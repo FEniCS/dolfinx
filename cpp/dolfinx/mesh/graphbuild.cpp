@@ -699,12 +699,12 @@ mesh::build_local_dual_graph(
   //    structure.
 
   std::vector<std::int32_t> num_links(cell_offsets.back(), 0);
-  std::ranges::for_each(edges,
-                        [&num_links](auto e)
-                        {
-                          ++num_links[e[0]];
-                          ++num_links[e[1]];
-                        });
+
+  for (auto [a, b] : edges)
+  {
+    ++num_links[a];
+    ++num_links[b];
+  }
 
   std::vector<std::int32_t> offsets(num_links.size() + 1, 0);
   std::partial_sum(num_links.cbegin(), num_links.cend(),
