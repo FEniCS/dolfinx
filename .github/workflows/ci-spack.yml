@@ -1,12 +1,12 @@
 name: "CI (RHEL clone: gcc, oneAPI)"
 on:
-  push:
-    # Uncomment the below 'push' to trigger on push
-    # branches:
-    # - "**"
+  # push:
+  #   # Uncomment the below 'push' to trigger on push
+  #   branches:
+  #   - "**"
   pull_request:
     branches:
-    - "main"
+    - main
     tags:
     - "v*"
   merge_group:

@@ -31,6 +31,11 @@ execute_process(
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
 
+# Enabling C here is a workaround for an ADIOS2 bug, see
+# https://github.com/ornladios/ADIOS2/pull/4255. Remove when the ADIOS2
+# fix is released.
+enable_language(C)
+
 find_package(DOLFINX REQUIRED CONFIG)
 
 if(DOLFINX_FOUND)

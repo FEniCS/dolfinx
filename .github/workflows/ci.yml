@@ -1,0 +1,165 @@
+name: CI (via Spack, experimental)
+
+on:
+  # Uncomment the below 'push' to trigger on push
+  push:
+    branches:
+      - "**"
+  # pull_request:
+  #   branches: [ "main" ]
+  # merge_group:
+  #   branches:
+  #     - main
+  workflow_dispatch:
+
+env:
+  GITHUB_USER: ${{ github.actor }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  OMPI_ALLOW_RUN_AS_ROOT: 1
+  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+  PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
+    permissions:
+      packages: write
+
+    steps:
+      - name: Install Spack requirements
+        run: |
+          apt-get -y update
+          apt-get install -y bzip2 curl file git gzip make patch python3-minimal \
+            tar unzip xz-utils g++ gcc gfortran
+          apt-get install -y llvm-15-dev
+
+      - name: Get DOLFINx code
+        uses: actions/checkout@v5
+        with:
+          path: dolfinx-src
+      - name: Get Spack
+        uses: actions/checkout@v5
+        with:
+          repository: spack/spack
+          ref: develop
+          path: spack-src
+      - name: Get Spack packages
+        uses: actions/checkout@v5
+        with:
+          repository: garth-wells/spack-packages
+          ref: fenics-testing
+          path: spack-packages
+
+      - name: Load dev branch environment variables
+        run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
+      - name: Add repo
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
+
+      - name: Prepare C++ environment
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack info fenics-dolfinx
+          spack env create cxx dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
+          spack -e cxx develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
+          spack -e cxx develop fenics-basix@git.${{ env.basix_ref }}=main
+          spack -e cxx develop fenics-ufcx@git.${{ env.ffcx_ref }}=main
+          spack -e cxx develop py-fenics-basix@git.${{ env.basix_ref }}=main
+          spack -e cxx develop py-fenics-ffcx@git.${{ env.ffcx_ref }}=main
+          spack -e cxx develop py-fenics-ufl@git.${{ env.ufl_ref }}=main
+
+      - name: Build library (C++)
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack -e cxx add fenics-dolfinx@main generator=ninja build_type=Developer +petsc +slepc partitioners=parmetis \
+            %petsc +mpi +hypre +mumps +superlu-dist %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
+          spack -e cxx add catch2 py-fenics-ffcx@main
+          spack -e cxx concretize -j 4
+          spack -v -e cxx install -j 4 -p 2 --use-buildcache auto
+
+      - name: Push C++ packages to cache
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack -e cxx buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
+          spack -e cxx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache catch2 ninja
+        if: ${{ !cancelled() }}
+
+      - name: Build and run C++ unit tests
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack env activate cxx
+          spack load catch2 cmake ninja py-fenics-ffcx
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
+          cmake --build build/test
+          cd build/test
+          ctest -V --output-on-failure -R unittests
+          mpirun -n 3 ctest -V --output-on-failure -R unittests
+
+      - name: Build and run C++ demos
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack env activate cxx
+          spack load cmake ninja py-fenics-ffcx
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
+          cmake --build build/demo
+          cd build/demo
+          ctest -V -R demo -R serial
+          ctest --output-on-failure -V -R demo -R mpi_2
+
+      - name: Prepare Python environment
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack info py-fenics-dolfinx
+          spack env create py dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
+          spack -e py develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
+          spack -e py develop fenics-basix@git.${{ env.basix_ref }}=main
+          spack -e py develop fenics-ufcx@git.${{ env.ffcx_ref }}=main
+          spack -e py develop --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
+          spack -e py develop py-fenics-basix@git.${{ env.basix_ref }}=main
+          spack -e py develop py-fenics-ffcx@git.${{ env.ffcx_ref }}=main
+          spack -e py develop py-fenics-ufl@git.${{ env.ufl_ref }}=main
+
+      - name: Build library (Python)
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack -e py add py-fenics-dolfinx@main +petsc4py +slepc4py build_type=Developer \
+            %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
+            ^openmpi ^adios2~fortran~libcatalyst \
+            ^petsc +mpi +hypre +mumps +superlu-dist
+          spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
+            py-numba py-pyamg@5.3: py-pytest py-pytest-xdist py-scipy py-pyvista
+          spack -e py concretize -j 4
+          spack -v -e py install -j 4 -p 2 --use-buildcache=auto
+
+      - name: Set default DOLFINx JIT options
+        run: |
+          mkdir -p ~/.config/dolfinx
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
+
+      - name: Run Python demos
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack env activate py
+          spack load gcc
+          python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
+          python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
+
+      - name: Run Python unit tests
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack env activate py
+          spack load gcc
+          python -m pytest -n=auto --durations=50 dolfinx-src/python/test/unit/
+          mpirun -np 3 python -m pytest --durations=50 dolfinx-src/python/test/unit/
+
+      - name: Push packages to cache and update index
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack -e py buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
+          spack -e py buildcache push --base-image ubuntu:24.04 --update-index local-buildcache \
+            py-gmsh py-matplotlib py-networkx py-numba py-pyamg py-pytest py-pytest-xdist py-scipy py-pyvista
+        if: ${{ !cancelled() }}

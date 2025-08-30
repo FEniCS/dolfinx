@@ -5,22 +5,10 @@ project(dolfinx-tests LANGUAGES C CXX)
 if (PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
   find_package(DOLFINX REQUIRED)
+  set(DOLFINX_CXX_DEVELOPER_FLAGS -Wall -Werror -Wextra -pedantic -g -O2)
 endif()
 
-find_package(Catch2 3)
-
-if(NOT Catch2_FOUND)
-  message(STATUS "Catch2 not found. Downloading.")
-  include(FetchContent)
-  FetchContent_Declare(
-    Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG v3.4.0
-  )
-  FetchContent_MakeAvailable(Catch2)
-endif()
-
-include(Catch)
+find_package(Catch2 3 REQUIRED)
 
 # FFCx compile: expr.py -> expr.c
 add_custom_command(
@@ -91,11 +79,13 @@ set_target_properties(
              CMAKE_CXX_EXTENSIONS OFF
 )
 
-target_compile_options(
-  unittests
-  PRIVATE
-    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
-)
+if (DEFINED DOLFINX_CXX_DEVELOPER_FLAGS)
+  target_compile_options(
+    unittests
+    PRIVATE
+      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  )
+endif()
 
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
@@ -107,7 +97,7 @@ if(ENABLE_CLANG_TIDY)
   )
 endif()
 
-# Uncommenting line allows for debugging individual tests, but slow. 
+# Uncommenting line allows for debugging individual tests, but slow.
 #catch_discover_tests(unittests)
 
 add_test(NAME unittests COMMAND $<TARGET_FILE:unittests>)
