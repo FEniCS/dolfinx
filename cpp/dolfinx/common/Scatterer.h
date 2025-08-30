@@ -41,6 +41,9 @@ template <class Container = std::vector<std::int32_t>>
   requires std::is_integral_v<typename Container::value_type>
 class Scatterer
 {
+  template <class T>
+  friend class Scatterer;
+
 public:
   /// Container type used to store local and remote indices.
   using container_type = Container;
@@ -57,7 +60,6 @@ public:
         _dest(map.dest().begin(), map.dest().end()),
         _sizes_remote(_src.size(), 0), _displs_remote(_src.size() + 1),
         _sizes_local(_dest.size()), _displs_local(_dest.size() + 1)
-
   {
     if (dolfinx::MPI::size(map.comm()) == 1)
       return;
@@ -187,6 +189,22 @@ public:
           idx[i * bs + j] = perm[i] * bs + j;
       _remote_inds = std::move(idx);
     }
+  }
+
+  /// @brief Copy constructor
+  Scatterer(const Scatterer& scatterer) = default;
+
+  /// @brief Cast-copy constructor.
+  /// @tparam S
+  /// @param s
+  template <typename S>
+  explicit Scatterer(const S& s)
+      : _comm0(s._comm0), _comm1(s._comm1), _src(s._src), _dest(s._dest),
+        _remote_inds(s._remote_inds.begin(), s._remote_inds.end()),
+        _sizes_remote(s._sizes_remote), _displs_remote(s._displs_remote),
+        _local_inds(s._local_inds.begin(), s._local_inds.end()),
+        _sizes_local(s._sizes_local), _displs_local(s._displs_local)
+  {
   }
 
   /// @brief Start a non-blocking send of owned data to ranks that ghost

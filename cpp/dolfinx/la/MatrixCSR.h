@@ -50,6 +50,9 @@ template <typename Scalar, typename Container = std::vector<Scalar>,
           typename RowPtrContainer = std::vector<std::int64_t>>
 class MatrixCSR
 {
+  template <class U, class V, class W, class X>
+  friend class MatrixCSR;
+
 public:
   /// Scalar type
   using value_type = Scalar;
@@ -196,22 +199,26 @@ public:
   template <typename Mat>
   explicit MatrixCSR(const Mat& A)
       : _index_maps(A.index_maps()), _block_mode(A.block_mode()),
-        _bs(A.block_size()), _data(A.values().begin(), A.values().end()),
+        _bs(A.block_size()), _data(A._data.begin(), A._data.end()),
         _cols(A.cols().begin(), A.cols().end()),
         _row_ptr(A.row_ptr().begin(), A.row_ptr().end()),
         _off_diagonal_offset(A.off_diag_offset().begin(),
                              A.off_diag_offset().end()),
-        _comm(A.comm()), _request(MPI_REQUEST_NULL),
-        _unpack_pos(A.unpack_pos()), _val_send_disp(A.val_send_disp()),
-        _val_recv_disp(A.val_recv_disp()),
-        _ghost_row_to_rank(A.ghost_row_to_rank())
+        _comm(A.comm()), _request(MPI_REQUEST_NULL), _unpack_pos(A._unpack_pos),
+        _val_send_disp(A._val_send_disp), _val_recv_disp(A._val_recv_disp),
+        _ghost_row_to_rank(A._ghost_row_to_rank)
   {
   }
 
+  /// @deprecated Use `std::ranges::fill(A.values(), x)` instead.
   /// @brief Set all non-zero local entries to a value including entries
   /// in ghost rows.
   /// @param[in] x The value to set non-zero matrix entries to
-  void set(value_type x) { std::ranges::fill(_data, x); }
+  [[deprecated("Use std::ranges::fill(A.values(), v) instead.")]]
+  void set(value_type x)
+  {
+    std::ranges::fill(_data, x);
+  }
 
   /// @brief Set values in the matrix.
   ///
@@ -524,21 +531,6 @@ public:
   /// @brief Get 'block mode'.
   /// @return block sizes for rows and columns
   BlockMode block_mode() const { return _block_mode; }
-
-  /// @brief For internal use and subject to change
-  const std::vector<int>& unpack_pos() const { return _unpack_pos; }
-
-  /// @brief For internal use and subject to change
-  const std::vector<int>& val_send_disp() const { return _val_send_disp; }
-
-  /// @brief For internal use and subject to change
-  const std::vector<int>& val_recv_disp() const { return _val_recv_disp; }
-
-  /// @brief For internal use and subject to change
-  const std::vector<int>& ghost_row_to_rank() const
-  {
-    return _ghost_row_to_rank;
-  }
 
 private:
   // Maps for the distribution of the rows and columns

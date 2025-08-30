@@ -50,6 +50,9 @@ class Vector
 {
   static_assert(std::is_same_v<typename Container::value_type, T>);
 
+  template <class U, class V, class W>
+  friend class Vector;
+
 private:
   /// @brief Return a 'pack' function for packing a send buffer.
   ///
@@ -150,9 +153,8 @@ public:
   /// @param x Vector to copy.
   template <typename Vec>
   explicit Vector(const Vec& x)
-      : _map(x.index_map()), _bs(x.bs()),
-        _x(x.array().begin(), x.array().end()), _scatterer(x.scatterer()),
-        _request(MPI_REQUEST_NULL),
+      : _map(x.index_map()), _bs(x.bs()), _x(x._x.begin(), x._x.end()),
+        _scatterer(x._scatterer), _request(MPI_REQUEST_NULL),
         _buffer_local(_scatterer->local_indices().size()),
         _buffer_remote(_scatterer->remote_indices().size())
   {
