@@ -79,7 +79,8 @@ def create_dofmaps(
         elements: Sequence of elements
 
     Returns:
-        List of new DOF maps
+        List of degree-of-freedom maps where the `i`-th map is the map for
+        `elements[i]`.
     """
     elements_cpp = [e._cpp_object for e in elements]
     cpp_dofmaps = _create_dofmaps(comm, topology._cpp_object, elements_cpp)
