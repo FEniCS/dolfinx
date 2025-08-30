@@ -219,14 +219,14 @@ void petsc_la_module(nb::module_& m)
              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
         std::vector<std::span<const PetscScalar>> _x_b;
-        std::ranges::transform(x_b, std::back_inserter(_x_b), [](const auto& x)
+        std::ranges::transform(x_b, std::back_inserter(_x_b), [](auto& x)
                                { return std::span(x.data(), x.size()); });
 
         using X = std::vector<std::pair<
             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
-                               [](const auto& q) -> typename X::value_type
+                               [](auto& q) -> typename X::value_type
                                { return {*q.first, q.second}; });
         dolfinx::la::petsc::scatter_local_vectors(x, _x_b, _maps);
       },
@@ -271,7 +271,7 @@ void petsc_fem_module(nb::module_& m)
             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
-                               [](const auto& q) -> typename X::value_type
+                               [](auto& q) -> typename X::value_type
                                { return {*q.first, q.second}; });
         return dolfinx::fem::petsc::create_vector_block(_maps);
       },
@@ -286,7 +286,7 @@ void petsc_fem_module(nb::module_& m)
             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
-                               [](const auto& m) -> typename X::value_type
+                               [](auto& m) -> typename X::value_type
                                { return {*m.first, m.second}; });
         return dolfinx::fem::petsc::create_vector_nest(_maps);
       },

@@ -57,21 +57,22 @@ nanobind_add_module(
   dolfinx/wrappers/refinement.cpp
 )
 
-# Add strict compiler flags
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
-if(HAVE_PEDANTIC)
-  target_compile_options(cpp PRIVATE -Wall;-Werror;-Wextra;-pedantic)
+# Add strict compiler flags for Developer build type
+set(DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
 
-  # Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
-  # library
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-     AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-     AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
-  )
-    target_compile_options(cpp PRIVATE -Wno-array-bounds;-Wno-stringop-overflow)
-  endif()
+# Turn off some checks in gcc12 and gcc13 due to false positives with
+# the fmt library
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
+    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
+)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
 endif()
+
+# Set 'Developer' build type flags
+target_compile_options(
+  cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_FLAGS}>
+)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 target_compile_definitions(cpp PRIVATE cxx_std_20)
