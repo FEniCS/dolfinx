@@ -41,7 +41,8 @@ template <class Container = std::vector<std::int32_t>>
   requires std::is_integral_v<typename Container::value_type>
 class Scatterer
 {
-  template <class T>
+  template <typename T>
+    requires std::is_integral_v<typename T::value_type>
   friend class Scatterer;
 
 public:
@@ -198,7 +199,7 @@ public:
   /// @tparam S
   /// @param s
   template <typename S>
-  explicit Scatterer(const S& s)
+  Scatterer(const S& s)
       : _comm0(s._comm0), _comm1(s._comm1), _src(s._src), _dest(s._dest),
         _remote_inds(s._remote_inds.begin(), s._remote_inds.end()),
         _sizes_remote(s._sizes_remote), _displs_remote(s._displs_remote),

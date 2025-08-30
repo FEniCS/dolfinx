@@ -20,6 +20,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <iostream>
+
 namespace dolfinx::la
 {
 /// @brief la::Vector scatter pack/unpack function concept.
@@ -143,6 +145,27 @@ public:
   /// Move constructor
   Vector(Vector&& x) = default;
 
+private:
+  // template <typename W>
+  auto scatter_ptr(auto sc) const
+  {
+    using X = typename std::remove_cv<
+        typename decltype(sc)::element_type>::type::container_type;
+    if constexpr (std::is_same_v<ScatterContainer, X>)
+    {
+      // std::cout << "*** No scatterer copy" << std::endl;
+      return sc;
+    }
+    else
+    {
+      // std::cout << "*** Scatterer copy" << std::endl;
+      return std::make_shared<common::Scatterer<ScatterContainer>>(*sc);
+    }
+
+    // return sc;
+  }
+
+public:
   /// @brief Copy-convert vector, possibly using to different container
   /// types.
   ///
@@ -154,7 +177,10 @@ public:
   template <typename Vec>
   explicit Vector(const Vec& x)
       : _map(x.index_map()), _bs(x.bs()), _x(x._x.begin(), x._x.end()),
-        _scatterer(x._scatterer), _request(MPI_REQUEST_NULL),
+        // _scatterer(x._scatterer),
+        _scatterer(scatter_ptr(x._scatterer)),
+        //
+        _request(MPI_REQUEST_NULL),
         _buffer_local(_scatterer->local_indices().size()),
         _buffer_remote(_scatterer->remote_indices().size())
   {
@@ -373,12 +399,6 @@ public:
   [[deprecated("Use array() instead.")]] container_type& mutable_array()
   {
     return _x;
-  }
-
-  /// @brief Internal library use only.
-  std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer() const
-  {
-    return _scatterer;
   }
 
 private:

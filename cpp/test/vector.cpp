@@ -78,7 +78,7 @@ void test_vector_cast()
   la::Vector<T> v(index_map, 1);
   std::ranges::fill(v.array(), 1);
 
-  la::Vector<U> v1(v);
+  la::Vector<U, std::vector<U>, std::vector<std::int64_t>> v1(v);
 
   U norm2 = la::squared_norm(v1);
   CHECK(norm2 == mpi_size * size_local);
