@@ -52,6 +52,9 @@ jobs:
           ref: fenics-testing
           path: spack-packages
 
+      - name: Load dev branch environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
       - name: Add repo
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
@@ -63,11 +66,11 @@ jobs:
           spack info fenics-dolfinx
           spack env create cxx dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
           spack -e cxx develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
-          spack -e cxx develop fenics-basix@git.main=main
-          spack -e cxx develop fenics-ufcx@git.main=main
-          spack -e cxx develop py-fenics-basix@git.main=main
-          spack -e cxx develop py-fenics-ffcx@git.main=main
-          spack -e cxx develop py-fenics-ufl@git.main=main
+          spack -e cxx develop fenics-basix@git.@${{ env.basix_ref }}=main
+          spack -e cxx develop fenics-ufcx@git.@${{ env.ffcx_ref }}=main
+          spack -e cxx develop py-fenics-basix@git.@${{ env.basix_ref }}=main
+          spack -e cxx develop py-fenics-ffcx@git.@${{ env.ffcx_ref }}=main
+          spack -e cxx develop py-fenics-ufl@git.@${{ env.ufl_ref }}=main
 
       - name: Build library (C++)
         run: |
@@ -76,7 +79,7 @@ jobs:
             %petsc +mpi +hypre +mumps +superlu-dist %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
           spack -e cxx add catch2 py-fenics-ffcx@main
           spack -e cxx concretize -j 4
-          spack -v -e cxx install -j 4 -p 1 --use-buildcache auto
+          spack -v -e cxx install -j 4 -p 2 --use-buildcache auto
 
       - name: Push C++ packages to cache
         run: |
@@ -113,12 +116,12 @@ jobs:
           spack info py-fenics-dolfinx
           spack env create py dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
           spack -e py develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
-          spack -e py develop fenics-basix@git.main=main
-          spack -e py develop fenics-ufcx@git.main=main
+          spack -e py develop fenics-basix@git.${{ env.basix_ref }}=main
+          spack -e py develop fenics-ufcx@git.${{ env.ffcx_ref }}=main
           spack -e py develop --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
-          spack -e py develop py-fenics-basix@git.main=main
-          spack -e py develop py-fenics-ffcx@git.main=main
-          spack -e py develop py-fenics-ufl@git.main=main
+          spack -e py develop py-fenics-basix@git.${{ env.basix_ref }}=main
+          spack -e py develop py-fenics-ffcx@git.${{ env.ffcx_ref }}=main
+          spack -e py develop py-fenics-ufl@git.${{ env.ufl_ref }}=main
 
       - name: Build library (Python)
         run: |
@@ -128,9 +131,9 @@ jobs:
             ^openmpi ^adios2~fortran~libcatalyst \
             ^petsc +mpi +hypre +mumps +superlu-dist
           spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
-            py-numba py-pyamg@5.3.0 py-pytest py-pytest-xdist py-scipy py-pyvista
+            py-numba py-pyamg@5.3: py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
-          spack -v -e py install -j 4 -p 1 --use-buildcache=auto
+          spack -v -e py install -j 4 -p 2 --use-buildcache=auto
 
       - name: Run Python demos
         run: |
