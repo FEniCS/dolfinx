@@ -350,10 +350,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     for_each_matched_pair(
         [&dedge_send_count](int facet_a, std::int64_t /* cell_a */, int facet_b,
                             std::int64_t /* cell_b */)
-        {
-          dedge_send_count[facet_a]++;
-          dedge_send_count[facet_b]++;
-        });
+        { ++dedge_send_count[facet_a]++ dedge_send_count[facet_b] });
 
     std::partial_sum(dedge_send_count.begin(), dedge_send_count.end(),
                      std::next(dedge_send_displs.begin()));
