@@ -247,7 +247,20 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
   if (type)
-    MatSetType(A, type->c_str());
+  {
+    if (type == std::string("mpi"))
+    {
+      ierr = MatSetType(A, MATAIJ);
+      if (ierr != 0)
+        petsc::error(ierr, __FILE__, "MatSetType");
+    }
+    else
+    {
+      ierr = MatSetType(A, type->c_str());
+      if (ierr != 0)
+        petsc::error(ierr, __FILE__, "MatSetType");
+    }
+  }
 
   // Get global and local dimensions
   const std::int64_t M = bs[0] * maps[0]->size_global();
