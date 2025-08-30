@@ -76,7 +76,7 @@ def create_dofmaps(
     Args:
         comm: MPI communicator
         topology: Mesh topology
-        elements: Sequence of coordinate elements
+        elements: Sequence of elements
 
     Returns:
         List of new DOF maps
