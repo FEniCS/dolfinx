@@ -71,7 +71,7 @@ class DofMap:
 def create_dofmaps(
     comm: Comm, topology: "dolfinx.mesh.Topology", elements: Sequence[FiniteElement]
 ) -> list[DofMap]:
-    """Create degree-of-freedom maps on a given topology .
+    """Create degree-of-freedom maps on a given topology.
 
     Args:
         comm: MPI communicator
