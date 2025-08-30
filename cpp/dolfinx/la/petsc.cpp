@@ -32,7 +32,7 @@ using namespace dolfinx::la;
   } while (0)
 
 //-----------------------------------------------------------------------------
-void la::petsc::error(int error_code, const std::string& filename,
+void la::petsc::error(PetscErrorCode error_code, const std::string& filename,
                       const std::string& petsc_function)
 {
   // Fetch PETSc error description
@@ -42,7 +42,7 @@ void la::petsc::error(int error_code, const std::string& filename,
   // Log detailed error info
   spdlog::info("PETSc error in '{}', '{}'", filename.c_str(),
                petsc_function.c_str());
-  spdlog::info("PETSc error code '{}' '{}'", error_code, desc);
+  spdlog::info("PETSc error code '{}' '{}'", (int)error_code, desc);
   throw std::runtime_error("Failed to successfully call PETSc function '"
                            + petsc_function + "'. PETSc error code is: "
                            + std ::to_string(error_code) + ", "
@@ -147,6 +147,52 @@ std::vector<IS> la::petsc::create_index_sets(
   return is;
 }
 //-----------------------------------------------------------------------------
+std::vector<IS> la::petsc::create_global_index_sets(
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
+{
+  std::vector<IS> is;
+
+  std::int64_t offset = 0;
+  std::int64_t merged_local_size = 0;
+  MPI_Comm comm = MPI_COMM_NULL;
+
+  for (auto& map : maps)
+  {
+    if (comm == MPI_COMM_NULL)
+    {
+      comm = map.first.get().comm();
+    }
+    int result;
+    MPI_Comm_compare(comm, map.first.get().comm(), &result);
+    if (result != MPI_IDENT && result != MPI_CONGRUENT)
+    {
+      throw std::runtime_error("Not supported on the different communicators.");
+    }
+    int bs = map.second;
+    std::int32_t size = map.first.get().size_local();
+    merged_local_size += size * bs;
+  }
+  if (comm == MPI_COMM_NULL)
+    return is;
+
+  int ierr = MPI_Exscan(&merged_local_size, &offset, 1, MPI_INT64_T,
+                        MPI_SUM, comm);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  for (auto& map : maps)
+  {
+    int bs = map.second;
+    std::int32_t size = map.first.get().size_local();
+    IS _is;
+    ISCreateStride(map.first.get().comm(), bs * size, offset, 1, &_is);
+    is.push_back(_is);
+    offset += bs * size;
+  }
+
+  return is;
+}
+//-----------------------------------------------------------------------------
 std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
     const Vec x,
     const std::vector<
@@ -232,7 +278,9 @@ void la::petsc::scatter_local_vectors(
 }
 //-----------------------------------------------------------------------------
 Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                             std::optional<std::string> type)
+                             std::optional<std::string> type,
+                             std::optional<ISLocalToGlobalMapping> rlgmap,
+                             std::optional<ISLocalToGlobalMapping> clgmap)
 {
   PetscErrorCode ierr;
   Mat A;
@@ -245,7 +293,20 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
   if (type)
-    MatSetType(A, type->c_str());
+  {
+    if (type == std::string("mpi"))
+    {
+      ierr = MatSetType(A, MATAIJ);
+      if (ierr != 0)
+        petsc::error(ierr, __FILE__, "MatSetType");
+    }
+    else
+    {
+      ierr = MatSetType(A, type->c_str());
+      if (ierr != 0)
+        petsc::error(ierr, __FILE__, "MatSetType");
+    }
+  }
 
   // Get global and local dimensions
   const std::int64_t M = bs[0] * maps[0]->size_global();
@@ -289,6 +350,65 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
       _nnz_offdiag[i] = bs[1] * sp.nnz_off_diag(i / bs[0]);
   }
 
+  // Create PETSc local-to-global map/index sets
+  ISLocalToGlobalMapping local_to_global0, local_to_global1 = NULL;
+  if (rlgmap)
+  {
+    ierr = PetscObjectReference((PetscObject)rlgmap.value());
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "PetscObjectReference");
+    local_to_global0 = rlgmap.value();
+  }
+  else
+  {
+    const std::vector map0 = maps[0]->global_indices();
+    const std::vector<PetscInt> _map0(map0.begin(), map0.end());
+    ierr = ISLocalToGlobalMappingCreate(comm, bs[0], _map0.size(),
+                                        _map0.data(), PETSC_COPY_VALUES,
+                                        &local_to_global0);
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
+  }
+
+  // Check for common index maps
+  if (maps[0] == maps[1] and bs[0] == bs[1] and !clgmap)
+  {
+    ierr = MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global0);
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
+  }
+  else
+  {
+    if (clgmap)
+    {
+      ierr = PetscObjectReference((PetscObject)clgmap.value());
+      if (ierr != 0)
+        petsc::error(ierr, __FILE__, "PetscObjectReference");
+      local_to_global1 = clgmap.value();
+    }
+    else
+    {
+      const std::vector map1 = maps[1]->global_indices();
+      const std::vector<PetscInt> _map1(map1.begin(), map1.end());
+      ierr = ISLocalToGlobalMappingCreate(comm, bs[1], _map1.size(),
+                                          _map1.data(), PETSC_COPY_VALUES,
+                                          &local_to_global1);
+      if (ierr != 0)
+        petsc::error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
+    }
+    ierr = MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global1);
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
+  }
+
+  // Clean up local-to-global 0
+  ierr = ISLocalToGlobalMappingDestroy(&local_to_global0);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
+  ierr = ISLocalToGlobalMappingDestroy(&local_to_global1);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
+
   // Allocate space for matrix
   ierr = MatXAIJSetPreallocation(A, _bs, _nnz_diag.data(), _nnz_offdiag.data(),
                                  nullptr, nullptr);
@@ -299,53 +419,6 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   ierr = MatSetBlockSizes(A, bs[0], bs[1]);
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "MatSetBlockSizes");
-
-  // Create PETSc local-to-global map/index sets
-  ISLocalToGlobalMapping local_to_global0;
-  const std::vector map0 = maps[0]->global_indices();
-  const std::vector<PetscInt> _map0(map0.begin(), map0.end());
-  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs[0], _map0.size(),
-                                      _map0.data(), PETSC_COPY_VALUES,
-                                      &local_to_global0);
-
-  if (ierr != 0)
-    petsc::error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
-
-  // Check for common index maps
-  if (maps[0] == maps[1] and bs[0] == bs[1])
-  {
-    ierr = MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global0);
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
-  }
-  else
-  {
-    ISLocalToGlobalMapping local_to_global1;
-    const std::vector map1 = maps[1]->global_indices();
-    const std::vector<PetscInt> _map1(map1.begin(), map1.end());
-    ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs[1], _map1.size(),
-                                        _map1.data(), PETSC_COPY_VALUES,
-                                        &local_to_global1);
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
-    ierr = MatSetLocalToGlobalMapping(A, local_to_global0, local_to_global1);
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
-    ierr = ISLocalToGlobalMappingDestroy(&local_to_global1);
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
-  }
-
-  // Clean up local-to-global 0
-  ierr = ISLocalToGlobalMappingDestroy(&local_to_global0);
-  if (ierr != 0)
-    petsc::error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
-
-  // Note: This should be called after having set the local-to-global
-  // map for MATIS (this is a dummy call if A is not of type MATIS)
-  // ierr = MatISSetPreallocation(A, 0, _nnz_diag.data(), 0,
-  // _nnz_offdiag.data()); if (ierr != 0)
-  //   error(ierr, __FILE__, "MatISSetPreallocation");
 
   // Set some options on Mat object
   ierr = MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);

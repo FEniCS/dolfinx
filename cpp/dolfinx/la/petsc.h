@@ -35,7 +35,7 @@ class SparsityPattern;
 namespace petsc
 {
 /// Print error message for PETSc calls that return an error
-void error(int error_code, const std::string& filename,
+void error(PetscErrorCode error_code, const std::string& filename,
            const std::string& petsc_function);
 
 /// Create PETsc vectors from the local data. The data is copied into
@@ -100,8 +100,22 @@ Vec create_vector_wrap(const la::Vector<V>& x)
 /// @note The caller is responsible for destruction of each IS.
 ///
 /// @param[in] maps Vector of IndexMaps and corresponding block sizes
-/// @return Vector of PETSc Index Sets, created on` PETSC_COMM_SELF`
+/// @return Vector of PETSc Index Sets, created on `PETSC_COMM_SELF`
 std::vector<IS> create_index_sets(
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+
+/// @brief Compute PETSc IndexSets (IS) for a stack of index maps.
+///
+/// This function stacks the owned part of the maps and returns
+/// indices in the global space. The maps must have the same communicator.
+///
+/// @note Collective
+/// @note The caller is responsible for destruction of each IS.
+///
+/// @param[in] maps Vector of IndexMaps and corresponding block sizes
+/// @return Vector of PETSc Index Sets, created on the index map communicators
+std::vector<IS> create_global_index_sets(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
@@ -120,7 +134,9 @@ void scatter_local_vectors(
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                  std::optional<std::string> type = std::nullopt);
+                  std::optional<std::string> type = std::nullopt,
+                  std::optional<ISLocalToGlobalMapping> rlgmap = std::nullopt,
+                  std::optional<ISLocalToGlobalMapping> clgmap = std::nullopt);
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.
