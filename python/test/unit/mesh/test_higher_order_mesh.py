@@ -20,7 +20,7 @@ from dolfinx import default_real_type
 from dolfinx.cpp.io import perm_vtk
 from dolfinx.fem import assemble_scalar, form
 from dolfinx.io import XDMFFile
-from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
+from dolfinx.io.gmsh import cell_perm_array, ufl_mesh
 from dolfinx.mesh import CellType, create_mesh, create_submesh
 from ufl import dx
 
