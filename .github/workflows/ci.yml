@@ -135,6 +135,11 @@ jobs:
           spack -e py concretize -j 4
           spack -v -e py install -j 4 -p 2 --use-buildcache=auto
 
+      - name: Set default DOLFINx JIT options
+        run: |
+          mkdir -p ~/.config/dolfinx
+          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
+
       - name: Run Python demos
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
