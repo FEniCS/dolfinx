@@ -947,6 +947,12 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// @brief Create a function that computes destination rank for mesh
 /// cells on this rank by applying the default graph partitioner to the
 /// dual graph of the mesh.
+/// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
+/// @param[in] partfn Partitioning function for distributing cells
+/// across MPI ranks.
+/// @param[in] max_facet_to_cell_links Bound on the number of cells a
+/// facet needs to be connected to to be considered *matched* (not on boundary
+/// for non-branching meshes).
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction create_cell_partitioner(
     mesh::GhostMode ghost_mode = mesh::GhostMode::none,
