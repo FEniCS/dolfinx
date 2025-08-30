@@ -504,7 +504,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       for (std::size_t i = node + 1; i < offsets.size(); i++)
         offsets[i] -= std::ranges::size(duplicate_links);
     }
-    // TOOD: shrink_to_fit here?
   }
 
   return graph::AdjacencyList(std::move(data), std::move(offsets));
