@@ -623,7 +623,7 @@ mesh::build_local_dual_graph(
   std::iota(perm.begin(), perm.end(), 0);
   // TODO: radix_sort? This is a heavy sort call.
   std::ranges::sort(perm, std::ranges::lexicographical_compare,
-                    [&](auto f)
+                    [&facets, shape1](auto f)
                     {
                       auto begin = std::next(facets.begin(), f * shape1);
                       return std::ranges::subrange(begin,
