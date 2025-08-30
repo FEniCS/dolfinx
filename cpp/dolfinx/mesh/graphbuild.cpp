@@ -483,7 +483,11 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       std::int32_t cell = cells[cell_idx];
 
       for (int j = 0; j < dedge_recv_count[i]; j++)
-        data[disp[cell]++] = recv_dual_edges[offset + j];
+      {
+        std::int32_t _cell_offset = disp[cell]++;
+        std::int64_t node = recv_dual_edges[offset + j];
+        data[_cell_offset] = node;
+      }
 
       offset += dedge_recv_count[i];
     }
