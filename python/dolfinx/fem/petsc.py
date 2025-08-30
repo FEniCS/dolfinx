@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import contextlib
 import functools
-import itertools
 import typing
 from collections.abc import Sequence
 
@@ -83,27 +82,30 @@ __all__ = [
 
 
 def create_vector(
-    L: typing.Union[Form, Sequence[Form]], kind: typing.Optional[str] = None
+    container: typing.Union[Form, _FunctionSpace, Sequence[Form], Sequence[_FunctionSpace]],
+    /,
+    kind: typing.Optional[str] = None,
 ) -> PETSc.Vec:  # type: ignore[name-defined]
-    """Create a PETSc vector that is compatible with a linear form(s).
+    """Create a PETSc vector that is compatible with a linear form(s)
+    or functionspace(s).
 
     Three cases are supported:
 
-    1. For a single linear form ``L``, if ``kind`` is ``None`` or is
-       ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
-       compatible with ``L`` is created.
+    1. For a single linear form ``L`` or space ``V``, if ``kind`` is
+       ``None`` or is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which
+       is compatible with ``L/V`` is created.
 
-    2. If ``L`` is a sequence of linear forms and ``kind`` is ``None``
-       or is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
-       compatible with ``L`` is created. The created vector ``b`` is
-       initialized such that on each MPI process ``b = [b_0, b_1, ...,
+    2. If ``L/V`` is a sequence of linear forms/functionspaces and ``kind``
+       is ``None`` or is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector
+       which is compatible with ``L`` is created. The created vector ``b``
+       is initialized such that on each MPI process ``b = [b_0, b_1, ...,
        b_n, b_0g, b_1g, ..., b_ng]``, where ``b_i`` are the entries
        associated with the 'owned' degrees-of-freedom for ``L[i]`` and
        ``b_ig`` are the 'unowned' (ghost) entries for ``L[i]``.
 
        For this case, the returned vector has an attribute ``_blocks``
        that holds the local offsets into ``b`` for the (i) owned and
-       (ii) ghost entries for each ``L[i]``. It can be accessed by
+       (ii) ghost entries for each ``L_i/V_i``. It can be accessed by
        ``b.getAttr("_blocks")``. The offsets can be used to get views
        into ``b`` for blocks, e.g.::
 
@@ -117,50 +119,28 @@ def create_vector(
            >>> b1_owned = b.array[offsets0[1]:offsets0[2]]
            >>> b1_ghost = b.array[offsets1[1]:offsets1[2]]
 
-    3. If ``L`` is a sequence of linear forms and ``kind`` is
-       ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a 'nest' of
-       ghosted PETSc vectors) which is compatible with ``L`` is created.
+    3. If ``L/V`` is a sequence of linear forms/functionspaces and ``kind``
+       is ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a 'nest' of
+       ghosted PETSc vectors) which is compatible with ``L/V`` is created.
 
     Args:
-        L: Linear form or a sequence of linear forms.
+        : Linear form/function space or a sequence of such.
         kind: PETSc vector type (``VecType``) to create.
 
     Returns:
         A PETSc vector with a layout that is compatible with ``L``. The
         vector is not initialised to zero.
     """
-    if isinstance(L, Sequence):
-        maps = [
-            (
-                form.function_spaces[0].dofmaps(0).index_map,  # type: ignore[attr-defined]
-                form.function_spaces[0].dofmaps(0).index_map_bs,  # type: ignore[attr-defined]
-            )
-            for form in L
-        ]
-        if kind == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
-            return _cpp.fem.petsc.create_vector_nest(maps)
-        elif kind == PETSc.Vec.Type.MPI or kind is None:  # type: ignore[attr-defined]
-            off_owned = tuple(
-                itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
-            )
-            off_ghost = tuple(
-                itertools.accumulate(
-                    maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-                )
-            )
+    if isinstance(container, (Form, _FunctionSpace)):
+        container = [container]  # type: ignore
 
-            b = _cpp.fem.petsc.create_vector_block(maps)
-            b.setAttr("_blocks", (off_owned, off_ghost))
-            return b
-        else:
-            raise NotImplementedError(
-                "Vector type must be specified for blocked/nested assembly."
-                f"Vector type '{kind}' not supported."
-                "Did you mean 'nest' or 'mpi'?"
-            )
-    else:
-        dofmap = L.function_spaces[0].dofmaps(0)  # type: ignore[attr-defined]
-        return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
+    V = _extract_function_spaces(container) if isinstance(container[0], Form) else container  # type: ignore
+
+    if any(_V is None for _V in V):  # type: ignore
+        raise RuntimeError("Can not create vector for extracted None block.")
+
+    maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]  # type: ignore
+    return dolfinx.la.petsc.create_vector(maps, kind=kind)
 
 
 # -- Matrix instantiation -------------------------------------------------
@@ -1043,26 +1023,16 @@ def _assign_block_data(forms: Sequence[Form], vec: PETSc.Vec):  # type: ignore[n
         forms: List of forms to extract block data from.
         vec: PETSc vector to assign block data to.
     """
-    # Early exit if the vector already has block data or is a nest vector
-    if vec.getAttr("_blocks") is not None or vec.getType() == "nest":
-        return
 
-    maps = [
+    maps = (
         (
             form.function_spaces[0].dofmaps(0).index_map,  # type: ignore[attr-defined]
             form.function_spaces[0].dofmaps(0).index_map_bs,  # type: ignore[attr-defined]
         )
         for form in forms
-    ]
-    off_owned = tuple(
-        itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
     )
-    off_ghost = tuple(
-        itertools.accumulate(
-            maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-        )
-    )
-    vec.setAttr("_blocks", (off_owned, off_ghost))
+
+    return dolfinx.la.petsc._assign_block_data(maps, vec)
 
 
 def assemble_residual(

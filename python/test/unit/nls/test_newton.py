@@ -200,8 +200,7 @@ class TestNLS:
         """Test Newton solver for a simple nonlinear PDE"""
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import create_matrix
-        from dolfinx.la.petsc import create_vector
+        from dolfinx.fem.petsc import create_matrix, create_vector
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
         V = functionspace(mesh, ("Lagrange", 1))
@@ -220,7 +219,7 @@ class TestNLS:
         problem = NonlinearPDE_SNESProblem(F, u, bc)
 
         u.x.array[:] = 0.9
-        b = create_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
+        b = create_vector(V)
         J = create_matrix(problem.a)
 
         # Create Newton solver and solve
