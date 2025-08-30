@@ -109,8 +109,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       for (std::size_t f = 0; f < facets.size() / local_max_vertices_per_facet;
            ++f)
       {
-        auto facet = facets.subspan(f * local_max_vertices_per_facet,
-                                    local_max_vertices_per_facet);
+        std::span facet = facets.subspan(f * local_max_vertices_per_facet,
+                                         local_max_vertices_per_facet);
         assert(std::is_sorted(facet.begin(), std::ranges::find(facet, -1)));
       }
     }
@@ -350,17 +350,20 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     for_each_matched_pair(
         [&dedge_send_count](int facet_a, std::int64_t /* cell_a */, int facet_b,
                             std::int64_t /* cell_b */)
-        { ++dedge_send_count[facet_a]++ dedge_send_count[facet_b] });
+        {
+          ++dedge_send_count[facet_a];
+          ++dedge_send_count[facet_b];
+        });
 
     std::partial_sum(dedge_send_count.begin(), dedge_send_count.end(),
                      std::next(dedge_send_displs.begin()));
 
-    auto send_dual_edges_size
+    std::int32_t send_dual_edges_size
         = std::accumulate(dedge_send_count.begin(), dedge_send_count.end(), 0);
     dedge_send_data.resize(send_dual_edges_size);
 
     // Iterate matching facets to store dual edge connectivity
-    auto offset = dedge_send_displs;
+    std::vector<std::int32_t> offset = dedge_send_displs;
     for_each_matched_pair(
         [&dedge_send_data, &offset](int facet_a, std::int64_t cell_a,
                                     int facet_b, std::int64_t cell_b)
@@ -595,10 +598,10 @@ mesh::build_local_dual_graph(
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       // Loop over cell facets
-      auto v = _cells.subspan(num_cell_vertices * c, num_cell_vertices);
+      std::span v = _cells.subspan(num_cell_vertices * c, num_cell_vertices);
       for (int f = 0; f < cell_facets.num_nodes(); ++f)
       {
-        auto facet_vertices = cell_facets.links(f);
+        std::span facet_vertices = cell_facets.links(f);
         std::ranges::transform(facet_vertices, std::back_inserter(facets),
                                [v](auto idx) { return v[idx]; });
         // TODO: radix_sort?
