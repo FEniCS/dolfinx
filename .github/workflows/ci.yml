@@ -49,7 +49,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: garth-wells/spack-packages
-          ref: py-dolfinx-c-compiler
+          ref: fenics-testing
           path: spack-packages
 
       - name: Add repo
@@ -76,7 +76,7 @@ jobs:
             %petsc +mpi +hypre +mumps +superlu-dist %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
           spack -e cxx add catch2 py-fenics-ffcx@main
           spack -e cxx concretize -j 4
-          spack -e cxx install -j 4 -p 2 --use-buildcache auto
+          spack -v -e cxx install -j 4 -p 2 --use-buildcache auto
 
       - name: Push C++ packages to cache
         run: |
@@ -123,14 +123,14 @@ jobs:
       - name: Build library (Python)
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack -e py add py-fenics-dolfinx@main +petsc4py +slepc4py \
+          spack -e py add py-fenics-dolfinx@main +petsc4py +slepc4py build_type=Developer \
             %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
             ^openmpi ^adios2~fortran~libcatalyst \
             ^petsc +mpi +hypre +mumps +superlu-dist
           spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
             py-numba py-pyamg@5.3.0 py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
-          spack -e py install -j 4 -p 2 --use-buildcache=auto
+          spack -v -e py install -j 4 -p 2 --use-buildcache=auto
 
       - name: Run Python demos
         run: |
