@@ -50,22 +50,6 @@ template <typename Scalar, typename Container = std::vector<Scalar>,
           typename RowPtrContainer = std::vector<std::int64_t>>
 class MatrixCSR
 {
-
-private:
-  template <template <typename...> typename, template <typename...> typename>
-  struct is_template_same : std::false_type
-  {
-  };
-
-  template <template <typename...> typename TT>
-  struct is_template_same<TT, TT> : std::true_type
-  {
-  };
-
-  // template <template <typename...> typename TT,
-  //           template <typename...> typename UU>
-  // inline constexpr bool is_template_same_v = is_template_same<TT, UU>::value;
-
 public:
   /// Scalar type
   using value_type = Scalar;
@@ -201,9 +185,6 @@ public:
   /// @todo Check handling of MPI_Request
   MatrixCSR(const MatrixCSR& A) = default;
 
-  /// @brief Copy-convert matrix, possibly using to different container
-  /// types.
-  ///
   /// @brief Copy-convert matrix, possibly using to different container
   /// types.
   ///

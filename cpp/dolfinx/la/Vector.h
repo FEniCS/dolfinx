@@ -140,6 +140,24 @@ public:
   /// Move constructor
   Vector(Vector&& x) = default;
 
+  /// @brief Copy-convert vector, possibly using to different container
+  /// types.
+  ///
+  /// Examples of use for this constructor include copying a Vector to a
+  /// different value type, or copying the Vector to a GPU.
+  ///
+  /// @tparam Vec
+  /// @param x Vector to copy.
+  template <typename Vec>
+  explicit Vector(const Vec& x)
+      : _map(x.index_map()), _bs(x.bs()),
+        _x(x.array().begin(), x.array().end()), _scatterer(x.scatterer()),
+        _request(MPI_REQUEST_NULL),
+        _buffer_local(_scatterer->local_indices().size()),
+        _buffer_remote(_scatterer->remote_indices().size())
+  {
+  }
+
   // Assignment operator (disabled)
   Vector& operator=(const Vector& x) = delete;
 
@@ -353,6 +371,12 @@ public:
   [[deprecated("Use array() instead.")]] container_type& mutable_array()
   {
     return _x;
+  }
+
+  /// @brief Internal library use only.
+  std::shared_ptr<const common::Scatterer<ScatterContainer>> scatterer() const
+  {
+    return _scatterer;
   }
 
 private:
