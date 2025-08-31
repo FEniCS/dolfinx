@@ -141,8 +141,8 @@ public:
     std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
                      std::next(_displs_local.begin()));
 
-    assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
-    assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
+    assert((int)ghosts_sorted.size() == _displs_remote.back());
+    assert((int)ghosts_sorted.size() == _displs_remote.back());
 
     // Send ghost global indices to owning rank, and receive owned
     // indices that are ghosts on other ranks
@@ -196,8 +196,18 @@ public:
   Scatterer(const Scatterer& scatterer) = default;
 
   /// @brief Cast-copy constructor.
-  /// @tparam S
-  /// @param s
+  ///
+  /// Create a copy of a Scatterer, were the copy uses a different
+  /// storage container for indices that are used in MPI communication.
+  /// Example usage includes creating from a CPU-suitable Scatterer a
+  /// GPU-suitable Scatterer that can be used with GPU-aware MPI to move
+  /// data between devices. This would be typical when copying a
+  /// la::Vector or la::MatrixCSR to/from a GPU. When copying a vector
+  /// or matrix to/from a GPU, the underlying Scatter that manages
+  /// parallel communication will usually be copied too with a different
+  /// storage container.
+  ///
+  /// @param[in] s Scatter to copy.
   template <typename S>
   Scatterer(const S& s)
       : _comm0(s._comm0), _comm1(s._comm1), _src(s._src), _dest(s._dest),
