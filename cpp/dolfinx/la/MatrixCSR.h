@@ -31,15 +31,14 @@ enum class BlockMode : int
                /// matrix has a block size of (1, 1).
 };
 
-/// @brief Distributed sparse matrix.
+/// @brief Distributed sparse matrix using compressed spare row storage.
 ///
-/// The matrix storage format is compressed sparse row. The matrix is
-/// partitioned row-wise across MPI ranks.
+/// @warning The class is experimental and subject to change.
 ///
-/// @warning Experimental storage of a matrix in CSR format which
-/// can be assembled into using the usual DOLFINx assembly routines.
-/// Matrix internal data can be accessed for interfacing with other
-/// code.
+/// The matrix storage format is compressed sparse row, and is
+/// partitioned by row across MPI ranks. The matrix can be assembled
+/// into using the usual DOLFINx assembly routines. Matrix internal data
+/// can be accessed for interfacing with other code.
 ///
 /// @tparam Scalar Scalar type of matrix entries
 /// @tparam Container Container type for storing matrix entries
