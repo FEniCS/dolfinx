@@ -32,6 +32,12 @@ namespace dolfinx::common
 /// The implementation is designed for sparse communication
 /// patterns, as is typical of patterns based on an IndexMap.
 ///
+/// A Scatterer is stateless, i.e. it provides the required information
+/// and static data for a given parallel communication pattern but does
+/// not provide any communication caches or track the status of MPi
+/// requests. Callers of the a Scatterer's members are responsible for
+/// managing buffer and MPI request handles.
+///
 /// @tparam Container Container type for storing the 'local' and
 /// 'remote' indices. On CPUs this is normally
 /// `std::vector<std::int32_t>`. For GPUs the container should store the
@@ -50,12 +56,12 @@ public:
   using container_type = Container;
 
   /// @brief Create a scatterer for data with a layout described by an
-  /// IndexMap, and with a block size.
+  /// IndexMap and a block size.
   ///
   /// @param[in] map Index map that describes the parallel layout of
   /// data.
   /// @param[in] bs Number of values associated with each `map` index
-  /// (block size).
+  /// (the block size).
   Scatterer(const IndexMap& map, int bs)
       : _src(map.src().begin(), map.src().end()),
         _dest(map.dest().begin(), map.dest().end()),

@@ -549,8 +549,7 @@ private:
   MPI_Request _request;
 
   // Position in _data to add received data
-  // FIXME: int is probably too small for some cases
-  std::vector<int> _unpack_pos;
+  std::vector<std::size_t> _unpack_pos;
 
   // Displacements for alltoall for each neighbor when sending and
   // receiving
