@@ -1,15 +1,15 @@
-name: macOS build
+name: CI (macOS)
 
 on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - "main"
-  #     # - "**"
-    tags:
-      - "v*"
+  # push:
+  #   branches:
+  #     - "main"
+  #     - "**"
+  #   tags:
+  #     - "v*"
   merge_group:
     branches:
       - main
