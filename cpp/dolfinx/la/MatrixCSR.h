@@ -197,7 +197,7 @@ public:
   /// @param A Matrix to copy.
   template <typename Mat>
   explicit MatrixCSR(const Mat& A)
-      : _index_maps(A.index_maps()), _block_mode(A.block_mode()),
+      : _index_maps(A._index_maps), _block_mode(A.block_mode()),
         _bs(A.block_size()), _data(A._data.begin(), A._data.end()),
         _cols(A.cols().begin(), A.cols().end()),
         _row_ptr(A.row_ptr().begin(), A.row_ptr().end()),
@@ -210,8 +210,8 @@ public:
   }
 
   /// @deprecated Use `std::ranges::fill(A.values(), x)` instead.
-  /// @brief Set all non-zero local entries to a value including entries
-  /// in ghost rows.
+  /// @brief Set all non-zero local entries to a value, including
+  /// entries in ghost rows.
   /// @param[in] x The value to set non-zero matrix entries to
   [[deprecated("Use std::ranges::fill(A.values(), v) instead.")]]
   void set(value_type x)
@@ -362,9 +362,11 @@ public:
 
   /// @brief Begin transfer of ghost row data to owning ranks, where it
   /// will be accumulated into existing owned rows.
+  ///
   /// @note Calls to this function must be followed by
   /// MatrixCSR::scatter_rev_end(). Between the two calls matrix values
   /// must not be changed.
+  ///
   /// @note This function does not change the matrix data. Data update
   /// only occurs with `scatter_rev_end()`.
   void scatter_rev_begin()
@@ -439,6 +441,7 @@ public:
   }
 
   /// @brief Compute the Frobenius norm squared across all processes.
+  ///
   /// @note MPI Collective
   double squared_norm() const
   {
@@ -470,24 +473,11 @@ public:
   /// @brief Get MPI communicator that matrix is defined on.
   MPI_Comm comm() const { return _comm.comm(); }
 
-  /// @brief Index maps for the row and column space.
-  ///
-  /// The row IndexMap contains ghost entries for rows which may be
-  /// inserted into and the column IndexMap contains all local and ghost
-  /// columns that may exist in the owned rows.
-  ///
-  /// @return Row (0) and column (1) index maps
-  const std::array<std::shared_ptr<const common::IndexMap>, 2>&
-  index_maps() const
-  {
-    return _index_maps;
-  }
-
   /// @brief Index map for the row or column space.
   ///
-  /// The row IndexMap contains ghost entries for rows which may be
-  /// inserted into and the column IndexMap contains all local and ghost
-  /// columns that may exist in the owned rows.
+  /// The row index map contains ghost entries for rows which may be
+  /// inserted into and the column index map contains all local and
+  /// ghost columns that may exist in the owned rows.
   ///
   /// @return Row (0) or column (1) index map.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const
@@ -495,15 +485,15 @@ public:
     return _index_maps.at(dim);
   }
 
-  /// Get local data values
-  /// @note Includes ghost values
+  /// @brief Get local data values.
+  /// @note Includes ghost values.
   container_type& values() { return _data; }
 
-  /// Get local values (const version)
+  /// @brief Get local values (const version).
   /// @note Includes ghost values
   const container_type& values() const { return _data; }
 
-  /// Get local row pointers
+  /// @brief Get local row pointers.
   /// @note Includes pointers to ghost rows
   const rowptr_container_type& row_ptr() const { return _row_ptr; }
 
@@ -511,13 +501,15 @@ public:
   /// @note Includes columns in ghost rows
   const column_container_type& cols() const { return _cols; }
 
-  /// Get the start of off-diagonal (unowned columns) on each row,
-  /// allowing the matrix to be split (virtually) into two parts.
+  /// @brief Get the start of off-diagonal (unowned columns) on each
+  /// row, allowing the matrix to be split (virtually) into two parts.
+  ///
   /// Operations (such as matrix-vector multiply) between the owned
   /// parts of the matrix and vector can then be performed separately
   /// from operations on the unowned parts.
-  /// @note Includes ghost rows, which should be truncated manually if
-  /// not required.
+  ///
+  /// @note Includes ghost rows, which should be 'truncated' by the
+  /// caller if not required.
   const rowptr_container_type& off_diag_offset() const
   {
     return _off_diagonal_offset;
@@ -528,11 +520,10 @@ public:
   std::array<int, 2> block_size() const { return _bs; }
 
   /// @brief Get 'block mode'.
-  /// @return block sizes for rows and columns
   BlockMode block_mode() const { return _block_mode; }
 
 private:
-  // Maps for the distribution of the rows and columns
+  // Parallel distribution of the rows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
   // Block mode (compact or expanded)
@@ -549,7 +540,7 @@ private:
   // Start of off-diagonal (unowned columns) on each row
   rowptr_container_type _off_diagonal_offset;
 
-  // Neighborhood communicator (ghost->owner communicator for rows)
+  // Communicator with neighborhood (ghost->owner communicator for rows)
   dolfinx::MPI::Comm _comm;
 
   // -- Precomputed data for scatter_rev/update
@@ -558,6 +549,7 @@ private:
   MPI_Request _request;
 
   // Position in _data to add received data
+  // FIXME: int is probably too small for some cases
   std::vector<int> _unpack_pos;
 
   // Displacements for alltoall for each neighbor when sending and
