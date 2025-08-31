@@ -200,10 +200,10 @@ allocate_coefficient_storage(const Form<T, U>& form)
   std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>> coeffs;
   for (fem::IntegralType type : form.integral_types())
   {
-    for (int id : form.integral_ids(type))
+    for (int i = 0; i < form.num_integrals(type, 0); ++i)
     {
-      coeffs.emplace_hint(coeffs.end(), std::pair{type, id},
-                          allocate_coefficient_storage(form, type, id));
+      coeffs.emplace_hint(coeffs.end(), std::pair{type, i},
+                          allocate_coefficient_storage(form, type, i));
     }
   }
 

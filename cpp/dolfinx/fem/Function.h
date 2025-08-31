@@ -127,7 +127,7 @@ public:
 
     // Copy values into new vector
     std::span<const value_type> x_old = _x->array();
-    std::span<value_type> x_new = x->mutable_array();
+    std::span<value_type> x_new = x->array();
     for (std::size_t i = 0; i < map.size(); ++i)
     {
       assert((int)i < x_new.size());

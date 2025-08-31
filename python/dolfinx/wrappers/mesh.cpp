@@ -295,7 +295,7 @@ void declare_mesh(nb::module_& m, std::string type)
 
           std::vector<std::span<const std::int64_t>> cells;
           std::ranges::transform(
-              cells_nb, std::back_inserter(cells), [](const auto& c)
+              cells_nb, std::back_inserter(cells), [](auto& c)
               { return std::span<const std::int64_t>(c.data(), c.size()); });
 
           if (p)
@@ -696,6 +696,20 @@ void mesh(nb::module_& m)
                 original_cell_indices.data() + original_cell_indices.size());
           },
           nb::arg("original_cell_indices"))
+      .def_prop_ro(
+          "original_cell_indices",
+          [](const dolfinx::mesh::Topology& self)
+          {
+            const std::vector<std::vector<std::int64_t>>& indices
+                = self.original_cell_index;
+            std::vector<nb::ndarray<const std::int64_t, nb::numpy>> idx_nb;
+            for (auto& oci : indices)
+            {
+              idx_nb.push_back(nb::ndarray<const std::int64_t, nb::numpy>(
+                  oci.data(), {oci.size()}));
+            }
+            return idx_nb;
+          })
       .def("connectivity",
            nb::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        nb::const_),
