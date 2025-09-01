@@ -65,7 +65,7 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack info fenics-dolfinx
           spack env create cxx dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
-          spack -e cxx develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
+          spack -e cxx develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
           spack -e cxx develop fenics-basix@git.${{ env.basix_ref }}=main
           spack -e cxx develop fenics-ufcx@git.${{ env.ffcx_ref }}=main
           spack -e cxx develop py-fenics-basix@git.${{ env.basix_ref }}=main
@@ -115,7 +115,7 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack info py-fenics-dolfinx
           spack env create py dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
-          spack -e py develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
+          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
           spack -e py develop fenics-basix@git.${{ env.basix_ref }}=main
           spack -e py develop fenics-ufcx@git.${{ env.ffcx_ref }}=main
           spack -e py develop --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
