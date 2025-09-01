@@ -62,10 +62,16 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
-# mpi4py and petsc4py use generated Cython headers
-# make sure to tell them that the limited API is in use
-target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
-target_compile_definitions(cpp PRIVATE MPI4PY_LIMITED_API=1)
+
+if(NANOBIND_SABI)
+  # mpi4py and petsc4py use generated Cython headers
+  # make sure to tell them that the limited API is in use
+  target_compile_definitions(cpp PRIVATE MPI4PY_LIMITED_API=1)
+  # needing to set CYTHON_COMPILING_IN_LIMITED_API is a bug in Cython-generated api headers,
+  # should become unnecessary with mpi4py/petsc4py releases published using Cython >= 3.1.4
+  # https://github.com/cython/cython/issues/7108
+  target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
+endif()
 
 # Add strict compiler flags
 include(CheckCXXCompilerFlag)
