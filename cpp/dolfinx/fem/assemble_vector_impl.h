@@ -1344,7 +1344,7 @@ void assemble_vector(
       }
       else
       {
-        impl::assemble_exterior_facets<T>(
+        impl::assemble_exterior_facets(
             P0, b, x_dofmap, x, facets, std::make_tuple(dofs, bs, facets1), fn,
             constants, md::mdspan(coeffs.data(), facets.size() / 2, cstride),
             cell_info0, perms);
@@ -1369,7 +1369,7 @@ void assemble_vector(
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
       if (bs == 1)
       {
-        impl::assemble_interior_facets(
+        impl::assemble_interior_facets<BS<1>>(
             P0, b, x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
             {dofmap, BS<1>(),
@@ -1380,7 +1380,7 @@ void assemble_vector(
       }
       else if (bs == 3)
       {
-        impl::assemble_interior_facets(
+        impl::assemble_interior_facets<BS<3>>(
             P0, b, x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
             {dofmap, BS<3>(),
@@ -1391,7 +1391,7 @@ void assemble_vector(
       }
       else
       {
-        impl::assemble_interior_facets<T>(
+        impl::assemble_interior_facets<int>(
             P0, b, x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
             {dofmap, bs, mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
