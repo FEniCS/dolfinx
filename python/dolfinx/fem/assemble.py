@@ -136,7 +136,7 @@ def assemble_scalar(
     M: Form,
     constants: typing.Optional[npt.NDArray] = None,
     coeffs: typing.Optional[dict[tuple[IntegralType, int], npt.NDArray]] = None,
-) -> float | complex:
+) -> typing.Union[float, complex]:
     """Assemble functional. The returned value is local and not
     accumulated across processes.
 
