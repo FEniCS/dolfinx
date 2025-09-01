@@ -1044,17 +1044,17 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
     auto coeffs = md::mdspan(_coeffs.data(), cells.size(), cstride);
     if (bs0 == 1 and bs1 == 1)
     {
-      _lift_bc_cells(b, x_dofmap, x, kernel, cells,
-                           {dofmap0, BS<1>(), cells0}, P0, {dofmap1, BS<1>(), cells1},
-                           P1T, constants, coeffs, cell_info0, cell_info1,
-                           bc_values1, bc_markers1, x0, alpha);
+      _lift_bc_cells(b, x_dofmap, x, kernel, cells, {dofmap0, BS<1>(), cells0},
+                     P0, {dofmap1, BS<1>(), cells1}, P1T, constants, coeffs,
+                     cell_info0, cell_info1, bc_values1, bc_markers1, x0,
+                     alpha);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
-      _lift_bc_cells(b, x_dofmap, x, kernel, cells,
-                           {dofmap0, BS<3>(), cells0}, P0, {dofmap1, BS<3>(), cells1},
-                           P1T, constants, coeffs, cell_info0, cell_info1,
-                           bc_values1, bc_markers1, x0, alpha);
+      _lift_bc_cells(b, x_dofmap, x, kernel, cells, {dofmap0, BS<3>(), cells0},
+                     P0, {dofmap1, BS<3>(), cells1}, P1T, constants, coeffs,
+                     cell_info0, cell_info1, bc_values1, bc_markers1, x0,
+                     alpha);
     }
     else
     {
