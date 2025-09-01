@@ -34,7 +34,7 @@ namespace dolfinx::common
 ///
 /// A Scatterer is stateless, i.e. it provides the required information
 /// and static data for a given parallel communication pattern but does
-/// not provide any communication caches or track the status of MPi
+/// not provide any communication caches or track the status of MPI
 /// requests. Callers of the a Scatterer's members are responsible for
 /// managing buffer and MPI request handles.
 ///
