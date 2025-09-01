@@ -30,13 +30,6 @@ using namespace nb::literals;
 namespace
 {
 
-// InsertMode types
-enum class PyInsertMode : std::uint8_t
-{
-  add,
-  insert
-};
-
 // Declare objects that have multiple scalar types
 template <typename T>
 void declare_objects(nb::module_& m, const std::string& type)
@@ -63,14 +56,14 @@ void declare_objects(nb::module_& m, const std::string& type)
            [](dolfinx::la::Vector<T>& self) { self.scatter_fwd(); })
       .def(
           "scatter_reverse",
-          [](dolfinx::la::Vector<T>& self, PyInsertMode mode)
+          [](dolfinx::la::Vector<T>& self, dolfinx::la::VectorInsertMode mode)
           {
             switch (mode)
             {
-            case PyInsertMode::add: // Add
+            case dolfinx::la::VectorInsertMode::add: // Add
               self.scatter_rev(std::plus<T>());
               break;
-            case PyInsertMode::insert: // Insert
+            case dolfinx::la::VectorInsertMode::insert: // Insert
               self.scatter_rev([](T /*a*/, T b) { return b; });
               break;
             default:
@@ -216,9 +209,9 @@ namespace dolfinx_wrappers
 {
 void la(nb::module_& m)
 {
-  nb::enum_<PyInsertMode>(m, "InsertMode")
-      .value("add", PyInsertMode::add)
-      .value("insert", PyInsertMode::insert);
+  nb::enum_<dolfinx::la::VectorInsertMode>(m, "InsertMode")
+      .value("add", dolfinx::la::VectorInsertMode::add)
+      .value("insert", dolfinx::la::VectorInsertMode::insert);
 
   nb::enum_<dolfinx::la::BlockMode>(m, "BlockMode")
       .value("compact", dolfinx::la::BlockMode::compact)

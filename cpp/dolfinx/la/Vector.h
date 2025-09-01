@@ -22,6 +22,14 @@
 
 namespace dolfinx::la
 {
+
+// InsertMode types
+enum class VectorInsertMode : std::uint8_t
+{
+  add,
+  insert
+};
+
 /// @brief la::Vector scatter pack/unpack function concept.
 template <class F, class Container, class ScatterContainer>
 concept VectorPackKernel = requires(F f, ScatterContainer idx, Container x) {

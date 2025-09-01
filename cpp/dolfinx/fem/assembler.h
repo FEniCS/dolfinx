@@ -19,6 +19,7 @@
 #include <basix/mdspan.hpp>
 #include <cstdint>
 #include <dolfinx/common/types.h>
+#include <dolfinx/la/Vector.h>
 #include <memory>
 #include <optional>
 #include <span>
@@ -614,38 +615,44 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 /// @param[in] bcs The Dirichlet boundary conditions.
 /// @param[in] diagonal Value to add to the diagonal for rows with a
 /// boundary condition applied.
-/// @param[in] unassembled Whether the matrix is in unassembled format
+/// @param[in] mode Whether the insertion should happen through insertion or
+/// addition. If addition is used, each process that has the ghost will add
+/// diagonal/number of shared processes, which the user in turn should
+/// accumulate through a scatter-reverse operation.
 template <dolfinx::scalar T, std::floating_point U>
 void set_diagonal(
     auto set_fn, const FunctionSpace<U>& V,
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs,
-    T diagonal = 1.0, bool unassembled = false)
+    T diagonal = 1.0, la::VectorInsertMode mode = la::VectorInsertMode::insert)
 {
   for (auto& bc : bcs)
   {
     if (V.contains(*bc.get().function_space()))
     {
       const auto [dofs, range] = bc.get().dof_indices();
-      if (unassembled)
+      switch (mode)
       {
-        // We need to insert on ghost indices too; since MATIS is not
-        // designed to support the INSERT_VALUES stage, we scale ALL
-        // the diagonal values we insert into the matrix
-        // TODO: move scaling factor computation to DirichletBC or IndexMap?
-        auto adjlist = bc.get().function_space()->dofmap()->index_map->index_to_dest_ranks();
-        const auto off = adjlist.offsets();
-        std::vector<std::int32_t> number_of_sharing_ranks(off.size());
-        for (size_t i = 0; i < off.size() - 1; ++i)
-            number_of_sharing_ranks[i] = off[i+1] - off[i] + 1;
-        std::vector<T> data(dofs.size());
-        for (size_t i = 0; i < dofs.size(); ++i)
-            data[i] = diagonal / T(number_of_sharing_ranks[dofs[i]]);
+      case la::VectorInsertMode::add:
+      {
+        std::span<const std::uint32_t> counter
+            = bc.get().shared_process_counter();
+        std::vector<T> data;
+        data.reserve(dofs.size());
+        std::transform(counter.begin(), counter.end(), std::back_inserter(data),
+                       [diagonal](std::uint32_t n) { return diagonal / T(n); });
         std::span<const T> data_span = std::span(data);
         set_diagonal(set_fn, dofs, data_span);
+        break;
       }
-      else
+      case la::VectorInsertMode::insert:
       {
         set_diagonal(set_fn, dofs.first(range), diagonal);
+        break;
+      }
+      default:
+      {
+        throw std::runtime_error("Unsupported insertion mode");
+      }
       }
     }
   }

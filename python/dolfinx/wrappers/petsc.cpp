@@ -420,10 +420,12 @@ void petsc_fem_module(nb::module_& m)
 
         PetscBool flg;
         PetscObjectTypeCompare((PetscObject)A, MATIS, &flg);
-
+        dolfinx::la::VectorInsertMode mode
+            = flg ? dolfinx::la::VectorInsertMode::add
+                  : dolfinx::la::VectorInsertMode::insert;
         dolfinx::fem::set_diagonal(
             dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES), V, _bcs,
-            diagonal, flg ? true : false);
+            diagonal, mode);
       },
       nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"));
 

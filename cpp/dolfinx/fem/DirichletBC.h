@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2024 Michal Habera, Anders Logg, Garth N. Wells, Jørgen
+// Copyright (C) 2007-2025 Michal Habera, Anders Logg, Garth N. Wells, Jørgen
 // S.Dokken and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -15,6 +15,7 @@
 #include <array>
 #include <concepts>
 #include <dolfinx/common/types.h>
+#include <dolfinx/la/Vector.h>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -266,6 +267,23 @@ private:
     return std::distance(dofs.begin(), it);
   }
 
+  /// Compute the number of shared processes for a set of degrees of freedom.
+  std::vector<std::uint32_t>
+  count_shared_processes(std::shared_ptr<const common::IndexMap> index_map,
+                         std::span<const std::int32_t> dofs)
+  {
+
+    la::Vector<std::uint32_t> counter_vector(index_map, 1);
+    std::fill(counter_vector.array().begin(), counter_vector.array().end(), 1);
+    counter_vector.scatter_rev(std::plus<std::uint32_t>());
+    counter_vector.scatter_fwd();
+    const std::vector<std::uint32_t>& counter_array = counter_vector.array();
+    std::vector<std::uint32_t> dof_counter;
+    std::transform(dofs.begin(), dofs.end(), std::back_inserter(dof_counter),
+                   [&counter_array](auto dof) { return counter_array[dof]; });
+    return dof_counter;
+  };
+
   /// Unroll dofs for block size.
   static std::vector<std::int32_t>
   unroll_dofs(std::span<const std::int32_t> dofs, int bs)
@@ -356,6 +374,9 @@ public:
       _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
     }
+
+    _shared_processes_count
+        = count_shared_processes(_function_space->dofmap()->index_map, _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -386,6 +407,9 @@ public:
       _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
     }
+
+    _shared_processes_count
+        = count_shared_processes(_function_space->dofmap()->index_map, _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -417,7 +441,9 @@ public:
             V_g_dofs[0])),
         _dofs1_g(std::forward<typename std::remove_reference_t<X>::value_type>(
             V_g_dofs[1])),
-        _owned_indices0(num_owned(*_function_space->dofmap(), _dofs0))
+        _owned_indices0(num_owned(*_function_space->dofmap(), _dofs0)),
+        _shared_processes_count(count_shared_processes(
+            _function_space->dofmap()->index_map, _dofs0))
   {
   }
 
@@ -591,6 +617,13 @@ public:
     }
   }
 
+  /// @brief For each `dof` that is constrained, return the number of processes
+  /// with this dof.
+  std::span<const std::uint32_t> shared_process_counter() const
+  {
+    return _shared_processes_count;
+  }
+
 private:
   // The function space (possibly a sub function space)
   std::shared_ptr<const FunctionSpace<U>> _function_space;
@@ -606,5 +639,8 @@ private:
 
   // The first _owned_indices in _dofs are owned by this process
   std::int32_t _owned_indices0 = -1;
+
+  // Counter of number of shared processes per constrained dof
+  std::vector<std::uint32_t> _shared_processes_count;
 };
 } // namespace dolfinx::fem
