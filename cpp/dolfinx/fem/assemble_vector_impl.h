@@ -898,7 +898,7 @@ void assemble_interior_facets(
 /// coefficient for cell `i`.
 /// @param[in] cell_info0 Cell permutation information for the test
 /// function mesh.
-template <dolfinx::scalar T, int _bs = -1>
+template <BlockSize BS = int, dolfinx::scalar T>
 void assemble_vertices(
     fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
@@ -907,7 +907,7 @@ void assemble_vertices(
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2>>
         vertices,
-    std::tuple<mdspan2_t, int,
+    std::tuple<mdspan2_t, BS,
                md::mdspan<const std::int32_t,
                           md::extents<std::size_t, md::dynamic_extent, 2>>>
         dofmap,
@@ -918,8 +918,8 @@ void assemble_vertices(
   if (vertices.empty())
     return;
 
-  const auto [dmap, bs, vertices0] = dofmap;
-  assert(_bs < 0 or _bs == bs);
+  const auto [dmap, _bs, vertices0] = dofmap;
+  auto bs = block_size(_bs);
 
   // Create data structures used in assembly
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
@@ -946,18 +946,9 @@ void assemble_vertices(
 
     // Scatter vertex vector to 'global' vector array
     auto dofs = md::submdspan(dmap, c0, md::full_extent);
-    if constexpr (_bs > 0)
-    {
-      for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (int k = 0; k < _bs; ++k)
-          b[_bs * dofs[i] + k] += be[_bs * i + k];
-    }
-    else
-    {
-      for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (int k = 0; k < bs; ++k)
-          b[bs * dofs[i] + k] += be[bs * i + k];
-    }
+    for (std::size_t i = 0; i < dofs.size(); ++i)
+      for (int k = 0; k < bs; ++k)
+        b[_bs * dofs[i] + k] += be[_bs * i + k];
   }
 }
 
@@ -1414,17 +1405,51 @@ void assemble_vector(
 
       assert(vertices.size() * cstride == coeffs.size());
 
-      impl::assemble_vertices<T>(
-          P0, b, x_dofmap, x,
-          md::mdspan<const std::int32_t,
-                     md::extents<std::size_t, md::dynamic_extent, 2>>(
-              vertices.data(), vertices.size() / 2, 2),
-          {dofs, bs,
-           md::mdspan<const std::int32_t,
-                      md::extents<std::size_t, md::dynamic_extent, 2>>(
-               vertices0.data(), vertices0.size() / 2, 2)},
-          fn, constants,
-          md::mdspan(coeffs.data(), vertices.size() / 2, cstride), cell_info0);
+      if (bs == 1)
+      {
+        impl::assemble_vertices<BS<1>>(
+            P0, b, x_dofmap, x,
+            md::mdspan<const std::int32_t,
+                       md::extents<std::size_t, md::dynamic_extent, 2>>(
+                vertices.data(), vertices.size() / 2, 2),
+            {dofs, BS<1>(),
+             md::mdspan<const std::int32_t,
+                        md::extents<std::size_t, md::dynamic_extent, 2>>(
+                 vertices0.data(), vertices0.size() / 2, 2)},
+            fn, constants,
+            md::mdspan(coeffs.data(), vertices.size() / 2, cstride),
+            cell_info0);
+      }
+      else if (bs == 3)
+      {
+        impl::assemble_vertices<BS<3>>(
+            P0, b, x_dofmap, x,
+            md::mdspan<const std::int32_t,
+                       md::extents<std::size_t, md::dynamic_extent, 2>>(
+                vertices.data(), vertices.size() / 2, 2),
+            {dofs, BS<3>(),
+             md::mdspan<const std::int32_t,
+                        md::extents<std::size_t, md::dynamic_extent, 2>>(
+                 vertices0.data(), vertices0.size() / 2, 2)},
+            fn, constants,
+            md::mdspan(coeffs.data(), vertices.size() / 2, cstride),
+            cell_info0);
+      }
+      else
+      {
+        impl::assemble_vertices<int>(
+            P0, b, x_dofmap, x,
+            md::mdspan<const std::int32_t,
+                       md::extents<std::size_t, md::dynamic_extent, 2>>(
+                vertices.data(), vertices.size() / 2, 2),
+            {dofs, bs,
+             md::mdspan<const std::int32_t,
+                        md::extents<std::size_t, md::dynamic_extent, 2>>(
+                 vertices0.data(), vertices0.size() / 2, 2)},
+            fn, constants,
+            md::mdspan(coeffs.data(), vertices.size() / 2, cstride),
+            cell_info0);
+      }
     }
   }
 }
