@@ -163,6 +163,12 @@ def get_integration_domains(
                 tdim = subdomain.topology.dim
                 subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
                 subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
+
+            if integral_type is IntegralType.vertex:
+                tdim = subdomain.topology.dim
+                subdomain._cpp_object.topology.create_connectivity(0, tdim)
+                subdomain._cpp_object.topology.create_connectivity(tdim, 0)
+
             # Compute integration domains only for each subdomain id in
             # the integrals. If a process has no integral entities,
             # insert an empty array.
@@ -363,8 +369,8 @@ def form(
 
         # Extract subdomain ids from ufcx_form
         subdomain_ids = {type: [] for type in sd.get(domain).keys()}
-        integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(4)]
-        for i in range(3):
+        integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(5)]
+        for i in range(len(integral_offsets) - 1):
             integral_type = IntegralType(i)
             for j in range(integral_offsets[i], integral_offsets[i + 1]):
                 subdomain_ids[integral_type.name].append(ufcx_form.form_integral_ids[j])

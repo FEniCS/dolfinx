@@ -1,12 +1,12 @@
 name: "CI (RHEL clone: gcc, oneAPI)"
 on:
-  push:
-    # Uncomment the below 'push' to trigger on push
-    # branches:
-    # - "**"
+  # push:
+  #   # Uncomment the below 'push' to trigger on push
+  #   branches:
+  #   - "**"
   pull_request:
     branches:
-    - "main"
+    - main
     tags:
     - "v*"
   merge_group:
@@ -86,9 +86,9 @@ jobs:
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
-          pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure and build C++
         run: |
