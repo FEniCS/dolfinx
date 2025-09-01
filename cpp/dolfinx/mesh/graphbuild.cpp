@@ -57,8 +57,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   spdlog::info("Build nonlocal part of mesh dual graph");
   common::Timer timer("Compute non-local part of mesh dual graph");
 
-  std::cout << "Unmatched facets: " << cells.size() << std::endl;
-
   // TODO: Two possible straightforward optimisations:
   // 1. Do not send owned data to self via MPI.
   // 2. Modify MPI::index_owner to use a subset of ranks as post offices.
