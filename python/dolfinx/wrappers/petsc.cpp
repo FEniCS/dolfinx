@@ -423,7 +423,7 @@ void petsc_fem_module(nb::module_& m)
         dolfinx::la::VectorInsertMode mode
             = flg ? dolfinx::la::VectorInsertMode::add
                   : dolfinx::la::VectorInsertMode::insert;
-        InsertMode petsc_mode = flg ? ADD_VALUES : INSERT_VALUES;
+        InsertMode petsc_mode = !flg ? ADD_VALUES : INSERT_VALUES;
         dolfinx::fem::set_diagonal(
             dolfinx::la::petsc::Matrix::set_fn(A, petsc_mode), V, _bcs,
             diagonal, mode);
