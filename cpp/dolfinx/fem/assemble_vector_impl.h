@@ -1058,10 +1058,9 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
     }
     else
     {
-      _lift_bc_cells<T>(b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells0},
-                        P0, {dofmap1, bs1, cells1}, P1T, constants, coeffs,
-                        cell_info0, cell_info1, bc_values1, bc_markers1, x0,
-                        alpha);
+      _lift_bc_cells(b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells0}, P0,
+                     {dofmap1, bs1, cells1}, P1T, constants, coeffs, cell_info0,
+                     cell_info1, bc_values1, bc_markers1, x0, alpha);
     }
   }
 
@@ -1331,14 +1330,14 @@ void assemble_vector(
       assert((facets.size() / 2) * cstride == coeffs.size());
       if (bs == 1)
       {
-        impl::assemble_exterior_facets(
+        impl::assemble_exterior_facets<BS<1>>(
             P0, b, x_dofmap, x, facets, {dofs, BS<1>(), facets1}, fn, constants,
             md::mdspan(coeffs.data(), facets.extent(0), cstride), cell_info0,
             perms);
       }
       else if (bs == 3)
       {
-        impl::assemble_exterior_facets(
+        impl::assemble_exterior_facets<BS<3>>(
             P0, b, x_dofmap, x, facets, {dofs, BS<3>(), facets1}, fn, constants,
             md::mdspan(coeffs.data(), facets.size() / 2, cstride), cell_info0,
             perms);

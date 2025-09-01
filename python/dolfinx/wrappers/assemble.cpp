@@ -326,23 +326,23 @@ void declare_assembly_functions(nb::module_& m)
       "Assemble functional over mesh with provided constants and "
       "coefficients");
   // Vector
-  m.def(
-      "assemble_vector",
-      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
-         const dolfinx::fem::Form<T, U>& L,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
-         const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
-             coefficients)
-      {
-        dolfinx::fem::assemble_vector(
-            std::span(b.data(), b.size()), L,
-            std::span(constants.data(), constants.size()),
-            dolfinx_wrappers::py_to_cpp_coeffs(coefficients));
-      },
-      nb::arg("b"), nb::arg("L"), nb::arg("constants"), nb::arg("coeffs"),
-      "Assemble linear form into an existing vector with pre-packed constants "
-      "and coefficients");
+  // m.def(
+  //     "assemble_vector",
+  //     [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
+  //        const dolfinx::fem::Form<T, U>& L,
+  //        nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
+  //        const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+  //                       nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
+  //            coefficients)
+  //     {
+  //       dolfinx::fem::assemble_vector(
+  //           std::span(b.data(), b.size()), L,
+  //           std::span(constants.data(), constants.size()),
+  //           dolfinx_wrappers::py_to_cpp_coeffs(coefficients));
+  //     },
+  //     nb::arg("b"), nb::arg("L"), nb::arg("constants"), nb::arg("coeffs"),
+  //     "Assemble linear form into an existing vector with pre-packed constants "
+  //     "and coefficients");
   // MatrixCSR
   m.def(
       "assemble_matrix",
