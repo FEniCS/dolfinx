@@ -35,6 +35,9 @@ jobs:
             tar unzip xz-utils g++ gcc gfortran
           apt-get install -y llvm-15-dev
 
+      - name: Load dev branch environment variables
+        run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
       - name: Get UFL code
         uses: actions/checkout@v5
         with:
@@ -69,9 +72,6 @@ jobs:
           repository: garth-wells/spack-packages
           ref: fenics-testing
           path: spack-packages
-
-      - name: Load dev branch environment variables
-        run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Add repo
         run: |
@@ -137,9 +137,9 @@ jobs:
           spack -e py develop --no-clone --path $GITHUB_WORKSPACE/basix-src fenics-basix@main
           spack -e py develop --no-clone --path $GITHUB_WORKSPACE/ffcx-src fenics-ufcx@main
           spack -e py develop --no-clone --path $GITHUB_WORKSPACE/dolfinx-src py-fenics-dolfinx@main
-          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/basix-src py-fenics-basix@git.${{ env.basix_ref }}=main
-          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/ffcx-src py-fenics-ffcx@git.${{ env.ffcx_ref }}=main
-          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/ufl-src py-fenics-ufl@git.${{ env.ufl_ref }}=main
+          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/basix-src py-fenics-basix@main
+          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/ffcx-src py-fenics-ffcx@main
+          spack -e py develop --no-clone --path $GITHUB_WORKSPACE/ufl-src py-fenics-ufl@main
 
       - name: Build library (Python)
         run: |
