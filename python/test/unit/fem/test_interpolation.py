@@ -142,7 +142,7 @@ def one_cell_mesh(cell_type):
             "Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],), dtype=default_real_type
         )
     )
-    return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
+    return create_mesh(MPI.COMM_WORLD, cells, domain, ordered_points)
 
 
 def two_cell_mesh(cell_type):
@@ -202,7 +202,7 @@ def two_cell_mesh(cell_type):
     domain = ufl.Mesh(
         element("Lagrange", cell_type.name, 1, shape=(points.shape[1],), dtype=default_real_type)
     )
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     return mesh
 
 
@@ -548,7 +548,7 @@ def test_interpolation_non_affine():
     )
     cells = np.array([range(len(points))], dtype=np.int32)
     domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,), dtype=default_real_type))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     W = functionspace(mesh, ("NCE", 1))
     V = functionspace(mesh, ("NCE", 2))
     w, v = Function(W), Function(V)
@@ -593,7 +593,7 @@ def test_interpolation_non_affine_nonmatching_maps():
     )
     cells = np.array([range(len(points))], dtype=np.int32)
     domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,), dtype=default_real_type))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     gdim = mesh.geometry.dim
     W = functionspace(mesh, ("DG", 1, (gdim,)))
     V = functionspace(mesh, ("NCE", 4))

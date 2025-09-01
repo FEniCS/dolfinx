@@ -136,7 +136,7 @@ def assemble_scalar(
     M: Form,
     constants: typing.Optional[npt.NDArray] = None,
     coeffs: typing.Optional[dict[tuple[IntegralType, int], npt.NDArray]] = None,
-):
+) -> typing.Union[float, complex]:
     """Assemble functional. The returned value is local and not
     accumulated across processes.
 
@@ -171,7 +171,7 @@ def assemble_vector(
     L: typing.Any,
     constants: typing.Optional[npt.NDArray] = None,
     coeffs: typing.Optional[dict[tuple[IntegralType, int], npt.NDArray]] = None,
-):
+) -> la.Vector:
     return _assemble_vector_form(L, constants, coeffs)
 
 
@@ -218,7 +218,7 @@ def _assemble_vector_array(
     L: Form,
     constants: typing.Optional[npt.NDArray] = None,
     coeffs: typing.Optional[dict[tuple[IntegralType, int], npt.NDArray]] = None,
-):
+) -> npt.NDArray:
     """Assemble linear form into an existing array.
 
     Args:
@@ -258,7 +258,7 @@ def assemble_matrix(
     constants: typing.Optional[npt.NDArray] = None,
     coeffs: typing.Optional[dict[tuple[IntegralType, int], npt.NDArray]] = None,
     block_mode: typing.Optional[la.BlockMode] = None,
-):
+) -> la.MatrixCSR:
     """Assemble bilinear form into a matrix.
 
     Args:

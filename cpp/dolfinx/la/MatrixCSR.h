@@ -43,16 +43,14 @@ enum class BlockMode : int
 /// code.
 ///
 /// @tparam Scalar Scalar type of matrix entries
-/// @tparam Container Sequence container type to store matrix entries
+/// @tparam Container Container type for storing matrix entries
 /// @tparam ColContainer Column index container type
 /// @tparam RowPtrContainer Row pointer container type
-template <class Scalar, class Container = std::vector<Scalar>,
-          class ColContainer = std::vector<std::int32_t>,
-          class RowPtrContainer = std::vector<std::int64_t>>
+template <typename Scalar, typename Container = std::vector<Scalar>,
+          typename ColContainer = std::vector<std::int32_t>,
+          typename RowPtrContainer = std::vector<std::int64_t>>
 class MatrixCSR
 {
-  static_assert(std::is_same_v<typename Container::value_type, Scalar>);
-
 public:
   /// Scalar type
   using value_type = Scalar;
@@ -68,6 +66,8 @@ public:
 
   static_assert(std::is_same_v<value_type, typename container_type::value_type>,
                 "Scalar type and container value type must be the same.");
+  static_assert(std::is_integral_v<typename column_container_type::value_type>);
+  static_assert(std::is_integral_v<typename rowptr_container_type::value_type>);
 
   /// @brief Insertion functor for setting values in a matrix. It is
   /// typically used in finite element assembly functions.
@@ -175,12 +175,30 @@ public:
   /// to a block of data (stored row major), or "expanded" where each
   /// matrix entry is individual. In the "expanded" case, the sparsity
   /// is expanded for every entry in the block, and the block size of
-  /// the matrix is set to (1, 1).
+  /// the matrix is set to `(1, 1)`.
   MatrixCSR(const SparsityPattern& p, BlockMode mode = BlockMode::compact);
 
   /// Move constructor
   /// @todo Check handling of MPI_Request
   MatrixCSR(MatrixCSR&& A) = default;
+
+  /// Copy constructor
+  /// @todo Check handling of MPI_Request
+  MatrixCSR(const MatrixCSR& A) = default;
+
+  /// @brief Copy-convert to different container types.
+  /// @note "update" data for reverse scatter is not copied.
+  template <typename Mat>
+  // requires requires(Mat A) {
+  //   //TODO, see examples in la::Vector
+  // }
+  explicit MatrixCSR(const Mat& A)
+      : _index_maps(A.index_maps()), _block_mode(A.block_mode()),
+        _bs(A.block_size()), _data(A.values()), _cols(A.cols()),
+        _row_ptr(A.row_ptr()), _off_diagonal_offset(A.off_diag_offset()),
+        _comm(A.comm())
+  {
+  }
 
   /// @brief Set all non-zero local entries to a value including entries
   /// in ghost rows.
@@ -435,13 +453,29 @@ public:
   /// @param[in,out] y Vector to accumulate the result into.
   void mult(Vector<value_type>& x, Vector<value_type>& y);
 
+  /// @brief Get MPI communicator that matrix is defined on.
+  MPI_Comm comm() const { return _comm.comm(); }
+
   /// @brief Index maps for the row and column space.
   ///
   /// The row IndexMap contains ghost entries for rows which may be
   /// inserted into and the column IndexMap contains all local and ghost
   /// columns that may exist in the owned rows.
   ///
-  /// @return Row (0) or column (1) index maps
+  /// @return Row (0) and column (1) index maps
+  const std::array<std::shared_ptr<const common::IndexMap>, 2>&
+  index_maps() const
+  {
+    return _index_maps;
+  }
+
+  /// @brief Index map for the row or column space.
+  ///
+  /// The row IndexMap contains ghost entries for rows which may be
+  /// inserted into and the column IndexMap contains all local and ghost
+  /// columns that may exist in the owned rows.
+  ///
+  /// @return Row (0) or column (1) index map.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const
   {
     return _index_maps.at(dim);
@@ -475,12 +509,16 @@ public:
     return _off_diagonal_offset;
   }
 
-  /// Block size
-  /// @return block sizes for rows and columns
+  /// @brief Get block sizes.
+  /// @return Block sizes for rows (0) and columns (1).
   std::array<int, 2> block_size() const { return _bs; }
 
+  /// @brief Get 'block mode'.
+  /// @return block sizes for rows and columns
+  BlockMode block_mode() const { return _block_mode; }
+
 private:
-  // Maps for the distribution of the ows and columns
+  // Maps for the distribution of the rows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
   // Block mode (compact or expanded)
@@ -783,7 +821,7 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
   std::span<const Scalar> Avalues(values().data(), Arow_ptr[nrowslocal]);
 
   std::span<const Scalar> _x = x.array();
-  std::span<Scalar> _y = y.mutable_array();
+  std::span<Scalar> _y = y.array();
 
   std::span<const std::int64_t> Arow_begin(Arow_ptr.data(), nrowslocal);
   std::span<const std::int64_t> Arow_end(Arow_ptr.data() + 1, nrowslocal);

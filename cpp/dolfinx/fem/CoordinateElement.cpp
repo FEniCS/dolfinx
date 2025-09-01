@@ -119,20 +119,20 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   std::vector<T> phi(basis.extent(2));
   for (std::size_t p = 0; p < num_points; ++p)
   {
-    std::ranges::fill(Xk_b, 0.0);
+    std::ranges::fill(Xk_b, 0);
     int k;
     for (k = 0; k < maxit; ++k)
     {
       _element->tabulate(1, Xk_b, {1, tdim}, basis_b);
 
       // x = cell_geometry * phi
-      std::ranges::fill(xk, 0.0);
+      std::ranges::fill(xk, 0);
       for (std::size_t i = 0; i < cell_geometry.extent(0); ++i)
         for (std::size_t j = 0; j < cell_geometry.extent(1); ++j)
           xk[j] += cell_geometry(i, j) * basis(0, 0, i, 0);
 
       // Compute Jacobian, its inverse and determinant
-      std::ranges::fill(J_b, 0.0);
+      std::ranges::fill(J_b, 0);
       for (std::size_t i = 0; i < tdim; ++i)
         for (std::size_t j = 0; j < basis.extent(2); ++j)
           dphi(i, j) = basis(i + 1, 0, j, 0);
