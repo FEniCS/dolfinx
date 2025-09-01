@@ -65,7 +65,7 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack info fenics-dolfinx
           spack env create cxx dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
-          spack -e cxx develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@git.${{ env.CURRENT_BRANCH }}=main
+          spack -e cxx develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
           spack -e cxx develop fenics-basix@git.${{ env.basix_ref }}=main
           spack -e cxx develop fenics-ufcx@git.${{ env.ffcx_ref }}=main
           spack -e cxx develop py-fenics-basix@git.${{ env.basix_ref }}=main
@@ -77,7 +77,7 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e cxx add fenics-dolfinx@main generator=ninja build_type=Developer +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
-          spack -e cxx add catch2 py-fenics-ffcx@git.${{ env.CURRENT_BRANCH }}=main
+          spack -e cxx add catch2 py-fenics-ffcx@main
           spack -e cxx concretize -j 4
           spack -v -e cxx install -j 4 -p 2 --use-buildcache auto
 
