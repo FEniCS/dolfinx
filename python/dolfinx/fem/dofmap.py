@@ -9,9 +9,9 @@ from collections.abc import Sequence
 
 from mpi4py.MPI import Comm
 
-from basix.finite_element import FiniteElement
 from dolfinx.cpp.fem import DofMap as _DofMap
 from dolfinx.cpp.fem import create_dofmaps as _create_dofmaps
+from dolfinx.fem.element import FiniteElement
 
 if typing.TYPE_CHECKING:
     import dolfinx.mesh
