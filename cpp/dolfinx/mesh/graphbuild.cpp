@@ -500,7 +500,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                                   std::next(data.begin(), offsets[node + 1]));
       std::ranges::sort(links);
       auto duplicate_links = std::ranges::unique(links);
-      if (duplicate_links.size() == 0)
+      if (duplicate_links.empty())
         continue;
 
       data.erase(duplicate_links.begin(), duplicate_links.end());
