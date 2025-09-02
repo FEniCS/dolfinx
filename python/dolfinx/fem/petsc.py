@@ -131,7 +131,9 @@ def create_vector(
         A PETSc vector with a layout that is compatible with ``V``. The
         vector is not initialised to zero.
     """
-    if isinstance(V, _FunctionSpace):
+    if isinstance(
+        V, (_FunctionSpace, _cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64)
+    ):
         V = [V]
 
     maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]
