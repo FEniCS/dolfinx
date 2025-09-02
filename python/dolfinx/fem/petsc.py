@@ -82,7 +82,7 @@ __all__ = [
 
 
 def create_vector(
-    V: typing.Union[_FunctionSpace, Sequence[_FunctionSpace]],
+    V: typing.Union[_FunctionSpace, Sequence[typing.Union[_FunctionSpace, None]]],
     /,
     kind: typing.Optional[str] = None,
 ) -> PETSc.Vec:  # type: ignore[name-defined]
@@ -135,8 +135,10 @@ def create_vector(
         V, (_FunctionSpace, _cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64)
     ):
         V = [V]
+    elif any(_V is None for _V in V):
+        raise RuntimeError("Can not create vector for None block.")
 
-    maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]
+    maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]  # type: ignore
     return dolfinx.la.petsc.create_vector(maps, kind=kind)
 
 
@@ -254,7 +256,7 @@ def assemble_vector(
     Returns:
         An assembled vector.
     """
-    b = create_vector(_extract_function_spaces(L), kind=kind)
+    b = create_vector(_extract_function_spaces(L), kind=kind)  # type: ignore
     dolfinx.la.petsc._zero_vector(b)
     return assemble_vector(b, L, constants, coeffs)  # type: ignore[arg-type]
 
@@ -827,8 +829,8 @@ class LinearProblem:
         # For nest matrices kind can be a nested list.
         kind = "nest" if self.A.getType() == PETSc.Mat.Type.NEST else kind  # type: ignore[attr-defined]
         assert kind is None or isinstance(kind, str)
-        self._b = create_vector(self.L, kind=kind)
-        self._x = create_vector(self.L, kind=kind)
+        self._b = create_vector(_extract_function_spaces(self.L), kind=kind)  # type: ignore
+        self._x = create_vector(_extract_function_spaces(self.L), kind=kind)  # type: ignore
 
         self._u: typing.Union[_Function, Sequence[_Function]]
         if u is None:
@@ -1294,8 +1296,8 @@ class NonlinearProblem:
         # Determine the vector kind based on the matrix type
         kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind  # type: ignore[attr-defined]
         assert kind is None or isinstance(kind, str)
-        self._b = create_vector(self.F, kind=kind)
-        self._x = create_vector(self.F, kind=kind)
+        self._b = create_vector(_extract_function_spaces(self.F), kind=kind)  # type: ignore
+        self._x = create_vector(_extract_function_spaces(self.F), kind=kind)  # type: ignore
 
         # Create the SNES solver and attach the corresponding Jacobian and
         # residual computation functions

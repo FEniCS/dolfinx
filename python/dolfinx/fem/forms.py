@@ -442,7 +442,7 @@ def form(
 def extract_function_spaces(
     forms: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
     index: int = 0,
-) -> list[typing.Union[None, FunctionSpace]]:
+) -> typing.Union[FunctionSpace, list[typing.Union[None, FunctionSpace]]]:
     """Extract common function spaces from an array of forms.
 
     If ``forms`` is a list of linear form, this function returns of list
@@ -462,7 +462,7 @@ def extract_function_spaces(
     """
     _forms = np.array(forms)
     if _forms.ndim == 0:
-        form = _forms.tolist()
+        form: Form = _forms.tolist()
         return form.function_spaces[0] if form is not None else None
     elif _forms.ndim == 1:
         assert index == 0, "Expected index=0 for 1D array of forms"
