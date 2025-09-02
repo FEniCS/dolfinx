@@ -193,7 +193,7 @@ class MatrixCSR:
         Args:
             x: The value to set all non-zero entries to.
         """
-        self._cpp_object.set_value(x)
+        self.data[:] = x
 
     def scatter_reverse(self) -> None:
         """Scatter and accumulate ghost values."""
