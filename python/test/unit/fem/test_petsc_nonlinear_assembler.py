@@ -118,7 +118,7 @@ class TestNLSPETSc:
             A = assemble_matrix(a_block, bcs=[bc])
             A.assemble()
 
-            b = assemble_vector([V0, V1], kind="mpi")
+            b = assemble_vector(L_block, kind="mpi")
             bcs1 = bcs_by_block(extract_function_spaces(a_block, 1), bcs=[bc])
             apply_lifting(b, a_block, bcs=bcs1, x0=x, alpha=-1.0)
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
