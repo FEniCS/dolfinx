@@ -38,6 +38,7 @@ constexpr kernel_t<T, U> extract_kernel(const ufcx_integral* integral)
     return integral->tabulate_tensor_float32;
   else if constexpr (std::is_same_v<T, double>)
     return integral->tabulate_tensor_float64;
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, std::complex<float>>
                      && has_complex_ufcx_kernels())
   {
@@ -50,6 +51,7 @@ constexpr kernel_t<T, U> extract_kernel(const ufcx_integral* integral)
     return reinterpret_cast<kernelptr_t<T, U>>(
         integral->tabulate_tensor_complex128);
   }
+#endif
   else
     throw std::runtime_error("Could not extract kernel from ufcx integral.");
 }
