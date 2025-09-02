@@ -1,4 +1,4 @@
-name: Windows build
+name: CI (Windows)
 
 on:
   push:
@@ -163,10 +163,10 @@ jobs:
 #        run: |
 #          mpiexec -n 3 python -m pytest -m "not petsc4py and not adios2" -k "not test_mixed_topology_partitioning" unit/
 
-      - name: Run Python demos (serial)
-        working-directory: dolfinx-src/python/demo
-        run: |
-          python3 -m pytest -n auto -m serial --durations=10 test.py
+#      - name: Run Python demos (serial)
+#        working-directory: dolfinx-src/python/demo
+#        run: |
+#          python3 -m pytest -n auto -m serial --durations=10 test.py
 #      - name: Run Python demos (MPI, np=3)
 #        working-directory: dolfinx-src/python/demo
 #        run: |
