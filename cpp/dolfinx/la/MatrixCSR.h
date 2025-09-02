@@ -47,15 +47,13 @@ enum class BlockMode : int
 template <typename Scalar, typename Container = std::vector<Scalar>,
           typename ColContainer = std::vector<std::int32_t>,
           typename RowPtrContainer = std::vector<std::int64_t>>
-  requires std::is_same_v<typename Container::value_type, Scalar>
-           and std::is_integral_v<typename ColContainer::value_type>
-           and std::is_integral_v<typename RowPtrContainer::value_type>
 class MatrixCSR
 {
-  template <class U, class V, class W, class X>
-    requires std::is_same_v<typename V::value_type, U>
-             and std::is_integral_v<typename W::value_type>
-             and std::is_integral_v<typename X::value_type>
+  static_assert(std::is_same_v<typename Container::value_type, Scalar>);
+  static_assert(std::is_integral_v<typename ColContainer::value_type>);
+  static_assert(std::is_integral_v<typename RowPtrContainer::value_type>);
+
+  template <typename, typename, typename, typename>
   friend class MatrixCSR;
 
 public:
@@ -568,9 +566,6 @@ private:
 };
 //-----------------------------------------------------------------------------
 template <class U, class V, class W, class X>
-  requires std::is_same_v<typename V::value_type, U>
-               and std::is_integral_v<typename W::value_type>
-               and std::is_integral_v<typename X::value_type>
 MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     : _index_maps({p.index_map(0),
                    std::make_shared<common::IndexMap>(p.column_index_map())}),
@@ -820,9 +815,6 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
 /// Computes y += A*x for a parallel CSR matrix A and parallel dense vectors
 /// x,y
 template <typename Scalar, typename V, typename W, typename X>
-  requires std::is_same_v<typename V::value_type, Scalar>
-           and std::is_integral_v<typename W::value_type>
-           and std::is_integral_v<typename X::value_type>
 void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
                                       la::Vector<Scalar>& y)
 {

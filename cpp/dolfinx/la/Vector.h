@@ -46,11 +46,11 @@ concept GetPtrConcept = requires(GetPtr f, U x) {
 /// `thrust::device_vector<std::int32_t>` on GPUs.
 template <typename T, typename Container = std::vector<T>,
           typename ScatterContainer = std::vector<std::int32_t>>
-  requires std::is_same_v<typename Container::value_type, T>
 class Vector
 {
-  template <class U, class V, class W>
-    requires std::is_same_v<typename V::value_type, U>
+  static_assert(std::is_same_v<typename Container::value_type, T>);
+
+  template <typename, typename, typename>
   friend class Vector;
 
 private:
