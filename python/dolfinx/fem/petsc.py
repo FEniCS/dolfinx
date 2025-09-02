@@ -82,7 +82,7 @@ __all__ = [
 
 
 def create_vector(
-    container: typing.Union[Form, _FunctionSpace, Sequence[Form], Sequence[_FunctionSpace]],
+    V: typing.Union[_FunctionSpace, Sequence[_FunctionSpace]],
     /,
     kind: typing.Optional[str] = None,
 ) -> PETSc.Vec:  # type: ignore[name-defined]
@@ -91,21 +91,21 @@ def create_vector(
 
     Three cases are supported:
 
-    1. For a single linear form ``L`` or space ``V``, if ``kind`` is
-       ``None`` or is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which
-       is compatible with ``L/V`` is created.
+    1. For a single space ``V``, if ``kind`` is ``None`` or is
+       ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is compatible
+       with ``V`` is created.
 
-    2. If ``L/V`` is a sequence of linear forms/functionspaces and ``kind``
-       is ``None`` or is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector
-       which is compatible with ``L`` is created. The created vector ``b``
+    2. If ``V`` is a sequence of functionspaces and ``kind`` is ``None`` or
+       is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
+       compatible with ``V`` is created. The created vector ``b``
        is initialized such that on each MPI process ``b = [b_0, b_1, ...,
        b_n, b_0g, b_1g, ..., b_ng]``, where ``b_i`` are the entries
-       associated with the 'owned' degrees-of-freedom for ``L[i]`` and
-       ``b_ig`` are the 'unowned' (ghost) entries for ``L[i]``.
+       associated with the 'owned' degrees-of-freedom for ``V[i]`` and
+       ``b_ig`` are the 'unowned' (ghost) entries for ``V[i]``.
 
        For this case, the returned vector has an attribute ``_blocks``
        that holds the local offsets into ``b`` for the (i) owned and
-       (ii) ghost entries for each ``L_i/V_i``. It can be accessed by
+       (ii) ghost entries for each ``V_i``. It can be accessed by
        ``b.getAttr("_blocks")``. The offsets can be used to get views
        into ``b`` for blocks, e.g.::
 
@@ -124,22 +124,17 @@ def create_vector(
        ghosted PETSc vectors) which is compatible with ``L/V`` is created.
 
     Args:
-        : Linear form/function space or a sequence of such.
+        V: Function space or a sequence of such.
         kind: PETSc vector type (``VecType``) to create.
 
     Returns:
-        A PETSc vector with a layout that is compatible with ``L``. The
+        A PETSc vector with a layout that is compatible with ``V``. The
         vector is not initialised to zero.
     """
-    if isinstance(container, (Form, _FunctionSpace)):
-        container = [container]  # type: ignore
+    if isinstance(V, _FunctionSpace):
+        V = [V]
 
-    V = _extract_function_spaces(container) if isinstance(container[0], Form) else container  # type: ignore
-
-    if any(_V is None for _V in V):  # type: ignore
-        raise RuntimeError("Can not create vector for extracted None block.")
-
-    maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]  # type: ignore
+    maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]
     return dolfinx.la.petsc.create_vector(maps, kind=kind)
 
 
