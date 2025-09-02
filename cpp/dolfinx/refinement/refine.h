@@ -52,7 +52,7 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
                        std::vector<std::span<const std::int64_t>> cells)
              -> graph::AdjacencyList<std::int32_t>
   {
-    const auto parent_cell_im
+    auto parent_cell_im
         = parent_mesh.topology()->index_map(parent_mesh.topology()->dim());
     std::int32_t parent_num_cells = parent_cell_im->size_local();
     std::span parent_cell_owners = parent_cell_im->owners();

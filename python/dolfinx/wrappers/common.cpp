@@ -56,8 +56,34 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
          nb::ndarray<const T, nb::ndim<1>, nb::c_contig> local_data,
          nb::ndarray<T, nb::ndim<1>, nb::c_contig> remote_data)
       {
-        self.scatter_fwd(std::span(local_data.data(), local_data.size()),
-                         std::span(remote_data.data(), remote_data.size()));
+        if (local_data.size() < self.remote_indices().size())
+        {
+          throw std::runtime_error(
+              "Local data buffer too small in forward scatter.");
+        }
+        if (remote_data.size() < self.remote_indices().size())
+        {
+          throw std::runtime_error(
+              "Ghost data buffer too small in forward scatter.");
+        }
+
+        std::vector<T> send_buffer(self.local_indices().size());
+        {
+          auto _local_data = local_data.view();
+          auto& idx = self.local_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            send_buffer[i] = _local_data(idx[i]);
+        }
+        std::vector<T> recv_buffer(self.remote_indices().size());
+        MPI_Request request = MPI_REQUEST_NULL;
+        self.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
+        self.scatter_end(request);
+        {
+          auto _remote_data = remote_data.view();
+          auto& idx = self.remote_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            _remote_data(idx[i]) = recv_buffer[i];
+        }
       },
       nb::arg("local_data"), nb::arg("remote_data"));
 
@@ -67,9 +93,35 @@ void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
          nb::ndarray<T, nb::ndim<1>, nb::c_contig> local_data,
          nb::ndarray<const T, nb::ndim<1>, nb::c_contig> remote_data)
       {
-        self.scatter_rev(std::span(local_data.data(), local_data.size()),
-                         std::span(remote_data.data(), remote_data.size()),
-                         std::plus<T>());
+        if (local_data.size() < self.local_indices().size())
+        {
+          throw std::runtime_error(
+              "Local data buffer too small in reverse scatter.");
+        }
+        if (remote_data.size() < self.remote_indices().size())
+        {
+          throw std::runtime_error(
+              "Ghost data buffer too small in reverse scatter.");
+        }
+
+        std::vector<T> send_buffer(self.remote_indices().size());
+        {
+          auto _remote_data = remote_data.view();
+          auto& idx = self.remote_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            send_buffer[i] = _remote_data(idx[i]);
+        }
+        std::vector<T> recv_buffer(self.local_indices().size());
+        MPI_Request request = MPI_REQUEST_NULL;
+        self.scatter_rev_begin<T>(send_buffer.data(), recv_buffer.data(),
+                                  request);
+        self.scatter_end(request);
+        {
+          auto _local_data = local_data.view();
+          auto& idx = self.local_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            _local_data(idx[i]) += recv_buffer[i];
+        }
       },
       nb::arg("local_data"), nb::arg("remote_data"));
 }

@@ -732,7 +732,7 @@ int petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
   {
     /*
     // Get solver residual norm
-    double rnorm = 0.0;
+    double rnorm = 0;
     ierr = KSPGetResidualNorm(_ksp, &rnorm);
     if (ierr != 0) error(ierr, __FILE__, "KSPGetResidualNorm");
     const char *reason_str = KSPConvergedReasons[reason];
