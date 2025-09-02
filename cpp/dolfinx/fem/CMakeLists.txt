@@ -18,6 +18,7 @@ set(HEADERS_fem
     ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_fem.h
     ${CMAKE_CURRENT_SOURCE_DIR}/interpolate.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/kernel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
     ${CMAKE_CURRENT_SOURCE_DIR}/pack.h
     ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.h

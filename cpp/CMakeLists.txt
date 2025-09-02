@@ -236,14 +236,12 @@ endif()
 
 # Debug flags
 check_cxx_compiler_flag(-g HAVE_DEBUG)
-
 if(HAVE_DEBUG)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -g)
 endif()
 
 # Optimisation
 check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
-
 if(HAVE_O2_OPTIMISATION)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
 endif()

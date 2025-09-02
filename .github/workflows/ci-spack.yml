@@ -1,12 +1,12 @@
-name: CI via Spack
+name: "CI (RHEL clone: gcc, oneAPI)"
 on:
-  push:
-    # Uncomment the below 'push' to trigger on push
-    branches:
-    - "**"
+  # push:
+  #   # Uncomment the below 'push' to trigger on push
+  #   branches:
+  #   - "**"
   pull_request:
     branches:
-    - "main"
+    - main
     tags:
     - "v*"
   merge_group:
@@ -23,9 +23,9 @@ env:
 
 jobs:
   build:
-    name: Rocky build and test
+    name: AlmaLinux build and test
     runs-on: ubuntu-latest
-    container: rockylinux/rockylinux:10
+    container: ghcr.io/almalinux/almalinux:10
     strategy:
       matrix:
         compiler: ["gcc", "oneapi"]
@@ -33,24 +33,24 @@ jobs:
     steps:
       - name: Install Spack requirements
         run: |
-          dnf -y install epel-release
-          dnf -y install file bzip2 ca-certificates git gzip patch python3 tar unzip xz zstd gcc gcc-c++ gcc-gfortran
+          dnf -y install file bzip2 ca-certificates git gzip patch python3 tar \
+            unzip xz zstd gcc gcc-c++ gcc-gfortran
 
       - name: Checkout Spack
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: spack/spack
           path: spack-src
 
       - name: Checkout DOLFINx
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: dolfinx-src
 
       - name: Create Spack environment
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env create . dolfinx-src/.github/workflows/spack-config/gh-actions-rocky.yml
+          spack env create . dolfinx-src/.github/workflows/spack-config/gh-actions-rh.yml
 
       - name: Add dependencies to environment
         run: |
@@ -68,7 +68,7 @@ jobs:
       - name: Install Spack packages
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack -e . install --use-buildcache auto
+          spack -e . install -j4 -p2 --use-buildcache auto
 
       - name: Push packages to Spack cache and update index
         env:
@@ -76,7 +76,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack -e . buildcache push --base-image rockylinux/rockylinux:10 --update-index local-buildcache
+          spack -e . buildcache push --base-image ghcr.io/almalinux/almalinux:10 --update-index local-buildcache
         if: ${{ !cancelled() }}
 
       - name: Load FEniCS testing environment variables
@@ -86,9 +86,9 @@ jobs:
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
-          pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure and build C++
         run: |

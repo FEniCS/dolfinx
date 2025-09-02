@@ -31,6 +31,11 @@ execute_process(
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
 
+# Enabling C here is a workaround for an ADIOS2 bug, see
+# https://github.com/ornladios/ADIOS2/pull/4255. Remove when the ADIOS2
+# fix is released.
+enable_language(C)
+
 find_package(DOLFINX REQUIRED CONFIG)
 
 if(DOLFINX_FOUND)
@@ -64,30 +69,32 @@ nanobind_add_module(
 )
 
 if(NANOBIND_SABI)
-  # mpi4py and petsc4py use generated Cython headers
-  # make sure to tell them that the limited API is in use
+  # mpi4py and petsc4py use generated Cython headers so tell
+  # them that the limited API is in use.
   target_compile_definitions(cpp PRIVATE MPI4PY_LIMITED_API=1)
-  # needing to set CYTHON_COMPILING_IN_LIMITED_API is a bug in Cython-generated api headers,
-  # should become unnecessary with mpi4py/petsc4py releases published using Cython >= 3.1.4
+  # Needing to set CYTHON_COMPILING_IN_LIMITED_API is a bug in 
+  # Cython-generated API headers, should become unnecessary with
+  # mpi4py/petsc4py releases published using Cython >= 3.1.4
   # https://github.com/cython/cython/issues/7108
   target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
 endif()
 
-# Add strict compiler flags
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
-if(HAVE_PEDANTIC)
-  target_compile_options(cpp PRIVATE -Wall;-Werror;-Wextra;-pedantic)
+# Add strict compiler flags for Developer build type
+set(DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
 
-  # Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
-  # library
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-     AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-     AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
-  )
-    target_compile_options(cpp PRIVATE -Wno-array-bounds;-Wno-stringop-overflow)
-  endif()
+# Turn off some checks in gcc12 and gcc13 due to false positives with
+# the fmt library
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
+    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
+)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
 endif()
+
+# Set 'Developer' build type flags
+target_compile_options(
+  cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_FLAGS}>
+)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 target_compile_definitions(cpp PRIVATE cxx_std_20)

@@ -589,7 +589,7 @@ void assemble_matrix(
       cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
     }
 
-    for (int i : a.integral_ids(IntegralType::cell))
+    for (int i = 0; i < a.num_integrals(IntegralType::cell, cell_type_idx); ++i)
     {
       auto fn = a.kernel(IntegralType::cell, i, cell_type_idx);
       assert(fn);
@@ -618,7 +618,8 @@ void assemble_matrix(
                          num_facets_per_cell);
     }
 
-    for (int i : a.integral_ids(IntegralType::exterior_facet))
+    for (int i = 0;
+         i < a.num_integrals(IntegralType::exterior_facet, cell_type_idx); ++i)
     {
       if (num_cell_types > 1)
       {
@@ -649,7 +650,8 @@ void assemble_matrix(
           cell_info0, cell_info1, perms);
     }
 
-    for (int i : a.integral_ids(IntegralType::interior_facet))
+    for (int i = 0;
+         i < a.num_integrals(IntegralType::interior_facet, cell_type_idx); ++i)
     {
       if (num_cell_types > 1)
       {

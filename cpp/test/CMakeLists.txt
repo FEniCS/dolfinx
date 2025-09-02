@@ -1,17 +1,14 @@
-find_package(Catch2 3)
+cmake_minimum_required(VERSION 3.21)
 
-if(NOT Catch2_FOUND)
-  message(STATUS "Catch2 not found. Downloading.")
-  include(FetchContent)
-  FetchContent_Declare(
-    Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG v3.4.0
-  )
-  FetchContent_MakeAvailable(Catch2)
+project(dolfinx-tests LANGUAGES C CXX)
+
+if (PROJECT_IS_TOP_LEVEL)
+  include(CTest) # enables testing
+  find_package(DOLFINX REQUIRED)
+  set(DOLFINX_CXX_DEVELOPER_FLAGS -Wall -Werror -Wextra -pedantic -g -O2)
 endif()
 
-include(Catch)
+find_package(Catch2 3 REQUIRED)
 
 # FFCx compile: expr.py -> expr.c
 add_custom_command(
@@ -54,7 +51,7 @@ add_executable(
   ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
-target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
+target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx)
 
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
@@ -66,24 +63,29 @@ endif()
 target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
-# Required to find version.h
-target_include_directories(
-  unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>
-)
+
+if (NOT PROJECT_IS_TOP_LEVEL)
+  # Required to find version.h
+  target_include_directories(
+    unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>
+  )
+endif()
 
 set_target_properties(
   unittests
-  PROPERTIES CMAKE_C_STANDARD 17
+  PROPERTIES CMAKE_C_STANDARD 17 # For FFCx generated .c files.
              CMAKE_CXX_STANDARD 20
              CMAKE_CXX_STANDARD_REQUIRED ON
              CMAKE_CXX_EXTENSIONS OFF
 )
 
-target_compile_options(
-  unittests
-  PRIVATE
-    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
-)
+if (DEFINED DOLFINX_CXX_DEVELOPER_FLAGS)
+  target_compile_options(
+    unittests
+    PRIVATE
+      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  )
+endif()
 
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
@@ -95,7 +97,7 @@ if(ENABLE_CLANG_TIDY)
   )
 endif()
 
-# Uncommenting line allows for debugging individual tests, but slow. 
+# Uncommenting line allows for debugging individual tests, but slow.
 #catch_discover_tests(unittests)
 
 add_test(NAME unittests COMMAND $<TARGET_FILE:unittests>)
