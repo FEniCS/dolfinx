@@ -252,7 +252,7 @@ def assemble_vector(
     Returns:
         An assembled vector.
     """
-    b = create_vector(L, kind=kind)
+    b = create_vector(_extract_function_spaces(L), kind=kind)
     dolfinx.la.petsc._zero_vector(b)
     return assemble_vector(b, L, constants, coeffs)  # type: ignore[arg-type]
 

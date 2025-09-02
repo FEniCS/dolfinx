@@ -1219,13 +1219,13 @@ class TestPETScAssemblers:
 
         # Apply lifting with input coefficient
         coeffs = pack_coefficients(J)
-        b = petsc_create_vector(L, kind=kind)
+        b = petsc_create_vector([V, Q], kind=kind)
         assert b.equal(petsc_create_vector([V, Q]))
         petsc_apply_lifting(b, J, bcs=bcs1, coeffs=coeffs)
         b.assemble()
 
         # Reference lifting
-        b_ref = petsc_create_vector(L, kind=kind)
+        b_ref = petsc_create_vector([V, Q], kind=kind)
         petsc_apply_lifting(b_ref, J, bcs=bcs1)
         b_ref.assemble()
 

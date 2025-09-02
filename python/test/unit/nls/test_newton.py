@@ -13,6 +13,7 @@ import pytest
 import ufl
 from dolfinx import default_real_type
 from dolfinx.fem import Function, dirichletbc, form, functionspace, locate_dofs_geometrical
+from dolfinx.fem.forms import extract_function_spaces
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
@@ -61,7 +62,7 @@ class NonlinearPDEProblem:
     def vector(self):
         from dolfinx.fem.petsc import create_vector
 
-        return create_vector(self.L)
+        return create_vector(extract_function_spaces(self.L))
 
 
 class NonlinearPDE_SNESProblem:
