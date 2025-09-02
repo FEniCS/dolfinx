@@ -52,6 +52,12 @@ template <typename Scalar, typename Container = std::vector<Scalar>,
            and std::is_integral_v<typename RowPtrContainer::value_type>
 class MatrixCSR
 {
+  template <typename U, typename V, typename W, typename X>
+    requires std::is_same_v<typename V::value_type, U>
+             and std::is_integral_v<typename W::value_type>
+             and std::is_integral_v<typename X::value_type>
+  friend class MatrixCSR;
+
 public:
   /// Scalar type
   using value_type = Scalar;
