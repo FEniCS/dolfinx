@@ -74,9 +74,6 @@ jobs:
           path: basix
           ref: ${{ env.basix_ref }}
 
-      - name: Install ninja
-        run: pip install ninja
-
       - name: Insert add_dll_directory calls into Basix
         working-directory: basix/python/basix
         run: |
@@ -86,7 +83,7 @@ jobs:
       - name: Install Basix (C++)
         working-directory: basix/cpp
         run: |
-          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build-dir -S . -G Ninja
+          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build-dir -S .
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix "D:/a/dolfinx/basix-install"
           echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
@@ -109,7 +106,7 @@ jobs:
       - name: Install UFCx header
         working-directory: ffcx
         run: |
-          cmake -B build-dir -S cmake/ -G Ninja
+          cmake -B build-dir -S cmake/
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/ufcx-install
 
@@ -131,7 +128,7 @@ jobs:
       - name: Install DOLFINx (C++)
         working-directory: dolfinx-src/cpp
         run: |
-          cmake -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS=".vcpkg-overlay" -B build-dir -S . -G Ninja
+          cmake -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS=".vcpkg-overlay" -B build-dir -S .
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
