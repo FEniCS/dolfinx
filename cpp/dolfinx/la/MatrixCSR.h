@@ -31,8 +31,9 @@ enum class BlockMode : int
                /// matrix has a block size of (1, 1).
 };
 
-template <typename Scalar, typename Container, typename ColContainer,
-          typename RowPtrContainer>
+template <typename Scalar, typename Container = std::vector<Scalar>,
+          typename ColContainer = std::vector<std::int32_t>,
+          typename RowPtrContainer = std::vector<std::int64_t>>
   requires std::is_same_v<typename Container::value_type, Scalar>
            and std::is_integral_v<typename ColContainer::value_type>
            and std::is_integral_v<typename RowPtrContainer::value_type>
@@ -51,9 +52,8 @@ class MatrixCSR;
 /// @tparam Container Container type for storing matrix entries
 /// @tparam ColContainer Column index container type
 /// @tparam RowPtrContainer Row pointer container type
-template <typename Scalar, typename Container = std::vector<Scalar>,
-          typename ColContainer = std::vector<std::int32_t>,
-          typename RowPtrContainer = std::vector<std::int64_t>>
+template <typename Scalar, typename Container, typename ColContainer,
+          typename RowPtrContainer>
   requires std::is_same_v<typename Container::value_type, Scalar>
            and std::is_integral_v<typename ColContainer::value_type>
            and std::is_integral_v<typename RowPtrContainer::value_type>
