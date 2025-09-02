@@ -214,8 +214,22 @@ public:
   /// storage container.
   ///
   /// @param[in] s Scatter to copy.
-  template <typename S>
-  Scatterer(const S& s)
+
+  /// @brief Cast-copy constructor.
+  ///
+  /// Create a copy of a Scatterer, were the copy uses a different
+  /// storage container for indices that are used in MPI communication.
+  /// Example usage includes creating from a CPU-suitable Scatterer a
+  /// GPU-suitable Scatterer that can be used with GPU-aware MPI to move
+  /// data between devices. This would be typical when copying a
+  /// la::Vector or la::MatrixCSR to/from a GPU. When copying a vector
+  /// or matrix to/from a GPU, the underlying Scatter that manages
+  /// parallel communication will usually be copied too with a different
+  /// storage container.
+  ///
+  /// @param s Scatterer to copy
+  template <class U>
+  Scatterer(const Scatterer<U>& s)
       : _comm0(s._comm0), _comm1(s._comm1), _src(s._src), _dest(s._dest),
         _remote_inds(s._remote_inds.begin(), s._remote_inds.end()),
         _sizes_remote(s._sizes_remote), _displs_remote(s._displs_remote),

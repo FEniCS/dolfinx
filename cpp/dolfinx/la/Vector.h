@@ -174,8 +174,8 @@ public:
   ///
   /// @tparam Vec Type of the Vector being copied.
   /// @param x Vector to copy.
-  template <typename Vec>
-  explicit Vector(const Vec& x)
+  template <typename T0, typename Container0, typename ScatterContainer0>
+  explicit Vector(const Vector<T0, Container0, ScatterContainer0>& x)
       : _map(x.index_map()), _bs(x.bs()), _x(x._x.begin(), x._x.end()),
         _scatterer(scatter_ptr(x._scatterer)), _request(MPI_REQUEST_NULL),
         _buffer_local(_scatterer->local_indices().size()),

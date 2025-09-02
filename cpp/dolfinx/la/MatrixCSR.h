@@ -195,8 +195,10 @@ public:
   ///
   /// @tparam Mat
   /// @param A Matrix to copy.
-  template <typename Mat>
-  explicit MatrixCSR(const Mat& A)
+  template <typename Scalar0, typename Container0, typename ColContainer0,
+            typename RowPtrContainer0>
+  explicit MatrixCSR(
+      const MatrixCSR<Scalar0, Container0, ColContainer0, RowPtrContainer0>& A)
       : _index_maps(A._index_maps), _block_mode(A.block_mode()),
         _bs(A.block_size()), _data(A._data.begin(), A._data.end()),
         _cols(A.cols().begin(), A.cols().end()),
