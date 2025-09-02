@@ -36,6 +36,10 @@ concept GetPtrConcept = requires(GetPtr f, U x) {
   { f(x) } -> std::same_as<const T*>;
 };
 
+template <typename T, typename Container, typename ScatterContainer>
+  requires std::is_same_v<typename Container::value_type, T>
+class Vector;
+
 /// @brief A vector that can be distributed across processes.
 ///
 /// @tparam T Scalar type of the vector.

@@ -21,6 +21,11 @@
 
 namespace dolfinx::common
 {
+
+template <class Container>
+  requires std::is_integral_v<typename Container::value_type>
+class Scatterer;
+
 /// @brief A Scatterer supports the scattering and gathering of
 /// distributed data that is associated with a common::IndexMap, using
 /// MPI.
