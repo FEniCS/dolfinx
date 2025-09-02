@@ -129,10 +129,8 @@ def create_vector(
         b = dolfinx.cpp.fem.petsc.create_vector_block(maps)
         _assign_block_data(maps, b)
         return b
-
     elif kind == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         return dolfinx.cpp.fem.petsc.create_vector_nest(maps)
-
     else:
         raise NotImplementedError(
             "Vector type must be specified for blocked/nested assembly."
