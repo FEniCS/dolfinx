@@ -36,11 +36,6 @@ concept GetPtrConcept = requires(GetPtr f, U x) {
   { f(x) } -> std::same_as<const T*>;
 };
 
-template <typename T, typename Container = std::vector<T>,
-          typename ScatterContainer = std::vector<std::int32_t>>
-  requires std::is_same_v<typename Container::value_type, T>
-class Vector;
-
 /// @brief A vector that can be distributed across processes.
 ///
 /// @tparam T Scalar type of the vector.
@@ -49,12 +44,13 @@ class Vector;
 /// @tparam ScatterContainer Storage container type for the scatterer
 /// indices. This is typically `std::vector<std::int32_t>` on CPUs, and
 /// `thrust::device_vector<std::int32_t>` on GPUs.
-template <typename T, typename Container, typename ScatterContainer>
-  requires std::is_same_v<typename Container::value_type, T>
+template <typename T, typename Container = std::vector<T>,
+          typename ScatterContainer = std::vector<std::int32_t>>
 class Vector
 {
-  template <typename U, typename V, typename W>
-    requires std::is_same_v<typename V::value_type, U>
+  static_assert(std::is_same_v<typename Container::value_type, T>);
+
+  template <typename, typename, typename>
   friend class Vector;
 
 private:
