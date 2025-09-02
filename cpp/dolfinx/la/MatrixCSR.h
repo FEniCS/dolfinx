@@ -31,7 +31,7 @@ enum class BlockMode : int
                /// matrix has a block size of (1, 1).
 };
 
-/// @brief Distributed sparse matrix using compressed spare row storage.
+/// @brief Distributed sparse matrix using compressed sparse row storage.
 ///
 /// @warning The class is experimental and subject to change.
 ///
