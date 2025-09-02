@@ -49,8 +49,6 @@ template <typename T, typename Container = std::vector<T>,
   requires std::is_same_v<typename Container::value_type, T>
 class Vector
 {
-  friend class Vector;
-
 private:
   /// @brief Return a 'pack' function for packing a send buffer.
   ///

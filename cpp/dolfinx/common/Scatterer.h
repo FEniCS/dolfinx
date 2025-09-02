@@ -47,8 +47,6 @@ template <class Container = std::vector<std::int32_t>>
   requires std::is_integral_v<typename Container::value_type>
 class Scatterer
 {
-  friend class Scatterer;
-
 public:
   /// Container type used to store local and remote indices.
   using container_type = Container;
