@@ -111,7 +111,6 @@ select = [
 ignore = [
       "UP007",
       "RUF012",
-      "UP045",  # Ractivate once Python 3.9 EoL
 ]
 allowed-confusables = ["σ"]
 
