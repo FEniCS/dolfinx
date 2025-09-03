@@ -1361,6 +1361,8 @@ void assemble_vector(
         perms = facet_perms;
         break;
       }
+      default:
+        break;
       }
       for (int i = 0; i < L.num_integrals(itg_type, 0); ++i)
       {

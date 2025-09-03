@@ -227,6 +227,8 @@ T assemble_scalar(
       perms = facet_perms;
       break;
     }
+    default:
+      break;
     }
 
     for (int i = 0; i < M.num_integrals(itg_type, 0); ++i)
