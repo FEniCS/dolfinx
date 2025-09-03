@@ -66,8 +66,9 @@ class Topology;
 ///    This data is used to correct the direction of vector function
 ///    on permuted facets.
 ///
-/// @return Facet permutation and cells permutations
-std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
+/// @param[in] topology The mesh topology.
+std::tuple<std::vector<std::uint8_t>, std::vector<std::uint8_t>,
+           std::vector<std::uint32_t>>
 compute_entity_permutations(const Topology& topology);
 
 } // namespace dolfinx::mesh
