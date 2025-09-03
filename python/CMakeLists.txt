@@ -10,7 +10,7 @@ endif(WIN32)
 
 find_package(
   Python
-  COMPONENTS Interpreter Development
+  COMPONENTS Interpreter Development ${SKBUILD_SABI_COMPONENT}
   REQUIRED
 )
 
@@ -44,10 +44,16 @@ endif()
 
 # Create the binding library nanobind handles its own calls to
 # target_link_libraries
+
+if(NOT "${SKBUILD_SABI_VERSION}" STREQUAL "")
+  set(NANOBIND_SABI "STABLE_ABI")
+endif()
+
 nanobind_add_module(
   cpp
   NB_SUPPRESS_WARNINGS
   NOMINSIZE
+  ${NANOBIND_SABI}
   dolfinx/wrappers/dolfinx.cpp
   dolfinx/wrappers/assemble.cpp
   dolfinx/wrappers/common.cpp
@@ -61,6 +67,17 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
+
+if(NANOBIND_SABI)
+  # mpi4py and petsc4py use generated Cython headers so tell
+  # them that the limited API is in use.
+  target_compile_definitions(cpp PRIVATE MPI4PY_LIMITED_API=1)
+  # Needing to set CYTHON_COMPILING_IN_LIMITED_API is a bug in 
+  # Cython-generated API headers, should become unnecessary with
+  # mpi4py/petsc4py releases published using Cython >= 3.1.4
+  # https://github.com/cython/cython/issues/7108
+  target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
+endif()
 
 # Add strict compiler flags for Developer build type
 set(DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
