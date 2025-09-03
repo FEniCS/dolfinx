@@ -601,78 +601,9 @@ Form<T, U> create_form_factory(
     }
   }
 
-  // Attach exterior facet kernels
-  std::vector<std::int32_t> default_facets_ext;
-  {
-    std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
-                                 + integral_offsets[exterior_facet],
-                             num_integrals_type[exterior_facet]);
-    auto sd = subdomains.find(IntegralType::exterior_facet);
-    for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
-    {
-      const ufcx_form& ufcx_form = ufcx_forms[form_idx];
-      for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
-      {
-        const int id = ids[i];
-        ufcx_integral* integral
-            = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
-        assert(integral);
-        check_geometry_hash(*integral, form_idx);
-
-        std::vector<int> active_coeffs;
-        for (int j = 0; j < ufcx_form.num_coefficients; ++j)
-        {
-          if (integral->enabled_coefficients[j])
-            active_coeffs.push_back(j);
-        }
-
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
-
-        // Build list of entities to assembler over
-        const std::vector bfacets = mesh::exterior_facet_indices(*topology);
-        auto f_to_c = topology->connectivity(tdim - 1, tdim);
-        assert(f_to_c);
-        auto c_to_f = topology->connectivity(tdim, tdim - 1);
-        assert(c_to_f);
-        if (id == -1)
-        {
-          // Default kernel, operates on all (owned) exterior facets
-          default_facets_ext.reserve(2 * bfacets.size());
-          for (std::int32_t f : bfacets)
-          {
-            // There will only be one pair for an exterior facet integral
-            std::array<std::int32_t, 2> pair
-                = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
-            default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
-                                      pair.end());
-          }
-          integrals.insert({{IntegralType::exterior_facet, i, form_idx},
-                            {k, default_facets_ext, active_coeffs}});
-        }
-        else if (sd != subdomains.end())
-        {
-          // NOTE: This requires that pairs are sorted
-          auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
-                                             [](auto& a) { return a.first; });
-          if (it != sd->second.end() and it->first == id)
-          {
-            integrals.insert({{IntegralType::exterior_facet, i, form_idx},
-                              {k,
-                               std::vector<std::int32_t>(it->second.begin(),
-                                                         it->second.end()),
-                               active_coeffs}});
-          }
-        }
-
-        if (integral->needs_facet_permutations)
-          needs_facet_permutations = true;
-      }
-    }
-  }
-
   // Attach interior facet kernels
-  std::vector<std::int32_t> default_facets_int;
   {
+    std::vector<std::int32_t> default_facets_int;
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[interior_facet],
                              num_integrals_type[interior_facet]);
@@ -765,162 +696,106 @@ Form<T, U> create_form_factory(
     }
   }
 
-  // Attach vertex kernels
+  // Attach exterior entity integrals
   {
-    for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
+    for (IntegralType itg_type : {IntegralType::exterior_facet,
+                                  IntegralType::vertex, IntegralType::ridge})
     {
-      const ufcx_form& form = ufcx_forms[form_idx];
+      std::size_t dim;
+      if (itg_type == IntegralType::exterior_facet)
+        dim = tdim - 1;
+      else if (itg_type == IntegralType::ridge)
+        dim = tdim - 2;
+      else if (itg_type == IntegralType::vertex)
+        dim = 0;
+      else
+        throw std::runtime_error("Unsupported integral type");
 
-      std::span<const int> ids(form.form_integral_ids
-                                   + integral_offsets[vertex],
-                               num_integrals_type[vertex]);
-      auto sd = subdomains.find(IntegralType::vertex);
-      for (int i = 0; i < num_integrals_type[vertex]; ++i)
+      auto get_default_integration_entities
+          = [dim](const mesh::Topology& topology, IntegralType itg_type)
       {
-        const int id = ids[i];
-        ufcx_integral* integral
-            = form.form_integrals[integral_offsets[vertex] + i];
-        assert(integral);
-        check_geometry_hash(*integral, form_idx);
-
-        std::vector<int> active_coeffs;
-        for (int j = 0; j < form.num_coefficients; ++j)
+        if (itg_type == IntegralType::exterior_facet)
         {
-          if (integral->enabled_coefficients[j])
-            active_coeffs.push_back(j);
+          // Integrate over all owned exterior facets
+          return mesh::exterior_facet_indices(topology);
         }
-
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
-        assert(k);
-
-        // Build list of entities to assembler over
-        auto v_to_c = topology->connectivity(0, tdim);
-        assert(v_to_c);
-        auto c_to_v = topology->connectivity(tdim, 0);
-        assert(c_to_v);
-
-        // pack for a range of vertices a flattened list of cell index c_i and
-        // local vertex index l_i:
-        //  [c_0, l_0, ..., c_n, l_n]
-        auto get_cells_and_vertices = [v_to_c, c_to_v](auto vertices_range)
+        else
         {
-          std::vector<std::int32_t> cell_and_vertex;
-          cell_and_vertex.reserve(2 * vertices_range.size());
-          for (std::int32_t vertex : vertices_range)
-          {
-            std::array<std::int32_t, 2> pair = impl::get_cell_entity_pairs<1>(
-                vertex, v_to_c->links(vertex), *c_to_v);
-
-            cell_and_vertex.insert(cell_and_vertex.end(), pair.begin(),
-                                   pair.end());
-          }
-          assert(cell_and_vertex.size() == 2 * vertices_range.size());
-          return cell_and_vertex;
-        };
-
-        if (id == -1)
-        {
+          // Integrate over all owned entities
           // Default vertex kernel operates on all (owned) vertices
-          std::int32_t num_vertices = topology->index_map(0)->size_local();
-          std::vector<std::int32_t> cells_and_vertices = get_cells_and_vertices(
-              std::ranges::views::iota(0, num_vertices));
-
-          integrals.insert({{IntegralType::vertex, i, form_idx},
-                            {k, cells_and_vertices, active_coeffs}});
+          std::int32_t num_entities = topology.index_map(dim)->size_local();
+          std::vector<std::int32_t> entities(num_entities);
+          std::iota(entities.begin(), entities.end(), 0);
+          return entities;
         }
-        else if (sd != subdomains.end())
-        {
-          // NOTE: This requires that pairs are sorted
-          auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
-                                             [](auto& a) { return a.first; });
-          if (it != sd->second.end() and it->first == id)
-          {
-            integrals.insert({{IntegralType::vertex, i, form_idx},
-                              {k,
-                               std::vector<std::int32_t>(it->second.begin(),
-                                                         it->second.end()),
-                               active_coeffs}});
-          }
-        }
-      }
-    }
-  }
+      };
 
-  // Attach ridge kernels
-  {
-    for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
-    {
-      const ufcx_form& form = ufcx_forms[form_idx];
+      std::vector<std::int32_t> default_entities_ext;
 
-      std::span<const int> ids(form.form_integral_ids + integral_offsets[ridge],
-                               num_integrals_type[ridge]);
-      auto sd = subdomains.find(IntegralType::ridge);
-      for (int i = 0; i < num_integrals_type[ridge]; ++i)
+      std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
+                                   + integral_offsets[(std::int8_t)itg_type],
+                               num_integrals_type[(std::int8_t)itg_type]);
+      auto sd = subdomains.find(itg_type);
+      for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
       {
-        const int id = ids[i];
-        ufcx_integral* integral
-            = form.form_integrals[integral_offsets[ridge] + i];
-        assert(integral);
-        check_geometry_hash(*integral, form_idx);
-
-        std::vector<int> active_coeffs;
-        for (int j = 0; j < form.num_coefficients; ++j)
+        const ufcx_form& ufcx_form = ufcx_forms[form_idx];
+        for (int i = 0; i < num_integrals_type[(std::int8_t)itg_type]; ++i)
         {
-          if (integral->enabled_coefficients[j])
-            active_coeffs.push_back(j);
-        }
+          const int id = ids[i];
+          ufcx_integral* integral
+              = ufcx_form.form_integrals[integral_offsets[(std::int8_t)itg_type]
+                                         + i];
+          assert(integral);
+          check_geometry_hash(*integral, form_idx);
 
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
-        assert(k);
-
-        // Build list of entities to assembler over
-        auto r_to_c = topology->connectivity(tdim - 2, tdim);
-        assert(r_to_c);
-        auto c_to_r = topology->connectivity(tdim, tdim - 2);
-        assert(c_to_r);
-
-        // pack for a range of vertices a flattened list of cell index c_i and
-        // local ridge index l_i:
-        //  [c_0, l_0, ..., c_n, l_n]
-        auto get_cells_and_ridges = [r_to_c, c_to_r](auto ridge_range)
-        {
-          std::vector<std::int32_t> cell_and_ridge;
-          cell_and_ridge.reserve(2 * ridge_range.size());
-          for (std::int32_t ridge : ridge_range)
+          std::vector<int> active_coeffs;
+          for (int j = 0; j < ufcx_form.num_coefficients; ++j)
           {
-            std::array<std::int32_t, 2> pair = impl::get_cell_entity_pairs<1>(
-                ridge, r_to_c->links(ridge), *c_to_r);
-
-            cell_and_ridge.insert(cell_and_ridge.end(), pair.begin(),
-                                  pair.end());
+            if (integral->enabled_coefficients[j])
+              active_coeffs.push_back(j);
           }
-          assert(cell_and_ridge.size() == 2 * ridge_range.size());
-          return cell_and_ridge;
-        };
 
-        if (id == -1)
-        {
-          // Default ridge kernel operates on all (owned) ridges
-          std::int32_t num_ridges = topology->index_map(tdim - 2)->size_local();
-          std::vector<std::int32_t> cells_and_ridges
-              = get_cells_and_ridges(std::ranges::views::iota(0, num_ridges));
+          impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
 
-          integrals.insert({{IntegralType::ridge, i, form_idx},
-                            {k, cells_and_ridges, active_coeffs}});
-        }
-        else if (sd != subdomains.end())
-        {
-          // NOTE: This requires that pairs are sorted
-          auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
-                                             [](auto& a) { return a.first; });
-          if (it != sd->second.end() and it->first == id)
+          // Build list of entities to assembler over
+          auto e_to_c = topology->connectivity(dim, tdim);
+          assert(e_to_c);
+          auto c_to_e = topology->connectivity(tdim, dim);
+          assert(c_to_e);
+          if (id == -1)
           {
-            integrals.insert({{IntegralType::ridge, i, form_idx},
-                              {k,
-                               std::vector<std::int32_t>(it->second.begin(),
-                                                         it->second.end()),
-                               active_coeffs}});
+            std::vector default_entities
+                = get_default_integration_entities(*topology, itg_type);
+            // Default kernel
+            default_entities_ext.reserve(2 * default_entities.size());
+            for (std::int32_t e : default_entities)
+            {
+              // There will only be one pair for an exterior facet integral
+              std::array<std::int32_t, 2> pair = impl::get_cell_entity_pairs<1>(
+                  e, e_to_c->links(e), *c_to_e);
+              default_entities_ext.insert(default_entities_ext.end(),
+                                          pair.begin(), pair.end());
+            }
+            integrals.insert({{itg_type, i, form_idx},
+                              {k, default_entities_ext, active_coeffs}});
           }
+          else if (sd != subdomains.end())
+          {
+            // NOTE: This requires that pairs are sorted
+            auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
+                                               [](auto& a) { return a.first; });
+            if (it != sd->second.end() and it->first == id)
+            {
+              integrals.insert({{itg_type, i, form_idx},
+                                {k,
+                                 std::vector<std::int32_t>(it->second.begin(),
+                                                           it->second.end()),
+                                 active_coeffs}});
+            }
+          }
+
+          if (integral->needs_facet_permutations)
+            needs_facet_permutations = true;
         }
       }
     }
