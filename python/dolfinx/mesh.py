@@ -273,12 +273,12 @@ class Mesh:
     _mesh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]
     _topology: Topology
     _geometry: Geometry
-    _ufl_domain: typing.Optional[ufl.Mesh]
+    _ufl_domain: ufl.Mesh | None
 
     def __init__(
         self,
         msh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64],
-        domain: typing.Optional[ufl.Mesh],
+        domain: ufl.Mesh | None,
     ):
         """Initialize mesh from a C++ mesh.
 
@@ -319,7 +319,7 @@ class Mesh:
         """
         return ufl.Cell(self.topology.cell_name())
 
-    def ufl_domain(self) -> typing.Optional[ufl.Mesh]:
+    def ufl_domain(self) -> ufl.Mesh | None:
         """Return the ufl domain corresponding to the mesh.
 
         Returns:
@@ -593,7 +593,7 @@ def transfer_meshtag(
     meshtag: MeshTags,
     msh1: Mesh,
     parent_cell: npt.NDArray[np.int32],
-    parent_facet: typing.Optional[npt.NDArray[np.int8]] = None,
+    parent_facet: npt.NDArray[np.int8] | None = None,
 ) -> MeshTags:
     """Generate cell mesh tags on a refined mesh from the mesh tags on the
     coarse parent mesh.
@@ -627,7 +627,7 @@ def transfer_meshtag(
 
 def refine(
     msh: Mesh,
-    edges: typing.Optional[np.ndarray] = None,
+    edges: np.ndarray | None = None,
     partitioner: typing.Union[
         Callable, IdentityPartitionerPlaceholder
     ] = IdentityPartitionerPlaceholder(),
@@ -679,7 +679,7 @@ def create_mesh(
         _CoordinateElement,
     ],
     x: npt.NDArray[np.floating],
-    partitioner: typing.Optional[Callable] = None,
+    partitioner: Callable | None = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
