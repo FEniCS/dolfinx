@@ -2091,7 +2091,7 @@ def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype, coefficient):
 
     c_el = ufl.Mesh(
         basix.ufl.element(
-            "Lagrange", basix.CellType.interval, 1, shape=(nodes.shape[1],), dtype=dtype
+            "Lagrange", basix.CellType.interval, 1, shape=(nodes.shape[1],), dtype=rdtype
         ),
     )
     line_mesh = dolfinx.mesh.create_mesh(
