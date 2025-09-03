@@ -702,14 +702,26 @@ Form<T, U> create_form_factory(
                                   IntegralType::vertex, IntegralType::ridge})
     {
       std::size_t dim;
-      if (itg_type == IntegralType::exterior_facet)
+      switch (itg_type)
+      {
+      case IntegralType::exterior_facet:
+      {
         dim = tdim - 1;
-      else if (itg_type == IntegralType::ridge)
+        break;
+      }
+      case IntegralType::ridge:
+      {
         dim = tdim - 2;
-      else if (itg_type == IntegralType::vertex)
+        break;
+      }
+      case IntegralType::vertex:
+      {
         dim = 0;
-      else
+        break;
+      }
+      default:
         throw std::runtime_error("Unsupported integral type");
+      }
 
       auto get_default_integration_entities
           = [dim](const mesh::Topology& topology, IntegralType itg_type)
