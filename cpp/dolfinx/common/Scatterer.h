@@ -21,6 +21,7 @@
 
 namespace dolfinx::common
 {
+
 /// @brief A Scatterer supports the scattering and gathering of
 /// distributed data that is associated with a common::IndexMap, using
 /// MPI.
@@ -44,11 +45,11 @@ namespace dolfinx::common
 /// indices on the device, e.g. using
 /// `thrust::device_vector<std::int32_t>`.
 template <class Container = std::vector<std::int32_t>>
-  requires std::is_integral_v<typename Container::value_type>
 class Scatterer
 {
-  template <typename T>
-    requires std::is_integral_v<typename T::value_type>
+  static_assert(std::is_integral_v<typename Container::value_type>);
+
+  template <class>
   friend class Scatterer;
 
 public:

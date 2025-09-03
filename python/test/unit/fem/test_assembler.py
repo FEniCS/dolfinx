@@ -6,6 +6,7 @@
 """Unit tests for assembly"""
 
 import math
+import os
 
 from mpi4py import MPI
 
@@ -1601,7 +1602,25 @@ def vertex_to_dof_map(V):
     ],
 )
 @pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+    ],
+)
 def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
@@ -1719,7 +1738,25 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
     ],
 )
 @pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+    ],
+)
 def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
