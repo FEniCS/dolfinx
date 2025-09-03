@@ -1873,10 +1873,6 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     [
         mesh.CellType.triangle,
         mesh.CellType.quadrilateral,
-        # mesh.CellType.tetrahedron,
-        # mesh.CellType.pyramid,
-        # mesh.CellType.prism,
-        # mesh.CellType.hexahedron,
     ],
 )
 @pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
@@ -1899,22 +1895,14 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
         ),
     ],
 )
-def test_ridge_integrals_rank1(cell_type, ghost_mode, dtype):
+def test_ridge_integrals_rank1_2D(cell_type, ghost_mode, dtype):
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
     msh = None
-    cell_dim = mesh.cell_dim(cell_type)
-    if cell_dim == 2:
-        msh = mesh.create_unit_square(
-            comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
-        )
-    elif cell_dim == 3:
-        msh = mesh.create_unit_cube(
-            comm, 4, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
-        )
-    else:
-        raise RuntimeError("Bad dimension")
+    msh = mesh.create_unit_square(
+        comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+    )
     gdim = msh.geometry.dim
     V = dolfinx.fem.functionspace(msh, ("Lagrange", 3))
 
@@ -1926,12 +1914,11 @@ def test_ridge_integrals_rank1(cell_type, ghost_mode, dtype):
     F = dolfinx.fem.form(integrand * dr, dtype=dtype)
     b = dolfinx.fem.assemble_vector(F)
 
-    if cell_dim == 2:
-        dP = ufl.Measure("dP", domain=msh)
-        Fp = dolfinx.fem.form(integrand * dP, dtype=dtype)
-        b_p = dolfinx.fem.assemble_vector(Fp)
-        tol = np.finfo(rdtype).eps
-        np.testing.assert_allclose(b.array, b_p.array, atol=tol, rtol=tol)
+    dP = ufl.Measure("dP", domain=msh)
+    Fp = dolfinx.fem.form(integrand * dP, dtype=dtype)
+    b_p = dolfinx.fem.assemble_vector(Fp)
+    tol = np.finfo(rdtype).eps
+    np.testing.assert_allclose(b.array, b_p.array, atol=tol, rtol=tol)
 
 
 @pytest.mark.parametrize(
@@ -2007,3 +1994,112 @@ def test_ridge_integrals_rank0(cell_type, ghost_mode, dtype):
         raise RuntimeError("Bad dimension")
     tol = 50 * np.finfo(rdtype).eps
     assert np.isclose(J_sum, ref_sol, atol=tol, rtol=tol)
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        mesh.CellType.tetrahedron,
+        # mesh.CellType.pyramid,
+        # mesh.CellType.prism,
+        mesh.CellType.hexahedron,
+    ],
+)
+@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+    ],
+)
+def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype):
+    comm = MPI.COMM_WORLD
+    rdtype = np.real(dtype(0)).dtype
+
+    msh = None
+    N = 4
+    msh = mesh.create_unit_cube(
+        comm, N, N, N, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+    )
+    gdim = msh.geometry.dim
+
+    el = ("Lagrange", 3, (gdim,))
+    V = dolfinx.fem.functionspace(msh, el)
+
+    x = ufl.SpatialCoordinate(msh)
+    v = ufl.TestFunction(V)
+
+    def marked_ridges(x):
+        return np.isclose(x[0], 1) & np.isclose(x[1], 0.5)
+
+    exterior_ridges = dolfinx.mesh.locate_entities_boundary(
+        msh, msh.topology.dim - 2, marked_ridges
+    )
+    et = dolfinx.mesh.meshtags(
+        msh, msh.topology.dim - 2, exterior_ridges, np.full_like(exterior_ridges, 33)
+    )
+
+    def f(x):
+        return x[0] + ufl.sin(x[1]), x[2] + x[1], x[0] ** 2 - 3 * x[1]
+
+    def integrand(x, v):
+        expr = ufl.as_vector(f(x))
+        return ufl.inner(expr, v)
+
+    metadata = {"quadrature_degree": 10}
+    dr = ufl.Measure("dr", domain=msh, subdomain_data=et, subdomain_id=33, metadata=metadata)
+    F = dolfinx.fem.form(integrand(x, v) * dr, dtype=dtype)
+    b = dolfinx.fem.assemble_vector(F)
+    b.scatter_reverse(la.InsertMode.add)
+    b.scatter_forward()
+
+    # Create reference solution on unit interval
+    assert gdim == 3
+    if comm.rank == 0:
+        nodes = np.zeros((N + 1, gdim), dtype=rdtype)
+        nodes[:, 0] = 1
+        nodes[:, 1] = 0.5
+        nodes[:, 2] = np.linspace(0, 1, N + 1)
+        connectivity = (
+            np.repeat(np.arange(nodes.shape[0]), 2)[1:-1]
+            .reshape(nodes.shape[0] - 1, 2)
+            .astype(np.int64)
+        )
+    else:
+        nodes = np.zeros((0, gdim), dtype=rdtype)
+        connectivity = np.zeros((0, 2), dtype=np.int64)
+
+    c_el = ufl.Mesh(
+        basix.ufl.element("Lagrange", basix.CellType.interval, 1, shape=(nodes.shape[1],))
+    )
+    line_mesh = dolfinx.mesh.create_mesh(
+        MPI.COMM_WORLD,
+        x=nodes,
+        cells=connectivity,
+        e=c_el,
+        partitioner=dolfinx.mesh.create_cell_partitioner(ghost_mode),
+    )
+
+    Q = dolfinx.fem.functionspace(line_mesh, el)
+    q = ufl.TestFunction(Q)
+
+    x_e = ufl.SpatialCoordinate(line_mesh)
+    F_ref = dolfinx.fem.form(integrand(x_e, q) * ufl.dx(domain=line_mesh, metadata=metadata))
+    b_ref = dolfinx.fem.assemble_vector(F_ref)
+    b_ref.scatter_reverse(la.InsertMode.add)
+    b_ref.scatter_forward()
+    tol = 10 * np.finfo(rdtype).eps
+    assert np.isclose(la.norm(b), la.norm(b_ref), rtol=tol, atol=tol)
