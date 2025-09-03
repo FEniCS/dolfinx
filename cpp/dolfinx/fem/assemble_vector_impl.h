@@ -1442,21 +1442,21 @@ void assemble_vector(
         impl::assemble_exterior_entities<1>(
             P0, b, x_dofmap, x, ridges, {dofs, bs, ridges1}, fn, constants,
             md::mdspan(coeffs.data(), ridges.extent(0), cstride), cell_info0,
-            facet_perms);
+            ridge_perms);
       }
       else if (bs == 3)
       {
         impl::assemble_exterior_entities<3>(
             P0, b, x_dofmap, x, ridges, {dofs, bs, ridges1}, fn, constants,
             md::mdspan(coeffs.data(), ridges.size() / 2, cstride), cell_info0,
-            facet_perms);
+            ridge_perms);
       }
       else
       {
         impl::assemble_exterior_entities(
             P0, b, x_dofmap, x, ridges, {dofs, bs, ridges1}, fn, constants,
             md::mdspan(coeffs.data(), ridges.size() / 2, cstride), cell_info0,
-            facet_perms);
+            ridge_perms);
       }
     }
   }
