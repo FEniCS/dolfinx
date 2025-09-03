@@ -1298,40 +1298,6 @@ void assemble_vector(
         = md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>;
 
-    for (int i = 0; i < L.num_integrals(IntegralType::exterior_facet, 0); ++i)
-    {
-      auto fn = L.kernel(IntegralType::exterior_facet, i, 0);
-      assert(fn);
-      auto& [coeffs, cstride]
-          = coefficients.at({IntegralType::exterior_facet, i});
-      std::span f = L.domain(IntegralType::exterior_facet, i, 0);
-      mdspanx2_t facets(f.data(), f.size() / 2, 2);
-      std::span f1 = L.domain_arg(IntegralType::exterior_facet, 0, i, 0);
-      mdspanx2_t facets1(f1.data(), f1.size() / 2, 2);
-      assert((facets.size() / 2) * cstride == coeffs.size());
-      if (bs == 1)
-      {
-        impl::assemble_exterior_entities<1>(
-            P0, b, x_dofmap, x, facets, {dofs, bs, facets1}, fn, constants,
-            md::mdspan(coeffs.data(), facets.extent(0), cstride), cell_info0,
-            facet_perms);
-      }
-      else if (bs == 3)
-      {
-        impl::assemble_exterior_entities<3>(
-            P0, b, x_dofmap, x, facets, {dofs, bs, facets1}, fn, constants,
-            md::mdspan(coeffs.data(), facets.size() / 2, cstride), cell_info0,
-            facet_perms);
-      }
-      else
-      {
-        impl::assemble_exterior_entities(
-            P0, b, x_dofmap, x, facets, {dofs, bs, facets1}, fn, constants,
-            md::mdspan(coeffs.data(), facets.size() / 2, cstride), cell_info0,
-            facet_perms);
-      }
-    }
-
     for (int i = 0; i < L.num_integrals(IntegralType::interior_facet, 0); ++i)
     {
       using mdspanx22_t
@@ -1383,80 +1349,48 @@ void assemble_vector(
       }
     }
 
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> vertex_perms;
-    for (int i = 0; i < L.num_integrals(IntegralType::vertex, 0); ++i)
+    for (fem::IntegralType itg_type :
+         {fem::IntegralType::exterior_facet, fem::IntegralType::vertex,
+          fem::IntegralType::ridge})
     {
-      auto fn = L.kernel(IntegralType::vertex, i, 0);
-      assert(fn);
-
-      std::span v = L.domain(IntegralType::vertex, i, cell_type_idx);
-      mdspanx2_t vertices(v.data(), v.size() / 2, 2);
-      std::span v1 = L.domain_arg(IntegralType::vertex, 0, i, cell_type_idx);
-      mdspanx2_t vertices1(v1.data(), v1.size() / 2, 2);
-
-      auto& [coeffs, cstride] = coefficients.at({IntegralType::vertex, i});
-
-      assert(vertices.size() * cstride == coeffs.size());
-      if (bs == 1)
-      {
-        impl::assemble_exterior_entities<1>(
-            P0, b, x_dofmap, x, vertices, {dofs, bs, vertices1}, fn, constants,
-            md::mdspan(coeffs.data(), vertices.extent(0), cstride), cell_info0,
-            vertex_perms);
-      }
-      else if (bs == 3)
-      {
-        impl::assemble_exterior_entities<3>(
-            P0, b, x_dofmap, x, vertices, {dofs, bs, vertices1}, fn, constants,
-            md::mdspan(coeffs.data(), vertices.size() / 2, cstride), cell_info0,
-            vertex_perms);
-      }
+      md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
+      if (itg_type == fem::IntegralType::exterior_facet && !facet_perms.empty())
+        perms = facet_perms;
       else
+        perms = md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>();
+      for (int i = 0; i < L.num_integrals(itg_type, 0); ++i)
       {
-        impl::assemble_exterior_entities(
-            P0, b, x_dofmap, x, vertices, {dofs, bs, vertices1}, fn, constants,
-            md::mdspan(coeffs.data(), vertices.size() / 2, cstride), cell_info0,
-            vertex_perms);
-      }
-    }
-
-    // NOTE: Empty for now, but I guess we require this for mixed-dimensional
-    // assembly
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> ridge_perms;
-    for (int i = 0; i < L.num_integrals(IntegralType::ridge, 0); ++i)
-    {
-      auto fn = L.kernel(IntegralType::ridge, i, 0);
-      assert(fn);
-
-      std::span r = L.domain(IntegralType::ridge, i, cell_type_idx);
-      mdspanx2_t ridges(r.data(), r.size() / 2, 2);
-      std::span r1 = L.domain_arg(IntegralType::ridge, 0, i, cell_type_idx);
-      mdspanx2_t ridges1(r1.data(), r1.size() / 2, 2);
-
-      auto& [coeffs, cstride] = coefficients.at({IntegralType::ridge, i});
-
-      assert(ridges.size() * cstride == coeffs.size());
-
-      if (bs == 1)
-      {
-        impl::assemble_exterior_entities<1>(
-            P0, b, x_dofmap, x, ridges, {dofs, bs, ridges1}, fn, constants,
-            md::mdspan(coeffs.data(), ridges.extent(0), cstride), cell_info0,
-            ridge_perms);
-      }
-      else if (bs == 3)
-      {
-        impl::assemble_exterior_entities<3>(
-            P0, b, x_dofmap, x, ridges, {dofs, bs, ridges1}, fn, constants,
-            md::mdspan(coeffs.data(), ridges.size() / 2, cstride), cell_info0,
-            ridge_perms);
-      }
-      else
-      {
-        impl::assemble_exterior_entities(
-            P0, b, x_dofmap, x, ridges, {dofs, bs, ridges1}, fn, constants,
-            md::mdspan(coeffs.data(), ridges.size() / 2, cstride), cell_info0,
-            ridge_perms);
+        auto fn = L.kernel(itg_type, i, 0);
+        assert(fn);
+        auto& [coeffs, cstride] = coefficients.at({itg_type, i});
+        std::span e = L.domain(itg_type, i, 0);
+        mdspanx2_t entities(e.data(), e.size() / 2, 2);
+        std::span e1 = L.domain_arg(itg_type, 0, i, 0);
+        mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
+        assert((entities.size() / 2) * cstride == coeffs.size());
+        if (bs == 1)
+        {
+          impl::assemble_exterior_entities<1>(
+              P0, b, x_dofmap, x, entities, {dofs, bs, entities1}, fn,
+              constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
+              cell_info0, perms);
+        }
+        else if (bs == 3)
+        {
+          impl::assemble_exterior_entities<3>(
+              P0, b, x_dofmap, x, entities, {dofs, bs, entities1}, fn,
+              constants,
+              md::mdspan(coeffs.data(), entities.size() / 2, cstride),
+              cell_info0, perms);
+        }
+        else
+        {
+          impl::assemble_exterior_entities(
+              P0, b, x_dofmap, x, entities, {dofs, bs, entities1}, fn,
+              constants,
+              md::mdspan(coeffs.data(), entities.size() / 2, cstride),
+              cell_info0, perms);
+        }
       }
     }
   }

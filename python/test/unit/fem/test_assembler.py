@@ -1996,6 +1996,7 @@ def test_ridge_integrals_rank0(cell_type, ghost_mode, dtype):
     assert np.isclose(J_sum, ref_sol, atol=tol, rtol=tol)
 
 
+@pytest.mark.parametrize("coefficient", [True, False])
 @pytest.mark.parametrize(
     "cell_type",
     [
@@ -2025,11 +2026,10 @@ def test_ridge_integrals_rank0(cell_type, ghost_mode, dtype):
         ),
     ],
 )
-def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype):
+def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype, coefficient):
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
-    msh = None
     N = 4
     msh = mesh.create_unit_cube(
         comm, N, N, N, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
@@ -2037,7 +2037,9 @@ def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype):
     gdim = msh.geometry.dim
 
     el = ("Lagrange", 3, (gdim,))
-    V = dolfinx.fem.functionspace(msh, el)
+
+    volume_element = basix.ufl.element(el[0], msh.basix_cell(), el[1], shape=el[2], dtype=rdtype)
+    V = dolfinx.fem.functionspace(msh, volume_element)
 
     x = ufl.SpatialCoordinate(msh)
     v = ufl.TestFunction(V)
@@ -2052,12 +2054,17 @@ def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype):
         msh, msh.topology.dim - 2, exterior_ridges, np.full_like(exterior_ridges, 33)
     )
 
-    def f(x):
-        return x[0] + ufl.sin(x[1]), x[2] + x[1], x[0] ** 2 - 3 * x[1]
+    def f(mod, x):
+        return x[0] + mod.sin(x[1]), x[2] + x[1], x[0] ** 2 - 3 * x[1]
 
     def integrand(x, v):
-        expr = ufl.as_vector(f(x))
-        return ufl.inner(expr, v)
+        if coefficient:
+            Z = dolfinx.fem.functionspace(v.ufl_function_space().mesh, ("Lagrange", 1, (gdim,)))
+            z = dolfinx.fem.Function(Z, dtype=dtype)
+            z.interpolate(lambda x: f(np, x))
+        else:
+            z = ufl.as_vector(f(ufl, x))
+        return ufl.inner(z, v)
 
     metadata = {"quadrature_degree": 10}
     dr = ufl.Measure("dr", domain=msh, subdomain_data=et, subdomain_id=33, metadata=metadata)
@@ -2083,7 +2090,9 @@ def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype):
         connectivity = np.zeros((0, 2), dtype=np.int64)
 
     c_el = ufl.Mesh(
-        basix.ufl.element("Lagrange", basix.CellType.interval, 1, shape=(nodes.shape[1],))
+        basix.ufl.element(
+            "Lagrange", basix.CellType.interval, 1, shape=(nodes.shape[1],), dtype=dtype
+        ),
     )
     line_mesh = dolfinx.mesh.create_mesh(
         MPI.COMM_WORLD,
@@ -2093,11 +2102,16 @@ def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype):
         partitioner=dolfinx.mesh.create_cell_partitioner(ghost_mode),
     )
 
-    Q = dolfinx.fem.functionspace(line_mesh, el)
+    line_element = basix.ufl.element(
+        el[0], line_mesh.basix_cell(), el[1], shape=el[2], dtype=rdtype
+    )
+    Q = dolfinx.fem.functionspace(line_mesh, line_element)
     q = ufl.TestFunction(Q)
 
     x_e = ufl.SpatialCoordinate(line_mesh)
-    F_ref = dolfinx.fem.form(integrand(x_e, q) * ufl.dx(domain=line_mesh, metadata=metadata))
+    F_ref = dolfinx.fem.form(
+        integrand(x_e, q) * ufl.dx(domain=line_mesh, metadata=metadata), dtype=dtype
+    )
     b_ref = dolfinx.fem.assemble_vector(F_ref)
     b_ref.scatter_reverse(la.InsertMode.add)
     b_ref.scatter_forward()
