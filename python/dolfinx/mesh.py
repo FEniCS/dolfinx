@@ -188,7 +188,6 @@ class Topology:
         """
         return self._cpp_object.get_ridge_permutations()
 
-
     def index_map(self, dim: int) -> _cpp.common.IndexMap:
         """Get the IndexMap that describes the parallel distribution of the
         mesh entities.
