@@ -731,7 +731,7 @@ void assemble_cells(
 /// @param[in,out] b The vector to accumulate into.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
 /// @param[in] x Mesh geometry (coordinates).
-/// @param[in] facets Facets (in the integration domain mesh) to execute
+/// @param[in] entities Entities (in the integration domain mesh) to execute
 /// the kernel over.
 /// @param[in] dofmap Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
