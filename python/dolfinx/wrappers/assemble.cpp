@@ -224,8 +224,7 @@ void declare_assembly_functions(nb::module_& m)
             c;
         std::ranges::transform(
             coefficients, std::back_inserter(c),
-            [](const auto& c) -> const dolfinx::fem::Function<T, U>&
-            { return *c; });
+            [](auto& c) -> const dolfinx::fem::Function<T, U>& { return *c; });
 
         if (entities.ndim() == 1)
         {
@@ -319,7 +318,7 @@ void declare_assembly_functions(nb::module_& m)
                         nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
              coefficients)
       {
-        return dolfinx::fem::assemble_scalar<T>(
+        return dolfinx::fem::assemble_scalar(
             M, std::span(constants.data(), constants.size()),
             dolfinx_wrappers::py_to_cpp_coeffs(coefficients));
       },
@@ -336,7 +335,7 @@ void declare_assembly_functions(nb::module_& m)
                         nb::ndarray<const T, nb::ndim<2>, nb::c_contig>>&
              coefficients)
       {
-        dolfinx::fem::assemble_vector<T>(
+        dolfinx::fem::assemble_vector(
             std::span(b.data(), b.size()), L,
             std::span(constants.data(), constants.size()),
             dolfinx_wrappers::py_to_cpp_coeffs(coefficients));
@@ -552,7 +551,7 @@ void declare_assembly_functions(nb::module_& m)
 
         std::vector<std::span<const T>> _x0;
         _x0.reserve(x0.size());
-        for (const auto& x : x0)
+        for (auto& x : x0)
           _x0.emplace_back(x.data(), x.size());
 
         std::vector<std::span<const T>> _constants;
@@ -567,8 +566,8 @@ void declare_assembly_functions(nb::module_& m)
             coeffs, std::back_inserter(_coeffs),
             [](auto& c) { return dolfinx_wrappers::py_to_cpp_coeffs(c); });
 
-        dolfinx::fem::apply_lifting<T>(std::span<T>(b.data(), b.size()), _a,
-                                       _constants, _coeffs, _bcs, _x0, alpha);
+        dolfinx::fem::apply_lifting(std::span<T>(b.data(), b.size()), _a,
+                                    _constants, _coeffs, _bcs, _x0, alpha);
       },
       nb::arg("b").noconvert(), nb::arg("a"), nb::arg("constants"),
       nb::arg("coeffs"), nb::arg("bcs1"), nb::arg("x0"), nb::arg("alpha"),

@@ -36,8 +36,8 @@ void sparsitybuild::interior_facets(
   const DofMap& dofmap0 = dofmaps[0];
   const DofMap& dofmap1 = dofmaps[1];
 
-  const std::size_t dmap0_size = dofmap0.cell_dofs(0).size();
-  const std::size_t dmap1_size = dofmap1.cell_dofs(0).size();
+  const std::size_t dmap0_size = dofmap0.map().extent(1);
+  const std::size_t dmap1_size = dofmap1.map().extent(1);
 
   // Iterate over facets
   std::vector<std::int32_t> macro_dofs0, macro_dofs1;

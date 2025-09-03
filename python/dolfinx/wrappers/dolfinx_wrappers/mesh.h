@@ -36,7 +36,7 @@ auto create_cell_partitioner_py(Functor&& p)
   {
     std::vector<std::span<const std::int64_t>> cells;
     std::ranges::transform(
-        cells_nb, std::back_inserter(cells), [](const auto& c)
+        cells_nb, std::back_inserter(cells), [](auto& c)
         { return std::span<const std::int64_t>(c.data(), c.size()); });
     return p(comm.get(), n, cell_types, cells);
   };

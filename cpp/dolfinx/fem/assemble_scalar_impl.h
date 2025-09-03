@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Garth N. Wells
+// Copyright (C) 2019-2025 Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -150,6 +150,43 @@ T assemble_interior_facets(
   return value;
 }
 
+/// Assemble functional over vertices
+template <dolfinx::scalar T>
+T assemble_vertices(mdspan2_t x_dofmap,
+                    md::mdspan<const scalar_value_t<T>,
+                               md::extents<std::size_t, md::dynamic_extent, 3>>
+                        x,
+                    md::mdspan<const std::int32_t,
+                               md::extents<std::size_t, md::dynamic_extent, 2>>
+                        vertices,
+                    FEkernel<T> auto fn, std::span<const T> constants,
+                    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs)
+{
+  T value(0);
+  if (vertices.empty())
+    return value;
+
+  // Create data structures used in assembly
+  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
+
+  // Iterate over all cells
+  for (std::size_t index = 0; index < vertices.extent(0); ++index)
+  {
+    std::int32_t cell = vertices(index, 0);
+    std::int32_t local_vertex_index = vertices(index, 1);
+
+    // Get cell coordinates/geometry
+    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
+    for (std::size_t i = 0; i < x_dofs.size(); ++i)
+      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs.begin(), 3 * i));
+
+    fn(&value, &coeffs(index, 0), constants.data(), cdofs.data(),
+       &local_vertex_index, nullptr, nullptr);
+  }
+
+  return value;
+}
+
 /// Assemble functional into an scalar with provided mesh geometry.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_scalar(
@@ -165,7 +202,7 @@ T assemble_scalar(
   assert(mesh);
 
   T value = 0;
-  for (int i : M.integral_ids(IntegralType::cell))
+  for (int i = 0; i < M.num_integrals(IntegralType::cell, 0); ++i)
   {
     auto fn = M.kernel(IntegralType::cell, i, 0);
     assert(fn);
@@ -190,7 +227,7 @@ T assemble_scalar(
                        num_facets_per_cell);
   }
 
-  for (int i : M.integral_ids(IntegralType::exterior_facet))
+  for (int i = 0; i < M.num_integrals(IntegralType::exterior_facet, 0); ++i)
   {
     auto fn = M.kernel(IntegralType::exterior_facet, i, 0);
     assert(fn);
@@ -198,34 +235,68 @@ T assemble_scalar(
         = coefficients.at({IntegralType::exterior_facet, i});
 
     std::span facets = M.domain(IntegralType::exterior_facet, i, 0);
+
+    constexpr std::size_t num_adjacent_cells = 1;
+    // Two values per each adj. cell (cell index and local facet index).
+    constexpr std::size_t shape1 = 2 * num_adjacent_cells;
+
     assert((facets.size() / 2) * cstride == coeffs.size());
     value += impl::assemble_exterior_facets(
         x_dofmap, x,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2>>(
-            facets.data(), facets.size() / 2, 2),
-        fn, constants, md::mdspan(coeffs.data(), facets.size() / 2, cstride),
-        perms);
+            facets.data(), facets.size() / shape1, 2),
+        fn, constants,
+        md::mdspan(coeffs.data(), facets.size() / shape1, cstride), perms);
   }
 
-  for (int i : M.integral_ids(IntegralType::interior_facet))
+  for (int i = 0; i < M.num_integrals(IntegralType::interior_facet, 0); ++i)
   {
     auto fn = M.kernel(IntegralType::interior_facet, i, 0);
     assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::interior_facet, i});
     std::span facets = M.domain(IntegralType::interior_facet, i, 0);
-    assert((facets.size() / 4) * 2 * cstride == coeffs.size());
+
+    constexpr std::size_t num_adjacent_cells = 2;
+    // Two values per each adj. cell (cell index and local facet index).
+    constexpr std::size_t shape1 = 2 * num_adjacent_cells;
+
+    assert((facets.size() / shape1) * 2 * cstride == coeffs.size());
     value += impl::assemble_interior_facets(
         x_dofmap, x,
         md::mdspan<const std::int32_t,
                    md::extents<std::size_t, md::dynamic_extent, 2, 2>>(
-            facets.data(), facets.size() / 4, 2, 2),
+            facets.data(), facets.size() / shape1, 2, 2),
         fn, constants,
         md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                         md::dynamic_extent>>(
-            coeffs.data(), facets.size() / 4, 2, cstride),
+            coeffs.data(), facets.size() / shape1, 2, cstride),
         perms);
+  }
+
+  for (int i = 0; i < M.num_integrals(IntegralType::vertex, 0); ++i)
+  {
+    auto fn = M.kernel(IntegralType::vertex, i, 0);
+    assert(fn);
+
+    auto& [coeffs, cstride] = coefficients.at({IntegralType::vertex, i});
+
+    std::span<const std::int32_t> vertices
+        = M.domain(IntegralType::vertex, i, 0);
+    assert(vertices.size() * cstride == coeffs.size());
+
+    constexpr std::size_t num_adjacent_cells = 1;
+    // Two values per adj. cell (cell index and local vertex index).
+    constexpr std::size_t shape1 = 2 * num_adjacent_cells;
+
+    value += impl::assemble_vertices(
+        x_dofmap, x,
+        md::mdspan<const std::int32_t,
+                   md::extents<std::size_t, md::dynamic_extent, 2>>(
+            vertices.data(), vertices.size() / shape1, shape1),
+        fn, constants,
+        md::mdspan(coeffs.data(), vertices.size() / shape1, cstride));
   }
 
   return value;

@@ -15,6 +15,7 @@
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <format>
 #include <numeric>
 #include <random>
 #include <set>
@@ -26,12 +27,12 @@ namespace
 {
 /// @brief Determine owner and sharing ranks sharing an index.
 ///
-/// @note Collective
-///
 /// Indices are sent to a 'post office' rank, which uses a
 /// (deterministic) random number generator to determine which rank is
 /// the 'owner'. This information is sent back to the ranks who sent the
 /// index to the post office.
+///
+/// @note Collective
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] indices Global indices to determine a an owning MPI ranks
@@ -825,7 +826,14 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
   if (_entity_types[dim].size() > 1)
     throw std::runtime_error(
         "Multiple index maps of this dimension. Call index_maps instead.");
-  return this->index_maps(dim).at(0);
+  auto im = index_maps(dim);
+  if (im.empty())
+  {
+    throw std::runtime_error(std::format(
+        "Missing IndexMap in Topology. Maybe you need to create_entities({}).",
+        dim));
+  }
+  return im.at(0);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
@@ -1465,6 +1473,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
 
   std::vector<std::vector<std::int32_t>> facet_pair_lists;
   for (std::size_t i = 0; i < cell_types.size(); ++i)
+  {
     for (std::size_t j = 0; j < cell_types.size(); ++j)
     {
       std::vector<std::int32_t> facet_pairs_ij;
@@ -1511,7 +1520,8 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
           {
             if (fci->num_links(k) == 1 and fcj->num_links(k) == 1)
             {
-              std::int32_t ci = fci->links(k)[0], cj = fcj->links(k)[0];
+              std::int32_t ci = fci->links(k)[0];
+              std::int32_t cj = fcj->links(k)[0];
               facet_pairs_ij.push_back(ci);
               facet_pairs_ij.push_back(local_facet(cfi, ci, k));
               facet_pairs_ij.push_back(cj);
@@ -1522,6 +1532,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
       }
       facet_pair_lists.push_back(facet_pairs_ij);
     }
+  }
 
   return facet_pair_lists;
 }

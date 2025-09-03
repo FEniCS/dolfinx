@@ -55,11 +55,12 @@ void declare_objects(nb::module_& m, const std::string& type)
           "array",
           [](dolfinx::la::Vector<T>& self)
           {
-            std::span<T> x = self.mutable_array();
-            return nb::ndarray<T, nb::numpy>(x.data(), {x.size()});
+            return nb::ndarray<T, nb::numpy>(self.array().data(),
+                                             {self.array().size()});
           },
           nb::rv_policy::reference_internal)
-      .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
+      .def("scatter_forward",
+           [](dolfinx::la::Vector<T>& self) { self.scatter_fwd(); })
       .def(
           "scatter_reverse",
           [](dolfinx::la::Vector<T>& self, PyInsertMode mode)
@@ -127,10 +128,6 @@ void declare_objects(nb::module_& m, const std::string& type)
                    "Block size not supported in this function");
              }
            })
-      .def("set_value",
-           static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
-               &dolfinx::la::MatrixCSR<T>::set),
-           nb::arg("x"))
       .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
       .def("mult", &dolfinx::la::MatrixCSR<T>::mult)
       .def("to_dense",

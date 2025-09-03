@@ -132,7 +132,7 @@ def test_read_write_higher_order_mesh(order):
 
     model = comm.bcast(model, root=rank)
     # Read in mesh with gmsh to create reference dat
-    ref_mesh = dolfinx.io.gmshio.model_to_mesh(gmsh.model, comm, rank).mesh
+    ref_mesh = dolfinx.io.gmsh.model_to_mesh(gmsh.model, comm, rank).mesh
     gmsh.finalize()
 
     ref_volume_form = dolfinx.fem.form(

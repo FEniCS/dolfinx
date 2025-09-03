@@ -46,7 +46,7 @@ test = [
       "matplotlib",
       "networkx",
       "pytest",
-      "scipy<1.16.0",             # pyamg not compatible
+      "scipy",
       "fenics-dolfinx[optional]",
 ]
 ci = [
