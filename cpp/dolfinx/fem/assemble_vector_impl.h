@@ -1273,21 +1273,24 @@ void assemble_vector(
       assert(cells.size() * cstride == coeffs.size());
       if (bs == 1)
       {
-        impl::assemble_cells(
-            P0, std::span(b), x_dofmap, x, cells, {dofs, BS<1>(), cells0}, fn, constants,
-            md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
+        impl::assemble_cells(P0, std::span(b), x_dofmap, x, cells,
+                             {dofs, BS<1>(), cells0}, fn, constants,
+                             md::mdspan(coeffs.data(), cells.size(), cstride),
+                             cell_info0);
       }
       else if (bs == 3)
       {
-        impl::assemble_cells(
-            P0, std::span(b), x_dofmap, x, cells, {dofs, BS<3>(), cells0}, fn, constants,
-            md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
+        impl::assemble_cells(P0, std::span(b), x_dofmap, x, cells,
+                             {dofs, BS<3>(), cells0}, fn, constants,
+                             md::mdspan(coeffs.data(), cells.size(), cstride),
+                             cell_info0);
       }
       else
       {
-        impl::assemble_cells(
-            P0, std::span(b), x_dofmap, x, cells, {dofs, bs, cells0}, fn, constants,
-            md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
+        impl::assemble_cells(P0, std::span(b), x_dofmap, x, cells,
+                             {dofs, bs, cells0}, fn, constants,
+                             md::mdspan(coeffs.data(), cells.size(), cstride),
+                             cell_info0);
       }
     }
 
@@ -1322,16 +1325,16 @@ void assemble_vector(
       if (bs == 1)
       {
         impl::assemble_exterior_facets<BS<1>>(
-            P0, std::span(b), x_dofmap, x, facets, {dofs, BS<1>(), facets1}, fn, constants,
-            md::mdspan(coeffs.data(), facets.extent(0), cstride), cell_info0,
-            perms);
+            P0, std::span(b), x_dofmap, x, facets, {dofs, BS<1>(), facets1}, fn,
+            constants, md::mdspan(coeffs.data(), facets.extent(0), cstride),
+            cell_info0, perms);
       }
       else if (bs == 3)
       {
         impl::assemble_exterior_facets<BS<3>>(
-            P0, std::span(b), x_dofmap, x, facets, {dofs, BS<3>(), facets1}, fn, constants,
-            md::mdspan(coeffs.data(), facets.size() / 2, cstride), cell_info0,
-            perms);
+            P0, std::span(b), x_dofmap, x, facets, {dofs, BS<3>(), facets1}, fn,
+            constants, md::mdspan(coeffs.data(), facets.size() / 2, cstride),
+            cell_info0, perms);
       }
       else
       {
