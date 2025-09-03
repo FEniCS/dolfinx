@@ -1274,19 +1274,19 @@ void assemble_vector(
       if (bs == 1)
       {
         impl::assemble_cells(
-            P0, b, x_dofmap, x, cells, {dofs, BS<1>(), cells0}, fn, constants,
+            P0, std::span(b), x_dofmap, x, cells, {dofs, BS<1>(), cells0}, fn, constants,
             md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
       }
       else if (bs == 3)
       {
         impl::assemble_cells(
-            P0, b, x_dofmap, x, cells, {dofs, BS<3>(), cells0}, fn, constants,
+            P0, std::span(b), x_dofmap, x, cells, {dofs, BS<3>(), cells0}, fn, constants,
             md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
       }
       else
       {
         impl::assemble_cells(
-            P0, b, x_dofmap, x, cells, {dofs, bs, cells0}, fn, constants,
+            P0, std::span(b), x_dofmap, x, cells, {dofs, bs, cells0}, fn, constants,
             md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
       }
     }
@@ -1322,14 +1322,14 @@ void assemble_vector(
       if (bs == 1)
       {
         impl::assemble_exterior_facets<BS<1>>(
-            P0, b, x_dofmap, x, facets, {dofs, BS<1>(), facets1}, fn, constants,
+            P0, std::span(b), x_dofmap, x, facets, {dofs, BS<1>(), facets1}, fn, constants,
             md::mdspan(coeffs.data(), facets.extent(0), cstride), cell_info0,
             perms);
       }
       else if (bs == 3)
       {
         impl::assemble_exterior_facets<BS<3>>(
-            P0, b, x_dofmap, x, facets, {dofs, BS<3>(), facets1}, fn, constants,
+            P0, std::span(b), x_dofmap, x, facets, {dofs, BS<3>(), facets1}, fn, constants,
             md::mdspan(coeffs.data(), facets.size() / 2, cstride), cell_info0,
             perms);
       }
@@ -1361,7 +1361,7 @@ void assemble_vector(
       if (bs == 1)
       {
         impl::assemble_interior_facets<BS<1>>(
-            P0, b, x_dofmap, x,
+            P0, std::span(b), x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
             {dofmap, BS<1>(),
              mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
@@ -1372,7 +1372,7 @@ void assemble_vector(
       else if (bs == 3)
       {
         impl::assemble_interior_facets<BS<3>>(
-            P0, b, x_dofmap, x,
+            P0, std::span(b), x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
             {dofmap, BS<3>(),
              mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
@@ -1383,7 +1383,7 @@ void assemble_vector(
       else
       {
         impl::assemble_interior_facets<int>(
-            P0, b, x_dofmap, x,
+            P0, std::span(b), x_dofmap, x,
             mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
             {dofmap, bs, mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
             fn, constants,
@@ -1408,7 +1408,7 @@ void assemble_vector(
       if (bs == 1)
       {
         impl::assemble_vertices<BS<1>>(
-            P0, b, x_dofmap, x,
+            P0, std::span(b), x_dofmap, x,
             md::mdspan<const std::int32_t,
                        md::extents<std::size_t, md::dynamic_extent, 2>>(
                 vertices.data(), vertices.size() / 2, 2),
@@ -1423,7 +1423,7 @@ void assemble_vector(
       else if (bs == 3)
       {
         impl::assemble_vertices<BS<3>>(
-            P0, b, x_dofmap, x,
+            P0, std::span(b), x_dofmap, x,
             md::mdspan<const std::int32_t,
                        md::extents<std::size_t, md::dynamic_extent, 2>>(
                 vertices.data(), vertices.size() / 2, 2),
@@ -1438,7 +1438,7 @@ void assemble_vector(
       else
       {
         impl::assemble_vertices<int>(
-            P0, b, x_dofmap, x,
+            P0, std::span(b), x_dofmap, x,
             md::mdspan<const std::int32_t,
                        md::extents<std::size_t, md::dynamic_extent, 2>>(
                 vertices.data(), vertices.size() / 2, 2),
