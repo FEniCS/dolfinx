@@ -1873,8 +1873,8 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     [
         mesh.CellType.triangle,
         mesh.CellType.quadrilateral,
-        #mesh.CellType.tetrahedron,
-        # # mesh.CellType.pyramid,
+        # mesh.CellType.tetrahedron,
+        # mesh.CellType.pyramid,
         # mesh.CellType.prism,
         # mesh.CellType.hexahedron,
     ],
@@ -1899,7 +1899,7 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
         ),
     ],
 )
-def test_ridge_integrals(cell_type, ghost_mode, dtype):
+def test_ridge_integrals_rank1(cell_type, ghost_mode, dtype):
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
@@ -1921,7 +1921,7 @@ def test_ridge_integrals(cell_type, ghost_mode, dtype):
     x = ufl.SpatialCoordinate(msh)
     u = ufl.TestFunction(V)
 
-    integrand = ufl.conj(u) * x[gdim -1]
+    integrand = ufl.conj(u) * x[gdim - 1]
     dr = ufl.Measure("dr", domain=msh)
     F = dolfinx.fem.form(integrand * dr, dtype=dtype)
     b = dolfinx.fem.assemble_vector(F)
@@ -1932,3 +1932,78 @@ def test_ridge_integrals(cell_type, ghost_mode, dtype):
         b_p = dolfinx.fem.assemble_vector(Fp)
         tol = np.finfo(rdtype).eps
         np.testing.assert_allclose(b.array, b_p.array, atol=tol, rtol=tol)
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        mesh.CellType.triangle,
+        mesh.CellType.quadrilateral,
+        mesh.CellType.tetrahedron,
+        # mesh.CellType.pyramid,
+        # mesh.CellType.prism,
+        mesh.CellType.hexahedron,
+    ],
+)
+@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+    ],
+)
+def test_ridge_integrals_rank0(cell_type, ghost_mode, dtype):
+    comm = MPI.COMM_WORLD
+    rdtype = np.real(dtype(0)).dtype
+
+    msh = None
+    cell_dim = mesh.cell_dim(cell_type)
+    if cell_dim == 2:
+        msh = mesh.create_unit_square(
+            comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+        )
+    elif cell_dim == 3:
+        msh = mesh.create_unit_cube(
+            comm, 4, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+        )
+    else:
+        raise RuntimeError("Bad dimension")
+    gdim = msh.geometry.dim
+
+    x = ufl.SpatialCoordinate(msh)
+
+    def marked_ridges(x):
+        return np.isclose(x[0], 1) & np.isclose(x[1], 0.5)
+
+    exterior_ridges = dolfinx.mesh.locate_entities_boundary(
+        msh, msh.topology.dim - 2, marked_ridges
+    )
+    et = dolfinx.mesh.meshtags(
+        msh, msh.topology.dim - 2, exterior_ridges, np.full_like(exterior_ridges, 33)
+    )
+    dr = ufl.Measure("dr", domain=msh, subdomain_data=et, subdomain_id=33)
+    integrand = x[0] + x[1] + x[gdim - 1] ** 2
+    J_compiled = dolfinx.fem.form(integrand * dr, dtype=dtype)
+    J = dolfinx.fem.assemble_scalar(J_compiled)
+    J_sum = msh.comm.allreduce(J, op=MPI.SUM)
+    if cell_dim == 2:
+        ref_sol = 1 + 1 / 2 + (1 / 2) ** 2
+    elif cell_dim == 3:
+        ref_sol = 1 + 1 / 2 + 1 / 3
+    else:
+        raise RuntimeError("Bad dimension")
+    tol = 50 * np.finfo(rdtype).eps
+    assert np.isclose(J_sum, ref_sol, atol=tol, rtol=tol)

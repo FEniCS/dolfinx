@@ -718,7 +718,8 @@ void assemble_cells(
   }
 }
 
-/// @brief Execute kernel over cells and accumulate result in vector.
+/// @brief Execute kernel over exterior entities and accumulate result in
+/// vector.
 ///
 /// @tparam T Scalar type.
 /// @tparam _bs The block size of the form test function dof map. If
