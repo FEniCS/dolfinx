@@ -154,6 +154,9 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   case IntegralType::vertex:
     dim = 0;
     break;
+  case IntegralType::ridge:
+    dim = tdim - 2;
+    break;
   default:
     throw std::runtime_error(
         "Cannot compute integration domains. Integral type not supported.");
@@ -253,9 +256,20 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     auto [v_to_c, c_to_v] = get_connectivities(0);
     for (auto vertex : entities)
     {
-      std::array<std::int32_t, 2> pair = impl::get_cell_vertex_pairs<1>(
+      std::array<std::int32_t, 2> pair = impl::get_cell_entity_pairs<1>(
           vertex, v_to_c->links(vertex), *c_to_v);
 
+      entity_data.insert(entity_data.end(), pair.begin(), pair.end());
+    }
+    break;
+  }
+  case IntegralType::ridge:
+  {
+    auto [r_to_c, c_to_r] = get_connectivities(tdim - 2);
+    for (auto entity : entities)
+    {
+      std::array<std::int32_t, 2> pair = impl::get_cell_entity_pairs<1>(
+          entity, r_to_c->links(entity), *c_to_r);
       entity_data.insert(entity_data.end(), pair.begin(), pair.end());
     }
   }

@@ -1273,7 +1273,8 @@ void fem(nb::module_& m)
              "exterior facet integral")
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet,
              "exterior facet integral")
-      .value("vertex", dolfinx::fem::IntegralType::vertex, "vertex integral");
+      .value("vertex", dolfinx::fem::IntegralType::vertex, "vertex integral")
+      .value("ridge", dolfinx::fem::IntegralType::ridge, "ridge integral");
 
   declare_function_space<float>(m, "float32");
   declare_function_space<double>(m, "float64");

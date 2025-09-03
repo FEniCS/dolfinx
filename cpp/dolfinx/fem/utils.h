@@ -92,17 +92,17 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
   return cell_local_facet_pairs;
 }
 
-/// Helper function to get an array of of (cell, local_vertex) pairs
-/// corresponding to a given vertex index.
-/// @note If the vertex is connected to multiple cells, the first one is picked.
-/// @param[in] v vertex index
-/// @param[in] cells List of cells incident to the vertex
-/// @param[in] c_to_v Cell to vertex connectivity
-/// @return Vector of (cell, local_vertex) pairs
+/// Helper function to get an array of of (cell, local_entity) pairs
+/// corresponding to a given entity index.
+/// @note If the entity is connected to multiple cells, the first one is picked.
+/// @param[in] e entity index
+/// @param[in] cells List of cells incident to the entity
+/// @param[in] c_to_e Cell to entity connectivity
+/// @return Vector of (cell, local_entity) pairs
 template <int num_cells>
 std::array<std::int32_t, 2 * num_cells>
-get_cell_vertex_pairs(std::int32_t v, std::span<const std::int32_t> cells,
-                      const graph::AdjacencyList<std::int32_t>& c_to_v)
+get_cell_entity_pairs(std::int32_t e, std::span<const std::int32_t> cells,
+                      const graph::AdjacencyList<std::int32_t>& c_to_e)
 {
   static_assert(num_cells == 1); // Patch assembly not supported.
 
@@ -111,11 +111,11 @@ get_cell_vertex_pairs(std::int32_t v, std::span<const std::int32_t> cells,
   // Use first cell for assembly over by default
   std::int32_t cell = cells[0];
 
-  // Find local index of vertex within cell
-  auto cell_vertices = c_to_v.links(cell);
-  auto it = std::ranges::find(cell_vertices, v);
-  assert(it != cell_vertices.end());
-  std::int32_t local_index = std::distance(cell_vertices.begin(), it);
+  // Find local index of entity within cell
+  auto cell_entities = c_to_e.links(cell);
+  auto it = std::ranges::find(cell_entities, e);
+  assert(it != cell_entities.end());
+  std::int32_t local_index = std::distance(cell_entities.begin(), it);
 
   return {cell, local_index};
 }
@@ -490,7 +490,7 @@ Form<T, U> create_form_factory(
   // integral offsets. Since the UFL forms for each type of cell should be
   // the same, I think this assumption is OK.
   const int* integral_offsets = ufcx_forms[0].get().form_integral_offsets;
-  std::array<int, 4> num_integrals_type;
+  std::array<int, 5> num_integrals_type;
   for (std::size_t i = 0; i < num_integrals_type.size(); ++i)
     num_integrals_type[i] = integral_offsets[i + 1] - integral_offsets[i];
 
@@ -508,6 +508,14 @@ Form<T, U> create_form_factory(
     mesh->topology_mutable()->create_entities(tdim - 1);
     mesh->topology_mutable()->create_connectivity(tdim - 1, tdim);
     mesh->topology_mutable()->create_connectivity(tdim, tdim - 1);
+  }
+
+  // Create ridges, if required
+  if (num_integrals_type[ridge] > 0)
+  {
+    mesh->topology_mutable()->create_entities(tdim - 2);
+    mesh->topology_mutable()->create_connectivity(tdim - 2, tdim);
+    mesh->topology_mutable()->create_connectivity(tdim, tdim - 2);
   }
 
   // Get list of integral IDs, and load tabulate tensor into memory for
@@ -800,7 +808,7 @@ Form<T, U> create_form_factory(
           cell_and_vertex.reserve(2 * vertices_range.size());
           for (std::int32_t vertex : vertices_range)
           {
-            std::array<std::int32_t, 2> pair = impl::get_cell_vertex_pairs<1>(
+            std::array<std::int32_t, 2> pair = impl::get_cell_entity_pairs<1>(
                 vertex, v_to_c->links(vertex), *c_to_v);
 
             cell_and_vertex.insert(cell_and_vertex.end(), pair.begin(),
@@ -828,6 +836,86 @@ Form<T, U> create_form_factory(
           if (it != sd->second.end() and it->first == id)
           {
             integrals.insert({{IntegralType::vertex, i, form_idx},
+                              {k,
+                               std::vector<std::int32_t>(it->second.begin(),
+                                                         it->second.end()),
+                               active_coeffs}});
+          }
+        }
+      }
+    }
+  }
+
+  // Attach ridge kernels
+  {
+    for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
+    {
+      const ufcx_form& form = ufcx_forms[form_idx];
+
+      std::span<const int> ids(form.form_integral_ids + integral_offsets[ridge],
+                               num_integrals_type[ridge]);
+      auto sd = subdomains.find(IntegralType::ridge);
+      for (int i = 0; i < num_integrals_type[ridge]; ++i)
+      {
+        const int id = ids[i];
+        ufcx_integral* integral
+            = form.form_integrals[integral_offsets[ridge] + i];
+        assert(integral);
+        check_geometry_hash(*integral, form_idx);
+
+        std::vector<int> active_coeffs;
+        for (int j = 0; j < form.num_coefficients; ++j)
+        {
+          if (integral->enabled_coefficients[j])
+            active_coeffs.push_back(j);
+        }
+
+        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+        assert(k);
+
+        // Build list of entities to assembler over
+        auto r_to_c = topology->connectivity(tdim - 2, tdim);
+        assert(r_to_c);
+        auto c_to_r = topology->connectivity(tdim, tdim - 2);
+        assert(c_to_r);
+
+        // pack for a range of vertices a flattened list of cell index c_i and
+        // local ridge index l_i:
+        //  [c_0, l_0, ..., c_n, l_n]
+        auto get_cells_and_ridges = [r_to_c, c_to_r](auto ridge_range)
+        {
+          std::vector<std::int32_t> cell_and_ridge;
+          cell_and_ridge.reserve(2 * ridge_range.size());
+          for (std::int32_t ridge : ridge_range)
+          {
+            std::array<std::int32_t, 2> pair = impl::get_cell_entity_pairs<1>(
+                ridge, r_to_c->links(ridge), *c_to_r);
+
+            cell_and_ridge.insert(cell_and_ridge.end(), pair.begin(),
+                                  pair.end());
+          }
+          assert(cell_and_ridge.size() == 2 * ridge_range.size());
+          return cell_and_ridge;
+        };
+
+        if (id == -1)
+        {
+          // Default ridge kernel operates on all (owned) ridges
+          std::int32_t num_ridges = topology->index_map(tdim - 2)->size_local();
+          std::vector<std::int32_t> cells_and_ridges
+              = get_cells_and_ridges(std::ranges::views::iota(0, num_ridges));
+
+          integrals.insert({{IntegralType::ridge, i, form_idx},
+                            {k, cells_and_ridges, active_coeffs}});
+        }
+        else if (sd != subdomains.end())
+        {
+          // NOTE: This requires that pairs are sorted
+          auto it = std::ranges::lower_bound(sd->second, id, std::less<>{},
+                                             [](auto& a) { return a.first; });
+          if (it != sd->second.end() and it->first == id)
+          {
+            integrals.insert({{IntegralType::ridge, i, form_idx},
                               {k,
                                std::vector<std::int32_t>(it->second.begin(),
                                                          it->second.end()),

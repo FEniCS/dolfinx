@@ -1866,3 +1866,69 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
     assert expected_value_l == pytest.approx(
         value_l.array[: expected_value_l.size], abs=5e4 * np.finfo(rdtype).eps
     )
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        mesh.CellType.triangle,
+        mesh.CellType.quadrilateral,
+        #mesh.CellType.tetrahedron,
+        # # mesh.CellType.pyramid,
+        # mesh.CellType.prism,
+        # mesh.CellType.hexahedron,
+    ],
+)
+@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+    ],
+)
+def test_ridge_integrals(cell_type, ghost_mode, dtype):
+    comm = MPI.COMM_WORLD
+    rdtype = np.real(dtype(0)).dtype
+
+    msh = None
+    cell_dim = mesh.cell_dim(cell_type)
+    if cell_dim == 2:
+        msh = mesh.create_unit_square(
+            comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+        )
+    elif cell_dim == 3:
+        msh = mesh.create_unit_cube(
+            comm, 4, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+        )
+    else:
+        raise RuntimeError("Bad dimension")
+    gdim = msh.geometry.dim
+    V = dolfinx.fem.functionspace(msh, ("Lagrange", 3))
+
+    x = ufl.SpatialCoordinate(msh)
+    u = ufl.TestFunction(V)
+
+    integrand = ufl.conj(u) * x[gdim -1]
+    dr = ufl.Measure("dr", domain=msh)
+    F = dolfinx.fem.form(integrand * dr, dtype=dtype)
+    b = dolfinx.fem.assemble_vector(F)
+
+    if cell_dim == 2:
+        dP = ufl.Measure("dP", domain=msh)
+        Fp = dolfinx.fem.form(integrand * dP, dtype=dtype)
+        b_p = dolfinx.fem.assemble_vector(Fp)
+        tol = np.finfo(rdtype).eps
+        np.testing.assert_allclose(b.array, b_p.array, atol=tol, rtol=tol)

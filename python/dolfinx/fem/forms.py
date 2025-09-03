@@ -169,6 +169,10 @@ def get_integration_domains(
                 subdomain._cpp_object.topology.create_connectivity(0, tdim)
                 subdomain._cpp_object.topology.create_connectivity(tdim, 0)
 
+            if integral_type is IntegralType.ridge:
+                tdim = subdomain.topology.dim
+                subdomain._cpp_object.topology.create_connectivity(tdim - 2, tdim)
+                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 2)
             # Compute integration domains only for each subdomain id in
             # the integrals. If a process has no integral entities,
             # insert an empty array.
@@ -219,6 +223,7 @@ _ufl_to_dolfinx_domain = {
     "exterior_facet": IntegralType.exterior_facet,
     "interior_facet": IntegralType.interior_facet,
     "vertex": IntegralType.vertex,
+    "ridge": IntegralType.ridge,
 }
 
 
