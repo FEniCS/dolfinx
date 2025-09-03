@@ -190,30 +190,6 @@ T assemble_scalar(
                              num_facets_per_cell);
   }
 
-  for (int i = 0; i < M.num_integrals(IntegralType::exterior_facet, 0); ++i)
-  {
-    auto fn = M.kernel(IntegralType::exterior_facet, i, 0);
-    assert(fn);
-    auto& [coeffs, cstride]
-        = coefficients.at({IntegralType::exterior_facet, i});
-
-    std::span facets = M.domain(IntegralType::exterior_facet, i, 0);
-
-    constexpr std::size_t num_adjacent_cells = 1;
-    // Two values per each adj. cell (cell index and local facet index).
-    constexpr std::size_t shape1 = 2 * num_adjacent_cells;
-
-    assert((facets.size() / 2) * cstride == coeffs.size());
-    value += impl::assemble_exterior_entities(
-        x_dofmap, x,
-        md::mdspan<const std::int32_t,
-                   md::extents<std::size_t, md::dynamic_extent, 2>>(
-            facets.data(), facets.size() / shape1, 2),
-        fn, constants,
-        md::mdspan(coeffs.data(), facets.size() / shape1, cstride),
-        facet_perms);
-  }
-
   for (int i = 0; i < M.num_integrals(IntegralType::interior_facet, 0); ++i)
   {
     auto fn = M.kernel(IntegralType::interior_facet, i, 0);
@@ -239,54 +215,37 @@ T assemble_scalar(
         facet_perms);
   }
 
-  md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> vertex_perms;
-  for (int i = 0; i < M.num_integrals(IntegralType::vertex, 0); ++i)
+  for (fem::IntegralType itg_type :
+       {fem::IntegralType::exterior_facet, fem::IntegralType::vertex,
+        fem::IntegralType::ridge})
   {
-    auto fn = M.kernel(IntegralType::vertex, i, 0);
-    assert(fn);
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
+    if (itg_type == fem::IntegralType::exterior_facet && !facet_perms.empty())
+      perms = facet_perms;
+    else
+      perms = md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>();
 
-    auto& [coeffs, cstride] = coefficients.at({IntegralType::vertex, i});
+    for (int i = 0; i < M.num_integrals(itg_type, 0); ++i)
+    {
+      auto fn = M.kernel(itg_type, i, 0);
+      assert(fn);
+      auto& [coeffs, cstride] = coefficients.at({itg_type, i});
 
-    std::span<const std::int32_t> vertices
-        = M.domain(IntegralType::vertex, i, 0);
-    assert(vertices.size() * cstride == coeffs.size());
+      std::span entities = M.domain(itg_type, i, 0);
 
-    constexpr std::size_t num_adjacent_cells = 1;
-    // Two values per adj. cell (cell index and local vertex index).
-    constexpr std::size_t shape1 = 2 * num_adjacent_cells;
+      constexpr std::size_t num_adjacent_cells = 1;
+      // Two values per each adj. cell (cell index and local entity index).
+      constexpr std::size_t shape1 = 2 * num_adjacent_cells;
 
-    value += impl::assemble_exterior_entities(
-        x_dofmap, x,
-        md::mdspan<const std::int32_t,
-                   md::extents<std::size_t, md::dynamic_extent, 2>>(
-            vertices.data(), vertices.size() / shape1, shape1),
-        fn, constants,
-        md::mdspan(coeffs.data(), vertices.size() / shape1, cstride),
-        vertex_perms);
-  }
-
-  md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> ridge_perms;
-  for (int i = 0; i < M.num_integrals(IntegralType::ridge, 0); ++i)
-  {
-    auto fn = M.kernel(IntegralType::ridge, i, 0);
-    assert(fn);
-
-    auto& [coeffs, cstride] = coefficients.at({IntegralType::ridge, i});
-
-    std::span<const std::int32_t> ridges = M.domain(IntegralType::ridge, i, 0);
-    assert(ridges.size() * cstride == coeffs.size());
-
-    constexpr std::size_t num_adjacent_cells = 1;
-    // Two values per adj. cell (cell index and local ridge index).
-    constexpr std::size_t shape1 = 2 * num_adjacent_cells;
-    value += impl::assemble_exterior_entities(
-        x_dofmap, x,
-        md::mdspan<const std::int32_t,
-                   md::extents<std::size_t, md::dynamic_extent, 2>>(
-            ridges.data(), ridges.size() / shape1, shape1),
-        fn, constants,
-        md::mdspan(coeffs.data(), ridges.size() / shape1, cstride),
-        ridge_perms);
+      assert((entities.size() / 2) * cstride == coeffs.size());
+      value += impl::assemble_exterior_entities(
+          x_dofmap, x,
+          md::mdspan<const std::int32_t,
+                     md::extents<std::size_t, md::dynamic_extent, 2>>(
+              entities.data(), entities.size() / shape1, 2),
+          fn, constants,
+          md::mdspan(coeffs.data(), entities.size() / shape1, cstride), perms);
+    }
   }
 
   return value;
