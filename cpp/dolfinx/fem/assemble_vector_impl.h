@@ -1354,10 +1354,14 @@ void assemble_vector(
           fem::IntegralType::ridge})
     {
       md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
-      if (itg_type == fem::IntegralType::exterior_facet && !facet_perms.empty())
+      switch (itg_type)
+      {
+      case fem::IntegralType::exterior_facet:
+      {
         perms = facet_perms;
-      else
-        perms = md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>();
+        break;
+      }
+      }
       for (int i = 0; i < L.num_integrals(itg_type, 0); ++i)
       {
         auto fn = L.kernel(itg_type, i, 0);
