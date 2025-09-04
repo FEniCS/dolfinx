@@ -39,7 +39,7 @@ class Form:
         _cpp.fem.Form_float32,
         _cpp.fem.Form_float64,
     ]
-    _code: typing.Optional[typing.Union[str, list[str]]]
+    _code: typing.Union[str, list[str]] | None
 
     def __init__(
         self,
@@ -50,8 +50,8 @@ class Form:
             _cpp.fem.Form_float64,
         ],
         ufcx_form=None,
-        code: typing.Optional[typing.Union[str, list[str]]] = None,
-        module: typing.Optional[typing.Union[types.ModuleType, list[types.ModuleType]]] = None,
+        code: typing.Union[str, list[str]] | None = None,
+        module: typing.Union[types.ModuleType, list[types.ModuleType]] | None = None,
     ):
         """A finite element form.
 
@@ -124,7 +124,7 @@ class Form:
 
 def get_integration_domains(
     integral_type: IntegralType,
-    subdomain: typing.Optional[typing.Union[MeshTags, list[tuple[int, np.ndarray]]]],
+    subdomain: typing.Union[MeshTags, list[tuple[int, np.ndarray]]] | None,
     subdomain_ids: list[int],
 ) -> list[tuple[int, np.ndarray]]:
     """Get integration domains from subdomain data.
@@ -225,9 +225,9 @@ _ufl_to_dolfinx_domain = {
 def mixed_topology_form(
     forms: Sequence[ufl.Form],
     dtype: npt.DTypeLike = default_scalar_type,
-    form_compiler_options: typing.Optional[dict] = None,
-    jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
 ):
     """
     Create a mixed-topology from from an array of Forms.
@@ -304,9 +304,9 @@ def mixed_topology_form(
 def form(
     form: typing.Union[ufl.Form, Sequence[ufl.Form], Sequence[Sequence[ufl.Form]]],
     dtype: npt.DTypeLike = default_scalar_type,
-    form_compiler_options: typing.Optional[dict] = None,
-    jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
 ):
     """Create a Form or list of Forms.
 
@@ -514,8 +514,8 @@ class CompiledForm:
 def compile_form(
     comm: MPI.Intracomm,
     form: ufl.Form,
-    form_compiler_options: typing.Optional[dict] = {"scalar_type": default_scalar_type},
-    jit_options: typing.Optional[dict] = None,
+    form_compiler_options: dict | None = {"scalar_type": default_scalar_type},
+    jit_options: dict | None = None,
 ) -> CompiledForm:
     """Compile UFL form without associated DOLFINx data.
 
@@ -572,7 +572,7 @@ def create_form(
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Coefficient, Function],
     constant_map: dict[ufl.Constant, Constant],
-    entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
 ) -> Form:
     """Create a Form object from a data-independent compiled form.
 
@@ -650,7 +650,7 @@ def create_form(
 def derivative_block(
     F: typing.Union[ufl.Form, Sequence[ufl.Form]],
     u: typing.Union[Function, Sequence[Function]],
-    du: typing.Optional[typing.Union[ufl.Argument, Sequence[ufl.Argument]]] = None,
+    du: typing.Union[ufl.Argument, Sequence[ufl.Argument]] | None = None,
 ) -> typing.Union[ufl.Form, Sequence[Sequence[ufl.Form]]]:
     """Return the UFL derivative of a (list of) UFL rank one form(s).
 

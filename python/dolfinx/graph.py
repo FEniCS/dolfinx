@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Union
 
 import numpy as np
 import numpy.typing as npt
@@ -118,7 +118,7 @@ class AdjacencyList:
 
 
 def adjacencylist(
-    data: npt.NDArray[Union[np.int32, np.int64]], offsets: Optional[npt.NDArray[np.int32]] = None
+    data: npt.NDArray[Union[np.int32, np.int64]], offsets: npt.NDArray[np.int32] | None = None
 ) -> AdjacencyList:
     """Create an :class:`AdjacencyList` for `int32` or `int64` datasets.
 
