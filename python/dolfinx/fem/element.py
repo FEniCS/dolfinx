@@ -5,7 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Finite elements."""
 
-import typing
 from functools import singledispatch
 
 import numpy as np

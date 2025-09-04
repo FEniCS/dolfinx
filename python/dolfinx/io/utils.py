@@ -6,7 +6,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data and post-processing file output."""
 
-import typing
 from pathlib import Path
 
 from mpi4py import MPI as _MPI

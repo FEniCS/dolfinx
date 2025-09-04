@@ -10,7 +10,7 @@ from __future__ import annotations
 import collections
 import types
 import typing
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from mpi4py import MPI

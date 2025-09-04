@@ -10,7 +10,6 @@ via modification of linear systems."""
 from __future__ import annotations
 
 import numbers
-import typing
 from collections.abc import Callable, Iterable
 
 import numpy as np

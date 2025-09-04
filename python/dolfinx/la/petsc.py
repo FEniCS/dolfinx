@@ -14,7 +14,6 @@ Note:
 """
 
 import functools
-import typing
 from collections.abc import Sequence
 
 from petsc4py import PETSc
