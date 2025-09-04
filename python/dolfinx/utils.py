@@ -217,8 +217,8 @@ class cffi_utils:
         from dolfinx.log import LogLevel, log
 
         log(
-            "Could not import numba, so cffi/numba complex types were not registered.",
             LogLevel.INFO,
+            "Could not import numba, so cffi/numba complex types were not registered.",
         )
 
     try:
@@ -264,6 +264,6 @@ class cffi_utils:
         from dolfinx.log import LogLevel, log
 
         log(
-            "Could not import petsc4py, so cffi/PETSc ABI mode interface was not created.",
             LogLevel.INFO,
+            "Could not import petsc4py, so cffi/PETSc ABI mode interface was not created.",
         )
