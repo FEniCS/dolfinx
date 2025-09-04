@@ -22,7 +22,7 @@ from dolfinx.fem.function import Constant, Function, FunctionSpace
 
 
 def locate_dofs_geometrical(
-    V: typing.Union[dolfinx.fem.FunctionSpace, Iterable[dolfinx.fem.FunctionSpace]],
+    V: dolfinx.fem.FunctionSpace | Iterable[dolfinx.fem.FunctionSpace],
     marker: Callable,
 ) -> np.ndarray:
     """Locate degrees-of-freedom geometrically using a marker function.
@@ -54,7 +54,7 @@ def locate_dofs_geometrical(
 
 
 def locate_dofs_topological(
-    V: typing.Union[dolfinx.fem.FunctionSpace, Iterable[dolfinx.fem.FunctionSpace]],
+    V: dolfinx.fem.FunctionSpace | Iterable[dolfinx.fem.FunctionSpace],
     entity_dim: int,
     entities: npt.NDArray[np.int32],
     remote: bool = True,
@@ -90,12 +90,12 @@ def locate_dofs_topological(
 
 
 class DirichletBC:
-    _cpp_object: typing.Union[
-        _cpp.fem.DirichletBC_complex64,
-        _cpp.fem.DirichletBC_complex128,
-        _cpp.fem.DirichletBC_float32,
-        _cpp.fem.DirichletBC_float64,
-    ]
+    _cpp_object: (
+        _cpp.fem.DirichletBC_complex64
+        | _cpp.fem.DirichletBC_complex128
+        | _cpp.fem.DirichletBC_float32
+        | _cpp.fem.DirichletBC_float64
+    )
 
     def __init__(self, bc):
         """Representation of Dirichlet boundary condition which is imposed
@@ -122,7 +122,7 @@ class DirichletBC:
         self._cpp_object = bc
 
     @property
-    def g(self) -> typing.Union[Function, Constant, np.ndarray]:
+    def g(self) -> Function | Constant | np.ndarray:
         """The boundary condition value(s)"""
         return self._cpp_object.value
 
@@ -176,7 +176,7 @@ class DirichletBC:
 
 
 def dirichletbc(
-    value: typing.Union[Function, Constant, np.ndarray],
+    value: Function | Constant | np.ndarray,
     dofs: npt.NDArray[np.int32],
     V: dolfinx.fem.FunctionSpace | None = None,
 ) -> DirichletBC:
@@ -237,7 +237,7 @@ def dirichletbc(
 
 
 def bcs_by_block(
-    spaces: Iterable[typing.Union[FunctionSpace, None]], bcs: Iterable[DirichletBC]
+    spaces: Iterable[FunctionSpace | None], bcs: Iterable[DirichletBC]
 ) -> list[list[DirichletBC]]:
     """Arrange Dirichlet boundary conditions by the function space that
     they constrain.

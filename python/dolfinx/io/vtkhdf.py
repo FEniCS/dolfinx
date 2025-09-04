@@ -25,7 +25,7 @@ from dolfinx.mesh import Mesh
 
 def read_mesh(
     comm: _MPI.Comm,
-    filename: typing.Union[str, Path],
+    filename: str | Path,
     dtype: npt.DTypeLike = np.float64,
     gdim: int = 3,
 ):
@@ -58,7 +58,7 @@ def read_mesh(
     return Mesh(mesh_cpp, domain)
 
 
-def write_mesh(filename: typing.Union[str, Path], mesh: Mesh):
+def write_mesh(filename: str | Path, mesh: Mesh):
     """Write a mesh to file in VTKHDF format
 
     Args:
@@ -68,7 +68,7 @@ def write_mesh(filename: typing.Union[str, Path], mesh: Mesh):
     write_vtkhdf_mesh(filename, mesh._cpp_object)
 
 
-def write_point_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.NDArray, time: float):
+def write_point_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float):
     """Write data at vertices of the mesh.
 
     Args:
@@ -80,7 +80,7 @@ def write_point_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.ND
     write_vtkhdf_data("Point", filename, mesh._cpp_object, data, time)
 
 
-def write_cell_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.NDArray, time: float):
+def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float):
     """Write data at cells of the mesh.
 
     Args:

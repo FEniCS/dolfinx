@@ -30,17 +30,17 @@ if typing.TYPE_CHECKING:
 
 
 class Constant(ufl.Constant):
-    _cpp_object: typing.Union[
-        _cpp.fem.Constant_complex64,
-        _cpp.fem.Constant_complex128,
-        _cpp.fem.Constant_float32,
-        _cpp.fem.Constant_float64,
-    ]
+    _cpp_object: (
+        _cpp.fem.Constant_complex64
+        | _cpp.fem.Constant_complex128
+        | _cpp.fem.Constant_float32
+        | _cpp.fem.Constant_float64
+    )
 
     def __init__(
         self,
         domain,
-        c: typing.Union[float, np.floating, complex, np.complexfloating, Sequence, np.ndarray],
+        c: float | np.floating | complex | np.complexfloating | Sequence | np.ndarray,
     ):
         """A constant with respect to a domain.
 
@@ -299,12 +299,12 @@ class Function(ufl.Coefficient):
     (domain, element and dofmap) and a vector holding the
     degrees-of-freedom."""
 
-    _cpp_object: typing.Union[
-        _cpp.fem.Function_complex64,
-        _cpp.fem.Function_complex128,
-        _cpp.fem.Function_float32,
-        _cpp.fem.Function_float64,
-    ]
+    _cpp_object: (
+        _cpp.fem.Function_complex64
+        | _cpp.fem.Function_complex128
+        | _cpp.fem.Function_float32
+        | _cpp.fem.Function_float64
+    )
 
     def __init__(
         self,
@@ -428,7 +428,7 @@ class Function(ufl.Coefficient):
 
     def interpolate(
         self,
-        u0: typing.Union[Callable, Expression, Function],
+        u0: Callable | Expression | Function,
         cells0: np.ndarray | None = None,
         cells1: np.ndarray | None = None,
     ) -> None:
@@ -580,13 +580,13 @@ class ElementMetaData(typing.NamedTuple):
 
 def functionspace(
     mesh: Mesh,
-    element: typing.Union[
-        ufl.finiteelement.AbstractFiniteElement,
-        ElementMetaData,
-        tuple[str, int],
-        tuple[str, int, tuple],
-        tuple[str, int, tuple, bool],
-    ],
+    element: (
+        ufl.finiteelement.AbstractFiniteElement
+        | ElementMetaData
+        | tuple[str, int]
+        | tuple[str, int, tuple]
+        | tuple[str, int, tuple, bool]
+    ),
 ) -> FunctionSpace:
     """Create a finite element function space.
 
@@ -634,14 +634,14 @@ def functionspace(
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
-    _cpp_object: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64]
+    _cpp_object: _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
     _mesh: Mesh
 
     def __init__(
         self,
         mesh: Mesh,
         element: ufl.finiteelement.AbstractFiniteElement,
-        cppV: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64],
+        cppV: (_cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64),
     ):
         """Create a finite element function space.
 
