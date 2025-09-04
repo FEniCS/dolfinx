@@ -14,7 +14,6 @@ Note:
 """
 
 import functools
-import typing
 from collections.abc import Sequence
 
 from petsc4py import PETSc
@@ -89,7 +88,7 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
 
 @functools.singledispatch
 def assign(
-    x0: typing.Union[npt.NDArray[np.inexact], Sequence[npt.NDArray[np.inexact]]],
+    x0: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
     x1: PETSc.Vec,  # type: ignore[name-defined]
 ):
     """Assign ``x0`` values to a PETSc vector ``x1``.
@@ -137,14 +136,13 @@ def assign(
 @assign.register
 def _(
     x0: PETSc.Vec,  # type: ignore[name-defined]
-    x1: typing.Union[npt.NDArray[np.inexact], Sequence[npt.NDArray[np.inexact]]],
+    x1: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
 ):
     """Assign PETSc vector ``x0`` values to (blocked) array(s) ``x1``.
 
     This function performs the reverse of the assignment performed by
-    the version of :func:`.assign(x0:
-    typing.Union[npt.NDArray[np.inexact],
-    list[npt.NDArray[np.inexact]]], x1: PETSc.Vec)`.
+    the version of :func:`.assign(x0: (npt.NDArray[np.inexact] |
+    list[npt.NDArray[np.inexact]]), x1: PETSc.Vec)`.
 
     Args:
         x0: Vector that will have its values assigned to ``x1``.
