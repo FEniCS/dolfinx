@@ -140,7 +140,7 @@ void graph(nb::module_& m)
   declare_adjacency_list_init<std::int64_t, std::nullptr_t>(m, "int64");
   declare_adjacency_list<std::tuple<int, std::size_t, std::int8_t>,
                          std::pair<std::int32_t, std::int32_t>>(
-      m, "AdjacencyList_int_sizet_int8__int32_int32");
+      m, "int_sizet_int8__int32_int32");
 
   using partition_fn
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
