@@ -229,9 +229,9 @@ void _lift_bc_cells(
 /// @param[in,out] b Vector to modify.
 /// @param[in] x_dofmap Degree-of-freedom map for the mesh geometry.
 /// @param[in] x Mesh geometry (coordinates).
-/// @param[in] kernel Kernel function to execute over each facet.
-/// @param[in] facets Facets to execute the kernel over, where for the
-/// `i`th facet `facets(i, 0)` is the attached cell and `facets(i, 1)`
+/// @param[in] kernel Kernel function to execute over each entity.
+/// @param[in] entities Entities to execute the kernel over, where for the
+/// `i`th entity `enities(i, 0)` is the attached cell and `entities(i, 1)`
 /// is the local index of the facet relative to the cell.
 /// @param[in] dofmap0 Test function (row) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap
@@ -263,7 +263,7 @@ void _lift_bc_cells(
 template <typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
-void _lift_bc_exterior_facets(
+void _lift_bc_exterior_entities(
     V&& b, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
@@ -271,7 +271,7 @@ void _lift_bc_exterior_facets(
     FEkernel<T> auto kernel,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2>>
-        facets,
+        entities,
     std::tuple<mdspan2_t, int,
                md::mdspan<const std::int32_t,
                           md::extents<std::size_t, md::dynamic_extent, 2>>>
@@ -288,11 +288,11 @@ void _lift_bc_exterior_facets(
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
 {
-  if (facets.empty())
+  if (entities.empty())
     return;
 
-  const auto [dmap0, bs0, facets0] = dofmap0;
-  const auto [dmap1, bs1, facets1] = dofmap1;
+  const auto [dmap0, bs0, entities0] = dofmap0;
+  const auto [dmap1, bs1, entities1] = dofmap1;
 
   const int num_rows = bs0 * dmap0.extent(1);
   const int num_cols = bs1 * dmap1.extent(1);
@@ -300,18 +300,18 @@ void _lift_bc_exterior_facets(
   // Data structures used in bc application
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   std::vector<T> Ae(num_rows * num_cols), be(num_rows);
-  assert(facets0.size() == facets.size());
-  assert(facets1.size() == facets.size());
-  for (std::size_t index = 0; index < facets.extent(0); ++index)
+  assert(entities0.size() == entities.size());
+  assert(entities1.size() == entities.size());
+  for (std::size_t index = 0; index < entities.extent(0); ++index)
   {
     // Cell in integration domain, test function and trial function
     // meshes
-    std::int32_t cell = facets(index, 0);
-    std::int32_t cell0 = facets0(index, 0);
-    std::int32_t cell1 = facets1(index, 0);
+    std::int32_t cell = entities(index, 0);
+    std::int32_t cell0 = entities0(index, 0);
+    std::int32_t cell1 = entities1(index, 0);
 
-    // Local facet index
-    std::int32_t local_facet = facets(index, 1);
+    // Local entity index
+    std::int32_t local_entity = entities(index, 1);
 
     // Get dof maps for cell
     auto dofs1 = md::submdspan(dmap1, cell1, md::full_extent);
@@ -342,10 +342,10 @@ void _lift_bc_exterior_facets(
     auto dofs0 = md::submdspan(dmap0, cell0, md::full_extent);
 
     // Permutations
-    std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_facet);
+    std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), &coeffs(index, 0), constants.data(), cdofs.data(),
-           &local_facet, &perm, nullptr);
+           &local_entity, &perm, nullptr);
     P0(Ae, cell_info0, cell0, num_cols);
     P1T(Ae, cell_info1, cell1, num_rows);
 
@@ -1045,7 +1045,7 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
     }
   }
 
-  md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
+  md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
   if (a.needs_facet_permutations())
   {
     mesh::CellType cell_type = mesh->topology()->cell_type();
@@ -1054,32 +1054,8 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
     mesh->topology_mutable()->create_entity_permutations();
     const std::vector<std::uint8_t>& p
         = mesh->topology()->get_facet_permutations();
-    perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
-                       num_facets_per_cell);
-  }
-
-  for (int i = 0; i < a.num_integrals(IntegralType::exterior_facet, 0); ++i)
-  {
-    auto kernel = a.kernel(IntegralType::exterior_facet, i, 0);
-    assert(kernel);
-    auto& [coeffs, cstride]
-        = coefficients.at({IntegralType::exterior_facet, i});
-
-    using mdspanx2_t
-        = md::mdspan<const std::int32_t,
-                     md::extents<std::size_t, md::dynamic_extent, 2>>;
-    std::span f = a.domain(IntegralType::exterior_facet, i, 0);
-    mdspanx2_t facets(f.data(), f.size() / 2, 2);
-    std::span f0 = a.domain_arg(IntegralType::exterior_facet, 0, i, 0);
-    mdspanx2_t facets0(f0.data(), f0.size() / 2, 2);
-    std::span f1 = a.domain_arg(IntegralType::exterior_facet, 1, i, 0);
-    mdspanx2_t facets1(f1.data(), f1.size() / 2, 2);
-    assert(coeffs.size() == facets.extent(0) * cstride);
-    _lift_bc_exterior_facets(
-        b, x_dofmap, x, kernel, facets, {dofmap0, bs0, facets0}, P0,
-        {dofmap1, bs1, facets1}, P1T, constants,
-        md::mdspan(coeffs.data(), facets.extent(0), cstride), cell_info0,
-        cell_info1, bc_values1, bc_markers1, x0, alpha, perms);
+    facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
+                             num_facets_per_cell);
   }
 
   for (int i = 0; i < a.num_integrals(IntegralType::interior_facet, 0); ++i)
@@ -1105,7 +1081,47 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
         b, x_dofmap, x, kernel, facets, {dofmap0, bs0, facets0}, P0,
         {dofmap1, bs1, facets1}, P1T, constants,
         mdspanx2x_t(coeffs.data(), facets.extent(0), 2, cstride), cell_info0,
-        cell_info1, bc_values1, bc_markers1, x0, alpha, perms);
+        cell_info1, bc_values1, bc_markers1, x0, alpha, facet_perms);
+  }
+
+  for (fem::IntegralType itg_type :
+       {fem::IntegralType::exterior_facet, fem::IntegralType::vertex,
+        fem::IntegralType::ridge})
+  {
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
+    switch (itg_type)
+    {
+    case fem::IntegralType::exterior_facet:
+    {
+      perms = facet_perms;
+      break;
+    }
+    default:
+      break;
+    }
+
+    for (int i = 0; i < a.num_integrals(itg_type, 0); ++i)
+    {
+      auto kernel = a.kernel(itg_type, i, 0);
+      assert(kernel);
+      auto& [coeffs, cstride] = coefficients.at({itg_type, i});
+
+      using mdspanx2_t
+          = md::mdspan<const std::int32_t,
+                       md::extents<std::size_t, md::dynamic_extent, 2>>;
+      std::span e = a.domain(itg_type, i, 0);
+      mdspanx2_t entities(e.data(), e.size() / 2, 2);
+      std::span e0 = a.domain_arg(itg_type, 0, i, 0);
+      mdspanx2_t entities0(e0.data(), e0.size() / 2, 2);
+      std::span e1 = a.domain_arg(itg_type, 1, i, 0);
+      mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
+      assert(coeffs.size() == entities.extent(0) * cstride);
+      _lift_bc_exterior_entities(
+          b, x_dofmap, x, kernel, entities, {dofmap0, bs0, entities0}, P0,
+          {dofmap1, bs1, entities1}, P1T, constants,
+          md::mdspan(coeffs.data(), entities.extent(0), cstride), cell_info0,
+          cell_info1, bc_values1, bc_markers1, x0, alpha, perms);
+    }
   }
 }
 
