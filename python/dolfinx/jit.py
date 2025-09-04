@@ -10,7 +10,6 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 from mpi4py import MPI
 
@@ -123,7 +122,7 @@ def _load_options():
     return (user_options, pwd_options)
 
 
-def get_options(priority_options: Optional[dict] = None) -> dict:
+def get_options(priority_options: dict | None = None) -> dict:
     """Return a copy of the merged JIT option values for DOLFINx.
 
     Args:
@@ -156,7 +155,7 @@ def get_options(priority_options: Optional[dict] = None) -> dict:
 
 @mpi_jit_decorator
 def ffcx_jit(
-    ufl_object, form_compiler_options: Optional[dict] = None, jit_options: Optional[dict] = None
+    ufl_object, form_compiler_options: dict | None = None, jit_options: dict | None = None
 ):
     """Compile UFL object with FFCx and CFFI.
 

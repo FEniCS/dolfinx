@@ -13,7 +13,7 @@ name = "fenics-dolfinx"
 version = "0.10.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
-requires-python = ">=3.9.0"
+requires-python = ">=3.10.0"
 license = { file = "../COPYING.LESSER" }
 authors = [
       { email = "fenics-steering-council@googlegroups.com" },
@@ -111,7 +111,6 @@ select = [
 ignore = [
       "UP007",
       "RUF012",
-      "UP045",  # Ractivate once Python 3.9 EoL
 ]
 allowed-confusables = ["σ"]
 

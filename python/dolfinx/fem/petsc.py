@@ -82,9 +82,7 @@ __all__ = [
 # -- Vector instantiation -------------------------------------------------
 
 
-def create_vector(
-    L: typing.Union[Form, Sequence[Form]], kind: typing.Optional[str] = None
-) -> PETSc.Vec:  # type: ignore[name-defined]
+def create_vector(L: typing.Union[Form, Sequence[Form]], kind: str | None = None) -> PETSc.Vec:  # type: ignore[name-defined]
     """Create a PETSc vector that is compatible with a linear form(s).
 
     Three cases are supported:
@@ -168,7 +166,7 @@ def create_vector(
 
 def create_matrix(
     a: typing.Union[Form, Sequence[Sequence[Form]]],
-    kind: typing.Optional[typing.Union[str, Sequence[Sequence[str]]]] = None,
+    kind: typing.Union[str, Sequence[Sequence[str]]] | None = None,
 ) -> PETSc.Mat:  # type: ignore[name-defined]
     """Create a PETSc matrix that is compatible with the (sequence) of
     bilinear form(s).
@@ -221,14 +219,13 @@ def create_matrix(
 @functools.singledispatch
 def assemble_vector(
     L: typing.Union[Form, Sequence[Form]],
-    constants: typing.Optional[typing.Union[npt.NDArray, Sequence[npt.NDArray]]] = None,
-    coeffs: typing.Optional[
-        typing.Union[
-            dict[tuple[IntegralType, int], npt.NDArray],
-            Sequence[dict[tuple[IntegralType, int], npt.NDArray]],
-        ]
-    ] = None,
-    kind: typing.Optional[str] = None,
+    constants: typing.Union[npt.NDArray, Sequence[npt.NDArray]] | None = None,
+    coeffs: typing.Union[
+        dict[tuple[IntegralType, int], npt.NDArray],
+        Sequence[dict[tuple[IntegralType, int], npt.NDArray]],
+    ]
+    | None = None,
+    kind: str | None = None,
 ) -> PETSc.Vec:  # type: ignore[name-defined]
     """Assemble linear form(s) into a new PETSc vector.
 
@@ -286,13 +283,12 @@ def assemble_vector(
 def _(
     b: PETSc.Vec,  # type: ignore[name-defined]
     L: typing.Union[Form, Sequence[Form]],
-    constants: typing.Optional[typing.Union[npt.NDArray, Sequence[npt.NDArray]]] = None,
-    coeffs: typing.Optional[
-        typing.Union[
-            dict[tuple[IntegralType, int], npt.NDArray],
-            Sequence[dict[tuple[IntegralType, int], npt.NDArray]],
-        ]
-    ] = None,
+    constants: typing.Union[npt.NDArray, Sequence[npt.NDArray]] | None = None,
+    coeffs: typing.Union[
+        dict[tuple[IntegralType, int], npt.NDArray],
+        Sequence[dict[tuple[IntegralType, int], npt.NDArray]],
+    ]
+    | None = None,
 ) -> PETSc.Vec:  # type: ignore[name-defined]
     """Assemble linear form(s) into a PETSc vector.
 
@@ -356,17 +352,14 @@ def _(
 @functools.singledispatch
 def assemble_matrix(
     a: typing.Union[Form, Sequence[Sequence[Form]]],
-    bcs: typing.Optional[Sequence[DirichletBC]] = None,
+    bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1,
-    constants: typing.Optional[
-        typing.Union[Sequence[npt.NDArray], Sequence[Sequence[npt.NDArray]]]
-    ] = None,
-    coeffs: typing.Optional[
-        typing.Union[
-            dict[tuple[IntegralType, int], npt.NDArray],
-            Sequence[dict[tuple[IntegralType, int], npt.NDArray]],
-        ]
-    ] = None,
+    constants: typing.Union[Sequence[npt.NDArray], Sequence[Sequence[npt.NDArray]]] | None = None,
+    coeffs: typing.Union[
+        dict[tuple[IntegralType, int], npt.NDArray],
+        Sequence[dict[tuple[IntegralType, int], npt.NDArray]],
+    ]
+    | None = None,
     kind=None,
 ):
     """Assemble a bilinear form into a matrix.
@@ -427,15 +420,14 @@ def assemble_matrix(
 def _(
     A: PETSc.Mat,  # type: ignore[name-defined]
     a: typing.Union[Form, Sequence[Sequence[Form]]],
-    bcs: typing.Optional[Sequence[DirichletBC]] = None,
+    bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1,
-    constants: typing.Optional[typing.Union[npt.NDArray, Sequence[Sequence[npt.NDArray]]]] = None,
-    coeffs: typing.Optional[
-        typing.Union[
-            dict[tuple[IntegralType, int], npt.NDArray],
-            Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]],
-        ]
-    ] = None,
+    constants: typing.Union[npt.NDArray, Sequence[Sequence[npt.NDArray]]] | None = None,
+    coeffs: typing.Union[
+        dict[tuple[IntegralType, int], npt.NDArray],
+        Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]],
+    ]
+    | None = None,
 ) -> PETSc.Mat:  # type: ignore[name-defined]
     """Assemble bilinear form into a matrix.
 
@@ -539,18 +531,15 @@ def _(
 def apply_lifting(
     b: PETSc.Vec,  # type: ignore[name-defined]
     a: typing.Union[Sequence[Form], Sequence[Sequence[Form]]],
-    bcs: typing.Optional[typing.Union[Sequence[DirichletBC], Sequence[Sequence[DirichletBC]]]],
-    x0: typing.Optional[Sequence[PETSc.Vec]] = None,  # type: ignore[name-defined]
+    bcs: typing.Union[Sequence[DirichletBC], Sequence[Sequence[DirichletBC]]] | None,
+    x0: Sequence[PETSc.Vec] | None = None,  # type: ignore[name-defined]
     alpha: float = 1,
-    constants: typing.Optional[
-        typing.Union[Sequence[npt.NDArray], Sequence[Sequence[npt.NDArray]]]
-    ] = None,
-    coeffs: typing.Optional[
-        typing.Union[
-            dict[tuple[IntegralType, int], npt.NDArray],
-            Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]],
-        ]
-    ] = None,
+    constants: typing.Union[Sequence[npt.NDArray], Sequence[Sequence[npt.NDArray]]] | None = None,
+    coeffs: typing.Union[
+        dict[tuple[IntegralType, int], npt.NDArray],
+        Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]],
+    ]
+    | None = None,
 ) -> None:
     r"""Modify the right-hand side PETSc vector ``b`` to account for
     constraints (Dirichlet boundary conitions).
@@ -659,7 +648,7 @@ def apply_lifting(
 def set_bc(
     b: PETSc.Vec,  # type: ignore[name-defined]
     bcs: typing.Union[Sequence[DirichletBC], Sequence[Sequence[DirichletBC]]],
-    x0: typing.Optional[PETSc.Vec] = None,  # type: ignore[name-defined]
+    x0: PETSc.Vec | None = None,  # type: ignore[name-defined]
     alpha: float = 1,
 ) -> None:
     r"""Set constraint (Dirchlet boundary condition) values in an vector.
@@ -731,14 +720,14 @@ class LinearProblem:
         L: typing.Union[ufl.Form, Sequence[ufl.Form]],
         *,
         petsc_options_prefix: str,
-        bcs: typing.Optional[Sequence[DirichletBC]] = None,
-        u: typing.Optional[typing.Union[_Function, Sequence[_Function]]] = None,
-        P: typing.Optional[typing.Union[ufl.Form, Sequence[Sequence[ufl.Form]]]] = None,
-        kind: typing.Optional[typing.Union[str, Sequence[Sequence[str]]]] = None,
-        petsc_options: typing.Optional[dict] = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
-        entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
+        bcs: Sequence[DirichletBC] | None = None,
+        u: typing.Union[_Function, Sequence[_Function]] | None = None,
+        P: typing.Union[ufl.Form, Sequence[Sequence[ufl.Form]]] | None = None,
+        kind: typing.Union[str, Sequence[Sequence[str]]] | None = None,
+        petsc_options: dict | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        entity_maps: Sequence[_EntityMap] | None = None,
     ) -> None:
         """Initialize solver for a linear variational problem.
 
@@ -1132,7 +1121,7 @@ def assemble_residual(
 def assemble_jacobian(
     u: typing.Union[Sequence[_Function], _Function],
     jacobian: typing.Union[Form, Sequence[Sequence[Form]]],
-    preconditioner: typing.Optional[typing.Union[Form, Sequence[Sequence[Form]]]],
+    preconditioner: typing.Union[Form, Sequence[Sequence[Form]]] | None,
     bcs: Sequence[DirichletBC],
     _snes: PETSc.SNES,  # type: ignore[name-defined]
     x: PETSc.Vec,  # type: ignore[name-defined]
@@ -1206,14 +1195,14 @@ class NonlinearProblem:
         u: typing.Union[_Function, Sequence[_Function]],
         *,
         petsc_options_prefix: str,
-        bcs: typing.Optional[Sequence[DirichletBC]] = None,
-        J: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
-        P: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
-        kind: typing.Optional[typing.Union[str, Sequence[Sequence[str]]]] = None,
-        petsc_options: typing.Optional[dict] = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
-        entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
+        bcs: Sequence[DirichletBC] | None = None,
+        J: typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]] | None = None,
+        P: typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]] | None = None,
+        kind: typing.Union[str, Sequence[Sequence[str]]] | None = None,
+        petsc_options: dict | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        entity_maps: Sequence[_EntityMap] | None = None,
     ):
         """
         Initialize solver for a nonlinear variational problem.
@@ -1423,7 +1412,7 @@ class NonlinearProblem:
         return self._J
 
     @property
-    def preconditioner(self) -> typing.Optional[typing.Union[Form, Sequence[Sequence[Form]]]]:
+    def preconditioner(self) -> typing.Union[Form, Sequence[Sequence[Form]]] | None:
         """The compiled preconditioner."""
         return self._preconditioner
 
@@ -1433,7 +1422,7 @@ class NonlinearProblem:
         return self._A
 
     @property
-    def P_mat(self) -> typing.Optional[PETSc.Mat]:  # type: ignore[name-defined]
+    def P_mat(self) -> PETSc.Mat | None:  # type: ignore[name-defined]
         """Preconditioner matrix."""
         return self._P_mat
 
@@ -1492,10 +1481,10 @@ class NewtonSolverNonlinearProblem:
         self,
         F: ufl.form.Form,
         u: _Function,
-        bcs: typing.Optional[Sequence[DirichletBC]] = None,
+        bcs: Sequence[DirichletBC] | None = None,
         J: ufl.form.Form = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
     ):
         """Initialize solver for solving a non-linear problem using
         Newton's method`.

@@ -132,7 +132,7 @@ class DirichletBC:
         return self._cpp_object.function_space
 
     def set(
-        self, x: npt.NDArray, x0: typing.Optional[npt.NDArray[np.int32]] = None, alpha: float = 1
+        self, x: npt.NDArray, x0: npt.NDArray[np.int32] | None = None, alpha: float = 1
     ) -> None:
         """Set entries in an array that are constrained by Dirichlet
         boundary conditions.
@@ -178,7 +178,7 @@ class DirichletBC:
 def dirichletbc(
     value: typing.Union[Function, Constant, np.ndarray],
     dofs: npt.NDArray[np.int32],
-    V: typing.Optional[dolfinx.fem.FunctionSpace] = None,
+    V: dolfinx.fem.FunctionSpace | None = None,
 ) -> DirichletBC:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
