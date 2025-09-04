@@ -49,7 +49,7 @@ class AdjacencyList:
         cpp_object: (
             _cpp.graph.AdjacencyList_int32
             | _cpp.graph.AdjacencyList_int64
-            | _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32,
+            | _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32
         ),
     ):
         """Creates a Python wrapper for the exported adjacency list class.
