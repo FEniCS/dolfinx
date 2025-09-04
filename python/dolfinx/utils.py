@@ -215,9 +215,11 @@ class cffi_utils:
     except KeyError:
         pass
     except ImportError:
-        warnings.warn(
+        from dolfinx.log import LogLevel, log
+
+        log(
             "Could not import numba, so cffi/numba complex types were not registered.",
-            ImportWarning,
+            LogLevel.INFO,
         )
 
     try:
@@ -260,7 +262,9 @@ class cffi_utils:
     except KeyError:
         pass
     except ImportError:
-        warnings.warn(
+        from dolfinx.log import LogLevel, log
+
+        log(
             "Could not import petsc4py, so cffi/PETSc ABI mode interface was not created.",
-            ImportWarning,
+            LogLevel.INFO,
         )
