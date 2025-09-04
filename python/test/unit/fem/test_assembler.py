@@ -48,7 +48,7 @@ from dolfinx.mesh import (
     locate_entities_boundary,
     meshtags,
 )
-from ufl import derivative, dS, ds, dx, inner
+from ufl import derivative, dP, dr, dS, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
 
 dtype_parametrize = pytest.mark.parametrize(
@@ -224,7 +224,32 @@ class TestPETScAssemblers:
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
         V = functionspace(mesh, ("Lagrange", 1))
         u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-        a = form(inner(u, v) * dx + inner(u, v) * ds)
+
+        exterior_ridges = locate_entities_boundary(
+            mesh, mesh.topology.dim - 2, lambda x: np.full(x.shape[1], True, dtype=bool)
+        )
+        ridge_tags = dolfinx.mesh.meshtags(
+            mesh,
+            mesh.topology.dim - 2,
+            exterior_ridges,
+            np.ones_like(exterior_ridges, dtype=np.int32),
+        )
+        dr_exterior = dr(subdomain_data=ridge_tags, subdomain_id=1)
+        exterior_vertices = locate_entities_boundary(
+            mesh, 0, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
+        )
+        vertex_tags = dolfinx.mesh.meshtags(
+            mesh, 0, exterior_vertices, np.ones_like(exterior_vertices, dtype=np.int32)
+        )
+        dP_exterior = dP(subdomain_data=vertex_tags, subdomain_id=1)
+        x = ufl.SpatialCoordinate(mesh)
+        f = ufl.exp(x[0] + x[1])
+        a = form(
+            inner(u, v) * dx
+            + inner(u, v) * ds
+            - inner(u, v) * dr_exterior
+            + f * inner(u, v) * dP_exterior
+        )
         L = form(inner(1.0, v) * dx)
 
         bdofsV = locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0))

@@ -291,6 +291,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
         }
         break;
       case IntegralType::exterior_facet:
+      case IntegralType::ridge:
+      case IntegralType::vertex:
         for (int i = 0; i < a.num_integrals(type, cell_type_idx); ++i)
         {
           sparsitybuild::cells(pattern,
