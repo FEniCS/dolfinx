@@ -10,7 +10,6 @@ from __future__ import annotations
 import ctypes as _ctypes
 import os
 import pathlib
-import warnings
 
 import numpy as np
 
