@@ -1,0 +1,111 @@
+// Copyright (C) 2025 Paul T. Kühner
+//
+// This file is part of DOLFINX (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+
+#include <array>
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <variant>
+#include <vector>
+
+#include <mpi.h>
+
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_template_test_macros.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_range_equals.hpp>
+
+#include <basix/cell.h>
+
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/utils.h>
+#include <dolfinx/multigrid/inclusion.h>
+#include <dolfinx/refinement/refine.h>
+
+using namespace dolfinx;
+using namespace Catch::Matchers;
+
+template <std::floating_point T>
+void CHECK_inclusion_map(const mesh::Mesh<T>& mesh_coarse,
+                         const mesh::Mesh<T>& mesh_fine,
+                         const std::vector<std::int32_t>& map)
+{
+  const common::IndexMap& im_from = *mesh_coarse.topology()->index_map(0);
+  const common::IndexMap& im_to = *mesh_fine.topology()->index_map(0);
+  CHECK(
+      map.size()
+      == static_cast<std::size_t>(im_from.size_local() + im_from.num_ghosts()));
+  for (std::size_t i = 0; i < map.size(); i++)
+  {
+    if (map[i] == -1)
+      continue;
+
+    CHECK(0 <= map[i]);
+    CHECK(map[i] <= im_to.size_local() + im_to.num_ghosts());
+
+    auto x = std::array{mesh_coarse.geometry().x()[3 * i],
+                        mesh_coarse.geometry().x()[3 * i + 1],
+                        mesh_coarse.geometry().x()[3 * i + 2]};
+    auto global_x = std::array{mesh_fine.geometry().x()[3 * map[i]],
+                               mesh_fine.geometry().x()[3 * map[i] + 1],
+                               mesh_fine.geometry().x()[3 * map[i] + 2]};
+
+    CHECK_THAT(x, Catch::Matchers::RangeEquals(global_x));
+  }
+}
+
+template <std::floating_point T>
+void TEST_inclusion(dolfinx::mesh::Mesh<T>&& mesh_coarse)
+{
+  mesh_coarse.topology()->create_entities(1);
+
+  std::array<std::variant<refinement::IdentityPartitionerPlaceholder,
+                          mesh::CellPartitionFunction>,
+             3>
+      ghost_modes
+      = {mesh::create_cell_partitioner(mesh::GhostMode::none),
+         mesh::create_cell_partitioner(mesh::GhostMode::shared_facet),
+         refinement::IdentityPartitionerPlaceholder()};
+  for (const auto& ghost_mode : ghost_modes)
+  {
+    auto [mesh_fine, parent_cell, parent_facet]
+        = refinement::refine(mesh_coarse, std::nullopt, ghost_mode);
+    mesh_fine.topology()->create_connectivity(1, 0);
+    mesh_fine.topology()->create_connectivity(0, 1);
+    std::vector<std::int32_t> inclusion_map
+        = multigrid::inclusion_mapping(mesh_coarse, mesh_fine);
+
+    if (std::holds_alternative<refinement::IdentityPartitionerPlaceholder>(
+            ghost_mode))
+      CHECK(std::ranges::all_of(inclusion_map, [](auto e) { return e >= 0; }));
+
+    CHECK_inclusion_map(mesh_coarse, mesh_fine, inclusion_map);
+  }
+}
+
+TEMPLATE_TEST_CASE("Inclusion (interval)", "[multigrid][inclusion]", double,
+                   float)
+{
+  TEST_inclusion(
+      dolfinx::mesh::create_interval<TestType>(MPI_COMM_WORLD, 10, {0.0, 1.0}));
+}
+
+TEMPLATE_TEST_CASE("Inclusion (triangle)", "[multigrid][inclusion]", double,
+                   float)
+{
+  TEST_inclusion(dolfinx::mesh::create_rectangle<TestType>(
+      MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {5, 5}, mesh::CellType::triangle));
+}
+
+TEMPLATE_TEST_CASE("Inclusion (tetrahedron)", "[multigrid][inclusion]", double,
+                   float)
+{
+  TEST_inclusion(dolfinx::mesh::create_box<TestType>(
+      MPI_COMM_WORLD, {{{0, 0, 0}, {1, 1, 1}}}, {5, 5, 5},
+      mesh::CellType::tetrahedron));
+}
