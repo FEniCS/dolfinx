@@ -664,6 +664,15 @@ void mesh(nb::module_& m)
           },
           nb::rv_policy::reference_internal)
       .def(
+          "get_ridge_permutations",
+          [](const dolfinx::mesh::Topology& self)
+          {
+            const std::vector<std::uint8_t>& p = self.get_ridge_permutations();
+            return nb::ndarray<const std::uint8_t, nb::numpy>(p.data(),
+                                                              {p.size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def(
           "get_cell_permutation_info",
           [](const dolfinx::mesh::Topology& self)
           {

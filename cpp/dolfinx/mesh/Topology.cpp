@@ -886,6 +886,20 @@ const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
+const std::vector<std::uint8_t>& Topology::get_ridge_permutations() const
+{
+  if (auto i_map = this->index_map(this->dim() - 2);
+      !i_map
+      or (_ridge_permutations.empty()
+          and i_map->size_local() + i_map->num_ghosts() > 0))
+  {
+    throw std::runtime_error(
+        "create_entity_permutations must be called before using this data.");
+  }
+
+  return _ridge_permutations;
+}
+//-----------------------------------------------------------------------------
 const std::vector<std::int32_t>& Topology::interprocess_facets(int index) const
 {
   if (_interprocess_facets.empty())
@@ -1009,9 +1023,10 @@ void Topology::create_entity_permutations()
   for (int d = 0; d < tdim; ++d)
     create_entities(d);
 
-  auto [facet_permutations, cell_permutations]
+  auto [ridge_permutations, facet_permutations, cell_permutations]
       = compute_entity_permutations(*this);
   _facet_permutations = std::move(facet_permutations);
+  _ridge_permutations = std::move(ridge_permutations);
   _cell_permutations = std::move(cell_permutations);
 }
 //-----------------------------------------------------------------------------
