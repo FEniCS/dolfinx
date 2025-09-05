@@ -441,14 +441,14 @@ def form(
 
 
 def extract_function_spaces(
-    forms: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]],
+    forms: Form | Sequence[Form] | Sequence[Sequence[Form]],
     index: int = 0,
 ) -> list[None | FunctionSpace]:
     """Extract common function spaces from an array of forms.
 
-    If ``forms`` is a list of linear form, this function returns of list
+    If ``forms`` is a list of linear forms, this function returns of list
     of the corresponding test function spaces. If ``forms`` is a 2D
-    array of bilinear forms, for ``index=0`` the list common test
+    array of bilinear forms, for ``index=0`` the list of common test
     function spaces for each row is returned, and if ``index=1`` the
     common trial function spaces for each column are returned.
 
