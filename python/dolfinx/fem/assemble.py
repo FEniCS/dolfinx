@@ -26,8 +26,8 @@ from dolfinx.fem.forms import Form
 
 
 def pack_constants(
-    form: typing.Union[Form, Sequence[Form]],
-) -> typing.Union[npt.NDArray, Sequence[npt.NDArray]]:
+    form: Form | Sequence[Form],
+) -> npt.NDArray | Sequence[npt.NDArray]:
     """Pack form constants for use in assembly.
 
     Pack the 'constants' that appear in forms. The packed constants can
@@ -58,10 +58,10 @@ def pack_constants(
 
 
 def pack_coefficients(
-    form: typing.Union[Form, Sequence[Form]],
-) -> typing.Union[
-    dict[tuple[IntegralType, int], npt.NDArray], list[dict[tuple[IntegralType, int], npt.NDArray]]
-]:
+    form: Form | Sequence[Form],
+) -> (
+    dict[tuple[IntegralType, int], npt.NDArray] | list[dict[tuple[IntegralType, int], npt.NDArray]]
+):
     """Pack form coefficients for use in assembly.
 
     Pack the ``coefficients`` that appear in forms. The packed
@@ -136,7 +136,7 @@ def assemble_scalar(
     M: Form,
     constants: npt.NDArray | None = None,
     coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
-) -> typing.Union[float, complex]:
+) -> float | complex:
     """Assemble functional. The returned value is local and not
     accumulated across processes.
 

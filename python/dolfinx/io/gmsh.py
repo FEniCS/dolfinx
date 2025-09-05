@@ -431,7 +431,7 @@ def model_to_mesh(
 
 
 def read_from_msh(
-    filename: typing.Union[str, Path],
+    filename: str | Path,
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
