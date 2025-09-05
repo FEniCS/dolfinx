@@ -5,7 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Finite elements."""
 
-import typing
 from functools import singledispatch
 
 import numpy as np
@@ -19,13 +18,10 @@ from dolfinx import cpp as _cpp
 class CoordinateElement:
     """Coordinate element describing the geometry map for mesh cells."""
 
-    _cpp_object: typing.Union[
-        _cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64
-    ]
+    _cpp_object: _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
 
     def __init__(
-        self,
-        cmap: typing.Union[_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64],
+        self, cmap: _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
     ):
         """Create a coordinate map element.
 
@@ -66,9 +62,9 @@ class CoordinateElement:
 
     def push_forward(
         self,
-        X: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
-        cell_geometry: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
-    ) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+        X: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Push points on the reference cell forward to the physical cell.
 
         Args:
@@ -86,9 +82,9 @@ class CoordinateElement:
 
     def pull_back(
         self,
-        x: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
-        cell_geometry: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
-    ) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+        x: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Pull points on the physical cell back to the reference cell.
 
         For non-affine cells, the pull-back is a nonlinear operation.
@@ -169,11 +165,11 @@ def _(e: basix.finite_element.FiniteElement):
 
 
 class FiniteElement:
-    _cpp_object: typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]
+    _cpp_object: _cpp.fem.FiniteElement_float32 | _cpp.fem.FiniteElement_float64
 
     def __init__(
         self,
-        cpp_object: typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64],
+        cpp_object: _cpp.fem.FiniteElement_float32 | _cpp.fem.FiniteElement_float64,
     ):
         """Creates a Python wrapper for the exported finite element class.
 

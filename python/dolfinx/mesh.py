@@ -217,11 +217,9 @@ class Topology:
 class Geometry:
     """The geometry of a :class:`dolfinx.mesh.Mesh`"""
 
-    _cpp_object: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64]
+    _cpp_object: _cpp.mesh.Geometry_float32 | _cpp.mesh.Geometry_float64
 
-    def __init__(
-        self, geometry: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64]
-    ):
+    def __init__(self, geometry: _cpp.mesh.Geometry_float32 | _cpp.mesh.Geometry_float64):
         """Initialize a geometry from a C++ geometry.
 
         Args:
@@ -262,7 +260,7 @@ class Geometry:
         return self._cpp_object.input_global_indices
 
     @property
-    def x(self) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+    def x(self) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Geometry coordinate points,  ``shape=(num_points, 3)``."""
         return self._cpp_object.x
 
@@ -270,14 +268,14 @@ class Geometry:
 class Mesh:
     """A mesh."""
 
-    _mesh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]
+    _mesh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     _topology: Topology
     _geometry: Geometry
     _ufl_domain: ufl.Mesh | None
 
     def __init__(
         self,
-        msh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64],
+        msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64,
         domain: ufl.Mesh | None,
     ):
         """Initialize mesh from a C++ mesh.
@@ -628,9 +626,7 @@ def transfer_meshtag(
 def refine(
     msh: Mesh,
     edges: np.ndarray | None = None,
-    partitioner: typing.Union[
-        Callable, IdentityPartitionerPlaceholder
-    ] = IdentityPartitionerPlaceholder(),
+    partitioner: Callable | IdentityPartitionerPlaceholder = IdentityPartitionerPlaceholder(),
     option: RefinementOption = RefinementOption.parent_cell,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
@@ -672,12 +668,7 @@ def refine(
 def create_mesh(
     comm: _MPI.Comm,
     cells: npt.NDArray[np.int64],
-    e: typing.Union[
-        ufl.Mesh,
-        basix.finite_element.FiniteElement,
-        basix.ufl._BasixElement,
-        _CoordinateElement,
-    ],
+    e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     x: npt.NDArray[np.floating],
     partitioner: Callable | None = None,
 ) -> Mesh:
@@ -744,7 +735,7 @@ def create_mesh(
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
-    msh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64] = _cpp.mesh.create_mesh(
+    msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
         comm, cells, cmap._cpp_object, x, partitioner
     )
 
@@ -788,7 +779,7 @@ def meshtags(
     msh: Mesh,
     dim: int,
     entities: npt.NDArray[np.int32],
-    values: typing.Union[np.ndarray, int, float],
+    values: np.ndarray | int | float,
 ) -> MeshTags:
     """Create a MeshTags object that associates data with a subset of
     mesh entities.
