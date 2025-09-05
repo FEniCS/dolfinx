@@ -441,7 +441,7 @@ def form(
 
 
 def extract_function_spaces(
-    forms: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]],
+    forms: Form | Sequence[Form] | Sequence[Sequence[Form]],
     index: int = 0,
 ) -> list[None | FunctionSpace]:
     """Extract common function spaces from an array of forms.
