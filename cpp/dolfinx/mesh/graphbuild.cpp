@@ -510,7 +510,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       data.erase(duplicate_links.begin(), duplicate_links.end());
       duplicates_count += std::ranges::size(duplicate_links);
     }
-    offsets[offsets.size()-1] -= duplicates_count;
+    offsets[offsets.size() - 1] -= duplicates_count;
   }
 
   return graph::AdjacencyList(std::move(data), std::move(offsets));
