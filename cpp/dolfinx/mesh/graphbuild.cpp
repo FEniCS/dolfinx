@@ -287,7 +287,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Search for consecutive facets (-> dual graph edge between cells)
   // and pack into send buffer. We store for every cell the number of matches,
   // the offsets of each cell and the continuous data.
-  // Note: deges is short dual dual edges.
+  // Note: deges is short for dual edges.
   std::vector<int> dedge_send_count(recv_disp.back());
   std::vector<std::int32_t> dedge_send_displs(dedge_send_count.size() + 1, 0);
   std::vector<std::int64_t> dedge_send_data;
@@ -362,7 +362,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
         = std::accumulate(dedge_send_count.begin(), dedge_send_count.end(), 0);
     dedge_send_data.resize(send_dual_edges_size);
 
-    // Iterate matching facets to store dual edge connectivity
+    // Iterate matching facets to store dual edges
     std::vector<std::int32_t> offset = dedge_send_displs;
     for_each_matched_pair(
         [&dedge_send_data, &offset](int facet_a, std::int64_t cell_a,
@@ -380,7 +380,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                                  src.size(), src.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &comm_po_receive);
 
-  // Send po->recipient matched cell counts (non-blocking)
+  // Send PO->recipient: matched cell counts (non-blocking)
   std::vector<int> dedge_recv_count(send_disp.back());
   MPI_Request dedge_recv_count_request;
   MPI_Ineighbor_alltoallv(dedge_send_count.data(), num_items_recv.data(),
@@ -623,7 +623,6 @@ mesh::build_local_dual_graph(
   // 3) Sort facets by vertex key
   std::vector<std::size_t> perm(facets.size() / shape1, 0);
   std::iota(perm.begin(), perm.end(), 0);
-  // TODO: radix_sort? This is a heavy sort call.
   std::ranges::sort(perm, std::ranges::lexicographical_compare,
                     [&facets, shape1](auto f)
                     {
