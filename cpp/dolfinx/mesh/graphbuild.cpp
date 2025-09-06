@@ -499,9 +499,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       // Account for offset
       offsets[node] -= duplicates_count;
 
-      auto links
-          = std::ranges::subrange(std::next(data.begin(), offsets[node]),
-                                  std::next(data.begin(), offsets[node + 1]));
+      auto links = std::ranges::subrange(
+          std::next(data.begin(), offsets[node]),
+          std::next(data.begin(), offsets[node + 1] - duplicates_count));
       std::ranges::sort(links);
       auto duplicate_links = std::ranges::unique(links);
       if (duplicate_links.empty())
