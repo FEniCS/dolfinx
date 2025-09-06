@@ -30,17 +30,17 @@ if typing.TYPE_CHECKING:
 
 
 class Constant(ufl.Constant):
-    _cpp_object: typing.Union[
-        _cpp.fem.Constant_complex64,
-        _cpp.fem.Constant_complex128,
-        _cpp.fem.Constant_float32,
-        _cpp.fem.Constant_float64,
-    ]
+    _cpp_object: (
+        _cpp.fem.Constant_complex64
+        | _cpp.fem.Constant_complex128
+        | _cpp.fem.Constant_float32
+        | _cpp.fem.Constant_float64
+    )
 
     def __init__(
         self,
         domain,
-        c: typing.Union[float, np.floating, complex, np.complexfloating, Sequence, np.ndarray],
+        c: float | np.floating | complex | np.complexfloating | Sequence | np.ndarray,
     ):
         """A constant with respect to a domain.
 
@@ -95,10 +95,10 @@ class Expression:
         self,
         e: ufl.core.expr.Expr,
         X: np.ndarray,
-        comm: typing.Optional[_MPI.Comm] = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
-        dtype: typing.Optional[npt.DTypeLike] = None,
+        comm: _MPI.Comm | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        dtype: npt.DTypeLike | None = None,
     ):
         """Create a DOLFINx Expression.
 
@@ -198,7 +198,7 @@ class Expression:
         self,
         mesh: Mesh,
         entities: np.ndarray,
-        values: typing.Optional[np.ndarray] = None,
+        values: np.ndarray | None = None,
     ) -> np.ndarray:
         """Evaluate Expression on entities.
 
@@ -275,7 +275,7 @@ class Expression:
         return self._cpp_object.value_size
 
     @property
-    def argument_space(self) -> typing.Optional[FunctionSpace]:
+    def argument_space(self) -> FunctionSpace | None:
         """Argument function space if Expression has argument."""
         return self._argument_space
 
@@ -299,19 +299,19 @@ class Function(ufl.Coefficient):
     (domain, element and dofmap) and a vector holding the
     degrees-of-freedom."""
 
-    _cpp_object: typing.Union[
-        _cpp.fem.Function_complex64,
-        _cpp.fem.Function_complex128,
-        _cpp.fem.Function_float32,
-        _cpp.fem.Function_float64,
-    ]
+    _cpp_object: (
+        _cpp.fem.Function_complex64
+        | _cpp.fem.Function_complex128
+        | _cpp.fem.Function_float32
+        | _cpp.fem.Function_float64
+    )
 
     def __init__(
         self,
         V: FunctionSpace,
-        x: typing.Optional[la.Vector] = None,
-        name: typing.Optional[str] = None,
-        dtype: typing.Optional[npt.DTypeLike] = None,
+        x: la.Vector | None = None,
+        name: str | None = None,
+        dtype: npt.DTypeLike | None = None,
     ):
         """Initialize a finite element Function.
 
@@ -428,9 +428,9 @@ class Function(ufl.Coefficient):
 
     def interpolate(
         self,
-        u0: typing.Union[Callable, Expression, Function],
-        cells0: typing.Optional[np.ndarray] = None,
-        cells1: typing.Optional[np.ndarray] = None,
+        u0: Callable | Expression | Function,
+        cells0: np.ndarray | None = None,
+        cells1: np.ndarray | None = None,
     ) -> None:
         """Interpolate an expression.
 
@@ -574,19 +574,19 @@ class ElementMetaData(typing.NamedTuple):
 
     family: str
     degree: int
-    shape: typing.Optional[tuple[int, ...]] = None
-    symmetry: typing.Optional[bool] = None
+    shape: tuple[int, ...] | None = None
+    symmetry: bool | None = None
 
 
 def functionspace(
     mesh: Mesh,
-    element: typing.Union[
-        ufl.finiteelement.AbstractFiniteElement,
-        ElementMetaData,
-        tuple[str, int],
-        tuple[str, int, tuple],
-        tuple[str, int, tuple, bool],
-    ],
+    element: (
+        ufl.finiteelement.AbstractFiniteElement
+        | ElementMetaData
+        | tuple[str, int]
+        | tuple[str, int, tuple]
+        | tuple[str, int, tuple, bool]
+    ),
 ) -> FunctionSpace:
     """Create a finite element function space.
 
@@ -634,14 +634,14 @@ def functionspace(
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
-    _cpp_object: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64]
+    _cpp_object: _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
     _mesh: Mesh
 
     def __init__(
         self,
         mesh: Mesh,
         element: ufl.finiteelement.AbstractFiniteElement,
-        cppV: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64],
+        cppV: (_cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64),
     ):
         """Create a finite element function space.
 
