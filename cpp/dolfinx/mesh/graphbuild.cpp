@@ -493,8 +493,12 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     }
     // local connections are possibly introduced again by remote -> remove
     // duplicates
+    std::size_t duplicates_count = 0;
     for (std::size_t node = 0; node < offsets.size() - 1; node++)
     {
+      // Account for offset
+      offsets[node] -= duplicates_count;
+
       auto links
           = std::ranges::subrange(std::next(data.begin(), offsets[node]),
                                   std::next(data.begin(), offsets[node + 1]));
@@ -504,9 +508,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
         continue;
 
       data.erase(duplicate_links.begin(), duplicate_links.end());
-      for (std::size_t i = node + 1; i < offsets.size(); i++)
-        offsets[i] -= std::ranges::size(duplicate_links);
+      duplicates_count += std::ranges::size(duplicate_links);
     }
+    offsets[offsets.size()-1] -= duplicates_count;
   }
 
   return graph::AdjacencyList(std::move(data), std::move(offsets));
