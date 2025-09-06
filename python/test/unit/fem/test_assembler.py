@@ -1206,7 +1206,7 @@ class TestPETScAssemblers:
         p = ufl.TrialFunction(Q)
         q = ufl.TestFunction(Q)
 
-        L = form([ufl.ZeroBaseForm((v,)), ufl.ZeroBaseForm((q,))])
+        # L = form([ufl.ZeroBaseForm((v,)), ufl.ZeroBaseForm((q,))])
         J = form(
             [[k * ufl.inner(u, v) * dx, None], [ufl.inner(u, q) * dx, k * ufl.inner(p, q) * dx]]
         )
@@ -1220,12 +1220,13 @@ class TestPETScAssemblers:
 
         # Apply lifting with input coefficient
         coeffs = pack_coefficients(J)
-        b = petsc_create_vector(L, kind=kind)
+        b = petsc_create_vector([V, Q], kind=kind)
+        assert b.equal(petsc_create_vector([V, Q]))
         petsc_apply_lifting(b, J, bcs=bcs1, coeffs=coeffs)
         b.assemble()
 
         # Reference lifting
-        b_ref = petsc_create_vector(L, kind=kind)
+        b_ref = petsc_create_vector([V, Q], kind=kind)
         petsc_apply_lifting(b_ref, J, bcs=bcs1)
         b_ref.assemble()
 

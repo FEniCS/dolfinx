@@ -110,7 +110,7 @@ class TestNLSPETSc:
 
         def blocked():
             """Monolithic blocked"""
-            x = create_vector(L_block, kind="mpi")
+            x = create_vector([V0, V1], kind="mpi")
 
             assign((u, p), x)
 
@@ -136,7 +136,7 @@ class TestNLSPETSc:
         # Nested (MatNest)
         def nested():
             """Nested (MatNest)"""
-            x = create_vector(L_block, kind=PETSc.Vec.Type.NEST)
+            x = create_vector([V0, V1], kind=PETSc.Vec.Type.NEST)
 
             assign((u, p), x)
 
@@ -315,8 +315,8 @@ class TestNLSPETSc:
             residual = dolfinx.fem.form(F)
             jacobian = dolfinx.fem.form(J)
             A = dolfinx.fem.petsc.create_matrix(jacobian, "nest")
-            b = dolfinx.fem.petsc.create_vector(residual, "nest")
-            x = dolfinx.fem.petsc.create_vector(residual, "nest")
+            b = dolfinx.fem.petsc.create_vector([V0, V1], "nest")
+            x = dolfinx.fem.petsc.create_vector([V0, V1], "nest")
             snes.setFunction(
                 partial(dolfinx.fem.petsc.assemble_residual, [u, p], residual, jacobian, bcs), b
             )
