@@ -357,6 +357,9 @@ def form(
 
         # For each argument in form extract its function space
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+        part = form_compiler_options.get("part", "full")
+        if part == "diagonal":
+            V = [V[0]]
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
