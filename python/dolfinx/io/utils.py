@@ -6,7 +6,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data and post-processing file output."""
 
-import typing
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -42,13 +41,13 @@ if _cpp.common.has_adios2:
         The files can be viewed using Paraview.
         """
 
-        _cpp_object: typing.Union[_cpp.io.VTXWriter_float32, _cpp.io.VTXWriter_float64]
+        _cpp_object: _cpp.io.VTXWriter_float32 | _cpp.io.VTXWriter_float64
 
         def __init__(
             self,
             comm: _MPI.Comm,
-            filename: typing.Union[str, Path],
-            output: typing.Union[Mesh, Function, list[Function], tuple[Function]],
+            filename: str | Path,
+            output: Mesh | Function | list[Function] | tuple[Function],
             engine: str = "BPFile",
             mesh_policy: VTXMeshPolicy = VTXMeshPolicy.update,
         ):
@@ -128,7 +127,7 @@ class VTKFile(_cpp.io.VTKFile):
         """Write mesh to file for a given time (default 0.0)"""
         self.write(mesh._cpp_object, t)
 
-    def write_function(self, u: typing.Union[list[Function], Function], t: float = 0.0) -> None:
+    def write_function(self, u: list[Function] | Function, t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a
         given time (default 0.0)"""
         cpp_objects = [u._cpp_object] if isinstance(u, Function) else [_u._cpp_object for _u in u]
@@ -249,7 +248,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         self,
         mesh: Mesh,
         name: str,
-        attribute_name: typing.Optional[str] = None,
+        attribute_name: str | None = None,
         xpath: str = "/Xdmf/Domain",
     ) -> MeshTags:
         """Read MeshTags with a specific name as specified in the XMDF
