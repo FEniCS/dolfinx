@@ -17,12 +17,13 @@ import numpy.typing as npt
 
 import dolfinx
 from dolfinx import cpp as _cpp
-from dolfinx import la
+from dolfinx import default_scalar_type, la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.fem import IntegralType
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.forms import Form
+from dolfinx.fem.function import FunctionSpace
 
 
 def pack_constants(
@@ -94,19 +95,19 @@ def pack_coefficients(
 # -- Vector and matrix instantiation --------------------------------------
 
 
-def create_vector(L: Form) -> la.Vector:
-    """Create a Vector that is compatible with a given linear form.
+def create_vector(V: FunctionSpace, dtype: npt.DTypeLike = default_scalar_type) -> la.Vector:
+    """Create a Vector that is compatible with the given function space.
 
     Args:
-        L: A linear form.
+        V: A function space.
 
     Returns:
-        A vector that the form can be assembled into.
+        A vector compatible with the function space.
     """
     # Can just take the first dofmap here, since all dof maps have the same
     # index map in mixed-topology meshes
-    dofmap = L.function_spaces[0].dofmaps(0)  # type: ignore[attr-defined]
-    return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=L.dtype)
+    dofmap = V.dofmaps(0)  # type: ignore[attr-defined]
+    return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=dtype)
 
 
 def create_matrix(a: Form, block_mode: la.BlockMode | None = None) -> la.MatrixCSR:
