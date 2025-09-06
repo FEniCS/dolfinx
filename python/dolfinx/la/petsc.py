@@ -15,6 +15,7 @@ Note:
 
 import functools
 import itertools
+import typing
 from collections.abc import Iterable, Sequence
 
 from petsc4py import PETSc
@@ -72,7 +73,7 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
 
 
 def create_vector(
-    maps: typing.Sequence[tuple[IndexMap, int]], kind: typing.Optional[str] = None
+    maps: typing.Sequence[tuple[IndexMap, int]], kind: str | None = None
 ) -> PETSc.Vec:  # type: ignore[name-defined]
     """Create a PETSc vector from a sequence of maps and blocksizes.
 

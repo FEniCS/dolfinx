@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import contextlib
 import functools
-import itertools
 from collections.abc import Sequence
 
 from petsc4py import PETSc
@@ -131,7 +130,7 @@ def create_vector(
         vector is not initialised to zero.
     """
     if isinstance(
-        V, (_FunctionSpace, _cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64)
+        V, _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
     ):
         V = [V]
     elif any(_V is None for _V in V):
