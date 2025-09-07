@@ -205,7 +205,7 @@ def _assemble_vector_form(
         :func:`dolfinx.la.Vector.scatter_reverse` on the return vector
         can accumulate ghost contributions.
     """
-    b = create_vector(L.function_spaces[0])
+    b = create_vector(L.function_spaces[0], L.dtype)
     b.array[:] = 0
     constants = pack_constants(L) if constants is None else constants  # type: ignore[assignment]
     coeffs = pack_coefficients(L) if coeffs is None else coeffs  # type: ignore[assignment]
