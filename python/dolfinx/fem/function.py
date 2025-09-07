@@ -751,6 +751,9 @@ class FunctionSpace(ufl.FunctionSpace):
         """Degree-of-freedom map associated with the function space."""
         return dofmap.DofMap(self._cpp_object.dofmap)  # type: ignore
 
+    def dofmaps(self, idx: int) -> dofmap.DofMap:
+        return dofmap.DofMap(self._cpp_object.dofmaps(idx))  # type: ignore
+
     @property
     def mesh(self) -> Mesh:
         """Mesh on which the function space is defined."""

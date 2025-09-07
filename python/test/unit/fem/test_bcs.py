@@ -89,7 +89,7 @@ def test_overlapping_bcs():
     ]
 
     A = create_matrix(a)
-    b = create_vector(L)
+    b = create_vector(V, dtype=L.dtype)
     assemble_matrix(A, a, bcs=bcs)
     A.scatter_reverse()
 
