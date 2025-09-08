@@ -135,8 +135,6 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     // Compute local quantities.
     // Note: to allow for single reduction we store -min_vertex_index,
     // i.e. max (-min_vertex_index) = min (min_vertex_index).
-    max_vertices_per_facet = std::int64_t(local_max_vertices_per_facet);
-
     vertex_range[0] = std::numeric_limits<std::int64_t>::min();
     vertex_range[1] = -1;
 
@@ -149,7 +147,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 
     // Exchange.
     std::array<std::int64_t, 3> send
-        = {max_vertices_per_facet, vertex_range[0], vertex_range[1]};
+        = {static_cast<std::int64_t>(local_max_vertices_per_facet), vertex_range[0], vertex_range[1]};
     std::array<std::int64_t, 3> recv;
     MPI_Allreduce(send.data(), recv.data(), 3, MPI_INT64_T, MPI_MAX, comm);
     assert(recv[1] != std::numeric_limits<std::int64_t>::min());
