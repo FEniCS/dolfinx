@@ -222,7 +222,7 @@ def form_cpp_class(
 
 _ufl_to_dolfinx_domain = {
     "cell": IntegralType.cell,
-    "facet": IntegralType.exterior_facet,
+    "exterior_facet": IntegralType.exterior_facet,
     "interior_facet": IntegralType.interior_facet,
     "vertex": IntegralType.vertex,
     "ridge": IntegralType.ridge,
