@@ -146,13 +146,13 @@ get_cell_entity_pairs(std::int32_t e, std::span<const std::int32_t> cells,
 /// @param[in] entities List of mesh entities. Depending on the `IntegralType`
 /// these are associated with different entities:
 ///     `IntegralType::cell`:             cells
-///     `IntegralType::facet`:            facets
+///     `IntegralType::exterior_facet`:            facets
 ///     `IntegralType::interior_facet`:   facets
 ///     `IntegralType::vertex`:           vertices
 /// @return List of integration entity data, depending on the `IntegralType` the
 /// data per entity has different layouts
 ///     `IntegralType::cell`:             cell
-///     `IntegralType::facet`:            (cell, local_facet)
+///     `IntegralType::exterior_facet`:            (cell, local_facet)
 ///     `IntegralType::interior_facet`:   (cell, local_facet)
 ///     `IntegralType::vertex`:           (cell, local_vertex)
 std::vector<std::int32_t>
@@ -239,7 +239,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
 
   const std::set<IntegralType> types = a.integral_types();
   if (types.find(IntegralType::interior_facet) != types.end()
-      or types.find(IntegralType::facet) != types.end())
+      or types.find(IntegralType::exterior_facet) != types.end())
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
     int tdim = mesh->topology()->dim();
@@ -290,7 +290,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
               {{dofmaps[0], dofmaps[1]}});
         }
         break;
-      case IntegralType::facet:
+      case IntegralType::exterior_facet:
       case IntegralType::ridge:
       case IntegralType::vertex:
         for (int i = 0; i < a.num_integrals(type, cell_type_idx); ++i)
@@ -701,13 +701,13 @@ Form<T, U> create_form_factory(
 
   // Attach exterior entity integrals
   {
-    for (IntegralType itg_type :
-         {IntegralType::facet, IntegralType::vertex, IntegralType::ridge})
+    for (IntegralType itg_type : {IntegralType::exterior_facet,
+                                  IntegralType::vertex, IntegralType::ridge})
     {
       std::size_t dim;
       switch (itg_type)
       {
-      case IntegralType::facet:
+      case IntegralType::exterior_facet:
       {
         dim = tdim - 1;
         break;
@@ -731,7 +731,7 @@ Form<T, U> create_form_factory(
           get_default_integration_entities
           = [dim](const mesh::Topology& topology, IntegralType itg_type)
       {
-        if (itg_type == IntegralType::facet)
+        if (itg_type == IntegralType::exterior_facet)
         {
           // Integrate over all owned exterior facets
           return mesh::exterior_facet_indices(topology);

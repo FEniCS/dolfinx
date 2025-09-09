@@ -1092,11 +1092,11 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
         cell_info1, bc_values1, bc_markers1, x0, alpha, facet_perms);
   }
 
-  for (auto itg_type : {fem::IntegralType::facet, fem::IntegralType::vertex,
-                        fem::IntegralType::ridge})
+  for (auto itg_type : {fem::IntegralType::exterior_facet,
+                        fem::IntegralType::vertex, fem::IntegralType::ridge})
   {
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
-        = (itg_type == fem::IntegralType::facet)
+        = (itg_type == fem::IntegralType::exterior_facet)
               ? facet_perms
               : md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>{};
 
@@ -1365,11 +1365,11 @@ void assemble_vector(
       }
     }
 
-    for (auto itg_type : {fem::IntegralType::facet, fem::IntegralType::vertex,
-                          fem::IntegralType::ridge})
+    for (auto itg_type : {fem::IntegralType::exterior_facet,
+                          fem::IntegralType::vertex, fem::IntegralType::ridge})
     {
       md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
-          = (itg_type == fem::IntegralType::facet)
+          = (itg_type == fem::IntegralType::exterior_facet)
                 ? facet_perms
                 : md::mdspan<const std::uint8_t,
                              md::dextents<std::size_t, 2>>{};

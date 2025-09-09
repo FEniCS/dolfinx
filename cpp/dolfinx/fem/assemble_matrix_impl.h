@@ -664,11 +664,11 @@ void assemble_matrix(
           cell_info0, cell_info1, facet_perms);
     }
 
-    for (auto itg_type : {fem::IntegralType::facet, fem::IntegralType::vertex,
-                          fem::IntegralType::ridge})
+    for (auto itg_type : {fem::IntegralType::exterior_facet,
+                          fem::IntegralType::vertex, fem::IntegralType::ridge})
     {
       md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
-          = itg_type == fem::IntegralType::facet
+          = itg_type == fem::IntegralType::exterior_facet
                 ? facet_perms
                 : md::mdspan<const std::uint8_t,
                              md::dextents<std::size_t, 2>>{};

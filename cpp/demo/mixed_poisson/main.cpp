@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
     // (applied on the `ds(1)` in the UFL file). First we get facet data
     // integration data for facets in dfacets.
     std::vector<std::int32_t> domains = fem::compute_integration_domains(
-        fem::IntegralType::facet, *mesh->topology(), dfacets);
+        fem::IntegralType::exterior_facet, *mesh->topology(), dfacets);
 
     // Create data structure for the `ds(1)` integration domain in form
     // (see the UFL file). It is for en exterior facet integral (the key
@@ -281,7 +281,7 @@ int main(int argc, char* argv[])
     std::map<
         fem::IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
-        subdomain_data{{fem::IntegralType::facet, {{1, domains}}}};
+        subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
     // Since we are doing a `ds(1)` integral on mesh and `u0` is defined
     // on the `submesh`, our form involves more than one mesh. The mesh
