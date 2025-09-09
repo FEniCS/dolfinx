@@ -74,7 +74,8 @@ void assemble_cells_matrix(
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1)
+    std::span<const std::uint32_t> cell_info1, std::span<T> Ab,
+    std::span<scalar_value_t<T>> cdofs_b)
 {
   if (cells.empty())
     return;
@@ -87,8 +88,10 @@ void assemble_cells_matrix(
   const int num_dofs1 = dmap1.extent(1);
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
-  std::vector<T> Ae(ndim0 * ndim1);
-  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
+
+  assert(Ab.size() >= ndim0 * ndim1);
+  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
+  auto Ae = Ab.first(ndim0 * ndim1);
 
   // Iterate over active cells
   assert(cells0.size() == cells.size());
@@ -104,11 +107,11 @@ void assemble_cells_matrix(
     // Get cell coordinates/geometry
     auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs.begin(), 3 * i));
+      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), &coeffs(c, 0), constants.data(), cdofs.data(), nullptr,
+    kernel(Ae.data(), &coeffs(c, 0), constants.data(), cdofs_b.data(), nullptr,
            nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
@@ -213,7 +216,8 @@ void assemble_exterior_facets(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
+    std::span<T> Ab, std::span<scalar_value_t<T>> cdofs_b)
 {
   if (facets.empty())
     return;
@@ -221,15 +225,15 @@ void assemble_exterior_facets(
   const auto [dmap0, bs0, facets0] = dofmap0;
   const auto [dmap1, bs1, facets1] = dofmap1;
 
-  // Data structures used in assembly
-  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
   const int num_dofs0 = dmap0.extent(1);
   const int num_dofs1 = dmap1.extent(1);
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
-  std::vector<T> Ae(ndim0 * ndim1);
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
+  assert(Ab.size() >= ndim0 * ndim1);
+  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
+  auto Ae = Ab.first(ndim0 * ndim1);
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
     // Cell in the integration domain, local facet index relative to the
@@ -243,14 +247,14 @@ void assemble_exterior_facets(
     // Get cell coordinates/geometry
     auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs.begin(), 3 * i));
+      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_facet);
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), &coeffs(f, 0), constants.data(), cdofs.data(),
+    kernel(Ae.data(), &coeffs(f, 0), constants.data(), cdofs_b.data(),
            &local_facet, &perm, nullptr);
     P0(Ae, cell_info0, cell0, ndim1);
     P1T(Ae, cell_info1, cell1, ndim0);
@@ -355,7 +359,8 @@ void assemble_interior_facets(
         coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
+    std::span<T> Ab, std::span<scalar_value_t<T>> cdofs_b)
 {
   if (facets.empty())
     return;
@@ -364,11 +369,9 @@ void assemble_interior_facets(
   const auto [dmap1, bs1, facets1] = dofmap1;
 
   // Data structures used in assembly
-  using X = scalar_value_t<T>;
-  std::vector<X> cdofs(2 * x_dofmap.extent(1) * 3);
-  std::span<X> cdofs0(cdofs.data(), x_dofmap.extent(1) * 3);
-  std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
-                      x_dofmap.extent(1) * 3);
+  assert(cdofs_b.size() >= 2 * 3 * x_dofmap.extent(1));
+  auto cdofs0 = cdofs_b.first(3 * x_dofmap.extent(1));
+  auto cdofs1 = cdofs_b.last(3 * x_dofmap.extent(1));
 
   const std::size_t dmap0_size = dmap0.map().extent(1);
   const std::size_t dmap1_size = dmap1.map().extent(1);
@@ -376,11 +379,12 @@ void assemble_interior_facets(
   const int num_cols = bs1 * 2 * dmap1_size;
 
   // Temporaries for joint dofmaps
-  std::vector<T> Ae(num_rows * num_cols), be(num_rows);
   std::vector<std::int32_t> dmapjoint0(2 * dmap0_size);
   std::vector<std::int32_t> dmapjoint1(2 * dmap1_size);
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
+  assert(Ab.size() >= num_rows * num_cols);
+  auto Ae = Ab.first(num_rows * num_cols);
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
     // Cells in integration domain,  test function domain and trial
@@ -431,7 +435,7 @@ void assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    kernel(Ae.data(), &coeffs(f, 0, 0), constants.data(), cdofs.data(),
+    kernel(Ae.data(), &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
            local_facet.data(), perm.data(), nullptr);
 
     // Local element layout is a 2x2 block matrix with structure
@@ -562,10 +566,16 @@ void assemble_matrix(
         = a.function_spaces().at(1)->dofmaps(cell_type_idx);
     assert(dofmap0);
     assert(dofmap1);
-    auto dofs0 = dofmap0->map();
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> dofs0
+        = dofmap0->map();
     const int bs0 = dofmap0->bs();
-    auto dofs1 = dofmap1->map();
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> dofs1
+        = dofmap1->map();
     const int bs1 = dofmap1->bs();
+
+    std::vector<T> Ab((2 * bs0 * dofs0.extent(1))
+                      * (2 * bs1 * dofs1.extent(1)));
+    std::vector<scalar_value_t<T>> cdofs_b(2 * 3 * x_dofmap.extent(1));
 
     auto element0 = a.function_spaces().at(0)->elements(cell_type_idx);
     assert(element0);
@@ -602,7 +612,7 @@ void assemble_matrix(
           mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
           {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
           md::mdspan(coeffs.data(), cells.size(), cstride), constants,
-          cell_info0, cell_info1);
+          cell_info0, cell_info1, Ab, cdofs_b);
     }
 
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
@@ -647,7 +657,7 @@ void assemble_matrix(
           mat_set, x_dofmap, x, facets, {dofs0, bs0, facets0}, P0,
           {dofs1, bs1, facets1}, P1T, bc0, bc1, fn,
           md::mdspan(coeffs.data(), facets.extent(0), cstride), constants,
-          cell_info0, cell_info1, perms);
+          cell_info0, cell_info1, perms, Ab, cdofs_b);
     }
 
     for (int i = 0;
@@ -685,7 +695,7 @@ void assemble_matrix(
            mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
           P1T, bc0, bc1, fn,
           mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride), constants,
-          cell_info0, cell_info1, perms);
+          cell_info0, cell_info1, perms, Ab, cdofs_b);
     }
   }
 }
