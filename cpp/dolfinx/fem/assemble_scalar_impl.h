@@ -29,14 +29,14 @@ T assemble_cells(mdspan2_t x_dofmap,
                      x,
                  std::span<const std::int32_t> cells, FEkernel<T> auto fn,
                  std::span<const T> constants,
-                 md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs)
+                 md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+                 std::span<scalar_value_t<T>> cdofs_b)
 {
   T value(0);
   if (cells.empty())
     return value;
 
-  // Create data structures used in assembly
-  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
+  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
 
   // Iterate over all cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -46,11 +46,9 @@ T assemble_cells(mdspan2_t x_dofmap,
     // Get cell coordinates/geometry
     auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
-    {
-      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs.begin(), 3 * i));
-    }
+      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
-    fn(&value, &coeffs(index, 0), constants.data(), cdofs.data(), nullptr,
+    fn(&value, &coeffs(index, 0), constants.data(), cdofs_b.data(), nullptr,
        nullptr, nullptr);
   }
 
@@ -69,14 +67,14 @@ T assemble_exterior_entities(
         entities,
     FEkernel<T> auto fn, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
+    std::span<scalar_value_t<T>> cdofs_b)
 {
   T value(0);
   if (entities.empty())
     return value;
 
-  // Create data structures used in assembly
-  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
+  assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
 
   // Iterate over all facets
   for (std::size_t f = 0; f < entities.extent(0); ++f)
@@ -87,11 +85,11 @@ T assemble_exterior_entities(
     // Get cell coordinates/geometry
     auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs.begin(), 3 * i));
+      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
-    fn(&value, &coeffs(f, 0), constants.data(), cdofs.data(), &local_entity,
+    fn(&value, &coeffs(f, 0), constants.data(), cdofs_b.data(), &local_entity,
        &perm, nullptr);
   }
 
@@ -112,18 +110,17 @@ T assemble_interior_facets(
     md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                     md::dynamic_extent>>
         coeffs,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
+    std::span<scalar_value_t<T>> cdofs_b)
 {
   T value(0);
   if (facets.empty())
     return value;
 
   // Create data structures used in assembly
-  using X = scalar_value_t<T>;
-  std::vector<X> cdofs(2 * x_dofmap.extent(1) * 3);
-  std::span<X> cdofs0(cdofs.data(), x_dofmap.extent(1) * 3);
-  std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
-                      x_dofmap.extent(1) * 3);
+  assert(cdofs_b.size() >= 2 * 3 * x_dofmap.extent(1));
+  auto cdofs0 = cdofs_b.first(3 * x_dofmap.extent(1));
+  auto cdofs1 = cdofs_b.last(3 * x_dofmap.extent(1));
 
   // Iterate over all facets
   for (std::size_t f = 0; f < facets.extent(0); ++f)
@@ -143,7 +140,7 @@ T assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    fn(&value, &coeffs(f, 0, 0), constants.data(), cdofs.data(),
+    fn(&value, &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
        local_facet.data(), perm.data(), nullptr);
   }
 
@@ -164,6 +161,8 @@ T assemble_scalar(
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
 
+  std::vector<scalar_value_t<T>> cdofs_b(2 * 3 * x_dofmap.extent(1));
+
   T value = 0;
   for (int i = 0; i < M.num_integrals(IntegralType::cell, 0); ++i)
   {
@@ -174,7 +173,7 @@ T assemble_scalar(
     assert(cells.size() * cstride == coeffs.size());
     value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
-        md::mdspan(coeffs.data(), cells.size(), cstride));
+        md::mdspan(coeffs.data(), cells.size(), cstride), cdofs_b);
   }
 
   mesh::CellType cell_type = mesh->topology()->cell_type();
@@ -212,7 +211,7 @@ T assemble_scalar(
         md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                         md::dynamic_extent>>(
             coeffs.data(), facets.size() / shape1, 2, cstride),
-        facet_perms);
+        facet_perms, cdofs_b);
   }
 
   for (fem::IntegralType itg_type :
@@ -250,7 +249,8 @@ T assemble_scalar(
                      md::extents<std::size_t, md::dynamic_extent, 2>>(
               entities.data(), entities.size() / shape1, 2),
           fn, constants,
-          md::mdspan(coeffs.data(), entities.size() / shape1, cstride), perms);
+          md::mdspan(coeffs.data(), entities.size() / shape1, cstride), perms,
+          cdofs_b);
     }
   }
 
