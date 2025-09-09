@@ -156,7 +156,7 @@ void assemble_cells_matrix(
   }
 }
 
-/// @brief Execute kernel over a set of entities and accumulate result in
+/// @brief Execute kernel over entities of codimension > 1 and accumulate result in
 /// a matrix.
 ///
 /// @tparam T Matrix/form scalar type.
