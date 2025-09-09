@@ -290,7 +290,7 @@ void declare_mesh(nb::module_& m, std::string type)
            const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
            nb::ndarray<const T, nb::c_contig> x,
            const part::impl::PythonCellPartitionFunction& p,
-           std::optional<std::uint32_t> max_facet_to_cell_links)
+           std::optional<std::int32_t> max_facet_to_cell_links)
         {
           std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
 
@@ -335,7 +335,7 @@ void declare_mesh(nb::module_& m, std::string type)
          const dolfinx::fem::CoordinateElement<T>& element,
          nb::ndarray<const T, nb::c_contig> x,
          const part::impl::PythonCellPartitionFunction& p,
-         std::optional<std::uint32_t> max_facet_to_cell_links)
+         std::optional<std::int32_t> max_facet_to_cell_links)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
         if (p)
@@ -785,7 +785,7 @@ void mesh(nb::module_& m)
   m.def(
       "create_cell_partitioner",
       [](dolfinx::mesh::GhostMode mode,
-         std::optional<std::uint32_t> max_facet_to_cell_links)
+         std::optional<std::int32_t> max_facet_to_cell_links)
           -> part::impl::PythonCellPartitionFunction
       {
         return part::impl::create_cell_partitioner_py(

@@ -99,7 +99,7 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
 //------------------------------------------------------------------------------
 mesh::CellPartitionFunction mesh::create_cell_partitioner(
     mesh::GhostMode ghost_mode, const graph::partition_fn& partfn,
-    std::optional<std::uint32_t> max_facet_to_cell_links)
+    std::optional<std::int32_t> max_facet_to_cell_links)
 {
   return [partfn, ghost_mode, max_facet_to_cell_links](
              MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,

@@ -310,9 +310,9 @@ void write_data(std::string point_or_cell, std::string filename,
 /// facet can be connected to.
 /// @return The mesh read from file.
 template <std::floating_point U>
-mesh::Mesh<U>
-read_mesh(MPI_Comm comm, std::string filename, std::size_t gdim = 3,
-          std::optional<std::uint32_t> max_facet_to_cell_links = 2)
+mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
+                        std::size_t gdim = 3,
+                        std::optional<std::int32_t> max_facet_to_cell_links = 2)
 {
   hid_t h5file = hdf5::open_file(comm, filename, "r", true);
 
