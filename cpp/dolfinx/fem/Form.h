@@ -38,7 +38,7 @@ class Function;
 enum class IntegralType : std::int8_t
 {
   cell = 0,           ///< Cell
-  exterior_facet = 1, ///< Exterior facet
+  facet = 1,          ///< Facet
   interior_facet = 2, ///< Interior facet
   vertex = 3,         ///< Vertex
   ridge = 4           ///< Ridge
@@ -277,7 +277,7 @@ public:
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
             e = emap.sub_topology_to_topology(itg.entities, inverse);
-          else if (type == IntegralType::exterior_facet
+          else if (type == IntegralType::facet
                    or type == IntegralType::interior_facet)
           {
             const mesh::Topology topology = *_mesh->topology();
@@ -320,7 +320,7 @@ public:
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
             e = emap.sub_topology_to_topology(integral.entities, inverse);
-          else if (type == IntegralType::exterior_facet
+          else if (type == IntegralType::facet
                    or type == IntegralType::interior_facet)
           {
             const mesh::Topology topology = *_mesh->topology();
@@ -456,7 +456,7 @@ public:
   /// integrated over by a given integral (kernel).
   ///
   /// - For IntegralType::cell, returns a list of cell indices.
-  /// - For IntegralType::exterior_facet, returns a list with shape
+  /// - For IntegralType::facet, returns a list with shape
   /// `(num_facets, 2)`, where `[cell_index, 0]` is the cell index and
   /// `[cell_index, 1]` is the local facet index relative to the cell.
   /// - For IntegralType::interior_facet the shape is `(num_facets, 4)`,

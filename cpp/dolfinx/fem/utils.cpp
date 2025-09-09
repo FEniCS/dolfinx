@@ -145,7 +145,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   case IntegralType::cell:
     dim = tdim;
     break;
-  case IntegralType::exterior_facet:
+  case IntegralType::facet:
     dim = tdim - 1;
     break;
   case IntegralType::interior_facet:
@@ -235,7 +235,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     }
     break;
   }
-  case IntegralType::exterior_facet:
+  case IntegralType::facet:
   case IntegralType::vertex:
   case IntegralType::ridge:
   {

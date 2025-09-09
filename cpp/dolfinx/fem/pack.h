@@ -297,7 +297,7 @@ void pack_coefficients(const Form<T, U>& form,
         }
         break;
       }
-      case IntegralType::exterior_facet:
+      case IntegralType::facet:
       case IntegralType::vertex:
       case IntegralType::ridge:
       {

@@ -772,7 +772,7 @@ void declare_form(nb::module_& m, std::string type)
             case dolfinx::fem::IntegralType::cell:
               return nb::ndarray<const std::int32_t, nb::numpy>(_d.data(),
                                                                 {_d.size()});
-            case dolfinx::fem::IntegralType::exterior_facet:
+            case dolfinx::fem::IntegralType::facet:
             {
               return nb::ndarray<const std::int32_t, nb::numpy>(
                   _d.data(), {_d.size() / 2, 2});
@@ -1269,7 +1269,7 @@ void fem(nb::module_& m)
 
   nb::enum_<dolfinx::fem::IntegralType>(m, "_IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell, "cell integral")
-      .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet,
+      .value("facet", dolfinx::fem::IntegralType::facet,
              "exterior facet integral")
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet,
              "exterior facet integral")

@@ -156,8 +156,16 @@ void assemble_cells_matrix(
   }
 }
 
-/// @brief Execute kernel over entities of codimension > 1 and accumulate result in
-/// a matrix.
+/// @brief Execute kernel over entities of codimension > 1 and accumulate result
+/// in a matrix.
+///
+/// Each entity is represented by (i) a cell that the entity is attached to
+/// and (ii) the local index of the entity  with respect to the cell. The
+/// kernel is executed for each entity. The kernel can access data
+/// (e.g., coefficients, basis functions) associated with the attached cell.
+/// However, entities may be attached to more than one cell. This function
+/// therefore computes 'one-sided' integrals, i.e. evaluates integrals as seen
+/// from cell used to define the entity.
 ///
 /// @tparam T Matrix/form scalar type.
 /// @param[in] mat_set Function that accumulates computed entries into a
@@ -191,7 +199,7 @@ void assemble_cells_matrix(
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
 template <dolfinx::scalar T>
-void assemble_entities_over_cells(
+void assemble_entities(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
@@ -656,21 +664,14 @@ void assemble_matrix(
           cell_info0, cell_info1, facet_perms);
     }
 
-    for (fem::IntegralType itg_type :
-         {fem::IntegralType::exterior_facet, fem::IntegralType::vertex,
-          fem::IntegralType::ridge})
+    for (auto itg_type : {fem::IntegralType::facet, fem::IntegralType::vertex,
+                          fem::IntegralType::ridge})
     {
-      md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
-      switch (itg_type)
-      {
-      case fem::IntegralType::exterior_facet:
-      {
-        perms = facet_perms;
-        break;
-      }
-      default:
-        break;
-      }
+      md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
+          = itg_type == fem::IntegralType::facet
+                ? facet_perms
+                : md::mdspan<const std::uint8_t,
+                             md::dextents<std::size_t, 2>>{};
 
       for (int i = 0; i < a.num_integrals(itg_type, cell_type_idx); ++i)
       {
@@ -695,7 +696,7 @@ void assemble_matrix(
         std::span e1 = a.domain_arg(itg_type, 1, i, 0);
         mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
         assert((entities.size() / 2) * cstride == coeffs.size());
-        impl::assemble_entities_over_cells(
+        impl::assemble_entities(
             mat_set, x_dofmap, x, entities, {dofs0, bs0, entities0}, P0,
             {dofs1, bs1, entities1}, P1T, bc0, bc1, fn,
             md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
