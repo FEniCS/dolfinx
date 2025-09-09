@@ -43,7 +43,7 @@ jobs:
             -Source "${{ env.FEED_URL }}"
 
       - name: Checkout DOLFINx
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: dolfinx-src
 
@@ -57,7 +57,7 @@ jobs:
           python-version: "3.12"
 
       - name: Checkout UFL
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: "fenics/ufl"
           path: ufl
