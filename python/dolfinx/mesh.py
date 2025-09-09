@@ -685,7 +685,7 @@ def create_mesh(
             type of ``e``.
         partitioner: Function that determines the parallel distribution of
             cells across MPI ranks.
-        max_facet_links_per_cell: Maximum number of cells a facet can
+        max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
 
     Note:
@@ -739,7 +739,7 @@ def create_mesh(
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
-        comm, cells, cmap._cpp_object, x, partitioner, max_facet_links_per_cell
+        comm, cells, cmap._cpp_object, x, partitioner, max_facet_to_cell_links
     )
 
     return Mesh(msh, domain)  # type: ignore
