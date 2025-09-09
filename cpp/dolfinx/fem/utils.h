@@ -504,7 +504,9 @@ Form<T, U> create_form_factory(
   }
 
   // Create facets, if required
-  if (num_integrals_type[facet] > 0 or num_integrals_type[interior_facet] > 0)
+  // NOTE: exterior_facet and interior_facet is declared in ufcx.h
+  if (num_integrals_type[exterior_facet] > 0
+      or num_integrals_type[interior_facet] > 0)
   {
     mesh->topology_mutable()->create_entities(tdim - 1);
     mesh->topology_mutable()->create_connectivity(tdim - 1, tdim);
