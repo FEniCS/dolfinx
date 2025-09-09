@@ -263,7 +263,7 @@ void _lift_bc_cells(
 template <typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
-void _lift_bc_exterior_entities(
+void _lift_bc_entities(
     V&& b, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
@@ -1116,7 +1116,7 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
       std::span e1 = a.domain_arg(itg_type, 1, i, 0);
       mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
       assert(coeffs.size() == entities.extent(0) * cstride);
-      _lift_bc_exterior_entities(
+      _lift_bc_entities(
           b, x_dofmap, x, kernel, entities, {dofmap0, bs0, entities0}, P0,
           {dofmap1, bs1, entities1}, P1T, constants,
           md::mdspan(coeffs.data(), entities.extent(0), cstride), cell_info0,
