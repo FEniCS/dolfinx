@@ -186,7 +186,7 @@ mesh::Mesh<double>
 XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
                     mesh::GhostMode mode, const std::string& name,
                     const std::string& xpath,
-                    std::size_t max_facet_to_cell_links) const
+                    std::optional<std::uint16_t> max_facet_to_cell_links) const
 {
   // Read mesh data
   auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);

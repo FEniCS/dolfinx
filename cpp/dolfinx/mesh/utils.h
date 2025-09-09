@@ -225,8 +225,10 @@ using CellReorderFunction = std::function<std::vector<std::int32_t>(
 /// connected to.
 /// @return Boundary vertices function which can be passed to `create_mesh`.
 /// TODO: offload to cpp?
-inline auto create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
-                                        std::size_t max_facet_to_cell_links = 2)
+inline auto
+create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
+                            std::optional<std::uint16_t> max_facet_to_cell_links
+                            = 2)
 {
   /// brief Function that computes the process boundary vertices of a mesh
   /// during creation.
@@ -962,7 +964,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 CellPartitionFunction create_cell_partitioner(
     mesh::GhostMode ghost_mode = mesh::GhostMode::none,
     const graph::partition_fn& partfn = &graph::partition_graph,
-    std::optional<std::int32_t> max_facet_to_cell_links = 2);
+    std::optional<std::uint16_t> max_facet_to_cell_links = 2);
 
 /// @brief Compute incident entities.
 /// @param[in] topology The topology.
@@ -1027,7 +1029,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::size_t max_facet_to_cell_links,
+    std::optional<std::uint16_t> max_facet_to_cell_links,
     const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   assert(cells.size() == elements.size());
@@ -1234,7 +1236,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::size_t max_facet_to_cell_links = 2,
+    std::optional<std::uint16_t> max_facet_to_cell_links = 2,
     const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
@@ -1268,7 +1270,7 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
             const fem::CoordinateElement<
                 std::remove_reference_t<typename U::value_type>>& elements,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode,
-            std::size_t max_facet_to_cell_links = 2)
+            std::optional<std::uint16_t> max_facet_to_cell_links = 2)
 {
   if (dolfinx::MPI::size(comm) == 1)
   {

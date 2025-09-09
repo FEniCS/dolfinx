@@ -107,10 +107,10 @@ public:
   /// be linked to a facet.
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
-  mesh::Mesh<double> read_mesh(const fem::CoordinateElement<double>& element,
-                               mesh::GhostMode mode, const std::string& name,
-                               const std::string& xpath = "/Xdmf/Domain",
-                               std::size_t max_facet_to_cell_links = 2) const;
+  mesh::Mesh<double>
+  read_mesh(const fem::CoordinateElement<double>& element, mesh::GhostMode mode,
+            const std::string& name, const std::string& xpath = "/Xdmf/Domain",
+            std::optional<std::uint16_t> max_facet_to_cell_links = 2) const;
 
   /// Read Topology data for Mesh
   /// @param[in] name Name of the mesh (Grid)

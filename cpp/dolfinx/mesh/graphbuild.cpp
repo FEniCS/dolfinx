@@ -522,7 +522,7 @@ std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
 mesh::build_local_dual_graph(
     std::span<const CellType> celltypes,
     const std::vector<std::span<const std::int64_t>>& cells,
-    std::optional<std::int32_t> max_facet_to_cell_links)
+    std::optional<std::uint16_t> max_facet_to_cell_links)
 {
   spdlog::info("Build local part of mesh dual graph (mixed)");
   common::Timer timer("Compute local part of mesh dual graph (mixed)");
@@ -660,7 +660,7 @@ mesh::build_local_dual_graph(
                                                    f1_it);
                                }));
 
-      std::int32_t cell_count = matching_facets.size();
+      std::uint16_t cell_count = matching_facets.size();
       assert(cell_count >= 1);
       if (!max_facet_to_cell_links.has_value()
           or (cell_count < *max_facet_to_cell_links))
@@ -729,7 +729,7 @@ mesh::build_local_dual_graph(
 graph::AdjacencyList<std::int64_t>
 mesh::build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                        const std::vector<std::span<const std::int64_t>>& cells,
-                       std::optional<std::int32_t> max_facet_to_cell_links)
+                       std::optional<std::uint16_t> max_facet_to_cell_links)
 {
   spdlog::info("Building mesh dual graph");
 
