@@ -158,7 +158,7 @@ def create_measure(msh, integral_type):
 
 def a_ufl(u, v, f, g, measure):
     "Helper function to create a UFL bilinear form. The form depends on the integral type"
-    if measure.integral_type() == "cell" or measure.integral_type() == "facet":
+    if measure.integral_type() == "cell" or measure.integral_type() == "exterior_facet":
         return ufl.inner(f * g * u, v) * measure
     else:
         assert measure.integral_type() == "interior_facet"
@@ -167,7 +167,7 @@ def a_ufl(u, v, f, g, measure):
 
 def L_ufl(v, f, g, measure):
     "Helper function to create a UFL linear form. The form depends on the integral type"
-    if measure.integral_type() == "cell" or measure.integral_type() == "facet":
+    if measure.integral_type() == "cell" or measure.integral_type() == "exterior_facet":
         return ufl.inner(f * g, v) * measure
     else:
         assert measure.integral_type() == "interior_facet"
