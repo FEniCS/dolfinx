@@ -110,7 +110,7 @@ public:
   mesh::Mesh<double>
   read_mesh(const fem::CoordinateElement<double>& element, mesh::GhostMode mode,
             const std::string& name, const std::string& xpath = "/Xdmf/Domain",
-            std::optional<std::uint16_t> max_facet_to_cell_links = 2) const;
+            std::optional<std::uint32_t> max_facet_to_cell_links = 2) const;
 
   /// Read Topology data for Mesh
   /// @param[in] name Name of the mesh (Grid)

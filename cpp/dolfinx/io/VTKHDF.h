@@ -312,7 +312,7 @@ void write_data(std::string point_or_cell, std::string filename,
 template <std::floating_point U>
 mesh::Mesh<U>
 read_mesh(MPI_Comm comm, std::string filename, std::size_t gdim = 3,
-          std::optional<std::uint16_t> max_facet_to_cell_links = 2)
+          std::optional<std::uint32_t> max_facet_to_cell_links = 2)
 {
   hid_t h5file = hdf5::open_file(comm, filename, "r", true);
 
