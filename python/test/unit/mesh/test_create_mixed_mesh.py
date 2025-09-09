@@ -89,7 +89,7 @@ def test_create_mixed_mesh():
         [hexahedron._cpp_object, pyramid._cpp_object, tetrahedron._cpp_object],
         geomx,
         part,
-        max_cells_per_facet
+        max_cells_per_facet,
     )
 
     entity_types = mesh.topology.entity_types[3]

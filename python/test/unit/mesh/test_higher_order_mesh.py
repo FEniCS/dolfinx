@@ -1892,11 +1892,9 @@ def test_vtk_perm_tetrahedron(order):
             261,
         ]
 
-    pt = [0 for i in p]
+    pt = np.zeros_like(p)
     for i, j in enumerate(p):
         pt[j] = i
-    print(" ".join([f"{i}" for i in pt]))
-    print(" ".join([f"{i}" for i in q]))
 
     for i, j in enumerate(p):
         assert q[j] == i
