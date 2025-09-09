@@ -157,7 +157,7 @@ def get_integration_domains(
     else:
         domains = []
         if not isinstance(subdomain, list):
-            if integral_type in (IntegralType.facet, IntegralType.interior_facet):
+            if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
                 tdim = subdomain.topology.dim
                 subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
                 subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
@@ -222,7 +222,7 @@ def form_cpp_class(
 
 _ufl_to_dolfinx_domain = {
     "cell": IntegralType.cell,
-    "facet": IntegralType.facet,
+    "facet": IntegralType.exterior_facet,
     "interior_facet": IntegralType.interior_facet,
     "vertex": IntegralType.vertex,
     "ridge": IntegralType.ridge,

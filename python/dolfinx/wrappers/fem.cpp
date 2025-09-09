@@ -1269,7 +1269,7 @@ void fem(nb::module_& m)
 
   nb::enum_<dolfinx::fem::IntegralType>(m, "_IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell, "cell integral")
-      .value("facet", dolfinx::fem::IntegralType::exterior_facet,
+      .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet,
              "exterior facet integral")
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet,
              "exterior facet integral")
