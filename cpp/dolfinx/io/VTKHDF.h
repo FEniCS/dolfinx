@@ -306,10 +306,13 @@ void write_data(std::string point_or_cell, std::string filename,
 /// @param gdim Geometric dimension of the mesh. All VTK meshes are
 /// embedded in 3D. Use this argument for meshes that should be in 1D or
 /// 2D.
+/// @param max_facet_to_cell_links The maximum number of cells a
+/// facet can be connected to.
 /// @return The mesh read from file.
 template <std::floating_point U>
 mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
-                        std::size_t gdim = 3)
+                        std::size_t gdim = 3,
+                        std::size_t max_facet_to_cell_links = 2)
 {
   hid_t h5file = hdf5::open_file(comm, filename, "r", true);
 
@@ -461,11 +464,13 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
         return fem::CoordinateElement<U>(cell_type, cell_degree, variant);
       });
 
-  auto part = create_cell_partitioner(mesh::GhostMode::none);
+  auto part = create_cell_partitioner(mesh::GhostMode::none,
+                                      dolfinx::graph::partition_graph,
+                                      max_facet_to_cell_links);
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());
   return mesh::create_mesh(comm, comm, cells_span, coordinate_elements, comm,
-                           points_pruned, {(std::size_t)x_shape[0], gdim},
-                           part);
+                           points_pruned, {(std::size_t)x_shape[0], gdim}, part,
+                           max_facet_to_cell_links);
 }
 } // namespace dolfinx::io::VTKHDF

@@ -1015,10 +1015,10 @@ compute_incident_entities(const Topology& topology,
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell in `cells`. If not callable, cells are not
 /// redistributed.
-/// @param[in] reorder_fn Function that reorders (locally) cells that
-/// are owned by this process.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet can be connected to.
+/// @param[in] reorder_fn Function that reorders (locally) cells that
+/// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
@@ -1028,9 +1028,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::size_t max_facet_to_cell_links = 2,
+    std::size_t max_facet_to_cell_links,
     const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
+  std::cout << "create_mesh: start" << (int)max_facet_to_cell_links
+            << std::endl;
   assert(cells.size() == elements.size());
   std::vector<CellType> celltypes;
   std::ranges::transform(elements, std::back_inserter(celltypes),
