@@ -152,7 +152,7 @@ get_cell_entity_pairs(std::int32_t e, std::span<const std::int32_t> cells,
 /// @return List of integration entity data, depending on the `IntegralType` the
 /// data per entity has different layouts
 ///     `IntegralType::cell`:             cell
-///     `IntegralType::exterior_facet`: (cell, local_facet)
+///     `IntegralType::exterior_facet`:   (cell, local_facet)
 ///     `IntegralType::interior_facet`:   (cell, local_facet)
 ///     `IntegralType::vertex`:           (cell, local_vertex)
 std::vector<std::int32_t>
