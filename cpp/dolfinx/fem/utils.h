@@ -737,7 +737,6 @@ Form<T, U> create_form_factory(
         else
         {
           // Integrate over all owned entities
-          // Default vertex kernel operates on all (owned) vertices
           std::int32_t num_entities = topology.index_map(dim)->size_local();
           std::vector<std::int32_t> entities(num_entities);
           std::iota(entities.begin(), entities.end(), 0);
