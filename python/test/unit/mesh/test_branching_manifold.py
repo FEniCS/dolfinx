@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Paul T. Kühner
+# Copyright (C) 2025 Paul T. Kühner and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -11,7 +11,7 @@ import pytest
 
 import basix
 import ufl
-from dolfinx.cpp.mesh import create_cell_partitioner
+from dolfinx.cpp.mesh import cell_num_vertices, create_cell_partitioner
 from dolfinx.mesh import (
     CellType,
     GhostMode,
@@ -19,6 +19,7 @@ from dolfinx.mesh import (
     create_mesh,
     create_unit_cube,
     create_unit_square,
+    entities_to_geometry,
 )
 
 
@@ -88,27 +89,42 @@ def test_edge_skeleton_mesh(dim, cell_type):
         assert matched or on_boundary(skeleton_mesh.geometry.x[facet])
 
 
-# TODO: tetrahedron
-@pytest.mark.parametrize("cell_type", [CellType.hexahedron])
+@pytest.mark.parametrize("cell_type", [CellType.hexahedron, CellType.tetrahedron])
 def test_facet_skeleton_mesh(cell_type):
     comm = MPI.COMM_WORLD
     if comm.rank == 0:
-        mesh = create_unit_cube(MPI.COMM_SELF, 3, 3, 3, cell_type=cell_type)
+        mesh = create_unit_cube(MPI.COMM_SELF, 4, 4, 4, cell_type=cell_type)
 
         top = mesh.topology
         top.create_connectivity(2, 0)
-        f_to_v = top.connectivity(2, 0)
+        tdim = top.dim
+        facet_map = mesh.topology.index_map(tdim - 1)
+        num_facets_local = facet_map.size_local
+        assert facet_map.size_global == num_facets_local
+        mesh.topology.create_connectivity(tdim - 1, tdim)
+        cells = entities_to_geometry(
+            mesh, tdim - 1, np.arange(num_facets_local, dtype=np.int32), False
+        )
         new_x = mesh.geometry.x
-        cells = f_to_v.array.reshape(-1, 4)  # TODO: cell_type
-    else:
-        new_x = np.empty((0, 3), dtype=np.float64)
-        cells = np.empty((0, 4), dtype=np.int64)
 
-    element = ufl.Mesh(basix.ufl.element("Lagrange", "quadrilateral", 1, shape=(3,)))
+        facet_type = mesh.topology.entity_types[tdim - 1]
+        assert len(facet_type) == 1
+        num_vertices = cell_num_vertices(facet_type[0])
+        ft = facet_type[0].name
+        comm.bcast((num_vertices, ft), root=0)
+    else:
+        num_vertices, ft = comm.bcast(None, root=0)
+        new_x = np.empty((0, 3), dtype=np.float64)
+        cells = np.empty((0, num_vertices), dtype=np.int64)
+
+    element = ufl.Mesh(basix.ufl.element("Lagrange", ft, 1, shape=(3,)))
 
     if cell_type == CellType.hexahedron:
         max_facet_to_cell_links = 4
-
+    elif cell_type == CellType.tetrahedron:
+        max_facet_to_cell_links = 16
+    else:
+        raise ValueError("Unknown cell type")
     skeleton_mesh = create_mesh(
         comm,
         cells,
@@ -116,7 +132,6 @@ def test_facet_skeleton_mesh(cell_type):
         new_x,
         create_cell_partitioner(GhostMode.shared_facet, max_facet_to_cell_links),
     )
-
     skeleton_top = skeleton_mesh.topology
 
     if comm.size > 1:
