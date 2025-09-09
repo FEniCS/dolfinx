@@ -61,6 +61,7 @@ jobs:
           repository: ${{ env.basix_repository }}
           ref: ${{ env.basix_ref }}
           path: basix-src
+
       - name: Get Spack
         uses: actions/checkout@v5
         with:
@@ -70,11 +71,10 @@ jobs:
       - name: Get Spack packages
         uses: actions/checkout@v5
         with:
-          repository: garth-wells/spack-packages
-          ref: fenics-testing
+          repository: spack/spack-packages
+          ref: develop
           path: spack-packages
-
-      - name: Add repo
+      - name: Add Spack packages repo
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
