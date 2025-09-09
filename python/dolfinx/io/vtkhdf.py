@@ -27,8 +27,15 @@ def read_mesh(
     filename: str | Path,
     dtype: npt.DTypeLike = np.float64,
     gdim: int = 3,
+    max_facet_to_cell_links: int = 2,
 ):
-    """Read a mesh from a VTKHDF format file
+    """Read a mesh from a VTKHDF format file.
+
+    Note:
+        Changing `max_facet_to_cell_links` from the default value should only be
+        required when working on branching manifolds. Changing this value on
+        non-branching meshes will only result in a slower mesh partitioning
+        and creation.
 
     Args:
         comm: An MPI communicator.
@@ -36,11 +43,12 @@ def read_mesh(
         dtype: Scalar type of mesh geometry (need not match dtype in
             file).
         gdim: Geometric dimension of the mesh.
+        max_facet_to_cell_links: Maximum number of cells that can be linked to a facet.
     """
     if dtype == np.float64:
-        mesh_cpp = read_vtkhdf_mesh_float64(comm, filename, gdim)
+        mesh_cpp = read_vtkhdf_mesh_float64(comm, filename, gdim, max_facet_to_cell_links)
     elif dtype == np.float32:
-        mesh_cpp = read_vtkhdf_mesh_float32(comm, filename, gdim)
+        mesh_cpp = read_vtkhdf_mesh_float32(comm, filename, gdim, max_facet_to_cell_links)
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:

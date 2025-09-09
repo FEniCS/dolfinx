@@ -239,7 +239,8 @@ inline auto create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
   /// param[out] original_idx Contains the permutation applied to the cells per
   /// celltype.
   /// return Boundary vertices (for all cell types).
-  return [&](const std::vector<CellType>& celltypes,
+  return [&, max_facet_to_cell_links](
+             const std::vector<CellType>& celltypes,
              const std::vector<fem::ElementDofLayout>& doflayouts,
              const std::vector<std::vector<int>>& ghost_owners,
              std::vector<std::vector<std::int64_t>>& cells,
@@ -267,8 +268,6 @@ inline auto create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
                                   num_owned_cells * num_cell_vertices);
 
       // Build local dual graph for cell type
-      std::cout << "NUM FACETS TO CELL LINKS" << (int)max_facet_to_cell_links
-                << std::endl;
       auto [graph, unmatched_facets, max_v, _facet_attached_cells]
           = build_local_dual_graph(std::vector{celltypes[i]},
                                    std::vector{cells1_v_local.back()},
@@ -1031,8 +1030,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::size_t max_facet_to_cell_links,
     const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
-  std::cout << "create_mesh: start" << (int)max_facet_to_cell_links
-            << std::endl;
   assert(cells.size() == elements.size());
   std::vector<CellType> celltypes;
   std::ranges::transform(elements, std::back_inserter(celltypes),

@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Paul T. Kühner
+# Copyright (C) 2025 Paul T. Kühner and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -100,9 +100,11 @@ def test_facet_skeleton_mesh(cell_type):
         f_to_v = top.connectivity(2, 0)
         new_x = mesh.geometry.x
         cells = f_to_v.array.reshape(-1, 4)  # TODO: cell_type
+        num_vertices_global, num_cells_global = comm.bcast((new_x.shape[0], cells.shape[0]), root=0)
     else:
         new_x = np.empty((0, 3), dtype=np.float64)
         cells = np.empty((0, 4), dtype=np.int64)
+        num_vertices_global, num_cells_global = comm.bcast((None, None), root=0)
 
     element = ufl.Mesh(basix.ufl.element("Lagrange", "quadrilateral", 1, shape=(3,)))
 
@@ -117,10 +119,10 @@ def test_facet_skeleton_mesh(cell_type):
         create_cell_partitioner(GhostMode.shared_facet, max_facet_to_cell_links), max_facet_links_per_cell=max_facet_to_cell_links
     )
 
+
     skeleton_top = skeleton_mesh.topology
-    print(MPI.COMM_WORLD.rank, new_x.shape, np.unique(cells.flatten()).shape, skeleton_mesh.topology.index_map(0).size_global)
-    if comm.size > 1:
-        pytest.skip("Branching mesh c->e, e->v connectivity not yet implemented.")
+    assert num_cells_global == skeleton_mesh.topology.index_map(skeleton_mesh.topology.dim).size_global
+    assert num_vertices_global == skeleton_mesh.topology.index_map(0).size_global
 
     skeleton_top.create_connectivity(1, 2)
     skeleton_f_to_c = skeleton_top.connectivity(1, 2)

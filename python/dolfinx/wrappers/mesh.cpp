@@ -355,7 +355,6 @@ void declare_mesh(nb::module_& m, std::string type)
                 });
             return p(MPICommWrapper(comm), n, cell_types, cells_nb);
           };
-          std::cout << "MESH PYTHON " << max_facet_to_cell_links << std::endl;
           return dolfinx::mesh::create_mesh(
               comm.get(), comm.get(), std::span(cells.data(), cells.size()),
               element, comm.get(), std::span(x.data(), x.size()),
