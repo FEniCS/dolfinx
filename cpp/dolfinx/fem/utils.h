@@ -146,13 +146,13 @@ get_cell_entity_pairs(std::int32_t e, std::span<const std::int32_t> cells,
 /// @param[in] entities List of mesh entities. Depending on the `IntegralType`
 /// these are associated with different entities:
 ///     `IntegralType::cell`:             cells
-///     `IntegralType::exterior_facet`:            facets
+///     `IntegralType::exterior_facet`: facets
 ///     `IntegralType::interior_facet`:   facets
 ///     `IntegralType::vertex`:           vertices
 /// @return List of integration entity data, depending on the `IntegralType` the
 /// data per entity has different layouts
 ///     `IntegralType::cell`:             cell
-///     `IntegralType::exterior_facet`:            (cell, local_facet)
+///     `IntegralType::exterior_facet`: (cell, local_facet)
 ///     `IntegralType::interior_facet`:   (cell, local_facet)
 ///     `IntegralType::vertex`:           (cell, local_vertex)
 std::vector<std::int32_t>
