@@ -5,8 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Linear algebra functionality"""
 
-import typing
-
 import numpy as np
 import numpy.typing as npt
 
@@ -29,27 +27,27 @@ __all__ = [
 
 
 class Vector:
-    _cpp_object: typing.Union[
-        _cpp.la.Vector_float32,
-        _cpp.la.Vector_float64,
-        _cpp.la.Vector_complex64,
-        _cpp.la.Vector_complex128,
-        _cpp.la.Vector_int8,
-        _cpp.la.Vector_int32,
-        _cpp.la.Vector_int64,
-    ]
+    _cpp_object: (
+        _cpp.la.Vector_float32
+        | _cpp.la.Vector_float64
+        | _cpp.la.Vector_complex64
+        | _cpp.la.Vector_complex128
+        | _cpp.la.Vector_int8
+        | _cpp.la.Vector_int32
+        | _cpp.la.Vector_int64
+    )
 
     def __init__(
         self,
-        x: typing.Union[
-            _cpp.la.Vector_float32,
-            _cpp.la.Vector_float64,
-            _cpp.la.Vector_complex64,
-            _cpp.la.Vector_complex128,
-            _cpp.la.Vector_int8,
-            _cpp.la.Vector_int32,
-            _cpp.la.Vector_int64,
-        ],
+        x: (
+            _cpp.la.Vector_float32
+            | _cpp.la.Vector_float64
+            | _cpp.la.Vector_complex64
+            | _cpp.la.Vector_complex128
+            | _cpp.la.Vector_int8
+            | _cpp.la.Vector_int32
+            | _cpp.la.Vector_int64
+        ),
     ):
         """A distributed vector object.
 
@@ -117,21 +115,21 @@ class Vector:
 
 
 class MatrixCSR:
-    _cpp_object: typing.Union[
-        _cpp.la.MatrixCSR_float32,
-        _cpp.la.MatrixCSR_float64,
-        _cpp.la.MatrixCSR_complex64,
-        _cpp.la.MatrixCSR_complex128,
-    ]
+    _cpp_object: (
+        _cpp.la.MatrixCSR_float32
+        | _cpp.la.MatrixCSR_float64
+        | _cpp.la.MatrixCSR_complex64
+        | _cpp.la.MatrixCSR_complex128
+    )
 
     def __init__(
         self,
-        A: typing.Union[
-            _cpp.la.MatrixCSR_float32,
-            _cpp.la.MatrixCSR_float64,
-            _cpp.la.MatrixCSR_complex64,
-            _cpp.la.MatrixCSR_complex128,
-        ],
+        A: (
+            _cpp.la.MatrixCSR_float32
+            | _cpp.la.MatrixCSR_float64
+            | _cpp.la.MatrixCSR_complex64
+            | _cpp.la.MatrixCSR_complex128
+        ),
     ):
         """A distributed sparse matrix that uses compressed sparse row
         storage.

@@ -26,8 +26,8 @@ from dolfinx.fem.forms import Form
 
 
 def pack_constants(
-    form: typing.Union[Form, Sequence[Form]],
-) -> typing.Union[npt.NDArray, Sequence[npt.NDArray]]:
+    form: Form | Sequence[Form],
+) -> npt.NDArray | Sequence[npt.NDArray]:
     """Pack form constants for use in assembly.
 
     Pack the 'constants' that appear in forms. The packed constants can
@@ -58,10 +58,10 @@ def pack_constants(
 
 
 def pack_coefficients(
-    form: typing.Union[Form, Sequence[Form]],
-) -> typing.Union[
-    dict[tuple[IntegralType, int], npt.NDArray], list[dict[tuple[IntegralType, int], npt.NDArray]]
-]:
+    form: Form | Sequence[Form],
+) -> (
+    dict[tuple[IntegralType, int], npt.NDArray] | list[dict[tuple[IntegralType, int], npt.NDArray]]
+):
     """Pack form coefficients for use in assembly.
 
     Pack the ``coefficients`` that appear in forms. The packed
@@ -109,7 +109,7 @@ def create_vector(L: Form) -> la.Vector:
     return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=L.dtype)
 
 
-def create_matrix(a: Form, block_mode: typing.Optional[la.BlockMode] = None) -> la.MatrixCSR:
+def create_matrix(a: Form, block_mode: la.BlockMode | None = None) -> la.MatrixCSR:
     """Create a sparse matrix that is compatible with a given bilinear
     form.
 
@@ -134,9 +134,9 @@ def create_matrix(a: Form, block_mode: typing.Optional[la.BlockMode] = None) -> 
 
 def assemble_scalar(
     M: Form,
-    constants: typing.Optional[npt.NDArray] = None,
-    coeffs: typing.Optional[dict[tuple[IntegralType, int], npt.NDArray]] = None,
-) -> typing.Union[float, complex]:
+    constants: npt.NDArray | None = None,
+    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
+) -> float | complex:
     """Assemble functional. The returned value is local and not
     accumulated across processes.
 
@@ -169,8 +169,8 @@ def assemble_scalar(
 @functools.singledispatch
 def assemble_vector(
     L: typing.Any,
-    constants: typing.Optional[npt.NDArray] = None,
-    coeffs: typing.Optional[dict[tuple[IntegralType, int], npt.NDArray]] = None,
+    constants: npt.NDArray | None = None,
+    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
 ) -> la.Vector:
     return _assemble_vector_form(L, constants, coeffs)
 
@@ -178,8 +178,8 @@ def assemble_vector(
 @assemble_vector.register
 def _assemble_vector_form(
     L: Form,
-    constants: typing.Optional[npt.NDArray] = None,
-    coeffs: typing.Optional[dict[tuple[IntegralType, int], npt.NDArray]] = None,
+    constants: npt.NDArray | None = None,
+    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
 ) -> la.Vector:
     """Assemble linear form into a new Vector.
 
@@ -216,8 +216,8 @@ def _assemble_vector_form(
 def _assemble_vector_array(
     b: npt.NDArray,
     L: Form,
-    constants: typing.Optional[npt.NDArray] = None,
-    coeffs: typing.Optional[dict[tuple[IntegralType, int], npt.NDArray]] = None,
+    constants: npt.NDArray | None = None,
+    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
 ) -> npt.NDArray:
     """Assemble linear form into an existing array.
 
@@ -253,11 +253,11 @@ def _assemble_vector_array(
 @functools.singledispatch
 def assemble_matrix(
     a: typing.Any,
-    bcs: typing.Optional[Sequence[DirichletBC]] = None,
+    bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1.0,
-    constants: typing.Optional[npt.NDArray] = None,
-    coeffs: typing.Optional[dict[tuple[IntegralType, int], npt.NDArray]] = None,
-    block_mode: typing.Optional[la.BlockMode] = None,
+    constants: npt.NDArray | None = None,
+    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
+    block_mode: la.BlockMode | None = None,
 ) -> la.MatrixCSR:
     """Assemble bilinear form into a matrix.
 
@@ -294,10 +294,10 @@ def assemble_matrix(
 def _assemble_matrix_csr(
     A: la.MatrixCSR,
     a: Form,
-    bcs: typing.Optional[Sequence[DirichletBC]] = None,
+    bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1.0,
-    constants: typing.Optional[npt.NDArray] = None,
-    coeffs: typing.Optional[dict[tuple[IntegralType, int], npt.NDArray]] = None,
+    constants: npt.NDArray | None = None,
+    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
 ) -> la.MatrixCSR:
     """Assemble bilinear form into a matrix.
 
@@ -341,10 +341,10 @@ def apply_lifting(
     b: npt.NDArray,
     a: Sequence[Form],
     bcs: Sequence[Sequence[DirichletBC]],
-    x0: typing.Optional[Sequence[npt.NDArray]] = None,
+    x0: Sequence[npt.NDArray] | None = None,
     alpha: float = 1,
-    constants: typing.Optional[npt.NDArray] = None,
-    coeffs: typing.Optional[dict[tuple[IntegralType, int], npt.NDArray]] = None,
+    constants: npt.NDArray | None = None,
+    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
 ) -> None:
     """Modify right-hand side vector ``b`` for lifting of Dirichlet
     boundary conditions.
@@ -459,7 +459,7 @@ def apply_lifting(
 def set_bc(
     b: npt.NDArray,
     bcs: Sequence[DirichletBC],
-    x0: typing.Optional[npt.NDArray] = None,
+    x0: npt.NDArray | None = None,
     alpha: float = 1,
 ) -> None:
     """Insert boundary condition values into vector.

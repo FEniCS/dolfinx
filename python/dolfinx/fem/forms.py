@@ -10,7 +10,7 @@ from __future__ import annotations
 import collections
 import types
 import typing
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from mpi4py import MPI
@@ -33,25 +33,23 @@ if typing.TYPE_CHECKING:
 
 
 class Form:
-    _cpp_object: typing.Union[
-        _cpp.fem.Form_complex64,
-        _cpp.fem.Form_complex128,
-        _cpp.fem.Form_float32,
-        _cpp.fem.Form_float64,
-    ]
-    _code: typing.Optional[typing.Union[str, list[str]]]
+    _cpp_object: (
+        _cpp.fem.Form_complex64
+        | _cpp.fem.Form_complex128
+        | _cpp.fem.Form_float32
+        | _cpp.fem.Form_float64
+    )
+    _code: str | list[str] | None
 
     def __init__(
         self,
-        form: typing.Union[
-            _cpp.fem.Form_complex64,
-            _cpp.fem.Form_complex128,
-            _cpp.fem.Form_float32,
-            _cpp.fem.Form_float64,
-        ],
+        form: _cpp.fem.Form_complex64
+        | _cpp.fem.Form_complex128
+        | _cpp.fem.Form_float32
+        | _cpp.fem.Form_float64,
         ufcx_form=None,
-        code: typing.Optional[typing.Union[str, list[str]]] = None,
-        module: typing.Optional[typing.Union[types.ModuleType, list[types.ModuleType]]] = None,
+        code: str | list[str] | None = None,
+        module: types.ModuleType | list[types.ModuleType] | None = None,
     ):
         """A finite element form.
 
@@ -78,12 +76,12 @@ class Form:
         return self._ufcx_form
 
     @property
-    def code(self) -> typing.Union[str, list[str], None]:
+    def code(self) -> str | list[str] | None:
         """C code strings."""
         return self._code
 
     @property
-    def module(self) -> typing.Union[types.ModuleType, list[types.ModuleType], None]:
+    def module(self) -> types.ModuleType | list[types.ModuleType] | None:
         """The CFFI module"""
         return self._module
 
@@ -102,7 +100,7 @@ class Form:
         return np.dtype(self._cpp_object.dtype)
 
     @property
-    def mesh(self) -> typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]:
+    def mesh(self) -> _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64:
         """Mesh on which this form is defined."""
         return self._cpp_object.mesh
 
@@ -124,7 +122,7 @@ class Form:
 
 def get_integration_domains(
     integral_type: IntegralType,
-    subdomain: typing.Optional[typing.Union[MeshTags, list[tuple[int, np.ndarray]]]],
+    subdomain: MeshTags | list[tuple[int, np.ndarray]] | None,
     subdomain_ids: list[int],
 ) -> list[tuple[int, np.ndarray]]:
     """Get integration domains from subdomain data.
@@ -191,9 +189,12 @@ def get_integration_domains(
 
 def form_cpp_class(
     dtype: npt.DTypeLike,
-) -> typing.Union[
-    _cpp.fem.Form_float32, _cpp.fem.Form_float64, _cpp.fem.Form_complex64, _cpp.fem.Form_complex128
-]:
+) -> (
+    _cpp.fem.Form_float32
+    | _cpp.fem.Form_float64
+    | _cpp.fem.Form_complex64
+    | _cpp.fem.Form_complex128
+):
     """Return the wrapped C++ class of a variational form of a specific
     scalar type.
 
@@ -231,9 +232,9 @@ _ufl_to_dolfinx_domain = {
 def mixed_topology_form(
     forms: Sequence[ufl.Form],
     dtype: npt.DTypeLike = default_scalar_type,
-    form_compiler_options: typing.Optional[dict] = None,
-    jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
 ):
     """
     Create a mixed-topology from from an array of Forms.
@@ -308,11 +309,11 @@ def mixed_topology_form(
 
 
 def form(
-    form: typing.Union[ufl.Form, Sequence[ufl.Form], Sequence[Sequence[ufl.Form]]],
+    form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]],
     dtype: npt.DTypeLike = default_scalar_type,
-    form_compiler_options: typing.Optional[dict] = None,
-    jit_options: typing.Optional[dict] = None,
-    entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
 ):
     """Create a Form or list of Forms.
 
@@ -446,14 +447,14 @@ def form(
 
 
 def extract_function_spaces(
-    forms: typing.Union[Iterable[Form], Iterable[Iterable[Form]]],
+    forms: Form | Sequence[Form] | Sequence[Sequence[Form]],
     index: int = 0,
-) -> list[typing.Union[None, FunctionSpace]]:
+) -> list[None | FunctionSpace]:
     """Extract common function spaces from an array of forms.
 
-    If ``forms`` is a list of linear form, this function returns of list
+    If ``forms`` is a list of linear forms, this function returns of list
     of the corresponding test function spaces. If ``forms`` is a 2D
-    array of bilinear forms, for ``index=0`` the list common test
+    array of bilinear forms, for ``index=0`` the list of common test
     function spaces for each row is returned, and if ``index=1`` the
     common trial function spaces for each column are returned.
 
@@ -520,8 +521,8 @@ class CompiledForm:
 def compile_form(
     comm: MPI.Intracomm,
     form: ufl.Form,
-    form_compiler_options: typing.Optional[dict] = {"scalar_type": default_scalar_type},
-    jit_options: typing.Optional[dict] = None,
+    form_compiler_options: dict | None = {"scalar_type": default_scalar_type},
+    jit_options: dict | None = None,
 ) -> CompiledForm:
     """Compile UFL form without associated DOLFINx data.
 
@@ -540,12 +541,12 @@ def compile_form(
 
 def form_cpp_creator(
     dtype: npt.DTypeLike,
-) -> typing.Union[
-    _cpp.fem.Form_float32,
-    _cpp.fem.Form_float64,
-    _cpp.fem.Form_complex64,
-    _cpp.fem.Form_complex128,
-]:
+) -> (
+    _cpp.fem.Form_float32
+    | _cpp.fem.Form_float64
+    | _cpp.fem.Form_complex64
+    | _cpp.fem.Form_complex128
+):
     """Return the wrapped C++ constructor for creating a variational form
     of a specific scalar type.
 
@@ -578,7 +579,7 @@ def create_form(
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Coefficient, Function],
     constant_map: dict[ufl.Constant, Constant],
-    entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
 ) -> Form:
     """Create a Form object from a data-independent compiled form.
 
@@ -654,10 +655,10 @@ def create_form(
 
 
 def derivative_block(
-    F: typing.Union[ufl.Form, Sequence[ufl.Form]],
-    u: typing.Union[Function, Sequence[Function]],
-    du: typing.Optional[typing.Union[ufl.Argument, Sequence[ufl.Argument]]] = None,
-) -> typing.Union[ufl.Form, Sequence[Sequence[ufl.Form]]]:
+    F: ufl.Form | Sequence[ufl.Form],
+    u: Function | Sequence[Function],
+    du: ufl.Argument | Sequence[ufl.Argument] | None = None,
+) -> ufl.Form | Sequence[Sequence[ufl.Form]]:
     """Return the UFL derivative of a (list of) UFL rank one form(s).
 
     This is commonly used to derive a block Jacobian from a block

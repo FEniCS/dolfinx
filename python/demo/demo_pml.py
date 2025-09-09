@@ -17,7 +17,6 @@
 # +
 import sys
 from functools import partial
-from typing import Union
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -627,8 +626,8 @@ y_pml = ufl.as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 
 def create_eps_mu(
     pml: ufl.tensors.ListTensor,
-    eps_bkg: Union[float, ufl.tensors.ListTensor],
-    mu_bkg: Union[float, ufl.tensors.ListTensor],
+    eps_bkg: float | ufl.tensors.ListTensor,
+    mu_bkg: float | ufl.tensors.ListTensor,
 ) -> tuple[ufl.tensors.ComponentTensor, ufl.tensors.ComponentTensor]:
     J = ufl.grad(pml)
 
