@@ -60,6 +60,12 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// function mesh.
 /// @param cell_info1 Cell permutation information for the trial
 /// function mesh.
+/// @param Ab Buffer for local element matrix. Size must be at least
+/// `(bs0 * num_dofs0) * (bs1 * num_dofs1)`, where `bs0 * num_dofs0` is
+/// the number of rows and `bs1 * num_dofs1` is the number of columns in
+/// local element matrix.
+/// @param cdofs_b Buffer for local element geometry. Size must be at
+/// least `3 * x_dofmap.extent(1))`.
 template <dolfinx::scalar T>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -193,6 +199,12 @@ void assemble_cells_matrix(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
+/// @param Ab Buffer for local element matrix. Size must be at least
+/// `(bs0 * num_dofs0) * (bs1 * num_dofs1)`, where `bs0 * num_dofs0` is
+/// the number of rows and `bs1 * num_dofs1` is the number of columns in
+/// local element matrix.
+/// @param cdofs_b Buffer for local element geometry. Size must be at
+/// least `3 * x_dofmap.extent(1))`.
 template <dolfinx::scalar T>
 void assemble_exterior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -334,6 +346,12 @@ void assemble_exterior_facets(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
+/// @param Ab Buffer for local element matrix. Size must be at least `4
+/// * (bs0 * num_dofs0) * (bs1 * num_dofs1)`, where `bs0 * num_dofs0` is
+/// the number of rows and `bs1 * num_dofs1` is the number of columns in
+/// local element matrix.
+/// @param cdofs_b Buffer for local element geometry. Size must be at
+/// least `2 * 3 * x_dofmap.extent(1))`.
 template <dolfinx::scalar T>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
