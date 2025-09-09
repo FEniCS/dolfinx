@@ -239,18 +239,15 @@ T assemble_scalar(
 
       std::span entities = M.domain(itg_type, i, 0);
 
-      constexpr std::size_t num_adjacent_cells = 1;
       // Two values per each adj. cell (cell index and local entity index).
-      constexpr std::size_t shape1 = 2 * num_adjacent_cells;
-
       assert((entities.size() / 2) * cstride == coeffs.size());
       value += impl::assemble_entities(
           x_dofmap, x,
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>(
-              entities.data(), entities.size() / shape1, 2),
+              entities.data(), entities.size() / 2, 2),
           fn, constants,
-          md::mdspan(coeffs.data(), entities.size() / shape1, cstride), perms,
+          md::mdspan(coeffs.data(), entities.size() / 2, cstride), perms,
           cdofs_b);
     }
   }
