@@ -55,9 +55,9 @@ T assemble_cells(mdspan2_t x_dofmap,
   return value;
 }
 
-/// Execute kernel over exterior entities and accumulate result
+/// Execute kernel over a set of entities and accumulate result
 template <dolfinx::scalar T>
-T assemble_exterior_entities(
+T assemble_entities_over_cells(
     mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
@@ -243,7 +243,7 @@ T assemble_scalar(
       constexpr std::size_t shape1 = 2 * num_adjacent_cells;
 
       assert((entities.size() / 2) * cstride == coeffs.size());
-      value += impl::assemble_exterior_entities(
+      value += impl::assemble_entities_over_cells(
           x_dofmap, x,
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>(

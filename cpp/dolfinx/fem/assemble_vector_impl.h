@@ -718,7 +718,7 @@ void assemble_cells(
   }
 }
 
-/// @brief Execute kernel over exterior entities and accumulate result in
+/// @brief Execute kernel over a set of entities and accumulate result in
 /// vector.
 ///
 /// @tparam T Scalar type.
@@ -746,7 +746,7 @@ void assemble_cells(
 template <int _bs = -1, typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
-void assemble_exterior_entities(
+void assemble_entities_over_cells(
     fem::DofTransformKernel<T> auto P0, V&& b, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
@@ -1392,14 +1392,14 @@ void assemble_vector(
         assert((entities.size() / 2) * cstride == coeffs.size());
         if (bs == 1)
         {
-          impl::assemble_exterior_entities<1>(
+          impl::assemble_entities_over_cells<1>(
               P0, b, x_dofmap, x, entities, {dofs, bs, entities1}, fn,
               constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
               cell_info0, perms);
         }
         else if (bs == 3)
         {
-          impl::assemble_exterior_entities<3>(
+          impl::assemble_entities_over_cells<3>(
               P0, b, x_dofmap, x, entities, {dofs, bs, entities1}, fn,
               constants,
               md::mdspan(coeffs.data(), entities.size() / 2, cstride),
@@ -1407,7 +1407,7 @@ void assemble_vector(
         }
         else
         {
-          impl::assemble_exterior_entities(
+          impl::assemble_entities_over_cells(
               P0, b, x_dofmap, x, entities, {dofs, bs, entities1}, fn,
               constants,
               md::mdspan(coeffs.data(), entities.size() / 2, cstride),
