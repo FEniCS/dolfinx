@@ -82,12 +82,14 @@ def test_create_mixed_mesh():
     tetrahedron = coordinate_element(CellType.tetrahedron, 1)
 
     part = _cpp.mesh.create_cell_partitioner(GhostMode.none)
+    max_cells_per_facet = 2
     mesh = create_mesh(
         MPI.COMM_WORLD,
         cells_np,
         [hexahedron._cpp_object, pyramid._cpp_object, tetrahedron._cpp_object],
         geomx,
         part,
+        max_cells_per_facet
     )
 
     entity_types = mesh.topology.entity_types[3]
