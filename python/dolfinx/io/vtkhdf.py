@@ -32,10 +32,10 @@ def read_mesh(
     """Read a mesh from a VTKHDF format file.
 
     Note:
-        Changing `max_facet_to_cell_links` from the default value should only be
-        required when working on branching manifolds. Changing this value on
-        non-branching meshes will only result in a slower mesh partitioning
-        and creation.
+        Changing `max_facet_to_cell_links` from the default value should
+        only be required when working on branching manifolds. Changing this
+        value on non-branching meshes will only result in a slower mesh
+        partitioning and creation.
 
     Args:
         comm: An MPI communicator.
@@ -43,7 +43,8 @@ def read_mesh(
         dtype: Scalar type of mesh geometry (need not match dtype in
             file).
         gdim: Geometric dimension of the mesh.
-        max_facet_to_cell_links: Maximum number of cells that can be linked to a facet.
+        max_facet_to_cell_links: Maximum number of cells that can be
+            linked to a facet.
     """
     if dtype == np.float64:
         mesh_cpp = read_vtkhdf_mesh_float64(comm, filename, gdim, max_facet_to_cell_links)

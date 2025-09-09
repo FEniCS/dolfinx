@@ -175,16 +175,19 @@ class XDMFFile(_cpp.io.XDMFFile):
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
     def read_mesh(
-        self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain",
+        self,
+        ghost_mode=GhostMode.shared_facet,
+        name="mesh",
+        xpath="/Xdmf/Domain",
         max_facet_to_cell_links: int = 2,
     ) -> Mesh:
         """Read mesh data from file.
-        
+
         Note:
-            Changing `max_facet_to_cell_links` from the default value should only be
-            required when working on branching manifolds. Changing this value on
-            non-branching meshes will only result in a slower mesh partitioning
-            and creation.
+            Changing `max_facet_to_cell_links` from the default value
+            should only be required when working on branching manifolds.
+            Changing this value on non-branching meshes will only result in
+            a slower mesh partitioning and creation.
 
         Args:
             ghost_mode: Ghost mode to use for the cells in mesh creation.
@@ -253,8 +256,12 @@ class XDMFFile(_cpp.io.XDMFFile):
 
         # Build the mesh
         msh = _cpp.mesh.create_mesh(
-            self.comm, cells, cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode),
-            max_facet_to_cell_links
+            self.comm,
+            cells,
+            cmap,
+            x,
+            _cpp.mesh.create_cell_partitioner(ghost_mode),
+            max_facet_to_cell_links,
         )
         msh.name = name
         domain = ufl.Mesh(basix_el)
