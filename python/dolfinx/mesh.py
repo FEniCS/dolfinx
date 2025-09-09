@@ -671,7 +671,7 @@ def create_mesh(
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     x: npt.NDArray[np.floating],
     partitioner: Callable | None = None,
-    max_facet_links_per_cell: int = 2,
+    max_facet_to_cell_links: int = 2,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
