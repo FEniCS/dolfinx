@@ -671,6 +671,7 @@ def create_mesh(
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     x: npt.NDArray[np.floating],
     partitioner: Callable | None = None,
+    max_facet_links_per_cell: int = 2
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -684,6 +685,8 @@ def create_mesh(
             type of ``e``.
         partitioner: Function that determines the parallel distribution of
             cells across MPI ranks.
+        max_facet_links_per_cell: Maximum number of cells a facet can
+            be connected to.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -736,7 +739,7 @@ def create_mesh(
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
-        comm, cells, cmap._cpp_object, x, partitioner
+        comm, cells, cmap._cpp_object, x, partitioner, max_facet_links_per_cell
     )
 
     return Mesh(msh, domain)  # type: ignore

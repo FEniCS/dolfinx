@@ -114,11 +114,11 @@ def test_facet_skeleton_mesh(cell_type):
         cells,
         element,
         new_x,
-        create_cell_partitioner(GhostMode.shared_facet, max_facet_to_cell_links),
+        create_cell_partitioner(GhostMode.shared_facet, max_facet_to_cell_links), max_facet_links_per_cell=max_facet_to_cell_links
     )
 
     skeleton_top = skeleton_mesh.topology
-
+    print(MPI.COMM_WORLD.rank, new_x.shape, np.unique(cells.flatten()).shape, skeleton_mesh.topology.index_map(0).size_global)
     if comm.size > 1:
         pytest.skip("Branching mesh c->e, e->v connectivity not yet implemented.")
 
