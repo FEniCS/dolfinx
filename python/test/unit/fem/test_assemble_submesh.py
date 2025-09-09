@@ -175,7 +175,7 @@ def L_ufl(v, f, g, measure):
 
 
 def M_ufl(f, g, measure):
-    if measure.integral_type() == "cell" or measure.integral_type() == "facet":
+    if measure.integral_type() == "cell" or measure.integral_type() == "exterior_facet":
         return f * g * measure
     else:
         assert measure.integral_type() == "interior_facet"
