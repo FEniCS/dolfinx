@@ -5,8 +5,8 @@ on:
   push:
     branches:
       - "**"
-  pull_request:
-    branches: [ "main" ]
+  # pull_request:
+  #   branches: [ "main" ]
   # merge_group:
   #   branches:
   #     - main
