@@ -612,7 +612,7 @@ void assemble_matrix(
           mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
           {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
           md::mdspan(coeffs.data(), cells.size(), cstride), constants,
-          cell_info0, cell_info1, Ab, cdofs_b);
+          cell_info0, cell_info1, std::span(Ab), std::span(cdofs_b));
     }
 
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
@@ -657,7 +657,7 @@ void assemble_matrix(
           mat_set, x_dofmap, x, facets, {dofs0, bs0, facets0}, P0,
           {dofs1, bs1, facets1}, P1T, bc0, bc1, fn,
           md::mdspan(coeffs.data(), facets.extent(0), cstride), constants,
-          cell_info0, cell_info1, perms, Ab, cdofs_b);
+          cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b));
     }
 
     for (int i = 0;
@@ -695,7 +695,7 @@ void assemble_matrix(
            mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
           P1T, bc0, bc1, fn,
           mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride), constants,
-          cell_info0, cell_info1, perms, Ab, cdofs_b);
+          cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b));
     }
   }
 }
