@@ -37,9 +37,7 @@ class PointOwnershipData:
     """Convenience class for storing data related to the ownership of
     points."""
 
-    _cpp_object: typing.Union[
-        _cpp.geometry.PointOwnershipData_float32, _cpp.geometry.PointOwnershipData_float64
-    ]
+    _cpp_object: _cpp.geometry.PointOwnershipData_float32 | _cpp.geometry.PointOwnershipData_float64
 
     def __init__(self, ownership_data):
         """Wrap a C++ PointOwnershipData."""
@@ -67,9 +65,7 @@ class PointOwnershipData:
 class BoundingBoxTree:
     """Bounding box trees used in collision detection."""
 
-    _cpp_object: typing.Union[
-        _cpp.geometry.BoundingBoxTree_float32, _cpp.geometry.BoundingBoxTree_float64
-    ]
+    _cpp_object: _cpp.geometry.BoundingBoxTree_float32 | _cpp.geometry.BoundingBoxTree_float64
 
     def __init__(self, tree):
         """Wrap a C++ BoundingBoxTree.
@@ -87,7 +83,7 @@ class BoundingBoxTree:
         return self._cpp_object.num_bboxes
 
     @property
-    def bbox_coordinates(self) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+    def bbox_coordinates(self) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Coordinates of lower and upper corners of bounding boxes.
 
         Note:
@@ -116,7 +112,7 @@ class BoundingBoxTree:
 def bb_tree(
     mesh: Mesh,
     dim: int,
-    entities: typing.Optional[npt.NDArray[np.int32]] = None,
+    entities: npt.NDArray[np.int32] | None = None,
     padding: float = 0.0,
 ) -> BoundingBoxTree:
     """Create a bounding box tree for use in collision detection.
