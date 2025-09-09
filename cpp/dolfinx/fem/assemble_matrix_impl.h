@@ -90,10 +90,10 @@ void assemble_cells_matrix(
   const auto [dmap1, bs1, cells1] = dofmap1;
 
   // Iterate over active cells
-  const int num_dofs0 = dmap0.extent(1);
-  const int num_dofs1 = dmap1.extent(1);
-  const int ndim0 = bs0 * num_dofs0;
-  const int ndim1 = bs1 * num_dofs1;
+  std::size_t num_dofs0 = dmap0.extent(1);
+  std::size_t num_dofs1 = dmap1.extent(1);
+  std::size_t ndim0 = bs0 * num_dofs0;
+  std::size_t ndim1 = bs1 * num_dofs1;
 
   assert(Ab.size() >= ndim0 * ndim1);
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
@@ -130,7 +130,7 @@ void assemble_cells_matrix(
 
     if (!bc0.empty())
     {
-      for (int i = 0; i < num_dofs0; ++i)
+      for (std::size_t i = 0; i < num_dofs0; ++i)
       {
         for (int k = 0; k < bs0; ++k)
         {
@@ -146,15 +146,15 @@ void assemble_cells_matrix(
 
     if (!bc1.empty())
     {
-      for (int j = 0; j < num_dofs1; ++j)
+      for (std::size_t j = 0; j < num_dofs1; ++j)
       {
         for (int k = 0; k < bs1; ++k)
         {
           if (bc1[bs1 * dofs1[j] + k])
           {
             // Zero column bs1 * j + k
-            const int col = bs1 * j + k;
-            for (int row = 0; row < ndim0; ++row)
+            int col = bs1 * j + k;
+            for (std::size_t row = 0; row < ndim0; ++row)
               Ae[row * ndim1 + col] = 0;
           }
         }
@@ -237,10 +237,10 @@ void assemble_exterior_facets(
   const auto [dmap0, bs0, facets0] = dofmap0;
   const auto [dmap1, bs1, facets1] = dofmap1;
 
-  const int num_dofs0 = dmap0.extent(1);
-  const int num_dofs1 = dmap1.extent(1);
-  const int ndim0 = bs0 * num_dofs0;
-  const int ndim1 = bs1 * num_dofs1;
+  std::size_t num_dofs0 = dmap0.extent(1);
+  std::size_t num_dofs1 = dmap1.extent(1);
+  std::size_t ndim0 = bs0 * num_dofs0;
+  std::size_t ndim1 = bs1 * num_dofs1;
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   assert(Ab.size() >= ndim0 * ndim1);
@@ -276,7 +276,7 @@ void assemble_exterior_facets(
     std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
     if (!bc0.empty())
     {
-      for (int i = 0; i < num_dofs0; ++i)
+      for (std::size_t i = 0; i < num_dofs0; ++i)
       {
         for (int k = 0; k < bs0; ++k)
         {
@@ -291,15 +291,15 @@ void assemble_exterior_facets(
     }
     if (!bc1.empty())
     {
-      for (int j = 0; j < num_dofs1; ++j)
+      for (std::size_t j = 0; j < num_dofs1; ++j)
       {
         for (int k = 0; k < bs1; ++k)
         {
           if (bc1[bs1 * dofs1[j] + k])
           {
             // Zero column bs1 * j + k
-            const int col = bs1 * j + k;
-            for (int row = 0; row < ndim0; ++row)
+            int col = bs1 * j + k;
+            for (std::size_t row = 0; row < ndim0; ++row)
               Ae[row * ndim1 + col] = 0;
           }
         }
@@ -391,10 +391,10 @@ void assemble_interior_facets(
   auto cdofs0 = cdofs_b.first(3 * x_dofmap.extent(1));
   auto cdofs1 = cdofs_b.last(3 * x_dofmap.extent(1));
 
-  const std::size_t dmap0_size = dmap0.map().extent(1);
-  const std::size_t dmap1_size = dmap1.map().extent(1);
-  const int num_rows = bs0 * 2 * dmap0_size;
-  const int num_cols = bs1 * 2 * dmap1_size;
+  std::size_t dmap0_size = dmap0.map().extent(1);
+  std::size_t dmap1_size = dmap1.map().extent(1);
+  std::size_t num_rows = bs0 * 2 * dmap0_size;
+  std::size_t num_cols = bs1 * 2 * dmap1_size;
 
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0(2 * dmap0_size);
@@ -478,7 +478,7 @@ void assemble_interior_facets(
 
     if (cells1[1] >= 0)
     {
-      for (int row = 0; row < num_rows; ++row)
+      for (std::size_t row = 0; row < num_rows; ++row)
       {
         // DOFs for dmap1 and cell1 are not stored contiguously in the
         // block matrix, so each row needs a separate span access
@@ -513,7 +513,7 @@ void assemble_interior_facets(
           if (bc1[bs1 * dmapjoint1[j] + k])
           {
             // Zero column bs1 * j + k
-            for (int m = 0; m < num_rows; ++m)
+            for (std::size_t m = 0; m < num_rows; ++m)
               Ae[m * num_cols + bs1 * j + k] = 0;
           }
         }
