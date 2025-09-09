@@ -726,7 +726,9 @@ Form<T, U> create_form_factory(
         throw std::runtime_error("Unsupported integral type");
       }
 
-      auto get_default_integration_entities
+      const std::function<std::vector<std::int32_t>(const mesh::Topology&,
+                                                    IntegralType)>
+          get_default_integration_entities
           = [dim](const mesh::Topology& topology, IntegralType itg_type)
       {
         if (itg_type == IntegralType::facet)
