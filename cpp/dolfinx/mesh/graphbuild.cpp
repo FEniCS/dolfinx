@@ -660,7 +660,7 @@ mesh::build_local_dual_graph(
                                                    f1_it);
                                }));
 
-      std::uint16_t cell_count = matching_facets.size();
+      std::int32_t cell_count = matching_facets.size();
       assert(cell_count >= 1);
       if (!max_facet_to_cell_links.has_value()
           or (cell_count < *max_facet_to_cell_links))
