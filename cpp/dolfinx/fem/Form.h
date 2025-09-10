@@ -286,7 +286,7 @@ public:
           std::vector<std::int32_t> e;
           if (type.codim == 0)
             e = emap.sub_topology_to_topology(itg.entities, inverse);
-          else if (type.codim = 1)
+          else if (type.codim == 1)
           {
             const mesh::Topology topology = *_mesh->topology();
             int tdim = topology.dim();
