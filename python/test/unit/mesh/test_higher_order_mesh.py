@@ -761,14 +761,14 @@ def test_gmsh_input_2d(order, cell_type, dtype):
     assert np.all(idx[srt] == np.arange(len(idx)))
     x = points[srt]
 
-    element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=2)
+    element_types, _, node_tags = gmsh.model.mesh.getElements(dim=2)
     (
-        name,
-        dim,
+        _,
+        _,
         order,
         num_nodes,
-        local_coords,
-        num_first_order_nodes,
+        _,
+        _,
     ) = gmsh.model.mesh.getElementProperties(element_types[0])
 
     cells = node_tags[0].reshape(-1, num_nodes) - 1
@@ -827,14 +827,14 @@ def test_gmsh_input_3d(order, cell_type, dtype):
     assert np.all(idx[srt] == np.arange(len(idx)))
     x = points[srt]
 
-    element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=3)
+    element_types, _, node_tags = gmsh.model.mesh.getElements(dim=3)
     (
-        name,
-        dim,
+        _,
+        _,
         order,
         num_nodes,
-        local_coords,
-        num_first_order_nodes,
+        _,
+        _,
     ) = gmsh.model.mesh.getElementProperties(element_types[0])
 
     cells = node_tags[0].reshape(-1, num_nodes) - 1

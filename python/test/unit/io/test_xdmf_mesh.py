@@ -131,14 +131,14 @@ def test_read_write_p2_mesh(tempdir, encoding):
         assert np.all(idx[srt] == np.arange(len(idx)))
         x = points[srt]
 
-        element_types, element_tags, node_tags = model.mesh.getElements(dim=3)
+        element_types, _, node_tags = model.mesh.getElements(dim=3)
         (
-            name,
-            dim,
-            order,
+            _,
+            _,
+            _,
             num_nodes,
-            local_coords,
-            num_first_order_nodes,
+            _,
+            _,
         ) = model.mesh.getElementProperties(element_types[0])
         cells = node_tags[0].reshape(-1, num_nodes) - 1
         num_nodes, gmsh_cell_id = MPI.COMM_WORLD.bcast(

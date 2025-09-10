@@ -327,7 +327,7 @@ def test_custom_mesh_loop_rank1(dtype):
     # Assemble using generated tabulate_tensor kernel and Numba
     # assembler
     b3 = Function(V, dtype=dtype)
-    ufcx_form, module, code = dolfinx.jit.ffcx_jit(
+    ufcx_form, _, _ = dolfinx.jit.ffcx_jit(
         mesh.comm, L, form_compiler_options={"scalar_type": dtype}
     )
 

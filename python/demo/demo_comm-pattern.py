@@ -95,7 +95,7 @@ def plot_bar(G: nx.MultiGraph):
     num_edges = [len(nbrs) for _, nbrs in G.adj.items()]
     weights = [sum(data["weight"] for nbr, data in nbrs.items()) for _, nbrs in G.adj.items()]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
     ax1.bar(ranks, num_edges)
     ax1.set_xlabel("rank")
