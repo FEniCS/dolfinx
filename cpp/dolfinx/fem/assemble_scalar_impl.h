@@ -277,7 +277,8 @@ T assemble_scalar(
         perms, cdofs_b);
   }
 
-  IntegralType vertex_type = IntegralType(1, 2);
+  std::int32_t tdim = mesh->topology()->dim();
+  IntegralType vertex_type = IntegralType(tdim, 1);
   for (int i = 0; i < M.num_integrals(vertex_type, 0); ++i)
   {
     auto fn = M.kernel(vertex_type, i, 0);
