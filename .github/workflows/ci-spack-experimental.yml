@@ -20,7 +20,7 @@ env:
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
 jobs:
-  build:
+  ci-spack-experimental-build:
     name: Build and test
     runs-on: ubuntu-latest
     container: ubuntu:24.04
