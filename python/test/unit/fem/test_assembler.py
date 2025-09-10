@@ -1591,7 +1591,7 @@ def vertex_to_dof_map(V):
 @pytest.mark.parametrize(
     "cell_type",
     [
-        #mesh.CellType.interval,
+        # mesh.CellType.interval,
         mesh.CellType.triangle,
         mesh.CellType.quadrilateral,
         mesh.CellType.tetrahedron,
