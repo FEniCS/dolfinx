@@ -48,10 +48,24 @@ struct IntegralType
   {
     return codim == other.codim && num_cells == other.num_cells;
   }
-};
 
-// Overload the less-than operator
-bool operator<(const IntegralType& self, const IntegralType& other);
+  /// @brief Less than operator.
+  /// Required for set operations.
+  /// @param other The other IntegralType to compare with
+  bool operator<(const IntegralType& other) const
+  {
+    // First, compare codim
+    if (codim < other.codim)
+      return true;
+
+    // If codims are equal, compare num_cells
+    if (codim == other.codim)
+      return num_cells < other.num_cells;
+
+    // Otherwise, this object is not less than 'other'
+    return false;
+  }
+};
 
 /// @brief Represents integral data, containing the kernel, and a list
 /// of entities to integrate over and the indicies of the coefficient
@@ -140,9 +154,9 @@ public:
   /// trial function spaces.
   /// @param[in] integrals Integrals in the form, where
   /// `integrals[IntegralType, i, kernel index]` returns the `i`th integral
-  /// (`integral_data`) of type `IntegralType` with kernel index `kernel index`.
-  /// The `i`-index refers to the position of a kernel when flattened by
-  /// sorted subdomain ids, sorted by subdomain ids. The subdomain ids can
+  /// (`integral_data`) of type `IntegralType` with kernel index `kernel
+  /// index`. The `i`-index refers to the position of a kernel when flattened
+  /// by sorted subdomain ids, sorted by subdomain ids. The subdomain ids can
   /// contain duplicate entries referring to different kernels over the same
   /// subdomain.
   /// @param[in] coefficients Coefficients in the form.
@@ -516,8 +530,8 @@ public:
   /// is marked with -1.
   ///
   /// @param[in] type Integral type.
-  /// @param[in] rank Argument index, e.g. `0` for the test function space, `1`
-  /// for the trial function space.
+  /// @param[in] rank Argument index, e.g. `0` for the test function space,
+  /// `1` for the trial function space.
   /// @param[in] idx Integral identifier.
   /// @param[in] kernel_idx Kernel index (cell type).
   /// @return Entity indices in the argument function space mesh that is
