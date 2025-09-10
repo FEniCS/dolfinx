@@ -166,6 +166,7 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate py
           spack load gcc
+          pip install pyamg
           python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
           python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
 
@@ -174,7 +175,6 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate py
           spack load gcc
-          pip install pyamg
           python -m pytest -n=auto --durations=50 dolfinx-src/python/test/unit/
           mpirun -np 3 python -m pytest --durations=50 dolfinx-src/python/test/unit/
 
