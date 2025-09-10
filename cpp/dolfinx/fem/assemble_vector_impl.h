@@ -1100,7 +1100,7 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
       = element1->template dof_transformation_right_fn<T>(
           doftransform::transpose);
 
-  IntegralType cell_integral_type = IntegralType(0, 1);
+  IntegralType cell_integral_type = IntegralType(0);
   for (int i = 0; i < a.num_integrals(cell_integral_type, 0); ++i)
   {
     auto kernel = a.kernel(cell_integral_type, i, 0);
@@ -1146,7 +1146,7 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
                        num_facets_per_cell);
   }
 
-  IntegralType facet_integral_type = IntegralType(1, 1);
+  IntegralType facet_integral_type = IntegralType(1);
   for (int i = 0; i < a.num_integrals(facet_integral_type, 0); ++i)
   {
     auto kernel = a.kernel(facet_integral_type, i, 0);
@@ -1342,7 +1342,7 @@ void assemble_vector(
       cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
     }
 
-    IntegralType cell_integral_type = IntegralType(0, 1);
+    IntegralType cell_integral_type = IntegralType(0);
     for (int i = 0; i < L.num_integrals(cell_integral_type, 0); ++i)
     {
       auto fn = L.kernel(cell_integral_type, i, cell_type_idx);
@@ -1388,7 +1388,7 @@ void assemble_vector(
         = md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>;
 
-    IntegralType facet_integral_type = IntegralType(1, 1);
+    IntegralType facet_integral_type = IntegralType(1);
     for (int i = 0; i < L.num_integrals(facet_integral_type, 0); ++i)
     {
       auto fn = L.kernel(facet_integral_type, i, 0);
@@ -1474,7 +1474,7 @@ void assemble_vector(
       }
     }
 
-    IntegralType vertex_integral_type = IntegralType(2, 1);
+    IntegralType vertex_integral_type = IntegralType(mesh->topology()->dim());
     for (int i = 0; i < L.num_integrals(vertex_integral_type, 0); ++i)
     {
       auto fn = L.kernel(vertex_integral_type, i, 0);

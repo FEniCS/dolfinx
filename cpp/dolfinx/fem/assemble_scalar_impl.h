@@ -201,7 +201,7 @@ T assemble_scalar(
   std::vector<scalar_value_t<T>> cdofs_b(2 * 3 * x_dofmap.extent(1));
 
   T value = 0;
-  IntegralType cell_integral = IntegralType(0, 1);
+  IntegralType cell_integral = IntegralType(0);
   for (int i = 0; i < M.num_integrals(cell_integral, 0); ++i)
   {
     auto fn = M.kernel(cell_integral, i, 0);
@@ -227,7 +227,7 @@ T assemble_scalar(
                        num_facets_per_cell);
   }
 
-  IntegralType facet_type = IntegralType(1, 1);
+  IntegralType facet_type = IntegralType(1);
   for (int i = 0; i < M.num_integrals(facet_type, 0); ++i)
   {
     auto fn = M.kernel(facet_type, i, 0);
@@ -278,7 +278,7 @@ T assemble_scalar(
   }
 
   std::int32_t tdim = mesh->topology()->dim();
-  IntegralType vertex_type = IntegralType(tdim, 1);
+  IntegralType vertex_type = IntegralType(tdim);
   for (int i = 0; i < M.num_integrals(vertex_type, 0); ++i)
   {
     auto fn = M.kernel(vertex_type, i, 0);

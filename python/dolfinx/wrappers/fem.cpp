@@ -1271,7 +1271,7 @@ void fem(nb::module_& m)
 
   nb::class_<dolfinx::fem::IntegralType>(m, "_IntegralType")
       .def(nb::init<const std::int32_t&, const std::int32_t&>(),
-           nb::arg("codim"), nb::arg("num_cells"))
+           nb::arg("codim"), nb::arg("num_cells") = 1)
       .def_ro("codim", &dolfinx::fem::IntegralType::codim)
       .def_ro("num_cells", &dolfinx::fem::IntegralType::num_cells)
       .def("__eq__", &dolfinx::fem::IntegralType::operator==);

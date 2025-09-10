@@ -588,7 +588,7 @@ void assemble_matrix(
       cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
       cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
     }
-    IntegralType cell_integral = IntegralType(0, 1);
+    IntegralType cell_integral = IntegralType(0);
     for (int i = 0; i < a.num_integrals(cell_integral, cell_type_idx); ++i)
     {
       auto fn = a.kernel(cell_integral, i, cell_type_idx);
@@ -618,7 +618,7 @@ void assemble_matrix(
                          num_facets_per_cell);
     }
 
-    IntegralType facet = IntegralType(1, 1);
+    IntegralType facet = IntegralType(1);
     for (int i = 0; i < a.num_integrals(facet, cell_type_idx); ++i)
     {
       if (num_cell_types > 1)

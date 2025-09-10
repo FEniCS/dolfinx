@@ -232,7 +232,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
   const std::set<IntegralType, std::less<IntegralType>> types
       = a.integral_types();
 
-  if (types.find(IntegralType(1, 1)) != types.end()
+  if (types.find(IntegralType(1)) != types.end()
       or types.find(IntegralType(1, 2)) != types.end())
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
@@ -263,7 +263,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
     // Create and build sparsity pattern
     for (auto type : types)
     {
-      if (type == IntegralType(0, 1))
+      if (type == IntegralType(0))
       {
         for (int i = 0; i < a.num_integrals(type, cell_type_idx); ++i)
         {
@@ -284,7 +284,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
               {{dofmaps[0], dofmaps[1]}});
         }
       }
-      else if (type == IntegralType(1, 1))
+      else if (type == IntegralType(1))
       {
         for (int i = 0; i < a.num_integrals(type, cell_type_idx); ++i)
         {
@@ -527,7 +527,7 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[cell],
                              num_integrals_type[cell]);
-    auto sd = subdomains.find(IntegralType(0, 1));
+    auto sd = subdomains.find(IntegralType(0));
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
       const ufcx_form& ufcx_form = ufcx_forms[form_idx];
@@ -562,7 +562,7 @@ Form<T, U> create_form_factory(
           default_cells.resize(
               topology->index_maps(tdim).at(form_idx)->size_local(), 0);
           std::iota(default_cells.begin(), default_cells.end(), 0);
-          integrals.insert({{IntegralType(0, 1), i, form_idx},
+          integrals.insert({{IntegralType(0), i, form_idx},
                             {k, default_cells, active_coeffs}});
         }
         else if (sd != subdomains.end())
@@ -572,7 +572,7 @@ Form<T, U> create_form_factory(
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
           {
-            integrals.insert({{IntegralType(0, 1), i, form_idx},
+            integrals.insert({{IntegralType(0), i, form_idx},
                               {k,
                                std::vector<std::int32_t>(it->second.begin(),
                                                          it->second.end()),
@@ -592,7 +592,7 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[facet],
                              num_integrals_type[facet]);
-    auto sd = subdomains.find(IntegralType(1, 1));
+    auto sd = subdomains.find(IntegralType(1));
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
       const ufcx_form& ufcx_form = ufcx_forms[form_idx];
@@ -631,7 +631,7 @@ Form<T, U> create_form_factory(
             default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
                                       pair.end());
           }
-          integrals.insert({{IntegralType(1, 1), i, form_idx},
+          integrals.insert({{IntegralType(1), i, form_idx},
                             {k, default_facets_ext, active_coeffs}});
         }
         else if (sd != subdomains.end())
@@ -641,7 +641,7 @@ Form<T, U> create_form_factory(
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
           {
-            integrals.insert({{IntegralType(1, 1), i, form_idx},
+            integrals.insert({{IntegralType(1), i, form_idx},
                               {k,
                                std::vector<std::int32_t>(it->second.begin(),
                                                          it->second.end()),
@@ -759,7 +759,7 @@ Form<T, U> create_form_factory(
       std::span<const int> ids(form.form_integral_ids
                                    + integral_offsets[vertex],
                                num_integrals_type[vertex]);
-      auto sd = subdomains.find(IntegralType(tdim, 1));
+      auto sd = subdomains.find(IntegralType(tdim));
       for (int i = 0; i < num_integrals_type[vertex]; ++i)
       {
         const int id = ids[i];
@@ -810,7 +810,7 @@ Form<T, U> create_form_factory(
           std::vector<std::int32_t> cells_and_vertices = get_cells_and_vertices(
               std::ranges::views::iota(0, num_vertices));
 
-          integrals.insert({{IntegralType(tdim, 1), i, form_idx},
+          integrals.insert({{IntegralType(tdim), i, form_idx},
                             {k, cells_and_vertices, active_coeffs}});
         }
         else if (sd != subdomains.end())
@@ -820,7 +820,7 @@ Form<T, U> create_form_factory(
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
           {
-            integrals.insert({{IntegralType(tdim, 1), i, form_idx},
+            integrals.insert({{IntegralType(tdim), i, form_idx},
                               {k,
                                std::vector<std::int32_t>(it->second.begin(),
                                                          it->second.end()),

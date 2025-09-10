@@ -1712,8 +1712,8 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
 
     # b) With create_form
     vertices = np.arange(num_vertices)
-    fem.compute_integration_domains(fem.IntegralType(1, 1), msh.topology, vertices)
-    subdomains = {fem.IntegralType(1, 1): [(0, cell_vertex_pairs)]}
+    fem.compute_integration_domains(fem.IntegralType(1), msh.topology, vertices)
+    subdomains = {fem.IntegralType(1): [(0, cell_vertex_pairs)]}
 
     compiled_form = fem.compile_form(
         comm, x[0] * ufl.dP, form_compiler_options={"scalar_type": dtype}
@@ -1852,8 +1852,8 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
 
     # b) With create_form
     vertices = np.arange(num_vertices)
-    fem.compute_integration_domains(fem.IntegralType(1, 1), msh.topology, vertices)
-    subdomains = {fem.IntegralType(1, 1): [(0, cell_vertex_pairs)]}
+    fem.compute_integration_domains(fem.IntegralType(1), msh.topology, vertices)
+    subdomains = {fem.IntegralType(1): [(0, cell_vertex_pairs)]}
 
     compiled_form = fem.compile_form(
         comm, x[0] * v * ufl.dP, form_compiler_options={"scalar_type": dtype}

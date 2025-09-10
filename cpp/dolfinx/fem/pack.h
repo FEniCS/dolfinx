@@ -237,7 +237,7 @@ void pack_coefficients(const Form<T, U>& form,
       if (integral_type.codim == 0)
       {
         // Iterate over coefficients that are active in cell integrals
-        for (int coeff : form.active_coeffs(IntegralType(0, 1), id))
+        for (int coeff : form.active_coeffs(IntegralType(0), id))
         {
           // Get coefficient mesh
           auto mesh = coefficients[coeff]->function_space()->mesh();
@@ -255,7 +255,7 @@ void pack_coefficients(const Form<T, U>& form,
           }
 
           std::span<const std::int32_t> cells_b
-              = form.domain_coeff(IntegralType(0, 1), id, coeff);
+              = form.domain_coeff(IntegralType(0), id, coeff);
           md::mdspan cells(cells_b.data(), cells_b.size());
           std::span<const std::uint32_t> cell_info
               = impl::get_cell_orientation_info(*coefficients[coeff]);
@@ -269,11 +269,11 @@ void pack_coefficients(const Form<T, U>& form,
         // Iterate over coefficients coefficients that are active in
         // exterior facet integrals
         for (int coeff :
-             form.active_coeffs(IntegralType(integral_type.codim, 1), id))
+             form.active_coeffs(IntegralType(integral_type.codim), id))
         {
           auto mesh = coefficients[coeff]->function_space()->mesh();
-          std::span<const std::int32_t> entities_b = form.domain_coeff(
-              IntegralType(integral_type.codim, 1), id, coeff);
+          std::span<const std::int32_t> entities_b
+              = form.domain_coeff(IntegralType(integral_type.codim), id, coeff);
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>
               entities(entities_b.data(), entities_b.size() / 2, 2);
