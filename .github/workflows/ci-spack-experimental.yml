@@ -21,7 +21,6 @@ env:
 
 jobs:
   ci-spack-experimental-build:
-    name: Build and test
     runs-on: ubuntu-latest
     container: ubuntu:24.04
     permissions:
