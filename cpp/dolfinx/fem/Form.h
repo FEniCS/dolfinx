@@ -41,10 +41,13 @@ struct IntegralType
   std::int32_t codim;     ///< Codimension of the integral
   std::int32_t num_cells; ///< Number of cells in the integral
 
+  /// @brief Create an integral type.
+  /// @param codim Codimension of the integral.
+  /// @param num_cells Number of cells in the integral. Default is 1.
   IntegralType(std::int32_t codim, std::int32_t num_cells = 1)
       : codim(codim), num_cells(num_cells)
   {
-  } // Default constructor
+  }
 
   /// @brief Equality operator for integral type
   /// @param other The other IntegralType to compare with
