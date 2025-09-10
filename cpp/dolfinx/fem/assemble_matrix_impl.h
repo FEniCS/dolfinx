@@ -588,15 +588,15 @@ void assemble_matrix(
       cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
       cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
     }
-
-    for (int i = 0; i < a.num_integrals(IntegralType::cell, cell_type_idx); ++i)
+    IntegralType cell_integral = IntegralType(0, 1);
+    for (int i = 0; i < a.num_integrals(cell_integral, cell_type_idx); ++i)
     {
-      auto fn = a.kernel(IntegralType::cell, i, cell_type_idx);
+      auto fn = a.kernel(cell_integral, i, cell_type_idx);
       assert(fn);
-      std::span cells = a.domain(IntegralType::cell, i, cell_type_idx);
-      std::span cells0 = a.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
-      std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
-      auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+      std::span cells = a.domain(cell_integral, i, cell_type_idx);
+      std::span cells0 = a.domain_arg(cell_integral, 0, i, cell_type_idx);
+      std::span cells1 = a.domain_arg(cell_integral, 1, i, cell_type_idx);
+      auto& [coeffs, cstride] = coefficients.at({cell_integral, i});
       assert(cells.size() * cstride == coeffs.size());
       impl::assemble_cells_matrix(
           mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
@@ -618,8 +618,8 @@ void assemble_matrix(
                          num_facets_per_cell);
     }
 
-    for (int i = 0; i < a.num_integrals(IntegralType::facet, cell_type_idx);
-         ++i)
+    IntegralType facet = IntegralType(1, 1);
+    for (int i = 0; i < a.num_integrals(facet, cell_type_idx); ++i)
     {
       if (num_cell_types > 1)
       {
@@ -631,15 +631,15 @@ void assemble_matrix(
           = md::mdspan<const std::int32_t,
                        md::extents<std::size_t, md::dynamic_extent, 2>>;
 
-      auto fn = a.kernel(IntegralType::facet, i, 0);
+      auto fn = a.kernel(facet, i, 0);
       assert(fn);
-      auto& [coeffs, cstride] = coefficients.at({IntegralType::facet, i});
+      auto& [coeffs, cstride] = coefficients.at({facet, i});
 
-      std::span f = a.domain(IntegralType::facet, i, 0);
+      std::span f = a.domain(facet, i, 0);
       mdspanx2_t facets(f.data(), f.size() / 2, 2);
-      std::span f0 = a.domain_arg(IntegralType::facet, 0, i, 0);
+      std::span f0 = a.domain_arg(facet, 0, i, 0);
       mdspanx2_t facets0(f0.data(), f0.size() / 2, 2);
-      std::span f1 = a.domain_arg(IntegralType::facet, 1, i, 0);
+      std::span f1 = a.domain_arg(facet, 1, i, 0);
       mdspanx2_t facets1(f1.data(), f1.size() / 2, 2);
       assert((facets.size() / 2) * cstride == coeffs.size());
       impl::assemble_exterior_facets(
@@ -649,8 +649,8 @@ void assemble_matrix(
           cell_info0, cell_info1, perms);
     }
 
-    for (int i = 0;
-         i < a.num_integrals(IntegralType::interior_facet, cell_type_idx); ++i)
+    IntegralType interior_facet = IntegralType(1, 2);
+    for (int i = 0; i < a.num_integrals(interior_facet, cell_type_idx); ++i)
     {
       if (num_cell_types > 1)
       {
@@ -665,14 +665,13 @@ void assemble_matrix(
           = md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                             md::dynamic_extent>>;
 
-      auto fn = a.kernel(IntegralType::interior_facet, i, 0);
+      auto fn = a.kernel(interior_facet, i, 0);
       assert(fn);
-      auto& [coeffs, cstride]
-          = coefficients.at({IntegralType::interior_facet, i});
+      auto& [coeffs, cstride] = coefficients.at({interior_facet, i});
 
-      std::span facets = a.domain(IntegralType::interior_facet, i, 0);
-      std::span facets0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
-      std::span facets1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
+      std::span facets = a.domain(interior_facet, i, 0);
+      std::span facets0 = a.domain_arg(interior_facet, 0, i, 0);
+      std::span facets1 = a.domain_arg(interior_facet, 1, i, 0);
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
       impl::assemble_interior_facets(
           mat_set, x_dofmap, x,

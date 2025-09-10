@@ -100,12 +100,12 @@ int main(int argc, char* argv[])
     // domain `mesh`
     std::vector<std::int32_t> integration_entities
         = fem::compute_integration_domains(
-            fem::IntegralType::cell, *mesh->topology(), cell_marker.find(2));
+            fem::IntegralType(0, 1), *mesh->topology(), cell_marker.find(2));
     std::map<
         fem::IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
         subdomain_data
-        = {{fem::IntegralType::cell, {{3, integration_entities}}}};
+        = {{fem::IntegralType(0, 1), {{3, integration_entities}}}};
 
     // A mixed-domain form involves functions defined over multiple
     // meshes. The mesh passed to `create_form` is called the

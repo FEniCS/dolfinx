@@ -35,13 +35,23 @@ template <dolfinx::scalar T, std::floating_point U>
 class Function;
 
 /// @brief Type of integral
-enum class IntegralType : std::int8_t
+
+struct IntegralType
 {
-  cell = 0,           ///< Cell
-  facet = 1,          ///< Facet
-  interior_facet = 2, ///< Interior facet
-  vertex = 3          ///< Vertex
+  std::int32_t codim;     ///< Codimension of the integral
+  std::int32_t num_cells; ///< Number of cells in the integral
+
+  /// @brief Equality operator for integral type
+  /// @param other The other IntegralType to compare with
+  /// @return True if the integral types are equal, false otherwise
+  bool operator==(const IntegralType& other) const
+  {
+    return codim == other.codim && num_cells == other.num_cells;
+  }
 };
+
+// Overload the less-than operator
+bool operator<(const IntegralType& self, const IntegralType& other);
 
 /// @brief Represents integral data, containing the kernel, and a list
 /// of entities to integrate over and the indicies of the coefficient
@@ -274,10 +284,9 @@ public:
         {
           auto [type, idx, kernel_idx] = key;
           std::vector<std::int32_t> e;
-          if (type == IntegralType::cell)
+          if (type.codim == 0)
             e = emap.sub_topology_to_topology(itg.entities, inverse);
-          else if (type == IntegralType::facet
-                   or type == IntegralType::interior_facet)
+          else if (type.codim = 1)
           {
             const mesh::Topology topology = *_mesh->topology();
             int tdim = topology.dim();
@@ -317,10 +326,9 @@ public:
           bool inverse = emap.sub_topology() == mesh0->topology();
 
           std::vector<std::int32_t> e;
-          if (type == IntegralType::cell)
+          if (type.codim == 0)
             e = emap.sub_topology_to_topology(integral.entities, inverse);
-          else if (type == IntegralType::facet
-                   or type == IntegralType::interior_facet)
+          else if (type.codim == 1)
           {
             const mesh::Topology topology = *_mesh->topology();
             int tdim = topology.dim();
@@ -454,16 +462,12 @@ public:
   /// These are the entities in the mesh returned by ::mesh that are
   /// integrated over by a given integral (kernel).
   ///
-  /// - For IntegralType::cell, returns a list of cell indices.
-  /// - For IntegralType::facet, returns a list with shape
-  /// `(num_facets, 2)`, where `[cell_index, 0]` is the cell index and
-  /// `[cell_index, 1]` is the local facet index relative to the cell.
-  /// - For IntegralType::interior_facet the shape is `(num_facets, 4)`,
-  /// where `[cell_index, 0]` is one attached cell and `[cell_index, 1]`
-  /// is the is the local facet index relative to the cell, and
-  /// `[cell_index, 2]` is the other one attached cell and `[cell_index, 1]`
-  /// is the is the local facet index relative to this cell. Storage
-  /// is row-major.
+  /// - For IntegralType of codim 0 returns a list of cell indices.
+  /// - For any other codim return a set of tuples `[cell_index,
+  /// local_entity_index]`.
+  /// - If the number of cells in the integral type, return as many tuples per
+  /// entity as there are number of cells in the integral type. Storage is
+  /// row-major.
   ///
   /// @param[in] type Integral type.
   /// @param[in] idx Integral index in flattened list of integral kernels.
