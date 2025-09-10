@@ -369,7 +369,10 @@ def form(
         # Extract subdomain ids from ufcx_form
         subdomain_ids = {_ufl_to_dolfinx_domain[type]: [] for type in sd.get(domain).keys()}
         integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(5)]
-        integral_types = [_ufl_to_dolfinx_domain[type] for type in ["cell", "exterior_facet", "interior_facet", "vertex"]]
+        integral_types = [
+            _ufl_to_dolfinx_domain[type]
+            for type in ["cell", "exterior_facet", "interior_facet", "vertex"]
+        ]
         for i in range(len(integral_offsets) - 1):
             integral_type = integral_types[i]
             for j in range(integral_offsets[i], integral_offsets[i + 1]):
