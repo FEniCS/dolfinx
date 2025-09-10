@@ -213,13 +213,16 @@ def form_cpp_class(
         raise NotImplementedError(f"Type {dtype} not supported.")
 
 
-def _ufl_to_dolfinx_domain(tdim:int) -> dict[str, IntegralType]:
-    return{ 
+def _ufl_to_dolfinx_domain(tdim: int) -> dict[str, IntegralType]:
+    """Return a mapping from the UFL integral types to the corresponding
+    `dolfinx.fem.IntegralType` for a given topological dimension.
+    """
+    return {
         "cell": IntegralType(0),
         "exterior_facet": IntegralType(1),
         "interior_facet": IntegralType(1, 2),
         "vertex": IntegralType(tdim),
-}
+    }
 
 
 def mixed_topology_form(
@@ -372,8 +375,7 @@ def form(
         subdomain_ids = {ufl_to_itg[type]: [] for type in sd.get(domain).keys()}
         integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(5)]
         integral_types = [
-            ufl_to_itg[type]
-            for type in ["cell", "exterior_facet", "interior_facet", "vertex"]
+            ufl_to_itg[type] for type in ["cell", "exterior_facet", "interior_facet", "vertex"]
         ]
         for i in range(len(integral_offsets) - 1):
             integral_type = integral_types[i]
