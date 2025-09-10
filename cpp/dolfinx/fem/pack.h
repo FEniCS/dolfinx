@@ -179,7 +179,7 @@ allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
     const std::vector<int> offsets = form.coefficient_offsets();
     cstride = offsets.back();
     num_entities = form.domain(integral_type, id, 0).size();
-    if (integral_type == IntegralType::exterior_facet
+    if (integral_type == IntegralType::facet
         or integral_type == IntegralType::interior_facet)
     {
       num_entities /= 2;
@@ -270,15 +270,15 @@ void pack_coefficients(const Form<T, U>& form,
         }
         break;
       }
-      case IntegralType::exterior_facet:
+      case IntegralType::facet:
       {
         // Iterate over coefficients coefficients that are active in
         // exterior facet integrals
-        for (int coeff : form.active_coeffs(IntegralType::exterior_facet, id))
+        for (int coeff : form.active_coeffs(IntegralType::facet, id))
         {
           auto mesh = coefficients[coeff]->function_space()->mesh();
           std::span<const std::int32_t> facets_b
-              = form.domain_coeff(IntegralType::exterior_facet, id, coeff);
+              = form.domain_coeff(IntegralType::facet, id, coeff);
           md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>
               facets(facets_b.data(), facets_b.size() / 2, 2);

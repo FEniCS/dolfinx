@@ -226,14 +226,13 @@ T assemble_scalar(
                        num_facets_per_cell);
   }
 
-  for (int i = 0; i < M.num_integrals(IntegralType::exterior_facet, 0); ++i)
+  for (int i = 0; i < M.num_integrals(IntegralType::facet, 0); ++i)
   {
-    auto fn = M.kernel(IntegralType::exterior_facet, i, 0);
+    auto fn = M.kernel(IntegralType::facet, i, 0);
     assert(fn);
-    auto& [coeffs, cstride]
-        = coefficients.at({IntegralType::exterior_facet, i});
+    auto& [coeffs, cstride] = coefficients.at({IntegralType::facet, i});
 
-    std::span facets = M.domain(IntegralType::exterior_facet, i, 0);
+    std::span facets = M.domain(IntegralType::facet, i, 0);
 
     // Two values per each adjacent cell (cell index and local facet
     // index)

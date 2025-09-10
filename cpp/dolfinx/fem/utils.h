@@ -146,13 +146,13 @@ get_cell_vertex_pairs(std::int32_t v, std::span<const std::int32_t> cells,
 /// @param[in] entities List of mesh entities. Depending on the `IntegralType`
 /// these are associated with different entities:
 ///     `IntegralType::cell`:             cells
-///     `IntegralType::exterior_facet`:   facets
+///     `IntegralType::facet`:            facets
 ///     `IntegralType::interior_facet`:   facets
 ///     `IntegralType::vertex`:           vertices
 /// @return List of integration entity data, depending on the `IntegralType` the
 /// data per entity has different layouts
 ///     `IntegralType::cell`:             cell
-///     `IntegralType::exterior_facet`:   (cell, local_facet)
+///     `IntegralType::facet`:            (cell, local_facet)
 ///     `IntegralType::interior_facet`:   (cell, local_facet)
 ///     `IntegralType::vertex`:           (cell, local_vertex)
 std::vector<std::int32_t>
@@ -239,7 +239,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
 
   const std::set<IntegralType> types = a.integral_types();
   if (types.find(IntegralType::interior_facet) != types.end()
-      or types.find(IntegralType::exterior_facet) != types.end())
+      or types.find(IntegralType::facet) != types.end())
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
     int tdim = mesh->topology()->dim();
@@ -290,7 +290,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
               {{dofmaps[0], dofmaps[1]}});
         }
         break;
-      case IntegralType::exterior_facet:
+      case IntegralType::facet:
         for (int i = 0; i < a.num_integrals(type, cell_type_idx); ++i)
         {
           sparsitybuild::cells(pattern,
@@ -502,8 +502,7 @@ Form<T, U> create_form_factory(
   }
 
   // Create facets, if required
-  if (num_integrals_type[facet] > 0
-      or num_integrals_type[interior_facet] > 0)
+  if (num_integrals_type[facet] > 0 or num_integrals_type[interior_facet] > 0)
   {
     mesh->topology_mutable()->create_entities(tdim - 1);
     mesh->topology_mutable()->create_connectivity(tdim - 1, tdim);
@@ -599,7 +598,7 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[facet],
                              num_integrals_type[facet]);
-    auto sd = subdomains.find(IntegralType::exterior_facet);
+    auto sd = subdomains.find(IntegralType::facet);
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
       const ufcx_form& ufcx_form = ufcx_forms[form_idx];
@@ -638,7 +637,7 @@ Form<T, U> create_form_factory(
             default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
                                       pair.end());
           }
-          integrals.insert({{IntegralType::exterior_facet, i, form_idx},
+          integrals.insert({{IntegralType::facet, i, form_idx},
                             {k, default_facets_ext, active_coeffs}});
         }
         else if (sd != subdomains.end())
@@ -648,7 +647,7 @@ Form<T, U> create_form_factory(
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
           {
-            integrals.insert({{IntegralType::exterior_facet, i, form_idx},
+            integrals.insert({{IntegralType::facet, i, form_idx},
                               {k,
                                std::vector<std::int32_t>(it->second.begin(),
                                                          it->second.end()),

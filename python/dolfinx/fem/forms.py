@@ -157,7 +157,7 @@ def get_integration_domains(
     else:
         domains = []
         if not isinstance(subdomain, list):
-            if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
+            if integral_type in (IntegralType.facet, IntegralType.interior_facet):
                 tdim = subdomain.topology.dim
                 subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
                 subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
@@ -217,7 +217,7 @@ def form_cpp_class(
 
 _ufl_to_dolfinx_domain = {
     "cell": IntegralType.cell,
-    "exterior_facet": IntegralType.exterior_facet,
+    "exterior_facet": IntegralType.facet,
     "interior_facet": IntegralType.interior_facet,
     "vertex": IntegralType.vertex,
 }
@@ -369,17 +369,19 @@ def form(
         constants = [c._cpp_object for c in form.constants()]
 
         # Extract subdomain ids from ufcx_form
-        subdomain_ids = {type: [] for type in sd.get(domain).keys()}
+        subdomain_ids = {_ufl_to_dolfinx_domain[type]: [] for type in sd.get(domain).keys()}
         integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(5)]
         for i in range(len(integral_offsets) - 1):
             integral_type = IntegralType(i)
             for j in range(integral_offsets[i], integral_offsets[i + 1]):
-                subdomain_ids[integral_type.name].append(ufcx_form.form_integral_ids[j])
+                subdomain_ids[integral_type].append(ufcx_form.form_integral_ids[j])
 
         # Subdomain markers (possibly empty list for some integral types)
         subdomains = {
             _ufl_to_dolfinx_domain[key]: get_integration_domains(
-                _ufl_to_dolfinx_domain[key], subdomain_data[0], subdomain_ids[key]
+                _ufl_to_dolfinx_domain[key],
+                subdomain_data[0],
+                subdomain_ids[_ufl_to_dolfinx_domain[key]],
             )
             for (key, subdomain_data) in sd.get(domain).items()
         }

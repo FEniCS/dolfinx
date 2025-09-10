@@ -145,7 +145,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   case IntegralType::cell:
     dim = tdim;
     break;
-  case IntegralType::exterior_facet:
+  case IntegralType::facet:
     dim = tdim - 1;
     break;
   case IntegralType::interior_facet:
@@ -199,7 +199,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     entity_data.insert(entity_data.begin(), entities.begin(), entities.end());
     break;
   }
-  case IntegralType::exterior_facet:
+  case IntegralType::facet:
   {
     auto [f_to_c, c_to_f] = get_connectivities(tdim - 1);
     // Create list of tagged boundary facets

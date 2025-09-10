@@ -1145,21 +1145,20 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
                        num_facets_per_cell);
   }
 
-  for (int i = 0; i < a.num_integrals(IntegralType::exterior_facet, 0); ++i)
+  for (int i = 0; i < a.num_integrals(IntegralType::facet, 0); ++i)
   {
-    auto kernel = a.kernel(IntegralType::exterior_facet, i, 0);
+    auto kernel = a.kernel(IntegralType::facet, i, 0);
     assert(kernel);
-    auto& [coeffs, cstride]
-        = coefficients.at({IntegralType::exterior_facet, i});
+    auto& [coeffs, cstride] = coefficients.at({IntegralType::facet, i});
 
     using mdspanx2_t
         = md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>;
-    std::span f = a.domain(IntegralType::exterior_facet, i, 0);
+    std::span f = a.domain(IntegralType::facet, i, 0);
     mdspanx2_t facets(f.data(), f.size() / 2, 2);
-    std::span f0 = a.domain_arg(IntegralType::exterior_facet, 0, i, 0);
+    std::span f0 = a.domain_arg(IntegralType::facet, 0, i, 0);
     mdspanx2_t facets0(f0.data(), f0.size() / 2, 2);
-    std::span f1 = a.domain_arg(IntegralType::exterior_facet, 1, i, 0);
+    std::span f1 = a.domain_arg(IntegralType::facet, 1, i, 0);
     mdspanx2_t facets1(f1.data(), f1.size() / 2, 2);
     assert(coeffs.size() == facets.extent(0) * cstride);
     _lift_bc_exterior_facets(
@@ -1385,15 +1384,14 @@ void assemble_vector(
         = md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>;
 
-    for (int i = 0; i < L.num_integrals(IntegralType::exterior_facet, 0); ++i)
+    for (int i = 0; i < L.num_integrals(IntegralType::facet, 0); ++i)
     {
-      auto fn = L.kernel(IntegralType::exterior_facet, i, 0);
+      auto fn = L.kernel(IntegralType::facet, i, 0);
       assert(fn);
-      auto& [coeffs, cstride]
-          = coefficients.at({IntegralType::exterior_facet, i});
-      std::span f = L.domain(IntegralType::exterior_facet, i, 0);
+      auto& [coeffs, cstride] = coefficients.at({IntegralType::facet, i});
+      std::span f = L.domain(IntegralType::facet, i, 0);
       mdspanx2_t facets(f.data(), f.size() / 2, 2);
-      std::span f1 = L.domain_arg(IntegralType::exterior_facet, 0, i, 0);
+      std::span f1 = L.domain_arg(IntegralType::facet, 0, i, 0);
       mdspanx2_t facets1(f1.data(), f1.size() / 2, 2);
       assert((facets.size() / 2) * cstride == coeffs.size());
       if (bs == 1)
