@@ -180,5 +180,5 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e py buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
           spack -e py buildcache push --base-image ubuntu:24.04 --update-index local-buildcache \
-            py-gmsh py-matplotlib py-networkx py-numba py-pyamg py-pytest py-pytest-xdist py-scipy py-pyvista
+            py-gmsh py-matplotlib py-networkx py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
         if: ${{ !cancelled() }}
