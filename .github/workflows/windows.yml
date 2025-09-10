@@ -99,7 +99,7 @@ jobs:
       - name: Debug env variables
         run: |
           cat dolfinx-src/.github/workflows/fenicsx-refs.env
-          cat ${{ env.ffcx_ref}}
+          echo ${{ env.ffcx_ref}}
 
       - name: Checkout FFCx
         uses: actions/checkout@v5
