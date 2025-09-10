@@ -83,8 +83,8 @@ jobs:
       - name: Add Spack packages repo
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
           spack repo add --name patches $GITHUB_WORKSPACE/spack-packages-patch/repos/spack_repo/builtin/
+          spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
           spack repo ls
           spack config get repos
 
