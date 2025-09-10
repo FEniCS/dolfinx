@@ -278,9 +278,9 @@ int main(int argc, char* argv[])
     // in the map), and exterior facet domain marked as '1' in the UFL
     // file, and `domains` holds the necessary data to perform
     // integration of selected facets.
-    std::map<
-        std::int32_t,
-        std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
+    std::map<std::int32_t,
+             std::vector<
+                 std::pair<fem::IntegralType, std::span<const std::int32_t>>>>
         subdomain_data{{fem::IntegralType(1, 1), {{1, domains}}}};
 
     // Since we are doing a `ds(1)` integral on mesh and `u0` is defined
