@@ -74,10 +74,17 @@ jobs:
           repository: spack/spack-packages
           ref: develop
           path: spack-packages
+      - name: Get Spack packages (extra)
+        uses: actions/checkout@v5
+        with:
+          repository: garth-wells/spack-packages
+          ref: py-pyvista-fix
+          path: spack-packages-patch
       - name: Add Spack packages repo
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
+          spack repo set --destination $GITHUB_WORKSPACE/spack-packages-patch builtin_patch
 
       - name: Prepare C++ environment
         run: |
