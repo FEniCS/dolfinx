@@ -68,24 +68,17 @@ jobs:
           repository: spack/spack
           ref: develop
           path: spack-src
-      - name: Get Spack packages
-        uses: actions/checkout@v5
-        with:
-          repository: spack/spack-packages
-          ref: develop
-          path: spack-packages
+
       - name: Get Spack packages (extra)
         uses: actions/checkout@v5
         with:
           repository: garth-wells/spack-packages
-          ref: py-pyvista-fix
-          path: spack-packages-patch
+          ref: fenics-testing
+          path: spack-packages
       - name: Add Spack packages repo
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack repo add --name patches $GITHUB_WORKSPACE/spack-packages-patch/repos/spack_repo/builtin/
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
-          spack repo ls
           spack config get repos
 
       - name: Prepare C++ environment
@@ -159,7 +152,7 @@ jobs:
             ^openmpi ^adios2~fortran~libcatalyst \
             ^petsc +mpi +hypre +mumps +superlu-dist
           spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
-            py-numba py-pytest py-pytest-xdist py-scipy patch.py-pyvista
+            py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
           spack -v -e py install -j 4 -p 2 --use-buildcache=auto
 
