@@ -661,7 +661,7 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
                                  + integral_offsets[interior_facet],
                              num_integrals_type[interior_facet]);
-    auto sd = subdomains.find(IntegralType(1, 1));
+    auto sd = subdomains.find(IntegralType(1, 2));
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
       const ufcx_form& ufcx_form = ufcx_forms[form_idx];
