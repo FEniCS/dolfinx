@@ -7,7 +7,6 @@
 
 import datetime
 import functools
-import typing
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (
@@ -117,7 +116,7 @@ class Timer:
 
     _cpp_object: _cpp.common.Timer
 
-    def __init__(self, name: typing.Optional[str] = None):
+    def __init__(self, name: str | None = None):
         """Create timer.
 
         Args:

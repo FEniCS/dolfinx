@@ -174,7 +174,8 @@ template <typename OP, typename U, typename V, typename W, typename X,
           typename Y>
 void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
                            const X& x, const Y& xrows, const Y& xcols, OP op,
-                           typename Y::value_type num_rows, int bs0, int bs1)
+                           [[maybe_unused]] typename Y::value_type num_rows,
+                           int bs0, int bs1)
 {
   const std::size_t nc = xcols.size();
   const int nbs = bs0 * bs1;

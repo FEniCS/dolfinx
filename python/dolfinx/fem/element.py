@@ -5,28 +5,21 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Finite elements."""
 
-import typing
-from functools import cached_property, singledispatch
-
 import numpy as np
 import numpy.typing as npt
 
 import basix
-import ufl
-import ufl.finiteelement
+import basix.ufl
 from dolfinx import cpp as _cpp
 
 
 class CoordinateElement:
     """Coordinate element describing the geometry map for mesh cells."""
 
-    _cpp_object: typing.Union[
-        _cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64
-    ]
+    _cpp_object: _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
 
     def __init__(
-        self,
-        cmap: typing.Union[_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64],
+        self, cmap: _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
     ):
         """Create a coordinate map element.
 
@@ -39,7 +32,7 @@ class CoordinateElement:
             cmap: A C++ CoordinateElement.
         """
         assert isinstance(
-            cmap, (_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64)
+            cmap, _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
         )
         self._cpp_object = cmap
 
@@ -67,9 +60,9 @@ class CoordinateElement:
 
     def push_forward(
         self,
-        X: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
-        cell_geometry: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
-    ) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+        X: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Push points on the reference cell forward to the physical cell.
 
         Args:
@@ -87,9 +80,9 @@ class CoordinateElement:
 
     def pull_back(
         self,
-        x: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
-        cell_geometry: typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]],
-    ) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+        x: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Pull points on the physical cell back to the reference cell.
 
         For non-affine cells, the pull-back is a nonlinear operation.
@@ -98,8 +91,9 @@ class CoordinateElement:
             x: Physical coordinates to pull back to the reference cells,
                 ``shape=(num_points, geometrical_dimension)``.
             cell_geometry: Physical coordinates describing the cell,
-                shape ``(num_of_geometry_basis_functions, geometrical_dimension)``
-                They can be created by accessing ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
+                shape ``(num_of_geometry_basis_functions,
+                geometrical_dimension)``. They can be created by accessing
+                ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
 
         Returns:
             Reference coordinates of the physical points ``x``.
@@ -111,8 +105,8 @@ class CoordinateElement:
         """Lagrange variant of the coordinate element.
 
         Note:
-            The return type is an integer. A Basix enum can be created using
-            ``basix.LagrangeVariant(value)``.
+            The return type is an integer. A Basix enum can be
+            created using ``basix.LagrangeVariant(value)``.
         """
         return self._cpp_object.variant
 
@@ -169,16 +163,17 @@ def _(e: basix.finite_element.FiniteElement):
 
 
 class FiniteElement:
-    _cpp_object: typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]
+    _cpp_object: _cpp.fem.FiniteElement_float32 | _cpp.fem.FiniteElement_float64
 
     def __init__(
         self,
-        cpp_object: typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64],
+        cpp_object: _cpp.fem.FiniteElement_float32 | _cpp.fem.FiniteElement_float64,
     ):
         """Creates a Python wrapper for the exported finite element class.
 
         Note:
-            Do not use this constructor directly. Instead use :func:``finiteelement``.
+            Do not use this constructor directly. Instead use
+            :func:``finiteelement``.
 
         Args:
             The underlying cpp instance that this object will wrap.
@@ -190,7 +185,8 @@ class FiniteElement:
 
     @property
     def dtype(self) -> np.dtype:
-        """Geometry type of the Mesh that the FunctionSpace is defined on."""
+        """Geometry type of the Mesh that the FunctionSpace is defined
+        on."""
         return self._cpp_object.dtype
 
     @cached_property
@@ -215,40 +211,45 @@ class FiniteElement:
     def value_shape(self) -> npt.NDArray[np.integer]:
         """Value shape of the finite element field.
 
-        The value shape describes the shape of the finite element field, e.g. ``{}`` for a scalar,
-        ``{2}`` for a vector in 2D, ``{3, 3}`` for a rank-2 tensor in 3D, etc.
+        The value shape describes the shape of the finite element field,
+        e.g. ``{}`` for a scalar, ``{2}`` for a vector in 2D, ``{3, 3}``
+        for a rank-2 tensor in 3D, etc.
         """
         return self._cpp_object.value_shape
 
     @property
     def interpolation_points(self) -> npt.NDArray[np.floating]:
-        """Points on the reference cell at which an expression needs to be evaluated in order to
-        interpolate the expression in the finite element space.
+        """Points on the reference cell at which an expression needs to be
+        evaluated in order to interpolate the expression in the finite
+        element space.
 
-        Interpolation point coordinates on the reference cell, returning the coordinates data
-        (row-major) storage with shape ``(num_points, tdim)``.
+        Interpolation point coordinates on the reference cell, returning
+        the coordinates data (row-major) storage with shape
+        ``(num_points, tdim)``.
 
         Note:
-            For Lagrange elements the points will just be the nodal positions. For other elements
-            the points will typically be the quadrature points used to evaluate moment degrees of
-            freedom.
+            For Lagrange elements the points will just be the nodal
+            positions. For other elements the points will typically be the
+            quadrature points used to evaluate moment degrees of freedom.
         """
         return self._cpp_object.interpolation_points()
 
     @property
     def interpolation_ident(self) -> bool:
-        """Check if interpolation into the finite element space is an identity operation given the
-        evaluation on an expression at specific points, i.e. the degree-of-freedom are equal to
-        point evaluations. The function will return `true` for Lagrange elements."""
+        """Check if interpolation into the finite element space is an
+        identity operation given the evaluation on an expression at
+        specific points, i.e. the degree-of-freedom are equal to point
+        evaluations. The function will return `true` for Lagrange
+        elements."""
         return self._cpp_object.interpolation_ident
 
     @property
     def space_dimension(self) -> int:
-        """Dimension of the finite element function space (the number of degrees-of-freedom for the
-        element).
+        """Dimension of the finite element function space (the number of
+        degrees-of-freedom for the element).
 
-        For 'blocked' elements, this function returns the dimension of the full element rather than
-        the dimension of the base element.
+        For 'blocked' elements, this function returns the dimension of the
+        full element rather than the dimension of the base element.
         """
         return self._cpp_object.space_dimension
 
@@ -256,13 +257,15 @@ class FiniteElement:
     def needs_dof_transformations(self) -> bool:
         """Check if DOF transformations are needed for this element.
 
-        DOF transformations will be needed for elements which might not be continuous when two
-        neighbouring cells disagree on the orientation of a shared sub-entity, and when this cannot
-        be corrected for by permuting the DOF numbering in the dofmap.
+        DOF transformations will be needed for elements which might not be
+        continuous when two neighbouring cells disagree on the orientation
+        of a shared sub-entity, and when this cannot be corrected for by
+        permuting the DOF numbering in the dofmap.
 
-        For example, Raviart-Thomas elements will need DOF transformations, as the neighbouring
-        cells may disagree on the orientation of a basis function, and this orientation cannot be
-        corrected for by permuting the DOF numbers on each cell.
+        For example, Raviart-Thomas elements will need DOF transformations,
+        as the neighbouring cells may disagree on the orientation of a
+        basis function, and this orientation cannot be corrected for by
+        permuting the DOF numbers on each cell.
         """
         return self._cpp_object.needs_dof_transformations
 
@@ -274,18 +277,21 @@ class FiniteElement:
     def T_apply(
         self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
-        """Transform basis functions from the reference element ordering and orientation to the
-        globally consistent physical element ordering and orientation.
+        """Transform basis functions from the reference element ordering
+        and orientation to the globally consistent physical element
+        ordering and orientation.
 
         Args:
-            x: Data to transform (in place). The shape is ``(num_cells, n, dim)``, where ``n`` is
-                the number degrees-of-freedom and the data is flattened (row-major).
+            x: Data to transform (in place). The shape is
+                ``(num_cells, n, dim)``, where ``n`` is the number degrees-
+                of-freedom and the data is flattened (row-major).
             cell_permutations: Permutation data for the cell.
             dim: Number of columns in ``data``.
 
         Note:
-            Exposed for testing. Function is not vectorised across multiple cells. Please see
-            `basix.numba_helpers` for performant versions.
+            Exposed for testing. Function is not vectorised across multiple
+            cells. Please see `basix.numba_helpers` for performant
+            versions.
         """
         self._cpp_object.T_apply(x, cell_permutations, dim)
 
@@ -295,8 +301,9 @@ class FiniteElement:
         """Apply the transpose of the operator applied by T_apply().
 
         Args:
-            x: Data to transform (in place). The shape is ``(num_cells, n, dim)``, where ``n`` is
-                the number degrees-of-freedom and the data is flattened (row-major).
+            x: Data to transform (in place). The shape is
+                ``(num_cells, n, dim)``, where ``n`` is the number degrees-
+                of-freedom and the data is flattened (row-major).
             cell_permutations: Permutation data for the cells
             dim: Number of columns in ``data``.
         """
@@ -305,11 +312,13 @@ class FiniteElement:
     def Tt_inv_apply(
         self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
-        """Apply the inverse transpose of the operator applied by T_apply().
+        """Apply the inverse transpose of the operator applied by
+        T_apply().
 
         Args:
-            x: Data to transform (in place). The shape is ``(num_cells, n, dim)``, where ``n`` is
-                the number degrees-of-freedom and the data is flattened (row-major).
+            x: Data to transform (in place). The shape is
+                ``(num_cells, n, dim)``, where ``n`` is the number degrees-
+                of-freedom and the data is flattened (row-major).
             cell_permutations: Permutation data for the cells
             dim: Number of columns in ``data``.
         """
@@ -318,14 +327,15 @@ class FiniteElement:
 
 def finiteelement(
     cell_type: _cpp.mesh.CellType,
-    ufl_e: ufl.finiteelement,
+    ufl_e: basix.ufl._ElementBase,
     FiniteElement_dtype: np.dtype,
 ) -> FiniteElement:
     """Create a DOLFINx element from a basix.ufl element.
 
     Args:
         cell_type: Element cell type, see ``mesh.CellType``
-        ufl_e: UFL element, holding quadrature rule and other properties of the selected element.
+        ufl_e: UFL element, holding quadrature rule and other properties of
+            the selected element.
         FiniteElement_dtype: Geometry type of the element.
     """
     if np.issubdtype(FiniteElement_dtype, np.float32):
@@ -337,7 +347,8 @@ def finiteelement(
 
     if ufl_e.is_mixed:
         elements = [
-            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object for e in ufl_e.sub_elements
+            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object  # type: ignore
+            for e in ufl_e.sub_elements
         ]
         return FiniteElement(CppElement(elements))
     elif ufl_e.is_quadrature:

@@ -58,7 +58,7 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
 
   // Compute maximum number of graph out edges edges per dof
   std::vector<int> num_edges(owned_size);
-  for (const auto& dofmap : dofmaps)
+  for (auto& dofmap : dofmaps)
   {
     std::size_t num_cells = dofmap.array.size() / dofmap.width;
     std::vector<std::int32_t> node_temp;
@@ -82,7 +82,7 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
   std::partial_sum(num_edges.begin(), num_edges.end(),
                    std::next(offsets.begin(), 1));
   std::vector<std::int32_t> edges(offsets.back());
-  for (const auto& dofmap : dofmaps)
+  for (auto& dofmap : dofmaps)
   {
     std::size_t num_cells = dofmap.array.size() / dofmap.width;
     std::vector<std::int32_t> node_temp;
@@ -169,7 +169,7 @@ build_basic_dofmaps(
   std::vector<std::pair<std::int8_t, std::int8_t>> required_dim_et;
   std::vector<std::int32_t> num_entity_dofs_et;
   std::vector<std::shared_ptr<const common::IndexMap>> topo_index_maps;
-  std::vector<std::int32_t> local_entity_offsets = {0};
+  std::vector<std::int32_t> local_entity_offsets{0};
 
   std::vector<std::vector<mesh::CellType>> entity_types(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
@@ -344,7 +344,7 @@ build_basic_dofmaps(
   for (std::size_t k = 0; k < required_dim_et.size(); ++k)
   {
     const int num_entity_dofs = num_entity_dofs_et[k];
-    auto map = topo_index_maps[k];
+    auto& map = topo_index_maps[k];
     assert(map);
     std::vector<std::int64_t> global_indices = map->global_indices();
 
@@ -413,7 +413,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // owned dofs. Set to -1 for unowned dofs.
   std::vector<int> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t counter_owned(0), counter_unowned(owned_size);
-  for (auto dofmap : dofmaps)
+  for (auto& dofmap : dofmaps)
   {
     for (std::int32_t dof : dofmap.array)
     {
@@ -487,7 +487,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   std::vector<std::vector<std::int8_t>> shared_entity(index_maps.size());
   for (std::size_t d = 0; d < index_maps.size(); ++d)
   {
-    auto map = index_maps[d];
+    auto& map = index_maps[d];
     assert(map);
 
     shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
@@ -524,7 +524,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   std::vector<std::vector<int>> disp_recv(index_maps.size());
   for (std::size_t d = 0; d < index_maps.size(); ++d)
   {
-    auto map = index_maps[d];
+    auto& map = index_maps[d];
     assert(map);
 
     std::span src = map->src();

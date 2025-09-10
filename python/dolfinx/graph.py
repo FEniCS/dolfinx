@@ -5,10 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Graph representations and operations on graphs."""
 
-from __future__ import annotations
-
-from typing import Optional, Union
-
 import numpy as np
 import numpy.typing as npt
 
@@ -31,17 +27,36 @@ except ImportError:
     pass
 
 
-__all__ = ["AdjacencyList", "adjacencylist", "partitioner"]
+__all__ = [
+    "AdjacencyList",
+    "adjacencylist",
+    "comm_graph",
+    "comm_graph_data",
+    "comm_to_json",
+    "partitioner",
+]
 
 
 class AdjacencyList:
-    _cpp_object: Union[_cpp.la.AdjacencyList_int32, _cpp.la.AdjacencyList_int64]
+    _cpp_object: (
+        _cpp.graph.AdjacencyList_int32
+        | _cpp.graph.AdjacencyList_int64
+        | _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32
+    )
 
-    def __init__(self, cpp_object: Union[_cpp.la.AdjacencyList_int32, _cpp.la.AdjacencyList_int64]):
+    def __init__(
+        self,
+        cpp_object: (
+            _cpp.graph.AdjacencyList_int32
+            | _cpp.graph.AdjacencyList_int64
+            | _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32
+        ),
+    ):
         """Creates a Python wrapper for the exported adjacency list class.
 
         Note:
-            Do not use this constructor directly. Instead use :func:`adjacencylist`.
+            Do not use this constructor directly. Instead use
+            :func:`adjacencylist`.
 
         Args:
             The underlying cpp instance that this object will wrap.
@@ -51,11 +66,15 @@ class AdjacencyList:
     def __repr__(self):
         return self._cpp_object.__repr__
 
-    def links(self, node: Union[np.int32, np.int64]) -> npt.NDArray[Union[np.int32, np.int64]]:
+    def links(self, node: np.int32 | np.int64) -> npt.NDArray[np.int32 | np.int64]:
         """Retrieve the links of a node.
 
+        Note:
+            This is available only for adjacency lists with no
+            additional link (edge) data.
+
         Args:
-            Node to retrieve the connectitivty of.
+            Node to retrieve the connectivity of.
 
         Returns:
             Neighbors of the node.
@@ -63,8 +82,12 @@ class AdjacencyList:
         return self._cpp_object.links(node)
 
     @property
-    def array(self) -> npt.NDArray[Union[np.int32, np.int64]]:
+    def array(self) -> npt.NDArray[np.int32 | np.int64]:
         """Array representation of the adjacency list.
+
+        Note:
+            This is available only for adjacency lists with no
+            additional link (edge) data.
 
         Returns:
             Flattened array representation of the adjacency list.
@@ -91,9 +114,9 @@ class AdjacencyList:
 
 
 def adjacencylist(
-    data: npt.NDArray[Union[np.int32, np.int64]], offsets: Optional[npt.NDArray[np.int32]] = None
+    data: npt.NDArray[np.int32 | np.int64], offsets: npt.NDArray[np.int32] | None = None
 ) -> AdjacencyList:
-    """Create an AdjacencyList for int32 or int64 datasets.
+    """Create an :class:`AdjacencyList` for `int32` or `int64` datasets.
 
     Args:
         data: The adjacency array. If the array is one-dimensional,
@@ -104,7 +127,8 @@ def adjacencylist(
     Returns:
         An adjacency list.
     """
-    # TODO: Switch to np.isdtype(data.dtype, np.int32) once numpy >= 2.0 is enforced
+    # TODO: Switch to np.isdtype(data.dtype, np.int32) once numpy >= 2.0 is
+    # enforced
     if data.dtype == np.int32:
         cpp_t = _cpp.graph.AdjacencyList_int32
     elif data.dtype == np.int64:
@@ -114,3 +138,76 @@ def adjacencylist(
 
     cpp_object = cpp_t(data, offsets) if offsets is not None else cpp_t(data)
     return AdjacencyList(cpp_object)
+
+
+def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
+    """Build a parallel communication graph from an index map.
+
+    The communication graph is a directed graph that represents the
+    communication pattern for a distributed array, and specifically the
+    forward scatter operation where the values for owned indices are
+    sent to ghosting ranks. The graph is built from an index map, which
+    describes the local and ghosted indices of the array.
+
+    Edges in the graph represent communication from the owning rank to
+    ranks that ghost the data. The edge data holds the (0) target node,
+    (1) edge weight, and (2) an indicator for whether the sending and
+    receiving ranks share memory (``local==1``) or if the ranks do not
+    share memory (``local==0``). The node data holds the local size
+    (number of owned indices) and the number of ghost indices.
+
+    The graph can be processed using :func:`comm_graph` to build data
+    structures that can be used to build a `NetworkX
+    <https://networkx.org/>`_ directed graph.
+
+    Note:
+        This function is collective across all MPI ranks. The
+        communication graph is returned on the `root` rank. All other
+        ranks return an empty graph
+
+    Args:
+        map: Index map to build the communication graph from.
+        root: Rank that will return the communication graph. Other ranks
+            return an empty graph.
+
+    Returns:
+        An adjacency list representing the communication graph.
+    """
+    return AdjacencyList(_cpp.graph.comm_graph(map))
+
+
+def comm_graph_data(
+    graph: AdjacencyList,
+) -> tuple[list[tuple[int, int, dict[str, int]]], list[tuple[int, dict[str, int]]]]:
+    """Build from a communication graph data structures for use with
+    `NetworkX <https://networkx.org/>`_.
+
+    Args:
+        graph: Communication graph to build data from. Normally created
+            by :func:`comm_graph`.
+
+    Returns:
+        A tuple of two lists. The first list contains the edge data,
+        where an edge is a `(nodeID_0, nodeID_1, dict)` tuple, where
+        `dict` holds edge data. The second list hold node data, where a
+        node is a `(nodeID, dict)` tuple, where `dict` holds node data.
+    """
+    return _cpp.graph.comm_graph_data(graph._cpp_object)
+
+
+def comm_to_json(graph: AdjacencyList) -> str:
+    """Build and JSON string from a communication graph.
+
+    The JSON string can be used to construct a `NetworkX
+    <https://networkx.org/>`_ graph. This is helpful for cases where a
+    simulation is executed and the graph data is written to file as a
+    JSON string for later analysis.
+
+    Args:
+        graph: The communication graph to convert. Normally created by
+            calling :meth:`comm_graph`.
+
+    Returns:
+        A JSON string representing the communication graph.
+    """
+    return _cpp.graph.comm_to_json(graph._cpp_object)

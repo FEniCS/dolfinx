@@ -31,7 +31,7 @@ namespace
 {
 
 // InsertMode types
-enum class PyInsertMode
+enum class PyInsertMode : std::uint8_t
 {
   add,
   insert
@@ -55,11 +55,12 @@ void declare_objects(nb::module_& m, const std::string& type)
           "array",
           [](dolfinx::la::Vector<T>& self)
           {
-            std::span<T> x = self.mutable_array();
-            return nb::ndarray<T, nb::numpy>(x.data(), {x.size()});
+            return nb::ndarray<T, nb::numpy>(self.array().data(),
+                                             {self.array().size()});
           },
           nb::rv_policy::reference_internal)
-      .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
+      .def("scatter_forward",
+           [](dolfinx::la::Vector<T>& self) { self.scatter_fwd(); })
       .def(
           "scatter_reverse",
           [](dolfinx::la::Vector<T>& self, PyInsertMode mode)
@@ -127,10 +128,6 @@ void declare_objects(nb::module_& m, const std::string& type)
                    "Block size not supported in this function");
              }
            })
-      .def("set_value",
-           static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
-               &dolfinx::la::MatrixCSR<T>::set),
-           nb::arg("x"))
       .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
       .def("mult", &dolfinx::la::MatrixCSR<T>::mult)
       .def("to_dense",
@@ -188,6 +185,7 @@ void declare_functions(nb::module_& m)
       [](std::vector<dolfinx::la::Vector<T>*> basis)
       {
         std::vector<std::reference_wrapper<dolfinx::la::Vector<T>>> _basis;
+        _basis.reserve(basis.size());
         for (std::size_t i = 0; i < basis.size(); ++i)
           _basis.push_back(*basis[i]);
         dolfinx::la::orthonormalize(_basis);
@@ -200,6 +198,7 @@ void declare_functions(nb::module_& m)
       {
         std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
             _basis;
+        _basis.reserve(basis.size());
         for (std::size_t i = 0; i < basis.size(); ++i)
           _basis.push_back(*basis[i]);
         return dolfinx::la::is_orthonormal(_basis, eps);
@@ -232,22 +231,22 @@ void la(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::la::SparsityPattern* sp, MPICommWrapper comm,
-             const std::array<std::shared_ptr<const dolfinx::common::IndexMap>,
-                              2>& maps,
-             const std::array<int, 2>& bs)
+             std::array<std::shared_ptr<const dolfinx::common::IndexMap>, 2>
+                 maps,
+             std::array<int, 2> bs)
           { new (sp) dolfinx::la::SparsityPattern(comm.get(), maps, bs); },
           nb::arg("comm"), nb::arg("maps"), nb::arg("bs"))
       .def(
           "__init__",
           [](dolfinx::la::SparsityPattern* sp, MPICommWrapper comm,
-             const std::vector<std::vector<const dolfinx::la::SparsityPattern*>>
-                 patterns,
+             const std::vector<
+                 std::vector<const dolfinx::la::SparsityPattern*>>& patterns,
              const std::array<
                  std::vector<std::pair<
                      std::reference_wrapper<const dolfinx::common::IndexMap>,
                      int>>,
                  2>& maps,
-             const std::array<std::vector<int>, 2>& bs)
+             std::array<std::vector<int>, 2> bs)
           {
             new (sp)
                 dolfinx::la::SparsityPattern(comm.get(), patterns, maps, bs);

@@ -52,12 +52,22 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
                                     const mesh::Geometry<T>& geometry,
                                     std::span<const std::int32_t> cells)
 {
+  // Find CoordinateElement appropriate to element
+  const std::vector<CoordinateElement<T>>& cmaps = geometry.cmaps();
+  mesh::CellType cell_type = element.cell_type();
+  auto it
+      = std::find_if(cmaps.begin(), cmaps.end(), [&cell_type](const auto& cm)
+                     { return cell_type == cm.cell_shape(); });
+  if (it == cmaps.end())
+    throw std::runtime_error("Cannot find CoordinateElement for FiniteElement");
+  int index = std::distance(cmaps.begin(), it);
+
   // Get geometry data and the element coordinate map
   const std::size_t gdim = geometry.dim();
-  auto x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.dofmap(index);
   std::span<const T> x_g = geometry.x();
 
-  const CoordinateElement<T>& cmap = geometry.cmap();
+  const CoordinateElement<T>& cmap = cmaps.at(index);
   const std::size_t num_dofs_g = cmap.dim();
 
   // Get the interpolation points on the reference cells
@@ -201,7 +211,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
     // Compute receive sizes
     std::ranges::for_each(
         dest_ranks,
-        [&dest_ranks, &rank_to_neighbor, &recv_sizes, block_size](auto rank)
+        [&rank_to_neighbor, &recv_sizes, block_size](auto rank)
         {
           if (rank >= 0)
           {
@@ -374,7 +384,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   const int tdim = mesh0->topology()->dim();
   auto map = mesh0->topology()->index_map(tdim);
   assert(map);
-  std::span<T> u1_array = u1.x()->mutable_array();
+  std::span<T> u1_array = u1.x()->array();
   std::span<const T> u0_array = u0.x()->array();
 
   std::span<const std::uint32_t> cell_info0;
@@ -588,7 +598,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
 
   // Iterate over mesh and interpolate on each cell
   std::span<const T> array0 = u0.x()->array();
-  std::span<T> array1 = u1.x()->mutable_array();
+  std::span<T> array1 = u1.x()->array();
   for (std::size_t c = 0; c < cells0.size(); c++)
   {
     // Get cell geometry (coordinate dofs)
@@ -596,7 +606,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
     for (std::size_t i = 0; i < num_dofs_g; ++i)
     {
       const int pos = 3 * x_dofs[i];
-      for (std::size_t j = 0; j < gdim; ++j)
+      for (int j = 0; j < gdim; ++j)
         coord_dofs(i, j) = x_g[pos + j];
     }
 
@@ -687,6 +697,358 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   }
 }
 
+/// @brief Interpolate data into coefficients for an identity-mapped point
+/// evaluation element.
+/// @param [in] element Element
+/// @param [in] symmetric Is the element symmetric
+/// @param [in] dofmap DofMap for cells
+/// @param [in] cells Cells to interpolate over
+/// @param [in] cell_info Cell permutation information, if required
+/// @param [in] f Input data evaluated at points
+/// @param [in] fshape Shape of input data
+/// @param [out] coeffs Output Function coefficients
+template <dolfinx::scalar T, std::floating_point U>
+void point_evaluation(const FiniteElement<U>& element, bool symmetric,
+                      const DofMap& dofmap, std::span<const std::int32_t> cells,
+                      std::span<const std::uint32_t> cell_info,
+                      std::span<const T> f, std::array<std::size_t, 2> fshape,
+                      std::span<T> coeffs)
+{
+  // Point evaluation element *and* the geometric map is the identity,
+  // e.g. not Piola mapped
+
+  const int element_bs = element.block_size();
+  const int num_scalar_dofs = element.space_dimension() / element_bs;
+  const int dofmap_bs = dofmap.bs();
+
+  std::vector<T> _coeffs(num_scalar_dofs);
+
+  auto apply_inv_transpose_dof_transformation
+      = element.template dof_transformation_fn<T>(
+          doftransform::inverse_transpose, true);
+
+  if (symmetric)
+  {
+    std::size_t matrix_size = 0;
+    while (matrix_size * matrix_size < fshape[0])
+      ++matrix_size;
+
+    spdlog::info("Loop over cells");
+    // Loop over cells
+    for (std::size_t c = 0; c < cells.size(); ++c)
+    {
+      // The entries of a symmetric matrix are numbered (for an
+      // example 4x4 element):
+      //  0 * * *
+      //  1 2 * *
+      //  3 4 5 *
+      //  6 7 8 9
+      // The loop extracts these elements. In this loop, row is the
+      // row of this matrix, and (k - rowstart) is the column
+      std::size_t row = 0;
+      std::size_t rowstart = 0;
+      const std::int32_t cell = cells[c];
+      std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
+      for (int k = 0; k < element_bs; ++k)
+      {
+        if (k - rowstart > row)
+        {
+          ++row;
+          rowstart = k;
+        }
+
+        // num_scalar_dofs is the number of interpolation points per
+        // cell in this case (interpolation matrix is identity)
+        std::copy_n(
+            std::next(f.begin(), (row * matrix_size + k - rowstart) * fshape[1]
+                                     + c * num_scalar_dofs),
+            num_scalar_dofs, _coeffs.begin());
+        apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+        for (int i = 0; i < num_scalar_dofs; ++i)
+        {
+          const int dof = i * element_bs + k;
+          std::div_t pos = std::div(dof, dofmap_bs);
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+        }
+      }
+    }
+  }
+  else
+  {
+    // Loop over cells
+    for (std::size_t c = 0; c < cells.size(); ++c)
+    {
+      const std::int32_t cell = cells[c];
+      std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
+      for (int k = 0; k < element_bs; ++k)
+      {
+        // num_scalar_dofs is the number of interpolation points per
+        // cell in this case (interpolation matrix is identity)
+        std::copy_n(std::next(f.begin(), k * fshape[1] + c * num_scalar_dofs),
+                    num_scalar_dofs, _coeffs.begin());
+        apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+        for (int i = 0; i < num_scalar_dofs; ++i)
+        {
+          const int dof = i * element_bs + k;
+          std::div_t pos = std::div(dof, dofmap_bs);
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+        }
+      }
+    }
+  }
+}
+
+/// @brief Interpolate data into coefficients for an identity-mapped but
+/// non-point evaluation element.
+/// @param [in] element Element
+/// @param [in] symmetric Is the element symmetric
+/// @param [in] dofmap DofMap for cells
+/// @param [in] cells Cells to interpolate over
+/// @param [in] cell_info Cell permutation information, if required
+/// @param [in] f Input data evaluated at points
+/// @param [in] fshape Shape of input data
+/// @param [out] coeffs Output Function coefficients
+template <dolfinx::scalar T, std::floating_point U>
+void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
+                                const DofMap& dofmap,
+                                std::span<const std::int32_t> cells,
+                                std::span<const std::uint32_t> cell_info,
+                                std::span<const T> f,
+                                std::array<std::size_t, 2> fshape,
+                                std::span<T> coeffs)
+{
+  // Not a point evaluation, but the geometric map is the identity,
+  // e.g. not Piola mapped
+
+  const int element_bs = element.block_size();
+  const int num_scalar_dofs = element.space_dimension() / element_bs;
+  const int dofmap_bs = dofmap.bs();
+
+  std::vector<T> _coeffs(num_scalar_dofs);
+
+  if (symmetric)
+  {
+    throw std::runtime_error("Interpolation into this element not supported.");
+  }
+
+  const int element_vs = element.reference_value_size();
+
+  if (element_vs > 1 and element_bs > 1)
+  {
+    throw std::runtime_error("Interpolation into this element not supported.");
+  }
+
+  // Get interpolation operator
+  const auto [_Pi, pi_shape] = element.interpolation_operator();
+  md::mdspan<const U, std::dextents<std::size_t, 2>> Pi(_Pi.data(), pi_shape);
+  const std::size_t num_interp_points = Pi.extent(1);
+  assert(Pi.extent(0) == num_scalar_dofs);
+
+  auto apply_inv_transpose_dof_transformation
+      = element.template dof_transformation_fn<T>(
+          doftransform::inverse_transpose, true);
+
+  // Loop over cells
+  std::vector<T> ref_data_b(num_interp_points);
+  md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 1>> ref_data(
+      ref_data_b.data(), num_interp_points, 1);
+  for (std::size_t c = 0; c < cells.size(); ++c)
+  {
+    const std::int32_t cell = cells[c];
+    std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
+    for (int k = 0; k < element_bs; ++k)
+    {
+      for (int i = 0; i < element_vs; ++i)
+      {
+        std::copy_n(
+            std::next(f.begin(),
+                      (i + k) * fshape[1] + c * num_interp_points / element_vs),
+            num_interp_points / element_vs,
+            std::next(ref_data_b.begin(), i * num_interp_points / element_vs));
+      }
+      impl::interpolation_apply(Pi, ref_data, std::span(_coeffs), 1);
+      apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+      for (int i = 0; i < num_scalar_dofs; ++i)
+      {
+        const int dof = i * element_bs + k;
+        std::div_t pos = std::div(dof, dofmap_bs);
+        coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+      }
+    }
+  }
+}
+
+/// @brief Interpolate data into coefficients for a Piola-mapped point
+/// evaluation element.
+/// @param [in] element Element
+/// @param [in] symmetric Is the element symmetric
+/// @param [in] dofmap DofMap for cells
+/// @param [in] cells Cells to interpolate over
+/// @param [in] cell_info Cell permutation information, if required
+/// @param [in] f Input data evaluated at points
+/// @param [in] fshape Shape of input data
+/// @param [in] mesh Mesh
+/// @param [out] coeffs Output Function coefficients
+template <dolfinx::scalar T, std::floating_point U>
+void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
+                             const DofMap& dofmap,
+                             std::span<const std::int32_t> cells,
+                             std::span<const std::uint32_t> cell_info,
+                             std::span<const T> f,
+                             std::array<std::size_t, 2> fshape,
+                             const mesh::Mesh<U>& mesh, std::span<T> coeffs)
+{
+
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology()->dim();
+
+  const int element_bs = element.block_size();
+  const int num_scalar_dofs = element.space_dimension() / element_bs;
+  const int value_size = element.reference_value_size();
+  const int dofmap_bs = dofmap.bs();
+
+  std::vector<T> _coeffs(num_scalar_dofs);
+  md::mdspan<const T, md::dextents<std::size_t, 2>> _f(f.data(), fshape);
+
+  if (symmetric)
+  {
+    throw std::runtime_error("Interpolation into this element not supported.");
+  }
+  // Get the interpolation points on the reference cells
+  const auto [X, Xshape] = element.interpolation_points();
+  if (X.empty())
+  {
+    throw std::runtime_error(
+        "Interpolation into this space is not yet supported.");
+  }
+
+  if (_f.extent(1) != cells.size() * Xshape[0])
+    throw std::runtime_error("Interpolation data has the wrong shape.");
+
+  // Get coordinate map
+  const CoordinateElement<U>& cmap = mesh.geometry().cmap();
+
+  // Get geometry data
+  auto x_dofmap = mesh.geometry().dofmap();
+  const int num_dofs_g = cmap.dim();
+  std::span<const U> x_g = mesh.geometry().x();
+
+  // Create data structures for Jacobian info
+  std::vector<U> J_b(Xshape[0] * gdim * tdim);
+  md::mdspan<U, std::dextents<std::size_t, 3>> J(J_b.data(), Xshape[0], gdim,
+                                                 tdim);
+  std::vector<U> K_b(Xshape[0] * tdim * gdim);
+  md::mdspan<U, std::dextents<std::size_t, 3>> K(K_b.data(), Xshape[0], tdim,
+                                                 gdim);
+  std::vector<U> detJ(Xshape[0]);
+  std::vector<U> det_scratch(2 * gdim * tdim);
+
+  std::vector<U> coord_dofs_b(num_dofs_g * gdim);
+  md::mdspan<U, std::dextents<std::size_t, 2>> coord_dofs(coord_dofs_b.data(),
+                                                          num_dofs_g, gdim);
+  const std::size_t value_size_ref = element.reference_value_size();
+  std::vector<T> ref_data_b(Xshape[0] * 1 * value_size_ref);
+  md::mdspan<
+      T, md::extents<std::size_t, md::dynamic_extent, 1, md::dynamic_extent>>
+      ref_data(ref_data_b.data(), Xshape[0], 1, value_size_ref);
+
+  std::vector<T> _vals_b(Xshape[0] * 1 * value_size);
+  md::mdspan<
+      T, md::extents<std::size_t, md::dynamic_extent, 1, md::dynamic_extent>>
+      _vals(_vals_b.data(), Xshape[0], 1, value_size);
+
+  // Tabulate 1st derivative of shape functions at interpolation
+  // coords
+  std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, Xshape[0]);
+  std::vector<U> phi_b(
+      std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+  md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent,
+                                  md::dynamic_extent, md::dynamic_extent, 1>>
+      phi(phi_b.data(), phi_shape);
+  cmap.tabulate(1, X, Xshape, phi_b);
+  auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), md::full_extent,
+                            md::full_extent, 0);
+
+  const std::function<void(std::span<T>, std::span<const std::uint32_t>,
+                           std::int32_t, int)>
+      apply_inverse_transpose_dof_transformation
+      = element.template dof_transformation_fn<T>(
+          doftransform::inverse_transpose);
+
+  // Get interpolation operator
+  const auto [_Pi, pi_shape] = element.interpolation_operator();
+  md::mdspan<const U, std::dextents<std::size_t, 2>> Pi(_Pi.data(), pi_shape);
+
+  using u_t = md::mdspan<const T, md::dextents<std::size_t, 2>>;
+  using U_t
+      = decltype(md::submdspan(ref_data, 0, md::full_extent, md::full_extent));
+  using J_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
+  using K_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
+  auto pull_back_fn
+      = element.basix_element().template map_fn<U_t, u_t, J_t, K_t>();
+
+  for (std::size_t c = 0; c < cells.size(); ++c)
+  {
+    const std::int32_t cell = cells[c];
+    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
+    for (int i = 0; i < num_dofs_g; ++i)
+    {
+      const int pos = 3 * x_dofs[i];
+      for (int j = 0; j < gdim; ++j)
+        coord_dofs(i, j) = x_g[pos + j];
+    }
+
+    // Compute J, detJ and K
+    std::ranges::fill(J_b, 0);
+    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    {
+      auto _dphi = md::submdspan(dphi, md::full_extent, p, md::full_extent);
+      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+      cmap.compute_jacobian(_dphi, coord_dofs, _J);
+      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+      cmap.compute_jacobian_inverse(_J, _K);
+      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
+    }
+
+    std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
+    for (int k = 0; k < element_bs; ++k)
+    {
+      // Extract computed expression values for element block k
+      for (int m = 0; m < value_size; ++m)
+      {
+        for (std::size_t k0 = 0; k0 < Xshape[0]; ++k0)
+        {
+          _vals(k0, 0, m)
+              = f[fshape[1] * (k * value_size + m) + c * Xshape[0] + k0];
+        }
+      }
+
+      // Get element degrees of freedom for block
+      for (std::size_t i = 0; i < Xshape[0]; ++i)
+      {
+        auto _u = md::submdspan(_vals, i, md::full_extent, md::full_extent);
+        auto _U = md::submdspan(ref_data, i, md::full_extent, md::full_extent);
+        auto _K = md::submdspan(K, i, md::full_extent, md::full_extent);
+        auto _J = md::submdspan(J, i, md::full_extent, md::full_extent);
+        pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
+      }
+
+      auto ref = md::submdspan(ref_data, md::full_extent, 0, md::full_extent);
+      impl::interpolation_apply(Pi, ref, std::span(_coeffs), element_bs);
+      apply_inverse_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+
+      // Copy interpolation dofs into coefficient vector
+      assert(_coeffs.size() == num_scalar_dofs);
+      for (int i = 0; i < num_scalar_dofs; ++i)
+      {
+        const int dof = i * element_bs + k;
+        std::div_t pos = std::div(dof, dofmap_bs);
+        coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+      }
+    }
+  }
+}
+
 //----------------------------------------------------------------------------
 } // namespace impl
 
@@ -695,7 +1057,9 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
                  std::span<const std::int32_t> cells)
 {
-  auto element = u.function_space()->element();
+  // TODO: Index for mixed-topology, zero for now
+  const int index = 0;
+  auto element = u.function_space()->elements(index);
   assert(element);
   const int element_bs = element->block_size();
   if (int num_sub = element->num_sub_elements();
@@ -710,12 +1074,12 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   auto mesh = u.function_space()->mesh();
   assert(mesh);
 
-  const int gdim = mesh->geometry().dim();
-  const int tdim = mesh->topology()->dim();
-
-  if (fshape[0] != (std::size_t)u.function_space()->element()->value_size())
+  if (fshape[0]
+          != (std::size_t)u.function_space()->elements(index)->value_size()
+      or f.size() != fshape[0] * fshape[1])
     throw std::runtime_error("Interpolation data has the wrong shape/size.");
 
+  spdlog::debug("Check for dof transformation");
   std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
@@ -723,304 +1087,34 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
-  const std::size_t f_shape1
-      = f.size() / u.function_space()->element()->value_size();
-  md::mdspan<const T, md::dextents<std::size_t, 2>> _f(f.data(), fshape);
-
+  spdlog::debug("Interpolate: get dofmap");
   // Get dofmap
-  const auto dofmap = u.function_space()->dofmap();
+  const auto dofmap = u.function_space()->dofmaps(index);
   assert(dofmap);
-  const int dofmap_bs = dofmap->bs();
 
-  // Loop over cells and compute interpolation dofs
-  const int num_scalar_dofs = element->space_dimension() / element_bs;
-  const int value_size = u.function_space()->element()->reference_value_size();
+  // Result will be stored to coeffs
+  std::span<T> coeffs = u.x()->array();
 
-  std::span<T> coeffs = u.x()->mutable_array();
-  std::vector<T> _coeffs(num_scalar_dofs);
-
-  // This assumes that any element with an identity interpolation matrix
-  // is a point evaluation
   const bool symmetric = u.function_space()->symmetric();
   if (element->map_ident() && element->interpolation_ident())
   {
-    // Point evaluation element *and* the geometric map is the identity,
-    // e.g. not Piola mapped
-
-    auto apply_inv_transpose_dof_transformation
-        = element->template dof_transformation_fn<T>(
-            doftransform::inverse_transpose, true);
-
-    if (symmetric)
-    {
-      std::size_t matrix_size = 0;
-      while (matrix_size * matrix_size < fshape[0])
-        ++matrix_size;
-
-      // Loop over cells
-      for (std::size_t c = 0; c < cells.size(); ++c)
-      {
-        // The entries of a symmetric matrix are numbered (for an
-        // example 4x4 element):
-        //  0 * * *
-        //  1 2 * *
-        //  3 4 5 *
-        //  6 7 8 9
-        // The loop extracts these elements. In this loop, row is the
-        // row of this matrix, and (k - rowstart) is the column
-        std::size_t row = 0;
-        std::size_t rowstart = 0;
-        const std::int32_t cell = cells[c];
-        std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
-        for (int k = 0; k < element_bs; ++k)
-        {
-          if (k - rowstart > row)
-          {
-            ++row;
-            rowstart = k;
-          }
-
-          // num_scalar_dofs is the number of interpolation points per
-          // cell in this case (interpolation matrix is identity)
-          std::copy_n(
-              std::next(f.begin(), (row * matrix_size + k - rowstart) * f_shape1
-                                       + c * num_scalar_dofs),
-              num_scalar_dofs, _coeffs.begin());
-          apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
-          for (int i = 0; i < num_scalar_dofs; ++i)
-          {
-            const int dof = i * element_bs + k;
-            std::div_t pos = std::div(dof, dofmap_bs);
-            coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
-          }
-        }
-      }
-    }
-    else
-    {
-      // Loop over cells
-      for (std::size_t c = 0; c < cells.size(); ++c)
-      {
-        const std::int32_t cell = cells[c];
-        std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
-        for (int k = 0; k < element_bs; ++k)
-        {
-          // num_scalar_dofs is the number of interpolation points per
-          // cell in this case (interpolation matrix is identity)
-          std::copy_n(std::next(f.begin(), k * f_shape1 + c * num_scalar_dofs),
-                      num_scalar_dofs, _coeffs.begin());
-          apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
-          for (int i = 0; i < num_scalar_dofs; ++i)
-          {
-            const int dof = i * element_bs + k;
-            std::div_t pos = std::div(dof, dofmap_bs);
-            coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
-          }
-        }
-      }
-    }
+    spdlog::debug("Interpolate: point evaluation");
+    // This assumes that any element with an identity interpolation matrix
+    // is a point evaluation
+    impl::point_evaluation(*element, symmetric, *dofmap, cells, cell_info, f,
+                           fshape, coeffs);
   }
   else if (element->map_ident())
   {
-    // Not a point evaluation, but the geometric map is the identity,
-    // e.g. not Piola mapped
-
-    if (symmetric)
-    {
-      throw std::runtime_error(
-          "Interpolation into this element not supported.");
-    }
-
-    const int element_vs
-        = u.function_space()->element()->reference_value_size();
-
-    if (element_vs > 1 and element_bs > 1)
-    {
-      throw std::runtime_error(
-          "Interpolation into this element not supported.");
-    }
-
-    // Get interpolation operator
-    const auto [_Pi, pi_shape] = element->interpolation_operator();
-    md::mdspan<const U, std::dextents<std::size_t, 2>> Pi(_Pi.data(), pi_shape);
-    const std::size_t num_interp_points = Pi.extent(1);
-    assert(Pi.extent(0) == num_scalar_dofs);
-
-    auto apply_inv_transpose_dof_transformation
-        = element->template dof_transformation_fn<T>(
-            doftransform::inverse_transpose, true);
-
-    // Loop over cells
-    std::vector<T> ref_data_b(num_interp_points);
-    md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 1>> ref_data(
-        ref_data_b.data(), num_interp_points, 1);
-    for (std::size_t c = 0; c < cells.size(); ++c)
-    {
-      const std::int32_t cell = cells[c];
-      std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
-      for (int k = 0; k < element_bs; ++k)
-      {
-        for (int i = 0; i < element_vs; ++i)
-        {
-          std::copy_n(
-              std::next(f.begin(), (i + k) * f_shape1
-                                       + c * num_interp_points / element_vs),
-              num_interp_points / element_vs,
-              std::next(ref_data_b.begin(),
-                        i * num_interp_points / element_vs));
-        }
-        impl::interpolation_apply(Pi, ref_data, std::span(_coeffs), 1);
-        apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
-        for (int i = 0; i < num_scalar_dofs; ++i)
-        {
-          const int dof = i * element_bs + k;
-          std::div_t pos = std::div(dof, dofmap_bs);
-          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
-        }
-      }
-    }
+    spdlog::debug("Interpolate: identity-mapped evaluation");
+    impl::identity_mapped_evaluation(*element, symmetric, *dofmap, cells,
+                                     cell_info, f, fshape, coeffs);
   }
   else
   {
-    if (symmetric)
-    {
-      throw std::runtime_error(
-          "Interpolation into this element not supported.");
-    }
-    // Get the interpolation points on the reference cells
-    const auto [X, Xshape] = element->interpolation_points();
-    if (X.empty())
-    {
-      throw std::runtime_error(
-          "Interpolation into this space is not yet supported.");
-    }
-
-    if (_f.extent(1) != cells.size() * Xshape[0])
-      throw std::runtime_error("Interpolation data has the wrong shape.");
-
-    // Get coordinate map
-    const CoordinateElement<U>& cmap = mesh->geometry().cmap();
-
-    // Get geometry data
-    auto x_dofmap = mesh->geometry().dofmap();
-    const int num_dofs_g = cmap.dim();
-    std::span<const U> x_g = mesh->geometry().x();
-
-    // Create data structures for Jacobian info
-    std::vector<U> J_b(Xshape[0] * gdim * tdim);
-    md::mdspan<U, std::dextents<std::size_t, 3>> J(J_b.data(), Xshape[0], gdim,
-                                                   tdim);
-    std::vector<U> K_b(Xshape[0] * tdim * gdim);
-    md::mdspan<U, std::dextents<std::size_t, 3>> K(K_b.data(), Xshape[0], tdim,
-                                                   gdim);
-    std::vector<U> detJ(Xshape[0]);
-    std::vector<U> det_scratch(2 * gdim * tdim);
-
-    std::vector<U> coord_dofs_b(num_dofs_g * gdim);
-    md::mdspan<U, std::dextents<std::size_t, 2>> coord_dofs(coord_dofs_b.data(),
-                                                            num_dofs_g, gdim);
-    const std::size_t value_size_ref = element->reference_value_size();
-    std::vector<T> ref_data_b(Xshape[0] * 1 * value_size_ref);
-    md::mdspan<
-        T, md::extents<std::size_t, md::dynamic_extent, 1, md::dynamic_extent>>
-        ref_data(ref_data_b.data(), Xshape[0], 1, value_size_ref);
-
-    std::vector<T> _vals_b(Xshape[0] * 1 * value_size);
-    md::mdspan<
-        T, md::extents<std::size_t, md::dynamic_extent, 1, md::dynamic_extent>>
-        _vals(_vals_b.data(), Xshape[0], 1, value_size);
-
-    // Tabulate 1st derivative of shape functions at interpolation
-    // coords
-    std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, Xshape[0]);
-    std::vector<U> phi_b(
-        std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent,
-                                    md::dynamic_extent, md::dynamic_extent, 1>>
-        phi(phi_b.data(), phi_shape);
-    cmap.tabulate(1, X, Xshape, phi_b);
-    auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), md::full_extent,
-                              md::full_extent, 0);
-
-    const std::function<void(std::span<T>, std::span<const std::uint32_t>,
-                             std::int32_t, int)>
-        apply_inverse_transpose_dof_transformation
-        = element->template dof_transformation_fn<T>(
-            doftransform::inverse_transpose);
-
-    // Get interpolation operator
-    const auto [_Pi, pi_shape] = element->interpolation_operator();
-    md::mdspan<const U, std::dextents<std::size_t, 2>> Pi(_Pi.data(), pi_shape);
-
-    using u_t = md::mdspan<const T, md::dextents<std::size_t, 2>>;
-    using U_t = decltype(md::submdspan(ref_data, 0, md::full_extent,
-                                       md::full_extent));
-    using J_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-    using K_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-    auto pull_back_fn
-        = element->basix_element().template map_fn<U_t, u_t, J_t, K_t>();
-
-    for (std::size_t c = 0; c < cells.size(); ++c)
-    {
-      const std::int32_t cell = cells[c];
-      auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-      for (int i = 0; i < num_dofs_g; ++i)
-      {
-        const int pos = 3 * x_dofs[i];
-        for (int j = 0; j < gdim; ++j)
-          coord_dofs(i, j) = x_g[pos + j];
-      }
-
-      // Compute J, detJ and K
-      std::ranges::fill(J_b, 0);
-      for (std::size_t p = 0; p < Xshape[0]; ++p)
-      {
-        auto _dphi = md::submdspan(dphi, md::full_extent, p, md::full_extent);
-        auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-        cmap.compute_jacobian(_dphi, coord_dofs, _J);
-        auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-        cmap.compute_jacobian_inverse(_J, _K);
-        detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
-      }
-
-      std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
-      for (int k = 0; k < element_bs; ++k)
-      {
-        // Extract computed expression values for element block k
-        for (int m = 0; m < value_size; ++m)
-        {
-          for (std::size_t k0 = 0; k0 < Xshape[0]; ++k0)
-          {
-            _vals(k0, 0, m)
-                = f[f_shape1 * (k * value_size + m) + c * Xshape[0] + k0];
-          }
-        }
-
-        // Get element degrees of freedom for block
-        for (std::size_t i = 0; i < Xshape[0]; ++i)
-        {
-          auto _u = md::submdspan(_vals, i, md::full_extent, md::full_extent);
-          auto _U
-              = md::submdspan(ref_data, i, md::full_extent, md::full_extent);
-          auto _K = md::submdspan(K, i, md::full_extent, md::full_extent);
-          auto _J = md::submdspan(J, i, md::full_extent, md::full_extent);
-          pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
-        }
-
-        auto ref = md::submdspan(ref_data, md::full_extent, 0, md::full_extent);
-        impl::interpolation_apply(Pi, ref, std::span(_coeffs), element_bs);
-        apply_inverse_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
-
-        // Copy interpolation dofs into coefficient vector
-        assert(_coeffs.size() == num_scalar_dofs);
-        for (int i = 0; i < num_scalar_dofs; ++i)
-        {
-          const int dof = i * element_bs + k;
-          std::div_t pos = std::div(dof, dofmap_bs);
-          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
-        }
-      }
-    }
+    spdlog::debug("Interpolate: Piola-mapped evaluation");
+    impl::piola_mapped_evaluation(*element, symmetric, *dofmap, cells,
+                                  cell_info, f, fshape, *mesh, coeffs);
   }
 }
 
@@ -1169,7 +1263,7 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
       and cells1.size() == num_cells0)
   {
     // Same function spaces and on whole mesh
-    std::span<T> u1_array = u1.x()->mutable_array();
+    std::span<T> u1_array = u1.x()->array();
     std::span<const T> u0_array = u0.x()->array();
     std::ranges::copy(u0_array, u1_array.begin());
   }
@@ -1203,7 +1297,7 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
       std::shared_ptr<const DofMap> dofmap1 = u1.function_space()->dofmap();
       assert(dofmap1);
 
-      std::span<T> u1_array = u1.x()->mutable_array();
+      std::span<T> u1_array = u1.x()->array();
       std::span<const T> u0_array = u0.x()->array();
 
       // Iterate over mesh and interpolate on each cell

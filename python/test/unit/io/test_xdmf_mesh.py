@@ -14,7 +14,7 @@ import pytest
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
-from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
+from dolfinx.io.gmsh import cell_perm_array, ufl_mesh
 from dolfinx.mesh import (
     CellType,
     GhostMode,
@@ -153,7 +153,7 @@ def test_read_write_p2_mesh(tempdir, encoding):
     cell_type = _cpp.mesh.to_type(str(domain.ufl_cell()))
     cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
 
-    mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x)
 
     filename = Path(tempdir, "tet10_mesh.xdmf")
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as xdmf:

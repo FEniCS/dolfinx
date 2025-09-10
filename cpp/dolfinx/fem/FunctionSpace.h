@@ -44,7 +44,7 @@ public:
   FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap)
-      : _mesh(mesh), _dofmaps{dofmap}, _elements{element},
+      : _mesh(mesh), _elements{element}, _dofmaps{std::move(dofmap)},
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
     // Do nothing
@@ -62,17 +62,17 @@ public:
       std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
       std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements,
       std::vector<std::shared_ptr<const DofMap>> dofmaps)
-      : _mesh(mesh), _dofmaps(dofmaps), _elements(elements),
+      : _mesh(mesh), _elements(elements), _dofmaps(std::move(dofmaps)),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
     std::vector<mesh::CellType> cell_types = mesh->topology()->cell_types();
-    int num_cell_types = cell_types.size();
+    std::size_t num_cell_types = cell_types.size();
     if (elements.size() != num_cell_types)
     {
       throw std::runtime_error(
           "Number of elements must match number of cell types");
     }
-    if (dofmaps.size() != num_cell_types)
+    if (_dofmaps.size() != num_cell_types)
     {
       throw std::runtime_error(
           "Number of dofmaps must match number of cell types");

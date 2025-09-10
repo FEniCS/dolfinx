@@ -20,7 +20,7 @@ from dolfinx import default_real_type
 from dolfinx.cpp.io import perm_vtk
 from dolfinx.fem import assemble_scalar, form
 from dolfinx.io import XDMFFile
-from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
+from dolfinx.io.gmsh import cell_perm_array, ufl_mesh
 from dolfinx.mesh import CellType, create_mesh, create_submesh
 from ufl import dx
 
@@ -39,7 +39,7 @@ def check_cell_volume(points, cell, domain, volume, dtype):
         ordered_cell = [point_order[i] for i in cell]
 
         ordered_points = np.array(ordered_points, dtype=dtype)
-        mesh = create_mesh(MPI.COMM_WORLD, [ordered_cell], ordered_points, domain)
+        mesh = create_mesh(MPI.COMM_WORLD, [ordered_cell], domain, ordered_points)
         area = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
         assert np.isclose(area, volume)
 
@@ -116,7 +116,7 @@ def test_submesh(order, dtype):
         )
     )
     points = np.array(points, dtype=dtype)
-    mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, [cell], domain, points)
     for i in range(mesh.topology.dim):
         mesh.topology.create_entities(i)
     md = {"quadrature_degree": 10}
@@ -780,7 +780,7 @@ def test_gmsh_input_2d(order, cell_type, dtype):
 
     cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
     x = x.astype(dtype)
-    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh(gmsh_cell_id, x.shape[1], dtype=dtype))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, ufl_mesh(gmsh_cell_id, x.shape[1], dtype=dtype), x)
     surface = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
 
     assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(
@@ -853,7 +853,7 @@ def test_gmsh_input_3d(order, cell_type, dtype):
     cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
 
     x = x.astype(dtype)
-    mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x)
     volume = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
     assert mesh.comm.allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
 

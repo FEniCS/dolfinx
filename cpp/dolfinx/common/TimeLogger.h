@@ -28,7 +28,7 @@ public:
   static TimeLogger& instance();
 
   /// Register timing (for later summary)
-  void register_timing(std::string task,
+  void register_timing(const std::string& task,
                        std::chrono::duration<double, std::ratio<1>> wall);
 
   /// Return a summary of timings and tasks in a Table
@@ -44,7 +44,7 @@ public:
   /// @param[in] task The task name to retrieve the timing for
   /// @return Values (count, total wall time) for given task.
   std::pair<int, std::chrono::duration<double, std::ratio<1>>>
-  timing(std::string task) const;
+  timing(const std::string& task) const;
 
   /// @brief Logged elapsed times.
   /// @return Elapsed [task id: (count, total wall time)].

@@ -36,7 +36,8 @@ public:
   template <typename V>
     requires std::is_convertible_v<std::remove_cvref_t<V>, Geometry<T>>
   Mesh(MPI_Comm comm, std::shared_ptr<Topology> topology, V&& geometry)
-      : _topology(topology), _geometry(std::forward<V>(geometry)), _comm(comm)
+      : _topology(std::move(topology)), _geometry(std::forward<V>(geometry)),
+        _comm(comm)
   {
     // Do nothing
   }

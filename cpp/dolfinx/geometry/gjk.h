@@ -8,8 +8,8 @@
 
 #include <algorithm>
 #include <array>
+#include <boost/multiprecision/cpp_bin_float.hpp>
 #include <concepts>
-#include <dolfinx/common/math.h>
 #include <limits>
 #include <numeric>
 #include <span>
@@ -22,200 +22,245 @@ namespace dolfinx::geometry
 namespace impl_gjk
 {
 
-/// @brief Find the resulting sub-simplex of the input simplex which is
-/// nearest to the origin. Also, return the shortest vector from the
-/// origin to the resulting simplex.
-template <std::floating_point T>
-std::pair<std::vector<T>, std::array<T, 3>>
-nearest_simplex(std::span<const T> s)
+/// @brief Determinant of 3x3 matrix A
+/// @param A 3x3 matrix
+/// @returns det(A)
+template <typename T>
+inline T det3(std::span<const T, 9> A)
+{
+  T w0 = A[3 + 1] * A[2 * 3 + 2] - A[3 + 2] * A[3 * 2 + 1];
+  T w1 = A[3] * A[3 * 2 + 2] - A[3 + 2] * A[3 * 2];
+  T w2 = A[3] * A[3 * 2 + 1] - A[3 + 1] * A[3 * 2];
+  return A[0] * w0 - A[1] * w1 + A[2] * w2;
+}
+
+/// @brief Dot product of vectors a and b, both size 3.
+/// @param a Vector of size 3
+/// @param b Vector of size 3
+/// @returns a.b
+template <typename Vec>
+inline Vec::value_type dot3(const Vec& a, const Vec& b)
+{
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+/// @brief Find the barycentric coordinates in the simplex `s`, of the point in
+/// `s` which is closest to the origin.
+/// @param s Simplex described by a set of points in 3D, row-major, flattened.
+/// @return Barycentric coordinates of the point in s closest to the origin.
+/// @note `s` may be an interval, a triangle or a tetrahedron.
+template <typename T>
+std::vector<T> nearest_simplex(std::span<const T> s)
 {
   assert(s.size() % 3 == 0);
   const std::size_t s_rows = s.size() / 3;
+
+  SPDLOG_DEBUG("GJK: nearest_simplex({})", s_rows);
+
   switch (s_rows)
   {
   case 2:
   {
+    // Simplex is an interval. Point may lie on the interval, or on either end.
     // Compute lm = dot(s0, ds / |ds|)
-    auto s0 = s.template subspan<0, 3>();
-    auto s1 = s.template subspan<3, 3>();
-    std::array ds = {s1[0] - s0[0], s1[1] - s0[1], s1[2] - s0[2]};
-    const T lm = -(s0[0] * ds[0] + s0[1] * ds[1] + s0[2] * ds[2])
-                 / (ds[0] * ds[0] + ds[1] * ds[1] + ds[2] * ds[2]);
-    if (lm >= 0.0 and lm <= 1.0)
+    std::span<const T, 3> s0 = s.template subspan<0, 3>();
+    std::span<const T, 3> s1 = s.template subspan<3, 3>();
+
+    T lm = dot3(s0, s0) - dot3(s0, s1);
+    if (lm < 0.0)
     {
-      // The origin is between A and B
-      // v = s0 + lm * (s1 - s0);
-      std::array v
-          = {s0[0] + lm * ds[0], s0[1] + lm * ds[1], s0[2] + lm * ds[2]};
-      return {std::vector<T>(s.begin(), s.end()), v};
+      SPDLOG_DEBUG("GJK: line point A");
+      return {1.0, 0.0};
+    }
+    T mu = dot3(s1, s1) - dot3(s1, s0);
+    if (mu < 0.0)
+    {
+      SPDLOG_DEBUG("GJK: line point B");
+      return {0.0, 1.0};
     }
 
-    if (lm < 0.0)
-      return {std::vector<T>(s0.begin(), s0.end()), {s0[0], s0[1], s0[2]}};
-    else
-      return {std::vector<T>(s1.begin(), s1.end()), {s1[0], s1[1], s1[2]}};
+    SPDLOG_DEBUG("GJK line: AB");
+    T f1 = 1.0 / (lm + mu);
+    return {mu * f1, lm * f1};
   }
   case 3:
   {
+    // Simplex is a triangle. Point may lie in one of 7 regions (outside near a
+    // vertex, outside near an edge, or on the interior)
     auto a = s.template subspan<0, 3>();
     auto b = s.template subspan<3, 3>();
     auto c = s.template subspan<6, 3>();
-    auto length = [](auto& x, auto& y)
+
+    T aa = dot3(a, a);
+    T ab = dot3(a, b);
+    T ac = dot3(a, c);
+    T d1 = aa - ab;
+    T d2 = aa - ac;
+    if (d1 < 0.0 and d2 < 0.0)
     {
-      return std::transform_reduce(x.begin(), x.end(), y.begin(), 0.0,
-                                   std::plus{}, [](auto x, auto y)
-                                   { return (x - y) * (x - y); });
-    };
-    const T ab2 = length(a, b);
-    const T ac2 = length(a, c);
-    const T bc2 = length(b, c);
-
-    // Helper to compute dot(x, x - y)
-    auto helper = [](auto& x, auto& y)
-    {
-      return std::transform_reduce(x.begin(), x.end(), y.begin(), 0.0,
-                                   std::plus{},
-                                   [](auto x, auto y) { return x * (x - y); });
-    };
-    const std::array lm
-        = {helper(a, b) / ab2, helper(a, c) / ac2, helper(b, c) / bc2};
-
-    T caba = 0;
-    for (std::size_t i = 0; i < 3; ++i)
-      caba += (c[i] - a[i]) * (b[i] - a[i]);
-
-    // Calculate triangle ABC
-    const T c2 = 1 - caba * caba / (ab2 * ac2);
-    const T lbb = (lm[0] - lm[1] * caba / ab2) / c2;
-    const T lcc = (lm[1] - lm[0] * caba / ac2) / c2;
-
-    // Intersects triangle
-    if (lbb >= 0.0 and lcc >= 0.0 and (lbb + lcc) <= 1.0)
-    {
-      // Calculate intersection more accurately
-      // v = (c - a)  x (b - a)
-      std::array dx0 = {c[0] - a[0], c[1] - a[1], c[2] - a[2]};
-      std::array dx1 = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
-      std::array v = math::cross(dx0, dx1);
-
-      // Barycentre of triangle
-      std::array p = {(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3,
-                      (a[2] + b[2] + c[2]) / 3};
-
-      T sum = v[0] * p[0] + v[1] * p[1] + v[2] * p[2];
-      T vnorm2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
-      for (std::size_t i = 0; i < 3; ++i)
-        v[i] *= sum / vnorm2;
-
-      return {std::vector(s.begin(), s.end()), v};
+      SPDLOG_DEBUG("GJK: Point A");
+      return {1.0, 0.0, 0.0};
     }
 
-    // Get closest point
-    std::size_t pos = 0;
+    T bb = dot3(b, b);
+    T bc = dot3(b, c);
+    T d3 = bb - ab;
+    T d4 = bb - bc;
+    if (d3 < 0.0 and d4 < 0.0)
     {
-      T norm0 = std::numeric_limits<T>::max();
-      for (std::size_t i = 0; i < s.size(); i += 3)
-      {
-        std::span<const T, 3> p(s.data() + i, 3);
-        T norm = p[0] * p[0] + p[1] * p[1] + p[2] * p[2];
-        if (norm < norm0)
-        {
-          pos = i / 3;
-          norm0 = norm;
-        }
-      }
+      SPDLOG_DEBUG("GJK: Point B");
+      return {0.0, 1.0, 0.0};
     }
 
-    std::array vmin = {s[3 * pos], s[3 * pos + 1], s[3 * pos + 2]};
-    T qmin = 0;
-    for (std::size_t k = 0; k < 3; ++k)
-      qmin += vmin[k] * vmin[k];
-
-    std::vector smin = {vmin[0], vmin[1], vmin[2]};
-
-    // Check if edges are closer
-    constexpr int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
-    for (std::size_t i = 0; i < s_rows; ++i)
+    T cc = dot3(c, c);
+    T d5 = cc - ac;
+    T d6 = cc - bc;
+    if (d5 < 0.0 and d6 < 0.0)
     {
-      auto s0 = s.subspan(3 * f[i][0], 3);
-      auto s1 = s.subspan(3 * f[i][1], 3);
-      if (lm[i] > 0 and lm[i] < 1)
-      {
-        std::array<T, 3> v;
-        for (std::size_t k = 0; k < 3; ++k)
-          v[k] = s0[k] + lm[i] * (s1[k] - s0[k]);
-        T qnorm = 0;
-        for (std::size_t k = 0; k < 3; ++k)
-          qnorm += v[k] * v[k];
-        if (qnorm < qmin)
-        {
-          std::ranges::copy(v, vmin.begin());
-          qmin = qnorm;
-          smin.resize(2 * 3);
-          std::span<T, 3> smin0(smin.data(), 3);
-          std::ranges::copy(s0, smin0.begin());
-          std::span<T, 3> smin1(smin.data() + 3, 3);
-          std::ranges::copy(s1, smin1.begin());
-        }
-      }
+      SPDLOG_DEBUG("GJK: Point C");
+      return {0.0, 0.0, 1.0};
     }
-    return {std::move(smin), vmin};
+
+    T vc = d4 * d1 - d1 * d3 + d3 * d2;
+    if (vc < 0.0 and d1 > 0.0 and d3 > 0.0)
+    {
+      SPDLOG_DEBUG("GJK: edge AB");
+      T f1 = 1.0 / (d1 + d3);
+      T lm = d1 * f1;
+      T mu = d3 * f1;
+      return {mu, lm, 0.0};
+    }
+    T vb = d1 * d5 - d5 * d2 + d2 * d6;
+    if (vb < 0.0 and d2 > 0.0 and d5 > 0.0)
+    {
+      SPDLOG_DEBUG("GJK: edge AC");
+      T f1 = 1.0 / (d2 + d5);
+      T lm = d2 * f1;
+      T mu = d5 * f1;
+      return {mu, 0.0, lm};
+    }
+    T va = d3 * d6 - d6 * d4 + d4 * d5;
+    if (va < 0.0 and d4 > 0.0 and d6 > 0.0)
+    {
+      SPDLOG_DEBUG("GJK: edge BC");
+      T f1 = 1.0 / (d4 + d6);
+      T lm = d4 * f1;
+      T mu = d6 * f1;
+      return {0.0, mu, lm};
+    }
+
+    SPDLOG_DEBUG("GJK: triangle ABC");
+    T f1 = 1.0 / (va + vb + vc);
+    return {va * f1, vb * f1, vc * f1};
   }
   case 4:
   {
-    auto s0 = s.template subspan<0, 3>();
-    auto s1 = s.template subspan<3, 3>();
-    auto s2 = s.template subspan<6, 3>();
-    auto s3 = s.template subspan<9, 3>();
-    auto W1 = math::cross(s0, s1);
-    auto W2 = math::cross(s2, s3);
+    // Most complex case, where simplex is a tetrahedron, with 15 possible
+    // outcomes (4 vertices, 6 edges, 4 facets and the interior).
+    std::vector<T> rv{0, 0, 0, 0};
 
-    std::array<T, 4> B;
-    B[0] = std::transform_reduce(s2.begin(), s2.end(), W1.begin(), 0.0);
-    B[1] = -std::transform_reduce(s3.begin(), s3.end(), W1.begin(), 0.0);
-    B[2] = std::transform_reduce(s0.begin(), s0.end(), W2.begin(), 0.0);
-    B[3] = -std::transform_reduce(s1.begin(), s1.end(), W2.begin(), 0.0);
-
-    const bool signDetM = std::signbit(std::reduce(B.begin(), B.end(), 0.0));
-    std::array<bool, 4> f_inside;
+    T d[4][4];
     for (int i = 0; i < 4; ++i)
-      f_inside[i] = (std::signbit(B[i]) == signDetM);
-
-    if (f_inside[1] and f_inside[2] and f_inside[3])
+    // Compute dot products at each vertex
     {
-      if (f_inside[0]) // The origin is inside the tetrahedron
-        return {std::vector<T>(s.begin(), s.end()), {0, 0, 0}};
-      else // The origin projection P faces BCD
-        return nearest_simplex<T>(s.template subspan<0, 3 * 3>());
-    }
-
-    // Test ACD, ABD and/or ABC
-    std::vector<T> smin;
-    std::array<T, 3> vmin = {0, 0, 0};
-    constexpr int facets[3][3] = {{0, 1, 3}, {0, 2, 3}, {1, 2, 3}};
-    T qmin = std::numeric_limits<T>::max();
-    std::vector<T> M(9);
-    for (int i = 0; i < 3; ++i)
-    {
-      if (f_inside[i + 1] == false)
+      std::span<const T, 3> si(s.begin() + i * 3, 3);
+      T sii = dot3(si, si);
+      bool out = true;
+      for (int j = 0; j < 4; ++j)
       {
-        std::copy_n(std::next(s.begin(), 3 * facets[i][0]), 3, M.begin());
-        std::copy_n(std::next(s.begin(), 3 * facets[i][1]), 3,
-                    std::next(M.begin(), 3));
-        std::copy_n(std::next(s.begin(), 3 * facets[i][2]), 3,
-                    std::next(M.begin(), 6));
-
-        const auto [snew, v] = nearest_simplex<T>(M);
-        T q = std::transform_reduce(v.begin(), v.end(), v.begin(), 0);
-        if (q < qmin)
-        {
-          qmin = q;
-          vmin = v;
-          smin = snew;
-        }
+        std::span<const T, 3> sj(s.begin() + j * 3, 3);
+        if (i != j)
+          d[i][j] = (sii - dot3(si, sj));
+        SPDLOG_DEBUG("d[{}][{}] = {}", i, j, static_cast<double>(d[i][j]));
+        if (d[i][j] > 0.0)
+          out = false;
+      }
+      if (out)
+      {
+        // Return if a vertex is closest
+        rv[i] = 1.0;
+        return rv;
       }
     }
-    return {smin, vmin};
+
+    SPDLOG_DEBUG("Check for edges");
+
+    // Check if an edge is closest
+    T v[6][2] = {{0.0}};
+    int edges[6][2] = {{2, 3}, {1, 3}, {1, 2}, {0, 3}, {0, 2}, {0, 1}};
+    for (int i = 0; i < 6; ++i)
+    {
+      // Four vertices of the tetrahedron, j0 and j1 at the ends of the current
+      // edge and j2  and j3 on the opposing edge.
+      int j0 = edges[i][0];
+      int j1 = edges[i][1];
+      int j2 = edges[5 - i][0];
+      int j3 = edges[5 - i][1];
+      v[i][0] = d[j1][j2] * d[j0][j1] - d[j0][j1] * d[j1][j0]
+                + d[j1][j0] * d[j0][j2];
+      v[i][1] = d[j1][j3] * d[j0][j1] - d[j0][j1] * d[j1][j0]
+                + d[j1][j0] * d[j0][j3];
+
+      SPDLOG_DEBUG("v[{}] = {},{}", i, (double)v[i][0], (double)v[i][1]);
+      if (v[i][0] <= 0.0 and v[i][1] <= 0.0 and d[j0][j1] >= 0.0
+          and d[j1][j0] >= 0.0)
+      {
+        // On an edge
+        T f1 = 1.0 / (d[j0][j1] + d[j1][j0]);
+        rv[j0] = f1 * d[j1][j0];
+        rv[j1] = f1 * d[j0][j1];
+        return rv;
+      }
+    }
+
+    // Now check the facets of a tetrahedron
+    std::array<T, 4> w;
+    std::array<T, 9> M;
+    std::span<const T, 9> Mspan(M.begin(), M.size());
+    std::copy(s.begin(), s.begin() + 9, M.begin());
+    w[0] = -det3(Mspan);
+    std::copy(s.begin() + 9, s.begin() + 12, M.begin() + 6);
+    w[1] = det3(Mspan);
+    std::copy(s.begin() + 6, s.begin() + 9, M.begin() + 3);
+    w[2] = -det3(Mspan);
+    std::copy(s.begin() + 3, s.begin() + 6, M.begin() + 0);
+    w[3] = det3(Mspan);
+    T wsum = w[0] + w[1] + w[2] + w[3];
+    if (wsum < 0.0)
+    {
+      w[0] = -w[0];
+      w[1] = -w[1];
+      w[2] = -w[2];
+      w[3] = -w[3];
+      wsum = -wsum;
+    }
+
+    if (w[0] < 0.0 and v[2][0] > 0.0 and v[4][0] > 0.0 and v[5][0] > 0.0)
+    {
+      T f1 = 1.0 / (v[2][0] + v[4][0] + v[5][0]);
+      return {v[2][0] * f1, v[4][0] * f1, v[5][0] * f1, 0.0};
+    }
+
+    if (w[1] < 0.0 and v[1][0] > 0.0 and v[3][0] > 0.0 and v[5][1] > 0.0)
+    {
+      T f1 = 1.0 / (v[1][0] + v[3][0] + v[5][1]);
+      return {v[1][0] * f1, v[3][0] * f1, 0.0, v[5][1] * f1};
+    }
+
+    if (w[2] < 0.0 and v[0][0] > 0.0 and v[3][1] > 0 and v[4][1] > 0.0)
+    {
+      T f1 = 1.0 / (v[0][0] + v[3][1] + v[4][1]);
+      return {v[0][0] * f1, 0.0, v[3][1] * f1, v[4][1] * f1};
+    }
+
+    if (w[3] < 0.0 and v[0][1] > 0.0 and v[1][1] > 0.0 and v[2][1] > 0.0)
+    {
+      T f1 = 1.0 / (v[0][1] + v[1][1] + v[2][1]);
+      return {0.0, v[0][1] * f1, v[1][1] * f1, v[2][1] * f1};
+    }
+
+    // Point lies in interior of tetrahedron with these barycentric coordinates
+    return {w[3] / wsum, w[2] / wsum, w[1] / wsum, w[0] / wsum};
   }
   default:
     throw std::runtime_error("Number of rows defining simplex not supported.");
@@ -223,7 +268,10 @@ nearest_simplex(std::span<const T> s)
 }
 
 /// @brief 'support' function, finds point p in bd which maximises p.v
-template <std::floating_point T>
+/// @param bd Body described by set of 3D points, flattened
+/// @param v A point in 3D
+/// @returns Point p in `bd` which maximises p.v
+template <typename T>
 std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 {
   int i = 0;
@@ -242,40 +290,50 @@ std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 }
 } // namespace impl_gjk
 
-/// @brief Compute the distance between two convex bodies p and q, each
+/// @brief Compute the distance between two convex bodies `p0` and `q0`, each
 /// defined by a set of points.
 ///
 /// Uses the Gilbert–Johnson–Keerthi (GJK) distance algorithm.
 ///
-/// @param[in] p Body 1 list of points, shape (num_points, 3). Row-major
+/// @param[in] p0 Body 1 list of points, `shape=(num_points, 3)`. Row-major
 /// storage.
-/// @param[in] q Body 2 list of points, shape (num_points, 3). Row-major
+/// @param[in] q0 Body 2 list of points, `shape=(num_points, 3)`. Row-major
 /// storage.
+/// @tparam T Floating point type
+/// @tparam U Floating point type used for geometry computations internally,
+/// which should be higher precision than T, to maintain accuracy.
 /// @return shortest vector between bodies
-template <std::floating_point T>
-std::array<T, 3> compute_distance_gjk(std::span<const T> p,
-                                      std::span<const T> q)
+template <std::floating_point T,
+          typename U = boost::multiprecision::cpp_bin_float_double_extended>
+std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
+                                      std::span<const T> q0)
 {
-  assert(p.size() % 3 == 0);
-  assert(q.size() % 3 == 0);
+  assert(p0.size() % 3 == 0);
+  assert(q0.size() % 3 == 0);
+
+  // Copy from T to type U
+  std::vector<U> p(p0.begin(), p0.end());
+  std::vector<U> q(q0.begin(), q0.end());
 
   constexpr int maxk = 15; // Maximum number of iterations of the GJK algorithm
 
   // Tolerance
-  constexpr T eps = 1.0e4 * std::numeric_limits<T>::epsilon();
+  const U eps = 1.0e4 * std::numeric_limits<T>::epsilon();
 
   // Initialise vector and simplex
-  std::array<T, 3> v = {p[0] - q[0], p[1] - q[1], p[2] - q[2]};
-  std::vector<T> s = {v[0], v[1], v[2]};
+  std::array<U, 3> v = {p[0] - q[0], p[1] - q[1], p[2] - q[2]};
+  std::vector<U> s = {v[0], v[1], v[2]};
 
   // Begin GJK iteration
   int k;
   for (k = 0; k < maxk; ++k)
   {
     // Support function
-    std::array w1 = impl_gjk::support(p, {-v[0], -v[1], -v[2]});
-    std::array w0 = impl_gjk::support(q, {v[0], v[1], v[2]});
-    const std::array w = {w1[0] - w0[0], w1[1] - w0[1], w1[2] - w0[2]};
+    std::array w1
+        = impl_gjk::support(std::span<const U>(p), {-v[0], -v[1], -v[2]});
+    std::array w0
+        = impl_gjk::support(std::span<const U>(q), {v[0], v[1], v[2]});
+    const std::array<U, 3> w = {w1[0] - w0[0], w1[1] - w0[1], w1[2] - w0[2]};
 
     // Break if any existing points are the same as w
     assert(s.size() % 3 == 0);
@@ -291,28 +349,49 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p,
       break;
 
     // 1st exit condition (v - w).v = 0
-    const T vnorm2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
-    const T vw = vnorm2 - (v[0] * w[0] + v[1] * w[1] + v[2] * w[2]);
+    const U vnorm2 = impl_gjk::dot3(v, v);
+    const U vw = vnorm2 - impl_gjk::dot3(v, w);
     if (vw < (eps * vnorm2) or vw < eps)
       break;
+
+    SPDLOG_DEBUG("GJK: vw={}/{}", static_cast<double>(vw),
+                 static_cast<double>(eps));
 
     // Add new vertex to simplex
     s.insert(s.end(), w.begin(), w.end());
 
     // Find nearest subset of simplex
-    auto [snew, vnew] = impl_gjk::nearest_simplex<T>(s);
-    s.assign(snew.data(), snew.data() + snew.size());
-    v = {vnew[0], vnew[1], vnew[2]};
+    std::vector<U> lmn = impl_gjk::nearest_simplex<U>(s);
 
+    // Recompute v and keep points with non-zero values in lmn
+    std::size_t j = 0;
+    v = {0.0, 0.0, 0.0};
+    for (std::size_t i = 0; i < lmn.size(); ++i)
+    {
+      std::span<const U> sc(std::next(s.begin(), 3 * i), 3);
+      if (lmn[i] > 0.0)
+      {
+        v[0] += lmn[i] * sc[0];
+        v[1] += lmn[i] * sc[1];
+        v[2] += lmn[i] * sc[2];
+        if (i > j)
+          std::copy(sc.begin(), sc.end(), std::next(s.begin(), 3 * j));
+        ++j;
+      }
+    }
+    SPDLOG_DEBUG("new s size={}", 3 * j);
+    s.resize(3 * j);
+
+    const U vn = impl_gjk::dot3(v, v);
     // 2nd exit condition - intersecting or touching
-    if ((v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) < eps * eps)
+    if (vn < eps * eps)
       break;
   }
 
   if (k == maxk)
     throw std::runtime_error("GJK error - max iteration limit reached");
 
-  return v;
+  return {static_cast<T>(v[0]), static_cast<T>(v[1]), static_cast<T>(v[2])};
 }
 
 } // namespace dolfinx::geometry

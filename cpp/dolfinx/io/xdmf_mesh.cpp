@@ -21,7 +21,7 @@ using namespace dolfinx::io;
 //-----------------------------------------------------------------------------
 template <std::floating_point U>
 void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  hid_t h5_id, std::string path_prefix,
+                                  hid_t h5_id, const std::string& path_prefix,
                                   const mesh::Topology& topology,
                                   const mesh::Geometry<U>& geometry, int dim,
                                   std::span<const std::int32_t> entities)
@@ -98,7 +98,9 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
     // Tabulate geometry dofs for local entities
     std::vector<std::vector<int>> entity_dofs;
-    for (int e = 0; e < mesh::cell_num_entities(cell_type, dim); ++e)
+    int cellc_count = mesh::cell_num_entities(cell_type, dim);
+    entity_dofs.reserve(cellc_count);
+    for (int e = 0; e < cellc_count; ++e)
       entity_dofs.push_back(cmap_dof_layout.entity_closure_dofs(dim, e));
 
     for (std::int32_t e : entities)
@@ -156,7 +158,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 //-----------------------------------------------------------------------------
 template <std::floating_point U>
 void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  hid_t h5_id, std::string path_prefix,
+                                  hid_t h5_id, const std::string& path_prefix,
                                   const mesh::Geometry<U>& geometry)
 {
   spdlog::info("Adding geometry data to node \"{}\"", xml_node.path('/'));
@@ -182,7 +184,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   std::span<const U> _x = geometry.x();
 
   int num_values = num_points_local * width;
-  std::vector<U> x(num_values, 0.0);
+  std::vector<U> x(num_values, 0);
 
   if (width == 3)
     std::copy_n(_x.data(), num_values, x.begin());

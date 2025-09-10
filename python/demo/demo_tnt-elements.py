@@ -20,21 +20,10 @@
 #
 # We begin this demo by importing the required modules.
 
-import importlib.util
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
-
-from mpi4py import MPI
 
 # +
+from mpi4py import MPI
+
 import matplotlib as mpl
 import matplotlib.pylab as plt
 import numpy as np
@@ -74,10 +63,10 @@ wcoeffs = np.eye(8, 9)
 # For elements where the coefficients matrix is not an identity, we can
 # use the properties of orthonormal polynomials to compute `wcoeffs`.
 # Let $\{q_0, q_1,\dots\}$ be the orthonormal polynomials of a given
-# degree for a given cell, and suppose that we're trying to represent a function
-# $f_i\in\operatorname{span}\{q_1, q_2,\dots\}$ (as $\{f_0, f_1,\dots\}$ is a
-# basis of the polynomial space for our element). Using the properties of
-# orthonormal polynomials, we see that
+# degree for a given cell, and suppose that we're trying to represent a
+# function $f_i\in\operatorname{span}\{q_1, q_2,\dots\}$ (as
+# $\{f_0, f_1,\dots\}$ is a basis of the polynomial space for our element).
+# Using the properties of orthonormal polynomials, we see that
 # $f_i = \sum_j\left(\int_R f_iq_j\,\mathrm{d}\mathbf{x}\right)q_j$,
 # and so the coefficients are given by
 # $a_{ij}=\int_R f_iq_j\,\mathrm{d}\mathbf{x}$.
@@ -275,8 +264,20 @@ def poisson_error(V: fem.FunctionSpace):
     bc = fem.dirichletbc(u_bc, bdofs)
 
     # Solve
-    problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_rtol": 1e-12})
+    ksp_rtol = 1e2 * np.finfo(default_real_type).eps
+    problem = LinearProblem(
+        a,
+        L,
+        bcs=[bc],
+        petsc_options_prefix="demo_tnt_elements_",
+        petsc_options={"ksp_rtol": ksp_rtol},
+    )
     uh = problem.solve()
+    converged_reason = problem.solver.getConvergedReason()
+    num_its = problem.solver.getIterationNumber()
+    assert converged_reason > 0, (
+        f"Failed to converge, reason: {converged_reason}, iterations: {num_its}"
+    )
 
     M = (u_exact - uh) ** 2 * ufl.dx
     M = fem.form(M)

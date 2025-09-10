@@ -1,10 +1,9 @@
-# Copyright (C) 2024 Chris Richardson
+# Copyright (C) 2024-2025 Chris Richardson and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import typing
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -14,23 +13,34 @@ import numpy.typing as npt
 
 import basix
 import ufl
-from dolfinx.cpp.io import read_vtkhdf_mesh_float32, read_vtkhdf_mesh_float64, write_vtkhdf_mesh
+from dolfinx.cpp.io import (
+    read_vtkhdf_mesh_float32,
+    read_vtkhdf_mesh_float64,
+    write_vtkhdf_data,
+    write_vtkhdf_mesh,
+)
 from dolfinx.mesh import Mesh
 
 
 def read_mesh(
-    comm: _MPI.Comm, filename: typing.Union[str, Path], dtype: npt.DTypeLike = np.float64
+    comm: _MPI.Comm,
+    filename: str | Path,
+    dtype: npt.DTypeLike = np.float64,
+    gdim: int = 3,
 ):
     """Read a mesh from a VTKHDF format file
+
     Args:
-           comm: An MPI communicator.
-           filename: File to read from.
-           dtype: Scalar type of mesh geometry (need not match dtype in file)
+        comm: An MPI communicator.
+        filename: File to read from.
+        dtype: Scalar type of mesh geometry (need not match dtype in
+            file).
+        gdim: Geometric dimension of the mesh.
     """
     if dtype == np.float64:
-        mesh_cpp = read_vtkhdf_mesh_float64(comm, filename)
+        mesh_cpp = read_vtkhdf_mesh_float64(comm, filename, gdim)
     elif dtype == np.float32:
-        mesh_cpp = read_vtkhdf_mesh_float32(comm, filename)
+        mesh_cpp = read_vtkhdf_mesh_float32(comm, filename, gdim)
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:
@@ -38,22 +48,44 @@ def read_mesh(
         domain = None
     else:
         cell_degree = mesh_cpp.geometry.cmap.degree
+        variant = mesh_cpp.geometry.cmap.variant
         domain = ufl.Mesh(
             basix.ufl.element(
-                "Lagrange",
-                cell_types[0].name,
-                cell_degree,
-                basix.LagrangeVariant.unset,
-                shape=(mesh_cpp.geometry.dim,),
+                "Lagrange", cell_types[0].name, cell_degree, variant, shape=(mesh_cpp.geometry.dim,)
             )
         )
     return Mesh(mesh_cpp, domain)
 
 
-def write_mesh(filename: typing.Union[str, Path], mesh: Mesh):
+def write_mesh(filename: str | Path, mesh: Mesh):
     """Write a mesh to file in VTKHDF format
+
     Args:
-           filename: File to write to.
-           mesh: Mesh.
+        filename: File to write to.
+        mesh: Mesh.
     """
     write_vtkhdf_mesh(filename, mesh._cpp_object)
+
+
+def write_point_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float):
+    """Write data at vertices of the mesh.
+
+    Args:
+        filename: File to write to.
+        mesh: Mesh.
+        data: Data at the points of the mesh, local to each process.
+        time: Timestamp.
+    """
+    write_vtkhdf_data("Point", filename, mesh._cpp_object, data, time)
+
+
+def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float):
+    """Write data at cells of the mesh.
+
+    Args:
+        filename: File to write to.
+        mesh: Mesh.
+        data: Data at the cells of the mesh, local to each process.
+        time: Timestamp.
+    """
+    write_vtkhdf_data("Cell", filename, mesh._cpp_object, data, time)

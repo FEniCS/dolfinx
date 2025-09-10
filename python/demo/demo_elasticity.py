@@ -22,21 +22,11 @@
 #
 # The required modules are first imported:
 
-from mpi4py import MPI
-
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
 
 # +
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 
 import ufl
@@ -54,7 +44,7 @@ from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_boundary
 
-dtype = PETSc.ScalarType  # type: ignore
+dtype = PETSc.ScalarType
 # -
 
 # ## Create the operator near-nullspace
@@ -97,10 +87,9 @@ def build_nullspace(V: FunctionSpace):
     la.orthonormalize(basis)
 
     basis_petsc = [
-        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm)  # type: ignore
-        for x in b
+        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm) for x in b
     ]
-    return PETSc.NullSpace().create(vectors=basis_petsc)  # type: ignore
+    return PETSc.NullSpace().create(vectors=basis_petsc)
 
 
 # ## Problem definition
@@ -111,7 +100,7 @@ def build_nullspace(V: FunctionSpace):
 msh = create_box(
     MPI.COMM_WORLD,
     [np.array([0.0, 0.0, 0.0]), np.array([2.0, 1.0, 1.0])],
-    [16, 16, 16],
+    (16, 16, 16),
     CellType.tetrahedron,
     ghost_mode=GhostMode.shared_facet,
 )
@@ -181,7 +170,7 @@ A.assemble()
 # +
 b = assemble_vector(L)
 apply_lifting(b, [a], bcs=[[bc]])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bc.set(b.array_w)
 # -
 
@@ -189,14 +178,14 @@ bc.set(b.array_w)
 
 ns = build_nullspace(V)
 A.setNearNullSpace(ns)
-A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore
+A.setOption(PETSc.Mat.Option.SPD, True)
 
 # Set PETSc solver options, create a PETSc Krylov solver, and attach the
 # matrix `A` to the solver:
 
 # +
 # Set solver options
-opts = PETSc.Options()  # type: ignore
+opts = PETSc.Options()
 opts["ksp_type"] = "cg"
 opts["ksp_rtol"] = 1.0e-8
 opts["pc_type"] = "gamg"
@@ -209,7 +198,7 @@ opts["mg_levels_pc_type"] = "jacobi"
 opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10
 
 # Create PETSc Krylov solver and turn convergence monitoring on
-solver = PETSc.KSP().create(msh.comm)  # type: ignore
+solver = PETSc.KSP().create(msh.comm)
 solver.setFromOptions()
 
 # Set matrix operator
