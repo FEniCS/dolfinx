@@ -502,7 +502,7 @@ Form<T, U> create_form_factory(
   }
 
   // Create facets, if required
-  if (num_integrals_type[exterior_facet] > 0
+  if (num_integrals_type[facet] > 0
       or num_integrals_type[interior_facet] > 0)
   {
     mesh->topology_mutable()->create_entities(tdim - 1);
@@ -597,17 +597,17 @@ Form<T, U> create_form_factory(
   std::vector<std::int32_t> default_facets_ext;
   {
     std::span<const int> ids(ufcx_forms[0].get().form_integral_ids
-                                 + integral_offsets[exterior_facet],
-                             num_integrals_type[exterior_facet]);
+                                 + integral_offsets[facet],
+                             num_integrals_type[facet]);
     auto sd = subdomains.find(IntegralType::exterior_facet);
     for (std::size_t form_idx = 0; form_idx < ufcx_forms.size(); ++form_idx)
     {
       const ufcx_form& ufcx_form = ufcx_forms[form_idx];
-      for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
+      for (int i = 0; i < num_integrals_type[facet]; ++i)
       {
         const int id = ids[i];
         ufcx_integral* integral
-            = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
+            = ufcx_form.form_integrals[integral_offsets[facet] + i];
         assert(integral);
         check_geometry_hash(*integral, form_idx);
 
