@@ -84,7 +84,7 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
-          spack repo add --destination $GITHUB_WORKSPACE/spack-packages-patch patch
+          spack repo add $GITHUB_WORKSPACE/spack-packages-patch patch
           spack repo ls
 
       - name: Prepare C++ environment
