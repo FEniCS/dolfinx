@@ -161,7 +161,7 @@ def get_integration_domains(
             if integral_type.codim == 1:
                 subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
                 subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
-            if integral_type.codim == tdim:
+            if integral_type.codim == -1:
                 subdomain._cpp_object.topology.create_connectivity(0, tdim)
                 subdomain._cpp_object.topology.create_connectivity(tdim, 0)
 

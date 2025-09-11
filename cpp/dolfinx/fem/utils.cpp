@@ -226,7 +226,7 @@ fem::compute_integration_domains(const fem::IntegralType& integral_type,
       }
     }
   }
-  else if (integral_type.codim == tdim and integral_type.num_cells == 1)
+  else if (integral_type.codim == -1 and integral_type.num_cells == 1)
   {
     auto [v_to_c, c_to_v] = get_connectivities(0);
     for (auto vertex : entities)
