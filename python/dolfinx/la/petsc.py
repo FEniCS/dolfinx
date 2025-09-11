@@ -123,7 +123,9 @@ def create_vector(
         index_map, bs = maps[0]
         ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore[attr-defined]
         size = (index_map.size_local * bs, index_map.size_global * bs)
-        return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore
+        b = PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore
+        _assign_block_data(maps, b)
+        return b
 
     if kind is None or kind == PETSc.Vec.Type.MPI:  # type: ignore[attr-defined]
         b = dolfinx.cpp.fem.petsc.create_vector_block(maps)
