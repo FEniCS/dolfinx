@@ -370,7 +370,6 @@ def form(
         ]
         constants = [c._cpp_object for c in form.constants()]
         # Extract subdomain ids from ufcx_form
-        tdim = domain.topological_dimension()
         ufl_to_itg = _ufl_to_dolfinx_domain()
         subdomain_ids = {ufl_to_itg[type]: [] for type in sd.get(domain).keys()}
         integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(5)]
