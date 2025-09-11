@@ -1486,7 +1486,7 @@ void assemble_vector(
 
       auto& [coeffs, cstride] = coefficients.at({vertex_integral_type, i});
 
-      assert(vertices.size() * cstride == coeffs.size());
+      assert(vertices.size() / 2 * cstride == coeffs.size());
 
       impl::assemble_vertices<T>(
           P0, b, x_dofmap, x,
