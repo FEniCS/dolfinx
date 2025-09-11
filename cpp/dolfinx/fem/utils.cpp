@@ -139,7 +139,7 @@ fem::compute_integration_domains(const fem::IntegralType& integral_type,
 {
   const int tdim = topology.dim();
 
-  int dim = tdim - integral_type.codim;
+  int dim = integral_type.codim == -1 ? 0 : tdim - integral_type.codim;
   assert(dim >= 0);
 
   {
@@ -228,6 +228,7 @@ fem::compute_integration_domains(const fem::IntegralType& integral_type,
   }
   else if (integral_type.codim == -1 and integral_type.num_cells == 1)
   {
+    std::cout << "HERE!" << std::endl;
     auto [v_to_c, c_to_v] = get_connectivities(0);
     for (auto vertex : entities)
     {

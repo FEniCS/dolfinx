@@ -287,7 +287,7 @@ T assemble_scalar(
     auto& [coeffs, cstride] = coefficients.at({vertex_type, i});
 
     std::span<const std::int32_t> vertices = M.domain(vertex_type, i, 0);
-    assert(vertices.size() * cstride == coeffs.size());
+    assert(vertices.size() / 2 * cstride == coeffs.size());
 
     constexpr std::size_t num_adjacent_cells = 1;
     // Two values per adj. cell (cell index and local vertex index).
