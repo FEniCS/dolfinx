@@ -292,7 +292,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
                                                        mixed_topology.end());
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, mesh.geometry().cmaps(), mesh.comm(),
-      new_x, {new_x.size() / 3, 3}, partitioner);
+      new_x, {new_x.size() / 3, 3}, partitioner, 2);
 
   return new_mesh;
 }

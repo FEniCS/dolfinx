@@ -761,14 +761,14 @@ def test_gmsh_input_2d(order, cell_type, dtype):
     assert np.all(idx[srt] == np.arange(len(idx)))
     x = points[srt]
 
-    element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=2)
+    element_types, _element_tags, node_tags = gmsh.model.mesh.getElements(dim=2)
     (
-        name,
-        dim,
+        _name,
+        _dim,
         order,
         num_nodes,
-        local_coords,
-        num_first_order_nodes,
+        _local_coords,
+        _num_first_order_nodes,
     ) = gmsh.model.mesh.getElementProperties(element_types[0])
 
     cells = node_tags[0].reshape(-1, num_nodes) - 1
@@ -827,14 +827,14 @@ def test_gmsh_input_3d(order, cell_type, dtype):
     assert np.all(idx[srt] == np.arange(len(idx)))
     x = points[srt]
 
-    element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=3)
+    element_types, _element_tags, node_tags = gmsh.model.mesh.getElements(dim=3)
     (
-        name,
-        dim,
+        _name,
+        _dim,
         order,
         num_nodes,
-        local_coords,
-        num_first_order_nodes,
+        _local_coords,
+        _num_first_order_nodes,
     ) = gmsh.model.mesh.getElementProperties(element_types[0])
 
     cells = node_tags[0].reshape(-1, num_nodes) - 1
@@ -1892,11 +1892,9 @@ def test_vtk_perm_tetrahedron(order):
             261,
         ]
 
-    pt = [0 for i in p]
+    pt = np.zeros_like(p)
     for i, j in enumerate(p):
         pt[j] = i
-    print(" ".join([f"{i}" for i in pt]))
-    print(" ".join([f"{i}" for i in q]))
 
     for i, j in enumerate(p):
         assert q[j] == i
