@@ -277,7 +277,6 @@ T assemble_scalar(
         perms, cdofs_b);
   }
 
-  std::int32_t tdim = mesh->topology()->dim();
   IntegralType vertex_type = IntegralType(-1);
   for (int i = 0; i < M.num_integrals(vertex_type, 0); ++i)
   {
