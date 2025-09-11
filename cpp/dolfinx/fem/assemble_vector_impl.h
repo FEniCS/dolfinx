@@ -1474,7 +1474,7 @@ void assemble_vector(
       }
     }
 
-    IntegralType vertex_integral_type = IntegralType(mesh->topology()->dim());
+    IntegralType vertex_integral_type = IntegralType(-1);
     for (int i = 0; i < L.num_integrals(vertex_integral_type, 0); ++i)
     {
       auto fn = L.kernel(vertex_integral_type, i, 0);
