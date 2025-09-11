@@ -759,7 +759,7 @@ Form<T, U> create_form_factory(
       std::span<const int> ids(form.form_integral_ids
                                    + integral_offsets[vertex],
                                num_integrals_type[vertex]);
-      auto sd = subdomains.find(IntegralType(tdim));
+      auto sd = subdomains.find(IntegralType(-1));
       for (int i = 0; i < num_integrals_type[vertex]; ++i)
       {
         const int id = ids[i];
@@ -810,7 +810,7 @@ Form<T, U> create_form_factory(
           std::vector<std::int32_t> cells_and_vertices = get_cells_and_vertices(
               std::ranges::views::iota(0, num_vertices));
 
-          integrals.insert({{IntegralType(tdim), i, form_idx},
+          integrals.insert({{IntegralType(-1), i, form_idx},
                             {k, cells_and_vertices, active_coeffs}});
         }
         else if (sd != subdomains.end())
@@ -820,7 +820,7 @@ Form<T, U> create_form_factory(
                                              [](auto& a) { return a.first; });
           if (it != sd->second.end() and it->first == id)
           {
-            integrals.insert({{IntegralType(tdim), i, form_idx},
+            integrals.insert({{IntegralType(-1), i, form_idx},
                               {k,
                                std::vector<std::int32_t>(it->second.begin(),
                                                          it->second.end()),

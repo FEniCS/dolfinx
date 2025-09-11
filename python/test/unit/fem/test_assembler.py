@@ -1591,7 +1591,7 @@ def vertex_to_dof_map(V):
 @pytest.mark.parametrize(
     "cell_type",
     [
-        # mesh.CellType.interval,
+        mesh.CellType.interval,
         mesh.CellType.triangle,
         mesh.CellType.quadrilateral,
         mesh.CellType.tetrahedron,
@@ -1727,7 +1727,7 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
 @pytest.mark.parametrize(
     "cell_type",
     [
-        # mesh.CellType.interval,
+        mesh.CellType.interval,
         mesh.CellType.triangle,
         mesh.CellType.quadrilateral,
         mesh.CellType.tetrahedron,

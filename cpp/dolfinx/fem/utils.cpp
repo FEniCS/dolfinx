@@ -239,7 +239,7 @@ fem::compute_integration_domains(const fem::IntegralType& integral_type,
   }
   else
   {
-    throw std::runtime_error("Unsupported integral type with codim "
+    throw std::runtime_error("Cannot compute integration domains with codim "
                              + std::to_string(integral_type.codim)
                              + " and num_cells "
                              + std::to_string(integral_type.num_cells));
