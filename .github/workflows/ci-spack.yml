@@ -23,7 +23,7 @@ env:
   PYTEST_ADDOPTS: "-W error"
 
 jobs:
-  build:
+  ci-spack-build:
     name: AlmaLinux build and test
     runs-on: ubuntu-latest
     container: ghcr.io/almalinux/almalinux:10
