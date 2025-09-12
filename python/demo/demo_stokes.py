@@ -238,7 +238,7 @@ def nested_iterative_solver_high_level():
     # a vector that spans the nullspace to the solver, and any component
     # of the solution in this direction will be eliminated during the
     # solution process.
-    null_vec = create_vector(L, "nest")
+    null_vec = create_vector(extract_function_spaces(L), "nest")
 
     # Set velocity part to zero and the pressure part to a non-zero
     # constant
@@ -322,7 +322,7 @@ def nested_iterative_solver_low_level():
 
     # Set the nullspace for pressure (since pressure is determined only
     # up to a constant)
-    null_vec = create_vector(L, "nest")
+    null_vec = create_vector(extract_function_spaces(L), "nest")
     null_vecs = null_vec.getNestSubVecs()
     null_vecs[0].set(0.0), null_vecs[1].set(1.0)
     null_vec.normalize()

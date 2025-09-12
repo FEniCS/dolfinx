@@ -81,7 +81,7 @@ TEST_CASE("dual_graph_branching")
 
   {
     // max_facet_to_cell_links = 3
-    // Note: additioanlly facet (2) is now considered unmatched
+    // Note: additionally facet (2) is now considered unmatched
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
         = mesh::build_local_dual_graph(celltypes, {cells}, 3);
 
