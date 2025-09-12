@@ -767,22 +767,24 @@ void declare_form(nb::module_& m, std::string type)
              dolfinx::fem::IntegralType type, int i)
           {
             std::span<const std::int32_t> _d = self.domain(type, i, 0);
-            switch (type)
+            if (type.codim == 0)
             {
-            case dolfinx::fem::IntegralType::cell:
               return nb::ndarray<const std::int32_t, nb::numpy>(_d.data(),
                                                                 {_d.size()});
-            case dolfinx::fem::IntegralType::exterior_facet:
-            {
-              return nb::ndarray<const std::int32_t, nb::numpy>(
-                  _d.data(), {_d.size() / 2, 2});
             }
-            case dolfinx::fem::IntegralType::interior_facet:
+            else if ((type.codim == 1) and (type.num_cells == 2))
             {
               return nb::ndarray<const std::int32_t, nb::numpy>(
                   _d.data(), {_d.size() / 4, 2, 2});
             }
-            default:
+            else if (type.num_cells == 1)
+            {
+              return nb::ndarray<const std::int32_t, nb::numpy>(
+                  _d.data(), {_d.size() / 2, 2});
+            }
+
+            else
+            {
               throw ::std::runtime_error("Integral type unsupported.");
             }
           },
@@ -1267,13 +1269,12 @@ void fem(nb::module_& m)
           },
           nb::rv_policy::reference_internal);
 
-  nb::enum_<dolfinx::fem::IntegralType>(m, "_IntegralType")
-      .value("cell", dolfinx::fem::IntegralType::cell, "cell integral")
-      .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet,
-             "exterior facet integral")
-      .value("interior_facet", dolfinx::fem::IntegralType::interior_facet,
-             "exterior facet integral")
-      .value("vertex", dolfinx::fem::IntegralType::vertex, "vertex integral");
+  nb::class_<dolfinx::fem::IntegralType>(m, "_IntegralType")
+      .def(nb::init<const std::int32_t&, const std::int32_t&>(),
+           nb::arg("codim"), nb::arg("num_cells") = 1)
+      .def_ro("codim", &dolfinx::fem::IntegralType::codim)
+      .def_ro("num_cells", &dolfinx::fem::IntegralType::num_cells)
+      .def("__eq__", &dolfinx::fem::IntegralType::operator==);
 
   declare_function_space<float>(m, "float32");
   declare_function_space<double>(m, "float64");

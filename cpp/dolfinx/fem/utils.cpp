@@ -133,31 +133,14 @@ std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
-fem::compute_integration_domains(fem::IntegralType integral_type,
+fem::compute_integration_domains(const fem::IntegralType& integral_type,
                                  const mesh::Topology& topology,
                                  std::span<const std::int32_t> entities)
 {
   const int tdim = topology.dim();
 
-  int dim = -1;
-  switch (integral_type)
-  {
-  case IntegralType::cell:
-    dim = tdim;
-    break;
-  case IntegralType::exterior_facet:
-    dim = tdim - 1;
-    break;
-  case IntegralType::interior_facet:
-    dim = tdim - 1;
-    break;
-  case IntegralType::vertex:
-    dim = 0;
-    break;
-  default:
-    throw std::runtime_error(
-        "Cannot compute integration domains. Integral type not supported.");
-  }
+  int dim = integral_type.codim == -1 ? 0 : tdim - integral_type.codim;
+  assert(dim >= 0);
 
   {
     // Create span of the owned entities (leaves off any ghosts)
@@ -192,14 +175,11 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   };
 
   std::vector<std::int32_t> entity_data;
-  switch (integral_type)
-  {
-  case IntegralType::cell:
+  if (integral_type.codim == 0)
   {
     entity_data.insert(entity_data.begin(), entities.begin(), entities.end());
-    break;
   }
-  case IntegralType::exterior_facet:
+  else if (integral_type.codim == 1 and integral_type.num_cells == 1)
   {
     auto [f_to_c, c_to_f] = get_connectivities(tdim - 1);
     // Create list of tagged boundary facets
@@ -213,9 +193,8 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
       auto facet = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
       entity_data.insert(entity_data.end(), facet.begin(), facet.end());
     }
-    break;
   }
-  case IntegralType::interior_facet:
+  else if (integral_type.codim == 1 and integral_type.num_cells == 2)
   {
     auto [f_to_c, c_to_f] = get_connectivities(tdim - 1);
 
@@ -246,9 +225,8 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
             "Use \"shared facet\"  ghost mode when creating the mesh.");
       }
     }
-    break;
   }
-  case IntegralType::vertex:
+  else if (integral_type.codim == -1 and integral_type.num_cells == 1)
   {
     auto [v_to_c, c_to_v] = get_connectivities(0);
     for (auto vertex : entities)
@@ -259,8 +237,13 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
       entity_data.insert(entity_data.end(), pair.begin(), pair.end());
     }
   }
+  else
+  {
+    throw std::runtime_error("Cannot compute integration domains with codim "
+                             + std::to_string(integral_type.codim)
+                             + " and num_cells "
+                             + std::to_string(integral_type.num_cells));
   }
-
   return entity_data;
 }
 //-----------------------------------------------------------------------------
