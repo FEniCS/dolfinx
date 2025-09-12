@@ -32,7 +32,7 @@ jobs:
       - name: Install Spack requirements
         run: |
           echo "Test SHA:"
-          echo ${{ env.dolfinx_ref }}
+          echo ${{ env.dolfinx_sha }}
           apt-get -y update
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal \
             tar unzip xz-utils g++ gcc gfortran
