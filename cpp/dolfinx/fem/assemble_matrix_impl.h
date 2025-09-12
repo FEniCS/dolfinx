@@ -240,7 +240,7 @@ void assemble_entities(
   assert(entities1.size() == entities.size());
   for (std::size_t f = 0; f < entities.extent(0); ++f)
   {
-    // Cell in the integration domain, local facet index relative to the
+    // Cell in the integration domain, local entity index relative to the
     // integration domain cell, and cells in the test and trial function
     // meshes
     std::int32_t cell = entities(f, 0);
