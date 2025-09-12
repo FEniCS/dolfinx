@@ -378,7 +378,8 @@ void assemble_interior_facets(
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<T> Ab, std::span<scalar_value_t<T>> cdofs_b)
+    std::span<T> Ab, std::span<scalar_value_t<T>> cdofs_b,
+    std::span<std::int32_t> dofs_b)
 {
   if (facets.empty())
     return;
@@ -397,8 +398,10 @@ void assemble_interior_facets(
   std::size_t num_cols = bs1 * 2 * dmap1_size;
 
   // Temporaries for joint dofmaps
-  std::vector<std::int32_t> dmapjoint0(2 * dmap0_size);
-  std::vector<std::int32_t> dmapjoint1(2 * dmap1_size);
+  assert(dofs_b.size() >= (2 * dmap0_size) + (2 * dmap1_size));
+  auto dmapjoint0 = dofs_b.first(2 * dmap0_size);
+  auto dmapjoint1 = dofs_b.last(2 * dmap1_size);
+
   assert(facets0.size() == facets.size());
   assert(facets1.size() == facets.size());
   assert(Ab.size() >= num_rows * num_cols);
@@ -594,6 +597,11 @@ void assemble_matrix(
     std::vector<T> Ab((2 * bs0 * dofs0.extent(1))
                       * (2 * bs1 * dofs1.extent(1)));
     std::vector<scalar_value_t<T>> cdofs_b(2 * 3 * x_dofmap.extent(1));
+    std::size_t dmap0_size = dofmap0->map().extent(1);
+    std::size_t dmap1_size = dofmap1->map().extent(1);
+    // std::size_t num_rows = bs0 * 2 * dmap0_size;
+    // std::size_t num_cols = bs1 * 2 * dmap1_size;
+    std::vector<std::int32_t> dmap_b((2 * dmap0_size) + (2 * dmap1_size));
 
     auto element0 = a.function_spaces().at(0)->elements(cell_type_idx);
     assert(element0);
@@ -713,7 +721,8 @@ void assemble_matrix(
            mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
           P1T, bc0, bc1, fn,
           mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride), constants,
-          cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b));
+          cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b),
+          dmap_b);
     }
   }
 }
