@@ -284,17 +284,22 @@ compute_face_permutations(const mesh::Topology& topology)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
+std::tuple<std::vector<std::uint8_t>, std::vector<std::uint8_t>,
+           std::vector<std::uint32_t>>
 mesh::compute_entity_permutations(const mesh::Topology& topology)
 {
+
   common::Timer t_perm("Compute entity permutations");
   const int tdim = topology.dim();
   CellType cell_type = topology.cell_type();
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
   const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
+  const int ridges_per_cell = cell_num_entities(cell_type, tdim - 2);
 
   std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
   std::vector<std::uint8_t> facet_permutations(num_cells * facets_per_cell);
+  std::vector<std::uint8_t> ridge_permutations(num_cells * ridges_per_cell);
+
   std::int32_t used_bits = 0;
   if (tdim > 2)
   {
@@ -335,9 +340,18 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
           facet_permutations[c * facets_per_cell + i] = edge_perm[c][i];
       }
     }
+    if (tdim == 3)
+    {
+      for (int c = 0; c < num_cells; ++c)
+      {
+        for (int i = 0; i < ridges_per_cell; ++i)
+          ridge_permutations[c * ridges_per_cell + i] = edge_perm[c][i];
+      }
+    }
   }
   assert(used_bits < _BITSETSIZE);
 
-  return {std::move(facet_permutations), std::move(cell_permutation_info)};
+  return {std::move(ridge_permutations), std::move(facet_permutations),
+          std::move(cell_permutation_info)};
 }
 //-----------------------------------------------------------------------------

@@ -159,6 +159,21 @@ public:
   /// computed
   const std::vector<std::uint8_t>& get_facet_permutations() const;
 
+  /// @brief Get the numbers that encode the number of permutations to
+  /// apply to ridges.
+  ///
+  /// The permutations are encoded so that:
+  ///
+  /// @todo Matthew needs to document this.
+  ///
+  /// The data is stored in a flattened 2D array, so that `data[cell_index *
+  /// ridges_per_cell + ridge_index]` contains the ridge with index
+  /// `ridge_index` of the cell with index `cell_index`.
+  /// @return The encoded permutation info
+  /// @note An exception is raised if the permutations have not been
+  /// computed
+  const std::vector<std::uint8_t>& get_ridge_permutations() const;
+
   /// @brief Get the types of cells in the topology
   /// @return The cell types
   std::vector<CellType> cell_types() const;
@@ -235,6 +250,11 @@ private:
   // [cell0_0, cell0_1, ,cell0_2, cell1_0, cell1_1, ,cell1_2, ...,
   // celln_0, celln_1, ,celln_2,]
   std::vector<std::uint8_t> _facet_permutations;
+
+  // The ridge permutations (local ridge, cell)
+  // [cell0_0, cell0_1, ,cell0_2, cell1_0, cell1_1, ,cell1_2, ...,
+  // celln_0, celln_1, ,celln_2,]
+  std::vector<std::uint8_t> _ridge_permutations;
 
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
