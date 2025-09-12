@@ -178,6 +178,17 @@ def nest_matrix_norm(A):
 
 
 @pytest.mark.petsc4py
+def test_vector_single_space_as_block():
+    from dolfinx.fem.petsc import create_vector as petsc_create_vector
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    gdim = mesh.geometry.dim
+    V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
+    assert petsc_create_vector(V).getAttr("_blocks") is None
+    assert petsc_create_vector(V, kind="mpi").getAttr("_blocks") is not None
+
+
+@pytest.mark.petsc4py
 class TestPETScAssemblers:
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_basic_assembly_petsc_matrixcsr(self, mode):
