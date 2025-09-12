@@ -38,10 +38,10 @@ jobs:
             tar unzip xz-utils g++ gcc gfortran
           apt-get install -y llvm-15-dev
 
-      - name: Get DOLFINx code
-        uses: actions/checkout@v5
-        with:
-          path: dolfinx-src
+      # - name: Get DOLFINx code
+      #   uses: actions/checkout@v5
+      #   with:
+      #     path: dolfinx-src
 
       - name: Load dev branch environment variables
         run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -89,7 +89,7 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack info fenics-dolfinx
           spack env create cxx dolfinx-src/.github/workflows/spack-config/gh-actions-env-test.yml
-          spack -e cxx develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@main
+          spack -e cxx develop --path $GITHUB_WORKSPACE/dolfinx-src fenics-dolfinx@git.${{ env.dolfinx_sha }}=main
           spack -e cxx develop --no-clone --path $GITHUB_WORKSPACE/ffcx-src fenics-ufcx@main
           spack -e cxx develop --no-clone --path $GITHUB_WORKSPACE/basix-src fenics-basix@main
           spack -e cxx develop --no-clone --path $GITHUB_WORKSPACE/basix-src py-fenics-basix@main
