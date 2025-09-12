@@ -153,7 +153,7 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e py add py-fenics-dolfinx@main commit=${{ github.sha }} +petsc4py +slepc4py build_type=Developer \
-            %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
+            %fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer +petsc +slepc partitioners=parmetis \
             ^openmpi ^adios2~fortran~libcatalyst \
             ^petsc +mpi +hypre +mumps +superlu-dist
           spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
