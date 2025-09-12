@@ -352,6 +352,8 @@ void assemble_exterior_facets(
 /// local element matrix.
 /// @param cdofs_b Buffer for local element geometry. Size must be at
 /// least `2 * 3 * x_dofmap.extent(1))`.
+/// @param dofs_b Buffer for degrees-of-freedom. Size must be at least
+/// `2 * dmap0.map().extent(1) + 2 * dmap1.map().extent(1)`.
 template <dolfinx::scalar T>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -397,7 +399,7 @@ void assemble_interior_facets(
   std::size_t num_rows = bs0 * 2 * dmap0_size;
   std::size_t num_cols = bs1 * 2 * dmap1_size;
 
-  // Temporaries for joint dofmaps
+  // Dofmap data structures
   assert(dofs_b.size() >= (2 * dmap0_size) + (2 * dmap1_size));
   auto dmapjoint0 = dofs_b.first(2 * dmap0_size);
   auto dmapjoint1 = dofs_b.last(2 * dmap1_size);
