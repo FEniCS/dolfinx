@@ -599,8 +599,6 @@ void assemble_matrix(
     std::vector<scalar_value_t<T>> cdofs_b(2 * 3 * x_dofmap.extent(1));
     std::size_t dmap0_size = dofmap0->map().extent(1);
     std::size_t dmap1_size = dofmap1->map().extent(1);
-    // std::size_t num_rows = bs0 * 2 * dmap0_size;
-    // std::size_t num_cols = bs1 * 2 * dmap1_size;
     std::vector<std::int32_t> dmap_b((2 * dmap0_size) + (2 * dmap1_size));
 
     auto element0 = a.function_spaces().at(0)->elements(cell_type_idx);
