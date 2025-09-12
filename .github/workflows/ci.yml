@@ -38,13 +38,13 @@ jobs:
             tar unzip xz-utils g++ gcc gfortran
           apt-get install -y llvm-15-dev
 
-      # - name: Get DOLFINx code
-      #   uses: actions/checkout@v5
-      #   with:
-      #     path: dolfinx-src
+      - name: Get DOLFINx code
+        uses: actions/checkout@v5
+        with:
+          path: dolfinx-src-tmp
 
       - name: Load dev branch environment variables
-        run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+        run: cat dolfinx-src-tmp/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Get UFL code
         uses: actions/checkout@v5
