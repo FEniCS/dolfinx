@@ -449,7 +449,7 @@ def form(
 def extract_function_spaces(
     forms: Form | Sequence[Form] | Sequence[Sequence[Form]],
     index: int = 0,
-) -> list[None | FunctionSpace]:
+) -> FunctionSpace | list[None | FunctionSpace]:
     """Extract common function spaces from an array of forms.
 
     If ``forms`` is a list of linear forms, this function returns of list
@@ -469,7 +469,8 @@ def extract_function_spaces(
     """
     _forms = np.array(forms)
     if _forms.ndim == 0:
-        raise RuntimeError("Expected an array for forms, not a single form")
+        form: Form = _forms.tolist()
+        return form.function_spaces[0] if form is not None else None
     elif _forms.ndim == 1:
         assert index == 0, "Expected index=0 for 1D array of forms"
         for form in _forms:

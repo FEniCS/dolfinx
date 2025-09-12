@@ -49,8 +49,7 @@ jobs:
 
       - name: Load environment variables
         run: |
-          cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
-
+          cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $env:GITHUB_ENV
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
