@@ -211,6 +211,31 @@ void petsc_la_module(nb::module_& m)
       nb::arg("maps"));
 
   m.def(
+      "create_global_index_sets",
+      [](const std::vector<std::pair<const dolfinx::common::IndexMap*, int>>&
+             maps)
+      {
+        using X = std::vector<std::pair<
+            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
+        X _maps;
+        std::ranges::transform(maps, std::back_inserter(_maps),
+                               [](auto m) -> typename X::value_type
+                               { return {*m.first, m.second}; });
+        std::vector<IS> index_sets
+            = dolfinx::la::petsc::create_global_index_sets(_maps);
+
+        std::vector<nb::object> py_index_sets;
+        for (auto is : index_sets)
+        {
+          PyObject* obj = PyPetscIS_New(is);
+          PetscObjectDereference((PetscObject)is);
+          py_index_sets.push_back(nb::steal(obj));
+        }
+        return py_index_sets;
+      },
+      nb::arg("maps"));
+
+  m.def(
       "scatter_local_vectors",
       [](Vec x,
          const std::vector<
@@ -393,9 +418,12 @@ void petsc_fem_module(nb::module_& m)
           _bcs.push_back(*bc);
         }
 
+        PetscBool flg;
+        PetscObjectTypeCompare((PetscObject)A, MATIS, &flg);
+
         dolfinx::fem::set_diagonal(
             dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES), V, _bcs,
-            diagonal);
+            diagonal, flg ? true : false);
       },
       nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"));
 
