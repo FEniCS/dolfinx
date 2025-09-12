@@ -19,6 +19,8 @@ env:
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
+  dolfinx_sha: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+
 jobs:
   ci-spack-experimental-build:
     runs-on: ubuntu-latest
@@ -29,6 +31,8 @@ jobs:
     steps:
       - name: Install Spack requirements
         run: |
+          echo "Test SHA:"
+          echo ${{ env.dolfinx_ref }}"
           apt-get -y update
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal \
             tar unzip xz-utils g++ gcc gfortran
@@ -54,7 +58,7 @@ jobs:
           repository: ${{ env.ffcx_repository }}
           ref: ${{ env.ffcx_ref }}
           path: ffcx-src
-      - name: Get BASIx code
+      - name: Get Basix code
         uses: actions/checkout@v5
         with:
           repository: ${{ env.basix_repository }}
@@ -68,7 +72,7 @@ jobs:
           ref: develop
           path: spack-src
 
-      - name: Get Spack packages (extra)
+      - name: Get Spack packages (custom)
         uses: actions/checkout@v5
         with:
           repository: garth-wells/spack-packages
