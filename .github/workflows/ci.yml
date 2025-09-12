@@ -19,7 +19,7 @@ env:
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
-  dolfinx_sha: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+  dolfinx_ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
 
 jobs:
   ci-spack-experimental-build:
@@ -29,10 +29,12 @@ jobs:
       packages: write
 
     steps:
+      - name: Branch and commit SHA
+        run: |
+          echo "Branch and commit SHA: ${{ env.dolfinx_ref }}, ${{ github.sha }}"
+
       - name: Install Spack requirements
         run: |
-          echo "Test SHA:"
-          echo ${{ env.dolfinx_sha }}
           apt-get -y update
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal \
             tar unzip xz-utils g++ gcc gfortran
@@ -101,8 +103,6 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e cxx add fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
-          # spack -e cxx add fenics-dolfinx@git.${{ env.dolfinx_sha }}=main build_type=Developer +petsc +slepc partitioners=parmetis \
-          #   %petsc +mpi +hypre +mumps +superlu-dist %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
           spack -e cxx add catch2 py-fenics-ffcx@main
           spack -e cxx concretize -j 4
           spack -v -e cxx install -j 4 -p 2 --use-buildcache auto
