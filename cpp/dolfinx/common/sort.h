@@ -67,7 +67,7 @@ struct __radix_sort
   /// @code
   /// std::array<std::int16_t, 3> a{2, 3, 1};
   /// std::array<std::int16_t, 3> i{0, 1, 2};
-  /// dolfixn::radix_sort(i, [&](auto i){ return a[i]; }); // yields i = {2, 0,
+  /// dolfinx::radix_sort(i, [&](auto i){ return a[i]; }); // yields i = {2, 0,
   /// 1} and a[i] = {1, 2, 3};
   /// @endcode
   /// @tparam R Type of range to be sorted.
