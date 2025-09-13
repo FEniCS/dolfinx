@@ -14,16 +14,16 @@
 
 using namespace dolfinx::common;
 
-TEMPLATE_TEST_CASE("Test constexpr type", "[constexpr_type]", std::int16_t,
-                   std::int32_t, std::int64_t
-// is C++ 20, but some compilers do not fully support, see
+// float and double is C++ 20, but some compilers do not fully support, see
 // https://en.cppreference.com/w/cpp/compiler_support/20#cpp_nontype_template_args_201911L
 #if defined(__cpp_nontype_template_args)                                       \
     && __cpp_nontype_template_args >= 201911L
-                   ,
-                   float, double
+TEMPLATE_TEST_CASE("Test constexpr type", "[constexpr_type]", std::int16_t,
+                   std::int32_t, std::int64_t, float, double)
+#else
+TEMPLATE_TEST_CASE("Test constexpr type", "[constexpr_type]", std::int16_t,
+                   std::int32_t, std::int64_t)
 #endif
-)
 {
   using T = TestType;
 
