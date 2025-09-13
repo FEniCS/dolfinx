@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <cassert>
@@ -13,11 +14,19 @@
 
 using namespace dolfinx::common;
 
-namespace
+TEMPLATE_TEST_CASE("Test constexpr type", "[constexpr_type]", std::int16_t,
+                   std::int32_t, std::int64_t
+// is C++ 20, but some compilers do not fully support, see
+// https://en.cppreference.com/w/cpp/compiler_support/20#cpp_nontype_template_args_201911L
+#if defined(__cpp_nontype_template_args)                                       \
+    && __cpp_nontype_template_args >= 201911L
+                   ,
+                   float, double
+#endif
+)
 {
-template <typename T>
-void test()
-{
+  using T = TestType;
+
   using V_runtime = T;
   static_assert(!is_compile_time_v<T, V_runtime>);
   static_assert(is_runtime_v<T, V_runtime>);
@@ -27,20 +36,4 @@ void test()
   static_assert(is_compile_time_v<T, V_compile_time>);
   static_assert(!is_runtime_v<T, V_compile_time>);
   static_assert((value<T, V_compile_time>(V_compile_time()) == T(1)));
-}
-} // namespace
-
-TEST_CASE("Test constexpr type", "[constexpr_type]")
-{
-  test<std::int16_t>();
-  test<std::int32_t>();
-  test<std::int64_t>();
-
-// is C++ 20, but some compilers do not fully support, see
-// https://en.cppreference.com/w/cpp/compiler_support/20#cpp_nontype_template_args_201911L
-#if defined(__cpp_nontype_template_args)                                       \
-    && __cpp_nontype_template_args >= 201911L
-  test<float>();
-  test<double>();
-#endif
 }
