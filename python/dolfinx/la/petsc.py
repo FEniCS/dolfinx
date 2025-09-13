@@ -72,9 +72,7 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
     )
 
 
-def create_vector(
-    maps: typing.Sequence[tuple[IndexMap, int]], kind: str | None = None
-) -> PETSc.Vec:  # type: ignore[name-defined]
+def create_vector(maps: typing.Sequence[tuple[IndexMap, int]], kind: str = "mpi") -> PETSc.Vec:  # type: ignore[name-defined]
     """Create a PETSc vector from a sequence of maps and blocksizes.
 
     Three cases are supported:
@@ -118,28 +116,19 @@ def create_vector(
         A PETSc vector with the prescribed layout. The vector is not
         initialised to zero.
     """
-    if len(maps) == 1:
-        # Single space case
-        index_map, bs = maps[0]
-        ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore[attr-defined]
-        size = (index_map.size_local * bs, index_map.size_global * bs)
-        b = PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore
-        if kind == PETSc.Vec.Type.MPI:
+    match kind:
+        case PETSc.Vec.Type.MPI:  # type: ignore[attr-defined]
+            b = dolfinx.cpp.fem.petsc.create_vector_block(maps)
             _assign_block_data(maps, b)
-        return b
-
-    if kind is None or kind == PETSc.Vec.Type.MPI:  # type: ignore[attr-defined]
-        b = dolfinx.cpp.fem.petsc.create_vector_block(maps)
-        _assign_block_data(maps, b)
-        return b
-    elif kind == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
-        return dolfinx.cpp.fem.petsc.create_vector_nest(maps)
-    else:
-        raise NotImplementedError(
-            "Vector type must be specified for blocked/nested assembly."
-            f"Vector type '{kind}' not supported."
-            "Did you mean 'nest' or 'mpi'?"
-        )
+            return b
+        case PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
+            return dolfinx.cpp.fem.petsc.create_vector_nest(maps)
+        case _:
+            raise NotImplementedError(
+                "Vector type must be specified for blocked/nested assembly."
+                f"Vector type '{kind}' not supported."
+                "Did you mean 'nest' or 'mpi'?"
+            )
 
 
 @functools.singledispatch
