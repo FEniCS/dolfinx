@@ -135,7 +135,7 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
     cell = ufl.Cell(shape)
     element = basix.ufl.element(
         basix.ElementFamily.P,
-        cell.cellname(),
+        cell.cellname,
         degree,
         basix.LagrangeVariant.equispaced,
         shape=(gdim,),
