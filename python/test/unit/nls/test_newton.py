@@ -109,6 +109,7 @@ class NonlinearPDE_SNESProblem:
 
 @pytest.mark.petsc4py
 class TestNLS:
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_linear_pde(self):
         """Test Newton solver for a linear PDE."""
         from petsc4py import PETSc
@@ -158,6 +159,7 @@ class TestNLS:
         del solver
         assert ksp.refcount == 1
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_nonlinear_pde(self):
         """Test Newton solver for a simple nonlinear PDE"""
         from petsc4py import PETSc
