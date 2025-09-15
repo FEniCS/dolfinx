@@ -112,17 +112,17 @@ class BoundingBoxTree:
 def bb_tree(
     mesh: Mesh,
     dim: int,
-    entities: npt.NDArray[np.int32] | None = None,
     padding: float = 0.0,
+    entities: npt.NDArray[np.int32] | None = None,
 ) -> BoundingBoxTree:
     """Create a bounding box tree for use in collision detection.
 
     Args:
         mesh: The mesh.
         dim: Dimension of the mesh entities to build bounding box for.
+        padding: Padding for each bounding box.
         entities: List of entity indices (local to process). If not
             supplied, all owned and ghosted entities are used.
-        padding: Padding for each bounding box.
 
     Returns:
         Bounding box tree.
