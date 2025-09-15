@@ -103,7 +103,7 @@ class TestPETScDiscreteOperators:
         u = Function(V)
         u.interpolate(lambda x: 2 * x[0] ** p + 3 * x[1] ** p)
 
-        grad_u = Expression(ufl.grad(u), W.element.interpolation_points())
+        grad_u = Expression(ufl.grad(u), W.element.interpolation_points)
         w_expr = Function(W)
         w_expr.interpolate(grad_u)
 
@@ -225,7 +225,7 @@ class TestPETScDiscreteOperators:
         domain = ufl.Mesh(
             element("Lagrange", cell_type.name, 2, shape=(3,), dtype=default_real_type)
         )
-        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+        mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
         gdim = mesh.geometry.dim
         W = functionspace(mesh, ("DG", 1, (gdim,)))
         V = functionspace(mesh, ("NCE", 4))

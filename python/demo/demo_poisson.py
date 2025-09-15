@@ -43,7 +43,8 @@
 # $$
 # \begin{align}
 #   a(u, v) &:= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
-#   L(v)    &:= \int_{\Omega} f v \, {\rm d} x + \int_{\Gamma_{N}} g v \, {\rm d} s.
+#   L(v)    &:= \int_{\Omega} f v \, {\rm d} x + \int_{\Gamma_{N}} g v \,
+#               {\rm d} s.
 # \end{align}
 # $$
 #
@@ -64,28 +65,15 @@
 #
 # The modules that will be used are imported:
 
-import importlib.util
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-    from petsc4py.PETSc import ScalarType  # type: ignore
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
-
-from mpi4py import MPI
-
 # +
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType  # type: ignore
+
 import numpy as np
 
 import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
-from ufl import ds, dx, grad, inner
 
 # -
 
@@ -146,19 +134,26 @@ v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(msh)
 f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
 g = ufl.sin(5 * x[0])
-a = inner(grad(u), grad(v)) * dx
-L = inner(f, v) * dx + inner(g, v) * ds
+a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+L = ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds
 # -
 
 # A {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>` object is
 # created that brings together the variational problem, the Dirichlet
 # boundary condition, and which specifies the linear solver. In this
-# case an LU solver is used. The {py:func}`solve
+# case an LU solver is used, and we ask that PETSc throws an error
+# if the solver does not converge. The {py:func}`solve
 # <dolfinx.fem.petsc.LinearProblem.solve>` computes the solution.
-
 # +
-problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(
+    a,
+    L,
+    bcs=[bc],
+    petsc_options_prefix="demo_poisson_",
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu", "ksp_error_if_not_converged": True},
+)
 uh = problem.solve()
+assert isinstance(uh, fem.Function)
 # -
 
 # The solution can be written to a {py:class}`XDMFFile
@@ -190,6 +185,6 @@ try:
     else:
         plotter.show()
 except ModuleNotFoundError:
-    print("'pyvista' is required to visualise the solution")
-    print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
+    print("'pyvista' is required to visualise the solution.")
+    print("To install pyvista with pip: 'python3 -m pip install pyvista'.")
 # -

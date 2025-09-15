@@ -40,33 +40,14 @@
 
 # +
 from mpi4py import MPI
+from petsc4py import PETSc
 
 import numpy as np
-
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-        print("This solver fails with PETSc and 64-bit integers because of memory errors in MUMPS.")
-        # Note: when PETSc.IntType == np.int32, superlu_dist is used
-        # rather than MUMPS and does not trigger memory failures.
-        exit(0)
-
-    real_type = PETSc.RealType
-    scalar_type = PETSc.ScalarType
-
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
+from slepc4py import SLEPc
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import fem, io, plot
+from dolfinx import fem, plot
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices, locate_entities
 
@@ -78,11 +59,19 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
-try:
-    from slepc4py import SLEPc
-except ModuleNotFoundError:
-    print("slepc4py is required for this demo")
+if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+    print("This solver fails with PETSc and 64-bit integers because of memory errors in MUMPS.")
+    # Note: when PETSc.IntType == np.int32, superlu_dist is used
+    # rather than MUMPS and does not trigger memory failures.
     exit(0)
+
+try:
+    from dolfinx.io import VTXWriter
+
+    has_vtx = True
+except ImportError:
+    print("VTXWriter not available, solution will not be saved.")
+    has_vtx = False
 # -
 
 # ## Analytical solutions for the half-loaded waveguide
@@ -93,7 +82,6 @@ except ModuleNotFoundError:
 # mention that the problem can be decoupled into $\mathrm{TE}_x$ and
 # $\mathrm{TM}_x$ modes, and the possible $k_z$ can be found by solving
 # a set of transcendental equations, which is shown here below:
-#
 #
 # $$
 # \textrm{For TE}_x \textrm{ modes}:
@@ -185,9 +173,7 @@ d = 0.5 * h
 nx = 300
 ny = int(0.4 * nx)
 
-msh = create_rectangle(
-    MPI.COMM_WORLD, np.array([[0, 0], [w, h]]), np.array([nx, ny]), CellType.quadrilateral
-)
+msh = create_rectangle(MPI.COMM_WORLD, np.array([[0, 0], [w, h]]), (nx, ny), CellType.quadrilateral)
 msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
 # -
 
@@ -199,23 +185,13 @@ msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
 eps_v = 1
 eps_d = 2.45
 
-
-def Omega_d(x):
-    return x[1] <= d
-
-
-def Omega_v(x):
-    return x[1] >= d
-
-
 D = fem.functionspace(msh, ("DQ", 0))
 eps = fem.Function(D)
 
-cells_v = locate_entities(msh, msh.topology.dim, Omega_v)
-cells_d = locate_entities(msh, msh.topology.dim, Omega_d)
+cells_d = locate_entities(msh, msh.topology.dim, lambda x: x[1] <= d)
 
-eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=scalar_type)
-eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=scalar_type)
+eps.x.array[:] = eps_v
+eps.x.array[cells_d] = eps_d
 # -
 
 # In order to find the weak form of our problem, the starting point are
@@ -234,7 +210,7 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=scalar_type)
 # wavelength, which we consider fixed at $\lambda = h/0.2$. If we focus
 # on non-magnetic material only, we can also use $\mu_r=1$.
 #
-# Now we can assume a known dependance on $z$:
+# Now we can assume a known dependence on $z$:
 #
 # $$
 # \mathbf{E}(x, y, z)=\left[\mathbf{E}_{t}(x, y)+\hat{z} E_{z}(x, y)\right]
@@ -300,8 +276,8 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=scalar_type)
 # `mixed_element`:
 
 degree = 1
-RTCE = element("RTCE", msh.basix_cell(), degree, dtype=real_type)
-Q = element("Lagrange", msh.basix_cell(), degree, dtype=real_type)
+RTCE = element("RTCE", msh.basix_cell(), degree, dtype=PETSc.RealType)
+Q = element("Lagrange", msh.basix_cell(), degree, dtype=PETSc.RealType)
 V = fem.functionspace(msh, mixed_element([RTCE, Q]))
 
 # Now we can define our weak form:
@@ -462,7 +438,7 @@ for i, kz in vals:
         # Verify if kz is consistent with the analytical equations
         assert verify_mode(kz, w, h, d, lmbd0, eps_d, eps_v, threshold=1e-4)
 
-        print(f"eigenvalue: {-kz**2}")
+        print(f"eigenvalue: {-(kz**2)}")
         print(f"kz: {kz}")
         print(f"kz/k0: {kz / k0}")
 
@@ -481,12 +457,13 @@ for i, kz in vals:
         Et_dg = fem.Function(V_dg)
         Et_dg.interpolate(eth)
 
-        # Save solutions
-        with io.VTXWriter(msh.comm, f"sols/Et_{i}.bp", Et_dg) as f:
-            f.write(0.0)
+        if has_vtx:
+            # Save solutions
+            with VTXWriter(msh.comm, f"sols/Et_{i}.bp", Et_dg) as f:
+                f.write(0.0)
 
-        with io.VTXWriter(msh.comm, f"sols/Ez_{i}.bp", ezh) as f:
-            f.write(0.0)
+            with VTXWriter(msh.comm, f"sols/Ez_{i}.bp", ezh) as f:
+                f.write(0.0)
 
         # Visualize solutions with Pyvista
         if have_pyvista:

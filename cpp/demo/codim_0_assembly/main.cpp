@@ -14,6 +14,7 @@
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/mesh/EntityMap.h>
 #include <map>
 #include <memory>
 #include <ranges>
@@ -22,7 +23,7 @@
 
 using namespace dolfinx;
 using T = PetscScalar;
-using U = typename dolfinx::scalar_value_type_t<T>;
+using U = typename dolfinx::scalar_value_t<T>;
 
 int main(int argc, char* argv[])
 {
@@ -76,36 +77,24 @@ int main(int argc, char* argv[])
     mesh::MeshTags<std::int32_t> cell_marker(mesh->topology(), tdim, cells,
                                              values);
 
-    std::shared_ptr<mesh::Mesh<U>> submesh;
-    std::vector<std::int32_t> submesh_to_mesh;
+    // We create a submesh consisting of only cells with a given tag by
+    // calling `create_submesh`. This function also returns an
+    // `EntityMap` object, which relates entities in the submesh to
+    // entities in the original mesh. We will need this to assemble our
+    // mixed-domain form.
+    auto submesh_data = [](auto& mesh, int tdim, auto&& subcells)
     {
-      auto [_submesh, _submesh_to_mesh, v_map, g_map]
-          = mesh::create_submesh(*mesh, tdim, cell_marker.find(2));
-      submesh = std::make_shared<mesh::Mesh<U>>(std::move(_submesh));
-      submesh_to_mesh = std::move(_submesh_to_mesh);
-    }
+      auto [submesh, emap, v_map, g_map]
+          = mesh::create_submesh(mesh, tdim, subcells);
+      return std::pair(std::make_shared<mesh::Mesh<U>>(std::move(submesh)),
+                       std::move(emap));
+    };
+    auto [submesh, entity_map] = submesh_data(*mesh, tdim, cell_marker.find(2));
 
     // We create the function space used for the trial space
     auto W
         = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
             submesh, std::make_shared<fem::FiniteElement<U>>(element)));
-
-    // A mixed-domain form has functions defined over different meshes.
-    // The mesh associated with the measure (dx, ds, etc.) is called the
-    // integration domain. To assemble mixed-domain forms, maps must be
-    // provided taking entities in the integration domain to entities on
-    // each mesh in the form. Since one of our forms has a measure
-    // defined over `mesh` and involves a function defined over
-    // `submesh`, we must provide a map from entities in `mesh` to
-    // entities in `submesh`. This is simply the "inverse" of
-    // `submesh_to_mesh`.
-    std::vector<std::int32_t> mesh_to_submesh(num_cells_local, -1);
-    for (std::size_t i = 0; i < submesh_to_mesh.size(); ++i)
-      mesh_to_submesh[submesh_to_mesh[i]] = i;
-
-    std::map<std::shared_ptr<const mesh::Mesh<U>>,
-             std::span<const std::int32_t>>
-        entity_maps = {{submesh, mesh_to_submesh}};
 
     // Next we compute the integration entities on the integration
     // domain `mesh`
@@ -118,10 +107,21 @@ int main(int argc, char* argv[])
         subdomain_data
         = {{fem::IntegralType::cell, {{3, integration_entities}}}};
 
+    // A mixed-domain form involves functions defined over multiple
+    // meshes. The mesh passed to `create_form` is called the
+    // *integration domain mesh*. To assemble a mixed-domain form, we
+    // must supply an `EntityMap` for each additional mesh involved in
+    // the form, relating entities in that mesh to the integration
+    // domain mesh. In our case, `mesh` is the integration domain mesh,
+    // and the only other mesh in our form is `submesh`. Hence, we must
+    // provide the entity map object returned when we called
+    // `create_submesh`, which relates entities in `submesh` to entities
+    // in `mesh`.
+    //
     // We can now create the bilinear form
     fem::Form<T> a_mixed
         = fem::create_form<T>(*form_mixed_codim0_a_mixed, {V, W}, {}, {},
-                              subdomain_data, entity_maps, V->mesh());
+                              subdomain_data, {entity_map}, V->mesh());
 
     la::SparsityPattern sp_mixed = fem::create_sparsity_pattern(a_mixed);
     sp_mixed.finalize();

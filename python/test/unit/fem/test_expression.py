@@ -17,8 +17,6 @@ from dolfinx import fem, la
 from dolfinx.fem import Constant, Expression, Function, form, functionspace
 from dolfinx.mesh import create_unit_square
 
-dolfinx.cpp.log.set_log_level(dolfinx.cpp.log.LogLevel.DEBUG)
-
 
 @pytest.mark.parametrize(
     "dtype",
@@ -37,7 +35,6 @@ def test_rank0(dtype):
 
     For a donor function f(x, y) = x^2 + 2*y^2 result is compared with the
     exact gradient grad f(x, y) = [2*x, 4*y].
-
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype(0).real.dtype)
     gdim = mesh.geometry.dim
@@ -48,7 +45,7 @@ def test_rank0(dtype):
     f.interpolate(lambda x: x[0] ** 2 + 2.0 * x[1] ** 2)
 
     ufl_expr = ufl.grad(f)
-    points = vdP1.element.interpolation_points()
+    points = vdP1.element.interpolation_points
 
     compiled_expr = Expression(ufl_expr, points, dtype=dtype)
     num_cells = mesh.topology.index_map(2).size_local
@@ -58,7 +55,7 @@ def test_rank0(dtype):
         for i in range(num_cells):
             for j in range(3):
                 for k in range(2):
-                    vec[2 * dofmap[i * 3 + j] + k] = array_evaluated[i, 2 * j + k]
+                    vec[2 * dofmap[i * 3 + j] + k] = array_evaluated[i, j, k]
 
     # Data structure for the result
     b = Function(vdP1, dtype=dtype)
@@ -90,7 +87,6 @@ def test_rank1_hdiv(dtype):
     Test compiles linear interpolation operator RT_2 ->
     vector DG_2 and assembles it into global matrix A. Input space RT_2
     is chosen because it requires dof permutations.
-
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype(0).real.dtype)
     gdim = mesh.geometry.dim
@@ -98,10 +94,10 @@ def test_rank1_hdiv(dtype):
     RT1 = functionspace(mesh, ("RT", 2))
     f = ufl.TrialFunction(RT1)
 
-    points = vdP1.element.interpolation_points()
-    compiled_expr = Expression(f, points, dtype=dtype)
+    points = vdP1.element.interpolation_points
+    expr = Expression(f, points, dtype=dtype)
     num_cells = mesh.topology.index_map(2).size_local
-    array_evaluated = compiled_expr.eval(mesh, np.arange(num_cells, dtype=np.int32))
+    array_evaluated = expr.eval(mesh, np.arange(num_cells, dtype=np.int32))
 
     def scatter(A, array_evaluated, dofmap0, dofmap1):
         for i in range(num_cells):
@@ -161,7 +157,7 @@ def test_simple_evaluation(dtype):
     For a function f(x, y) = 3*(x^2 + 2*y^2) the result is compared with
     the exact gradient:
 
-        grad f(x, y) = 3*[2*x, 4*y].
+        grad f(x, y) = 3 * [2 * x, 4 * y].
 
     (x^2 + 2*y^2) is first interpolated into a P2 finite element space.
     The scaling by a constant factor of 3 and the gradient is calculated
@@ -169,7 +165,6 @@ def test_simple_evaluation(dtype):
     evaluating the spatial coordinates as an Expression using UFL/FFCx
     and passing the result to a numpy function that calculates the exact
     gradient.
-
     """
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=xtype)
@@ -179,7 +174,7 @@ def test_simple_evaluation(dtype):
     # implemented within the UFL Expression. This is to check that the
     # Constants are being set up correctly.
     def exact_expr(x):
-        return x[0] ** 2 + 2.0 * x[1] ** 2
+        return x[0] ** 2 + 2 * x[1] ** 2
 
     # Unused, but remains for clarity.
     def f(x):
@@ -187,8 +182,10 @@ def test_simple_evaluation(dtype):
 
     def exact_grad_f(x):
         values = np.zeros_like(x)
-        values[:, 0::2] = 2 * x[:, 0::2]
-        values[:, 1::2] = 4 * x[:, 1::2]
+        for cell in range(x.shape[0]):
+            for p in range(x.shape[1]):
+                values[cell, p, 0] = 2 * x[cell, p, 0]
+                values[cell, p, 1] = 4 * x[cell, p, 1]
         values *= 3.0
         return values
 
@@ -207,8 +204,10 @@ def test_simple_evaluation(dtype):
     cells = np.arange(0, num_cells, dtype=np.int32)
 
     grad_f_evaluated = grad_f_expr.eval(mesh, cells)
+    assert grad_f_evaluated.ndim == 3
     assert grad_f_evaluated.shape[0] == cells.shape[0]
-    assert grad_f_evaluated.shape[1] == grad_f_expr.value_size * grad_f_expr.X().shape[0]
+    assert grad_f_evaluated.shape[1] == grad_f_expr.X().shape[0]
+    assert grad_f_evaluated.shape[2] == grad_f_expr.value_size
 
     # Evaluate points in global space
     ufl_x = ufl.SpatialCoordinate(mesh)
@@ -217,10 +216,12 @@ def test_simple_evaluation(dtype):
     assert x_expr.value_size == 2
     x_evaluated = x_expr.eval(mesh, cells)
     assert x_evaluated.shape[0] == cells.shape[0]
-    assert x_evaluated.shape[1] == x_expr.X().shape[0] * x_expr.value_size
+    assert x_evaluated.shape[1] == x_expr.X().shape[0]
+    assert x_evaluated.shape[2] == x_expr.value_size
 
     # Evaluate exact gradient using global points
     grad_f_exact = exact_grad_f(x_evaluated)
+    assert grad_f_exact.ndim == 3
     assert np.allclose(
         grad_f_evaluated,
         grad_f_exact,
@@ -263,7 +264,6 @@ def test_assembly_into_quadrature_function(dtype):
     In parallel, each process evaluates the Expression on both local
     cells and ghost cells so that no parallel communication is required
     after insertion into the vector.
-
     """
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 6, dtype=xtype)
@@ -355,7 +355,7 @@ def test_expression_eval_cells_subset(dtype):
     u = dolfinx.fem.Function(V, dtype=dtype)
     u.x.array[:] = dofs_to_cells
     u.x.scatter_forward()
-    e = dolfinx.fem.Expression(u, V.element.interpolation_points())
+    e = dolfinx.fem.Expression(u, V.element.interpolation_points)
 
     # Test eval on single cell
     for c in range(cells_imap.size_local):
@@ -387,8 +387,8 @@ def test_expression_comm(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=xtype)
     v = Constant(mesh, dtype(1))
     u = Function(functionspace(mesh, ("Lagrange", 1)), dtype=dtype)
-    Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_WORLD)
-    Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_SELF)
+    Expression(v, u.function_space.element.interpolation_points, comm=MPI.COMM_WORLD)
+    Expression(v, u.function_space.element.interpolation_points, comm=MPI.COMM_SELF)
 
 
 def compute_exterior_facet_entities(mesh, facets):
@@ -398,15 +398,15 @@ def compute_exterior_facet_entities(mesh, facets):
     mesh.topology.create_connectivity(tdim, tdim - 1)
     c_to_f = mesh.topology.connectivity(tdim, tdim - 1)
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
-    integration_entities = np.empty(2 * len(facets), dtype=np.int32)
+    integration_entities = np.empty((len(facets), 2), dtype=np.int32)
     for i, facet in enumerate(facets):
         cells = f_to_c.links(facet)
         assert len(cells) == 1
         cell = cells[0]
         local_facets = c_to_f.links(cell)
         local_pos = np.flatnonzero(local_facets == facet)
-        integration_entities[2 * i] = cell
-        integration_entities[2 * i + 1] = local_pos[0]
+        integration_entities[i, 0] = cell
+        integration_entities[i, 1] = local_pos[0]
     return integration_entities
 
 
@@ -489,14 +489,14 @@ def test_facet_expression(dtype):
 
 
 def test_rank1_blocked():
-    """
-    Check that a test function with tensor shape is unrolled as
-    (num_cells, num_points, num_dofs, bs) when evaluated as an expression
-    """
+    """Check that a test function with tensor shape is unrolled as
+    (num_cells, num_points, num_dofs, bs) when evaluated as an
+    expression."""
     mesh = dolfinx.mesh.create_unit_square(
-        MPI.COMM_SELF, 1, 1, cell_type=dolfinx.mesh.CellType.quadrilateral
+        MPI.COMM_SELF, 3, 4, cell_type=dolfinx.mesh.CellType.quadrilateral
     )
     value_shape = (3, 2)
+    vs = np.prod(value_shape)
     V = dolfinx.fem.functionspace(mesh, ("Lagrange", 2, value_shape))
     v = ufl.TestFunction(V)
 
@@ -504,21 +504,24 @@ def test_rank1_blocked():
     expr = dolfinx.fem.Expression(v, points)
 
     values = expr.eval(mesh, np.array([0], dtype=np.int32))[0]
+
     # Tabulate returns (num_derivatives, num_points, num_dofs, value_size)
     ref_values = V.element.basix_element.tabulate(1, points)[0]
 
     num_points = points.shape[0]
     num_dofs = V.dofmap.dof_layout.num_dofs
     bs = V.dofmap.bs
-    assert len(values) == num_dofs * num_points * bs * bs
-    for i in range(num_points):
+    value_size = np.prod(values.shape)
+    assert value_size == num_dofs * num_points * bs * bs
+    for p in range(num_points):
         # Get basis functions for all blocks for ith point
-        point_values = values[i * num_dofs * bs * bs : (i + 1) * num_dofs * bs * bs]
-        for j in range(bs):
-            block_values = point_values[j * num_dofs * bs : (j + 1) * num_dofs * bs]
-            for k in range(bs):
-                # Test functions are evaluated as a vector function
-                if j != k:
-                    np.testing.assert_allclose(block_values[k::bs], 0.0)
-                else:
-                    np.testing.assert_allclose(block_values[k::bs], ref_values[i].flatten())
+        point_values = values[p]
+        for i in range(value_shape[0]):
+            for j in range(value_shape[1]):
+                offset = i * value_shape[1] + j
+                vals = point_values[i, j, offset::vs]
+                np.testing.assert_allclose(vals, ref_values[p].flatten())
+
+                mask = np.ones(point_values.shape[2], dtype=bool)
+                mask[offset::vs] = False
+                np.testing.assert_allclose(point_values[i, j, mask], 0)

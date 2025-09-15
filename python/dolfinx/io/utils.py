@@ -1,12 +1,11 @@
-# Copyright (C) 2017-2022 Chris N. Richardson, Garth N. Wells, Michal Habera
-# and Jørgen S. Dokken
+# Copyright (C) 2017-2022 Chris N. Richardson, Garth N. Wells,
+# Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data and post-processing file output."""
 
-import typing
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -21,17 +20,9 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
-from dolfinx.mesh import Geometry, GhostMode, Mesh, MeshTags
+from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
-
-
-def _extract_cpp_objects(functions: typing.Union[Mesh, Function, tuple[Function], list[Function]]):
-    """Extract C++ objects"""
-    if isinstance(functions, (list, tuple)):
-        return [getattr(u, "_cpp_object", u) for u in functions]
-    else:
-        return [getattr(functions, "_cpp_object", functions)]
 
 
 # VTXWriter requires ADIOS2
@@ -50,13 +41,13 @@ if _cpp.common.has_adios2:
         The files can be viewed using Paraview.
         """
 
-        _cpp_object: typing.Union[_cpp.io.VTXWriter_float32, _cpp.io.VTXWriter_float64]
+        _cpp_object: _cpp.io.VTXWriter_float32 | _cpp.io.VTXWriter_float64
 
         def __init__(
             self,
             comm: _MPI.Comm,
-            filename: typing.Union[str, Path],
-            output: typing.Union[Mesh, Function, list[Function], tuple[Function]],
+            filename: str | Path,
+            output: Mesh | Function | list[Function] | tuple[Function],
             engine: str = "BPFile",
             mesh_policy: VTXMeshPolicy = VTXMeshPolicy.update,
         ):
@@ -81,27 +72,29 @@ if _cpp.common.has_adios2:
                 have the same element type.
             """
             # Get geometry type
-            try:
-                dtype = output.geometry.x.dtype  # type: ignore
-            except AttributeError:
-                try:
-                    dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
-                except AttributeError:
-                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
+            if isinstance(output, Mesh):
+                dtype = output.geometry.x.dtype
+            elif isinstance(output, Function):
+                dtype = output.function_space.mesh.geometry.x.dtype
+            else:
+                dtype = output[0].function_space.mesh.geometry.x.dtype
 
             if np.issubdtype(dtype, np.float32):
                 _vtxwriter = _cpp.io.VTXWriter_float32
             elif np.issubdtype(dtype, np.float64):
                 _vtxwriter = _cpp.io.VTXWriter_float64
+            else:
+                raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
-            try:
-                # Input is a mesh
+            if isinstance(output, Mesh):
                 self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
-            except (NotImplementedError, TypeError, AttributeError):
-                # Input is a single function or a list of functions
-                self._cpp_object = _vtxwriter(
-                    comm, filename, _extract_cpp_objects(output), engine, mesh_policy
-                )  # type: ignore[arg-type]
+            else:
+                cpp_objects = (
+                    [output._cpp_object]
+                    if isinstance(output, Function)
+                    else [o._cpp_object for o in output]
+                )
+                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)
 
         def __enter__(self):
             return self
@@ -134,9 +127,11 @@ class VTKFile(_cpp.io.VTKFile):
         """Write mesh to file for a given time (default 0.0)"""
         self.write(mesh._cpp_object, t)
 
-    def write_function(self, u: typing.Union[list[Function], Function], t: float = 0.0) -> None:
-        """Write a single function or a list of functions to file for a given time (default 0.0)"""
-        super().write(_extract_cpp_objects(u), t)
+    def write_function(self, u: list[Function] | Function, t: float = 0.0) -> None:
+        """Write a single function or a list of functions to file for a
+        given time (default 0.0)"""
+        cpp_objects = [u._cpp_object] if isinstance(u, Function) else [_u._cpp_object for _u in u]
+        super().write(cpp_objects, t)
 
 
 class XDMFFile(_cpp.io.XDMFFile):
@@ -180,38 +175,107 @@ class XDMFFile(_cpp.io.XDMFFile):
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
     def read_mesh(
-        self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"
+        self,
+        ghost_mode=GhostMode.shared_facet,
+        name="mesh",
+        xpath="/Xdmf/Domain",
+        max_facet_to_cell_links: int = 2,
     ) -> Mesh:
-        """Read mesh data from file."""
+        """Read mesh data from file.
+
+        Note:
+            Changing `max_facet_to_cell_links` from the default value
+            should only be required when working on branching manifolds.
+            Changing this value on non-branching meshes will only result in
+            a slower mesh partitioning and creation.
+
+        Args:
+            ghost_mode: Ghost mode to use for the cells in mesh creation.
+            name: Name of the grid node in the xml-scheme in the file
+            xpath: XPath where Mesh Grid is stored in the file.
+            max_facet_to_cell_links: Maximum number of cells that a facet
+                can be linked to.
+        """
         cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
 
-        # Build the mesh
-        cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
-        msh = _cpp.mesh.create_mesh(
-            self.comm, cells, cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode)
-        )
-        msh.name = name
-        domain = ufl.Mesh(
-            basix.ufl.element(
+        # Get coordinate element, special handling for second order
+        # serendipity.
+        num_nodes_per_cell = cells.shape[1]
+        if (cell_shape == CellType.quadrilateral and num_nodes_per_cell == 8) or (
+            cell_shape == CellType.hexahedron and num_nodes_per_cell == 20
+        ):
+            s_el = basix.ufl.element(
+                basix.ElementFamily.serendipity,
+                cell_shape.name,
+                2,
+            )
+            # Create a custom element that is serendipity but uses points
+            # evaluations on edges
+            geometry = basix.cell.geometry(s_el.basix_element.cell_type)
+            topology = basix.cell.topology(s_el.basix_element.cell_type)
+            e_x: list[list[npt.NDArray[np.floating]]] = [
+                [np.array([p]) for p in geometry],
+                [np.array([(geometry[edge[0]] + geometry[edge[1]]) / 2]) for edge in topology[1]],
+                [np.zeros((0, 3)) for _ in s_el.basix_element.x[2]],
+                [np.zeros((0, 3)) for _ in s_el.basix_element.x[3]],
+            ]
+            e_m: list[list[npt.NDArray[np.floating]]] = [
+                [np.ones((1, 1, 1, 1)) for _ in s_el.basix_element.M[0]],
+                [np.ones((1, 1, 1, 1)) for _ in s_el.basix_element.M[1]],
+                [np.zeros((0, 1, 0, 1)) for _ in s_el.basix_element.M[2]],
+                [np.zeros((0, 1, 0, 1)) for _ in s_el.basix_element.M[3]],
+            ]
+            el = basix.ufl.custom_element(
+                s_el.basix_element.cell_type,
+                s_el.reference_value_shape,
+                s_el.basix_element.wcoeffs,
+                e_x,
+                e_m,
+                0,
+                s_el.map_type,
+                s_el.basix_element.sobolev_space,
+                s_el.discontinuous,
+                s_el.embedded_subdegree,
+                s_el.embedded_superdegree,
+                s_el.polyset_type,
+                s_el.dtype,
+            )
+            cmap = _cpp.fem.CoordinateElement_float64(el.basix_element._e)
+            basix_el = basix.ufl.blocked_element(el, shape=(x.shape[1],))
+        else:
+            basix_el = basix.ufl.element(
                 "Lagrange",
                 cell_shape.name,
                 cell_degree,
-                basix.LagrangeVariant.equispaced,
+                basix.LagrangeVariant.unset,
                 shape=(x.shape[1],),
             )
+            cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
+
+        # Build the mesh
+        msh = _cpp.mesh.create_mesh(
+            self.comm,
+            cells,
+            cmap,
+            x,
+            _cpp.mesh.create_cell_partitioner(ghost_mode),
+            max_facet_to_cell_links,
         )
+        msh.name = name
+        domain = ufl.Mesh(basix_el)
         return Mesh(msh, domain)
 
     def read_meshtags(
         self,
         mesh: Mesh,
         name: str,
-        attribute_name: typing.Optional[str] = None,
+        attribute_name: str | None = None,
         xpath: str = "/Xdmf/Domain",
     ) -> MeshTags:
-        """Read MeshTags with a specific name as specified in the XMDF file.
+        """Read MeshTags with a specific name as specified in the XMDF
+        file.
 
         Args:
             mesh: Mesh that the input data is defined on.
@@ -236,7 +300,8 @@ class XDMFFile(_cpp.io.XDMFFile):
 def distribute_entity_data(
     mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: np.ndarray
 ) -> tuple[npt.NDArray[np.int64], np.ndarray]:
-    """Given a set of mesh entities and values, distribute them to the process that owns the entity.
+    """Given a set of mesh entities and values, distribute them to the
+    process that owns the entity.
 
     The entities are described by the global vertex indices of the mesh.
     These entity indices are using the original input ordering.

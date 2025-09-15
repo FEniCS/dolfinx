@@ -17,9 +17,8 @@ using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
-    MPI_Comm comm,
-    const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
-    const std::array<int, 2>& bs)
+    MPI_Comm comm, std::array<std::shared_ptr<const common::IndexMap>, 2> maps,
+    std::array<int, 2> bs)
     : _comm(comm), _index_maps(maps), _bs(bs),
       _row_cache(maps[0]->size_local() + maps[0]->num_ghosts())
 {
@@ -329,7 +328,7 @@ void SparsityPattern::finalize()
                           MPI_INT, comm);
 
     // Build recv displacements
-    std::vector<int> recv_disp = {0};
+    std::vector<int> recv_disp{0};
     std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                      std::back_inserter(recv_disp));
 

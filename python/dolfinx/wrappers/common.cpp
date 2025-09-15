@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "caster_mpi.h"
+#include "dolfinx_wrappers/MPICommWrapper.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
@@ -21,15 +21,15 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/chrono.h>
-#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
-#include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace nb = nanobind;
@@ -45,6 +45,85 @@ consteval bool has_petsc4py()
 #else
   return false;
 #endif
+}
+
+template <typename T>
+void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
+{
+  sc.def(
+      "scatter_fwd",
+      [](dolfinx::common::Scatterer<>& self,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> local_data,
+         nb::ndarray<T, nb::ndim<1>, nb::c_contig> remote_data)
+      {
+        if (local_data.size() < self.remote_indices().size())
+        {
+          throw std::runtime_error(
+              "Local data buffer too small in forward scatter.");
+        }
+        if (remote_data.size() < self.remote_indices().size())
+        {
+          throw std::runtime_error(
+              "Ghost data buffer too small in forward scatter.");
+        }
+
+        std::vector<T> send_buffer(self.local_indices().size());
+        {
+          auto _local_data = local_data.view();
+          auto& idx = self.local_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            send_buffer[i] = _local_data(idx[i]);
+        }
+        std::vector<T> recv_buffer(self.remote_indices().size());
+        MPI_Request request = MPI_REQUEST_NULL;
+        self.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
+        self.scatter_end(request);
+        {
+          auto _remote_data = remote_data.view();
+          auto& idx = self.remote_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            _remote_data(idx[i]) = recv_buffer[i];
+        }
+      },
+      nb::arg("local_data"), nb::arg("remote_data"));
+
+  sc.def(
+      "scatter_rev",
+      [](dolfinx::common::Scatterer<>& self,
+         nb::ndarray<T, nb::ndim<1>, nb::c_contig> local_data,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> remote_data)
+      {
+        if (local_data.size() < self.local_indices().size())
+        {
+          throw std::runtime_error(
+              "Local data buffer too small in reverse scatter.");
+        }
+        if (remote_data.size() < self.remote_indices().size())
+        {
+          throw std::runtime_error(
+              "Ghost data buffer too small in reverse scatter.");
+        }
+
+        std::vector<T> send_buffer(self.remote_indices().size());
+        {
+          auto _remote_data = remote_data.view();
+          auto& idx = self.remote_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            send_buffer[i] = _remote_data(idx[i]);
+        }
+        std::vector<T> recv_buffer(self.local_indices().size());
+        MPI_Request request = MPI_REQUEST_NULL;
+        self.scatter_rev_begin<T>(send_buffer.data(), recv_buffer.data(),
+                                  request);
+        self.scatter_end(request);
+        {
+          auto _local_data = local_data.view();
+          auto& idx = self.local_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            _local_data(idx[i]) += recv_buffer[i];
+        }
+      },
+      nb::arg("local_data"), nb::arg("remote_data"));
 }
 
 // Interface for dolfinx/common
@@ -68,6 +147,13 @@ void common(nb::module_& m)
       .value("max", dolfinx::Table::Reduction::max)
       .value("min", dolfinx::Table::Reduction::min)
       .value("average", dolfinx::Table::Reduction::average);
+
+  auto sc = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
+                .def(nb::init<dolfinx::common::IndexMap&, int>(),
+                     nb::arg("index_map"), nb::arg("block_size"));
+  add_scatter_functions<std::int64_t>(sc);
+  add_scatter_functions<double>(sc);
+  add_scatter_functions<float>(sc);
 
   // dolfinx::common::IndexMap
   nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")
@@ -122,8 +208,6 @@ void common(nb::module_& m)
                    "Range of indices owned by this map")
       .def("index_to_dest_ranks",
            &dolfinx::common::IndexMap::index_to_dest_ranks)
-      .def("imbalance", &dolfinx::common::IndexMap::imbalance,
-           "Imbalance of the current IndexMap.")
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)

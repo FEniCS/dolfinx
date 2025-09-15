@@ -117,10 +117,8 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
   // Compute dof coordinates
   const std::vector<T> dof_coordinates = V.tabulate_dof_coordinates(true);
 
-  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
+  using cmdspan3x_t
+      = md::mdspan<const T, md::extents<std::size_t, 3, md::dynamic_extent>>;
 
   // Compute marker for each dof coordinate
   cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
@@ -152,7 +150,7 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 template <std::floating_point T, typename U>
 std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
-    const std::array<std::reference_wrapper<const FunctionSpace<T>>, 2>& V,
+    std::array<std::reference_wrapper<const FunctionSpace<T>>, 2> V,
     U marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
@@ -179,10 +177,8 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   // Compute dof coordinates
   const std::vector<T> dof_coordinates = V1.tabulate_dof_coordinates(true);
 
-  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
+  using cmdspan3x_t
+      = md::mdspan<const T, md::extents<std::size_t, 3, md::dynamic_extent>>;
 
   // Evaluate marker for each dof coordinate
   cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
@@ -254,8 +250,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
 /// A DirichletBC is specified by the function \f$g\f$, the function
 /// space (trial space) and degrees of freedom to which the boundary
 /// condition applies.
-template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_t<T>>
 class DirichletBC
 {
 private:
@@ -338,10 +333,10 @@ public:
     if (g->shape.size() != V->element()->value_shape().size())
     {
       throw std::runtime_error(
-          "Rank mis-match between Constant and function space in DirichletBC");
+          "Rank mismatch between Constant and function space in DirichletBC");
     }
 
-    if (g->value.size() != _function_space->dofmap()->bs())
+    if (g->value.size() != (std::size_t)_function_space->dofmap()->bs())
     {
       throw std::runtime_error(
           "Creating a DirichletBC using a Constant is not supported when the "

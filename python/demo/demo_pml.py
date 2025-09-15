@@ -1,4 +1,4 @@
-# # Electromagnetic scattering from a wire with perfectly matched layer condition
+# # Electromagnetic scattering from a wire with perfectly matched layer condition # noqa
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
@@ -15,32 +15,22 @@
 # First, we import the required modules
 
 # +
-import importlib.util
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
-
 import sys
 from functools import partial
-from typing import Union
 
 from mpi4py import MPI
+from petsc4py import PETSc
 
+import gmsh
 import numpy as np
 from scipy.special import h2vp, hankel2, jv, jvp
 
+import dolfinx
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
-from dolfinx.io import gmshio
+from dolfinx.io import gmsh as gmshio
 
 try:
     from dolfinx.io import VTXWriter
@@ -48,11 +38,6 @@ except ImportError:
     print("This demo requires DOLFINx to be configured with adios2.")
     exit(0)
 
-try:
-    import gmsh
-except ModuleNotFoundError:
-    print("This demo requires gmsh to be installed")
-    exit(0)
 
 try:
     import pyvista
@@ -62,7 +47,6 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
-from petsc4py import PETSc
 
 # Since we want to solve time-harmonic Maxwell's equation, we require
 # that the demo is executed with DOLFINx (PETSc) complex mode.
@@ -221,7 +205,8 @@ def generate_mesh_wire(
 # being hit normally by a TM-polarized electromagnetic wave.
 #
 # The formula are taken from:
-# Milton Kerker, "The Scattering of Light and Other Electromagnetic Radiation",
+# Milton Kerker, "The Scattering of Light and Other Electromagnetic
+# Radiation",
 # Chapter 6, Elsevier, 1969.
 #
 # ## Implementation
@@ -451,9 +436,10 @@ if MPI.COMM_WORLD.rank == 0:
 model = MPI.COMM_WORLD.bcast(model, root=0)
 partitioner = dolfinx.cpp.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet)
 
-msh, cell_tags, facet_tags = gmshio.model_to_mesh(
-    model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner
-)
+mesh_data = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
+assert mesh_data.cell_tags is not None, "Cell tags are missing"
+assert mesh_data.facet_tags is not None, "Facet tags are missing"
+assert all(pg.dim == 2 for _, pg in mesh_data.physical_groups.items()), "Wrong phsyical group dim."
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
@@ -462,13 +448,15 @@ MPI.COMM_WORLD.barrier()
 # We visualize the mesh and subdomains with
 # [PyVista](https://docs.pyvista.org/)
 
-tdim = msh.topology.dim
+tdim = mesh_data.mesh.topology.dim
 if have_pyvista:
-    topology, cell_types, geometry = plot.vtk_mesh(msh, 2)
+    topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
-    num_local_cells = msh.topology.index_map(tdim).size_local
-    grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
+    num_local_cells = mesh_data.mesh.topology.index_map(tdim).size_local
+    grid.cell_data["Marker"] = mesh_data.cell_tags.values[
+        mesh_data.cell_tags.indices < num_local_cells
+    ]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
@@ -487,11 +475,12 @@ if have_pyvista:
 #
 # $$
 # \begin{align}
-# \text{PML}_\text{corners} \rightarrow \mathbf{r}^\prime &= (x^\prime, y^\prime) \\
+# \text{PML}_\text{corners} \rightarrow \mathbf{r}^\prime &= (x^\prime,
+#   y^\prime) \\
 # \text{PML}_\text{rectangles along x} \rightarrow
-#                                       \mathbf{r}^\prime &= (x^\prime, y) \\
+#   \mathbf{r}^\prime &= (x^\prime, y) \\
 # \text{PML}_\text{rectangles along y} \rightarrow
-#                                       \mathbf{r}^\prime &= (x, y^\prime).
+#   \mathbf{r}^\prime &= (x, y^\prime).
 # \end{align}
 # $$
 #
@@ -504,12 +493,12 @@ k0 = 2 * np.pi / wl0  # Wavevector of the background field
 theta = 0  # Angle of incidence of the background field
 
 # We use a degree 3
-# [Nedelec (first kind)](https://defelement.com/elements/nedelec1.html)
+# [Nedelec (first kind)](https://defelement.org/elements/nedelec1.html)
 # element to represent the electric field:
 
 degree = 3
-curl_el = element("N1curl", msh.basix_cell(), degree, dtype=default_real_type)
-V = fem.functionspace(msh, curl_el)
+curl_el = element("N1curl", mesh_data.mesh.basix_cell(), degree, dtype=default_real_type)
+V = fem.functionspace(mesh_data.mesh, curl_el)
 
 # Next, we interpolate $\mathbf{E}_b$ into the function space $V$,
 # define our trial and test function, and the integration domains:
@@ -528,7 +517,7 @@ Es_3d = ufl.as_vector((Es[0], Es[1], 0))
 v_3d = ufl.as_vector((v[0], v[1], 0))
 
 # Measures for subdomains
-dx = ufl.Measure("dx", msh, subdomain_data=cell_tags)
+dx = ufl.Measure("dx", mesh_data.mesh, subdomain_data=mesh_data.cell_tags)
 dDom = dx((au_tag, bkg_tag))
 dPml_xy = dx(pml_tag)
 dPml_x = dx(pml_tag + 1)
@@ -550,10 +539,10 @@ eps_au = -1.0782 + 1j * 5.8089
 # it takes the value of the background permittivity $\varepsilon_b$ in
 # the background region:
 
-D = fem.functionspace(msh, ("DG", 0))
+D = fem.functionspace(mesh_data.mesh, ("DG", 0))
 eps = fem.Function(D)
-au_cells = cell_tags.find(au_tag)
-bkg_cells = cell_tags.find(bkg_tag)
+au_cells = mesh_data.cell_tags.find(au_tag)
+bkg_cells = mesh_data.cell_tags.find(bkg_tag)
 eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=eps.x.array.dtype)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=eps.x.array.dtype)
 eps.x.scatter_forward()
@@ -563,7 +552,7 @@ eps.x.scatter_forward()
 # coordinates as:
 
 # +
-x = ufl.SpatialCoordinate(msh)
+x = ufl.SpatialCoordinate(mesh_data.mesh)
 alpha = 1
 
 # PML corners
@@ -637,8 +626,8 @@ y_pml = ufl.as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 
 def create_eps_mu(
     pml: ufl.tensors.ListTensor,
-    eps_bkg: Union[float, ufl.tensors.ListTensor],
-    mu_bkg: Union[float, ufl.tensors.ListTensor],
+    eps_bkg: float | ufl.tensors.ListTensor,
+    mu_bkg: float | ufl.tensors.ListTensor,
 ) -> tuple[ufl.tensors.ComponentTensor, ufl.tensors.ComponentTensor]:
     J = ufl.grad(pml)
 
@@ -660,8 +649,8 @@ eps_xy, mu_xy = create_eps_mu(xy_pml, eps_bkg, 1)
 # The final weak form in the PML region is:
 #
 # $$
-# \int_{\Omega_{pml}}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times \mathbf{E}
-# \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
+# \int_{\Omega_{pml}}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times
+# \mathbf{E} \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
 # \left[\boldsymbol{\varepsilon}_{pml} \mathbf{E} \right]\cdot
 # \bar{\mathbf{v}}~ d x=0,
 # $$
@@ -703,7 +692,7 @@ if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
 elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
     mat_factor_backend = "superlu_dist"
 else:
-    if msh.comm > 1:
+    if mesh_data.mesh.comm > 1:
         raise RuntimeError("This demo requires a parallel LU solver.")
     else:
         mat_factor_backend = "petsc"
@@ -712,6 +701,7 @@ problem = LinearProblem(
     a,
     L,
     bcs=[],
+    petsc_options_prefix="demo_pml_",
     petsc_options={
         "ksp_type": "preonly",
         "pc_type": "lu",
@@ -719,7 +709,8 @@ problem = LinearProblem(
     },
 )
 Esh = problem.solve()
-assert problem.solver.getConvergedReason() > 0, "Solver did not converge!"
+assert problem.solver.getConvergedReason() > 0
+assert isinstance(Esh, fem.Function)
 # -
 
 # Let's now save the solution in a `bp`-file. In order to do so, we need
@@ -727,12 +718,12 @@ assert problem.solver.getConvergedReason() > 0, "Solver did not converge!"
 # compatible discontinuous Lagrange space.
 
 # +
-gdim = msh.geometry.dim
-V_dg = fem.functionspace(msh, ("DG", degree, (gdim,)))
+gdim = mesh_data.mesh.geometry.dim
+V_dg = fem.functionspace(mesh_data.mesh, ("DG", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
-with VTXWriter(msh.comm, "Esh.bp", Esh_dg) as vtx:
+with VTXWriter(mesh_data.mesh.comm, "Esh.bp", Esh_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -770,7 +761,7 @@ E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
 
-with VTXWriter(msh.comm, "E.bp", E_dg) as vtx:
+with VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -809,17 +800,19 @@ I0 = 0.5 / Z0
 # Geometrical cross section of the wire
 gcs = 2 * radius_wire
 
-n = ufl.FacetNormal(msh)
+n = ufl.FacetNormal(mesh_data.mesh)
 n_3d = ufl.as_vector((n[0], n[1], 0))
 
 # Create a marker for the integration boundary for the scattering
 # efficiency
 marker = fem.Function(D)
-scatt_facets = facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(msh.topology, scatt_facets, tdim - 1, tdim)
+scatt_facets = mesh_data.facet_tags.find(scatt_tag)
+incident_cells = mesh.compute_incident_entities(
+    mesh_data.mesh.topology, scatt_facets, tdim - 1, tdim
+)
 
-msh.topology.create_connectivity(tdim, tdim)
-midpoints = mesh.compute_midpoints(msh, tdim, incident_cells)
+mesh_data.mesh.topology.create_connectivity(tdim, tdim)
+midpoints = mesh.compute_midpoints(mesh_data.mesh, tdim, incident_cells)
 inner_cells = incident_cells[(midpoints[:, 0] ** 2 + midpoints[:, 1] ** 2) < (radius_scatt) ** 2]
 
 marker.x.array[inner_cells] = 1
@@ -832,12 +825,12 @@ Q = 0.5 * eps_au.imag * k0 * (ufl.inner(E_3d, E_3d)) / (Z0 * n_bkg)
 dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
-dS = ufl.Measure("dS", msh, subdomain_data=facet_tags)
+dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
 
 # Normalized absorption efficiency
 q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / (gcs * I0)).real
 # Sum results from all MPI processes
-q_abs_fenics = msh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+q_abs_fenics = mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
 q_sca_fenics_proc = (
@@ -845,7 +838,7 @@ q_sca_fenics_proc = (
 ).real
 
 # Sum results from all MPI processes
-q_sca_fenics = msh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+q_sca_fenics = mesh_data.mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 # Extinction efficiency
 q_ext_fenics = q_abs_fenics + q_sca_fenics
@@ -855,7 +848,7 @@ err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt
 err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
 err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
 
-if msh.comm.rank == 0:
+if mesh_data.mesh.comm.rank == 0:
     print()
     print(f"The analytical absorption efficiency is {q_abs_analyt}")
     print(f"The numerical absorption efficiency is {q_abs_fenics}")

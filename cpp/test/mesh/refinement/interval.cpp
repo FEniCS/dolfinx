@@ -47,9 +47,9 @@ template <typename T>
 mesh::Mesh<T> create_3_vertex_interval_mesh()
 {
   // creates mesh with vertices
-  std::array<T, 3> v0 = {0., 0., 0.};
-  std::array<T, 3> v1 = {.5, 1., 2.};
-  std::array<T, 3> v2 = {1., 2., 4.};
+  std::array<T, 3> v0{0., 0., 0.};
+  std::array<T, 3> v1{.5, 1., 2.};
+  std::array<T, 3> v2{1., 2., 4.};
 
   // and connectivity
   // v0 --- v1 --- v2
@@ -238,4 +238,14 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
     CHECK(v_to_e->links((center_index + 1) % 3)[0]
           != v_to_e->links((center_index + 2) % 3)[0]);
   }
+}
+
+TEMPLATE_TEST_CASE("Interval uniform refinement", "[refinement][interva]",
+                   double, float)
+{
+  auto interval = dolfinx::mesh::create_interval<TestType>(MPI_COMM_WORLD, 20,
+                                                           {0.0, 1.0});
+  auto [refined, parent_edge, parent_facet]
+      = dolfinx::refinement::refine(interval, std::nullopt);
+  CHECK(refined.topology()->index_map(0)->size_global() == 41);
 }

@@ -25,6 +25,7 @@ from dolfinx.geometry import (
 from dolfinx.mesh import (
     CellType,
     compute_midpoints,
+    compute_incident_entities,
     create_box,
     create_unit_cube,
     create_unit_interval,
@@ -411,8 +412,8 @@ def test_sub_bbtree_codim1(dtype):
     fdim = tdim - 1
 
     top_facets = locate_entities_boundary(mesh, fdim, lambda x: np.isclose(x[2], 1))
-    f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
-    cells = np.array([f_to_c.links(f)[0] for f in top_facets], dtype=np.int32)
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    cells = compute_incident_entities(mesh.topology, top_facets, fdim, tdim)
     bbtree = bb_tree(mesh, tdim, 0.0, cells)
 
     # Compute a BBtree for all processes
@@ -424,9 +425,13 @@ def test_sub_bbtree_codim1(dtype):
 
     # Compute local collisions
     cells = compute_collisions_points(bbtree, point)
-    if MPI.COMM_WORLD.rank in ranks.array:
-        assert len(cells.links(0)) > 0
-    else:
+
+    # Relationship to test: if cells has link => ranks must also hold a value.
+    if len(cells.links(0)) > 0:
+        assert len(ranks.links(0)) > 0
+
+    # Negated: ranks holds no value => cells has no link
+    if len(ranks.links(0)) == 0:
         assert len(cells.links(0)) == 0
 
 
@@ -500,6 +505,24 @@ def test_surface_bbtree_collision(dtype):
     collisions = compute_collisions_trees(bbtree1, bbtree2)
     assert len(collisions) == 1
 
+@pytest.mark.parametrize("ct", [CellType.tetrahedron])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_shift_bbtree(ct, dtype):
+    tdim = 3
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, ct, dtype=dtype)
+    bbtree = bb_tree(mesh, tdim, padding=0.0)
+    rng = np.random.default_rng(0)
+    points = rng.random((10, 3))
+
+    # Point-tree collisions pre-motion
+    collisions_pre = compute_collisions_points(bbtree, points)
+    # Shift everything
+    shift = np.array([1.0, 2.0, 3.0], dtype=dtype)
+    points[:] += shift
+    bbtree.bbox_coordinates[:] += shift
+
+    collisions_post = compute_collisions_points(bbtree, points)
+    assert (collisions_pre.array == collisions_post.array).all()
 
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("affine", [True, False])

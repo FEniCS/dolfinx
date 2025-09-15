@@ -13,8 +13,15 @@ using namespace dolfinx;
 using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
+TimeLogger& TimeLogger::instance()
+{
+  static TimeLogger _instance{};
+  return _instance;
+}
+
+//-----------------------------------------------------------------------------
 void TimeLogger::register_timing(
-    std::string task, std::chrono::duration<double, std::ratio<1>> time)
+    const std::string& task, std::chrono::duration<double, std::ratio<1>> time)
 {
   // Print a message
   std::string line
@@ -40,7 +47,7 @@ void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction) const
 
   // Print just on rank 0
   if (dolfinx::MPI::rank(comm) == 0)
-    std::cout << str << std::endl;
+    std::cout << str << '\n';
 }
 //-----------------------------------------------------------------------------
 Table TimeLogger::timing_table() const
@@ -60,7 +67,7 @@ Table TimeLogger::timing_table() const
 }
 //-----------------------------------------------------------------------------
 std::pair<int, std::chrono::duration<double, std::ratio<1>>>
-TimeLogger::timing(std::string task) const
+TimeLogger::timing(const std::string& task) const
 {
   // Find timing
   auto it = _timings.find(task);

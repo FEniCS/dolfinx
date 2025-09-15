@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <dolfinx/mesh/utils.h>
 #include <mpi.h>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -34,11 +35,12 @@ std::array<T, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
   // FIXME: return of small dynamic array is expensive
   std::span<const std::int32_t> entity(&index, 1);
   const std::vector<std::int32_t> vertex_indices
-      = mesh::entities_to_geometry(mesh, dim, entity, false);
+      = mesh::entities_to_geometry(mesh, dim, entity, false).first;
 
   std::array<T, 6> b;
-  auto b0 = std::span(b).template subspan<0, 3>();
-  auto b1 = std::span(b).template subspan<3, 3>();
+  std::span<T, 3> b0(b.data(), 3);
+  std::span<T, 3> b1(b.data() + 3, 3);
+
   std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()), 3, b0.begin());
   std::copy_n(std::next(xg.begin(), 3 * vertex_indices.front()), 3, b1.begin());
 
@@ -203,6 +205,11 @@ template <std::floating_point T>
 class BoundingBoxTree
 {
 private:
+  /// @brief Return a range of entity indices of the given topological dimension
+  /// (including ghosts).
+  /// @param topology Topology to get entities from.
+  /// @param tdim Dimension of the entities.
+  /// @return Range of local indices, including ghosts.
   static std::vector<std::int32_t> range(mesh::Topology& topology, int tdim)
   {
     topology.create_entities(tdim);
@@ -219,14 +226,32 @@ public:
   /// @param[in] mesh Mesh for building the bounding box tree.
   /// @param[in] tdim Topological dimension of the mesh entities to
   /// build the bounding box tree for.
-  /// @param[in] entities List of entity indices (local to process) to
-  /// compute the bounding box for (may be empty, if none).
   /// @param[in] padding Value to pad (extend) the the bounding box of
   /// each entity by.
+  /// @param[in] entities List of entity indices (local to process) to
+  /// compute the bounding box for. If `std::nullopt`, the bounding box tree is
+  /// computed for all local entities (including ghosts) of the given `tdim`.
   BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim, double padding,
-                  std::span<const std::int32_t> entities)
+                  std::optional<std::span<const std::int32_t>> entities
+                  = std::nullopt)
       : _tdim(tdim)
   {
+    // Initialize entities of given dimension if they don't exist
+    mesh.topology_mutable()->create_entities(tdim);
+
+    // Get input entities. If not provided, get all local entities of the given
+    // dimension (including ghosts)
+    std::span<const std::int32_t> entities_span;
+    std::optional<std::vector<std::int32_t>> local_range(std::nullopt);
+    if (entities)
+      entities_span = entities.value();
+    else
+    {
+      local_range.emplace(range(*mesh.topology_mutable(), tdim));
+      entities_span = std::span<const std::int32_t>(local_range->data(),
+                                                    local_range->size());
+    }
+
     if (tdim < 0 or tdim > mesh.topology()->dim())
     {
       throw std::runtime_error(
@@ -234,14 +259,12 @@ public:
           "equal to the topological dimension of the mesh");
     }
 
-    // Initialize entities of given dimension if they don't exist
-    mesh.topology_mutable()->create_entities(tdim);
     mesh.topology_mutable()->create_connectivity(tdim, mesh.topology()->dim());
 
     // Create bounding boxes for all mesh entities (leaves)
     std::vector<std::pair<std::array<T, 6>, std::int32_t>> leaf_bboxes;
-    leaf_bboxes.reserve(entities.size());
-    for (std::int32_t e : entities)
+    leaf_bboxes.reserve(entities_span.size());
+    for (std::int32_t e : entities_span)
     {
       std::array<T, 6> b = impl_bb::compute_bbox_of_entity(mesh, tdim, e);
       std::transform(b.cbegin(), std::next(b.cbegin(), 3), b.begin(),
@@ -257,23 +280,10 @@ public:
           = impl_bb::build_from_leaf(leaf_bboxes);
 
     spdlog::info("Computed bounding box tree with {} nodes for {} entities",
-                 num_bboxes(), entities.size());
+                 num_bboxes(), entities_span.size());
   }
 
-  /// Constructor
-  /// @param[in] mesh The mesh for building the bounding box tree
-  /// @param[in] tdim The topological dimension of the mesh entities to
-  /// build the bounding box tree for
-  /// @param[in] padding Value to pad (extend) the the bounding box of
-  /// each entity by.
-  BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim, T padding)
-      : BoundingBoxTree::BoundingBoxTree(
-            mesh, tdim, range(mesh.topology_mutable(), tdim), padding)
-  {
-    // Do nothing
-  }
-
-  /// Constructor @param[in] points Cloud of points, with associated
+    /// Constructor @param[in] points Cloud of points, with associated
   /// point identifier index, to build the bounding box tree around
   BoundingBoxTree(std::vector<std::pair<std::array<T, 3>, std::int32_t>> points)
       : _tdim(0)
@@ -335,8 +345,8 @@ public:
     if (num_bboxes() > 0)
       std::copy_n(std::prev(_bbox_coordinates.end(), 6), 6, send_bbox.begin());
     std::vector<T> recv_bbox(mpi_size * 6);
-    MPI_Allgather(send_bbox.data(), 6, dolfinx::MPI::mpi_type<T>(),
-                  recv_bbox.data(), 6, dolfinx::MPI::mpi_type<T>(), comm);
+    MPI_Allgather(send_bbox.data(), 6, dolfinx::MPI::mpi_t<T>, recv_bbox.data(),
+                  6, dolfinx::MPI::mpi_t<T>, comm);
 
     std::vector<std::pair<std::array<T, 6>, std::int32_t>> _recv_bbox(mpi_size);
     for (std::size_t i = 0; i < _recv_bbox.size(); ++i)
@@ -358,6 +368,20 @@ public:
 
   /// Return number of bounding boxes
   std::int32_t num_bboxes() const { return _bboxes.size() / 2; }
+
+  /// @brief Access coordinates of lower and upper corners of bounding boxes
+  /// (const version).
+  ///
+  /// @return The flattened row-major coordinate vector, where the shape is
+  /// `(2*num_bboxes, 3)`.
+  std::span<const T> bbox_coordinates() const { return _bbox_coordinates; }
+
+  /// @brief Access coordinates of lower and upper corners of bounding boxes
+  /// (non-const version)
+  ///
+  /// @return The flattened row-major coordinate vector, where the shape is
+  /// `(2*num_bboxes, 3)`.
+  std::span<T> bbox_coordinates() { return _bbox_coordinates; }
 
   /// Topological dimension of leaf entities
   int tdim() const { return _tdim; }
