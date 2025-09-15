@@ -478,6 +478,8 @@ public:
     auto V0 = std::visit([](auto& u) { return u->function_space().get(); },
                          u.front());
     assert(V0);
+
+    // Replace first function space if it is a space for piecewise constants
     bool has_V0_changed = false;
     for (auto& v : u)
     {
@@ -605,8 +607,9 @@ public:
     _engine->BeginStep();
     _engine->template Put<double>(var_step, t);
 
-    // If we have no functions or DG functions write the mesh to file
-    if (_has_piecewise_constant or _u.empty())
+    // If we have no non-constant functions write the mesh to file
+    auto [names, dg0_names] = impl_vtx::extract_function_names<T>(_u);
+    if ((names.size() == 0) or _u.empty())
     {
       impl_vtx::vtx_write_mesh(*_io, *_engine, *_mesh);
     }

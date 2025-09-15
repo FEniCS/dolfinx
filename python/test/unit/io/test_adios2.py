@@ -224,3 +224,36 @@ class TestVTX:
             else:
                 assert int(var["AvailableStepsCount"]) == target_all
         adios_file.close()
+
+
+
+    def test_dg_0_data(self, tempdir):
+        """Test that we can mix DG-0 and other Lagrange functions."""
+        from dolfinx.io import VTXWriter
+
+        adios2 = pytest.importorskip("adios2", minversion="2.10.0")
+        if not adios2.is_built_with_mpi:
+            pytest.skip("Require adios2 built with MPI support")
+
+        mesh = generate_mesh(2, False)
+        v = Function(functionspace(mesh, ("Lagrange", 2, (2, ))))
+        filename = Path(tempdir, "v.bp")
+        v.name = "v"
+        v.interpolate(lambda x: (x[0], -x[1]))
+        z = Function(v.function_space)
+        z.name = "z"
+        z.interpolate(lambda x : (np.sin(x[0]), x[1]))
+
+        q = Function(functionspace(mesh, ("DG", 0, (2, ))))
+        q.name = "q"
+        q.x.array[:] = np.arange(q.x.array.size, dtype=q.x.array.dtype)
+ 
+        # Save three steps
+        writer = VTXWriter(mesh.comm, filename, [v,q])
+        writer.write(0)
+        v.interpolate(lambda x: (0.5 * x[0], x[1]))
+        writer.write(1)
+        q.interpolate(lambda x: (x[1], x[0]))
+        writer.write(2)
+        writer.close()
+
