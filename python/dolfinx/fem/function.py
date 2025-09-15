@@ -1,4 +1,5 @@
-# Copyright (C) 2009-2024 Chris N. Richardson, Garth N. Wells, Michal Habera and Jørgen S. Dokken
+# Copyright (C) 2009-2024 Chris N. Richardson, Garth N. Wells,
+# Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -8,6 +9,7 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Callable, Sequence
 from functools import cached_property, singledispatch
 
 import numpy as np
@@ -28,15 +30,17 @@ if typing.TYPE_CHECKING:
 
 
 class Constant(ufl.Constant):
-    _cpp_object: typing.Union[
-        _cpp.fem.Constant_complex64,
-        _cpp.fem.Constant_complex128,
-        _cpp.fem.Constant_float32,
-        _cpp.fem.Constant_float64,
-    ]
+    _cpp_object: (
+        _cpp.fem.Constant_complex64
+        | _cpp.fem.Constant_complex128
+        | _cpp.fem.Constant_float32
+        | _cpp.fem.Constant_float64
+    )
 
     def __init__(
-        self, domain, c: typing.Union[np.ndarray, typing.Sequence, np.floating, np.complexfloating]
+        self,
+        domain,
+        c: float | np.floating | complex | np.complexfloating | Sequence | np.ndarray,
     ):
         """A constant with respect to a domain.
 
@@ -91,10 +95,10 @@ class Expression:
         self,
         e: ufl.core.expr.Expr,
         X: np.ndarray,
-        comm: typing.Optional[_MPI.Comm] = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
-        dtype: typing.Optional[npt.DTypeLike] = None,
+        comm: _MPI.Comm | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        dtype: npt.DTypeLike | None = None,
     ):
         """Create a DOLFINx Expression.
 
@@ -140,10 +144,7 @@ class Expression:
 
         # Attempt to deduce dtype
         if dtype is None:
-            try:
-                dtype = e.dtype
-            except AttributeError:
-                dtype = default_scalar_type
+            dtype = getattr(e, "dtype", default_scalar_type)
 
         # Compile UFL expression with JIT
         if form_compiler_options is None:
@@ -197,7 +198,7 @@ class Expression:
         self,
         mesh: Mesh,
         entities: np.ndarray,
-        values: typing.Optional[np.ndarray] = None,
+        values: np.ndarray | None = None,
     ) -> np.ndarray:
         """Evaluate Expression on entities.
 
@@ -274,7 +275,7 @@ class Expression:
         return self._cpp_object.value_size
 
     @property
-    def argument_space(self) -> typing.Optional[FunctionSpace]:
+    def argument_space(self) -> FunctionSpace | None:
         """Argument function space if Expression has argument."""
         return self._argument_space
 
@@ -298,19 +299,19 @@ class Function(ufl.Coefficient):
     (domain, element and dofmap) and a vector holding the
     degrees-of-freedom."""
 
-    _cpp_object: typing.Union[
-        _cpp.fem.Function_complex64,
-        _cpp.fem.Function_complex128,
-        _cpp.fem.Function_float32,
-        _cpp.fem.Function_float64,
-    ]
+    _cpp_object: (
+        _cpp.fem.Function_complex64
+        | _cpp.fem.Function_complex128
+        | _cpp.fem.Function_float32
+        | _cpp.fem.Function_float64
+    )
 
     def __init__(
         self,
         V: FunctionSpace,
-        x: typing.Optional[la.Vector] = None,
-        name: typing.Optional[str] = None,
-        dtype: typing.Optional[npt.DTypeLike] = None,
+        x: la.Vector | None = None,
+        name: str | None = None,
+        dtype: npt.DTypeLike | None = None,
     ):
         """Initialize a finite element Function.
 
@@ -427,9 +428,9 @@ class Function(ufl.Coefficient):
 
     def interpolate(
         self,
-        u0: typing.Union[typing.Callable, Expression, Function],
-        cells0: typing.Optional[np.ndarray] = None,
-        cells1: typing.Optional[np.ndarray] = None,
+        u0: Callable | Expression | Function,
+        cells0: np.ndarray | None = None,
+        cells1: np.ndarray | None = None,
     ) -> None:
         """Interpolate an expression.
 
@@ -573,13 +574,19 @@ class ElementMetaData(typing.NamedTuple):
 
     family: str
     degree: int
-    shape: typing.Optional[tuple[int, ...]] = None
-    symmetry: typing.Optional[bool] = None
+    shape: tuple[int, ...] | None = None
+    symmetry: bool | None = None
 
 
 def functionspace(
     mesh: Mesh,
-    element: typing.Union[ufl.FiniteElementBase, ElementMetaData, tuple[str, int, tuple, bool]],
+    element: (
+        ufl.finiteelement.AbstractFiniteElement
+        | ElementMetaData
+        | tuple[str, int]
+        | tuple[str, int, tuple]
+        | tuple[str, int, tuple, bool]
+    ),
 ) -> FunctionSpace:
     """Create a finite element function space.
 
@@ -593,30 +600,33 @@ def functionspace(
     # Create UFL element
     dtype = mesh.geometry.x.dtype
     try:
-        e = ElementMetaData(*element)
+        e = ElementMetaData(*element)  # type: ignore
         ufl_e = basix.ufl.element(
-            e.family, mesh.basix_cell(), e.degree, shape=e.shape, symmetry=e.symmetry, dtype=dtype
+            e.family,
+            mesh.basix_cell(),  # type: ignore
+            e.degree,
+            shape=e.shape,
+            symmetry=e.symmetry,
+            dtype=dtype,
         )
     except TypeError:
         ufl_e = element  # type: ignore
 
     # Check that element and mesh cell types match
-    if ufl_e.cell != mesh.ufl_domain().ufl_cell():
+    if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
-
     # Create DOLFINx objects
-    element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
-    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)
-
-    assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (
+    element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)  # type: ignore
+    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)  # type: ignore
+    assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (  # type: ignore
         "Mesh and element dtype are not compatible."
     )
 
     # Initialize the cpp.FunctionSpace
     try:
-        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, element._cpp_object, cpp_dofmap)
+        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
     except TypeError:
-        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, element._cpp_object, cpp_dofmap)
+        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
 
     return FunctionSpace(mesh, ufl_e, cppV)
 
@@ -624,14 +634,14 @@ def functionspace(
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
-    _cpp_object: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64]
+    _cpp_object: _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
     _mesh: Mesh
 
     def __init__(
         self,
         mesh: Mesh,
-        element: ufl.FiniteElementBase,
-        cppV: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64],
+        element: ufl.finiteelement.AbstractFiniteElement,
+        cppV: (_cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64),
     ):
         """Create a finite element function space.
 
@@ -759,7 +769,8 @@ class FunctionSpace(ufl.FunctionSpace):
         return V, dofs
 
     def tabulate_dof_coordinates(self) -> npt.NDArray[np.float64]:
-        """Tabulate the coordinates of the degrees-of-freedom in the function space.
+        """Tabulate the coordinates of the degrees-of-freedom in the
+        function space.
 
         Returns:
             Coordinates of the degrees-of-freedom.

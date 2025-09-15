@@ -22,20 +22,16 @@
 # To start, the required modules are imported and some PyVista
 # parameters set.
 
-from mpi4py import MPI
 
 # +
+from mpi4py import MPI
+
 import numpy as np
+import pyvista
 
 import dolfinx.plot as plot
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import CellType, compute_midpoints, create_unit_cube, create_unit_square, meshtags
-
-try:
-    import pyvista
-except ModuleNotFoundError:
-    print("pyvista is required for this demo")
-    exit(0)
 
 # If environment variable PYVISTA_OFF_SCREEN is set to true save a png
 # otherwise create interactive plot
@@ -256,8 +252,8 @@ def plot_nedelec():
     # Add this grid (as a wireframe) to the plotter
     plotter.add_mesh(grid, style="wireframe", line_width=2, color="black")
 
-    # Create a function space consisting of first order Nédélec (first kind)
-    # elements and interpolate a vector-valued expression
+    # Create a function space consisting of first order Nédélec (first
+    # kind) elements and interpolate a vector-valued expression
     V = functionspace(msh, ("N1curl", 2))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: (x[2] ** 2, np.zeros(x.shape[1]), -x[0] * x[2]))
@@ -276,7 +272,8 @@ def plot_nedelec():
     cells, cell_types, x = plot.vtk_mesh(V0)
     grid = pyvista.UnstructuredGrid(cells, cell_types, x)
 
-    # Create point cloud of vertices, and add the vertex values to the cloud
+    # Create point cloud of vertices, and add the vertex values to the
+    # cloud
     grid.point_data["u"] = u0.x.array.reshape(x.shape[0], V0.dofmap.index_map_bs)
     glyphs = grid.glyph(orient="u", factor=0.1)
 

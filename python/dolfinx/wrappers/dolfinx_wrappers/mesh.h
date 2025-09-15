@@ -15,7 +15,7 @@ namespace dolfinx_wrappers::part::impl
 {
 /// Wrap a Python graph partitioning function as a C++ function
 template <typename Functor>
-auto create_partitioner_cpp(Functor p)
+auto create_partitioner_cpp(Functor&& p)
 {
   return [p](MPI_Comm comm, int nparts,
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
@@ -28,7 +28,7 @@ auto create_partitioner_cpp(Functor p)
 
 /// Wrap a C++ cell partitioning function as a Python function
 template <typename Functor>
-auto create_cell_partitioner_py(Functor p)
+auto create_cell_partitioner_py(Functor&& p)
 {
   return [p](dolfinx_wrappers::MPICommWrapper comm, int n,
              const std::vector<dolfinx::mesh::CellType>& cell_types,
@@ -36,7 +36,7 @@ auto create_cell_partitioner_py(Functor p)
   {
     std::vector<std::span<const std::int64_t>> cells;
     std::ranges::transform(
-        cells_nb, std::back_inserter(cells), [](auto c)
+        cells_nb, std::back_inserter(cells), [](auto& c)
         { return std::span<const std::int64_t>(c.data(), c.size()); });
     return p(comm.get(), n, cell_types, cells);
   };

@@ -13,7 +13,7 @@
 #     name: python3-complex
 # ---
 
-# # Electromagnetic scattering from a wire with scattering boundary conditions
+# # Electromagnetic scattering from a wire with scattering boundary conditions # noqa
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
@@ -30,44 +30,19 @@
 # First of all, let's import the modules that will be used:
 
 # +
-import importlib.util
 import sys
 
 from mpi4py import MPI
+from petsc4py import PETSc
 
+import gmsh
 import numpy as np
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-
-    from petsc4py import PETSc
-
-    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
-        # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
-        # than MUMPS and does not trigger memory failures.
-        exit(0)
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
-
-
 from scipy.special import h2vp, hankel2, jv, jvp
 
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import LinearProblem
-
-try:
-    import gmsh
-except ModuleNotFoundError:
-    print("This demo requires gmsh to be installed")
-    exit(0)
 
 try:
     import pyvista
@@ -77,6 +52,11 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
+if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+    print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+    # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
+    # than MUMPS and does not trigger memory failures.
+    exit(0)
 
 # -
 # This file defines the `generate_mesh_wire` function, which is used to
@@ -163,8 +143,8 @@ def generate_mesh_wire(
 # being hit normally by a TM-polarized electromagnetic wave.
 #
 # The formula are taken from:
-# Milton Kerker, "The Scattering of Light and Other Electromagnetic Radiation",
-# Chapter 6, Elsevier, 1969.
+# Milton Kerker, "The Scattering of Light and Other Electromagnetic
+# Radiation", Chapter 6, Elsevier, 1969.
 #
 # ## Implementation
 # First of all, let's define the parameters of the problem:
@@ -442,7 +422,7 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-mesh_data = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
+mesh_data = io.gmsh.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
 
@@ -562,8 +542,8 @@ eps.x.scatter_forward()
 # & \int_{\Omega}-\nabla \cdot(\nabla\times\mathbf{E}_s \times
 # \bar{\mathbf{v}})-\nabla \times \mathbf{E}_s \cdot \nabla
 # \times\bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
-# \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
-# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{dx} \\
+# \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b
+# \right) \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{dx} \\
 # +&\int_{\partial \Omega}
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
@@ -591,10 +571,11 @@ eps.x.scatter_forward()
 #
 # Cancelling $-(\nabla\times\mathbf{E}_s \times \bar{\mathbf{V}})
 # \cdot\mathbf{n}$  and $\mathbf{n} \times \nabla \times \mathbf{E}_s
-# \cdot \bar{\mathbf{V}}$ and rearrange $\left((\mathbf{n} \times \mathbf{E}_s)
-# \times \mathbf{n}\right) \cdot \bar{\mathbf{v}}$ to $ (\mathbf{E}_s \times\mathbf{n})
-# \cdot (\bar{\mathbf{v}} \times \mathbf{n})$ using the triple product rule $\mathbf{A}
-# \cdot(\mathbf{B} \times \mathbf{C})=\mathbf{B} \cdot(\mathbf{C} \times
+# \cdot \bar{\mathbf{V}}$ and rearrange $\left((\mathbf{n} \times
+# \mathbf{E}_s) \times \mathbf{n}\right) \cdot \bar{\mathbf{v}}$ to
+# $(\mathbf{E}_s \times\mathbf{n}) \cdot (\bar{\mathbf{v}} \times
+# \mathbf{n})$ using the triple product rule $\mathbf{A} \cdot(\mathbf{B}
+# \times \mathbf{C})=\mathbf{B} \cdot(\mathbf{C} \times
 # \mathbf{A})=\mathbf{C} \cdot(\mathbf{A} \times \mathbf{B})$, we get:
 #
 # $$
@@ -604,8 +585,8 @@ eps.x.scatter_forward()
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
 # \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\
 # +&\int_{\partial \Omega}
-# \left(j n_bk_{0}+\frac{1}{2r}\right)( \mathbf{n} \times \mathbf{E}_s \times
-# \mathbf{n}) \cdot \bar{\mathbf{v}} ~\mathrm{d} s = 0.
+# \left(j n_bk_{0}+\frac{1}{2r}\right)( \mathbf{n} \times \mathbf{E}_s
+# \times \mathbf{n}) \cdot \bar{\mathbf{v}} ~\mathrm{d} s = 0.
 # \end{align}
 # $$
 #
@@ -627,8 +608,15 @@ F = (
 # `Esh`:
 
 a, L = ufl.lhs(F), ufl.rhs(F)
-problem = LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(
+    a,
+    L,
+    bcs=[],
+    petsc_options_prefix="demo_scattering_boundary_conditions_",
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
+)
 Esh = problem.solve()
+assert problem.solver.getConvergedReason() > 0
 
 # We save the solution as an [ADIOS2
 # bp](https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html)
@@ -640,6 +628,7 @@ Esh = problem.solve()
 gdim = mesh_data.mesh.geometry.dim
 V_dg = fem.functionspace(mesh_data.mesh, ("Discontinuous Lagrange", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
+assert isinstance(Esh, fem.Function)
 Esh_dg.interpolate(Esh)
 
 with io.VTXWriter(mesh_data.mesh.comm, "Esh.bp", Esh_dg) as vtx:

@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools for assembling and manipulating finite element forms."""
 
+import typing
+
 import numpy as np
 import numpy.typing as npt
 
@@ -18,7 +20,6 @@ from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
 from dolfinx.cpp.fem import transpose_dofmap
 from dolfinx.cpp.la import SparsityPattern
-from dolfinx.cpp.mesh import Topology
 from dolfinx.fem.assemble import (
     apply_lifting,
     assemble_matrix,
@@ -37,7 +38,7 @@ from dolfinx.fem.bcs import (
     locate_dofs_geometrical,
     locate_dofs_topological,
 )
-from dolfinx.fem.dofmap import DofMap
+from dolfinx.fem.dofmap import DofMap, create_dofmaps
 from dolfinx.fem.element import CoordinateElement, FiniteElement, coordinate_element, finiteelement
 from dolfinx.fem.forms import (
     Form,
@@ -58,6 +59,9 @@ from dolfinx.fem.function import (
 )
 from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
 from dolfinx.la import MatrixCSR as _MatrixCSR
+
+if typing.TYPE_CHECKING:
+    import dolfinx.mesh
 
 
 def create_sparsity_pattern(a: Form):
@@ -99,7 +103,8 @@ def create_interpolation_data(
     cells: npt.NDArray[np.int32],
     padding: float = 1e-14,
 ) -> _PointOwnershipData:
-    """Generate data needed to interpolate discrete functions across different meshes.
+    """Generate data needed to interpolate discrete functions across
+    different meshes.
 
     Args:
         V_to: Function space to interpolate into
@@ -159,7 +164,8 @@ def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCS
 
 
 def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
-    """Assemble an interpolation matrix for two function spaces on the same mesh.
+    """Assemble an interpolation matrix for two function spaces on the same
+    mesh.
 
     Args:
         space0: space to interpolate from
@@ -172,9 +178,10 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
 
 
 def compute_integration_domains(
-    integral_type: IntegralType, topology: Topology, entities: np.ndarray
+    integral_type: IntegralType, topology: "dolfinx.mesh.Topology", entities: np.ndarray
 ):
-    """Given an integral type and a set of entities compute integration entities.
+    """Given an integral type and a set of entities compute integration
+    entities.
 
     This function returns a list ``[(id, entities)]``. For cell
     integrals ``entities`` are the cell indices. For exterior facet
@@ -228,6 +235,7 @@ __all__ = [
     "compile_form",
     "compute_integration_domains",
     "coordinate_element",
+    "create_dofmaps",
     "create_form",
     "create_interpolation_data",
     "create_matrix",

@@ -24,17 +24,7 @@ from mpi4py import MPI
 
 import numpy as np
 import numpy.typing as npt
-
-if MPI.COMM_WORLD.size > 1:
-    print("This demo works only in serial.")
-    exit(0)
-
-try:
-    import pyamg
-except (ImportError, AttributeError):
-    print('This demo requires pyamg, install using "pip install pyamg"')
-    exit(0)
-
+import pyamg
 
 import ufl
 from dolfinx import fem, io
@@ -49,23 +39,27 @@ from dolfinx.fem import (
 )
 from dolfinx.mesh import CellType, create_box, locate_entities_boundary
 
+if MPI.COMM_WORLD.size > 1:
+    print("This demo works only in serial.")
+    exit(0)
 # -
 
 
 # +
-def poisson_problem(dtype: npt.DTypeLike, solver_type: str):
+def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
     """Solve a 3D Poisson problem using Ruge-Stuben algebraic multigrid.
 
     Args:
         dtype: Scalar type to use.
-        solver_type: pyamg solver type, either "ruge_stuben" or "smoothed_aggregation"
+        solver_type: pyamg solver type, either "ruge_stuben" or
+            "smoothed_aggregation"
     """
 
     real_type = np.real(dtype(0)).dtype
     mesh = create_box(
         comm=MPI.COMM_WORLD,
         points=[(0.0, 0.0, 0.0), (3.0, 2.0, 1.0)],
-        n=[30, 20, 10],
+        n=(30, 20, 10),
         cell_type=CellType.tetrahedron,
         dtype=real_type,
     )
@@ -158,7 +152,7 @@ def nullspace_elasticty(Q: fem.FunctionSpace) -> list[np.ndarray]:
 
 
 # +
-def elasticity_problem(dtype):
+def elasticity_problem(dtype) -> None:
     """Solve a 3D linearised elasticity problem using a smoothed
     aggregation algebraic multigrid method.
 
@@ -168,7 +162,7 @@ def elasticity_problem(dtype):
     mesh = create_box(
         comm=MPI.COMM_WORLD,
         points=[(0.0, 0.0, 0.0), (3.0, 2.0, 1.0)],
-        n=[30, 20, 10],
+        n=(30, 20, 10),
         cell_type=CellType.tetrahedron,
         dtype=dtype,
     )
@@ -191,7 +185,8 @@ def elasticity_problem(dtype):
     λ = E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
 
     def σ(v):
-        """Return an expression for the stress σ given a displacement field"""
+        """Return an expression for the stress σ given a displacement
+        field"""
         return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(
             len(v)
         )

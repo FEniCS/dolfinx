@@ -69,7 +69,8 @@ class numba_utils:
                          m: int, rows: npt.NDArray[PETSc.IntType],
                          n: int, cols: npt.NDArray[PETSc.IntType],
                          data: npt.NDArray[PETSc.ScalarTYpe], mode: int):
-                MatSetValuesLocal(A, m, rows.ctypes, n, cols.ctypes, data.ctypes, mode)
+                MatSetValuesLocal(A, m, rows.ctypes, n, cols.ctypes,
+                                  data.ctypes, mode)
     """
 
     try:
@@ -127,7 +128,8 @@ class ctypes_utils:
                          m: int, rows: npt.NDArray[PETSc.IntType],
                          n: int, cols: npt.NDArray[PETSc.IntType],
                          data: npt.NDArray[PETSc.ScalarTYpe], mode: int):
-                MatSetValuesLocal(A, m, rows.ctypes, n, cols.ctypes, data.ctypes, mode)
+                MatSetValuesLocal(A, m, rows.ctypes, n, cols.ctypes,
+                                  data.ctypes, mode)
     """
 
     try:
@@ -176,12 +178,13 @@ class cffi_utils:
     Registers Numba's complex types with CFFI.
 
     If PETSc is available, CFFI convenience functions for calling PETSc C
-    functions are also created. These are typically called from within Numba
-    functions.
+    functions are also created. These are typically called from within
+    Numba functions.
 
     Note:
         `CFFI <https://cffi.readthedocs.io/>`_ and  `Numba
-        <https://numba.pydata.org/>`_ must be available to use these utilities.
+        <https://numba.pydata.org/>`_ must be available to use these
+        utilities.
 
     Examples:
         A typical use of these utility functions is::
@@ -192,8 +195,9 @@ class cffi_utils:
                          m: int, rows: npt.NDArray[PETSc.IntType],
                          n: int, cols: npt.NDArray[PETSc.IntType],
                          data: npt.NDArray[PETSc.ScalarType], mode: int):
-                MatSetValuesLocal(A, m, ffi.from_buffer(rows), n, ffi.from_buffer(cols),
-                                ffi.from_buffer(rows(data), mode)
+                MatSetValuesLocal(A, m, ffi.from_buffer(rows), n,
+                                  ffi.from_buffer(cols),
+                                  ffi.from_buffer(rows(data), mode)
     """
 
     import cffi as _cffi
@@ -244,12 +248,12 @@ class cffi_utils:
                                     """
         )
 
-        MatSetValuesLocal = _lib_cffi.MatSetValuesLocal
+        MatSetValuesLocal = _lib_cffi.MatSetValuesLocal  # type: ignore[attr-defined]
         """See PETSc `MatSetValuesLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesLocal>`_
         documentation."""
 
-        MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal
+        MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal  # type: ignore[attr-defined]
         """See PETSc `MatSetValuesBlockedLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""

@@ -89,7 +89,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     // Use ElementDofLayout of the cell to get vertex dof indices (local
     // to a cell), i.e. build a map from local vertex index to associated
     // local dof index
-    const std::vector<int> entity_layout
+    const std::vector<int>& entity_layout
         = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
     std::vector<int> entity_vertex_dofs;
     for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
@@ -136,6 +136,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
 
     // Determine destination by index of first vertex
     std::vector<int> dest0;
+    dest0.reserve(entities.extent(0));
     for (std::size_t e = 0; e < entities.extent(0); ++e)
     {
       dest0.push_back(
@@ -353,6 +354,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     dolfinx::MPI::check_error(comm, err);
 
     std::vector<int> num_items_send;
+    num_items_send.reserve(send_data.size());
     for (auto& x : send_data)
       num_items_send.push_back(x.size() / entities.extent(1));
 

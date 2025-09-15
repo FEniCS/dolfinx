@@ -36,6 +36,7 @@ target_include_directories(
 
 # ------------------------------------------------------------------------------
 # Configure the common/version.h file
+
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/common/version.h.in common/version.h @ONLY
 )
@@ -47,6 +48,11 @@ set_target_properties(
   PROPERTIES VERSION ${DOLFINX_VERSION}
              SOVERSION ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR}
 )
+
+if(ENABLE_CLANG_TIDY)
+  find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
+  set_target_properties(dolfinx PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy")
+endif()
 
 # Add git revision flag to the one affected file
 set_source_files_properties(
@@ -152,39 +158,28 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Install dolfinx library and header files
-if(WIN32)
-  install(
+install(
     TARGETS dolfinx
     EXPORT DOLFINXTargets
     RUNTIME_DEPENDENCY_SET dependencies
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeExecutables
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
-  )
+)
 
-  if(INSTALL_RUNTIME_DEPENDENCIES)
-    list(APPEND PRE_EXCLUDE_REGEXES "api-ms-.*")
-    list(APPEND PRE_EXCLUDE_REGEXES "ext-ms-.*")
-    install(
-      RUNTIME_DEPENDENCY_SET
-      dependencies
-      DESTINATION
-      ${CMAKE_INSTALL_BINDIR}
-      PRE_EXCLUDE_REGEXES
-      ${PRE_EXCLUDE_REGEXES}
-      POST_EXCLUDE_REGEXES
-      ".*system32/.*\\.dll"
-      DIRECTORIES
-      $<TARGET_FILE_DIR:Basix::basix>
-    )
-  endif()
-else()
+if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
   install(
-    TARGETS dolfinx
-    EXPORT DOLFINXTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeExecutables
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
+    RUNTIME_DEPENDENCY_SET
+    dependencies
+    DESTINATION
+    ${CMAKE_INSTALL_BINDIR}
+    PRE_EXCLUDE_REGEXES
+    [[api-ms-win-.*]] [[ext-ms-.*]]
+    POST_EXCLUDE_REGEXES
+    [[.*(\\|/)system32(\\|/).*\.dll]]
+    DIRECTORIES
+    $<TARGET_FILE_DIR:Basix::basix>
+    $<TARGET_FILE_DIR:hdf5::hdf5>
   )
 endif()
 
@@ -295,6 +290,7 @@ list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES)
 list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_LIBS)
 
 # Convert include dirs to -I<incdir> form
+set(PKG_INCLUDES)
 foreach(_inc_dir ${PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES})
   set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
 endforeach()
@@ -345,11 +341,6 @@ endforeach()
 separate_arguments(PKG_LINKFLAGS)
 list(REMOVE_DUPLICATES PKG_LINKFLAGS)
 string(REPLACE ";" " " PKG_LINKFLAGS "${PKG_LINKFLAGS}")
-
-# Add additional link flags
-foreach(_linkflag ${DOLFINX_LINK_FLAGS})
-  set(PKG_LINKFLAGS "${PKG_LINKFLAGS} ${_linkflag}")
-endforeach()
 
 # Boost include dir (used as pkg-config variable)
 get_target_property(

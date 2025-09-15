@@ -225,7 +225,8 @@ def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type):
 def test_higher_order_function(tempdir):
     """Test Function output for higher-order meshes."""
     gmsh = pytest.importorskip("gmsh")
-    from dolfinx.io import gmshio
+
+    from dolfinx.io import gmsh as gmshio
 
     gmsh.initialize()
 

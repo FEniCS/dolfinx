@@ -15,6 +15,7 @@
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <format>
 #include <numeric>
 #include <random>
 #include <set>
@@ -26,12 +27,12 @@ namespace
 {
 /// @brief Determine owner and sharing ranks sharing an index.
 ///
-/// @note Collective
-///
 /// Indices are sent to a 'post office' rank, which uses a
 /// (deterministic) random number generator to determine which rank is
 /// the 'owner'. This information is sent back to the ranks who sent the
 /// index to the post office.
+///
+/// @note Collective
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] indices Global indices to determine a an owning MPI ranks
@@ -144,7 +145,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
   std::vector<std::int32_t> num_items_per_pos1(recv_disp0.back(), 0);
 
   std::vector<int> owner;
-  std::vector<int> disp1 = {0};
+  std::vector<int> disp1{0};
   {
     std::mt19937 rng(dolfinx::MPI::rank(comm));
     auto it = indices_list.begin();
@@ -252,7 +253,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 
   // Build adjacency list
   std::vector<int> data;
-  std::vector<std::int32_t> graph_offsets = {0};
+  std::vector<std::int32_t> graph_offsets{0};
   {
     auto it = recv_buffer1.begin();
     while (it != recv_buffer1.end())
@@ -814,8 +815,8 @@ Topology::index_maps(int dim) const
   for (std::size_t i = 0; i < _entity_types[dim].size(); ++i)
   {
     auto it = _index_maps.find({dim, int(i)});
-    assert(it != _index_maps.end());
-    maps.push_back(it->second);
+    if (it != _index_maps.end())
+      maps.push_back(it->second);
   }
   return maps;
 }
@@ -825,7 +826,14 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
   if (_entity_types[dim].size() > 1)
     throw std::runtime_error(
         "Multiple index maps of this dimension. Call index_maps instead.");
-  return this->index_maps(dim).at(0);
+  auto im = index_maps(dim);
+  if (im.empty())
+  {
+    throw std::runtime_error(std::format(
+        "Missing IndexMap in Topology. Maybe you need to create_entities({}).",
+        dim));
+  }
+  return im.at(0);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
@@ -1230,6 +1238,7 @@ Topology mesh::create_topology(
   std::ranges::sort(global_to_local_vertices);
 
   std::vector<std::vector<std::int32_t>> _cells_local_idx;
+  _cells_local_idx.reserve(cells.size());
   for (std::span<const std::int64_t> c : cells)
   {
     _cells_local_idx.push_back(
@@ -1272,6 +1281,7 @@ Topology mesh::create_topology(
 
   // Set cell index map and connectivity
   std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells_c;
+  cells_c.reserve(cell_types.size());
   for (std::size_t i = 0; i < cell_types.size(); ++i)
   {
     cells_c.push_back(std::make_shared<graph::AdjacencyList<std::int32_t>>(
@@ -1445,8 +1455,9 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
                                mesh::CellType facet_type)
 {
   int tdim = topology.dim();
-  std::vector<mesh::CellType> cell_types = topology.entity_types(tdim);
-  std::vector<mesh::CellType> facet_types = topology.entity_types(tdim - 1);
+  const std::vector<mesh::CellType>& cell_types = topology.entity_types(tdim);
+  const std::vector<mesh::CellType>& facet_types
+      = topology.entity_types(tdim - 1);
 
   int facet_index = -1;
   for (std::size_t i = 0; i < facet_types.size(); ++i)
@@ -1462,6 +1473,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
 
   std::vector<std::vector<std::int32_t>> facet_pair_lists;
   for (std::size_t i = 0; i < cell_types.size(); ++i)
+  {
     for (std::size_t j = 0; j < cell_types.size(); ++j)
     {
       std::vector<std::int32_t> facet_pairs_ij;
@@ -1470,7 +1482,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
       auto cfi = topology.connectivity({tdim, static_cast<int>(i)},
                                        {tdim - 1, facet_index});
 
-      auto local_facet = [](auto cf, std::int32_t c, std::int32_t f)
+      auto local_facet = [](const auto& cf, std::int32_t c, std::int32_t f)
       {
         auto it = std::find(cf->links(c).begin(), cf->links(c).end(), f);
         if (it == cf->links(c).end())
@@ -1508,7 +1520,8 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
           {
             if (fci->num_links(k) == 1 and fcj->num_links(k) == 1)
             {
-              std::int32_t ci = fci->links(k)[0], cj = fcj->links(k)[0];
+              std::int32_t ci = fci->links(k)[0];
+              std::int32_t cj = fcj->links(k)[0];
               facet_pairs_ij.push_back(ci);
               facet_pairs_ij.push_back(local_facet(cfi, ci, k));
               facet_pairs_ij.push_back(cj);
@@ -1519,6 +1532,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
       }
       facet_pair_lists.push_back(facet_pairs_ij);
     }
+  }
 
   return facet_pair_lists;
 }

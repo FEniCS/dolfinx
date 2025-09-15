@@ -11,7 +11,7 @@ import pytest
 
 import dolfinx
 import ufl
-from dolfinx.io.vtkhdf import read_mesh, write_mesh
+from dolfinx.io.vtkhdf import read_mesh, write_cell_data, write_mesh, write_point_data
 from dolfinx.mesh import CellType, Mesh, create_unit_cube, create_unit_square
 
 
@@ -83,8 +83,14 @@ def test_read_write_higher_order():
     ]
 
     part = dolfinx.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.none)
+    max_cells_per_facet = 2
     mesh = dolfinx.cpp.mesh.create_mesh(
-        MPI.COMM_WORLD, cells_np, [e._cpp_object for e in coordinate_elements], geom, part
+        MPI.COMM_WORLD,
+        cells_np,
+        [e._cpp_object for e in coordinate_elements],
+        geom,
+        part,
+        max_cells_per_facet,
     )
     py_mesh = Mesh(mesh, None)
 
@@ -132,13 +138,19 @@ def test_read_write_higher_order_mesh(order):
 
     model = comm.bcast(model, root=rank)
     # Read in mesh with gmsh to create reference dat
-    ref_mesh = dolfinx.io.gmshio.model_to_mesh(gmsh.model, comm, rank).mesh
+    ref_mesh = dolfinx.io.gmsh.model_to_mesh(gmsh.model, comm, rank).mesh
     gmsh.finalize()
 
-    ref_volume_form = dolfinx.fem.form(1 * ufl.dx(domain=ref_mesh))
+    ref_volume_form = dolfinx.fem.form(
+        1 * ufl.dx(domain=ref_mesh),
+        dtype=ref_mesh.geometry.x.dtype,
+    )
     ref_volume = comm.allreduce(dolfinx.fem.assemble_scalar(ref_volume_form), op=MPI.SUM)
 
-    ref_surface_form = dolfinx.fem.form(1 * ufl.ds(domain=ref_mesh))
+    ref_surface_form = dolfinx.fem.form(
+        1 * ufl.ds(domain=ref_mesh),
+        dtype=ref_mesh.geometry.x.dtype,
+    )
     ref_surface = comm.allreduce(dolfinx.fem.assemble_scalar(ref_surface_form), op=MPI.SUM)
 
     # Write to file
@@ -150,10 +162,47 @@ def test_read_write_higher_order_mesh(order):
     mesh = read_mesh(comm, filename)
 
     # Compare surface and volume metrics
-    volume_form = dolfinx.fem.form(1 * ufl.dx(domain=mesh))
+    volume_form = dolfinx.fem.form(1 * ufl.dx(domain=mesh), dtype=mesh.geometry.x.dtype)
     volume = comm.allreduce(dolfinx.fem.assemble_scalar(volume_form), op=MPI.SUM)
     assert np.isclose(ref_volume, volume)
 
-    surface_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh))
+    surface_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh), dtype=mesh.geometry.x.dtype)
     surface = comm.allreduce(dolfinx.fem.assemble_scalar(surface_form), op=MPI.SUM)
     assert np.isclose(ref_surface, surface)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_write_point_data(dtype):
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
+    filename = "point_data.vtkhdf"
+    write_mesh(filename, mesh)
+    point_data = np.arange(mesh.geometry.index_map().size_local)
+    for j in range(3):
+        write_point_data(filename, mesh, point_data, float(j))
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("width", [1, 3])
+def test_write_cell_data(dtype, width):
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
+    filename = "cell_data.vtkhdf"
+    write_mesh(filename, mesh)
+    cell_data = np.arange(mesh.topology.index_map(2).size_local * width)
+    for j in range(3):
+        write_cell_data(filename, mesh, cell_data, float(j))
+
+
+def test_write_mixed_topology_data(mixed_topology_mesh):
+    mesh = Mesh(mixed_topology_mesh, None)
+    filename = "mixed_point_data.vtkhdf"
+    write_mesh(filename, mesh)
+    point_data = np.arange(mesh.geometry.index_map().size_local, dtype=np.float64)
+    for j in range(10):
+        write_point_data(filename, mesh, point_data, float(j))
+        point_data *= 0.9
+
+    filename = "mixed_cell_data.vtkhdf"
+    write_mesh(filename, mesh)
+    b = sum([im.size_local for im in mesh.topology.index_maps(mesh.topology.dim)])
+    cell_data = np.arange(b, dtype=np.float64)
+    write_cell_data(filename, mesh, cell_data, 0.0)

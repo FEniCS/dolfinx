@@ -57,7 +57,7 @@ public:
   explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
       : _function_space(V),
         _x(std::make_shared<la::Vector<value_type>>(
-            V->dofmap()->index_map, V->dofmap()->index_map_bs()))
+            V->dofmaps(0)->index_map, V->dofmaps(0)->index_map_bs()))
   {
     if (!V->component().empty())
     {
@@ -127,7 +127,7 @@ public:
 
     // Copy values into new vector
     std::span<const value_type> x_old = _x->array();
-    std::span<value_type> x_new = x->mutable_array();
+    std::span<value_type> x_new = x->array();
     for (std::size_t i = 0; i < map.size(); ++i)
     {
       assert((int)i < x_new.size());
@@ -347,7 +347,7 @@ public:
     std::size_t value_size = e0.value_size();
     if (e0.argument_space())
       throw std::runtime_error("Cannot interpolate Expression with Argument.");
-    if (value_size != _function_space->element()->value_size())
+    if (value_size != (std::size_t)_function_space->element()->value_size())
     {
       throw std::runtime_error(
           "Function value size not equal to Expression value size.");
@@ -572,7 +572,7 @@ public:
       auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
       auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
 
-      std::array<geometry_type, 3> Xpb = {0, 0, 0};
+      std::array<geometry_type, 3> Xpb{0, 0, 0};
       md::mdspan<geometry_type, md::extents<std::size_t, 1, md::dynamic_extent>>
           Xp(Xpb.data(), 1, tdim);
 
@@ -582,7 +582,7 @@ public:
         CoordinateElement<geometry_type>::compute_jacobian(dphi0, coord_dofs,
                                                            _J);
         CoordinateElement<geometry_type>::compute_jacobian_inverse(_J, _K);
-        std::array<geometry_type, 3> x0 = {0, 0, 0};
+        std::array<geometry_type, 3> x0{0, 0, 0};
         for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
           x0[i] += coord_dofs(0, i);
         CoordinateElement<geometry_type>::pull_back_affine(Xp, _K, x0, xp);
@@ -639,7 +639,7 @@ public:
     if (element->symmetric())
     {
       matrix_size = 0;
-      while (matrix_size * matrix_size < ushape[1])
+      while (matrix_size * matrix_size < (int)ushape[1])
         ++matrix_size;
     }
 

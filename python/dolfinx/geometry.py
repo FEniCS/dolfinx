@@ -1,4 +1,5 @@
-# Copyright (C) 2018-2021 Michal Habera, Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2018-2021 Michal Habera, Garth N. Wells and
+# Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -33,18 +34,18 @@ __all__ = [
 
 
 class PointOwnershipData:
-    """Convenience class for storing data related to the ownership of points."""
+    """Convenience class for storing data related to the ownership of
+    points."""
 
-    _cpp_object: typing.Union[
-        _cpp.geometry.PointOwnershipData_float32, _cpp.geometry.PointOwnershipData_float64
-    ]
+    _cpp_object: _cpp.geometry.PointOwnershipData_float32 | _cpp.geometry.PointOwnershipData_float64
 
     def __init__(self, ownership_data):
         """Wrap a C++ PointOwnershipData."""
         self._cpp_object = ownership_data
 
     def src_owner(self) -> npt.NDArray[np.int32]:
-        """Ranks owning each point sent into ownership determination for current process."""
+        """Ranks owning each point sent into ownership determination for
+        current process."""
         return self._cpp_object.src_owner
 
     def dest_owner(self) -> npt.NDArray[np.int32]:
@@ -56,16 +57,15 @@ class PointOwnershipData:
         return self._cpp_object.dest_points
 
     def dest_cells(self) -> npt.NDArray[np.int32]:
-        """Cell indices (local to process) where each entry of ``dest_points`` is located."""
+        """Cell indices (local to process) where each entry of
+        ``dest_points`` is located."""
         return self._cpp_object.dest_cells
 
 
 class BoundingBoxTree:
     """Bounding box trees used in collision detection."""
 
-    _cpp_object: typing.Union[
-        _cpp.geometry.BoundingBoxTree_float32, _cpp.geometry.BoundingBoxTree_float64
-    ]
+    _cpp_object: _cpp.geometry.BoundingBoxTree_float32 | _cpp.geometry.BoundingBoxTree_float64
 
     def __init__(self, tree):
         """Wrap a C++ BoundingBoxTree.
@@ -83,7 +83,7 @@ class BoundingBoxTree:
         return self._cpp_object.num_bboxes
 
     @property
-    def bbox_coordinates(self) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+    def bbox_coordinates(self) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Coordinates of lower and upper corners of bounding boxes.
 
         Note:
@@ -112,7 +112,7 @@ class BoundingBoxTree:
 def bb_tree(
     mesh: Mesh,
     dim: int,
-    entities: typing.Optional[npt.NDArray[np.int32]] = None,
+    entities: npt.NDArray[np.int32] | None = None,
     padding: float = 0.0,
 ) -> BoundingBoxTree:
     """Create a bounding box tree for use in collision detection.
@@ -193,7 +193,8 @@ def compute_closest_entity(
         midpoint_tree: A bounding box tree with the midpoints of all
             the mesh entities. This is used to accelerate the search.
         mesh: The mesh.
-        points: The points to check for collision, ``shape=(num_points,3)``.
+        points: The points to check for collision,
+            ``shape=(num_points,3)``.
 
     Returns:
         Mesh entity index for each point in ``points``. Returns -1 for a
@@ -206,7 +207,8 @@ def compute_closest_entity(
 
 
 def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) -> BoundingBoxTree:
-    """Create a bounding box tree for the midpoints of a subset of entities.
+    """Create a bounding box tree for the midpoints of a subset of
+    entities.
 
     Args:
         mesh: The mesh.
@@ -229,7 +231,8 @@ def compute_colliding_cells(
         mesh: The mesh.
         candidate_cells: Adjacency list of candidate colliding cells for
             the ith point in ``x``.
-        points: The points to check for collision ``shape=(num_points, 3)``,
+        points: The points to check for collision
+            ``shape=(num_points, 3)``,
 
     Returns:
         Adjacency list where the ith node is the list of entities that
@@ -266,7 +269,8 @@ def squared_distance(
 def compute_distance_gjk(
     p: npt.NDArray[np.floating], q: npt.NDArray[np.floating]
 ) -> npt.NDArray[np.floating]:
-    """Compute the distance between two convex bodies p and q, each defined by a set of points.
+    """Compute the distance between two convex bodies p and q, each defined
+    by a set of points.
 
     Uses the Gilbert-Johnson-Keerthi (GJK) distance algorithm.
 
@@ -278,4 +282,9 @@ def compute_distance_gjk(
         Shortest vector between the two bodies.
 
     """
-    return _cpp.geometry.compute_distance_gjk(p, q)
+    assert p.dtype == q.dtype
+    if np.issubdtype(p.dtype, np.float32):
+        return _cpp.geometry.compute_distance_gjk_float32(p, q)
+    elif np.issubdtype(p.dtype, np.float64):
+        return _cpp.geometry.compute_distance_gjk_float64(p, q)
+    raise RuntimeError("Invalid dtype in compute_distance_gjk")
