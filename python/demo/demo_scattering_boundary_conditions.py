@@ -30,44 +30,19 @@
 # First of all, let's import the modules that will be used:
 
 # +
-import importlib.util
 import sys
 
 from mpi4py import MPI
+from petsc4py import PETSc
 
+import gmsh
 import numpy as np
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-
-    from petsc4py import PETSc
-
-    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
-        # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
-        # than MUMPS and does not trigger memory failures.
-        exit(0)
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
-
-
 from scipy.special import h2vp, hankel2, jv, jvp
 
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import LinearProblem
-
-try:
-    import gmsh
-except ModuleNotFoundError:
-    print("This demo requires gmsh to be installed")
-    exit(0)
 
 try:
     import pyvista
@@ -77,6 +52,11 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
+if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+    print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+    # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
+    # than MUMPS and does not trigger memory failures.
+    exit(0)
 
 # -
 # This file defines the `generate_mesh_wire` function, which is used to
@@ -442,7 +422,7 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-mesh_data = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
+mesh_data = io.gmsh.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
 
@@ -635,8 +615,8 @@ problem = LinearProblem(
     petsc_options_prefix="demo_scattering_boundary_conditions_",
     petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
 )
-Esh, _, convergence_reason, _ = problem.solve()
-assert convergence_reason > 0
+Esh = problem.solve()
+assert problem.solver.getConvergedReason() > 0
 
 # We save the solution as an [ADIOS2
 # bp](https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html)

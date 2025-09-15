@@ -21,9 +21,8 @@ from dolfinx import mesh
 @pytest.mark.parametrize("option", [mesh.RefinementOption.none, mesh.RefinementOption.parent_cell])
 def test_refine_interval(n, ghost_mode, ghost_mode_refined, option):
     msh = mesh.create_interval(MPI.COMM_WORLD, n, [0, 1], ghost_mode=ghost_mode)
-    msh_refined, edges, vertices = mesh.refine(
-        msh,
-        option=option,
+    msh_refined, edges, _vertices = mesh.refine(
+        msh, option=option, partitioner=mesh.create_cell_partitioner(ghost_mode_refined)
     )
     # TODO: add create_cell_partitioner(ghost_mode) when works
 
@@ -48,7 +47,7 @@ def test_refine_interval(n, ghost_mode, ghost_mode_refined, option):
 )
 def test_refine_interval_adaptive(n, ghost_mode, ghost_mode_refined):
     msh = mesh.create_interval(MPI.COMM_WORLD, n, [0, 1], ghost_mode=ghost_mode)
-    msh_refined, edges, vertices = mesh.refine(
+    msh_refined, edges, _vertices = mesh.refine(
         msh,
         np.arange(10, dtype=np.int32),
         option=mesh.RefinementOption.parent_cell,

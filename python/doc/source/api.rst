@@ -17,7 +17,7 @@ Public user interface
    dolfinx.geometry
    dolfinx.graph
    dolfinx.io
-   dolfinx.io.gmshio
+   dolfinx.io.gmsh
    dolfinx.jit
    dolfinx.la
    dolfinx.la.petsc

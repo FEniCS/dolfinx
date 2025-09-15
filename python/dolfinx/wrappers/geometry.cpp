@@ -27,7 +27,7 @@ namespace nb = nanobind;
 namespace
 {
 template <typename T>
-void declare_bbtree(nb::module_& m, std::string type)
+void declare_bbtree(nb::module_& m, const std::string& type)
 {
   // dolfinx::geometry::BoundingBoxTree
   std::string pyclass_name = "BoundingBoxTree_" + type;
@@ -52,7 +52,7 @@ void declare_bbtree(nb::module_& m, std::string type)
                 dolfinx::geometry::BoundingBoxTree<T>(mesh, dim, ents, padding);
           },
           nb::arg("mesh"), nb::arg("dim"), nb::arg("entities").none(),
-          nb::arg("padding") = 0.0)
+          nb::arg("padding") = 0)
       .def_prop_ro("num_bboxes",
                    &dolfinx::geometry::BoundingBoxTree<T>::num_bboxes)
       .def_prop_ro(

@@ -384,7 +384,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   const int tdim = mesh0->topology()->dim();
   auto map = mesh0->topology()->index_map(tdim);
   assert(map);
-  std::span<T> u1_array = u1.x()->mutable_array();
+  std::span<T> u1_array = u1.x()->array();
   std::span<const T> u0_array = u0.x()->array();
 
   std::span<const std::uint32_t> cell_info0;
@@ -598,7 +598,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
 
   // Iterate over mesh and interpolate on each cell
   std::span<const T> array0 = u0.x()->array();
-  std::span<T> array1 = u1.x()->mutable_array();
+  std::span<T> array1 = u1.x()->array();
   for (std::size_t c = 0; c < cells0.size(); c++)
   {
     // Get cell geometry (coordinate dofs)
@@ -1093,7 +1093,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   assert(dofmap);
 
   // Result will be stored to coeffs
-  std::span<T> coeffs = u.x()->mutable_array();
+  std::span<T> coeffs = u.x()->array();
 
   const bool symmetric = u.function_space()->symmetric();
   if (element->map_ident() && element->interpolation_ident())
@@ -1263,7 +1263,7 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
       and cells1.size() == num_cells0)
   {
     // Same function spaces and on whole mesh
-    std::span<T> u1_array = u1.x()->mutable_array();
+    std::span<T> u1_array = u1.x()->array();
     std::span<const T> u0_array = u0.x()->array();
     std::ranges::copy(u0_array, u1_array.begin());
   }
@@ -1297,7 +1297,7 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
       std::shared_ptr<const DofMap> dofmap1 = u1.function_space()->dofmap();
       assert(dofmap1);
 
-      std::span<T> u1_array = u1.x()->mutable_array();
+      std::span<T> u1_array = u1.x()->array();
       std::span<const T> u0_array = u0.x()->array();
 
       // Iterate over mesh and interpolate on each cell

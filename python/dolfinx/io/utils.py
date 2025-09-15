@@ -6,7 +6,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data and post-processing file output."""
 
-import typing
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -26,14 +25,6 @@ from dolfinx.mesh import CellType, Geometry, GhostMode, Mesh, MeshTags
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
 
-def _extract_cpp_objects(functions: typing.Union[Mesh, Function, tuple[Function], list[Function]]):
-    """Extract C++ objects"""
-    if isinstance(functions, (list, tuple)):
-        return [getattr(u, "_cpp_object", u) for u in functions]
-    else:
-        return [getattr(functions, "_cpp_object", functions)]
-
-
 # VTXWriter requires ADIOS2
 if _cpp.common.has_adios2:
     from dolfinx.cpp.io import VTXMeshPolicy  # F401
@@ -50,13 +41,13 @@ if _cpp.common.has_adios2:
         The files can be viewed using Paraview.
         """
 
-        _cpp_object: typing.Union[_cpp.io.VTXWriter_float32, _cpp.io.VTXWriter_float64]
+        _cpp_object: _cpp.io.VTXWriter_float32 | _cpp.io.VTXWriter_float64
 
         def __init__(
             self,
             comm: _MPI.Comm,
-            filename: typing.Union[str, Path],
-            output: typing.Union[Mesh, Function, list[Function], tuple[Function]],
+            filename: str | Path,
+            output: Mesh | Function | list[Function] | tuple[Function],
             engine: str = "BPFile",
             mesh_policy: VTXMeshPolicy = VTXMeshPolicy.update,
         ):
@@ -81,27 +72,29 @@ if _cpp.common.has_adios2:
                 have the same element type.
             """
             # Get geometry type
-            try:
-                dtype = output.geometry.x.dtype  # type: ignore
-            except AttributeError:
-                try:
-                    dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
-                except AttributeError:
-                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
+            if isinstance(output, Mesh):
+                dtype = output.geometry.x.dtype
+            elif isinstance(output, Function):
+                dtype = output.function_space.mesh.geometry.x.dtype
+            else:
+                dtype = output[0].function_space.mesh.geometry.x.dtype
 
             if np.issubdtype(dtype, np.float32):
                 _vtxwriter = _cpp.io.VTXWriter_float32
             elif np.issubdtype(dtype, np.float64):
                 _vtxwriter = _cpp.io.VTXWriter_float64
+            else:
+                raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
-            try:
-                # Input is a mesh
+            if isinstance(output, Mesh):
                 self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
-            except (NotImplementedError, TypeError, AttributeError):
-                # Input is a single function or a list of functions
-                self._cpp_object = _vtxwriter(
-                    comm, filename, _extract_cpp_objects(output), engine, mesh_policy
-                )  # type: ignore[arg-type]
+            else:
+                cpp_objects = (
+                    [output._cpp_object]
+                    if isinstance(output, Function)
+                    else [o._cpp_object for o in output]
+                )
+                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)
 
         def __enter__(self):
             return self
@@ -134,10 +127,11 @@ class VTKFile(_cpp.io.VTKFile):
         """Write mesh to file for a given time (default 0.0)"""
         self.write(mesh._cpp_object, t)
 
-    def write_function(self, u: typing.Union[list[Function], Function], t: float = 0.0) -> None:
+    def write_function(self, u: list[Function] | Function, t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a
         given time (default 0.0)"""
-        super().write(_extract_cpp_objects(u), t)
+        cpp_objects = [u._cpp_object] if isinstance(u, Function) else [_u._cpp_object for _u in u]
+        super().write(cpp_objects, t)
 
 
 class XDMFFile(_cpp.io.XDMFFile):
@@ -181,9 +175,27 @@ class XDMFFile(_cpp.io.XDMFFile):
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
     def read_mesh(
-        self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"
+        self,
+        ghost_mode=GhostMode.shared_facet,
+        name="mesh",
+        xpath="/Xdmf/Domain",
+        max_facet_to_cell_links: int = 2,
     ) -> Mesh:
-        """Read mesh data from file."""
+        """Read mesh data from file.
+
+        Note:
+            Changing `max_facet_to_cell_links` from the default value
+            should only be required when working on branching manifolds.
+            Changing this value on non-branching meshes will only result in
+            a slower mesh partitioning and creation.
+
+        Args:
+            ghost_mode: Ghost mode to use for the cells in mesh creation.
+            name: Name of the grid node in the xml-scheme in the file
+            xpath: XPath where Mesh Grid is stored in the file.
+            max_facet_to_cell_links: Maximum number of cells that a facet
+                can be linked to.
+        """
         cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
@@ -244,7 +256,12 @@ class XDMFFile(_cpp.io.XDMFFile):
 
         # Build the mesh
         msh = _cpp.mesh.create_mesh(
-            self.comm, cells, cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode)
+            self.comm,
+            cells,
+            cmap,
+            x,
+            _cpp.mesh.create_cell_partitioner(ghost_mode),
+            max_facet_to_cell_links,
         )
         msh.name = name
         domain = ufl.Mesh(basix_el)
@@ -254,7 +271,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         self,
         mesh: Mesh,
         name: str,
-        attribute_name: typing.Optional[str] = None,
+        attribute_name: str | None = None,
         xpath: str = "/Xdmf/Domain",
     ) -> MeshTags:
         """Read MeshTags with a specific name as specified in the XMDF

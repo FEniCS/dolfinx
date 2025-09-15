@@ -532,7 +532,7 @@ void write_function(
         if (mesh0->geometry().dim() == 3)
           add_data(_u.get().name,
                    std::span<const std::size_t>(component_vector),
-                   _u.get().x()->array(), data_node);
+                   std::span(_u.get().x()->array()), data_node);
         else
         {
           // Pad with zeros and then add

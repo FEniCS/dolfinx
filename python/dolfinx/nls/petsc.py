@@ -3,7 +3,8 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Methods for solving nonlinear equations using PETSc solvers."""
+"""(Deprecated) Methods for solving nonlinear equations using PETSc
+solvers."""
 
 from __future__ import annotations
 
@@ -12,6 +13,8 @@ import warnings
 
 from mpi4py import MPI
 from petsc4py import PETSc
+
+from dolfinx.fem.forms import extract_function_spaces
 
 if typing.TYPE_CHECKING:
     import dolfinx
@@ -34,12 +37,12 @@ __all__ = ["NewtonSolver"]
 
 class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
     def __init__(self, comm: MPI.Intracomm, problem: NewtonSolverNonlinearProblem):
-        """A Newton solver for non-linear problems.
+        """(Deprecated) A Newton solver for non-linear problems.
 
         Note:
             This class is deprecated in favour of
-            dolfinx.fem.petsc.NonlinearProblem, a high level interface to
-            PETSc SNES.
+            :class:`dolfinx.fem.petsc.NonlinearProblem`, a high
+            level interface to PETSc SNES.
         """
         super().__init__(comm)
 
@@ -47,7 +50,7 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
             (
                 "dolfinx.nls.petsc.NewtonSolver is deprecated. "
                 + "Use dolfinx.fem.petsc.NonlinearProblem, "
-                + "a high level interface to PETSc SNES, instead."
+                + "a high level interface to PETSc SNES."
             ),
             DeprecationWarning,
         )
@@ -56,7 +59,7 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         # of the non-linear problem
         self._A = create_matrix(problem.a)
         self.setJ(problem.J, self._A)
-        self._b = create_vector(problem.L)
+        self._b = create_vector(extract_function_spaces(problem.L))  # type: ignore
         self.setF(problem.F, self._b)
         self.set_form(problem.form)
 

@@ -17,16 +17,14 @@
 #
 # The Gmsh module is required for this demo.
 
+# +
 from mpi4py import MPI
 
-# +
-from dolfinx.io import XDMFFile, gmshio
+import gmsh  # type: ignore
 
-try:
-    import gmsh  # type: ignore
-except ImportError:
-    print("This demo requires gmsh to be installed")
-    exit(0)
+from dolfinx.io import XDMFFile
+from dolfinx.io import gmsh as gmshio
+
 # -
 
 # ##  Gmsh model builders

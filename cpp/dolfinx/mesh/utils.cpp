@@ -18,6 +18,7 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -35,7 +36,7 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
   std::vector<int> local_vertices(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
-    const std::vector<int> local_index = layout.entity_dofs(0, i);
+    const std::vector<int>& local_index = layout.entity_dofs(0, i);
     assert(local_index.size() == 1);
     local_vertices[i] = local_index[0];
   }
@@ -96,11 +97,11 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   return mesh::exterior_facet_indices(topology, 0);
 }
 //------------------------------------------------------------------------------
-mesh::CellPartitionFunction
-mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
-                              const graph::partition_fn& partfn)
+mesh::CellPartitionFunction mesh::create_cell_partitioner(
+    mesh::GhostMode ghost_mode, const graph::partition_fn& partfn,
+    std::optional<std::int32_t> max_facet_to_cell_links)
 {
-  return [partfn, ghost_mode](
+  return [partfn, ghost_mode, max_facet_to_cell_links](
              MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
              const std::vector<std::span<const std::int64_t>>& cells)
              -> graph::AdjacencyList<std::int32_t>
@@ -109,7 +110,7 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
 
     // Compute distributed dual graph (for the cells on this process)
     const graph::AdjacencyList dual_graph
-        = build_dual_graph(comm, cell_types, cells);
+        = build_dual_graph(comm, cell_types, cells, max_facet_to_cell_links);
 
     // Just flag any kind of ghosting for now
     bool ghosting = (ghost_mode != GhostMode::none);

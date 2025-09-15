@@ -94,19 +94,19 @@ def test_numba_assembly(dtype):
     active_coeffs = np.array([], dtype=np.int8)
     integrals = {
         IntegralType.cell: [
-            (-1, k2.address, cells, active_coeffs),
+            (0, k2.address, cells, active_coeffs),
+            (1, k2.address, np.arange(0), active_coeffs),
             (2, k2.address, np.arange(0), active_coeffs),
-            (12, k2.address, np.arange(0), active_coeffs),
         ]
     }
     formtype = form_cpp_class(dtype)
     a = Form(
         formtype(
-            [V._cpp_object, V._cpp_object], integrals, [], [], False, {}, mesh=mesh._cpp_object
+            [V._cpp_object, V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object
         )
     )
-    integrals = {IntegralType.cell: [(-1, k1.address, cells, active_coeffs)]}
-    L = Form(formtype([V._cpp_object], integrals, [], [], False, {}, mesh=mesh._cpp_object))
+    integrals = {IntegralType.cell: [(0, k1.address, cells, active_coeffs)]}
+    L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
 
     A = dolfinx.fem.assemble_matrix(a)
     A.scatter_reverse()
@@ -136,12 +136,12 @@ def test_coefficient(dtype):
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
     active_coeffs = np.array([0], dtype=np.int8)
     integrals = {
-        IntegralType.cell: [(1, k1.address, np.arange(num_cells, dtype=np.int32), active_coeffs)]
+        IntegralType.cell: [(0, k1.address, np.arange(num_cells, dtype=np.int32), active_coeffs)]
     }
     formtype = form_cpp_class(dtype)
     L = Form(
         formtype(
-            [V._cpp_object], integrals, [vals._cpp_object], [], False, {}, mesh=mesh._cpp_object
+            [V._cpp_object], integrals, [vals._cpp_object], [], False, [], mesh=mesh._cpp_object
         )
     )
 
@@ -276,19 +276,18 @@ def test_cffi_assembly():
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
     active_coeffs = np.array([], dtype=np.int8)
-    integrals = {IntegralType.cell: [(-1, ptrA, cells, active_coeffs)]}
+    integrals = {IntegralType.cell: [(0, ptrA, cells, active_coeffs)]}
     a = Form(
         _cpp.fem.Form_float64(
-            [V._cpp_object, V._cpp_object], integrals, [], [], False, {}, mesh=mesh._cpp_object
+            [V._cpp_object, V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object
         )
     )
 
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
-    integrals = {IntegralType.cell: [(-1, ptrL, cells, active_coeffs)]}
+    integrals = {IntegralType.cell: [(0, ptrL, cells, active_coeffs)]}
     L = Form(
-        _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, {}, mesh=mesh._cpp_object)
+        _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object)
     )
-
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
     assert np.isclose(np.sqrt(A.squared_norm()), 56.124860801609124)

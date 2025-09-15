@@ -110,7 +110,7 @@ class TestNLSPETSc:
 
         def blocked():
             """Monolithic blocked"""
-            x = create_vector(L_block, kind="mpi")
+            x = create_vector([V0, V1], kind="mpi")
 
             assign((u, p), x)
 
@@ -136,7 +136,7 @@ class TestNLSPETSc:
         # Nested (MatNest)
         def nested():
             """Nested (MatNest)"""
-            x = create_vector(L_block, kind=PETSc.Vec.Type.NEST)
+            x = create_vector([V0, V1], kind=PETSc.Vec.Type.NEST)
 
             assign((u, p), x)
 
@@ -315,8 +315,8 @@ class TestNLSPETSc:
             residual = dolfinx.fem.form(F)
             jacobian = dolfinx.fem.form(J)
             A = dolfinx.fem.petsc.create_matrix(jacobian, "nest")
-            b = dolfinx.fem.petsc.create_vector(residual, "nest")
-            x = dolfinx.fem.petsc.create_vector(residual, "nest")
+            b = dolfinx.fem.petsc.create_vector([V0, V1], "nest")
+            x = dolfinx.fem.petsc.create_vector([V0, V1], "nest")
             snes.setFunction(
                 partial(dolfinx.fem.petsc.assemble_residual, [u, p], residual, jacobian, bcs), b
             )
@@ -384,9 +384,9 @@ class TestNLSPETSc:
                 petsc_options=petsc_options,
             )
 
-            _, x, converged_reason, _ = problem.solve()
-            assert converged_reason > 0
-            xnorm = x.norm()
+            problem.solve()
+            assert problem.solver.getConvergedReason() > 0
+            xnorm = problem.x.norm()
             return xnorm
 
         norm0 = blocked_solve()
@@ -484,11 +484,11 @@ class TestNLSPETSc:
                 petsc_options=petsc_options,
                 kind="mpi",
             )
-            _, x, converged_reason, _ = problem.solve()
-            assert converged_reason > 0
+            problem.solve()
+            assert problem.solver.getConvergedReason() > 0
             Jnorm = problem.solver.getJacobian()[0].norm()
             Fnorm = problem.solver.getFunction()[0].norm()
-            xnorm = x.norm()
+            xnorm = problem.x.norm()
             return Jnorm, Fnorm, xnorm
 
         def nested():
@@ -517,9 +517,9 @@ class TestNLSPETSc:
                 ["u", nested_IS[0][0]], ["p", nested_IS[1][1]]
             )
 
-            _, x, converged_reason, _ = problem.solve()
-            assert converged_reason > 0
-            xnorm = x.norm()
+            problem.solve()
+            assert problem.solver.getConvergedReason() > 0
+            xnorm = problem.x.norm()
             Jnorm = nest_matrix_norm(problem.solver.getJacobian()[0])
             Fnorm = problem.solver.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm
@@ -575,9 +575,9 @@ class TestNLSPETSc:
                 petsc_options_prefix="test_assembly_solve_taylor_hood_nl__monolithic_",
                 petsc_options=petsc_options,
             )
-            _, x, converged_reason, _ = problem.solve()
-            assert converged_reason > 0
-            xnorm = x.norm()
+            problem.solve()
+            assert problem.solver.getConvergedReason() > 0
+            xnorm = problem.x.norm()
             Jnorm = problem.solver.getJacobian()[0].norm()
             Fnorm = problem.solver.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm
