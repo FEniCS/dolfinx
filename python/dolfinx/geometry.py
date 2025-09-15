@@ -112,6 +112,7 @@ class BoundingBoxTree:
 def bb_tree(
     mesh: Mesh,
     dim: int,
+    *,
     padding: float = 0.0,
     entities: npt.NDArray[np.int32] | None = None,
 ) -> BoundingBoxTree:
