@@ -24,8 +24,8 @@ from dolfinx.geometry import (
 )
 from dolfinx.mesh import (
     CellType,
-    compute_midpoints,
     compute_incident_entities,
+    compute_midpoints,
     create_box,
     create_unit_cube,
     create_unit_interval,
@@ -505,6 +505,7 @@ def test_surface_bbtree_collision(dtype):
     collisions = compute_collisions_trees(bbtree1, bbtree2)
     assert len(collisions) == 1
 
+
 @pytest.mark.parametrize("ct", [CellType.tetrahedron])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_shift_bbtree(ct, dtype):
@@ -523,6 +524,7 @@ def test_shift_bbtree(ct, dtype):
 
     collisions_post = compute_collisions_points(bbtree, points)
     assert (collisions_pre.array == collisions_post.array).all()
+
 
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("affine", [True, False])

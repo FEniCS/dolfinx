@@ -289,11 +289,12 @@ def compute_distance_gjk(
         return _cpp.geometry.compute_distance_gjk_float64(p, q)
     raise RuntimeError("Invalid dtype in compute_distance_gjk")
 
+
 def determine_point_ownership(
     mesh: Mesh,
     points: npt.NDArray[np.floating],
     padding: float,
-    cells: typing.Optional[npt.NDArray[np.int32]] = None,
+    cells: npt.NDArray[np.int32] | None = None,
 ) -> PointOwnershipData:
     """Build point ownership data for a mesh-points pair.
 
