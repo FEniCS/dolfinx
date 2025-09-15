@@ -553,7 +553,7 @@ def test_determine_point_ownership(dim, affine, dtype):
         )
     cell_map = mesh.topology.index_map(tdim)
 
-    tree = bb_tree(mesh, mesh.topology.dim, padding=0.0, entites=np.arange(cell_map.size_local))
+    tree = bb_tree(mesh, mesh.topology.dim, padding=0.0, entities=np.arange(cell_map.size_local))
     num_global_cells = num_cells_side**tdim
     if affine:
         num_global_cells *= 2 * (3 ** (tdim - 2))
