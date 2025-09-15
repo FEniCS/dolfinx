@@ -366,20 +366,21 @@ def model_to_mesh(
     tdim = int(entity_tdim[cell_position])
 
     # Check that all cells are tagged once
-    _elementTypes, _elementTags, _nodeTags = model.mesh.getElements(dim=tdim, tag=-1)
-    _elementType_dim = _elementTypes[0]
-    if _elementType_dim not in topologies.keys():
-        raise RuntimeError("All cells are expected to be tagged once; none found")
+    if comm.rank == rank:
+        _elementTypes, _elementTags, _nodeTags = model.mesh.getElements(dim=tdim, tag=-1)
+        _elementType_dim = _elementTypes[0]
+        if _elementType_dim not in topologies.keys():
+            raise RuntimeError("All cells are expected to be tagged once; none found")
 
-    num_cells_tagged = len(topologies[_elementType_dim]["entity_tags"])
-    if (num_cells := len(_elementTags[0])) != num_cells_tagged:
-        raise RuntimeError(
-            "All cells are expected to be tagged once;"
-            f"found: {num_cells_tagged}, expected: {num_cells}"
-        )
-    num_cells_tagged_once = len(np.unique(topologies[_elementType_dim]["entity_tags"]))
-    if num_cells_tagged != num_cells_tagged_once:
-        raise RuntimeError("All cells are expected to be tagged once; found duplicates")
+        num_cells_tagged = len(topologies[_elementType_dim]["entity_tags"])
+        if (num_cells := len(_elementTags[0])) != num_cells_tagged:
+            raise RuntimeError(
+                "All cells are expected to be tagged once;"
+                f"found: {num_cells_tagged}, expected: {num_cells}"
+            )
+        num_cells_tagged_once = len(np.unique(topologies[_elementType_dim]["entity_tags"]))
+        if num_cells_tagged != num_cells_tagged_once:
+            raise RuntimeError("All cells are expected to be tagged once; found duplicates")
 
     # Extract entity -> node connectivity for all cells and sub-entities
     # marked in the GMSH model
