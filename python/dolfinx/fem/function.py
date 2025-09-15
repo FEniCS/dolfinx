@@ -19,7 +19,7 @@ import basix
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
-from dolfinx.fem import dofmap
+from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.element import FiniteElement, finiteelement
 from dolfinx.geometry import PointOwnershipData
 
@@ -747,9 +747,12 @@ class FunctionSpace(ufl.FunctionSpace):
         return FiniteElement(self._cpp_object.element)
 
     @property
-    def dofmap(self) -> dofmap.DofMap:
+    def dofmap(self) -> DofMap:
         """Degree-of-freedom map associated with the function space."""
-        return dofmap.DofMap(self._cpp_object.dofmap)  # type: ignore
+        return DofMap(self._cpp_object.dofmap)
+
+    def dofmaps(self, idx: int) -> DofMap:
+        return DofMap(self._cpp_object.dofmaps(idx))
 
     @property
     def mesh(self) -> Mesh:
