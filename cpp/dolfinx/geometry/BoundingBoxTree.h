@@ -283,7 +283,8 @@ public:
                  num_bboxes(), entities_span.size());
   }
 
-    /// Constructor @param[in] points Cloud of points, with associated
+  /// Constructor
+  /// @param[in] points Cloud of points, with associated
   /// point identifier index, to build the bounding box tree around
   BoundingBoxTree(std::vector<std::pair<std::array<T, 3>, std::int32_t>> points)
       : _tdim(0)
