@@ -22,7 +22,7 @@ env:
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
 jobs:
-  build:
+  ci-spack-build:
     name: AlmaLinux build and test
     runs-on: ubuntu-latest
     container: ghcr.io/almalinux/almalinux:10

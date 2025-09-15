@@ -18,7 +18,7 @@ def _pkgconfig_query(s):
     pkg_config_exe = os.environ.get("PKG_CONFIG", None) or "pkg-config"
     cmd = [pkg_config_exe, *s.split()]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = proc.communicate()
+    out, _err = proc.communicate()
     rc = proc.returncode
     return (rc, out.rstrip().decode("utf-8"))
 

@@ -19,15 +19,20 @@ env:
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
+  dolfinx_ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+
 jobs:
-  build:
-    name: Build and test
+  ci-spack-experimental-build:
     runs-on: ubuntu-latest
     container: ubuntu:24.04
     permissions:
       packages: write
 
     steps:
+      - name: Branch and commit SHA
+        run: |
+          echo "Branch and commit SHA: ${{ env.dolfinx_ref }}, ${{ github.sha }}"
+
       - name: Install Spack requirements
         run: |
           apt-get -y update
@@ -55,29 +60,33 @@ jobs:
           repository: ${{ env.ffcx_repository }}
           ref: ${{ env.ffcx_ref }}
           path: ffcx-src
-      - name: Get BASIx code
+      - name: Get Basix code
         uses: actions/checkout@v5
         with:
           repository: ${{ env.basix_repository }}
           ref: ${{ env.basix_ref }}
           path: basix-src
+
       - name: Get Spack
         uses: actions/checkout@v5
         with:
           repository: spack/spack
           ref: develop
           path: spack-src
-      - name: Get Spack packages
+
+      # Note: the below two blocks can be commented out when the main
+      # spack-packages repository can be used
+      - name: Get Spack packages (custom)
         uses: actions/checkout@v5
         with:
           repository: garth-wells/spack-packages
           ref: fenics-testing
           path: spack-packages
-
-      - name: Add repo
+      - name: Add Spack packages repo
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
+          spack config get repos
 
       - name: Prepare C++ environment
         run: |
@@ -94,7 +103,7 @@ jobs:
       - name: Build library (C++)
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack -e cxx add fenics-dolfinx@main generator=ninja build_type=Developer +petsc +slepc partitioners=parmetis \
+          spack -e cxx add fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
           spack -e cxx add catch2 py-fenics-ffcx@main
           spack -e cxx concretize -j 4
@@ -145,12 +154,12 @@ jobs:
       - name: Build library (Python)
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack -e py add py-fenics-dolfinx@main +petsc4py +slepc4py build_type=Developer \
-            %fenics-dolfinx@main build_type=Developer +petsc +slepc partitioners=parmetis \
+          spack -e py add py-fenics-dolfinx@main commit=${{ github.sha }} +petsc4py +slepc4py build_type=Developer \
+            %fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer +petsc +slepc partitioners=parmetis \
             ^openmpi ^adios2~fortran~libcatalyst \
             ^petsc +mpi +hypre +mumps +superlu-dist
           spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
-            py-numba py-pyamg@5.3: py-pytest py-pytest-xdist py-scipy py-pyvista
+            py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
           spack -v -e py install -j 4 -p 2 --use-buildcache=auto
 
@@ -164,6 +173,8 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate py
           spack load gcc
+          spack load py-pip
+          pip install pyamg
           python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
           python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
 
@@ -180,5 +191,5 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e py buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
           spack -e py buildcache push --base-image ubuntu:24.04 --update-index local-buildcache \
-            py-gmsh py-matplotlib py-networkx py-numba py-pyamg py-pytest py-pytest-xdist py-scipy py-pyvista
+            py-gmsh py-matplotlib py-networkx py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
         if: ${{ !cancelled() }}

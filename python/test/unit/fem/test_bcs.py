@@ -88,7 +88,8 @@ def test_overlapping_bcs():
         dirichletbc(default_scalar_type(123.456), dofs_top, V),
     ]
 
-    A, b = create_matrix(a), create_vector(L)
+    A = create_matrix(a)
+    b = create_vector(V, dtype=L.dtype)
     assemble_matrix(A, a, bcs=bcs)
     A.scatter_reverse()
 

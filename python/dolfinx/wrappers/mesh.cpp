@@ -289,7 +289,8 @@ void declare_mesh(nb::module_& m, std::string type)
                                          nb::c_contig>>& cells_nb,
            const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
            nb::ndarray<const T, nb::c_contig> x,
-           const part::impl::PythonCellPartitionFunction& p)
+           const part::impl::PythonCellPartitionFunction& p,
+           std::optional<std::int32_t> max_facet_to_cell_links)
         {
           std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
 
@@ -317,12 +318,14 @@ void declare_mesh(nb::module_& m, std::string type)
             };
             return dolfinx::mesh::create_mesh(
                 comm.get(), comm.get(), cells, elements, comm.get(),
-                std::span(x.data(), x.size()), {x.shape(0), shape1}, p_wrap);
+                std::span(x.data(), x.size()), {x.shape(0), shape1}, p_wrap,
+                max_facet_to_cell_links);
           }
           else
             return dolfinx::mesh::create_mesh(
                 comm.get(), comm.get(), cells, elements, comm.get(),
-                std::span(x.data(), x.size()), {x.shape(0), shape1}, nullptr);
+                std::span(x.data(), x.size()), {x.shape(0), shape1}, nullptr,
+                max_facet_to_cell_links);
         });
 
   m.def(
@@ -331,7 +334,8 @@ void declare_mesh(nb::module_& m, std::string type)
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> cells,
          const dolfinx::fem::CoordinateElement<T>& element,
          nb::ndarray<const T, nb::c_contig> x,
-         const part::impl::PythonCellPartitionFunction& p)
+         const part::impl::PythonCellPartitionFunction& p,
+         std::optional<std::int32_t> max_facet_to_cell_links)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
         if (p)
@@ -354,18 +358,19 @@ void declare_mesh(nb::module_& m, std::string type)
           return dolfinx::mesh::create_mesh(
               comm.get(), comm.get(), std::span(cells.data(), cells.size()),
               element, comm.get(), std::span(x.data(), x.size()),
-              {x.shape(0), shape1}, p_wrap);
+              {x.shape(0), shape1}, p_wrap, max_facet_to_cell_links);
         }
         else
         {
           return dolfinx::mesh::create_mesh(
               comm.get(), comm.get(), std::span(cells.data(), cells.size()),
               element, comm.get(), std::span(x.data(), x.size()),
-              {x.shape(0), shape1}, nullptr);
+              {x.shape(0), shape1}, nullptr, max_facet_to_cell_links);
         }
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
+      nb::arg("max_facet_to_cell_links") = 2,
       "Helper function for creating meshes.");
   m.def(
       "create_submesh",
