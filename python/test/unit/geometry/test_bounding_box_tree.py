@@ -1,4 +1,4 @@
-# Copyright (C) 2013-2021 Anders Logg, Jørgen S. Dokken, Chris Richardson
+# Copyright (C) 2013-2025 Anders Logg, Jørgen S. Dokken, Chris Richardson
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -8,9 +8,9 @@
 from mpi4py import MPI
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
-from dolfinx import cpp as _cpp
 from dolfinx.geometry import (
     PointOwnershipData,
     bb_tree,
@@ -24,12 +24,14 @@ from dolfinx.geometry import (
 )
 from dolfinx.mesh import (
     CellType,
+    Mesh,
     compute_incident_entities,
     compute_midpoints,
     create_box,
     create_unit_cube,
     create_unit_interval,
     create_unit_square,
+    entities_to_geometry,
     exterior_facet_indices,
     locate_entities,
     locate_entities_boundary,
@@ -41,8 +43,8 @@ def extract_geometricial_data(mesh, dim, entities):
     vertices"""
     mesh_nodes = []
     geom = mesh.geometry
-    g_indices = _cpp.mesh.entities_to_geometry(
-        mesh._cpp_object, dim, np.array(entities, dtype=np.int32), False
+    g_indices = entities_to_geometry(
+        mesh, dim, np.array(entities, dtype=np.int32), False
     )
     for cell in g_indices:
         nodes = np.zeros((len(cell), 3), dtype=np.float64)
@@ -76,8 +78,8 @@ def find_colliding_cells(mesh, bbox, dtype):
     # Find actual cells using known bounding box tree
     colliding_cells = []
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    x_indices = _cpp.mesh.entities_to_geometry(
-        mesh._cpp_object, mesh.topology.dim, np.arange(num_cells, dtype=np.int32), False
+    x_indices = entities_to_geometry(
+        mesh, mesh.topology.dim, np.arange(num_cells, dtype=np.int32), False
     )
     points = mesh.geometry.x
     bounding_box = expand_bbox(bbox, dtype)
@@ -173,7 +175,7 @@ def test_compute_collisions_point_1d(dtype):
     assert len(entities.array) == 1
 
     # Get the vertices of the geometry
-    geom_entities = _cpp.mesh.entities_to_geometry(mesh._cpp_object, tdim, entities.array, False)[0]
+    geom_entities = entities_to_geometry(mesh, tdim, entities.array, False)[0]
     x = mesh.geometry.x
     cell_vertices = x[geom_entities]
     # Check that we get the cell with correct vertices
@@ -190,7 +192,7 @@ def test_compute_collisions_tree_1d(point, dtype):
         return x[0] >= point[0]
 
     # Locate all vertices of mesh A that should collide
-    vertices_A = _cpp.mesh.locate_entities(mesh_A._cpp_object, 0, locator_A)
+    vertices_A = entities_to_geometry(mesh_A, 0, locator_A)
     mesh_A.topology.create_connectivity(0, mesh_A.topology.dim)
     v_to_c = mesh_A.topology.connectivity(0, mesh_A.topology.dim)
 
@@ -205,7 +207,7 @@ def test_compute_collisions_tree_1d(point, dtype):
         return x[0] <= 1
 
     # Locate all vertices of mesh B that should collide
-    vertices_B = _cpp.mesh.locate_entities(mesh_B._cpp_object, 0, locator_B)
+    vertices_B = locate_entities(mesh_B, 0, locator_B)
     mesh_B.topology.create_connectivity(0, mesh_B.topology.dim)
     v_to_c = mesh_B.topology.connectivity(0, mesh_B.topology.dim)
 
@@ -552,189 +554,43 @@ def test_determine_point_ownership(dim, affine, dtype):
             dtype=dtype,
         )
     cell_map = mesh.topology.index_map(tdim)
+    cells_local = np.arange(cell_map.size_local, dtype=np.int32)
+    num_cells_global = mesh.topology.index_map(tdim).size_global
 
-    tree = bb_tree(mesh, mesh.topology.dim, padding=0.0, entities=np.arange(cell_map.size_local))
-    num_global_cells = num_cells_side**tdim
-    if affine:
-        num_global_cells *= 2 * (3 ** (tdim - 2))
+    # Check point ownership for midpoints of each owned cell (should be owned by the calling process)
     local_midpoints = compute_midpoints(
-        mesh, tdim, np.arange(mesh.topology.index_map(tdim).size_local)
-    )
+        mesh, tdim, cells_local)
+    po = determine_point_ownership(mesh, local_midpoints, 0.0, cells_local)
+    assert len(po.dest_cells) == local_midpoints.shape[0]
+    np.testing.assert_allclose(po.dest_owner, rank)
+    np.testing.assert_allclose(po.dest_cells, cells_local)
+    np.testing.assert_allclose(po.dest_points, local_midpoints)
+    np.testing.assert_allclose(po.src_owner, rank)
+
+    # Gather all midpoints to all processes and check that calling determine_point_ownership
+    # assignes data to the original rank.
     midpoints_per_rank = np.zeros(comm.size, dtype=np.int32)
     midpoints_offsets = np.zeros(comm.size, dtype=np.int32)
     comm.Allgather(np.array([local_midpoints.shape[0]], dtype=np.int32), midpoints_per_rank)
     midpoints_offsets[1:] = np.cumsum(midpoints_per_rank[:-1])
-    all_midpoints = np.zeros((num_global_cells, 3), dtype=dtype)
+    all_midpoints = np.zeros((num_cells_global, 3), dtype=dtype)
     comm.Allgatherv(
         local_midpoints, [all_midpoints, midpoints_per_rank * 3, midpoints_offsets * 3, mpi_dtype]
     )
-    # Find potential owner cells
-    tree_col = compute_collisions_points(tree, all_midpoints)
 
-    mesh.topology.create_connectivity(tdim - 1, 0)
-    mesh.topology.create_connectivity(0, tdim)
-    cfc = mesh.topology.connectivity(tdim, tdim - 1)
-    fpc = mesh.topology.connectivity(tdim - 1, 0)
+    # Gather ownership ranges of process sent to all processes
+    ownership_ranges = np.empty(MPI.COMM_WORLD.size + 1, dtype=np.int32)
+    ownership_ranges[0] = 0
+    ownership_ranges[1:] = comm.allgather(cell_map.local_range[1])
 
-    # Narrow it down to a single owner cell
-    def is_inside(mesh, icell, point):
-        fdim = tdim - 1
-        is_inside = True
-        cpoints = mesh.geometry.x[mesh.geometry.dofmap[icell, :]]  # cell points
-        ccentroid = np.average(cpoints, axis=0)  # cell centroid
-        for ifacet in cfc.links(icell):
-            fpoints_indices = _cpp.mesh.entities_to_geometry(
-                mesh._cpp_object,
-                0,
-                fpc.links(ifacet),
-                False,
-            )
-            fpoints_indices = fpoints_indices.reshape(fpoints_indices.size)
-            fpoints = mesh.geometry.x[fpoints_indices]
-            fcentroid = np.average(fpoints, axis=0)  # facet centroid
-            # Compute facet normal pointing to outside of owner cell
-            normal = np.zeros(3, dtype=dtype)
-            facet_vector1 = fpoints[1, :] - fpoints[0, :]
-            if fdim == 1:
-                normal[0] = -facet_vector1[1]
-                normal[1] = +facet_vector1[0]
-            elif fdim == 2:
-                facet_vector2 = fpoints[2, :] - fpoints[0, :]
-                normal = np.cross(facet_vector1, facet_vector2)
-            else:
-                raise ValueError("Unexpected facet dimension.")
-            normal /= np.linalg.norm(normal)
-            # Re-align if pointing to inside the parent cell
-            normal = -normal if (np.dot((ccentroid - fcentroid), normal) > 0) else normal
-            # Test the point
-            signed_distance = np.dot((point - fcentroid), normal)
-            if signed_distance > 1e-9:
-                is_inside = False
-                break
-        return is_inside
+    # Check that point ownership matches the original rank
+    global_po = determine_point_ownership(mesh, all_midpoints, 0.0, cells_local)
+    assigned_ranks = np.empty(num_cells_global, dtype=np.int32)
+    for i in range(comm.size):
+        assigned_ranks[ownership_ranges[i] : ownership_ranges[i + 1]] = i
+    np.testing.assert_allclose(global_po.src_owner, assigned_ranks)
+    # Check that each process is assigned as many points as it has cells (from each other process)
+    assert len(global_po.dest_cells) == comm.size * (cell_map.size_local)
 
-    processwise_owners = np.zeros(2 * num_global_cells, dtype=np.int32)
-    owners = np.empty_like(processwise_owners)
-    for ipoint in range(num_global_cells):
-        potential_owners = tree_col.links(ipoint)
-        owner_cells = []
-        for cell in potential_owners:
-            if is_inside(mesh, cell, all_midpoints[ipoint, :]):
-                owner_cells.append(cell)
-        if owner_cells:
-            assert len(owner_cells) == 1
-            processwise_owners[2 * ipoint] = rank
-            processwise_owners[2 * ipoint + 1] = owner_cells[0]
-
-    # Since ghost cells are left out and the points considered are midpoints
-    # of cells, they are only contained in a single process / cell
-    # The value at a given index is null if it doesn't correspond
-    # to the current process.
-    # We can sum the processwise arrays to obtain a global array
-    comm.Allreduce(processwise_owners, owners, op=MPI.SUM)
-    owner_ranks = owners[[2 * i for i in range(num_global_cells)]]
-    owner_cells = owners[[2 * i + 1 for i in range(num_global_cells)]]
-
-    # Reorganize ownership data (point, index, rank, cell) into dictionary
-    ownership_data = {}
-    for ipoint in range(num_global_cells):
-        ownership_data[tuple(all_midpoints[ipoint])] = (
-            ipoint,
-            owner_ranks[ipoint],
-            owner_cells[ipoint],
-        )
-
-    def check_po(po: PointOwnershipData, src_points, ownership_data, global_dest_owners):
-        """
-        Check point ownership data
-
-        po: PointOwnershipData object to check
-        src_points: Points sent by process
-        ownership_data: {point:(global_index,rank,cell}
-        global_dest_owners: Rank who sent each point
-        """
-        # Check src_owner: Check owner ranks of sent points
-        src_owner = po.src_owner()
-        for ipoint in range(src_points.shape[0]):
-            assert ownership_data[tuple(src_points[ipoint])][1] == src_owner[ipoint]
-
-        dest_points = po.dest_points()
-        dest_owners = po.dest_owner()
-        dest_cells = po.dest_cells()
-
-        # Check dest_points: All points that should have been found have been found
-        dest_points_indices = list(range(dest_points.shape[0]))
-        for point, data in ownership_data.items():
-            (iglobal, processor, _) = data
-            if processor == rank:
-                found = False
-                point = np.array(point, dtype=dtype)
-                for jpoint in dest_points_indices:
-                    found = np.allclose(point, dest_points[jpoint])
-                    if found:
-                        break
-                assert found
-                dest_points_indices.remove(jpoint)
-
-        # Check dest_owners and dest_cells
-        # dest_owners: Ranks that asked about the points we own
-        # dest_cells: Local index of cell that contains the points we own
-        for ipoint in range(dest_points.shape[0]):
-            iglobal = ownership_data[tuple(dest_points[ipoint])][0]
-            c = ownership_data[tuple(dest_points[ipoint])][2]
-            assert dest_owners[ipoint] == global_dest_owners[iglobal]
-            assert dest_cells[ipoint] == c
-
-    def set_local_range(array):
-        N = array.shape[0]
-        n = N // comm.size
-        r = N % comm.size
-        # First r processes has one extra value
-        if rank < r:
-            (start, stop) = [rank * (n + 1), (rank + 1) * (n + 1)]
-        else:
-            (start, stop) = [rank * n + r, (rank + 1) * n + r]
-        return array[start:stop], start, stop
-
-    def compute_global_owners(N, start, stop):
-        """Compute array of ranks who own each point"""
-        mask_points_owned = np.zeros(N, np.int32)
-        global_owners = np.empty_like(mask_points_owned)
-        mask_points_owned[start:stop] = rank
-        comm.Allreduce(mask_points_owned, global_owners, op=MPI.SUM)
-        return global_owners
-
-    # All cells
-    points, start, stop = set_local_range(all_midpoints)
-    owners = compute_global_owners(np.int64(all_midpoints.shape[0]), start, stop)
-    all_cells = np.arange(cell_map.size_local, dtype=dtype)
-    po = determine_point_ownership(mesh, points, 0.0, all_cells)
-
-    check_po(po, points, ownership_data, owners)
-
-    # Left half
-    num_left_cells = np.rint(num_global_cells / 2).astype(np.int32)
-    left_midpoints = np.zeros((num_left_cells, 3), dtype=dtype)
-    counter = 0
-    indices_left = []
-    for ipoint in range(num_global_cells):
-        if all_midpoints[ipoint, 0] <= 0.5:
-            left_midpoints[counter] = all_midpoints[ipoint]
-            indices_left.append(ipoint)
-            counter += 1
-    points, start, stop = set_local_range(left_midpoints)
-    owners = compute_global_owners(np.int64(all_midpoints.shape[0]), start, stop)
-    left_cells = locate_entities(mesh, tdim, lambda x: x[0] <= 0.5)
-    left_cells = np.array(
-        [cell for cell in left_cells if cell < cell_map.size_local], dtype=np.int32
-    )  # Filter out ghost cells
-    lpo = determine_point_ownership(mesh, points, 0.0, left_cells)
-
-    left_ownership_data = {}
-    for idx, ipoint in enumerate(indices_left):
-        left_ownership_data[tuple(all_midpoints[ipoint])] = (
-            idx,
-            owner_ranks[ipoint],
-            owner_cells[ipoint],
-        )
-    check_po(lpo, points, left_ownership_data, owners)
+    for cell, point in zip(global_po.dest_cells, global_po.dest_points):
+        np.testing.assert_allclose(local_midpoints[cell], point)
