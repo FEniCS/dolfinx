@@ -8,11 +8,9 @@
 from mpi4py import MPI
 
 import numpy as np
-import numpy.typing as npt
 import pytest
 
 from dolfinx.geometry import (
-    PointOwnershipData,
     bb_tree,
     compute_closest_entity,
     compute_colliding_cells,
@@ -24,7 +22,6 @@ from dolfinx.geometry import (
 )
 from dolfinx.mesh import (
     CellType,
-    Mesh,
     compute_incident_entities,
     compute_midpoints,
     create_box,
@@ -43,9 +40,7 @@ def extract_geometricial_data(mesh, dim, entities):
     vertices"""
     mesh_nodes = []
     geom = mesh.geometry
-    g_indices = entities_to_geometry(
-        mesh, dim, np.array(entities, dtype=np.int32), False
-    )
+    g_indices = entities_to_geometry(mesh, dim, np.array(entities, dtype=np.int32), False)
     for cell in g_indices:
         nodes = np.zeros((len(cell), 3), dtype=np.float64)
         for j, entity in enumerate(cell):
@@ -558,8 +553,7 @@ def test_determine_point_ownership(dim, affine, dtype):
     num_cells_global = mesh.topology.index_map(tdim).size_global
 
     # Check point ownership for midpoints of each owned cell (should be owned by the calling process)
-    local_midpoints = compute_midpoints(
-        mesh, tdim, cells_local)
+    local_midpoints = compute_midpoints(mesh, tdim, cells_local)
     po = determine_point_ownership(mesh, local_midpoints, 0.0, cells_local)
     assert len(po.dest_cells) == local_midpoints.shape[0]
     np.testing.assert_allclose(po.dest_owner, rank)
@@ -594,3 +588,12 @@ def test_determine_point_ownership(dim, affine, dtype):
 
     for cell, point in zip(global_po.dest_cells, global_po.dest_points):
         np.testing.assert_allclose(local_midpoints[cell], point)
+
+    # Check ownership for subset of cells
+    left_cells = locate_entities(mesh, tdim, lambda x: x[0] <= 0.5 + 1e-14)
+    left_cells = left_cells[left_cells < cell_map.size_local]
+
+    subset_po = determine_point_ownership(mesh, local_midpoints, 0.0, left_cells)
+    right_cells = np.delete(cells_local, left_cells)
+    np.testing.assert_allclose(subset_po.src_owner[right_cells], -1)
+    assert len(subset_po.dest_cells) == len(left_cells)
