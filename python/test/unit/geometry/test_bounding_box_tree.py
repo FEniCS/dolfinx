@@ -187,7 +187,7 @@ def test_compute_collisions_tree_1d(point, dtype):
         return x[0] >= point[0]
 
     # Locate all vertices of mesh A that should collide
-    vertices_A = entities_to_geometry(mesh_A, 0, locator_A)
+    vertices_A = locate_entities(mesh_A, 0, locator_A)
     mesh_A.topology.create_connectivity(0, mesh_A.topology.dim)
     v_to_c = mesh_A.topology.connectivity(0, mesh_A.topology.dim)
 
