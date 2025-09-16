@@ -552,7 +552,8 @@ def test_determine_point_ownership(dim, affine, dtype):
     cells_local = np.arange(cell_map.size_local, dtype=np.int32)
     num_cells_global = mesh.topology.index_map(tdim).size_global
 
-    # Check point ownership for midpoints of each owned cell (should be owned by the calling process)
+    # Check point ownership for midpoints of each owned cell
+    # (should be owned by the calling process)
     local_midpoints = compute_midpoints(mesh, tdim, cells_local)
     po = determine_point_ownership(mesh, local_midpoints, 0.0, cells_local)
     assert len(po.dest_cells) == local_midpoints.shape[0]
@@ -583,7 +584,8 @@ def test_determine_point_ownership(dim, affine, dtype):
     for i in range(comm.size):
         assigned_ranks[ownership_ranges[i] : ownership_ranges[i + 1]] = i
     np.testing.assert_allclose(global_po.src_owner, assigned_ranks)
-    # Check that each process is assigned as many points as it has cells (from each other process)
+    # Check that each process is assigned as many points as it has cells
+    # (from each other process)
     assert len(global_po.dest_cells) == comm.size * (cell_map.size_local)
 
     for cell, point in zip(global_po.dest_cells, global_po.dest_points):
