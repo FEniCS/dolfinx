@@ -46,8 +46,6 @@ public:
   /// Destructor
   ~NewtonSolver();
 
-  std::pair<double, bool> converged(const Vec r);
-
   /// @brief Set the function for computing the residual \f$F(x) = 0\f$
   /// and the vector to assemble the residual into.
   /// @param[in] F Function to compute/assemble the residual vector `b`.
@@ -63,22 +61,6 @@ public:
   /// second is the matrix to assemble into.
   /// @param[in] Jmat Matrix to assemble the Jacobian into.
   void setJ(std::function<void(const Vec, Mat)> J, Mat Jmat);
-
-  /// @brief Get the internal Krylov solver used to solve for the Newton
-  /// updates (const version).
-  ///
-  /// The Krylov solver prefix is `nls_solve_`.
-  ///
-  /// @return The Krylov solver
-  const dolfinx::la::petsc::KrylovSolver& get_krylov_solver() const;
-
-  /// @brief Get the internal Krylov solver used to solve for the Newton
-  /// updates (non-const version).
-  ///
-  /// The Krylov solver prefix is `nls_solve_`.
-  ///
-  /// @return The Krylov solver
-  dolfinx::la::petsc::KrylovSolver& get_krylov_solver();
 
   /// @brief Set the function that is called before the residual or
   /// Jacobian are computed. It is commonly used to update ghost values.
@@ -106,17 +88,6 @@ public:
   /// @return (number of Newton iterations, whether iteration converged)
   std::pair<int, bool> solve(Vec x);
 
-  /// @brief Number of Krylov iterations elapsed since solve started.
-  /// @return Number of Krylov iterations.
-  int krylov_iterations() const;
-
-  /// @brief Get initial residual.
-  /// @return Initial residual.
-  double residual0() const;
-
-  /// @brief Get MPI communicator.
-  MPI_Comm comm() const;
-
   /// @brief Maximum number of iterations.
   int max_it = 50;
 
@@ -125,10 +96,6 @@ public:
 
   /// @brief Absolute convergence tolerance.
   double atol = 1e-10;
-
-  /// @todo change to string to enum.
-  /// @brief Convergence criterion.
-  std::string convergence_criterion = "residual";
 
   /// @brief Relaxation parameter.
   double relaxation_parameter = 1.0;
@@ -168,14 +135,11 @@ private:
   std::function<void(const NewtonSolver& solver, const Vec dx, Vec x)>
       _update_solution;
 
-  // Accumulated number of Krylov iterations since solve began
-  int _krylov_iterations;
-
   // Number of iterations
-  int _iteration;
+  // int _iteration;
 
   // Most recent residual and initial residual
-  double _residual, _residual0;
+  // double _residual, _residual0;
 
   // Linear solver
   dolfinx::la::petsc::KrylovSolver _solver;

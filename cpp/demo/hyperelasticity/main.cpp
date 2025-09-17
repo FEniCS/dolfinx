@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
         mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
     auto element = basix::create_element<U>(
-        basix::element::family::P, basix::cell::type::tetrahedron, 2,
+        basix::element::family::P, basix::cell::type::tetrahedron, 1,
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
 

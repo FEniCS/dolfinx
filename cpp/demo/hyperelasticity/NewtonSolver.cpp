@@ -15,38 +15,9 @@
 
 using namespace dolfinx;
 
-/// Convergence test
-/// @param solver The Newton solver
-/// @param r The residual vector
-/// @return The pair `(residual norm, converged)`, where `converged` is
-/// and true` if convergence achieved
-std::pair<double, bool> NewtonSolver::converged(const Vec r)
-{
-  PetscReal residual = 0;
-  VecNorm(r, NORM_2, &residual);
-
-  // Relative residual
-  const double relative_residual = residual / residual0();
-
-  // Output iteration number and residual
-  if (dolfinx::MPI::rank(comm()) == 0)
-  {
-    spdlog::info("Newton iteration {}"
-                 ": r (abs) = {} (tol = {}), r (rel) = {} (tol = {})",
-                 _iteration, residual, atol, relative_residual, rtol);
-  }
-
-  // Return true if convergence criterion is met
-  if (relative_residual < rtol or residual < atol)
-    return {residual, true};
-  else
-    return {residual, false};
-}
-
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(MPI_Comm comm)
-    : _krylov_iterations(0), _iteration(0), _residual(0), _residual0(0),
-      _solver(comm), _dx(nullptr), _comm(comm)
+    : _solver(comm), _dx(nullptr), _comm(comm)
 {
   // Create linear solver if not already created. Default to LU.
   _solver.set_options_prefix("nls_solve_");
@@ -83,17 +54,6 @@ void NewtonSolver::setJ(std::function<void(const Vec, Mat)> J,
   PetscObjectReference((PetscObject)_matJ);
 }
 //-----------------------------------------------------------------------------
-const la::petsc::KrylovSolver&
-NewtonSolver::get_krylov_solver() const
-{
-  return _solver;
-}
-//-----------------------------------------------------------------------------
-la::petsc::KrylovSolver& NewtonSolver::get_krylov_solver()
-{
-  return _solver;
-}
-//-----------------------------------------------------------------------------
 void NewtonSolver::set_form(std::function<void(Vec)> form)
 {
   _system = std::move(form);
@@ -102,10 +62,34 @@ void NewtonSolver::set_form(std::function<void(Vec)> form)
 std::pair<int, bool> NewtonSolver::solve(Vec x)
 {
   // Reset iteration counts
-  _iteration = 0;
+  int iteration = 0;
   int krylov_iterations = 0;
-  _residual = -1;
-  _residual0 = 0;
+  double residual = -1;
+  double residual0 = 0;
+
+  auto converged = [&iteration, &residual, &residual0,
+                    this](const Vec r) -> std::pair<double, bool>
+  {
+    PetscReal residual = 0;
+    VecNorm(r, NORM_2, &residual);
+
+    // Relative residual
+    const double relative_residual = residual / residual0;
+
+    // Output iteration number and residual
+    if (dolfinx::MPI::rank(_comm.comm()) == 0)
+    {
+      spdlog::info("Newton iteration {}"
+                   ": r (abs) = {} (tol = {}), r (rel) = {} (tol = {})",
+                   iteration, residual, atol, relative_residual, rtol);
+    }
+
+    // Return true if convergence criterion is met
+    if (relative_residual < rtol or residual < atol)
+      return {residual, true};
+    else
+      return {residual, false};
+  };
 
   if (!_fnF)
   {
@@ -126,16 +110,14 @@ std::pair<int, bool> NewtonSolver::solve(Vec x)
 
   // Check convergence
   bool newton_converged = false;
-  if (convergence_criterion == "residual")
-    std::tie(_residual, newton_converged) = converged(_b);
+  std::tie(residual, newton_converged) = converged(_b);
 
   _solver.set_operators(_matJ, _matJ);
 
-  if (!_dx)
-    MatCreateVecs(_matJ, &_dx, nullptr);
+  MatCreateVecs(_matJ, &_dx, nullptr);
 
   // Start iterations
-  while (!newton_converged and _iteration < max_it)
+  while (!newton_converged and iteration < max_it)
   {
     // Compute Jacobian
     assert(_matJ);
@@ -148,22 +130,23 @@ std::pair<int, bool> NewtonSolver::solve(Vec x)
     VecAXPY(x, -relaxation_parameter, _dx);
 
     // Increment iteration count
-    ++_iteration;
+    ++iteration;
 
     // Compute F
     if (_system)
       _system(x);
     _fnF(x, _b);
+
     // Initialize _residual0
-    if (_iteration == 1)
+    if (iteration == 1)
     {
       PetscReal _r = 0;
       VecNorm(_dx, NORM_2, &_r);
-      _residual0 = _r;
+      residual0 = _r;
     }
 
     // Test for convergence
-    std::tie(_residual, newton_converged) = converged(_b);
+    std::tie(residual, newton_converged) = converged(_b);
   }
 
   if (newton_converged)
@@ -172,7 +155,7 @@ std::pair<int, bool> NewtonSolver::solve(Vec x)
     {
       spdlog::info("Newton solver finished in {} iterations and {} linear "
                    "solver iterations.",
-                   _iteration, krylov_iterations);
+                   iteration, krylov_iterations);
     }
   }
   else
@@ -180,20 +163,6 @@ std::pair<int, bool> NewtonSolver::solve(Vec x)
     throw std::runtime_error("Newton solver did not converge.");
   }
 
-  return {_iteration, newton_converged};
+  return {iteration, newton_converged};
 }
-//-----------------------------------------------------------------------------
-int NewtonSolver::krylov_iterations() const
-{
-  return _krylov_iterations;
-}
-//-----------------------------------------------------------------------------
-// int NewtonSolver::iteration() const { return _iteration; }
-//-----------------------------------------------------------------------------
-// double NewtonSolver::residual() const { return _residual; }
-//-----------------------------------------------------------------------------
-double NewtonSolver::residual0() const { return _residual0; }
-//-----------------------------------------------------------------------------
-MPI_Comm NewtonSolver::comm() const { return _comm.comm(); }
-//-----------------------------------------------------------------------------
 // #endif
