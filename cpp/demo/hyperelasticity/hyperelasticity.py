@@ -27,9 +27,8 @@ from ufl import (
 
 # Function spaces
 e = element("Lagrange", "tetrahedron", 1, shape=(3,))
-e2 = element("Lagrange", "tetrahedron", 1, shape=(3,))
 mesh = Mesh(e)
-V = FunctionSpace(mesh, e2)
+V = FunctionSpace(mesh, e)
 
 # Trial and test functions
 du = TrialFunction(V)  # Incremental displacement
@@ -75,8 +74,6 @@ lmbda = E * nu / ((1 + nu) * (1 - 2 * nu))
 # Stored strain energy density (compressible neo-Hookean model)
 psi = (mu / 2) * (Ic - 3) - mu * ln(J) + (lmbda / 2) * (ln(J)) ** 2
 
-
-# dx = Measure("dx", metadata={"quadrature_degree": 3})
 # Total potential energy
 Pi = psi * dx - inner(B, u) * dx - inner(T, u) * ds
 

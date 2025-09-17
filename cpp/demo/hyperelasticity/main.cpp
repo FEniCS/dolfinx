@@ -14,7 +14,6 @@
 
 // ## C++ program
 
-#include "NewtonSolver.h"
 #include "hyperelasticity.h"
 #include <algorithm>
 #include <basix/finite-element.h>
@@ -72,8 +71,8 @@ public:
   /// Destructor
   virtual ~HyperElasticProblem()
   {
-    if (_b)
-      VecDestroy(&_b);
+    assert(_b);
+    VecDestroy(&_b);
   }
 
   /// @brief Newton Solver
@@ -82,7 +81,7 @@ public:
   std::pair<int, bool> solve(Vec x)
   {
     int iteration = 0;
-    double residual0 = 0;
+    PetscReal residual0 = 0;
 
     auto converged
         = [&iteration, &residual0, this](const Vec r) -> std::pair<double, bool>
@@ -140,11 +139,7 @@ public:
 
       // Initialize residual0
       if (iteration == 1)
-      {
-        PetscReal _r = 0;
-        VecNorm(dx, NORM_2, &_r);
-        residual0 = _r;
-      }
+        VecNorm(dx, NORM_2, &residual0);
 
       // Test for convergence
       std::tie(residual, newton_converged) = converged(_b);
@@ -157,9 +152,7 @@ public:
                    iteration, krylov_iterations);
     }
     else
-    {
       throw std::runtime_error("Newton solver did not converge.");
-    }
 
     VecDestroy(&dx);
 
