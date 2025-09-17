@@ -135,12 +135,6 @@ private:
   std::function<void(const NewtonSolver& solver, const Vec dx, Vec x)>
       _update_solution;
 
-  // Number of iterations
-  // int _iteration;
-
-  // Most recent residual and initial residual
-  // double _residual, _residual0;
-
   // Linear solver
   dolfinx::la::petsc::KrylovSolver _solver;
 
