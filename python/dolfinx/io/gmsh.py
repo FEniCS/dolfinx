@@ -376,7 +376,6 @@ def model_to_mesh(
         _elementType_dim = _elementTypes[0]
         if _elementType_dim not in topologies.keys():
             error_msg = "All cells are expected to be tagged once; none found"
-    
 
         num_cells_tagged = len(topologies[_elementType_dim]["entity_tags"])
         if (num_cells := len(_elementTags[0])) != num_cells_tagged:
