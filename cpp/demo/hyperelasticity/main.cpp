@@ -76,12 +76,12 @@ public:
       VecDestroy(&_b);
   }
 
+  /// @brief Newton Solver
+  /// @param x Solution vector
+  /// @return Iteration count and flag indicating convergence
   std::pair<int, bool> solve(Vec x)
   {
-    // Reset iteration counts
     int iteration = 0;
-    int krylov_iterations = 0;
-    double residual = -1;
     double residual0 = 0;
 
     auto converged
@@ -105,13 +105,10 @@ public:
         return {residual, false};
     };
 
-    form(x);
     assert(_b);
     F(x);
 
-    // Check convergence
-    bool newton_converged = false;
-    std::tie(residual, newton_converged) = converged(_b);
+    auto [residual, newton_converged] = converged(_b);
 
     _solver.set_operators(_matJ.mat(), _matJ.mat());
 
@@ -119,6 +116,8 @@ public:
     MatCreateVecs(_matJ.mat(), &dx, nullptr);
 
     int max_it = 50;
+    int krylov_iterations = 0;
+
     // Start iterations
     while (!newton_converged and iteration < max_it)
     {
@@ -137,10 +136,9 @@ public:
       ++iteration;
 
       // Compute F
-      form(x);
       F(x);
 
-      // Initialize _residual0
+      // Initialize residual0
       if (iteration == 1)
       {
         PetscReal _r = 0;
@@ -168,17 +166,12 @@ public:
     return {iteration, newton_converged};
   }
 
-  /// @brief  Form
-  /// @return
-  void form(Vec x)
-  {
-    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
-  }
-
   /// Compute F at current point x
   void F(const Vec x)
   {
+    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+
     // Assemble b and update ghosts
     std::span b(_b_vec.array());
     std::ranges::fill(b, 0);
