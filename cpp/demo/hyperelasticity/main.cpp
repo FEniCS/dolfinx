@@ -44,13 +44,13 @@ class HyperElasticProblem
 {
 public:
   /// Constructor
-  HyperElasticProblem(MPI_Comm comm, fem::Form<T>& L, fem::Form<T>& J,
+  HyperElasticProblem(fem::Form<T>& L, fem::Form<T>& J,
                       const std::vector<fem::DirichletBC<T>>& bcs)
       : _l(L), _j(J), _bcs(bcs.begin(), bcs.end()),
         _b_vec(L.function_spaces()[0]->dofmap()->index_map,
                L.function_spaces()[0]->dofmap()->index_map_bs()),
-        _matA(la::petsc::Matrix(fem::petsc::create_matrix(J, "aij"), false)),
-        _solver(comm), _comm(comm)
+        _matJ(la::petsc::Matrix(fem::petsc::create_matrix(J, "aij"), false)),
+        _solver(L.function_spaces()[0]->dofmap()->index_map->comm())
   {
     auto map = L.function_spaces()[0]->dofmap()->index_map;
     const int bs = L.function_spaces()[0]->dofmap()->index_map_bs();
@@ -67,8 +67,6 @@ public:
     la::petsc::options::set("nls_solve_ksp_type", "preonly");
     la::petsc::options::set("nls_solve_pc_type", "lu");
     _solver.set_from_options();
-
-    _matJ = _matA.mat();
   }
 
   /// Destructor
@@ -96,12 +94,9 @@ public:
       const double relative_residual = residual / residual0;
 
       // Output iteration number and residual
-      if (dolfinx::MPI::rank(_comm.comm()) == 0)
-      {
-        spdlog::info("Newton iteration {}"
-                     ": r (abs) = {} (tol = {}), r (rel) = {} (tol = {})",
-                     iteration, residual, atol, relative_residual, rtol);
-      }
+      spdlog::info("Newton iteration {}"
+                   ": r (abs) = {} (tol = {}), r (rel) = {} (tol = {})",
+                   iteration, residual, atol, relative_residual, rtol);
 
       // Return true if convergence criterion is met
       if (relative_residual < rtol or residual < atol)
@@ -112,24 +107,24 @@ public:
 
     form(x);
     assert(_b);
-    F(x, _b);
+    F(x);
 
     // Check convergence
     bool newton_converged = false;
     std::tie(residual, newton_converged) = converged(_b);
 
-    _solver.set_operators(_matJ, _matJ);
+    _solver.set_operators(_matJ.mat(), _matJ.mat());
 
     Vec dx;
-    MatCreateVecs(_matJ, &dx, nullptr);
+    MatCreateVecs(_matJ.mat(), &dx, nullptr);
 
     int max_it = 50;
     // Start iterations
     while (!newton_converged and iteration < max_it)
     {
       // Compute Jacobian
-      assert(_matJ);
-      J(x, _matJ);
+      assert(_matJ.mat());
+      J(x, _matJ.mat());
 
       // Perform linear solve and update total number of Krylov iterations
       krylov_iterations += _solver.solve(dx, _b);
@@ -143,7 +138,7 @@ public:
 
       // Compute F
       form(x);
-      F(x, _b);
+      F(x);
 
       // Initialize _residual0
       if (iteration == 1)
@@ -159,12 +154,9 @@ public:
 
     if (newton_converged)
     {
-      if (dolfinx::MPI::rank(_comm.comm()) == 0)
-      {
-        spdlog::info("Newton solver finished in {} iterations and {} linear "
-                     "solver iterations.",
-                     iteration, krylov_iterations);
-      }
+      spdlog::info("Newton solver finished in {} iterations and {} linear "
+                   "solver iterations.",
+                   iteration, krylov_iterations);
     }
     else
     {
@@ -185,7 +177,7 @@ public:
   }
 
   /// Compute F at current point x
-  void F(const Vec x, Vec)
+  void F(const Vec x)
   {
     // Assemble b and update ghosts
     std::span b(_b_vec.array());
@@ -234,14 +226,10 @@ private:
   Vec _b = nullptr;
 
   // Jacobian matrix
-  la::petsc::Matrix _matA;
-  Mat _matJ = nullptr;
+  la::petsc::Matrix _matJ;
 
   // Linear solver
   dolfinx::la::petsc::KrylovSolver _solver;
-
-  // MPI communicator
-  dolfinx::MPI::Comm _comm;
 };
 
 int main(int argc, char* argv[])
@@ -353,7 +341,7 @@ int main(int argc, char* argv[])
         = {fem::DirichletBC<T>(std::vector<T>{0, 0, 0}, bdofs_left, V),
            fem::DirichletBC<T>(u_rotation, bdofs_right)};
 
-    HyperElasticProblem problem(mesh->comm(), L, a, bcs);
+    HyperElasticProblem problem(L, a, bcs);
     problem.rtol = 10 * std::numeric_limits<T>::epsilon();
     problem.atol = 10 * std::numeric_limits<T>::epsilon();
 
