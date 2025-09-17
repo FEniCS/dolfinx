@@ -359,7 +359,6 @@ def model_to_mesh(
     if not valid_mesh:
         raise RuntimeError("No 'physical groups' in gmsh mesh. Cannot continue.")
 
-
     # Sort elements by descending dimension
     assert len(np.unique(entity_tdim)) == len(entity_tdim)
     perm_sort = np.argsort(entity_tdim)[::-1]
@@ -379,8 +378,10 @@ def model_to_mesh(
 
         num_cells_tagged = len(topologies[_elementType_dim]["entity_tags"])
         if (num_cells := len(_elementTags[0])) != num_cells_tagged:
-            error_msg =  "All cells are expected to be tagged once;" + \
-                f"found: {num_cells_tagged}, expected: {num_cells}"
+            error_msg = (
+                "All cells are expected to be tagged once;"
+                + f"found: {num_cells_tagged}, expected: {num_cells}"
+            )
         num_cells_tagged_once = len(np.unique(topologies[_elementType_dim]["entity_tags"]))
         if num_cells_tagged != num_cells_tagged_once:
             error_msg = "All cells are expected to be tagged once, found duplicates"
@@ -388,7 +389,7 @@ def model_to_mesh(
     error_msg = comm.bcast(error_msg, root=rank)
     if error_msg != "":
         raise RuntimeError(error_msg)
-    
+
     # Extract entity -> node connectivity for all cells and sub-entities
     # marked in the GMSH model
     meshtags: dict[int, tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]] = {}
