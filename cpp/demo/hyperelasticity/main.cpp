@@ -14,6 +14,7 @@
 
 // ## C++ program
 
+#include "NewtonSolver.h"
 #include "hyperelasticity.h"
 #include <algorithm>
 #include <basix/finite-element.h>
@@ -28,7 +29,6 @@
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <dolfinx/nls/NewtonSolver.h>
 #include <numbers>
 #include <petscmat.h>
 #include <petscsys.h>
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
         mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
     auto element = basix::create_element<U>(
-        basix::element::family::P, basix::cell::type::tetrahedron, 1,
+        basix::element::family::P, basix::cell::type::tetrahedron, 2,
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
 
@@ -247,7 +247,7 @@ int main(int argc, char* argv[])
            fem::DirichletBC<T>(u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);
-    nls::petsc::NewtonSolver newton_solver(mesh->comm());
+    NewtonSolver newton_solver(mesh->comm());
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
     newton_solver.set_form(problem.form());
