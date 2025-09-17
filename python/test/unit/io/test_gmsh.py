@@ -16,6 +16,7 @@ import pytest
         pytest.param(0, marks=pytest.mark.xfail(raises=RuntimeError)),
         pytest.param(1, marks=pytest.mark.xfail(raises=RuntimeError)),
         2,
+        pytest.param(3, marks=pytest.mark.xfail(raises=RuntimeError)),
     ],
 )
 def test_physical_tags(marker_mode):
@@ -41,7 +42,8 @@ def test_physical_tags(marker_mode):
             volume_entities = volume_entities[:marker_mode]
             for i, entity in enumerate(volume_entities):
                 model.addPhysicalGroup(3, [entity], tag=i)
-
+            if marker_mode == 3:  # Check duplicate marker error
+                model.addPhysicalGroup(3, [entity], tag=10)
             model.mesh.generate(3)
             gmsh.option.setNumber("General.Terminal", 1)
             model.mesh.setOrder(order)

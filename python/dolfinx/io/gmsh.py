@@ -326,14 +326,13 @@ def model_to_mesh(
         and corresponding tags using :class:`dolfinx.io.XDMFFile` after
         creation for efficient access.
     """
+    valid_mesh = None
     if comm.rank == rank:
         assert model is not None, "Gmsh model is None on rank responsible for mesh creation."
         # Get mesh geometry and mesh topology for each element
         x = extract_geometry(model)
         topologies, physical_groups = extract_topology_and_markers(model)
-
-        if len(physical_groups) == 0:
-            raise RuntimeError("No 'physical groups' in gmsh mesh. Cannot continue.")
+        valid_mesh = len(physical_groups) > 0
 
         # Extract Gmsh entity (cell) id, topological dimension and number
         # of nodes which is used to create an appropriate coordinate
@@ -356,6 +355,11 @@ def model_to_mesh(
     else:
         entity_tdim, element_ids, num_nodes_per_element = comm.bcast((None, None, None), root=rank)
 
+    valid_mesh = comm.bcast(valid_mesh, root=rank)
+    if not valid_mesh:
+        raise RuntimeError("No 'physical groups' in gmsh mesh. Cannot continue.")
+
+
     # Sort elements by descending dimension
     assert len(np.unique(entity_tdim)) == len(entity_tdim)
     perm_sort = np.argsort(entity_tdim)[::-1]
@@ -366,22 +370,26 @@ def model_to_mesh(
     tdim = int(entity_tdim[cell_position])
 
     # Check that all cells are tagged once
+    error_msg = ""
     if comm.rank == rank:
         _elementTypes, _elementTags, _nodeTags = model.mesh.getElements(dim=tdim, tag=-1)
         _elementType_dim = _elementTypes[0]
         if _elementType_dim not in topologies.keys():
-            raise RuntimeError("All cells are expected to be tagged once; none found")
+            error_msg = "All cells are expected to be tagged once; none found"
+    
 
         num_cells_tagged = len(topologies[_elementType_dim]["entity_tags"])
         if (num_cells := len(_elementTags[0])) != num_cells_tagged:
-            raise RuntimeError(
-                "All cells are expected to be tagged once;"
+            error_msg =  "All cells are expected to be tagged once;" + \
                 f"found: {num_cells_tagged}, expected: {num_cells}"
-            )
         num_cells_tagged_once = len(np.unique(topologies[_elementType_dim]["entity_tags"]))
         if num_cells_tagged != num_cells_tagged_once:
-            raise RuntimeError("All cells are expected to be tagged once; found duplicates")
+            error_msg = "All cells are expected to be tagged once, found duplicates"
 
+    error_msg = comm.bcast(error_msg, root=rank)
+    if error_msg != "":
+        raise RuntimeError(error_msg)
+    
     # Extract entity -> node connectivity for all cells and sub-entities
     # marked in the GMSH model
     meshtags: dict[int, tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]] = {}
