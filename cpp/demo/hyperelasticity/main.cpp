@@ -50,7 +50,7 @@ public:
         _b_vec(L.function_spaces()[0]->dofmap()->index_map,
                L.function_spaces()[0]->dofmap()->index_map_bs()),
         _matA(la::petsc::Matrix(fem::petsc::create_matrix(J, "aij"), false)),
-        _solver(comm), _dx(nullptr), _comm(comm)
+        _solver(comm), _comm(comm)
   {
     auto map = L.function_spaces()[0]->dofmap()->index_map;
     const int bs = L.function_spaces()[0]->dofmap()->index_map_bs();
@@ -76,8 +76,6 @@ public:
   {
     if (_b)
       VecDestroy(&_b);
-    if (_dx)
-      VecDestroy(&_dx);
   }
 
   std::pair<int, bool> solve(Vec x)
@@ -122,8 +120,10 @@ public:
 
     _solver.set_operators(_matJ, _matJ);
 
-    MatCreateVecs(_matJ, &_dx, nullptr);
+    Vec dx;
+    MatCreateVecs(_matJ, &dx, nullptr);
 
+    int max_it = 50;
     // Start iterations
     while (!newton_converged and iteration < max_it)
     {
@@ -132,10 +132,11 @@ public:
       J(x, _matJ);
 
       // Perform linear solve and update total number of Krylov iterations
-      krylov_iterations += _solver.solve(_dx, _b);
+      krylov_iterations += _solver.solve(dx, _b);
 
       // Update solution
-      VecAXPY(x, -relaxation_parameter, _dx);
+      double relaxation_parameter = 1.0;
+      VecAXPY(x, -relaxation_parameter, dx);
 
       // Increment iteration count
       ++iteration;
@@ -148,7 +149,7 @@ public:
       if (iteration == 1)
       {
         PetscReal _r = 0;
-        VecNorm(_dx, NORM_2, &_r);
+        VecNorm(dx, NORM_2, &_r);
         residual0 = _r;
       }
 
@@ -169,6 +170,8 @@ public:
     {
       throw std::runtime_error("Newton solver did not converge.");
     }
+
+    VecDestroy(&dx);
 
     return {iteration, newton_converged};
   }
@@ -237,17 +240,8 @@ private:
   // Linear solver
   dolfinx::la::petsc::KrylovSolver _solver;
 
-  // Solution vector
-  Vec _dx = nullptr;
-
   // MPI communicator
   dolfinx::MPI::Comm _comm;
-
-  /// @brief Maximum number of iterations.
-  int max_it = 50;
-
-  /// @brief Relaxation parameter.
-  double relaxation_parameter = 1.0;
 };
 
 int main(int argc, char* argv[])
