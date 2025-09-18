@@ -5,10 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Graph representations and operations on graphs."""
 
-from __future__ import annotations
-
-from typing import Optional, Union
-
 import numpy as np
 import numpy.typing as npt
 
@@ -42,19 +38,19 @@ __all__ = [
 
 
 class AdjacencyList:
-    _cpp_object: Union[
-        _cpp.graph.AdjacencyList_int32,
-        _cpp.graph.AdjacencyList_int64,
-        _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32,
-    ]
+    _cpp_object: (
+        _cpp.graph.AdjacencyList_int32
+        | _cpp.graph.AdjacencyList_int64
+        | _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32
+    )
 
     def __init__(
         self,
-        cpp_object: Union[
-            _cpp.graph.AdjacencyList_int32,
-            _cpp.graph.AdjacencyList_int64,
-            _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32,
-        ],
+        cpp_object: (
+            _cpp.graph.AdjacencyList_int32
+            | _cpp.graph.AdjacencyList_int64
+            | _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32
+        ),
     ):
         """Creates a Python wrapper for the exported adjacency list class.
 
@@ -70,7 +66,7 @@ class AdjacencyList:
     def __repr__(self):
         return self._cpp_object.__repr__
 
-    def links(self, node: Union[np.int32, np.int64]) -> npt.NDArray[Union[np.int32, np.int64]]:
+    def links(self, node: np.int32 | np.int64) -> npt.NDArray[np.int32 | np.int64]:
         """Retrieve the links of a node.
 
         Note:
@@ -86,7 +82,7 @@ class AdjacencyList:
         return self._cpp_object.links(node)
 
     @property
-    def array(self) -> npt.NDArray[Union[np.int32, np.int64]]:
+    def array(self) -> npt.NDArray[np.int32 | np.int64]:
         """Array representation of the adjacency list.
 
         Note:
@@ -118,7 +114,7 @@ class AdjacencyList:
 
 
 def adjacencylist(
-    data: npt.NDArray[Union[np.int32, np.int64]], offsets: Optional[npt.NDArray[np.int32]] = None
+    data: npt.NDArray[np.int32 | np.int64], offsets: npt.NDArray[np.int32] | None = None
 ) -> AdjacencyList:
     """Create an :class:`AdjacencyList` for `int32` or `int64` datasets.
 

@@ -25,8 +25,6 @@ from __future__ import annotations
 
 import contextlib
 import functools
-import itertools
-import typing
 from collections.abc import Sequence
 
 from petsc4py import PETSc
@@ -83,27 +81,29 @@ __all__ = [
 
 
 def create_vector(
-    L: typing.Union[Form, Sequence[Form]], kind: typing.Optional[str] = None
+    V: _FunctionSpace | Sequence[_FunctionSpace | None],
+    /,
+    kind: str | None = None,
 ) -> PETSc.Vec:  # type: ignore[name-defined]
-    """Create a PETSc vector that is compatible with a linear form(s).
-
+    """Create a PETSc vector that is compatible with a linear form(s)
+    or functionspace(s).
     Three cases are supported:
 
-    1. For a single linear form ``L``, if ``kind`` is ``None`` or is
-       ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
-       compatible with ``L`` is created.
+    1. For a single space ``V``, if ``kind`` is ``None`` or is
+       ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is compatible
+       with ``V`` is created.
 
-    2. If ``L`` is a sequence of linear forms and ``kind`` is ``None``
-       or is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
-       compatible with ``L`` is created. The created vector ``b`` is
-       initialized such that on each MPI process ``b = [b_0, b_1, ...,
+    2. If ``V`` is a sequence of functionspaces and ``kind`` is ``None`` or
+       is ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector which is
+       compatible with ``V`` is created. The created vector ``b``
+       is initialized such that on each MPI process ``b = [b_0, b_1, ...,
        b_n, b_0g, b_1g, ..., b_ng]``, where ``b_i`` are the entries
-       associated with the 'owned' degrees-of-freedom for ``L[i]`` and
-       ``b_ig`` are the 'unowned' (ghost) entries for ``L[i]``.
+       associated with the 'owned' degrees-of-freedom for ``V[i]`` and
+       ``b_ig`` are the 'unowned' (ghost) entries for ``V[i]``.
 
        For this case, the returned vector has an attribute ``_blocks``
        that holds the local offsets into ``b`` for the (i) owned and
-       (ii) ghost entries for each ``L[i]``. It can be accessed by
+       (ii) ghost entries for each ``V_i``. It can be accessed by
        ``b.getAttr("_blocks")``. The offsets can be used to get views
        into ``b`` for blocks, e.g.::
 
@@ -117,58 +117,35 @@ def create_vector(
            >>> b1_owned = b.array[offsets0[1]:offsets0[2]]
            >>> b1_ghost = b.array[offsets1[1]:offsets1[2]]
 
-    3. If ``L`` is a sequence of linear forms and ``kind`` is
-       ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a 'nest' of
-       ghosted PETSc vectors) which is compatible with ``L`` is created.
+    3. If ``L/V`` is a sequence of linear forms/functionspaces and ``kind``
+       is ``PETSc.Vec.Type.NEST``, a PETSc nested vector (a 'nest' of
+       ghosted PETSc vectors) which is compatible with ``L/V`` is created.
 
     Args:
-        L: Linear form or a sequence of linear forms.
+        V: Function space or a sequence of such.
         kind: PETSc vector type (``VecType``) to create.
 
     Returns:
-        A PETSc vector with a layout that is compatible with ``L``. The
+        A PETSc vector with a layout that is compatible with ``V``. The
         vector is not initialised to zero.
     """
-    if isinstance(L, Sequence):
-        maps = [
-            (
-                form.function_spaces[0].dofmaps(0).index_map,  # type: ignore[attr-defined]
-                form.function_spaces[0].dofmaps(0).index_map_bs,  # type: ignore[attr-defined]
-            )
-            for form in L
-        ]
-        if kind == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
-            return _cpp.fem.petsc.create_vector_nest(maps)
-        elif kind == PETSc.Vec.Type.MPI or kind is None:  # type: ignore[attr-defined]
-            off_owned = tuple(
-                itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
-            )
-            off_ghost = tuple(
-                itertools.accumulate(
-                    maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-                )
-            )
+    if isinstance(
+        V, _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
+    ):
+        V = [V]
+    elif any(_V is None for _V in V):
+        raise RuntimeError("Can not create vector for None block.")
 
-            b = _cpp.fem.petsc.create_vector_block(maps)
-            b.setAttr("_blocks", (off_owned, off_ghost))
-            return b
-        else:
-            raise NotImplementedError(
-                "Vector type must be specified for blocked/nested assembly."
-                f"Vector type '{kind}' not supported."
-                "Did you mean 'nest' or 'mpi'?"
-            )
-    else:
-        dofmap = L.function_spaces[0].dofmaps(0)  # type: ignore[attr-defined]
-        return dolfinx.la.petsc.create_vector(dofmap.index_map, dofmap.index_map_bs)
+    maps = [(_V.dofmap.index_map, _V.dofmap.index_map_bs) for _V in V]  # type: ignore
+    return dolfinx.la.petsc.create_vector(maps, kind=kind)
 
 
 # -- Matrix instantiation -------------------------------------------------
 
 
 def create_matrix(
-    a: typing.Union[Form, Sequence[Sequence[Form]]],
-    kind: typing.Optional[typing.Union[str, Sequence[Sequence[str]]]] = None,
+    a: Form | Sequence[Sequence[Form]],
+    kind: str | Sequence[Sequence[str]] | None = None,
 ) -> PETSc.Mat:  # type: ignore[name-defined]
     """Create a PETSc matrix that is compatible with the (sequence) of
     bilinear form(s).
@@ -220,15 +197,14 @@ def create_matrix(
 
 @functools.singledispatch
 def assemble_vector(
-    L: typing.Union[Form, Sequence[Form]],
-    constants: typing.Optional[typing.Union[npt.NDArray, Sequence[npt.NDArray]]] = None,
-    coeffs: typing.Optional[
-        typing.Union[
-            dict[tuple[IntegralType, int], npt.NDArray],
-            Sequence[dict[tuple[IntegralType, int], npt.NDArray]],
-        ]
-    ] = None,
-    kind: typing.Optional[str] = None,
+    L: Form | Sequence[Form],
+    constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
+    coeffs: (
+        dict[tuple[IntegralType, int], npt.NDArray]
+        | Sequence[dict[tuple[IntegralType, int], npt.NDArray]]
+        | None
+    ) = None,
+    kind: str | None = None,
 ) -> PETSc.Vec:  # type: ignore[name-defined]
     """Assemble linear form(s) into a new PETSc vector.
 
@@ -277,7 +253,7 @@ def assemble_vector(
     Returns:
         An assembled vector.
     """
-    b = create_vector(L, kind=kind)
+    b = create_vector(_extract_function_spaces(L), kind=kind)  # type: ignore
     dolfinx.la.petsc._zero_vector(b)
     return assemble_vector(b, L, constants, coeffs)  # type: ignore[arg-type]
 
@@ -285,14 +261,13 @@ def assemble_vector(
 @assemble_vector.register
 def _(
     b: PETSc.Vec,  # type: ignore[name-defined]
-    L: typing.Union[Form, Sequence[Form]],
-    constants: typing.Optional[typing.Union[npt.NDArray, Sequence[npt.NDArray]]] = None,
-    coeffs: typing.Optional[
-        typing.Union[
-            dict[tuple[IntegralType, int], npt.NDArray],
-            Sequence[dict[tuple[IntegralType, int], npt.NDArray]],
-        ]
-    ] = None,
+    L: Form | Sequence[Form],
+    constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
+    coeffs: (
+        dict[tuple[IntegralType, int], npt.NDArray]
+        | Sequence[dict[tuple[IntegralType, int], npt.NDArray]]
+        | None
+    ) = None,
 ) -> PETSc.Vec:  # type: ignore[name-defined]
     """Assemble linear form(s) into a PETSc vector.
 
@@ -355,18 +330,15 @@ def _(
 # -- Matrix assembly ------------------------------------------------------
 @functools.singledispatch
 def assemble_matrix(
-    a: typing.Union[Form, Sequence[Sequence[Form]]],
-    bcs: typing.Optional[Sequence[DirichletBC]] = None,
+    a: Form | Sequence[Sequence[Form]],
+    bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1,
-    constants: typing.Optional[
-        typing.Union[Sequence[npt.NDArray], Sequence[Sequence[npt.NDArray]]]
-    ] = None,
-    coeffs: typing.Optional[
-        typing.Union[
-            dict[tuple[IntegralType, int], npt.NDArray],
-            Sequence[dict[tuple[IntegralType, int], npt.NDArray]],
-        ]
-    ] = None,
+    constants: Sequence[npt.NDArray] | Sequence[Sequence[npt.NDArray]] | None = None,
+    coeffs: (
+        dict[tuple[IntegralType, int], npt.NDArray]
+        | Sequence[dict[tuple[IntegralType, int], npt.NDArray]]
+        | None
+    ) = None,
     kind=None,
 ):
     """Assemble a bilinear form into a matrix.
@@ -426,16 +398,15 @@ def assemble_matrix(
 @assemble_matrix.register
 def _(
     A: PETSc.Mat,  # type: ignore[name-defined]
-    a: typing.Union[Form, Sequence[Sequence[Form]]],
-    bcs: typing.Optional[Sequence[DirichletBC]] = None,
+    a: Form | Sequence[Sequence[Form]],
+    bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1,
-    constants: typing.Optional[typing.Union[npt.NDArray, Sequence[Sequence[npt.NDArray]]]] = None,
-    coeffs: typing.Optional[
-        typing.Union[
-            dict[tuple[IntegralType, int], npt.NDArray],
-            Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]],
-        ]
-    ] = None,
+    constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
+    coeffs: (
+        dict[tuple[IntegralType, int], npt.NDArray]
+        | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
+        | None
+    ) = None,
 ) -> PETSc.Mat:  # type: ignore[name-defined]
     """Assemble bilinear form into a matrix.
 
@@ -538,19 +509,16 @@ def _(
 
 def apply_lifting(
     b: PETSc.Vec,  # type: ignore[name-defined]
-    a: typing.Union[Sequence[Form], Sequence[Sequence[Form]]],
-    bcs: typing.Optional[typing.Union[Sequence[DirichletBC], Sequence[Sequence[DirichletBC]]]],
-    x0: typing.Optional[Sequence[PETSc.Vec]] = None,  # type: ignore[name-defined]
+    a: Sequence[Form] | Sequence[Sequence[Form]],
+    bcs: Sequence[DirichletBC] | Sequence[Sequence[DirichletBC]] | None,
+    x0: Sequence[PETSc.Vec] | None = None,  # type: ignore[name-defined]
     alpha: float = 1,
-    constants: typing.Optional[
-        typing.Union[Sequence[npt.NDArray], Sequence[Sequence[npt.NDArray]]]
-    ] = None,
-    coeffs: typing.Optional[
-        typing.Union[
-            dict[tuple[IntegralType, int], npt.NDArray],
-            Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]],
-        ]
-    ] = None,
+    constants: Sequence[npt.NDArray] | Sequence[Sequence[npt.NDArray]] | None = None,
+    coeffs: (
+        dict[tuple[IntegralType, int], npt.NDArray]
+        | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
+        | None
+    ) = None,
 ) -> None:
     r"""Modify the right-hand side PETSc vector ``b`` to account for
     constraints (Dirichlet boundary conitions).
@@ -658,8 +626,8 @@ def apply_lifting(
 
 def set_bc(
     b: PETSc.Vec,  # type: ignore[name-defined]
-    bcs: typing.Union[Sequence[DirichletBC], Sequence[Sequence[DirichletBC]]],
-    x0: typing.Optional[PETSc.Vec] = None,  # type: ignore[name-defined]
+    bcs: Sequence[DirichletBC] | Sequence[Sequence[DirichletBC]],
+    x0: PETSc.Vec | None = None,  # type: ignore[name-defined]
     alpha: float = 1,
 ) -> None:
     r"""Set constraint (Dirchlet boundary condition) values in an vector.
@@ -727,18 +695,18 @@ class LinearProblem:
 
     def __init__(
         self,
-        a: typing.Union[ufl.Form, Sequence[Sequence[ufl.Form]]],
-        L: typing.Union[ufl.Form, Sequence[ufl.Form]],
+        a: ufl.Form | Sequence[Sequence[ufl.Form]],
+        L: ufl.Form | Sequence[ufl.Form],
         *,
         petsc_options_prefix: str,
-        bcs: typing.Optional[Sequence[DirichletBC]] = None,
-        u: typing.Optional[typing.Union[_Function, Sequence[_Function]]] = None,
-        P: typing.Optional[typing.Union[ufl.Form, Sequence[Sequence[ufl.Form]]]] = None,
-        kind: typing.Optional[typing.Union[str, Sequence[Sequence[str]]]] = None,
-        petsc_options: typing.Optional[dict] = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
-        entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
+        bcs: Sequence[DirichletBC] | None = None,
+        u: _Function | Sequence[_Function] | None = None,
+        P: ufl.Form | Sequence[Sequence[ufl.Form]] | None = None,
+        kind: str | Sequence[Sequence[str]] | None = None,
+        petsc_options: dict | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        entity_maps: Sequence[_EntityMap] | None = None,
     ) -> None:
         """Initialize solver for a linear variational problem.
 
@@ -850,10 +818,10 @@ class LinearProblem:
         # For nest matrices kind can be a nested list.
         kind = "nest" if self.A.getType() == PETSc.Mat.Type.NEST else kind  # type: ignore[attr-defined]
         assert kind is None or isinstance(kind, str)
-        self._b = create_vector(self.L, kind=kind)
-        self._x = create_vector(self.L, kind=kind)
+        self._b = create_vector(_extract_function_spaces(self.L), kind=kind)  # type: ignore
+        self._x = create_vector(_extract_function_spaces(self.L), kind=kind)  # type: ignore
 
-        self._u: typing.Union[_Function, Sequence[_Function]]
+        self._u: _Function | Sequence[_Function]
         if u is None:
             # Extract function space for unknown from the right hand
             # side of the equation.
@@ -916,7 +884,7 @@ class LinearProblem:
         if self._P_mat is not None:
             self._P_mat.destroy()
 
-    def solve(self) -> typing.Union[_Function, Sequence[_Function]]:
+    def solve(self) -> _Function | Sequence[_Function]:
         """Solve the problem.
 
         This method updates the solution ``u`` function(s) stored in the
@@ -978,17 +946,17 @@ class LinearProblem:
         return self.u
 
     @property
-    def L(self) -> typing.Union[Form, Sequence[Form]]:
+    def L(self) -> Form | Sequence[Form]:
         """The compiled linear form representing the left-hand side."""
         return self._L
 
     @property
-    def a(self) -> typing.Union[Form, Sequence[Form]]:
+    def a(self) -> Form | Sequence[Form]:
         """The compiled bilinear form representing the right-hand side."""
         return self._a
 
     @property
-    def preconditioner(self) -> typing.Union[Form, Sequence[Form]]:
+    def preconditioner(self) -> Form | Sequence[Form]:
         """The compiled bilinear form representing the preconditioner."""
         return self._preconditioner
 
@@ -1023,7 +991,7 @@ class LinearProblem:
         return self._solver
 
     @property
-    def u(self) -> typing.Union[_Function, Sequence[_Function]]:
+    def u(self) -> _Function | Sequence[_Function]:
         """Solution function(s).
 
         Note:
@@ -1043,32 +1011,22 @@ def _assign_block_data(forms: Sequence[Form], vec: PETSc.Vec):  # type: ignore[n
         forms: List of forms to extract block data from.
         vec: PETSc vector to assign block data to.
     """
-    # Early exit if the vector already has block data or is a nest vector
-    if vec.getAttr("_blocks") is not None or vec.getType() == "nest":
-        return
 
-    maps = [
+    maps = (
         (
             form.function_spaces[0].dofmaps(0).index_map,  # type: ignore[attr-defined]
             form.function_spaces[0].dofmaps(0).index_map_bs,  # type: ignore[attr-defined]
         )
         for form in forms
-    ]
-    off_owned = tuple(
-        itertools.accumulate(maps, lambda off, m: off + m[0].size_local * m[1], initial=0)
     )
-    off_ghost = tuple(
-        itertools.accumulate(
-            maps, lambda off, m: off + m[0].num_ghosts * m[1], initial=off_owned[-1]
-        )
-    )
-    vec.setAttr("_blocks", (off_owned, off_ghost))
+
+    return dolfinx.la.petsc._assign_block_data(maps, vec)
 
 
 def assemble_residual(
-    u: typing.Union[_Function, Sequence[_Function]],
-    residual: typing.Union[Form, Sequence[Form]],
-    jacobian: typing.Union[Form, Sequence[Sequence[Form]]],
+    u: _Function | Sequence[_Function],
+    residual: Form | Sequence[Form],
+    jacobian: Form | Sequence[Sequence[Form]],
     bcs: Sequence[DirichletBC],
     _snes: PETSc.SNES,  # type: ignore[name-defined]
     x: PETSc.Vec,  # type: ignore[name-defined]
@@ -1130,9 +1088,9 @@ def assemble_residual(
 
 
 def assemble_jacobian(
-    u: typing.Union[Sequence[_Function], _Function],
-    jacobian: typing.Union[Form, Sequence[Sequence[Form]]],
-    preconditioner: typing.Optional[typing.Union[Form, Sequence[Sequence[Form]]]],
+    u: Sequence[_Function] | _Function,
+    jacobian: Form | Sequence[Sequence[Form]],
+    preconditioner: Form | Sequence[Sequence[Form]] | None,
     bcs: Sequence[DirichletBC],
     _snes: PETSc.SNES,  # type: ignore[name-defined]
     x: PETSc.Vec,  # type: ignore[name-defined]
@@ -1202,18 +1160,18 @@ class NonlinearProblem:
 
     def __init__(
         self,
-        F: typing.Union[ufl.form.Form, Sequence[ufl.form.Form]],
-        u: typing.Union[_Function, Sequence[_Function]],
+        F: ufl.form.Form | Sequence[ufl.form.Form],
+        u: _Function | Sequence[_Function],
         *,
         petsc_options_prefix: str,
-        bcs: typing.Optional[Sequence[DirichletBC]] = None,
-        J: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
-        P: typing.Optional[typing.Union[ufl.form.Form, Sequence[Sequence[ufl.form.Form]]]] = None,
-        kind: typing.Optional[typing.Union[str, Sequence[Sequence[str]]]] = None,
-        petsc_options: typing.Optional[dict] = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
-        entity_maps: typing.Optional[Sequence[_EntityMap]] = None,
+        bcs: Sequence[DirichletBC] | None = None,
+        J: ufl.form.Form | Sequence[Sequence[ufl.form.Form]] | None = None,
+        P: ufl.form.Form | Sequence[Sequence[ufl.form.Form]] | None = None,
+        kind: str | Sequence[Sequence[str]] | None = None,
+        petsc_options: dict | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        entity_maps: Sequence[_EntityMap] | None = None,
     ):
         """
         Initialize solver for a nonlinear variational problem.
@@ -1327,8 +1285,8 @@ class NonlinearProblem:
         # Determine the vector kind based on the matrix type
         kind = "nest" if self._A.getType() == PETSc.Mat.Type.NEST else kind  # type: ignore[attr-defined]
         assert kind is None or isinstance(kind, str)
-        self._b = create_vector(self.F, kind=kind)
-        self._x = create_vector(self.F, kind=kind)
+        self._b = create_vector(_extract_function_spaces(self.F), kind=kind)  # type: ignore
+        self._x = create_vector(_extract_function_spaces(self.F), kind=kind)  # type: ignore
 
         # Create the SNES solver and attach the corresponding Jacobian and
         # residual computation functions
@@ -1376,7 +1334,7 @@ class NonlinearProblem:
             )
             self.solver.getKSP().getPC().setFieldSplitIS(*fieldsplit_IS)
 
-    def solve(self) -> typing.Union[_Function, Sequence[_Function]]:
+    def solve(self) -> _Function | Sequence[_Function]:
         """Solve the problem.
 
         This method updates the solution ``u`` function(s) stored in the
@@ -1413,17 +1371,17 @@ class NonlinearProblem:
             self._P_mat.destroy()
 
     @property
-    def F(self) -> typing.Union[Form, Sequence[Form]]:
+    def F(self) -> Form | Sequence[Form]:
         """The compiled residual."""
         return self._F
 
     @property
-    def J(self) -> typing.Union[Form, Sequence[Sequence[Form]]]:
+    def J(self) -> Form | Sequence[Sequence[Form]]:
         """The compiled Jacobian."""
         return self._J
 
     @property
-    def preconditioner(self) -> typing.Optional[typing.Union[Form, Sequence[Sequence[Form]]]]:
+    def preconditioner(self) -> Form | Sequence[Sequence[Form]] | None:
         """The compiled preconditioner."""
         return self._preconditioner
 
@@ -1433,7 +1391,7 @@ class NonlinearProblem:
         return self._A
 
     @property
-    def P_mat(self) -> typing.Optional[PETSc.Mat]:  # type: ignore[name-defined]
+    def P_mat(self) -> PETSc.Mat | None:  # type: ignore[name-defined]
         """Preconditioner matrix."""
         return self._P_mat
 
@@ -1458,7 +1416,7 @@ class NonlinearProblem:
         return self._snes
 
     @property
-    def u(self) -> typing.Union[_Function, Sequence[_Function]]:
+    def u(self) -> _Function | Sequence[_Function]:
         """Solution function(s).
 
         Note:
@@ -1492,10 +1450,10 @@ class NewtonSolverNonlinearProblem:
         self,
         F: ufl.form.Form,
         u: _Function,
-        bcs: typing.Optional[Sequence[DirichletBC]] = None,
+        bcs: Sequence[DirichletBC] | None = None,
         J: ufl.form.Form = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
     ):
         """Initialize solver for solving a non-linear problem using
         Newton's method`.
@@ -1647,7 +1605,7 @@ def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:  
 
 
 @functools.singledispatch
-def assign(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):  # type: ignore[name-defined]
+def assign(u: _Function | Sequence[_Function], x: PETSc.Vec):  # type: ignore[name-defined]
     """Assign :class:`Function` degrees-of-freedom to a vector.
 
     Assigns degree-of-freedom values in ``u``, which is possibly a
@@ -1676,7 +1634,7 @@ def assign(u: typing.Union[_Function, Sequence[_Function]], x: PETSc.Vec):  # ty
 
 
 @assign.register
-def _(x: PETSc.Vec, u: typing.Union[_Function, Sequence[_Function]]):  # type: ignore[name-defined]
+def _(x: PETSc.Vec, u: _Function | Sequence[_Function]):  # type: ignore[name-defined]
     """Assign vector entries to :class:`Function` degrees-of-freedom.
 
     Assigns values in ``x`` to the degrees-of-freedom of ``u``, which is
