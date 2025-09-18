@@ -795,7 +795,7 @@ def test_interpolate_callable_subset(bound):
 def test_vector_element_interpolation(scalar_element):
     """Test interpolation into a range of vector elements."""
     mesh = create_unit_square(
-        MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell.cellname())
+        MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell.cellname)
     )
     V = functionspace(mesh, blocked_element(scalar_element, shape=(2,)))
     u = Function(V)

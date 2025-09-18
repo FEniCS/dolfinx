@@ -721,13 +721,13 @@ def create_mesh(
         e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
         domain = ufl.Mesh(e_ufl)
         dtype = cmap.dtype
-        assert domain.geometric_dimension() == gdim
+        assert domain.geometric_dimension == gdim
     elif isinstance(e, ufl.finiteelement.AbstractFiniteElement):
         # e is a Basix 'UFL' element
         cmap = _coordinate_element(e.basix_element)  # type: ignore
         domain = ufl.Mesh(e)
         dtype = cmap.dtype
-        assert domain.geometric_dimension() == gdim
+        assert domain.geometric_dimension == gdim
     elif isinstance(e, _CoordinateElement):
         # e is a CoordinateElement
         cmap = e
