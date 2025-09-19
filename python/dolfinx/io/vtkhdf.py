@@ -85,7 +85,7 @@ def write_point_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: 
         data: Data at the points of the mesh, local to each process.
         time: Timestamp.
     """
-    write_vtkhdf_data("Point", filename, mesh._cpp_object, data, time)
+    write_vtkhdf_data("Point", filename, [mesh.geometry.index_map()], data, time)
 
 
 def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float):
@@ -97,4 +97,6 @@ def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: f
         data: Data at the cells of the mesh, local to each process.
         time: Timestamp.
     """
-    write_vtkhdf_data("Cell", filename, mesh._cpp_object, data, time)
+    write_vtkhdf_data(
+        "Cell", filename, [im for im in mesh.topology.index_maps(mesh.topology.dim)], data, time
+    )

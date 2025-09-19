@@ -157,8 +157,8 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 /// @param[in] point_or_cell String "Point" or "Cell" determining data
 /// location.
 /// @param[in] filename File for output.
-/// @param[in] mesh Mesh, which must be the same as the original mesh
-/// used in the file.
+/// @param[in] index_maps List of IndexMaps for the points or cells being
+/// written
 /// @param[in] data Local point or cell centered data, whose size must
 /// match the number of local points or cells. Vector data is supported,
 /// in which case, the data size must be an integral multiple of the
@@ -170,17 +170,12 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 /// multiple timesteps.
 /// @note Limited support for floating point types at present (no
 /// complex number support).
-template <std::floating_point U>
+template <typename T>
 void write_data(std::string point_or_cell, std::string filename,
-                const mesh::Mesh<U>& mesh, const std::vector<U>& data,
-                double time)
+                std::vector<std::shared_ptr<const common::IndexMap>> index_maps,
+                const std::span<const T> data, double time)
 {
-  std::vector<std::shared_ptr<const common::IndexMap>> index_maps;
-  if (point_or_cell == "Point")
-    index_maps = {mesh.geometry().index_map()};
-  else if (point_or_cell == "Cell")
-    index_maps = mesh.topology()->index_maps(mesh.topology()->dim());
-  else
+  if (point_or_cell != "Point" and point_or_cell != "Cell")
     throw std::runtime_error("Selection must be Point or Cell");
 
   std::string dataset_name = "/VTKHDF/" + point_or_cell + "Data/u";
@@ -195,7 +190,7 @@ void write_data(std::string point_or_cell, std::string filename,
   }
   spdlog::debug("Data vector width={}", data_width);
 
-  hid_t h5file = hdf5::open_file(mesh.comm(), filename, "a", true);
+  hid_t h5file = hdf5::open_file(index_maps[0]->comm(), filename, "a", true);
   hdf5::add_group(h5file, "VTKHDF/Steps");
   hid_t vtk_group = H5Gopen(h5file, "VTKHDF/Steps", H5P_DEFAULT);
 
@@ -223,7 +218,7 @@ void write_data(std::string point_or_cell, std::string filename,
 
   // Add a single value to end of a 1D dataset
   auto append_dataset
-      = [&h5file]<typename T>(const std::string& dset_name, T value)
+      = [&h5file]<typename S>(const std::string& dset_name, S value)
   {
     std::int32_t s = 0;
     if (hdf5::has_dataset(h5file, dset_name))

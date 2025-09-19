@@ -172,11 +172,12 @@ def test_read_write_higher_order_mesh(order):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_write_point_data(dtype):
+@pytest.mark.parametrize("data_dtype", [np.float32, np.float64, np.int32, np.int64])
+def test_write_point_data(dtype, data_dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     filename = "point_data.vtkhdf"
     write_mesh(filename, mesh)
-    point_data = np.arange(mesh.geometry.index_map().size_local)
+    point_data = np.arange(mesh.geometry.index_map().size_local, dtype=data_dtype)
     for j in range(3):
         write_point_data(filename, mesh, point_data, float(j))
 
@@ -204,5 +205,5 @@ def test_write_mixed_topology_data(mixed_topology_mesh):
     filename = "mixed_cell_data.vtkhdf"
     write_mesh(filename, mesh)
     b = sum([im.size_local for im in mesh.topology.index_maps(mesh.topology.dim)])
-    cell_data = np.arange(b, dtype=np.float64)
+    cell_data = np.arange(b, dtype=np.int32)
     write_cell_data(filename, mesh, cell_data, 0.0)

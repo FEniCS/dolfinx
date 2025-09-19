@@ -154,6 +154,24 @@ void declare_vtx_writer(nb::module_& m, const std::string& type)
 #endif
 
 template <typename T>
+void vtkhdf_io(nb::module_& m)
+{
+  m.def(
+      "write_vtkhdf_data",
+      [](std::string point_or_cell, std::string filename,
+         std::vector<std::shared_ptr<const dolfinx::common::IndexMap>>
+             index_maps,
+         nb::ndarray<const T, nb::ndim<1>> data, double time)
+      {
+        std::span<const T> d(data.data(), data.shape(0));
+        dolfinx::io::VTKHDF::write_data<T>(point_or_cell, filename, index_maps,
+                                           d, time);
+      },
+      nb::arg("point_or_cell"), nb::arg("filename"), nb::arg("index_maps"),
+      nb::arg("data").noconvert(), nb::arg("time"));
+}
+
+template <typename T>
 void declare_data_types(nb::module_& m)
 {
   m.def(
@@ -223,8 +241,7 @@ void io(nb::module_& m)
 
   m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>)
       .def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<float>);
-  m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<double>);
-  m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<float>);
+
   m.def("read_vtkhdf_mesh_float64",
         [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
            std::optional<std::int32_t> max_facet_to_cell_links)
@@ -331,6 +348,12 @@ void io(nb::module_& m)
   vtk_scalar_fn<double, double>(vtk_file);
   vtk_scalar_fn<std::complex<float>, float>(vtk_file);
   vtk_scalar_fn<std::complex<double>, double>(vtk_file);
+
+  // Add data output for supported types in VTKHDF
+  vtkhdf_io<float>(m);
+  vtkhdf_io<double>(m);
+  vtkhdf_io<std::int32_t>(m);
+  vtkhdf_io<std::int64_t>(m);
 
 #ifdef HAS_ADIOS2
   nb::enum_<dolfinx::io::VTXMeshPolicy>(m, "VTXMeshPolicy")
