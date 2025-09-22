@@ -10,7 +10,6 @@ from __future__ import annotations
 import ctypes as _ctypes
 import os
 import pathlib
-import warnings
 
 import numpy as np
 
@@ -215,9 +214,11 @@ class cffi_utils:
     except KeyError:
         pass
     except ImportError:
-        warnings.warn(
+        from dolfinx.log import LogLevel, log
+
+        log(
+            LogLevel.INFO,
             "Could not import numba, so cffi/numba complex types were not registered.",
-            ImportWarning,
         )
 
     try:
@@ -260,7 +261,9 @@ class cffi_utils:
     except KeyError:
         pass
     except ImportError:
-        warnings.warn(
+        from dolfinx.log import LogLevel, log
+
+        log(
+            LogLevel.INFO,
             "Could not import petsc4py, so cffi/PETSc ABI mode interface was not created.",
-            ImportWarning,
         )
