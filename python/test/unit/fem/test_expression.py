@@ -467,7 +467,7 @@ def test_facet_expression(dtype):
     n = ufl.FacetNormal(mesh)
     mixed_expr = p * ufl.dot(ufl.grad(u), n)
     facet_expression = dolfinx.fem.Expression(
-        mixed_expr, np.array([[0.5]], dtype=dtype), dtype=dtype
+        mixed_expr, np.array([[0.5]], dtype=np.real(dtype(0)).dtype), dtype=dtype
     )
     subset_values = facet_expression.eval(mesh, boundary_entities)
     for values, midpoint in zip(subset_values, facet_midpoints):
