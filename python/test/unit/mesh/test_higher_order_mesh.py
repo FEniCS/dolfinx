@@ -747,8 +747,9 @@ def test_gmsh_input_2d(order, cell_type, dtype):
         # Force mesh to have no triangles
         gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 3)
 
-    gmsh.model.occ.addSphere(0, 0, 0, 1, tag=1)
+    tag = gmsh.model.occ.addSphere(0, 0, 0, 1, tag=1)
     gmsh.model.occ.synchronize()
+    gmsh.model.addPhysicalGroup(2, [tag], tag=1)
 
     gmsh.model.mesh.generate(2)
     if cell_type == CellType.quadrilateral:
@@ -812,11 +813,12 @@ def test_gmsh_input_3d(order, cell_type, dtype):
     circle = gmsh.model.occ.addDisk(0, 0, 0, 1, 1)
 
     if cell_type == CellType.hexahedron:
-        gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5], recombine=True)
+        tag = gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5], recombine=True)
     else:
-        gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5])
+        tag = gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5])
     gmsh.model.occ.synchronize()
-
+    for element in tag:
+        gmsh.model.addPhysicalGroup(element[0], [element[1]], tag=element[1])
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.setOrder(order)
 
