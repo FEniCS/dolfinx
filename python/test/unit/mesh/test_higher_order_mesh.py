@@ -817,7 +817,7 @@ def test_gmsh_input_3d(order, cell_type, dtype):
     else:
         tag = gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5])
     gmsh.model.occ.synchronize()
-    for (dim, idx) in tag:
+    for dim, idx in tag:
         gmsh.model.addPhysicalGroup(dim, [idx], tag=idx)
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.setOrder(order)
