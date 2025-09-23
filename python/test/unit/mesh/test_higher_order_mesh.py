@@ -747,7 +747,7 @@ def test_gmsh_input_2d(order, cell_type, dtype):
         # Force mesh to have no triangles
         gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 3)
 
-    tag = gmsh.model.occ.addSphere(0, 0, 0, 1, tag=1)
+    tag = gmsh.model.occ.addSphere(0, 0, 0, 1)
     gmsh.model.occ.synchronize()
     gmsh.model.addPhysicalGroup(2, [tag], tag=1)
 
