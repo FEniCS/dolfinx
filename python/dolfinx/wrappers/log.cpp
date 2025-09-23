@@ -72,6 +72,9 @@ void log(nb::module_& m)
         case (spdlog::level::level_enum::err):
           spdlog::error(s.c_str());
           break;
+        case (spdlog::level::level_enum::debug):
+          spdlog::debug(s.c_str());
+          break;
         default:
           throw std::runtime_error("Log level not supported");
           break;
