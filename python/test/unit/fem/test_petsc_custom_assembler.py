@@ -14,6 +14,9 @@ try:
     from petsc4py import PETSc
 
     from dolfinx.fem.petsc import assemble_matrix
+    from dolfinx.fem.petsc import cffi_utils as petsc_cffi
+    from dolfinx.fem.petsc import ctypes_utils as petsc_ctypes
+    from dolfinx.fem.petsc import numba_utils as petsc_numba
 except ImportError:
     pass
 
@@ -28,9 +31,6 @@ import pytest
 
 import ufl
 from dolfinx.fem import form, functionspace
-from dolfinx.fem.petsc import cffi_utils as petsc_cffi
-from dolfinx.fem.petsc import ctypes_utils as petsc_ctypes
-from dolfinx.fem.petsc import numba_utils as petsc_numba
 from dolfinx.mesh import create_unit_square
 
 pytest.importorskip("petsc4py")
