@@ -121,8 +121,8 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
             marks=[
                 pytest.mark.xfail_win32_complex,
                 pytest.mark.skipif(
-                    cffi.__version_info__ > (1, 16, 99) and cffi.__version_info__ <= (1, 17, 1),
-                    reason="bug in cffi 1.17.0/1 for complex",
+                    cffi.__version_info__ > (1, 16, 99) and cffi.__version_info__ <= (2, 0, 0),
+                    reason="bug in cffi 1.17.0/1 and 2.0.0 for complex",
                 ),
             ],
         ),
@@ -131,8 +131,8 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
             marks=[
                 pytest.mark.xfail_win32_complex,
                 pytest.mark.skipif(
-                    cffi.__version_info__ > (1, 16, 99) and cffi.__version_info__ <= (1, 17, 1),
-                    reason="bug in cffi 1.17.0/1 for complex",
+                    cffi.__version_info__ > (1, 16, 99) and cffi.__version_info__ <= (2, 0, 0),
+                    reason="bug in cffi 1.17.0/1 and 2.0.0 for complex",
                 ),
             ],
         ),
