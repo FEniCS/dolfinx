@@ -29,6 +29,7 @@ __all__ = [
     "compute_collisions_trees",
     "compute_distance_gjk",
     "create_midpoint_tree",
+    "determine_point_ownership",
     "squared_distance",
 ]
 
