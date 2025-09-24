@@ -5,20 +5,10 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tests for custom Python assemblers."""
 
-import importlib
 import math
-import os
-import pathlib
 import time
 
 from mpi4py import MPI
-
-try:
-    from petsc4py import PETSc
-
-    from dolfinx.fem.petsc import assemble_matrix
-except ImportError:
-    pass
 
 try:
     import numba
@@ -31,104 +21,15 @@ import numpy as np
 import pytest
 
 import dolfinx
-import dolfinx.pkgconfig
 import ufl
 from dolfinx.fem import Function, form, functionspace
-from dolfinx.fem.petsc import cffi_utils as petsc_cffi
-from dolfinx.fem.petsc import ctypes_utils as petsc_ctypes
-from dolfinx.fem.petsc import numba_utils as petsc_numba
 from dolfinx.mesh import create_unit_square
 
 cffi = pytest.importorskip("cffi")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 numba = pytest.importorskip("numba")
 
-# Get PETSc MatSetValuesLocal interfaces
-try:
-    MatSetValuesLocal = petsc_numba.MatSetValuesLocal
-    MatSetValuesLocal_ctypes = petsc_ctypes.MatSetValuesLocal
-    MatSetValuesLocal_abi = petsc_cffi.MatSetValuesLocal
-except AttributeError:
-    MatSetValuesLocal_abi = None
-
-
-@numba.njit
-def set_vals_numba(A, m, rows, n, cols, data, mode):
-    MatSetValuesLocal(A, 3, rows.ctypes, 3, cols.ctypes, data.ctypes, mode)
-
-
-@numba.njit
-def set_vals_cffi(A, m, rows, n, cols, data, mode):
-    MatSetValuesLocal_abi(
-        A, m, ffi.from_buffer(rows), n, ffi.from_buffer(cols), ffi.from_buffer(data), mode
-    )
-
-
-@numba.njit
-def set_vals_ctypes(A, m, rows, n, cols, data, mode):
-    MatSetValuesLocal_ctypes(A, m, rows.ctypes, n, cols.ctypes, data.ctypes, mode)
-
-
 ffi = cffi.FFI()
-
-
-def get_matsetvalues_cffi_api():
-    """Make MatSetValuesLocal from PETSc available via cffi in API mode.
-
-    This function is not (yet) in the DOLFINx module because it is complicated
-    by needing to compile code.
-    """
-    if dolfinx.pkgconfig.exists("dolfinx"):
-        dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
-    else:
-        raise RuntimeError("Could not find DOLFINx pkg-config file")
-
-    import petsc4py.lib
-    from petsc4py import get_config as PETSc_get_config
-
-    cffi_support.register_type(ffi.typeof("float _Complex"), numba.types.complex64)
-    cffi_support.register_type(ffi.typeof("double _Complex"), numba.types.complex128)
-
-    petsc_dir = PETSc_get_config()["PETSC_DIR"]
-    petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
-
-    worker = os.getenv("PYTEST_XDIST_WORKER", None)
-    module_name = f"_petsc_cffi_{worker}"
-    if MPI.COMM_WORLD.Get_rank() == 0:
-        ffibuilder = cffi.FFI()
-        ffibuilder.cdef(
-            """typedef int... PetscInt;
-                           typedef ... PetscScalar;
-                           typedef int... InsertMode;
-                           int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
-                                PetscInt ncol, const PetscInt* icol,
-                                const PetscScalar* y, InsertMode addv);"""
-        )
-        ffibuilder.set_source(
-            module_name,
-            '#include "petscmat.h"',
-            libraries=["petsc"],
-            include_dirs=[
-                os.path.join(petsc_dir, petsc_arch, "include"),
-                os.path.join(petsc_dir, "include"),
-            ]
-            + dolfinx_pc["include_dirs"],
-            library_dirs=[os.path.join(petsc_dir, petsc_arch, "lib")],
-            extra_compile_args=[],
-        )
-
-        # Build module in same directory as test file
-        path = pathlib.Path(__file__).parent.absolute()
-        ffibuilder.compile(tmpdir=path, verbose=True)
-
-    MPI.COMM_WORLD.Barrier()
-    spec = importlib.util.find_spec(module_name)
-    if spec is None:
-        raise ImportError("Failed to find CFFI generated module")
-    module = importlib.util.module_from_spec(spec)
-    cffi_support.register_module(module)
-    cffi_support.register_type(module.ffi.typeof("PetscScalar"), petsc_numba._scalar)
-    return module.lib.MatSetValuesLocal
 
 
 # See https://github.com/numba/numba/issues/4036 for why we need 'sink'
@@ -210,36 +111,6 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
             b[dofmap[cell, j]] += b_local[j]
 
 
-@numba.njit(fastmath=True)
-def assemble_petsc_matrix(A, mesh, dofmap, num_cells, set_vals, mode):
-    """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
-    # Mesh data
-    v, x = mesh
-
-    # Quadrature points and weights
-    q = np.array([[0.5, 0.0], [0.5, 0.5], [0.0, 0.5]], dtype=np.double)
-    weights = np.full(3, 1.0 / 3.0, dtype=np.double)
-
-    # Loop over cells
-    N = np.empty(3, dtype=np.double)
-    A_local = np.empty((3, 3), dtype=PETSc.ScalarType)
-    for cell in range(num_cells):
-        cell_area = area(x[v[cell, 0]], x[v[cell, 1]], x[v[cell, 2]])
-
-        # Loop over quadrature points
-        A_local[:] = 0.0
-        for j in range(q.shape[0]):
-            N[0], N[1], N[2] = 1.0 - q[j, 0] - q[j, 1], q[j, 0], q[j, 1]
-            for row in range(3):
-                for col in range(3):
-                    A_local[row, col] += weights[j] * cell_area * N[row] * N[col]
-
-        # Add to global tensor
-        pos = dofmap[cell, :]
-        set_vals(A, 3, pos, 3, pos, A_local, mode)
-    sink(A_local, dofmap)
-
-
 @pytest.mark.parametrize(
     "dtype",
     [
@@ -304,8 +175,8 @@ def test_custom_mesh_loop_rank1(dtype):
     #     assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
     #     end = time.time()
     #     print("Time (numba parallel, pass {}): {}".format(i, end - start))
-    # btmp.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    # assert (btmp.x.petsc_vec - b0.x.petsc_vec).norm() == pytest.approx(0.0)
+    # btmp.x.scatter_reverse(dolfinx.la.InsertMode.add)
+    # assert (btmp.x.array - b0.x.array).norm() == pytest.approx(0.0)
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
@@ -343,54 +214,3 @@ def test_custom_mesh_loop_rank1(dtype):
         print(f"Time (numba/cffi, pass {i}): {end - start}")
     b3.x.scatter_reverse(dolfinx.la.InsertMode.add)
     assert np.linalg.norm(b3.x.array - b0.x.array) == pytest.approx(0.0, abs=1e-8)
-
-
-@pytest.mark.skipif(cffi.__version_info__ == (1, 17, 1), reason="bug in cffi 1.17.1 for complex")
-@pytest.mark.petsc4py
-@pytest.mark.parametrize(
-    "set_vals,backend",
-    [
-        (set_vals_numba, "numba"),
-        (set_vals_ctypes, "ctypes"),
-        (set_vals_cffi, "cffi_abi"),
-    ],
-)
-def test_custom_mesh_loop_petsc_rank2(set_vals, backend):
-    """Test numba assembler for a bilinear form."""
-
-    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
-    V = functionspace(mesh, ("Lagrange", 1))
-
-    # Test against generated code and general assembler
-    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = form(ufl.inner(u, v) * ufl.dx)
-    A0 = assemble_matrix(a)
-    A0.assemble()
-
-    A0.zeroEntries()
-    start = time.time()
-    assemble_matrix(A0, a)
-    end = time.time()
-    print("Time (C++, pass 2):", end - start)
-    A0.assemble()
-
-    # Unpack mesh and dofmap data
-    num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    x_dofs = mesh.geometry.dofmap
-    x = mesh.geometry.x
-    dofmap = V.dofmap.list.astype(np.dtype(PETSc.IntType))
-
-    A1 = A0.copy()
-    for i in range(2):
-        A1.zeroEntries()
-        start = time.time()
-        assemble_petsc_matrix(
-            A1.handle, (x_dofs, x), dofmap, num_owned_cells, set_vals, PETSc.InsertMode.ADD_VALUES
-        )
-        end = time.time()
-        print(f"Time (Numba/{backend}, pass {i}): {end - start}")
-        A1.assemble()
-    assert (A1 - A0).norm() == pytest.approx(0.0, abs=1.0e-9)
-
-    A0.destroy()
-    A1.destroy()
