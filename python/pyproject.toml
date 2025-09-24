@@ -35,6 +35,7 @@ docs = [
       "markdown",
       "matplotlib",
       "myst_parser",
+      "numba",
       "pyyaml",
       "sphinx",
       "sphinx_rtd_theme",
