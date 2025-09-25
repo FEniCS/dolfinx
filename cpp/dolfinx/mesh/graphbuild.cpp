@@ -12,6 +12,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <iostream>
 #include <mpi.h>
 #include <numeric>
 #include <optional>
@@ -133,7 +134,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   std::array<std::int64_t, 2> vertex_range;
   {
     // Compute local quantities.
-    vertex_range[0] = 0;
+    vertex_range[0]
+        = facets.size() > 0 ? std::numeric_limits<std::int64_t>::max() : 0;
     vertex_range[1] = 0;
 
     for (std::size_t i = 0; i < facets.size();
