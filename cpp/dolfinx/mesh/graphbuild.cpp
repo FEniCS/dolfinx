@@ -12,7 +12,6 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <iostream>
 #include <mpi.h>
 #include <numeric>
 #include <optional>
