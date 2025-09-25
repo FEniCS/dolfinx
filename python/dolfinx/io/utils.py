@@ -6,7 +6,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data and post-processing file output."""
 
-import typing
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -42,13 +41,13 @@ if _cpp.common.has_adios2:
         The files can be viewed using Paraview.
         """
 
-        _cpp_object: typing.Union[_cpp.io.VTXWriter_float32, _cpp.io.VTXWriter_float64]
+        _cpp_object: _cpp.io.VTXWriter_float32 | _cpp.io.VTXWriter_float64
 
         def __init__(
             self,
             comm: _MPI.Comm,
-            filename: typing.Union[str, Path],
-            output: typing.Union[Mesh, Function, list[Function], tuple[Function]],
+            filename: str | Path,
+            output: Mesh | Function | list[Function] | tuple[Function],
             engine: str = "BPFile",
             mesh_policy: VTXMeshPolicy = VTXMeshPolicy.update,
         ):
@@ -128,7 +127,7 @@ class VTKFile(_cpp.io.VTKFile):
         """Write mesh to file for a given time (default 0.0)"""
         self.write(mesh._cpp_object, t)
 
-    def write_function(self, u: typing.Union[list[Function], Function], t: float = 0.0) -> None:
+    def write_function(self, u: list[Function] | Function, t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a
         given time (default 0.0)"""
         cpp_objects = [u._cpp_object] if isinstance(u, Function) else [_u._cpp_object for _u in u]
@@ -176,9 +175,27 @@ class XDMFFile(_cpp.io.XDMFFile):
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
     def read_mesh(
-        self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"
+        self,
+        ghost_mode=GhostMode.shared_facet,
+        name="mesh",
+        xpath="/Xdmf/Domain",
+        max_facet_to_cell_links: int = 2,
     ) -> Mesh:
-        """Read mesh data from file."""
+        """Read mesh data from file.
+
+        Note:
+            Changing `max_facet_to_cell_links` from the default value
+            should only be required when working on branching manifolds.
+            Changing this value on non-branching meshes will only result in
+            a slower mesh partitioning and creation.
+
+        Args:
+            ghost_mode: Ghost mode to use for the cells in mesh creation.
+            name: Name of the grid node in the xml-scheme in the file
+            xpath: XPath where Mesh Grid is stored in the file.
+            max_facet_to_cell_links: Maximum number of cells that a facet
+                can be linked to.
+        """
         cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
@@ -239,7 +256,12 @@ class XDMFFile(_cpp.io.XDMFFile):
 
         # Build the mesh
         msh = _cpp.mesh.create_mesh(
-            self.comm, cells, cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode)
+            self.comm,
+            cells,
+            cmap,
+            x,
+            _cpp.mesh.create_cell_partitioner(ghost_mode),
+            max_facet_to_cell_links,
         )
         msh.name = name
         domain = ufl.Mesh(basix_el)
@@ -249,7 +271,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         self,
         mesh: Mesh,
         name: str,
-        attribute_name: typing.Optional[str] = None,
+        attribute_name: str | None = None,
         xpath: str = "/Xdmf/Domain",
     ) -> MeshTags:
         """Read MeshTags with a specific name as specified in the XMDF

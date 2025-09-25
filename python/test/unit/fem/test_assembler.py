@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2025 Garth N. Wells, Jørgen S. Dokken
+# Copyright (C) 2018-2025 Garth N. Wells, Jørgen S. Dokken and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -6,6 +6,7 @@
 """Unit tests for assembly"""
 
 import math
+import os
 
 from mpi4py import MPI
 
@@ -14,10 +15,11 @@ import pytest
 import scipy.sparse
 
 import basix
+import dolfinx.cpp
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import cpp as _cpp
-from dolfinx import default_real_type, default_scalar_type, fem, graph, la
+from dolfinx import default_real_type, default_scalar_type, fem, graph, la, mesh
 from dolfinx.fem import (
     Constant,
     Function,
@@ -173,6 +175,17 @@ def nest_matrix_norm(A):
                 _norm = A_sub.norm()
                 norm += _norm * _norm
     return math.sqrt(norm)
+
+
+@pytest.mark.petsc4py
+def test_vector_single_space_as_block():
+    from dolfinx.fem.petsc import create_vector as petsc_create_vector
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    gdim = mesh.geometry.dim
+    V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
+    assert petsc_create_vector(V).getAttr("_blocks") is None
+    assert petsc_create_vector(V, kind="mpi").getAttr("_blocks") is not None
 
 
 @pytest.mark.petsc4py
@@ -1204,7 +1217,6 @@ class TestPETScAssemblers:
         p = ufl.TrialFunction(Q)
         q = ufl.TestFunction(Q)
 
-        L = form([ufl.ZeroBaseForm((v,)), ufl.ZeroBaseForm((q,))])
         J = form(
             [[k * ufl.inner(u, v) * dx, None], [ufl.inner(u, q) * dx, k * ufl.inner(p, q) * dx]]
         )
@@ -1218,12 +1230,13 @@ class TestPETScAssemblers:
 
         # Apply lifting with input coefficient
         coeffs = pack_coefficients(J)
-        b = petsc_create_vector(L, kind=kind)
+        b = petsc_create_vector([V, Q], kind=kind)
+        assert b.equal(petsc_create_vector([V, Q]))
         petsc_apply_lifting(b, J, bcs=bcs1, coeffs=coeffs)
         b.assemble()
 
         # Reference lifting
-        b_ref = petsc_create_vector(L, kind=kind)
+        b_ref = petsc_create_vector([V, Q], kind=kind)
         petsc_apply_lifting(b_ref, J, bcs=bcs1)
         b_ref.assemble()
 
@@ -1560,3 +1573,307 @@ def test_mixed_quadrature(dtype, method):
     local_sum = assemble_scalar(compiled_form)
     global_sum = mesh.comm.allreduce(local_sum, op=MPI.SUM)
     assert np.isclose(global_contribution, global_sum, rtol=tol, atol=tol)
+
+
+def vertex_to_dof_map(V):
+    """Create a map from the vertices of the mesh to the corresponding degree of freedom."""
+    mesh = V.mesh
+    num_vertices_per_cell = dolfinx.cpp.mesh.cell_num_entities(mesh.topology.cell_type, 0)
+
+    dof_layout2 = np.empty((num_vertices_per_cell,), dtype=np.int32)
+    for i in range(num_vertices_per_cell):
+        var = V.dofmap.dof_layout.entity_dofs(0, i)
+        assert len(var) == 1
+        dof_layout2[i] = var[0]
+
+    num_vertices = mesh.topology.index_map(0).size_local + mesh.topology.index_map(0).num_ghosts
+
+    c_to_v = mesh.topology.connectivity(mesh.topology.dim, 0)
+    assert (
+        c_to_v.num_nodes == 0
+        or (c_to_v.offsets[1:] - c_to_v.offsets[:-1] == c_to_v.offsets[1]).all()
+    ), "Single cell type supported"
+
+    vertex_to_dof_map = np.empty(num_vertices, dtype=np.int32)
+    vertex_to_dof_map[c_to_v.array] = V.dofmap.list[:, dof_layout2].reshape(-1)
+    return vertex_to_dof_map
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        mesh.CellType.interval,
+        mesh.CellType.triangle,
+        mesh.CellType.quadrilateral,
+        mesh.CellType.tetrahedron,
+        # mesh.CellType.pyramid,
+        mesh.CellType.prism,
+        mesh.CellType.hexahedron,
+    ],
+)
+@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+    ],
+)
+def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
+    comm = MPI.COMM_WORLD
+    rdtype = np.real(dtype(0)).dtype
+
+    msh = None
+    cell_dim = mesh.cell_dim(cell_type)
+    if cell_dim == 1:
+        msh = mesh.create_unit_interval(comm, 4, dtype=rdtype, ghost_mode=ghost_mode)
+    elif cell_dim == 2:
+        msh = mesh.create_unit_square(
+            comm, 4, 4, cell_type=cell_type, dtype=rdtype, ghost_mode=ghost_mode
+        )
+    elif cell_dim == 3:
+        msh = mesh.create_unit_cube(
+            comm, 4, 4, 4, cell_type=cell_type, dtype=rdtype, ghost_mode=ghost_mode
+        )
+    else:
+        raise RuntimeError("Bad dimension")
+
+    vertex_map = msh.topology.index_map(0)
+
+    def check_vertex_integral_against_sum(form, vertices, weighted=False):
+        """Weighting assumes the vertex integral to be weighted by a P1 function, each vertex value
+        corresponding to its global index."""
+        weights = vertex_map.local_to_global(vertices) if weighted else np.ones_like(vertices)
+        expected_value_l = np.sum(msh.geometry.x[vertices, 0] * weights)
+        value_l = fem.assemble_scalar(fem.form(form, dtype=dtype))
+        assert expected_value_l == pytest.approx(value_l, abs=5e4 * np.finfo(rdtype).eps)
+
+        expected_value = comm.allreduce(expected_value_l)
+        value = comm.allreduce(value_l)
+        assert expected_value == pytest.approx(value, abs=5e4 * np.finfo(rdtype).eps)
+
+    num_vertices = vertex_map.size_local
+    x = ufl.SpatialCoordinate(msh)
+
+    # Full domain
+    check_vertex_integral_against_sum(x[0] * ufl.dP, np.arange(num_vertices))
+
+    # Split domain into left half of vertices (1) and right half of vertices (2)
+    vertices_1 = mesh.locate_entities(msh, 0, lambda x: x[0] <= 0.5)
+    vertices_1 = vertices_1[vertices_1 < num_vertices]
+    vertices_2 = mesh.locate_entities(msh, 0, lambda x: x[0] > 0.5)
+    vertices_2 = vertices_2[vertices_2 < num_vertices]
+
+    tags = np.full(num_vertices, 1)
+    tags[vertices_2] = 2
+    vertices = np.arange(0, num_vertices, dtype=np.int32)
+    meshtags = mesh.meshtags(msh, 0, vertices, tags)
+
+    dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
+
+    # Combinations of sub domains
+    check_vertex_integral_against_sum(x[0] * dP(1), vertices_1)
+    check_vertex_integral_against_sum(x[0] * dP(2), vertices_2)
+    check_vertex_integral_against_sum(x[0] * (dP(1) + dP(2)), np.arange(num_vertices))
+
+    V = fem.functionspace(msh, ("P", 1))
+    u = fem.Function(V, dtype=dtype)
+    vertex_to_dof = vertex_to_dof_map(V)
+    vertices = np.arange(num_vertices + vertex_map.num_ghosts)
+    u.x.array[vertex_to_dof[vertices]] = vertex_map.local_to_global(vertices)
+
+    check_vertex_integral_against_sum(u * x[0] * ufl.dP, np.arange(num_vertices), True)
+    check_vertex_integral_against_sum(u * x[0] * dP(1), vertices_1, True)
+    check_vertex_integral_against_sum(u * x[0] * dP(2), vertices_2, True)
+    check_vertex_integral_against_sum(u * x[0] * (dP(1) + dP(2)), np.arange(num_vertices), True)
+
+    # Check custom packing
+    if cell_type is mesh.CellType.prism:
+        return
+
+    msh.topology.create_entities(1)
+    msh.topology.create_connectivity(cell_dim - 1, cell_dim)
+
+    v_to_c = msh.topology.connectivity(0, cell_dim)
+    c_to_v = msh.topology.connectivity(cell_dim, 0)
+
+    cell_vertex_pairs = np.array([], dtype=np.int32)
+    for v in range(num_vertices):
+        c = v_to_c.links(v)[0]
+        v_l = np.where(c_to_v.links(c) == v)[0]
+        cell_vertex_pairs = np.append(cell_vertex_pairs, [c, *v_l])
+
+    # a) With subdomain_data
+    check_vertex_integral_against_sum(
+        x[0] * ufl.dP(domain=msh, subdomain_data=[(1, cell_vertex_pairs)], subdomain_id=1),
+        np.arange(num_vertices),
+    )
+
+    # b) With create_form
+    vertices = np.arange(num_vertices)
+    fem.compute_integration_domains(fem.IntegralType.exterior_facet, msh.topology, vertices)
+    subdomains = {fem.IntegralType.exterior_facet: [(0, cell_vertex_pairs)]}
+
+    compiled_form = fem.compile_form(
+        comm, x[0] * ufl.dP, form_compiler_options={"scalar_type": dtype}
+    )
+    form = fem.create_form(compiled_form, [], msh, subdomains, {}, {}, [])
+    expected_value_l = np.sum(msh.geometry.x[vertices, 0])
+    value_l = fem.assemble_scalar(form)
+    assert expected_value_l == pytest.approx(value_l, abs=5e4 * np.finfo(rdtype).eps)
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        mesh.CellType.interval,
+        mesh.CellType.triangle,
+        mesh.CellType.quadrilateral,
+        mesh.CellType.tetrahedron,
+        # mesh.CellType.pyramid,
+        mesh.CellType.prism,
+        mesh.CellType.hexahedron,
+    ],
+)
+@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+    ],
+)
+def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
+    comm = MPI.COMM_WORLD
+    rdtype = np.real(dtype(0)).dtype
+
+    msh = None
+    cell_dim = mesh.cell_dim(cell_type)
+    if cell_dim == 1:
+        msh = mesh.create_unit_interval(comm, 4, ghost_mode=ghost_mode, dtype=rdtype)
+    elif cell_dim == 2:
+        msh = mesh.create_unit_square(
+            comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+        )
+    elif cell_dim == 3:
+        msh = mesh.create_unit_cube(
+            comm, 4, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+        )
+    else:
+        raise RuntimeError("Bad dimension")
+
+    vertex_map = msh.topology.index_map(0)
+    num_vertices = vertex_map.size_local
+
+    def check_vertex_integral_against_sum(form, vertices, weighted=False):
+        """Weighting assumes the vertex integral to be weighted by a P1 function, each vertex value
+        corresponding to its global index."""
+        weights = vertex_map.local_to_global(vertices) if weighted else np.ones_like(vertices)
+        expected_value_l = np.zeros(num_vertices, dtype=rdtype)
+        expected_value_l[vertices] = msh.geometry.x[vertices, 0] * weights
+        value_l = fem.assemble_vector(fem.form(form, dtype=dtype))
+        equal_l = np.allclose(
+            expected_value_l, np.real(value_l.array[:num_vertices]), atol=1e3 * np.finfo(rdtype).eps
+        )
+        assert equal_l
+        assert comm.allreduce(equal_l, MPI.BAND)
+
+    x = ufl.SpatialCoordinate(msh)
+    V = fem.functionspace(msh, ("P", 1))
+    v = ufl.conj(ufl.TestFunction(V))
+
+    # Full domain
+    check_vertex_integral_against_sum(x[0] * v * ufl.dP, np.arange(num_vertices))
+
+    # Split domain into left half of vertices (1) and right half of vertices (2)
+    vertices_1 = mesh.locate_entities(msh, 0, lambda x: x[0] <= 0.5)
+    vertices_1 = vertices_1[vertices_1 < num_vertices]
+    vertices_2 = mesh.locate_entities(msh, 0, lambda x: x[0] > 0.5)
+    vertices_2 = vertices_2[vertices_2 < num_vertices]
+
+    tags = np.full(num_vertices, 1)
+    tags[vertices_2] = 2
+    vertices = np.arange(0, num_vertices, dtype=np.int32)
+    meshtags = mesh.meshtags(msh, 0, vertices, tags)
+
+    dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
+
+    check_vertex_integral_against_sum(x[0] * v * dP(1), vertices_1)
+    check_vertex_integral_against_sum(x[0] * v * dP(2), vertices_2)
+    check_vertex_integral_against_sum(x[0] * v * (dP(1) + dP(2)), np.arange(num_vertices))
+
+    V = fem.functionspace(msh, ("P", 1))
+    u = fem.Function(V, dtype=dtype)
+    u.x.array[:] = vertex_map.local_to_global(np.arange(num_vertices + vertex_map.num_ghosts))
+    vertex_to_dof = vertex_to_dof_map(V)
+    vertices = np.arange(num_vertices + vertex_map.num_ghosts)
+    u.x.array[vertex_to_dof[vertices]] = vertex_map.local_to_global(vertices)
+
+    check_vertex_integral_against_sum(u * x[0] * v * ufl.dP, np.arange(num_vertices), True)
+    check_vertex_integral_against_sum(u * x[0] * v * dP(1), vertices_1, True)
+    check_vertex_integral_against_sum(u * x[0] * v * dP(2), vertices_2, True)
+    check_vertex_integral_against_sum(u * x[0] * v * (dP(1) + dP(2)), np.arange(num_vertices), True)
+
+    # Check custom packing
+    if cell_type is mesh.CellType.prism:
+        return
+
+    msh.topology.create_entities(1)
+    msh.topology.create_connectivity(cell_dim - 1, cell_dim)
+
+    v_to_c = msh.topology.connectivity(0, cell_dim)
+    c_to_v = msh.topology.connectivity(cell_dim, 0)
+
+    cell_vertex_pairs = np.array([], dtype=np.int32)
+    for v in range(num_vertices):
+        c = v_to_c.links(v)[0]
+        v_l = np.where(c_to_v.links(c) == v)[0]
+        cell_vertex_pairs = np.append(cell_vertex_pairs, [c, *v_l])
+
+    # a) With subdomain_data
+    v = ufl.conj(ufl.TestFunction(V))
+    check_vertex_integral_against_sum(
+        x[0] * v * ufl.dP(domain=msh, subdomain_data=[(1, cell_vertex_pairs)], subdomain_id=1),
+        np.arange(num_vertices),
+    )
+
+    # b) With create_form
+    vertices = np.arange(num_vertices)
+    fem.compute_integration_domains(fem.IntegralType.exterior_facet, msh.topology, vertices)
+    subdomains = {fem.IntegralType.exterior_facet: [(0, cell_vertex_pairs)]}
+
+    compiled_form = fem.compile_form(
+        comm, x[0] * v * ufl.dP, form_compiler_options={"scalar_type": dtype}
+    )
+    form = fem.create_form(compiled_form, [V], msh, subdomains, {}, {}, [])
+    expected_value_l = np.sum(msh.geometry.x[vertices, 0])
+    expected_value_l = np.zeros(num_vertices, dtype=rdtype)
+    expected_value_l[vertices] = msh.geometry.x[vertices, 0]
+    value_l = fem.assemble_vector(form)
+    assert expected_value_l == pytest.approx(
+        value_l.array[: expected_value_l.size], abs=5e4 * np.finfo(rdtype).eps
+    )

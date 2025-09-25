@@ -83,8 +83,14 @@ def test_read_write_higher_order():
     ]
 
     part = dolfinx.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.none)
+    max_cells_per_facet = 2
     mesh = dolfinx.cpp.mesh.create_mesh(
-        MPI.COMM_WORLD, cells_np, [e._cpp_object for e in coordinate_elements], geom, part
+        MPI.COMM_WORLD,
+        cells_np,
+        [e._cpp_object for e in coordinate_elements],
+        geom,
+        part,
+        max_cells_per_facet,
     )
     py_mesh = Mesh(mesh, None)
 
@@ -132,7 +138,7 @@ def test_read_write_higher_order_mesh(order):
 
     model = comm.bcast(model, root=rank)
     # Read in mesh with gmsh to create reference dat
-    ref_mesh = dolfinx.io.gmshio.model_to_mesh(gmsh.model, comm, rank).mesh
+    ref_mesh = dolfinx.io.gmsh.model_to_mesh(gmsh.model, comm, rank).mesh
     gmsh.finalize()
 
     ref_volume_form = dolfinx.fem.form(

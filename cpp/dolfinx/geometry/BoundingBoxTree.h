@@ -226,15 +226,14 @@ public:
   /// @param[in] mesh Mesh for building the bounding box tree.
   /// @param[in] tdim Topological dimension of the mesh entities to
   /// build the bounding box tree for.
+  /// @param[in] padding Value to pad (extend) the the bounding box of
+  /// each entity by.
   /// @param[in] entities List of entity indices (local to process) to
   /// compute the bounding box for. If `std::nullopt`, the bounding box tree is
   /// computed for all local entities (including ghosts) of the given `tdim`.
-  /// @param[in] padding Value to pad (extend) the the bounding box of
-  /// each entity by.
-  BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim,
+  BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim, double padding,
                   std::optional<std::span<const std::int32_t>> entities
-                  = std::nullopt,
-                  double padding = 0)
+                  = std::nullopt)
       : _tdim(tdim)
   {
     // Initialize entities of given dimension if they don't exist
@@ -284,7 +283,8 @@ public:
                  num_bboxes(), entities_span.size());
   }
 
-  /// Constructor @param[in] points Cloud of points, with associated
+  /// Constructor
+  /// @param[in] points Cloud of points, with associated
   /// point identifier index, to build the bounding box tree around
   BoundingBoxTree(std::vector<std::pair<std::array<T, 3>, std::int32_t>> points)
       : _tdim(0)

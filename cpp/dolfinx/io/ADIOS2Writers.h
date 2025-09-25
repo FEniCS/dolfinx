@@ -168,29 +168,34 @@ std::stringstream create_vtk_schema(const std::vector<std::string>& point_data,
 
 /// Extract name of functions and split into real and imaginary component
 template <std::floating_point T>
-std::vector<std::string>
+std::tuple<std::vector<std::string>, std::vector<std::string>>
 extract_function_names(const typename adios2_writer::U<T>& u)
 {
-  std::vector<std::string> names;
+  std::vector<std::string> names, dg0_names;
   for (auto& v : u)
   {
     std::visit(
-        [&names](auto&& u)
+        [&names, &dg0_names](auto&& u)
         {
           using U = std::decay_t<decltype(u)>;
           using X = typename U::element_type;
+          std::vector<std::string>* fnames = &names;
+          if (impl::is_cellwise(*(u->function_space()->element())))
+          {
+            fnames = &dg0_names;
+          }
           if constexpr (std::is_floating_point_v<typename X::value_type>)
-            names.push_back(u->name);
+            fnames->push_back(u->name);
           else
           {
-            names.push_back(u->name + impl_adios2::field_ext[0]);
-            names.push_back(u->name + impl_adios2::field_ext[1]);
+            fnames->push_back(u->name + impl_adios2::field_ext[0]);
+            fnames->push_back(u->name + impl_adios2::field_ext[1]);
           }
         },
         v);
   }
 
-  return names;
+  return {names, dg0_names};
 }
 
 /// Given a Function, write the coefficient to file using ADIOS2.
@@ -436,7 +441,8 @@ public:
             std::shared_ptr<const mesh::Mesh<T>> mesh,
             std::string engine = "BPFile")
       : ADIOS2Writer(comm, filename, "VTX mesh writer", engine), _mesh(mesh),
-        _mesh_reuse_policy(VTXMeshPolicy::update), _is_piecewise_constant(false)
+        _mesh_reuse_policy(VTXMeshPolicy::update),
+        _has_piecewise_constant(false)
   {
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {}).str();
@@ -463,7 +469,7 @@ public:
             VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
       : ADIOS2Writer(comm, filename, "VTX function writer", engine),
         _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u),
-        _mesh_reuse_policy(mesh_policy), _is_piecewise_constant(false)
+        _mesh_reuse_policy(mesh_policy), _has_piecewise_constant(false)
   {
     if (u.empty())
       throw std::runtime_error("VTXWriter fem::Function list is empty.");
@@ -472,6 +478,26 @@ public:
     auto V0 = std::visit([](auto& u) { return u->function_space().get(); },
                          u.front());
     assert(V0);
+
+    // Replace first function space if it is a space for piecewise constants
+    bool has_V0_changed = false;
+    for (auto& v : u)
+    {
+      std::visit(
+          [&V0, &has_V0_changed](auto& u)
+          {
+            auto V = u->function_space().get();
+            assert(V);
+            if (!impl::is_cellwise(*V->element()))
+            {
+              V0 = V;
+              has_V0_changed = true;
+            }
+          },
+          v);
+      if (has_V0_changed)
+        break;
+    }
     auto element0 = V0->element().get();
     assert(element0);
 
@@ -492,19 +518,18 @@ public:
           "supported. Interpolate Functions before output.");
     }
 
-    // Check if function is DG 0
-    if (element0->space_dimension() / element0->block_size() == 1)
-      _is_piecewise_constant = true;
-
     // Check that all functions come from same element type
     for (auto& v : _u)
     {
       std::visit(
-          [V0](auto& u)
+          [V0, this](auto& u)
           {
             auto element = u->function_space()->element();
             assert(element);
-            if (*element != *V0->element().get())
+            bool is_piecewise_constant = impl::is_cellwise(*element);
+            _has_piecewise_constant
+                = _has_piecewise_constant || is_piecewise_constant;
+            if (*element != *V0->element().get() and !is_piecewise_constant)
             {
               throw std::runtime_error("All functions in VTXWriter must have "
                                        "the same element type.");
@@ -512,10 +537,11 @@ public:
 #ifndef NDEBUG
             auto dmap0 = V0->dofmap()->map();
             auto dmap = u->function_space()->dofmap()->map();
-            if (dmap0.size() != dmap.size()
-                or !std::equal(dmap0.data_handle(),
-                               dmap0.data_handle() + dmap0.size(),
-                               dmap.data_handle()))
+            if ((dmap0.size() != dmap.size()
+                 or !std::equal(dmap0.data_handle(),
+                                dmap0.data_handle() + dmap0.size(),
+                                dmap.data_handle()))
+                and !is_piecewise_constant)
             {
               throw std::runtime_error(
                   "All functions must have the same dofmap for VTXWriter.");
@@ -526,12 +552,9 @@ public:
     }
 
     // Define VTK scheme attribute for set of functions
-    std::vector<std::string> names = impl_vtx::extract_function_names<T>(u);
+    auto [names, dg0_names] = impl_vtx::extract_function_names<T>(u);
     std::string vtk_scheme;
-    if (_is_piecewise_constant)
-      vtk_scheme = impl_vtx::create_vtk_schema({}, names).str();
-    else
-      vtk_scheme = impl_vtx::create_vtk_schema(names, {}).str();
+    vtk_scheme = impl_vtx::create_vtk_schema(names, dg0_names).str();
 
     impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
@@ -584,18 +607,11 @@ public:
     _engine->BeginStep();
     _engine->template Put<double>(var_step, t);
 
-    // If we have no functions or DG functions write the mesh to file
-    if (_is_piecewise_constant or _u.empty())
+    // If we have no non-constant functions write the mesh to file
+    auto [names, dg0_names] = impl_vtx::extract_function_names<T>(_u);
+    if ((names.size() == 0) or _u.empty())
     {
       impl_vtx::vtx_write_mesh(*_io, *_engine, *_mesh);
-      if (_is_piecewise_constant)
-      {
-        for (auto& v : _u)
-        {
-          std::visit([&](auto& u)
-                     { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
-        }
-      }
     }
     else
     {
@@ -623,13 +639,12 @@ public:
         _engine->Put(ghost, _x_ghost.data());
         _engine->PerformPuts();
       }
-
-      // Write function data for each function to file
-      for (auto& v : _u)
-      {
-        std::visit([&](auto& u)
-                   { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
-      }
+    }
+    // Write function data for each function to file
+    for (auto& v : _u)
+    {
+      std::visit([&](auto& u) { impl_vtx::vtx_write_data(*_io, *_engine, *u); },
+                 v);
     }
 
     _engine->EndStep();
@@ -646,7 +661,7 @@ private:
   std::vector<std::uint8_t> _x_ghost;
 
   // Special handling of piecewise constant functions
-  bool _is_piecewise_constant;
+  bool _has_piecewise_constant;
 };
 
 /// Type deduction

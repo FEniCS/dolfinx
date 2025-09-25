@@ -5,6 +5,7 @@
 [![Actions Conda install](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml)
 [![Actions macOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
 [![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml)
+[![Actions Windows/vcpkg install](https://github.com/FEniCS/dolfinx/actions/workflows/windows.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/windows.yml)
 
 DOLFINx is the computational environment of
 [FEniCSx](https://fenicsproject.org) and implements the FEniCS Problem
@@ -60,8 +61,7 @@ git clone https://github.com/spack/spack.git
 . ./spack/share/spack/setup-env.sh
 spack env create fenicsx-env
 spack env activate fenicsx-env
-spack add fenics-dolfinx+petsc+adios2 py-fenics-dolfinx cflags="-O3" fflags="-O3"
-spack install
+spack install --add py-fenics-dolfinx+petsc4py+slepc4py
 ```
 
 Spack is the recommended approach for HPC systems.

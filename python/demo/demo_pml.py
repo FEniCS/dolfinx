@@ -17,7 +17,6 @@
 # +
 import sys
 from functools import partial
-from typing import Union
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -31,7 +30,7 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
-from dolfinx.io import gmshio
+from dolfinx.io import gmsh as gmshio
 
 try:
     from dolfinx.io import VTXWriter
@@ -440,6 +439,7 @@ partitioner = dolfinx.cpp.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.sh
 mesh_data = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
+assert all(pg.dim == 2 for _, pg in mesh_data.physical_groups.items()), "Wrong phsyical group dim."
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
@@ -626,8 +626,8 @@ y_pml = ufl.as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 
 def create_eps_mu(
     pml: ufl.tensors.ListTensor,
-    eps_bkg: Union[float, ufl.tensors.ListTensor],
-    mu_bkg: Union[float, ufl.tensors.ListTensor],
+    eps_bkg: float | ufl.tensors.ListTensor,
+    mu_bkg: float | ufl.tensors.ListTensor,
 ) -> tuple[ufl.tensors.ComponentTensor, ufl.tensors.ComponentTensor]:
     J = ufl.grad(pml)
 

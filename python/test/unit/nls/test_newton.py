@@ -13,6 +13,7 @@ import pytest
 import ufl
 from dolfinx import default_real_type
 from dolfinx.fem import Function, dirichletbc, form, functionspace, locate_dofs_geometrical
+from dolfinx.fem.forms import extract_function_spaces
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
@@ -61,7 +62,7 @@ class NonlinearPDEProblem:
     def vector(self):
         from dolfinx.fem.petsc import create_vector
 
-        return create_vector(self.L)
+        return create_vector(extract_function_spaces(self.L))
 
 
 class NonlinearPDE_SNESProblem:
@@ -108,6 +109,7 @@ class NonlinearPDE_SNESProblem:
 
 @pytest.mark.petsc4py
 class TestNLS:
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_linear_pde(self):
         """Test Newton solver for a linear PDE."""
         from petsc4py import PETSc
@@ -157,6 +159,7 @@ class TestNLS:
         del solver
         assert ksp.refcount == 1
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_nonlinear_pde(self):
         """Test Newton solver for a simple nonlinear PDE"""
         from petsc4py import PETSc
@@ -200,8 +203,7 @@ class TestNLS:
         """Test Newton solver for a simple nonlinear PDE"""
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import create_matrix
-        from dolfinx.la.petsc import create_vector
+        from dolfinx.fem.petsc import create_matrix, create_vector
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
         V = functionspace(mesh, ("Lagrange", 1))
@@ -220,7 +222,7 @@ class TestNLS:
         problem = NonlinearPDE_SNESProblem(F, u, bc)
 
         u.x.array[:] = 0.9
-        b = create_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
+        b = create_vector(V)
         J = create_matrix(problem.a)
 
         # Create Newton solver and solve
