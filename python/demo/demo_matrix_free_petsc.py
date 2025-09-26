@@ -289,7 +289,7 @@ def attach_matrix_free_operator(
 N = 25
 mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, N, N)
 el_0 = basix.ufl.element("Lagrange", mesh.basix_cell(), 2, shape=(2,), dtype=dolfinx.default_real_type)
-el_1 = basix.ufl.element("Lagrange", mesh.basix_cell(), 1)
+el_1 = basix.ufl.element("Lagrange", mesh.basix_cell(), 1,  dtype=dolfinx.default_real_type)
 
 # We define the analytical solutions `f` and `g`
 
