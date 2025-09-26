@@ -259,9 +259,8 @@ private:
   std::size_t num_owned(const DofMap& dofmap,
                         std::span<const std::int32_t> dofs)
   {
-    int bs = dofmap.index_map_bs();
     std::int32_t map_size = dofmap.index_map->size_local();
-    std::int32_t owned_size = bs * map_size;
+    std::int32_t owned_size = map_size;
     auto it = std::ranges::lower_bound(dofs, owned_size);
     return std::distance(dofs.begin(), it);
   }
@@ -383,8 +382,8 @@ public:
     // Unroll _dofs0 if dofmap block size > 1
     if (const int bs = _function_space->dofmap()->bs(); bs > 1)
     {
-      _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
+      _owned_indices0 *= bs;
     }
   }
 
