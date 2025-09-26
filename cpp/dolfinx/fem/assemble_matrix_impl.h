@@ -156,7 +156,7 @@ void assemble_cells_matrix(
   }
 }
 
-/// @brief Execute kernel over entities of codimension > 1 and accumulate result
+/// @brief Execute kernel over entities of codimension ≥ 1 and accumulate result
 /// in a matrix.
 ///
 /// Each entity is represented by (i) a cell that the entity is attached to
@@ -196,7 +196,7 @@ void assemble_cells_matrix(
 /// function mesh.
 /// @param[in] cell_info1 Cell permutation information for the trial
 /// function mesh.
-/// @param[in] perms Facet permutation integer. Empty if facet
+/// @param[in] perms Entity permutation integer. Empty if entity
 /// permutations are not required.
 template <dolfinx::scalar T>
 void assemble_entities(

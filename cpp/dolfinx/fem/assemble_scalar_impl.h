@@ -55,7 +55,7 @@ T assemble_cells(mdspan2_t x_dofmap,
   return value;
 }
 
-/// @brief Execute kernel over entities of codimension > 1 and accumulate result
+/// @brief Execute kernel over entities of codimension ≥ 1 and accumulate result
 /// in a scalar.
 ///
 /// Each entity is represented by (i) a cell that the entity is attached to
