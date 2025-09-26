@@ -93,7 +93,7 @@ def test_incorrect_element():
         [space._cpp_object, space._cpp_object],
         [],
         [],
-        {IntegralType.cell: []},
+        {IntegralType(0): []},
         [],
         mesh._cpp_object,
     )
@@ -105,7 +105,7 @@ def test_incorrect_element():
             [incorrect_space._cpp_object, incorrect_space._cpp_object],
             [],
             [],
-            {IntegralType.cell: []},
+            {IntegralType(0): []},
             [],
             mesh._cpp_object,
         )

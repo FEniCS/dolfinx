@@ -1100,14 +1100,15 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
       = element1->template dof_transformation_right_fn<T>(
           doftransform::transpose);
 
-  for (int i = 0; i < a.num_integrals(IntegralType::cell, 0); ++i)
+  IntegralType cell_integral_type = IntegralType(0);
+  for (int i = 0; i < a.num_integrals(cell_integral_type, 0); ++i)
   {
-    auto kernel = a.kernel(IntegralType::cell, i, 0);
+    auto kernel = a.kernel(cell_integral_type, i, 0);
     assert(kernel);
-    auto& [_coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    std::span cells = a.domain(IntegralType::cell, i, 0);
-    std::span cells0 = a.domain_arg(IntegralType::cell, 0, i, 0);
-    std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, 0);
+    auto& [_coeffs, cstride] = coefficients.at({cell_integral_type, i});
+    std::span cells = a.domain(cell_integral_type, i, 0);
+    std::span cells0 = a.domain_arg(cell_integral_type, 0, i, 0);
+    std::span cells1 = a.domain_arg(cell_integral_type, 1, i, 0);
     assert(_coeffs.size() == cells.size() * cstride);
     auto coeffs = md::mdspan(_coeffs.data(), cells.size(), cstride);
     if (bs0 == 1 and bs1 == 1)
@@ -1145,21 +1146,21 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
                        num_facets_per_cell);
   }
 
-  for (int i = 0; i < a.num_integrals(IntegralType::exterior_facet, 0); ++i)
+  IntegralType facet_integral_type = IntegralType(1);
+  for (int i = 0; i < a.num_integrals(facet_integral_type, 0); ++i)
   {
-    auto kernel = a.kernel(IntegralType::exterior_facet, i, 0);
+    auto kernel = a.kernel(facet_integral_type, i, 0);
     assert(kernel);
-    auto& [coeffs, cstride]
-        = coefficients.at({IntegralType::exterior_facet, i});
+    auto& [coeffs, cstride] = coefficients.at({facet_integral_type, i});
 
     using mdspanx2_t
         = md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>;
-    std::span f = a.domain(IntegralType::exterior_facet, i, 0);
+    std::span f = a.domain(facet_integral_type, i, 0);
     mdspanx2_t facets(f.data(), f.size() / 2, 2);
-    std::span f0 = a.domain_arg(IntegralType::exterior_facet, 0, i, 0);
+    std::span f0 = a.domain_arg(facet_integral_type, 0, i, 0);
     mdspanx2_t facets0(f0.data(), f0.size() / 2, 2);
-    std::span f1 = a.domain_arg(IntegralType::exterior_facet, 1, i, 0);
+    std::span f1 = a.domain_arg(facet_integral_type, 1, i, 0);
     mdspanx2_t facets1(f1.data(), f1.size() / 2, 2);
     assert(coeffs.size() == facets.extent(0) * cstride);
     _lift_bc_exterior_facets(
@@ -1169,12 +1170,13 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
         cell_info1, bc_values1, bc_markers1, x0, alpha, perms);
   }
 
-  for (int i = 0; i < a.num_integrals(IntegralType::interior_facet, 0); ++i)
+  IntegralType interior_facet_integral_type = IntegralType(1, 2);
+  for (int i = 0; i < a.num_integrals(interior_facet_integral_type, 0); ++i)
   {
-    auto kernel = a.kernel(IntegralType::interior_facet, i, 0);
+    auto kernel = a.kernel(interior_facet_integral_type, i, 0);
     assert(kernel);
     auto& [coeffs, cstride]
-        = coefficients.at({IntegralType::interior_facet, i});
+        = coefficients.at({interior_facet_integral_type, i});
 
     using mdspanx22_t
         = md::mdspan<const std::int32_t,
@@ -1182,11 +1184,11 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
     using mdspanx2x_t
         = md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                           md::dynamic_extent>>;
-    std::span f = a.domain(IntegralType::interior_facet, i, 0);
+    std::span f = a.domain(interior_facet_integral_type, i, 0);
     mdspanx22_t facets(f.data(), f.size() / 4, 2, 2);
-    std::span f0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
+    std::span f0 = a.domain_arg(interior_facet_integral_type, 0, i, 0);
     mdspanx22_t facets0(f0.data(), f0.size() / 4, 2, 2);
-    std::span f1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
+    std::span f1 = a.domain_arg(interior_facet_integral_type, 1, i, 0);
     mdspanx22_t facets1(f1.data(), f1.size() / 4, 2, 2);
     _lift_bc_interior_facets(
         b, x_dofmap, x, kernel, facets, {dofmap0, bs0, facets0}, P0,
@@ -1340,13 +1342,14 @@ void assemble_vector(
       cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
     }
 
-    for (int i = 0; i < L.num_integrals(IntegralType::cell, 0); ++i)
+    IntegralType cell_integral_type = IntegralType(0);
+    for (int i = 0; i < L.num_integrals(cell_integral_type, 0); ++i)
     {
-      auto fn = L.kernel(IntegralType::cell, i, cell_type_idx);
+      auto fn = L.kernel(cell_integral_type, i, cell_type_idx);
       assert(fn);
-      std::span cells = L.domain(IntegralType::cell, i, cell_type_idx);
-      std::span cells0 = L.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
-      auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+      std::span cells = L.domain(cell_integral_type, i, cell_type_idx);
+      std::span cells0 = L.domain_arg(cell_integral_type, 0, i, cell_type_idx);
+      auto& [coeffs, cstride] = coefficients.at({cell_integral_type, i});
       assert(cells.size() * cstride == coeffs.size());
       if (bs == 1)
       {
@@ -1385,15 +1388,15 @@ void assemble_vector(
         = md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>;
 
-    for (int i = 0; i < L.num_integrals(IntegralType::exterior_facet, 0); ++i)
+    IntegralType facet_integral_type = IntegralType(1);
+    for (int i = 0; i < L.num_integrals(facet_integral_type, 0); ++i)
     {
-      auto fn = L.kernel(IntegralType::exterior_facet, i, 0);
+      auto fn = L.kernel(facet_integral_type, i, 0);
       assert(fn);
-      auto& [coeffs, cstride]
-          = coefficients.at({IntegralType::exterior_facet, i});
-      std::span f = L.domain(IntegralType::exterior_facet, i, 0);
+      auto& [coeffs, cstride] = coefficients.at({facet_integral_type, i});
+      std::span f = L.domain(facet_integral_type, i, 0);
       mdspanx2_t facets(f.data(), f.size() / 2, 2);
-      std::span f1 = L.domain_arg(IntegralType::exterior_facet, 0, i, 0);
+      std::span f1 = L.domain_arg(facet_integral_type, 0, i, 0);
       mdspanx2_t facets1(f1.data(), f1.size() / 2, 2);
       assert((facets.size() / 2) * cstride == coeffs.size());
       if (bs == 1)
@@ -1419,7 +1422,8 @@ void assemble_vector(
       }
     }
 
-    for (int i = 0; i < L.num_integrals(IntegralType::interior_facet, 0); ++i)
+    IntegralType interior_facet_integral_type = IntegralType(1, 2);
+    for (int i = 0; i < L.num_integrals(interior_facet_integral_type, 0); ++i)
     {
       using mdspanx22_t
           = md::mdspan<const std::int32_t,
@@ -1428,12 +1432,12 @@ void assemble_vector(
           = md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                             md::dynamic_extent>>;
 
-      auto fn = L.kernel(IntegralType::interior_facet, i, 0);
+      auto fn = L.kernel(interior_facet_integral_type, i, 0);
       assert(fn);
       auto& [coeffs, cstride]
-          = coefficients.at({IntegralType::interior_facet, i});
-      std::span facets = L.domain(IntegralType::interior_facet, i, 0);
-      std::span facets1 = L.domain_arg(IntegralType::interior_facet, 0, i, 0);
+          = coefficients.at({interior_facet_integral_type, i});
+      std::span facets = L.domain(interior_facet_integral_type, i, 0);
+      std::span facets1 = L.domain_arg(interior_facet_integral_type, 0, i, 0);
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
       if (bs == 1)
       {
@@ -1470,18 +1474,19 @@ void assemble_vector(
       }
     }
 
-    for (int i = 0; i < L.num_integrals(IntegralType::vertex, 0); ++i)
+    IntegralType vertex_integral_type = IntegralType(-1);
+    for (int i = 0; i < L.num_integrals(vertex_integral_type, 0); ++i)
     {
-      auto fn = L.kernel(IntegralType::vertex, i, 0);
+      auto fn = L.kernel(vertex_integral_type, i, 0);
       assert(fn);
 
-      std::span vertices = L.domain(IntegralType::vertex, i, cell_type_idx);
+      std::span vertices = L.domain(vertex_integral_type, i, cell_type_idx);
       std::span vertices0
-          = L.domain_arg(IntegralType::vertex, 0, i, cell_type_idx);
+          = L.domain_arg(vertex_integral_type, 0, i, cell_type_idx);
 
-      auto& [coeffs, cstride] = coefficients.at({IntegralType::vertex, i});
+      auto& [coeffs, cstride] = coefficients.at({vertex_integral_type, i});
 
-      assert(vertices.size() * cstride == coeffs.size());
+      assert(vertices.size() / 2 * cstride == coeffs.size());
 
       impl::assemble_vertices<T>(
           P0, b, x_dofmap, x,

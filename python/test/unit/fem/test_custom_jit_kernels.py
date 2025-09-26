@@ -92,7 +92,7 @@ def test_numba_assembly(dtype):
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
     active_coeffs = np.array([], dtype=np.int8)
     integrals = {
-        IntegralType.cell: [
+        IntegralType(0): [
             (0, k2.address, cells, active_coeffs),
             (1, k2.address, np.arange(0), active_coeffs),
             (2, k2.address, np.arange(0), active_coeffs),
@@ -104,7 +104,7 @@ def test_numba_assembly(dtype):
             [V._cpp_object, V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object
         )
     )
-    integrals = {IntegralType.cell: [(0, k1.address, cells, active_coeffs)]}
+    integrals = {IntegralType(0): [(0, k1.address, cells, active_coeffs)]}
     L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
 
     A = dolfinx.fem.assemble_matrix(a)
@@ -135,7 +135,7 @@ def test_coefficient(dtype):
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
     active_coeffs = np.array([0], dtype=np.int8)
     integrals = {
-        IntegralType.cell: [(0, k1.address, np.arange(num_cells, dtype=np.int32), active_coeffs)]
+        IntegralType(0): [(0, k1.address, np.arange(num_cells, dtype=np.int32), active_coeffs)]
     }
     formtype = form_cpp_class(dtype)
     L = Form(
@@ -275,7 +275,7 @@ def test_cffi_assembly():
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
     active_coeffs = np.array([], dtype=np.int8)
-    integrals = {IntegralType.cell: [(0, ptrA, cells, active_coeffs)]}
+    integrals = {IntegralType(0): [(0, ptrA, cells, active_coeffs)]}
     a = Form(
         _cpp.fem.Form_float64(
             [V._cpp_object, V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object
@@ -283,7 +283,7 @@ def test_cffi_assembly():
     )
 
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
-    integrals = {IntegralType.cell: [(0, ptrL, cells, active_coeffs)]}
+    integrals = {IntegralType(0): [(0, ptrL, cells, active_coeffs)]}
     L = Form(
         _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object)
     )

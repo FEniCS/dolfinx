@@ -201,12 +201,13 @@ T assemble_scalar(
   std::vector<scalar_value_t<T>> cdofs_b(2 * 3 * x_dofmap.extent(1));
 
   T value = 0;
-  for (int i = 0; i < M.num_integrals(IntegralType::cell, 0); ++i)
+  IntegralType cell_integral = IntegralType(0);
+  for (int i = 0; i < M.num_integrals(cell_integral, 0); ++i)
   {
-    auto fn = M.kernel(IntegralType::cell, i, 0);
+    auto fn = M.kernel(cell_integral, i, 0);
     assert(fn);
-    auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i, 0);
+    auto& [coeffs, cstride] = coefficients.at({cell_integral, i});
+    std::span<const std::int32_t> cells = M.domain(cell_integral, i, 0);
     assert(cells.size() * cstride == coeffs.size());
     value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
@@ -226,14 +227,14 @@ T assemble_scalar(
                        num_facets_per_cell);
   }
 
-  for (int i = 0; i < M.num_integrals(IntegralType::exterior_facet, 0); ++i)
+  IntegralType facet_type = IntegralType(1);
+  for (int i = 0; i < M.num_integrals(facet_type, 0); ++i)
   {
-    auto fn = M.kernel(IntegralType::exterior_facet, i, 0);
+    auto fn = M.kernel(facet_type, i, 0);
     assert(fn);
-    auto& [coeffs, cstride]
-        = coefficients.at({IntegralType::exterior_facet, i});
+    auto& [coeffs, cstride] = coefficients.at({facet_type, i});
 
-    std::span facets = M.domain(IntegralType::exterior_facet, i, 0);
+    std::span facets = M.domain(facet_type, i, 0);
 
     // Two values per each adjacent cell (cell index and local facet
     // index)
@@ -251,13 +252,13 @@ T assemble_scalar(
         cdofs_b);
   }
 
-  for (int i = 0; i < M.num_integrals(IntegralType::interior_facet, 0); ++i)
+  IntegralType interior_facet_type = IntegralType(1, 2);
+  for (int i = 0; i < M.num_integrals(interior_facet_type, 0); ++i)
   {
-    auto fn = M.kernel(IntegralType::interior_facet, i, 0);
+    auto fn = M.kernel(interior_facet_type, i, 0);
     assert(fn);
-    auto& [coeffs, cstride]
-        = coefficients.at({IntegralType::interior_facet, i});
-    std::span facets = M.domain(IntegralType::interior_facet, i, 0);
+    auto& [coeffs, cstride] = coefficients.at({interior_facet_type, i});
+    std::span facets = M.domain(interior_facet_type, i, 0);
 
     constexpr std::size_t num_adjacent_cells = 2;
     // Two values per each adj. cell (cell index and local facet index).
@@ -276,16 +277,16 @@ T assemble_scalar(
         perms, cdofs_b);
   }
 
-  for (int i = 0; i < M.num_integrals(IntegralType::vertex, 0); ++i)
+  IntegralType vertex_type = IntegralType(-1);
+  for (int i = 0; i < M.num_integrals(vertex_type, 0); ++i)
   {
-    auto fn = M.kernel(IntegralType::vertex, i, 0);
+    auto fn = M.kernel(vertex_type, i, 0);
     assert(fn);
 
-    auto& [coeffs, cstride] = coefficients.at({IntegralType::vertex, i});
+    auto& [coeffs, cstride] = coefficients.at({vertex_type, i});
 
-    std::span<const std::int32_t> vertices
-        = M.domain(IntegralType::vertex, i, 0);
-    assert(vertices.size() * cstride == coeffs.size());
+    std::span<const std::int32_t> vertices = M.domain(vertex_type, i, 0);
+    assert(vertices.size() / 2 * cstride == coeffs.size());
 
     constexpr std::size_t num_adjacent_cells = 1;
     // Two values per adj. cell (cell index and local vertex index).
