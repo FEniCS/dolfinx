@@ -382,8 +382,8 @@ public:
     // Unroll _dofs0 if dofmap block size > 1
     if (const int bs = _function_space->dofmap()->bs(); bs > 1)
     {
-      _dofs0 = unroll_dofs(_dofs0, bs);
       _owned_indices0 *= bs;
+      _dofs0 = unroll_dofs(_dofs0, bs);
     }
   }
 
