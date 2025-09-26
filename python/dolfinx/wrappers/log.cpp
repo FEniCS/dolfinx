@@ -21,11 +21,13 @@ void log(nb::module_& m)
 {
   // log level enums
   nb::enum_<spdlog::level::level_enum>(m, "LogLevel", nb::is_arithmetic())
-      .value("OFF", spdlog::level::level_enum::off)
+      .value("TRACE", spdlog::level::level_enum::trace)
       .value("DEBUG", spdlog::level::level_enum::debug)
       .value("INFO", spdlog::level::level_enum::info)
       .value("WARNING", spdlog::level::level_enum::warn)
-      .value("ERROR", spdlog::level::level_enum::err);
+      .value("ERROR", spdlog::level::level_enum::err)
+      .value("CRITICAL", spdlog::level::level_enum::critical)
+      .value("OFF", spdlog::level::level_enum::off);
 
   m.def(
       "set_output_file",
@@ -63,6 +65,12 @@ void log(nb::module_& m)
       {
         switch (level)
         {
+        case (spdlog::level::level_enum::trace):
+          spdlog::trace(s.c_str());
+          break;
+        case (spdlog::level::level_enum::debug):
+          spdlog::debug(s.c_str());
+          break;
         case (spdlog::level::level_enum::info):
           spdlog::info(s.c_str());
           break;
@@ -71,6 +79,11 @@ void log(nb::module_& m)
           break;
         case (spdlog::level::level_enum::err):
           spdlog::error(s.c_str());
+          break;
+        case (spdlog::level::level_enum::critical):
+          spdlog::critical(s.c_str());
+          break;
+        case (spdlog::level::level_enum::off):
           break;
         default:
           throw std::runtime_error("Log level not supported");
