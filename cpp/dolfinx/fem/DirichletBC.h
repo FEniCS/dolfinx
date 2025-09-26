@@ -259,9 +259,8 @@ private:
   std::size_t num_owned(const DofMap& dofmap,
                         std::span<const std::int32_t> dofs)
   {
-    int bs = dofmap.index_map_bs();
     std::int32_t map_size = dofmap.index_map->size_local();
-    std::int32_t owned_size = bs * map_size;
+    std::int32_t owned_size = map_size;
     auto it = std::ranges::lower_bound(dofs, owned_size);
     return std::distance(dofs.begin(), it);
   }
