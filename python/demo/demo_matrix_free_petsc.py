@@ -88,7 +88,7 @@ class MatrixFreeOperator:
 
     def __init__(
         self,
-        bilinear_form: ufl.Form | list[list[ufl.form.Form]],
+        bilinear_form: ufl.Form,
         bcs: list[dolfinx.fem.DirichletBC] | None = None,
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
@@ -319,7 +319,7 @@ def extract_system(
 
 
 def define_matrix_free_ksp(
-    a: ufl.Form | list[list[ufl.form.Form]],
+    a: ufl.Form,
     bcs: list[dolfinx.fem.DirichletBC],
     prefix: str,
 ) -> PETSc.KSP:
