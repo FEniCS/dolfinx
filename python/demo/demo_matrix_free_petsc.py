@@ -12,10 +12,13 @@
 #
 # Author: Jørgen S. Dokken
 #
-# This demo can be downloaded as a single Python file {download}`demo_matrix_free_petsc.py`.
-# In this demo, we will demonstrate how to set up a fully matrix-free solver using PETSc.
-# We will start by defining our variational problem, and then in turn define a custom PETSc-matrix
-# that will handle assembly without ever forming the full system matrix.
+# This demo can be downloaded as a single Python file
+# {download}`demo_matrix_free_petsc.py`.
+# In this demo, we will demonstrate how to set up a fully matrix-free
+# solver using PETSc.
+# We will start by defining our variational problem, and then in turn
+# define a custom PETSc-matrix that will handle assembly without ever
+# forming the full system matrix.
 
 # ## Problem definition
 # In this example, we consider a projection problem, i.e.
@@ -23,16 +26,21 @@
 #
 # $$
 # \begin{align}
-#   \min_{u_h, p_h} J(u_h, p_h) &= \frac{1}{2} \int_\Omega \vert u_h - f\vert^2~\mathrm{d}x + \int_\Omega \vert p_h - g\vert^2~\mathrm{d}x
+#   \min_{u_h, p_h} J(u_h, p_h) &=
+#   \frac{1}{2} \int_\Omega \vert u_h - f\vert^2~\mathrm{d}x
+#   + \int_\Omega \vert p_h - g\vert^2~\mathrm{d}x
 # \end{align}
 # $$
 #
-# By considering the optimality conditions of this system we arrive at the variational problem:
+# By considering the optimality conditions of this system we arrive at the
+# variational problem:
 # Find $(u_h, p_h) \in V_h \times Q_h$ such that
 #
 # $$
 # \begin{align}
-#   \int_\Omega (u_h-f) \cdot v~\mathrm{d}x + \int_\Omega (p_h-g) q~\mathrm{d}x &= 0 \quad \forall (v, q) \in V_h \times Q_h
+#   \int_\Omega (u_h-f) \cdot v~\mathrm{d}x + \int_\Omega (p_h-g) q
+#  ~\mathrm{d}x
+# &= 0 \quad \forall (v, q) \in V_h \times Q_h
 # \end{align}
 # $$
 #
@@ -47,21 +55,25 @@ import numpy as np
 import basix.ufl
 import dolfinx.fem.petsc
 import ufl
+
 # -
 
 # ## Matrix-free operator
-# For many interative methods, such as the conjugate gradient method,
-# one only needs to be able to compute the action of the system matrix on a vector.
-# Thus, one can assemble a form of rank 1 with a given function replacing the
-# trial function and obtain this vector.
+# Many interative methods, such as the conjugate gradient method,
+# only requires the action of the system matrix on a vector.
+# Thus, one can assemble a form of rank 1 with a given function replacing
+# the trial function and obtain this vector.
 
 # We do this using `ufl.action` to create a rank 1 form.
-# Additionally, some preconditioners, such as the Jacobi preconditioner, need access to the diagonal of the matrix.
-# This can be obtained by assembling the form with a special option to only compute the diagonal, i.e.
-# the `form_compiler_options={"part":"diagonal"}`, which is passed to FFCx when calling `dolfinx.fem.form`.
+# Additionally, some preconditioners, such as the Jacobi preconditioner,
+# need access to the diagonal of the matrix.
+# This can be obtained by assembling the form with a special option to only
+# compute the diagonal, i.e.
+# the `form_compiler_options={"part":"diagonal"}`, which is passed to FFCx
+# when calling `dolfinx.fem.form`.
 
-# For the assembly itself, we require an operator that can compute the action of the matrix on a vector,
-# as well as provide the diagonal.
+# For the assembly itself, we require an operator that can compute the
+# action of the matrix on a vector, as well as provide the diagonal.
 # We provide this class below:
 
 
@@ -71,9 +83,7 @@ class MatrixFreeOperator:
     _diagonal: PETSc.Vec  # Temporary storage of diagonal
     _vector: PETSc.Vec  # Temporary storage of action
 
-    _vector_product: (
-        dolfinx.fem.Form | list[dolfinx.fem.Form]
-    )  # Compiled matrix-vector product
+    _vector_product: dolfinx.fem.Form | list[dolfinx.fem.Form]  # Compiled matrix-vector product
     _compiled_diagonal: dolfinx.fem.Form | list[ufl.form.Form]  # Compiled diagonal form
 
     def __init__(
@@ -83,23 +93,23 @@ class MatrixFreeOperator:
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
     ):
-        """A matrix-free operator for a bilinear form with boundary conditions.
+        """A matrix-free operator for a bilinear form with
+        boundary conditions.
 
         Args:
             bilinear_form: The bilinear form.
             bcs: A list of Dirichlet boundary conditions.
         """
         jit_options = {} if jit_options is None else jit_options
-        form_compiler_options = (
-            {} if form_compiler_options is None else form_compiler_options
-        )
+        form_compiler_options = {} if form_compiler_options is None else form_compiler_options
         diagnal_options = form_compiler_options.copy()
         diagnal_options["part"] = "diagonal"
 
         # Store the boundary conditions
         self._bcs = [] if bcs is None else bcs
 
-        # Use the number of arguments in the bilinear for to decide if we have a mixed function space
+        # Use the number of arguments in the bilinear for to decide if we
+        # have a mixed function space
         arguments = bilinear_form.arguments()
         if len(arguments) > 2:
             # Handle MixedFunctionSpace forms
@@ -107,9 +117,7 @@ class MatrixFreeOperator:
             assert max(arg.number() for arg in arguments) == 1
             a_blocked = ufl.extract_blocks(bilinear_form)
             assert len(a_blocked) == size
-            spaces = [
-                a_blocked[i][i].arguments()[0].ufl_function_space() for i in range(size)
-            ]
+            spaces = [a_blocked[i][i].arguments()[0].ufl_function_space() for i in range(size)]
 
             self._w = [dolfinx.fem.Function(space) for space in spaces]
             self._diagonal = dolfinx.fem.petsc.create_vector(spaces)
@@ -127,9 +135,7 @@ class MatrixFreeOperator:
         else:
             # Handle "standard" bilinear forms
             assert len(arguments) == 2, "Only bilinear forms are supported"
-            self._w = dolfinx.fem.Function(
-                bilinear_form.arguments()[-1].ufl_function_space()
-            )
+            self._w = dolfinx.fem.Function(bilinear_form.arguments()[-1].ufl_function_space())
             self._diagonal = dolfinx.fem.petsc.create_vector(self._w.function_space)
             self._vector = dolfinx.fem.petsc.create_vector(self._w.function_space)
             self._vector_product = dolfinx.fem.form(ufl.action(bilinear_form, self._w))
@@ -216,8 +222,9 @@ class MatrixFreeOperator:
             mat: The PETSc matrix (not used).
             vec: The output vector to store the diagonal.
         """
-        # NOTE: Only have to go through a DOLFINx vector due to a bug in PETSc,
-        # similar to: https://gitlab.com/petsc/petsc/-/issues/1645
+        # NOTE: Only have to go through a DOLFINx vector due to a
+        # bug in PETSc, similar to:
+        # https://gitlab.com/petsc/petsc/-/issues/1645
         with self._diagonal.localForm() as loc:
             loc.set(0)
         dolfinx.fem.petsc.assemble_vector(self._diagonal, self._compiled_diagonal)
@@ -241,9 +248,11 @@ class MatrixFreeOperator:
         vec.setArray(self._diagonal)
 
 
-# ## Setting up a PETSc krylov subspace solver with the matrix-free operator
-# As we will solve the problem below with different representations of the bilinear form,
-# we provide a convenience function for attaching the matrix-free operator to a PETSc KSP object.
+# ## Setting up a krylov subspace solver with the matrix-free operator
+# As we will solve the problem below with different representations of the
+# bilinear form,
+# we provide a convenience function for attaching the matrix-free operator
+# to a PETSc KSP object.
 
 
 def attach_matrix_free_operator(
@@ -272,8 +281,8 @@ def attach_matrix_free_operator(
 
 
 # We are ready to solve our problem.
-# In this demo we will consider two approaches, using a `mixed_element` with `basix.ufl.mixed_element`
-# and using a `ufl.MixedFunctionSpace`.
+# In this demo we will consider two approaches, using
+# `basix.ufl.mixed_element`and using a `ufl.MixedFunctionSpace`.
 
 # We start by definng our mesh and finite element spaces.
 
@@ -289,7 +298,8 @@ f = ufl.as_vector((ufl.cos(2 * x[0]) * ufl.sin(x[1]), x[1]))
 g = ufl.sin(3 * x[0]) * ufl.cos(4 * x[1])
 
 
-# Next, we create a general function to extract the bilinear and linear forms from the weak formulation.
+# Next, we create a general function to extract the bilinear and
+# linear forms from the weak formulation.
 
 
 def extract_system(
@@ -297,14 +307,15 @@ def extract_system(
     f: ufl.core.expr.Expr,
     g: ufl.core.expr.Expr,
 ) -> tuple[ufl.Form, ufl.Form]:
-    """Given a mixed function space, extract the bilinear and linear forms."""
+    """Extract the bilinear and linear forms."""
     u_h, p_h = ufl.TrialFunctions(W)
     v, q = ufl.TestFunctions(W)
     residual = ufl.inner(u_h - f, v) * ufl.dx + ufl.inner(p_h - g, q) * ufl.dx
     return ufl.system(residual)
 
 
-# We also define a convenience function for creating the Krylov subspace solver and attaching the matrix free operator.
+# We also define a convenience function for creating the Krylov subspace
+# solver and attaching the matrix free operator.
 
 
 def define_matrix_free_ksp(
@@ -317,9 +328,7 @@ def define_matrix_free_ksp(
     attach_matrix_free_operator(ksp, a, bcs=bcs)
 
     ksp.setMonitor(
-        lambda _, its, rnorm: PETSc.Sys.Print(
-            f"{prefix} Iter: {its}, rel. residual: {rnorm:.5e}"
-        )
+        lambda _, its, rnorm: PETSc.Sys.Print(f"{prefix} Iter: {its}, rel. residual: {rnorm:.5e}")
     )
     ksp.setType("cg")
     pc = ksp.getPC()
@@ -332,7 +341,8 @@ def define_matrix_free_ksp(
 
 
 # ## Mixed-element approach
-# We start by defining the function spaces using a mixed element from `basix.ufl.mixed_element`.
+# We start by defining the function spaces using a mixed element from
+# `basix.ufl.mixed_element`.
 
 
 def mixed_element(
@@ -352,15 +362,11 @@ def mixed_element(
     u_bc.interpolate(u_bc_expr)
     mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
     bc_facets = dolfinx.mesh.exterior_facet_indices(mesh.topology)
-    bc_dofs_u = dolfinx.fem.locate_dofs_topological(
-        (W.sub(0), V), mesh.topology.dim - 1, bc_facets
-    )
+    bc_dofs_u = dolfinx.fem.locate_dofs_topological((W.sub(0), V), mesh.topology.dim - 1, bc_facets)
     p_bc_expr = dolfinx.fem.Expression(g, Q.element.interpolation_points)
     p_bc = dolfinx.fem.Function(Q)
     p_bc.interpolate(p_bc_expr)
-    bc_dofs_p = dolfinx.fem.locate_dofs_topological(
-        (W.sub(1), Q), mesh.topology.dim - 1, bc_facets
-    )
+    bc_dofs_p = dolfinx.fem.locate_dofs_topological((W.sub(1), Q), mesh.topology.dim - 1, bc_facets)
     bcs = [
         dolfinx.fem.dirichletbc(u_bc, bc_dofs_u, W.sub(0)),
         dolfinx.fem.dirichletbc(p_bc, bc_dofs_p, W.sub(1)),
@@ -388,9 +394,10 @@ def mixed_element(
 
 # ## MixedFunctionSpace approach
 # We can also define the function space using `ufl.MixedFunctionSpace`.
-# This approach is more efficient if there are many subspaces, where there is little cross coupling.
-# It is also more flexible, as each sub-space can be defined on different meshes, such as submeshes of
-# codimension 0 and 1.
+# This approach is more efficient if there are many subspaces, where
+# there is little cross coupling.
+# It is also more flexible, as each sub-space can be defined on
+# different meshes, such as submeshes of codimension 0 and 1.
 
 
 def mixed_function_space(
@@ -428,9 +435,7 @@ def mixed_function_space(
     L_compiled = dolfinx.fem.form(ufl.extract_blocks(L))
     a_compiled = dolfinx.fem.form(ufl.extract_blocks(a))
     b = dolfinx.fem.petsc.assemble_vector(L_compiled)
-    bcs0 = dolfinx.fem.bcs_by_block(
-        dolfinx.fem.extract_function_spaces(L_compiled), bcs
-    )
+    bcs0 = dolfinx.fem.bcs_by_block(dolfinx.fem.extract_function_spaces(L_compiled), bcs)
     dolfinx.fem.petsc.apply_lifting(b, a_compiled, bcs0)
     b.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
     dolfinx.fem.petsc.set_bc(b, bcs0)
@@ -450,8 +455,10 @@ def mixed_function_space(
 
 
 # ## Checking solution accuracy
-# We can now solve the problem using both approaches and compare the solution accuracy.
-# We compute the L2-error between the numerical solution and the analytical solution.
+# We can now solve the problem using both approaches and compare
+# the solution accuracy.
+# We compute the L2-error between the numerical solution and the
+# analytical solution.
 
 # +
 u_me, p_me = mixed_element(mesh, f, g)
@@ -460,7 +467,8 @@ u_mfs, p_mfs = mixed_function_space(mesh, f, g)
 
 
 def compute_L2_error(uh, u_ex) -> float:
-    """Compute the L2-error between an approximate solution and an exact solution.
+    """Compute the L2-error between an approximate solution and
+    an exact solution.
 
     Args:
         uh: The approximate solution.
