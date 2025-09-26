@@ -1,4 +1,4 @@
-# Copyright (C) 2020-2021 Joseph P. Dean, Massimiliano Leoni and Jørgen S. Dokken
+# Copyright (C) 2020-2025 Joseph P. Dean, Massimiliano Leoni and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -362,3 +362,26 @@ def test_mixed_blocked_constant():
     with pytest.raises(RuntimeError):
         dofs1 = locate_dofs_topological(W.sub(1), tdim - 1, boundary_facets)
         dirichletbc(c1, dofs1, W.sub(1))
+
+
+@pytest.mark.parametrize("shape", [(), (2,), (3, 2)])
+def test_blocked_dof_ownership(shape):
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    V = functionspace(mesh, ("Lagrange", 1, shape))
+
+    u_bc = Function(V)
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    bc_facets = exterior_facet_indices(mesh.topology)
+    # Blocked spaces are not unrolled here
+    bc_dofs_u = locate_dofs_topological(V, mesh.topology.dim - 1, bc_facets)
+
+    # Num owned dofs
+    num_owned_blocked = V.dofmap.index_map.size_local
+
+    input_dofs_owned = bc_dofs_u[bc_dofs_u < num_owned_blocked]
+
+    bc = dirichletbc(u_bc, bc_dofs_u)
+    unrolled_bc_dofs, num_owned = bc.dof_indices()
+
+    assert len(input_dofs_owned) * V.dofmap.index_map_bs == num_owned
+    assert len(unrolled_bc_dofs) == len(bc_dofs_u) * V.dofmap.index_map_bs
