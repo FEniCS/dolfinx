@@ -718,7 +718,7 @@ void assemble_cells(
   }
 }
 
-/// @brief Execute kernel over entities of codimension > 1 and accumulate result
+/// @brief Execute kernel over entities of codimension ≥ 1 and accumulate result
 /// in a matrix.
 ///
 /// Each entity is represented by (i) a cell that the entity is attached to
