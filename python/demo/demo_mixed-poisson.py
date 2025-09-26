@@ -22,6 +22,9 @@
 #   PETSc/petsc4y.
 # * Construct a Hypre Auxiliary Maxwell Space (AMS) preconditioner for
 #   $H(\mathrm{div})$ problems in two-dimensions.
+# * Construct a monolithic Balancing Domain Decomposition by
+#   Constraints (BDDC) preconditioner as described in the
+#   [paper](https://doi.org/10.1137/16M1080653)
 #
 # ```{admonition} Download sources
 # :class: download
@@ -103,7 +106,7 @@ import ufl
 from basix.ufl import element
 from dolfinx import fem, mesh
 from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
-from dolfinx.mesh import CellType, create_unit_square
+from dolfinx.mesh import CellType, GhostMode, create_unit_square
 
 # Solution scalar (e.g., float32, complex128) and geometry (float32/64)
 # types
@@ -111,13 +114,19 @@ dtype = dolfinx.default_scalar_type
 xdtype = dolfinx.default_real_type
 # -
 
-# Create a two-dimensional mesh. The iterative solver constructed
-# later requires special construction that is specific to two
+# Create a two-dimensional mesh. The AMS based iterative solvers
+# constructed later require special construction that is specific to two
 # dimensions. Application in three-dimensions would require a number of
 # changes to the linear solver.
+# BDDC methods need the linear operator to be stored in unassembled format,
+# i.e. assembled on each MPI process associated with the subdomain part of
+# the mesh, but not across processes.
+# To this end, we require the mesh to not be distributed with overlap.
 
 # +
-msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle, dtype=xdtype)
+msh = create_unit_square(
+    MPI.COMM_WORLD, 96, 96, CellType.triangle, ghost_mode=GhostMode.none, dtype=xdtype
+)
 # -
 #
 # Here we construct compatible function spaces for the mixed Poisson
@@ -226,41 +235,14 @@ sigma, u = fem.Function(V, name="sigma", dtype=dtype), fem.Function(W, name="u",
 # -
 
 # We now create a linear problem solver for the mixed problem.
+# We use two separate functions to setup block preconditioning with AMS or
+# monolithic BDDC methods, as the matrix specification differs.
+#
+# The next function sets up the problem with block preconditioning.
 # As we will use different preconditions for the individual blocks of
 # the saddle point problem, we specify the matrix kind to be "nest",
 # so that we can use # [`fieldsplit`](https://petsc.org/release/manual/ksp/#sec-block-matrices)
 # (block) type and set the 'splits' between the $\sigma$ and $u$ fields.
-
-
-# +
-
-problem = fem.petsc.LinearProblem(
-    a,
-    L,
-    u=[sigma, u],
-    P=a_p,
-    kind="nest",
-    bcs=bcs,
-    petsc_options_prefix="demo_mixed_poisson_",
-    petsc_options={
-        "ksp_type": "gmres",
-        "pc_type": "fieldsplit",
-        "pc_fieldsplit_type": "additive",
-        "ksp_rtol": 1e-8,
-        "ksp_gmres_restart": 100,
-        "ksp_view": "",
-    },
-)
-# -
-
-
-# +
-ksp = problem.solver
-ksp.setMonitor(
-    lambda _, its, rnorm: PETSc.Sys.Print(f"Iteration: {its:>4d}, residual: {rnorm:.3e}")
-)
-# -
-
 # For the $P_{11}$ block, which is the discontinuous Lagrange mass
 # matrix, we let the preconditioner be the default, which is incomplete
 # LU factorisation and which can solve the block exactly in one
@@ -273,82 +255,174 @@ ksp.setMonitor(
 # $H({\rm div})$ and $H({\rm curl})$ spaces are effectively the same in
 # two-dimensions, just rotated by $\pi/2.
 
+
 # +
-ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
-pc_sigma = ksp_sigma.getPC()
-if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.complexfloating):
-    pc_sigma.setType("hypre")
-    pc_sigma.setHYPREType("ams")
+def block_solver():
+    problem = fem.petsc.LinearProblem(
+        a,
+        L,
+        u=[sigma, u],
+        P=a_p,
+        kind="nest",
+        bcs=bcs,
+        petsc_options_prefix="demo_mixed_poisson_",
+        petsc_options={
+            "ksp_type": "gmres",
+            "pc_type": "fieldsplit",
+            "pc_fieldsplit_type": "additive",
+            "ksp_rtol": 1e-8,
+            "ksp_gmres_restart": 100,
+            "ksp_view": "",
+        },
+    )
 
-    opts = PETSc.Options()
-    opts[f"{ksp_sigma.prefix}pc_hypre_ams_cycle_type"] = 7
-    opts[f"{ksp_sigma.prefix}pc_hypre_ams_relax_times"] = 2
+    ksp = problem.solver
+    ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
+    pc_sigma = ksp_sigma.getPC()
+    if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.complexfloating):
+        pc_sigma.setType("hypre")
+        pc_sigma.setHYPREType("ams")
 
-    # Construct and set the 'discrete gradient' operator, which maps
-    # grad H1 -> H(curl), i.e. the gradient of a scalar Lagrange space
-    # to a H(curl) space
-    V_H1 = fem.functionspace(msh, element("Lagrange", msh.basix_cell(), k, dtype=xdtype))
-    V_curl = fem.functionspace(msh, element("N1curl", msh.basix_cell(), k, dtype=xdtype))
-    G = discrete_gradient(V_H1, V_curl)
-    G.assemble()
-    pc_sigma.setHYPREDiscreteGradient(G)
+        opts = PETSc.Options()
+        opts[f"{ksp_sigma.prefix}pc_hypre_ams_cycle_type"] = 7
+        opts[f"{ksp_sigma.prefix}pc_hypre_ams_relax_times"] = 2
 
-    assert k > 0, "Element degree must be at least 1."
-    if k == 1:
-        # For the lowest order base (k=1), we can supply interpolation
-        # of the '1' vectors in the space V. Hypre can then construct
-        # the required operators from G and the '1' vectors.
-        cvec0, cvec1 = fem.Function(V), fem.Function(V)
-        cvec0.interpolate(lambda x: np.vstack((np.ones_like(x[0]), np.zeros_like(x[1]))))
-        cvec1.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.ones_like(x[1]))))
-        pc_sigma.setHYPRESetEdgeConstantVectors(cvec0.x.petsc_vec, cvec1.x.petsc_vec, None)
+        # Construct and set the 'discrete gradient' operator, which maps
+        # grad H1 -> H(curl), i.e. the gradient of a scalar Lagrange space
+        # to a H(curl) space
+        V_H1 = fem.functionspace(msh, element("Lagrange", msh.basix_cell(), k, dtype=xdtype))
+        V_curl = fem.functionspace(msh, element("N1curl", msh.basix_cell(), k, dtype=xdtype))
+        G = discrete_gradient(V_H1, V_curl)
+        G.assemble()
+        pc_sigma.setHYPREDiscreteGradient(G)
+
+        assert k > 0, "Element degree must be at least 1."
+        if k == 1:
+            # For the lowest order base (k=1), we can supply interpolation
+            # of the '1' vectors in the space V. Hypre can then construct
+            # the required operators from G and the '1' vectors.
+            cvec0, cvec1 = fem.Function(V), fem.Function(V)
+            cvec0.interpolate(lambda x: np.vstack((np.ones_like(x[0]), np.zeros_like(x[1]))))
+            cvec1.interpolate(lambda x: np.vstack((np.zeros_like(x[0]), np.ones_like(x[1]))))
+            pc_sigma.setHYPRESetEdgeConstantVectors(cvec0.x.petsc_vec, cvec1.x.petsc_vec, None)
+        else:
+            # For high-order spaces, we must provide the (H1)^d -> H(div)
+            # interpolation operator/matrix
+            V_H1d = fem.functionspace(msh, ("Lagrange", k, (msh.geometry.dim,)))
+            Pi = interpolation_matrix(V_H1d, V)  # (H1)^d -> H(div)
+            Pi.assemble()
+            pc_sigma.setHYPRESetInterpolations(msh.geometry.dim, None, None, Pi, None)
+
+            # High-order elements generally converge less well than the
+            # lowest-order case with algebraic multigrid, so we perform
+            # extra work at the multigrid stage
+            opts[f"{ksp_sigma.prefix}pc_hypre_ams_tol"] = 1e-12
+            opts[f"{ksp_sigma.prefix}pc_hypre_ams_max_iter"] = 3
+
+        ksp_sigma.setFromOptions()
     else:
-        # For high-order spaces, we must provide the (H1)^d -> H(div)
-        # interpolation operator/matrix
-        V_H1d = fem.functionspace(msh, ("Lagrange", k, (msh.geometry.dim,)))
-        Pi = interpolation_matrix(V_H1d, V)  # (H1)^d -> H(div)
-        Pi.assemble()
-        pc_sigma.setHYPRESetInterpolations(msh.geometry.dim, None, None, Pi, None)
+        # If Hypre is not available, use LU factorisation on the $P_{00}$
+        # block
+        pc_sigma.setType("lu")
+        use_superlu = PETSc.IntType == np.int64
+        if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
+            pc_sigma.setFactorSolverType("mumps")
+        elif PETSc.Sys().hasExternalPackage("superlu_dist"):
+            pc_sigma.setFactorSolverType("superlu_dist")
 
-        # High-order elements generally converge less well than the
-        # lowest-order case with algebraic multigrid, so we perform
-        # extra work at the multigrid stage
-        opts[f"{ksp_sigma.prefix}pc_hypre_ams_tol"] = 1e-12
-        opts[f"{ksp_sigma.prefix}pc_hypre_ams_max_iter"] = 3
+    return problem
 
-    ksp_sigma.setFromOptions()
-else:
-    # If Hypre is not available, use LU factorisation on the $P_{00}$
-    # block
-    pc_sigma.setType("lu")
-    use_superlu = PETSc.IntType == np.int64
-    if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
-        pc_sigma.setFactorSolverType("mumps")
-    elif PETSc.Sys().hasExternalPackage("superlu_dist"):
-        pc_sigma.setFactorSolverType("superlu_dist")
+
 # -
 
-# Once we have set the preconditioners for the two blocks, we can
-# solve the linear system. The `LinearProblem` class will
+# In the next function we create a monolithic linear problem solver.
+# As we will use BDDC, we specify the matrix kind to be "is".
+# We also show a minimal customization for the method to be
+# applied monolithically on the symmetric indefinite linear
+# system arising from the mixed problem.
+# In particular, we need solvers for the subproblems that can
+# support the saddle point formulation.
+
+
+# +
+def monolithic_solver():
+    # Some defaults solver strategies based on what PETSc has
+    # been configured with
+    local_solver = "svd"
+    local_solver_type = "dummy"
+    coarse_solver = "svd"
+    coarse_solver_type = "dummy"
+    if PETSc.Sys().hasExternalPackage("mumps"):
+        local_solver = "cholesky"
+        local_solver_type = "mumps"
+        coarse_solver = "cholesky"
+        coarse_solver_type = "mumps"
+    elif PETSc.Sys().hasExternalPackage("superlu"):
+        local_solver = "lu"
+        local_solver_type = "superlu"
+    elif PETSc.Sys().hasExternalPackage("umfpack"):
+        local_solver = "lu"
+        local_solver_type = "umfpack"
+    if coarse_solver == "svd" and PETSc.Sys().hasExternalPackage("superlu_dist"):
+        coarse_solver = "lu"
+        coarse_solver_type = "superlu_dist"
+
+    return fem.petsc.LinearProblem(
+        a,
+        L,
+        u=[sigma, u],
+        kind="is",
+        bcs=bcs,
+        petsc_options_prefix="demo_mixed_poisson_",
+        petsc_options={
+            "ksp_rtol": 1e-8,
+            "ksp_view": None,
+            "pc_type": "bddc",
+            "pc_bddc_use_local_mat_graph": False,
+            "pc_bddc_benign_trick": None,
+            "pc_bddc_nonetflux": None,
+            "pc_bddc_detect_disconnected": None,
+            "pc_bddc_dirichlet_pc_type": local_solver,
+            "pc_bddc_dirichlet_pc_factor_mat_solver_type": local_solver_type,
+            "pc_bddc_neumann_pc_type": local_solver,
+            "pc_bddc_neumann_pc_factor_mat_solver_type": local_solver_type,
+            "pc_bddc_coarse_pc_type": coarse_solver,
+            "pc_bddc_coarse_pc_factor_mat_solver_type": coarse_solver_type,
+        },
+    )
+
+
+# -
+
+# Once we have created the problem solvers, we can
+# solve the linear systems. The `LinearProblem` class will
 # automatically assemble the linear system, apply the boundary
 # conditions, call the Krylov solver and update the solution
-# vectors `u` and `sigma`.
+# vectors `u` and `sigma`. For each solve, we save the solution
+# `u` in VTX format:
 
 # +
-problem.solve()
-converged_reason = problem.solver.getConvergedReason()
-assert converged_reason > 0, f"Krylov solver has not converged, reason: {converged_reason}."
-# -
+if not dolfinx.has_adios2:
+    PETSc.Sys.Print("ADIOS2 required for VTX output.")
 
-# We save the solution `u` in VTX format:
 
-# +
-if dolfinx.has_adios2:
-    from dolfinx.io import VTXWriter
+for strategy_name, strategy in ("block", block_solver), ("monolithic", monolithic_solver):
+    problem = strategy()
+    ksp = problem.solver
+    ksp.setMonitor(
+        lambda _, its, rnorm: PETSc.Sys.Print(f"  iteration: {its:>4d}, residual: {rnorm:.3e}")
+    )
+    PETSc.Sys.Print(f"\n\nSolving mixed poisson problem with {strategy_name} solver.")
+    problem.solve()
+    converged_reason = problem.solver.getConvergedReason()
+    assert converged_reason > 0, (
+        f"Krylov solver for {strategy_name} has not converged, reason: {converged_reason}."
+    )
 
-    u.name = "u"
-    with VTXWriter(msh.comm, "output_mixed_poisson.bp", u, "bp4") as f:
-        f.write(0.0)
-else:
-    print("ADIOS2 required for VTX output.")
+    if dolfinx.has_adios2:
+        from dolfinx.io import VTXWriter
+
+        u.name = "u"
+        with VTXWriter(msh.comm, f"output_mixed_poisson_{strategy_name}.bp", u, "bp4") as f:
+            f.write(0.0)
 # -
