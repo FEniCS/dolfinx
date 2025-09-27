@@ -1867,6 +1867,7 @@ class cffi_utils:
         pass
     except ImportError:
         from dolfinx.log import LogLevel, log
+
         log(
             LogLevel.DEBUG,
             "Could not import numba, so cffi/numba complex types were not registered.",
