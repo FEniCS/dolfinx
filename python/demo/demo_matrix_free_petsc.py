@@ -14,7 +14,7 @@
 #
 # This demo can be downloaded as a single Python file
 # {download}`demo_matrix_free_petsc.py`.
-# In this demo, we will demonstrate how to set up a fully matrix-free
+# In this demo, we will demonstrate how to set up a matrix-free
 # solver using PETSc.
 # We will start by defining our variational problem, and then in turn
 # define a custom PETSc-matrix that will handle assembly without ever
