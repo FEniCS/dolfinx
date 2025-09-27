@@ -234,6 +234,8 @@ def calculate_analytical_efficiencies(
     return q_ext - q_sca, q_sca, q_ext
 
 
+# -
+
 # Since we want to solve time-harmonic Maxwell's equation, we need to
 # solve a complex-valued PDE, and therefore need to use PETSc compiled
 # with complex numbers.
@@ -719,60 +721,57 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # We can calculate these values in the following way:
 
 # +
-# Vacuum impedance
-Z0 = np.sqrt(mu_0 / epsilon_0)
-
-# Magnetic field H
-Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)
-
+Z0 = np.sqrt(mu_0 / epsilon_0)  # Vacuum impedance
+Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)  # Magnetic field H
 Esh_3d = ufl.as_vector((Esh[0], Esh[1], 0))
 E_3d = ufl.as_vector((E[0], E[1], 0))
 
 # Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0 E0 =
 # np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
 I0 = 0.5 / Z0
-
-# Geometrical cross section of the wire
-gcs = 2 * radius_wire
+gcs = 2 * radius_wire  # Geometrical cross section of the wire
+# -
 
 # Quantities for the calculation of efficiencies
+
 P = 0.5 * ufl.inner(ufl.cross(Esh_3d, ufl.conj(Hsh_3d)), n_3d)
 Q = 0.5 * np.imag(eps_au) * k0 * (ufl.inner(E_3d, E_3d)) / Z0 / n_bkg
 
-# Define integration domain for the wire
-dAu = dx(au_tag)
-
 # Normalized absorption efficiency
+
+dAu = dx(au_tag)  # Define integration domain for the wire
 q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
 q_abs_fenics = mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
+
 q_sca_fenics_proc = (fem.assemble_scalar(fem.form(P * dsbc)) / gcs / I0).real
 q_sca_fenics = mesh_data.mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 # Extinction efficiency
+
 q_ext_fenics = q_abs_fenics + q_sca_fenics
 
 # Error calculation
+
 err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt
 err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
 err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
 
 # Check if errors are smaller than 1%
-assert err_abs < 0.01
-assert err_sca < 0.01
-assert err_ext < 0.01
 
-if mesh_data.mesh.comm.rank == 0:
-    print()
-    print(f"The analytical absorption efficiency is {q_abs_analyt}")
-    print(f"The numerical absorption efficiency is {q_abs_fenics}")
-    print(f"The error is {err_abs * 100}%")
-    print()
-    print(f"The analytical scattering efficiency is {q_sca_analyt}")
-    print(f"The numerical scattering efficiency is {q_sca_fenics}")
-    print(f"The error is {err_sca * 100}%")
-    print()
-    print(f"The analytical extinction efficiency is {q_ext_analyt}")
-    print(f"The numerical extinction efficiency is {q_ext_fenics}")
-    print(f"The error is {err_ext * 100}%")
+# +
+assert err_abs < 0.01, "Error in absorption efficiency is too large"
+assert err_sca < 0.01, "Error in scattering efficiency is too large"
+assert err_ext < 0.01, "Error in Extinction efficiency is too large"
+
+PETSc.Sys.Print(f"The analytical absorption efficiency is {q_abs_analyt}")
+PETSc.Sys.Print(f"The numerical absorption efficiency is {q_abs_fenics}")
+PETSc.Sys.Print(f"The error is {err_abs * 100}%")
+PETSc.Sys.Print(f"The analytical scattering efficiency is {q_sca_analyt}")
+PETSc.Sys.Print(f"The numerical scattering efficiency is {q_sca_fenics}")
+PETSc.Sys.Print(f"The error is {err_sca * 100}%")
+PETSc.Sys.Print(f"The analytical extinction efficiency is {q_ext_analyt}")
+PETSc.Sys.Print(f"The numerical extinction efficiency is {q_ext_fenics}")
+PETSc.Sys.Print(f"The error is {err_ext * 100}%")
+# -

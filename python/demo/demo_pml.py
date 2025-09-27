@@ -16,7 +16,7 @@
 
 # +
 import sys
-from functools import partial
+from functools import partial, reduce
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -46,7 +46,7 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
-
+# -
 
 # Since we want to solve time-harmonic Maxwell's equation, we require
 # that the demo is executed with DOLFINx (PETSc) complex mode.
@@ -80,8 +80,6 @@ if not np.issubdtype(default_scalar_type, np.complexfloating):
 #   (together with pml_tag+1 and pml_tag+2)
 #
 #
-
-from functools import reduce
 
 
 def generate_mesh_wire(
@@ -298,6 +296,7 @@ def calculate_analytical_efficiencies(
         q_sca += c * 2 * np.abs(compute_a(nu, m, alpha)) ** 2
     return q_ext - q_sca, q_sca, q_ext
 
+# -
 
 # Now, let's consider an infinite metallic wire immersed in a background
 # medium (e.g. vacuum or water). Let's now consider the plane cutting
@@ -377,10 +376,9 @@ def pml_coordinates(x: ufl.indexed.Indexed, alpha: float, k0: complex, l_dom: fl
     return x + 1j * alpha / k0 * x * (ufl.algebra.Abs(x) - l_dom / 2) / (l_pml / 2 - l_dom / 2) ** 2
 
 
-# We use the following domain specific parameters.
+# We use the following domain specific parameters:
 
 # +
-# Constants
 epsilon_0 = 8.8541878128 * 10**-12
 mu_0 = 4 * np.pi * 10**-7
 
@@ -390,20 +388,12 @@ l_dom = 0.8
 radius_scatt = 0.8 * l_dom / 2
 l_pml = 1
 
-# The smaller the mesh_factor, the finer is the mesh
-mesh_factor = 1
+mesh_factor = 1  # The smaller the mesh_factor, the finer is the mesh
+in_wire_size = mesh_factor * 6e-3  # Mesh size inside the wire
+on_wire_size = mesh_factor * 3.0e-3  # Mesh size at the boundary of the wire
+scatt_size = mesh_factor * 15.0e-3  # Mesh size in the background
+pml_size = mesh_factor * 15.0e-3  # Mesh size at the boundary
 
-# Mesh size inside the wire
-in_wire_size = mesh_factor * 6e-3
-
-# Mesh size at the boundary of the wire
-on_wire_size = mesh_factor * 3.0e-3
-
-# Mesh size in the background
-scatt_size = mesh_factor * 15.0e-3
-
-# Mesh size at the boundary
-pml_size = mesh_factor * 15.0e-3
 
 # Tags for the subdomains
 au_tag = 1
@@ -706,10 +696,10 @@ problem = LinearProblem(
         "ksp_type": "preonly",
         "pc_type": "lu",
         "pc_factor_mat_solver_type": mat_factor_backend,
+        "ksp_error_if_not_converged": True
     },
 )
 Esh = problem.solve()
-assert problem.solver.getConvergedReason() > 0
 assert isinstance(Esh, fem.Function)
 # -
 
@@ -728,8 +718,7 @@ with VTXWriter(mesh_data.mesh.comm, "Esh.bp", Esh_dg) as vtx:
 # -
 
 # For more information about saving and visualizing vector fields
-# discretized with Nedelec elements, check [this](
-# https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_interpolation-io.html)
+# discretized with Nedelec elements, check [this](./demo_interpolation-io)
 # DOLFINx demo.
 
 if have_pyvista:
@@ -784,22 +773,15 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # inner facet, and therefore it requires a slightly different approach:
 
 # +
-# Vacuum impedance
-Z0 = np.sqrt(mu_0 / epsilon_0)
-
-# Magnetic field H
-Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)
-
+Z0 = np.sqrt(mu_0 / epsilon_0)  # Vacuum impedance
+Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)  # Magnetic field H
 Esh_3d = ufl.as_vector((Esh[0], Esh[1], 0))
 E_3d = ufl.as_vector((E[0], E[1], 0))
 
 # Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
 # E0 = np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
 I0 = 0.5 / Z0
-
-# Geometrical cross section of the wire
-gcs = 2 * radius_wire
-
+gcs = 2 * radius_wire  # Geometrical cross section of the wire
 n = ufl.FacetNormal(mesh_data.mesh)
 n_3d = ufl.as_vector((n[0], n[1], 0))
 
@@ -821,18 +803,14 @@ marker.x.array[inner_cells] = 1
 P = 0.5 * ufl.inner(ufl.cross(Esh_3d, ufl.conj(Hsh_3d)), n_3d) * marker
 Q = 0.5 * eps_au.imag * k0 * (ufl.inner(E_3d, E_3d)) / (Z0 * n_bkg)
 
-# Define integration domain for the wire
-dAu = dx(au_tag)
-
-# Define integration facet for the scattering efficiency
-dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
-
 # Normalized absorption efficiency
+dAu = dx(au_tag)  # Define integration domain for the wire
 q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / (gcs * I0)).real
 # Sum results from all MPI processes
 q_abs_fenics = mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
+dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
 q_sca_fenics_proc = (
     fem.assemble_scalar(fem.form((P("+") + P("-")) * dS(scatt_tag))) / (gcs * I0)
 ).real
@@ -848,22 +826,20 @@ err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt
 err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
 err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
 
-if mesh_data.mesh.comm.rank == 0:
-    print()
-    print(f"The analytical absorption efficiency is {q_abs_analyt}")
-    print(f"The numerical absorption efficiency is {q_abs_fenics}")
-    print(f"The error is {err_abs * 100}%")
-    print()
-    print(f"The analytical scattering efficiency is {q_sca_analyt}")
-    print(f"The numerical scattering efficiency is {q_sca_fenics}")
-    print(f"The error is {err_sca * 100}%")
-    print()
-    print(f"The analytical extinction efficiency is {q_ext_analyt}")
-    print(f"The numerical extinction efficiency is {q_ext_fenics}")
-    print(f"The error is {err_ext * 100}%")
+PETSc.Sys.Print(f"The analytical absorption efficiency is {q_abs_analyt}")
+PETSc.Sys.Print(f"The numerical absorption efficiency is {q_abs_fenics}")
+PETSc.Sys.Print(f"The error is {err_abs * 100}%")
+PETSc.Sys.Print()
+PETSc.Sys.Print(f"The analytical scattering efficiency is {q_sca_analyt}")
+PETSc.Sys.Print(f"The numerical scattering efficiency is {q_sca_fenics}")
+PETSc.Sys.Print(f"The error is {err_sca * 100}%")
+PETSc.Sys.Print()
+PETSc.Sys.Print(f"The analytical extinction efficiency is {q_ext_analyt}")
+PETSc.Sys.Print(f"The numerical extinction efficiency is {q_ext_fenics}")
+PETSc.Sys.Print(f"The error is {err_ext * 100}%")
 # -
 
 # Check if errors are smaller than 1%
-assert err_abs < 0.01
+assert err_abs < 0.01, "Error in absorption efficiency is too large"
 # assert err_sca < 0.01
-assert err_ext < 0.01
+assert err_ext < 0.01, "Error in extinction efficiency is too large"
