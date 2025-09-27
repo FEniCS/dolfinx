@@ -17,7 +17,7 @@
 # In this demo, we will demonstrate how to set up a matrix-free
 # solver using PETSc.
 # We will start by defining our variational problem, and then in turn
-# define a custom PETSc-matrix that will handle assembly without ever
+# define a custom PETSc SHELL matrix that will handle assembly without ever
 # forming the full system matrix.
 
 # ## Problem definition
