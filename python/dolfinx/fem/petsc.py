@@ -89,7 +89,7 @@ __all__ = [
 def create_vector(
     V: _FunctionSpace | Sequence[_FunctionSpace | None],
     /,
-    kind: str | None = None,
+    kind: str = "mpi",
 ) -> PETSc.Vec:  # type: ignore[name-defined]
     """Create a PETSc vector that is compatible with a linear form(s)
     or functionspace(s).
