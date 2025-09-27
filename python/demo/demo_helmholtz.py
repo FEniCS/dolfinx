@@ -60,17 +60,21 @@ msh = create_unit_square(MPI.COMM_WORLD, n_elem, n_elem)
 V = functionspace(msh, ("Lagrange", deg))
 
 # ## Define variational problem.
-# The Helmholtz equation can be discretized in the same way for both the real and complex valued
-# formulation. However, note that we use `ufl.inner` instead of `ufl.dot` or the ` * ` operator between
-# the test and trial function, and that the test-function is **always** the second variable in the operator.
-# The reason for this is that for complex variational forms, one requires a sesquilinear two-form, with the
-# inner product being $(a,b)=\int_\Omega a \cdot \bar{b}~\mathrm{d}x$.
+# The Helmholtz equation can be discretized in the same way for both the
+# real and complex valued formulation. However, note that we use
+# `ufl.inner` instead of `ufl.dot` or the ` * ` operator between
+# the test and trial function, and that the test-function is
+# **always** the second variable in the operator.
+# The reason for this is that for complex variational forms,
+# one requires a sesquilinear two-form, with the inner product being
+# $(a,b)=\int_\Omega a \cdot \bar{b}~\mathrm{d}x$.
 
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx - k0**2 * ufl.inner(u, v) * ufl.dx
 
 # We solve for plane wave with mixed Dirichlet and Neumann BCs.
-# We use ufl to manufacture an exact solution and corresponding boundary conditions.
+# We use ufl to manufacture an exact solution and corresponding
+# boundary conditions.
 
 # +
 theta = np.pi / 4

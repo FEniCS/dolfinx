@@ -296,6 +296,7 @@ def calculate_analytical_efficiencies(
         q_sca += c * 2 * np.abs(compute_a(nu, m, alpha)) ** 2
     return q_ext - q_sca, q_sca, q_ext
 
+
 # -
 
 # Now, let's consider an infinite metallic wire immersed in a background
@@ -696,7 +697,7 @@ problem = LinearProblem(
         "ksp_type": "preonly",
         "pc_type": "lu",
         "pc_factor_mat_solver_type": mat_factor_backend,
-        "ksp_error_if_not_converged": True
+        "ksp_error_if_not_converged": True,
     },
 )
 Esh = problem.solve()
