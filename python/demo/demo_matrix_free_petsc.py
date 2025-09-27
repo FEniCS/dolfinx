@@ -18,7 +18,7 @@
 # solver using PETSc.
 # We will start by defining our variational problem, and then in turn
 # define a custom PETSc SHELL matrix that will handle assembly without ever
-# forming the full system matrix.
+# forming the PETSc MATAIJ system matrix.
 
 # ## Problem definition
 # In this example, we consider a projection problem, i.e.
