@@ -33,6 +33,7 @@ import numpy as np
 
 import ufl
 from dolfinx.fem import (
+    Expression,
     Function,
     assemble_scalar,
     dirichletbc,
@@ -76,10 +77,15 @@ a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx - k0**2 * ufl.inner(u, v) * ufl
 # We use ufl to manufacture an exact solution and corresponding
 # boundary conditions.
 
+
 # +
 theta = np.pi / 4
+V_exact = functionspace(
+    msh, ("Lagrange", deg + 3)
+)  # Exact solution should be in a higher order space
+u_exact = Function(V_exact, name="u_exact")
+u_exact.interpolate(lambda x: A * np.exp(1j * k0 * (np.cos(theta) * x[0] + np.sin(theta) * x[1])))
 x = ufl.SpatialCoordinate(msh)
-u_exact = A * np.exp(1j * k0 * (np.cos(theta) * x[0] + np.sin(theta) * x[1]))
 n = ufl.FacetNormal(msh)
 g = -ufl.dot(n, ufl.grad(u_exact))
 L = -ufl.inner(g, v) * ufl.ds
@@ -88,7 +94,7 @@ dofs_D = locate_dofs_geometrical(
     V, lambda x: np.logical_or(np.isclose(x[0], 0), np.isclose(x[1], 0))
 )
 u_bc = Function(V)
-u_bc.interpolate(u_exact)
+u_bc.interpolate(Expression(u_exact, V.element.interpolation_points))
 bcs = [dirichletbc(u_bc, dofs_D)]
 # -
 
