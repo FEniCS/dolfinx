@@ -12,6 +12,12 @@
 #
 # Copyright (C) 2018-2025 Samuel Groth and Jørgen S. Dokken
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_helmholtz.py>`
+# * {download}`Jupyter notebook <./demo_helmholtz.ipynb>`
+# ```
+#
 # In the following example, we will consider the Helmholtz equation solved
 # with both a complex valued and a real valued finite element formulation.
 #

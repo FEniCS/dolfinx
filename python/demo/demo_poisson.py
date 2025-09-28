@@ -10,12 +10,16 @@
 
 # # Poisson equation
 #
-# This demo is implemented in {download}`demo_poisson.py`. It
-# illustrates how to:
+# This demo illustrates how to:
 #
 # - Create a {py:class}`function space <dolfinx.fem.FunctionSpace>`
 # - Solve a linear partial differential equation
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_poisson.py>`
+# * {download}`Jupyter notebook <./demo_poisson.ipynb>`
+# ```
 # ## Equation and problem definition
 #
 # For a domain $\Omega \subset \mathbb{R}^n$ with boundary $\partial

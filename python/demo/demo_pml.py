@@ -1,16 +1,17 @@
-# # Electromagnetic scattering from a wire with perfectly matched layer condition # noqa
+# # Electromagnetic scattering from a wire with PML
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This demo is implemented in three files: one for the mesh generation
-# with Gmsh, one for the calculation of analytical efficiencies, and one
-# for the variational forms and the solver. It illustrates how to:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_pml.py>`
+# * {download}`Jupyter notebook <./demo_pml.ipynb>`
+# ```
 #
+# This demo illustrates how to:
 # - Use complex quantities in FEniCSx
 # - Setup and solve Maxwell's equations
-# - Implement (rectangular) perfectly matched layers
-#
-# ## Equations, problem definition and implementation
+# - Implement (rectangular) perfectly matched layers (PMLs)
 #
 # First, we import the required modules
 
@@ -55,11 +56,10 @@ if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
 
-# This file defines the `generate_mesh_wire` function, which is used to
-# generate the mesh used for the PML demo. The mesh is made up by a
-# central circle (the wire), and an external layer (the PML) divided in
-# 4 rectangles and 4 squares at the corners. The `generate_mesh_wire`
-# function takes as input:
+# # Mesh generation with GMSH
+# The mesh is made up by a central circle (the wire), and an external
+# layer (the PML) divided in 4 rectangles and 4 squares at the corners.
+# The `generate_mesh_wire` function takes as input:
 
 # - `radius_wire`: the radius of the wire
 # - `radius_scatt`: the radius of the circle where scattering efficiency
@@ -198,73 +198,12 @@ def generate_mesh_wire(
     return gmsh.model
 
 
-# This file contains a function for the calculation of the
+# ## Mathematical formulation
+# Following are convenience functions for the calculation of the
 # absorption, scattering and extinction efficiencies of a wire
 # being hit normally by a TM-polarized electromagnetic wave.
-#
-# The formula are taken from:
-# Milton Kerker, "The Scattering of Light and Other Electromagnetic
-# Radiation",
-# Chapter 6, Elsevier, 1969.
-#
-# ## Implementation
-# First of all, let's define the parameters of the problem:
-#
-# - $n = \sqrt{\varepsilon}$: refractive index of the wire,
-# - $n_b$: refractive index of the background medium,
-# - $m = n/n_b$: relative refractive index of the wire,
-# - $\lambda_0$: wavelength of the electromagnetic wave,
-# - $r_w$: radius of the cross-section of the wire,
-# - $\alpha = 2\pi r_w n_b/\lambda_0$.
-#
-# Now, let's define the $a_\nu$ coefficients as:
-#
-# $$
-# \begin{equation}
-# a_\nu=\frac{J_\nu(\alpha) J_\nu^{\prime}(m \alpha)-m J_\nu(m \alpha)
-# J_\nu^{\prime}(\alpha)}{H_\nu^{(2)}(\alpha) J_\nu^{\prime}(m \alpha)
-# -m J_\nu(m \alpha) H_\nu^{(2){\prime}}(\alpha)}
-# \end{equation}
-# $$
-#
-# where:
-# - $J_\nu(x)$: $\nu$-th order Bessel function of the first kind,
-# - $J_\nu^{\prime}(x)$: first derivative with respect to $x$ of
-# the $\nu$-th order Bessel function of the first kind,
-# - $H_\nu^{(2)}(x)$: $\nu$-th order Hankel function of the second kind,
-# - $H_\nu^{(2){\prime}}(x)$: first derivative with respect to $x$ of
-# the $\nu$-th order Hankel function of the second kind.
-#
-# We can now calculate the scattering, extinction and absorption
-# efficiencies as:
-#
-# $$
-# & q_{\mathrm{sca}}=(2 / \alpha)\left[\left|a_0\right|^{2}
-# +2 \sum_{\nu=1}^{\infty}\left|a_\nu\right|^{2}\right] \\
-# & q_{\mathrm{ext}}=(2 / \alpha) \operatorname{Re}\left[ a_0
-# +2 \sum_{\nu=1}^{\infty} a_\nu\right] \\
-# & q_{\mathrm{abs}} = q_{\mathrm{ext}} - q_{\mathrm{sca}}
-# $$
-
-
-# The functions that we import from `scipy.special` correspond to:
-#
-# - `jv(nu, x)` ⟷ $J_\nu(x)$,
-# - `jvp(nu, x, 1)` ⟷ $J_\nu^{\prime}(x)$,
-# - `hankel2(nu, x)` ⟷ $H_\nu^{(2)}(x)$,
-# - `h2vp(nu, x, 1)` ⟷ $H_\nu^{(2){\prime}}(x)$.
-#
-# Next, we define a function for calculating the analytical efficiencies
-# in Python. The inputs of the function are:
-#
-# - `eps` ⟷ $\varepsilon$,
-# - `n_bkg` ⟷ $n_b$,
-# - `wl0` ⟷ $\lambda_0$,
-# - `radius_wire` ⟷ $r_w$.
-#
-# We also define a nested function for the calculation of $a_l$. For the
-# final calculation of the efficiencies, the summation over the different
-# orders of the Bessel functions is truncated at $\nu=50$.
+# See {ref}`Scattering boundary conditions:
+# Mathematical formulation <em_efficiencies>` for a detailed description.
 
 # +
 
@@ -299,6 +238,7 @@ def calculate_analytical_efficiencies(
 
 # -
 
+# ## Perfectly matched layers (PMLs)
 # Now, let's consider an infinite metallic wire immersed in a background
 # medium (e.g. vacuum or water). Let's now consider the plane cutting
 # the wire perpendicularly to its axis at a generic point. Such plane
@@ -404,7 +344,8 @@ pml_tag = 4
 # -
 
 # We generate the mesh using GMSH and convert it to a
-# `dolfinx.mesh.Mesh`.
+# {py:class}`Mesh<dolfinx.mesh.Mesh>` using
+# {py:func}`model_to_mesh <dolfinx.io.gmsh.model_to_mesh>`.
 
 # +
 model = None
@@ -761,8 +702,7 @@ with VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
 # and extinction efficiencies, which are quantities that define how much
 # light is absorbed and scattered by the wire. First of all, we
 # calculate the analytical efficiencies with the
-# `calculate_analytical_efficiencies` function defined in a separate
-# file:
+# `calculate_analytical_efficiencies` function
 
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
     eps_au, n_bkg, wl0, radius_wire
