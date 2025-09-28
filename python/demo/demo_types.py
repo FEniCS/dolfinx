@@ -10,7 +10,13 @@
 
 # # Solving PDEs with different scalar (float) types
 #
-# This demo  ({download}`demo_types.py`) shows:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_types.py>`
+# * {download}`Jupyter notebook <./demo_types.ipynb>`
+# ```
+
+# This demo shows:
 #
 # - How to solve problems using different scalar types, .e.g. single or
 #   double precision, or complex numbers

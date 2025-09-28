@@ -14,9 +14,12 @@
 
 # # Biharmonic equation
 #
-# This demo is implemented in a single Python file,
-# {download}`demo_biharmonic.py`, which contains both the variational forms
-# and the solver. It illustrates how to:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_biharmonic.py>`
+# * {download}`Jupyter notebook <./demo_biharmonic.ipynb>`
+# ```
+# This demo illustrates how to:
 #
 # - Solve a linear partial differential equation
 # - Use a discontinuous Galerkin method
@@ -143,6 +146,9 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 # degree)`, where `family` is the finite element family, and `degree`
 # specifies the polynomial degree. in this case `V` consists of
 # second-order, continuous Lagrange finite element functions.
+# For further details of how one can specify
+# finite elements as tuples, see {py:class}`ElementMetaData
+# <dolfinx.fem.ElementMetaData>`.
 #
 # Next, we locate the mesh facets that lie on the boundary
 # $\Gamma_D = \partial\Omega$.
