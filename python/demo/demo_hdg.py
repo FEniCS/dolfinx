@@ -47,8 +47,8 @@ from dolfinx.fem.petsc import (
 
 
 # We start by creating two convenience functions: One to compute
-# the L2 norm of a UFL expression, and one to define the integration domains
-# for the facets of all cells in a mesh.
+# the L2 norm of a UFL expression, and one to define the integration
+# domains for the facets of all cells in a mesh.
 
 
 def norm_L2(v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx) -> np.inexact:
@@ -58,12 +58,13 @@ def norm_L2(v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx) -> np.inexact:
     return np.sqrt(comm.allreduce(fem.assemble_scalar(compiled_form), op=MPI.SUM))
 
 
-# In DOLFINx, we represent integration domains over entities of codimension > 0
-# as a tuple `(cell_idx, local_entity_idx)`, where `cell_idx` is the index of
-# the cell in the mesh (local to process), and `local_entity_idx` is the local
-# index of the sub entity (local to cell).
-# For the HDG scheme, we will integrate over the facets of each cell (for internal
-# facets, there will be repeat entries, from the viewpoint of the connected cells).
+# In DOLFINx, we represent integration domains over entities of
+# codimension > 0 as a tuple `(cell_idx, local_entity_idx)`,
+# where `cell_idx` is the index of the cell in the mesh
+# (local to process), and `local_entity_idx` is the local index
+# of the sub entity (local to cell). For the HDG scheme, we will
+# integrate over the facets of each cell (for internal facets,
+# there will be repeat entries, from the viewpoint of the connected cells).
 
 
 def compute_cell_boundary_facets(msh: dolfinx.mesh.Mesh) -> np.ndarray:
@@ -112,9 +113,10 @@ facet_imap = msh.topology.index_map(fdim)
 num_facets = facet_imap.size_local + facet_imap.num_ghosts
 facets = np.arange(num_facets, dtype=np.int32)
 
-# The submesh is created with {py:func}`dolfinx.mesh.create_submesh`, which takes
-# in the mesh to extract entities from, the topological dimension of the entities,
-# and the set of entities to create the mesh (indices local to process).
+# The submesh is created with {py:func}`dolfinx.mesh.create_submesh`,
+# which takes in the mesh to extract entities from, the topological
+# dimension of the entities, and the set of entities to create the
+# mesh (indices local to process).
 # ```{admonition} Note
 # Despite all facets being present in the submesh, the entity map
 # isn't necessarily the identity in parallel
@@ -128,8 +130,10 @@ k = 3  # Polynomial order
 V = fem.functionspace(msh, ("Discontinuous Lagrange", k))
 Vbar = fem.functionspace(facet_mesh, ("Discontinuous Lagrange", k))
 
-# Trial and test functions in mixed space, we use {py:class}`ufl.MixedFunctionSpace``
-# to create a single function space object we can extract {py:func}`ufl.TrialFunctions`
+# Trial and test functions in mixed space, we use {py:class}`
+# ufl.MixedFunctionSpace`
+# to create a single function space object we can extract {py:func}`
+# ufl.TrialFunctions`
 # and {py:func}`ufl.TestFunctions` from.
 
 W = ufl.MixedFunctionSpace(V, Vbar)
@@ -139,18 +143,20 @@ v, vbar = ufl.TestFunctions(W)
 
 # ## Define integration measures
 
-# We define the integration measure over cells as we would do in any other UFL form.
+# We define the integration measure over cells as we would do in any
+# other UFL form.
 
 dx_c = ufl.Measure("dx", domain=msh)
 
-# For the cell boundaries, we need to define an integration measure to integrate around the
-# boundary of each cell. The integration entities can be computed using
-# the following convenience function.
+# For the cell boundaries, we need to define an integration measure to
+# integrate around the boundary of each cell. The integration entities
+# can be computed using the following convenience function.
 
 cell_boundary_facets = compute_cell_boundary_facets(msh)
 cell_boundaries = 1  # A tag
 
-# We pass the integration domains into the `ufl.Measure` through the `subdomain_data` keyword argument.
+# We pass the integration domains into the `ufl.Measure` through the
+# `subdomain_data` keyword argument.
 ds_c = ufl.Measure("ds", subdomain_data=[(cell_boundaries, cell_boundary_facets)], domain=msh)
 
 # Create a cell integral measure over the facet mesh
