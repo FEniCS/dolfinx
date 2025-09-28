@@ -366,22 +366,36 @@ def test_mixed_blocked_constant():
 
 @pytest.mark.parametrize("shape", [(), (2,), (3, 2)])
 def test_blocked_dof_ownership(shape):
+    """Test that dof ownership is correctly handled for blocked function spaces."""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     V = functionspace(mesh, ("Lagrange", 1, shape))
-
     u_bc = Function(V)
-    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
-    bc_facets = exterior_facet_indices(mesh.topology)
-    # Blocked spaces are not unrolled here
-    bc_dofs_u = locate_dofs_topological(V, mesh.topology.dim - 1, bc_facets)
 
-    # Num owned dofs
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    boundary_facets = exterior_facet_indices(mesh.topology)
+    boundary_dofs = locate_dofs_topological(V, tdim - 1, boundary_facets)
+
+    # Test full space BC
+    bc = dirichletbc(u_bc, boundary_dofs)
+    unrolled_dofs, num_owned = bc.dof_indices()
+
     num_owned_blocked = V.dofmap.index_map.size_local
+    bs = V.dofmap.index_map_bs
+    owned_input_dofs = boundary_dofs[boundary_dofs < num_owned_blocked]
 
-    input_dofs_owned = bc_dofs_u[bc_dofs_u < num_owned_blocked]
+    assert len(owned_input_dofs) * bs == num_owned
+    assert len(unrolled_dofs) == len(boundary_dofs) * bs
 
-    bc = dirichletbc(u_bc, bc_dofs_u)
-    unrolled_bc_dofs, num_owned = bc.dof_indices()
+    # Test subspace BC for tensor spaces
+    if len(shape) > 1:
+        V0, _ = V.sub(0).collapse()
+        boundary_dofs = locate_dofs_topological((V.sub(0), V0), tdim - 1, boundary_facets)
+        bc_sub = dirichletbc(u_bc, boundary_dofs, V)
+        unrolled_dofs_sub, num_owned_sub = bc_sub.dof_indices()
 
-    assert len(input_dofs_owned) * V.dofmap.index_map_bs == num_owned
-    assert len(unrolled_bc_dofs) == len(bc_dofs_u) * V.dofmap.index_map_bs
+        # Check number of unrolled owned dofs in the full non-collapsed space
+        boundary_dofs_V = boundary_dofs[0]
+        owned_sub_dofs = boundary_dofs_V[boundary_dofs_V < num_owned_blocked * bs]
+        assert len(owned_sub_dofs) == num_owned_sub
+        assert len(unrolled_dofs_sub) == len(boundary_dofs_V)
