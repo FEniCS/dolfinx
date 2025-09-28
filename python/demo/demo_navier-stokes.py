@@ -10,16 +10,22 @@
 
 # # Divergence conforming discontinuous Galerkin method for the Navier--Stokes equations # noqa
 #
-# This demo ({download}`demo_navier-stokes.py`) illustrates how to
-# implement a divergence conforming discontinuous Galerkin method for
-# the Navier-Stokes equations in FEniCSx. The method conserves mass
-# exactly and uses upwinding. The formulation is based on a combination
-# of "A fully divergence-free finite element method for
-# magnetohydrodynamic equations" by Hiptmair et al., "A Note on
-# Discontinuous Galerkin Divergence-free Solutions of the Navier-Stokes
-# Equations" by Cockburn et al, and "On the Divergence Constraint in
-# Mixed Finite Element Methods for Incompressible Flows" by John et al.
-#
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_navier-stokes.py>`
+# * {download}`Jupyter notebook <./demo_navier-stokes.ipynb>`
+# ```
+# This demo illustrates how to implement a divergence conforming
+# discontinuous Galerkin method for the Navier-Stokes equations.
+# The method conserves mass exactly and uses upwinding.
+# The formulation is based on a combination of [A fully divergence-free
+# finite element method for magnetohydrodynamic equations](
+# https://doi.org/10.1142/S0218202518500173) by Hiptmair et al.,
+# [A Note on Discontinuous Galerkin Divergence-free Solutions of the
+# Navier-Stokes Equations](https://doi.org/10.1007/s10915-006-9107-7)
+# by Cockburn et al, and [On the Divergence Constraint in Mixed Finite
+# Element Methods for Incompressible Flows](https://doi.org/10.1137/15M1047696)
+# by John et al.
 #
 # ## Governing equations
 #
@@ -301,7 +307,8 @@ L = ufl.inner(f, v) * ufl.dx + (1 / Re) * (
 L += ufl.inner(fem.Constant(msh, default_real_type(0.0)), q) * ufl.dx
 # -
 
-# We create the Dirichlet boundary condition
+# We create the {py:class}`Dirichlet boundary condition
+# <dolfinx.fem.DirichletBC>`
 
 msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
 boundary_facets = mesh.exterior_facet_indices(msh.topology)
@@ -368,8 +375,6 @@ else:
 u_n = fem.Function(V, name="u_prev")
 u_n.x.array[:] = u_h.x.array
 
-# -
-
 # Now we add the time stepping and convective terms and
 # set up the {py:class}`LinearProblem
 # <dolfinx.fem.petsc.LinearProblem>`
@@ -403,6 +408,7 @@ navier_stokes_problem = LinearProblem(
 
 # We perform the time-stepping as a for-loop
 
+# +
 for n in range(num_time_steps):
     t += delta_t.value
 
@@ -439,11 +445,11 @@ p_e = fem.Function(Q_e)
 p_e.interpolate(p_e_expr)
 
 # Compute errors
-
 e_u = norm_L2(msh.comm, u_h - u_e)
 e_div_u = norm_L2(msh.comm, ufl.div(u_h))
+# -
 
-# This scheme conserves mass exactly, so check this
+# This scheme conserves mass exactly, so we check this
 
 # +
 assert np.isclose(e_div_u, 0.0, atol=float(1.0e5 * np.finfo(default_real_type).eps))
