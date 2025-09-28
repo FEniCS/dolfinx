@@ -10,10 +10,14 @@
 
 # # Parallel communication pattern analysis
 #
-# This demo is implemented in {download}`demo_comm-pattern.py`. It
-# illustrates how build a graph that represents a parallel communication
-# pattern and how to analyse the parallel communication pattern using
-# [NetworkX](https://networkx.org/).
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_comm-pattern.py>`
+# * {download}`Jupyter notebook <./demo_comm-pattern.ipynb>`
+# ```
+# This demo illustrates how build a graph that represents a parallel
+# communication pattern and how to analyse the parallel communication
+# pattern using [NetworkX](https://networkx.org/).
 #
 # The layout of a distributed array across processes (MPI ranks) is
 # described in DOLFINx by an {py:class}`IndexMap

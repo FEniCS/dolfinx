@@ -14,7 +14,7 @@
 # :class: download
 # * {download}`Python script <./demo_hdg.py>`
 # * {download}`Jupyter notebook <./demo_hdg.ipynb>`
-# ````
+# ```
 # This demo illustrates how to:
 #
 # - Solve Poisson's equation using an HDG scheme.
