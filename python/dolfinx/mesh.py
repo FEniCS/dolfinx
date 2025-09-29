@@ -232,11 +232,9 @@ class Topology:
 class Geometry:
     """The geometry of a :class:`dolfinx.mesh.Mesh`"""
 
-    _cpp_object: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64]
+    _cpp_object: _cpp.mesh.Geometry_float32 | _cpp.mesh.Geometry_float64
 
-    def __init__(
-        self, geometry: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64]
-    ):
+    def __init__(self, geometry: _cpp.mesh.Geometry_float32 | _cpp.mesh.Geometry_float64):
         """Initialize a geometry from a C++ geometry.
 
         Args:
@@ -277,7 +275,7 @@ class Geometry:
         return self._cpp_object.input_global_indices
 
     @property
-    def x(self) -> typing.Union[npt.NDArray[np.float32], npt.NDArray[np.float64]]:
+    def x(self) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Geometry coordinate points,  ``shape=(num_points, 3)``."""
         return self._cpp_object.x
 
@@ -285,15 +283,15 @@ class Geometry:
 class Mesh:
     """A mesh."""
 
-    _mesh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]
+    _mesh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     _topology: Topology
     _geometry: Geometry
-    _ufl_domain: typing.Optional[ufl.Mesh]
+    _ufl_domain: ufl.Mesh | None
 
     def __init__(
         self,
-        msh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64],
-        domain: typing.Optional[ufl.Mesh],
+        msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64,
+        domain: ufl.Mesh | None,
     ):
         """Initialize mesh from a C++ mesh.
 
@@ -334,7 +332,7 @@ class Mesh:
         """
         return ufl.Cell(self.topology.cell_name())
 
-    def ufl_domain(self) -> typing.Optional[ufl.Mesh]:
+    def ufl_domain(self) -> ufl.Mesh | None:
         """Return the ufl domain corresponding to the mesh.
 
         Returns:
@@ -608,7 +606,7 @@ def transfer_meshtag(
     meshtag: MeshTags,
     msh1: Mesh,
     parent_cell: npt.NDArray[np.int32],
-    parent_facet: typing.Optional[npt.NDArray[np.int8]] = None,
+    parent_facet: npt.NDArray[np.int8] | None = None,
 ) -> MeshTags:
     """Generate cell mesh tags on a refined mesh from the mesh tags on the
     coarse parent mesh.
@@ -642,10 +640,8 @@ def transfer_meshtag(
 
 def refine(
     msh: Mesh,
-    edges: typing.Optional[np.ndarray] = None,
-    partitioner: typing.Union[
-        Callable, IdentityPartitionerPlaceholder
-    ] = IdentityPartitionerPlaceholder(),
+    edges: np.ndarray | None = None,
+    partitioner: Callable | IdentityPartitionerPlaceholder = IdentityPartitionerPlaceholder(),
     option: RefinementOption = RefinementOption.parent_cell,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
@@ -687,14 +683,10 @@ def refine(
 def create_mesh(
     comm: _MPI.Comm,
     cells: npt.NDArray[np.int64],
-    e: typing.Union[
-        ufl.Mesh,
-        basix.finite_element.FiniteElement,
-        basix.ufl._BasixElement,
-        _CoordinateElement,
-    ],
+    e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     x: npt.NDArray[np.floating],
-    partitioner: typing.Optional[Callable] = None,
+    partitioner: Callable | None = None,
+    max_facet_to_cell_links: int = 2,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -708,6 +700,8 @@ def create_mesh(
             type of ``e``.
         partitioner: Function that determines the parallel distribution of
             cells across MPI ranks.
+        max_facet_to_cell_links: Maximum number of cells a facet can
+            be connected to.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -759,8 +753,8 @@ def create_mesh(
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
-    msh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64] = _cpp.mesh.create_mesh(
-        comm, cells, cmap._cpp_object, x, partitioner
+    msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
+        comm, cells, cmap._cpp_object, x, partitioner, max_facet_to_cell_links
     )
 
     return Mesh(msh, domain)  # type: ignore
@@ -803,7 +797,7 @@ def meshtags(
     msh: Mesh,
     dim: int,
     entities: npt.NDArray[np.int32],
-    values: typing.Union[np.ndarray, int, float],
+    values: np.ndarray | int | float,
 ) -> MeshTags:
     """Create a MeshTags object that associates data with a subset of
     mesh entities.

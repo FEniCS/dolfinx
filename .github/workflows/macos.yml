@@ -24,6 +24,7 @@ jobs:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
       PETSC_VERSION: 3.23.6
+      PYTEST_ADDOPTS: "-W error"
 
     steps:
       - uses: actions/checkout@v5
@@ -34,7 +35,7 @@ jobs:
           echo DYLD_LIBRARY_PATH=/usr/local/lib >> $GITHUB_ENV
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         id: cp3
         with:
           python-version: "3.12"

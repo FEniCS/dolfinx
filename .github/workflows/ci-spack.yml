@@ -20,9 +20,10 @@ env:
   OMPI_ALLOW_RUN_AS_ROOT: 1
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
+  PYTEST_ADDOPTS: "-W error"
 
 jobs:
-  build:
+  ci-spack-build:
     name: AlmaLinux build and test
     runs-on: ubuntu-latest
     container: ghcr.io/almalinux/almalinux:10

@@ -185,7 +185,8 @@ void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
 mesh::Mesh<double>
 XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
                     mesh::GhostMode mode, const std::string& name,
-                    const std::string& xpath) const
+                    const std::string& xpath,
+                    std::optional<std::int32_t> max_facet_to_cell_links) const
 {
   // Read mesh data
   auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);
@@ -193,8 +194,8 @@ XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
 
   // Create mesh
   const std::vector<double>& _x = std::get<std::vector<double>>(x);
-  mesh::Mesh<double> mesh
-      = mesh::create_mesh(_comm.comm(), cells, element, _x, xshape, mode);
+  mesh::Mesh<double> mesh = mesh::create_mesh(
+      _comm.comm(), cells, element, _x, xshape, mode, max_facet_to_cell_links);
   mesh.name = name;
   return mesh;
 }
