@@ -116,7 +116,7 @@ facets = np.arange(num_facets, dtype=np.int32)
 # The submesh is created with {py:func}`dolfinx.mesh.create_submesh`,
 # which takes in the mesh to extract entities from, the topological
 # dimension of the entities, and the set of entities to create the
-# mesh (indices local to process).
+# submesh (indices local to process).
 # ```{admonition} Note
 # Despite all facets being present in the submesh, the entity map
 # isn't necessarily the identity in parallel
