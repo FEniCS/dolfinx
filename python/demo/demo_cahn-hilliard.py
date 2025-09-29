@@ -198,7 +198,6 @@ c0, mu0 = ufl.split(u0)
 # The initial conditions are interpolated into a finite element space:
 
 # +
-u.x.array[:] = 0.0  # Zero u
 
 # Interpolate initial condition
 rng = np.random.default_rng(42)
