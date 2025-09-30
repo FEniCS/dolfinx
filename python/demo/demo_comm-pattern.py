@@ -19,8 +19,6 @@
 # - Build a graph that represents a parallel communication pattern
 # - Analyse the parallel communication pattern using
 #   [NetworkX](https://networkx.org/).
-# communication pattern and how to analyse the parallel communication
-# pattern using [NetworkX](https://networkx.org/).
 #
 # The layout of a distributed array across processes (MPI ranks) is
 # described in DOLFINx by an {py:class}`IndexMap
