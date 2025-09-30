@@ -237,7 +237,7 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL, cu
 
 
 # Prepare a {py:class}`Form<dolfinx.fem.Form>` with a condensed
-# tabulation kernel. We speciy the integration domains to be the
+# tabulation kernel. We specify the integration domains to be the
 # cells owned by the current process
 
 formtype = form_cpp_class(dtype)  # type: ignore
