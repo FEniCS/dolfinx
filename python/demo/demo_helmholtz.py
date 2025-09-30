@@ -17,7 +17,8 @@
 # * {download}`Python script <./demo_helmholtz.py>`
 # * {download}`Jupyter notebook <./demo_helmholtz.ipynb>`
 # ```
-#
+# This demo illustrates how to:
+# - Create a complex-valued finite element formulation
 # In the following example, we will consider the Helmholtz equation solved
 # with both a complex valued and a real valued finite element formulation.
 #
