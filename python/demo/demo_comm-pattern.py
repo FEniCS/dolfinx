@@ -15,7 +15,10 @@
 # * {download}`Python script <./demo_comm-pattern.py>`
 # * {download}`Jupyter notebook <./demo_comm-pattern.ipynb>`
 # ```
-# This demo illustrates how build a graph that represents a parallel
+# This demo illustrates how to:
+# - Build a graph that represents a parallel communication pattern
+# - Analyse the parallel communication pattern using
+#   [NetworkX](https://networkx.org/).
 # communication pattern and how to analyse the parallel communication
 # pattern using [NetworkX](https://networkx.org/).
 #
