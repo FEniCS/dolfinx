@@ -12,10 +12,14 @@
 #
 # Copyright © 2020-2022 Garth N. Wells and Michal Habera
 #
-# This demo ({download}`demo_elasticity.py`) solves the equations of
-# static linear elasticity using a smoothed aggregation algebraic
-# multigrid solver. It illustrates how to:
-#
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_elasticity.py>`
+# * {download}`Jupyter notebook <./demo_elasticity.ipynb>`
+# ```
+# This demo solves the equations of static linear elasticity using
+# a smoothed aggregation algebraic multigrid solver.
+# It illustrates how to:
 # - Use a smoothed aggregation algebraic multigrid solver
 # - Use {py:class}`Expression <dolfinx.fem.Expression>` to compute
 #   derived quantities of a solution
@@ -94,7 +98,7 @@ def build_nullspace(V: FunctionSpace):
 
 # ## Problem definition
 
-# Create a box Mesh:
+# Create a {py:func}`box mesh<dolfinx.mesh.create_box>`:
 
 
 msh = create_box(
@@ -258,8 +262,9 @@ with XDMFFile(msh.comm, "out_elasticity/von_mises_stress.xdmf", "w") as file:
 # -
 
 # Finally, we compute the $L^2$ norm of the displacement solution
-# vector. This is a collective operation (i.e., the method `norm` must
-# be called from all MPI ranks), but we print the norm only on rank 0.
+# vector. This is a collective operation (i.e., the method
+# {py:func}`norm<dolfinx.la.norm>` must be called from all MPI ranks),
+# but we print the norm only on rank 0.
 
 # +
 unorm = la.norm(uh.x)

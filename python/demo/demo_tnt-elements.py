@@ -10,6 +10,11 @@
 
 # # Creating TNT elements using Basix's custom element interface
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_tnt-elements.py>`
+# * {download}`Jupyter notebook <./demo_tnt-elements.ipynb>`
+# ```
 # Basix provides numerous finite elements, but there are many other
 # possible elements a user may want to use. This demo
 # ({download}`demo_tnt-elements.py`) shows how the Basix custom element

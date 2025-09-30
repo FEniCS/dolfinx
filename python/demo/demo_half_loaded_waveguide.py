@@ -17,18 +17,19 @@
 
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This demo is implemented in two files, one for defining and solving
-# the eigenvalue problem for a half-loaded electromagnetic waveguide
-# with perfect electric conducting walls, and one for verifying if the
-# numerical eigenvalues are consistent with the analytical modes of the
-# problem.
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_half_loaded_waveguide.py>`
+# * {download}`Jupyter notebook <./demo_half_loaded_waveguide.ipynb>`
+# ```
 #
 # The demo shows how to:
-#
 # - Setup an eigenvalue problem for Maxwell's equations
+# - Setup a half-loaded electromagnetic waveguide with perfect electric
+#   conducting walls
 # - Use SLEPc for solving eigenvalue problems
+# - Verification of numerical eigenvalues with analytical modes
 #
-
 # ## Equations and problem definition
 #
 # In this demo, we are going to show how to solve the eigenvalue problem
@@ -407,6 +408,7 @@ eps.solve()
 eps.view()
 eps.errorView()
 
+# ## Verification of computed eigenvalues
 # Now we can get the eigenvalues and eigenvectors calculated by SLEPc
 # with the following code. We also verify if the numerical $k_z$ are
 # consistent with the analytical equations of the half-loaded waveguide

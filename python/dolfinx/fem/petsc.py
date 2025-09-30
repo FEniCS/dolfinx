@@ -784,14 +784,8 @@ class LinearProblem:
                 option values.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
-                as the integration domain, ``entity_maps`` must be
-                supplied.
-                For each key (a mesh, different to the integration domain
-                mesh) a map should be provided relating the entities in the
-                integration domain mesh to the entities in the key mesh
-                e.g. for a key-value pair (msh, emap) in ``entity_maps``,
-                ``emap[i]`` is the entity in ``msh`` corresponding to
-                entity ``i`` in the integration domain mesh.
+                as the integration domain, a corresponding :class:
+                `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
         """
         self._a = _create_form(
             a,
@@ -1238,14 +1232,8 @@ class NonlinearProblem:
                 values.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
-                as the integration domain, ``entity_maps`` must be
-                supplied. For each key (a mesh, different to the
-                integration domain mesh) a map should be provided relating
-                the entities in the integration domain mesh to the entities
-                in the key mesh e.g. for a key-value pair ``(msh, emap)``
-                in ``entity_maps``, ``emap[i]`` is the entity in ``msh``
-                corresponding to entity ``i`` in the integration domain
-                mesh.
+                as the integration domain, a corresponding :class:
+                `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
         """
         # Compile residual and Jacobian forms
         self._F = _create_form(

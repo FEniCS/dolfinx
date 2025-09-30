@@ -10,6 +10,11 @@
 
 # # Cahn-Hilliard equation
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_cahn-hilliard.py>`
+# * {download}`Jupyter notebook <./demo_cahn-hilliard.ipynb>`
+# ```
 # This example demonstrates the solution of the Cahn-Hilliard equation,
 # a nonlinear, time-dependent fourth-order PDE.
 #
@@ -21,8 +26,6 @@
 # - Interpolation of functions
 # - Visualisation of a running simulation with
 #   [PyVista](https://pyvista.org/)
-#
-# This demo is implemented in {download}`demo_cahn-hilliard.py`.
 #
 # ## Equation and problem definition
 #
@@ -113,9 +116,6 @@
 # - $\theta = 0.5$
 #
 # ## Implementation
-#
-# This demo is implemented in the {download}`demo_cahn-hilliard.py`
-# file.
 
 # +
 import os
@@ -154,6 +154,7 @@ log.set_output_file("log.txt")
 lmbda = 1.0e-02  # surface parameter
 dt = 5.0e-06  # time step
 theta = 0.5  # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicholson
+t = 0.0  # Current time
 
 # A unit square mesh with 96 cells edges in each direction is created,
 # and on this mesh a
@@ -197,8 +198,6 @@ c0, mu0 = ufl.split(u0)
 # The initial conditions are interpolated into a finite element space:
 
 # +
-# Zero u
-u.x.array[:] = 0.0
 
 # Interpolate initial condition
 rng = np.random.default_rng(42)
@@ -230,8 +229,7 @@ dfdc = ufl.diff(f, c)
 #
 # It is convenient to introduce an expression for $\mu_{n+\theta}$:
 
-# mu_(n+theta)
-mu_mid = (1.0 - theta) * mu0 + theta * mu
+mu_mid = (1.0 - theta) * mu0 + theta * mu  # mu_(n+theta)
 
 # which is then used in the definition of the variational forms:
 
@@ -256,9 +254,7 @@ F = F0 + F1
 #
 # To solve the nonlinear system of equations,
 # {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>` object
-# to solve a system of nonlinear equations
-
-# +
+# to solve a system of nonlinear equations.
 # For the factorisation of the underlying linearized problems, prefer
 # MUMPS, then superlu_dist, then default.
 # We measure convergence by looking at the norm of the increment of the
@@ -266,6 +262,7 @@ F = F0 + F1
 # [`SNES convegence tests`](https://petsc.org/release/manual/snes/#convergence-tests)
 # for further details.
 
+# +
 use_superlu = PETSc.IntType == np.int64  # or PETSc.ScalarType == np.complex64
 sys = PETSc.Sys()  # type: ignore
 if sys.hasExternalPackage("mumps") and not use_superlu:
@@ -290,29 +287,19 @@ problem = NonlinearProblem(
 )
 # -
 
-# To run the solver and save the output to a VTK file for later
-# visualization, the solver is advanced in time from $t_{n}$ to
-# $t_{n+1}$ until a terminal time $T$ is reached:
+# We prepare output files and pyvista for time-dependent visualization:
 
-# +
-# Output file
-file = XDMFFile(MPI.COMM_WORLD, "demo_ch/output.xdmf", "w")
+file = XDMFFile(MPI.COMM_WORLD, "demo_ch/output.xdmf", "w")  # Output file
 file.write_mesh(msh)
 
-# Step in time
-t = 0.0
-
-#  Reduce run time if on test (CI) server
-if "CI" in os.environ.keys() or "GITHUB_ACTIONS" in os.environ.keys():
-    T = 3 * dt
-else:
-    T = 50 * dt
-
 # Get the sub-space for c and the corresponding dofs in the mixed space
-# vector
+# vector. This is used for visualization on the collapsed subspace with
+# pyvista.
+
 V0, dofs = ME.sub(0).collapse()
 
 # Prepare viewer for plotting the solution during the computation
+
 if have_pyvista:
     # Create a VTK 'mesh' with 'nodes' at the function dofs
     topology, cell_types, x = plot.vtk_mesh(V0)
@@ -327,6 +314,17 @@ if have_pyvista:
     p.view_xy(True)
     p.add_text(f"time: {t}", font_size=12, name="timelabel")
 
+
+# Reduce run time if on test (CI) server
+if "CI" in os.environ.keys() or "GITHUB_ACTIONS" in os.environ.keys():
+    T = 3 * dt
+else:
+    T = 50 * dt
+
+# The solver is advanced in time from $t_{n}$ to
+# $t_{n+1}$ until a terminal time $T$ is reached
+
+# +
 c = u.sub(0)
 u0.x.array[:] = u.x.array
 step = 0
@@ -348,10 +346,11 @@ while t < T:
         p.app.processEvents()
 
 file.close()
+# -
 
-# Update ghost entries and plot
+# Update plot
+
 if have_pyvista:
-    u.x.scatter_forward()
     grid.point_data["c"] = u.x.array[dofs].real
     screenshot = None
     if pv.OFF_SCREEN:
