@@ -15,7 +15,10 @@
 # * {download}`Python script <./demo_navier-stokes.py>`
 # * {download}`Jupyter notebook <./demo_navier-stokes.ipynb>`
 # ```
-# This demo illustrates how to implement a divergence conforming
+# This demo illustrates how to:
+# - Implement a divergence conforming discontinuous Galerkin method
+#   for the Navier-Stokes equations.
+# - Tune MUMPS to support singular systems.
 # discontinuous Galerkin method for the Navier-Stokes equations.
 # The method conserves mass exactly and uses upwinding.
 # The formulation is based on a combination of [A fully divergence-free
