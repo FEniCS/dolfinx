@@ -18,7 +18,11 @@
 # * {download}`Python script <./demo_interpolation-io.py>`
 # * {download}`Jupyter notebook <./demo_interpolation-io.ipynb>`
 # ```
-# This demo shows the interpolation of functions into vector-element
+# This demo shows how to:
+# - Interpolate functions into vector-element $H(\mathrm{curl})$
+#   finite element spaces
+# - Interpolate these special finite elements into discontinuous Lagrange
+#   spaces for artifact-free visualisation.
 # $H(\mathrm{curl})$ finite element spaces, and the interpolation of
 # these special finite elements in discontinuous Lagrange spaces for
 # artifact-free visualisation.
