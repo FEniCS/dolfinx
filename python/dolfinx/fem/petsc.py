@@ -450,7 +450,9 @@ def _(
         for index in range(2):
             # the check below is to ensure that a .dofmaps attribute is
             # available when creating is0 and is1 below
-            if all(Vsub is None for Vsub in V[index]):
+            Vi = V[index]
+            assert isinstance(Vi, list)
+            if all(Vsub is None for Vsub in Vi):
                 raise ValueError(
                     "Cannot have a entire {'row' if index == 0 else 'column'} of a full of None"
                 )
@@ -1074,7 +1076,7 @@ def assemble_residual(
     # Lift vector
     if isinstance(jacobian, Sequence):
         # Nest and blocked lifting
-        bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)
+        bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)  # type: ignore[arg-type]
         apply_lifting(b, jacobian, bcs=bcs1, x0=x, alpha=-1.0)
         dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[attr-defined]
         bcs0 = _bcs_by_block(_extract_function_spaces(residual), bcs)  # type: ignore[arg-type]
