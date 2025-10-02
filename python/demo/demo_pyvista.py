@@ -14,6 +14,12 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_pyvista.py>`
+# * {download}`Jupyter notebook <./demo_pyvista.ipynb>`
+# ```
+#
 # # Visualization with PyVista
 #
 # [PyVista](https://pyvista.org/) can be used with DOLFINx for

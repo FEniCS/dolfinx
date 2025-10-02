@@ -2,10 +2,13 @@
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This demo is implemented in three files: one for the mesh generation
-# with gmsh, one for the calculation of analytical efficiencies, and one
-# for the variational forms and the solver. It illustrates how to:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_axis.py>`
+# * {download}`Jupyter notebook <./demo_axis.ipynb>`
+# ```
 #
+# This demo illustrates how to:
 # - Setup and solve Maxwell's equations for axisymmetric geometries
 # - Implement (axisymmetric) perfectly matched layers
 #
@@ -388,7 +391,7 @@ def create_eps_mu(pml, rho, eps_bkg, mu_bkg):
 
 # We can now define some constants and geometrical parameters, and then
 # we can generate the mesh with Gmsh, by using the function
-# `generate_mesh_sphere_axis` in `mesh_sphere_axis.py`:
+# `generate_mesh_sphere_axis`:
 
 
 # +

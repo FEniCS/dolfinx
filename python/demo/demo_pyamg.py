@@ -10,11 +10,14 @@
 
 # # Solve the Poisson and linearised elasticity equations using pyamg
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_pyamg.py>`
+# * {download}`Jupyter notebook <./demo_pyamg.ipynb>`
+# ```
 # The demo illustrates solving the Poisson and linearised elasticity
 # equations with using algebraic multigrid from
-# [pyamg](https://github.com/pyamg/pyamg). It is implemented in
-# {download}`demo_pyamg.py`.
-#
+# [pyamg](https://github.com/pyamg/pyamg).
 # pyamg is not MPI-parallel, therefore this demo runs in serial only.
 
 # +
@@ -226,15 +229,17 @@ def elasticity_problem(dtype) -> None:
 
 
 # Solve Poission problem with different scalar types
+
 poisson_problem(np.float32, "ruge_stuben")
 poisson_problem(np.float64, "ruge_stuben")
 
 # For complex, pyamg requires smoothed aggregation multigrid
+
 if not sys.platform.startswith("win32"):
     poisson_problem(np.complex64, "smoothed_aggregation")
     poisson_problem(np.complex128, "smoothed_aggregation")
 
 # Solve elasticity problem with different scalar types
+
 elasticity_problem(np.float32)
 elasticity_problem(np.float64)
-# -

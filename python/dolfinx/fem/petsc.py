@@ -450,7 +450,9 @@ def _(
         for index in range(2):
             # the check below is to ensure that a .dofmaps attribute is
             # available when creating is0 and is1 below
-            if all(Vsub is None for Vsub in V[index]):
+            Vi = V[index]
+            assert isinstance(Vi, list)
+            if all(Vsub is None for Vsub in Vi):
                 raise ValueError(
                     "Cannot have a entire {'row' if index == 0 else 'column'} of a full of None"
                 )
@@ -784,14 +786,8 @@ class LinearProblem:
                 option values.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
-                as the integration domain, ``entity_maps`` must be
-                supplied.
-                For each key (a mesh, different to the integration domain
-                mesh) a map should be provided relating the entities in the
-                integration domain mesh to the entities in the key mesh
-                e.g. for a key-value pair (msh, emap) in ``entity_maps``,
-                ``emap[i]`` is the entity in ``msh`` corresponding to
-                entity ``i`` in the integration domain mesh.
+                as the integration domain, a corresponding :class:
+                `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
         """
         self._a = _create_form(
             a,
@@ -1080,7 +1076,7 @@ def assemble_residual(
     # Lift vector
     if isinstance(jacobian, Sequence):
         # Nest and blocked lifting
-        bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)
+        bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)  # type: ignore[arg-type]
         apply_lifting(b, jacobian, bcs=bcs1, x0=x, alpha=-1.0)
         dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[attr-defined]
         bcs0 = _bcs_by_block(_extract_function_spaces(residual), bcs)  # type: ignore[arg-type]
@@ -1238,14 +1234,8 @@ class NonlinearProblem:
                 values.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
-                as the integration domain, ``entity_maps`` must be
-                supplied. For each key (a mesh, different to the
-                integration domain mesh) a map should be provided relating
-                the entities in the integration domain mesh to the entities
-                in the key mesh e.g. for a key-value pair ``(msh, emap)``
-                in ``entity_maps``, ``emap[i]`` is the entity in ``msh``
-                corresponding to entity ``i`` in the integration domain
-                mesh.
+                as the integration domain, a corresponding :class:
+                `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
         """
         # Compile residual and Jacobian forms
         self._F = _create_form(
@@ -1868,7 +1858,6 @@ class cffi_utils:
     except ImportError:
         from dolfinx.log import LogLevel, log
 
-        breakpoint()
         log(
             LogLevel.DEBUG,
             "Could not import numba, so cffi/numba complex types were not registered.",
