@@ -156,6 +156,8 @@ void XDMFFile::close()
 // modification to re-create the _xml_doc object.
 void XDMFFile::reopen()
 {
+  // As we are re-opening the file, open it in "append" mode.
+  _file_mode = "a";
   open(true);
 }
 //-----------------------------------------------------------------------------
