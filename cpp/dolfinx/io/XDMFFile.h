@@ -84,7 +84,7 @@ public:
 
   /// Reopen a file that has been previously closed
   ///
-  /// As only HDF5 files actually have any actions undertaken 
+  /// As only HDF5 files actually have any actions undertaken
   /// on the close call, this really only applies currently to HDF5
   /// files. Re-open the file to the same state as it was in before
   /// it was closed.
@@ -207,12 +207,11 @@ public:
   MPI_Comm comm() const;
 
 private:
-
   // Private function that holds all the functionality required to open a
   // file. Used here so it can be called either from the constructor or
   // from the reopen function depending on what is required.
   void open(bool reopen = false);
-  
+
   // MPI communicator
   dolfinx::MPI::Comm _comm;
 

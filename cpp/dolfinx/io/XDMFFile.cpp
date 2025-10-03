@@ -61,81 +61,84 @@ void XDMFFile::open(bool reopen)
     _h5_id = -1;
   }
 
-  if(not reopen){
+  if (not reopen)
+  {
     if (_file_mode == "r")
-      {
-	// Load XML doc from file
-	pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
-	if (!result)
-	  throw std::runtime_error("Failed to load xml document from file.");
-	
-	if (_xml_doc->child("Xdmf").empty())
-	  throw std::runtime_error("Empty <Xdmf> root node.");
-	
-	if (_xml_doc->child("Xdmf").child("Domain").empty())
-	  throw std::runtime_error("Empty <Domain> node.");
-      }
+    {
+      // Load XML doc from file
+      pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
+      if (!result)
+        throw std::runtime_error("Failed to load xml document from file.");
+
+      if (_xml_doc->child("Xdmf").empty())
+        throw std::runtime_error("Empty <Xdmf> root node.");
+
+      if (_xml_doc->child("Xdmf").child("Domain").empty())
+        throw std::runtime_error("Empty <Domain> node.");
+    }
     else if (_file_mode == "w")
+    {
+      if (_encoding == Encoding::ASCII and dolfinx::MPI::size(_comm.comm()) > 1)
       {
-	if (_encoding == Encoding::ASCII and dolfinx::MPI::size(_comm.comm()) > 1)
-	  {
-	    throw std::runtime_error(
-				     "ASCII encoding is not supported for writing files in parallel.");
-	  }
-	
-	_xml_doc->reset();
-	
-	// Add XDMF node and version attribute
-	_xml_doc->append_child(pugi::node_doctype)
-	  .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
-	pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
-	assert(xdmf_node);
-	xdmf_node.append_attribute("Version") = "3.0";
-	xdmf_node.append_attribute("xmlns:xi") = "https://www.w3.org/2001/XInclude";
-	
-	pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-	if (!domain_node)
-	  throw std::runtime_error("Failed to append xml/xdmf Domain.");
+        throw std::runtime_error(
+            "ASCII encoding is not supported for writing files in parallel.");
       }
+
+      _xml_doc->reset();
+
+      // Add XDMF node and version attribute
+      _xml_doc->append_child(pugi::node_doctype)
+          .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+      pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+      assert(xdmf_node);
+      xdmf_node.append_attribute("Version") = "3.0";
+      xdmf_node.append_attribute("xmlns:xi")
+          = "https://www.w3.org/2001/XInclude";
+
+      pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+      if (!domain_node)
+        throw std::runtime_error("Failed to append xml/xdmf Domain.");
+    }
     else if (_file_mode == "a")
+    {
+      if (_encoding == Encoding::ASCII and dolfinx::MPI::size(_comm.comm()) > 1)
       {
-	if (_encoding == Encoding::ASCII and dolfinx::MPI::size(_comm.comm()) > 1)
-	  {
-	    throw std::runtime_error("ASCII encoding is not supported for appending "
-				     "to files in parallel.");
-	  }
-	
-	if (std::filesystem::exists(_filename))
-	  {
-	    // Load XML doc from file
-	    [[maybe_unused]] pugi::xml_parse_result result
-	      = _xml_doc->load_file(_filename.c_str());
-	    assert(result);
-	    
-	    if (_xml_doc->child("Xdmf").empty())
-	      throw std::runtime_error("Empty <Xdmf> root node.");
-	    
-	    if (_xml_doc->child("Xdmf").child("Domain").empty())
-	      throw std::runtime_error("Empty <Domain> node.");
-	  }
-	else
-	  {
-	    _xml_doc->reset();
-	    
-	    // Add XDMF node and version attribute
-	    _xml_doc->append_child(pugi::node_doctype)
-	      .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
-	    pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
-	    assert(xdmf_node);
-	    xdmf_node.append_attribute("Version") = "3.0";
-	    xdmf_node.append_attribute("xmlns:xi")
-	      = "https://www.w3.org/2001/XInclude";
-	    
-	    pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-	    if (!domain_node)
-	      throw std::runtime_error("Failed to append xml/xdmf Domain.");
-	  }
+        throw std::runtime_error(
+            "ASCII encoding is not supported for appending "
+            "to files in parallel.");
       }
+
+      if (std::filesystem::exists(_filename))
+      {
+        // Load XML doc from file
+        [[maybe_unused]] pugi::xml_parse_result result
+            = _xml_doc->load_file(_filename.c_str());
+        assert(result);
+
+        if (_xml_doc->child("Xdmf").empty())
+          throw std::runtime_error("Empty <Xdmf> root node.");
+
+        if (_xml_doc->child("Xdmf").child("Domain").empty())
+          throw std::runtime_error("Empty <Domain> node.");
+      }
+      else
+      {
+        _xml_doc->reset();
+
+        // Add XDMF node and version attribute
+        _xml_doc->append_child(pugi::node_doctype)
+            .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+        pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+        assert(xdmf_node);
+        xdmf_node.append_attribute("Version") = "3.0";
+        xdmf_node.append_attribute("xmlns:xi")
+            = "https://www.w3.org/2001/XInclude";
+
+        pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+        if (!domain_node)
+          throw std::runtime_error("Failed to append xml/xdmf Domain.");
+      }
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -148,8 +151,8 @@ void XDMFFile::close()
 //-----------------------------------------------------------------------------
 // AJ: TODO: Currently this assumes the file has not been changed externally
 // between the close and reopen, so all that is required is the HDF5 file handle
-// to be recreated. This _should_ be a safe assumption because there is no way to
-// signal from a running program when files are closed/open, so an external
+// to be recreated. This _should_ be a safe assumption because there is no way
+// to signal from a running program when files are closed/open, so an external
 // program should have no way of know if it's safe to modify a file that has
 // been already opened by this program. However, it's worth bearing this
 // potential issue in mind. To fix this the open() function would need some
