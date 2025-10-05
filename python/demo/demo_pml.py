@@ -18,6 +18,7 @@
 # +
 import sys
 from functools import partial, reduce
+from pathlib import Path
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -380,6 +381,8 @@ MPI.COMM_WORLD.barrier()
 # We visualize the mesh and subdomains with
 # [PyVista](https://docs.pyvista.org/)
 
+out_folder = Path("output_pml")
+out_folder.mkdir(parents=True, exist_ok=True)
 tdim = mesh_data.mesh.topology.dim
 if have_pyvista:
     topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
@@ -395,8 +398,7 @@ if have_pyvista:
     if not pyvista.OFF_SCREEN:
         plotter.show(interactive=True)
     else:
-        pyvista.start_xvfb()
-        figure = plotter.screenshot("wire_mesh_pml.png", window_size=[800, 800])
+        figure = plotter.screenshot(out_folder / "wire_mesh_pml.png", window_size=[800, 800])
 
 # We observe five different subdomains: one for the gold wire
 # (`au_tag`), one for the background medium (`bkg_tag`), one for the PML
@@ -655,7 +657,7 @@ V_dg = fem.functionspace(mesh_data.mesh, ("DG", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
-with VTXWriter(mesh_data.mesh.comm, "Esh.bp", Esh_dg) as vtx:
+with VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -679,8 +681,7 @@ if have_pyvista:
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:
-        pyvista.start_xvfb()
-        plotter.screenshot("Esh.png", window_size=[800, 800])
+        plotter.screenshot(out_folder / "Esh.png", window_size=[800, 800])
 
 # Next we can calculate the total electric field
 # $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$ and save it:
@@ -692,7 +693,7 @@ E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
 
-with VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
+with VTXWriter(mesh_data.mesh.comm, out_folder / "E.bp", E_dg) as vtx:
     vtx.write(0.0)
 # -
 

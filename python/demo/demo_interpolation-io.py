@@ -29,6 +29,8 @@
 
 
 # +
+from pathlib import Path
+
 from mpi4py import MPI
 
 import numpy as np
@@ -75,10 +77,12 @@ u0.interpolate(u)
 # discontinuous and the $x_1$-component should appear continuous.
 # We use the {py:class}`dolfinx.io.VTXWriter` to store the data.
 
+out_folder = Path("output_nedelec")
+out_folder.mkdir(parents=True, exist_ok=True)
 if has_adios2:
     from dolfinx.io import VTXWriter
 
-    with VTXWriter(msh.comm, "output_nedelec.bp", u0, "bp4") as f:
+    with VTXWriter(msh.comm, out_folder / "output_nedelec.bp", u0) as f:
         f.write(0.0)
 else:
     print("ADIOS2 required for VTX output")
@@ -121,8 +125,7 @@ try:
     # If pyvista environment variable is set to off-screen (static)
     # plotting save png
     if pyvista.OFF_SCREEN:
-        pyvista.start_xvfb(wait=0.1)
-        pl.screenshot("uh.png")
+        pl.screenshot(out_folder / "uh.png")
     else:
         pl.show()
 except ModuleNotFoundError:

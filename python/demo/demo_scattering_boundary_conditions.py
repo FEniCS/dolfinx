@@ -35,6 +35,7 @@
 
 # +
 import sys
+from pathlib import Path
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -440,7 +441,8 @@ MPI.COMM_WORLD.barrier()
 # -
 
 # The mesh is visualized with [PyVista](https://docs.pyvista.org/)
-
+out_folder = Path("out_scattering_boundary_conditions")
+out_folder.mkdir(parents=True, exist_ok=True)
 if have_pyvista:
     topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
@@ -455,8 +457,7 @@ if have_pyvista:
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:
-        pyvista.start_xvfb()
-        figure = plotter.screenshot("wire_mesh.png", window_size=[8000, 8000])
+        figure = plotter.screenshot(out_folder / "wire_mesh.png", window_size=[8000, 8000])
 
 # Now we define some other problem specific parameters:
 
@@ -643,7 +644,7 @@ Esh_dg = fem.Function(V_dg)
 assert isinstance(Esh, fem.Function)
 Esh_dg.interpolate(Esh)
 
-with io.VTXWriter(mesh_data.mesh.comm, "Esh.bp", Esh_dg) as vtx:
+with io.VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -668,11 +669,11 @@ if have_pyvista:
     plotter.add_mesh(V_grid.copy(), show_edges=True)
     plotter.view_xy()
     plotter.link_views()
-    if not pyvista.OFF_SCREEN:
-        plotter.show()
+    if pyvista.OFF_SCREEN:
+        plotter.screenshot(out_folder / "Esh.png", window_size=[800, 800])
     else:
-        pyvista.start_xvfb()
-        plotter.screenshot("Esh.png", window_size=[800, 800])
+        plotter.show()
+
 
 # Next we can calculate the total electric field
 # $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$ and save it.

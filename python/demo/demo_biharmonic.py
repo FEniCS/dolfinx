@@ -116,6 +116,8 @@
 
 
 # +
+from pathlib import Path
+
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType  # type: ignore
 
@@ -236,7 +238,9 @@ assert problem.solver.getConvergedReason() > 0
 # The solution can be written to a  {py:class}`XDMFFile
 # <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt
 
-with io.XDMFFile(msh.comm, "out_biharmonic/biharmonic.xdmf", "w") as file:
+out_folder = Path("out_biharmonic")
+out_folder.mkdir(parents=True, exist_ok=True)
+with io.XDMFFile(msh.comm, out_folder / "biharmonic.xdmf", "w") as file:
     V1 = fem.functionspace(msh, ("Lagrange", 1))
     u1 = fem.Function(V1)
     u1.interpolate(uh)
@@ -258,8 +262,7 @@ try:
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
     if pyvista.OFF_SCREEN:
-        pyvista.start_xvfb(wait=0.1)
-        plotter.screenshot("uh_biharmonic.png")
+        plotter.screenshot(out_folder / "uh_biharmonic.png")
     else:
         plotter.show()
 except ModuleNotFoundError:
