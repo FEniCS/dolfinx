@@ -26,6 +26,7 @@
 
 # +
 import sys
+from pathlib import Path
 
 from mpi4py import MPI
 
@@ -45,6 +46,10 @@ from dolfinx import fem, la, mesh, plot
 comm = MPI.COMM_SELF
 # -
 
+# We create an output directory for storing results and figures
+
+out_folder = Path("out_types")
+out_folder.mkdir(parents=True, exist_ok=True)
 
 # Create a function that solves the Poisson equation using different
 # precision float and complex scalar types for the finite element
@@ -65,8 +70,7 @@ def display_scalar(u, name, filter=np.real):
         plotter.add_mesh(grid.warp_by_scalar())
         plotter.add_title(f"{name}: real" if filter is np.real else f"{name}: imag")
         if pyvista.OFF_SCREEN:
-            pyvista.start_xvfb(wait=0.1)
-            plotter.screenshot(f"u_{'real' if filter is np.real else 'imag'}.png")
+            plotter.screenshot(out_folder / f"u_{'real' if filter is np.real else 'imag'}.png")
         else:
             plotter.show()
     except ModuleNotFoundError:
@@ -87,8 +91,7 @@ def display_vector(u, name, filter=np.real):
         plotter.add_mesh(grid.warp_by_scalar(), show_edges=True)
         plotter.add_title(f"{name}: real" if filter is np.real else f"{name}: imag")
         if pyvista.OFF_SCREEN:
-            pyvista.start_xvfb(wait=0.1)
-            plotter.screenshot(f"u_{'real' if filter is np.real else 'imag'}.png")
+            plotter.screenshot(out_folder / f"u_{'real' if filter is np.real else 'imag'}.png")
         else:
             plotter.show()
     except ModuleNotFoundError:

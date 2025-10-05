@@ -40,6 +40,8 @@
 # problem:
 
 # +
+from pathlib import Path
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -426,6 +428,9 @@ eh = fem.Function(V)
 
 kz_list = []
 
+out_folder = Path("out_half_loaded_waveguide")
+out_folder.mkdir(parents=True, exist_ok=True)
+
 for i, kz in vals:
     # Save eigenvector in eh
     eps.getEigenpair(i, eh.x.petsc_vec)
@@ -461,10 +466,10 @@ for i, kz in vals:
 
         if has_vtx:
             # Save solutions
-            with VTXWriter(msh.comm, f"sols/Et_{i}.bp", Et_dg) as f:
+            with VTXWriter(msh.comm, out_folder / f"/Et_{i}.bp", Et_dg) as f:
                 f.write(0.0)
 
-            with VTXWriter(msh.comm, f"sols/Ez_{i}.bp", ezh) as f:
+            with VTXWriter(msh.comm, out_folder / f"sols/Ez_{i}.bp", ezh) as f:
                 f.write(0.0)
 
         # Visualize solutions with Pyvista
@@ -482,11 +487,10 @@ for i, kz in vals:
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()
             plotter.link_views()
-            if not pyvista.OFF_SCREEN:
-                plotter.show()
+            if pyvista.OFF_SCREEN:
+                plotter.screenshot(out_folder / "Et.png", window_size=[400, 400])
             else:
-                pyvista.start_xvfb()
-                plotter.screenshot("Et.png", window_size=[400, 400])
+                plotter.show()
 
         if have_pyvista:
             V_lagr, lagr_dofs = V.sub(1).collapse()
@@ -497,9 +501,7 @@ for i, kz in vals:
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()
             plotter.link_views()
-            if not pyvista.OFF_SCREEN:
-                plotter.show()
+            if pyvista.OFF_SCREEN:
+                plotter.screenshot(out_folder / "Ez.png", window_size=[400, 400])
             else:
-                pyvista.start_xvfb()
-                plotter.screenshot("Ez.png", window_size=[400, 400])
-# -
+                plotter.show()

@@ -70,6 +70,8 @@
 # The modules that will be used are imported:
 
 # +
+from pathlib import Path
+
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType  # type: ignore
 
@@ -168,7 +170,9 @@ assert isinstance(uh, fem.Function)
 # or [VisIt](https://visit-dav.github.io/visit-website/):
 
 # +
-with io.XDMFFile(msh.comm, "out_poisson/poisson.xdmf", "w") as file:
+out_folder = Path("out_poisson")
+out_folder.mkdir(parents=True, exist_ok=True)
+with io.XDMFFile(msh.comm, out_folder / "poisson.xdmf", "w") as file:
     file.write_mesh(msh)
     file.write_function(uh)
 # -
@@ -188,8 +192,7 @@ try:
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
     if pyvista.OFF_SCREEN:
-        pyvista.start_xvfb(wait=0.1)
-        plotter.screenshot("uh_poisson.png")
+        plotter.screenshot(out_folder / "uh_poisson.png")
     else:
         plotter.show()
 except ModuleNotFoundError:

@@ -119,6 +119,7 @@
 
 # +
 import os
+from pathlib import Path
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -138,8 +139,6 @@ try:
     import pyvistaqt as pvqt
 
     have_pyvista = True
-    if pv.OFF_SCREEN:
-        pv.start_xvfb(wait=0.5)
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
@@ -289,7 +288,9 @@ problem = NonlinearProblem(
 
 # We prepare output files and pyvista for time-dependent visualization:
 
-file = XDMFFile(MPI.COMM_WORLD, "demo_ch/output.xdmf", "w")  # Output file
+out_folder = Path("demo_ch")
+out_folder.mkdir(parents=True, exist_ok=True)
+file = XDMFFile(MPI.COMM_WORLD, out_folder / "output.xdmf", "w")  # Output file
 file.write_mesh(msh)
 
 # Get the sub-space for c and the corresponding dofs in the mixed space
@@ -311,7 +312,7 @@ if have_pyvista:
 
     p = pvqt.BackgroundPlotter(title="concentration", auto_update=True)
     p.add_mesh(grid, clim=[0, 1])
-    p.view_xy(True)
+    p.view_xy(negative=True)
     p.add_text(f"time: {t}", font_size=12, name="timelabel")
 
 
@@ -352,7 +353,5 @@ file.close()
 
 if have_pyvista:
     grid.point_data["c"] = u.x.array[dofs].real
-    screenshot = None
-    if pv.OFF_SCREEN:
-        screenshot = "c.png"
+    screenshot = out_folder / "ch.png" if pv.OFF_SCREEN else None
     pv.plot(grid, show_edges=True, screenshot=screenshot)

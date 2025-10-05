@@ -30,6 +30,8 @@
 
 
 # +
+from pathlib import Path
+
 from mpi4py import MPI
 
 import numpy as np
@@ -39,14 +41,11 @@ import dolfinx.plot as plot
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import CellType, compute_midpoints, create_unit_cube, create_unit_square, meshtags
 
-# If environment variable PYVISTA_OFF_SCREEN is set to true save a png
-# otherwise create interactive plot
-if pyvista.OFF_SCREEN:
-    pyvista.start_xvfb(wait=0.1)
-
 # Set some global options for all plots
 transparent = False
 figsize = 800
+out_folder = Path("out_pyvista")
+out_folder.mkdir(parents=True, exist_ok=True)
 # -
 
 # ## Plotting a finite element Function using warp by scalar
@@ -101,7 +100,7 @@ def plot_scalar():
     subplotter.add_mesh(warped, show_edges=True, scalar_bar_args=sargs)
     if pyvista.OFF_SCREEN:
         subplotter.screenshot(
-            "2D_function_warp.png",
+            out_folder / "2D_function_warp.png",
             transparent_background=transparent,
             window_size=[figsize, figsize],
         )
@@ -157,7 +156,9 @@ def plot_meshtags():
 
     if pyvista.OFF_SCREEN:
         subplotter.screenshot(
-            "2D_markers.png", transparent_background=transparent, window_size=[2 * figsize, figsize]
+            out_folder / "2D_markers.png",
+            transparent_background=transparent,
+            window_size=[2 * figsize, figsize],
         )
     else:
         subplotter.show()
@@ -226,7 +227,7 @@ def plot_higher_order():
     plotter.view_xy()
     if pyvista.OFF_SCREEN:
         plotter.screenshot(
-            f"DG_{MPI.COMM_WORLD.rank}.png",
+            out_folder / f"DG_{MPI.COMM_WORLD.rank}.png",
             transparent_background=transparent,
             window_size=[figsize, figsize],
         )
@@ -289,7 +290,7 @@ def plot_nedelec():
     # Save as png if we are using a container with no rendering
     if pyvista.OFF_SCREEN:
         plotter.screenshot(
-            "3D_wireframe_with_vectors.png",
+            out_folder / "3D_wireframe_with_vectors.png",
             transparent_background=transparent,
             window_size=[figsize, figsize],
         )
@@ -332,7 +333,7 @@ def plot_streamlines():
     plotter.view_xy()
     if pyvista.OFF_SCREEN:
         plotter.screenshot(
-            f"streamlines_{MPI.COMM_WORLD.rank}.png",
+            out_folder / f"streamlines_{MPI.COMM_WORLD.rank}.png",
             transparent_background=transparent,
             window_size=[figsize, figsize],
         )
