@@ -33,6 +33,8 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "myst_parser",
+    "sphinx_codeautolink",
+    "sphinx.ext.intersphinx",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -147,6 +149,14 @@ autodoc_default_options = {
 autosummary_generate = True
 autosummary_ignore_module_all = False
 autoclass_content = "both"
+
+codeautolink_concat_default = True
+
+intersphinx_mapping = {
+    "basix": ("https://docs.fenicsproject.org/basix/main/python/", None),
+    "ffcx": ("https://docs.fenicsproject.org/ffcx/main/", None),
+    "ufl": ("https://docs.fenicsproject.org/ufl/main/", None),
+}
 
 napoleon_google_docstring = True
 napoleon_use_admonition_for_notes = False

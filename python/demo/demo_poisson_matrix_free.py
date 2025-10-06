@@ -14,6 +14,11 @@
 
 # # Matrix-free conjugate gradient solver for the Poisson equation
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_poisson_matrix_free.py>`
+# * {download}`Jupyter notebook <./demo_poisson_matrix_free.ipynb>`
+# ```
 # This demo illustrates how to solve the Poisson equation using a
 # matrix-free conjugate gradient (CG) solver. In particular, it
 # illustrates how to:
@@ -22,9 +27,6 @@
 #   conjugate gradient (CG) solver.
 # - Create and apply Dirichlet boundary conditions.
 # - Compute approximation error as compared with a known exact solution.
-#
-# {download}`Python script <./demo_poisson_matrix_free.py>`\
-# {download}`Jupyter notebook <./demo_poisson_matrix_free.ipynb>`
 #
 # ```{note}
 # This demo illustrates the use of a matrix-free conjugate gradient
@@ -76,6 +78,7 @@
 #
 # The modules that will be used are imported:
 
+# +
 from mpi4py import MPI
 
 import numpy as np
@@ -83,6 +86,8 @@ import numpy as np
 import dolfinx
 import ufl
 from dolfinx import fem, la
+
+# -
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
@@ -94,8 +99,6 @@ dtype = dolfinx.default_scalar_type
 real_type = np.real(dtype(0.0)).dtype
 comm = MPI.COMM_WORLD
 mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], (10, 10), dtype=real_type)
-
-# Create function space
 degree = 2
 V = fem.functionspace(mesh, ("Lagrange", degree))
 
@@ -171,6 +174,7 @@ fem.assemble_vector(b.array, M_fem)
 b.scatter_reverse(la.InsertMode.add)
 
 # Set BC dofs to zero on right hand side
+
 bc.set(b.array, alpha=0.0)
 b.scatter_forward()
 
@@ -251,17 +255,21 @@ u = fem.Function(V, dtype=dtype)
 iter_cg1 = cg(mesh.comm, action_A, u.x, b, max_iter=200, rtol=rtol)
 
 # Set BC values in the solution vector
+
 bc.set(u.x.array, alpha=1.0)
 
+# Print CG iteration number and error
 
+
+# +
 def L2Norm(u):
     val = fem.assemble_scalar(fem.form(ufl.inner(u, u) * ufl.dx, dtype=dtype))
     return np.sqrt(comm.allreduce(val, op=MPI.SUM))
 
 
-# Print CG iteration number and error
 error_L2_cg1 = L2Norm(u - uD)
 if mesh.comm.rank == 0:
     print("Matrix-free CG solver using DOLFINx vectors:")
     print(f"CG iterations until convergence: {iter_cg1}")
     print(f"L2 approximation error: {error_L2_cg1:.4e}")
+# -

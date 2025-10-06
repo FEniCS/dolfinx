@@ -13,24 +13,29 @@
 #     name: python3-complex
 # ---
 
-# # Electromagnetic scattering from a wire with scattering boundary conditions # noqa
+# # Electromagnetic scattering from a wire with scattering BCs
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This demo is implemented in two files: one for the mesh generation
-# with gmsh, and one for the variational forms and the solver. It
-# illustrates how to:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script
+# <./demo_scattering_boundary_conditions.py>`
+# * {download}`Jupyter notebook
+# <./demo_scattering_boundary_conditions.ipynb>`
+# ```
+#
+# This demo illustrates how to:
 #
 # - Use complex quantities in FEniCSx
 # - Setup and solve Maxwell's equations
 # - Implement Scattering Boundary Conditions
 #
-# ## Equations, problem definition and implementation
-#
 # First of all, let's import the modules that will be used:
 
 # +
 import sys
+from pathlib import Path
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -59,13 +64,15 @@ if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
     exit(0)
 
 # -
-# This file defines the `generate_mesh_wire` function, which is used to
+
+# ## Mesh generation
+# First, we define the `generate_mesh_wire` function, which is used to
 # generate the mesh used for scattering boundary conditions demo. The
 # mesh is made up by a central circle representing the wire, and an
 # external circle, which represents the external boundary of our domain,
 # where scattering boundary conditions are applied. The
 # `generate_mesh_wire` function takes as input:
-
+#
 # - `radius_wire`: the radius of the wire
 # - `radius_dom`: the radius of the external boundary
 # - `in_wire_size`: the mesh size at a distance `0.8 * radius_wire` from
@@ -138,15 +145,16 @@ def generate_mesh_wire(
     return gmsh.model
 
 
-# This file contains a function for the calculation of the
+# (em_efficiencies)=
+# ## Mathematical formulation
+# Next, we define the mathematical formulation for the calculation of the
 # absorption, scattering and extinction efficiencies of a wire
 # being hit normally by a TM-polarized electromagnetic wave.
 #
-# The formula are taken from:
-# Milton Kerker, "The Scattering of Light and Other Electromagnetic
-# Radiation", Chapter 6, Elsevier, 1969.
+# The formulas are taken from:
+# Milton Kerker, [The Scattering of Light and Other Electromagnetic
+# Radiation, Chapter 6, Elsevier, 1969.](https://doi.org/10.1016/B978-0-12-404550-7.50012-9)
 #
-# ## Implementation
 # First of all, let's define the parameters of the problem:
 #
 # - $n = \sqrt{\varepsilon}$: refractive index of the wire,
@@ -185,6 +193,7 @@ def generate_mesh_wire(
 # & q_{\mathrm{abs}} = q_{\mathrm{ext}} - q_{\mathrm{sca}}
 # $$
 
+
 # The functions that we import from `scipy.special` correspond to:
 #
 # - `jv(nu, x)` ⟷ $J_\nu(x)$,
@@ -203,8 +212,6 @@ def generate_mesh_wire(
 # We also define a nested function for the calculation of $a_l$. For the
 # final calculation of the efficiencies, the summation over the different
 # orders of the Bessel functions is truncated at $\nu=50$.
-
-
 # +
 def compute_a(nu: int, m: complex, alpha: float) -> float:
     J_nu_alpha = jv(nu, alpha)
@@ -233,6 +240,8 @@ def calculate_analytical_efficiencies(
         q_sca += c * 2 * np.abs(compute_a(nu, m, alpha)) ** 2
     return q_ext - q_sca, q_sca, q_ext
 
+
+# -
 
 # Since we want to solve time-harmonic Maxwell's equation, we need to
 # solve a complex-valued PDE, and therefore need to use PETSc compiled
@@ -403,7 +412,8 @@ boundary_tag = 3  # boundary
 # -
 
 # We generate the mesh using GMSH and convert it to a
-# `dolfinx.mesh.Mesh`.
+# {py:class}`Mesh<dolfinx.mesh.Mesh>` using
+# {py:func}`model_to_mesh <dolfinx.io.gmsh.model_to_mesh>`.
 
 # +
 model = None
@@ -431,7 +441,8 @@ MPI.COMM_WORLD.barrier()
 # -
 
 # The mesh is visualized with [PyVista](https://docs.pyvista.org/)
-
+out_folder = Path("out_scattering_boundary_conditions")
+out_folder.mkdir(parents=True, exist_ok=True)
 if have_pyvista:
     topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
@@ -446,8 +457,7 @@ if have_pyvista:
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:
-        pyvista.start_xvfb()
-        figure = plotter.screenshot("wire_mesh.png", window_size=[8000, 8000])
+        figure = plotter.screenshot(out_folder / "wire_mesh.png", window_size=[8000, 8000])
 
 # Now we define some other problem specific parameters:
 
@@ -515,6 +525,7 @@ eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=eps.x.array.dtype)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=eps.x.array.dtype)
 eps.x.scatter_forward()
 
+# ### Derivation of the weak formulation
 # Next we derive the weak formulation of the Maxwell's equation plus
 # with scattering boundary conditions. First, we take the inner products
 # of the equations with a complex test function $\mathbf{v}$, and
@@ -603,6 +614,8 @@ F = (
     * dsbc
 )
 
+# ## Solving the variational problem
+
 # We split the residual into a sesquilinear (lhs) and linear (rhs) form
 # and solve the problem. We store the scattered field $\mathbf{E}_s$ as
 # `Esh`:
@@ -631,7 +644,7 @@ Esh_dg = fem.Function(V_dg)
 assert isinstance(Esh, fem.Function)
 Esh_dg.interpolate(Esh)
 
-with io.VTXWriter(mesh_data.mesh.comm, "Esh.bp", Esh_dg) as vtx:
+with io.VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -656,11 +669,11 @@ if have_pyvista:
     plotter.add_mesh(V_grid.copy(), show_edges=True)
     plotter.view_xy()
     plotter.link_views()
-    if not pyvista.OFF_SCREEN:
-        plotter.show()
+    if pyvista.OFF_SCREEN:
+        plotter.screenshot(out_folder / "Esh.png", window_size=[800, 800])
     else:
-        pyvista.start_xvfb()
-        plotter.screenshot("Esh.png", window_size=[800, 800])
+        plotter.show()
+
 
 # Next we can calculate the total electric field
 # $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$ and save it.
@@ -686,6 +699,7 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
     eps_au, n_bkg, wl0, radius_wire
 )
 
+# ## Calculation of the numerical efficiencies
 # Now we can calculate the numerical efficiencies. The formula for the
 # absorption, scattering and extinction are:
 #
@@ -719,60 +733,57 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # We can calculate these values in the following way:
 
 # +
-# Vacuum impedance
-Z0 = np.sqrt(mu_0 / epsilon_0)
-
-# Magnetic field H
-Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)
-
+Z0 = np.sqrt(mu_0 / epsilon_0)  # Vacuum impedance
+Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)  # Magnetic field H
 Esh_3d = ufl.as_vector((Esh[0], Esh[1], 0))
 E_3d = ufl.as_vector((E[0], E[1], 0))
 
 # Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0 E0 =
 # np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
 I0 = 0.5 / Z0
-
-# Geometrical cross section of the wire
-gcs = 2 * radius_wire
+gcs = 2 * radius_wire  # Geometrical cross section of the wire
+# -
 
 # Quantities for the calculation of efficiencies
+
 P = 0.5 * ufl.inner(ufl.cross(Esh_3d, ufl.conj(Hsh_3d)), n_3d)
 Q = 0.5 * np.imag(eps_au) * k0 * (ufl.inner(E_3d, E_3d)) / Z0 / n_bkg
 
-# Define integration domain for the wire
-dAu = dx(au_tag)
-
 # Normalized absorption efficiency
+
+dAu = dx(au_tag)  # Define integration domain for the wire
 q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / gcs / I0).real
 q_abs_fenics = mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
+
 q_sca_fenics_proc = (fem.assemble_scalar(fem.form(P * dsbc)) / gcs / I0).real
 q_sca_fenics = mesh_data.mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 # Extinction efficiency
+
 q_ext_fenics = q_abs_fenics + q_sca_fenics
 
 # Error calculation
+
 err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt
 err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
 err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
 
 # Check if errors are smaller than 1%
-assert err_abs < 0.01
-assert err_sca < 0.01
-assert err_ext < 0.01
 
-if mesh_data.mesh.comm.rank == 0:
-    print()
-    print(f"The analytical absorption efficiency is {q_abs_analyt}")
-    print(f"The numerical absorption efficiency is {q_abs_fenics}")
-    print(f"The error is {err_abs * 100}%")
-    print()
-    print(f"The analytical scattering efficiency is {q_sca_analyt}")
-    print(f"The numerical scattering efficiency is {q_sca_fenics}")
-    print(f"The error is {err_sca * 100}%")
-    print()
-    print(f"The analytical extinction efficiency is {q_ext_analyt}")
-    print(f"The numerical extinction efficiency is {q_ext_fenics}")
-    print(f"The error is {err_ext * 100}%")
+# +
+assert err_abs < 0.01, "Error in absorption efficiency is too large"
+assert err_sca < 0.01, "Error in scattering efficiency is too large"
+assert err_ext < 0.01, "Error in Extinction efficiency is too large"
+
+PETSc.Sys.Print(f"The analytical absorption efficiency is {q_abs_analyt}")
+PETSc.Sys.Print(f"The numerical absorption efficiency is {q_abs_fenics}")
+PETSc.Sys.Print(f"The error is {err_abs * 100}%")
+PETSc.Sys.Print(f"The analytical scattering efficiency is {q_sca_analyt}")
+PETSc.Sys.Print(f"The numerical scattering efficiency is {q_sca_fenics}")
+PETSc.Sys.Print(f"The error is {err_sca * 100}%")
+PETSc.Sys.Print(f"The analytical extinction efficiency is {q_ext_analyt}")
+PETSc.Sys.Print(f"The numerical extinction efficiency is {q_ext_fenics}")
+PETSc.Sys.Print(f"The error is {err_ext * 100}%")
+# -

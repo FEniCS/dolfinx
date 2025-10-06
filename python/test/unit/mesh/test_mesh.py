@@ -734,3 +734,29 @@ def test_mesh_create_cmap(dtype):
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain() is None
+
+
+def test_mesh_single_process_distribution():
+    comm = MPI.COMM_WORLD
+
+    if comm.rank == 0:
+        #    2
+        #  / |
+        # 0--1
+        cells = np.array([[0, 1], [1, 2], [2, 0]], dtype=np.int32)
+        x = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]], dtype=np.float64)
+    else:
+        cells = np.zeros((0, 2), dtype=np.int32)
+        x = np.zeros((0, 3), dtype=np.float64)
+
+    element = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(3,)))
+    mesh = _mesh.create_mesh(MPI.COMM_WORLD, cells, element, x)
+
+    assert mesh.topology.index_map(0).size_global == 3
+    assert mesh.topology.index_map(1).size_global == 3
+
+    for conn in ((0, 1), (1, 0)):
+        mesh.topology.create_connectivity(*conn)
+        adj = mesh.topology.connectivity(*conn)
+        for i in range(adj.num_nodes):
+            assert adj.links(i).size == 2

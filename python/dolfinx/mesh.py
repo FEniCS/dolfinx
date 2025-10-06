@@ -39,6 +39,7 @@ from dolfinx.graph import AdjacencyList
 
 __all__ = [
     "CellType",
+    "DiagonalType",
     "EntityMap",
     "Geometry",
     "GhostMode",
@@ -953,9 +954,8 @@ def create_rectangle(
         ghost_mode: Ghost mode used in the mesh partitioning.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
-        diagonal: Direction of diagonal of triangular meshes. The
-            options are ``left``, ``right``, ``crossed``, ``left / right``,
-            ``right / left``.
+        diagonal: Direction of diagonal of triangular meshes.
+            See :class:`DiagonalType` for available options.
 
     Returns:
         A mesh of a rectangle.
@@ -1005,7 +1005,8 @@ def create_unit_square(
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
         diagonal:
-            Direction of diagonal.
+            Direction of diagonal. See :class:`DiagonalType` for
+            available options.
 
     Returns:
         A mesh of a square with corners at ``(0, 0)`` and ``(1, 1)``.

@@ -156,7 +156,7 @@ RUN pip install --no-cache-dir jupyter jupyterlab
 
 # pyvista dependencies from apt
 RUN apt-get -qq update && \
-    apt-get -y install libgl1-mesa-dev xvfb && \
+    apt-get -y install libgl1-mesa-dev mesa-utils  && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -175,4 +175,5 @@ COPY dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3
 
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash
+ENV PYVISTA_JUPYTER_BACKEND=trame
 ENTRYPOINT ["jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]

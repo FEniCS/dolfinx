@@ -35,9 +35,11 @@ docs = [
       "markdown",
       "matplotlib",
       "myst_parser",
+      "numba",
       "pyyaml",
       "sphinx",
       "sphinx_rtd_theme",
+      "sphinx_codeautolink[ipython]",
 ]
 lint = ["ruff>=0.2.0"]
 optional = ["numba", "pyamg"]
