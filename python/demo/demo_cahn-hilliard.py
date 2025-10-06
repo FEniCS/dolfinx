@@ -338,6 +338,10 @@ while t < T:
     print(f"Step {step}: {converged_reason=} {num_iterations=}")
     u0.x.array[:] = u.x.array
     file.write_function(c, t)
+
+    # Flushing the output ensures that the full output is written to the
+    # disk.
+    file.flush()
     step += 1
 
     # Update the plot window
