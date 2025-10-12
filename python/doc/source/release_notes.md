@@ -43,7 +43,7 @@ As Kitware has stated that [VTKHDF](https://www.kitware.com/vtk-hdf-reader/) is 
 we have started the transistion to this format.
 Currently, the following features have been implemented:
 - Reading meshes: {py:func}`dolfinx.io.vtkhdf.read_mesh`. Supports mixed topology.
-- Writing meshes: {py:func}`dolfinx.io.vtkdhf.write_mesh`. Supports mixed topology.
+- Writing meshes: {py:func}`dolfinx.io.vtkhdf.write_mesh`. Supports mixed topology.
 - Writing point data {py:func}`dolfinx.io.vtkhdf.write_point_data`.
   The point data should have the same ordering as the geometry nodes of the mesh.
 - Writing cell data {py:func}`dolfinx.io.vtkhdf.write_cell_data`.
