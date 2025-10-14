@@ -644,12 +644,12 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
       for (std::size_t i = 0; i < row_dofs.size(); ++i)
       {
         std::int32_t r = row_dofs[i];
-        if (r >= num_owned_rows) | row_added[r])
-          {
-            for (std::size_t j = 0; j < space_dim0; ++j)
-              for (int k = 0; k < row_bs; ++k)
-                A(i * row_bs + k, j) = 0.0;
-          }
+        if (r >= num_owned_rows || row_added[r])
+        {
+          for (std::size_t j = 0; j < space_dim0; ++j)
+            for (int k = 0; k < row_bs; ++k)
+              A(i * row_bs + k, j) = 0.0;
+        }
         row_added[r] = 1;
       }
     }
