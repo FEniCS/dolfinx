@@ -1596,6 +1596,10 @@ def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:  
 
     Returns:
         The interpolation matrix :math:`\Pi`.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
     """
     return _interpolation_matrix(V0._cpp_object, V1._cpp_object)
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2022 Garth N. Wells, Jørgen S. Dokken
+# Copyright (C) 2015-2025 Garth N. Wells, Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -13,6 +13,7 @@ import pytest
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
+from dolfinx.cpp.mesh import cell_dim
 from dolfinx.fem import Expression, Function, assemble_scalar, form, functionspace
 from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
 
@@ -246,3 +247,57 @@ class TestPETScDiscreteOperators:
         s = assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx))
         assert np.isclose(s, 0, atol=atol)
         G.destroy()
+
+    @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+    @pytest.mark.parametrize(
+        "cell_type",
+        [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
+    )
+    def test_discrete_interpolation(self, cell_type, ghost_mode):
+        from dolfinx.fem.petsc import interpolation_matrix
+
+        tdim = cell_dim(cell_type)
+        if tdim == 2:
+            mesh = create_unit_square(
+                MPI.COMM_WORLD,
+                4,
+                4,
+                cell_type=cell_type,
+                ghost_mode=ghost_mode,
+            )
+        elif tdim == 3:
+            mesh = create_unit_cube(
+                MPI.COMM_WORLD,
+                3,
+                2,
+                4,
+                cell_type=cell_type,
+                ghost_mode=ghost_mode,
+            )
+        else:
+            raise ValueError(f"Unsupported {cell_type=}")
+
+        V = functionspace(mesh, ("DG", 3))
+        Q = functionspace(mesh, ("Lagrange", 3))
+
+        u = Function(
+            V,
+        )
+        u.interpolate(lambda x: x[0] ** 3 - x[1] ** 3)
+
+        int_matrix = interpolation_matrix(V, Q)
+        int_matrix.assemble()
+
+        q = Function(
+            Q,
+        )
+        int_matrix.mult(u.x.petsc_vec, q.x.petsc_vec)
+        q.x.scatter_forward()
+
+        q_ref = Function(
+            Q,
+        )
+        q_ref.interpolate(u)
+
+        atol = 100 * np.finfo(default_real_type).resolution
+        np.testing.assert_allclose(q.x.array, q_ref.x.array, atol=atol)
