@@ -162,7 +162,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
         dolfinx::fem::interpolation_matrix<T, U>(
-            V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, INSERT_VALUES));
+            V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES));
         return A;
       },
       nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));
