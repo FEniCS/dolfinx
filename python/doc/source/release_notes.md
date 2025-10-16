@@ -2,10 +2,14 @@
 
 ## v0.10.0
 
+Since the 0.9.0 release, there has been 311 merged pull requests from 25 contributors.
+Below follows a summary of the biggest changes to the Python-API from these pull requests.
+In addition to the changes below, the ever-lasting quest of improving performance and squasing bugs continues.
+
 ### PETSc API
 
-**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd), [Jack Hale](https://github.com/jhale)
-and [Garth N. Wells](https://github.com/garth-wells)
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd), [Francesco Ballarin](https://github.com/francesco-ballarin),
+[Jack Hale](https://github.com/jhale) and [Garth N. Wells](https://github.com/garth-wells)
 
 Mapping data between {py:class}`PETSc.Vec<petsc4py.PETSc.Vec` and {py:class}`dolfinx.fem.Function`s is now
 trivial for blocked problems by using {py:func}`dolfinx.fem.petsc.assign`. 
@@ -54,17 +58,11 @@ Similar changes has been done to {py:func}`dolfinx.fem.petsc.apply_lifting`.
 
 There is now a sub-module ({py:mod}`dolfinx.la.petsc`) containing PETSc LA operations.
 
+#### Interpolation
 
-
-
-### Interpolation
-
-**Author**:  [Garth N. Wells](https://github.com/garth-wells)
-
-- The {py:func}`dolfinx.fem.discrete_curl` operator has been added to DOLFINx, to cater to
+The {py:func}`dolfinx.fem.discrete_curl` operator has been added to DOLFINx, to cater to
 [Hypre Auxiliary-space Divergence Solver](https://hypre.readthedocs.io/en/latest/solvers-ads.html)
 - A {py:class}`petsc4py.PETSc.Mat` equivalent can be found under {py:func}`dolfinx.fem.petsc.discrete_curl`.
-
 
 ### Simplified demos
 
@@ -88,6 +86,67 @@ With the introduction of {py:class}`ufl.ZeroBaseForm` this is no longer required
 The aforementioned workaround can now be reduced to `ufl.ZeroBaseForm((v, ))`, which avoid extra
 assembly calls within DOLFINx.
 
+### Form compiler and integral types
+**Author**: [Susanne Claus](https://github.com/sclaus2), [Paul T. Kühner](https://github.com/schnellerhase),
+and [Jørgen S. Dokken](https://github.com/jorgensd)
+- The tabulation kernels now have an extra input, a `void*`, to make it possible to pass custom data for custom kernels.
+- New {py:class}`dolfinx.fem.IntegralType` support
+  - Vertex integrals: {py:obj}`ufl.dP`
+  - Ridge integrals (codim=2); {py:obj}`uf.dr`
+- One can now assemble the diagonal of a bi-linear form into a matrix by adding `form_compiler_options={"part":"diagonal"}`
+  when calling {py:func}`dolfinx.fem.form`. Instead of calling {py:func}`dolfinx.fem.petsc.assemble_matrix` one should now call
+  {py:func}`dolfinx.fem.petsc.assemble_vector`. This is useful for matrix-free solvers with Jacobi smoothing.
+
+### Mesh
+
+**Authors**: [Paul T. Kühner](https://github.com/schnellerhase), [Joe Dean](https://github.com/jpdean/),
+[Garth N. Wells](https://github.com/garth-wells), [Jørgen S. Dokken](https://github.com/jorgensd) and [Chris Richardson](https://github.com/chrisrichardson)
+
+- Uniform mesh refinement of all {py:class}`CellTypes<dolfinx.mesh.CellType>` is available through
+{py:func}`dolfinx.mesh.refine` by not passing in any edges.
+- Branching meshes, such as t-joints and 1D graphs are now supported as input meshes to DOLFINx. To ensure proper
+  partitioning in parallel, one should change the default option `max_facet_to_cell_links` to how many cells a facet
+  can be attached to in {py:meth}`dolfinx.io.XDMFFile.read_mesh`, {py:func}`dolfinx.io.vtkhd.read_mesh` and
+  {py:func}`dolfinx.mesh.create_mesh`.
+- One can no longer use `set_connectivity` or `set_index_map` to modify {py:class}`dolfinx.mesh.Topology`
+  objects. Any connectivity that is not `(tdim, 0)`, (`tdim`, `tdim`) or `(0, 0)` should be created withed
+ {py:meth}`dolfinx.mesh.Topology.create_connectivity`. The aforementioned connections should be attached
+ to the topology when calling {py:func}`dolfinx.cpp.mesh.create_topology`.
+- Mixed-dimensional support has been vastly improved by creating {py:class}`dolfinx.mesh.EntityMap`,
+  which replaces the numpy arrays used as `entity_maps` in {py:func}`dolfinx.fem.form` in the previous release.
+  This is a two-way map, meaning that the user no longer has to take care of creating the correct mapping.
+  The two-way map from a sub-mesh to a parent mesh is returned as part of {py:func}`dolfinx.mesh.create_submesh`.
+
+
+### Linear Algebra
+
+**Authors**: [Chris Richardson](https://github.com/chrisrichardson)
+
+The native {py:class}`matrix-format<dolfinx.la.MatrixCSR>` now has a sparse matrix-vector multiplication
+{py:meth}`dolfinx.la.MatrixCSR.mult`. Note that the {py:class}`dolfinx.la.Vector` that you multiply with should use the
+{py:attr}`dolfinx.la.MatrixCSR.index_map(1)<dolfinx.la.MatrixCSR.index_map>` rather than the one stemming from the
+{py:meth}`dolfinx.fem.FunctionSpace.dofmap.index_map<dolfinx.fem.DofMap.index_map>`.
+
+
+### Collision detection
+**Author**: [Chris Richardson](https://github.com/chrisrichardson)
+The collision detection algorithm {py:func}`dolfinx.geometry.compute_distance_gjk` now used multiprecision to ensure
+proper collision detection. The algorithm has also been improve to work on co-planar convex hulls.
+
+### Documentation
+**Authors**: [Paul T. Kühner](https://github.com/schnellerhase), [Garth N. Wells](https://github.com/garth-wells),
+ [Mehdi Slimani](https://github.com/ordinary-slim) and [Jørgen S. Dokken](https://github.com/jorgensd)
+- Several classes that have only been exposed through the {ref}`dolfinx_cpp_interface` have gotten proper
+  Python classes and functions. This includes:
+  - {py:class}`dolfinx.graph.AdjacencyList`
+  - {py:class}`dolfinx.fem.FiniteElement`
+  - {py:func}`dolfinx.geometry.determine_point_ownership`
+- Tons of typos, formatting fixes and improvements have been made.
+- Usage of [intersphinx](https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html) and
+  [sphinx-codeautolink](https://sphinx-codeautolink.readthedocs.io) to make the documentation more interactive.
+  Most classes, functions and methods in any demo on the webpage can now redirect you to the relevant package API.
+
+
 ### Revised timer logic
 
 **Authors**: [Garth N. Wells](https://github.com/garth-wells) and [Paul T. Kühner](https://github.com/schnellerhase)
@@ -104,19 +163,19 @@ See or {py:class}`Timer<dolfinx.common.Timer>` for examples of usage.
 #### GMSH
 
 **Authors**: [Paul T. Kühner](https://github.com/schnellerhase),  [Jørgen S. Dokken](https://github.com/jorgensd),
-[Henrik N.T. Finsberg](https://github.com/finsberg)
+[Henrik N.T. Finsberg](https://github.com/finsberg) and [Pierric Mora](https://github.com/pierricmora)
 
 The GMSH interface to DOLFINx has received a major upgrade.
-An **API**-breaking change is that the module `dolfinx.io.gmshio` has been renamed to {py:mod}`dolfinx.io.gmsh`.
-Another API-breaking change is the return type of {py:func}`dolfinx.io.gmshio.model_to_mesh` and
-{py:func}`dolfinx.io.read_from_msh`. Instead of returning the {py:class}`dolfinx.mesh.Mesh`, cell and facet
-{py:class}`dolfinx.mesh.MeshTags`, it now returns a {py:class}`dolfinx.io.gmsh.MeshData` data-class,
-that can contain {py:class}`dolfinx.mesh.MeshTags` of an sub-entity:
-- Cell (codim 0)
-- Facet (codim 1)
-- Ridge (codim 2)
-- Peak (codim 3)
-
+- An **API**-breaking change is that the module `dolfinx.io.gmshio` has been renamed to {py:mod}`dolfinx.io.gmsh`.
+- Another API-breaking change is the return type of {py:func}`dolfinx.io.gmshio.model_to_mesh` and
+  {py:func}`dolfinx.io.read_from_msh`. Instead of returning the {py:class}`dolfinx.mesh.Mesh`, cell and facet
+  {py:class}`dolfinx.mesh.MeshTags`, it now returns a {py:class}`dolfinx.io.gmsh.MeshData` data-class,
+  that can contain {py:class}`dolfinx.mesh.MeshTags` of an sub-entity:
+    - Cell (codim 0)
+    - Facet (codim 1)
+    - Ridge (codim 2)
+    - Peak (codim 3)
+- Additional checks and error handing for `Physical` tags from GMSH has been added to improve the user experience.
 
 #### VTKHDF5
 
@@ -131,6 +190,21 @@ Currently, the following features have been implemented:
   The point data should have the same ordering as the geometry nodes of the mesh.
 - Writing cell data {py:func}`dolfinx.io.vtkhdf.write_cell_data`.
 
+#### VTXWriter
+
+**Authors**:  [Mehdi Slimani](https://github.com/ordinary-slim) and [Jørgen S. Dokken](https://github.com/jorgensd)
+
+The writer does now support time-dependent DG-0 data, which can be written in the same file as a set of functions
+from another (unique) function space.
+
+#### XDMF
+
+**Author**: [Massimilliano Leoni](https://github.com/mleoni-pf) and [Paul T. Kühner](https://github.com/schnellerhase)
+- When using {py:meth}`dolfinx.io.XDMFFIle.read_meshtags` one can now specify the attribute name, if the grid has
+multiple tags assigned to it. 
+- Flushing data to file is now possible with {py:meth}`dolfinx.io.XDMFFile.flush`. This is useful when wanting to visualize
+  long-running jobs in Paraview.
+
 #### Remove Fides backend
 As we unfortunately haven't seen an expanding set of features for the 
 [Fides Reader](https://fides.readthedocs.io/en/latest/paraview/paraview.html)
@@ -140,48 +214,3 @@ in Paraview, we have decided to remove it from DOLFINx.
 
 Pyvista no longer requires {py:func}`pyvista.start_xvfb` if one has installed `vtk` with OSMesa support.
 
-### Mesh
-
-**Authors**:  [Garth N. Wells](https://github.com/garth-wells)
-
-One can no longer use `set_connectivity` or `set_index_map` to modify {py:class}`dolfinx.mesh.Topology`
-objects. Any connectivity that is not `(tdim, 0)`, (`tdim`, `tdim`) or `(0, 0)` should be created withed
-{py:meth}`dolfinx.mesh.Topology.create_connectivity`. The aforementioned connections should be attached
-to the topology when calling {py:func}`dolfinx.cpp.mesh.create_topology`.
-
-Meshtag attribute name: https://github.com/FEniCS/dolfinx/pull/3257
-
-
-### DirichletBC
-
-Simplify {py:meth}`dolfinx.fem.DirichletBC.set` https://github.com/FEniCS/dolfinx/pull/3505
-
-## Linear Algebra
-
-**Authors**: [Chris Richardson](https://github.com/chrisrichardson)
-
-The native {py:class}`matrix-format<dolfinx.la.MatrixCSR>` now has a sparse matrix-vector multiplication
-{py:meth}`dolfinx.la.MatrixCSR.mult`. Note that the {py:class}`dolfinx.la.Vector` that you multiply with should use the
-{py:attr}`dolfinx.la.MatrixCSR.index_map(1)<dolfinx.la.MatrixCSR.index_map>` rather than the one stemming from the
-{py:meth}`dolfinx.fem.FunctionSpace.dofmap.index_map<dolfinx.fem.DofMap.index_map>`.
-
-## Form compiler
-**Author**: [Susanne Claus](https://github.com/sclaus2)
-- The tabulation kernels now have an extra input, a `void*`, to make it possible to pass custom data for custom kernels.
-
-
-## Documentation
-**Authors**: [Paul T. Kühner](https://github.com/schnellerhase), [Garth N. Wells](https://github.com/garth-wells)
-and [Jørgen S. Dokken](https://github.com/jorgensd)
-- Several classes that have only been exposed through the {ref}`dolfinx_cpp_interface` have gotten proper
-  Python classes. This includes:
-  - {py:class}`dolfinx.graph.AdjacencyList`
-  - {py:class}`dolfinx.fem.FiniteElement`
-- Tons of typos, formatting fixes and improvements have been made.
-- Usage of [intersphinx](https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html) and
-  [sphinx-codeautolink](https://sphinx-codeautolink.readthedocs.io) to make the documentation more interactive.
-  Most classes, functions and methods in any demo on the webpage can now redirect you to the relevant package API.
-
-
-# Progress
-At commit: https://github.com/FEniCS/dolfinx/commit/b694be6e66f9043de039ebc18c166733d044409f
