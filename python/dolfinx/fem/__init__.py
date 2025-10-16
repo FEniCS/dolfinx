@@ -243,6 +243,7 @@ __all__ = [
     "create_vector",
     "dirichletbc",
     "discrete_gradient",
+    "discrete_curl",
     "extract_function_spaces",
     "finiteelement",
     "form",

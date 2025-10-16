@@ -159,6 +159,7 @@ intersphinx_mapping = {
     "mpi4py": ("https://mpi4py.readthedocs.io/en/stable", None),
     "petsc4py": ("https://petsc.org/release/petsc4py", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
+    "pyvista": ("https://docs.pyvista.org/", None),
 }
 
 napoleon_google_docstring = True

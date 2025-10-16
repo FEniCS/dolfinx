@@ -28,6 +28,8 @@ Public user interface
    dolfinx.plot
 
 
+.. _dolfinx_cpp_interface:
+
 nanobind/C++interface
 ^^^^^^^^^^^^^^^^^^^^^
 

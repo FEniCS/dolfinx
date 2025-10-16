@@ -750,27 +750,29 @@ void mesh(nb::module_& m)
           "comm", [](dolfinx::mesh::Topology& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
 
-  m.def("create_topology",
-        [](MPICommWrapper comm,
-           const std::vector<dolfinx::mesh::CellType>& cell_type,
-           const std::vector<std::vector<std::int64_t>>& cells,
-           const std::vector<std::vector<std::int64_t>>& original_cell_index,
-           const std::vector<std::vector<int>>& ghost_owners,
-           const std::vector<std::int64_t>& boundary_vertices)
-        {
-          std::vector<std::span<const std::int64_t>> cells_span(cells.begin(),
-                                                                cells.end());
-          std::vector<std::span<const std::int64_t>> original_cell_index_span(
-              original_cell_index.begin(), original_cell_index.end());
-          std::vector<std::span<const int>> ghost_owners_span(
-              ghost_owners.begin(), ghost_owners.end());
-          std::span<const std::int64_t> boundary_vertices_span(
-              boundary_vertices.begin(), boundary_vertices.end());
+  m.def(
+      "create_topology",
+      [](MPICommWrapper comm,
+         const std::vector<dolfinx::mesh::CellType>& cell_type,
+         const std::vector<std::vector<std::int64_t>>& cells,
+         const std::vector<std::vector<std::int64_t>>& original_cell_index,
+         const std::vector<std::vector<int>>& ghost_owners,
+         const std::vector<std::int64_t>& boundary_vertices)
+      {
+        std::vector<std::span<const std::int64_t>> cells_span(cells.begin(),
+                                                              cells.end());
+        std::vector<std::span<const std::int64_t>> original_cell_index_span(
+            original_cell_index.begin(), original_cell_index.end());
+        std::vector<std::span<const int>> ghost_owners_span(
+            ghost_owners.begin(), ghost_owners.end());
+        std::span<const std::int64_t> boundary_vertices_span(
+            boundary_vertices.begin(), boundary_vertices.end());
 
-          return dolfinx::mesh::create_topology(
-              comm.get(), cell_type, cells_span, original_cell_index_span,
-              ghost_owners_span, boundary_vertices_span);
-        });
+        return dolfinx::mesh::create_topology(
+            comm.get(), cell_type, cells_span, original_cell_index_span,
+            ghost_owners_span, boundary_vertices_span);
+      },
+      "Create a Topology object.");
 
   m.def("compute_mixed_cell_pairs", &dolfinx::mesh::compute_mixed_cell_pairs);
 
