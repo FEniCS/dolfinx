@@ -171,9 +171,6 @@ class Timer:
         self._cpp_object.flush()
 
 
-list_timings
-
-
 def timed(task: str):
     """Decorator for timing functions."""
 
