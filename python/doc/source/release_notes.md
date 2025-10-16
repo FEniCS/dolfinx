@@ -2,6 +2,61 @@
 
 ## v0.10.0
 
+### PETSc API
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd), [Jack Hale](https://github.com/jhale)
+and [Garth N. Wells](https://github.com/garth-wells)
+
+Mapping data between {py:class}`PETSc.Vec<petsc4py.PETSc.Vec` and {py:class}`dolfinx.fem.Function`s is now
+trivial for blocked problems by using {py:func}`dolfinx.fem.petsc.assign`. 
+
+Both solvers and assembly routines interfacing with PETSc has recieved a drastic make-over to
+improve useability and maintenance, both for developers and end-users
+
+#### Improved non-linear (Newton) solver
+
+The FEniCS project has for the last 15 years had its own implementation of a Netwon solver.
+We no longer see the need of providing this solver, as the {py:class}`PETSc SNES<petsc4py.PETSc.SNES>` solver,
+and equivalent solver for C++ provides more features than our own implementation.
+
+The previously shipped {py:class}`dolfinx.nls.petsc.NewtonSolver` is deprecated, in favor of
+{py:class}`dolfinx.fem.petsc.NonlinearProblem`, which now integrates directly with {py:class}`petsc4py.PETSc.SNES`.
+
+The non-linear problem object that was sent into {py:class}`dolfinx.nls.petsc.NewtonSolver` has been renamed
+to {py:class}`NewtonSolverNonlinearProblem<dolfinx.fem.petsc.NewtonSolverNonlinearProblem>` and is also deprecated.
+
+The new {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>` has additional support for blocked systems,
+such as {py:attr}`NEST<petsc4py.PETSc.Mat.Type.NEST>` by supplying `kind="nest"` to its intializer. See the documentation for further
+information.
+
+#### Improved {py:class}`dolfinx.fem.petsc.LinearProblem`
+
+- The {py:class}`dolfinx.fem.petsc.LinearProblem` now support blocked problems, either specified manually or by using
+  {py:func}`ufl.extract_blocks`. By changing the input-argument `kind`, the user can now decide if they want to use
+  the DOLFINx blocked PETSc implementation (`kind="mpi"`) or the `kind=`{py:attr}`"nest"<petsc4py.PETSc.Mat.Type.NEST>`.
+- The default behavior for non-blocked systems remains the same as before.
+- The users can now also specify a (blocked) form for preconditioning through the `P` keyword argument in the constructor.
+
+#### Assembly routines
+
+In earlier versions of DOLFINx, there were three assembly routines for {py:class}`PETSc.Vec<petsc4py.PETSc.Vec>` and {py:class}`PETSc.Mat<petsc4py.PETSc.Mat>`:
+- `assemble_*`
+- `assemble_*_block`
+- `assemble_*_nest`
+
+This was confusing to users, and causing alot of duplicate logic in codes.
+Therefore, we have unified all these assembly routines under {py:func}`dolfinx.fem.petsc.assemble_vector` and {py:func}`dolfinx.fem.petsc.assemble_matrix`.
+The input keyword argument `kind` selects the relevant assembler routine.
+See for instance the [Stokes demo](./demos/demo_stokes) for a detailed introduction.
+Similar changes has been done to {py:func}`dolfinx.fem.petsc.apply_lifting`.
+
+#### Linear algebra submodule
+
+There is now a sub-module ({py:mod}`dolfinx.la.petsc`) containing PETSc LA operations.
+
+
+
+
 ### Interpolation
 
 **Author**:  [Garth N. Wells](https://github.com/garth-wells)
@@ -42,26 +97,6 @@ we have opted for the standard timing library [std::chrono](https://en.cpprefere
 The switch is mainly due to some observed unaccuracies in timings with Boost.
 This removes the notion of wall, system and user time.
 See or {py:class}`Timer<dolfinx.common.Timer>` for examples of usage.
-
-
-### Improved non-linear (Newton) solver
-
-**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd), [Jack Hale](https://github.com/jhale)
-and [Garth N. Wells](https://github.com/garth-wells)
-
-The FEniCS project has for the last 15 years had its own implementation of a Netwon solver.
-We no longer see the need of providing this solver, as the {py:class}`PETSc SNES<petsc4py.PETSc.SNES>` solver,
-and equivalent solver for C++ provides more features than our own implementation.
-
-The previously shipped {py:class}`dolfinx.nls.petsc.NewtonSolver` is deprecated, in favor of
-{py:class}`dolfinx.fem.petsc.NonlinearProblem`, which now integrates directly with {py:class}`petsc4py.PETSc.SNES`.
-
-The non-linear problem object that was sent into {py:class}`dolfinx.nls.petsc.NewtonSolver` has been renamed
-to {py:class}`NewtonSolverNonlinearProblem<dolfinx.fem.petsc.NewtonSolverNonlinearProblem>` and is also deprecated.
-
-The new {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>` has additional support for blocked systems,
-such as {py:attr}`NEST<petsc4py.PETSc.Mat.Type.NEST>` by supplying `kind="nest"` to its intializer. See the documentation for further
-information.
 
 
 ### IO
@@ -130,6 +165,10 @@ The native {py:class}`matrix-format<dolfinx.la.MatrixCSR>` now has a sparse matr
 {py:attr}`dolfinx.la.MatrixCSR.index_map(1)<dolfinx.la.MatrixCSR.index_map>` rather than the one stemming from the
 {py:meth}`dolfinx.fem.FunctionSpace.dofmap.index_map<dolfinx.fem.DofMap.index_map>`.
 
+## Form compiler
+**Author**: [Susanne Claus](https://github.com/sclaus2)
+- The tabulation kernels now have an extra input, a `void*`, to make it possible to pass custom data for custom kernels.
+
 
 ## Documentation
 **Authors**: [Paul T. Kühner](https://github.com/schnellerhase), [Garth N. Wells](https://github.com/garth-wells)
@@ -144,6 +183,5 @@ and [Jørgen S. Dokken](https://github.com/jorgensd)
   Most classes, functions and methods in any demo on the webpage can now redirect you to the relevant package API.
 
 
-
 # Progress
-At commit: https://github.com/FEniCS/dolfinx/commit/54b4e6aa08eecfb0bae3844a3db13c01c21b3312
+At commit: https://github.com/FEniCS/dolfinx/commit/b694be6e66f9043de039ebc18c166733d044409f
