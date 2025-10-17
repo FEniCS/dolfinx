@@ -879,10 +879,10 @@ class LinearProblem:
             self.solver.getPC().setFieldSplitIS(*fieldsplit_IS)
 
     def __del__(self):
-        for o in filter(
-            lambda o: o is not None, (self._solver, self._A, self._b, self._x, self._P_mat)
+        for obj in filter(
+            lambda obj: obj is not None, (self._solver, self._A, self._b, self._x, self._P_mat)
         ):
-            o.destroy()
+            obj.destroy()
 
     def solve(self) -> _Function | Sequence[_Function]:
         """Solve the problem.
@@ -1357,10 +1357,10 @@ class NonlinearProblem:
         return self.u
 
     def __del__(self):
-        for o in filter(
-            lambda o: o is not None, (self._snes, self._A, self._b, self._x, self._P_mat)
+        for obj in filter(
+            lambda obj: obj is not None, (self._snes, self._A, self._b, self._x, self._P_mat)
         ):
-            o.destroy()
+            obj.destroy()
 
     @property
     def F(self) -> Form | Sequence[Form]:
