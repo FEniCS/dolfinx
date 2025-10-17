@@ -156,6 +156,10 @@ intersphinx_mapping = {
     "basix": ("https://docs.fenicsproject.org/basix/main/python/", None),
     "ffcx": ("https://docs.fenicsproject.org/ffcx/main/", None),
     "ufl": ("https://docs.fenicsproject.org/ufl/main/", None),
+    "mpi4py": ("https://mpi4py.readthedocs.io/en/stable", None),
+    "petsc4py": ("https://petsc.org/release/petsc4py", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pyvista": ("https://docs.pyvista.org/", None),
 }
 
 napoleon_google_docstring = True

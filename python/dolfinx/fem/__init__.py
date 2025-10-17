@@ -246,6 +246,7 @@ __all__ = [
     "create_sparsity_pattern",
     "create_vector",
     "dirichletbc",
+    "discrete_curl",
     "discrete_gradient",
     "extract_function_spaces",
     "finiteelement",
