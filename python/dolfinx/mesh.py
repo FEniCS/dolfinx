@@ -668,10 +668,10 @@ def refine(
     """Refine a mesh.
 
     Note:
-        Using the `None` (default) partitioner for the refined mesh, the
-        refined mesh will **not** include ghosts cells (cells connected by
-        facet to an owned cells) even if the parent mesh is ghosted. The
-        refined cells will be on the same process as the parent cell.
+        Using the `None` partitioner for the refined mesh, the refined mesh
+        will **not** include ghosts cells (cells connected by facet to an
+        owned cells) even if the parent mesh is ghosted. The refined cells
+        will be on the same process as the parent cell.
 
     Args:
         msh: Mesh from which to create the refined mesh.
