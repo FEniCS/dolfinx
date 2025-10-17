@@ -879,12 +879,9 @@ class LinearProblem:
             self.solver.getPC().setFieldSplitIS(*fieldsplit_IS)
 
     def __del__(self):
-        self._solver.destroy()
-        self._A.destroy()
-        self._b.destroy()
-        self._x.destroy()
-        if self._P_mat is not None:
-            self._P_mat.destroy()
+        for attr in ("_solver", "_A", "_b", "_x", "_P_mat"):
+            if hasattr(self, attr):
+                getattr(self, attr).destroy()
 
     def solve(self) -> _Function | Sequence[_Function]:
         """Solve the problem.
