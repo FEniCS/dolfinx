@@ -109,7 +109,7 @@ and [Jørgen S. Dokken](https://github.com/jorgensd)
   can be attached to in {py:meth}`dolfinx.io.XDMFFile.read_mesh`, {py:func}`dolfinx.io.vtkhd.read_mesh` and
   {py:func}`dolfinx.mesh.create_mesh`.
 - One can no longer use `set_connectivity` or `set_index_map` to modify {py:class}`dolfinx.mesh.Topology`
-  objects. Any connectivity that is not `(tdim, 0)`, (`tdim`, `tdim`) or `(0, 0)` should be created withed
+  objects. Any connectivity that is not `(tdim, 0)`, (`tdim`, `tdim`) or `(0, 0)` should be created with
  {py:meth}`dolfinx.mesh.Topology.create_connectivity`. The aforementioned connections should be attached
  to the topology when calling {py:func}`dolfinx.cpp.mesh.create_topology`.
 - Mixed-dimensional support has been vastly improved by creating {py:class}`dolfinx.mesh.EntityMap`,
