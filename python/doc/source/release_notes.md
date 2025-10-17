@@ -93,7 +93,7 @@ and [Jørgen S. Dokken](https://github.com/jorgensd)
 - New {py:class}`dolfinx.fem.IntegralType` support
   - Vertex integrals: {py:obj}`ufl.dP`
   - Ridge integrals (codim=2); {py:obj}`uf.dr`
-- One can now assemble the diagonal of a bi-linear form into a matrix by adding `form_compiler_options={"part":"diagonal"}`
+- One can now assemble the diagonal of a bilinear form into a vector by adding `form_compiler_options={"part":"diagonal"}`
   when calling {py:func}`dolfinx.fem.form`. Instead of calling {py:func}`dolfinx.fem.petsc.assemble_matrix` one should now call
   {py:func}`dolfinx.fem.petsc.assemble_vector`. This is useful for matrix-free solvers with Jacobi smoothing.
 
