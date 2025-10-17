@@ -639,13 +639,11 @@ def uniform_refine(
 ) -> Mesh:
     """Uniformly refine a mesh.
 
-    Passing ``None`` for ``partitioner``, refined cells will be on the
-    same process as the parent cell.
-
     Note:
         Using the default partitioner for the refined mesh, the refined
         mesh will **not** include ghosts cells (cells connected by facet
-        to an owned cells) even if the parent mesh is ghosted.
+        to an owned cells) even if the parent mesh is ghosted. The
+        refined cells will be on the same process as the parent cell.
 
     Args:
         msh: Mesh from which to create the refined mesh.
@@ -669,13 +667,11 @@ def refine(
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
 
-    Passing ``None`` for ``partitioner``, refined cells will be on the
-    same process as the parent cell.
-
     Note:
-        Using the default partitioner for the refined mesh, the refined
-        mesh will **not** include ghosts cells (cells connected by facet
-        to an owned cells) even if the parent mesh is ghosted.
+        Using the `None` (default) partitioner for the refined mesh, the
+        refined mesh will **not** include ghosts cells (cells connected by
+        facet to an owned cells) even if the parent mesh is ghosted. The
+        refined cells will be on the same process as the parent cell.
 
     Args:
         msh: Mesh from which to create the refined mesh.
