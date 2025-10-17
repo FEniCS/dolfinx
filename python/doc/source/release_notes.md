@@ -71,7 +71,7 @@ The {py:func}`dolfinx.fem.discrete_curl` operator has been added to DOLFINx, to 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd) and [Joe Dean](https://github.com/jpdean/)
 
 Initially introduced as part of the [v0.9.0-release](https://fenicsproject.org/blog/v0.9.0/#extract-blocks),
-usage of these two UFL-abstractions hasve been propegated into the demos, to make it even easier for users to
+usage of these two UFL-abstractions hasve been propagated into the demos, to make it even easier for users to
 see examples of how to work with blocked problems.
 
 *TODO*: Add profiling of blocked/mixed-element vs mixedfunction-space.
