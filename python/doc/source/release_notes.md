@@ -48,7 +48,7 @@ In earlier versions of DOLFINx, there were three assembly routines for {py:class
 - `assemble_*_block`
 - `assemble_*_nest`
 
-This was confusing to users, and causing alot of duplicate logic in codes.
+This caused alot of duplicate logic in codes.
 Therefore, we have unified all these assembly routines under {py:func}`dolfinx.fem.petsc.assemble_vector` and {py:func}`dolfinx.fem.petsc.assemble_matrix`.
 The input keyword argument `kind` selects the relevant assembler routine.
 See for instance the [Stokes demo](./demos/demo_stokes) for a detailed introduction.
