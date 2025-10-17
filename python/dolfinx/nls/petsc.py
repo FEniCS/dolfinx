@@ -64,8 +64,10 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         self.set_form(problem.form)
 
     def __del__(self):
-        self._A.destroy()
-        self._b.destroy()
+        attrs = ("_A", "_b")
+        for attr in attrs:
+            if _attr := getattr(self, attr, None) is not None:
+                _attr.destroy()
 
     def solve(self, u: fem.Function):
         """Solve non-linear problem into function u. Returns the number

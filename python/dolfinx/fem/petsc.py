@@ -880,8 +880,8 @@ class LinearProblem:
 
     def __del__(self):
         for attr in ("_solver", "_A", "_b", "_x", "_P_mat"):
-            if hasattr(self, attr):
-                getattr(self, attr).destroy()
+            if _attr := getattr(self, attr, None) is not None:
+                _attr.destroy()
 
     def solve(self) -> _Function | Sequence[_Function]:
         """Solve the problem.
@@ -1356,12 +1356,9 @@ class NonlinearProblem:
         return self.u
 
     def __del__(self):
-        self._snes.destroy()
-        self._x.destroy()
-        self._A.destroy()
-        self._b.destroy()
-        if self._P_mat is not None:
-            self._P_mat.destroy()
+        for attr in ("_snes", "_x", "_A", "_b", "_P_mat"):
+            if _attr := getattr(self, attr, None) is not None:
+                _attr.destroy()
 
     @property
     def F(self) -> Form | Sequence[Form]:
