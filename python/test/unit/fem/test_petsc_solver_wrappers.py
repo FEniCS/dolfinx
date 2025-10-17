@@ -124,6 +124,7 @@ class TestPETScSolverWrappers:
     @pytest.mark.parametrize("kind", [None, "mpi", "nest", [["aij", None], [None, "baij"]]])
     def test_mixed_system(self, mode, kind):
         from petsc4py import PETSc
+
         import dolfinx.fem.petsc
 
         msh = dolfinx.mesh.create_unit_square(
