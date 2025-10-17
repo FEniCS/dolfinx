@@ -103,7 +103,7 @@ and [Jørgen S. Dokken](https://github.com/jorgensd)
 [Garth N. Wells](https://github.com/garth-wells), [Jørgen S. Dokken](https://github.com/jorgensd) and [Chris Richardson](https://github.com/chrisrichardson)
 
 - Uniform mesh refinement of all {py:class}`CellTypes<dolfinx.mesh.CellType>` is available through
-{py:func}`dolfinx.mesh.refine` by not passing in any edges.
+{py:func}`dolfinx.mesh.uniform_refine`.
 - Branching meshes, such as t-joints and 1D graphs are now supported as input meshes to DOLFINx. To ensure proper
   partitioning in parallel, one should change the default option `max_facet_to_cell_links` to how many cells a facet
   can be attached to in {py:meth}`dolfinx.io.XDMFFile.read_mesh`, {py:func}`dolfinx.io.vtkhd.read_mesh` and
