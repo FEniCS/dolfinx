@@ -8,14 +8,26 @@
 
 #include <concepts>
 
-namespace dolfinx::mesh
+namespace dolfinx
+{
+
+namespace common
+{
+class IndexMap;
+}
+
+namespace mesh
 {
 template <std::floating_point T>
 class Geometry;
 }
 
-namespace dolfinx::common::impl
+namespace common::impl
 {
+std::size_t memory(const IndexMap& im);
+
 template <std::floating_point T>
 std::size_t memory(const dolfinx::mesh::Geometry<T>& geometry);
 }
+
+} // namespace dolfinx

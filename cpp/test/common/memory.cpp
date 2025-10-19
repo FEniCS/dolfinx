@@ -8,6 +8,7 @@
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <mpi.h>
 #include <vector>
 
 #include "dolfinx/common/memory.h"
@@ -84,6 +85,12 @@ TEMPLATE_TEST_CASE("memory-vector-vector", "[memory]", std::int16_t,
         == Catch::Approx(static_cast<double>(bytes) / gigabyte));
   CHECK(memory(v, terabyte)
         == Catch::Approx(static_cast<double>(bytes) / terabyte));
+}
+
+TEST_CASE("memory-indexmap", "[memory]")
+{
+  auto im = IndexMap(MPI_COMM_WORLD, 10);
+  CHECK(memory(im, byte) > 0);
 }
 
 TEMPLATE_TEST_CASE("memory-geometry", "[memory]", float, double)
