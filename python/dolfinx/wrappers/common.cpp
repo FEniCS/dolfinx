@@ -28,6 +28,7 @@
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -280,6 +281,7 @@ void common(nb::module_& m)
              case MemoryUnit::terabyte:
                return dolfinx::common::memory(self, dolfinx::common::terabyte);
              }
+             throw std::runtime_error("Not a valid memory unit.");
            });
 
   // dolfinx::common::Timer
