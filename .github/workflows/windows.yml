@@ -144,7 +144,8 @@ jobs:
 
       - name: Install DOLFINx Python build dependencies
         working-directory: dolfinx-src/python
-        run: | 
+        run: |
+           pip install scikit-build-core
           python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
           pip install --no-binary mpi4py
 
