@@ -10,11 +10,14 @@
 
 # # Solve the Poisson and linearised elasticity equations using pyamg
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_pyamg.py>`
+# * {download}`Jupyter notebook <./demo_pyamg.ipynb>`
+# ```
 # The demo illustrates solving the Poisson and linearised elasticity
 # equations with using algebraic multigrid from
-# [pyamg](https://github.com/pyamg/pyamg). It is implemented in
-# {download}`demo_pyamg.py`.
-#
+# [pyamg](https://github.com/pyamg/pyamg).
 # pyamg is not MPI-parallel, therefore this demo runs in serial only.
 
 # +
@@ -24,17 +27,7 @@ from mpi4py import MPI
 
 import numpy as np
 import numpy.typing as npt
-
-if MPI.COMM_WORLD.size > 1:
-    print("This demo works only in serial.")
-    exit(0)
-
-try:
-    import pyamg
-except (ImportError, AttributeError):
-    print('This demo requires pyamg, install using "pip install pyamg"')
-    exit(0)
-
+import pyamg
 
 import ufl
 from dolfinx import fem, io
@@ -48,25 +41,28 @@ from dolfinx.fem import (
     locate_dofs_topological,
 )
 from dolfinx.mesh import CellType, create_box, locate_entities_boundary
-from ufl import ds, dx, grad, inner
 
+if MPI.COMM_WORLD.size > 1:
+    print("This demo works only in serial.")
+    exit(0)
 # -
 
 
 # +
-def poisson_problem(dtype: npt.DTypeLike, solver_type: str):
+def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
     """Solve a 3D Poisson problem using Ruge-Stuben algebraic multigrid.
 
     Args:
         dtype: Scalar type to use.
-        solver_type: pyamg solver type, either "ruge_stuben" or "smoothed_aggregation"
+        solver_type: pyamg solver type, either "ruge_stuben" or
+            "smoothed_aggregation"
     """
 
     real_type = np.real(dtype(0)).dtype
     mesh = create_box(
         comm=MPI.COMM_WORLD,
         points=[(0.0, 0.0, 0.0), (3.0, 2.0, 1.0)],
-        n=[30, 20, 10],
+        n=(30, 20, 10),
         cell_type=CellType.tetrahedron,
         dtype=real_type,
     )
@@ -88,8 +84,8 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str):
     x = ufl.SpatialCoordinate(mesh)
     f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
     g = ufl.sin(5 * x[0])
-    a = form(inner(grad(u), grad(v)) * dx, dtype=dtype)
-    L = form(inner(f, v) * dx + inner(g, v) * ds, dtype=dtype)
+    a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, dtype=dtype)
+    L = form(ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds, dtype=dtype)
 
     A = assemble_matrix(a, [bc]).to_scipy()
     b = assemble_vector(L)
@@ -159,7 +155,7 @@ def nullspace_elasticty(Q: fem.FunctionSpace) -> list[np.ndarray]:
 
 
 # +
-def elasticity_problem(dtype):
+def elasticity_problem(dtype) -> None:
     """Solve a 3D linearised elasticity problem using a smoothed
     aggregation algebraic multigrid method.
 
@@ -169,7 +165,7 @@ def elasticity_problem(dtype):
     mesh = create_box(
         comm=MPI.COMM_WORLD,
         points=[(0.0, 0.0, 0.0), (3.0, 2.0, 1.0)],
-        n=[30, 20, 10],
+        n=(30, 20, 10),
         cell_type=CellType.tetrahedron,
         dtype=dtype,
     )
@@ -192,13 +188,16 @@ def elasticity_problem(dtype):
     λ = E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
 
     def σ(v):
-        """Return an expression for the stress σ given a displacement field"""
-        return 2.0 * μ * ufl.sym(grad(v)) + λ * ufl.tr(ufl.sym(grad(v))) * ufl.Identity(len(v))
+        """Return an expression for the stress σ given a displacement
+        field"""
+        return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(
+            len(v)
+        )
 
     V = functionspace(mesh, ("Lagrange", 1, (mesh.geometry.dim,)))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = form(inner(σ(u), grad(v)) * dx, dtype=dtype)
-    L = form(inner(f, v) * dx, dtype=dtype)
+    a = form(ufl.inner(σ(u), ufl.grad(v)) * ufl.dx, dtype=dtype)
+    L = form(ufl.inner(f, v) * ufl.dx, dtype=dtype)
 
     tdim = mesh.topology.dim
     dofs = locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
@@ -230,15 +229,17 @@ def elasticity_problem(dtype):
 
 
 # Solve Poission problem with different scalar types
+
 poisson_problem(np.float32, "ruge_stuben")
 poisson_problem(np.float64, "ruge_stuben")
 
 # For complex, pyamg requires smoothed aggregation multigrid
+
 if not sys.platform.startswith("win32"):
     poisson_problem(np.complex64, "smoothed_aggregation")
     poisson_problem(np.complex128, "smoothed_aggregation")
 
 # Solve elasticity problem with different scalar types
+
 elasticity_problem(np.float32)
 elasticity_problem(np.float64)
-# -

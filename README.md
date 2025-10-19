@@ -1,16 +1,22 @@
 # DOLFINx
 
 [![DOLFINx CI](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml)
-[![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml)
 [![Actions Spack build](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/spack.yml)
 [![Actions Conda install](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml)
 [![Actions macOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
+[![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml)
 [![Actions Windows/vcpkg install](https://github.com/FEniCS/dolfinx/actions/workflows/windows.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/windows.yml)
 
 DOLFINx is the computational environment of
 [FEniCSx](https://fenicsproject.org) and implements the FEniCS Problem
 Solving Environment in C++ and Python. DOLFINx is a new version of
 DOLFIN and is actively developed.
+
+For questions about using DOLFINx, visit the [FEniCS
+Discourse](https://fenicsproject.discourse.group/) page or use the
+[FEniCS Slack channel](https://fenicsproject.slack.com/) (use
+[this](https://join.slack.com/t/fenicsproject/shared_invite/zt-1lraknsp1-6_3Js5kueDIyWgF192d3nA)
+link to sign up to the Slack channel).
 
 ## Documentation
 
@@ -19,6 +25,9 @@ Documentation can be viewed at <https://docs.fenicsproject.org>.
 ## Installation
 
 ### From source
+
+For detailed instructions and a list of dependencies, see
+<https://docs.fenicsproject.org/dolfinx/main/python/installation>.
 
 #### C++ core
 
@@ -41,28 +50,23 @@ pip install -r build-requirements.txt
 pip install --check-build-dependencies --no-build-isolation .
 ```
 
-For detailed instructions, see
-<https://docs.fenicsproject.org/dolfinx/main/python/installation>.
-
 ### Spack
 
-Spack is recommended for building DOLFINx on HPC systems. To build the
-most recent release using [Spack](https://spack.readthedocs.io/)
-(assuming a bash-compatible shell):
+To build the most recent release using
+[Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
+shell):
 
 ```shell
 git clone https://github.com/spack/spack.git
 . ./spack/share/spack/setup-env.sh
 spack env create fenicsx-env
 spack env activate fenicsx-env
-spack add fenics-dolfinx+adios2 py-fenics-dolfinx cflags="-O3" fflags="-O3"
-spack install
+spack install --add py-fenics-dolfinx+petsc4py+slepc4py
 ```
 
-See the Spack [documentation](https://spack.readthedocs.io/) for
-comprehensive instructions.
+Spack is the recommended approach for HPC systems.
 
-### Binary
+### Binary packages
 
 **Recommendations**
 
@@ -78,23 +82,20 @@ comprehensive instructions.
 
 #### conda
 
-To install the latest release of the Python interface, with pyvista
-support for visualisation, using [conda](https://conda.io):
+To install the latest release of the Python interface, including pyvista for
+visualisation, using [conda](https://conda.io):
 
 ```shell
 conda create -n fenicsx-env
 conda activate fenicsx-env
-conda install -c conda-forge fenics-dolfinx mpich pyvista
+conda install -c conda-forge fenics-dolfinx mpich pyvista # Linux and macOS
+conda install -c conda-forge fenics-dolfinx pyvista pyamg # Windows
 ```
 
-Windows conda packages are currently in beta testing and can be installed using:
-```shell
-conda create -n fenicsx-env
-conda activate fenicsx-env
-conda install -c minrk/label/fenics-windows -c conda-forge fenics-dolfinx=0.9.0.dev
-```
-Because FEniCS uses just-in-time compilation it also necessary to install
-[Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/).
+*Windows only*: Windows conda packages are currently in beta testing.
+PETSc and petsc4py are not available on Windows. Because FEniCS uses
+just-in-time compilation it necessary to install [Microsoft Visual
+Studio](https://visualstudio.microsoft.com/downloads/).
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html). The recipe
@@ -193,19 +194,3 @@ Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public
 License along with DOLFINx. If not, see
 <https://www.gnu.org/licenses/>.
-
-## Contact
-
-For questions about using DOLFINx, visit the FEniCS Discourse page:
-
-<https://fenicsproject.discourse.group/>
-
-or use the FEniCS Slack channel:
-
-<https://fenicsproject.slack.com/>
-
-(use <https://join.slack.com/t/fenicsproject/shared_invite/zt-1lraknsp1-6_3Js5kueDIyWgF192d3nA> to sign up)
-
-For bug reports visit:
-
-<https://github.com/FEniCS/dolfinx>

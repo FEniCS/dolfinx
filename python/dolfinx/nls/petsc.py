@@ -1,49 +1,71 @@
-# Copyright (C) 2021 Jørgen S. Dokken
+# Copyright (C) 2021-2025 Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Methods for solving nonlinear equations using PETSc solvers."""
+"""(Deprecated) Methods for solving nonlinear equations using PETSc
+solvers."""
 
 from __future__ import annotations
 
 import typing
+import warnings
+
+from mpi4py import MPI
+from petsc4py import PETSc
+
+from dolfinx.fem.forms import extract_function_spaces
 
 if typing.TYPE_CHECKING:
-    from mpi4py import MPI
-    from petsc4py import PETSc
-
     import dolfinx
 
     assert dolfinx.has_petsc4py
 
-    from dolfinx.fem.problem import NonlinearProblem
+    from dolfinx.fem.petsc import NewtonSolverNonlinearProblem
 
 import types
 
 from dolfinx import cpp as _cpp
 from dolfinx import fem
-from dolfinx.fem.petsc import create_matrix, create_vector
+from dolfinx.fem.petsc import (
+    create_matrix,
+    create_vector,
+)
 
 __all__ = ["NewtonSolver"]
 
 
 class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
-    def __init__(self, comm: MPI.Intracomm, problem: NonlinearProblem):
-        """A Newton solver for non-linear problems."""
+    def __init__(self, comm: MPI.Intracomm, problem: NewtonSolverNonlinearProblem):
+        """(Deprecated) A Newton solver for non-linear problems.
+
+        Note:
+            This class is deprecated in favour of
+            :class:`dolfinx.fem.petsc.NonlinearProblem`, a high
+            level interface to PETSc SNES.
+        """
         super().__init__(comm)
+
+        warnings.warn(
+            (
+                "dolfinx.nls.petsc.NewtonSolver is deprecated. "
+                + "Use dolfinx.fem.petsc.NonlinearProblem, "
+                + "a high level interface to PETSc SNES."
+            ),
+            DeprecationWarning,
+        )
 
         # Create matrix and vector to be used for assembly
         # of the non-linear problem
         self._A = create_matrix(problem.a)
         self.setJ(problem.J, self._A)
-        self._b = create_vector(problem.L)
+        self._b = create_vector(extract_function_spaces(problem.L))  # type: ignore
         self.setF(problem.F, self._b)
         self.set_form(problem.form)
 
     def __del__(self):
-        self._A.destroy()
-        self._b.destroy()
+        for obj in filter(lambda obj: obj is not None, (self._A, self._b)):
+            obj.destroy()
 
     def solve(self, u: fem.Function):
         """Solve non-linear problem into function u. Returns the number

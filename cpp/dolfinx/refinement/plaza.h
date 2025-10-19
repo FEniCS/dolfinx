@@ -198,8 +198,7 @@ face_long_edge(const mesh::Mesh<T>& mesh)
     assert(it1 != cell_vertices.end());
     const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells.front(), MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, cells.front(), md::full_extent);
     std::span<const T, 3> x0(mesh.geometry().x().data() + 3 * x_dofs[local0],
                              3);
     std::span<const T, 3> x1(mesh.geometry().x().data() + 3 * x_dofs[local1],
@@ -353,9 +352,9 @@ compute_refinement(MPI_Comm neighbor_comm,
       if (marked_edges[edges[ei]])
       {
         no_edge_marked = false;
-        auto it = new_vertex_map.find(edges[ei]);
-        assert(it != new_vertex_map.end());
-        indices[num_cell_vertices + ei] = it->second;
+        auto nv = new_vertex_map.links(edges[ei]);
+        assert(nv.size() == 1);
+        indices[num_cell_vertices + ei] = nv[0];
       }
       else
         indices[num_cell_vertices + ei] = -1;
@@ -502,7 +501,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
       map_e->size_local() + map_e->num_ghosts(), !edges.has_value());
   std::vector<std::vector<std::int32_t>> marked_for_update(ranks.size());
 
-  if (edges.has_value())
+  if (edges)
   {
     for (auto edge : edges.value())
     {

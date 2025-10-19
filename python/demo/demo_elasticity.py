@@ -12,31 +12,25 @@
 #
 # Copyright © 2020-2022 Garth N. Wells and Michal Habera
 #
-# This demo ({download}`demo_elasticity.py`) solves the equations of
-# static linear elasticity using a smoothed aggregation algebraic
-# multigrid solver. It illustrates how to:
-#
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_elasticity.py>`
+# * {download}`Jupyter notebook <./demo_elasticity.ipynb>`
+# ```
+# This demo solves the equations of static linear elasticity using
+# a smoothed aggregation algebraic multigrid solver.
+# It illustrates how to:
 # - Use a smoothed aggregation algebraic multigrid solver
 # - Use {py:class}`Expression <dolfinx.fem.Expression>` to compute
 #   derived quantities of a solution
 #
 # The required modules are first imported:
 
-from mpi4py import MPI
-
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
 
 # +
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 
 import ufl
@@ -53,9 +47,8 @@ from dolfinx.fem import (
 from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_boundary
-from ufl import dx, grad, inner
 
-dtype = PETSc.ScalarType  # type: ignore
+dtype = PETSc.ScalarType
 # -
 
 # ## Create the operator near-nullspace
@@ -98,21 +91,20 @@ def build_nullspace(V: FunctionSpace):
     la.orthonormalize(basis)
 
     basis_petsc = [
-        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm)  # type: ignore
-        for x in b
+        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm) for x in b
     ]
-    return PETSc.NullSpace().create(vectors=basis_petsc)  # type: ignore
+    return PETSc.NullSpace().create(vectors=basis_petsc)
 
 
 # ## Problem definition
 
-# Create a box Mesh:
+# Create a {py:func}`box mesh<dolfinx.mesh.create_box>`:
 
 
 msh = create_box(
     MPI.COMM_WORLD,
     [np.array([0.0, 0.0, 0.0]), np.array([2.0, 1.0, 1.0])],
-    [16, 16, 16],
+    (16, 16, 16),
     CellType.tetrahedron,
     ghost_mode=GhostMode.shared_facet,
 )
@@ -135,7 +127,7 @@ E = 1.0e9
 
 def σ(v):
     """Return an expression for the stress σ given a displacement field"""
-    return 2.0 * μ * ufl.sym(grad(v)) + λ * ufl.tr(ufl.sym(grad(v))) * ufl.Identity(len(v))
+    return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(len(v))
 
 
 # -
@@ -146,8 +138,8 @@ def σ(v):
 
 V = functionspace(msh, ("Lagrange", 1, (msh.geometry.dim,)))
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-a = form(inner(σ(u), grad(v)) * dx)
-L = form(inner(f, v) * dx)
+a = form(ufl.inner(σ(u), ufl.grad(v)) * ufl.dx)
+L = form(ufl.inner(f, v) * ufl.dx)
 
 # A homogeneous (zero) boundary condition is created on $x_0 = 0$ and
 # $x_1 = 1$ by finding all facets on these boundaries, and then creating
@@ -182,7 +174,7 @@ A.assemble()
 # +
 b = assemble_vector(L)
 apply_lifting(b, [a], bcs=[[bc]])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bc.set(b.array_w)
 # -
 
@@ -190,14 +182,14 @@ bc.set(b.array_w)
 
 ns = build_nullspace(V)
 A.setNearNullSpace(ns)
-A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore
+A.setOption(PETSc.Mat.Option.SPD, True)
 
 # Set PETSc solver options, create a PETSc Krylov solver, and attach the
 # matrix `A` to the solver:
 
 # +
 # Set solver options
-opts = PETSc.Options()  # type: ignore
+opts = PETSc.Options()
 opts["ksp_type"] = "cg"
 opts["ksp_rtol"] = 1.0e-8
 opts["pc_type"] = "gamg"
@@ -210,7 +202,7 @@ opts["mg_levels_pc_type"] = "jacobi"
 opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10
 
 # Create PETSc Krylov solver and turn convergence monitoring on
-solver = PETSc.KSP().create(msh.comm)  # type: ignore
+solver = PETSc.KSP().create(msh.comm)
 solver.setFromOptions()
 
 # Set matrix operator
@@ -240,7 +232,7 @@ uh.x.scatter_forward()
 
 # +
 sigma_dev = σ(uh) - (1 / 3) * ufl.tr(σ(uh)) * ufl.Identity(len(uh))
-sigma_vm = ufl.sqrt((3 / 2) * inner(sigma_dev, sigma_dev))
+sigma_vm = ufl.sqrt((3 / 2) * ufl.inner(sigma_dev, sigma_dev))
 # -
 
 # Next, the Von Mises stress is interpolated in a piecewise-constant
@@ -250,7 +242,7 @@ sigma_vm = ufl.sqrt((3 / 2) * inner(sigma_dev, sigma_dev))
 
 # +
 W = functionspace(msh, ("Discontinuous Lagrange", 0))
-sigma_vm_expr = Expression(sigma_vm, W.element.interpolation_points())
+sigma_vm_expr = Expression(sigma_vm, W.element.interpolation_points)
 sigma_vm_h = Function(W)
 sigma_vm_h.interpolate(sigma_vm_expr)
 # -
@@ -270,8 +262,9 @@ with XDMFFile(msh.comm, "out_elasticity/von_mises_stress.xdmf", "w") as file:
 # -
 
 # Finally, we compute the $L^2$ norm of the displacement solution
-# vector. This is a collective operation (i.e., the method `norm` must
-# be called from all MPI ranks), but we print the norm only on rank 0.
+# vector. This is a collective operation (i.e., the method
+# {py:func}`norm<dolfinx.la.norm>` must be called from all MPI ranks),
+# but we print the norm only on rank 0.
 
 # +
 unorm = la.norm(uh.x)

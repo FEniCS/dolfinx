@@ -54,7 +54,7 @@ def process():
             with open(myst_file, "w") as fw:
                 fw.write(cpp_myst_text)
 
-            # There is a posibility to use jupyter-notebooks with C++/C kernels
+            # There is a possibility to use jupyter-notebooks with C++/C kernels
             # ipynb_file = (demo_doc_dir / fname.name).with_suffix(".ipynb")
             # jupytext.write(cpp_demo, ipynb_file, fmt="ipynb")
 

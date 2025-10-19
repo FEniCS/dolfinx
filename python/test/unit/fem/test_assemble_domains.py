@@ -11,9 +11,9 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, fem, la
 from dolfinx.fem import Constant, Function, assemble_scalar, dirichletbc, form, functionspace
+from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (
     GhostMode,
     Mesh,
@@ -33,9 +33,7 @@ def mesh():
 def create_cell_meshtags_from_entities(mesh: Mesh, dim: int, cells: np.ndarray, values: np.ndarray):
     mesh.topology.create_connectivity(mesh.topology.dim, 0)
     cell_to_vertices = mesh.topology.connectivity(mesh.topology.dim, 0)
-    entities = _cpp.graph.AdjacencyList_int32(
-        np.array([cell_to_vertices.links(cell) for cell in cells])
-    )
+    entities = adjacencylist(np.array([cell_to_vertices.links(cell) for cell in cells]))
     return meshtags_from_entities(mesh, dim, entities, values)
 
 
@@ -305,7 +303,7 @@ def test_manual_integration_domains():
     # to give same result as above)
     cell_domains = [
         (domain_id, cell_indices[(cell_values == domain_id) & (cell_indices < cell_map.size_local)])
-        for domain_id in [0, 7]
+        for domain_id in [7, 0]
     ]
 
     # Manually specify exterior facets to integrate over as

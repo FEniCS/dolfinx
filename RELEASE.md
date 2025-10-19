@@ -9,6 +9,9 @@ Check that all CIs on `main` are running green.
 Check that the `main` documentation looks reasonable at
 https://docs.fenicsproject.org.
 
+As of 18/07/2025 the Windows CI is broken and consequently only @minrk
+can test the Windows build via the Condaforge CI.
+
 The release proceeds in a bottom up manner (UFL, Basix, FFCx, DOLFINx). pypa
 packages cannot be deleted and should be made a number of days after the
 creation of git tags so that errors can be fixed. GitHub releases can have their
@@ -38,7 +41,7 @@ UFL still runs on the year-based release scheme.
        git pull
        git checkout release
        git merge --no-commit origin/main
-       git checkout --theirs origin/main . # files deleted on `main` must be manually git `add`ed
+       git checkout --theirs . # files deleted on `main` must be manually git `rm`ed
        git diff origin/main
 
 2. Update the version number in `pyproject.toml`, e.g. `2022.2.0`.
@@ -54,11 +57,13 @@ UFL still runs on the year-based release scheme.
        git pull
        git checkout release
        git merge --no-commit origin/main
-       git checkout --theirs origin/main . # files deleted on `main` must be manually `git add`ed
+       git checkout --theirs . # files deleted on `main` must be manually git `rm`ed
        git diff origin/main
 
 2. Update version numbers in `pyproject.toml`, `python/pyproject.toml`,
    `CMakeLists.txt` and `cpp/CMakeLists.txt`.
+
+3. Update the Basix nanobind type stubs following `basix/python/README/md`.
 
 4. In `pyproject.toml` update the `fenics-ufl` optional dependency version. On
    `main` this is often pointing at the git repo, it needs to be changed to a
@@ -75,7 +80,7 @@ UFL still runs on the year-based release scheme.
        git pull
        git checkout release
        git merge --no-commit origin/main
-       git checkout --theirs origin/main . # files deleted on `main` must be manually git `add`ed
+       git checkout --theirs . # files deleted on `main` must be manually git `rm`ed
        git diff origin/main
 
 2. Update the version number in `pyproject.toml`, e.g. `0.5.0`.
@@ -101,16 +106,16 @@ UFL still runs on the year-based release scheme.
        git pull
        git checkout release
        git merge --no-commit origin/main
-       git checkout --theirs origin/main . # files deleted on `main` must be manually git `add`ed
+       git checkout --theirs . # files deleted on `main` must be manually git `rm`ed
        git diff origin/main
 
 2. In `cpp/CMakeLists.txt` change the version number e.g. `0.5.0`.
 
 3. In `cpp/CMakeLists.txt` change the version number in the
-   `find_package(ufcx)` and `find_package(UFCx)` calls.
+   `find_package(ufcx)`, `find_package(UFCx)` and `find_package(Basix)` calls.
 
-4. In `python/pyproject.toml` update the version to e.g. `0.5.0` and
-   update the dependency versions for `fenics-ffcx` and `fenics-ufl`.
+4. In `python/pyproject.toml` update the version to e.g. `0.5.0` and update the
+   dependency versions for `fenics-basix`, `fenics-ffcx` and `fenics-ufl`.
 
 5. In `CITATION.md` update the version number `version: 0.5.0` and the release
    date `date-released: 2022-03-14`.
@@ -140,7 +145,6 @@ UFL with FEniCSx: https://github.com/FEniCS/ufl/actions/workflows/fenicsx-tests.
 FFCx with DOLFINx: https://github.com/FEniCS/ffcx/actions/workflows/dolfinx-tests.yml
 
 Full stack: https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml
-
 
 ## Tagging
 

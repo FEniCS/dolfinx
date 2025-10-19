@@ -10,12 +10,16 @@
 
 # # Poisson equation
 #
-# This demo is implemented in {download}`demo_poisson.py`. It
-# illustrates how to:
+# This demo illustrates how to:
 #
 # - Create a {py:class}`function space <dolfinx.fem.FunctionSpace>`
 # - Solve a linear partial differential equation
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_poisson.py>`
+# * {download}`Jupyter notebook <./demo_poisson.ipynb>`
+# ```
 # ## Equation and problem definition
 #
 # For a domain $\Omega \subset \mathbb{R}^n$ with boundary $\partial
@@ -43,7 +47,8 @@
 # $$
 # \begin{align}
 #   a(u, v) &:= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
-#   L(v)    &:= \int_{\Omega} f v \, {\rm d} x + \int_{\Gamma_{N}} g v \, {\rm d} s.
+#   L(v)    &:= \int_{\Omega} f v \, {\rm d} x + \int_{\Gamma_{N}} g v \,
+#               {\rm d} s.
 # \end{align}
 # $$
 #
@@ -64,28 +69,17 @@
 #
 # The modules that will be used are imported:
 
-import importlib.util
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-    from petsc4py.PETSc import ScalarType  # type: ignore
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
+# +
+from pathlib import Path
 
 from mpi4py import MPI
+from petsc4py.PETSc import ScalarType  # type: ignore
 
-# +
 import numpy as np
 
 import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
-from ufl import ds, dx, grad, inner
 
 # -
 
@@ -111,7 +105,9 @@ V = fem.functionspace(msh, ("Lagrange", 1))
 # <dolfinx.fem.functionspace>` is a tuple `(family, degree)`, where
 # `family` is the finite element family, and `degree` specifies the
 # polynomial degree. In this case `V` is a space of continuous Lagrange
-# finite elements of degree 1.
+# finite elements of degree 1. For further details of how one can specify
+# finite elements as tuples, see {py:class}`ElementMetaData
+# <dolfinx.fem.ElementMetaData>`.
 #
 # To apply the Dirichlet boundary conditions, we find the mesh facets
 # (entities of topological co-dimension 1) that lie on the boundary
@@ -146,26 +142,37 @@ v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(msh)
 f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
 g = ufl.sin(5 * x[0])
-a = inner(grad(u), grad(v)) * dx
-L = inner(f, v) * dx + inner(g, v) * ds
+a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+L = ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds
 # -
 
 # A {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>` object is
 # created that brings together the variational problem, the Dirichlet
 # boundary condition, and which specifies the linear solver. In this
-# case an LU solver is used. The {py:func}`solve
+# case an LU solver is used, and we ask that PETSc throws an error
+# if the solver does not converge. The {py:func}`solve
 # <dolfinx.fem.petsc.LinearProblem.solve>` computes the solution.
 
 # +
-problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(
+    a,
+    L,
+    bcs=[bc],
+    petsc_options_prefix="demo_poisson_",
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu", "ksp_error_if_not_converged": True},
+)
 uh = problem.solve()
+assert isinstance(uh, fem.Function)
 # -
 
 # The solution can be written to a {py:class}`XDMFFile
-# <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt:
+# <dolfinx.io.XDMFFile>` file visualization with [ParaView](https://www.paraview.org/)
+# or [VisIt](https://visit-dav.github.io/visit-website/):
 
 # +
-with io.XDMFFile(msh.comm, "out_poisson/poisson.xdmf", "w") as file:
+out_folder = Path("out_poisson")
+out_folder.mkdir(parents=True, exist_ok=True)
+with io.XDMFFile(msh.comm, out_folder / "poisson.xdmf", "w") as file:
     file.write_mesh(msh)
     file.write_function(uh)
 # -
@@ -185,11 +192,10 @@ try:
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
     if pyvista.OFF_SCREEN:
-        pyvista.start_xvfb(wait=0.1)
-        plotter.screenshot("uh_poisson.png")
+        plotter.screenshot(out_folder / "uh_poisson.png")
     else:
         plotter.show()
 except ModuleNotFoundError:
-    print("'pyvista' is required to visualise the solution")
-    print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
+    print("'pyvista' is required to visualise the solution.")
+    print("To install pyvista with pip: 'python3 -m pip install pyvista'.")
 # -

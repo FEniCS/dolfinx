@@ -10,18 +10,26 @@
 
 # # Solving PDEs with different scalar (float) types
 #
-# This demo  ({download}`demo_types.py`) shows:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_types.py>`
+# * {download}`Jupyter notebook <./demo_types.ipynb>`
+# ```
+
+# This demo shows:
 #
 # - How to solve problems using different scalar types, .e.g. single or
 #   double precision, or complex numbers
 # - Interfacing with [SciPy](https://scipy.org/) sparse linear algebra
 #   functionality
 
+
+# +
 import sys
+from pathlib import Path
 
 from mpi4py import MPI
 
-# +
 import numpy as np
 import scipy.sparse
 import scipy.sparse.linalg
@@ -38,6 +46,10 @@ from dolfinx import fem, la, mesh, plot
 comm = MPI.COMM_SELF
 # -
 
+# We create an output directory for storing results and figures
+
+out_folder = Path("out_types")
+out_folder.mkdir(parents=True, exist_ok=True)
 
 # Create a function that solves the Poisson equation using different
 # precision float and complex scalar types for the finite element
@@ -58,8 +70,7 @@ def display_scalar(u, name, filter=np.real):
         plotter.add_mesh(grid.warp_by_scalar())
         plotter.add_title(f"{name}: real" if filter is np.real else f"{name}: imag")
         if pyvista.OFF_SCREEN:
-            pyvista.start_xvfb(wait=0.1)
-            plotter.screenshot(f"u_{'real' if filter is np.real else 'imag'}.png")
+            plotter.screenshot(out_folder / f"u_{'real' if filter is np.real else 'imag'}.png")
         else:
             plotter.show()
     except ModuleNotFoundError:
@@ -80,8 +91,7 @@ def display_vector(u, name, filter=np.real):
         plotter.add_mesh(grid.warp_by_scalar(), show_edges=True)
         plotter.add_title(f"{name}: real" if filter is np.real else f"{name}: imag")
         if pyvista.OFF_SCREEN:
-            pyvista.start_xvfb(wait=0.1)
-            plotter.screenshot(f"u_{'real' if filter is np.real else 'imag'}.png")
+            plotter.screenshot(out_folder / f"u_{'real' if filter is np.real else 'imag'}.png")
         else:
             plotter.show()
     except ModuleNotFoundError:
@@ -182,7 +192,8 @@ def elasticity(dtype) -> fem.Function:
     μ, λ = E / (2.0 * (1.0 + ν)), E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
 
     def σ(v):
-        """Return an expression for the stress σ given a displacement field"""
+        """Return an expression for the stress σ given a displacement
+        field"""
         return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(
             len(v)
         )

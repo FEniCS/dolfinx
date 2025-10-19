@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstdint>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <mpi.h>
 #include <tuple>
@@ -22,12 +23,6 @@ namespace dolfinx::mesh
 class Topology;
 }
 
-namespace dolfinx::graph
-{
-template <typename T>
-class AdjacencyList;
-}
-
 namespace dolfinx::fem
 {
 class ElementDofLayout;
@@ -35,8 +30,8 @@ class ElementDofLayout;
 /// Build dofmap data for elements on a mesh topology
 /// @param[in] comm MPI communicator
 /// @param[in] topology The mesh topology
-/// @param[in] element_dof_layouts The element dof layouts for each cell type in
-/// @p topology
+/// @param[in] element_dof_layouts The element dof layouts for each cell
+/// type in `topology`.
 /// @param[in] reorder_fn Graph reordering function that is applied to
 /// the dofmaps
 /// @return The index map, block size, and dofmaps for each element type

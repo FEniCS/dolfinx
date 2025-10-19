@@ -35,21 +35,8 @@ extern "C"
 
 using namespace dolfinx;
 
-namespace
-{
-/// @todo Is it un-documented that the owning rank must come first in
-/// reach list of edges?
-///
-/// @param[in] comm The communicator
-/// @param[in] graph Graph, using global indices for graph edges
-/// @param[in] node_disp The distribution of graph nodes across MPI
-/// ranks. The global index `gidx` of local index `lidx` is `lidx +
-/// node_disp[my_rank]`.
-/// @param[in] part The destination rank for owned nodes, i.e. `dest[i]`
-/// is the destination of the node with local index `i`.
-/// @return Destination ranks for each local node.
 template <typename T>
-graph::AdjacencyList<int> compute_destination_ranks(
+graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
     const std::vector<T>& node_disp, const std::vector<T>& part)
 {
@@ -94,7 +81,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
     while (it != node_to_dest.end())
     {
       // Current destination rank
-      dest.push_back((*it)[0]);
+      dest.push_back(it->front());
 
       // Find iterator to next destination rank and pack send data
       auto it1
@@ -103,8 +90,8 @@ graph::AdjacencyList<int> compute_destination_ranks(
       send_sizes.push_back(2 * std::distance(it, it1));
       for (auto itx = it; itx != it1; ++itx)
       {
-        send_buffer.push_back((*itx)[1]);
-        send_buffer.push_back((*itx)[2]);
+        send_buffer.push_back(itx->at(1));
+        send_buffer.push_back(itx->at(2));
       }
 
       it = it1;
@@ -152,6 +139,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
   // Prepare (local node index, destination rank) array. Add local data,
   // then add the received data, and the make unique.
   std::vector<std::array<int, 2>> local_node_to_dest;
+  local_node_to_dest.reserve(2 * part.size() + 2 * recv_buffer.size());
   for (auto d : part)
   {
     local_node_to_dest.push_back(
@@ -202,6 +190,18 @@ graph::AdjacencyList<int> compute_destination_ranks(
 
   return g;
 }
+
+/// @cond
+template graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
+    const std::vector<int>& node_disp, const std::vector<int>& part);
+
+template graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
+    const std::vector<unsigned long long>& node_disp,
+    const std::vector<unsigned long long>& part);
+/// @endcond
+
 //-----------------------------------------------------------------------------
 #ifdef HAS_PARMETIS
 template <typename T>
@@ -304,7 +304,6 @@ std::vector<int> refine(MPI_Comm comm, const graph::AdjacencyList<T>& adj_graph)
   //-----------------------------------------------------------------------------
 }
 #endif
-} // namespace
 
 //-----------------------------------------------------------------------------
 #ifdef HAS_PTSCOTCH
@@ -444,7 +443,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       // Exchange halo with node_partition data for ghosts
       common::Timer timer3("SCOTCH: call SCOTCH_dgraphHalo");
       err = SCOTCH_dgraphHalo(&dgrafdat, node_partition.data(),
-                              dolfinx::MPI::mpi_type<SCOTCH_Num>());
+                              dolfinx::MPI::mpi_t<SCOTCH_Num>);
       if (err != 0)
         throw std::runtime_error("Error during SCOTCH halo exchange");
       timer3.stop();
@@ -554,9 +553,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       const int psize = dolfinx::MPI::size(pcomm);
       const idx_t num_local_nodes = graph.num_nodes();
       node_disp = std::vector<idx_t>(psize + 1, 0);
-      MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<idx_t>(),
-                    node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<idx_t>(),
-                    pcomm);
+      MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<idx_t>,
+                    node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<idx_t>, pcomm);
       std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
       std::vector<idx_t> array(graph.array().begin(), graph.array().end());
       std::vector<idx_t> offsets(graph.offsets().begin(),
@@ -588,7 +586,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     {
       // FIXME: Is it implicit that the first entry is the owner?
       graph::AdjacencyList<int> dest
-          = compute_destination_ranks(pcomm, graph, node_disp, part);
+          = graph::compute_destination_ranks(pcomm, graph, node_disp, part);
       if (split_comm)
         MPI_Comm_free(&pcomm);
       return dest;
@@ -631,8 +629,13 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     common::Timer timer1("KaHIP: build adjacency data");
     std::vector<T> node_disp(dolfinx::MPI::size(comm) + 1, 0);
     const T num_local_nodes = graph.num_nodes();
-    MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<T>(),
-                  node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<T>(), comm);
+
+    // KaHIP internally relies on an unsigned long long int type, which is not
+    // easily convertible to a general mpi type due to platform specific
+    // differences. So we can not rely on the general mpi_t<> mapping and do it
+    // by hand in this sole occurrence.
+    MPI_Allgather(&num_local_nodes, 1, MPI_UNSIGNED_LONG_LONG,
+                  node_disp.data() + 1, 1, MPI_UNSIGNED_LONG_LONG, comm);
     std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
     std::vector<T> array(graph.array().begin(), graph.array().end());
     std::vector<T> offsets(graph.offsets().begin(), graph.offsets().end());
@@ -649,7 +652,7 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     timer2.stop();
 
     if (ghosting)
-      return compute_destination_ranks(comm, graph, node_disp, part);
+      return graph::compute_destination_ranks(comm, graph, node_disp, part);
     else
     {
       return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),

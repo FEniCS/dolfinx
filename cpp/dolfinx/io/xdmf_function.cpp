@@ -7,6 +7,7 @@
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
+#include <algorithm>
 #include <basix/mdspan.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -16,6 +17,7 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <format>
 #include <pugixml.hpp>
 #include <string>
 
@@ -77,7 +79,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
 
   // Pad to 3D if vector/tensor is product of dimensions is smaller than 3**rank
   // to ensure that we can visualize them correctly in Paraview
-  std::span<const std::size_t> value_shape = u.function_space()->value_shape();
+  std::span<const std::size_t> value_shape
+      = u.function_space()->element()->value_shape();
   int rank = value_shape.size();
   int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                    std::multiplies{});
@@ -107,7 +110,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   else
   {
     // Get number of geometry nodes per cell
-    const auto& geometry = mesh->geometry();
+    auto& geometry = mesh->geometry();
     auto& cmap = geometry.cmap();
     int cmap_dim = cmap.dim();
     int cell_dim = element->space_dimension() / element->block_size();
@@ -127,7 +130,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     if (cmap.degree() > 2
         and element->basix_element().lagrange_variant() != cmap.variant())
     {
-      throw std::runtime_error("Mis-match in Lagrange family. Maybe the "
+      throw std::runtime_error("Mismatch in Lagrange family. Maybe the "
                                "Function needs to be interpolated?");
     }
 
@@ -140,8 +143,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       auto dofs = dofmap->cell_dofs(c);
-      auto dofs_x = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dofs_x = md::submdspan(dofmap_x, c, md::full_extent);
       assert(dofs.size() == dofs_x.size());
       for (std::size_t i = 0; i < dofs.size(); ++i)
       {
@@ -167,13 +169,12 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   std::vector<std::string> components = {""};
   if constexpr (!std::is_scalar_v<T>)
     components = {"real_", "imag_"};
+
   std::string t_str = boost::lexical_cast<std::string>(t);
   std::replace(t_str.begin(), t_str.end(), '.', '_');
-  for (auto component : components)
+  for (const auto& component : components)
   {
     std::string attr_name = component + u.name;
-    std::string dataset_name
-        = std::string("/Function/") + attr_name + std::string("/") + t_str;
 
     // Add attribute node
     pugi::xml_node attr_node = xml_node.append_child("Attribute");
@@ -183,8 +184,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         = shape_to_string(value_shape).c_str();
     attr_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
-    std::span<const scalar_value_type_t<T>> u;
-    std::vector<scalar_value_type_t<T>> _data;
+    std::span<const scalar_value_t<T>> u;
+    std::vector<scalar_value_t<T>> _data;
     if constexpr (!std::is_scalar_v<T>)
     {
       // Complex-valued case
@@ -199,13 +200,14 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         std::ranges::transform(data_values, _data.begin(),
                                [](auto x) { return x.imag(); });
       }
-      u = std::span<const scalar_value_type_t<T>>(_data);
+      u = std::span<const scalar_value_t<T>>(_data);
     }
     else
       u = std::span<const T>(data_values);
 
     // -- Real case, add data item
-    xdmf_utils::add_data_item(attr_node, h5_id, dataset_name, u, offset,
+    std::string h5_path = std::format("/Function/{}/{}", attr_name, t_str);
+    xdmf_utils::add_data_item(attr_node, h5_id, h5_path, u, offset,
                               {num_values, num_components}, "", use_mpi_io);
   }
 }

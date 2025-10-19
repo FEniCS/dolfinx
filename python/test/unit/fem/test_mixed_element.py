@@ -44,8 +44,6 @@ def test_mixed_element(rank, family, cell, degree):
         A.scatter_reverse()
         norms.append(A.squared_norm())
 
-        U_el = mixed_element([U_el])
-
     for i in norms[1:]:
         assert np.isclose(norms[0], i)
 
@@ -64,8 +62,8 @@ def test_vector_element():
     A.scatter_reverse()
 
     with pytest.raises(ValueError):
-        # Function space containing a vector should throw an error rather
-        # than segfaulting
+        # Function space containing a vector should throw an error
+        # rather than segfaulting
         gdim = mesh.geometry.dim
         U = functionspace(mesh, ("RT", 2, (gdim + 1,)))
         u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
@@ -100,3 +98,27 @@ def test_element_product(d1, d2):
     B.scatter_reverse()
 
     assert np.isclose(A.squared_norm(), B.squared_norm())
+
+
+@pytest.mark.parametrize("rtype", [np.float32, np.float64])
+def test_single_element_in_mixed_element(rtype):
+    """Check that a mixed element with a single element is equivalent to a single element."""
+    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 3, dtype=rtype)
+    el = element("Lagrange", mesh.basix_cell(), 3, dtype=rtype)
+    me = mixed_element([el])
+    V = dolfinx.fem.functionspace(mesh, me)
+    assert V.num_sub_spaces == 1
+    W = dolfinx.fem.functionspace(mesh, el)
+    np.testing.assert_allclose(W.dofmap.list, V.dofmap.list)
+
+    def f(x):
+        return x[0] ** 2 + x[1] ** 2
+
+    u = dolfinx.fem.Function(V, dtype=rtype)
+    u.sub(0).interpolate(f)
+    w = dolfinx.fem.Function(W, dtype=rtype)
+    w.interpolate(f)
+    np.testing.assert_allclose(u.x.array, w.x.array)
+
+    with pytest.raises(RuntimeError):
+        u.interpolate(f)

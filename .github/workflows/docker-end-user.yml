@@ -64,7 +64,7 @@ jobs:
           - arch_tag: amd64
             os: ubuntu-latest
           - arch_tag: arm64
-            os: buildjet-8vcpu-ubuntu-2204-arm
+            os: ubuntu-24.04-arm
     runs-on: ${{ matrix.os }}
     steps:
       - name: Create tag without image name
@@ -95,25 +95,25 @@ jobs:
           echo "BASEIMAGE=${USER_INPUT:-ghcr.io/fenics/dolfinx/dev-env:current}" >> $GITHUB_ENV
 
       - name: Checkout basix
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: "FEniCS/basix"
           path: "basix"
           ref: ${{ env.BASIX_REF }}
       - name: Checkout UFL
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: "FEniCS/ufl"
           path: "ufl"
           ref: ${{ env.UFL_REF }}
       - name: Checkout FFCx
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: "FEniCS/ffcx"
           path: "ffcx"
           ref: ${{ env.FFCX_REF }}
       - name: Checkout DOLFINx
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: "FEniCS/dolfinx"
           path: "dolfinx"
