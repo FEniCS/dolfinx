@@ -1381,10 +1381,10 @@ std::size_t dolfinx::common::impl::memory(const IndexMap& im)
 
   size += sizeof(IndexMap);
   size += memory(im.local_range());
-  // size += memory(im.ghosts());
-  // size += memory(im.owners());
-  // size += memory(im.src());
-  // size += memory(im.dest());
+  size += memory(im.ghosts());
+  size += memory(im.owners());
+  size += memory(im.src());
+  size += memory(im.dest());
 
   return size;
 }

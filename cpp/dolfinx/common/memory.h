@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <type_traits>
 #include <vector>
 
@@ -42,6 +43,18 @@ std::size_t memory(const std::vector<S>& vec)
 
   std::size_t size_type = sizeof(vec);
   std::size_t size_data = vec.capacity() * sizeof(value_type);
+  return size_type + size_data;
+}
+
+// TODO: document ownership assumption
+template <typename S>
+  requires std::is_arithmetic_v<S>
+std::size_t memory(const std::span<const S>& span)
+{
+  using value_type = typename std::vector<S>::value_type;
+
+  std::size_t size_type = sizeof(span);
+  std::size_t size_data = span.size() * sizeof(value_type);
   return size_type + size_data;
 }
 

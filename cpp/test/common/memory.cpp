@@ -60,6 +60,28 @@ TEMPLATE_TEST_CASE("memory-vector", "[memory]", std::int16_t, std::int32_t,
         == Catch::Approx(static_cast<double>(bytes) / terabyte));
 }
 
+TEMPLATE_TEST_CASE("memory-span", "[memory]", std::int16_t, std::int32_t,
+                   std::int64_t, std::uint16_t, std::uint32_t, std::uint64_t,
+                   float, double)
+//    std::complex<float>, std::complex<double>
+{
+  std::array<TestType, 10> v;
+  std::span span{v};
+
+  std::size_t bytes = 10 * sizeof(TestType);
+
+  CHECK(memory(v, byte) == bytes);
+
+  CHECK(memory(v, kilobyte)
+        == Catch::Approx(static_cast<double>(bytes) / kilobyte));
+  CHECK(memory(v, megabyte)
+        == Catch::Approx(static_cast<double>(bytes) / megabyte));
+  CHECK(memory(v, gigabyte)
+        == Catch::Approx(static_cast<double>(bytes) / gigabyte));
+  CHECK(memory(v, terabyte)
+        == Catch::Approx(static_cast<double>(bytes) / terabyte));
+}
+
 TEMPLATE_TEST_CASE("memory-vector-vector", "[memory]", std::int16_t,
                    std::int32_t, std::int64_t, std::uint16_t, std::uint32_t,
                    std::uint64_t, float, double)

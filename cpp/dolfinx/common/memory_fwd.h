@@ -28,6 +28,6 @@ std::size_t memory(const IndexMap& im);
 
 template <std::floating_point T>
 std::size_t memory(const dolfinx::mesh::Geometry<T>& geometry);
-}
+} // namespace common::impl
 
 } // namespace dolfinx
