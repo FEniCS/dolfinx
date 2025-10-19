@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2022 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2022 Anders Logg, Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -344,7 +344,8 @@ std::size_t memory(const dolfinx::mesh::Geometry<T>& geometry)
   for (std::size_t i = 0; i < geometry.cmaps().size(); i++)
   {
     size += memory(geometry.dofmap(i));
-    // size += memory(geometry.cmaps()[i]); TODO
+    // TODO: requires heavy work for basix::finite_element
+    // size += memory(geometry.cmaps()[i]);
   }
 
   size += memory(geometry.x());

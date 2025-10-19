@@ -8,6 +8,7 @@
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
 #include <complex>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
@@ -143,6 +144,21 @@ void common(nb::module_& m)
   m.attr("ufcx_signature") = dolfinx::ufcx_signature();
   m.attr("version") = dolfinx::version();
 
+  enum MemoryUnit : std::int64_t
+  {
+    byte = dolfinx::common::byte.value,
+    kilobyte = dolfinx::common::kilobyte.value,
+    megabyte = dolfinx::common::megabyte.value,
+    gigabyte = dolfinx::common::gigabyte.value,
+    terabyte = dolfinx::common::terabyte.value,
+  };
+  nb::enum_<MemoryUnit>(m, "MemoryUnit")
+      .value("byte", MemoryUnit::byte)
+      .value("kilobyte", MemoryUnit::kilobyte)
+      .value("megabyte", MemoryUnit::megabyte)
+      .value("gigabyte", MemoryUnit::gigabyte)
+      .value("terabyte", MemoryUnit::terabyte);
+
   nb::enum_<dolfinx::Table::Reduction>(m, "Reduction")
       .value("max", dolfinx::Table::Reduction::max)
       .value("min", dolfinx::Table::Reduction::min)
@@ -246,7 +262,25 @@ void common(nb::module_& m)
                                  local);
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
-          nb::arg("global"));
+          nb::arg("global"))
+      .def("memory",
+           [](const dolfinx::common::IndexMap& self, MemoryUnit unit)
+           {
+             switch (unit)
+             {
+             case MemoryUnit::byte:
+               return double(
+                   dolfinx::common::memory(self, dolfinx::common::byte));
+             case MemoryUnit::kilobyte:
+               return dolfinx::common::memory(self, dolfinx::common::kilobyte);
+             case MemoryUnit::megabyte:
+               return dolfinx::common::memory(self, dolfinx::common::megabyte);
+             case MemoryUnit::gigabyte:
+               return dolfinx::common::memory(self, dolfinx::common::gigabyte);
+             case MemoryUnit::terabyte:
+               return dolfinx::common::memory(self, dolfinx::common::terabyte);
+             }
+           });
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
