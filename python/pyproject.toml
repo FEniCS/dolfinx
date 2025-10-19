@@ -4,7 +4,7 @@
 # NOTE: petsc4py is an optional build dependency, therefore we don't
 # list it here.
 [build-system]
-requires = ["scikit-build-core[pyproject]>=0.10", "nanobind>=2.5.0", "mpi4py"]
+requires = ["scikit-build-core[pyproject]>=0.10", "nanobind>=2.5.0", "mpi4py", "setuptools"]
 build-backend = "scikit_build_core.build"
 
 [project]
