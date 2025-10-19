@@ -328,3 +328,28 @@ create_geometry(const Topology& topology,
 }
 
 } // namespace dolfinx::mesh
+
+namespace dolfinx::common::impl
+{
+
+template <std::floating_point T>
+std::size_t memory(const dolfinx::mesh::Geometry<T>& geometry)
+{
+
+  std::size_t size = 0;
+  size += sizeof(geometry);
+
+  for (std::size_t i = 0; i < geometry.cmaps().size(); i++)
+  {
+    // size += memory(geometry.dofmap(i)); TODO
+    // size += memory(geometry.index_map(i)) TODO
+    // size += memory(geometry.cmaps()[i]); TODO
+  }
+
+  // size += memory(geometry.x()); TODO
+
+  // size += memory(geometry.input_global_indices());
+
+  return size;
+};
+} // namespace dolfinx::common::impl

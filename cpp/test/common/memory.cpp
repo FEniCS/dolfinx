@@ -8,10 +8,11 @@
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 
-#include <complex>
 #include <vector>
 
 #include "dolfinx/common/memory.h"
+#include "dolfinx/mesh/Geometry.h"
+#include "dolfinx/mesh/generation.h"
 
 using namespace dolfinx::common;
 
@@ -62,4 +63,14 @@ TEMPLATE_TEST_CASE("memory-vector-vector", "[memory]", std::int16_t,
         == Catch::Approx(static_cast<double>(bytes) / gigabyte));
   CHECK(memory(v, terabyte)
         == Catch::Approx(static_cast<double>(bytes) / terabyte));
+}
+
+TEMPLATE_TEST_CASE("memory-geometry", "[memory]", float, double)
+{
+  auto mesh = dolfinx::mesh::create_rectangle<TestType>(
+      MPI_COMM_SELF, {{{0, 0}, {1, 1}}}, {1, 1},
+      dolfinx::mesh::CellType::quadrilateral);
+
+  const auto& geo = mesh.geometry();
+  CHECK(memory<dolfinx::mesh::Geometry<TestType>>(geo, byte) > 0);
 }

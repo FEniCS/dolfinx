@@ -3,14 +3,21 @@
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
+#pragma once
 
 #include <algorithm>
-#include <complex>
 #include <cstddef>
 #include <cstdint>
-#include <numeric>
 #include <type_traits>
 #include <vector>
+
+// --- FWD declares ---
+
+namespace dolfinx::mesh
+{
+template <std::floating_point T>
+class Geometry;
+}
 
 namespace dolfinx::common
 {
@@ -43,6 +50,11 @@ std::size_t memory(const std::vector<std::vector<T>>& vec)
   std::ranges::for_each(vec, [&](const auto& e) { size += memory(e); });
   return size;
 }
+
+// --- FWD declares ---
+
+template <std::floating_point T>
+std::size_t memory(const dolfinx::mesh::Geometry<T>& geometry);
 
 } // namespace impl
 
