@@ -9,11 +9,15 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <type_traits>
 #include <vector>
 
+#include <basix/mdspan.hpp>
+
 #include "memory_fwd.h"
+#include "types.h"
 
 namespace dolfinx::common
 {
@@ -64,6 +68,21 @@ std::size_t memory(const std::vector<std::vector<T>>& vec)
   std::size_t size = sizeof(vec);
   std::ranges::for_each(vec, [&](const auto& e) { size += memory(e); });
   return size;
+}
+
+template <typename S, class Extents, class LayoutPolicy = md::layout_right,
+          class AccessorPolicy = md::default_accessor<S>>
+  requires std::is_arithmetic_v<S>
+std::size_t
+memory(const md::mdspan<S, Extents, LayoutPolicy, AccessorPolicy>& mdspan)
+{
+  using value_type = typename std::mdspan<S, Extents, LayoutPolicy,
+                                          AccessorPolicy>::value_type;
+
+  // TODO: object size? - what happens for compile time sized mdspans?
+  std::size_t size_data = mdspan.size() * sizeof(value_type);
+
+  return size_data;
 }
 
 } // namespace impl
