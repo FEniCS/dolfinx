@@ -73,7 +73,7 @@ ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
 # dependencies manually here.
 ONBUILD RUN cd dolfinx/python &&
             pip install --no-cache-dir scikit-build-core && 
-            python -m scikit_build_core.build requires | python -c "import sys, json; print(', '.join(json.load(sys.stdin)))" | xargs pip install --no-cache-dir && \
+            python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install --no-cache-dir && \
             pip install --no-cache-dir pyamg pytest scipy matplotlib numba # test + optional set
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/

@@ -46,7 +46,7 @@ To install the Python interface, first install the C++ core, and then in
 the `python/` directory run:
 
 ```shell
-python -m scikit_build_core.build requires | python -c "import sys, json; print(', '.join(json.load(sys.stdin)))" | xargs pip install
+python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 pip install --check-build-dependencies --no-build-isolation .
 ```
 

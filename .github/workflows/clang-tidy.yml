@@ -38,7 +38,7 @@ jobs:
         working-directory: python
         run: |
           pip install scikit-build-core
-          python -m scikit_build_core.build requires | python -c "import sys, json; print(', '.join(json.load(sys.stdin)))" | xargs pip install
+          python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
