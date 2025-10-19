@@ -71,7 +71,7 @@ ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
 # Using pip install `.[test]` with --no-dependencies and --no-build-isolation
 # does not install necessary packages, hence install build and optional
 # dependencies manually here.
-ONBUILD RUN pip install --no-cache-dir -r dolfinx/python/build-requirements.txt && \
+ONBUILD RUN python -m scikit_build_core.build requires | python -c "import sys, json; print(', '.join(json.load(sys.stdin)))" | xargs pip install && \
             pip install --no-cache-dir pyamg pytest scipy matplotlib numba # test + optional set
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/

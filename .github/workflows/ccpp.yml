@@ -93,8 +93,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python build dependencies
-        run: |
-          pip -v install --upgrade -r python/build-requirements.txt
+        run: python -m scikit_build_core.build requires | python -c "import sys, json; print(', '.join(json.load(sys.stdin)))" | xargs pip install
 
       - name: Install FEniCS Python components
         run: |
@@ -187,7 +186,7 @@ jobs:
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install Python build dependencies
-        run: pip install -r python/build-requirements.txt
+        run: python -m scikit_build_core.build requires | python -c "import sys, json; print(', '.join(json.load(sys.stdin)))" | xargs pip install
 
       - name: Install FEniCS Python components
         run: |
@@ -294,7 +293,7 @@ jobs:
 
       - name: Install FEniCS Python components
         run: |
-          pip install -r python/build-requirements.txt
+          run: python -m scikit_build_core.build requires | python -c "import sys, json; print(', '.join(json.load(sys.stdin)))" | xargs pip install
           pip install --no-build-isolation git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
