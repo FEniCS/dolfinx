@@ -27,6 +27,13 @@ std::size_t memory(const T& /* obj */)
   return 0;
 }
 
+template <typename S, std::size_t N>
+  requires std::is_arithmetic_v<S>
+std::size_t memory(const std::array<S, N>& array)
+{
+  return sizeof(array);
+}
+
 template <typename S>
   requires std::is_arithmetic_v<S>
 std::size_t memory(const std::vector<S>& vec)
