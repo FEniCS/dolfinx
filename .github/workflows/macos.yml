@@ -110,7 +110,7 @@ jobs:
         run: |
           pip install scikit-build-core
           python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
-          pip install --check-build-dependencies --no-build-isolation 'python/[test]'
+          pip install --check-build-dependencies --no-build-isolation './[test]'
 
       - name: Basic test
         run: |
