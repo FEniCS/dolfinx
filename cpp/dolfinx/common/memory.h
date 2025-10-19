@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
 #include <vector>
 
 namespace dolfinx::common
@@ -15,7 +16,7 @@ namespace impl
 {
 
 template <typename T>
-std::size_t memory(const T& obj)
+std::size_t memory(const T& /* obj */)
 {
   static_assert(false, "Memory usage not supported for provided type.");
 }
@@ -32,17 +33,21 @@ std::size_t memory(const std::vector<T>& vec)
 
 } // namespace impl
 
-constexpr std::int64_t byte = 1;
-constexpr std::int64_t kilobyte = 1024;
-constexpr std::int64_t megabyte = 1'048'576;
-constexpr std::int64_t gigabyte = 1'073'741'824;
-constexpr std::int64_t terabyte = 1'099'511'627'776;
+constexpr std::integral_constant<std::int64_t, 1> byte;
+constexpr std::integral_constant<std::int64_t, 1'024> kilobyte;
+constexpr std::integral_constant<std::int64_t, 1'048'576> megabyte;
+constexpr std::integral_constant<std::int64_t, 1'073'741'824> gigabyte;
+constexpr std::integral_constant<std::int64_t, 1'099'511'627'776> terabyte;
 
-template <typename T>
-double memory(const T& obj, std::int64_t bytes_per_unit = byte)
+template <typename T, std::int64_t U = 1>
+std::conditional_t<U == 1, std::size_t, double>
+memory(const T& obj, std::integral_constant<std::int64_t, U> bytes_per_unit)
 {
   std::size_t bytes = impl::memory(obj);
-  return static_cast<double>(bytes) / bytes_per_unit;
+  if constexpr (bytes_per_unit == byte)
+    return bytes;
+  else
+    return static_cast<double>(bytes) / bytes_per_unit.value;
 }
 
 } // namespace dolfinx::common

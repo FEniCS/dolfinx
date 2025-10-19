@@ -24,6 +24,14 @@ TEMPLATE_TEST_CASE("memory-vector", "[memory]", std::int16_t, std::int32_t,
 
   std::size_t bytes = sizeof(std::vector<TestType>) + 10 * sizeof(TestType);
 
-  for (auto unit : {byte, kilobyte, megabyte, gigabyte, terabyte})
-    CHECK(memory(v, unit) == Catch::Approx(static_cast<double>(bytes) / unit));
+  CHECK(memory(v, byte) == bytes);
+
+  CHECK(memory(v, kilobyte)
+        == Catch::Approx(static_cast<double>(bytes) / kilobyte));
+  CHECK(memory(v, megabyte)
+        == Catch::Approx(static_cast<double>(bytes) / megabyte));
+  CHECK(memory(v, gigabyte)
+        == Catch::Approx(static_cast<double>(bytes) / gigabyte));
+  CHECK(memory(v, terabyte)
+        == Catch::Approx(static_cast<double>(bytes) / terabyte));
 }
