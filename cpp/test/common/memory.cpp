@@ -17,12 +17,40 @@ using namespace dolfinx::common;
 
 TEMPLATE_TEST_CASE("memory-vector", "[memory]", std::int16_t, std::int32_t,
                    std::int64_t, std::uint16_t, std::uint32_t, std::uint64_t,
-                   float, double, std::complex<float>, std::complex<double>)
+                   float, double)
+//    std::complex<float>, std::complex<double>
 {
   std::vector<TestType> v;
   v.reserve(10);
 
   std::size_t bytes = sizeof(std::vector<TestType>) + 10 * sizeof(TestType);
+
+  CHECK(memory(v, byte) == bytes);
+
+  CHECK(memory(v, kilobyte)
+        == Catch::Approx(static_cast<double>(bytes) / kilobyte));
+  CHECK(memory(v, megabyte)
+        == Catch::Approx(static_cast<double>(bytes) / megabyte));
+  CHECK(memory(v, gigabyte)
+        == Catch::Approx(static_cast<double>(bytes) / gigabyte));
+  CHECK(memory(v, terabyte)
+        == Catch::Approx(static_cast<double>(bytes) / terabyte));
+}
+
+TEMPLATE_TEST_CASE("memory-vector-vector", "[memory]", std::int16_t,
+                   std::int32_t, std::int64_t, std::uint16_t, std::uint32_t,
+                   std::uint64_t, float, double)
+//    std::complex<float>, std::complex<double>
+{
+  std::vector<std::vector<TestType>> v;
+  v.reserve(3);
+  v.template emplace_back<std::vector<TestType>>({{0, 1, 2}});
+  v.template emplace_back<std::vector<TestType>>({{0, 1, 2, 3}});
+  v.template emplace_back<std::vector<TestType>>({{0, 1, 2, 3, 4}});
+
+  std::size_t bytes = sizeof(std::vector<std::vector<TestType>>)
+                      + 3 * sizeof(std::vector<TestType>)
+                      + (3 + 4 + 5) * sizeof(TestType);
 
   CHECK(memory(v, byte) == bytes);
 

@@ -4,8 +4,11 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <algorithm>
+#include <complex>
 #include <cstddef>
 #include <cstdint>
+#include <numeric>
 #include <type_traits>
 #include <vector>
 
@@ -19,16 +22,26 @@ template <typename T>
 std::size_t memory(const T& /* obj */)
 {
   static_assert(false, "Memory usage not supported for provided type.");
+  return 0;
 }
 
-template <typename T>
-std::size_t memory(const std::vector<T>& vec)
+template <typename S>
+  requires std::is_arithmetic_v<S>
+std::size_t memory(const std::vector<S>& vec)
 {
-  using value_type = typename std::vector<T>::value_type;
+  using value_type = typename std::vector<S>::value_type;
 
   std::size_t size_type = sizeof(vec);
   std::size_t size_data = vec.capacity() * sizeof(value_type);
   return size_type + size_data;
+}
+
+template <typename T>
+std::size_t memory(const std::vector<std::vector<T>>& vec)
+{
+  std::size_t size = sizeof(vec);
+  std::ranges::for_each(vec, [&](const auto& e) { size += memory(e); });
+  return size;
 }
 
 } // namespace impl
