@@ -33,7 +33,10 @@ jobs:
         run: |
           apt-get update
           apt-get install -y clang-tidy catch2
-          python -m scikit_build_core.build requires | python -c "import sys, json; print(', '.join(json.load(sys.stdin)))" | xargs pip install
+        
+      - name: Install Python build dependencies
+        working-directory: python
+        run: python -m scikit_build_core.build requires | python -c "import sys, json; print(', '.join(json.load(sys.stdin)))" | xargs pip install
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
