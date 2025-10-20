@@ -2,7 +2,7 @@ name: SonarCloud
 on:
   push:
     branches:
-      - main
+      - release
     tags:
       - "v*"
   pull_request:
