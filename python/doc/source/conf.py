@@ -182,7 +182,7 @@ intersphinx_mapping["dolfinx"] = (
 )
 basix_version = "main" if "dev0" in basix.__version__ else "v" + basix.__version__
 intersphinx_mapping["basix"] = (
-    f"https://docs.fenicsproject.org/basix/{basix_version}",
+    f"https://docs.fenicsproject.org/basix/{basix_version}/python/",
     None,
 )
 ffcx_version = "main" if "dev0" in ffcx.__version__ else "v" + ffcx.__version__
