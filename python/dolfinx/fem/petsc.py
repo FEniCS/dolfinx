@@ -879,12 +879,10 @@ class LinearProblem:
             self.solver.getPC().setFieldSplitIS(*fieldsplit_IS)
 
     def __del__(self):
-        self._solver.destroy()
-        self._A.destroy()
-        self._b.destroy()
-        self._x.destroy()
-        if self._P_mat is not None:
-            self._P_mat.destroy()
+        for obj in filter(
+            lambda obj: obj is not None, (self._solver, self._A, self._b, self._x, self._P_mat)
+        ):
+            obj.destroy()
 
     def solve(self) -> _Function | Sequence[_Function]:
         """Solve the problem.
@@ -1359,12 +1357,10 @@ class NonlinearProblem:
         return self.u
 
     def __del__(self):
-        self._snes.destroy()
-        self._x.destroy()
-        self._A.destroy()
-        self._b.destroy()
-        if self._P_mat is not None:
-            self._P_mat.destroy()
+        for obj in filter(
+            lambda obj: obj is not None, (self._snes, self._A, self._b, self._x, self._P_mat)
+        ):
+            obj.destroy()
 
     @property
     def F(self) -> Form | Sequence[Form]:
@@ -1596,6 +1592,10 @@ def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:  
 
     Returns:
         The interpolation matrix :math:`\Pi`.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
     """
     return _interpolation_matrix(V0._cpp_object, V1._cpp_object)
 

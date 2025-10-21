@@ -18,6 +18,7 @@ Public user interface
    dolfinx.graph
    dolfinx.io
    dolfinx.io.gmsh
+   dolfinx.io.vtkhdf
    dolfinx.jit
    dolfinx.la
    dolfinx.la.petsc
@@ -26,6 +27,8 @@ Public user interface
    dolfinx.pkgconfig
    dolfinx.plot
 
+
+.. _dolfinx_cpp_interface:
 
 nanobind/C++interface
 ^^^^^^^^^^^^^^^^^^^^^
