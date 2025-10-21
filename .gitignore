@@ -130,4 +130,5 @@ _petsc*
 core
 log.txt
 
+.pytest_cache/
 .mypy_cache/
