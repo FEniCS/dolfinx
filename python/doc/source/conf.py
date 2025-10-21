@@ -158,13 +158,13 @@ if "dev0" in dolfinx.__version__:
     basix_version = "main"
     ffcx_version = "main"
 else:
-    import ufl
     import basix
     import ffcx
+    import ufl
 
     ufl_version = ufl.__version__
     basix_version = basix.__version__
-    ffcx_version = ffcx.__version__    
+    ffcx_version = ffcx.__version__
 intersphinx_mapping = {
     "basix": (f"https://docs.fenicsproject.org/basix/v{basix_version}/python/", None),
     "ffcx": (f"https://docs.fenicsproject.org/ffcx/v{ffcx_version}/python/", None),
