@@ -6,7 +6,12 @@ import datetime
 import os
 import sys
 
+import mpi4py
 import dolfinx
+import basix
+import ffcx
+import ufl
+import numpy
 
 sys.path.insert(0, os.path.abspath("."))
 import jupytext_process  # isort:skip
@@ -153,27 +158,41 @@ autoclass_content = "both"
 codeautolink_concat_default = True
 
 # The version info for ufl, basix and ffcx used for intersphinx
-if "dev0" in dolfinx.__version__:
-    ufl_version = "main"
-    basix_version = "main"
-    ffcx_version = "main"
-else:
-    import basix
-    import ffcx
-    import ufl
-
-    ufl_version = ufl.__version__
-    basix_version = basix.__version__
-    ffcx_version = ffcx.__version__
 intersphinx_mapping = {
-    "basix": (f"https://docs.fenicsproject.org/basix/v{basix_version}/python/", None),
-    "ffcx": (f"https://docs.fenicsproject.org/ffcx/v{ffcx_version}/python/", None),
-    "ufl": (f"https://docs.fenicsproject.org/ufl/{ufl_version}/python/", None),
-    "mpi4py": ("https://mpi4py.readthedocs.io/en/stable", None),
-    "petsc4py": ("https://petsc.org/release/petsc4py", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "pyvista": ("https://docs.pyvista.org/", None),
+    "petsc4py": (
+        "https://petsc.org/release/petsc4py",
+        None,
+    ),  # PETSc only release one doc version
+    "numpy": (
+        f"https://numpy.org/doc/{''.join(numpy.__version__.split('.')[:-1])}/",  # Numpy is major.minor
+        None,
+    ),
+    "pyvista": (
+        "https://docs.pyvista.org/",
+        None,
+    ),  # PyVista only release one doc version
 }
+
+intersphinx_mapping["dolfinx"] = (
+    f"https://docs.fenicsproject.org/dolfinx/{'main' if 'dev0' in dolfinx.__version__ else 'v' + dolfinx.__version__}/python/",
+    None,
+)
+intersphinx_mapping["basix"] = (
+    f"https://docs.fenicsproject.org/basix/{'main' if 'dev0' in basix.__version__ else 'v' + basix.__version__}",
+    None,
+)
+intersphinx_mapping["ffcx"] = (
+    f"https://docs.fenicsproject.org/ffcx/{'main' if 'dev0' in ffcx.__version__ else 'v' + ffcx.__version__}",
+    None,
+)
+intersphinx_mapping["ufl"] = (
+    f"https://docs.fenicsproject.org/ufl/{'main' if 'dev0' in ufl.__version__ else ufl.__version__}",
+    None,
+)
+intersphinx_mapping["mpi4py"] = (
+    f"https://mpi4py.readthedocs.io/en/{mpi4py.__version__}/",
+    None,
+)
 
 napoleon_google_docstring = True
 napoleon_use_admonition_for_notes = False
