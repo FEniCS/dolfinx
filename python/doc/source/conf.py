@@ -7,11 +7,13 @@ import os
 import sys
 
 import mpi4py
-import dolfinx
+
+import numpy as np
+
 import basix
+import dolfinx
 import ffcx
 import ufl
-import numpy
 
 sys.path.insert(0, os.path.abspath("."))
 import jupytext_process  # isort:skip
@@ -164,7 +166,7 @@ intersphinx_mapping = {
         None,
     ),  # PETSc only release one doc version
     "numpy": (
-        f"https://numpy.org/doc/{''.join(numpy.__version__.split('.')[:-1])}/",  # Numpy is major.minor
+        f"https://numpy.org/doc/{''.join(np.__version__.split('.')[:-1])}/",  # major.minor
         None,
     ),
     "pyvista": (
@@ -173,20 +175,24 @@ intersphinx_mapping = {
     ),  # PyVista only release one doc version
 }
 
+dolfinx_version = "main" if "dev0" in dolfinx.__version__ else "v" + dolfinx.__version__
 intersphinx_mapping["dolfinx"] = (
-    f"https://docs.fenicsproject.org/dolfinx/{'main' if 'dev0' in dolfinx.__version__ else 'v' + dolfinx.__version__}/python/",
+    f"https://docs.fenicsproject.org/dolfinx/{dolfinx_version}/python/",
     None,
 )
+basix_version = "main" if "dev0" in basix.__version__ else "v" + basix.__version__
 intersphinx_mapping["basix"] = (
-    f"https://docs.fenicsproject.org/basix/{'main' if 'dev0' in basix.__version__ else 'v' + basix.__version__}",
+    f"https://docs.fenicsproject.org/basix/{basix_version}",
     None,
 )
+ffcx_version = "main" if "dev0" in ffcx.__version__ else "v" + ffcx.__version__
 intersphinx_mapping["ffcx"] = (
-    f"https://docs.fenicsproject.org/ffcx/{'main' if 'dev0' in ffcx.__version__ else 'v' + ffcx.__version__}",
+    f"https://docs.fenicsproject.org/ffcx/{ffcx_version}",
     None,
 )
+ufl_version = "main" if "dev0" in ufl.__version__ else ufl.__version__
 intersphinx_mapping["ufl"] = (
-    f"https://docs.fenicsproject.org/ufl/{'main' if 'dev0' in ufl.__version__ else ufl.__version__}",
+    f"https://docs.fenicsproject.org/ufl/{ufl_version}",
     None,
 )
 intersphinx_mapping["mpi4py"] = (
