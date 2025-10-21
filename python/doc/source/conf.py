@@ -152,10 +152,23 @@ autoclass_content = "both"
 
 codeautolink_concat_default = True
 
+# The version info for ufl, basix and ffcx used for intersphinx
+if "dev0" in dolfinx.__version__:
+    ufl_version = "main"
+    basix_version = "main"
+    ffcx_version = "main"
+else:
+    import ufl
+    import basix
+    import ffcx
+
+    ufl_version = ufl.__version__
+    basix_version = basix.__version__
+    ffcx_version = ffcx.__version__    
 intersphinx_mapping = {
-    "basix": ("https://docs.fenicsproject.org/basix/main/python/", None),
-    "ffcx": ("https://docs.fenicsproject.org/ffcx/main/", None),
-    "ufl": ("https://docs.fenicsproject.org/ufl/main/", None),
+    "basix": (f"https://docs.fenicsproject.org/basix/v{basix_version}/python/", None),
+    "ffcx": (f"https://docs.fenicsproject.org/ffcx/v{ffcx_version}/python/", None),
+    "ufl": (f"https://docs.fenicsproject.org/ufl/{ufl_version}/python/", None),
     "mpi4py": ("https://mpi4py.readthedocs.io/en/stable", None),
     "petsc4py": ("https://petsc.org/release/petsc4py", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
