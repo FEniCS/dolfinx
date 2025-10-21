@@ -47,8 +47,7 @@ from dolfinx.common import (
 
 from importlib.metadata import metadata
 
-meta = metadata("fenics-dolfinx")
-__version__ = meta["Version"]
+__version__ = metadata("fenics-dolfinx")["Version"]
 
 _cpp.common.init_logging(sys.argv)
 del _cpp, sys
