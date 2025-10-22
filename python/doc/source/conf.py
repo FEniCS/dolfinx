@@ -185,19 +185,19 @@ intersphinx_mapping = {
         f"https://mpi4py.readthedocs.io/en/{mpi4py.__version__}",
         None,
     ),
-    "dolfinx" = (
+    "dolfinx": (
         f"https://docs.fenicsproject.org/dolfinx/{dolfinx_version}/python",
         None,
     ),
-    "basix" = (
+    "basix": (
         f"https://docs.fenicsproject.org/basix/{basix_version}/python",
         None,
     ),
-    "ffcx" = (
+    "ffcx": (
         f"https://docs.fenicsproject.org/ffcx/{ffcx_version}",
         None,
     ),
-    "ufl" = (
+    "ufl": (
         f"https://docs.fenicsproject.org/ufl/{ufl_version}",
         None,
     )
