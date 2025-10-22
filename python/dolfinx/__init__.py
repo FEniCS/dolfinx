@@ -44,7 +44,10 @@ from dolfinx.common import (
     has_slepc,
     ufcx_signature,
 )
-from dolfinx.cpp import __version__
+
+from importlib.metadata import metadata
+
+__version__ = metadata("fenics-dolfinx")["Version"]
 
 _cpp.common.init_logging(sys.argv)
 del _cpp, sys
