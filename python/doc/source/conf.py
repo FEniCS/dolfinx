@@ -163,18 +163,17 @@ dolfinx_version = "main" if "dev0" in dolfinx.__version__ else "v" + dolfinx.__v
 basix_version = "main" if "dev0" in basix.__version__ else "v" + basix.__version__
 ffcx_version = "main" if "dev0" in ffcx.__version__ else "v" + ffcx.__version__
 ufl_version = "main" if "dev0" in ufl.__version__ else ufl.__version__
-numpy_version = "".join(np.__version__.split(".")[:-1])
+numpy_version = "".join(np.__version__.split(".")[:-1]) # major.minor
 
-# The version info for ufl, basix and ffcx used for intersphinx.
-# Note that as of late 2025 pyvista and petsc4py only have docs
-# for the latest releases.
+# Note that as of late 2025 pyvista and petsc4py only have docs for the latest
+# releases.
 intersphinx_mapping = {
     "petsc4py": (
         "https://petsc.org/release/petsc4py",
         None,
     ),
     "numpy": (
-        f"https://numpy.org/doc/{numpy_version}",  # major.minor
+        f"https://numpy.org/doc/{numpy_version}",
         None,
     ),
     "pyvista": (
