@@ -160,7 +160,7 @@ autoclass_content = "both"
 
 codeautolink_concat_default = True
 
-intersphinx_resolve_self = 'dolfinx'
+intersphinx_resolve_self = "dolfinx"
 
 # Could be reimplemented using packaging.version
 basix_version = "main" if "dev0" in basix.__version__ else "v" + basix.__version__
@@ -187,10 +187,6 @@ intersphinx_mapping = {
     ),
     "mpi4py": (
         f"https://mpi4py.readthedocs.io/en/{mpi4py.__version__}",
-        None,
-    ),
-    "dolfinx": (
-        f"https://docs.fenicsproject.org/dolfinx/{dolfinx_version}/python",
         None,
     ),
     "basix": (
