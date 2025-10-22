@@ -9,6 +9,7 @@ import sys
 import mpi4py
 
 import numpy as np
+import packaging
 
 import basix
 import dolfinx
@@ -159,11 +160,14 @@ autoclass_content = "both"
 
 codeautolink_concat_default = True
 
+# Could be reimplemented using packaging.version
 dolfinx_version = "main" if "dev0" in dolfinx.__version__ else "v" + dolfinx.__version__
 basix_version = "main" if "dev0" in basix.__version__ else "v" + basix.__version__
 ffcx_version = "main" if "dev0" in ffcx.__version__ else "v" + ffcx.__version__
 ufl_version = "main" if "dev0" in ufl.__version__ else ufl.__version__
-numpy_version = "".join(np.__version__.split(".")[:-1]) # major.minor
+
+numpy_version = packaging.version.parse(np.__version__)
+numpy_doc_version = f"{numpy_version.major}.{numpy_version.minor}"
 
 # Note that as of late 2025 pyvista and petsc4py only have docs for the latest
 # releases.
@@ -173,7 +177,7 @@ intersphinx_mapping = {
         None,
     ),
     "numpy": (
-        f"https://numpy.org/doc/{numpy_version}",
+        f"https://numpy.org/doc/{numpy_doc_version}",
         None,
     ),
     "pyvista": (
