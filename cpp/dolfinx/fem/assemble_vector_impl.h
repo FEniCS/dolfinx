@@ -1319,15 +1319,15 @@ void assemble_vector(
         assert((entities.size() / 2) * cstride == coeffs.size());
         if (bs == 1)
         {
-          impl::assemble_entities<1>(
-              P0, b, x_dofmap, x, entities, {dofs, bs, entities1}, fn,
+          impl::assemble_entities(
+              P0, b, x_dofmap, x, entities, {dofs, BS<1>(), entities1}, fn,
               constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
               cell_info0, perms);
         }
         else if (bs == 3)
         {
-          impl::assemble_entities<3>(
-              P0, b, x_dofmap, x, entities, {dofs, bs, entities1}, fn,
+          impl::assemble_entities(
+              P0, b, x_dofmap, x, entities, {dofs, BS<3>(), entities1}, fn,
               constants,
               md::mdspan(coeffs.data(), entities.size() / 2, cstride),
               cell_info0, perms);
