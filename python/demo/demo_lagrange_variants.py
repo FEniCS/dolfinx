@@ -10,7 +10,12 @@
 
 # # Variants of Lagrange elements
 #
-# This demo ({download}`demo_lagrange_variants.py`) illustrates how to:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_lagrange_variants.py>`
+# * {download}`Jupyter notebook <./demo_lagrange_variants.ipynb>`
+# ```
+# This demo illustrates how to:
 #
 # - Define finite elements directly using Basix
 # - Create variants of Lagrange finite elements

@@ -10,16 +10,25 @@
 
 # # Divergence conforming discontinuous Galerkin method for the Navier--Stokes equations # noqa
 #
-# This demo ({download}`demo_navier-stokes.py`) illustrates how to
-# implement a divergence conforming discontinuous Galerkin method for
-# the Navier-Stokes equations in FEniCSx. The method conserves mass
-# exactly and uses upwinding. The formulation is based on a combination
-# of "A fully divergence-free finite element method for
-# magnetohydrodynamic equations" by Hiptmair et al., "A Note on
-# Discontinuous Galerkin Divergence-free Solutions of the Navier-Stokes
-# Equations" by Cockburn et al, and "On the Divergence Constraint in
-# Mixed Finite Element Methods for Incompressible Flows" by John et al.
-#
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_navier-stokes.py>`
+# * {download}`Jupyter notebook <./demo_navier-stokes.ipynb>`
+# ```
+# This demo illustrates how to:
+# - Implement a divergence conforming discontinuous Galerkin method
+#   for the Navier-Stokes equations.
+# - Tune MUMPS to support singular systems.
+# discontinuous Galerkin method for the Navier-Stokes equations.
+# The method conserves mass exactly and uses upwinding.
+# The formulation is based on a combination of [A fully divergence-free
+# finite element method for magnetohydrodynamic equations](
+# https://doi.org/10.1142/S0218202518500173) by Hiptmair et al.,
+# [A Note on Discontinuous Galerkin Divergence-free Solutions of the
+# Navier-Stokes Equations](https://doi.org/10.1007/s10915-006-9107-7)
+# by Cockburn et al, and [On the Divergence Constraint in Mixed Finite
+# Element Methods for Incompressible Flows](https://doi.org/10.1137/15M1047696)
+# by John et al.
 #
 # ## Governing equations
 #
@@ -274,8 +283,8 @@ def jump(phi, n):
 
 # -
 
-# We solve the Stokes problem for the initial condition, omitting the
-# convective term:
+# We set up the variational formulation of the Stokes problem for
+# the initial condition, omitting the convective term:
 
 # +
 a = (1.0 / Re) * (
@@ -299,23 +308,27 @@ L = ufl.inner(f, v) * ufl.dx + (1 / Re) * (
     + (alpha / h) * ufl.inner(ufl.outer(u_D, n), ufl.outer(v, n)) * ufl.ds
 )
 L += ufl.inner(fem.Constant(msh, default_real_type(0.0)), q) * ufl.dx
+# -
 
-# Boundary conditions
+# We create the {py:class}`Dirichlet boundary condition
+# <dolfinx.fem.DirichletBC>`
+
 msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
 boundary_facets = mesh.exterior_facet_indices(msh.topology)
 boundary_vel_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, boundary_facets)
 bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 bcs = [bc_u]
 
+# and solve the problem for the initial condition
 
-# Assemble Stokes problem
+# +
 solver_options = {
     "ksp_type": "preonly",
     "pc_type": "lu",
     "pc_factor_mat_solver_type": "mumps",
     "mat_mumps_icntl_14": 80,  # Increase MUMPS working memory
-    "mat_mumps_icntl_24": 1,  # Option to support solving a singular matrix (pressure nullspace)
-    "mat_mumps_icntl_25": 0,  # Option to support solving a singular matrix (pressure nullspace)
+    "mat_mumps_icntl_24": 1,  # Support solving a singular matrix (pressure nullspace)
+    "mat_mumps_icntl_25": 0,  # Support solving a singular matrix (pressure nullspace)
     "ksp_error_if_not_converged": 1,
 }
 u_h = fem.Function(V)
@@ -340,18 +353,19 @@ except PETSc.Error as e:  # type: ignore
         exit(0)
     else:
         raise e
+# -
 
 # Subtract the average of the pressure since it is only determined up to
 # a constant
+
 p_h.x.array[:] -= domain_average(msh, p_h)
 
-u_vis = fem.Function(W)
-u_vis.name = "u"
-u_vis.interpolate(u_h)
-
 # Write initial condition to file
+
 t = 0.0
 if has_adios2:
+    u_vis = fem.Function(W, name="u_init")
+    u_vis.interpolate(u_h)
     u_file = io.VTXWriter(msh.comm, "u.bp", u_vis)
     p_file = io.VTXWriter(msh.comm, "p.bp", p_h)
     u_file.write(t)
@@ -360,11 +374,13 @@ else:
     print("File output requires ADIOS2.")
 
 # Create function to store solution and previous time step
-u_n = fem.Function(V)
-u_n.x.array[:] = u_h.x.array
-# -
 
-# Now we add the time stepping and convective terms
+u_n = fem.Function(V, name="u_prev")
+u_n.x.array[:] = u_h.x.array
+
+# Now we add the time stepping and convective terms and
+# set up the {py:class}`LinearProblem
+# <dolfinx.fem.petsc.LinearProblem>`
 
 # +
 lmbda = ufl.conditional(ufl.gt(ufl.dot(u_n, n), 0), 1, 0)
@@ -391,22 +407,22 @@ navier_stokes_problem = LinearProblem(
     petsc_options_prefix="demo_stokes__navier_stokes_problem_",
     petsc_options=solver_options,
 )
+# -
 
-# Time stepping loop
+# We perform the time-stepping as a for-loop
+
+# +
 for n in range(num_time_steps):
     t += delta_t.value
 
     navier_stokes_problem.solve()
     p_h.x.array[:] -= domain_average(msh, p_h)
 
-    u_vis.interpolate(u_h)
-
     # Write to file
-    try:
+    if has_adios2:
+        u_vis.interpolate(u_h)
         u_file.write(t)
         p_file.write(t)
-    except NameError:
-        pass
 
     # Update u_n
     u_n.x.array[:] = u_h.x.array
@@ -434,14 +450,16 @@ p_e.interpolate(p_e_expr)
 # Compute errors
 e_u = norm_L2(msh.comm, u_h - u_e)
 e_div_u = norm_L2(msh.comm, ufl.div(u_h))
+# -
 
-# This scheme conserves mass exactly, so check this
+# This scheme conserves mass exactly, so we check this
+
+# +
 assert np.isclose(e_div_u, 0.0, atol=float(1.0e5 * np.finfo(default_real_type).eps))
 p_e_avg = domain_average(msh, p_e)
 e_p = norm_L2(msh.comm, p_h - (p_e - p_e_avg))
 
-if msh.comm.rank == 0:
-    print(f"e_u = {e_u}")
-    print(f"e_div_u = {e_div_u}")
-    print(f"e_p = {e_p}")
+PETSc.Sys.Print(f"e_u = {e_u:.5e}")
+PETSc.Sys.Print(f"e_div_u = {e_div_u:.5e}")
+PETSc.Sys.Print(f"e_p = {e_p:.5e}")
 # -

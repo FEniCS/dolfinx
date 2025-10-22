@@ -1,11 +1,11 @@
 name: CI
 
 on:
-  # push:
-  #   branches:
-  #     - "**"
-  #   tags:
-  #     - "v*"
+  push:
+    branches:
+      - release
+    tags:
+      - "v*"
   pull_request:
     branches:
       - main
@@ -72,6 +72,7 @@ jobs:
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
       OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
+      PYTEST_ADDOPTS: "-W error"
 
     name: Build and test
     steps:
@@ -176,6 +177,7 @@ jobs:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
+      PYTEST_ADDOPTS: "-W error"
 
     name: Build and test (${{ matrix.petsc_arch }}, ${{ matrix.docker_image }})
     steps:

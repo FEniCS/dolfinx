@@ -24,7 +24,10 @@ Note:
 from __future__ import annotations
 
 import contextlib
+import ctypes as _ctypes
 import functools
+import os
+import pathlib
 from collections.abc import Sequence
 
 from petsc4py import PETSc
@@ -68,11 +71,14 @@ __all__ = [
     "assemble_residual",
     "assemble_vector",
     "assign",
+    "cffi_utils",
     "create_matrix",
     "create_vector",
+    "ctypes_utils",
     "discrete_curl",
     "discrete_gradient",
     "interpolation_matrix",
+    "numba_utils",
     "set_bc",
 ]
 
@@ -444,7 +450,9 @@ def _(
         for index in range(2):
             # the check below is to ensure that a .dofmaps attribute is
             # available when creating is0 and is1 below
-            if all(Vsub is None for Vsub in V[index]):
+            Vi = V[index]
+            assert isinstance(Vi, list)
+            if all(Vsub is None for Vsub in Vi):
                 raise ValueError(
                     "Cannot have a entire {'row' if index == 0 else 'column'} of a full of None"
                 )
@@ -778,14 +786,8 @@ class LinearProblem:
                 option values.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
-                as the integration domain, ``entity_maps`` must be
-                supplied.
-                For each key (a mesh, different to the integration domain
-                mesh) a map should be provided relating the entities in the
-                integration domain mesh to the entities in the key mesh
-                e.g. for a key-value pair (msh, emap) in ``entity_maps``,
-                ``emap[i]`` is the entity in ``msh`` corresponding to
-                entity ``i`` in the integration domain mesh.
+                as the integration domain, a corresponding :class:
+                `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
         """
         self._a = _create_form(
             a,
@@ -877,12 +879,10 @@ class LinearProblem:
             self.solver.getPC().setFieldSplitIS(*fieldsplit_IS)
 
     def __del__(self):
-        self._solver.destroy()
-        self._A.destroy()
-        self._b.destroy()
-        self._x.destroy()
-        if self._P_mat is not None:
-            self._P_mat.destroy()
+        for obj in filter(
+            lambda obj: obj is not None, (self._solver, self._A, self._b, self._x, self._P_mat)
+        ):
+            obj.destroy()
 
     def solve(self) -> _Function | Sequence[_Function]:
         """Solve the problem.
@@ -1074,7 +1074,7 @@ def assemble_residual(
     # Lift vector
     if isinstance(jacobian, Sequence):
         # Nest and blocked lifting
-        bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)
+        bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)  # type: ignore[arg-type]
         apply_lifting(b, jacobian, bcs=bcs1, x0=x, alpha=-1.0)
         dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[attr-defined]
         bcs0 = _bcs_by_block(_extract_function_spaces(residual), bcs)  # type: ignore[arg-type]
@@ -1232,14 +1232,8 @@ class NonlinearProblem:
                 values.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
-                as the integration domain, ``entity_maps`` must be
-                supplied. For each key (a mesh, different to the
-                integration domain mesh) a map should be provided relating
-                the entities in the integration domain mesh to the entities
-                in the key mesh e.g. for a key-value pair ``(msh, emap)``
-                in ``entity_maps``, ``emap[i]`` is the entity in ``msh``
-                corresponding to entity ``i`` in the integration domain
-                mesh.
+                as the integration domain, a corresponding :class:
+                `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
         """
         # Compile residual and Jacobian forms
         self._F = _create_form(
@@ -1363,12 +1357,10 @@ class NonlinearProblem:
         return self.u
 
     def __del__(self):
-        self._snes.destroy()
-        self._x.destroy()
-        self._A.destroy()
-        self._b.destroy()
-        if self._P_mat is not None:
-            self._P_mat.destroy()
+        for obj in filter(
+            lambda obj: obj is not None, (self._snes, self._A, self._b, self._x, self._P_mat)
+        ):
+            obj.destroy()
 
     @property
     def F(self) -> Form | Sequence[Form]:
@@ -1600,6 +1592,10 @@ def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:  
 
     Returns:
         The interpolation matrix :math:`\Pi`.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
     """
     return _interpolation_matrix(V0._cpp_object, V1._cpp_object)
 
@@ -1660,3 +1656,256 @@ def _(x: PETSc.Vec, u: _Function | Sequence[_Function]):  # type: ignore[name-de
             dolfinx.la.petsc.assign(x, data0 + data1)
         else:
             dolfinx.la.petsc.assign(x, u.x.array)
+
+
+def get_petsc_lib() -> pathlib.Path:
+    """Find the full path of the PETSc shared library.
+
+    Returns:
+        Full path to the PETSc shared library.
+
+    Raises:
+        RuntimeError: If PETSc library cannot be found for if more than
+            one library is found.
+    """
+    import petsc4py as _petsc4py
+
+    petsc_dir = _petsc4py.get_config()["PETSC_DIR"]
+    petsc_arch = _petsc4py.lib.getPathArchPETSc()[1]
+    candidate_paths = [
+        os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
+        os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"),
+    ]
+    exists_paths = []
+    for candidate_path in candidate_paths:
+        if os.path.exists(candidate_path):
+            exists_paths.append(candidate_path)
+
+    if len(exists_paths) == 0:
+        raise RuntimeError(
+            f"Could not find a PETSc shared library. Candidate paths: {candidate_paths}"
+        )
+    elif len(exists_paths) > 1:
+        raise RuntimeError(f"More than one PETSc shared library found. Paths: {exists_paths}")
+
+    return pathlib.Path(exists_paths[0])
+
+
+class numba_utils:
+    """Utility attributes for working with Numba and PETSc.
+
+    These attributes are convenience functions for calling PETSc C
+    functions from within Numba functions.
+
+    Note:
+        `Numba <https://numba.pydata.org/>`_ must be available
+        to use these utilities.
+
+    Examples:
+        A typical use of these utility functions is::
+
+            import numpy as np
+            import numpy.typing as npt
+            def set_vals(A: int,
+                         m: int, rows: npt.NDArray[PETSc.IntType],
+                         n: int, cols: npt.NDArray[PETSc.IntType],
+                         data: npt.NDArray[PETSc.ScalarTYpe], mode: int):
+                MatSetValuesLocal(A, m, rows.ctypes, n, cols.ctypes,
+                                  data.ctypes, mode)
+    """
+
+    try:
+        import petsc4py.PETSc as _PETSc
+
+        import llvmlite as _llvmlite
+        import numba as _numba
+
+        _llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
+
+        _int = _numba.from_dtype(_PETSc.IntType)  # type: ignore
+        _scalar = _numba.from_dtype(_PETSc.ScalarType)  # type: ignore
+        _real = _numba.from_dtype(_PETSc.RealType)  # type: ignore
+        _int_ptr = _numba.core.types.CPointer(_int)
+        _scalar_ptr = _numba.core.types.CPointer(_scalar)
+        _MatSetValues_sig = _numba.core.typing.signature(
+            _numba.core.types.intc,
+            _numba.core.types.uintp,
+            _int,
+            _int_ptr,
+            _int,
+            _int_ptr,
+            _scalar_ptr,
+            _numba.core.types.intc,
+        )
+        MatSetValuesLocal = _numba.core.types.ExternalFunction(
+            "MatSetValuesLocal", _MatSetValues_sig
+        )
+        """See PETSc `MatSetValuesLocal
+        <https://petsc.org/release/manualpages/Mat/MatSetValuesLocal>`_
+        documentation."""
+
+        MatSetValuesBlockedLocal = _numba.core.types.ExternalFunction(
+            "MatSetValuesBlockedLocal", _MatSetValues_sig
+        )
+        """See PETSc `MatSetValuesBlockedLocal
+        <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
+        documentation."""
+    except ImportError:
+        pass
+
+
+class ctypes_utils:
+    """Utility attributes for working with ctypes and PETSc.
+
+    These attributes are convenience functions for calling PETSc C
+    functions, typically from within Numba functions.
+
+    Examples:
+        A typical use of these utility functions is::
+
+            import numpy as np
+            import numpy.typing as npt
+            def set_vals(A: int,
+                         m: int, rows: npt.NDArray[PETSc.IntType],
+                         n: int, cols: npt.NDArray[PETSc.IntType],
+                         data: npt.NDArray[PETSc.ScalarTYpe], mode: int):
+                MatSetValuesLocal(A, m, rows.ctypes, n, cols.ctypes,
+                                  data.ctypes, mode)
+    """
+
+    try:
+        import petsc4py.PETSc as _PETSc
+
+        _lib_ctypes = _ctypes.cdll.LoadLibrary(str(get_petsc_lib()))
+
+        # Note: ctypes does not have complex types, hence we use void* for
+        # scalar data
+        _int = np.ctypeslib.as_ctypes_type(_PETSc.IntType)  # type: ignore
+
+        MatSetValuesLocal = _lib_ctypes.MatSetValuesLocal
+        """See PETSc `MatSetValuesLocal
+        <https://petsc.org/release/manualpages/Mat/MatSetValuesLocal>`_
+        documentation."""
+        MatSetValuesLocal.argtypes = [
+            _ctypes.c_void_p,
+            _int,
+            _ctypes.POINTER(_int),
+            _int,
+            _ctypes.POINTER(_int),
+            _ctypes.c_void_p,
+            _ctypes.c_int,
+        ]
+
+        MatSetValuesBlockedLocal = _lib_ctypes.MatSetValuesBlockedLocal
+        """See PETSc `MatSetValuesBlockedLocal
+        <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
+        documentation."""
+        MatSetValuesBlockedLocal.argtypes = [
+            _ctypes.c_void_p,
+            _int,
+            _ctypes.POINTER(_int),
+            _int,
+            _ctypes.POINTER(_int),
+            _ctypes.c_void_p,
+            _ctypes.c_int,
+        ]
+    except ImportError:
+        pass
+
+
+class cffi_utils:
+    """Utility attributes for working with CFFI (ABI mode) and Numba.
+
+    Registers Numba's complex types with CFFI.
+
+    If PETSc is available, CFFI convenience functions for calling PETSc C
+    functions are also created. These are typically called from within
+    Numba functions.
+
+    Note:
+        `CFFI <https://cffi.readthedocs.io/>`_ and  `Numba
+        <https://numba.pydata.org/>`_ must be available to use these
+        utilities.
+
+    Examples:
+        A typical use of these utility functions is::
+
+            import numpy as np
+            import numpy.typing as npt
+            def set_vals(A: int,
+                         m: int, rows: npt.NDArray[PETSc.IntType],
+                         n: int, cols: npt.NDArray[PETSc.IntType],
+                         data: npt.NDArray[PETSc.ScalarType], mode: int):
+                MatSetValuesLocal(A, m, ffi.from_buffer(rows), n,
+                                  ffi.from_buffer(cols),
+                                  ffi.from_buffer(rows(data), mode)
+    """
+
+    import cffi as _cffi
+
+    _ffi = _cffi.FFI()
+
+    try:
+        import numba as _numba
+        import numba.core.typing.cffi_utils as _cffi_support
+
+        # Register complex types
+        _cffi_support.register_type(_ffi.typeof("float _Complex"), _numba.types.complex64)
+        _cffi_support.register_type(_ffi.typeof("double _Complex"), _numba.types.complex128)
+
+    except KeyError:
+        pass
+    except ImportError:
+        from dolfinx.log import LogLevel, log
+
+        log(
+            LogLevel.DEBUG,
+            "Could not import numba, so cffi/numba complex types were not registered.",
+        )
+
+    try:
+        from petsc4py import PETSc as _PETSc
+
+        _lib_cffi = _ffi.dlopen(str(get_petsc_lib()))
+
+        _CTYPES = {
+            np.int32: "int32_t",
+            np.int64: "int64_t",
+            np.float32: "float",
+            np.float64: "double",
+            np.complex64: "float _Complex",
+            np.complex128: "double _Complex",
+            np.longlong: "long long",
+        }
+
+        _c_int_t = _CTYPES[_PETSc.IntType]  # type: ignore
+        _c_scalar_t = _CTYPES[_PETSc.ScalarType]  # type: ignore
+        _ffi.cdef(
+            f"""
+                int MatSetValuesLocal(void* mat, {_c_int_t} nrow, const {_c_int_t}* irow,
+                                    {_c_int_t} ncol, const {_c_int_t}* icol,
+                                    const {_c_scalar_t}* y, int addv);
+                int MatSetValuesBlockedLocal(void* mat, {_c_int_t} nrow, const {_c_int_t}* irow,
+                                    {_c_int_t} ncol, const {_c_int_t}* icol,
+                                    const {_c_scalar_t}* y, int addv);
+                                    """
+        )
+
+        MatSetValuesLocal = _lib_cffi.MatSetValuesLocal  # type: ignore[attr-defined]
+        """See PETSc `MatSetValuesLocal
+        <https://petsc.org/release/manualpages/Mat/MatSetValuesLocal>`_
+        documentation."""
+
+        MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal  # type: ignore[attr-defined]
+        """See PETSc `MatSetValuesBlockedLocal
+        <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
+        documentation."""
+    except KeyError:
+        pass
+    except ImportError:
+        from dolfinx.log import LogLevel, log
+
+        log(
+            LogLevel.DEBUG,
+            "Could not import petsc4py, so cffi/PETSc ABI mode interface was not created.",
+        )

@@ -10,9 +10,25 @@
 
 # # Stokes equations using Taylor-Hood elements
 #
-# This demo is implemented in {download}`demo_stokes.py`. It shows how
-# to solve the Stokes problem using Taylor-Hood elements using different
-# linear solvers.
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_stokes.py>`
+# * {download}`Jupyter notebook <./demo_stokes.ipynb>`
+# ```
+# It shows how to solve the Stokes problem using Taylor-Hood elements
+# using different linear solvers:
+#
+# 1. [Block preconditioner using PETSc Nest data structures using
+#    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
+#    ](#high-level-nested-matrix-solver)
+# 1. [Block preconditioner using PETSc Nest data structures using
+#    PETSc directly](#low-level-nested-matrix-solver)
+# 1. [Block preconditioner with the `u` and `p` fields stored block-wise
+#    in a single matrix](#monolithic-block-iterative-solver)
+# 1. [Direct solver with the `u` and `p` fields stored block-wise in a
+#    single matrix](#monolithic-block-direct-solver)
+# 1. [Direct solver with the `u` and `p` fields stored in a mixed fashion a
+#    single matrix](#non-blocked-direct-solver)
 #
 # ## Equation and problem definition
 #
@@ -72,19 +88,6 @@
 #
 #
 # ## Implementation
-#
-# The Stokes problem using Taylor-Hood elements is solved using:
-# 1. [Block preconditioner using PETSc Nest data structures using
-#    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
-#    ](#high-level-nested-matrix-solver)
-# 1. [Block preconditioner using PETSc Nest data structures using
-#    PETSc directly](#low-level-nested-matrix-solver)
-# 1. [Block preconditioner with the `u` and `p` fields stored block-wise
-#    in a single matrix](#monolithic-block-iterative-solver)
-# 1. [Direct solver with the `u` and `p` fields stored block-wise in a
-#    single matrix](#monolithic-block-direct-solver)
-# 1. [Direct solver with the `u` and `p` fields stored in a mixed fashion a
-#    single matrix](#non-blocked-direct-solver)
 #
 # The required modules are first imported:
 

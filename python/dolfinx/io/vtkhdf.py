@@ -21,6 +21,8 @@ from dolfinx.cpp.io import (
 )
 from dolfinx.mesh import Mesh
 
+__all__ = ["read_mesh", "write_cell_data", "write_mesh", "write_point_data"]
+
 
 def read_mesh(
     comm: _MPI.Comm,

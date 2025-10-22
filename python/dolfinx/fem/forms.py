@@ -167,6 +167,11 @@ def get_integration_domains(
                 subdomain._cpp_object.topology.create_connectivity(0, tdim)
                 subdomain._cpp_object.topology.create_connectivity(tdim, 0)
 
+            if integral_type is IntegralType.ridge:
+                tdim = subdomain.topology.dim
+                subdomain._cpp_object.topology.create_connectivity(tdim - 2, tdim)
+                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 2)
+
             # Compute integration domains only for each subdomain id in
             # the integrals. If a process has no integral entities,
             # insert an empty array.
@@ -220,6 +225,7 @@ _ufl_to_dolfinx_domain = {
     "exterior_facet": IntegralType.exterior_facet,
     "interior_facet": IntegralType.interior_facet,
     "vertex": IntegralType.vertex,
+    "ridge": IntegralType.ridge,
 }
 
 
@@ -358,6 +364,9 @@ def form(
 
         # For each argument in form extract its function space
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+        part = form_compiler_options.get("part", "full")
+        if part == "diagonal":
+            V = [V[0]]
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
@@ -370,7 +379,7 @@ def form(
 
         # Extract subdomain ids from ufcx_form
         subdomain_ids = {type: [] for type in sd.get(domain).keys()}
-        integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(5)]
+        integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(6)]
         for i in range(len(integral_offsets) - 1):
             integral_type = IntegralType(i)
             for j in range(integral_offsets[i], integral_offsets[i + 1]):
