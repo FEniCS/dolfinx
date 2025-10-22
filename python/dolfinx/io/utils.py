@@ -135,6 +135,8 @@ class VTKFile(_cpp.io.VTKFile):
 
 
 class XDMFFile(_cpp.io.XDMFFile):
+    Encoding = _cpp.io.XDMFFile.Encoding
+
     def __enter__(self):
         return self
 

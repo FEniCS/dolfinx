@@ -255,7 +255,7 @@ class DirichletBC
 {
 private:
   /// Compute number of owned dofs indices. Will contain 'gaps' for
-  /// sub-spaces.
+  /// sub-spaces. The dofs must be unrolled.
   std::size_t num_owned(const DofMap& dofmap,
                         std::span<const std::int32_t> dofs)
   {
@@ -325,8 +325,7 @@ public:
                                    std::vector<std::int32_t>>
   DirichletBC(std::shared_ptr<const Constant<T>> g, X&& dofs,
               std::shared_ptr<const FunctionSpace<U>> V)
-      : _function_space(V), _g(g), _dofs0(std::forward<X>(dofs)),
-        _owned_indices0(num_owned(*V->dofmap(), _dofs0))
+      : _function_space(V), _g(g), _dofs0(std::forward<X>(dofs))
   {
     assert(g);
     assert(V);
@@ -352,10 +351,9 @@ public:
 
     // Unroll _dofs0 if dofmap block size > 1
     if (const int bs = V->dofmap()->bs(); bs > 1)
-    {
-      _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
-    }
+
+    _owned_indices0 = num_owned(*_function_space->dofmap(), _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -375,17 +373,15 @@ public:
                                    std::vector<std::int32_t>>
   DirichletBC(std::shared_ptr<const Function<T, U>> g, X&& dofs)
       : _function_space(g->function_space()), _g(g),
-        _dofs0(std::forward<X>(dofs)),
-        _owned_indices0(num_owned(*_function_space->dofmap(), _dofs0))
+        _dofs0(std::forward<X>(dofs))
   {
     assert(_function_space);
 
     // Unroll _dofs0 if dofmap block size > 1
     if (const int bs = _function_space->dofmap()->bs(); bs > 1)
-    {
-      _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
-    }
+
+    _owned_indices0 = num_owned(*_function_space->dofmap(), _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition

@@ -1,22 +1,24 @@
-# # Electromagnetic scattering from a wire with perfectly matched layer condition # noqa
+# # Electromagnetic scattering from a wire with PML
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This demo is implemented in three files: one for the mesh generation
-# with Gmsh, one for the calculation of analytical efficiencies, and one
-# for the variational forms and the solver. It illustrates how to:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_pml.py>`
+# * {download}`Jupyter notebook <./demo_pml.ipynb>`
+# ```
 #
+# This demo illustrates how to:
 # - Use complex quantities in FEniCSx
 # - Setup and solve Maxwell's equations
-# - Implement (rectangular) perfectly matched layers
-#
-# ## Equations, problem definition and implementation
+# - Implement (rectangular) perfectly matched layers (PMLs)
 #
 # First, we import the required modules
 
 # +
 import sys
-from functools import partial
+from functools import partial, reduce
+from pathlib import Path
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -46,7 +48,7 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
-
+# -
 
 # Since we want to solve time-harmonic Maxwell's equation, we require
 # that the demo is executed with DOLFINx (PETSc) complex mode.
@@ -55,11 +57,10 @@ if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
 
-# This file defines the `generate_mesh_wire` function, which is used to
-# generate the mesh used for the PML demo. The mesh is made up by a
-# central circle (the wire), and an external layer (the PML) divided in
-# 4 rectangles and 4 squares at the corners. The `generate_mesh_wire`
-# function takes as input:
+# # Mesh generation with GMSH
+# The mesh is made up by a central circle (the wire), and an external
+# layer (the PML) divided in 4 rectangles and 4 squares at the corners.
+# The `generate_mesh_wire` function takes as input:
 
 # - `radius_wire`: the radius of the wire
 # - `radius_scatt`: the radius of the circle where scattering efficiency
@@ -80,8 +81,6 @@ if not np.issubdtype(default_scalar_type, np.complexfloating):
 #   (together with pml_tag+1 and pml_tag+2)
 #
 #
-
-from functools import reduce
 
 
 def generate_mesh_wire(
@@ -200,73 +199,12 @@ def generate_mesh_wire(
     return gmsh.model
 
 
-# This file contains a function for the calculation of the
+# ## Mathematical formulation
+# Following are convenience functions for the calculation of the
 # absorption, scattering and extinction efficiencies of a wire
 # being hit normally by a TM-polarized electromagnetic wave.
-#
-# The formula are taken from:
-# Milton Kerker, "The Scattering of Light and Other Electromagnetic
-# Radiation",
-# Chapter 6, Elsevier, 1969.
-#
-# ## Implementation
-# First of all, let's define the parameters of the problem:
-#
-# - $n = \sqrt{\varepsilon}$: refractive index of the wire,
-# - $n_b$: refractive index of the background medium,
-# - $m = n/n_b$: relative refractive index of the wire,
-# - $\lambda_0$: wavelength of the electromagnetic wave,
-# - $r_w$: radius of the cross-section of the wire,
-# - $\alpha = 2\pi r_w n_b/\lambda_0$.
-#
-# Now, let's define the $a_\nu$ coefficients as:
-#
-# $$
-# \begin{equation}
-# a_\nu=\frac{J_\nu(\alpha) J_\nu^{\prime}(m \alpha)-m J_\nu(m \alpha)
-# J_\nu^{\prime}(\alpha)}{H_\nu^{(2)}(\alpha) J_\nu^{\prime}(m \alpha)
-# -m J_\nu(m \alpha) H_\nu^{(2){\prime}}(\alpha)}
-# \end{equation}
-# $$
-#
-# where:
-# - $J_\nu(x)$: $\nu$-th order Bessel function of the first kind,
-# - $J_\nu^{\prime}(x)$: first derivative with respect to $x$ of
-# the $\nu$-th order Bessel function of the first kind,
-# - $H_\nu^{(2)}(x)$: $\nu$-th order Hankel function of the second kind,
-# - $H_\nu^{(2){\prime}}(x)$: first derivative with respect to $x$ of
-# the $\nu$-th order Hankel function of the second kind.
-#
-# We can now calculate the scattering, extinction and absorption
-# efficiencies as:
-#
-# $$
-# & q_{\mathrm{sca}}=(2 / \alpha)\left[\left|a_0\right|^{2}
-# +2 \sum_{\nu=1}^{\infty}\left|a_\nu\right|^{2}\right] \\
-# & q_{\mathrm{ext}}=(2 / \alpha) \operatorname{Re}\left[ a_0
-# +2 \sum_{\nu=1}^{\infty} a_\nu\right] \\
-# & q_{\mathrm{abs}} = q_{\mathrm{ext}} - q_{\mathrm{sca}}
-# $$
-
-
-# The functions that we import from `scipy.special` correspond to:
-#
-# - `jv(nu, x)` ⟷ $J_\nu(x)$,
-# - `jvp(nu, x, 1)` ⟷ $J_\nu^{\prime}(x)$,
-# - `hankel2(nu, x)` ⟷ $H_\nu^{(2)}(x)$,
-# - `h2vp(nu, x, 1)` ⟷ $H_\nu^{(2){\prime}}(x)$.
-#
-# Next, we define a function for calculating the analytical efficiencies
-# in Python. The inputs of the function are:
-#
-# - `eps` ⟷ $\varepsilon$,
-# - `n_bkg` ⟷ $n_b$,
-# - `wl0` ⟷ $\lambda_0$,
-# - `radius_wire` ⟷ $r_w$.
-#
-# We also define a nested function for the calculation of $a_l$. For the
-# final calculation of the efficiencies, the summation over the different
-# orders of the Bessel functions is truncated at $\nu=50$.
+# See {ref}`Scattering boundary conditions:
+# Mathematical formulation <em_efficiencies>` for a detailed description.
 
 # +
 
@@ -299,6 +237,9 @@ def calculate_analytical_efficiencies(
     return q_ext - q_sca, q_sca, q_ext
 
 
+# -
+
+# ## Perfectly matched layers (PMLs)
 # Now, let's consider an infinite metallic wire immersed in a background
 # medium (e.g. vacuum or water). Let's now consider the plane cutting
 # the wire perpendicularly to its axis at a generic point. Such plane
@@ -377,10 +318,9 @@ def pml_coordinates(x: ufl.indexed.Indexed, alpha: float, k0: complex, l_dom: fl
     return x + 1j * alpha / k0 * x * (ufl.algebra.Abs(x) - l_dom / 2) / (l_pml / 2 - l_dom / 2) ** 2
 
 
-# We use the following domain specific parameters.
+# We use the following domain specific parameters:
 
 # +
-# Constants
 epsilon_0 = 8.8541878128 * 10**-12
 mu_0 = 4 * np.pi * 10**-7
 
@@ -390,20 +330,12 @@ l_dom = 0.8
 radius_scatt = 0.8 * l_dom / 2
 l_pml = 1
 
-# The smaller the mesh_factor, the finer is the mesh
-mesh_factor = 1
+mesh_factor = 1  # The smaller the mesh_factor, the finer is the mesh
+in_wire_size = mesh_factor * 6e-3  # Mesh size inside the wire
+on_wire_size = mesh_factor * 3.0e-3  # Mesh size at the boundary of the wire
+scatt_size = mesh_factor * 15.0e-3  # Mesh size in the background
+pml_size = mesh_factor * 15.0e-3  # Mesh size at the boundary
 
-# Mesh size inside the wire
-in_wire_size = mesh_factor * 6e-3
-
-# Mesh size at the boundary of the wire
-on_wire_size = mesh_factor * 3.0e-3
-
-# Mesh size in the background
-scatt_size = mesh_factor * 15.0e-3
-
-# Mesh size at the boundary
-pml_size = mesh_factor * 15.0e-3
 
 # Tags for the subdomains
 au_tag = 1
@@ -413,7 +345,8 @@ pml_tag = 4
 # -
 
 # We generate the mesh using GMSH and convert it to a
-# `dolfinx.mesh.Mesh`.
+# {py:class}`Mesh<dolfinx.mesh.Mesh>` using
+# {py:func}`model_to_mesh <dolfinx.io.gmsh.model_to_mesh>`.
 
 # +
 model = None
@@ -448,6 +381,8 @@ MPI.COMM_WORLD.barrier()
 # We visualize the mesh and subdomains with
 # [PyVista](https://docs.pyvista.org/)
 
+out_folder = Path("output_pml")
+out_folder.mkdir(parents=True, exist_ok=True)
 tdim = mesh_data.mesh.topology.dim
 if have_pyvista:
     topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
@@ -463,8 +398,7 @@ if have_pyvista:
     if not pyvista.OFF_SCREEN:
         plotter.show(interactive=True)
     else:
-        pyvista.start_xvfb()
-        figure = plotter.screenshot("wire_mesh_pml.png", window_size=[800, 800])
+        figure = plotter.screenshot(out_folder / "wire_mesh_pml.png", window_size=[800, 800])
 
 # We observe five different subdomains: one for the gold wire
 # (`au_tag`), one for the background medium (`bkg_tag`), one for the PML
@@ -706,10 +640,10 @@ problem = LinearProblem(
         "ksp_type": "preonly",
         "pc_type": "lu",
         "pc_factor_mat_solver_type": mat_factor_backend,
+        "ksp_error_if_not_converged": True,
     },
 )
 Esh = problem.solve()
-assert problem.solver.getConvergedReason() > 0
 assert isinstance(Esh, fem.Function)
 # -
 
@@ -723,13 +657,12 @@ V_dg = fem.functionspace(mesh_data.mesh, ("DG", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
-with VTXWriter(mesh_data.mesh.comm, "Esh.bp", Esh_dg) as vtx:
+with VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
     vtx.write(0.0)
 # -
 
 # For more information about saving and visualizing vector fields
-# discretized with Nedelec elements, check [this](
-# https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_interpolation-io.html)
+# discretized with Nedelec elements, check [this](./demo_interpolation-io)
 # DOLFINx demo.
 
 if have_pyvista:
@@ -748,8 +681,7 @@ if have_pyvista:
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:
-        pyvista.start_xvfb()
-        plotter.screenshot("Esh.png", window_size=[800, 800])
+        plotter.screenshot(out_folder / "Esh.png", window_size=[800, 800])
 
 # Next we can calculate the total electric field
 # $\mathbf{E}=\mathbf{E}_s+\mathbf{E}_b$ and save it:
@@ -761,7 +693,7 @@ E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
 
-with VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
+with VTXWriter(mesh_data.mesh.comm, out_folder / "E.bp", E_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -771,8 +703,7 @@ with VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
 # and extinction efficiencies, which are quantities that define how much
 # light is absorbed and scattered by the wire. First of all, we
 # calculate the analytical efficiencies with the
-# `calculate_analytical_efficiencies` function defined in a separate
-# file:
+# `calculate_analytical_efficiencies` function
 
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
     eps_au, n_bkg, wl0, radius_wire
@@ -784,22 +715,15 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # inner facet, and therefore it requires a slightly different approach:
 
 # +
-# Vacuum impedance
-Z0 = np.sqrt(mu_0 / epsilon_0)
-
-# Magnetic field H
-Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)
-
+Z0 = np.sqrt(mu_0 / epsilon_0)  # Vacuum impedance
+Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)  # Magnetic field H
 Esh_3d = ufl.as_vector((Esh[0], Esh[1], 0))
 E_3d = ufl.as_vector((E[0], E[1], 0))
 
 # Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
 # E0 = np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
 I0 = 0.5 / Z0
-
-# Geometrical cross section of the wire
-gcs = 2 * radius_wire
-
+gcs = 2 * radius_wire  # Geometrical cross section of the wire
 n = ufl.FacetNormal(mesh_data.mesh)
 n_3d = ufl.as_vector((n[0], n[1], 0))
 
@@ -821,18 +745,14 @@ marker.x.array[inner_cells] = 1
 P = 0.5 * ufl.inner(ufl.cross(Esh_3d, ufl.conj(Hsh_3d)), n_3d) * marker
 Q = 0.5 * eps_au.imag * k0 * (ufl.inner(E_3d, E_3d)) / (Z0 * n_bkg)
 
-# Define integration domain for the wire
-dAu = dx(au_tag)
-
-# Define integration facet for the scattering efficiency
-dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
-
 # Normalized absorption efficiency
+dAu = dx(au_tag)  # Define integration domain for the wire
 q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / (gcs * I0)).real
 # Sum results from all MPI processes
 q_abs_fenics = mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
+dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
 q_sca_fenics_proc = (
     fem.assemble_scalar(fem.form((P("+") + P("-")) * dS(scatt_tag))) / (gcs * I0)
 ).real
@@ -848,22 +768,20 @@ err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt
 err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
 err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
 
-if mesh_data.mesh.comm.rank == 0:
-    print()
-    print(f"The analytical absorption efficiency is {q_abs_analyt}")
-    print(f"The numerical absorption efficiency is {q_abs_fenics}")
-    print(f"The error is {err_abs * 100}%")
-    print()
-    print(f"The analytical scattering efficiency is {q_sca_analyt}")
-    print(f"The numerical scattering efficiency is {q_sca_fenics}")
-    print(f"The error is {err_sca * 100}%")
-    print()
-    print(f"The analytical extinction efficiency is {q_ext_analyt}")
-    print(f"The numerical extinction efficiency is {q_ext_fenics}")
-    print(f"The error is {err_ext * 100}%")
+PETSc.Sys.Print(f"The analytical absorption efficiency is {q_abs_analyt}")
+PETSc.Sys.Print(f"The numerical absorption efficiency is {q_abs_fenics}")
+PETSc.Sys.Print(f"The error is {err_abs * 100}%")
+PETSc.Sys.Print()
+PETSc.Sys.Print(f"The analytical scattering efficiency is {q_sca_analyt}")
+PETSc.Sys.Print(f"The numerical scattering efficiency is {q_sca_fenics}")
+PETSc.Sys.Print(f"The error is {err_sca * 100}%")
+PETSc.Sys.Print()
+PETSc.Sys.Print(f"The analytical extinction efficiency is {q_ext_analyt}")
+PETSc.Sys.Print(f"The numerical extinction efficiency is {q_ext_fenics}")
+PETSc.Sys.Print(f"The error is {err_ext * 100}%")
 # -
 
 # Check if errors are smaller than 1%
-assert err_abs < 0.01
+assert err_abs < 0.01, "Error in absorption efficiency is too large"
 # assert err_sca < 0.01
-assert err_ext < 0.01
+assert err_ext < 0.01, "Error in extinction efficiency is too large"

@@ -303,6 +303,7 @@ void io(nb::module_& m)
            nb::arg("name"), nb::arg("value"), nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
            nb::arg("name"), nb::arg("xpath") = "/Xdmf/Domain")
+      .def("flush", &dolfinx::io::XDMFFile::flush)
       .def_prop_ro(
           "comm", [](dolfinx::io::XDMFFile& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());

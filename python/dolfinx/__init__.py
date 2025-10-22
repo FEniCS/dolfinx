@@ -29,7 +29,7 @@ except ImportError:
 
 from dolfinx import common
 from dolfinx import cpp as _cpp
-from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, utils
+from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot
 
 from dolfinx.common import (
     git_commit_hash,
@@ -44,7 +44,10 @@ from dolfinx.common import (
     has_slepc,
     ufcx_signature,
 )
-from dolfinx.cpp import __version__
+
+from importlib.metadata import metadata
+
+__version__ = metadata("fenics-dolfinx")["Version"]
 
 _cpp.common.init_logging(sys.argv)
 del _cpp, sys
@@ -74,7 +77,6 @@ __all__ = [
     "mesh",
     "nls",
     "plot",
-    "utils",
     "git_commit_hash",
     "has_adios2",
     "has_complex_ufcx_kernels",

@@ -12,14 +12,25 @@
 #
 # Copyright (C) 2022 Garth N. Wells
 #
-# This demo ({download}`demo_interpolation-io.py`) shows the
-# interpolation of functions into vector-element $H(\mathrm{curl})$
-# finite element spaces, and the interpolation of these special finite
-# elements in discontinuous Lagrange spaces for artifact-free
-# visualisation.
+#
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_interpolation-io.py>`
+# * {download}`Jupyter notebook <./demo_interpolation-io.ipynb>`
+# ```
+# This demo shows how to:
+# - Interpolate functions into vector-element $H(\mathrm{curl})$
+#   finite element spaces
+# - Interpolate these special finite elements into discontinuous Lagrange
+#   spaces for artifact-free visualisation.
+# $H(\mathrm{curl})$ finite element spaces, and the interpolation of
+# these special finite elements in discontinuous Lagrange spaces for
+# artifact-free visualisation.
 
 
 # +
+from pathlib import Path
+
 from mpi4py import MPI
 
 import numpy as np
@@ -64,11 +75,14 @@ u0.interpolate(u)
 # We save the interpolated function `u0` in VTX format. When visualising
 # the field, at $x_0 = 0.5$ the $x_0$-component should appear
 # discontinuous and the $x_1$-component should appear continuous.
+# We use the {py:class}`dolfinx.io.VTXWriter` to store the data.
 
+out_folder = Path("output_nedelec")
+out_folder.mkdir(parents=True, exist_ok=True)
 if has_adios2:
     from dolfinx.io import VTXWriter
 
-    with VTXWriter(msh.comm, "output_nedelec.bp", u0, "bp4") as f:
+    with VTXWriter(msh.comm, out_folder / "output_nedelec.bp", u0) as f:
         f.write(0.0)
 else:
     print("ADIOS2 required for VTX output")
@@ -111,8 +125,7 @@ try:
     # If pyvista environment variable is set to off-screen (static)
     # plotting save png
     if pyvista.OFF_SCREEN:
-        pyvista.start_xvfb(wait=0.1)
-        pl.screenshot("uh.png")
+        pl.screenshot(out_folder / "uh.png")
     else:
         pl.show()
 except ModuleNotFoundError:

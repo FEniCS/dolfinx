@@ -133,7 +133,9 @@ class Expression:
         # Get MPI communicator
         if comm is None:
             try:
-                mesh = ufl.domain.extract_unique_domain(e).ufl_cargo()
+                domain = ufl.domain.extract_unique_domain(e)
+                assert isinstance(domain, ufl.Mesh)
+                mesh = domain.ufl_cargo()
                 comm = mesh.comm
             except AttributeError:
                 print(
