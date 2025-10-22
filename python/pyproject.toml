@@ -36,6 +36,7 @@ docs = [
       "matplotlib",
       "myst_parser",
       "numba",
+      "packaging",
       "pyyaml",
       "sphinx",
       "sphinx_rtd_theme",
