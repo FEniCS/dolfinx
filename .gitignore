@@ -129,6 +129,3 @@ _petsc*
 # Files created by demos
 core
 log.txt
-
-.pytest_cache/
-.mypy_cache/
