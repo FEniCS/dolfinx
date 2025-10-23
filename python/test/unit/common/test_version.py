@@ -4,16 +4,27 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from packaging.version import parse
 
 import dolfinx
 
 
 def test_version():
-    """Test that installed Python version matches C++ version."""
-    # Change any final '.dev0' to '.0'
-    py_version = dolfinx.__version__.replace("dev0", "0")
-    cpp_version = dolfinx.cpp.__version__
-    if py_version != cpp_version:
-        raise RuntimeError(
-            f"Incorrect versions. Python version: {py_version}, Core version: {cpp_version}"
-        )
+    """Test that installed Python version matches C++ version.
+
+    Python DOLFINx follows `major.minor.micro` with the append of `.devx`
+    and `.postx` denoting development and postrelease, respectively.
+
+    C++ DOLFINx follows `major.minor.micro` with a development denoted
+    `major.minor.micro.0`. postrelease cannot be reflected in C++,
+    any changes to the C++ code should bump micro.
+    """
+    cpp_version = parse(dolfinx.cpp.__version__)
+    python_version = parse(dolfinx.__version__)
+
+    assert cpp_version.major == python_version.major
+    assert cpp_version.minor == python_version.minor
+    assert cpp_version.micro == python_version.micro
+
+    cpp_is_devrelease = True if len(cpp_version.release) == 4 else False
+    assert cpp_is_devrelease == python_version.is_devrelease

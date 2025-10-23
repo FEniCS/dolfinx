@@ -45,9 +45,9 @@ from dolfinx.common import (
     ufcx_signature,
 )
 
-from importlib.metadata import metadata
+from importlib.metadata import version
 
-__version__ = metadata("fenics-dolfinx")["Version"]
+__version__ = version("fenics-dolfinx")
 
 _cpp.common.init_logging(sys.argv)
 del _cpp, sys
