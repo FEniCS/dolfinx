@@ -12,10 +12,10 @@ import dolfinx
 def test_version():
     """Test that installed Python version matches C++ version.
 
-    C++ DOLFINx follows `major.minor.patch` with a development version
-    denoted `major.minor.patch.0`.
+    C++ DOLFINx follows `major.minor.micro` with a development version
+    denoted `major.minor.micro.0`.
 
-    Python DOLFINx follows `major.minor.patch` with the append of `.devx`
+    Python DOLFINx follows `major.minor.micro` with the append of `.devx`
     and `.postx` denoting development and post-release.
     """
     cpp_version = parse(dolfinx.cpp.__version__)
