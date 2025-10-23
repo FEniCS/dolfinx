@@ -12,11 +12,12 @@ import dolfinx
 def test_version():
     """Test that installed Python version matches C++ version.
 
-    C++ DOLFINx follows `major.minor.micro` with a development version
-    denoted `major.minor.micro.0`.
-
     Python DOLFINx follows `major.minor.micro` with the append of `.devx`
-    and `.postx` denoting development and post-release.
+    and `.postx` denoting development and postrelease, respectively.
+
+    C++ DOLFINx follows `major.minor.micro` with a development denoted
+    `major.minor.micro.0`. postrelease cannot be reflected in C++,
+    any changes to the C++ code should bump micro.
     """
     cpp_version = parse(dolfinx.cpp.__version__)
     python_version = parse(dolfinx.__version__)
@@ -25,5 +26,5 @@ def test_version():
     assert cpp_version.minor == python_version.minor
     assert cpp_version.micro == python_version.micro
 
-    cpp_is_dev = True if len(cpp_version.release) == 4 else False
-    assert cpp_is_dev == python_version.is_devrelease
+    cpp_is_devrelease = True if len(cpp_version.release) == 4 else False
+    assert cpp_is_devrelease == python_version.is_devrelease
