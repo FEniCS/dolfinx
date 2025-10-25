@@ -183,6 +183,21 @@ class Topology:
         """
         return self._cpp_object.get_facet_permutations()
 
+    def get_ridge_permutations(self) -> npt.NDArray[np.uint8]:
+        """Get the permutation integer to apply to ridges.
+
+        The bits of each integer describes the number of reflections
+        that has to be applied to a ridge to map between a
+        ridge in the mesh (relative to a cell) and the corresponding
+        ridge on the reference element. The data has the shape
+        ``(num_cells, num_ridges_per_cell)``, flattened row-wise. The
+        number of cells include potential ghost cells.
+
+        Note:
+            The data can be unpacked with ``numpy.unpack_bits``.
+        """
+        return self._cpp_object.get_ridge_permutations()
+
     def index_map(self, dim: int) -> _cpp.common.IndexMap:
         """Get the IndexMap that describes the parallel distribution of the
         mesh entities.
