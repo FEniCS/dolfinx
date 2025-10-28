@@ -101,7 +101,7 @@ jobs:
       - name: Build library (C++)
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack -e cxx add fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer +petsc +slepc partitioners=parmetis \
+          spack -e cxx add fenics-dolfinx@main commit=${{ github.sha }} fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD) build_type=Developer +petsc +slepc partitioners=parmetis \
             %petsc +mpi +hypre +mumps +superlu-dist %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
           spack -e cxx add catch2 py-fenics-ffcx@main
           spack -e cxx concretize -j 4
