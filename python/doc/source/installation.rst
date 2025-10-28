@@ -18,38 +18,25 @@ Source
 Installation of DOLFINx requires installation of the C++ core. Most
 users will also want the Python interface.
 
-An example of how to build DOLFINx and its dependencies can be found in
-our `RedHat Dockerfile
-<https://github.com/FEniCS/dolfinx/blob/main/docker/Dockerfile.redhat>`_
-and `RedHat GitHub Actions workflow
-<https://github.com/FEniCS/dolfinx/blob/main/.github/workflows/redhat.yml>`_
-for a minimal set of tested steps that can be adapted to suit most
-Unix-like systems.
-
 Dependencies
 ^^^^^^^^^^^^
 
-C++ core
-********
-
-The C++ core can be installed without Python as a dependency.
+C++
+***
 
 .. rubric:: Required
 
 - C++ compiler (supporting the C++20 standard)
-- `Basix C++ core <https://github.com/FEniCS/basix>`_
-- `Boost <https://www.boost.org>`_, with the following compiled Boost
-  components
-
-  - timer
-
+- `Basix <https://github.com/FEniCS/basix>`_ (C++ interface)
+- `Boost <https://www.boost.org>`_
 - `CMake <https://cmake.org>`_ [build dependency]
 - HDF5 (with MPI support enabled)
-- MPI supporting MPI standard version 3 or above.
+- MPI (MPI-3 or later).
 - `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
 - `pugixml <https://pugixml.org/>`_
 - `spdlog <https://github.com/gabime/spdlog/>`_
-- UFCx [``ufcx.h``, provided by FFCx package or FFCx UFCx CMake install at ``ffcx/cmake/*``]
+- UFCx [``ufcx.h``, provided by FFCx package or FFCx UFCx CMake install
+  at ``ffcx/cmake/*``]
 - At least one of ParMETIS [2]_, KaHIP or PT-SCOTCH [2]_
 
 From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
@@ -65,18 +52,18 @@ From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
 
 - FFCx
 
-PETSc and FFCx are optional but still recommended.
+PETSc and FFCx are optional but recommended.
 
 Python interface
 ****************
 
-Below are additional requirements for the Python interface to the C++
-core.
+Requirements for the Python interface, in addition to the C++
+requirements.
 
 .. rubric:: Required
 
 - Python
-- Python cffi (https://cffi.readthedocs.io/)
+- Python CFFI (https://cffi.readthedocs.io/)
 - FFCx, UFL and Basix Python interface.
 - mpi4py (https://mpi4py.readthedocs.io/)
 - nanobind (https://github.com/wjakob/nanobind)
@@ -97,11 +84,11 @@ core.
 Building and installing
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-C++ core
-********
+C++
+***
 
-The C++ core is built using CMake. Create a build directory in ``cpp/``,
-e.g. ``mkdir -p build/`` and in the build run directory::
+The C++ library is built using CMake. Create a build directory in
+``cpp/``, e.g. ``mkdir -p build/`` and in the build run directory::
 
     cmake ../
     make install
@@ -115,10 +102,10 @@ To set the installation prefix::
 Python
 ******
 
-After installation of the C++ core, from the ``python/`` directory the
-Python interface can be installed using::
+After installation of the C++ interface, from the ``python/`` directory
+the Python interface can be installed using::
 
-    pip install -r build-requirements.txt
+    python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
     pip install --check-build-dependencies --no-build-isolation .
 
 

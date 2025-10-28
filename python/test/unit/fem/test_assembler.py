@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2022 Garth N. Wells
+# Copyright (C) 2018-2025 Garth N. Wells, Jørgen S. Dokken and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -6,6 +6,7 @@
 """Unit tests for assembly"""
 
 import math
+import os
 
 from mpi4py import MPI
 
@@ -14,14 +15,17 @@ import pytest
 import scipy.sparse
 
 import basix
+import dolfinx.cpp
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import cpp as _cpp
-from dolfinx import default_real_type, fem, graph, la
+from dolfinx import default_real_type, default_scalar_type, fem, graph, la, mesh
 from dolfinx.fem import (
     Constant,
     Function,
+    assemble_matrix,
     assemble_scalar,
+    assemble_vector,
     bcs_by_block,
     dirichletbc,
     extract_function_spaces,
@@ -29,6 +33,8 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_geometrical,
     locate_dofs_topological,
+    pack_coefficients,
+    pack_constants,
 )
 from dolfinx.mesh import (
     CellType,
@@ -37,9 +43,12 @@ from dolfinx.mesh import (
     create_rectangle,
     create_unit_cube,
     create_unit_square,
+    exterior_facet_indices,
+    locate_entities,
     locate_entities_boundary,
+    meshtags,
 )
-from ufl import derivative, dS, ds, dx, inner
+from ufl import derivative, dP, dr, dS, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
 
 dtype_parametrize = pytest.mark.parametrize(
@@ -84,7 +93,7 @@ def test_assemble_functional_ds(mode, dtype):
 def test_assemble_derivatives(dtype):
     """This test checks the original_coefficient_positions, which may change
     under differentiation (some coefficients and constants are
-    eliminated)"""
+    eliminated)."""
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, dtype=dtype(0).real.dtype)
     Q = functionspace(mesh, ("Lagrange", 1))
     u = Function(Q, dtype=dtype)
@@ -100,10 +109,10 @@ def test_assemble_derivatives(dtype):
     L = ufl.inner(c1, c1) * v * dx + c2 * b * inner(u, v) * dx
     a = form(derivative(L, u, du), dtype=dtype)
 
-    A1 = fem.assemble_matrix(a)
+    A1 = assemble_matrix(a)
     A1.scatter_reverse()
     a = form(c2 * b * inner(du, v) * dx, dtype=dtype)
-    A2 = fem.assemble_matrix(a)
+    A2 = assemble_matrix(a)
     A2.scatter_reverse()
     assert np.allclose(A1.data, A2.data)
 
@@ -122,34 +131,34 @@ def test_basic_assembly(mode, dtype):
     a, L = form(a, dtype=dtype), form(L, dtype=dtype)
 
     # Initial assembly
-    A = fem.assemble_matrix(a)
+    A = assemble_matrix(a)
     A.scatter_reverse()
     assert isinstance(A, la.MatrixCSR)
-    b = fem.assemble_vector(L)
+    b = assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
     assert isinstance(b, la.Vector)
 
     # Second assembly
     normA = A.squared_norm()
     A.set_value(0)
-    A = fem.assemble_matrix(A, a)
+    A = assemble_matrix(A, a)
     A.scatter_reverse()
     assert isinstance(A, la.MatrixCSR)
     assert normA == pytest.approx(A.squared_norm())
     normb = la.norm(b)
     b.array[:] = 0
-    fem.assemble_vector(b.array, L)
+    assemble_vector(b.array, L)
     b.scatter_reverse(la.InsertMode.add)
     assert normb == pytest.approx(la.norm(b))
 
     # Vector re-assembly - no zeroing (but need to zero ghost entries)
     b.array[b.index_map.size_local * b.block_size :] = 0
-    fem.assemble_vector(b.array, L)
+    assemble_vector(b.array, L)
     b.scatter_reverse(la.InsertMode.add)
     assert 2 * normb == pytest.approx(la.norm(b))
 
     # Matrix re-assembly (no zeroing)
-    fem.assemble_matrix(A, a)
+    assemble_matrix(A, a)
     A.scatter_reverse()
     assert 4 * normA == pytest.approx(A.squared_norm())
 
@@ -169,6 +178,17 @@ def nest_matrix_norm(A):
 
 
 @pytest.mark.petsc4py
+def test_vector_single_space_as_block():
+    from dolfinx.fem.petsc import create_vector as petsc_create_vector
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    gdim = mesh.geometry.dim
+    V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
+    assert petsc_create_vector(V).getAttr("_blocks") is None
+    assert petsc_create_vector(V, kind="mpi").getAttr("_blocks") is not None
+
+
+@pytest.mark.petsc4py
 class TestPETScAssemblers:
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_basic_assembly_petsc_matrixcsr(self, mode):
@@ -181,7 +201,7 @@ class TestPETScAssemblers:
         u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
         a = form(inner(u, v) * dx + inner(u, v) * ds)
 
-        A0 = fem.assemble_matrix(a)
+        A0 = assemble_matrix(a)
         A0.scatter_reverse()
         assert isinstance(A0, la.MatrixCSR)
         A1 = petsc_assemble_matrix(a)
@@ -194,7 +214,7 @@ class TestPETScAssemblers:
         V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
         u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
         a = form(inner(u, v) * dx + inner(u, v) * ds)
-        A0 = fem.assemble_matrix(a)
+        A0 = assemble_matrix(a)
         A0.scatter_reverse()
         assert isinstance(A0, la.MatrixCSR)
         A1 = petsc_assemble_matrix(a)
@@ -215,7 +235,32 @@ class TestPETScAssemblers:
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
         V = functionspace(mesh, ("Lagrange", 1))
         u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-        a = form(inner(u, v) * dx + inner(u, v) * ds)
+
+        exterior_ridges = locate_entities_boundary(
+            mesh, mesh.topology.dim - 2, lambda x: np.full(x.shape[1], True, dtype=bool)
+        )
+        ridge_tags = dolfinx.mesh.meshtags(
+            mesh,
+            mesh.topology.dim - 2,
+            exterior_ridges,
+            np.ones_like(exterior_ridges, dtype=np.int32),
+        )
+        dr_exterior = dr(subdomain_data=ridge_tags, subdomain_id=1)
+        exterior_vertices = locate_entities_boundary(
+            mesh, 0, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
+        )
+        vertex_tags = dolfinx.mesh.meshtags(
+            mesh, 0, exterior_vertices, np.ones_like(exterior_vertices, dtype=np.int32)
+        )
+        dP_exterior = dP(subdomain_data=vertex_tags, subdomain_id=1)
+        x = ufl.SpatialCoordinate(mesh)
+        f = ufl.exp(x[0] + x[1])
+        a = form(
+            inner(u, v) * dx
+            + inner(u, v) * ds
+            - inner(u, v) * dr_exterior
+            + f * inner(u, v) * dP_exterior
+        )
         L = form(inner(1.0, v) * dx)
 
         bdofsV = locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0))
@@ -269,7 +314,7 @@ class TestPETScAssemblers:
                 dtype=default_real_type,
             )
         )
-        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+        mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
         assert mesh.geometry.dim == 2
         assert mesh.topology.dim == 1
 
@@ -302,15 +347,9 @@ class TestPETScAssemblers:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-        from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
-        from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
-        from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
-        from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
-        from dolfinx.fem.petsc import assemble_vector_nest as petsc_assemble_vector_nest
         from dolfinx.fem.petsc import set_bc as petsc_set_bc
-        from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 
         mesh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
         p0, p1 = 1, 2
@@ -333,9 +372,7 @@ class TestPETScAssemblers:
         # Define variational problem
         u, p, r = ufl.TrialFunction(V0), ufl.TrialFunction(V1), ufl.TrialFunction(V2)
         v, q, s = ufl.TestFunction(V0), ufl.TestFunction(V1), ufl.TestFunction(V2)
-        f = 1.0
         g = -3.0
-        zero = Function(V0)
 
         a00 = inner(u, v) * dx
         a01 = inner(p, v) * dx
@@ -347,7 +384,7 @@ class TestPETScAssemblers:
         a21 = inner(p, s) * dx
         a22 = inner(r, s) * dx
 
-        L0 = zero * inner(f, v) * dx
+        L0 = ufl.ZeroBaseForm((v,))
         L1 = inner(g, q) * dx
         L2 = inner(g, s) * dx
 
@@ -359,39 +396,45 @@ class TestPETScAssemblers:
 
         def blocked():
             """Monolithic blocked"""
-            A = petsc_assemble_matrix_block(a_block, bcs=[bc])
+            A = petsc_assemble_matrix(a_block, bcs=[bc])
             A.assemble()
-            b = petsc_assemble_vector_block(L_block, a_block, bcs=[bc])
+            b = petsc_assemble_vector(L_block, kind=PETSc.Vec.Type.MPI)
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_block, 1), bcs=[bc])
+            petsc_apply_lifting(b, a_block, bcs=bcs1)
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_block), [bc])
+            petsc_set_bc(b, bcs0)
+
             assert A.getType() != "nest"
-            Anorm = A.norm()
-            bnorm = b.norm()
-            A.destroy(), b.destroy()
+
             with pytest.raises(RuntimeError):
-                petsc_assemble_matrix_block(a_block_none, bcs=[bc])
-            return Anorm, bnorm
+                petsc_assemble_matrix(a_block_none, bcs=[bc])
+
+            return A, b
 
         def nest():
             """Nested (MatNest)"""
-            A = petsc_assemble_matrix_nest(
+            A = petsc_assemble_matrix(
                 a_block,
                 bcs=[bc],
-                mat_types=[["baij", "aij", "aij"], ["aij", "", "aij"], ["aij", "aij", "aij"]],
+                kind=[["baij", "aij", "aij"], ["aij", "", "aij"], ["aij", "aij", "aij"]],
             )
             A.assemble()
-            with pytest.raises(RuntimeError):
-                petsc_assemble_matrix_nest(a_block_none, bcs=[bc])
+            assert A.type == "nest"
 
-            b = petsc_assemble_vector_nest(L_block)
-            petsc_apply_lifting_nest(b, a_block, bcs=[bc])
+            with pytest.raises(RuntimeError):
+                petsc_assemble_matrix(a_block_none, bcs=[bc])
+
+            b = petsc_assemble_vector(L_block, kind="nest")
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_block, 1), bcs=[bc])
+            petsc_apply_lifting(b, a_block, bcs=bcs1)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
-            petsc_set_bc_nest(b, bcs0)
+            petsc_set_bc(b, bcs0)
             b.assemble()
-            bnorm = math.sqrt(sum([x.norm() ** 2 for x in b.getNestSubVecs()]))
-            Anorm = nest_matrix_norm(A)
-            A.destroy(), b.destroy()
-            return Anorm, bnorm
+
+            return A, b
 
         def monolithic():
             """Monolithic version"""
@@ -409,7 +452,7 @@ class TestPETScAssemblers:
                 + inner(u2, v0) * dx
                 + inner(u2, v1) * dx
             )
-            L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx + inner(g, v2) * dx
+            L = ufl.ZeroBaseForm((v0,)) + inner(g, v1) * dx + inner(g, v2) * dx
             a, L = form(a), form(L)
 
             bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
@@ -421,19 +464,139 @@ class TestPETScAssemblers:
             b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             petsc_set_bc(b, [bc])
             assert A.getType() != "nest"
-            Anorm = A.norm()
-            bnorm = b.norm()
-            A.destroy(), b.destroy()
-            return Anorm, bnorm
 
-        Anorm0, bnorm0 = blocked()
-        Anorm1, bnorm1 = nest()
-        assert Anorm1 == pytest.approx(Anorm0, 1.0e-4)
-        assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
+            return A, b
 
-        Anorm2, bnorm2 = monolithic()
-        assert Anorm2 == pytest.approx(Anorm0, 1.0e-4)
-        assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
+        A_blocked, b_blocked = blocked()
+        A_nest, b_nest = nest()
+        A_monolithic, b_monolithic = monolithic()
+
+        assert A_blocked.equal(A_nest)
+        assert b_blocked.equal(b_nest)
+
+        assert A_blocked.norm() == pytest.approx(A_monolithic.norm(), 1.0e-4)
+        assert b_blocked.norm() == pytest.approx(b_monolithic.norm(), 1.0e-6)
+
+        A_nest.destroy(), b_nest.destroy()
+        A_blocked.destroy(), b_blocked.destroy()
+        A_monolithic.destroy(), b_monolithic.destroy()
+
+    @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+    def test_matrix_assembly_block_vector(self, mode):
+        """Test assembly of block matrices and vectors into (a) monolithic
+        blocked structures, PETSc Nest structures, and monolithic
+        structures.
+        """
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
+        from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+        from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+        from dolfinx.fem.petsc import set_bc as petsc_set_bc
+
+        mesh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
+
+        P0 = element("Lagrange", mesh.basix_cell(), 2, dtype=default_real_type, shape=(2,))
+        P1 = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
+        V0 = functionspace(mesh, P0)
+        V1 = functionspace(mesh, P1)
+
+        # Locate facets on boundary
+        facetdim = mesh.topology.dim - 1
+        bndry_facets = locate_entities_boundary(
+            mesh, facetdim, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
+        )
+        bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
+        u_bc = PETSc.ScalarType(50.0)
+        bc = dirichletbc(u_bc, bdofsV1, V1)
+
+        # Define variational problem
+        u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
+        v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
+        g = -3.0
+
+        a00 = inner(u, v) * dx
+        a01 = inner(p, v[0] + v[1]) * dx
+        a10 = inner(u[0] + u[1], q) * dx
+        a11 = inner(p, q) * dx
+
+        L0 = ufl.ZeroBaseForm((v,))
+        L1 = inner(g, q) * dx
+
+        a_block = form([[a00, a01], [a10, a11]])
+        L_block = form([L0, L1])
+
+        def blocked():
+            """Monolithic blocked"""
+            A = petsc_assemble_matrix(a_block, bcs=[bc])
+            A.assemble()
+            b = petsc_assemble_vector(L_block, kind=PETSc.Vec.Type.MPI)
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_block, 1), bcs=[bc])
+            petsc_apply_lifting(b, a_block, bcs=bcs1)
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L_block), [bc])
+            petsc_set_bc(b, bcs0)
+
+            assert A.getType() != "nest"
+            return A, b
+
+        def nest():
+            """Nested (MatNest)"""
+            A = petsc_assemble_matrix(a_block, bcs=[bc], kind="nest")
+            A.assemble()
+
+            assert A.type == "nest"
+
+            b = petsc_assemble_vector(L_block, kind="nest")
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_block, 1), bcs=[bc])
+            petsc_apply_lifting(b, a_block, bcs=bcs1)
+            for b_sub in b.getNestSubVecs():
+                b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
+            petsc_set_bc(b, bcs0)
+            b.assemble()
+
+            return A, b
+
+        def monolithic():
+            """Monolithic version"""
+            W = functionspace(mesh, mixed_element([P0, P1]))
+            u0, u1 = ufl.TrialFunctions(W)
+            v0, v1 = ufl.TestFunctions(W)
+            a = (
+                inner(u0, v0) * dx
+                + inner(u1, v1) * dx
+                + inner(u0[0] + u0[1], v1) * dx
+                + inner(u1, v0[0] + v0[1]) * dx
+            )
+            L = ufl.ZeroBaseForm((v0,)) + inner(g, v1) * dx
+            a, L = form(a), form(L)
+
+            bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
+            bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
+            A = petsc_assemble_matrix(a, bcs=[bc])
+            A.assemble()
+            b = petsc_assemble_vector(L)
+            petsc_apply_lifting(b, [a], bcs=[[bc]])
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            petsc_set_bc(b, [bc])
+            assert A.getType() != "nest"
+
+            return A, b
+
+        A_blocked, b_blocked = blocked()
+        A_nest, b_nest = nest()
+        A_monolithic, b_monolithic = monolithic()
+
+        assert A_blocked.equal(A_nest)
+        assert b_blocked.equal(b_nest)
+
+        assert A_blocked.norm() == pytest.approx(A_monolithic.norm(), 1.0e-4)
+        assert b_blocked.norm() == pytest.approx(b_monolithic.norm(), 1.0e-6)
+
+        A_nest.destroy(), b_nest.destroy()
+        A_blocked.destroy(), b_blocked.destroy()
+        A_monolithic.destroy(), b_monolithic.destroy()
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_assembly_solve_block(self, mode):
@@ -443,15 +606,9 @@ class TestPETScAssemblers:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-        from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
-        from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
-        from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
-        from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
-        from dolfinx.fem.petsc import assemble_vector_nest as petsc_assemble_vector_nest
         from dolfinx.fem.petsc import set_bc as petsc_set_bc
-        from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 
         mesh = create_unit_square(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
         P = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
@@ -476,11 +633,10 @@ class TestPETScAssemblers:
         v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
         f = 1.0
         g = -3.0
-        zero = Function(V0)
 
         a00 = form(inner(u, v) * dx)
-        a01 = form(zero * inner(p, v) * dx)
-        a10 = form(zero * inner(u, q) * dx)
+        a01 = None
+        a10 = None
         a11 = form(inner(p, q) * dx)
         L0 = form(inner(f, v) * dx)
         L1 = form(inner(g, q) * dx)
@@ -491,8 +647,15 @@ class TestPETScAssemblers:
 
         def blocked():
             """Blocked"""
-            A = petsc_assemble_matrix_block([[a00, a01], [a10, a11]], bcs=bcs)
-            b = petsc_assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], bcs=bcs)
+            a = [[a00, a01], [a10, a11]]
+            A = petsc_assemble_matrix(a, bcs=bcs)
+            b = petsc_assemble_vector([L0, L1], kind=PETSc.Vec.Type.MPI)
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs=bcs)
+            petsc_apply_lifting(b, a, bcs=bcs1)
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            bcs0 = fem.bcs_by_block(fem.extract_function_spaces([L0, L1]), bcs)
+            petsc_set_bc(b, bcs0)
+
             A.assemble()
             x = A.createVecLeft()
             ksp = PETSc.KSP()
@@ -512,14 +675,16 @@ class TestPETScAssemblers:
 
         def nested():
             """Nested (MatNest)"""
-            A = petsc_assemble_matrix_nest([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
+            a = [[a00, a01], [a10, a11]]
+            A = petsc_assemble_matrix(a, bcs=bcs, diag=1.0, kind="nest")
             A.assemble()
-            b = petsc_assemble_vector_nest([L0, L1])
-            petsc_apply_lifting_nest(b, [[a00, a01], [a10, a11]], bcs=bcs)
+            b = petsc_assemble_vector([L0, L1], kind="nest")
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs=bcs)
+            petsc_apply_lifting(b, a, bcs=bcs1)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             bcs0 = bcs_by_block([L0.function_spaces[0], L1.function_spaces[0]], bcs)
-            petsc_set_bc_nest(b, bcs0)
+            petsc_set_bc(b, bcs0)
             b.assemble()
 
             x = b.copy()
@@ -592,7 +757,7 @@ class TestPETScAssemblers:
         Anorm2, bnorm2, xnorm2 = monolithic()
         assert Anorm2 == pytest.approx(Anorm0, 1.0e-6)
         assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
-        assert xnorm2 == pytest.approx(xnorm0, 1.0e-6)
+        assert xnorm2 == pytest.approx(xnorm0, 1.0e-5)
 
     @pytest.mark.parametrize(
         "mesh",
@@ -608,15 +773,9 @@ class TestPETScAssemblers:
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-        from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
-        from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
-        from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
-        from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
-        from dolfinx.fem.petsc import assemble_vector_nest as petsc_assemble_vector_nest
         from dolfinx.fem.petsc import set_bc as petsc_set_bc
-        from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 
         gdim = mesh.geometry.dim
         P2 = functionspace(mesh, ("Lagrange", 2, (gdim,)))
@@ -654,33 +813,29 @@ class TestPETScAssemblers:
         p01, p10 = None, None
         p11 = inner(p, q) * dx
 
-        # FIXME
-        # We need zero function for the 'zero' part of L
-        p_zero = Function(P1)
+        # We need a 'zero' form for the 'zero' part of L
         f = Function(P2)
         L0 = ufl.inner(f, v) * dx
-        L1 = ufl.inner(p_zero, q) * dx
+        L1 = ufl.ZeroBaseForm((q,))
 
         def nested_solve():
             """Nested solver"""
-            A = petsc_assemble_matrix_nest(
-                form([[a00, a01], [a10, a11]]),
-                bcs=[bc0, bc1],
-                mat_types=[["baij", "aij"], ["aij", ""]],
-            )
+            a = form([[a00, a01], [a10, a11]])
+            L = form([L0, L1])
+            A = petsc_assemble_matrix(a, bcs=[bc0, bc1], kind=[["baij", "aij"], ["aij", ""]])
             A.assemble()
-            P = petsc_assemble_matrix_nest(
-                form([[p00, p01], [p10, p11]]),
-                bcs=[bc0, bc1],
-                mat_types=[["aij", "aij"], ["aij", ""]],
+            P = petsc_assemble_matrix(
+                form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1], kind=[["aij", "aij"], ["aij", ""]]
             )
             P.assemble()
-            b = petsc_assemble_vector_nest(form([L0, L1]))
-            petsc_apply_lifting_nest(b, form([[a00, a01], [a10, a11]]), [bc0, bc1])
+            b = petsc_assemble_vector(L, kind="nest")
+
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), [bc0, bc1])
+            petsc_apply_lifting(b, a, bcs1)
             for b_sub in b.getNestSubVecs():
                 b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-            bcs = bcs_by_block(extract_function_spaces(form([L0, L1])), [bc0, bc1])
-            petsc_set_bc_nest(b, bcs)
+            bcs0 = bcs_by_block(extract_function_spaces(L), [bc0, bc1])
+            petsc_set_bc(b, bcs0)
             b.assemble()
 
             ksp = PETSc.KSP()
@@ -713,13 +868,17 @@ class TestPETScAssemblers:
 
         def blocked_solve():
             """Blocked (monolithic) solver"""
-            A = petsc_assemble_matrix_block(form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1])
+            A = petsc_assemble_matrix(form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1])
             A.assemble()
-            P = petsc_assemble_matrix_block(form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1])
+            P = petsc_assemble_matrix(form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1])
             P.assemble()
-            b = petsc_assemble_vector_block(
-                form([L0, L1]), form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1]
-            )
+            L, a = form([L0, L1]), form([[a00, a01], [a10, a11]])
+            b = petsc_assemble_vector(L, kind=PETSc.Vec.Type.MPI)
+            bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), [bc0, bc1])
+            petsc_apply_lifting(b, a, bcs=bcs1)
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=[bc0, bc1])
+            petsc_set_bc(b, bcs0)
 
             ksp = PETSc.KSP()
             ksp.create(mesh.comm)
@@ -759,9 +918,8 @@ class TestPETScAssemblers:
             p_form = p00 + p11
 
             f = Function(W.sub(0).collapse()[0])
-            p_zero = Function(W.sub(1).collapse()[0])
             L0 = inner(f, v) * dx
-            L1 = inner(p_zero, q) * dx
+            L1 = ufl.ZeroBaseForm((q,))
             L = L0 + L1
             a, p_form, L = form(a), form(p_form), form(L)
 
@@ -853,8 +1011,10 @@ class TestPETScAssemblers:
     def test_symmetry_interior_facet_assembly(self, mesh):
         from petsc4py import PETSc
 
-        from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
-        from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
+        from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
+        from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+        from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+        from dolfinx.fem.petsc import set_bc as petsc_set_bc
 
         def bc(V):
             facetdim = mesh.topology.dim - 1
@@ -876,15 +1036,21 @@ class TestPETScAssemblers:
         L1 = inner(ufl.unit_vector(1, mesh.geometry.dim), ufl.avg(v1)) * dS
         L = form([L0, L1])
         # without boundary conditions
-        A = petsc_assemble_matrix_block(a)
+        A = petsc_assemble_matrix(a)
         A.assemble()
         assert isinstance(A, PETSc.Mat)
         assert A.isSymmetric(tol=1.0e-4)
         A.destroy()
         # with boundary conditions
         bcs = [bc(V0), bc(V1)]
-        A = petsc_assemble_matrix_block(a, bcs=bcs)
-        b = petsc_assemble_vector_block(L, a, bcs=bcs)
+        A = petsc_assemble_matrix(a, bcs=bcs)
+        b = petsc_assemble_vector(L, kind=PETSc.Vec.Type.MPI)
+        bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs)
+        petsc_apply_lifting(b, a, bcs=bcs1)
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=bcs)
+        petsc_set_bc(b, bcs0)
+
         A.assemble()
         b.assemble()
         assert isinstance(A, PETSc.Mat)
@@ -907,15 +1073,21 @@ class TestPETScAssemblers:
         L1 = inner(ufl.unit_matrix(1, 1, mesh.geometry.dim), ufl.avg(v1)) * dS
         L = form([L0, L1])
         # without boundary conditions
-        A = petsc_assemble_matrix_block(a)
+        A = petsc_assemble_matrix(a)
         A.assemble()
         assert isinstance(A, PETSc.Mat)
         assert A.isSymmetric(tol=1.0e-4)
         A.destroy()
         # with boundary conditions
         bcs = [bc(V0), bc(V1)]
-        A = petsc_assemble_matrix_block(a, bcs=bcs)
-        b = petsc_assemble_vector_block(L, a, bcs=bcs)
+        A = petsc_assemble_matrix(a, bcs=bcs)
+        b = petsc_assemble_vector(L, kind=PETSc.Vec.Type.MPI)
+        bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a, 1), bcs=bcs)
+        petsc_apply_lifting(b, a, bcs=bcs1)
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        bcs0 = fem.bcs_by_block(fem.extract_function_spaces(L), bcs=bcs)
+        petsc_set_bc(b, bcs0)
+
         A.assemble()
         b.assemble()
         assert isinstance(A, PETSc.Mat)
@@ -924,7 +1096,8 @@ class TestPETScAssemblers:
         A.destroy()
         b.destroy()
 
-    def test_pack_coefficients(self):
+    @pytest.mark.parametrize("kind", ["nest", "mpi", None])
+    def test_pack_coefficients(self, kind):
         """Test packing of form coefficients ahead of main assembly call."""
         from petsc4py import PETSc
 
@@ -932,64 +1105,167 @@ class TestPETScAssemblers:
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
 
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
-        V = functionspace(mesh, ("Lagrange", 1))
 
-        # Non-blocked
-        u = Function(V)
-        v = ufl.TestFunction(V)
-        c = Constant(mesh, PETSc.ScalarType(12.0))
-        F = ufl.inner(c, v) * dx - c * ufl.sqrt(u * u) * ufl.inner(u, v) * dx
-        u.x.array[:] = 10.0
-        _F = form(F)
+        if kind is None:
+            # Non-blocked
+            V = functionspace(mesh, ("Lagrange", 1))
+            u = Function(V)
+            v = ufl.TestFunction(V)
+            c = Constant(mesh, PETSc.ScalarType(12.0))
+            F = ufl.inner(c, v) * dx - c * ufl.sqrt(u * u) * ufl.inner(u, v) * dx
+            u.x.array[:] = 10.0
+            _F = form(F)
+        else:
+            V = functionspace(mesh, ("Lagrange", 1))
+            V2 = V.clone()
+            u = Function(V)
+            u.interpolate(lambda x: x[0] * x[1])
+            v = ufl.TestFunction(V)
+            u2 = Function(V2)
+            v2 = ufl.TestFunction(V2)
+            c = Constant(mesh, PETSc.ScalarType(12.0))
+            u2.interpolate(lambda x: x[0] + x[1])
+            F = [c**2 * ufl.inner(u * u2, v2) * dx, c * ufl.inner(u * u2 * u2, v2) * dx]
+            _F = form(F)
 
         # -- Test vector
-        b0 = petsc_assemble_vector(_F)
+        b0 = petsc_assemble_vector(_F, kind=kind)
         b0.assemble()
-        constants = _cpp.fem.pack_constants(_F._cpp_object)
-        coeffs = _cpp.fem.pack_coefficients(_F._cpp_object)
+        constants = pack_constants(_F)
+        coeffs = pack_coefficients(_F)
         with b0.localForm() as _b0:
             for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
-                b = petsc_assemble_vector(_F, c[0], c[1])
+                b = petsc_assemble_vector(_F, c[0], c[1], kind=kind)
                 b.assemble()
                 with b.localForm() as _b:
                     assert (_b0.array_r == _b.array_r).all()
 
-        # Change coefficients
-        constants *= 5.0
-        for coeff in coeffs.values():
-            coeff *= 5.0
-        with b0.localForm() as _b0:
-            for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
-                b = petsc_assemble_vector(_F, c[0], c[1])
-                b.assemble()
-                with b.localForm() as _b:
-                    assert (_b0 - _b).norm() > 1.0e-5
+        # Change coefficients and constants, check that it reflected in the vector
+        if kind is None:
+            constants *= 5.0
+        else:
+            for const in constants:
+                const *= 5.0
+        if kind is None:
+            for coeff in coeffs.values():
+                coeff *= 5.0
+        else:
+            for coeff in coeffs:
+                for c in coeff.values():
+                    c *= 5.0
+
+        for c in [(constants, None), (None, coeffs), (constants, coeffs)]:
+            b = petsc_assemble_vector(_F, c[0], c[1], kind=kind)
+            b.assemble()
+            diff = b0.copy()
+            diff.axpy(-1.0, b)
+            assert diff.norm() > 1.0e-5
 
         # -- Test matrix
-        du = ufl.TrialFunction(V)
-        J = ufl.derivative(F, u, du)
-        J = form(J)
+        if kind is None:
+            du = ufl.TrialFunction(V)
+            _J = ufl.derivative(F, u, du)
+        else:
+            du = [ufl.TrialFunction(V), ufl.TrialFunction(V2)]
+            us = [u, u2]
+            _J = [
+                [ufl.derivative(F[j], us[i], du[i]) for i in range(len(F))] for j in range(len(du))
+            ]
 
-        A0 = petsc_assemble_matrix(J)
+        J = form(_J)
+        A0 = petsc_assemble_matrix(J, kind=kind)
         A0.assemble()
 
-        constants = _cpp.fem.pack_constants(J._cpp_object)
-        coeffs = _cpp.fem.pack_coefficients(J._cpp_object)
+        constants = pack_constants(J)
+        coeffs = pack_coefficients(J)
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
-            A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1])
+            A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1], kind=kind)
             A.assemble()
-        assert 0.0 == pytest.approx((A - A0).norm(), abs=1.0e-12)  # /NOSONAR
+            if kind == "nest":
+                # Nest does not have norm implemented
+                for i in range(2):
+                    for j in range(2):
+                        Asub = A.getNestSubMatrix(i, j)
+                        A0sub = A0.getNestSubMatrix(i, j)
+                        assert 0.0 == pytest.approx((Asub - A0sub).norm(), abs=1.0e-12)  # /NOSONAR
+                        Asub.destroy()
+                        A0sub.destroy()
+            else:
+                assert 0.0 == pytest.approx((A - A0).norm(), abs=1.0e-12)  # /NOSONAR
 
-        # Change coefficients
-        constants *= 5.0
-        for coeff in coeffs.values():
-            coeff *= 5.0
+        # Change coefficients and constants
+        if kind is None:
+            constants *= 5.0
+        else:
+            for ci in constants:
+                for cij in ci:
+                    cij *= 5.0
+        if kind is None:
+            for coeff in coeffs.values():
+                coeff *= 5.0
+        else:
+            for ci in coeffs:
+                for cij in ci:
+                    for c in cij.values():
+                        c *= 5.0
+        # Re-assemble with either new coefficients, new constants or both and check that
+        # the matrix changes
         for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
-            A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1])
+            A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1], kind=kind)
             A.assemble()
-            assert (A - A0).norm() > 1.0e-5
+            if kind == "nest":
+                # Nest does not have norm implemented
+                for i in range(2):
+                    for j in range(2):
+                        Asub = A.getNestSubMatrix(i, j)
+                        A0sub = A0.getNestSubMatrix(i, j)
+                        assert (Asub - A0sub).norm() > 1.0e-5  # /NOSONAR
+                        Asub.destroy()
+                        A0sub.destroy()
+            else:
+                assert (A - A0).norm() > 1.0e-5  # /NOSONAR
+            A.destroy()
+        A0.destroy()
 
-        A.destroy(), A0.destroy()
+    @pytest.mark.parametrize("kind", ["nest", "mpi"])
+    def test_lifting_coefficients(self, kind):
+        from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
+        from dolfinx.fem.petsc import create_vector as petsc_create_vector
+
+        mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
+        V = functionspace(mesh, ("Lagrange", 1))
+        Q = V.clone()
+        k = Function(V)
+        k.interpolate(lambda x: x[0] * x[1])
+        u = ufl.TrialFunction(V)
+        v = ufl.TestFunction(V)
+        p = ufl.TrialFunction(Q)
+        q = ufl.TestFunction(Q)
+
+        J = form(
+            [[k * ufl.inner(u, v) * dx, None], [ufl.inner(u, q) * dx, k * ufl.inner(p, q) * dx]]
+        )
+
+        mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+        bndry_facets = exterior_facet_indices(mesh.topology)
+        bndry_dofs = locate_dofs_topological(V, mesh.topology.dim - 1, bndry_facets)
+        bcs = [dirichletbc(default_scalar_type(2.0), bndry_dofs, V)]
+
+        bcs1 = bcs_by_block(extract_function_spaces(J, 1), bcs)
+
+        # Apply lifting with input coefficient
+        coeffs = pack_coefficients(J)
+        b = petsc_create_vector([V, Q], kind=kind)
+        assert b.equal(petsc_create_vector([V, Q]))
+        petsc_apply_lifting(b, J, bcs=bcs1, coeffs=coeffs)
+        b.assemble()
+
+        # Reference lifting
+        b_ref = petsc_create_vector([V, Q], kind=kind)
+        petsc_apply_lifting(b_ref, J, bcs=bcs1)
+        b_ref.assemble()
+
+        np.testing.assert_allclose(b.array_r, b_ref.array_r, rtol=1e-12)
 
     def test_coefficents_non_constant(self):
         """Test packing coefficients with non-constant values."""
@@ -1057,9 +1333,9 @@ class TestPETScAssemblers:
         )
 
         def partitioner(comm, nparts, local_graph, num_ghost_nodes):
-            """Leave cells on the curent rank"""
+            """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
-            return graph.adjacencylist(dest)
+            return graph.adjacencylist(dest)._cpp_object
 
         if comm.rank == 0:
             # Put cells on rank 0
@@ -1070,7 +1346,7 @@ class TestPETScAssemblers:
             cells = np.empty((0, 3), dtype=np.int64)
             x = np.empty((0, 2), dtype=default_real_type)
 
-        mesh = create_mesh(comm, cells, x, domain, partitioner)
+        mesh = create_mesh(comm, cells, domain, x, partitioner)
 
         V = functionspace(mesh, ("Lagrange", 2))
         u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -1107,8 +1383,6 @@ class TestPETScAssemblers:
     def test_matrix_assembly_rectangular(self, mode):
         """Test assembly of block rectangular block matrices."""
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
-        from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
-        from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
 
         msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
         V0 = functionspace(msh, ("Lagrange", 1))
@@ -1124,9 +1398,9 @@ class TestPETScAssemblers:
 
         def block():
             a = form([[ufl.inner(u, v0) * ufl.dx], [ufl.inner(u, v1) * ufl.dx]])
-            A0 = petsc_assemble_matrix_block(a, bcs=[])
+            A0 = petsc_assemble_matrix(a, bcs=[])
             A0.assemble()
-            A1 = petsc_assemble_matrix_nest(a, bcs=[])
+            A1 = petsc_assemble_matrix(a, bcs=[], kind="nest")
             A1.assemble()
             return A0, A1
 
@@ -1140,7 +1414,9 @@ class TestPETScAssemblers:
         A0.destroy(), A1.destroy(), A2.destroy()
 
     def test_block_null_lifting(self):
-        from dolfinx.fem.petsc import assemble_vector_block
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
 
         comm = MPI.COMM_WORLD
         msh = create_unit_square(comm, 2, 2)
@@ -1148,7 +1424,22 @@ class TestPETScAssemblers:
         W = functionspace(msh, ("Lagrange", 2))
         v, w = ufl.TestFunction(V), ufl.TestFunction(W)
         L = form([ufl.conj(v) * ufl.dx, ufl.conj(w) * ufl.dx])
-        assemble_vector_block(L, [[None, None], [None, None]])
+        b = petsc_assemble_vector(L, kind=PETSc.Vec.Type.MPI)
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    def test_zero_diagonal_block_no_bcs(self):
+        from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+
+        msh = create_unit_square(MPI.COMM_WORLD, 2, 2)
+        V = functionspace(msh, ("Lagrange", 1))
+        W = functionspace(msh, ("Lagrange", 2))
+        u, p = ufl.TrialFunction(V), ufl.TrialFunction(W)
+        v, q = ufl.TestFunction(V), ufl.TestFunction(W)
+        a = form(
+            [[ufl.inner(u, v) * ufl.dx, ufl.inner(p, v) * ufl.dx], [ufl.inner(u, q) * ufl.dx, None]]
+        )
+        A = petsc_assemble_matrix(a, kind="mpi")
+        A.assemble()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -1171,19 +1462,19 @@ def test_basic_assembly_constant(mode, dtype):
     a, L = form(a, dtype=dtype), form(L, dtype=dtype)
 
     # Initial assembly
-    A1 = fem.assemble_matrix(a)
+    A1 = assemble_matrix(a)
     A1.scatter_reverse()
 
-    b1 = fem.assemble_vector(L)
+    b1 = assemble_vector(L)
     b1.scatter_reverse(la.InsertMode.add)
 
     c.value = [[1.0, 2.0], [3.0, 4.0]]
 
-    A2 = fem.assemble_matrix(a)
+    A2 = assemble_matrix(a)
     A2.scatter_reverse()
     assert np.linalg.norm(A1.data * 3.0 - A2.data * 5.0) == pytest.approx(0.0, abs=1.0e-5)
 
-    b2 = fem.assemble_vector(L)
+    b2 = assemble_vector(L)
     b2.scatter_reverse(la.InsertMode.add)
     assert np.linalg.norm(b1.array * 3.0 - b2.array * 5.0) == pytest.approx(0.0, abs=1.0e-5)
 
@@ -1231,28 +1522,634 @@ def test_vector_types():
     L = inner(c, v1) * ufl.dx
     x0 = la.vector(V1.dofmap.index_map, V1.dofmap.index_map_bs, dtype=np.float64)
     L = form(L, dtype=x0.array.dtype)
-    c0 = _cpp.fem.pack_constants(L._cpp_object)
-    c1 = _cpp.fem.pack_coefficients(L._cpp_object)
-    _cpp.fem.assemble_vector(x0.array, L._cpp_object, c0, c1)
+    c0 = pack_constants(L)
+    c1 = pack_coefficients(L)
+    assemble_vector(x0.array, L, c0, c1)
     x0.scatter_reverse(la.InsertMode.add)
 
     c = Constant(mesh1, np.complex128(1))
     L = inner(c, v1) * ufl.dx
     x1 = la.vector(V1.dofmap.index_map, V1.dofmap.index_map_bs, dtype=np.complex128)
     L = form(L, dtype=x1.array.dtype)
-    c0 = _cpp.fem.pack_constants(L._cpp_object)
-    c1 = _cpp.fem.pack_coefficients(L._cpp_object)
-    _cpp.fem.assemble_vector(x1.array, L._cpp_object, c0, c1)
+    c0 = pack_constants(L)
+    c1 = pack_coefficients(L)
+    assemble_vector(x1.array, L, c0, c1)
     x1.scatter_reverse(la.InsertMode.add)
 
     c = Constant(mesh0, np.float32(1))
     L = inner(c, v0) * ufl.dx
     x2 = la.vector(V0.dofmap.index_map, V0.dofmap.index_map_bs, dtype=np.float32)
     L = form(L, dtype=x2.array.dtype)
-    c0 = _cpp.fem.pack_constants(L._cpp_object)
-    c1 = _cpp.fem.pack_coefficients(L._cpp_object)
-    _cpp.fem.assemble_vector(x2.array, L._cpp_object, c0, c1)
+    c0 = pack_constants(L)
+    c1 = pack_coefficients(L)
+    assemble_vector(x2.array, L, c0, c1)
     x2.scatter_reverse(la.InsertMode.add)
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
     assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-7)
+
+
+@dtype_parametrize
+@pytest.mark.parametrize("method", ["degree", "metadata"])
+def test_mixed_quadrature(dtype, method):
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, dtype=xtype)
+
+    V = functionspace(mesh, ("Lagrange", 1))
+    u = Function(V, dtype=dtype)
+    u.interpolate(lambda x: x[0])
+
+    tol = 500 * np.finfo(dtype).eps
+    num_cells_local = (
+        mesh.topology.index_map(mesh.topology.dim).size_local
+        + mesh.topology.index_map(mesh.topology.dim).num_ghosts
+    )
+    values = np.full(num_cells_local, 1, dtype=np.int32)
+    left_cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[0] <= 0.5 + tol)
+    values[left_cells] = 2
+    top_cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[1] >= 0.5 - tol)
+    values[top_cells] = 3
+    ct = meshtags(mesh, mesh.topology.dim, np.arange(num_cells_local, dtype=np.int32), values)
+
+    dx = ufl.Measure("dx", domain=mesh, subdomain_data=ct)
+
+    if method == "degree":
+        dx_1 = dx(subdomain_id=(1,), degree=1)
+        dx_2 = dx(subdomain_id=(1, 2), degree=2)
+        dx_3 = dx(subdomain_id=(2, 3), degree=3)
+    elif method == "metadata":
+        dx_1 = dx(subdomain_id=(1,), metadata={"quadrature_degree": 1})
+        dx_2 = dx(subdomain_id=(1, 2), metadata={"quadrature_degree": 2})
+        dx_3 = dx(subdomain_id=(2, 3), metadata={"quadrature_degree": 3})
+    else:
+        raise ValueError(f"Invalid method {method}")
+    form_1 = u * dx_1
+    form_2 = u * dx_2
+    form_3 = u * dx_3
+    summed_form = form_1 + form_2 + form_3
+
+    compiled_forms = form([form_1, form_2, form_3], dtype=dtype)
+    local_contributions = 0
+    for compiled_form in compiled_forms:
+        local_contributions += assemble_scalar(compiled_form)
+    global_contribution = mesh.comm.allreduce(local_contributions, op=MPI.SUM)
+
+    compiled_form = form(summed_form, dtype=dtype)
+    local_sum = assemble_scalar(compiled_form)
+    global_sum = mesh.comm.allreduce(local_sum, op=MPI.SUM)
+    assert np.isclose(global_contribution, global_sum, rtol=tol, atol=tol)
+
+
+def vertex_to_dof_map(V):
+    """Create a map from the vertices of the mesh to the corresponding degree of freedom."""
+    mesh = V.mesh
+    num_vertices_per_cell = dolfinx.cpp.mesh.cell_num_entities(mesh.topology.cell_type, 0)
+
+    dof_layout2 = np.empty((num_vertices_per_cell,), dtype=np.int32)
+    for i in range(num_vertices_per_cell):
+        var = V.dofmap.dof_layout.entity_dofs(0, i)
+        assert len(var) == 1
+        dof_layout2[i] = var[0]
+
+    num_vertices = mesh.topology.index_map(0).size_local + mesh.topology.index_map(0).num_ghosts
+
+    c_to_v = mesh.topology.connectivity(mesh.topology.dim, 0)
+    assert (
+        c_to_v.num_nodes == 0
+        or (c_to_v.offsets[1:] - c_to_v.offsets[:-1] == c_to_v.offsets[1]).all()
+    ), "Single cell type supported"
+
+    vertex_to_dof_map = np.empty(num_vertices, dtype=np.int32)
+    vertex_to_dof_map[c_to_v.array] = V.dofmap.list[:, dof_layout2].reshape(-1)
+    return vertex_to_dof_map
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        mesh.CellType.interval,
+        mesh.CellType.triangle,
+        mesh.CellType.quadrilateral,
+        mesh.CellType.tetrahedron,
+        # mesh.CellType.pyramid,
+        mesh.CellType.prism,
+        mesh.CellType.hexahedron,
+    ],
+)
+@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+    ],
+)
+def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
+    comm = MPI.COMM_WORLD
+    rdtype = np.real(dtype(0)).dtype
+
+    msh = None
+    cell_dim = mesh.cell_dim(cell_type)
+    if cell_dim == 1:
+        msh = mesh.create_unit_interval(comm, 4, dtype=rdtype, ghost_mode=ghost_mode)
+    elif cell_dim == 2:
+        msh = mesh.create_unit_square(
+            comm, 4, 4, cell_type=cell_type, dtype=rdtype, ghost_mode=ghost_mode
+        )
+    elif cell_dim == 3:
+        msh = mesh.create_unit_cube(
+            comm, 4, 4, 4, cell_type=cell_type, dtype=rdtype, ghost_mode=ghost_mode
+        )
+    else:
+        raise RuntimeError("Bad dimension")
+
+    vertex_map = msh.topology.index_map(0)
+
+    def check_vertex_integral_against_sum(form, vertices, weighted=False):
+        """Weighting assumes the vertex integral to be weighted by a P1 function, each vertex value
+        corresponding to its global index."""
+        weights = vertex_map.local_to_global(vertices) if weighted else np.ones_like(vertices)
+        expected_value_l = np.sum(msh.geometry.x[vertices, 0] * weights)
+        value_l = fem.assemble_scalar(fem.form(form, dtype=dtype))
+        assert expected_value_l == pytest.approx(value_l, abs=5e4 * np.finfo(rdtype).eps)
+
+        expected_value = comm.allreduce(expected_value_l)
+        value = comm.allreduce(value_l)
+        assert expected_value == pytest.approx(value, abs=5e4 * np.finfo(rdtype).eps)
+
+    num_vertices = vertex_map.size_local
+    x = ufl.SpatialCoordinate(msh)
+
+    # Full domain
+    check_vertex_integral_against_sum(x[0] * ufl.dP, np.arange(num_vertices))
+
+    # Split domain into left half of vertices (1) and right half of vertices (2)
+    vertices_1 = mesh.locate_entities(msh, 0, lambda x: x[0] <= 0.5)
+    vertices_1 = vertices_1[vertices_1 < num_vertices]
+    vertices_2 = mesh.locate_entities(msh, 0, lambda x: x[0] > 0.5)
+    vertices_2 = vertices_2[vertices_2 < num_vertices]
+
+    tags = np.full(num_vertices, 1)
+    tags[vertices_2] = 2
+    vertices = np.arange(0, num_vertices, dtype=np.int32)
+    meshtags = mesh.meshtags(msh, 0, vertices, tags)
+
+    dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
+
+    # Combinations of sub domains
+    check_vertex_integral_against_sum(x[0] * dP(1), vertices_1)
+    check_vertex_integral_against_sum(x[0] * dP(2), vertices_2)
+    check_vertex_integral_against_sum(x[0] * (dP(1) + dP(2)), np.arange(num_vertices))
+
+    V = fem.functionspace(msh, ("P", 1))
+    u = fem.Function(V, dtype=dtype)
+    vertex_to_dof = vertex_to_dof_map(V)
+    vertices = np.arange(num_vertices + vertex_map.num_ghosts)
+    u.x.array[vertex_to_dof[vertices]] = vertex_map.local_to_global(vertices)
+
+    check_vertex_integral_against_sum(u * x[0] * ufl.dP, np.arange(num_vertices), True)
+    check_vertex_integral_against_sum(u * x[0] * dP(1), vertices_1, True)
+    check_vertex_integral_against_sum(u * x[0] * dP(2), vertices_2, True)
+    check_vertex_integral_against_sum(u * x[0] * (dP(1) + dP(2)), np.arange(num_vertices), True)
+
+    # Check custom packing
+    if cell_type is mesh.CellType.prism:
+        return
+
+    msh.topology.create_entities(1)
+    msh.topology.create_connectivity(cell_dim - 1, cell_dim)
+
+    v_to_c = msh.topology.connectivity(0, cell_dim)
+    c_to_v = msh.topology.connectivity(cell_dim, 0)
+
+    cell_vertex_pairs = np.array([], dtype=np.int32)
+    for v in range(num_vertices):
+        c = v_to_c.links(v)[0]
+        v_l = np.where(c_to_v.links(c) == v)[0]
+        cell_vertex_pairs = np.append(cell_vertex_pairs, [c, *v_l])
+
+    # a) With subdomain_data
+    check_vertex_integral_against_sum(
+        x[0] * ufl.dP(domain=msh, subdomain_data=[(1, cell_vertex_pairs)], subdomain_id=1),
+        np.arange(num_vertices),
+    )
+
+    # b) With create_form
+    vertices = np.arange(num_vertices)
+    fem.compute_integration_domains(fem.IntegralType.exterior_facet, msh.topology, vertices)
+    subdomains = {fem.IntegralType.exterior_facet: [(0, cell_vertex_pairs)]}
+
+    compiled_form = fem.compile_form(
+        comm, x[0] * ufl.dP, form_compiler_options={"scalar_type": dtype}
+    )
+    form = fem.create_form(compiled_form, [], msh, subdomains, {}, {}, [])
+    expected_value_l = np.sum(msh.geometry.x[vertices, 0])
+    value_l = fem.assemble_scalar(form)
+    assert expected_value_l == pytest.approx(value_l, abs=5e4 * np.finfo(rdtype).eps)
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        mesh.CellType.interval,
+        mesh.CellType.triangle,
+        mesh.CellType.quadrilateral,
+        mesh.CellType.tetrahedron,
+        # mesh.CellType.pyramid,
+        mesh.CellType.prism,
+        mesh.CellType.hexahedron,
+    ],
+)
+@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+    ],
+)
+def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
+    comm = MPI.COMM_WORLD
+    rdtype = np.real(dtype(0)).dtype
+
+    msh = None
+    cell_dim = mesh.cell_dim(cell_type)
+    if cell_dim == 1:
+        msh = mesh.create_unit_interval(comm, 4, ghost_mode=ghost_mode, dtype=rdtype)
+    elif cell_dim == 2:
+        msh = mesh.create_unit_square(
+            comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+        )
+    elif cell_dim == 3:
+        msh = mesh.create_unit_cube(
+            comm, 4, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+        )
+    else:
+        raise RuntimeError("Bad dimension")
+
+    vertex_map = msh.topology.index_map(0)
+    num_vertices = vertex_map.size_local
+
+    def check_vertex_integral_against_sum(form, vertices, weighted=False):
+        """Weighting assumes the vertex integral to be weighted by a P1 function, each vertex value
+        corresponding to its global index."""
+        weights = vertex_map.local_to_global(vertices) if weighted else np.ones_like(vertices)
+        expected_value_l = np.zeros(num_vertices, dtype=rdtype)
+        expected_value_l[vertices] = msh.geometry.x[vertices, 0] * weights
+        value_l = fem.assemble_vector(fem.form(form, dtype=dtype))
+        equal_l = np.allclose(
+            expected_value_l, np.real(value_l.array[:num_vertices]), atol=1e3 * np.finfo(rdtype).eps
+        )
+        assert equal_l
+        assert comm.allreduce(equal_l, MPI.BAND)
+
+    x = ufl.SpatialCoordinate(msh)
+    V = fem.functionspace(msh, ("P", 1))
+    v = ufl.conj(ufl.TestFunction(V))
+
+    # Full domain
+    check_vertex_integral_against_sum(x[0] * v * ufl.dP, np.arange(num_vertices))
+
+    # Split domain into left half of vertices (1) and right half of vertices (2)
+    vertices_1 = mesh.locate_entities(msh, 0, lambda x: x[0] <= 0.5)
+    vertices_1 = vertices_1[vertices_1 < num_vertices]
+    vertices_2 = mesh.locate_entities(msh, 0, lambda x: x[0] > 0.5)
+    vertices_2 = vertices_2[vertices_2 < num_vertices]
+
+    tags = np.full(num_vertices, 1)
+    tags[vertices_2] = 2
+    vertices = np.arange(0, num_vertices, dtype=np.int32)
+    meshtags = mesh.meshtags(msh, 0, vertices, tags)
+
+    dP = ufl.Measure("dP", domain=msh, subdomain_data=meshtags)
+
+    check_vertex_integral_against_sum(x[0] * v * dP(1), vertices_1)
+    check_vertex_integral_against_sum(x[0] * v * dP(2), vertices_2)
+    check_vertex_integral_against_sum(x[0] * v * (dP(1) + dP(2)), np.arange(num_vertices))
+
+    V = fem.functionspace(msh, ("P", 1))
+    u = fem.Function(V, dtype=dtype)
+    u.x.array[:] = vertex_map.local_to_global(np.arange(num_vertices + vertex_map.num_ghosts))
+    vertex_to_dof = vertex_to_dof_map(V)
+    vertices = np.arange(num_vertices + vertex_map.num_ghosts)
+    u.x.array[vertex_to_dof[vertices]] = vertex_map.local_to_global(vertices)
+
+    check_vertex_integral_against_sum(u * x[0] * v * ufl.dP, np.arange(num_vertices), True)
+    check_vertex_integral_against_sum(u * x[0] * v * dP(1), vertices_1, True)
+    check_vertex_integral_against_sum(u * x[0] * v * dP(2), vertices_2, True)
+    check_vertex_integral_against_sum(u * x[0] * v * (dP(1) + dP(2)), np.arange(num_vertices), True)
+
+    # Check custom packing
+    if cell_type is mesh.CellType.prism:
+        return
+
+    msh.topology.create_entities(1)
+    msh.topology.create_connectivity(cell_dim - 1, cell_dim)
+
+    v_to_c = msh.topology.connectivity(0, cell_dim)
+    c_to_v = msh.topology.connectivity(cell_dim, 0)
+
+    cell_vertex_pairs = np.array([], dtype=np.int32)
+    for v in range(num_vertices):
+        c = v_to_c.links(v)[0]
+        v_l = np.where(c_to_v.links(c) == v)[0]
+        cell_vertex_pairs = np.append(cell_vertex_pairs, [c, *v_l])
+
+    # a) With subdomain_data
+    v = ufl.conj(ufl.TestFunction(V))
+    check_vertex_integral_against_sum(
+        x[0] * v * ufl.dP(domain=msh, subdomain_data=[(1, cell_vertex_pairs)], subdomain_id=1),
+        np.arange(num_vertices),
+    )
+
+    # b) With create_form
+    vertices = np.arange(num_vertices)
+    fem.compute_integration_domains(fem.IntegralType.exterior_facet, msh.topology, vertices)
+    subdomains = {fem.IntegralType.exterior_facet: [(0, cell_vertex_pairs)]}
+
+    compiled_form = fem.compile_form(
+        comm, x[0] * v * ufl.dP, form_compiler_options={"scalar_type": dtype}
+    )
+    form = fem.create_form(compiled_form, [V], msh, subdomains, {}, {}, [])
+    expected_value_l = np.sum(msh.geometry.x[vertices, 0])
+    expected_value_l = np.zeros(num_vertices, dtype=rdtype)
+    expected_value_l[vertices] = msh.geometry.x[vertices, 0]
+    value_l = fem.assemble_vector(form)
+    assert expected_value_l == pytest.approx(
+        value_l.array[: expected_value_l.size], abs=5e4 * np.finfo(rdtype).eps
+    )
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        mesh.CellType.triangle,
+        mesh.CellType.quadrilateral,
+    ],
+)
+@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+    ],
+)
+def test_ridge_integrals_rank1_2D(cell_type, ghost_mode, dtype):
+    comm = MPI.COMM_WORLD
+    rdtype = np.real(dtype(0)).dtype
+
+    msh = None
+    msh = mesh.create_unit_square(
+        comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+    )
+    gdim = msh.geometry.dim
+    V = dolfinx.fem.functionspace(msh, ("Lagrange", 3))
+
+    x = ufl.SpatialCoordinate(msh)
+    u = ufl.TestFunction(V)
+
+    integrand = ufl.conj(u) * x[gdim - 1]
+    dr = ufl.Measure("dr", domain=msh)
+    F = dolfinx.fem.form(integrand * dr, dtype=dtype)
+    b = dolfinx.fem.assemble_vector(F)
+
+    dP = ufl.Measure("dP", domain=msh)
+    Fp = dolfinx.fem.form(integrand * dP, dtype=dtype)
+    b_p = dolfinx.fem.assemble_vector(Fp)
+    tol = np.finfo(rdtype).eps
+    np.testing.assert_allclose(b.array, b_p.array, atol=tol, rtol=tol)
+
+
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        mesh.CellType.triangle,
+        mesh.CellType.quadrilateral,
+        mesh.CellType.tetrahedron,
+        # mesh.CellType.pyramid,
+        # mesh.CellType.prism,
+        mesh.CellType.hexahedron,
+    ],
+)
+@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+    ],
+)
+def test_ridge_integrals_rank0(cell_type, ghost_mode, dtype):
+    comm = MPI.COMM_WORLD
+    rdtype = np.real(dtype(0)).dtype
+
+    msh = None
+    cell_dim = mesh.cell_dim(cell_type)
+    if cell_dim == 2:
+        msh = mesh.create_unit_square(
+            comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+        )
+    elif cell_dim == 3:
+        msh = mesh.create_unit_cube(
+            comm, 4, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+        )
+    else:
+        raise RuntimeError("Bad dimension")
+    gdim = msh.geometry.dim
+
+    x = ufl.SpatialCoordinate(msh)
+
+    def marked_ridges(x):
+        return np.isclose(x[0], 1) & np.isclose(x[1], 0.5)
+
+    exterior_ridges = dolfinx.mesh.locate_entities_boundary(
+        msh, msh.topology.dim - 2, marked_ridges
+    )
+    et = dolfinx.mesh.meshtags(
+        msh, msh.topology.dim - 2, exterior_ridges, np.full_like(exterior_ridges, 33)
+    )
+    dr = ufl.Measure("dr", domain=msh, subdomain_data=et, subdomain_id=33)
+    integrand = x[0] + x[1] + x[gdim - 1] ** 2
+    J_compiled = dolfinx.fem.form(integrand * dr, dtype=dtype)
+    J = dolfinx.fem.assemble_scalar(J_compiled)
+    J_sum = msh.comm.allreduce(J, op=MPI.SUM)
+    if cell_dim == 2:
+        ref_sol = 1 + 1 / 2 + (1 / 2) ** 2
+    elif cell_dim == 3:
+        ref_sol = 1 + 1 / 2 + 1 / 3
+    else:
+        raise RuntimeError("Bad dimension")
+    tol = 50 * np.finfo(rdtype).eps
+    assert np.isclose(J_sum, ref_sol, atol=tol, rtol=tol)
+
+
+@pytest.mark.parametrize("coefficient", [True, False])
+@pytest.mark.parametrize(
+    "cell_type",
+    [
+        mesh.CellType.tetrahedron,
+        # mesh.CellType.pyramid,
+        # mesh.CellType.prism,
+        mesh.CellType.hexahedron,
+    ],
+)
+@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="win32 platform does not support C99 _Complex numbers"
+            ),
+        ),
+    ],
+)
+def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype, coefficient):
+    comm = MPI.COMM_WORLD
+    rdtype = np.real(dtype(0)).dtype
+
+    N = 4
+    msh = mesh.create_unit_cube(
+        comm, N, N, N, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
+    )
+    gdim = msh.geometry.dim
+
+    el = ("Lagrange", 3, (gdim,))
+
+    volume_element = basix.ufl.element(el[0], msh.basix_cell(), el[1], shape=el[2], dtype=rdtype)
+    V = dolfinx.fem.functionspace(msh, volume_element)
+
+    x = ufl.SpatialCoordinate(msh)
+    v = ufl.TestFunction(V)
+
+    def marked_ridges(x):
+        return np.isclose(x[0], 1) & np.isclose(x[1], 0.5)
+
+    exterior_ridges = dolfinx.mesh.locate_entities_boundary(
+        msh, msh.topology.dim - 2, marked_ridges
+    )
+    et = dolfinx.mesh.meshtags(
+        msh, msh.topology.dim - 2, exterior_ridges, np.full_like(exterior_ridges, 33)
+    )
+
+    def f(mod, x):
+        return x[0] + mod.sin(x[1]), x[2] + x[1], x[0] ** 2 - 3 * x[1]
+
+    def integrand(x, v):
+        if coefficient:
+            Z = dolfinx.fem.functionspace(v.ufl_function_space().mesh, ("Lagrange", 1, (gdim,)))
+            z = dolfinx.fem.Function(Z, dtype=dtype)
+            z.interpolate(lambda x: f(np, x))
+        else:
+            z = ufl.as_vector(f(ufl, x))
+        return ufl.inner(z, v)
+
+    metadata = {"quadrature_degree": 10}
+    dr = ufl.Measure("dr", domain=msh, subdomain_data=et, subdomain_id=33, metadata=metadata)
+    F = dolfinx.fem.form(integrand(x, v) * dr, dtype=dtype)
+    b = dolfinx.fem.assemble_vector(F)
+    b.scatter_reverse(la.InsertMode.add)
+    b.scatter_forward()
+
+    # Create reference solution on unit interval
+    assert gdim == 3
+    if comm.rank == 0:
+        nodes = np.zeros((N + 1, gdim), dtype=rdtype)
+        nodes[:, 0] = 1
+        nodes[:, 1] = 0.5
+        nodes[:, 2] = np.linspace(0, 1, N + 1)
+        connectivity = (
+            np.repeat(np.arange(nodes.shape[0]), 2)[1:-1]
+            .reshape(nodes.shape[0] - 1, 2)
+            .astype(np.int64)
+        )
+    else:
+        nodes = np.zeros((0, gdim), dtype=rdtype)
+        connectivity = np.zeros((0, 2), dtype=np.int64)
+
+    c_el = ufl.Mesh(
+        basix.ufl.element(
+            "Lagrange", basix.CellType.interval, 1, shape=(nodes.shape[1],), dtype=rdtype
+        ),
+    )
+    line_mesh = dolfinx.mesh.create_mesh(
+        MPI.COMM_WORLD,
+        x=nodes,
+        cells=connectivity,
+        e=c_el,
+        partitioner=dolfinx.mesh.create_cell_partitioner(ghost_mode),
+    )
+
+    line_element = basix.ufl.element(
+        el[0], line_mesh.basix_cell(), el[1], shape=el[2], dtype=rdtype
+    )
+    Q = dolfinx.fem.functionspace(line_mesh, line_element)
+    q = ufl.TestFunction(Q)
+
+    x_e = ufl.SpatialCoordinate(line_mesh)
+    F_ref = dolfinx.fem.form(
+        integrand(x_e, q) * ufl.dx(domain=line_mesh, metadata=metadata), dtype=dtype
+    )
+    b_ref = dolfinx.fem.assemble_vector(F_ref)
+    b_ref.scatter_reverse(la.InsertMode.add)
+    b_ref.scatter_forward()
+    tol = 10 * np.finfo(rdtype).eps
+    assert np.isclose(la.norm(b), la.norm(b_ref), rtol=tol, atol=tol)

@@ -31,16 +31,16 @@ else()
   endif()
 endif()
 add_custom_command(
-  OUTPUT poisson.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py ${SCALAR_TYPE}
+  OUTPUT mixed_poisson.c
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/mixed_poisson.py ${SCALAR_TYPE}
   VERBATIM
-  DEPENDS poisson.py
-  COMMENT "Compile poisson.py using FFCx"
+  DEPENDS mixed_poisson.py
+  COMMENT "Compile mixed_poisson.py using FFCx"
 )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
+add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/mixed_poisson.c)
 target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Set C++20 standard
@@ -59,8 +59,8 @@ set_source_files_properties(
 )
 
 # Test targets (used by DOLFINx testing system)
-set(TEST_PARAMETERS2 -np 2 ${MPIEXEC_PARAMS} "./${PROJECT_NAME}")
-set(TEST_PARAMETERS3 -np 3 ${MPIEXEC_PARAMS} "./${PROJECT_NAME}")
+set(TEST_PARAMETERS2 -np 2 "./${PROJECT_NAME}")
+set(TEST_PARAMETERS3 -np 3 "./${PROJECT_NAME}")
 add_test(NAME ${PROJECT_NAME}_mpi_2 COMMAND "mpirun" ${TEST_PARAMETERS2})
 add_test(NAME ${PROJECT_NAME}_mpi_3 COMMAND "mpirun" ${TEST_PARAMETERS3})
 add_test(NAME ${PROJECT_NAME}_serial COMMAND ${PROJECT_NAME})

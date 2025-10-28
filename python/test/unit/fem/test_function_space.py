@@ -123,7 +123,7 @@ def test_sub(Q, W):
     assert W.element.num_sub_elements == X.element.num_sub_elements
     assert W.element.space_dimension == X.element.space_dimension
     assert W.value_shape == X.value_shape
-    assert W.element.interpolation_points().shape == X.element.interpolation_points().shape
+    assert W.element.interpolation_points.shape == X.element.interpolation_points.shape
     assert W.element == X.element
 
 
@@ -170,8 +170,12 @@ def test_collapse(W, V):
         Function(W.sub(1))
 
     Ws = [W.sub(i).collapse() for i in range(W.num_sub_spaces)]
-    for Wi, _ in Ws:
+    for Wi, dofs in Ws:
         assert np.allclose(Wi.dofmap.index_map.ghosts, W.dofmap.index_map.ghosts)
+
+        # Number of collapsed dofs in W numbering must agree with the number of dofs
+        # of the collapsed space
+        assert Wi.dofmap.index_map.size_local + Wi.dofmap.index_map.num_ghosts == dofs.size
 
     msh = W.mesh
     cell_imap = msh.topology.index_map(msh.topology.dim)
@@ -252,7 +256,7 @@ def test_basix_element(V, W, Q, V2):
     for V_ in (V, W, V2):
         e = V_.element.basix_element
         assert isinstance(
-            e, (basix._basixcpp.FiniteElement_float64, basix._basixcpp.FiniteElement_float32)
+            e, basix._basixcpp.FiniteElement_float64 | basix._basixcpp.FiniteElement_float32
         )
 
     # Mixed spaces do not yet return a basix element
@@ -272,7 +276,7 @@ def test_vector_function_space_cell_type():
     domain = Mesh(element("Lagrange", "interval", 1, shape=(1,), dtype=default_real_type))
     cells = np.array([[0, 1]], dtype=np.int64)
     x = np.array([[0.0, 0.0], [1.0, 1.0]])
-    mesh = create_mesh(comm, cells, x, domain)
+    mesh = create_mesh(comm, cells, domain, x)
 
     # Create functions space over mesh, and check element cell
     # is correct
@@ -288,7 +292,7 @@ def test_manifold_spaces():
     )
     cells = [(0, 1, 2), (0, 1, 3)]
     domain = Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, vertices)
     gdim = mesh.geometry.dim
     QV = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     QT = functionspace(mesh, ("Lagrange", 1, (gdim, gdim)))

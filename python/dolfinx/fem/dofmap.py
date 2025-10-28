@@ -1,22 +1,32 @@
-# Copyright (C) 2018 Michal Habera
+# Copyright (C) 2018-2025 Michal Habera and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfinx import cpp as _cpp
+import typing
+from collections.abc import Sequence
+
+from mpi4py.MPI import Comm
+
+from dolfinx.cpp.fem import DofMap as _DofMap
+from dolfinx.cpp.fem import create_dofmaps as _create_dofmaps
+from dolfinx.fem.element import FiniteElement
+
+if typing.TYPE_CHECKING:
+    import dolfinx.mesh
 
 
 class DofMap:
-    """Degree-of-freedom map
+    """Degree-of-freedom map.
 
-    This class handles the mapping of degrees of freedom. It builds
-    a dof map based on a FiniteElement on a specific mesh.
+    This class handles the mapping of degrees of freedom. It builds a
+    dof map based on a FiniteElement on a specific mesh.
     """
 
-    _cpp_object: _cpp.fem.DofMap
+    _cpp_object: _DofMap
 
-    def __init__(self, dofmap: _cpp.fem.DofMap):
+    def __init__(self, dofmap: _DofMap):
         self._cpp_object = dofmap
 
     def cell_dofs(self, cell_index: int):
@@ -26,13 +36,14 @@ class DofMap:
             cell: The cell index.
 
         Returns:
-            Local-global dof map for the cell (using process-local indices).
+            Local-global dof map for the cell (using process-local
+            indices).
         """
         return self._cpp_object.cell_dofs(cell_index)
 
     @property
     def bs(self):
-        """Returns the block size of the dofmap"""
+        """Block size of the dofmap."""
         return self._cpp_object.bs
 
     @property
@@ -42,7 +53,8 @@ class DofMap:
 
     @property
     def index_map(self):
-        """Index map that described the parallel distribution of the dofmap."""
+        """Index map that described the parallel distribution of the
+        dofmap."""
         return self._cpp_object.index_map
 
     @property
@@ -54,3 +66,22 @@ class DofMap:
     def list(self):
         """Adjacency list with dof indices for each cell."""
         return self._cpp_object.map()
+
+
+def create_dofmaps(
+    comm: Comm, topology: "dolfinx.mesh.Topology", elements: Sequence[FiniteElement]
+) -> list[DofMap]:
+    """Create degree-of-freedom maps on a given topology.
+
+    Args:
+        comm: MPI communicator
+        topology: Mesh topology
+        elements: Sequence of elements
+
+    Returns:
+        List of degree-of-freedom maps where the ``i``-th map is the map
+        for ``elements[i]``.
+    """
+    elements_cpp = [e._cpp_object for e in elements]
+    cpp_dofmaps = _create_dofmaps(comm, topology._cpp_object, elements_cpp)
+    return [DofMap(cpp_object) for cpp_object in cpp_dofmaps]

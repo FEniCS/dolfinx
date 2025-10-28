@@ -10,9 +10,25 @@
 
 # # Stokes equations using Taylor-Hood elements
 #
-# This demo is implemented in {download}`demo_stokes.py`. It shows how
-# to solve the Stokes problem using Taylor-Hood elements using different
-# linear solvers.
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_stokes.py>`
+# * {download}`Jupyter notebook <./demo_stokes.ipynb>`
+# ```
+# It shows how to solve the Stokes problem using Taylor-Hood elements
+# using different linear solvers:
+#
+# 1. [Block preconditioner using PETSc Nest data structures using
+#    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
+#    ](#high-level-nested-matrix-solver)
+# 1. [Block preconditioner using PETSc Nest data structures using
+#    PETSc directly](#low-level-nested-matrix-solver)
+# 1. [Block preconditioner with the `u` and `p` fields stored block-wise
+#    in a single matrix](#monolithic-block-iterative-solver)
+# 1. [Direct solver with the `u` and `p` fields stored block-wise in a
+#    single matrix](#monolithic-block-direct-solver)
+# 1. [Direct solver with the `u` and `p` fields stored in a mixed fashion a
+#    single matrix](#non-blocked-direct-solver)
 #
 # ## Equation and problem definition
 #
@@ -54,7 +70,7 @@
 # $$
 # \begin{align}
 #   a((u, p), (v, q)) &:= \int_{\Omega} \nabla u \cdot \nabla v -
-#            \nabla \cdot v \ p + \nabla \cdot u \ q \, {\rm d} x,
+#            \nabla \cdot v \ p + \nabla \cdot u \ q \, {\rm d} x,\\
 #   L((v, q)) &:= \int_{\Omega} f \cdot v \, {\rm d} x + \int_{\partial
 #            \Omega_N} g \cdot v \, {\rm d} s.
 # \end{align}
@@ -73,50 +89,40 @@
 #
 # ## Implementation
 #
-# The Stokes problem using Taylor-Hood elements is solved using:
-# 1. [Block preconditioner using PETSc MatNest and VecNest data
-#    structures. Each 'block' is a standalone object.](#nested-matrix-solver)
-# 1. [Block preconditioner with the `u` and `p` fields stored block-wise
-#    in a single matrix](#monolithic-block-iterative-solver)
-# 1. [Direct solver with the `u` and `p` fields stored block-wise in a
-#    single matrix](#monolithic-block-direct-solver)
-# 1. [Direct solver with the `u` and `p` fields stored block-wise in a
-#    single matrix](#non-blocked-direct-solver)
-#
 # The required modules are first imported:
 
+# +
 from mpi4py import MPI
-
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
+from petsc4py import PETSc
 
 import numpy as np
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import default_real_type, fem, la
+from dolfinx import default_real_type, la
 from dolfinx.fem import (
     Constant,
     Function,
+    bcs_by_block,
     dirichletbc,
     extract_function_spaces,
     form,
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
+from dolfinx.fem.petsc import (
+    LinearProblem,
+    apply_lifting,
+    assemble_matrix,
+    assemble_vector,
+    create_vector,
+    set_bc,
+)
 from dolfinx.io import XDMFFile
+from dolfinx.la.petsc import create_vector_wrap
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
-from ufl import div, dx, grad, inner
+
+# -
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function
@@ -125,7 +131,7 @@ from ufl import div, dx, grad, inner
 # +
 # Create mesh
 msh = create_rectangle(
-    MPI.COMM_WORLD, [np.array([0, 0]), np.array([1, 1])], [32, 32], CellType.triangle
+    MPI.COMM_WORLD, [np.array([0, 0]), np.array([1, 1])], (32, 32), CellType.triangle
 )
 
 
@@ -177,7 +183,7 @@ bcs = [bc0, bc1]
 # -
 
 # The bilinear and linear forms for the Stokes equations are defined
-# using a a blocked structure:
+# using a blocked structure:
 
 # +
 # Define variational problem
@@ -185,36 +191,112 @@ bcs = [bc0, bc1]
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
 f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore
 
-a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx], [inner(div(u), q) * dx, None]])
-L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])  # type: ignore
+a_ufl = [
+    [ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, ufl.inner(p, ufl.div(v)) * ufl.dx],
+    [ufl.inner(ufl.div(u), q) * ufl.dx, None],
+]
+a = form(a_ufl)
+L_ufl = [ufl.inner(f, v) * ufl.dx, ufl.ZeroBaseForm((q,))]
+L = form(L_ufl)
 # -
 
 # A block-diagonal preconditioner will be used with the iterative
 # solvers for this problem:
 
-a_p11 = form(inner(p, q) * dx)
+a_p11 = form(ufl.inner(p, q) * ufl.dx)
 a_p = [[a[0][0], None], [None, a_p11]]
 
-# ### Nested matrix solver
+
+# ### High-level nested matrix solver
+#
+# We first use the high-level {py:class}`LinearProblem
+# <dolfinx.fem.petsc.LinearProblem>` class which uses PETSc to solve
+# the linear problem. Details on the preconditioner setup are given in
+# {py:func}`nested_iterative_solver_low_level` below.
+
+
+def nested_iterative_solver_high_level():
+    """Solve the Stokes problem using nest matrices and an iterative solver
+    using high-level functionality."""
+    problem = LinearProblem(
+        a_ufl,
+        L_ufl,
+        kind="nest",
+        bcs=bcs,
+        P=a_p,
+        petsc_options_prefix="demo_stokes__nested_iterative_solver_high_level_",
+        petsc_options={
+            "ksp_type": "minres",
+            "ksp_rtol": 1e-9,
+            "pc_type": "fieldsplit",
+            "pc_fieldsplit_type": "additive",
+            "fieldsplit_0_ksp_type": "preonly",
+            "fieldsplit_0_pc_type": "gamg",
+            "fieldsplit_1_ksp_type": "preonly",
+            "fieldsplit_1_pc_type": "jacobi",
+        },
+    )
+
+    # The pressure field is determined only up to a constant. We supply
+    # a vector that spans the nullspace to the solver, and any component
+    # of the solution in this direction will be eliminated during the
+    # solution process.
+    null_vec = create_vector(extract_function_spaces(L), "nest")
+
+    # Set velocity part to zero and the pressure part to a non-zero
+    # constant
+    null_vecs = null_vec.getNestSubVecs()
+    null_vecs[0].set(0.0), null_vecs[1].set(1.0)
+
+    # Normalize the vector that spans the nullspace, create a nullspace
+    # object, and attach it to the matrix
+    null_vec.normalize()
+    nsp = PETSc.NullSpace().create(vectors=[null_vec])
+    problem.A.setNullSpace(nsp)
+
+    A00 = problem.A.getNestSubMatrix(0, 0)
+    A00.setOption(PETSc.Mat.Option.SPD, True)
+
+    P00, P11 = problem.P_mat.getNestSubMatrix(0, 0), problem.P_mat.getNestSubMatrix(1, 1)
+    P00.setOption(PETSc.Mat.Option.SPD, True)
+    P11.setOption(PETSc.Mat.Option.SPD, True)
+
+    u_h, p_h = problem.solve()
+    assert problem.solver.getConvergedReason() > 0
+    # Because left-hand side operator is only assembled during solve
+    # we can only test the null space at this point.
+    assert nsp.test(problem.A)
+
+    # Compute norms of the solution vectors
+    norm_u = la.norm(u_h.x)
+    norm_p = la.norm(p_h.x)
+    if MPI.COMM_WORLD.rank == 0:
+        print(f"(A) Norm of velocity coefficient vector (high-level nested, iterative): {norm_u}")
+        print(f"(A) Norm of pressure coefficient vector (high-level nested, iterative): {norm_p}")
+
+    return norm_u, norm_p
+
+
+# ### Low-level nested matrix solver
 #
 # We assemble the bilinear form into a nested matrix `A`, and call the
 # `assemble()` method to communicate shared entries in parallel. Rows
 # and columns in `A` that correspond to degrees-of-freedom with
-# Dirichlet boundary conditions wil be zeroed by the assembler, and a
+# Dirichlet boundary conditions will be zeroed by the assembler, and a
 # value of 1 will be set on the diagonal for these rows.
 
 
-def nested_iterative_solver():
-    """Solve the Stokes problem using nest matrices and an iterative solver."""
-
+def nested_iterative_solver_low_level():
+    """Solve the Stokes problem using nest matrices and an iterative
+    solver using low-level routines."""
     # Assemble nested matrix operators
-    A = fem.petsc.assemble_matrix_nest(a, bcs=bcs)
+    A = assemble_matrix(a, bcs=bcs, kind="nest")
     A.assemble()
 
     # Create a nested matrix P to use as the preconditioner. The
     # top-left block of P is shared with the top-left block of A. The
     # bottom-right diagonal entry is assembled from the form a_p11:
-    P11 = fem.petsc.assemble_matrix(a_p11, [])
+    P11 = assemble_matrix(a_p11, [])
     P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
     P.assemble()
 
@@ -226,33 +308,26 @@ def nested_iterative_solver():
     P11.setOption(PETSc.Mat.Option.SPD, True)
 
     # Assemble right-hand side vector
-    b = fem.petsc.assemble_vector_nest(L)
+    b = assemble_vector(L, kind="nest")
 
     # Modify ('lift') the RHS for Dirichlet boundary conditions
-    fem.petsc.apply_lifting_nest(b, a, bcs=bcs)
+    bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
+    apply_lifting(b, a, bcs=bcs1)
 
-    # Sum contributions for vector entries that are share across
+    # Sum contributions for vector entries that are shared across
     # parallel processes
     for b_sub in b.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Set Dirichlet boundary condition values in the RHS vector
-    bcs0 = fem.bcs_by_block(extract_function_spaces(L), bcs)
-    fem.petsc.set_bc_nest(b, bcs0)
+    bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
+    set_bc(b, bcs0)
 
-    # The pressure field is determined only up to a constant. We supply
-    # a vector that spans the nullspace to the solver, and any component
-    # of the solution in this direction will be eliminated during the
-    # solution process.
-    null_vec = fem.petsc.create_vector_nest(L)
-
-    # Set velocity part to zero and the pressure part to a non-zero
-    # constant
+    # Set the nullspace for pressure (since pressure is determined only
+    # up to a constant)
+    null_vec = create_vector(extract_function_spaces(L), "nest")
     null_vecs = null_vec.getNestSubVecs()
     null_vecs[0].set(0.0), null_vecs[1].set(1.0)
-
-    # Normalize the vector that spans the nullspace, create a nullspace
-    # object, and attach it to the matrix
     null_vec.normalize()
     nsp = PETSc.NullSpace().create(vectors=[null_vec])
     assert nsp.test(A)
@@ -287,7 +362,7 @@ def nested_iterative_solver():
     # space `Q`). The vectors for `u` and `p` are combined to form a
     # nested vector and the system is solved.
     u, p = Function(V), Function(Q)
-    x = PETSc.Vec().createNest([la.create_petsc_vector_wrap(u.x), la.create_petsc_vector_wrap(p.x)])
+    x = PETSc.Vec().createNest([create_vector_wrap(u.x), create_vector_wrap(p.x)])
     ksp.solve(b, x)
 
     # Save solution to file in XDMF format for visualization, e.g. with
@@ -312,8 +387,8 @@ def nested_iterative_solver():
     norm_u = la.norm(u.x)
     norm_p = la.norm(p.x)
     if MPI.COMM_WORLD.rank == 0:
-        print(f"(A) Norm of velocity coefficient vector (nested, iterative): {norm_u}")
-        print(f"(A) Norm of pressure coefficient vector (nested, iterative): {norm_p}")
+        print(f"(A) Norm of velocity coefficient vector (low-level nested, iterative): {norm_u}")
+        print(f"(A) Norm of pressure coefficient vector (low-level nested, iterative): {norm_p}")
 
     return norm_u, norm_p
 
@@ -327,15 +402,21 @@ def nested_iterative_solver():
 
 def block_operators():
     """Return block operators and block RHS vector for the Stokes
-    problem"""
+    problem."""
 
     # Assembler matrix operator, preconditioner and RHS vector into
     # single objects but preserving block structure
-    A = assemble_matrix_block(a, bcs=bcs)
+    A = assemble_matrix(a, bcs=bcs)
     A.assemble()
-    P = assemble_matrix_block(a_p, bcs=bcs)
+    P = assemble_matrix(a_p, bcs=bcs)
     P.assemble()
-    b = assemble_vector_block(L, a, bcs=bcs)
+
+    b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
+    bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
+    apply_lifting(b, a, bcs=bcs1)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
+    set_bc(b, bcs0)
 
     # Set the nullspace for pressure (since pressure is determined only
     # up to a constant)
@@ -368,9 +449,9 @@ def block_iterative_solver():
     offset_u = V_map.local_range[0] * V.dofmap.index_map_bs + Q_map.local_range[0]
     offset_p = offset_u + V_map.size_local * V.dofmap.index_map_bs
     is_u = PETSc.IS().createStride(
-        V_map.size_local * V.dofmap.index_map_bs, offset_u, 1, comm=PETSc.COMM_SELF
+        V_map.size_local * V.dofmap.index_map_bs, offset_u, 1, comm=msh.comm
     )
-    is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
+    is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=msh.comm)
 
     # Create a MINRES Krylov solver and a block-diagonal preconditioner
     # using PETSc's additive fieldsplit preconditioner
@@ -440,9 +521,8 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    sys = PETSc.Sys()  # type: ignore
     use_superlu = PETSc.IntType == np.int64
-    if sys.hasExternalPackage("mumps") and not use_superlu:
+    if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
         pc.setFactorSolverType("mumps")
         pc.setFactorSetUpSolverType()
         pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
@@ -504,15 +584,19 @@ def mixed_direct():
     (u, p) = ufl.TrialFunctions(W)
     (v, q) = ufl.TestFunctions(W)
     f = Function(Q)
-    a = form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
-    L = form(inner(f, v) * dx)
+    a = form(
+        (ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(p, ufl.div(v)) + ufl.inner(ufl.div(u), q))
+        * ufl.dx
+    )
+    L = form(ufl.inner(f, v) * ufl.dx)
 
     # Assemble LHS matrix and RHS vector
-    A = fem.petsc.assemble_matrix(a, bcs=bcs)
+    A = assemble_matrix(a, bcs=bcs)
     A.assemble()
-    b = fem.petsc.assemble_vector(L)
+    b = assemble_vector(L)
 
-    fem.petsc.apply_lifting(b, [a], bcs=[bcs])
+    bcs1 = bcs_by_block(extract_function_spaces([[a]], 1), bcs)
+    apply_lifting(b, [a], bcs=bcs1)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Set Dirichlet boundary condition values in the RHS
@@ -527,9 +611,8 @@ def mixed_direct():
     # Configure MUMPS to handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    sys = PETSc.Sys()  # type: ignore
     use_superlu = PETSc.IntType == np.int64
-    if sys.hasExternalPackage("mumps") and not use_superlu:
+    if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
         pc.setFactorSolverType("mumps")
         pc.setFactorSetUpSolverType()
         pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
@@ -561,19 +644,29 @@ def mixed_direct():
     return norm_u, norm_u
 
 
+# Solve using LinearProblem class
+
+norm_u_0, norm_p_0 = nested_iterative_solver_high_level()
+
 # Solve using PETSc MatNest
-norm_u_0, norm_p_0 = nested_iterative_solver()
+
+norm_u_1, norm_p_1 = nested_iterative_solver_low_level()
+np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
 
 # Solve using PETSc block matrices and an iterative solver
-norm_u_1, norm_p_1 = block_iterative_solver()
-np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
-np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
+
+norm_u_2, norm_p_2 = block_iterative_solver()
+np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
 
 # Solve using PETSc block matrices and an LU solver
-norm_u_2, norm_p_2 = block_direct_solver()
-np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
-np.testing.assert_allclose(norm_p_2, norm_p_0, rtol=1e-4)
+
+norm_u_3, norm_p_3 = block_direct_solver()
+np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_p_3, norm_p_0, rtol=1e-4)
 
 # Solve using a non-blocked matrix and an LU solver
-norm_u_3, norm_p_3 = mixed_direct()
-np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-4)
+
+norm_u_4, norm_p_4 = mixed_direct()
+np.testing.assert_allclose(norm_u_4, norm_u_0, rtol=1e-4)

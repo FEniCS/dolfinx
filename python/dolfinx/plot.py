@@ -6,7 +6,6 @@
 """Support functions for plotting"""
 
 import functools
-import typing
 
 import numpy as np
 
@@ -31,7 +30,7 @@ _first_order_vtk = {
 
 
 @functools.singledispatch
-def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
+def vtk_mesh(msh: mesh.Mesh, dim: int | None = None, entities=None):
     """Create vtk mesh topology data for mesh entities of a given
     dimension. The vertex indices in the returned topology array are the
     indices for the associated entry in the mesh geometry.
@@ -74,8 +73,8 @@ def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
     return topology.reshape(-1), cell_types, msh.geometry.x
 
 
-@vtk_mesh.register(fem.FunctionSpace)
-def _(V: fem.FunctionSpace, entities=None):
+@vtk_mesh.register
+def _(V: fem.FunctionSpace, entities=None):  # type: ignore
     """Creates a VTK mesh topology (topology array and array of cell
     types) that is based on the degree-of-freedom coordinates.
 
@@ -103,7 +102,8 @@ def _(V: fem.FunctionSpace, entities=None):
         "P",
     ]:
         raise RuntimeError(
-            "Can only create meshes from continuous or discontinuous Lagrange spaces"
+            "Can only create meshes from continuous or discontinuous Lagrange"
+            "spaces, not {V.ufl_element().family_name}."
         )
 
     degree = V.ufl_element().degree
@@ -129,6 +129,5 @@ def _(V: fem.FunctionSpace, entities=None):
     topology = np.zeros((len(entities), num_dofs_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_dofs_per_cell
     dofmap_ = dofmap.list
-
-    topology[:, 1:] = dofmap_[: len(entities), perm]
+    topology[:, 1:] = dofmap_[entities][:, perm]
     return topology.reshape(1, -1)[0], cell_types, V.tabulate_dof_coordinates()

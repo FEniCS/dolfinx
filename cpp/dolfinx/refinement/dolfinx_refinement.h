@@ -12,3 +12,4 @@ namespace dolfinx::refinement
 
 #include <dolfinx/refinement/interval.h>
 #include <dolfinx/refinement/refine.h>
+#include <dolfinx/refinement/uniform.h>

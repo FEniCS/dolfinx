@@ -18,6 +18,7 @@
 #include <dolfinx/common/log.h>
 #include <iostream>
 #include <sstream>
+#include <utility>
 
 using namespace dolfinx;
 using namespace dolfinx::la;
@@ -31,8 +32,8 @@ using namespace dolfinx::la;
   } while (0)
 
 //-----------------------------------------------------------------------------
-void la::petsc::error(int error_code, std::string filename,
-                      std::string petsc_function)
+void la::petsc::error(int error_code, const std::string& filename,
+                      const std::string& petsc_function)
 {
   // Fetch PETSc error description
   const char* desc;
@@ -215,12 +216,10 @@ void la::petsc::scatter_local_vectors(
   int offset_ghost = offset_owned; // Ghost DoFs start after owned
   for (std::size_t i = 0; i < maps.size(); ++i)
   {
-    const std::int32_t size_owned
-        = maps[i].first.get().size_local() * maps[i].second;
-    const std::int32_t size_ghost
-        = maps[i].first.get().num_ghosts() * maps[i].second;
-
+    std::int32_t size_owned = maps[i].first.get().size_local() * maps[i].second;
     std::copy_n(x_b[i].begin(), size_owned, std::next(_x.begin(), offset));
+
+    std::int32_t size_ghost = maps[i].first.get().num_ghosts() * maps[i].second;
     std::copy_n(std::next(x_b[i].begin(), size_owned), size_ghost,
                 std::next(_x.begin(), offset_ghost));
 
@@ -233,7 +232,7 @@ void la::petsc::scatter_local_vectors(
 }
 //-----------------------------------------------------------------------------
 Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                             std::string type)
+                             std::optional<std::string> type)
 {
   PetscErrorCode ierr;
   Mat A;
@@ -245,8 +244,8 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   std::array maps = {sp.index_map(0), sp.index_map(1)};
   const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
-  if (!type.empty())
-    MatSetType(A, type.c_str());
+  if (type)
+    MatSetType(A, type->c_str());
 
   // Get global and local dimensions
   const std::int64_t M = bs[0] * maps[0]->size_global();
@@ -373,7 +372,7 @@ MatNullSpace la::petsc::create_nullspace(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 void petsc::options::set(std::string option)
 {
-  petsc::options::set<std::string>(option, "");
+  petsc::options::set<std::string>(std::move(option), "");
 }
 //-----------------------------------------------------------------------------
 void petsc::options::clear(std::string option)
@@ -408,7 +407,7 @@ petsc::Vector::Vector(Vec x, bool inc_ref_count) : _x(x)
     PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
-petsc::Vector::Vector(Vector&& v) : _x(std::exchange(v._x, nullptr)) {}
+petsc::Vector::Vector(Vector&& v) noexcept : _x(std::exchange(v._x, nullptr)) {}
 //-----------------------------------------------------------------------------
 petsc::Vector::~Vector()
 {
@@ -416,7 +415,7 @@ petsc::Vector::~Vector()
     VecDestroy(&_x);
 }
 //-----------------------------------------------------------------------------
-petsc::Vector& petsc::Vector::operator=(Vector&& v)
+petsc::Vector& petsc::Vector::operator=(Vector&& v) noexcept
 {
   std::swap(_x, v._x);
   return *this;
@@ -469,7 +468,7 @@ MPI_Comm petsc::Vector::comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
-void petsc::Vector::set_options_prefix(std::string options_prefix)
+void petsc::Vector::set_options_prefix(const std::string& options_prefix)
 {
   assert(_x);
   PetscErrorCode ierr = VecSetOptionsPrefix(_x, options_prefix.c_str());
@@ -502,7 +501,8 @@ petsc::Operator::Operator(Mat A, bool inc_ref_count) : _matA(A)
     PetscObjectReference((PetscObject)_matA);
 }
 //-----------------------------------------------------------------------------
-petsc::Operator::Operator(Operator&& A) : _matA(std::exchange(A._matA, nullptr))
+petsc::Operator::Operator(Operator&& A) noexcept
+    : _matA(std::exchange(A._matA, nullptr))
 {
 }
 //-----------------------------------------------------------------------------
@@ -514,7 +514,7 @@ petsc::Operator::~Operator()
     MatDestroy(&_matA);
 }
 //-----------------------------------------------------------------------------
-petsc::Operator& petsc::Operator::operator=(Operator&& A)
+petsc::Operator& petsc::Operator::operator=(Operator&& A) noexcept
 {
   std::swap(_matA, A._matA);
   return *this;
@@ -563,8 +563,8 @@ Mat petsc::Operator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 petsc::Matrix::Matrix(MPI_Comm comm, const SparsityPattern& sp,
-                      std::string type)
-    : Operator(petsc::create_matrix(comm, sp, type), false)
+                      std::optional<std::string> type)
+    : Operator(petsc::create_matrix(comm, sp, std::move(type)), false)
 {
   // Do nothing
 }
@@ -616,7 +616,7 @@ void petsc::Matrix::apply(AssemblyType type)
     petsc::error(ierr, __FILE__, "MatAssemblyEnd");
 }
 //-----------------------------------------------------------------------------
-void petsc::Matrix::set_options_prefix(std::string options_prefix)
+void petsc::Matrix::set_options_prefix(const std::string& options_prefix)
 {
   assert(_matA);
   MatSetOptionsPrefix(_matA, options_prefix.c_str());
@@ -656,7 +656,7 @@ petsc::KrylovSolver::KrylovSolver(KSP ksp, bool inc_ref_count) : _ksp(ksp)
   }
 }
 //-----------------------------------------------------------------------------
-petsc::KrylovSolver::KrylovSolver(KrylovSolver&& solver)
+petsc::KrylovSolver::KrylovSolver(KrylovSolver&& solver) noexcept
     : _ksp(std::exchange(solver._ksp, nullptr))
 {
   // Do nothing
@@ -668,7 +668,8 @@ petsc::KrylovSolver::~KrylovSolver()
     KSPDestroy(&_ksp);
 }
 //-----------------------------------------------------------------------------
-petsc::KrylovSolver& petsc::KrylovSolver::operator=(KrylovSolver&& solver)
+petsc::KrylovSolver&
+petsc::KrylovSolver::operator=(KrylovSolver&& solver) noexcept
 {
   std::swap(_ksp, solver._ksp);
   return *this;
@@ -731,7 +732,7 @@ int petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
   {
     /*
     // Get solver residual norm
-    double rnorm = 0.0;
+    double rnorm = 0;
     ierr = KSPGetResidualNorm(_ksp, &rnorm);
     if (ierr != 0) error(ierr, __FILE__, "KSPGetResidualNorm");
     const char *reason_str = KSPConvergedReasons[reason];
@@ -763,7 +764,7 @@ int petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-void petsc::KrylovSolver::set_options_prefix(std::string options_prefix)
+void petsc::KrylovSolver::set_options_prefix(const std::string& options_prefix)
 {
   // Set options prefix
   assert(_ksp);

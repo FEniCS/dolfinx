@@ -22,7 +22,7 @@ def test_transpose(degree, symmetry):
     )
     space = dolfinx.fem.functionspace(mesh, e)
     f = dolfinx.fem.Function(space)
-    f.interpolate(lambda x: (x[0], x[1], x[0] ** 3, x[0]))
+    f.interpolate(lambda x: [x[0], x[1], 2 * x[1], x[0] ** 3])
 
     form = dolfinx.fem.form(ufl.inner(f - ufl.transpose(f), f - ufl.transpose(f)) * ufl.dx)
     assert np.isclose(dolfinx.fem.assemble_scalar(form), 0) == symmetry

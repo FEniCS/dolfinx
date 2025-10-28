@@ -62,15 +62,3 @@ A build of this `Dockerfile` produces an image at
 Actions for testing. This image is x86-64 only.
 
 A build must be triggered manually via GitHub Actions to update the image.
-
-## `Dockerfile.redhat`
-
-This Dockerfile describes a complete development and testing environment for
-DOLFINx based on a RedHat-compatible distribution. It does not contain the
-FEniCS components.
-
-A build of this `Dockerfile` produces an image at
-`docker.io/fenicsproject/test-env:current-redhat` which is used on GitHub
-Actions for testing. This image is x86-64 only at this time. 
-
-A build must be triggered manually via GitHub Actions to update the image.

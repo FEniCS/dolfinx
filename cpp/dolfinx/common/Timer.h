@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "TimeLogManager.h"
+#include "TimeLogger.h"
 #include <chrono>
 #include <optional>
 #include <stdexcept>
@@ -47,7 +47,9 @@ public:
   /// @param[in] task Name used to registered the elapsed time in the
   /// logger. If no name is set, the elapsed time is not registered in
   /// the logger.
-  Timer(std::optional<std::string> task = std::nullopt) : _task(task) {}
+  Timer(std::optional<std::string> task = std::nullopt) : _task(std::move(task))
+  {
+  }
 
   /// If timer is still running, it is stopped. Elapsed time is
   /// registered in the logger.
@@ -56,7 +58,7 @@ public:
     if (_start_time.has_value() and _task.has_value())
     {
       _acc += T::now() - *_start_time;
-      TimeLogManager::logger().register_timing(*_task, _acc);
+      TimeLogger::instance().register_timing(*_task, _acc);
     }
   }
 
@@ -121,7 +123,7 @@ public:
 
     if (_task.has_value())
     {
-      TimeLogManager::logger().register_timing(*_task, _acc);
+      TimeLogger::instance().register_timing(*_task, _acc);
       _task = std::nullopt;
     }
   }

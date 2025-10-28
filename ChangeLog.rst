@@ -28,7 +28,7 @@ solver <https://bitbucket.org/fenics-project/dolfin/>`_.
 - Remove ``Mesh::size``. Use ``Mesh::num_entities`` instead.
 - Improved mesh topology computation performance.
 - Remove excessive calls to MPI init. It may now be necessary in some
-  cases to explicitly intialise MPI.
+  cases to explicitly initialise MPI.
 - Improvements to sparsity pattern computation.
 - Addition of some interfaces using ``Eigen::Map/ref`` in addition to
   ``dolfin::Array(View)``.  ``dolfin::Array(View)``interfaces will be
@@ -146,7 +146,7 @@ solver <https://bitbucket.org/fenics-project/dolfin/>`_.
 - Require polynomial degree or finite element for Expressions in the
   Python interface (fixes Issue #355,
   https://bitbucket.org/fenics-project/dolfin/issues/355)
-- Switch to Google Test framwork for C++ unit tests
+- Switch to Google Test framework for C++ unit tests
 - Fix bug when reading domain data from mesh file for a ghosted mesh
 - Add interface for manipulating mesh geometry using (higher-order) FE
   functions: free functions set_coordinates, get_coordinates,
@@ -223,7 +223,7 @@ solver <https://bitbucket.org/fenics-project/dolfin/>`_.
   #443)
 - Add quadrature rules for multimesh/cut-cell integration up to order
   6
-- Implement MPI reductions and XML ouput of Table class
+- Implement MPI reductions and XML output of Table class
 - list_timings() is now collective and returns MPI average across
   processes
 - Add dump_timings_to_xml()
@@ -324,7 +324,7 @@ solver <https://bitbucket.org/fenics-project/dolfin/>`_.
   module
 - Add function Form::set_some_coefficients()
 - Remove Boost.MPI dependency
-- Change GenericMatrix::compresss to return a new matrix (7be3a29)
+- Change GenericMatrix::compress to return a new matrix (7be3a29)
 - Add function GenericTensor::empty()
 - Deprecate resizing of linear algebra via the GenericFoo interfaces
   (fixes #213)
@@ -387,7 +387,7 @@ solver <https://bitbucket.org/fenics-project/dolfin/>`_.
 - Fixes bug where child/parent hierarchy in Python were destroyed
 - Add utility script dolfin-get-demos
 - MeshFunctions in python now support iterable protocol
-- Add timed VTK output for Mesh and MeshFunction in addtion to
+- Add timed VTK output for Mesh and MeshFunction in addition to
   Functions
 - Expose ufc::dofmap::tabulate_entity_dofs to GenericDofMap interface
 - Expose ufc::dofmap::num_entity_dofs to GenericDofMap interface
@@ -477,7 +477,7 @@ solver <https://bitbucket.org/fenics-project/dolfin/>`_.
 - Add sparray method in the Python interface of GenericMatrix,
   requires scipy.sparse
 - Make methods that return a view of contiguous c-arrays, via a NumPy
-  array, keep a reference from the object so it wont get out of scope
+  array, keep a reference from the object so it won't get out of scope
 - Add parameter: "use_petsc_signal_handler", which enables/disable
   PETSc system signals
 - Avoid unnecessary resize of result vector for A*b
@@ -684,7 +684,7 @@ solver <https://bitbucket.org/fenics-project/dolfin/>`_.
 - Thread-safe fixed in Function class
 - Make GenericFunction::eval thread-safe (Data class removed)
 - Optimize and speedup topology computation (mesh.init())
-- Add function Mesh::clean() for cleaning out auxilliary topology data
+- Add function Mesh::clean() for cleaning out auxiliary topology data
 - Improve speed and accuracy of timers
 - Fix bug in 3D uniform mesh refinement
 - Add built-in meshes UnitTriangle and UnitTetrahedron
@@ -761,7 +761,7 @@ solver <https://bitbucket.org/fenics-project/dolfin/>`_.
   refinement
 - Add functionality for smoothing the boundary of a mesh
 - Speedup assembly over exterior facets by not using BoundaryMesh
-- Mesh refinement improvements, remove unecessary copying in Python
+- Mesh refinement improvements, remove unnecessary copying in Python
   interface
 - Clean PETSc and Epetra Krylov solvers
 - Add separate preconditioner classes for PETSc and Epetra solvers
@@ -935,7 +935,7 @@ solver <https://bitbucket.org/fenics-project/dolfin/>`_.
   check range
 - Add unit tests to the memorycheck
 - Add call to clean up libxml2 parser at exit
-- Remove unecessary arguments in DofMap member functions
+- Remove unnecessary arguments in DofMap member functions
 - Remove reference constructors from DofMap, FiniteElement and
   FunctionSpace
 - Use a shared_ptr to store the mesh in DofMap objects
@@ -1215,7 +1215,7 @@ solver <https://bitbucket.org/fenics-project/dolfin/>`_.
 - Disable PETSc by default, use --enable-petsc to enable
 - Modify ODE solver interface for u0() and f()
 - Add class ConvectionMatrix
-- Readd classes LoadVector, MassMatrix, StiffnessMatrix
+- Read classes LoadVector, MassMatrix, StiffnessMatrix
 - Add matrix factory for simple creation of standard finite element
   matrices
 - Collect static solvers in LU and GMRES
@@ -1500,7 +1500,7 @@ solver <https://bitbucket.org/fenics-project/dolfin/>`_.
 - Update PETSc wrappers NewVector, NewMatrix, and NewGMRES
 - Fix initialization of PETSc
 - Add mono-adaptive cG(q) and dG(q) solvers (experimental)
-- Implementation of new assebly: NewFEM, using output from FFC
+- Implementation of new assembly: NewFEM, using output from FFC
 - Add access to mesh for nodes, cells, faces and edges
 - Add Tecplot I/O interface; contributed by Garth N. Wells
 
@@ -1623,7 +1623,7 @@ solver <https://bitbucket.org/fenics-project/dolfin/>`_.
 - Optimize Lagrange polynomials
 - Optimize sparsity: use stl containers
 - Optimize choice of discrete residual for multi-adaptive solver
-- Don't save solution in benchmark proble
+- Don't save solution in benchmark problem
 - Improve computation of divergence factor for underdamped systems
 - Don't check residual on first slab for fixed time step
 - Decrease largest (default) time step to 0.1

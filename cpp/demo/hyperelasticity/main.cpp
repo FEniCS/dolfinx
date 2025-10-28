@@ -29,6 +29,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/nls/NewtonSolver.h>
+#include <numbers>
 #include <petscmat.h>
 #include <petscsys.h>
 #include <petscsystypes.h>
@@ -36,7 +37,7 @@
 
 using namespace dolfinx;
 using T = PetscScalar;
-using U = typename dolfinx::scalar_value_type_t<T>;
+using U = typename dolfinx::scalar_value_t<T>;
 
 /// Hyperelastic problem class
 class HyperElasticProblem
@@ -85,9 +86,9 @@ public:
     return [&](const Vec x, Vec)
     {
       // Assemble b and update ghosts
-      std::span b(_b.mutable_array());
+      std::span b(_b.array());
       std::ranges::fill(b, 0);
-      fem::assemble_vector<T>(b, _l);
+      fem::assemble_vector(b, _l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
       VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
 
@@ -142,8 +143,7 @@ int main(int argc, char* argv[])
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   // Set the logging thread name to show the process rank
-  int mpi_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
   std::string fmt = "[%Y-%m-%d %H:%M:%S.%e] [RANK " + std::to_string(mpi_rank)
                     + "] [%l] %v";
   spdlog::set_pattern(fmt);
@@ -194,15 +194,12 @@ int main(int argc, char* argv[])
           constexpr U x2_c = 0.5;
 
           // Large angle of rotation (60 degrees)
-          constexpr U theta = 1.04719755;
+          constexpr U theta = std::numbers::pi / 3;
 
           // New coordinates
-          std::vector<U> fdata(3 * x.extent(1), 0.0);
-          MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              U, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-                     std::size_t, 3,
-                     MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
-              f(fdata.data(), 3, x.extent(1));
+          std::vector<U> fdata(3 * x.extent(1), 0);
+          md::mdspan<U, md::extents<std::size_t, 3, md::dynamic_extent>> f(
+              fdata.data(), 3, x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
             U x1 = x(1, p);
@@ -285,12 +282,12 @@ int main(int argc, char* argv[])
 
     // Save solution in VTK format
     io::VTKFile file_u(mesh->comm(), "u.pvd", "w");
-    file_u.write<T>({*u}, 0.0);
+    file_u.write<T>({*u}, 0);
 
     // Save Cauchy stress in XDMF format
     io::XDMFFile file_sigma(mesh->comm(), "sigma.xdmf", "w");
     file_sigma.write_mesh(*mesh);
-    file_sigma.write_function(sigma, 0.0);
+    file_sigma.write_function(sigma, 0);
   }
 
   PetscFinalize();

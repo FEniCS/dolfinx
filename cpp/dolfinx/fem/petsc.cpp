@@ -76,8 +76,8 @@ Vec fem::petsc::create_vector_nest(
 
   // Create nested (VecNest) vector
   Vec y;
-  VecCreateNest(vecs[0]->comm(), petsc_vecs.size(), nullptr, petsc_vecs.data(),
-                &y);
+  VecCreateNest(vecs.front()->comm(), petsc_vecs.size(), nullptr,
+                petsc_vecs.data(), &y);
   return y;
 }
 //-----------------------------------------------------------------------------
