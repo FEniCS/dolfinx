@@ -142,7 +142,8 @@ jobs:
       - name: Install DOLFINx Python build dependencies
         working-directory: dolfinx-src/python
         run: |
-          pip -v install --no-binary mpi4py -r build-requirements.txt
+          pip install scikit-build-core
+          python -m pip install --no-binary mpi4py (python -m scikit_build_core.build requires | Out-String | ConvertFrom-Json)
 
       - name: Install DOLFINx (Python)
         working-directory: dolfinx-src/python

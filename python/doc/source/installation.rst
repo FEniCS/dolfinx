@@ -105,7 +105,7 @@ Python
 After installation of the C++ interface, from the ``python/`` directory
 the Python interface can be installed using::
 
-    pip install -r build-requirements.txt
+    python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
     pip install --check-build-dependencies --no-build-isolation .
 
 
