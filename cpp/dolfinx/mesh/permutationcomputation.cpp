@@ -291,7 +291,11 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   const int tdim = topology.dim();
   CellType cell_type = topology.cell_type();
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
-  const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
+  // Point meshes have no facets per cell and cell_num_entities(vertex, -1) is
+  // undefined
+  int facets_per_cell = 0;
+  if (tdim > 0)
+    facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
   std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
   std::vector<std::uint8_t> facet_permutations(num_cells * facets_per_cell);
