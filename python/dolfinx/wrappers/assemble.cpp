@@ -493,7 +493,7 @@ void declare_assembly_functions(nb::module_& m)
           _bcs.push_back(*bc);
         }
 
-        auto f = [&fin](std::span<const std::int32_t> rows,
+        auto f = [&fin](int, std::span<const std::int32_t> rows,
                         std::span<const std::int32_t> cols,
                         std::span<const T> data)
         {

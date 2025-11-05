@@ -279,7 +279,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
     }
 
     apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
-    mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
+    mat_set(c, dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
   }
 }
 
@@ -387,7 +387,7 @@ void discrete_gradient(mesh::Topology& topology,
   {
     std::ranges::copy(Ab, Ae.begin());
     apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
-    mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
+    mat_set(c, dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
   }
 }
 
@@ -653,7 +653,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
         row_added[r] = 1;
       }
     }
-    mat_add(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
+    mat_add(c, dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
   }
 }
 
