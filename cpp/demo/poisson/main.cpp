@@ -107,6 +107,37 @@ using U = typename dolfinx::scalar_value_t<T>;
 // divided into two triangles, and the finite element space (specified
 // in the form file) defined relative to this mesh, we do as follows:
 
+static auto mpc_set_block_fn(
+    Mat A,
+    const std::map<std::int32_t, std::vector<std::pair<double, std::int32_t>>>&
+        mpc_map,
+    InsertMode mode)
+{
+  return [A, &mpc_map, mode, cache = std::vector<PetscInt>()](
+             int, std::span<const std::int32_t> rows,
+             std::span<const std::int32_t> cols,
+             std::span<const PetscScalar> vals) mutable -> int
+  {
+    spdlog::info("mpcmap.size={}", mpc_map.size());
+
+    PetscErrorCode ierr;
+#ifdef PETSC_USE_64BIT_INDICES
+    cache.resize(rows.size() + cols.size());
+    std::ranges::copy(rows, cache.begin());
+    std::ranges::copy(cols, std::next(cache.begin(), rows.size()));
+    const PetscInt* _rows = cache.data();
+    const PetscInt* _cols = cache.data() + rows.size();
+    ierr = MatSetValuesBlockedLocal(A, rows.size(), _rows, cols.size(), _cols,
+                                    vals.data(), mode);
+#else
+    ierr = MatSetValuesBlockedLocal(A, rows.size(), rows.data(), cols.size(),
+                                    cols.data(), vals.data(), mode);
+#endif
+
+    return ierr;
+  };
+}
+
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
@@ -213,8 +244,12 @@ int main(int argc, char* argv[])
                     L.function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
-    fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
-                         a, {bc});
+    std::map<std::int32_t, std::vector<std::pair<double, std::int32_t>>>
+        mpc_map;
+    mpc_map[0] = {{0.25, 560}};
+
+    fem::assemble_matrix(mpc_set_block_fn(A.mat(), mpc_map, ADD_VALUES), a,
+                         {bc});
     MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
     fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
