@@ -27,14 +27,12 @@ ElementDofLayout::ElementDofLayout(
 {
   // TODO: Handle global support dofs
 
-  _num_entity_dofs.fill(0);
   _num_entity_closure_dofs.fill(0);
   assert(entity_dofs.size() == _entity_closure_dofs.size());
   for (std::size_t dim = 0; dim < entity_dofs.size(); ++dim)
   {
     assert(!entity_dofs[dim].empty());
     assert(!_entity_closure_dofs[dim].empty());
-    _num_entity_dofs[dim] = entity_dofs[dim][0].size();
     _num_entity_closure_dofs[dim] = _entity_closure_dofs[dim][0].size();
     _num_dofs = std::accumulate(entity_dofs[dim].begin(),
                                 entity_dofs[dim].end(), _num_dofs,
@@ -52,18 +50,12 @@ ElementDofLayout ElementDofLayout::copy() const
 bool ElementDofLayout::operator==(const ElementDofLayout& layout) const
 {
   return this->_num_dofs == layout._num_dofs
-         and this->_num_entity_dofs == layout._num_entity_dofs
          and this->_num_entity_closure_dofs == layout._num_entity_closure_dofs
          and this->_entity_dofs == layout._entity_dofs
          and this->_entity_closure_dofs == layout._entity_closure_dofs;
 }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_dofs() const { return _num_dofs; }
-//-----------------------------------------------------------------------------
-int ElementDofLayout::num_entity_dofs(int dim) const
-{
-  return _num_entity_dofs.at(dim);
-}
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_entity_closure_dofs(int dim) const
 {

@@ -75,11 +75,6 @@ public:
   /// @return Dimension of the local finite element function space.
   int num_dofs() const;
 
-  /// Return the number of dofs for a given entity dimension
-  /// @param[in] dim Entity dimension
-  /// @return Number of dofs associated with given entity dimension
-  int num_entity_dofs(int dim) const;
-
   /// Return the number of closure dofs for a given entity dimension
   /// @param[in] dim Entity dimension
   /// @return Number of dofs associated with closure of given entity
@@ -134,9 +129,6 @@ private:
 
   // Total number of dofs on this element dofmap
   int _num_dofs;
-
-  // The number of dofs associated with each entity type
-  std::array<int, 4> _num_entity_dofs;
 
   // The number of dofs associated with each entity type, including all
   // connected entities of lower dimension.
