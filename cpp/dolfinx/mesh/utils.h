@@ -1159,9 +1159,17 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // a Geometry object
   for (int i = 0; i < num_cell_types; ++i)
   {
+    auto entity_dofs = doflayouts[i].entity_dofs_all();
     for (int e = 1; e < topology.dim(); ++e)
     {
-      if (doflayouts[i].num_entity_dofs(e) > 0)
+      // Accumulate all dofs on this dimension
+      int dim_sum = 0;
+      for (auto q : entity_dofs[e])
+        for (auto r : q)
+          dim_sum += r;
+      spdlog::debug("Counting entity dofs, cell-type {}, dim={}: {}", i, e,
+                    dim_sum);
+      if (dim_sum > 0)
         topology.create_entities(e);
     }
 
