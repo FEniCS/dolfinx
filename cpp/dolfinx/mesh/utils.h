@@ -873,7 +873,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   // Get the DOF layout and the number of DOFs per entity
   const fem::CoordinateElement<T>& coord_ele = geometry.cmap();
   const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
-  const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
+  const std::size_t num_entity_dofs = layout.entity_closure_dofs(dim, 0).size();
   std::vector<std::int32_t> entity_xdofs;
   entity_xdofs.reserve(entities.size() * num_entity_dofs);
   std::array<std::size_t, 2> eshape{entities.size(), num_entity_dofs};

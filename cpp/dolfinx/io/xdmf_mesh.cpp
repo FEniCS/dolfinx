@@ -44,7 +44,8 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
       = geometry.cmap().create_dof_layout();
 
   // Get number of nodes per entity
-  const int num_nodes_per_entity = cmap_dof_layout.num_entity_closure_dofs(dim);
+  const int num_nodes_per_entity
+      = cmap_dof_layout.entity_closure_dofs(dim, 0).size();
 
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type

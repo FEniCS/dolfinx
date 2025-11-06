@@ -75,12 +75,6 @@ public:
   /// @return Dimension of the local finite element function space.
   int num_dofs() const;
 
-  /// Return the number of closure dofs for a given entity dimension
-  /// @param[in] dim Entity dimension
-  /// @return Number of dofs associated with closure of given entity
-  /// dimension
-  int num_entity_closure_dofs(int dim) const;
-
   /// Local-local mapping of dofs on entity of cell
   /// @param[in] dim The entity dimension
   /// @param[in] entity_index The local entity index on the cell
@@ -129,10 +123,6 @@ private:
 
   // Total number of dofs on this element dofmap
   int _num_dofs;
-
-  // The number of dofs associated with each entity type, including all
-  // connected entities of lower dimension.
-  std::array<int, 4> _num_entity_closure_dofs;
 
   // List of dofs per entity, ordered by dimension.
   // dof = _entity_dofs[dim][entity][i]
