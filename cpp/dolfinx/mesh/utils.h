@@ -1161,17 +1161,16 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   for (int i = 0; i < num_cell_types; ++i)
   {
     auto entity_dofs = doflayouts[i].entity_dofs_all();
-    for (int e = 1; e < topology.dim(); ++e)
+    for (int dim = 1; dim < topology.dim(); ++dim)
     {
-      // Accumulate all dofs on this dimension
-      int dim_sum = 0;
-      for (auto q : entity_dofs[e])
-        for (auto r : q)
-          dim_sum += r;
-      spdlog::debug("Counting entity dofs, cell-type {}, dim={}: {}", i, e,
-                    dim_sum);
+      // Accumulate count of all dofs on this dimension
+      int dim_sum
+          = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
+                            [](int c, auto v) { return c + v.size(); });
+
+      spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
       if (dim_sum > 0)
-        topology.create_entities(e);
+        topology.create_entities(dim);
     }
 
     if (elements[i].needs_dof_permutations())
