@@ -114,24 +114,40 @@ static auto mpc_set_block_fn(
     InsertMode mode)
 {
   return [A, &mpc_map, mode, cache = std::vector<PetscInt>()](
-             int, std::span<const std::int32_t> rows,
+             std::span<const std::int32_t> rows,
              std::span<const std::int32_t> cols,
              std::span<const PetscScalar> vals) mutable -> int
   {
     spdlog::info("mpcmap.size={}", mpc_map.size());
 
+    // Prepare K.A.K^T
+    std::vector<std::int32_t> nrows, ncols;
+    for (std::size_t i = 0; i < rows.size(); ++i)
+    {
+      auto it = mpc_map.find(rows[i]);
+      if (it == mpc_map.end())
+        nrows.push_back(rows[i]);
+      else
+        for (auto p : it->second)
+          nrows.push_back(p.second);
+    }
+    for (std::size_t i = 0; i < cols.size(); ++i)
+    {
+      auto it = mpc_map.find(cols[i]);
+      if (it == mpc_map.end())
+        ncols.push_back(cols[i]);
+      else
+        for (auto p : it->second)
+          ncols.push_back(p.second);
+    }
+    std::vector<double> nvals(nrows.size() * ncols.size());
+
     PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
-    cache.resize(rows.size() + cols.size());
-    std::ranges::copy(rows, cache.begin());
-    std::ranges::copy(cols, std::next(cache.begin(), rows.size()));
-    const PetscInt* _rows = cache.data();
-    const PetscInt* _cols = cache.data() + rows.size();
-    ierr = MatSetValuesBlockedLocal(A, rows.size(), _rows, cols.size(), _cols,
-                                    vals.data(), mode);
+    throw std::runtime_error("Not petsc-64 bit");
 #else
-    ierr = MatSetValuesBlockedLocal(A, rows.size(), rows.data(), cols.size(),
-                                    cols.data(), vals.data(), mode);
+    ierr = MatSetValuesBlockedLocal(A, nrows.size(), nrows.data(), ncols.size(),
+                                    ncols.data(), nvals.data(), mode);
 #endif
 
     return ierr;
