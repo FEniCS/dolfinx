@@ -101,6 +101,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
       if (dim_sum > 0)
         topology.create_entities(dim);
     }
+  }
 
   auto [_index_map, bs, dofmaps]
       = build_dofmap_data(comm, topology, layouts, reorder_fn);
