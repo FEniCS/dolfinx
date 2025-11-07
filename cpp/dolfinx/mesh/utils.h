@@ -1160,7 +1160,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // a Geometry object
   for (int i = 0; i < num_cell_types; ++i)
   {
-    auto entity_dofs = doflayouts[i].entity_dofs_all();
+    const auto& entity_dofs = doflayouts[i].entity_dofs_all();
     for (int dim = 1; dim < topology.dim(); ++dim)
     {
       // Accumulate count of all dofs on this dimension

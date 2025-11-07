@@ -39,7 +39,7 @@ fem::DofMap fem::create_dofmap(
   // Create required mesh entities
   const int D = topology.dim();
 
-  auto entity_dofs = layout.entity_dofs_all();
+  const auto& entity_dofs = layout.entity_dofs_all();
   for (int dim = 1; dim < topology.dim(); ++dim)
   {
     // Accumulate count of all dofs on this dimension
@@ -89,7 +89,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
   // Create required mesh entities
   for (std::size_t i = 0; i < layouts.size(); ++i)
   {
-    auto entity_dofs = layouts[i].entity_dofs_all();
+    const auto& entity_dofs = layouts[i].entity_dofs_all();
     for (int dim = 1; dim < topology.dim(); ++dim)
     {
       // Accumulate count of all dofs on this dimension
