@@ -136,13 +136,16 @@ def test_entity_closure_dofs(mesh_factory):
                 entities = np.array([entity], dtype=np.uintp)
                 dofs_on_this_entity = V.dofmap.entity_dofs(mesh, d, entities)
                 closure_dofs = V.dofmap.entity_closure_dofs(mesh, d, entities)
-                assert len(dofs_on_this_entity) == V.dofmap.dof_layout.entity_dofs(d)
+                assert len(dofs_on_this_entity) == len(V.dofmap.dof_layout.entity_dofs(d, 0))
                 assert len(dofs_on_this_entity) <= len(closure_dofs)
                 covered.update(dofs_on_this_entity)
                 covered2.update(closure_dofs)
             dofs_on_all_entities = V.dofmap.entity_dofs(mesh, d, all_entities)
             closure_dofs_on_all_entities = V.dofmap.entity_closure_dofs(mesh, d, all_entities)
-            assert len(dofs_on_all_entities) == V.dofmap.dof_layout.entity_dofs(d) * num_entities
+            assert (
+                len(dofs_on_all_entities)
+                == len(V.dofmap.dof_layout.entity_dofs(d, 0)) * num_entities
+            )
             assert covered == set(dofs_on_all_entities)
             assert covered2 == set(closure_dofs_on_all_entities)
 
