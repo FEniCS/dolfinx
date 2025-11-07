@@ -860,10 +860,11 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto topology = mesh.topology();
   assert(topology);
   CellType cell_type = topology->cell_type();
-  if (cell_type == CellType::prism and dim == 2)
+  if ((cell_type == CellType::prism or cell_type == CellType::pyramid)
+      and dim == 2)
   {
-    throw std::runtime_error(
-        "mesh::entities_to_geometry for prism cells not yet supported.");
+    throw std::runtime_error("mesh::entities_to_geometry for prism/pyramid "
+                             "cell facets not yet supported.");
   }
 
   const int tdim = topology->dim();
