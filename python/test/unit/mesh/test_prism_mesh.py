@@ -1,12 +1,14 @@
 from mpi4py import MPI
 
 import numpy as np
+import pytest
 
 import basix
 from dolfinx.fem import coordinate_element
 from dolfinx.mesh import CellType, create_mesh
 
 
+@pytest.mark.skip_in_parallel
 def test_prism_mesh():
     cells = [np.arange(6)]
     x = np.array(
@@ -29,6 +31,7 @@ def test_prism_mesh():
     assert mesh.topology.index_maps(2)[1].size_local == 2
 
 
+@pytest.mark.skip_in_parallel
 def test_quadratic_prism_mesh():
     # Work out geometry for quadratic cell
     layout = basix.cell.sub_entity_connectivity(basix.cell.CellType.prism)
