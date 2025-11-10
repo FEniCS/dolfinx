@@ -571,7 +571,7 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
     std::span diag_span(&diagonal, 1);
-    set_fn(0, rows.subspan(i, 1), rows.subspan(i, 1), diag_span);
+    set_fn(rows.subspan(i, 1), rows.subspan(i, 1), diag_span);
   }
 }
 

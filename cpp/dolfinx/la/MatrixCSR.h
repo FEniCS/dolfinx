@@ -102,7 +102,7 @@ public:
           "Cannot insert blocks of different size than matrix block size");
     }
 
-    return [&](int, std::span<const std::int32_t> rows,
+    return [&](std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
                std::span<const value_type> data) -> int
     {
@@ -144,7 +144,7 @@ public:
           "Cannot insert blocks of different size than matrix block size");
     }
 
-    return [&](int, std::span<const std::int32_t> rows,
+    return [&](std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
                std::span<const value_type> data) -> int
     {

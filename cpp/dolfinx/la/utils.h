@@ -25,6 +25,6 @@ enum class Norm : std::int8_t
 /// in assemblers to accumulate or set values in a matrix.
 template <class U, class T>
 concept MatSet
-    = std::invocable<U, int, std::span<const std::int32_t>,
+    = std::invocable<U, std::span<const std::int32_t>,
                      std::span<const std::int32_t>, std::span<const T>>;
 } // namespace dolfinx::la

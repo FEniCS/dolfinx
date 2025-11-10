@@ -293,7 +293,7 @@ public:
   static auto set_fn(Mat A, InsertMode mode)
   {
     return [A, mode, cache = std::vector<PetscInt>()](
-               int, std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
                std::span<const PetscScalar> vals) mutable -> int
     {
@@ -327,7 +327,7 @@ public:
   static auto set_block_fn(Mat A, InsertMode mode)
   {
     return [A, mode, cache = std::vector<PetscInt>()](
-               int, std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
                std::span<const PetscScalar> vals) mutable -> int
     {
@@ -365,7 +365,7 @@ public:
   {
     return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
             cache1 = std::vector<PetscInt>()](
-               int, std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
                std::span<const PetscScalar> vals) mutable -> int
     {

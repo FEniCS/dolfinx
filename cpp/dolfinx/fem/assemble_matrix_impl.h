@@ -152,7 +152,7 @@ void assemble_cells_matrix(
       }
     }
 
-    mat_set(c, dofs0, dofs1, Ae);
+    mat_set(dofs0, dofs1, Ae);
   }
 }
 
@@ -298,7 +298,7 @@ void assemble_entities(
       }
     }
 
-    mat_set(f, dofs0, dofs1, Ae);
+    mat_set(dofs0, dofs1, Ae);
   }
 }
 
@@ -506,7 +506,7 @@ void assemble_interior_facets(
       }
     }
 
-    mat_set(f, dmapjoint0, dmapjoint1, Ae);
+    mat_set(dmapjoint0, dmapjoint1, Ae);
   }
 }
 
