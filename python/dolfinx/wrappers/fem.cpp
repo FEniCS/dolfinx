@@ -1217,11 +1217,6 @@ void fem(nb::module_& m)
            nb::arg("entity_closure_dofs"), nb::arg("parent_map"),
            nb::arg("sub_layouts"))
       .def_prop_ro("num_dofs", &dolfinx::fem::ElementDofLayout::num_dofs)
-      .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs,
-           nb::arg("dim"))
-      .def("num_entity_closure_dofs",
-           &dolfinx::fem::ElementDofLayout::num_entity_closure_dofs,
-           nb::arg("dim"))
       .def("entity_dofs", &dolfinx::fem::ElementDofLayout::entity_dofs,
            nb::arg("dim"), nb::arg("entity_index"))
       .def("entity_closure_dofs",
