@@ -356,7 +356,7 @@ void petsc_fem_module(nb::module_& m)
          nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> rows1,
          bool unrolled)
       {
-        std::function<int(int, std::span<const std::int32_t>,
+        std::function<int(std::span<const std::int32_t>,
                           std::span<const std::int32_t>,
                           std::span<const PetscScalar>)>
             set_fn;
