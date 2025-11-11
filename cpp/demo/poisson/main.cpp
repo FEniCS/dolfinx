@@ -107,53 +107,6 @@ using U = typename dolfinx::scalar_value_t<T>;
 // divided into two triangles, and the finite element space (specified
 // in the form file) defined relative to this mesh, we do as follows:
 
-static auto mpc_set_block_fn(
-    Mat A,
-    const std::map<std::int32_t, std::vector<std::pair<double, std::int32_t>>>&
-        mpc_map,
-    InsertMode mode)
-{
-  return [A, &mpc_map, mode, cache = std::vector<PetscInt>()](
-             std::span<const std::int32_t> rows,
-             std::span<const std::int32_t> cols,
-             std::span<const PetscScalar> vals) mutable -> int
-  {
-    spdlog::info("mpcmap.size={}", mpc_map.size());
-
-    // Prepare K.A.K^T
-    std::vector<std::int32_t> nrows, ncols;
-    for (std::size_t i = 0; i < rows.size(); ++i)
-    {
-      auto it = mpc_map.find(rows[i]);
-      if (it == mpc_map.end())
-        nrows.push_back(rows[i]);
-      else
-        for (auto p : it->second)
-          nrows.push_back(p.second);
-    }
-    for (std::size_t i = 0; i < cols.size(); ++i)
-    {
-      auto it = mpc_map.find(cols[i]);
-      if (it == mpc_map.end())
-        ncols.push_back(cols[i]);
-      else
-        for (auto p : it->second)
-          ncols.push_back(p.second);
-    }
-    std::vector<double> nvals(nrows.size() * ncols.size());
-
-    PetscErrorCode ierr;
-#ifdef PETSC_USE_64BIT_INDICES
-    throw std::runtime_error("Not petsc-64 bit");
-#else
-    ierr = MatSetValuesBlockedLocal(A, nrows.size(), nrows.data(), ncols.size(),
-                                    ncols.data(), nvals.data(), mode);
-#endif
-
-    return ierr;
-  };
-}
-
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
@@ -260,12 +213,8 @@ int main(int argc, char* argv[])
                     L.function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
-    std::map<std::int32_t, std::vector<std::pair<double, std::int32_t>>>
-        mpc_map;
-    mpc_map[0] = {{0.25, 560}};
-
-    fem::assemble_matrix(mpc_set_block_fn(A.mat(), mpc_map, ADD_VALUES), a,
-                         {bc});
+    fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
+                         a, {bc});
     MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
     fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,

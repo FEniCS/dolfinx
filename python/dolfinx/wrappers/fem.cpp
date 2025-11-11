@@ -338,34 +338,36 @@ void declare_objects(nb::module_& m, std::string type)
   std::string pyclass_name = std::string("MPC_") + type;
   nb::class_<dolfinx::fem::MPC<T, U>> mpc(m, pyclass_name.c_str(),
                                           "Multipoint constraint");
-  mpc.def(
-      "__init__",
-      [](dolfinx::fem::MPC<T, U>* mpc, const dolfinx::fem::FunctionSpace<U>& V,
-         nb::ndarray<const std::int32_t, nb::c_contig> local_dofs,
-         const std::vector<nb::ndarray<const std::int64_t, nb::c_contig>>&
-             global_dofs,
-         const std::vector<nb::ndarray<const T, nb::c_contig>>& global_coeffs)
-      {
-        if (global_dofs.size() != global_coeffs.size())
-          throw std::runtime_error("Mismatch global dofs/coeffs");
-        std::vector<std::vector<std::pair<T, std::int64_t>>> ref_globals;
-        for (int j = 0; j < global_dofs.size(); ++j)
-        {
-          const auto& v = global_dofs[j];
-          const auto& vcoeff = global_coeffs[j];
-          if (v.size() != vcoeff.size())
-            throw std::runtime_error("Mismatch global dofs/coeffs");
-          std::vector<std::pair<T, std::int64_t>> vec;
-          for (std::size_t i = 0; i < v.size(); ++i)
-            vec.push_back({vcoeff.data()[i], v.data()[i]});
-          ref_globals.push_back(vec);
-        }
-        new (mpc) dolfinx::fem::MPC<T, U>(
-            V,
-            std::vector<std::int32_t>(local_dofs.data(),
-                                      local_dofs.data() + local_dofs.size()),
-            ref_globals);
-      });
+  mpc.def("__init__",
+          [](dolfinx::fem::MPC<T, U>* mpc,
+             const dolfinx::fem::FunctionSpace<U>& V,
+             nb::ndarray<const std::int32_t, nb::c_contig> local_dofs,
+             const std::vector<nb::ndarray<const std::int64_t, nb::c_contig>>&
+                 global_dofs,
+             const std::vector<nb::ndarray<const T, nb::c_contig>>&
+                 global_coeffs)
+          {
+            if (global_dofs.size() != global_coeffs.size())
+              throw std::runtime_error("Mismatch global dofs/coeffs");
+            std::vector<std::vector<std::pair<T, std::int64_t>>> ref_globals;
+            for (int j = 0; j < global_dofs.size(); ++j)
+            {
+              const auto& v = global_dofs[j];
+              const auto& vcoeff = global_coeffs[j];
+              if (v.size() != vcoeff.size())
+                throw std::runtime_error("Mismatch global dofs/coeffs");
+              std::vector<std::pair<T, std::int64_t>> vec;
+              for (std::size_t i = 0; i < v.size(); ++i)
+                vec.push_back({vcoeff.data()[i], v.data()[i]});
+              ref_globals.push_back(vec);
+            }
+            new (mpc) dolfinx::fem::MPC<T, U>(
+                V,
+                std::vector<std::int32_t>(
+                    local_dofs.data(), local_dofs.data() + local_dofs.size()),
+                ref_globals);
+          })
+      .def("V", &dolfinx::fem::MPC<T, U>::V);
 
   // dolfinx::fem::DirichletBC
   pyclass_name = std::string("DirichletBC_") + type;
