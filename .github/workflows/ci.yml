@@ -67,7 +67,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: spack/spack
-           ref: develop
+          ref: develop
           path: spack-src
 
       - name: Get Spack packages (custom)
