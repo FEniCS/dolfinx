@@ -109,7 +109,7 @@ jobs:
             ^petsc@3.24.1 +mpi +hypre +mumps +superlu-dist ^openmpi ^adios2~fortran~libcatalyst ^cmake~ncurses
           spack -e cxx add catch2
           spack -e cxx concretize -j 4 --fresh
-          spack -v -e cxx install -j 4 -p 2 --use-buildcache auto
+          spack -v -e cxx install -j 4 -p 2 --use-buildcache never
 
       - name: Push C++ packages to cache
         run: |
@@ -169,7 +169,7 @@ jobs:
           spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
             py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4 --fresh
-          spack -v -e py install -j 4 -p 2 --use-buildcache=auto
+          spack -v -e py install -j 4 -p 2 --use-buildcache never
 
       - name: Set default DOLFINx JIT options
         run: |
