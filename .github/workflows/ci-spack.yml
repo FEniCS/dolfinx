@@ -67,7 +67,7 @@ jobs:
       - name: Add dependencies to environment
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack -e . add mpi petsc+mpi+shared+mumps slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
+          spack -e . add mpi petsc@3.23.7+mpi+shared+mumps slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
           spack -e . add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
           spack -e . add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
 
