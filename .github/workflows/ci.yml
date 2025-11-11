@@ -79,7 +79,7 @@ jobs:
       - name: Add Spack packages repo
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack repo add --name builtin $GITHUB_WORKSPACE/spack-packages
+          spack repo add --name builtin $GITHUB_WORKSPACE/spack-packages/repos/spack_repo/builtin
           spack config get repos
 
       - name: Prepare C++ environment
