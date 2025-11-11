@@ -495,7 +495,9 @@ class Function(ufl.Coefficient):
             A new Function with a copy of the degree-of-freedom vector.
         """
         return Function(
-            self.function_space, la.Vector(type(self.x._cpp_object)(self.x._cpp_object))
+            self.function_space,
+            la.Vector(type(self.x._cpp_object)(self.x._cpp_object)),
+            name=self.name,
         )
 
     @property
