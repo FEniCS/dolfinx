@@ -72,12 +72,10 @@ jobs:
           ref: develop
           path: spack-src
 
-      # Note: the below two blocks can be commented out when the main
-      # spack-packages repository can be used
       - name: Get Spack packages (custom)
         uses: actions/checkout@v5
         with:
-          repository: garth-wells/spack-packages
+          repository: fenics/spack-packages
           ref: fenics-testing
           path: spack-packages
       - name: Add Spack packages repo
