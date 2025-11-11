@@ -108,7 +108,7 @@ jobs:
             ^petsc +mpi +hypre +mumps +superlu-dist ^openmpi ^adios2~fortran~libcatalyst ^cmake~ncurses
           spack -e cxx add catch2
           spack -e cxx concretize -j 4 --fresh
-          spack -v -e cxx install -j 4 -p 2 --use-build-cache auto
+          spack -v -e cxx install -j 4 -p 2
 
       - name: Push C++ packages to cache
         run: |
