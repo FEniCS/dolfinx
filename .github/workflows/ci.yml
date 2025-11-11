@@ -23,8 +23,6 @@ jobs:
   ci-spack-experimental-build:
     runs-on: ubuntu-latest
     container: ubuntu:24.04
-    permissions:
-      packages: write
 
     steps:
       - name: Branch and commit SHA
