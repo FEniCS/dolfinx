@@ -100,13 +100,16 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           # Ensure build provenance by adding manually and providing git sha
-          spack -e cxx add fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD)
-          spack -e cxx add py-fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD)
-          spack -e cxx add py-fenics-ufl@main commit=$(git -C $GITHUB_WORKSPACE/ufl-src rev-parse HEAD)
-          spack -e cxx add fenics-ufcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
-          spack -e cxx add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           spack -e cxx add fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer +petsc +slepc partitioners=parmetis \
-            ^petsc@3.24.1 +mpi +hypre +mumps +superlu-dist ^openmpi ^adios2~fortran~libcatalyst ^cmake~ncurses
+            ^petsc@3.24.1 +mpi +hypre +mumps +superlu-dist \
+            ^openmpi \
+            ^adios2~fortran~libcatalyst \
+            ^cmake~ncurses \
+            ^fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD) \
+            ^py-fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD) \
+            ^py-fenics-ufl@main commit=$(git -C $GITHUB_WORKSPACE/ufl-src rev-parse HEAD) \
+            ^fenics-ufcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD) \
+            ^py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           spack -e cxx add catch2
           spack -e cxx concretize -j 4
           spack -v -e cxx install -j 4 -p 2 --use-buildcache auto
