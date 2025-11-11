@@ -106,9 +106,9 @@ jobs:
           spack -e cxx add fenics-ufcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           spack -e cxx add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           spack -e cxx add fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer +petsc +slepc partitioners=parmetis \
-            ^slepc@3.24.0 ^petsc@3.24.1 +mpi +hypre +mumps +superlu-dist ^openmpi ^adios2~fortran~libcatalyst ^cmake~ncurses
+            ^petsc@3.24.1 +mpi +hypre +mumps +superlu-dist ^openmpi ^adios2~fortran~libcatalyst ^cmake~ncurses
           spack -e cxx add catch2
-          spack -e cxx concretize -j 4
+          spack -e cxx concretize -j 4 --fresh
           spack -v -e cxx install -j 4 -p 2 --use-buildcache auto
 
       - name: Push C++ packages to cache
@@ -165,10 +165,10 @@ jobs:
           spack -e py add py-fenics-dolfinx@main commit=${{ github.sha }} +petsc4py +slepc4py build_type=Developer \
             %fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer +petsc +slepc partitioners=parmetis \
             ^openmpi ^adios2~fortran~libcatalyst \
-            ^slepc@3.24.0 ^petsc@3.24.1 +mpi +hypre +mumps +superlu-dist
+            ^petsc@3.24.1 +mpi +hypre +mumps +superlu-dist
           spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
             py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
-          spack -e py concretize -j 4
+          spack -e py concretize -j 4 --fresh
           spack -v -e py install -j 4 -p 2 --use-buildcache=auto
 
       - name: Set default DOLFINx JIT options
