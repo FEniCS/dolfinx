@@ -120,7 +120,7 @@ jobs:
       - name: Install C++
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack env activate .
+          spack env activate py
           cmake --build build --target install
 
       - name: Build and run C++ regression tests (serial and MPI (np=2))
