@@ -104,20 +104,23 @@ public:
         std::make_shared<const DofMap>(dm->element_dof_layout(), index_map,
                                        index_map_bs, cell_dofs, bs));
 
-    // Flatten reference dofs and weight arrays
-    std::vector<std::int64_t> ref_dofs_global;
+    // Flatten reference dofs and weight arrays, in correct order
+    std::vector<std::int64_t> ref_dofs_tmp(dof_to_ref.back());
+    ref_coeffs_flat.resize(dof_to_ref.back());
     for (std::size_t i = 0; i < constrained_dofs_local.size(); ++i)
     {
-      for (auto v : reference_dofs_global[i])
+      std::int32_t index = dof_to_ref[constrained_dofs_local[i]];
+      const auto& refs_i = reference_dofs_global[i];
+      for (std::size_t j = 0; j < refs_i.size(); ++j)
       {
-        ref_coeffs_flat.push_back(v.first);
-        ref_dofs_global.push_back(v.second);
+        ref_coeffs_flat[index + j] = refs_i[j].first;
+        ref_dofs_tmp[index + j] = refs_i[j].second;
       }
     }
 
     // Convert reference dofs to local indexing
-    ref_dofs_flat.resize(ref_dofs_global.size());
-    _V->dofmap()->index_map->global_to_local(ref_dofs_global, ref_dofs_flat);
+    ref_dofs_flat.resize(ref_dofs_tmp.size());
+    _V->dofmap()->index_map->global_to_local(ref_dofs_tmp, ref_dofs_flat);
   }
 
   /// @brief Get modified FunctionSpace containing reference dofs as ghosts
