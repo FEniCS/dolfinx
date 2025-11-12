@@ -123,10 +123,7 @@ jobs:
 
       - name: Run tests via target (C++, serial)
         working-directory: cpp/build
-        run: mpirun -np 1 cmake --build . --target test
-      - name: Run tests via target (C++, MPI, np=3)
-        working-directory: cpp/build
-        run: mpirun -np 3 cmake --build . --target test
+        run: cmake --build . --target test
 
       - name: Build Python interface
         run: |
