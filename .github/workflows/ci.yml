@@ -104,7 +104,8 @@ jobs:
           spack -e cxx add py-fenics-ufl@main commit=$(git -C $GITHUB_WORKSPACE/ufl-src rev-parse HEAD)
           spack -e cxx add fenics-ufcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           spack -e cxx add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
-          spack -e cxx add fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer partitioners=parmetis +petsc
+          spack -e cxx add fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer partitioners=parmetis +petsc \
+            ^petsc+hypre+mumps+superlu-dist
           spack -e cxx add catch2
           spack -e cxx concretize -j 4
           spack -v -e cxx install -j 4 -p 2
