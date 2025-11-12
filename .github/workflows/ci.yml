@@ -168,6 +168,8 @@ jobs:
             ^adios2~libcatalyst~fortran
           spack -e py add py-fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer \
             +petsc4py +slepc4py
+          spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
+             py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
           spack -v -e py install -j 4 -p 2 --use-buildcache auto
 
@@ -192,7 +194,7 @@ jobs:
           spack env activate py
           spack load gcc
           python -m pytest -n=auto --durations=50 dolfinx-src/python/test/unit/
-          mpirun -np 3 python -m pytest --durations=50 dolfinx-src/python/test/unit/
+          mpiexec -np 3 python -m pytest --durations=50 dolfinx-src/python/test/unit/
 
       - name: Push packages to cache and update index
         run: |
