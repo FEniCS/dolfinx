@@ -110,7 +110,7 @@ jobs:
             ^adios2~libcatalyst~fortran
           spack -e cxx add catch2
           spack -e cxx concretize -j 4
-          spack -v -e cxx install -j 4 -p 2 --use-build-cache=auto
+          spack -v -e cxx install -j 4 -p 2 --use-build-cache auto
 
       - name: Push C++ packages to cache
         run: |
@@ -172,7 +172,7 @@ jobs:
           spack -e py add py-fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer \
             +petsc4py +slepc4py
           spack -e py concretize -j 4
-          spack -v -e py install -j 4 -p 2 --use-build-cache=auto
+          spack -v -e py install -j 4 -p 2 --use-build-cache auto
 
       - name: Set default DOLFINx JIT options
         run: |
