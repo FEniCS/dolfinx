@@ -169,7 +169,7 @@ jobs:
           spack -e cxx add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
             ^petsc+mumps+superlu-dist~hypre \
             ^adios2~libcatalyst~fortran
-          spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer \
+          spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer
           spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
             py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
