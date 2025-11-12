@@ -175,7 +175,7 @@ void inv(U A, V B)
 /// @param[in] A Input matrix
 /// @param[in] B Input matrix
 /// @param[in, out] C Filled to be C += A * B
-/// @param[in] transpose Computes C += A^T * B^T if false, otherwise
+/// @param[in] transpose Computes C += A * B if false, otherwise
 /// computed C += A^T * B^T
 template <typename U, typename V, typename P>
 void dot(U A, V B, P C, bool transpose = false)

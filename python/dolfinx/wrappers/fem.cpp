@@ -367,7 +367,22 @@ void declare_objects(nb::module_& m, std::string type)
                     local_dofs.data(), local_dofs.data() + local_dofs.size()),
                 ref_globals);
           })
-      .def("V", &dolfinx::fem::MPC<T, U>::V);
+      .def("V", &dolfinx::fem::MPC<T, U>::V)
+      .def("modified_dofs",
+           [](dolfinx::fem::MPC<T, U>& self,
+              nb::ndarray<std::int32_t, nb::c_contig> dofs)
+           {
+             std::span<std::int32_t> dspan(dofs.data(), dofs.size());
+             return self.modified_dofs(dspan);
+           })
+      .def("Kmat",
+           [](dolfinx::fem::MPC<T, U>& self,
+              nb::ndarray<std::int32_t, nb::c_contig> dofs)
+           {
+             std::span<std::int32_t> dspan(dofs.data(), dofs.size());
+
+             return self.Kmat(dspan);
+           });
 
   // dolfinx::fem::DirichletBC
   pyclass_name = std::string("DirichletBC_") + type;
