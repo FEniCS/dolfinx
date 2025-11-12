@@ -108,7 +108,7 @@ jobs:
           # hypre causing petsc to concretise to old version as of 12/11/2025
           spack -e cxx add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
             ^petsc+mumps+superlu-dist~hypre \
-            ^adios2~libcatalyst~fortran
+            ^adios2~libcatalyst~fortran \
             ^hdf5+hl # Required for vtk build below, probably broken Spack package.
           spack -e cxx add catch2
           spack -e cxx concretize -j 4
