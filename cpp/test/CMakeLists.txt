@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.21)
 
 project(dolfinx-tests LANGUAGES C CXX)
 
+find_package(MPI 3 REQUIRED)
+
 if (PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
   find_package(DOLFINX REQUIRED)
@@ -100,4 +102,18 @@ endif()
 # Uncommenting line allows for debugging individual tests, but slow.
 #catch_discover_tests(unittests)
 
-add_test(NAME unittests COMMAND $<TARGET_FILE:unittests>)
+# To subset of tests use:
+# ctest -R unittests_np_3
+foreach(N 1 2 3)
+  add_test(NAME unittests_np_${N}
+           COMMAND
+           ${MPIEXEC_EXECUTABLE}
+           ${MPIEXEC_NUMPROC_FLAG} ${N}
+           ${MPIEXEC_PREFLAGS}
+           $<TARGET_FILE:unittests>
+           ${MPIEXEC_POSTFLAGS}
+  )
+  # This tells ctest how many physical cores (i.e., ${N}) are needed for each
+  # test, preventing oversubscription when using e.g. `ctest -j2`.
+  set_tests_properties(unittests_np_${N} PROPERTIES PROCESSORS ${N})
+endforeach()

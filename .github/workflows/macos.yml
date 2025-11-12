@@ -101,8 +101,8 @@ jobs:
       - name: Run tests (C++)
         working-directory: cpp/build
         run: |
-          mpiexec -np 1 ctest -V --output-on-failure -R unittests
-          mpiexec -np 3 ctest -V --output-on-failure -R unittests
+          ctest -V --output-on-failure -R unittests_np_1
+          ctest -V --output-on-failure -R unittests_np_3
 
       - name: Build and install DOLFINx Python interface
         working-directory: python
