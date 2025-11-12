@@ -60,7 +60,7 @@ file(INSTALL "${SOURCE_LIBFABRIC_PATH}/libfabric.dll"
 )
 
 file(INSTALL "${SOURCE_LIBFABRIC_PATH}/libfabric.dll"
-     "${SOURCE_DEBUG_BIN_PATH}/impi.dll" "${SOURCE_DEBUG_BIN_PATH}/impi.pdb"
+     "${SOURCE_DEBUG_BIN_PATH}/impi.dll"
      DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin"
 )
 
