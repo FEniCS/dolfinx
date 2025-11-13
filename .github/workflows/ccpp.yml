@@ -121,7 +121,7 @@ jobs:
           cmake --build .
           sudo cmake --install .
 
-      - name: Run tests via target (C++, serial)
+      - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
         run: cmake --build . --target test
 
