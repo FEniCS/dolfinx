@@ -102,8 +102,8 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack env activate .
           cd build
-          mpirun -np 1 ctest -V --output-on-failure -R unittests
-          mpirun -np 2 ctest -V --output-on-failure -R unittests
+          ctest -V --output-on-failure -R unittests_np_1
+          ctest -V --output-on-failure -R unittests_np_2
 
       - name: Install C++
         run: |
