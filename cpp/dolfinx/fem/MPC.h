@@ -35,13 +35,6 @@ public:
 
     std::shared_ptr<const fem::DofMap> dm = V.dofmap();
 
-    // Compute offsets for flattened arrays of reference dofs and weights
-    std::vector<std::int32_t> count(dm->index_map->size_local(), 0);
-    for (std::size_t i = 0; i < constrained_dofs_local.size(); ++i)
-      count[constrained_dofs_local[i]] += reference_dofs_global[i].size();
-    dof_to_ref.resize(count.size() + 1, 0);
-    std::partial_sum(count.begin(), count.end(), std::next(dof_to_ref.begin()));
-
     // Get unique list of global dofs
     std::vector<std::int64_t> gl_dofs;
     for (std::size_t i = 0; i < reference_dofs_global.size(); ++i)
@@ -104,6 +97,14 @@ public:
         std::make_shared<const DofMap>(dm->element_dof_layout(), index_map,
                                        index_map_bs, cell_dofs, bs));
 
+    // Compute offsets for flattened arrays of reference dofs and weights
+    std::vector<std::int32_t> count(
+        dm->index_map->size_local() + dm->index_map->num_ghosts(), 0);
+    for (std::size_t i = 0; i < constrained_dofs_local.size(); ++i)
+      count[constrained_dofs_local[i]] += reference_dofs_global[i].size();
+    dof_to_ref.resize(count.size() + 1, 0);
+    std::partial_sum(count.begin(), count.end(), std::next(dof_to_ref.begin()));
+
     // Flatten reference dofs and weight arrays, in correct order
     std::vector<std::int64_t> ref_dofs_tmp(dof_to_ref.back());
     ref_coeffs_flat.resize(dof_to_ref.back());
@@ -128,54 +129,83 @@ public:
   /// dofs
   std::shared_ptr<const FunctionSpace<U>> V() { return _V; }
 
+  /// @brief Find cells which contain constrained dofs
+  /// @return List of cells containing constrained dofs
+  std::vector<std::int32_t> cells() const
+  {
+    auto cell_dofs = _V->dofmap()->map();
+    std::vector<std::int32_t> marked_cells;
+    for (int i = 0; i < cell_dofs.extent(0); ++i)
+    {
+      for (int j = 0; j < cell_dofs.extent(1); ++j)
+      {
+        int index = cell_dofs(i, j);
+        if (dof_to_ref[index] != dof_to_ref[index + 1])
+          marked_cells.push_back(i);
+      }
+    }
+    return marked_cells;
+  }
+
   /// @brief Replace constrained dofs with reference dofs in list
   /// @param dofs List of dofs, which may contain constrained dofs
   /// @return List of dofs, where constrained dofs are replaced with reference
   /// dofs
-  std::vector<std::int32_t> modified_dofs(std::span<std::int32_t> dofs)
+  std::vector<std::int32_t>
+  modified_dofs(std::span<const std::int32_t> dofs) const
   {
-    // TODO - fix the case where the same reference dof appears more than once
-
     std::vector<std::int32_t> mdofs;
     mdofs.reserve(dofs.size());
+    // Copy unconstrained dofs
     for (std::int32_t r : dofs)
     {
       if (dof_to_ref[r + 1] == dof_to_ref[r])
         mdofs.push_back(r);
-      else
+    }
+    // Add any new reference dofs
+    for (std::int32_t r : dofs)
+    {
+      if (dof_to_ref[r + 1] != dof_to_ref[r])
       {
         for (int j = dof_to_ref[r]; j < dof_to_ref[r + 1]; ++j)
-          mdofs.push_back(ref_dofs_flat[j]);
+        {
+          if (std::find(mdofs.begin(), mdofs.end(), ref_dofs_flat[j])
+              == mdofs.end())
+            mdofs.push_back(ref_dofs_flat[j]);
+        }
       }
     }
+
     return mdofs;
   }
 
   /// @brief Compute K-matrix to convert between constrained and reference dofs
   /// @param dofs Input dofs
   /// @return Flattened K-matrix
-  std::vector<T> Kmat(std::span<std::int32_t> dofs)
+  std::vector<T> Kmat(std::span<const std::int32_t> dofs) const
   {
-    // TODO - fix the case where the same reference dof appears more than once
+    std::vector<std::int32_t> mdofs = modified_dofs(dofs);
+    std::vector<T> mat(mdofs.size() * dofs.size(), 0.0);
 
-    int mdofs_size = 0;
-    for (int r : dofs)
-    {
-      int n = dof_to_ref[r + 1] - dof_to_ref[r];
-      mdofs_size += (n == 0) ? 1 : n;
-    }
-
-    std::vector<T> mat(mdofs_size * dofs.size(), 0.0);
-    int j = 0;
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
       int r = dofs[i];
       if (dof_to_ref[r + 1] - dof_to_ref[r] == 0)
-        mat[mdofs_size * i + j++] = 1.0;
+      {
+        auto it = std::find(mdofs.begin(), mdofs.end(), r);
+        assert(it != mdofs.end());
+        int j = std::distance(mdofs.begin(), it);
+        mat[mdofs.size() * i + j] = 1.0;
+      }
       else
       {
         for (int k = dof_to_ref[r]; k < dof_to_ref[r + 1]; ++k)
-          mat[mdofs_size * i + j++] = ref_coeffs_flat[k];
+        {
+          auto it = std::find(mdofs.begin(), mdofs.end(), ref_dofs_flat[k]);
+          assert(it != mdofs.end());
+          int j = std::distance(mdofs.begin(), it);
+          mat[mdofs.size() * i + j] = ref_coeffs_flat[k];
+        }
       }
     }
 

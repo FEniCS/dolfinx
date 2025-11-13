@@ -31,6 +31,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <functional>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <nanobind/nanobind.h>
@@ -379,9 +380,50 @@ void declare_objects(nb::module_& m, std::string type)
            [](dolfinx::fem::MPC<T, U>& self,
               nb::ndarray<std::int32_t, nb::c_contig> dofs)
            {
-             std::span<std::int32_t> dspan(dofs.data(), dofs.size());
-
+             std::span<const std::int32_t> dspan(dofs.data(), dofs.size());
              return self.Kmat(dspan);
+           })
+      .def("assemble_matrix",
+           [](dolfinx::fem::MPC<T, U>& self, const dolfinx::fem::Form<T, U>& a)
+           {
+             using mdspan2_t
+                 = md::mdspan<const T, md::dextents<std::size_t, 2>>;
+             using mdspan2T_t
+                 = md::mdspan<const T, md::dextents<std::size_t, 2>,
+                              md::layout_left>;
+             std::vector<std::int32_t> mat_rows;
+             std::vector<std::int32_t> mat_cols;
+             std::vector<T> mat_vals;
+             auto mat_add
+                 = [self, &mat_rows, &mat_cols, &mat_vals](
+                       std::span<const std::int32_t> r,
+                       std::span<const std::int32_t> c, std::span<const T> v)
+             {
+               std::vector<std::int32_t> mdofs = self.modified_dofs(r);
+               std::vector<T> Kmat = self.Kmat(r);
+               mdspan2_t K(Kmat.data(), r.size(), mdofs.size());
+               mdspan2T_t KT(Kmat.data(), r.size(), mdofs.size());
+               mdspan2_t Ae(v.data(), r.size(), c.size());
+
+               std::vector<T> scratch(r.size() * mdofs.size(), 0.0);
+               std::vector<T> scratch2(r.size() * mdofs.size(), 0.0);
+               md::mdspan<T, md::dextents<std::size_t, 2>> A0(
+                   scratch.data(), r.size(), mdofs.size());
+               md::mdspan<T, md::dextents<std::size_t, 2>> A1(
+                   scratch2.data(), r.size(), mdofs.size());
+               dolfinx::math::dot(K, Ae, A0);
+               dolfinx::math::dot(A0, KT, A1);
+
+               for (std::size_t i = 0; i < r.size(); ++i)
+                 for (std::size_t j = 0; j < c.size(); ++j)
+                 {
+                   mat_rows.push_back(mdofs[i]);
+                   mat_cols.push_back(mdofs[j]);
+                   mat_vals.push_back(A1(i, j));
+                 }
+             };
+             dolfinx::fem::assemble_matrix(mat_add, a, {});
+             return std::tuple{mat_rows, mat_cols, mat_vals};
            });
 
   // dolfinx::fem::DirichletBC
