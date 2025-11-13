@@ -167,9 +167,9 @@ jobs:
           spack -e py add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           # hypre causing petsc to concretise to old version as of 12/11/2025
           spack -e cxx add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
+            py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer \
             ^petsc+mpi+mumps+superlu-dist~hypre \
             ^adios2~libcatalyst~fortran
-          spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer
           spack -e py add py-gmsh ^gmsh~fltk+external py-pyamg py-matplotlib py-networkx \
             py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
@@ -185,10 +185,8 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate py
           spack load gcc
-          # As of 13/11/2025 the monolithic Stokes direct solve does not
-          # produce a matching displacement norm. All other CIs pass.
-          python -m pytest -n=auto -m serial --durations=10 -k "not demo_stokes" dolfinx-src/python/demo/test.py
-          python -m pytest -m mpi --num-proc=3 -k "not demo_stokes" dolfinx-src/python/demo/test.py
+          python -m pytest -n=auto -m serial --durations=10 -k dolfinx-src/python/demo/test.py
+          python -m pytest -m mpi --num-proc=3 -k dolfinx-src/python/demo/test.py
 
       - name: Run Python unit tests
         run: |
