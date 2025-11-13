@@ -108,8 +108,7 @@ jobs:
           # hypre causing petsc to concretise to old version as of 12/11/2025
           spack -e cxx add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
             ^petsc+mumps+superlu-dist~hypre \
-            ^adios2~libcatalyst~fortran \
-            ^hdf5+hl
+            ^adios2~libcatalyst~fortran
           spack -e cxx add catch2
           spack -e cxx concretize -j 4
           spack -v -e cxx install -j 4 -p 2 --use-buildcache auto
@@ -169,8 +168,7 @@ jobs:
           # hypre causing petsc to concretise to old version as of 12/11/2025
           spack -e cxx add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
             ^petsc+mumps+superlu-dist~hypre \
-            ^adios2~libcatalyst~fortran \
-            ^hdf5+hl
+            ^adios2~libcatalyst~fortran
           spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer
           spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
             py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
