@@ -102,7 +102,7 @@ endif()
 # Uncommenting line allows for debugging individual tests, but slow.
 #catch_discover_tests(unittests)
 
-# To subset of tests use:
+# To select one np use, e.g.:
 # ctest -R unittests_np_3
 foreach(N 1 2 3)
   add_test(NAME unittests_np_${N}
