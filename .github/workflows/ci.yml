@@ -107,7 +107,7 @@ jobs:
           spack -e cxx add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           # As of 12/11/2025 ^petsc+hypre causes petsc to concretise to old version
           spack -e cxx add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
-            ^petsc+mumps+superlu-dist~hypre \
+            ^petsc+mpi+mumps+superlu-dist~hypre \
             ^adios2~libcatalyst~fortran
           spack -e cxx add catch2
           spack -e cxx concretize -j 4
@@ -167,7 +167,7 @@ jobs:
           spack -e py add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           # hypre causing petsc to concretise to old version as of 12/11/2025
           spack -e cxx add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
-            ^petsc+mumps+superlu-dist~hypre \
+            ^petsc+mpi+mumps+superlu-dist~hypre \
             ^adios2~libcatalyst~fortran
           spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer
           spack -e py add py-gmsh ^gmsh~fltk+external py-pyamg py-matplotlib py-networkx \
