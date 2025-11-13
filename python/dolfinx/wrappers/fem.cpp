@@ -383,9 +383,20 @@ void declare_objects(nb::module_& m, std::string type)
              std::span<const std::int32_t> dspan(dofs.data(), dofs.size());
              return self.Kmat(dspan);
            })
+      .def("constraint", &dolfinx::fem::MPC<T, U>::constraint)
       .def("assemble_matrix",
-           [](dolfinx::fem::MPC<T, U>& self, const dolfinx::fem::Form<T, U>& a)
+           [](dolfinx::fem::MPC<T, U>& self, const dolfinx::fem::Form<T, U>& a,
+              const std::vector<const dolfinx::fem::DirichletBC<T, U>*>& bcs)
            {
+             std::vector<
+                 std::reference_wrapper<const dolfinx::fem::DirichletBC<T, U>>>
+                 _bcs;
+             for (auto bc : bcs)
+             {
+               assert(bc);
+               _bcs.push_back(*bc);
+             }
+
              using mdspan2_t
                  = md::mdspan<const T, md::dextents<std::size_t, 2>>;
              using mdspan2T_t
@@ -414,15 +425,17 @@ void declare_objects(nb::module_& m, std::string type)
                dolfinx::math::dot(K, Ae, A0);
                dolfinx::math::dot(A0, KT, A1);
 
-               for (std::size_t i = 0; i < r.size(); ++i)
-                 for (std::size_t j = 0; j < c.size(); ++j)
+               for (std::size_t i = 0; i < mdofs.size(); ++i)
+                 for (std::size_t j = 0; j < mdofs.size(); ++j)
                  {
+                   std::cout << "i,j,dofs: " << i << "," << j << "," << mdofs[i]
+                             << "," << mdofs[j] << "=" << A1(i, j) << "\n";
                    mat_rows.push_back(mdofs[i]);
                    mat_cols.push_back(mdofs[j]);
                    mat_vals.push_back(A1(i, j));
                  }
              };
-             dolfinx::fem::assemble_matrix(mat_add, a, {});
+             dolfinx::fem::assemble_matrix(mat_add, a, _bcs);
              return std::tuple{mat_rows, mat_cols, mat_vals};
            });
 

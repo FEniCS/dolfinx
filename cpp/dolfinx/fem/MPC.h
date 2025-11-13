@@ -55,6 +55,7 @@ public:
     int size = dolfinx::MPI::size(V.mesh()->comm());
     if (size > 1)
     {
+      int rank = dolfinx::MPI::rank(V.mesh()->comm());
       // Compute owner of global reference dofs
       // Should be a better way to do this
 
@@ -73,6 +74,8 @@ public:
       // If not already included, add new global dofs to ghosts
       for (std::size_t i = 0; i < gl_dofs.size(); ++i)
       {
+        if (gl_owner[i] == rank)
+          continue;
         auto it = std::find(ghost_dofs.begin(), ghost_dofs.end(), gl_dofs[i]);
         if (it == ghost_dofs.end())
         {
@@ -145,6 +148,26 @@ public:
       }
     }
     return marked_cells;
+  }
+
+  /// @brief Return constraint on a given dof, if any
+  std::pair<std::vector<std::int32_t>, std::vector<T>>
+  constraint(std::int32_t dof)
+  {
+    std::vector<std::int32_t> ref_dofs;
+    std::vector<T> coeffs;
+
+    int n = dof_to_ref[dof + 1] - dof_to_ref[dof];
+    ref_dofs.resize(n);
+    std::copy(std::next(ref_dofs_flat.begin(), dof_to_ref[dof]),
+              std::next(ref_dofs_flat.begin(), dof_to_ref[dof + 1]),
+              ref_dofs.begin());
+    coeffs.resize(n);
+    std::copy(std::next(ref_coeffs_flat.begin(), dof_to_ref[dof]),
+              std::next(ref_coeffs_flat.begin(), dof_to_ref[dof + 1]),
+              coeffs.begin());
+
+    return {ref_dofs, coeffs};
   }
 
   /// @brief Replace constrained dofs with reference dofs in list
