@@ -42,6 +42,8 @@ def test_sub_index_map():
         comm, map_local_size, [dest_ranks, src_ranks], map_ghosts, src_ranks
     )
     assert map.size_global == map_local_size * comm.size
+    assert map.memory(dolfinx.cpp.common.MemoryUnit.byte) > 0
+    assert map.memory(dolfinx.cpp.common.MemoryUnit.kilobyte) > 0
 
     # Build list for each rank of the first (myrank + myrank % 2) local
     # indices
