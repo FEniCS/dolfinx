@@ -164,10 +164,11 @@ jobs:
           spack -e py add py-fenics-ufl@main commit=$(git -C $GITHUB_WORKSPACE/ufl-src rev-parse HEAD)
           spack -e py add fenics-ufcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           spack -e py add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
-          # hypre causing petsc to concretise to old version as of 12/11/2025
-          spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer \
+          spack -e py add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
             ^petsc+mpi+mumps+superlu-dist~hypre \
             ^adios2~libcatalyst~fortran
+          # hypre causing petsc to concretise to old version as of 12/11/2025
+          spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer
           spack -e py add py-gmsh ^gmsh~fltk+external py-pyamg py-matplotlib py-networkx \
             py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
