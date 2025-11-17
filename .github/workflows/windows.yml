@@ -23,6 +23,7 @@ jobs:
       VCPKG_EXE: C:/vcpkg/vcpkg
       FEED_URL: https://nuget.pkg.github.com/FEniCS/index.json
       VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/FEniCS/index.json,readwrite"
+      I_MPI_FABRICS: "shm"
 
     steps:
       - name: Add NuGet sources
