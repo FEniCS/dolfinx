@@ -386,6 +386,7 @@ void declare_objects(nb::module_& m, std::string type)
              return self.Kmat(dspan);
            })
       .def("constraint", &dolfinx::fem::MPC<T, U>::constraint)
+      .def("cells", &dolfinx::fem::MPC<T, U>::cells)
       .def("assemble_matrix",
            [](dolfinx::fem::MPC<T, U>& self, dolfinx::la::MatrixCSR<T>& A,
               const dolfinx::fem::Form<T, U>& a,

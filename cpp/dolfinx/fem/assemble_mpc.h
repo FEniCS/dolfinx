@@ -41,8 +41,6 @@ void assemble_matrix_mpc(
   // Check functionspace is the same for rows and cols
   if (a.function_spaces().size() != 2)
     throw std::runtime_error("Bilinear form required");
-  if (a.function_spaces()[0] == a.function_spaces()[1])
-    throw std::runtime_error("Not yet supported with MPC");
 
   using mdspan2_t = md::mdspan<const T, md::dextents<std::size_t, 2>>;
   using mdspan2T_t
@@ -56,6 +54,7 @@ void assemble_matrix_mpc(
     std::vector<std::int32_t> mod_rows = mpc.modified_dofs(rows);
     std::vector<std::int32_t> mod_cols = mpc.modified_dofs(cols);
     cache.resize(rows.size() * mod_rows.size() + cols.size() * mod_cols.size());
+    std::fill(cache.begin(), cache.end(), 0.0);
     std::vector<T> Kmat = mpc.Kmat(rows);
     mdspan2_t K(Kmat.data(), rows.size(), mod_rows.size());
     mdspan2T_t KT(Kmat.data(), rows.size(), mod_rows.size());

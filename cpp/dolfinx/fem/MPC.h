@@ -209,7 +209,7 @@ public:
       la::MatrixCSR<T>& A, const Form<T, U>& a,
       const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
   {
-    auto mat_set = A.mat_set_values();
+    auto mat_set = A.mat_add_values();
     assemble_matrix_mpc(*this, mat_set, a, bcs);
   }
 
