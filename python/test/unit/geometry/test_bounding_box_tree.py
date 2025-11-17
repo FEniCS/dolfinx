@@ -167,6 +167,8 @@ def test_compute_collisions_point_1d(dtype):
     tdim = mesh.topology.dim
     tree = bb_tree(mesh, tdim, padding=0.0)
     entities = compute_collisions_points(tree, p)
+
+    assert repr(entities) == "<AdjacencyList> with 1 nodes\n  0: [4 ]\n"
     assert len(entities.array) == 1
 
     # Get the vertices of the geometry
