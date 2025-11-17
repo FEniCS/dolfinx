@@ -21,11 +21,13 @@
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/MPC.h>
+#include <dolfinx/fem/assemble_mpc.h>
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/fem/interpolate.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/graph/ordering.h>
+#include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -385,7 +387,8 @@ void declare_objects(nb::module_& m, std::string type)
            })
       .def("constraint", &dolfinx::fem::MPC<T, U>::constraint)
       .def("assemble_matrix",
-           [](dolfinx::fem::MPC<T, U>& self, const dolfinx::fem::Form<T, U>& a,
+           [](dolfinx::fem::MPC<T, U>& self, dolfinx::la::MatrixCSR<T>& A,
+              const dolfinx::fem::Form<T, U>& a,
               const std::vector<const dolfinx::fem::DirichletBC<T, U>*>& bcs)
            {
              std::vector<
@@ -396,47 +399,7 @@ void declare_objects(nb::module_& m, std::string type)
                assert(bc);
                _bcs.push_back(*bc);
              }
-
-             using mdspan2_t
-                 = md::mdspan<const T, md::dextents<std::size_t, 2>>;
-             using mdspan2T_t
-                 = md::mdspan<const T, md::dextents<std::size_t, 2>,
-                              md::layout_left>;
-             std::vector<std::int32_t> mat_rows;
-             std::vector<std::int32_t> mat_cols;
-             std::vector<T> mat_vals;
-             auto mat_add
-                 = [self, &mat_rows, &mat_cols, &mat_vals](
-                       std::span<const std::int32_t> r,
-                       std::span<const std::int32_t> c, std::span<const T> v)
-             {
-               std::vector<std::int32_t> mdofs = self.modified_dofs(r);
-               std::vector<T> Kmat = self.Kmat(r);
-               mdspan2_t K(Kmat.data(), r.size(), mdofs.size());
-               mdspan2T_t KT(Kmat.data(), r.size(), mdofs.size());
-               mdspan2_t Ae(v.data(), r.size(), c.size());
-
-               std::vector<T> scratch(r.size() * mdofs.size(), 0.0);
-               std::vector<T> scratch2(r.size() * mdofs.size(), 0.0);
-               md::mdspan<T, md::dextents<std::size_t, 2>> A0(
-                   scratch.data(), r.size(), mdofs.size());
-               md::mdspan<T, md::dextents<std::size_t, 2>> A1(
-                   scratch2.data(), r.size(), mdofs.size());
-               dolfinx::math::dot(K, Ae, A0);
-               dolfinx::math::dot(A0, KT, A1);
-
-               for (std::size_t i = 0; i < mdofs.size(); ++i)
-                 for (std::size_t j = 0; j < mdofs.size(); ++j)
-                 {
-                   std::cout << "i,j,dofs: " << i << "," << j << "," << mdofs[i]
-                             << "," << mdofs[j] << "=" << A1(i, j) << "\n";
-                   mat_rows.push_back(mdofs[i]);
-                   mat_cols.push_back(mdofs[j]);
-                   mat_vals.push_back(A1(i, j));
-                 }
-             };
-             dolfinx::fem::assemble_matrix(mat_add, a, _bcs);
-             return std::tuple{mat_rows, mat_cols, mat_vals};
+             self.assemble(A, a, _bcs);
            });
 
   // dolfinx::fem::DirichletBC

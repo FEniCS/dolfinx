@@ -5,7 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <concepts>
+#include <dolfinx/fem/DirichletBC.h>
+#include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/la/MatrixCSR.h>
 #include <mpi.h>
 
 #pragma once
@@ -200,6 +203,14 @@ public:
     }
 
     return mdofs;
+  }
+
+  void assemble(
+      la::MatrixCSR<T>& A, const Form<T, U>& a,
+      const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
+  {
+    auto mat_set = A.mat_set_values();
+    assemble_matrix_mpc(*this, mat_set, a, bcs);
   }
 
   /// @brief Compute K-matrix to convert between constrained and reference dofs
