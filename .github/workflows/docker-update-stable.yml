@@ -58,5 +58,6 @@ jobs:
            ./regctl image copy ghcr.io/fenics/dolfinx/dolfinx-onbuild:${{ inputs.end-user-tag }} ghcr.io/fenics/dolfinx/dolfinx-onbuild:stable
           
       - name: "Link :dev-env-tag to :stable"
+        run: |
            ./regctl image copy dolfinx/dev-env:${{ inputs.dev-env-tag }} dolfinx/dev-env:stable
            ./regctl image copy ghcr.io/fenics/dolfinx/dev-env:${{ inputs.dev-env-tag }} ghcr.io/fenics/dolfinx/dev-env:stable
