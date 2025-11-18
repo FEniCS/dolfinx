@@ -96,7 +96,7 @@ def test_mpc():
 
     A = matrix_csr(sp)
 
-    mpc.assemble_matrix(A._cpp_object, a._cpp_object, [bc._cpp_object])
+    dolfinx.cpp.fem.assemble_matrix_mpc(mpc, A._cpp_object, a._cpp_object, [bc._cpp_object])
     dolfinx.cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], [bc._cpp_object], 1.0)
 
     # Convert to scipy

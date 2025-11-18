@@ -17,6 +17,8 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/fem/MPC.h>
+#include <dolfinx/fem/assemble_mpc.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/petsc.h>
@@ -345,6 +347,27 @@ void petsc_fem_module(nb::module_& m)
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
       nb::arg("bcs"), nb::arg("unrolled") = false,
       "Assemble bilinear form into an existing PETSc matrix");
+
+  m.def("assemble_matrix_mpc",
+        [](const dolfinx::fem::MPC<PetscScalar, PetscReal>& mpc, Mat A,
+           const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
+           const std::vector<
+               const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>& bcs)
+        {
+          auto mat_add
+              = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
+
+          std::vector<std::reference_wrapper<
+              const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>
+              _bcs;
+          for (auto bc : bcs)
+          {
+            assert(bc);
+            _bcs.push_back(*bc);
+          }
+          dolfinx::fem::assemble_matrix_mpc(mpc, mat_add, a, _bcs);
+        });
+
   m.def(
       "assemble_matrix",
       [](Mat A, const dolfinx::fem::Form<PetscScalar, PetscReal>& a,

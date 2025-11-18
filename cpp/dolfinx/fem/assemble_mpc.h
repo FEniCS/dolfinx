@@ -20,22 +20,15 @@
 namespace dolfinx::fem
 {
 
-/// @brief Assemble bilinear form into a matrix. Matrix must already be
-/// initialised. Does not zero or finalise the matrix.
+/// @brief Assemble bilinear form with a multipoint constraint into a matrix.
+/// Matrix must already be initialised. Does not zero or finalise the matrix.
+/// @param[in] mpc Multipoint constraint.
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear form to assemble.
-/// @param[in] constants Constants that appear in `a`.
-/// @param[in] coefficients Coefficients that appear in `a`.
-/// @param[in] dof_marker0 Boundary condition markers for the rows. If
-/// bc[i] is true then rows i in A will be zeroed. The index i is a
-/// local index.
-/// @param[in] dof_marker1 Boundary condition markers for the columns.
-/// If bc[i] is true then rows i in A will be zeroed. The index i is a
-/// local index.
+/// @param[in] bcs Dirichlet boundary conditions.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix_mpc(
-    const fem::MPC<T, U>& mpc, la::MatSet<T> auto mat_add,
-    const fem::Form<T, U>& a,
+    const fem::MPC<T, U>& mpc, auto mat_add, const fem::Form<T, U>& a,
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
 {
   // Check functionspace is the same for rows and cols
@@ -49,7 +42,7 @@ void assemble_matrix_mpc(
   std::vector<T> cache;
   auto mat_add_mpc = [mat_add, &mpc, &cache](std::span<const std::int32_t> rows,
                                              std::span<const std::int32_t> cols,
-                                             std::span<const T> vals)
+                                             std::span<const T> vals) mutable
   {
     std::vector<std::int32_t> mod_rows = mpc.modified_dofs(rows);
     std::vector<std::int32_t> mod_cols = mpc.modified_dofs(cols);
@@ -77,6 +70,27 @@ void assemble_matrix_mpc(
   pack_coefficients(a, coefficients);
 
   assemble_matrix(mat_add_mpc, a, bcs);
+
+  // Insert constraint u_i = sum(a_j u_j)
+  // N.B. assumes b_i = 0
+  for (int dof = 0; dof < mpc.V()->dofmap()->index_map->size_local(); ++dof)
+  {
+    std::pair<std::vector<std::int32_t>, std::vector<T>> c
+        = mpc.constraint(dof);
+    if (!c.first.empty())
+    {
+      c.first.push_back(dof);
+      c.second.push_back(-1.0);
+      std::vector<T> v;
+      v.reserve(c.second.size() * c.second.size());
+      for (std::size_t i = 0; i < c.second.size(); ++i)
+        for (std::size_t j = 0; j < c.second.size(); ++j)
+        {
+          v.push_back(c.second[i] * c.second[j]);
+        }
+      mat_add(c.first, c.first, v);
+    }
+  }
 }
 
 } // namespace dolfinx::fem

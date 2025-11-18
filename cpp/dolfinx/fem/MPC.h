@@ -133,7 +133,7 @@ public:
   /// @brief Get modified FunctionSpace containing reference dofs as ghosts
   /// @return The FunctionSpace associated with the MPC, including extra ghost
   /// dofs
-  std::shared_ptr<const FunctionSpace<U>> V() { return _V; }
+  std::shared_ptr<const FunctionSpace<U>> V() const { return _V; }
 
   /// @brief Find cells which contain constrained dofs
   /// @return List of cells containing constrained dofs
@@ -155,7 +155,7 @@ public:
 
   /// @brief Return constraint on a given dof, if any
   std::pair<std::vector<std::int32_t>, std::vector<T>>
-  constraint(std::int32_t dof)
+  constraint(std::int32_t dof) const
   {
     std::vector<std::int32_t> ref_dofs;
     std::vector<T> coeffs;
@@ -203,35 +203,6 @@ public:
     }
 
     return mdofs;
-  }
-
-  void assemble(
-      la::MatrixCSR<T>& A, const Form<T, U>& a,
-      const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
-  {
-    auto mat_add = A.mat_add_values();
-    assemble_matrix_mpc(*this, mat_add, a, bcs);
-
-    // Insert constraint u_i = sum(a_j u_j)
-    // N.B. assumes b_i = 0
-    for (int dof = 0; dof < _V->dofmap()->index_map->size_local(); ++dof)
-    {
-      if (dof_to_ref[dof + 1] != dof_to_ref[dof])
-      {
-        std::pair<std::vector<std::int32_t>, std::vector<T>> c
-            = constraint(dof);
-        c.first.push_back(dof);
-        c.second.push_back(-1.0);
-        std::vector<T> v;
-        v.reserve(c.second.size() * c.second.size());
-        for (std::size_t i = 0; i < c.second.size(); ++i)
-          for (std::size_t j = 0; j < c.second.size(); ++j)
-          {
-            v.push_back(c.second[i] * c.second[j]);
-          }
-        mat_add(c.first, c.first, v);
-      }
-    }
   }
 
   /// @brief Compute K-matrix to convert between constrained and reference dofs
@@ -282,4 +253,14 @@ private:
   // Stored coefficients to apply to reference dofs, flattened
   std::vector<T> ref_coeffs_flat;
 };
+
+template <typename T, std::floating_point U>
+void assemble_mpc(
+    const MPC<T, U>& mpc, la::MatrixCSR<T>& A, const Form<T, U>& a,
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
+{
+  auto mat_add = A.mat_add_values();
+  assemble_matrix_mpc(mpc, mat_add, a, bcs);
+}
+
 } // namespace dolfinx::fem

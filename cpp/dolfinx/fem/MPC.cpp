@@ -15,8 +15,9 @@ template MPC<double, double>::MPC(const FunctionSpace<double>&,const std::vector
     const std::vector<std::vector<std::pair<double, std::int64_t>>>&);
 
 // Assemble into CSR Matrix
-template void MPC<double, double>::assemble(
-    la::MatrixCSR<double>& A, const fem::Form<double, double>& a,
+template void assemble_mpc(
+    const MPC<double, double>& mpc, la::MatrixCSR<double>& A,
+    const fem::Form<double, double>& a,
     const std::vector<
         std::reference_wrapper<const DirichletBC<double, double>>>& bcs);
 
