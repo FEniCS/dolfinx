@@ -209,8 +209,29 @@ public:
       la::MatrixCSR<T>& A, const Form<T, U>& a,
       const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
   {
-    auto mat_set = A.mat_add_values();
-    assemble_matrix_mpc(*this, mat_set, a, bcs);
+    auto mat_add = A.mat_add_values();
+    assemble_matrix_mpc(*this, mat_add, a, bcs);
+
+    // Insert constraint u_i = sum(a_j u_j)
+    // N.B. assumes b_i = 0
+    for (int dof = 0; dof < _V->dofmap()->index_map->size_local(); ++dof)
+    {
+      if (dof_to_ref[dof + 1] != dof_to_ref[dof])
+      {
+        std::pair<std::vector<std::int32_t>, std::vector<T>> c
+            = constraint(dof);
+        c.first.push_back(dof);
+        c.second.push_back(-1.0);
+        std::vector<T> v;
+        v.reserve(c.second.size() * c.second.size());
+        for (std::size_t i = 0; i < c.second.size(); ++i)
+          for (std::size_t j = 0; j < c.second.size(); ++j)
+          {
+            v.push_back(c.second[i] * c.second[j]);
+          }
+        mat_add(c.first, c.first, v);
+      }
+    }
   }
 
   /// @brief Compute K-matrix to convert between constrained and reference dofs
