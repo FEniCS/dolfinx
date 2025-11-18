@@ -715,35 +715,55 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # inner facet, and therefore it requires a slightly different approach:
 
 # +
-Z0 = np.sqrt(mu_0 / epsilon_0)  # Vacuum impedance
-Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)  # Magnetic field H
-Esh_3d = ufl.as_vector((Esh[0], Esh[1], 0))
-E_3d = ufl.as_vector((E[0], E[1], 0))
+def calc_Q(E, eps_au, k0, Z0, n_bkg):
+    """
+    Absorption density used for q_abs:
+        Q = 0.5 * Im(ε_au) * k0 * |E|^2 / (Z0 * n_bkg)
+    Returns a UFL scalar expression.
+    """
+    E_3d = ufl.as_vector((E[0], E[1], 0))
+    Q = 0.5 * eps_au.imag * k0 * ufl.inner(E_3d, E_3d) / (Z0 * n_bkg)
+    return Q
 
+def calc_P(Esh, k0, Z0, n_bkg, mesh_data, scatt_tag, radius_scatt, D, tdim):
+    """
+    Scattered Poynting flux (normal component) for q_sca:
+        H_s = -j * curl(E_s)/(Z0 k0 n_bkg)
+        P   = 0.5 * Re((E_s × H_s*) · n3d)
+    Builds the inner-ring marker internally.
+    Returns a UFL scalar expression.
+    """
+    n2d  = ufl.FacetNormal(mesh_data.mesh)
+    n3d  = ufl.as_vector((n2d[0], n2d[1], 0))
+    Esh_3d = ufl.as_vector((Esh[0], Esh[1], 0))
+    Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg) # Magnetic field H
+    Sn     = 0.5 * ufl.inner(ufl.cross(Esh_3d, ufl.conj(Hsh_3d)), n3d)
+
+    # Create a marker for the integration boundary for the scattering
+    # efficiency
+    marker = fem.Function(D)
+    scatt_facets   = mesh_data.facet_tags.find(scatt_tag)
+    incident_cells = mesh.compute_incident_entities(
+        mesh_data.mesh.topology, scatt_facets, tdim - 1, tdim
+    )
+    mesh_data.mesh.topology.create_connectivity(tdim, tdim)
+    midpoints   = mesh.compute_midpoints(mesh_data.mesh, tdim, incident_cells)
+    inner_cells = incident_cells[(midpoints[:, 0]**2 + midpoints[:, 1]**2) < (radius_scatt)**2]
+    marker.x.array[inner_cells] = 1
+
+    return Sn * marker
+
+# +
+Z0 = np.sqrt(mu_0 / epsilon_0)  # Vacuum impedance
 # Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
 # E0 = np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
 I0 = 0.5 / Z0
 gcs = 2 * radius_wire  # Geometrical cross section of the wire
-n = ufl.FacetNormal(mesh_data.mesh)
-n_3d = ufl.as_vector((n[0], n[1], 0))
 
-# Create a marker for the integration boundary for the scattering
-# efficiency
-marker = fem.Function(D)
-scatt_facets = mesh_data.facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(
-    mesh_data.mesh.topology, scatt_facets, tdim - 1, tdim
-)
-
-mesh_data.mesh.topology.create_connectivity(tdim, tdim)
-midpoints = mesh.compute_midpoints(mesh_data.mesh, tdim, incident_cells)
-inner_cells = incident_cells[(midpoints[:, 0] ** 2 + midpoints[:, 1] ** 2) < (radius_scatt) ** 2]
-
-marker.x.array[inner_cells] = 1
-
+# - 
 # Quantities for the calculation of efficiencies
-P = 0.5 * ufl.inner(ufl.cross(Esh_3d, ufl.conj(Hsh_3d)), n_3d) * marker
-Q = 0.5 * eps_au.imag * k0 * (ufl.inner(E_3d, E_3d)) / (Z0 * n_bkg)
+P = calc_P(Esh, k0, Z0, n_bkg, mesh_data, scatt_tag, radius_scatt, D, tdim)
+Q= calc_Q(E, eps_au, k0, Z0, n_bkg)
 
 # Normalized absorption efficiency
 dAu = dx(au_tag)  # Define integration domain for the wire
