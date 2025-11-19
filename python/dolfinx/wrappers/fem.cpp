@@ -382,8 +382,14 @@ void declare_objects(nb::module_& m, std::string type)
            [](dolfinx::fem::MPC<T, U>& self,
               nb::ndarray<std::int32_t, nb::c_contig> dofs)
            {
+             std::span<const std::int32_t> _dofs(dofs.data(), dofs.size());
+             std::vector<std::int32_t> mdofs = self.modified_dofs(_dofs);
+             std::vector<T> kmat_data(dofs.size() * mdofs.size(), 0.0);
+             nb::ndarray<T, nb::numpy> Kmat(
+                 kmat_data.data(), {dofs.size(), mdofs.size()}, nullptr);
              std::span<const std::int32_t> dspan(dofs.data(), dofs.size());
-             return self.Kmat(dspan);
+             self.Kmat(dspan, std::span<T>(Kmat.data(), Kmat.size()));
+             return Kmat.cast();
            })
       .def("constraint", &dolfinx::fem::MPC<T, U>::constraint)
       .def("cells", &dolfinx::fem::MPC<T, U>::cells);

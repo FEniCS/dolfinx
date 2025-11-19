@@ -153,7 +153,9 @@ public:
     return marked_cells;
   }
 
-  /// @brief Return constraint on a given dof, if any
+  /// @brief Return constraint on a given dof, if any.
+  /// @param dof Index of degree of freedom
+  /// @return list of reference dof indices and respective coefficients.
   std::pair<std::vector<std::int32_t>, std::vector<T>>
   constraint(std::int32_t dof) const
   {
@@ -207,11 +209,13 @@ public:
 
   /// @brief Compute K-matrix to convert between constrained and reference dofs
   /// @param dofs Input dofs
+  /// @param mat Memory to be filled with matrix data, size given by the product
+  /// of the number of dofs and the number of modified dofs.
   /// @return Flattened K-matrix
-  std::vector<T> Kmat(std::span<const std::int32_t> dofs) const
+  void Kmat(std::span<const std::int32_t> dofs, std::span<T> mat) const
   {
     std::vector<std::int32_t> mdofs = modified_dofs(dofs);
-    std::vector<T> mat(mdofs.size() * dofs.size(), 0.0);
+    assert(mat.size() == dofs.size() * mdofs.size());
 
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
@@ -234,8 +238,6 @@ public:
         }
       }
     }
-
-    return mat;
   }
 
 private:
@@ -254,6 +256,14 @@ private:
   std::vector<T> ref_coeffs_flat;
 };
 
+/// @brief Assemble a billinear form with MPC constraints into a `MatrixCSR`.
+/// @tparam T Scalar type
+/// @tparam U Geometry scalar type
+/// @param mpc MultiPoint Constraint
+/// @param A Matrix to assemble into
+/// @param a Form to assemble
+/// @param bcs Dirichlet boundary conditions
+/// @note Matrix A must have appropriate sparsity set beforehand
 template <typename T, std::floating_point U>
 void assemble_mpc(
     const MPC<T, U>& mpc, la::MatrixCSR<T>& A, const Form<T, U>& a,

@@ -21,7 +21,8 @@ namespace dolfinx::fem
 {
 
 /// @brief Assemble bilinear form with a multipoint constraint into a matrix.
-/// Matrix must already be initialised. Does not zero or finalise the matrix.
+/// Matrix must already be initialised, with suitable sparsity.
+/// Does not zero or finalise the matrix.
 /// @param[in] mpc Multipoint constraint.
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear form to assemble.
@@ -35,9 +36,25 @@ void assemble_matrix_mpc(
   if (a.function_spaces().size() != 2)
     throw std::runtime_error("Bilinear form required");
 
-  using mdspan2_t = md::mdspan<const T, md::dextents<std::size_t, 2>>;
-  using mdspan2T_t
+  // Ensure column and row space are the same
+  if (a.function_spaces()[0].get() != a.function_spaces()[1].get())
+    throw std::runtime_error("Different FunctionSpaces not supported.");
+
+  // Check that DirichletBCs and MPC constraints do not conflict
+  for (auto bc : bcs)
+  {
+    for (std::int32_t dof : bc.get().dof_indices().first)
+    {
+      spdlog::debug("BC dof {}", dof);
+      if (!mpc.constraint(dof).first.empty())
+        throw std::runtime_error("Clashing MPC constraint and DirichletBC");
+    }
+  }
+
+  using cmdspan2_t = md::mdspan<const T, md::dextents<std::size_t, 2>>;
+  using cmdspan2T_t
       = md::mdspan<const T, md::dextents<std::size_t, 2>, md::layout_left>;
+  using mdspan2_t = md::mdspan<T, md::dextents<std::size_t, 2>>;
 
   std::vector<T> cache;
   auto mat_add_mpc = [mat_add, &mpc, &cache](std::span<const std::int32_t> rows,
@@ -45,23 +62,24 @@ void assemble_matrix_mpc(
                                              std::span<const T> vals) mutable
   {
     std::vector<std::int32_t> mod_rows = mpc.modified_dofs(rows);
-    std::vector<std::int32_t> mod_cols = mpc.modified_dofs(cols);
-    cache.resize(rows.size() * mod_rows.size() + cols.size() * mod_cols.size());
+    int kmat_size = rows.size() * mod_rows.size();
+    cache.resize(kmat_size * 2 + mod_rows.size() * mod_rows.size());
     std::fill(cache.begin(), cache.end(), 0.0);
-    std::vector<T> Kmat = mpc.Kmat(rows);
-    mdspan2_t K(Kmat.data(), rows.size(), mod_rows.size());
-    mdspan2T_t KT(Kmat.data(), rows.size(), mod_rows.size());
-    mdspan2_t Ae(vals.data(), rows.size(), cols.size());
-    md::mdspan<T, md::dextents<std::size_t, 2>> A0(cache.data(), rows.size(),
-                                                   mod_rows.size());
-    md::mdspan<T, md::dextents<std::size_t, 2>> A1(
-        cache.data() + rows.size() * mod_rows.size(), cols.size(),
-        mod_cols.size());
-    math::dot(K, Ae, A0);
-    math::dot(A0, KT, A1);
+    std::span<T> Kmat(cache.data(), kmat_size);
+    mpc.Kmat(rows, Kmat);
+    cmdspan2_t K(Kmat.data(), rows.size(), mod_rows.size());
+    cmdspan2T_t KT(Kmat.data(), rows.size(), mod_rows.size());
+    cmdspan2_t Ae(vals.data(), rows.size(), cols.size());
+    mdspan2_t A0(cache.data() + kmat_size, rows.size(), mod_rows.size());
+    mdspan2_t A1(cache.data() + 2 * kmat_size, mod_rows.size(),
+                 mod_rows.size());
+    // A0 = Ae.K^T
+    math::dot(Ae, KT, A0);
+    // A1 = K.Ae.K^T
+    math::dot(K, A0, A1);
 
     // Revise rows, cols and vals for MPC
-    mat_add(mod_rows, mod_cols, std::span<T>(A1.data_handle(), A1.size()));
+    mat_add(mod_rows, mod_rows, std::span<T>(A1.data_handle(), A1.size()));
   };
 
   // Prepare constants and coefficients
@@ -69,10 +87,11 @@ void assemble_matrix_mpc(
   auto coefficients = allocate_coefficient_storage(a);
   pack_coefficients(a, coefficients);
 
+  // Main assembly
   assemble_matrix(mat_add_mpc, a, bcs);
 
   // Insert constraint u_i = sum(a_j u_j)
-  // N.B. assumes b_i = 0
+  // N.B. assumes b_i = 0 (make sure this is done in RHS)
   for (int dof = 0; dof < mpc.V()->dofmap()->index_map->size_local(); ++dof)
   {
     std::pair<std::vector<std::int32_t>, std::vector<T>> c
