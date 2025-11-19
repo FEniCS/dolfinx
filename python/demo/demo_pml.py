@@ -763,7 +763,7 @@ gcs = 2 * radius_wire  # Geometrical cross section of the wire
 # - 
 # Quantities for the calculation of efficiencies
 P = calc_P(Esh, k0, Z0, n_bkg, mesh_data, scatt_tag, radius_scatt, D, tdim)
-Q= calc_Q(E, eps_au, k0, Z0, n_bkg)
+Q = calc_Q(E, eps_au, k0, Z0, n_bkg)
 
 # Normalized absorption efficiency
 dAu = dx(au_tag)  # Define integration domain for the wire
@@ -788,17 +788,12 @@ err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt
 err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
 err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
 
-PETSc.Sys.Print(f"The analytical absorption efficiency is {q_abs_analyt}")
-PETSc.Sys.Print(f"The numerical absorption efficiency is {q_abs_fenics}")
-PETSc.Sys.Print(f"The error is {err_abs * 100}%")
-PETSc.Sys.Print()
-PETSc.Sys.Print(f"The analytical scattering efficiency is {q_sca_analyt}")
-PETSc.Sys.Print(f"The numerical scattering efficiency is {q_sca_fenics}")
-PETSc.Sys.Print(f"The error is {err_sca * 100}%")
-PETSc.Sys.Print()
-PETSc.Sys.Print(f"The analytical extinction efficiency is {q_ext_analyt}")
-PETSc.Sys.Print(f"The numerical extinction efficiency is {q_ext_fenics}")
-PETSc.Sys.Print(f"The error is {err_ext * 100}%")
+# +
+PETSc.Sys.Print(f"Analytical  : Q_abs={q_abs_analyt:.6f}, Q_sca={q_sca_analyt:.6f}, Q_ext={q_ext_analyt:.6f}")
+PETSc.Sys.Print(f"Numerical   : Q_abs={q_abs_fenics:.6f},      Q_sca={q_sca_fenics:.6f},      Q_ext={q_ext_fenics:.6f}")
+PETSc.Sys.Print(f"Error is : Q_abs = {err_abs * 100}%, Q_sca={err_sca * 100}%, Q_ext={err_ext * 100}%")
+# -
+
 # -
 
 # Check if errors are smaller than 1%
