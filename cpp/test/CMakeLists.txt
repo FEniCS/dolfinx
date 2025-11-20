@@ -8,6 +8,7 @@ if (PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
   find_package(DOLFINX REQUIRED)
 
+  # NOTE: The following must precisely replicate the code in ../CMakeLists.txt.
   # Check for some compiler flags
   include(CheckCXXCompilerFlag)
 
@@ -51,8 +52,8 @@ if (PROJECT_IS_TOP_LEVEL)
     AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
   )
     list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS
-         -Wno-array-bounds;-Wno-stringop-overflow
-  )
+         -Wno-array-bounds;-Wno-stringop-overflow)
+  endif()
 endif()
 
 find_package(Catch2 3 REQUIRED)
