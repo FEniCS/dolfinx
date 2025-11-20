@@ -76,6 +76,7 @@ add_custom_command(
   COMMENT "Compile poisson.py using FFCx"
 )
 
+set(CMAKE_CXX_EXTENSIONS OFF)
 add_executable(
   unittests
   main.cpp
@@ -100,6 +101,7 @@ add_executable(
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
 target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx)
+target_compile_features(unittests PRIVATE cxx_std_20 c_std_17)
 
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
@@ -118,14 +120,6 @@ if (NOT PROJECT_IS_TOP_LEVEL)
     unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>
   )
 endif()
-
-set_target_properties(
-  unittests
-  PROPERTIES CMAKE_C_STANDARD 17 # For FFCx generated .c files.
-             CMAKE_CXX_STANDARD 20
-             CMAKE_CXX_STANDARD_REQUIRED ON
-             CMAKE_CXX_EXTENSIONS OFF
-)
 
 if (DEFINED DOLFINX_CXX_DEVELOPER_FLAGS)
   target_compile_options(
