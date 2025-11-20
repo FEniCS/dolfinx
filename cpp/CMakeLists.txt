@@ -227,6 +227,10 @@ endif()
 # Check for some compiler flags
 include(CheckCXXCompilerFlag)
 
+set(DOLFINX_CXX_DEVELOPER_FLAGS "")
+set(DOFLINX_CXX_DEVLEOPER_DEFINITIONS "")
+set(DOLFINX_LINK_DEVELOPER_FLAGS "")
+
 # Add some strict compiler checks
 check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
 if(HAVE_PEDANTIC)
