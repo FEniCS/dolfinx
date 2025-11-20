@@ -67,7 +67,12 @@ set_source_files_properties(
 
 # Set 'Developer' build type flags
 target_compile_options(
-  dolfinx PRIVATE $<$<CONFIG:Developer>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  dolfinx PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+)
+
+# Set 'Developer' compile definitions
+target_compile_definitions(
+  dolfinx PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 
 # Add version to definitions (public)

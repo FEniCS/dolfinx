@@ -89,6 +89,14 @@ if (DEFINED DOLFINX_CXX_DEVELOPER_FLAGS)
   )
 endif()
 
+if (DEFINED DOLFINX_CXX_DEVELOPER_DEFINITIONS)
+  target_compile_definitions(
+    unittests
+    PRIVATE
+      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+  )
+endif()
+
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
   set_target_properties(
