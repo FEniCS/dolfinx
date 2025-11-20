@@ -253,11 +253,11 @@ check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
 check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
 
 if(LIBCPP)
-  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS "_LIBCPP_DEBUG=0")
+  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS "_LIBCPP_HARDENING_MODE")
 endif()
 
 if(GLIBCXX)
-  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS "_GLIBCXX_DEBUG=1")
+  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS "_GLIBCXX_ASSERTIONS")
 endif()
 
 # Turn off some checks in gcc12 and gcc13 due to false positives with the fmt

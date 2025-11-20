@@ -28,7 +28,7 @@ if (PROJECT_IS_TOP_LEVEL)
   # Optimisation
   check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
   if(HAVE_O2_OPTIMISATION)
-    list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS "-O")
+    list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS "-O2")
   endif()
 
   # Enable C++ standard library debugging
@@ -38,11 +38,11 @@ if (PROJECT_IS_TOP_LEVEL)
   check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
 
   if(LIBCPP)
-    list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS "_LIBCPP_DEBUG=0")
+    list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG")
   endif()
 
   if(GLIBCXX)
-    list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS "_GLIBCXX_DEBUG=1")
+	  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS "_GLIBCXX_ASSERTIONS")
   endif()
 
   # Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
