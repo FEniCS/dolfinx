@@ -138,29 +138,23 @@ if (NOT PROJECT_IS_TOP_LEVEL)
   )
 endif()
 
-if (DEFINED DOLFINX_CXX_DEVELOPER_FLAGS)
-  target_compile_options(
-    unittests
-    PRIVATE
-      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
-  )
-endif()
+target_compile_options(
+  unittests
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+)
 
-if (DEFINED DOLFINX_CXX_DEVELOPER_DEFINITIONS)
-  target_compile_definitions(
-    unittests
-    PRIVATE
-      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
-  )
-endif()
+target_compile_definitions(
+  unittests
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+)
 
-if (DEFINED DOLFINX_LINK_DEVELOPER_FLAGS)
-  target_link_options(
-    unittests
-    PRIVATE
-      $<$<CONFIG:Developer>>:${DOLFINX_LINK_DEVELOPER_FLAGS}>
-  )
-endif()
+target_link_options(
+  unittests
+  PRIVATE
+    $<$<CONFIG:Developer>>:${DOLFINX_LINK_DEVELOPER_FLAGS}>
+)
 
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
