@@ -150,6 +150,14 @@ if (DEFINED DOLFINX_CXX_DEVELOPER_DEFINITIONS)
   )
 endif()
 
+if (DEFINED DOLFINX_LINK_DEVELOPER_FLAGS)
+  target_link_options(
+    unittests
+    PRIVATE
+      $<$<CONFIG:Developer>>:${DOLFINX_LINK_DEVELOPER_FLAGS}>
+  )
+endif()
+
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
   set_target_properties(
