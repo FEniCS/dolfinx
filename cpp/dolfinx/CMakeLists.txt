@@ -75,6 +75,12 @@ target_compile_definitions(
   dolfinx PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 
+# Set 'Developer' link options
+target_link_options(
+  dolfinx PRIVATE $<$<CONFIG:Developer>:${DOLFINX_LINK_DEVELOPER_FLAGS}>
+)
+
+
 # Add version to definitions (public)
 target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 
