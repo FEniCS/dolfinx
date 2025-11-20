@@ -153,7 +153,7 @@ target_compile_definitions(
 target_link_options(
   unittests
   PRIVATE
-    $<$<CONFIG:Developer>>:${DOLFINX_LINK_DEVELOPER_FLAGS}>
+    $<$<CONFIG:Developer>:${DOLFINX_LINK_DEVELOPER_FLAGS}>
 )
 
 if(ENABLE_CLANG_TIDY)
