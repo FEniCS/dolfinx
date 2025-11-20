@@ -243,7 +243,7 @@ endif()
 # Optimisation
 check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
 if(HAVE_O2_OPTIMISATION)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS "-O2")
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS "-O")
 endif()
 
 # Enable C++ standard library debugging
@@ -253,7 +253,7 @@ check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
 check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
 
 if(LIBCPP)
-  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS "_LIBCPP_DEBUG=1")
+  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS "_LIBCPP_DEBUG=0")
 endif()
 
 if(GLIBCXX)
