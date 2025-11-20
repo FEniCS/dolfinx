@@ -228,7 +228,7 @@ endif()
 include(CheckCXXCompilerFlag)
 
 set(DOLFINX_CXX_DEVELOPER_FLAGS "")
-set(DOFLINX_CXX_DEVLEOPER_DEFINITIONS "")
+set(DOFLINX_CXX_DEVELOPER_DEFINITIONS "")
 set(DOLFINX_LINK_DEVELOPER_FLAGS "")
 
 # Add some strict compiler checks

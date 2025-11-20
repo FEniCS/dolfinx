@@ -9,7 +9,7 @@ if (PROJECT_IS_TOP_LEVEL)
   find_package(DOLFINX REQUIRED)
 
   set(DOLFINX_CXX_DEVELOPER_FLAGS "")
-  set(DOFLINX_CXX_DEVLEOPER_DEFINITIONS "")
+  set(DOLFINX_CXX_DEVELOPER_DEFINITIONS "")
   set(DOLFINX_LINK_DEVELOPER_FLAGS "")
 
   # NOTE: The following must precisely replicate the code in ../CMakeLists.txt.
