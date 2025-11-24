@@ -737,23 +737,16 @@ def test_mesh_create_cmap(dtype):
     assert msh.ufl_domain() is None
 
 
-avail_partioners = []
+avail_partitioners = []
 if dolfinx.has_ptscotch:
-    avail_partioners.append(
-        pytest.param(
-            dolfinx.cpp.graph.partitioner_scotch,
-            marks=pytest.mark.xfail(
-                reason="SCOTCH partitioner in parallel results in unexpected mesh connectivity."
-            ),
-        )
-    )
+    avail_partitioners.append(dolfinx.cpp.graph.partitioner_scotch)
 if dolfinx.has_kahip:
-    avail_partioners.append(dolfinx.cpp.graph.partitioner_kahip)
+    avail_partitioners.append(dolfinx.cpp.graph.partitioner_kahip)
 if dolfinx.has_parmetis:
-    avail_partioners.append(dolfinx.cpp.graph.partitioner_parmetis)
+    avail_partitioners.append(dolfinx.cpp.graph.partitioner_parmetis)
 
 
-@pytest.mark.parametrize("partitioner", avail_partioners)
+@pytest.mark.parametrize("partitioner", avail_partitioners)
 def test_mesh_single_process_distribution(partitioner):
     comm = MPI.COMM_WORLD
 
@@ -773,7 +766,9 @@ def test_mesh_single_process_distribution(partitioner):
         cells,
         element,
         x,
-        partitioner=dolfinx.mesh.create_cell_partitioner(partitioner()),
+        partitioner=dolfinx.mesh.create_cell_partitioner(
+            partitioner(), dolfinx.mesh.GhostMode.shared_facet
+        ),
     )
 
     assert mesh.topology.index_map(0).size_global == 3
