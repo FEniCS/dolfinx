@@ -782,6 +782,5 @@ def test_mesh_single_process_distribution(partitioner):
     for conn in ((0, 1), (1, 0)):
         mesh.topology.create_connectivity(*conn)
         adj = mesh.topology.connectivity(*conn)
-        print(adj.array)
         for i in range(adj.num_nodes):
             assert adj.links(i).size == 2
