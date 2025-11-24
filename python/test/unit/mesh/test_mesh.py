@@ -740,7 +740,12 @@ def test_mesh_create_cmap(dtype):
 avail_partioners = []
 if dolfinx.has_ptscotch:
     avail_partioners.append(
-        pytest.param(dolfinx.cpp.graph.partitioner_scotch, marks=pytest.mark.xfail(reason="Bug"))
+        pytest.param(
+            dolfinx.cpp.graph.partitioner_scotch,
+            marks=pytest.mark.xfail(
+                reason="SCOTCH partitioner results in parallel in unpexpected mesh connectivity."
+            ),
+        )
     )
 if dolfinx.has_kahip:
     avail_partioners.append(dolfinx.cpp.graph.partitioner_kahip)
