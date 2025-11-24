@@ -655,7 +655,7 @@ def test_boundary_facets(n, d, ghost_mode, dtype):
         mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode, dtype=dtype)
         exd_num_boundary_facets = 6 * n**2 * 2
 
-    assert compute_num_boundary_facets(mesh) == expected_num_boundary_facets
+    assert compute_num_boundary_facets(mesh) == exd_num_boundary_facets
 
 
 @pytest.mark.parametrize("n", [3, 5])
