@@ -10,7 +10,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "fenics-dolfinx"
-version = "0.10.0.post2"
+version = "0.10.0.post3"
 description = "DOLFINx Python interface"
 readme = "../README.md"
 requires-python = ">=3.10.0"
