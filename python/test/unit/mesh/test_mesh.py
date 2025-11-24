@@ -650,10 +650,10 @@ def test_boundary_facets(n, d, ghost_mode, dtype):
     """Test that the correct number of boundary facets are computed"""
     if d == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode, dtype=dtype)
-        expected_num_boundary_facets = 4 * n
+        exd_num_boundary_facets = 4 * n
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode, dtype=dtype)
-        expected_num_boundary_facets = 6 * n**2 * 2
+        exd_num_boundary_facets = 6 * n**2 * 2
 
     assert compute_num_boundary_facets(mesh) == expected_num_boundary_facets
 
@@ -743,7 +743,7 @@ if dolfinx.has_ptscotch:
         pytest.param(
             dolfinx.cpp.graph.partitioner_scotch,
             marks=pytest.mark.xfail(
-                reason="SCOTCH partitioner results in parallel in unpexpected mesh connectivity."
+                reason="SCOTCH partitioner in parallel results in unexpected mesh connectivity."
             ),
         )
     )
