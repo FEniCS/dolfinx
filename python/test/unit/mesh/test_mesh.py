@@ -13,6 +13,7 @@ import numpy as np
 import pytest
 
 import basix
+import dolfinx.cpp.graph
 import ufl
 from basix.ufl import element
 from dolfinx import cpp as _cpp
@@ -736,7 +737,17 @@ def test_mesh_create_cmap(dtype):
     assert msh.ufl_domain() is None
 
 
-def test_mesh_single_process_distribution():
+avail_partioners = []
+if dolfinx.has_ptscotch:
+    avail_partioners.append(dolfinx.cpp.graph.partitioner_scotch)
+if dolfinx.has_kahip:
+    avail_partioners.append(dolfinx.cpp.graph.partitioner_kahip)
+if dolfinx.has_parmetis:
+    avail_partioners.append(dolfinx.cpp.graph.partitioner_parmetis)
+
+
+@pytest.mark.parametrize("partitioner", avail_partioners)
+def test_mesh_single_process_distribution(partitioner):
     comm = MPI.COMM_WORLD
 
     if comm.rank == 0:
@@ -750,7 +761,13 @@ def test_mesh_single_process_distribution():
         x = np.zeros((0, 3), dtype=np.float64)
 
     element = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(3,)))
-    mesh = _mesh.create_mesh(MPI.COMM_WORLD, cells, element, x)
+    mesh = _mesh.create_mesh(
+        MPI.COMM_WORLD,
+        cells,
+        element,
+        x,
+        partitioner=dolfinx.mesh.create_cell_partitioner(partitioner()),
+    )
 
     assert mesh.topology.index_map(0).size_global == 3
     assert mesh.topology.index_map(1).size_global == 3
