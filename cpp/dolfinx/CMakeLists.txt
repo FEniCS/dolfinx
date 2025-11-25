@@ -123,7 +123,15 @@ target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 # ADIOS2
 if(ADIOS2_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
-  target_link_libraries(dolfinx PUBLIC adios2::cxx11_mpi)
+  if(TARGET adios2::cxx_mpi)
+    set(_adios2_mpi_target adios2::cxx_mpi)
+  elseif(TARGET adios2::cxx11_mpi)
+    set(_adios2_mpi_target adios2::cxx11_mpi)
+  else()
+    message(FATAL_ERROR
+      "ADIOS2 found, but no MPI target available")
+  endif()
+  target_link_libraries(dolfinx PUBLIC ${_adios2_mpi_target})
 endif()
 
 # PETSc
