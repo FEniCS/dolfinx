@@ -90,7 +90,7 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo add --name builtin $GITHUB_WORKSPACE/spack-packages/repos/spack_repo/builtin
-          spack repo add --name fenics $GITHUB_WORKSPACE/spack-fenics/repos/spack_repo/fenics
+          spack repo add --name fenics $GITHUB_WORKSPACE/spack-fenics/spack_repo/fenics
           spack config get repos
           spack repo list
 
