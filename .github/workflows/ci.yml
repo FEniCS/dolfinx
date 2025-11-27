@@ -121,7 +121,7 @@ jobs:
             ^adios2~libcatalyst~fortran
           spack -e cxx add catch2
           spack -e cxx concretize -j 4
-          spack -v -e cxx install -j 4 -p 2 --use-buildcache auto
+          spack -e cxx install -j 4 -p 2 --use-buildcache auto
 
       - name: Push C++ packages to cache
         run: |
@@ -182,7 +182,7 @@ jobs:
           spack -e py add py-gmsh ^gmsh~fltk+external py-pyamg py-matplotlib py-networkx \
             py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
-          spack -v -e py install -j 4 -p 2 --use-buildcache auto
+          spack -e py install -j 4 -p 2 --use-buildcache auto
 
       - name: Set default DOLFINx JIT options
         run: |
