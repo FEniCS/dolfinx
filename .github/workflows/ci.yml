@@ -39,7 +39,7 @@ jobs:
           apt-get install -y llvm-15-dev
 
       - name: Get DOLFINx code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           path: dolfinx-src
 
@@ -47,39 +47,39 @@ jobs:
         run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Get UFL code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: ${{ env.ufl_repository }}
           ref: ${{ env.ufl_ref }}
           path: ufl-src
       - name: Get FFCx code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: ${{ env.ffcx_repository }}
           ref: ${{ env.ffcx_ref }}
           path: ffcx-src
       - name: Get Basix code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: ${{ env.basix_repository }}
           ref: ${{ env.basix_ref }}
           path: basix-src
 
       - name: Get Spack
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: spack/spack
           ref: develop
           path: spack-src
 
       - name: Get upstream Spack packages
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: spack/spack-packages
           ref: develop
           path: spack-packages
       - name: Get FEniCS Spack packages
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: fenics/spack-fenics
           ref: main
