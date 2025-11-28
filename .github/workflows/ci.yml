@@ -72,17 +72,27 @@ jobs:
           ref: develop
           path: spack-src
 
-      - name: Get Spack packages (custom)
+      - name: Get upstream Spack packages
         uses: actions/checkout@v5
         with:
-          repository: fenics/spack-packages
-          ref: fenics-testing
+          repository: spack/spack-packages
+          ref: develop
           path: spack-packages
+      - name: Get FEniCS Spack packages
+        uses: actions/checkout@v5
+        with:
+          repository: fenics/spack-fenics
+          ref: main
+          path: spack-fenics
+
+      # Use upstream Spack packages and overlay FEniCS Spack packages
       - name: Add Spack packages repo
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo add --name builtin $GITHUB_WORKSPACE/spack-packages/repos/spack_repo/builtin
+          spack repo add --name fenics $GITHUB_WORKSPACE/spack-fenics/spack_repo/fenics
           spack config get repos
+          spack repo list
 
       - name: Prepare C++ environment
         run: |
@@ -111,7 +121,7 @@ jobs:
             ^adios2~libcatalyst~fortran
           spack -e cxx add catch2
           spack -e cxx concretize -j 4
-          spack -v -e cxx install -j 4 -p 2 --use-buildcache auto
+          spack -e cxx install -j 4 -p 2 --use-buildcache auto
 
       - name: Push C++ packages to cache
         run: |
@@ -172,7 +182,7 @@ jobs:
           spack -e py add py-gmsh ^gmsh~fltk+external py-pyamg py-matplotlib py-networkx \
             py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
-          spack -v -e py install -j 4 -p 2 --use-buildcache auto
+          spack -e py install -j 4 -p 2 --use-buildcache auto
 
       - name: Set default DOLFINx JIT options
         run: |

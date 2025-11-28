@@ -67,6 +67,16 @@ spack install --add py-fenics-dolfinx+petsc4py+slepc4py
 
 Spack is the recommended approach for HPC systems.
 
+Although Spack already contains FEniCS Project packages, we also maintain a
+separate [overlay package repository](https://github.com/FEniCS/spack-fenics)
+which may contain bug fixes and package specs for newer releases of the FEniCS
+Project components, particularly after a recent release.
+
+```shell
+spack repo add https://github.com/fenics/spack-fenics
+spack repo ls # shows fenics above builtin
+```
+
 ### Binary packages
 
 **Recommendations**
