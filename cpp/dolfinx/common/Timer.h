@@ -133,7 +133,7 @@ private:
   std::optional<std::string> _task;
 
   // Elapsed time offset
-  T::duration _acc = T::duration::zero();
+  typename T::duration _acc = T::duration::zero();
 
   // Store start time (std::nullopt if timer has been stopped)
   std::optional<typename T::time_point> _start_time = T::now();
