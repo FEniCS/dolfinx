@@ -620,8 +620,8 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   // Remove duplicates from received indices
   {
     std::ranges::sort(recv_buffer);
-    auto [unique_end, range_end] = std::ranges::unique(recv_buffer);
-    recv_buffer.erase(unique_end, range_end);
+    auto range = std::ranges::unique(recv_buffer);
+    recv_buffer.erase(range.begin(), range.end());
   }
 
   // Copy owned and ghost indices into return array
