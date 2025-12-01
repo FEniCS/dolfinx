@@ -762,6 +762,22 @@ void declare_form(nb::module_& m, std::string type)
       .def_prop_ro("needs_facet_permutations",
                    &dolfinx::fem::Form<T, U>::needs_facet_permutations)
       .def(
+          "set_custom_data",
+          [](dolfinx::fem::Form<T, U>& self, dolfinx::fem::IntegralType type,
+             int id, int kernel_idx, std::uintptr_t data)
+          { self.set_custom_data(type, id, kernel_idx, (void*)data); },
+          nb::arg("type"), nb::arg("id"), nb::arg("kernel_idx"),
+          nb::arg("data"),
+          "Set custom data pointer for an integral. The data pointer is "
+          "passed to the kernel.")
+      .def(
+          "custom_data",
+          [](const dolfinx::fem::Form<T, U>& self,
+             dolfinx::fem::IntegralType type, int id, int kernel_idx)
+          { return (std::uintptr_t)self.custom_data(type, id, kernel_idx); },
+          nb::arg("type"), nb::arg("id"), nb::arg("kernel_idx"),
+          "Get custom data pointer for an integral.")
+      .def(
           "domains",
           [](const dolfinx::fem::Form<T, U>& self,
              dolfinx::fem::IntegralType type, int i)

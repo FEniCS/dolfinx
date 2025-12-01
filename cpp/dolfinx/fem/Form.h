@@ -55,6 +55,8 @@ struct integral_data
   /// @param[in] entities Indices of entities to integrate over.
   /// @param[in] coeffs Indices of the coefficients that are present
   /// (active) in `kernel`.
+  /// @param[in] custom_data Optional custom user data pointer passed to
+  /// the kernel function.
   template <typename K, typename V, typename W>
     requires std::is_convertible_v<
                  std::remove_cvref_t<K>,
@@ -64,9 +66,10 @@ struct integral_data
                                            std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<int>>
-  integral_data(K&& kernel, V&& entities, W&& coeffs)
+  integral_data(K&& kernel, V&& entities, W&& coeffs,
+                void* custom_data = nullptr)
       : kernel(std::forward<K>(kernel)), entities(std::forward<V>(entities)),
-        coeffs(std::forward<W>(coeffs))
+        coeffs(std::forward<W>(coeffs)), custom_data(custom_data)
   {
   }
 
@@ -82,6 +85,11 @@ struct integral_data
   /// @brief Indices of coefficients (from the form) that are in this
   /// integral.
   std::vector<int> coeffs;
+
+  /// @brief Custom user data pointer passed to the kernel function.
+  /// This can be used to pass runtime-computed data (e.g., per-cell
+  /// quadrature rules, material properties) to the kernel.
+  void* custom_data = nullptr;
 };
 
 /// @brief A representation of finite element variational forms.
@@ -389,6 +397,39 @@ public:
     if (it == _integrals.end())
       throw std::runtime_error("Requested integral kernel not found.");
     return it->second.kernel;
+  }
+
+  /// @brief Get the custom data pointer for an integral.
+  ///
+  /// The custom data pointer is passed to the kernel function during
+  /// assembly. This can be used to pass runtime-computed data to
+  /// kernels (e.g., per-cell quadrature rules, material properties).
+  ///
+  /// @param[in] type Integral type.
+  /// @param[in] id Integral subdomain ID.
+  /// @param[in] kernel_idx Index of the kernel (we may have multiple
+  /// kernels for a given ID in mixed-topology meshes).
+  /// @return Custom data pointer for the integral, or nullptr if not set.
+  void* custom_data(IntegralType type, int id, int kernel_idx) const
+  {
+    auto it = _integrals.find({type, id, kernel_idx});
+    if (it == _integrals.end())
+      throw std::runtime_error("Requested integral not found.");
+    return it->second.custom_data;
+  }
+
+  /// @brief Set the custom data pointer for an integral.
+  ///
+  /// @param[in] type Integral type.
+  /// @param[in] id Integral subdomain ID.
+  /// @param[in] kernel_idx Index of the kernel.
+  /// @param[in] data Custom data pointer to set.
+  void set_custom_data(IntegralType type, int id, int kernel_idx, void* data)
+  {
+    auto it = _integrals.find({type, id, kernel_idx});
+    if (it == _integrals.end())
+      throw std::runtime_error("Requested integral not found.");
+    it->second.custom_data = data;
   }
 
   /// @brief Get types of integrals in the form.

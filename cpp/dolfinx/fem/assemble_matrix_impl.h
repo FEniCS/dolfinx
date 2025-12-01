@@ -60,6 +60,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// function mesh.
 /// @param cell_info1 Cell permutation information for the trial
 /// function mesh.
+/// @param custom_data Custom user data pointer passed to the kernel.
 template <dolfinx::scalar T>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -74,7 +75,7 @@ void assemble_cells_matrix(
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
-    std::span<const std::uint32_t> cell_info1)
+    std::span<const std::uint32_t> cell_info1, void* custom_data = nullptr)
 {
   if (cells.empty())
     return;
@@ -109,7 +110,7 @@ void assemble_cells_matrix(
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), &coeffs(c, 0), constants.data(), cdofs.data(), nullptr,
-           nullptr, nullptr);
+           nullptr, custom_data);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
     P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
@@ -198,6 +199,7 @@ void assemble_cells_matrix(
 /// function mesh.
 /// @param[in] perms Entity permutation integer. Empty if entity
 /// permutations are not required.
+/// @param custom_data Custom user data pointer passed to the kernel.
 template <dolfinx::scalar T>
 void assemble_entities(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -221,7 +223,8 @@ void assemble_entities(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
+    void* custom_data = nullptr)
 {
   if (entities.empty())
     return;
@@ -259,7 +262,7 @@ void assemble_entities(
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), &coeffs(f, 0), constants.data(), cdofs.data(),
-           &local_entity, &perm, nullptr);
+           &local_entity, &perm, custom_data);
     P0(Ae, cell_info0, cell0, ndim1);
     P1T(Ae, cell_info1, cell1, ndim0);
 
@@ -363,7 +366,8 @@ void assemble_interior_facets(
         coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
+    void* custom_data = nullptr)
 {
   if (facets.empty())
     return;
@@ -440,7 +444,7 @@ void assemble_interior_facets(
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
     kernel(Ae.data(), &coeffs(f, 0, 0), constants.data(), cdofs.data(),
-           local_facet.data(), perm.data(), nullptr);
+           local_facet.data(), perm.data(), custom_data);
 
     // Local element layout is a 2x2 block matrix with structure
     //
@@ -605,12 +609,13 @@ void assemble_matrix(
       std::span cells0 = a.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+      void* custom_data = a.custom_data(IntegralType::cell, i, cell_type_idx);
       assert(cells.size() * cstride == coeffs.size());
       impl::assemble_cells_matrix(
           mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
           {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
           md::mdspan(coeffs.data(), cells.size(), cstride), constants,
-          cell_info0, cell_info1);
+          cell_info0, cell_info1, custom_data);
     }
 
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
@@ -646,6 +651,7 @@ void assemble_matrix(
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
+      void* custom_data = a.custom_data(IntegralType::interior_facet, i, 0);
 
       std::span facets = a.domain(IntegralType::interior_facet, i, 0);
       std::span facets0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
@@ -661,7 +667,7 @@ void assemble_matrix(
            mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
           P1T, bc0, bc1, fn,
           mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride), constants,
-          cell_info0, cell_info1, facet_perms);
+          cell_info0, cell_info1, facet_perms, custom_data);
     }
 
     for (auto itg_type : {fem::IntegralType::exterior_facet,
@@ -688,6 +694,7 @@ void assemble_matrix(
         auto fn = a.kernel(itg_type, i, 0);
         assert(fn);
         auto& [coeffs, cstride] = coefficients.at({itg_type, i});
+        void* custom_data = a.custom_data(itg_type, i, 0);
 
         std::span e = a.domain(itg_type, i, 0);
         mdspanx2_t entities(e.data(), e.size() / 2, 2);
@@ -700,7 +707,7 @@ void assemble_matrix(
             mat_set, x_dofmap, x, entities, {dofs0, bs0, entities0}, P0,
             {dofs1, bs1, entities1}, P1T, bc0, bc1, fn,
             md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
-            cell_info0, cell_info1, perms);
+            cell_info0, cell_info1, perms, custom_data);
       }
     }
   }
