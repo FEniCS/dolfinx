@@ -764,19 +764,28 @@ void declare_form(nb::module_& m, std::string type)
       .def(
           "set_custom_data",
           [](dolfinx::fem::Form<T, U>& self, dolfinx::fem::IntegralType type,
-             int id, int kernel_idx, std::uintptr_t data)
-          { self.set_custom_data(type, id, kernel_idx, (void*)data); },
+             int id, int kernel_idx, std::optional<std::uintptr_t> data)
+          {
+            self.set_custom_data(type, id, kernel_idx,
+                                 data ? std::optional<void*>((void*)*data)
+                                      : std::nullopt);
+          },
           nb::arg("type"), nb::arg("id"), nb::arg("kernel_idx"),
-          nb::arg("data"),
+          nb::arg("data").none(),
           "Set custom data pointer for an integral. The data pointer is "
-          "passed to the kernel.")
+          "passed to the kernel. Pass None to clear.")
       .def(
           "custom_data",
           [](const dolfinx::fem::Form<T, U>& self,
-             dolfinx::fem::IntegralType type, int id, int kernel_idx)
-          { return (std::uintptr_t)self.custom_data(type, id, kernel_idx); },
+             dolfinx::fem::IntegralType type, int id,
+             int kernel_idx) -> std::optional<std::uintptr_t>
+          {
+            auto cd = self.custom_data(type, id, kernel_idx);
+            return cd ? std::optional<std::uintptr_t>((std::uintptr_t)*cd)
+                      : std::nullopt;
+          },
           nb::arg("type"), nb::arg("id"), nb::arg("kernel_idx"),
-          "Get custom data pointer for an integral.")
+          "Get custom data pointer for an integral, or None if not set.")
       .def(
           "domains",
           [](const dolfinx::fem::Form<T, U>& self,

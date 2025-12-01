@@ -236,8 +236,8 @@ def test_custom_data_default_nullptr(dtype):
     formtype = form_cpp_class(dtype)
     L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
 
-    # custom_data should be 0 (nullptr) by default
-    assert L._cpp_object.custom_data(IntegralType.cell, 0, 0) == 0
+    # custom_data should be None (std::nullopt) by default
+    assert L._cpp_object.custom_data(IntegralType.cell, 0, 0) is None
 
 
 @pytest.mark.parametrize("dtype", [np.float64])

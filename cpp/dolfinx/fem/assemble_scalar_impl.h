@@ -17,6 +17,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -31,7 +32,7 @@ T assemble_cells(mdspan2_t x_dofmap,
                  std::span<const T> constants,
                  md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
                  std::span<scalar_value_t<T>> cdofs_b,
-                 void* custom_data = nullptr)
+                 std::optional<void*> custom_data = std::nullopt)
 {
   T value(0);
   if (cells.empty())
@@ -50,7 +51,7 @@ T assemble_cells(mdspan2_t x_dofmap,
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
     fn(&value, &coeffs(index, 0), constants.data(), cdofs_b.data(), nullptr,
-       nullptr, custom_data);
+       nullptr, custom_data.value_or(nullptr));
   }
 
   return value;
@@ -78,7 +79,8 @@ T assemble_entities(
     FEkernel<T> auto fn, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<scalar_value_t<T>> cdofs_b, void* custom_data = nullptr)
+    std::span<scalar_value_t<T>> cdofs_b,
+    std::optional<void*> custom_data = std::nullopt)
 {
   T value(0);
   if (entities.empty())
@@ -100,7 +102,7 @@ T assemble_entities(
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
     fn(&value, &coeffs(f, 0), constants.data(), cdofs_b.data(), &local_entity,
-       &perm, custom_data);
+       &perm, custom_data.value_or(nullptr));
   }
 
   return value;
@@ -121,7 +123,8 @@ T assemble_interior_facets(
                                     md::dynamic_extent>>
         coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<scalar_value_t<T>> cdofs_b, void* custom_data = nullptr)
+    std::span<scalar_value_t<T>> cdofs_b,
+    std::optional<void*> custom_data = std::nullopt)
 {
   T value(0);
   if (facets.empty())
@@ -151,7 +154,7 @@ T assemble_interior_facets(
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
     fn(&value, &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
-       local_facet.data(), perm.data(), custom_data);
+       local_facet.data(), perm.data(), custom_data.value_or(nullptr));
   }
 
   return value;
@@ -179,7 +182,7 @@ T assemble_scalar(
     auto fn = M.kernel(IntegralType::cell, i, 0);
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    void* custom_data = M.custom_data(IntegralType::cell, i, 0);
+    std::optional<void*> custom_data = M.custom_data(IntegralType::cell, i, 0);
     std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i, 0);
     assert(cells.size() * cstride == coeffs.size());
     value += impl::assemble_cells(
@@ -206,7 +209,8 @@ T assemble_scalar(
     assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::interior_facet, i});
-    void* custom_data = M.custom_data(IntegralType::interior_facet, i, 0);
+    std::optional<void*> custom_data
+        = M.custom_data(IntegralType::interior_facet, i, 0);
     std::span facets = M.domain(IntegralType::interior_facet, i, 0);
 
     constexpr std::size_t num_adjacent_cells = 2;
@@ -239,7 +243,7 @@ T assemble_scalar(
       auto fn = M.kernel(itg_type, i, 0);
       assert(fn);
       auto& [coeffs, cstride] = coefficients.at({itg_type, i});
-      void* custom_data = M.custom_data(itg_type, i, 0);
+      std::optional<void*> custom_data = M.custom_data(itg_type, i, 0);
 
       std::span entities = M.domain(itg_type, i, 0);
 

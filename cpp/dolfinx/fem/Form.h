@@ -67,7 +67,7 @@ struct integral_data
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<int>>
   integral_data(K&& kernel, V&& entities, W&& coeffs,
-                void* custom_data = nullptr)
+                std::optional<void*> custom_data = std::nullopt)
       : kernel(std::forward<K>(kernel)), entities(std::forward<V>(entities)),
         coeffs(std::forward<W>(coeffs)), custom_data(custom_data)
   {
@@ -89,7 +89,7 @@ struct integral_data
   /// @brief Custom user data pointer passed to the kernel function.
   /// This can be used to pass runtime-computed data (e.g., per-cell
   /// quadrature rules, material properties) to the kernel.
-  void* custom_data = nullptr;
+  std::optional<void*> custom_data = std::nullopt;
 };
 
 /// @brief A representation of finite element variational forms.
@@ -409,8 +409,9 @@ public:
   /// @param[in] id Integral subdomain ID.
   /// @param[in] kernel_idx Index of the kernel (we may have multiple
   /// kernels for a given ID in mixed-topology meshes).
-  /// @return Custom data pointer for the integral, or nullptr if not set.
-  void* custom_data(IntegralType type, int id, int kernel_idx) const
+  /// @return Custom data pointer for the integral, or std::nullopt if not set.
+  std::optional<void*> custom_data(IntegralType type, int id,
+                                   int kernel_idx) const
   {
     auto it = _integrals.find({type, id, kernel_idx});
     if (it == _integrals.end())
@@ -423,8 +424,9 @@ public:
   /// @param[in] type Integral type.
   /// @param[in] id Integral subdomain ID.
   /// @param[in] kernel_idx Index of the kernel.
-  /// @param[in] data Custom data pointer to set.
-  void set_custom_data(IntegralType type, int id, int kernel_idx, void* data)
+  /// @param[in] data Custom data pointer to set, or std::nullopt to clear.
+  void set_custom_data(IntegralType type, int id, int kernel_idx,
+                       std::optional<void*> data)
   {
     auto it = _integrals.find({type, id, kernel_idx});
     if (it == _integrals.end())
