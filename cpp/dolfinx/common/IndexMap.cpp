@@ -38,8 +38,8 @@ build_src_dest(MPI_Comm comm, std::span<const int> owners, int tag)
 
   std::vector<int> src(owners.begin(), owners.end());
   std::ranges::sort(src);
-  auto [unique_end, range_end] = std::ranges::unique(src);
-  src.erase(unique_end, range_end);
+  auto unique = std::ranges::unique(src);
+  src.erase(unique.begin(), unique.end());
   src.shrink_to_fit();
   std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src, tag);
   std::ranges::sort(dest);
