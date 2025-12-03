@@ -405,6 +405,10 @@ public:
   /// assembly. This can be used to pass runtime-computed data to
   /// kernels (e.g., per-cell quadrature rules, material properties).
   ///
+  /// @warning Void pointers are inherently unsafe and cannot be type or
+  /// bounds checked. Incorrect usage of this feature can and will lead
+  /// to undefined behaviour and crashes.
+  ///
   /// @param[in] type Integral type.
   /// @param[in] id Integral subdomain ID.
   /// @param[in] kernel_idx Index of the kernel (we may have multiple
@@ -417,21 +421,6 @@ public:
     if (it == _integrals.end())
       throw std::runtime_error("Requested integral not found.");
     return it->second.custom_data;
-  }
-
-  /// @brief Set the custom data pointer for an integral.
-  ///
-  /// @param[in] type Integral type.
-  /// @param[in] id Integral subdomain ID.
-  /// @param[in] kernel_idx Index of the kernel.
-  /// @param[in] data Custom data pointer to set, or std::nullopt to clear.
-  void set_custom_data(IntegralType type, int id, int kernel_idx,
-                       std::optional<void*> data)
-  {
-    auto it = _integrals.find({type, id, kernel_idx});
-    if (it == _integrals.end())
-      throw std::runtime_error("Requested integral not found.");
-    it->second.custom_data = data;
   }
 
   /// @brief Get types of integrals in the form.

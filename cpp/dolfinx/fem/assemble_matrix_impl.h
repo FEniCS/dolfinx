@@ -111,7 +111,7 @@ void assemble_cells_matrix(
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), &coeffs(c, 0), constants.data(), cdofs.data(), nullptr,
+    kernel(Ae.data(), &coeffs(c, 0), constants.data(), cdofs.data(), &cell,
            nullptr, custom_data.value_or(nullptr));
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)

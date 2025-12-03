@@ -126,14 +126,14 @@ def test_custom_data_vector_assembly(dtype):
     cells = np.arange(num_cells, dtype=np.int32)
     active_coeffs = np.array([], dtype=np.int8)
 
-    integrals = {IntegralType.cell: [(0, k1.address, cells, active_coeffs)]}
-    formtype = form_cpp_class(dtype)
-    L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
-
-    # Create custom_data with scale=1.0 first
+    # Create custom_data with scale=1.0
     scale_value = np.array([1.0], dtype=dtype)
     scale_ptr = scale_value.ctypes.data
-    L._cpp_object.set_custom_data(IntegralType.cell, 0, 0, scale_ptr)
+
+    # Pass custom_data at form creation time via the 5th element of the integrals tuple
+    integrals = {IntegralType.cell: [(0, k1.address, cells, active_coeffs, scale_ptr)]}
+    formtype = form_cpp_class(dtype)
+    L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
 
     # Assemble with scale=1.0
     b1 = dolfinx.fem.assemble_vector(L)
@@ -143,7 +143,7 @@ def test_custom_data_vector_assembly(dtype):
     # Verify we can read back the custom_data pointer
     assert L._cpp_object.custom_data(IntegralType.cell, 0, 0) == scale_ptr
 
-    # Update custom_data to scale=2.0
+    # Update custom_data to scale=2.0 (by modifying the underlying array)
     scale_value[0] = 2.0
     b2 = dolfinx.fem.assemble_vector(L)
     b2.scatter_reverse(la.InsertMode.add)
@@ -173,7 +173,13 @@ def test_custom_data_matrix_assembly(dtype):
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
     active_coeffs = np.array([], dtype=np.int8)
 
-    integrals = {IntegralType.cell: [(0, k2.address, cells, active_coeffs)]}
+    # Create custom_data with scale=1.0
+    scale_value = np.array([1.0], dtype=dtype)
+
+    # Pass custom_data at form creation time via the 5th element
+    integrals = {
+        IntegralType.cell: [(0, k2.address, cells, active_coeffs, scale_value.ctypes.data)]
+    }
     formtype = form_cpp_class(dtype)
     a = Form(
         formtype(
@@ -187,16 +193,12 @@ def test_custom_data_matrix_assembly(dtype):
         )
     )
 
-    # Set custom_data with scale=1.0 first
-    scale_value = np.array([1.0], dtype=dtype)
-    a._cpp_object.set_custom_data(IntegralType.cell, 0, 0, scale_value.ctypes.data)
-
     # Assemble with scale=1.0
     A1 = dolfinx.fem.assemble_matrix(a)
     A1.scatter_reverse()
     norm1 = np.sqrt(A1.squared_norm())
 
-    # Update custom_data to scale=2.0
+    # Update custom_data to scale=2.0 (by modifying the underlying array)
     scale_value[0] = 2.0
     A2 = dolfinx.fem.assemble_matrix(a)
     A2.scatter_reverse()
@@ -208,7 +210,7 @@ def test_custom_data_matrix_assembly(dtype):
 
 @pytest.mark.parametrize("dtype", [np.float64])
 def test_custom_data_default_nullptr(dtype):
-    """Test that custom_data defaults to nullptr (0)."""
+    """Test that custom_data defaults to nullptr (None) when not provided."""
     xdtype = np.real(dtype(0)).dtype
 
     # Define a simple kernel that doesn't use custom_data
@@ -232,11 +234,12 @@ def test_custom_data_default_nullptr(dtype):
     cells = np.arange(num_cells, dtype=np.int32)
     active_coeffs = np.array([], dtype=np.int8)
 
-    integrals = {IntegralType.cell: [(0, tabulate_simple.address, cells, active_coeffs)]}
+    # Pass None as custom_data (5th element) to get std::nullopt
+    integrals = {IntegralType.cell: [(0, tabulate_simple.address, cells, active_coeffs, None)]}
     formtype = form_cpp_class(dtype)
     L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
 
-    # custom_data should be None (std::nullopt) by default
+    # custom_data should be None (std::nullopt) when passed as None
     assert L._cpp_object.custom_data(IntegralType.cell, 0, 0) is None
 
 
@@ -271,17 +274,273 @@ def test_custom_data_struct(dtype):
     cells = np.arange(num_cells, dtype=np.int32)
     active_coeffs = np.array([], dtype=np.int8)
 
-    integrals = {IntegralType.cell: [(0, tabulate_with_struct.address, cells, active_coeffs)]}
+    # Test 1: scale=1.0, offset=0.0 (baseline)
+    struct_data = np.array([1.0, 0.0], dtype=dtype)
+
+    # Pass custom_data at form creation time
+    integrals = {
+        IntegralType.cell: [
+            (0, tabulate_with_struct.address, cells, active_coeffs, struct_data.ctypes.data)
+        ]
+    }
     formtype = form_cpp_class(dtype)
     L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
 
-    # Create struct data: [scale=2.0, offset=0.5]
-    struct_data = np.array([2.0, 0.5], dtype=dtype)
-    L._cpp_object.set_custom_data(IntegralType.cell, 0, 0, struct_data.ctypes.data)
+    b_baseline = dolfinx.fem.assemble_vector(L)
+    b_baseline.scatter_reverse(la.InsertMode.add)
+    norm_baseline = la.norm(b_baseline)
 
-    b = dolfinx.fem.assemble_vector(L)
-    b.scatter_reverse(la.InsertMode.add)
+    # Test 2: scale=2.0, offset=0.0 - should double the norm
+    struct_data[0] = 2.0
+    struct_data[1] = 0.0
+    b_scaled = dolfinx.fem.assemble_vector(L)
+    b_scaled.scatter_reverse(la.InsertMode.add)
+    norm_scaled = la.norm(b_scaled)
+    assert np.isclose(norm_scaled, 2.0 * norm_baseline)
 
-    # Verify the assembly used our custom values
-    # The offset should contribute to each DOF
-    assert la.norm(b) > 0
+    # Test 3: scale=0.0, offset=1.0 - pure offset contribution
+    struct_data[0] = 0.0
+    struct_data[1] = 1.0
+    b_offset = dolfinx.fem.assemble_vector(L)
+    b_offset.scatter_reverse(la.InsertMode.add)
+    # With offset=1.0, each DOF gets contribution from each cell it touches
+    # Interior nodes touch 6 cells, edge nodes touch 3-4, corner nodes touch 1-2
+    # The sum of all contributions equals 3 * num_cells (3 DOFs per cell, offset=1.0 each)
+    total_contribution = np.sum(b_offset.array)
+    assert np.isclose(total_contribution, 3.0 * num_cells)
+
+
+@pytest.mark.parametrize("dtype", [np.float64])
+def test_custom_data_multiple_parameters(dtype):
+    """Test custom_data with multiple parameters demonstrating complex data passing.
+
+    This test shows how to pass multiple values through custom_data, simulating
+    the use case of passing runtime-computed parameters like material properties
+    or integration parameters.
+    """
+    xdtype = np.real(dtype(0)).dtype
+
+    # Kernel that uses three parameters: coefficient, exponent base, and additive term
+    # Computes: coeff * base^area + additive
+    @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
+    def tabulate_with_params(b_, w_, c_, coords_, local_index, orientation, custom_data):
+        b = numba.carray(b_, (3), dtype=dtype)
+        coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
+
+        # Read three parameters from custom_data
+        typed_ptr = voidptr_to_float64_ptr(custom_data)
+        coeff = typed_ptr[0]
+        power = typed_ptr[1]
+        additive = typed_ptr[2]
+
+        x0, y0 = coordinate_dofs[0, :2]
+        x1, y1 = coordinate_dofs[1, :2]
+        x2, y2 = coordinate_dofs[2, :2]
+
+        Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
+        # Use power as a simple multiplier (avoiding actual power function complexity)
+        val = coeff * power * Ae / 6.0 + additive
+        b[:] = val
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=xdtype)
+    V = functionspace(mesh, ("Lagrange", 1))
+
+    tdim = mesh.topology.dim
+    num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
+    cells = np.arange(num_cells, dtype=np.int32)
+    active_coeffs = np.array([], dtype=np.int8)
+
+    # Test with specific parameters: coeff=2, power=3, additive=0
+    params = np.array([2.0, 3.0, 0.0], dtype=dtype)
+
+    # Pass custom_data at form creation time
+    integrals = {
+        IntegralType.cell: [
+            (0, tabulate_with_params.address, cells, active_coeffs, params.ctypes.data)
+        ]
+    }
+    formtype = form_cpp_class(dtype)
+    L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
+
+    b1 = dolfinx.fem.assemble_vector(L)
+    b1.scatter_reverse(la.InsertMode.add)
+    norm1 = la.norm(b1)
+
+    # Change parameters: coeff=1, power=6, additive=0 (should give same result: 1*6 = 2*3)
+    params[0] = 1.0
+    params[1] = 6.0
+    b2 = dolfinx.fem.assemble_vector(L)
+    b2.scatter_reverse(la.InsertMode.add)
+    norm2 = la.norm(b2)
+
+    assert np.isclose(norm1, norm2)
+
+
+@pytest.mark.parametrize("dtype", [np.float64])
+def test_custom_data_global_parameter_update(dtype):
+    """Test updating custom_data between assemblies for parameter studies.
+
+    This demonstrates a key use case: running multiple assemblies with
+    different parameter values without recreating the form. The custom_data
+    points to a parameter that can be modified between assembly calls.
+    """
+    xdtype = np.real(dtype(0)).dtype
+
+    # Kernel that reads a diffusion coefficient from custom_data
+    @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
+    def tabulate_diffusion(b_, w_, c_, coords_, local_index, orientation, custom_data):
+        b = numba.carray(b_, (3), dtype=dtype)
+        coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
+
+        # Read diffusion coefficient from custom_data
+        typed_ptr = voidptr_to_float64_ptr(custom_data)
+        kappa = typed_ptr[0]  # Diffusion coefficient
+
+        x0, y0 = coordinate_dofs[0, :2]
+        x1, y1 = coordinate_dofs[1, :2]
+        x2, y2 = coordinate_dofs[2, :2]
+
+        # 2x Element area Ae
+        Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
+        # Simple load vector scaled by diffusion coefficient
+        b[:] = kappa * Ae / 6.0
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 8, 8, dtype=xdtype)
+    V = functionspace(mesh, ("Lagrange", 1))
+
+    tdim = mesh.topology.dim
+    num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
+    cells = np.arange(num_cells, dtype=np.int32)
+    active_coeffs = np.array([], dtype=np.int8)
+
+    # Parameter array - this can be updated between assemblies
+    kappa = np.array([1.0], dtype=dtype)
+
+    integrals = {
+        IntegralType.cell: [
+            (0, tabulate_diffusion.address, cells, active_coeffs, kappa.ctypes.data)
+        ]
+    }
+    formtype = form_cpp_class(dtype)
+    L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
+
+    # Store results for different kappa values
+    results = []
+    kappa_values = [0.1, 1.0, 10.0, 100.0]
+
+    for k in kappa_values:
+        kappa[0] = k
+        b = dolfinx.fem.assemble_vector(L)
+        b.scatter_reverse(la.InsertMode.add)
+        results.append(la.norm(b))
+
+    # Verify linear scaling: norm should scale linearly with kappa
+    # norm(kappa=k) / norm(kappa=1) should equal k
+    base_norm = results[1]  # kappa=1.0
+    for i, k in enumerate(kappa_values):
+        expected_ratio = k / 1.0
+        actual_ratio = results[i] / base_norm
+        assert np.isclose(actual_ratio, expected_ratio, rtol=1e-10)
+
+
+@pytest.mark.parametrize("dtype", [np.float64])
+def test_custom_data_per_cell_material(dtype):
+    """Test custom_data with per-cell material properties using cell index.
+
+    This test demonstrates the use case where a kernel needs to access
+    cell-specific data. The cell index is now passed through entity_local_index
+    for cell integrals, allowing the kernel to look up per-cell values.
+
+    The custom_data pointer points to an array of values indexed by cell number.
+    The kernel uses entity_local_index[0] (which contains the cell index for
+    cell integrals) to look up the appropriate value.
+    """
+    xdtype = np.real(dtype(0)).dtype
+
+    # Kernel that reads per-cell material property from custom_data
+    # custom_data points to array: material_values[cell_index]
+    # entity_local_index[0] contains the cell index for cell integrals
+    @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
+    def tabulate_per_cell_material(
+        b_, w_, c_, coords_, entity_local_index, cell_orientation, custom_data
+    ):
+        b = numba.carray(b_, (3), dtype=dtype)
+        coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
+
+        # Cast void* to float64* - this points to per-cell material array
+        material_array = voidptr_to_float64_ptr(custom_data)
+
+        # entity_local_index[0] contains the cell index for cell integrals
+        cell_idx_ptr = numba.carray(entity_local_index, (1,), dtype=np.int32)
+        cell_idx = cell_idx_ptr[0]
+
+        # Look up the material property for this specific cell
+        material_value = material_array[cell_idx]
+
+        x0, y0 = coordinate_dofs[0, :2]
+        x1, y1 = coordinate_dofs[1, :2]
+        x2, y2 = coordinate_dofs[2, :2]
+
+        # 2x Element area Ae
+        Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
+        b[:] = material_value * Ae / 6.0
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=xdtype)
+    V = functionspace(mesh, ("Lagrange", 1))
+
+    tdim = mesh.topology.dim
+    num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
+    cells = np.arange(num_cells, dtype=np.int32)
+    active_coeffs = np.array([], dtype=np.int8)
+
+    # Create per-cell material array - all cells have material=1.0
+    material_values = np.ones(num_cells, dtype=dtype)
+
+    # Pass pointer to material array as custom_data
+    integrals = {
+        IntegralType.cell: [
+            (
+                0,
+                tabulate_per_cell_material.address,
+                cells,
+                active_coeffs,
+                material_values.ctypes.data,
+            )
+        ]
+    }
+    formtype = form_cpp_class(dtype)
+    L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
+
+    # Assemble with uniform material=1.0
+    b_uniform = dolfinx.fem.assemble_vector(L)
+    b_uniform.scatter_reverse(la.InsertMode.add)
+    norm_uniform = la.norm(b_uniform)
+
+    # Now set material=2.0 for all cells - should double the result
+    material_values[:] = 2.0
+    b_doubled = dolfinx.fem.assemble_vector(L)
+    b_doubled.scatter_reverse(la.InsertMode.add)
+    norm_doubled = la.norm(b_doubled)
+
+    assert np.isclose(norm_doubled, 2.0 * norm_uniform)
+
+    # Test heterogeneous material: first half of cells have material=1.0,
+    # second half have material=3.0
+    material_values[: num_cells // 2] = 1.0
+    material_values[num_cells // 2 :] = 3.0
+    b_hetero = dolfinx.fem.assemble_vector(L)
+    b_hetero.scatter_reverse(la.InsertMode.add)
+
+    # The result should be between uniform material=1.0 and material=3.0
+    norm_hetero = la.norm(b_hetero)
+    assert norm_uniform < norm_hetero < 3.0 * norm_uniform
+
+    # Verify the total contribution matches expected:
+    # The kernel computes Ae = 2*area (determinant formula), so:
+    # Each cell contributes material[i] * Ae / 6 = material[i] * area / 3 to each of 3 DOFs
+    # Total per cell = 3 * material[i] * area / 3 = material[i] * area
+    # Total = sum_i (material[i] * area_i)
+    # For uniform mesh on unit square with 4x4 grid: 32 triangles, each area 1/32
+    total_contribution = np.sum(b_hetero.array)
+    expected_sum = np.sum(material_values) * (1.0 / num_cells)
+    assert np.isclose(total_contribution, expected_sum)
