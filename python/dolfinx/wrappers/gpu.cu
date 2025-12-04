@@ -49,10 +49,18 @@ cudssSolver<MatType, VecType>::cudssSolver(MatType& A_device, VecType& b_device,
                                            VecType& u_device)
 {
   using T = MatType::value_type;
+  using U = VecType::value_type;
+  static_assert(std::is_same_v<T, U>, "Incompatible data types");
 
-  cudaDataType_t data_type = CUDA_R_32F;
+  cudaDataType_t data_type;
   if constexpr (std::is_same_v<T, double>)
     data_type = CUDA_R_64F;
+  else if constexpr (std::is_same_v<T, float>)
+    data_type = CUDA_R_32F;
+  else if constexpr (std::is_same_v<T, std::complex<float>>)
+    data_type = CUDA_C_32F;
+  else if constexpr (std::is_same_v<T, std::complex<double>>)
+    data_type = CUDA_C_64F;
 
   cudssCreate(&handle);
   cudssConfigCreate(&config);
