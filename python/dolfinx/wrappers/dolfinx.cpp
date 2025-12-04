@@ -16,6 +16,7 @@ void mpi(nb::module_& m);
 void petsc(nb::module_& m_fem, nb::module_& m_la, nb::module_& m_nls);
 
 void log(nb::module_& m);
+void gpu(nb::module_& m);
 void assemble(nb::module_& m);
 void fem(nb::module_& m);
 void geometry(nb::module_& m);
@@ -44,6 +45,10 @@ NB_MODULE(cpp, m)
   // Create common submodule [log]
   nb::module_ log = m.def_submodule("log", "Logging module");
   dolfinx_wrappers::log(log);
+
+  // Create common submodule [gpu]
+  nb::module_ gpu = m.def_submodule("gpu", "GPU module");
+  dolfinx_wrappers::gpu(gpu);
 
   // Create mesh submodule [mesh]
   nb::module_ mesh = m.def_submodule("mesh", "Mesh library module");

@@ -36,6 +36,12 @@ find_package(nanobind CONFIG REQUIRED)
 # fix is released.
 enable_language(C)
 
+set(CMAKE_CUDA_ARCHITECTURES 86 89 90a)  # RTX A4000
+set(CMAKE_CUDA_STANDARD 20)
+enable_language(CUDA)
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -march=native -std=c++20 -O3 -DNDEBUG --extended-lambda --expt-relaxed-constexpr -lineinfo")
+
+
 find_package(DOLFINX REQUIRED CONFIG)
 
 if(DOLFINX_FOUND)
@@ -65,14 +71,16 @@ nanobind_add_module(
   dolfinx/wrappers/log.cpp
   dolfinx/wrappers/mesh.cpp
   dolfinx/wrappers/petsc.cpp
+  dolfinx/wrappers/gpu.cu
   dolfinx/wrappers/refinement.cpp
 )
+
 
 if(NANOBIND_SABI)
   # mpi4py and petsc4py use generated Cython headers so tell
   # them that the limited API is in use.
   target_compile_definitions(cpp PRIVATE MPI4PY_LIMITED_API=1)
-  # Needing to set CYTHON_COMPILING_IN_LIMITED_API is a bug in 
+  # Needing to set CYTHON_COMPILING_IN_LIMITED_API is a bug in
   # Cython-generated API headers, should become unnecessary with
   # mpi4py/petsc4py releases published using Cython >= 3.1.4
   # https://github.com/cython/cython/issues/7108
@@ -104,8 +112,12 @@ if(ENABLE_CLANG_TIDY)
   set_target_properties(cpp PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../.clang-tidy")
 endif()
 
+# CUDA direct solver
+find_package(cudss)
+
 # Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)
+target_link_libraries(cpp PRIVATE cudss)
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
 if(WIN32)
