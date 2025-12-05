@@ -7,6 +7,8 @@ set(HEADERS_la
     ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/slepc.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/gpu_cudss.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/gpu_cusparse.h
     PARENT_SCOPE
 )
 

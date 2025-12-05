@@ -7,7 +7,8 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 
-#include <cudss.h>
+#include <dolfinx/la/gpu_cudss.h>
+#include <dolfinx/la/gpu_cusparse.h>
 
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
@@ -18,99 +19,10 @@
 namespace nb = nanobind;
 using namespace nb::literals;
 
-namespace
-{
-
-template <typename MatType, typename VecType>
-class cudssSolver
-{
-
-public:
-  cudssSolver(MatType& A_device, VecType& b_device, VecType& u_device);
-
-  // Destructor
-  ~cudssSolver();
-
-  void factorize();
-  void solve();
-
-private:
-  cudssMatrix_t A_dss;
-  cudssMatrix_t b_dss;
-  cudssMatrix_t u_dss;
-
-  cudssHandle_t handle;
-  cudssConfig_t config;
-  cudssData_t data;
-};
-
-template <typename MatType, typename VecType>
-cudssSolver<MatType, VecType>::cudssSolver(MatType& A_device, VecType& b_device,
-                                           VecType& u_device)
-{
-  using T = MatType::value_type;
-  using U = VecType::value_type;
-  static_assert(std::is_same_v<T, U>, "Incompatible data types");
-
-  cudaDataType_t data_type;
-  if constexpr (std::is_same_v<T, double>)
-    data_type = CUDA_R_64F;
-  else if constexpr (std::is_same_v<T, float>)
-    data_type = CUDA_R_32F;
-  else if constexpr (std::is_same_v<T, std::complex<float>>)
-    data_type = CUDA_C_32F;
-  else if constexpr (std::is_same_v<T, std::complex<double>>)
-    data_type = CUDA_C_64F;
-
-  cudssCreate(&handle);
-  cudssConfigCreate(&config);
-  cudssDataCreate(handle, &data);
-
-  cudssMatrixCreateCsr(
-      &A_dss, A_device.index_map(0)->size_local(),
-      A_device.index_map(1)->size_local(), A_device.cols().size(),
-      (void*)(A_device.row_ptr().data().get()), NULL,
-      (void*)(A_device.cols().data().get()),
-      (void*)(A_device.values().data().get()), CUDA_R_32I, data_type,
-      CUDSS_MTYPE_GENERAL, CUDSS_MVIEW_FULL, CUDSS_BASE_ZERO);
-
-  std::int64_t nrows = b_device.index_map()->size_local();
-  cudssMatrixCreateDn(&b_dss, nrows, 1, nrows,
-                      (void*)b_device.array().data().get(), data_type,
-                      CUDSS_LAYOUT_COL_MAJOR);
-  cudssMatrixCreateDn(&u_dss, nrows, 1, nrows,
-                      (void*)u_device.array().data().get(), data_type,
-                      CUDSS_LAYOUT_COL_MAJOR);
-}
-
-template <typename MatType, typename VecType>
-void cudssSolver<MatType, VecType>::factorize()
-{
-  cudssExecute(handle, CUDSS_PHASE_ANALYSIS, config, data, A_dss, u_dss, b_dss);
-  cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, config, data, A_dss, u_dss,
-               b_dss);
-}
-
-template <typename MatType, typename VecType>
-void cudssSolver<MatType, VecType>::solve()
-{
-  cudssExecute(handle, CUDSS_PHASE_SOLVE, config, data, A_dss, u_dss, b_dss);
-}
-
-template <typename MatType, typename VecType>
-cudssSolver<MatType, VecType>::~cudssSolver()
-{
-  cudssConfigDestroy(config);
-  cudssDataDestroy(handle, data);
-  cudssMatrixDestroy(A_dss);
-  cudssMatrixDestroy(u_dss);
-  cudssMatrixDestroy(b_dss);
-  cudssDestroy(handle);
-}
-
 template <typename T>
 void declare_objects(nb::module_& m, const std::string& type)
 {
+  // Wrapper for a Vector allocated on-device
   using GPUVector = dolfinx::la::Vector<T, thrust::device_vector<T>,
                                         thrust::device_vector<std::int32_t>>;
   std::string pyclass_vector_name = std::string("GPU_Vector_") + type;
@@ -131,6 +43,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           },
           nb::rv_policy::reference_internal);
 
+  // Wrapper for a MatrixCSR allocated on-device
   using GPUMatrixCSR
       = dolfinx::la::MatrixCSR<T, thrust::device_vector<T>,
                                thrust::device_vector<std::int32_t>,
@@ -167,15 +80,25 @@ void declare_objects(nb::module_& m, const std::string& type)
           },
           nb::rv_policy::reference_internal);
 
-  using GPUSolver = cudssSolver<GPUMatrixCSR, GPUVector>;
+  // Solver for Au=b
+  using GPUSolver = dolfinx::la::cuda::cudssSolver<GPUMatrixCSR, GPUVector>;
   std::string pyclass_solver_name = std::string("GPU_Solver_") + type;
   nb::class_<GPUSolver>(m, pyclass_solver_name.c_str())
       .def(nb::init<GPUMatrixCSR&, GPUVector&, GPUVector&>(), nb::arg("A"),
            nb::arg("b"), nb::arg("u"))
+      .def("analyze", &GPUSolver::analyze)
       .def("factorize", &GPUSolver::factorize)
       .def("solve", &GPUSolver::solve);
+
+  // Operator for y=Ax
+  using GPUSpmv = dolfinx::la::cuda::cusparseMatVec<GPUMatrixCSR, GPUVector>;
+  std::string pyclass_spmv_name = std::string("GPU_SPMV_") + type;
+  nb::class_<GPUSpmv>(m, pyclass_spmv_name.c_str())
+      .def(nb::init<GPUMatrixCSR&, GPUVector&, GPUVector&>(), nb::arg("A"),
+           nb::arg("y"), nb::arg("x"))
+      .def("apply", &GPUSpmv::apply);
 }
-} // namespace
+
 
 namespace dolfinx_wrappers
 {
