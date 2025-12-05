@@ -76,7 +76,8 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// conditions applied.
 /// @param[in] x0 Vector used in the lifting.
 /// @param[in] alpha Scaling to apply.
-/// @param[in] custom_data Optional pointer to user-supplied data passed to the kernel at runtime.
+/// @param[in] custom_data Optional pointer to user-supplied data passed to the
+/// kernel at runtime.
 template <int _bs0 = -1, int _bs1 = -1, typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
@@ -262,7 +263,8 @@ void _lift_bc_cells(
 /// local_facet_idx)` is the permutation value for the facet attached to
 /// the cell `cell_idx` with local index `local_facet_idx` relative to
 /// the cell. Empty if facet permutations are not required.
-/// @param[in] custom_data Optional pointer to user-supplied data passed to the kernel at runtime.
+/// @param[in] custom_data Optional pointer to user-supplied data passed to the
+/// kernel at runtime.
 template <typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
@@ -419,7 +421,8 @@ void _lift_bc_entities(
 /// local_facet_idx)` is the permutation value for the facet attached to
 /// the cell `cell_idx` with local index `local_facet_idx` relative to
 /// the cell. Empty if facet permutations are not required.
-/// @param[in] custom_data Optional pointer to user-supplied data passed to the kernel at runtime.
+/// @param[in] custom_data Optional pointer to user-supplied data passed to the
+/// kernel at runtime.
 template <typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>

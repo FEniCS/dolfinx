@@ -67,7 +67,8 @@ T assemble_cells(mdspan2_t x_dofmap,
 /// However, entities may be attached to more than one cell. This function
 /// therefore computes 'one-sided' integrals, i.e. evaluates integrals as seen
 /// from cell used to define the entity.
-/// @param custom_data Optional pointer to user-supplied data passed to the kernel at runtime.
+/// @param custom_data Optional pointer to user-supplied data passed to the
+/// kernel at runtime.
 template <dolfinx::scalar T>
 T assemble_entities(
     mdspan2_t x_dofmap,
@@ -110,7 +111,8 @@ T assemble_entities(
 }
 
 /// Assemble functional over interior facets
-/// @param custom_data Optional pointer to user-supplied data passed to the kernel at runtime.
+/// @param custom_data Optional pointer to user-supplied data passed to the
+/// kernel at runtime.
 template <dolfinx::scalar T>
 T assemble_interior_facets(
     mdspan2_t x_dofmap,
