@@ -6,10 +6,6 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from ffcx.codegeneration.utils import (
-    numba_ufcx_kernel_signature,
-    voidptr_to_float64_ptr,
-)
 from mpi4py import MPI
 
 import numpy as np
@@ -19,6 +15,10 @@ import dolfinx
 from dolfinx import la
 from dolfinx.fem import Form, IntegralType, form_cpp_class, functionspace
 from dolfinx.mesh import create_unit_square
+from ffcx.codegeneration.utils import (
+    numba_ufcx_kernel_signature,
+    voidptr_to_float64_ptr,
+)
 
 numba = pytest.importorskip("numba")
 ufcx_signature = numba_ufcx_kernel_signature
