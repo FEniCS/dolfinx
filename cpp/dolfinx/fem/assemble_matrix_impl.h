@@ -343,6 +343,8 @@ void assemble_entities(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
+/// @param[in] custom_data Optional pointer to user-supplied data passed
+/// to the kernel at runtime.
 template <dolfinx::scalar T>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,

@@ -667,6 +667,8 @@ void _lift_bc_interior_facets(
 /// coefficient for cell `i`.
 /// @param[in] cell_info0 Cell permutation information for the test
 /// function mesh.
+/// @param[in] custom_data Optional pointer to user-supplied data passed to
+/// the kernel at runtime.
 template <int _bs = -1, typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
@@ -761,6 +763,8 @@ void assemble_cells(
 /// function mesh.
 /// @param[in] perms Entity permutation integer. Empty if entity
 /// permutations are not required.
+/// @param[in] custom_data Optional pointer to user-supplied data passed to
+/// the kernel at runtime.
 template <int _bs = -1, typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
@@ -857,6 +861,8 @@ void assemble_entities(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
+/// @param[in] custom_data Optional pointer to user-supplied data passed to
+/// the kernel at runtime.
 template <int _bs = -1, typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
