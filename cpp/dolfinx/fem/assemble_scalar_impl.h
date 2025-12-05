@@ -50,7 +50,7 @@ T assemble_cells(mdspan2_t x_dofmap,
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
-    fn(&value, &coeffs(index, 0), constants.data(), cdofs_b.data(), &c, nullptr,
+    fn(&value, &coeffs(index, 0), constants.data(), cdofs_b.data(), nullptr, nullptr,
        custom_data.value_or(nullptr));
   }
 

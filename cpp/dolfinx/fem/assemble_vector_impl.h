@@ -164,7 +164,7 @@ void _lift_bc_cells(
     auto dofs0 = md::submdspan(dmap0, c0, md::full_extent);
 
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), &coeffs(index, 0), constants.data(), cdofs.data(), &c,
+    kernel(Ae.data(), &coeffs(index, 0), constants.data(), cdofs.data(), nullptr,
            nullptr, custom_data.value_or(nullptr));
     P0(Ae, cell_info0, c0, num_cols);
     P1T(Ae, cell_info1, c1, num_rows);
