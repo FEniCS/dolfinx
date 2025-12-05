@@ -47,8 +47,10 @@ NB_MODULE(cpp, m)
   dolfinx_wrappers::log(log);
 
   // Create common submodule [gpu]
+#ifdef DOLFINX_GPU_SUBMODULE
   nb::module_ gpu = m.def_submodule("gpu", "GPU module");
   dolfinx_wrappers::gpu(gpu);
+#endif
 
   // Create mesh submodule [mesh]
   nb::module_ mesh = m.def_submodule("mesh", "Mesh library module");

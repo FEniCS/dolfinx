@@ -36,11 +36,14 @@ find_package(nanobind CONFIG REQUIRED)
 # fix is released.
 enable_language(C)
 
-set(CMAKE_CUDA_ARCHITECTURES 86 89 90a)  # RTX A4000
-set(CMAKE_CUDA_STANDARD 20)
-enable_language(CUDA)
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -march=native -std=c++20 -O3 -DNDEBUG --extended-lambda --expt-relaxed-constexpr -lineinfo")
-
+# If CUDA is available, the user should set CUDA_ARCH environment variable
+if(DEFINED ENV{CUDA_ARCH})
+  set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH})
+  set(CMAKE_CUDA_STANDARD 20)
+  enable_language(CUDA)
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -march=native -std=c++20 -O3 -DNDEBUG --extended-lambda --expt-relaxed-constexpr -lineinfo")
+  set(GPU_WRAPPER dolfinx/wrappers/gpu.cu)
+endif()
 
 find_package(DOLFINX REQUIRED CONFIG)
 
@@ -71,7 +74,7 @@ nanobind_add_module(
   dolfinx/wrappers/log.cpp
   dolfinx/wrappers/mesh.cpp
   dolfinx/wrappers/petsc.cpp
-  dolfinx/wrappers/gpu.cu
+  ${GPU_WRAPPER}
   dolfinx/wrappers/refinement.cpp
 )
 
@@ -112,8 +115,13 @@ if(ENABLE_CLANG_TIDY)
   set_target_properties(cpp PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../.clang-tidy")
 endif()
 
-# CUDA direct solver
-find_package(cudss)
+
+if(DEFINED ENV{CUDA_ARCH})
+  # Add compile flag
+  target_compile_definitions(cpp PUBLIC DOLFINX_GPU_SUBMODULE)
+  # CUDA direct solver
+  find_package(cudss)
+endif()
 
 # Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)
