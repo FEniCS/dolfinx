@@ -237,8 +237,10 @@ def test_custom_data_struct(dtype):
     V = functionspace(mesh, ("Lagrange", 1))
 
     tdim = mesh.topology.dim
-    num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
-    cells = np.arange(num_cells, dtype=np.int32)
+    # Only iterate over local cells (not ghosts) to avoid double-counting
+    # contributions after scatter_reverse
+    num_local_cells = mesh.topology.index_map(tdim).size_local
+    cells = np.arange(num_local_cells, dtype=np.int32)
     active_coeffs = np.array([], dtype=np.int8)
 
     # Test 1: scale=1.0, offset=0.0 (baseline)
@@ -272,9 +274,12 @@ def test_custom_data_struct(dtype):
     b_offset.scatter_reverse(la.InsertMode.add)
     # With offset=1.0, each DOF gets contribution from each cell it touches
     # Interior nodes touch 6 cells, edge nodes touch 3-4, corner nodes touch 1-2
-    # The sum of all contributions equals 3 * num_cells (3 DOFs per cell, offset=1.0 each)
-    total_contribution = np.sum(b_offset.array)
-    assert np.isclose(total_contribution, 3.0 * num_cells)
+    # The sum of all contributions equals 3 * num_local_cells (3 DOFs per cell, offset=1.0 each)
+    # Sum only local DOFs and gather across processes
+    local_sum = np.sum(b_offset.array[: V.dofmap.index_map.size_local * V.dofmap.index_map_bs])
+    total_contribution = mesh.comm.allreduce(local_sum, op=MPI.SUM)
+    total_cells = mesh.comm.allreduce(num_local_cells, op=MPI.SUM)
+    assert np.isclose(total_contribution, 3.0 * total_cells)
 
 
 @pytest.mark.parametrize("dtype", [np.float64])
