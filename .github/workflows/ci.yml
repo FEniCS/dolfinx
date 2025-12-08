@@ -72,19 +72,27 @@ jobs:
           ref: develop
           path: spack-src
 
-      # Note: the below two blocks can be commented out when the main
-      # spack-packages repository can be used
-      - name: Get Spack packages (custom)
+      - name: Get upstream Spack packages
         uses: actions/checkout@v5
         with:
-          repository: garth-wells/spack-packages
-          ref: fenics-testing
+          repository: spack/spack-packages
+          ref: develop
           path: spack-packages
+      - name: Get FEniCS Spack packages
+        uses: actions/checkout@v5
+        with:
+          repository: fenics/spack-fenics
+          ref: main
+          path: spack-fenics
+
+      # Use upstream Spack packages and overlay FEniCS Spack packages
       - name: Add Spack packages repo
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack repo set --destination $GITHUB_WORKSPACE/spack-packages builtin
+          spack repo add --name builtin $GITHUB_WORKSPACE/spack-packages/repos/spack_repo/builtin
+          spack repo add --name fenics $GITHUB_WORKSPACE/spack-fenics/spack_repo/fenics
           spack config get repos
+          spack repo list
 
       - name: Prepare C++ environment
         run: |
@@ -107,11 +115,13 @@ jobs:
           spack -e cxx add py-fenics-ufl@main commit=$(git -C $GITHUB_WORKSPACE/ufl-src rev-parse HEAD)
           spack -e cxx add fenics-ufcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           spack -e cxx add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
-          spack -e cxx add fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer +petsc +slepc partitioners=parmetis \
-            %petsc +mpi +hypre +mumps +superlu-dist %openmpi %adios2~fortran~libcatalyst %cmake~ncurses
+          # As of 12/11/2025 ^petsc+hypre causes petsc to concretise to old version
+          spack -e cxx add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
+            ^petsc+mpi+mumps+superlu-dist~hypre \
+            ^adios2~libcatalyst~fortran
           spack -e cxx add catch2
           spack -e cxx concretize -j 4
-          spack -v -e cxx install -j 4 -p 2 --use-buildcache auto
+          spack -e cxx install -j 4 -p 2 --use-buildcache auto
 
       - name: Push C++ packages to cache
         run: |
@@ -128,8 +138,8 @@ jobs:
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
           cmake --build build/test
           cd build/test
-          ctest -V --output-on-failure -R unittests
-          mpirun -n 3 ctest -V --output-on-failure -R unittests
+          ctest -V --output-on-failure -R unittests_np_1
+          ctest -V --output-on-failure -R unittests_np_3
 
       - name: Build and run C++ demos
         run: |
@@ -164,14 +174,15 @@ jobs:
           spack -e py add py-fenics-ufl@main commit=$(git -C $GITHUB_WORKSPACE/ufl-src rev-parse HEAD)
           spack -e py add fenics-ufcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           spack -e py add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
-          spack -e py add py-fenics-dolfinx@main commit=${{ github.sha }} +petsc4py +slepc4py build_type=Developer \
-            %fenics-dolfinx@main commit=${{ github.sha }} build_type=Developer +petsc +slepc partitioners=parmetis \
-            ^openmpi ^adios2~fortran~libcatalyst \
-            ^petsc +mpi +hypre +mumps +superlu-dist
-          spack -e py add py-gmsh ^gmsh~fltk+external py-matplotlib py-networkx \
+          spack -e py add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
+            ^petsc+mpi+mumps+superlu-dist~hypre \
+            ^adios2~libcatalyst~fortran
+          # hypre causing petsc to concretise to old version as of 12/11/2025
+          spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer
+          spack -e py add py-gmsh ^gmsh~fltk+external py-pyamg py-matplotlib py-networkx \
             py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
-          spack -v -e py install -j 4 -p 2 --use-buildcache=auto
+          spack -e py install -j 4 -p 2 --use-buildcache auto
 
       - name: Set default DOLFINx JIT options
         run: |
@@ -183,8 +194,6 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate py
           spack load gcc
-          spack load py-pip
-          pip install pyamg
           python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
           python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
 
@@ -194,7 +203,7 @@ jobs:
           spack env activate py
           spack load gcc
           python -m pytest -n=auto --durations=50 dolfinx-src/python/test/unit/
-          mpirun -np 3 python -m pytest --durations=50 dolfinx-src/python/test/unit/
+          mpiexec -np 3 python -m pytest --durations=50 dolfinx-src/python/test/unit/
 
       - name: Push packages to cache and update index
         run: |

@@ -466,10 +466,10 @@ for i, kz in vals:
 
         if has_vtx:
             # Save solutions
-            with VTXWriter(msh.comm, out_folder / f"/Et_{i}.bp", Et_dg) as f:
+            with VTXWriter(msh.comm, out_folder / f"Et_{i}.bp", Et_dg) as f:
                 f.write(0.0)
 
-            with VTXWriter(msh.comm, out_folder / f"sols/Ez_{i}.bp", ezh) as f:
+            with VTXWriter(msh.comm, out_folder / f"Ez_{i}.bp", ezh) as f:
                 f.write(0.0)
 
         # Visualize solutions with Pyvista

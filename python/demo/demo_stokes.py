@@ -652,13 +652,13 @@ norm_u_0, norm_p_0 = nested_iterative_solver_high_level()
 
 norm_u_1, norm_p_1 = nested_iterative_solver_low_level()
 np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
-np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_p_1, norm_p_0, rtol=1e-4)
 
 # Solve using PETSc block matrices and an iterative solver
 
 norm_u_2, norm_p_2 = block_iterative_solver()
 np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
-np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_p_2, norm_p_0, rtol=1e-4)
 
 # Solve using PETSc block matrices and an LU solver
 
