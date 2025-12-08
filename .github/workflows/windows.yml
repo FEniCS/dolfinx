@@ -86,7 +86,7 @@ jobs:
 
       - name: Install Basix Python build dependencies
         run: |
-          python -m pip install scikit-build-core[pyproject] setuptools wheel nanobind
+          python -m pip install scikit-build-core[pyproject] setuptools wheel nanobind!=2.10.0
       - name: Install Basix (Python)
         working-directory: basix/python
         run: |
