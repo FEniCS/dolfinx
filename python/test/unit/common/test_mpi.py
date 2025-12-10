@@ -31,5 +31,5 @@ def test_mpi_comm_refcount():
     assert comm2 == comm1
 
     del m
-    assert sys.getrefcount(comm1) == 2
+    assert sys.getrefcount(comm1) == 1 + int(sys.version_info < (3, 14))
     assert comm1.rank == comm0.rank
