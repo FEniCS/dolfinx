@@ -2,12 +2,19 @@
 # (Based on Last Stable Release: Dolfinx v0.9.0)
 fenics-dolfinx==0.9.0
 numpy>=1.24.0
+mpi4py
+petsc4py
 matplotlib>=3.7.0
 scipy>=1.10.0
 
 # Image Processing
 pillow>=10.0.0
+scipy>=1.10.0
 scikit-image>=0.21.0
+
+# Testing
+pytest>=7.4.0
+pytest-mpi>=0.6
 
 # Visualization
 pyvista>=0.43.0
