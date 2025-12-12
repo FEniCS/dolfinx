@@ -26,7 +26,7 @@ jobs:
       PYTEST_ADDOPTS: "-W error"
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Load environment variables
         run: |
