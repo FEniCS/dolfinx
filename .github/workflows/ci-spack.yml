@@ -44,7 +44,7 @@ jobs:
           path: spack-src
 
       - name: Get Spack packages (custom)
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: fenics/spack-packages
           ref: fenics-testing
@@ -57,7 +57,7 @@ jobs:
           spack config get repos
 
       - name: Checkout DOLFINx
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           path: dolfinx-src
 
