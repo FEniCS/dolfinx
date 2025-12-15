@@ -2,10 +2,10 @@ name: CI (Windows)
 
 on:
   push:
-    branches:
-      - release
-    tags:
-      - "v*"
+    # branches:
+    #   - release
+    # tags:
+    #   - "v*"
   pull_request:
     branches:
       - main
