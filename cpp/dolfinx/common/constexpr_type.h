@@ -22,7 +22,7 @@ concept ConstexprType = std::is_same_v<T, V> || (requires {
                           requires std::is_fundamental_v<T>;
                           typename V::value_type;
                           requires std::same_as<typename V::value_type, T>;
-                          requires std::same_as<decltype(V::value), const T>;
+                          requires std::same_as<std::remove_cv_t<decltype(V::value)>, T>;
                         });
 
 /// @private Check if ConstexprType holds a compile time constant.
