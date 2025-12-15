@@ -19,9 +19,10 @@ namespace dolfinx::common
 /// std::integral_constant<T, ...> for a compile time constant.
 template <typename T, typename V>
 concept ConstexprType = std::is_same_v<T, V> || (requires {
-                          typename V::value_type;
                           requires std::is_fundamental_v<T>;
-                          requires std::is_same_v<typename V::value_type, T>;
+                          typename V::value_type;
+                          requires std::same_as<typename V::value_type, T>;
+                          requires std::same_as<decltype(V::value), const T>;
                         });
 
 /// @private Check if ConstexprType holds a compile time constant.
