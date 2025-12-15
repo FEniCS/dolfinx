@@ -32,18 +32,27 @@ from dolfinx.cpp.mesh import (
     to_string,
     to_type,
 )
-from dolfinx.cpp.refinement import IdentityPartitionerPlaceholder, RefinementOption
+from dolfinx.cpp.refinement import (
+    IdentityPartitionerPlaceholder,
+    RefinementOption,
+)
+from dolfinx.cpp.refinement import (
+    uniform_refine as _uniform_refine,
+)
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
 from dolfinx.graph import AdjacencyList
 
 __all__ = [
     "CellType",
+    "DiagonalType",
     "EntityMap",
     "Geometry",
     "GhostMode",
+    "IdentityPartitionerPlaceholder",
     "Mesh",
     "MeshTags",
+    "RefinementOption",
     "Topology",
     "build_dual_graph",
     "cell_dim",
@@ -69,6 +78,7 @@ __all__ = [
     "to_string",
     "to_type",
     "transfer_meshtag",
+    "uniform_refine",
 ]
 
 
@@ -623,6 +633,32 @@ def transfer_meshtag(
         raise RuntimeError("MeshTag transfer is supported on on cells or facets.")
 
 
+def uniform_refine(
+    msh: Mesh,
+    partitioner: Callable | None = None,
+) -> Mesh:
+    """Uniformly refine a mesh.
+
+    Note:
+        Using the default partitioner for the refined mesh, the refined
+        mesh will **not** include ghosts cells (cells connected by facet
+        to an owned cells) even if the parent mesh is ghosted. The
+        refined cells will be on the same process as the parent cell.
+
+    Args:
+        msh: Mesh from which to create the refined mesh.
+        partitioner: Partitioner to distribute the refined mesh.
+            If ``None`` is passed (default) no redistribution will happen.
+    Returns:
+        The refined mesh.
+    """
+    _cpp_mesh = _uniform_refine(msh._cpp_object, partitioner)
+    # Create new ufl domain as it will carry a reference to the C++ mesh
+    # in the ufl_cargo
+    ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())  # type: ignore
+    return Mesh(_cpp_mesh, ufl_domain)
+
+
 def refine(
     msh: Mesh,
     edges: np.ndarray | None = None,
@@ -631,22 +667,20 @@ def refine(
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
 
-    Passing ``None`` for ``partitioner``, refined cells will be on the
-    same process as the parent cell.
-
     Note:
-        Using the default partitioner for the refined mesh, the refined
-        mesh will **not** include ghosts cells (cells connected by facet
-        to an owned cells) even if the parent mesh is ghosted.
+        Using the `None` partitioner for the refined mesh, the refined mesh
+        will **not** include ghosts cells (cells connected by facet to an
+        owned cells) even if the parent mesh is ghosted. The refined cells
+        will be on the same process as the parent cell.
 
     Args:
         msh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
             mesh refinement is uniform.
         partitioner: Partitioner to distribute the refined mesh. If a
-            ``IdentityPartitionerPlaceholder`` is passed (default) no
-            redistribution is performed, i.e. refined cells remain on the
-            same process as the parent cell, but the ghost layer is
+            :py:class:`IdentityPartitionerPlaceholder` is passed (default)
+            no redistribution is performed, i.e. refined cells remain on
+            the same process as the parent cell, but the ghost layer is
             updated. If a custom partitioner is passed, it will be used for
             distributing the refined mesh. If ``None`` is passed no
             redistribution will happen.
@@ -671,6 +705,7 @@ def create_mesh(
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,
     x: npt.NDArray[np.floating],
     partitioner: Callable | None = None,
+    max_facet_to_cell_links: int = 2,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -684,6 +719,8 @@ def create_mesh(
             type of ``e``.
         partitioner: Function that determines the parallel distribution of
             cells across MPI ranks.
+        max_facet_to_cell_links: Maximum number of cells a facet can
+            be connected to.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -718,13 +755,13 @@ def create_mesh(
         e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
         domain = ufl.Mesh(e_ufl)
         dtype = cmap.dtype
-        assert domain.geometric_dimension() == gdim
+        assert domain.geometric_dimension == gdim
     elif isinstance(e, ufl.finiteelement.AbstractFiniteElement):
         # e is a Basix 'UFL' element
         cmap = _coordinate_element(e.basix_element)  # type: ignore
         domain = ufl.Mesh(e)
         dtype = cmap.dtype
-        assert domain.geometric_dimension() == gdim
+        assert domain.geometric_dimension == gdim
     elif isinstance(e, _CoordinateElement):
         # e is a CoordinateElement
         cmap = e
@@ -736,7 +773,7 @@ def create_mesh(
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
-        comm, cells, cmap._cpp_object, x, partitioner
+        comm, cells, cmap._cpp_object, x, partitioner, max_facet_to_cell_links
     )
 
     return Mesh(msh, domain)  # type: ignore
@@ -950,9 +987,8 @@ def create_rectangle(
         ghost_mode: Ghost mode used in the mesh partitioning.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
-        diagonal: Direction of diagonal of triangular meshes. The
-            options are ``left``, ``right``, ``crossed``, ``left / right``,
-            ``right / left``.
+        diagonal: Direction of diagonal of triangular meshes.
+            See :class:`DiagonalType` for available options.
 
     Returns:
         A mesh of a rectangle.
@@ -1002,7 +1038,8 @@ def create_unit_square(
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
         diagonal:
-            Direction of diagonal.
+            Direction of diagonal. See :class:`DiagonalType` for
+            available options.
 
     Returns:
         A mesh of a square with corners at ``(0, 0)`` and ``(1, 1)``.

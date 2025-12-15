@@ -13,6 +13,7 @@ import numpy as np
 import pytest
 
 import basix
+import dolfinx.cpp.graph
 import ufl
 from basix.ufl import element
 from dolfinx import cpp as _cpp
@@ -248,8 +249,8 @@ def test_UFLCell(interval, square, rectangle, cube, box):
 def test_UFLDomain(interval, square, rectangle, cube, box):
     def _check_ufl_domain(mesh):
         domain = mesh.ufl_domain()
-        assert mesh.geometry.dim == domain.geometric_dimension()
-        assert mesh.topology.dim == domain.topological_dimension()
+        assert mesh.geometry.dim == domain.geometric_dimension
+        assert mesh.topology.dim == domain.topological_dimension
         assert mesh.ufl_cell() == domain.ufl_cell()
 
     _check_ufl_domain(interval)
@@ -649,12 +650,12 @@ def test_boundary_facets(n, d, ghost_mode, dtype):
     """Test that the correct number of boundary facets are computed"""
     if d == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode, dtype=dtype)
-        expected_num_boundary_facets = 4 * n
+        exd_num_boundary_facets = 4 * n
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode, dtype=dtype)
-        expected_num_boundary_facets = 6 * n**2 * 2
+        exd_num_boundary_facets = 6 * n**2 * 2
 
-    assert compute_num_boundary_facets(mesh) == expected_num_boundary_facets
+    assert compute_num_boundary_facets(mesh) == exd_num_boundary_facets
 
 
 @pytest.mark.parametrize("n", [3, 5])
@@ -734,3 +735,47 @@ def test_mesh_create_cmap(dtype):
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain() is None
+
+
+avail_partitioners = []
+if dolfinx.has_ptscotch:
+    avail_partitioners.append(dolfinx.cpp.graph.partitioner_scotch)
+if dolfinx.has_kahip:
+    avail_partitioners.append(dolfinx.cpp.graph.partitioner_kahip)
+if dolfinx.has_parmetis:
+    avail_partitioners.append(dolfinx.cpp.graph.partitioner_parmetis)
+
+
+@pytest.mark.parametrize("partitioner", avail_partitioners)
+def test_mesh_single_process_distribution(partitioner):
+    comm = MPI.COMM_WORLD
+
+    if comm.rank == 0:
+        #    2
+        #  / |
+        # 0--1
+        cells = np.array([[0, 1], [1, 2], [2, 0]], dtype=np.int32)
+        x = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]], dtype=np.float64)
+    else:
+        cells = np.zeros((0, 2), dtype=np.int32)
+        x = np.zeros((0, 3), dtype=np.float64)
+
+    element = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(3,)))
+    mesh = _mesh.create_mesh(
+        MPI.COMM_WORLD,
+        cells,
+        element,
+        x,
+        partitioner=dolfinx.mesh.create_cell_partitioner(
+            partitioner(), dolfinx.mesh.GhostMode.shared_facet
+        ),
+    )
+
+    assert mesh.topology.index_map(0).size_global == 3
+    assert mesh.topology.index_map(1).size_global == 3
+
+    for conn in ((0, 1), (1, 0)):
+        mesh.topology.create_connectivity(*conn)
+        adj = mesh.topology.connectivity(*conn)
+        for i in range(adj.num_nodes):
+            assert adj.links(i).size == 2

@@ -12,7 +12,7 @@
 #    docker build --target dev-env --file dolfinx/docker/Dockerfile.test-env --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
 
-ARG ADIOS2_VERSION=2.10.2
+ARG ADIOS2_VERSION=2.11.0
 ARG DOXYGEN_VERSION=1_14_0
 ARG GMSH_VERSION=4_14_0
 ARG HDF5_VERSION=1.14.6
@@ -22,8 +22,8 @@ ARG KAHIP_VERSION=3.18
 # the most recent Numba release, see
 # https://numba.readthedocs.io/en/stable/user/installing.html#version-support-information
 ARG NUMPY_VERSION=2.2.6
-ARG PETSC_VERSION=3.23.5
-ARG SLEPC_VERSION=3.23.2
+ARG PETSC_VERSION=3.24.0
+ARG SLEPC_VERSION=3.24.0
 ARG SPDLOG_VERSION=1.15.3
 
 ARG MPICH_VERSION=4.3.1

@@ -46,7 +46,8 @@ To install the Python interface, first install the C++ core, and then in
 the `python/` directory run:
 
 ```shell
-pip install -r build-requirements.txt
+pip install scikit-build-core
+python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 pip install --check-build-dependencies --no-build-isolation .
 ```
 
@@ -65,6 +66,16 @@ spack install --add py-fenics-dolfinx+petsc4py+slepc4py
 ```
 
 Spack is the recommended approach for HPC systems.
+
+Although Spack already contains FEniCS Project packages, we also maintain a
+separate [overlay package repository](https://github.com/FEniCS/spack-fenics)
+which may contain bug fixes and package specs for newer releases of the FEniCS
+Project components, particularly after a recent release.
+
+```shell
+spack repo add https://github.com/fenics/spack-fenics
+spack repo ls # shows fenics above builtin
+```
 
 ### Binary packages
 

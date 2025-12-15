@@ -10,9 +10,25 @@
 
 # # Stokes equations using Taylor-Hood elements
 #
-# This demo is implemented in {download}`demo_stokes.py`. It shows how
-# to solve the Stokes problem using Taylor-Hood elements using different
-# linear solvers.
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_stokes.py>`
+# * {download}`Jupyter notebook <./demo_stokes.ipynb>`
+# ```
+# It shows how to solve the Stokes problem using Taylor-Hood elements
+# using different linear solvers:
+#
+# 1. [Block preconditioner using PETSc Nest data structures using
+#    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
+#    ](#high-level-nested-matrix-solver)
+# 1. [Block preconditioner using PETSc Nest data structures using
+#    PETSc directly](#low-level-nested-matrix-solver)
+# 1. [Block preconditioner with the `u` and `p` fields stored block-wise
+#    in a single matrix](#monolithic-block-iterative-solver)
+# 1. [Direct solver with the `u` and `p` fields stored block-wise in a
+#    single matrix](#monolithic-block-direct-solver)
+# 1. [Direct solver with the `u` and `p` fields stored in a mixed fashion a
+#    single matrix](#non-blocked-direct-solver)
 #
 # ## Equation and problem definition
 #
@@ -72,19 +88,6 @@
 #
 #
 # ## Implementation
-#
-# The Stokes problem using Taylor-Hood elements is solved using:
-# 1. [Block preconditioner using PETSc Nest data structures using
-#    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
-#    ](#high-level-nested-matrix-solver)
-# 1. [Block preconditioner using PETSc Nest data structures using
-#    PETSc directly](#low-level-nested-matrix-solver)
-# 1. [Block preconditioner with the `u` and `p` fields stored block-wise
-#    in a single matrix](#monolithic-block-iterative-solver)
-# 1. [Direct solver with the `u` and `p` fields stored block-wise in a
-#    single matrix](#monolithic-block-direct-solver)
-# 1. [Direct solver with the `u` and `p` fields stored in a mixed fashion a
-#    single matrix](#non-blocked-direct-solver)
 #
 # The required modules are first imported:
 
@@ -238,7 +241,7 @@ def nested_iterative_solver_high_level():
     # a vector that spans the nullspace to the solver, and any component
     # of the solution in this direction will be eliminated during the
     # solution process.
-    null_vec = create_vector(L, "nest")
+    null_vec = create_vector(extract_function_spaces(L), "nest")
 
     # Set velocity part to zero and the pressure part to a non-zero
     # constant
@@ -322,7 +325,7 @@ def nested_iterative_solver_low_level():
 
     # Set the nullspace for pressure (since pressure is determined only
     # up to a constant)
-    null_vec = create_vector(L, "nest")
+    null_vec = create_vector(extract_function_spaces(L), "nest")
     null_vecs = null_vec.getNestSubVecs()
     null_vecs[0].set(0.0), null_vecs[1].set(1.0)
     null_vec.normalize()
@@ -649,13 +652,13 @@ norm_u_0, norm_p_0 = nested_iterative_solver_high_level()
 
 norm_u_1, norm_p_1 = nested_iterative_solver_low_level()
 np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
-np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_p_1, norm_p_0, rtol=1e-4)
 
 # Solve using PETSc block matrices and an iterative solver
 
 norm_u_2, norm_p_2 = block_iterative_solver()
 np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
-np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_p_2, norm_p_0, rtol=1e-4)
 
 # Solve using PETSc block matrices and an LU solver
 

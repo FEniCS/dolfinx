@@ -14,6 +14,8 @@ import warnings
 from mpi4py import MPI
 from petsc4py import PETSc
 
+from dolfinx.fem.forms import extract_function_spaces
+
 if typing.TYPE_CHECKING:
     import dolfinx
 
@@ -57,13 +59,13 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         # of the non-linear problem
         self._A = create_matrix(problem.a)
         self.setJ(problem.J, self._A)
-        self._b = create_vector(problem.L)
+        self._b = create_vector(extract_function_spaces(problem.L))  # type: ignore
         self.setF(problem.F, self._b)
         self.set_form(problem.form)
 
     def __del__(self):
-        self._A.destroy()
-        self._b.destroy()
+        for obj in filter(lambda obj: obj is not None, (self._A, self._b)):
+            obj.destroy()
 
     def solve(self, u: fem.Function):
         """Solve non-linear problem into function u. Returns the number

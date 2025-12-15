@@ -173,7 +173,7 @@ class FiniteElement:
 
         Note:
             Do not use this constructor directly. Instead use
-            :func:``finiteelement``.
+            :func:`finiteelement`.
 
         Args:
             The underlying cpp instance that this object will wrap.

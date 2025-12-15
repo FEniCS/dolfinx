@@ -3,8 +3,8 @@ include(GNUInstallDirs)
 
 # ------------------------------------------------------------------------------
 # Declare the library (target) and set C++ standard
-add_library(dolfinx)
 set(CMAKE_CXX_EXTENSIONS OFF)
+add_library(dolfinx)
 target_compile_features(dolfinx PUBLIC cxx_std_20)
 
 # ------------------------------------------------------------------------------
@@ -67,7 +67,12 @@ set_source_files_properties(
 
 # Set 'Developer' build type flags
 target_compile_options(
-  dolfinx PRIVATE $<$<CONFIG:Developer>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  dolfinx PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+)
+
+# Set 'Developer' compile definitions
+target_compile_definitions(
+  dolfinx PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 
 # Add version to definitions (public)
@@ -118,7 +123,17 @@ target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 # ADIOS2
 if(ADIOS2_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
-  target_link_libraries(dolfinx PUBLIC adios2::cxx11_mpi)
+  # ADIOS2 2.11 and later
+  if(TARGET adios2::cxx_mpi)
+    set(_adios2_mpi_target adios2::cxx_mpi)
+  # And prior
+  elseif(TARGET adios2::cxx11_mpi)
+    set(_adios2_mpi_target adios2::cxx11_mpi)
+  else()
+    message(FATAL_ERROR
+      "ADIOS2 found, but no adios2::cxx*_mpi target found.")
+  endif()
+  target_link_libraries(dolfinx PUBLIC ${_adios2_mpi_target})
 endif()
 
 # PETSc

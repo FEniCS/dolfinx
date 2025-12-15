@@ -101,10 +101,12 @@ def test_sub(Q, W):
 
     assert W.dofmap.dof_layout.num_dofs == X.dofmap.dof_layout.num_dofs
     for dim, entity_count in enumerate([4, 6, 4, 1]):
-        assert W.dofmap.dof_layout.num_entity_dofs(dim) == X.dofmap.dof_layout.num_entity_dofs(dim)
-        assert W.dofmap.dof_layout.num_entity_closure_dofs(
-            dim
-        ) == X.dofmap.dof_layout.num_entity_closure_dofs(dim)
+        assert len(W.dofmap.dof_layout.entity_dofs(dim, 0)) == len(
+            X.dofmap.dof_layout.entity_dofs(dim, 0)
+        )
+        assert len(W.dofmap.dof_layout.entity_closure_dofs(dim, 0)) == len(
+            X.dofmap.dof_layout.entity_closure_dofs(dim, 0)
+        )
         for i in range(entity_count):
             assert (
                 len(W.dofmap.dof_layout.entity_dofs(dim, i))

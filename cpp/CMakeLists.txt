@@ -11,7 +11,7 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.10.0.0")
+project(DOLFINX VERSION "0.11.0.0")
 
 set(DOXYGEN_DOLFINX_VERSION
     ${DOLFINX_VERSION}
@@ -246,6 +246,20 @@ if(HAVE_O2_OPTIMISATION)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
 endif()
 
+# Enable C++ standard library debugging
+include(CheckCXXSymbolExists)
+
+check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
+check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
+
+if(LIBCPP)
+  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG)
+endif()
+
+if(GLIBCXX)
+  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS _GLIBCXX_ASSERTIONS)
+endif()
+
 # Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
 # library
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
@@ -253,8 +267,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
 )
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS
-       -Wno-array-bounds;-Wno-stringop-overflow
-  )
+         -Wno-array-bounds;-Wno-stringop-overflow)
 endif()
 
 # ------------------------------------------------------------------------------
@@ -315,7 +328,7 @@ if(DOLFINX_BASIX_PYTHON)
   endif()
 endif()
 
-find_package(Basix 0.10 REQUIRED CONFIG)
+find_package(Basix 0.11 REQUIRED CONFIG)
 set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
@@ -346,12 +359,12 @@ set_package_properties(
 # method UFCx was found.
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.10 REQUIRED CONFIG)
+  find_package(ufcx 0.11 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake) using Python
   # interpreter
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  find_package(UFCx 0.10 REQUIRED MODULE)
+  find_package(UFCx 0.11 REQUIRED MODULE)
 endif()
 
 set_package_properties(
@@ -364,15 +377,9 @@ set_package_properties(
 # ------------------------------------------------------------------------------
 # Find optional packages
 if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
-  find_package(ADIOS2 2.8.1 REQUIRED COMPONENTS CXX)
+  find_package(ADIOS2 2.8.1 REQUIRED COMPONENTS CXX MPI)
 elseif(DOLFINX_ENABLE_ADIOS2)
-  find_package(ADIOS2 2.8.1 COMPONENTS CXX)
-endif()
-if(ADIOS2_FOUND AND NOT ADIOS2_HAVE_MPI)
-  message(
-    FATAL_ERROR
-      "Found serial ADIOS2, MPI ADIOS2 build required. Try setting ADIOS2_DIR or ADIOS2_ROOT."
-  )
+  find_package(ADIOS2 2.8.1 COMPONENTS CXX MPI)
 endif()
 
 if(DOLFINX_ENABLE_PETSC)

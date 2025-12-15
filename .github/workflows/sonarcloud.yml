@@ -2,7 +2,9 @@ name: SonarCloud
 on:
   push:
     branches:
-      - main
+      - release
+    tags:
+      - "v*"
   pull_request:
     branches:
       - main
@@ -17,13 +19,13 @@ jobs:
     container: fenicsproject/test-env:current-mpich
     env:
       SONAR_SCANNER_VERSION:
-        6.1.0.4477 # Find the latest version at:
+        7.2.0.5079 # Find the latest version at:
         # https://github.com/SonarSource/sonar-scanner-cli/tags
       SONAR_SERVER_URL: "https://sonarcloud.io"
       BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
       PETSC_ARCH: linux-gnu-real64-32
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
@@ -40,7 +42,7 @@ jobs:
           distribution: 'zulu'
           java-version: 17
       - name: Cache SonarCloud packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar

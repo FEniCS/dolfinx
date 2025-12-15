@@ -10,10 +10,15 @@
 
 # # Parallel communication pattern analysis
 #
-# This demo is implemented in {download}`demo_comm-pattern.py`. It
-# illustrates how build a graph that represents a parallel communication
-# pattern and how to analyse the parallel communication pattern using
-# [NetworkX](https://networkx.org/).
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_comm-pattern.py>`
+# * {download}`Jupyter notebook <./demo_comm-pattern.ipynb>`
+# ```
+# This demo illustrates how to:
+# - Build a graph that represents a parallel communication pattern
+# - Analyse the parallel communication pattern using
+#   [NetworkX](https://networkx.org/).
 #
 # The layout of a distributed array across processes (MPI ranks) is
 # described in DOLFINx by an {py:class}`IndexMap
@@ -95,7 +100,7 @@ def plot_bar(G: nx.MultiGraph):
     num_edges = [len(nbrs) for _, nbrs in G.adj.items()]
     weights = [sum(data["weight"] for nbr, data in nbrs.items()) for _, nbrs in G.adj.items()]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    _fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
     ax1.bar(ranks, num_edges)
     ax1.set_xlabel("rank")

@@ -141,7 +141,6 @@ Q = ufl.MixedFunctionSpace(V, W)
 # Trial functions for $\sigma$ and $u$ are declared on the space $V$ and
 # $W$, with corresponding test functions $\tau$ and $v$:
 
-# +
 sigma, u = ufl.TrialFunctions(Q)
 tau, v = ufl.TestFunctions(Q)
 
@@ -172,10 +171,13 @@ L = [ufl.ZeroBaseForm((tau,)), -ufl.inner(f, v) * dx]
 
 
 # In preparation for Dirichlet boundary conditions, we use the function
-# `locate_entities_boundary` to locate mesh entities (facets) with which
-# degree-of-freedoms to be constrained are associated with, and then use
-# `locate_dofs_topological` to get the  degree-of-freedom indices. Below
-# we identify the degree-of-freedom in `V` on the (i) top ($x_{1} = 1$)
+# {py:func}`locate_entities_boundary
+# <dolfinx.mesh.locate_entities_boundary>` to locate mesh entities
+# (facets) with which degree-of-freedoms to be constrained are
+# associated with, and then use {py:func}`locate_dofs_topological
+# <dolfinx.fem.locate_dofs_topological>`
+# to get the  degree-of-freedom indices. Below we identify the
+# degree-of-freedom in `V` on the (i) top ($x_{1} = 1$)
 # and (ii) bottom ($x_{1} = 0$) of the mesh/domain.
 
 # +
@@ -203,12 +205,14 @@ bcs = [fem.dirichletbc(g, dofs_top), fem.dirichletbc(g, dofs_bottom)]
 # this does not lead to efficient solvers for saddle point problems.
 #
 # For this problem, we introduce the preconditioner
+#
 # $$
 # a_p((\sigma, u), (\tau, v))
 # = \begin{bmatrix} \int_{\Omega} \sigma \cdot \tau + (\nabla \cdot
 # \sigma) (\nabla \cdot \tau) \ {\rm d} x  & 0 \\ 0 &
 # \int_{\Omega} u \cdot v \ {\rm d} x \end{bmatrix}
 # $$
+#
 # and assemble it into the matrix `P`:
 
 # +
@@ -228,7 +232,7 @@ sigma, u = fem.Function(V, name="sigma", dtype=dtype), fem.Function(W, name="u",
 # We now create a linear problem solver for the mixed problem.
 # As we will use different preconditions for the individual blocks of
 # the saddle point problem, we specify the matrix kind to be "nest",
-# so that we can use # [`fieldsplit`](https://petsc.org/release/manual/ksp/#sec-block-matrices)
+# so that we can use [`fieldsplit`](https://petsc.org/release/manual/ksp/#sec-block-matrices)
 # (block) type and set the 'splits' between the $\sigma$ and $u$ fields.
 
 
@@ -267,8 +271,9 @@ ksp.setMonitor(
 # iteration. The $P_{00}$ requires careful handling as $H({\rm div})$
 # problems require special preconditioners to be efficient.
 #
-# If PETSc has been configured with Hypre, we use the Hypre `Auxiliary
-# Maxwell Space` (AMS) algebraic multigrid preconditioner. We can use
+# If PETSc has been configured with Hypre, we use the Hypre [Auxiliary
+# Maxwell Space](https://hypre.readthedocs.io/en/latest/solvers-ams.html)
+# (AMS) algebraic multigrid preconditioner. We can use
 # AMS for this $H({\rm div})$-type problem in two-dimensions because
 # $H({\rm div})$ and $H({\rm curl})$ spaces are effectively the same in
 # two-dimensions, just rotated by $\pi/2.
@@ -329,7 +334,8 @@ else:
 # -
 
 # Once we have set the preconditioners for the two blocks, we can
-# solve the linear system. The `LinearProblem` class will
+# solve the linear system.
+# {py:class}`LinearProblem<dolfinx.fem.petsc.LinearProblem>` will
 # automatically assemble the linear system, apply the boundary
 # conditions, call the Krylov solver and update the solution
 # vectors `u` and `sigma`.
@@ -346,8 +352,7 @@ assert converged_reason > 0, f"Krylov solver has not converged, reason: {converg
 if dolfinx.has_adios2:
     from dolfinx.io import VTXWriter
 
-    u.name = "u"
-    with VTXWriter(msh.comm, "output_mixed_poisson.bp", u, "bp4") as f:
+    with VTXWriter(msh.comm, "output_mixed_poisson.bp", u) as f:
         f.write(0.0)
 else:
     print("ADIOS2 required for VTX output.")

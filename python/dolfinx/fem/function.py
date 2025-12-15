@@ -19,7 +19,7 @@ import basix
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
-from dolfinx.fem import dofmap
+from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.element import FiniteElement, finiteelement
 from dolfinx.geometry import PointOwnershipData
 
@@ -133,7 +133,9 @@ class Expression:
         # Get MPI communicator
         if comm is None:
             try:
-                mesh = ufl.domain.extract_unique_domain(e).ufl_cargo()
+                domain = ufl.domain.extract_unique_domain(e)
+                assert isinstance(domain, ufl.Mesh)
+                mesh = domain.ufl_cargo()
                 comm = mesh.comm
             except AttributeError:
                 print(
@@ -493,7 +495,9 @@ class Function(ufl.Coefficient):
             A new Function with a copy of the degree-of-freedom vector.
         """
         return Function(
-            self.function_space, la.Vector(type(self.x._cpp_object)(self.x._cpp_object))
+            self.function_space,
+            la.Vector(type(self.x._cpp_object)(self.x._cpp_object)),
+            name=self.name,
         )
 
     @property
@@ -752,9 +756,12 @@ class FunctionSpace(ufl.FunctionSpace):
         return FiniteElement(self._cpp_object.element)
 
     @property
-    def dofmap(self) -> dofmap.DofMap:
+    def dofmap(self) -> DofMap:
         """Degree-of-freedom map associated with the function space."""
-        return dofmap.DofMap(self._cpp_object.dofmap)  # type: ignore
+        return DofMap(self._cpp_object.dofmap)
+
+    def dofmaps(self, idx: int) -> DofMap:
+        return DofMap(self._cpp_object.dofmaps(idx))
 
     @property
     def mesh(self) -> Mesh:

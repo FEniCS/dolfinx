@@ -135,6 +135,8 @@ class VTKFile(_cpp.io.VTKFile):
 
 
 class XDMFFile(_cpp.io.XDMFFile):
+    Encoding = _cpp.io.XDMFFile.Encoding
+
     def __enter__(self):
         return self
 
@@ -175,9 +177,27 @@ class XDMFFile(_cpp.io.XDMFFile):
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
     def read_mesh(
-        self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"
+        self,
+        ghost_mode=GhostMode.shared_facet,
+        name="mesh",
+        xpath="/Xdmf/Domain",
+        max_facet_to_cell_links: int = 2,
     ) -> Mesh:
-        """Read mesh data from file."""
+        """Read mesh data from file.
+
+        Note:
+            Changing `max_facet_to_cell_links` from the default value
+            should only be required when working on branching manifolds.
+            Changing this value on non-branching meshes will only result in
+            a slower mesh partitioning and creation.
+
+        Args:
+            ghost_mode: Ghost mode to use for the cells in mesh creation.
+            name: Name of the grid node in the xml-scheme in the file
+            xpath: XPath where Mesh Grid is stored in the file.
+            max_facet_to_cell_links: Maximum number of cells that a facet
+                can be linked to.
+        """
         cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
@@ -238,7 +258,12 @@ class XDMFFile(_cpp.io.XDMFFile):
 
         # Build the mesh
         msh = _cpp.mesh.create_mesh(
-            self.comm, cells, cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode)
+            self.comm,
+            cells,
+            cmap,
+            x,
+            _cpp.mesh.create_cell_partitioner(ghost_mode),
+            max_facet_to_cell_links,
         )
         msh.name = name
         domain = ufl.Mesh(basix_el)

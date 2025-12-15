@@ -21,6 +21,7 @@ class TestPETScSolverWrappers:
         "mode",
         [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet],
     )
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_compare_solution_linear_vs_nonlinear_problem(self, mode):
         """Test that the wrapper for Linear problem and NonlinearProblem give the same result"""
         from petsc4py import PETSc
@@ -123,6 +124,8 @@ class TestPETScSolverWrappers:
     @pytest.mark.parametrize("kind", [None, "mpi", "nest", [["aij", None], [None, "baij"]]])
     def test_mixed_system(self, mode, kind):
         from petsc4py import PETSc
+
+        import dolfinx.fem.petsc
 
         msh = dolfinx.mesh.create_unit_square(
             MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=PETSc.RealType

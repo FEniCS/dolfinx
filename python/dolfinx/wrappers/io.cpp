@@ -226,16 +226,18 @@ void io(nb::module_& m)
   m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<double>);
   m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<float>);
   m.def("read_vtkhdf_mesh_float64",
-        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim)
+        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
+           std::optional<std::int32_t> max_facet_to_cell_links)
         {
-          return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename,
-                                                        gdim);
+          return dolfinx::io::VTKHDF::read_mesh<double>(
+              comm.get(), filename, gdim, max_facet_to_cell_links);
         });
   m.def("read_vtkhdf_mesh_float32",
-        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim)
+        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
+           std::optional<std::int32_t> max_facet_to_cell_links)
         {
-          return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename,
-                                                       gdim);
+          return dolfinx::io::VTKHDF::read_mesh<float>(
+              comm.get(), filename, gdim, max_facet_to_cell_links);
         });
 
   // dolfinx::io::cell permutation functions
@@ -301,6 +303,7 @@ void io(nb::module_& m)
            nb::arg("name"), nb::arg("value"), nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
            nb::arg("name"), nb::arg("xpath") = "/Xdmf/Domain")
+      .def("flush", &dolfinx::io::XDMFFile::flush)
       .def_prop_ro(
           "comm", [](dolfinx::io::XDMFFile& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());

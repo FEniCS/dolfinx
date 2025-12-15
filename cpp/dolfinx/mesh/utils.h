@@ -221,9 +221,14 @@ using CellReorderFunction = std::function<std::vector<std::int32_t>(
 /// function.
 /// @param[in] reorder_fn A cell reorder funciton which will be applied to
 /// reorder the cells.
+/// @param[in] max_facet_to_cell_links Maximum number of cells a facet can be
+/// connected to.
 /// @return Boundary vertices function which can be passed to `create_mesh`.
 /// TODO: offload to cpp?
-inline auto create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
+inline auto
+create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
+                            std::optional<std::int32_t> max_facet_to_cell_links
+                            = 2)
 {
   /// brief Function that computes the process boundary vertices of a mesh
   /// during creation.
@@ -235,8 +240,9 @@ inline auto create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
   /// celltype. Reordered during call.
   /// param[out] original_idx Contains the permutation applied to the cells per
   /// celltype.
-  /// return Boundary vetices (for all cell types).
-  return [&](const std::vector<CellType>& celltypes,
+  /// return Boundary vertices (for all cell types).
+  return [&, max_facet_to_cell_links](
+             const std::vector<CellType>& celltypes,
              const std::vector<fem::ElementDofLayout>& doflayouts,
              const std::vector<std::vector<int>>& ghost_owners,
              std::vector<std::vector<std::int64_t>>& cells,
@@ -266,7 +272,8 @@ inline auto create_boundary_vertices_fn(const CellReorderFunction& reorder_fn)
       // Build local dual graph for cell type
       auto [graph, unmatched_facets, max_v, _facet_attached_cells]
           = build_local_dual_graph(std::vector{celltypes[i]},
-                                   std::vector{cells1_v_local.back()});
+                                   std::vector{cells1_v_local.back()},
+                                   max_facet_to_cell_links);
 
       // Store unmatched_facets for current cell type
       facets.emplace_back(std::move(unmatched_facets), max_v);
@@ -853,10 +860,11 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto topology = mesh.topology();
   assert(topology);
   CellType cell_type = topology->cell_type();
-  if (cell_type == CellType::prism and dim == 2)
+  if ((cell_type == CellType::prism or cell_type == CellType::pyramid)
+      and dim == 2)
   {
-    throw std::runtime_error(
-        "mesh::entities_to_geometry for prism cells not yet supported.");
+    throw std::runtime_error("mesh::entities_to_geometry for prism/pyramid "
+                             "cell facets not yet supported.");
   }
 
   const int tdim = topology->dim();
@@ -866,7 +874,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   // Get the DOF layout and the number of DOFs per entity
   const fem::CoordinateElement<T>& coord_ele = geometry.cmap();
   const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
-  const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
+  const std::size_t num_entity_dofs = layout.entity_closure_dofs(dim, 0).size();
   std::vector<std::int32_t> entity_xdofs;
   entity_xdofs.reserve(entities.size() * num_entity_dofs);
   std::array<std::size_t, 2> eshape{entities.size(), num_entity_dofs};
@@ -1009,6 +1017,8 @@ compute_incident_entities(const Topology& topology,
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell in `cells`. If not callable, cells are not
 /// redistributed.
+/// @param[in] max_facet_to_cell_links Bound on the number of cells a
+/// facet can be connected to.
 /// @param[in] reorder_fn Function that reorders (locally) cells that
 /// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
@@ -1020,6 +1030,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
+    std::optional<std::int32_t> max_facet_to_cell_links,
     const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   assert(cells.size() == elements.size());
@@ -1124,7 +1135,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                  cells1_v[i].size());
   }
 
-  auto boundary_v_fn = create_boundary_vertices_fn(reorder_fn);
+  auto boundary_v_fn
+      = create_boundary_vertices_fn(reorder_fn, max_facet_to_cell_links);
   const std::vector<std::int64_t> boundary_v = boundary_v_fn(
       celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1);
 
@@ -1148,10 +1160,17 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // a Geometry object
   for (int i = 0; i < num_cell_types; ++i)
   {
-    for (int e = 1; e < topology.dim(); ++e)
+    const auto& entity_dofs = doflayouts[i].entity_dofs_all();
+    for (int dim = 1; dim < topology.dim(); ++dim)
     {
-      if (doflayouts[i].num_entity_dofs(e) > 0)
-        topology.create_entities(e);
+      // Accumulate count of all dofs on this dimension
+      int dim_sum
+          = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
+                            [](int c, auto v) { return c + v.size(); });
+
+      spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
+      if (dim_sum > 0)
+        topology.create_entities(dim);
     }
 
     if (elements[i].needs_dof_permutations())
@@ -1213,6 +1232,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell. If not callable, cells are not redistributed.
+/// @param[in] max_facet_to_cell_links Bound on the number of cells a
+/// facet can be connected to.
 /// @param[in] reorder_fn Function that reorders (locally) cells that
 /// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
@@ -1223,10 +1244,12 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
+    std::optional<std::int32_t> max_facet_to_cell_links = 2,
     const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
-                     commg, x, xshape, partitioner, reorder_fn);
+                     commg, x, xshape, partitioner, max_facet_to_cell_links,
+                     reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
@@ -1246,21 +1269,27 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// for a detailed description.
 /// @param[in] xshape Shape of `x`. It should be `(num_points, gdim)`.
 /// @param[in] ghost_mode Required type of cell ghosting/overlap.
+/// @param[in] max_facet_to_cell_links Bound on the number of cells a
+/// facet can be connected to.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
             const fem::CoordinateElement<
                 std::remove_reference_t<typename U::value_type>>& elements,
-            const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
+            const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode,
+            std::optional<std::int32_t> max_facet_to_cell_links = 2)
 {
   if (dolfinx::MPI::size(comm) == 1)
+  {
     return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
-                       comm, x, xshape, nullptr);
+                       comm, x, xshape, nullptr, max_facet_to_cell_links);
+  }
   else
   {
     return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
-                       comm, x, xshape, create_cell_partitioner(ghost_mode));
+                       comm, x, xshape, create_cell_partitioner(ghost_mode),
+                       max_facet_to_cell_links);
   }
 }
 

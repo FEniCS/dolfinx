@@ -14,9 +14,12 @@
 
 # # Biharmonic equation
 #
-# This demo is implemented in a single Python file,
-# {download}`demo_biharmonic.py`, which contains both the variational forms
-# and the solver. It illustrates how to:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_biharmonic.py>`
+# * {download}`Jupyter notebook <./demo_biharmonic.ipynb>`
+# ```
+# This demo illustrates how to:
 #
 # - Solve a linear partial differential equation
 # - Use a discontinuous Galerkin method
@@ -113,6 +116,8 @@
 
 
 # +
+from pathlib import Path
+
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType  # type: ignore
 
@@ -143,6 +148,9 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 # degree)`, where `family` is the finite element family, and `degree`
 # specifies the polynomial degree. in this case `V` consists of
 # second-order, continuous Lagrange finite element functions.
+# For further details of how one can specify
+# finite elements as tuples, see {py:class}`ElementMetaData
+# <dolfinx.fem.ElementMetaData>`.
 #
 # Next, we locate the mesh facets that lie on the boundary
 # $\Gamma_D = \partial\Omega$.
@@ -230,7 +238,9 @@ assert problem.solver.getConvergedReason() > 0
 # The solution can be written to a  {py:class}`XDMFFile
 # <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt
 
-with io.XDMFFile(msh.comm, "out_biharmonic/biharmonic.xdmf", "w") as file:
+out_folder = Path("out_biharmonic")
+out_folder.mkdir(parents=True, exist_ok=True)
+with io.XDMFFile(msh.comm, out_folder / "biharmonic.xdmf", "w") as file:
     V1 = fem.functionspace(msh, ("Lagrange", 1))
     u1 = fem.Function(V1)
     u1.interpolate(uh)
@@ -252,8 +262,7 @@ try:
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
     if pyvista.OFF_SCREEN:
-        pyvista.start_xvfb(wait=0.1)
-        plotter.screenshot("uh_biharmonic.png")
+        plotter.screenshot(out_folder / "uh_biharmonic.png")
     else:
         plotter.show()
 except ModuleNotFoundError:

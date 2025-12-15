@@ -33,7 +33,7 @@ def test_mixed_element(rank, family, cell, degree):
 
     shape = (mesh.geometry.dim,) * rank
     norms = []
-    U_el = element(family, cell.cellname(), degree, shape=shape, dtype=default_real_type)
+    U_el = element(family, cell.cellname, degree, shape=shape, dtype=default_real_type)
     for i in range(3):
         U = functionspace(mesh, U_el)
         u = ufl.TrialFunction(U)

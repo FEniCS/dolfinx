@@ -73,35 +73,35 @@ def test_entity_dofs(mesh):
     gdim = mesh.geometry.dim
 
     V = functionspace(mesh, ("Lagrange", 1))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 0
 
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     bs = V.dofmap.dof_layout.block_size
-    assert V.dofmap.dof_layout.num_entity_dofs(0) * bs == 2
-    assert V.dofmap.dof_layout.num_entity_dofs(1) * bs == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) * bs == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) * bs == 2
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) * bs == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) * bs == 0
 
     V = functionspace(mesh, ("Lagrange", 2))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 1
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 0
 
     V = functionspace(mesh, ("Lagrange", 3))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 2
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 2
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 1
 
     V = functionspace(mesh, ("DG", 0))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 1
 
     V = functionspace(mesh, ("DG", 1))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 3
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 3
 
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     bs = V.dofmap.dof_layout.block_size
@@ -136,14 +136,15 @@ def test_entity_closure_dofs(mesh_factory):
                 entities = np.array([entity], dtype=np.uintp)
                 dofs_on_this_entity = V.dofmap.entity_dofs(mesh, d, entities)
                 closure_dofs = V.dofmap.entity_closure_dofs(mesh, d, entities)
-                assert len(dofs_on_this_entity) == V.dofmap.dof_layout.num_entity_dofs(d)
+                assert len(dofs_on_this_entity) == len(V.dofmap.dof_layout.entity_dofs(d, 0))
                 assert len(dofs_on_this_entity) <= len(closure_dofs)
                 covered.update(dofs_on_this_entity)
                 covered2.update(closure_dofs)
             dofs_on_all_entities = V.dofmap.entity_dofs(mesh, d, all_entities)
             closure_dofs_on_all_entities = V.dofmap.entity_closure_dofs(mesh, d, all_entities)
             assert (
-                len(dofs_on_all_entities) == V.dofmap.dof_layout.num_entity_dofs(d) * num_entities
+                len(dofs_on_all_entities)
+                == len(V.dofmap.dof_layout.entity_dofs(d, 0)) * num_entities
             )
             assert covered == set(dofs_on_all_entities)
             assert covered2 == set(closure_dofs_on_all_entities)
