@@ -34,7 +34,7 @@ jobs:
             -StorePasswordInClearText `
             -Name GitHubPackages `
             -UserName "${{ env.USERNAME }}" `
-            -Password "${{ secrets.GITHUB_TOKEN }}"
+            -Password "${{ secrets.GITHUB_TOKEN }}" `
             -SkipDuplicate
           .$(${{ env.VCPKG_EXE }} fetch nuget) `
             setapikey "${{ secrets.GITHUB_TOKEN }}" `
