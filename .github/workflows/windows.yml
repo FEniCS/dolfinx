@@ -29,13 +29,13 @@ jobs:
         shell: pwsh
         run: |
           .$(${{ env.VCPKG_EXE }} fetch nuget) `
+            -SkipDuplicate
             sources add `
             -Source "${{ env.FEED_URL }}" `
             -StorePasswordInClearText `
             -Name GitHubPackages `
             -UserName "${{ env.USERNAME }}" `
             -Password "${{ secrets.GITHUB_TOKEN }}" `
-            -SkipDuplicate
           .$(${{ env.VCPKG_EXE }} fetch nuget) `
             setapikey "${{ secrets.GITHUB_TOKEN }}" `
             -Source "${{ env.FEED_URL }}"
