@@ -29,7 +29,6 @@ jobs:
         shell: pwsh
         run: |
           .$(${{ env.VCPKG_EXE }} fetch nuget) `
-            -SkipDuplicate `
             sources add `
             -Source "${{ env.FEED_URL }}" `
             -StorePasswordInClearText `
@@ -38,7 +37,8 @@ jobs:
             -Password "${{ secrets.GITHUB_TOKEN }}" `
           .$(${{ env.VCPKG_EXE }} fetch nuget) `
             setapikey "${{ secrets.GITHUB_TOKEN }}" `
-            -Source "${{ env.FEED_URL }}"
+            -Source "${{ env.FEED_URL }}" `
+            -SkipDuplicate `
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v6
