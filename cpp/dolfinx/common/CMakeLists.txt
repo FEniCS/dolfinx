@@ -19,8 +19,7 @@ set(HEADERS_common
 
 target_sources(
   dolfinx
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/defines.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.cpp
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/log.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/MPI.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/Table.cpp

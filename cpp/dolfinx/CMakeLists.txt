@@ -54,13 +54,10 @@ if(ENABLE_CLANG_TIDY)
   set_target_properties(dolfinx PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy")
 endif()
 
-# Add git revision flag to the one affected file
-set_source_files_properties(
-  common/defines.cpp
-  PROPERTIES
-    COMPILE_DEFINITIONS
-    "UFCX_SIGNATURE=\"${UFCX_SIGNATURE}\";DOLFINX_GIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\""
-)
+# Add git revision and UFCx signature
+target_compile_definitions(dolfinx PUBLIC
+                           UFCX_SIGNATURE="${UFCX_SIGNATURE}"
+                           DOLFINX_GIT_COMMIT_HASH="${GIT_COMMIT_HASH}")
 
 # ------------------------------------------------------------------------------
 # Set compiler options and definitions
@@ -123,7 +120,17 @@ target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 # ADIOS2
 if(ADIOS2_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
-  target_link_libraries(dolfinx PUBLIC adios2::cxx11_mpi)
+  # ADIOS2 2.11 and later
+  if(TARGET adios2::cxx_mpi)
+    set(_adios2_mpi_target adios2::cxx_mpi)
+  # And prior
+  elseif(TARGET adios2::cxx11_mpi)
+    set(_adios2_mpi_target adios2::cxx11_mpi)
+  else()
+    message(FATAL_ERROR
+      "ADIOS2 found, but no adios2::cxx*_mpi target found.")
+  endif()
+  target_link_libraries(dolfinx PUBLIC ${_adios2_mpi_target})
 endif()
 
 # PETSc
