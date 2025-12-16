@@ -15,7 +15,8 @@
 
 # # Electromagnetic scattering from a wire with scattering BCs
 #
-# Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
+# Copyright (C) 2022-2025 Michele Castriotta, Igor Baratta
+# and Jørgen S. Dokken
 #
 # ```{admonition} Download sources
 # :class: download
@@ -194,12 +195,13 @@ def generate_mesh_wire(
 # $$
 
 
-# The functions that we import from `scipy.special` correspond to:
+# The functions that we import from {py:mod}`scipy.special` correspond to:
 #
-# - `jv(nu, x)` ⟷ $J_\nu(x)$,
-# - `jvp(nu, x, 1)` ⟷ $J_\nu^{\prime}(x)$,
-# - `hankel2(nu, x)` ⟷ $H_\nu^{(2)}(x)$,
-# - `h2vp(nu, x, 1)` ⟷ $H_\nu^{(2){\prime}}(x)$.
+# - {py:obj}`jv(nu, x)<scipy.special.jv>` ⟷ $J_\nu(x)$,
+# - {py:func}`jvp(nu, x, 1)<scipy.special.jvp>` ⟷ $J_\nu^{\prime}(x)$,
+# - {py:obj}`hankel2(nu, x)<scipy.special.hankel2>` ⟷ $H_\nu^{(2)}(x)$,
+# - {py:func}`h2vp(nu, x, 1)<scipy.special.h2vp>`
+#   ⟷ $H_\nu^{(2){\prime}}(x)$.
 #
 # Next, we define a function for calculating the analytical efficiencies
 # in Python. The inputs of the function are:
@@ -212,6 +214,8 @@ def generate_mesh_wire(
 # We also define a nested function for the calculation of $a_l$. For the
 # final calculation of the efficiencies, the summation over the different
 # orders of the Bessel functions is truncated at $\nu=50$.
+
+
 # +
 def compute_a(nu: int, m: complex, alpha: float) -> float:
     J_nu_alpha = jv(nu, alpha)
@@ -691,8 +695,7 @@ with io.VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
 # scattering and extinction efficiencies, which are quantities that
 # define how much light is absorbed and scattered by the wire. First of
 # all, we calculate the analytical efficiencies with the
-# `calculate_analytical_efficiencies` function defined in a separate
-# file:
+# `calculate_analytical_efficiencies` function defined above.
 
 # Calculation of analytical efficiencies
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
@@ -707,10 +710,10 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # \begin{align}
 # & Q_{abs} = \operatorname{Re}\left(\int_{\Omega_{m}} \frac{1}{2}
 #   \frac{\operatorname{Im}(\varepsilon_m)k_0}{Z_0n_b}
-#   \mathbf{E}\cdot\hat{\mathbf{E}}dx\right) \\
+#   \mathbf{E}\cdot\hat{\mathbf{E}}~\mathrm{d}x\right) \\
 # & Q_{sca} = \operatorname{Re}\left(\int_{\partial\Omega} \frac{1}{2}
 #   \left(\mathbf{E}_s\times\bar{\mathbf{H}}_s\right)
-#   \cdot\mathbf{n}ds\right)\\ \\
+#   \cdot\mathbf{n}~\mathrm{d}s\right)\\ \\
 # & Q_{ext} = Q_{abs} + Q_{sca},
 # \end{align}
 # $$

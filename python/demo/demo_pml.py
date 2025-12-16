@@ -1,6 +1,7 @@
 # # Electromagnetic scattering from a wire with PML
 #
-# Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
+# Copyright (C) 2022-2025 Michele Castriotta, Igor Baratta
+# and Jørgen S. Dokken
 #
 # ```{admonition} Download sources
 # :class: download
@@ -12,6 +13,7 @@
 # - Use complex quantities in FEniCSx
 # - Setup and solve Maxwell's equations
 # - Implement (rectangular) perfectly matched layers (PMLs)
+# - Use custom integration entities for one-sided interior facet integrals
 #
 # First, we import the required modules
 
@@ -549,7 +551,7 @@ y_pml = ufl.as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 #
 # with $A^{-1}=\operatorname{det}(\mathbf{J})$.
 #
-# We use `ufl.grad` to calculate the Jacobian of our coordinate
+# We use {py:func}`ufl.grad` to calculate the Jacobian of our coordinate
 # transformation for the different PML regions, and then we can
 # implement this Jacobian for calculating
 # $\boldsymbol{\varepsilon}_{pml}$ and $\boldsymbol{\mu}_{pml}$. The
@@ -710,9 +712,73 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 )
 
 # We calculate the numerical efficiencies in the same way as done in
-# `demo_scattering_boundary_conditions.py`, with the only difference
-# that now the scattering efficiency needs to be calculated over an
-# inner facet, and therefore it requires a slightly different approach:
+# [Electromagnetic scattering demo](./demo_scattering_boundary_conditions),
+# with the only difference that now the scattering efficiency needs to be
+# calculated over an inner facet, and therefore it requires a slightly
+# different approach:
+
+# ### One-sided interior facet integrals
+
+# An integration entity of an integral over a single facet in DOLFINx is
+# defined as a tuple, `(cell_idx, local_facet_idx)`, where `cell_idx` is
+# the index of a cell containing the facet, (local to process),
+# while `local_facet_idx` is the relative index of the facet in the cell.
+# For exterior facets, this is straightforward to obtain,
+# as a facet is then connected to only one cell.
+# However, for an interior facet a facet is connected to at lest two cells.
+# As we would like to compute the outwards facing flux through the wire,
+# we want to be able to integrate only from the side of the cell that has
+# a normal pointing outwards.
+# We start by identifying all cells that are interior to the scatter tag.
+
+cell_map = mesh_data.mesh.topology.index_map(tdim)
+num_cells_local = cell_map.size_local + cell_map.num_ghosts
+midpoints = mesh.compute_midpoints(mesh_data.mesh, tdim, np.arange(num_cells_local, dtype=np.int32))
+is_inner_cell = (midpoints[:, 0] ** 2 + midpoints[:, 1] ** 2) < (radius_scatt) ** 2
+
+# Next, we compute the integration entity for the facets in question.
+# We start by finding all facets owned by the current process (to assure
+# that we only integrate over each facet once), and then for each facet,
+# we find the connected cells.
+
+# +
+# Get connectivity between facets and cells
+mesh_data.mesh.topology.create_connectivity(tdim - 1, tdim)
+mesh_data.mesh.topology.create_connectivity(tdim, tdim - 1)
+f_to_c = mesh_data.mesh.topology.connectivity(tdim - 1, tdim)
+c_to_f = mesh_data.mesh.topology.connectivity(tdim, tdim - 1)
+
+# Filter facets to only those owned by the current process
+num_facets_local = mesh_data.mesh.topology.index_map(tdim - 1).size_local
+scatt_facets = mesh_data.facet_tags.find(scatt_tag)
+scatt_facets = scatt_facets[scatt_facets < num_facets_local]
+
+# Pack integration data
+integration_entities = np.empty((len(scatt_facets), 2), dtype=np.int32)
+for i, facet in enumerate(scatt_facets):
+    connected_cells = f_to_c.links(facet)
+    inner_cell_idx = np.flatnonzero(is_inner_cell[connected_cells])
+    assert len(inner_cell_idx) == 1, "Expected exactly one inner cell per facet."
+    inner_cell = connected_cells[inner_cell_idx[0]]
+    local_facets = c_to_f.links(inner_cell)
+    local_facet_idx = np.flatnonzero(local_facets == facet)[0]
+    integration_entities[i, :] = (inner_cell, local_facet_idx)
+# -
+
+# Now that we have computed the integration entities, we define
+# an integration measure for one-sided facet integrals `ufl.ds`:
+
+ds_scatter = ufl.ds(
+    domain=mesh_data.mesh,
+    subdomain_data=[(scatt_tag, integration_entities.flatten())],
+    subdomain_id=scatt_tag,
+)
+
+
+scatt_facets = mesh_data.facet_tags.find(scatt_tag)
+incident_cells = mesh.compute_incident_entities(
+    mesh_data.mesh.topology, scatt_facets, tdim - 1, tdim
+)
 
 # +
 Z0 = np.sqrt(mu_0 / epsilon_0)  # Vacuum impedance
@@ -727,22 +793,8 @@ gcs = 2 * radius_wire  # Geometrical cross section of the wire
 n = ufl.FacetNormal(mesh_data.mesh)
 n_3d = ufl.as_vector((n[0], n[1], 0))
 
-# Create a marker for the integration boundary for the scattering
-# efficiency
-marker = fem.Function(D)
-scatt_facets = mesh_data.facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(
-    mesh_data.mesh.topology, scatt_facets, tdim - 1, tdim
-)
-
-mesh_data.mesh.topology.create_connectivity(tdim, tdim)
-midpoints = mesh.compute_midpoints(mesh_data.mesh, tdim, incident_cells)
-inner_cells = incident_cells[(midpoints[:, 0] ** 2 + midpoints[:, 1] ** 2) < (radius_scatt) ** 2]
-
-marker.x.array[inner_cells] = 1
-
 # Quantities for the calculation of efficiencies
-P = 0.5 * ufl.inner(ufl.cross(Esh_3d, ufl.conj(Hsh_3d)), n_3d) * marker
+P = 0.5 * ufl.inner(ufl.cross(Esh_3d, ufl.conj(Hsh_3d)), n_3d)
 Q = 0.5 * eps_au.imag * k0 * (ufl.inner(E_3d, E_3d)) / (Z0 * n_bkg)
 
 # Normalized absorption efficiency
@@ -752,10 +804,7 @@ q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / (gcs * I0)).real
 q_abs_fenics = mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
-dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
-q_sca_fenics_proc = (
-    fem.assemble_scalar(fem.form((P("+") + P("-")) * dS(scatt_tag))) / (gcs * I0)
-).real
+q_sca_fenics_proc = (fem.assemble_scalar(fem.form(P * ds_scatter)) / (gcs * I0)).real
 
 # Sum results from all MPI processes
 q_sca_fenics = mesh_data.mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
