@@ -63,7 +63,7 @@ consteval int block_size(V bs)
 /// @private Retrieves the integral block size of a runtime block size.
 template <BlockSize V>
   requires common::is_runtime_v<std::int32_t, V>
-int block_size(V bs)
+inline int block_size(V bs)
 {
   return common::value<std::int32_t, V>(bs);
 }

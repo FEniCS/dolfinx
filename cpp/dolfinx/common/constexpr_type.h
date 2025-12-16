@@ -47,7 +47,7 @@ consteval T value(V /* container */)
 /// @private Retrieve value of runtime variable from a ConstexprType.
 template <typename T, typename V>
   requires ConstexprType<T, V> && is_runtime_v<T, V>
-T value(V container)
+inline T value(V container)
 {
   return container;
 }
