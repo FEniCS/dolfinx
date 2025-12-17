@@ -4,7 +4,7 @@
 
 Since the 0.9.0 release, there has been 311 merged pull requests from 25 contributors.
 Below follows a summary of the biggest changes to the Python-API from these pull requests.
-In addition to the changes below, the ever-lasting quest of improving performance and squasing bugs continues.
+In addition to the changes below, the ever-lasting quest of improving performance and squashing bugs continues.
 
 ### PETSc API
 
@@ -14,12 +14,12 @@ In addition to the changes below, the ever-lasting quest of improving performanc
 Mapping data between {py:class}`PETSc.Vec<petsc4py.PETSc.Vec` and {py:class}`dolfinx.fem.Function`s is now
 trivial for blocked problems by using {py:func}`dolfinx.fem.petsc.assign`. 
 
-Both solvers and assembly routines interfacing with PETSc has recieved a drastic make-over to
-improve useability and maintenance, both for developers and end-users
+Both solvers and assembly routines interfacing with PETSc has received a drastic make-over to
+improve usability and maintenance, both for developers and end-users.
 
 #### Improved non-linear (Newton) solver
 
-The FEniCS project has for the last 15 years had its own implementation of a Netwon solver.
+The FEniCS project has for the last 15 years had its own implementation of a Newton solver.
 We no longer see the need of providing this solver, as the {py:class}`PETSc SNES<petsc4py.PETSc.SNES>` solver,
 and equivalent solver for C++ provides more features than our own implementation.
 
@@ -30,7 +30,7 @@ The non-linear problem object that was sent into {py:class}`dolfinx.nls.petsc.Ne
 to {py:class}`NewtonSolverNonlinearProblem<dolfinx.fem.petsc.NewtonSolverNonlinearProblem>` and is also deprecated.
 
 The new {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>` has additional support for blocked systems,
-such as {py:attr}`NEST<petsc4py.PETSc.Mat.Type.NEST>` by supplying `kind="nest"` to its intializer. See the documentation for further
+such as {py:attr}`NEST<petsc4py.PETSc.Mat.Type.NEST>` by supplying `kind="nest"` to its initializer. See the documentation for further
 information.
 
 #### Improved {py:class}`dolfinx.fem.petsc.LinearProblem`
@@ -48,7 +48,7 @@ In earlier versions of DOLFINx, there were three assembly routines for {py:class
 - `assemble_*_block`
 - `assemble_*_nest`
 
-This caused alot of duplicate logic in codes.
+This caused a lot of duplicate logic in codes.
 Therefore, we have unified all these assembly routines under {py:func}`dolfinx.fem.petsc.assemble_vector` and {py:func}`dolfinx.fem.petsc.assemble_matrix`.
 The input keyword argument `kind` selects the relevant assembler routine.
 See for instance the [Stokes demo](./demos/demo_stokes) for a detailed introduction.
@@ -71,7 +71,7 @@ The {py:func}`dolfinx.fem.discrete_curl` operator has been added to DOLFINx, to 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd) and [Joe Dean](https://github.com/jpdean/)
 
 Initially introduced as part of the [v0.9.0-release](https://fenicsproject.org/blog/v0.9.0/#extract-blocks),
-usage of these two UFL-abstractions hasve been propagated into the demos, to make it even easier for users to
+usage of these two UFL-abstractions has been propagated into the demos, to make it even easier for users to
 see examples of how to work with blocked problems.
 
 *TODO*: Add profiling of blocked/mixed-element vs mixedfunction-space.
@@ -153,7 +153,7 @@ proper collision detection. The algorithm has also been improve to work on co-pl
 
 Instead of using the [Boost timer library](https://www.boost.org/doc/libs/1_89_0/libs/timer/doc/index.html),
 we have opted for the standard timing library [std::chrono](https://en.cppreference.com/w/cpp/header/chrono.html).
-The switch is mainly due to some observed unaccuracies in timings with Boost.
+The switch is mainly due to some observed inaccuracies in timings with Boost.
 This removes the notion of wall, system and user time.
 See or {py:class}`Timer<dolfinx.common.Timer>` for examples of usage.
 
@@ -182,7 +182,7 @@ The GMSH interface to DOLFINx has received a major upgrade.
 **Authors**: [Chris Richardson](https://github.com/chrisrichardson) and [Jørgen S. Dokken](https://github.com/jorgensd) 
 
 As Kitware has stated that [VTKHDF](https://www.kitware.com/vtk-hdf-reader/) is the future format they want to support,
-we have started the transistion to this format.
+we have started the transition to this format.
 Currently, the following features have been implemented:
 - Reading meshes: {py:func}`dolfinx.io.vtkhdf.read_mesh`. Supports mixed topology.
 - Writing meshes: {py:func}`dolfinx.io.vtkhdf.write_mesh`. Supports mixed topology.
@@ -192,14 +192,14 @@ Currently, the following features have been implemented:
 
 #### VTXWriter
 
-**Authors**:  [Mehdi Slimani](https://github.com/ordinary-slim) and [Jørgen S. Dokken](https://github.com/jorgensd)
+**Authors**: [Mehdi Slimani](https://github.com/ordinary-slim) and [Jørgen S. Dokken](https://github.com/jorgensd)
 
 The writer does now support time-dependent DG-0 data, which can be written in the same file as a set of functions
 from another (unique) function space.
 
 #### XDMF
 
-**Author**: [Massimilliano Leoni](https://github.com/mleoni-pf) and [Paul T. Kühner](https://github.com/schnellerhase)
+**Author**: [Massimiliano Leoni](https://github.com/mleoni-pf) and [Paul T. Kühner](https://github.com/schnellerhase)
 - When using {py:meth}`dolfinx.io.XDMFFIle.read_meshtags` one can now specify the attribute name, if the grid has
 multiple tags assigned to it. 
 - Flushing data to file is now possible with {py:meth}`dolfinx.io.XDMFFile.flush`. This is useful when wanting to visualize

@@ -246,6 +246,20 @@ if(HAVE_O2_OPTIMISATION)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
 endif()
 
+# Enable C++ standard library debugging
+include(CheckCXXSymbolExists)
+
+check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
+check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
+
+if(LIBCPP)
+  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG)
+endif()
+
+if(GLIBCXX)
+  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS _GLIBCXX_ASSERTIONS)
+endif()
+
 # Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
 # library
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
@@ -253,8 +267,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
 )
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS
-       -Wno-array-bounds;-Wno-stringop-overflow
-  )
+         -Wno-array-bounds;-Wno-stringop-overflow)
 endif()
 
 # ------------------------------------------------------------------------------
@@ -364,15 +377,9 @@ set_package_properties(
 # ------------------------------------------------------------------------------
 # Find optional packages
 if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
-  find_package(ADIOS2 2.8.1 REQUIRED COMPONENTS CXX)
+  find_package(ADIOS2 2.8.1 REQUIRED COMPONENTS CXX MPI)
 elseif(DOLFINX_ENABLE_ADIOS2)
-  find_package(ADIOS2 2.8.1 COMPONENTS CXX)
-endif()
-if(ADIOS2_FOUND AND NOT ADIOS2_HAVE_MPI)
-  message(
-    FATAL_ERROR
-      "Found serial ADIOS2, MPI ADIOS2 build required. Try setting ADIOS2_DIR or ADIOS2_ROOT."
-  )
+  find_package(ADIOS2 2.8.1 COMPONENTS CXX MPI)
 endif()
 
 if(DOLFINX_ENABLE_PETSC)

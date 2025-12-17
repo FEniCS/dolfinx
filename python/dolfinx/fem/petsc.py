@@ -1043,7 +1043,7 @@ def assemble_residual(
         assemble_residual = functools.partial(
             dolfinx.fem.petsc.assemble_residual,
             u, residual, jacobian, bcs)
-        snes.setFunction(assemble_residual, x, b)
+        snes.setFunction(assemble_residual, b)
 
     Args:
         u: Function(s) tied to the solution vector within the residual and
