@@ -21,7 +21,7 @@ jobs:
     name: Lint
     steps:
       - name: Checkout DOLFINx
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -76,7 +76,7 @@ jobs:
 
     name: Build and test
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -121,12 +121,9 @@ jobs:
           cmake --build .
           sudo cmake --install .
 
-      - name: Run tests via target (C++, serial)
+      - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
-        run: mpirun -np 1 cmake --build . --target test
-      - name: Run tests via target (C++, MPI, np=3)
-        working-directory: cpp/build
-        run: mpirun -np 3 cmake --build . --target test
+        run: cmake --build . --target test
 
       - name: Build Python interface
         run: |
@@ -183,7 +180,7 @@ jobs:
 
     name: Build and test (${{ matrix.petsc_arch }}, ${{ matrix.docker_image }})
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -222,15 +219,15 @@ jobs:
       - name: Build tests (C++, standalone)
         working-directory: cpp/test
         run: |
-          cmake -B build -S .
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Developer
           cmake --build build
 
       - name: Run tests (C++, serial)
         working-directory: cpp/test/build
-        run: mpiexec -np 1 ctest -V --output-on-failure -R unittests
+        run: ctest -V --output-on-failure -R unittests_np_1
       - name: Run tests (C++, MPI, np=3)
         working-directory: cpp/test/build
-        run: mpiexec -np 3 ctest -V --output-on-failure -R unittests
+        run: ctest -V --output-on-failure -R unittests_np_3
 
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
@@ -292,7 +289,7 @@ jobs:
 
     name: Build and publish docs
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -327,13 +324,13 @@ jobs:
           doxygen Doxyfile
           make html
       - name: Upload C++ Doxygen documentation artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: docs-cpp-doxygen
           path: cpp/doc/html
           retention-days: 2
       - name: Upload C++ Sphinx documentation artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: docs-cpp-sphinx
           path: cpp/doc/build/html
@@ -344,7 +341,7 @@ jobs:
           cd python/doc
           python -m sphinx -W -b html source/ build/html/
       - name: Upload Python documentation artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: docs-python
           path: python/doc/build/html
@@ -352,7 +349,7 @@ jobs:
 
       - name: Checkout FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: "FEniCS/docs"
           path: "docs"
