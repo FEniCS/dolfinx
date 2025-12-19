@@ -21,7 +21,7 @@ ARG KAHIP_VERSION=3.18
 # should be pinned to the most recent NumPy release that is supported by
 # the most recent Numba release, see
 # https://numba.readthedocs.io/en/stable/user/installing.html#version-support-information
-ARG NUMPY_VERSION=2.2.6
+ARG NUMPY_VERSION=2.3.5
 ARG PETSC_VERSION=3.24.0
 ARG SLEPC_VERSION=3.24.0
 ARG SPDLOG_VERSION=1.15.3
