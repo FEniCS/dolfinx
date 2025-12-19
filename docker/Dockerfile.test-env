@@ -16,7 +16,7 @@ ARG ADIOS2_VERSION=2.11.0
 ARG DOXYGEN_VERSION=1_14_0
 ARG GMSH_VERSION=4_15_0
 ARG HDF5_VERSION=2.0.0
-ARG KAHIP_VERSION=3.18
+ARG KAHIP_VERSION=3.21
 # NOTE: The NumPy version (https://pypi.org/project/numpy/#history)
 # should be pinned to the most recent NumPy release that is supported by
 # the most recent Numba release, see
