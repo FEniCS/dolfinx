@@ -643,4 +643,138 @@ std::vector<U> read_data(std::string point_or_cell, std::string filename,
 
   return values;
 }
+
+/// @brief Read a CG1 function from a VTKHDF format file.
+///
+/// @tparam U Scalar type of mesh
+/// @param filename Name of the file to read from.
+/// @param mesh Mesh previously read from the same file.
+/// @param timestep The time step to read for time-dependent data.
+/// @return The function read from file.
+///
+/// @note This only supports meshes with a single cell type as of now.
+template <std::floating_point U>
+fem::Function<U> read_CG1_function(std::string filename,
+                                   std::shared_ptr<mesh::Mesh<U>> mesh,
+                                   std::int32_t timestep = 0)
+{
+  auto element = basix::create_element<U>(
+      basix::element::family::P,
+      mesh::cell_type_to_basix_type(mesh->topology()->cell_type()), 1,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false);
+
+  hid_t h5file = hdf5::open_file(mesh->comm(), filename, "r", true);
+  std::string dataset_name = "/VTKHDF/PointData/u";
+
+  std::vector<std::int64_t> shape
+      = hdf5::get_dataset_shape(h5file, dataset_name);
+  hdf5::close_file(h5file);
+
+  const std::size_t block_size = shape[1];
+
+  auto P1
+      = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+          mesh, std::make_shared<fem::FiniteElement<U>>(
+                    element, std::vector<std::size_t>{block_size})));
+
+  fem::Function<U> u_in(P1);
+
+  std::shared_ptr<const common::IndexMap> index_map(
+      mesh->geometry().index_map());
+
+  std::int64_t range0 = index_map->local_range()[0];
+
+  int npoints = index_map->size_local();
+
+  std::array<std::int64_t, 2> range{range0, range0 + npoints};
+
+  const auto values
+      = io::VTKHDF::read_data("Point", filename, *mesh, range, timestep);
+
+  // Parallel distribution. For vector functions we distribute each component
+  // separately.
+  std::vector<std::vector<double>> values_s(block_size);
+  for (auto& v : values_s)
+  {
+    v.reserve(values.size() / block_size);
+  }
+  for (std::size_t i = 0; i < values.size() / block_size; ++i)
+  {
+    for (int j = 0; j < block_size; ++j)
+    {
+      values_s[j].push_back(values[block_size * i + j]);
+    }
+  }
+
+  std::vector<std::int64_t> entities(range[1] - range[0]);
+  std::iota(entities.begin(), entities.end(), range[0]);
+
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const std::int64_t,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+      entities_span(entities.data(),
+                    std::array<std::size_t, 2>{entities.size(), 1});
+
+  std::vector<std::pair<std::vector<std::int32_t>, std::vector<double>>>
+      entities_values;
+
+  for (std::size_t i = 0; i < values_s.size(); ++i)
+  {
+    entities_values.push_back(dolfinx::io::distribute_entity_data<double>(
+        *mesh->topology(), mesh->geometry().input_global_indices(),
+        mesh->geometry().index_map()->size_global(),
+        mesh->geometry().cmap().create_dof_layout(), mesh->geometry().dofmap(),
+        mesh::cell_dim(mesh::CellType::point), entities_span, values_s[i]));
+  }
+
+  auto num_vertices_per_cell
+      = dolfinx::mesh::num_cell_vertices(mesh->topology()->cell_type());
+  std::vector<std::int32_t> local_vertex_map(num_vertices_per_cell);
+
+  for (int i = 0; i < num_vertices_per_cell; ++i)
+  {
+    const auto v_to_d
+        = u_in.function_space()->dofmap()->element_dof_layout().entity_dofs(0,
+                                                                            i);
+    assert(v_to_d.size() == 1);
+    local_vertex_map[i] = v_to_d.front();
+  }
+
+  const auto tdim = mesh->topology()->dim();
+  const auto c_to_v = mesh->topology()->connectivity(tdim, 0);
+  std::vector<std::int32_t> vertex_to_dofmap(
+      mesh->topology()->index_map(0)->size_local()
+      + mesh->topology()->index_map(0)->num_ghosts());
+
+  for (int i = 0; i < mesh->topology()->index_map(tdim)->size_local(); ++i)
+  {
+    const auto local_vertices = c_to_v->links(i);
+    const auto local_dofs = u_in.function_space()->dofmap()->cell_dofs(i);
+    for (int j = 0; j < num_vertices_per_cell; ++j)
+    {
+      vertex_to_dofmap[local_vertices[j]] = local_dofs[local_vertex_map[j]];
+    }
+  }
+
+  /*
+   * After the data is read and distributed, we need to place the
+   * retrieved values in the correct position in the function's array,
+   * reading values and positions from `entities_values`.
+   */
+  for (std::size_t i = 0; i < entities_values[0].first.size(); ++i)
+  {
+    for (std::size_t j = 0; j < block_size; ++j)
+    {
+      u_in.x()
+          ->array()[block_size * vertex_to_dofmap[entities_values[0].first[i]]
+                    + j]
+          = entities_values[j].second[i];
+    }
+  }
+
+  u_in.x()->scatter_fwd();
+
+  return u_in;
+}
 } // namespace dolfinx::io::VTKHDF

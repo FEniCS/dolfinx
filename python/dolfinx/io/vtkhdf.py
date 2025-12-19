@@ -12,18 +12,21 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
+import dolfinx
 import ufl
 from dolfinx.cpp.io import (
+    read_vtkhdf_cg1_function,
     read_vtkhdf_mesh_float32,
     read_vtkhdf_mesh_float64,
     write_vtkhdf_data,
     write_vtkhdf_function,
     write_vtkhdf_mesh,
 )
-from dolfinx.fem import Function
+from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import Mesh
 
 __all__ = [
+    "read_cg1_function",
     "read_mesh",
     "write_cell_data",
     "write_function",
@@ -120,3 +123,32 @@ def write_function(filename: str | Path, mesh: Mesh, u: Function, time: float):
         time: Timestamp.
     """
     write_vtkhdf_function(filename, mesh._cpp_object, u._cpp_object, time)
+
+def read_cg1_function(filename: str | Path, mesh: Mesh, timestep: int = 0) -> Function:
+    """Read a CG1 function form file.
+
+    Args:
+        filename: File to read.
+        mesh: Mesh.
+        timestep: Time step to read
+
+    Returns:
+        The read function.
+    """
+    match type(mesh._cpp_object):
+        case dolfinx.cpp.mesh.Mesh_float64:
+            dtype = np.float64
+        case dolfinx.cpp.mesh.Mesh_float32:
+            dtype = np.float32
+    u_cpp = read_vtkhdf_cg1_function(filename, mesh._cpp_object, timestep)
+    elem = basix.ufl.element(
+        "Lagrange",
+        mesh.basix_cell(),
+        1,
+        shape=tuple(u_cpp.function_space.element.value_shape),
+        dtype=dtype,
+    )
+    V = FunctionSpace(mesh, elem, u_cpp.function_space)
+    u_ret = Function(V, dtype=dtype)
+    u_ret.interpolate(u_cpp)
+    return u_ret

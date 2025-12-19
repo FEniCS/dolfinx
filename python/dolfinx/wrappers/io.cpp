@@ -227,6 +227,8 @@ void io(nb::module_& m)
   m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<float>);
   m.def("write_vtkhdf_function", &dolfinx::io::VTKHDF::write_function<float>);
   m.def("write_vtkhdf_function", &dolfinx::io::VTKHDF::write_function<double>);
+  m.def("read_vtkhdf_cg1_function", &dolfinx::io::VTKHDF::read_CG1_function<float>);
+  m.def("read_vtkhdf_cg1_function", &dolfinx::io::VTKHDF::read_CG1_function<double>);
   m.def("read_vtkhdf_mesh_float64",
         [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
            std::optional<std::int32_t> max_facet_to_cell_links)
