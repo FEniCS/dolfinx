@@ -340,18 +340,13 @@ set_package_properties(
 set(HDF5_PREFER_PARALLEL TRUE)
 set(HDF5_FIND_DEBUG TRUE)
 find_package(HDF5 REQUIRED COMPONENTS C)
-if (NOT HDF5_PROVIDES_PARALLEL)
+# HDF5_IS_PARALLEL -> HDF5_PROVIDES_PARALLEL in HDF5@2.0.0
+if (NOT (HDF5_IS_PARALLEL OR HDF5_PROVIDES_PARALLEL))
   message(
     FATAL_ERROR
       "Found serial HDF5, MPI HDF5 build required. Try setting HDF5_DIR or HDF5_ROOT."
   )
 endif()
-# if(NOT HDF5_IS_PARALLEL)
-#   message(
-#     FATAL_ERROR
-#       "Found serial HDF5, MPI HDF5 build required. Try setting HDF5_DIR or HDF5_ROOT."
-#   )
-# endif()
 
 set_package_properties(
   HDF5 PROPERTIES
