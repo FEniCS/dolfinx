@@ -16,6 +16,7 @@ import ufl
 from dolfinx.cpp.io import (
     read_vtkhdf_mesh_float32,
     read_vtkhdf_mesh_float64,
+    write_vtkhdf_cg1_function,
     write_vtkhdf_data,
     write_vtkhdf_function,
     write_vtkhdf_mesh,
