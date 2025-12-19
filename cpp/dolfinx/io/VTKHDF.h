@@ -602,4 +602,45 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
                            points_pruned, {(std::size_t)x_shape[0], gdim}, part,
                            max_facet_to_cell_links);
 }
+
+/// @brief Read data from a VTKHDF format file.
+///
+/// @tparam U Scalar type of mesh
+/// @param[in] point_or_cell String "Point" or "Cell" determining data
+/// location.
+/// @param filename Name of the file to read from.
+/// @param mesh Mesh previously read from the same file.
+/// @param range The local range of data to read.
+/// @param timestep The time step to read for time-dependent data.
+/// @return The data read from file.
+template <std::floating_point U>
+std::vector<U> read_data(std::string point_or_cell, std::string filename,
+                         const mesh::Mesh<U>& mesh,
+                         std::array<std::int64_t, 2> range, int timestep = 0)
+{
+  hid_t h5file = hdf5::open_file(mesh.comm(), filename, "r", true);
+  std::string dataset_name = "/VTKHDF/" + point_or_cell + "Data/u";
+
+  std::int64_t data_offset = 0;
+  // Read the offset for the requested timestep
+  std::string offset_path = "/VTKHDF/Steps/" + point_or_cell + "DataOffsets/u";
+  hid_t offset_dset = hdf5::open_dataset(h5file, offset_path);
+  std::vector<std::int64_t> offsets = hdf5::read_dataset<std::int64_t>(
+      offset_dset, {timestep, timestep + 1}, true);
+  H5Dclose(offset_dset);
+  data_offset = offsets[0];
+
+  // Adjust range to account for timestep offset
+  range[0] += data_offset;
+  range[1] += data_offset;
+
+  // Read data using HDF5
+  hid_t dset_id = hdf5::open_dataset(h5file, dataset_name);
+  std::vector<U> values = hdf5::read_dataset<U>(dset_id, range, true);
+  H5Dclose(dset_id);
+
+  hdf5::close_file(h5file);
+
+  return values;
+}
 } // namespace dolfinx::io::VTKHDF
