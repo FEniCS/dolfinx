@@ -146,20 +146,20 @@ void common(nb::module_& m)
   m.attr("ufcx_signature") = dolfinx::ufcx_signature();
   m.attr("version") = dolfinx::version();
 
-  enum MemoryUnit : std::int64_t
-  {
-    byte = dolfinx::common::byte.value,
-    kilobyte = dolfinx::common::kilobyte.value,
-    megabyte = dolfinx::common::megabyte.value,
-    gigabyte = dolfinx::common::gigabyte.value,
-    terabyte = dolfinx::common::terabyte.value,
-  };
-  nb::enum_<MemoryUnit>(m, "MemoryUnit")
-      .value("byte", MemoryUnit::byte)
-      .value("kilobyte", MemoryUnit::kilobyte)
-      .value("megabyte", MemoryUnit::megabyte)
-      .value("gigabyte", MemoryUnit::gigabyte)
-      .value("terabyte", MemoryUnit::terabyte);
+  // enum MemoryUnit : std::int64_t
+  // {
+  //   byte = dolfinx::common::byte.value,
+  //   kilobyte = dolfinx::common::kilobyte.value,
+  //   megabyte = dolfinx::common::megabyte.value,
+  //   gigabyte = dolfinx::common::gigabyte.value,
+  //   terabyte = dolfinx::common::terabyte.value,
+  // };
+  // nb::enum_<MemoryUnit>(m, "MemoryUnit")
+  //     .value("byte", MemoryUnit::byte)
+  //     .value("kilobyte", MemoryUnit::kilobyte)
+  //     .value("megabyte", MemoryUnit::megabyte)
+  //     .value("gigabyte", MemoryUnit::gigabyte)
+  //     .value("terabyte", MemoryUnit::terabyte);
 
   nb::enum_<dolfinx::Table::Reduction>(m, "Reduction")
       .value("max", dolfinx::Table::Reduction::max)
@@ -265,25 +265,27 @@ void common(nb::module_& m)
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
           nb::arg("global"))
-      .def("memory",
-           [](const dolfinx::common::IndexMap& self, MemoryUnit unit)
-           {
-             switch (unit)
-             {
-             case MemoryUnit::byte:
-               return double(
-                   dolfinx::common::memory(self, dolfinx::common::byte));
-             case MemoryUnit::kilobyte:
-               return dolfinx::common::memory(self, dolfinx::common::kilobyte);
-             case MemoryUnit::megabyte:
-               return dolfinx::common::memory(self, dolfinx::common::megabyte);
-             case MemoryUnit::gigabyte:
-               return dolfinx::common::memory(self, dolfinx::common::gigabyte);
-             case MemoryUnit::terabyte:
-               return dolfinx::common::memory(self, dolfinx::common::terabyte);
-             }
-             throw std::runtime_error("Not a valid memory unit.");
-           });
+      .def("__sizeof__", [](const dolfinx::common::IndexMap& self)
+           { return dolfinx::common::memory(self, dolfinx::common::byte); });
+  // .def("memory",
+  //      [](const dolfinx::common::IndexMap& self, MemoryUnit unit)
+  //      {
+  //        switch (unit)
+  //        {
+  //        case MemoryUnit::byte:
+  //          return double(
+  //              dolfinx::common::memory(self, dolfinx::common::byte));
+  //        case MemoryUnit::kilobyte:
+  //          return dolfinx::common::memory(self, dolfinx::common::kilobyte);
+  //        case MemoryUnit::megabyte:
+  //          return dolfinx::common::memory(self, dolfinx::common::megabyte);
+  //        case MemoryUnit::gigabyte:
+  //          return dolfinx::common::memory(self, dolfinx::common::gigabyte);
+  //        case MemoryUnit::terabyte:
+  //          return dolfinx::common::memory(self, dolfinx::common::terabyte);
+  //        }
+  //        throw std::runtime_error("Not a valid memory unit.");
+  //      });
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
