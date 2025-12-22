@@ -176,7 +176,8 @@ public:
   /// matrix entry is individual. In the "expanded" case, the sparsity
   /// is expanded for every entry in the block, and the block size of
   /// the matrix is set to `(1, 1)`.
-  MatrixCSR(const SparsityPattern& p, BlockMode mode = BlockMode::compact);
+  template <typename SparsityT>
+  MatrixCSR(const SparsityT& p, BlockMode mode = BlockMode::compact);
 
   /// Move constructor
   /// @todo Check handling of MPI_Request
@@ -566,7 +567,8 @@ private:
 };
 //-----------------------------------------------------------------------------
 template <class U, class V, class W, class X>
-MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
+template <typename SparsityT>
+MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityT& p, BlockMode mode)
     : _index_maps({p.index_map(0),
                    std::make_shared<common::IndexMap>(p.column_index_map())}),
       _block_mode(mode), _bs({p.block_size(0), p.block_size(1)}),
