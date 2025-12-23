@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for the DiscreteOperator class"""
+"""Unit tests for the DiscreteOperator class."""
 
 from mpi4py import MPI
 
@@ -20,6 +20,8 @@ from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, cre
 
 @pytest.mark.petsc4py
 class TestPETScDiscreteOperators:
+    """Test PETSc-based discrete operators."""
+
     @pytest.mark.skip_in_parallel
     @pytest.mark.parametrize(
         "mesh",
@@ -184,8 +186,12 @@ class TestPETScDiscreteOperators:
 
     @pytest.mark.skip_in_parallel
     def test_nonaffine_discrete_operator_petsc(self):
-        """Check that discrete operator is consistent with normal
-        interpolation between non-matching maps on non-affine geometries"""
+        """Test non-affine discrete operator.
+
+        Check that discrete operator is consistent with normal
+        interpolation between non-matching maps on non-affine
+        geometries.
+        """
         from dolfinx.fem.petsc import interpolation_matrix
 
         points = np.array(
@@ -254,6 +260,7 @@ class TestPETScDiscreteOperators:
         [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
     )
     def test_discrete_interpolation(self, cell_type, ghost_mode):
+        """Test discrete interpolation operator."""
         from dolfinx.fem.petsc import interpolation_matrix
 
         tdim = cell_dim(cell_type)

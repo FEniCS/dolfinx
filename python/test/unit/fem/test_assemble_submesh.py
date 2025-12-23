@@ -74,7 +74,8 @@ def assemble(mesh, space, k):
 def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     """Check that assembling a form over a unit square gives the same
     result as assembling over half of a 2x1 rectangle with the same
-    triangulation."""
+    triangulation.
+    """
     if d == 2:
         mesh_0 = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
         mesh_1 = create_rectangle(
@@ -106,7 +107,8 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_submesh_facet_assembly(n, k, space, ghost_mode):
     """Test that assembling a form over the face of a unit cube gives
-    the same result as assembling it over a unit square."""
+    the same result as assembling it over a unit square.
+    """
     cube_mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
     edim = cube_mesh.topology.dim - 1
     entities = locate_entities_boundary(cube_mesh, edim, lambda x: np.isclose(x[2], 0.0))
@@ -126,7 +128,8 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
 
 def create_measure(msh, integral_type):
     """Helper function to create an integration measure of type `integral_type`
-    over domain `msh`"""
+    over domain `msh`.
+    """
 
     def create_meshtags(msh, dim, entities):
         values = np.full_like(entities, 1, dtype=np.intc)
@@ -157,7 +160,7 @@ def create_measure(msh, integral_type):
 
 
 def a_ufl(u, v, f, g, measure):
-    "Helper function to create a UFL bilinear form. The form depends on the integral type"
+    """Helper function to create a UFL bilinear form. The form depends on the integral type."""
     if measure.integral_type() == "cell" or measure.integral_type() == "exterior_facet":
         return ufl.inner(f * g * u, v) * measure
     else:
@@ -166,7 +169,7 @@ def a_ufl(u, v, f, g, measure):
 
 
 def L_ufl(v, f, g, measure):
-    "Helper function to create a UFL linear form. The form depends on the integral type"
+    """Helper function to create a UFL linear form. The form depends on the integral type."""
     if measure.integral_type() == "cell" or measure.integral_type() == "exterior_facet":
         return ufl.inner(f * g, v) * measure
     else:
@@ -188,8 +191,8 @@ def M_ufl(f, g, measure):
 @pytest.mark.parametrize("integral_type", ["dx", "ds", "dS"])
 def test_mixed_dom_codim_0(n, k, space, integral_type):
     """Test assembling forms where the trial and test functions
-    are defined over different meshes"""
-
+    are defined over different meshes.
+    """
     # Create a mesh
     msh = create_rectangle(
         MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=GhostMode.shared_facet
@@ -293,7 +296,8 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
 def test_mixed_dom_codim_1(n, k):
     """Test assembling forms where the trial functions, test functions
     and coefficients are defined over different meshes of different topological
-    dimension."""
+    dimension.
+    """
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
 
     # Create a submesh of the boundary
@@ -375,7 +379,7 @@ def test_mixed_dom_codim_1(n, k):
 
 def test_disjoint_submeshes():
     # FIXME Simplify this test
-    """Test assembly with multiple disjoint submeshes in same variational form"""
+    """Test assembly with multiple disjoint submeshes in same variational form."""
     N = 10
     tol = 1e-14
     mesh = create_unit_interval(MPI.COMM_WORLD, N, ghost_mode=GhostMode.shared_facet)
@@ -528,7 +532,8 @@ def test_disjoint_submeshes():
 @pytest.mark.petsc4py
 def test_mixed_measures():
     """Test block assembly of forms where the integration measure in each
-    block may be different"""
+    block may be different.
+    """
     from petsc4py import PETSc
 
     from dolfinx.fem.petsc import assemble_vector
@@ -595,8 +600,7 @@ def test_mixed_measures():
     ],
 )
 def test_interior_facet_codim_1(msh):
-    """
-    Check that assembly on an interior facet with coefficients defined on a co-dim 1
+    """Check that assembly on an interior facet with coefficients defined on a co-dim 1
     mesh gives the correct result.
     """
     # Collect mesh properties

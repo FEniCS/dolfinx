@@ -99,6 +99,7 @@ indent-width = 4
 
 [tool.ruff.lint]
 select = [
+      "D",      # pydocstyle
       "E",      # pycodestyle
       "W",      # pycodestyle
       "F",      # pyflakes
@@ -111,7 +112,7 @@ select = [
       "NPY201", # numpy 2.x ruleset
 ]
 ignore = ["RUF012"]
-allowed-confusables = ["σ"]
+allowed-confusables = ["σ", "ρ"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
@@ -127,3 +128,11 @@ section-order = [
 
 [tool.ruff.lint.isort.sections]
 "mpi" = ["mpi4py", "petsc4py"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"demo*.py" = ["D100"]
+"test*.py" = ["D100", "D103", "D205"]
+"conf.py" = ["D100", "D103", "D205"]

@@ -62,8 +62,7 @@ dtype = PETSc.ScalarType
 
 
 def build_nullspace(V: FunctionSpace):
-    """Build PETSc nullspace for 3D elasticity"""
-
+    """Build PETSc nullspace for 3D elasticity."""
     # Create vectors that will span the nullspace
     bs = V.dofmap.index_map_bs
     length0 = V.dofmap.index_map.size_local
@@ -126,7 +125,7 @@ E = 1.0e9
 
 
 def σ(v):
-    """Return an expression for the stress σ given a displacement field"""
+    """Return an expression for the stress σ given a displacement field."""
     return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(len(v))
 
 
