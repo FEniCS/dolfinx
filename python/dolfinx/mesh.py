@@ -713,10 +713,10 @@ def create_mesh(
         comm: MPI communicator to define the mesh on.
         cells: Cells of the mesh. ``cells[i]`` are the 'nodes' of
             cell ``i``.
-        x: Mesh geometry ('node' coordinates), with shape
-            ``(num_nodes, gdim)``.
         e: UFL mesh. The mesh scalar type is determined by the scalar
             type of ``e``.
+        x: Mesh geometry ('node' coordinates), with shape
+            ``(num_nodes, gdim)``.
         partitioner: Function that determines the parallel distribution of
             cells across MPI ranks.
         max_facet_to_cell_links: Maximum number of cells a facet can
