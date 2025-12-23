@@ -19,6 +19,17 @@
 #include <utility>
 #include <vector>
 
+// Define requirements on sparsity pattern required for MatrixCSR constructor
+template <typename T>
+concept SparsityImplementation = requires(T sp, int i) {
+  { sp.graph() }; // TODO constrain as a pair of containers
+  { sp.block_size(i) } -> std::same_as<int>;
+  {
+    sp.index_map(i)
+  } -> std::same_as<std::shared_ptr<const dolfinx::common::IndexMap>>;
+  { sp.column_index_map() };
+};
+
 namespace dolfinx::la
 {
 /// @brief Modes for representing block structured matrices.
@@ -176,8 +187,8 @@ public:
   /// matrix entry is individual. In the "expanded" case, the sparsity
   /// is expanded for every entry in the block, and the block size of
   /// the matrix is set to `(1, 1)`.
-  template <typename SparsityT>
-  MatrixCSR(const SparsityT& p, BlockMode mode = BlockMode::compact);
+  template <SparsityImplementation T>
+  MatrixCSR(const T& p, BlockMode mode = BlockMode::compact);
 
   /// Move constructor
   /// @todo Check handling of MPI_Request
@@ -567,12 +578,12 @@ private:
 };
 //-----------------------------------------------------------------------------
 template <class U, class V, class W, class X>
-template <typename SparsityT>
-MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityT& p, BlockMode mode)
+template <SparsityImplementation SparsityType>
+MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityType& p, BlockMode mode)
     : _index_maps({p.index_map(0),
                    std::make_shared<common::IndexMap>(p.column_index_map())}),
       _block_mode(mode), _bs({p.block_size(0), p.block_size(1)}),
-      _data(p.num_nonzeros() * _bs[0] * _bs[1], 0),
+      _data(p.graph().first.size() * _bs[0] * _bs[1], 0),
       _cols(p.graph().first.begin(), p.graph().first.end()),
       _row_ptr(p.graph().second.begin(), p.graph().second.end()),
       _comm(MPI_COMM_NULL)
