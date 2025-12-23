@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import typing
-import warnings
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -34,9 +33,11 @@ from dolfinx.fem.petsc import (
 __all__ = ["NewtonSolver"]
 
 
-@warnings.deprecated("Use dolfinx.fem.petsc.NonlinearProblem instead.")
 class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
-    """Newton solver for non-linear problems."""
+    """Newton solver for non-linear problems.
+
+    Deprecated.
+    """
 
     def __init__(self, comm: MPI.Intracomm, problem: NewtonSolverNonlinearProblem):
         """Initialize Newton solver.
