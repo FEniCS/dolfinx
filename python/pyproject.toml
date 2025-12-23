@@ -134,5 +134,9 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "demo*.py" = ["D100"]
-"test*.py" = ["D100", "D103", "D205"]
+"test*.py" = [
+    "D100",
+    "D103",  # undocumented-public-function
+    "D205"  # missing-blank-line-after-summary
+]
 "conf.py" = ["D100", "D103", "D205"]
