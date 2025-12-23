@@ -14,19 +14,19 @@
 
 ARG ADIOS2_VERSION=2.11.0
 ARG DOXYGEN_VERSION=1_14_0
-ARG GMSH_VERSION=4_14_0
-ARG HDF5_VERSION=1.14.6
-ARG KAHIP_VERSION=3.18
+ARG GMSH_VERSION=4_15_0
+ARG HDF5_VERSION=2.0.0
+ARG KAHIP_VERSION=3.21
 # NOTE: The NumPy version (https://pypi.org/project/numpy/#history)
 # should be pinned to the most recent NumPy release that is supported by
 # the most recent Numba release, see
 # https://numba.readthedocs.io/en/stable/user/installing.html#version-support-information
-ARG NUMPY_VERSION=2.2.6
-ARG PETSC_VERSION=3.24.0
-ARG SLEPC_VERSION=3.24.0
-ARG SPDLOG_VERSION=1.15.3
+ARG NUMPY_VERSION=2.3.5
+ARG PETSC_VERSION=3.24.2
+ARG SLEPC_VERSION=3.24.1
+ARG SPDLOG_VERSION=1.16.0
 
-ARG MPICH_VERSION=4.3.1
+ARG MPICH_VERSION=4.3.2
 ARG OPENMPI_SERIES=5.0
 ARG OPENMPI_PATCH=8
 
