@@ -20,14 +20,20 @@
 #include <vector>
 
 // Define requirements on sparsity pattern required for MatrixCSR constructor
+// allowing alternative implentations that can provide these essentials.
 template <typename T>
 concept SparsityImplementation = requires(T sp, int i) {
-  { sp.graph() }; // TODO constrain as a pair of containers
+  { sp.graph() };
+  requires std::convertible_to<std::int32_t,
+                               typename decltype(sp.graph().first)::value_type>;
+  requires std::convertible_to<
+      std::int64_t, typename decltype(sp.graph().second)::value_type>;
+
   { sp.block_size(i) } -> std::same_as<int>;
   {
     sp.index_map(i)
   } -> std::same_as<std::shared_ptr<const dolfinx::common::IndexMap>>;
-  { sp.column_index_map() };
+  { sp.column_index_map() } -> std::same_as<dolfinx::common::IndexMap>;
 };
 
 namespace dolfinx::la
