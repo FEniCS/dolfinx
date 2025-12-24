@@ -23,7 +23,6 @@
 // allowing alternative implentations that can provide these essentials.
 template <typename T>
 concept SparsityImplementation = requires(T sp, int i) {
-
   { sp.graph() };
   requires std::forward_iterator<typename decltype(sp.graph().first)::iterator>;
   requires std::convertible_to<std::int32_t,
