@@ -311,9 +311,10 @@ class Expression:
 class Function(ufl.Coefficient):
     """A finite element function.
 
-     A finite element function is represented by a function space
+    A finite element function is represented by a function space
     (domain, element and dofmap) and a vector holding the
     degrees-of-freedom.
+
     """
 
     _cpp_object: (
