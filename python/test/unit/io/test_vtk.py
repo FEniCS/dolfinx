@@ -203,7 +203,7 @@ def test_save_vector_element(tempdir, cell_type):
 
 
 def test_save_vtk_cell_point(tempdir):
-    """Test writing cell-wise and point-wise data"""
+    """Test writing cell-wise and point-wise data."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     P2 = element("Lagrange", mesh.basix_cell(), 1, shape=(3,), dtype=default_real_type)
     P1 = element("Discontinuous Lagrange", mesh.basix_cell(), 0, dtype=default_real_type)

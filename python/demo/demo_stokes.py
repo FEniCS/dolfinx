@@ -137,16 +137,19 @@ msh = create_rectangle(
 
 # Function to mark x = 0, x = 1 and y = 0
 def noslip_boundary(x):
+    """Mark no-slip boundaries where x = 0, x = 1, and y = 0."""
     return np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0) | np.isclose(x[1], 0.0)
 
 
 # Function to mark the lid (y = 1)
 def lid(x):
+    """Mark lid boundary where y = 1."""
     return np.isclose(x[1], 1.0)
 
 
 # Lid velocity
 def lid_velocity_expression(x):
+    """Expression for lid velocity."""
     return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
 
 
@@ -216,8 +219,10 @@ a_p = [[a[0][0], None], [None, a_p11]]
 
 
 def nested_iterative_solver_high_level():
-    """Solve the Stokes problem using nest matrices and an iterative solver
-    using high-level functionality."""
+    """Solve Stokes problem using nest matrices and an iterative solver.
+
+    Uses high-level DOLFINx functionality.
+    """
     problem = LinearProblem(
         a_ufl,
         L_ufl,
@@ -287,8 +292,10 @@ def nested_iterative_solver_high_level():
 
 
 def nested_iterative_solver_low_level():
-    """Solve the Stokes problem using nest matrices and an iterative
-    solver using low-level routines."""
+    """Solve Stokes problem using nest matrices and an iterative solver.
+
+    Used low-level DOLFINx routines.
+    """
     # Assemble nested matrix operators
     A = assemble_matrix(a, bcs=bcs, kind="nest")
     A.assemble()
@@ -401,9 +408,7 @@ def nested_iterative_solver_low_level():
 
 
 def block_operators():
-    """Return block operators and block RHS vector for the Stokes
-    problem."""
-
+    """Block operators and block RHS vector for the Stokes problem."""
     # Assembler matrix operator, preconditioner and RHS vector into
     # single objects but preserving block structure
     A = assemble_matrix(a, bcs=bcs)
@@ -436,9 +441,7 @@ def block_operators():
 
 
 def block_iterative_solver():
-    """Solve the Stokes problem using blocked matrices and an iterative
-    solver."""
-
+    """Solve Stokes problem using blocked matrices and iterative solver."""
     # Assembler the operators and RHS vector
     A, P, b = block_operators()
 
@@ -506,9 +509,7 @@ def block_iterative_solver():
 
 
 def block_direct_solver():
-    """Solve the Stokes problem using blocked matrices and a direct
-    solver."""
-
+    """Solve Stokes problem using blocked matrices and a direct solver."""
     # Assembler the block operator and RHS vector
     A, _, b = block_operators()
 
@@ -558,6 +559,7 @@ def block_direct_solver():
 
 
 def mixed_direct():
+    """Solve Stokes problem using mixed matrix and a direct solver."""
     # Create the Taylot-Hood function space
     TH = mixed_element([P2, P1])
     W = functionspace(msh, TH)

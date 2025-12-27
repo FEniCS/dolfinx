@@ -117,6 +117,7 @@ if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
 
 
 def saw_tooth(x):
+    """Define a saw tooth wave function."""
     f = 4 * abs(x - 0.43)
     for _ in range(8):
         f = abs(f - 0.3)

@@ -32,7 +32,8 @@ from ufl import dx, inner
 
 def test_locate_dofs_geometrical():
     """Test that locate_dofs_geometrical, when passed two function
-    spaces, returns the correct degrees of freedom in each space"""
+    spaces, returns the correct degrees of freedom in each space.
+    """
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
     P0 = element("Lagrange", mesh.basix_cell(), p0, dtype=default_real_type)
@@ -68,7 +69,8 @@ def test_locate_dofs_geometrical():
 
 def test_overlapping_bcs():
     """Test that, when boundaries condition overlap, the last provided
-    boundary condition is applied"""
+    boundary condition is applied.
+    """
     n = 23
     mesh = create_unit_square(MPI.COMM_WORLD, n, n)
     V = functionspace(mesh, ("Lagrange", 1))
@@ -112,7 +114,7 @@ def test_overlapping_bcs():
 
 
 def test_constant_bc_constructions():
-    """Test construction from constant values"""
+    """Test construction from constant values."""
     msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=default_real_type)
     gdim = msh.geometry.dim
     V0 = functionspace(msh, ("Lagrange", 1))
@@ -160,7 +162,8 @@ def test_constant_bc_constructions():
 )
 def test_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with a constant yields the same
-    result as setting it with a function"""
+    result as setting it with a function.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     V = functionspace(mesh, ("Lagrange", 1))
@@ -195,7 +198,8 @@ def test_constant_bc(mesh_factory):
 )
 def test_vector_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with a vector valued constant
-    yields the same result as setting it with a function"""
+    yields the same result as setting it with a function.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     tdim = mesh.topology.dim
@@ -243,7 +247,8 @@ def test_vector_constant_bc(mesh_factory):
 def test_sub_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with on a component of a vector
     valued function yields the same result as setting it with a
-    function"""
+    function.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     gdim = mesh.geometry.dim
@@ -281,7 +286,8 @@ def test_sub_constant_bc(mesh_factory):
 )
 def test_mixed_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with on a component of a mixed
-    function yields the same result as setting it with a function"""
+    function yields the same result as setting it with a function.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     tdim = mesh.topology.dim
@@ -323,7 +329,8 @@ def test_mixed_constant_bc(mesh_factory):
 
 def test_mixed_blocked_constant():
     """Check that mixed space with blocked component cannot have
-    Dirichlet BC based on a vector valued Constant."""
+    Dirichlet BC based on a vector valued Constant.
+    """
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim - 1, tdim)

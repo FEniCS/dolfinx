@@ -97,15 +97,19 @@ if _cpp.common.has_adios2:
                 self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)
 
         def __enter__(self):
+            """Enter context manager."""
             return self
 
         def __exit__(self, exception_type, exception_value, traceback):
+            """Exit context manager and close file."""
             self.close()
 
         def write(self, t: float):
+            """Write data to file for a given time."""
             self._cpp_object.write(t)
 
         def close(self):
+            """Close the VTX file."""
             self._cpp_object.close()
 
 
@@ -118,33 +122,38 @@ class VTKFile(_cpp.io.VTKFile):
     """
 
     def __enter__(self):
+        """Enter context manager."""
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
+        """Exit context manager and close file."""
         self.close()
 
     def write_mesh(self, mesh: Mesh, t: float = 0.0) -> None:
-        """Write mesh to file for a given time (default 0.0)"""
+        """Write mesh to file for a given time."""
         self.write(mesh._cpp_object, t)
 
     def write_function(self, u: list[Function] | Function, t: float = 0.0) -> None:
-        """Write a single function or a list of functions to file for a
-        given time (default 0.0)"""
+        """Write a functions to file with a given time."""
         cpp_objects = [u._cpp_object] if isinstance(u, Function) else [_u._cpp_object for _u in u]
         super().write(cpp_objects, t)
 
 
 class XDMFFile(_cpp.io.XDMFFile):
+    """Interface to manage XDMF files."""
+
     Encoding = _cpp.io.XDMFFile.Encoding
 
     def __enter__(self):
+        """Enter context manager."""
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
+        """Exit context manager and close file."""
         self.close()
 
     def write_mesh(self, mesh: Mesh, xpath: str = "/Xdmf/Domain") -> None:
-        """Write mesh to file"""
+        """Write mesh to file."""
         super().write_mesh(mesh._cpp_object, xpath)
 
     def write_meshtags(
@@ -154,7 +163,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
         xpath: str = "/Xdmf/Domain",
     ) -> None:
-        """Write mesh tags to file"""
+        """Write mesh tags to file."""
         super().write_meshtags(tags._cpp_object, x._cpp_object, geometry_xpath, xpath)
 
     def write_function(
@@ -276,8 +285,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         attribute_name: str | None = None,
         xpath: str = "/Xdmf/Domain",
     ) -> MeshTags:
-        """Read MeshTags with a specific name as specified in the XMDF
-        file.
+        """Read mesh tags with name given in the XMDF file.
 
         Args:
             mesh: Mesh that the input data is defined on.
@@ -302,8 +310,7 @@ class XDMFFile(_cpp.io.XDMFFile):
 def distribute_entity_data(
     mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: np.ndarray
 ) -> tuple[npt.NDArray[np.int64], np.ndarray]:
-    """Given a set of mesh entities and values, distribute them to the
-    process that owns the entity.
+    """Distribute  mesh entities and values to owning process.
 
     The entities are described by the global vertex indices of the mesh.
     These entity indices are using the original input ordering.
