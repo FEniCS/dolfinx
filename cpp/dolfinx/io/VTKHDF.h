@@ -8,7 +8,9 @@
 #include <algorithm>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/fem/Function.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/utils.h>
@@ -298,6 +300,68 @@ void write_data(std::string point_or_cell, std::string filename,
   hdf5::close_file(h5file);
 }
 
+/// @brief Write a CG1 function to VTKHDF.
+///
+/// Adds a function to an existing VTKHDF file, which already contains a mesh.
+///
+/// @tparam U Scalar type.
+/// @param[in] filename File for output.
+/// @param[in] mesh Mesh, which must be the same as the original mesh
+/// used in the file.
+/// @param[in] u Function to write to file.
+/// @param[in] time Timestamp.
+///
+/// @note Mesh must be written to file first using `VTKHDF::write_mesh`.
+/// @note Only one dataset "u" can be written per file at present, with
+/// multiple timesteps.
+/// @note Limited support for floating point types at present (no
+/// complex number support).
+template <std::floating_point U>
+void write_CG1_function(std::string filename, const mesh::Mesh<U>& mesh,
+                        const fem::Function<U>& u, double time)
+{
+  io::VTKHDF::write_data<U>(
+      "Point", filename, mesh,
+      std::vector<U>(std::begin(u.x()->array()),
+                     std::begin(u.x()->array())
+                         + mesh.geometry().index_map()->size_local()
+                               * u.function_space()->dofmaps(0)->bs()),
+      time);
+}
+
+/// @brief Write a DG0 function to VTKHDF.
+///
+/// Adds a function to an existing VTKHDF file, which already contains a mesh.
+///
+/// @tparam U Scalar type.
+/// @param[in] filename File for output.
+/// @param[in] mesh Mesh, which must be the same as the original mesh
+/// used in the file.
+/// @param[in] u Function to write to file.
+/// @param[in] time Timestamp.
+///
+/// @note Mesh must be written to file first using `VTKHDF::write_mesh`.
+/// @note Only one dataset "u" can be written per file at present, with
+/// multiple timesteps.
+/// @note Limited support for floating point types at present (no
+/// complex number support).
+template <std::floating_point U>
+void write_DG0_function(std::string filename, const mesh::Mesh<U>& mesh,
+                        const fem::Function<U>& u, double time)
+{
+  const auto index_maps = mesh.topology()->index_maps(mesh.topology()->dim());
+  int npoints
+      = std::accumulate(index_maps.begin(), index_maps.end(), 0,
+                        [](int a, auto im) { return a + im->size_local(); });
+
+  io::VTKHDF::write_data<U>(
+      "Cell", filename, mesh,
+      std::vector<U>(std::begin(u.x()->array()),
+                     std::begin(u.x()->array())
+                         + npoints * u.function_space()->dofmaps(0)->bs()),
+      time);
+}
+
 /// @brief Read a mesh from a VTKHDF format file.
 ///
 /// @tparam U Scalar type of mesh
@@ -472,5 +536,46 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   return mesh::create_mesh(comm, comm, cells_span, coordinate_elements, comm,
                            points_pruned, {(std::size_t)x_shape[0], gdim}, part,
                            max_facet_to_cell_links);
+}
+
+/// @brief Read data from a VTKHDF format file.
+///
+/// @tparam U Scalar type of mesh
+/// @param[in] point_or_cell String "Point" or "Cell" determining data
+/// location.
+/// @param filename Name of the file to read from.
+/// @param mesh Mesh previously read from the same file.
+/// @param range The local range of data to read.
+/// @param timestep The time step to read for time-dependent data.
+/// @return The data read from file.
+template <std::floating_point U>
+std::vector<U> read_data(std::string point_or_cell, std::string filename,
+                         const mesh::Mesh<U>& mesh,
+                         std::array<std::int64_t, 2> range, int timestep = 0)
+{
+  hid_t h5file = hdf5::open_file(mesh.comm(), filename, "r", true);
+  std::string dataset_name = "/VTKHDF/" + point_or_cell + "Data/u";
+
+  std::int64_t data_offset = 0;
+  // Read the offset for the requested timestep
+  std::string offset_path = "/VTKHDF/Steps/" + point_or_cell + "DataOffsets/u";
+  hid_t offset_dset = hdf5::open_dataset(h5file, offset_path);
+  std::vector<std::int64_t> offsets = hdf5::read_dataset<std::int64_t>(
+      offset_dset, {timestep, timestep + 1}, true);
+  H5Dclose(offset_dset);
+  data_offset = offsets[0];
+
+  // Adjust range to account for timestep offset
+  range[0] += data_offset;
+  range[1] += data_offset;
+
+  // Read data using HDF5
+  hid_t dset_id = hdf5::open_dataset(h5file, dataset_name);
+  std::vector<U> values = hdf5::read_dataset<U>(dset_id, range, true);
+  H5Dclose(dset_id);
+
+  hdf5::close_file(h5file);
+
+  return values;
 }
 } // namespace dolfinx::io::VTKHDF
