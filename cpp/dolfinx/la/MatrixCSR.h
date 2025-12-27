@@ -586,7 +586,9 @@ private:
   container_type _ghost_value_data_in;
 };
 //-----------------------------------------------------------------------------
-template <class U, class V, class W, class X>
+
+/** @copydoc MatrixCSR::MatrixCSR */
+template <typename U, typename V, typename W, typename X>
 template <SparsityImplementation SparsityType>
 MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityType& p, BlockMode mode)
     : _index_maps({p.index_map(0),
