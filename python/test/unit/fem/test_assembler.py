@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for assembly"""
+"""Unit tests for assembly."""
 
 import math
 import os
@@ -93,7 +93,8 @@ def test_assemble_functional_ds(mode, dtype):
 def test_assemble_derivatives(dtype):
     """This test checks the original_coefficient_positions, which may change
     under differentiation (some coefficients and constants are
-    eliminated)."""
+    eliminated).
+    """
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, dtype=dtype(0).real.dtype)
     Q = functionspace(mesh, ("Lagrange", 1))
     u = Function(Q, dtype=dtype)
@@ -164,7 +165,7 @@ def test_basic_assembly(mode, dtype):
 
 
 def nest_matrix_norm(A):
-    """Return norm of a MatNest matrix"""
+    """Return norm of a MatNest matrix."""
     assert A.getType() == "nest"
     norm = 0.0
     nrows, ncols = A.getNestSize()
@@ -190,8 +191,11 @@ def test_vector_single_space_as_block():
 
 @pytest.mark.petsc4py
 class TestPETScAssemblers:
+    """Test PETSc-based assemblers for matrices and vectors."""
+
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_basic_assembly_petsc_matrixcsr(self, mode):
+        """Test basic assembly of PETSc Mat and compare with MatrixCSR assembly."""
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
@@ -225,6 +229,7 @@ class TestPETScAssemblers:
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_assembly_bcs(self, mode):
+        """Test assembly with boundary conditions and lifting."""
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
@@ -395,7 +400,7 @@ class TestPETScAssemblers:
         a_block_none = form([[a00, a01, a02], [None, None, a12], [a20, a21, a22]])
 
         def blocked():
-            """Monolithic blocked"""
+            """Monolithic blocked."""
             A = petsc_assemble_matrix(a_block, bcs=[bc])
             A.assemble()
             b = petsc_assemble_vector(L_block, kind=PETSc.Vec.Type.MPI)
@@ -413,7 +418,7 @@ class TestPETScAssemblers:
             return A, b
 
         def nest():
-            """Nested (MatNest)"""
+            """Nested (MatNest)."""
             A = petsc_assemble_matrix(
                 a_block,
                 bcs=[bc],
@@ -437,7 +442,7 @@ class TestPETScAssemblers:
             return A, b
 
         def monolithic():
-            """Monolithic version"""
+            """Monolithic version."""
             W = functionspace(mesh, mixed_element([P0, P1, P2]))
             u0, u1, u2 = ufl.TrialFunctions(W)
             v0, v1, v2 = ufl.TestFunctions(W)
@@ -527,7 +532,7 @@ class TestPETScAssemblers:
         L_block = form([L0, L1])
 
         def blocked():
-            """Monolithic blocked"""
+            """Monolithic blocked."""
             A = petsc_assemble_matrix(a_block, bcs=[bc])
             A.assemble()
             b = petsc_assemble_vector(L_block, kind=PETSc.Vec.Type.MPI)
@@ -541,7 +546,7 @@ class TestPETScAssemblers:
             return A, b
 
         def nest():
-            """Nested (MatNest)"""
+            """Nested (MatNest)."""
             A = petsc_assemble_matrix(a_block, bcs=[bc], kind="nest")
             A.assemble()
 
@@ -559,7 +564,7 @@ class TestPETScAssemblers:
             return A, b
 
         def monolithic():
-            """Monolithic version"""
+            """Monolithic version."""
             W = functionspace(mesh, mixed_element([P0, P1]))
             u0, u1 = ufl.TrialFunctions(W)
             v0, v1 = ufl.TestFunctions(W)
@@ -646,7 +651,7 @@ class TestPETScAssemblers:
             # print("Norm:", its, rnorm)
 
         def blocked():
-            """Blocked"""
+            """Blocked."""
             a = [[a00, a01], [a10, a11]]
             A = petsc_assemble_matrix(a, bcs=bcs)
             b = petsc_assemble_vector([L0, L1], kind=PETSc.Vec.Type.MPI)
@@ -674,7 +679,7 @@ class TestPETScAssemblers:
             return Anorm, bnorm, xnorm
 
         def nested():
-            """Nested (MatNest)"""
+            """Nested (MatNest)."""
             a = [[a00, a01], [a10, a11]]
             A = petsc_assemble_matrix(a, bcs=bcs, diag=1.0, kind="nest")
             A.assemble()
@@ -709,7 +714,7 @@ class TestPETScAssemblers:
             return Anorm, bnorm, xnorm
 
         def monolithic():
-            """Monolithic version"""
+            """Monolithic version."""
             E = mixed_element([P, P])
             W = functionspace(mesh, E)
             u0, u1 = ufl.TrialFunctions(W)
@@ -782,11 +787,11 @@ class TestPETScAssemblers:
         P1 = functionspace(mesh, ("Lagrange", 1))
 
         def boundary0(x):
-            """Define boundary x = 0"""
+            """Define boundary x = 0."""
             return np.isclose(x[0], 0.0)
 
         def boundary1(x):
-            """Define boundary x = 1"""
+            """Define boundary x = 1."""
             return np.isclose(x[0], 1.0)
 
         # Locate facets on boundaries
@@ -819,7 +824,7 @@ class TestPETScAssemblers:
         L1 = ufl.ZeroBaseForm((q,))
 
         def nested_solve():
-            """Nested solver"""
+            """Nested solver."""
             a = form([[a00, a01], [a10, a11]])
             L = form([L0, L1])
             A = petsc_assemble_matrix(a, bcs=[bc0, bc1], kind=[["baij", "aij"], ["aij", ""]])
@@ -867,7 +872,7 @@ class TestPETScAssemblers:
             return norms
 
         def blocked_solve():
-            """Blocked (monolithic) solver"""
+            """Blocked (monolithic) solver."""
             A = petsc_assemble_matrix(form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1])
             A.assemble()
             P = petsc_assemble_matrix(form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1])
@@ -895,7 +900,7 @@ class TestPETScAssemblers:
             return b.norm(), x.norm(), A.norm(), P.norm()
 
         def monolithic_solve():
-            """Monolithic (interleaved) solver"""
+            """Monolithic (interleaved) solver."""
             P2_el = element(
                 "Lagrange",
                 mesh.basix_cell(),
@@ -974,6 +979,7 @@ class TestPETScAssemblers:
         assert Pnorm2 == pytest.approx(Pnorm1, 1.0e-6)
 
     def test_basic_interior_facet_assembly(self):
+        """Test basic assembly of interior facet terms."""
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
@@ -1009,6 +1015,7 @@ class TestPETScAssemblers:
         ],
     )
     def test_symmetry_interior_facet_assembly(self, mesh):
+        """Test that assembled matrices from interior facet terms are symmetric."""
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
@@ -1229,6 +1236,7 @@ class TestPETScAssemblers:
 
     @pytest.mark.parametrize("kind", ["nest", "mpi"])
     def test_lifting_coefficients(self, kind):
+        """Test applying lifting with packed coefficients."""
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
         from dolfinx.fem.petsc import create_vector as petsc_create_vector
 
@@ -1414,6 +1422,7 @@ class TestPETScAssemblers:
         A0.destroy(), A1.destroy(), A2.destroy()
 
     def test_block_null_lifting(self):
+        """Test assembly of block vector with a zero block in the form."""
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
@@ -1428,6 +1437,7 @@ class TestPETScAssemblers:
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     def test_zero_diagonal_block_no_bcs(self):
+        """Test assembly of block matrix with a zero diagonal block and no BCs."""
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
 
         msh = create_unit_square(MPI.COMM_WORLD, 2, 2)
@@ -1480,7 +1490,7 @@ def test_basic_assembly_constant(mode, dtype):
 
 
 def test_lambda_assembler():
-    """Tests assembly with a lambda function"""
+    """Tests assembly with a lambda function."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -1512,7 +1522,7 @@ def test_lambda_assembler():
 
 @pytest.mark.xfail_win32_complex
 def test_vector_types():
-    """Assemble form using different types"""
+    """Assemble form using different types."""
     mesh0 = create_unit_square(MPI.COMM_WORLD, 3, 5, dtype=np.float32)
     mesh1 = create_unit_square(MPI.COMM_WORLD, 3, 5, dtype=np.float64)
     V0, V1 = functionspace(mesh0, ("Lagrange", 3)), functionspace(mesh1, ("Lagrange", 3))
@@ -1679,7 +1689,8 @@ def test_vertex_integral_rank_0(cell_type, ghost_mode, dtype):
 
     def check_vertex_integral_against_sum(form, vertices, weighted=False):
         """Weighting assumes the vertex integral to be weighted by a P1 function, each vertex value
-        corresponding to its global index."""
+        corresponding to its global index.
+        """
         weights = vertex_map.local_to_global(vertices) if weighted else np.ones_like(vertices)
         expected_value_l = np.sum(msh.geometry.x[vertices, 0] * weights)
         value_l = fem.assemble_scalar(fem.form(form, dtype=dtype))
@@ -1816,7 +1827,8 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
 
     def check_vertex_integral_against_sum(form, vertices, weighted=False):
         """Weighting assumes the vertex integral to be weighted by a P1 function, each vertex value
-        corresponding to its global index."""
+        corresponding to its global index.
+        """
         weights = vertex_map.local_to_global(vertices) if weighted else np.ones_like(vertices)
         expected_value_l = np.zeros(num_vertices, dtype=rdtype)
         expected_value_l[vertices] = msh.geometry.x[vertices, 0] * weights

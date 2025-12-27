@@ -73,6 +73,7 @@ def generate_mesh_sphere_axis(
     pml_tag: int,
     scatt_tag: int,
 ):
+    """Generate axisymmetric mesh of a sphere with surrounding PML."""
     gmsh.model.add("geometry")
 
     gmsh.model.occ.addCircle(0, 0, 0, radius_sph * 0.5, angle1=-np.pi / 2, angle2=np.pi / 2, tag=1)
@@ -251,6 +252,7 @@ def generate_mesh_sphere_axis(
 
 
 def curl_axis(a, m: int, rho):
+    """Curl operator in cylindrical coordinates."""
     curl_r = -a[2].dx(1) - 1j * m / rho * a[1]
     curl_z = a[2] / rho + a[2].dx(0) + 1j * m / rho * a[0]
     curl_p = a[0].dx(1) - a[1].dx(0)
@@ -285,6 +287,7 @@ def curl_axis(a, m: int, rho):
 
 # +
 def background_field_rz(theta: float, n_bkg: float, k0: float, m: int, x):
+    """Cylindrical harmonics of background field (ρ and z components)."""
     k = k0 * n_bkg
     a_r = (
         np.cos(theta)
@@ -302,6 +305,7 @@ def background_field_rz(theta: float, n_bkg: float, k0: float, m: int, x):
 
 
 def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
+    """Cylindrical harmonics of background field (φ component)."""
     k = k0 * n_bkg
     a_p = (
         np.cos(theta)
@@ -373,10 +377,12 @@ def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
 
 
 def pml_coordinate(x, r, alpha: float, k0: float, radius_dom: float, radius_pml: float):
+    """Coordinate transformation for PML in cylindrical coordinates."""
     return x + 1j * alpha / k0 * x * (r - radius_dom) / (radius_pml * r)
 
 
 def create_eps_mu(pml, rho, eps_bkg, mu_bkg):
+    """Create PML permittivity and permeability tensors."""
     J = ufl.grad(pml)
 
     # Transform the 2x2 Jacobian into a 3x3 matrix.

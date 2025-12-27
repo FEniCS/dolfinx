@@ -111,7 +111,7 @@ public:
   /// This constructor uses a 'consensus' algorithm to determine the
   /// ranks that ghost indices that are owned by the caller. This
   /// requires non-trivial MPI communication. If the ranks that ghost
-  /// indices owned by the caller are known, it more efficient to use
+  /// indices owned by the caller are known, it is more efficient to use
   /// the constructor that takes these ranks as an argument.
   ///
   /// @note Collective

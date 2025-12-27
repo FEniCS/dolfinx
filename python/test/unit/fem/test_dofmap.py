@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for the fem interface"""
+"""Unit tests for the fem interface."""
 
 import sys
 
@@ -69,7 +69,7 @@ def test_tabulate_dofs(mesh_factory):
 
 
 def test_entity_dofs(mesh):
-    """Test that num entity dofs is correctly wrapped to dolfinx::DofMap"""
+    """Test that num entity dofs is correctly wrapped to dolfinx::DofMap."""
     gdim = mesh.geometry.dim
 
     V = functionspace(mesh, ("Lagrange", 1))
@@ -224,7 +224,8 @@ def test_local_dimension(mesh_factory):
 @pytest.mark.skip
 def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
-    view into the data; in particular test lifetime of data owner"""
+    view into the data; in particular test lifetime of data owner.
+    """
     V = functionspace(mesh, "P", 1)
     dofmap = V.dofmap
     index_map = dofmap().index_map
@@ -425,7 +426,7 @@ def test_transpose_dofmap():
 
 
 def test_empty_rank_collapse():
-    """Test that dofmap with no dofs on a rank can be collapsed"""
+    """Test that dofmap with no dofs on a rank can be collapsed."""
     if MPI.COMM_WORLD.rank == 0:
         nodes = np.array([[0.0], [1.0], [2.0]], dtype=np.float64)
         cells = np.array([[0, 1], [1, 2]], dtype=np.int64)

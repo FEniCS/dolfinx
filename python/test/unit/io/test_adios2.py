@@ -40,8 +40,11 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
 
 @pytest.mark.adios2
 class TestVTX:
+    """Test VTXWriter functionality."""
+
     @pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")
     def test_second_order_vtx(self, tempdir):
+        """Test saving a simple second order mesh with VTXWriter."""
         from dolfinx.io import VTXWriter
 
         filename = Path(tempdir, "mesh_vtx.bp")
@@ -55,6 +58,7 @@ class TestVTX:
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
     def test_vtx_mesh(self, tempdir, dim, simplex):
+        """Test saving mesh with VTXWriter."""
         from dolfinx.io import VTXWriter
 
         filename = Path(tempdir, "mesh_vtx.bp")
@@ -163,7 +167,7 @@ class TestVTX:
         )
 
         def partitioner(comm, nparts, local_graph, num_ghost_nodes):
-            """Leave cells on the current rank"""
+            """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
             return adjacencylist(dest)._cpp_object
 

@@ -57,7 +57,7 @@ out_folder.mkdir(parents=True, exist_ok=True)
 
 
 def display_scalar(u, name, filter=np.real):
-    """Plot the solution using pyvista"""
+    """Plot the solution using pyvista."""
     try:
         import pyvista
 
@@ -78,7 +78,7 @@ def display_scalar(u, name, filter=np.real):
 
 
 def display_vector(u, name, filter=np.real):
-    """Plot the solution using pyvista"""
+    """Plot the solution using pyvista."""
     try:
         import pyvista
 
@@ -99,14 +99,11 @@ def display_vector(u, name, filter=np.real):
 
 
 def poisson(dtype):
-    """Poisson problem solver
+    """Poisson problem solver.
 
     Args:
         dtype: Scalar type to use.
-
-
     """
-
     # Create a mesh and locate facets by a geometric condition
     msh = mesh.create_rectangle(
         comm=comm,
@@ -168,7 +165,6 @@ def poisson(dtype):
 
 def elasticity(dtype) -> fem.Function:
     """Linearised elasticity problem solver."""
-
     # Create a mesh and locate facets by a geometric condition
     msh = mesh.create_rectangle(
         comm=comm,
@@ -192,8 +188,7 @@ def elasticity(dtype) -> fem.Function:
     μ, λ = E / (2.0 * (1.0 + ν)), E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
 
     def σ(v):
-        """Return an expression for the stress σ given a displacement
-        field"""
+        """Expression for the stress σ given a displacement field."""
         return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(
             len(v)
         )
