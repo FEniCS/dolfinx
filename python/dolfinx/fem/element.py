@@ -5,8 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Finite elements."""
 
-from functools import singledispatch
-
 import numpy as np
 import numpy.typing as npt
 
@@ -193,14 +191,18 @@ class FiniteElement:
         """Geometry type of the mesh that the space is defined on."""
         return self._cpp_object.dtype
 
-    @property
+    @cached_property
     def basix_element(self) -> basix.finite_element.FiniteElement:
         """Return underlying Basix C++ element (if it exists).
 
         Raises:
             Runtime error if Basix element does not exist.
+
+        Note:
+            Cached property: Wrapper constructed on initial call and not updated on subsequent
+            calls.
         """
-        return self._cpp_object.basix_element
+        return basix.finite_element.FiniteElement(self._cpp_object.basix_element)
 
     @property
     def num_sub_elements(self) -> int:
