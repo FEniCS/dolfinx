@@ -406,3 +406,16 @@ def test_blocked_dof_ownership(shape):
         owned_sub_dofs = boundary_dofs_V[boundary_dofs_V < num_owned_blocked * bs]
         assert len(owned_sub_dofs) == num_owned_sub
         assert len(unrolled_dofs_sub) == len(boundary_dofs_V)
+
+
+def test_bc_index_out_of_range():
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    facet_map = mesh.topology.index_map(mesh.topology.dim - 1)
+    num_facets_on_proc = facet_map.size_local + facet_map.num_ghosts
+    facets = np.arange(num_facets_on_proc + 1, dtype=np.int32)
+    V = functionspace(mesh, ("Lagrange", 1))
+    with pytest.raises(
+        RuntimeError, match=".*is bigger than the number of entities on this process.*"
+    ):
+        locate_dofs_topological(V, mesh.topology.dim - 1, facets)
