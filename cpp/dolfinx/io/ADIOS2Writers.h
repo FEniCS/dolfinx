@@ -24,6 +24,7 @@
 #include <filesystem>
 #include <memory>
 #include <mpi.h>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <variant>
@@ -195,6 +196,17 @@ extract_function_names(const typename adios2_writer::U<T>& u)
             },
             v);
       });
+
+  {
+    // Check names are unique
+    auto sorted = names;
+    std::ranges::sort(sorted);
+    if (std::ranges::unique(sorted).begin() != sorted.end())
+    {
+      throw std::runtime_error(
+          "Function names in VTX output need to be unique.");
+    }
+  }
 
   return {names, dg0_names};
 }
