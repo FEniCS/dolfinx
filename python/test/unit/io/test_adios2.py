@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Jørgen S. Dokken
+# Copyright (C) 2026 Jørgen S. Dokken and Paul T. Kühner
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -82,6 +82,20 @@ class TestVTX:
         with pytest.raises(RuntimeError):
             VTXWriter(mesh.comm, filename, [v, w])
 
+    @pytest.mark.parametrize("dim", [2, 3])
+    @pytest.mark.parametrize("simplex", [True, False])
+    def test_vtx_names_fail(self, tempdir, dim, simplex):
+        """Test for error when elements differ."""
+        from dolfinx.io import VTXWriter
+
+        mesh = generate_mesh(dim, simplex)
+        gdim = mesh.geometry.dim
+        v = Function(functionspace(mesh, ("Lagrange", 1, (gdim,))), name="f")
+        w = Function(functionspace(mesh, ("Lagrange", 1)), name="f")
+        filename = Path(tempdir, "v.bp")
+        with pytest.raises(RuntimeError):
+            VTXWriter(mesh.comm, filename, [v, w])
+
     @pytest.mark.parametrize("simplex", [True, False])
     def test_vtx_different_meshes_function(self, tempdir, simplex):
         """Test for error when functions do not share a mesh."""
@@ -106,7 +120,7 @@ class TestVTX:
         mesh = generate_mesh(dim, simplex, dtype=xtype)
         gdim = mesh.geometry.dim
         V = functionspace(mesh, ("DG", 2, (gdim,)))
-        v = Function(V, dtype=dtype)
+        v = Function(V, dtype=dtype, name="v")
         bs = V.dofmap.index_map_bs
 
         def vel(x):
@@ -118,7 +132,7 @@ class TestVTX:
         v.interpolate(vel)
 
         W = functionspace(mesh, ("DG", 2))
-        w = Function(W, dtype=v.dtype)
+        w = Function(W, dtype=v.dtype, name="w")
         w.interpolate(lambda x: x[0] + x[1])
 
         filename = Path(tempdir, f"v-{np.dtype(dtype).num}.bp")
