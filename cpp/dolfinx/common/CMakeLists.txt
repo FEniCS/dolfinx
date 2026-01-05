@@ -1,5 +1,6 @@
 set(HEADERS_common
     ${CMAKE_CURRENT_SOURCE_DIR}/defines.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/constexpr_type.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_common.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_doc.h
     ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.h
