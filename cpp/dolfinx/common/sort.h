@@ -67,7 +67,7 @@ struct __radix_sort
   /// @code
   /// std::array<std::int16_t, 3> a{2, 3, 1};
   /// std::array<std::int16_t, 3> i{0, 1, 2};
-  /// dolfixn::radix_sort(i, [&](auto i){ return a[i]; }); // yields i = {2, 0,
+  /// dolfinx::radix_sort(i, [&](auto i){ return a[i]; }); // yields i = {2, 0,
   /// 1} and a[i] = {1, 2, 3};
   /// @endcode
   /// @tparam R Type of range to be sorted.
@@ -175,7 +175,7 @@ inline constexpr __radix_sort radix_sort{};
 /// for (row-major storage).
 /// @param[in] shape1 The number of columns of `x`.
 /// @return The permutation array such that `x[perm[i]] <= x[perm[i
-/// +1]].
+/// +1]]`.
 /// @pre `x.size()` must be a multiple of `shape1`.
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.

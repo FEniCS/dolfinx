@@ -38,9 +38,10 @@ class Function;
 enum class IntegralType : std::int8_t
 {
   cell = 0,           ///< Cell
-  exterior_facet = 1, ///< Exterior facet
+  exterior_facet = 1, ///< Facet
   interior_facet = 2, ///< Interior facet
-  vertex = 3          ///< Vertex
+  vertex = 3,         ///< Vertex
+  ridge = 4           ///< Ridge
 };
 
 /// @brief Represents integral data, containing the kernel, and a list

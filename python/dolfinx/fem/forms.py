@@ -4,6 +4,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Finite element forms."""
 
 from __future__ import annotations
 
@@ -33,6 +34,8 @@ if typing.TYPE_CHECKING:
 
 
 class Form:
+    """A finite element form."""
+
     _cpp_object: (
         _cpp.fem.Form_complex64
         | _cpp.fem.Form_complex128
@@ -51,7 +54,7 @@ class Form:
         code: str | list[str] | None = None,
         module: types.ModuleType | list[types.ModuleType] | None = None,
     ):
-        """A finite element form.
+        """Initialize a finite element form.
 
         Note:
             Forms should normally be constructed using :func:`form` and
@@ -82,11 +85,12 @@ class Form:
 
     @property
     def module(self) -> types.ModuleType | list[types.ModuleType] | None:
-        """The CFFI module"""
+        """The CFFI module."""
         return self._module
 
     @property
     def rank(self) -> int:
+        """Rank of this form."""
         return self._cpp_object.rank
 
     @property
@@ -167,6 +171,11 @@ def get_integration_domains(
                 subdomain._cpp_object.topology.create_connectivity(0, tdim)
                 subdomain._cpp_object.topology.create_connectivity(tdim, 0)
 
+            if integral_type is IntegralType.ridge:
+                tdim = subdomain.topology.dim
+                subdomain._cpp_object.topology.create_connectivity(tdim - 2, tdim)
+                subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 2)
+
             # Compute integration domains only for each subdomain id in
             # the integrals. If a process has no integral entities,
             # insert an empty array.
@@ -190,8 +199,7 @@ def form_cpp_class(
     | _cpp.fem.Form_complex64
     | _cpp.fem.Form_complex128
 ):
-    """Return the wrapped C++ class of a variational form of a specific
-    scalar type.
+    """Wrapped C++ class of a variational form of a specific scalar type.
 
     Args:
         dtype: Scalar type of the required form class.
@@ -220,6 +228,7 @@ _ufl_to_dolfinx_domain = {
     "exterior_facet": IntegralType.exterior_facet,
     "interior_facet": IntegralType.interior_facet,
     "vertex": IntegralType.vertex,
+    "ridge": IntegralType.ridge,
 }
 
 
@@ -230,8 +239,7 @@ def mixed_topology_form(
     jit_options: dict | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
 ):
-    """
-    Create a mixed-topology from from an array of Forms.
+    """Create a mixed-topology from from an array of Forms.
 
     # FIXME: This function is a temporary hack for mixed-topology
     meshes. # It is needed because UFL does not know about
@@ -239,7 +247,7 @@ def mixed_topology_form(
     cell type.
 
     Args:
-        form: A list of UFL forms. Each form should be the same, just
+        forms: A list of UFL forms. Each form should be the same, just
             defined on different cell types.
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
@@ -254,7 +262,6 @@ def mixed_topology_form(
     Returns:
         Compiled finite element Form.
     """
-
     if form_compiler_options is None:
         form_compiler_options = dict()
 
@@ -358,6 +365,9 @@ def form(
 
         # For each argument in form extract its function space
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
+        part = form_compiler_options.get("part", "full")
+        if part == "diagonal":
+            V = [V[0]]
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
@@ -370,7 +380,7 @@ def form(
 
         # Extract subdomain ids from ufcx_form
         subdomain_ids = {type: [] for type in sd.get(domain).keys()}
-        integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(5)]
+        integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(6)]
         for i in range(len(integral_offsets) - 1):
             integral_type = IntegralType(i)
             for j in range(integral_offsets[i], integral_offsets[i + 1]):
@@ -401,8 +411,10 @@ def form(
         return Form(f, ufcx_form, code, module)
 
     def _zero_form(form):
-        """Compile a single 'zero' UFL form, i.e. a form with no
-        integrals."""
+        """Compile a single 'zero' UFL form.
+
+        I.e. a form with no integrals.
+        """
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
         assert len(V) > 0
         msh = V[0].mesh
@@ -542,8 +554,7 @@ def form_cpp_creator(
     | _cpp.fem.Form_complex64
     | _cpp.fem.Form_complex128
 ):
-    """Return the wrapped C++ constructor for creating a variational form
-    of a specific scalar type.
+    """A wrapped C++ constructor for a form with a specified scalar type.
 
     Args:
         dtype: Scalar type of the required form class.
@@ -569,7 +580,7 @@ def form_cpp_creator(
 
 def create_form(
     form: CompiledForm,
-    function_spaces: list[FunctionSpace],
+    V: list[FunctionSpace],
     msh: Mesh,
     subdomains: dict[IntegralType, list[tuple[int, np.ndarray]]],
     coefficient_map: dict[ufl.Coefficient, Function],
@@ -579,11 +590,11 @@ def create_form(
     """Create a Form object from a data-independent compiled form.
 
     Args:
-        form: Compiled ufl form function_spaces: List of function spaces
-        associated with the
-            form. Should match the number of arguments in the form.
-        msh: Mesh to associate form with. subdomains: A map from
-        integral type to a list of pairs, where
+        form: Compiled ufl form,
+        V: List of function spaces associated with the form. Should
+            match the number of arguments in the form.
+        msh: Mesh to associate form with.
+        subdomains: A map from integral type to a list of pairs, where
             each pair corresponds to a subdomain id and the set of of
             integration entities to integrate over. Can be computed with
             {py:func}`dolfinx.fem.compute_integration_domains`.
@@ -639,7 +650,7 @@ def create_form(
     ftype = form_cpp_creator(form.dtype)
     f = ftype(
         form.module.ffi.cast("uintptr_t", form.module.ffi.addressof(form.ufcx_form)),
-        [fs._cpp_object for fs in function_spaces],
+        [fs._cpp_object for fs in V],
         coefficients,
         constants,
         _subdomain_data,
@@ -659,14 +670,14 @@ def derivative_block(
     This is commonly used to derive a block Jacobian from a block
     residual.
 
-    If `F_i` is a list of forms, the Jacobian is a list of lists with
+    If ``F_i`` is a list of forms, the Jacobian is a list of lists with
     :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using
-    `ufl.derivative` called component-wise.
+    ``ufl.derivative`` called component-wise.
 
-    If `F` is a form, the Jacobian is computed as :math:`J =
+    If ``F`` is a form, the Jacobian is computed as :math:`J =
     \\frac{\\partial F}{\\partial u}[\\delta u]`. This is identical to
-    calling `ufl.derivative` directly.
-    """
+    calling ``ufl.derivative`` directly.
+    """  # noqa: D301
     if isinstance(F, ufl.Form):
         if not isinstance(u, Function):
             raise ValueError("Must provide a single function when F is a UFL form")

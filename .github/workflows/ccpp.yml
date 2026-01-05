@@ -1,11 +1,11 @@
 name: CI
 
 on:
-  # push:
-  #   branches:
-  #     - "**"
-  #   tags:
-  #     - "v*"
+  push:
+    branches:
+      - release
+    tags:
+      - "v*"
   pull_request:
     branches:
       - main
@@ -21,7 +21,7 @@ jobs:
     name: Lint
     steps:
       - name: Checkout DOLFINx
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -72,10 +72,11 @@ jobs:
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
       OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
+      PYTEST_ADDOPTS: "-W error"
 
     name: Build and test
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -92,12 +93,14 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python build dependencies
+        working-directory: python
         run: |
-          pip -v install --upgrade -r python/build-requirements.txt
+          pip install scikit-build-core setuptools
+          python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 
       - name: Install FEniCS Python components
         run: |
-          pip install --no-build-isolation git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
@@ -118,12 +121,9 @@ jobs:
           cmake --build .
           sudo cmake --install .
 
-      - name: Run tests via target (C++, serial)
+      - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
-        run: mpirun -np 1 cmake --build . --target test
-      - name: Run tests via target (C++, MPI, np=3)
-        working-directory: cpp/build
-        run: mpirun -np 3 cmake --build . --target test
+        run: cmake --build . --target test
 
       - name: Build Python interface
         run: |
@@ -176,20 +176,24 @@ jobs:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
+      PYTEST_ADDOPTS: "-W error"
 
     name: Build and test (${{ matrix.petsc_arch }}, ${{ matrix.docker_image }})
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install Python build dependencies
-        run: pip install -r python/build-requirements.txt
+        working-directory: python
+        run: |
+          pip install scikit-build-core
+          python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 
       - name: Install FEniCS Python components
         run: |
-          pip install --no-build-isolation git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
@@ -215,15 +219,15 @@ jobs:
       - name: Build tests (C++, standalone)
         working-directory: cpp/test
         run: |
-          cmake -B build -S .
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Developer
           cmake --build build
 
       - name: Run tests (C++, serial)
         working-directory: cpp/test/build
-        run: mpiexec -np 1 ctest -V --output-on-failure -R unittests
+        run: ctest -V --output-on-failure -R unittests_np_1
       - name: Run tests (C++, MPI, np=3)
         working-directory: cpp/test/build
-        run: mpiexec -np 3 ctest -V --output-on-failure -R unittests
+        run: ctest -V --output-on-failure -R unittests_np_3
 
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
@@ -285,15 +289,20 @@ jobs:
 
     name: Build and publish docs
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
+      - name: Install Python build dependencies
+        working-directory: python
+        run: |
+          pip install scikit-build-core setuptools
+          python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
+
       - name: Install FEniCS Python components
         run: |
-          pip install -r python/build-requirements.txt
-          pip install --no-build-isolation git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
@@ -315,13 +324,13 @@ jobs:
           doxygen Doxyfile
           make html
       - name: Upload C++ Doxygen documentation artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: docs-cpp-doxygen
           path: cpp/doc/html
           retention-days: 2
       - name: Upload C++ Sphinx documentation artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: docs-cpp-sphinx
           path: cpp/doc/build/html
@@ -332,7 +341,7 @@ jobs:
           cd python/doc
           python -m sphinx -W -b html source/ build/html/
       - name: Upload Python documentation artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: docs-python
           path: python/doc/build/html
@@ -340,7 +349,7 @@ jobs:
 
       - name: Checkout FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: "FEniCS/docs"
           path: "docs"

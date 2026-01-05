@@ -2,10 +2,13 @@
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This demo is implemented in three files: one for the mesh generation
-# with gmsh, one for the calculation of analytical efficiencies, and one
-# for the variational forms and the solver. It illustrates how to:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_axis.py>`
+# * {download}`Jupyter notebook <./demo_axis.ipynb>`
+# ```
 #
+# This demo illustrates how to:
 # - Setup and solve Maxwell's equations for axisymmetric geometries
 # - Implement (axisymmetric) perfectly matched layers
 #
@@ -16,6 +19,7 @@
 # +
 import sys
 from functools import partial
+from pathlib import Path
 
 from mpi4py import MPI
 from petsc4py import PETSc
@@ -69,6 +73,7 @@ def generate_mesh_sphere_axis(
     pml_tag: int,
     scatt_tag: int,
 ):
+    """Generate axisymmetric mesh of a sphere with surrounding PML."""
     gmsh.model.add("geometry")
 
     gmsh.model.occ.addCircle(0, 0, 0, radius_sph * 0.5, angle1=-np.pi / 2, angle2=np.pi / 2, tag=1)
@@ -247,6 +252,7 @@ def generate_mesh_sphere_axis(
 
 
 def curl_axis(a, m: int, rho):
+    """Curl operator in cylindrical coordinates."""
     curl_r = -a[2].dx(1) - 1j * m / rho * a[1]
     curl_z = a[2] / rho + a[2].dx(0) + 1j * m / rho * a[0]
     curl_p = a[0].dx(1) - a[1].dx(0)
@@ -281,6 +287,7 @@ def curl_axis(a, m: int, rho):
 
 # +
 def background_field_rz(theta: float, n_bkg: float, k0: float, m: int, x):
+    """Cylindrical harmonics of background field (ρ and z components)."""
     k = k0 * n_bkg
     a_r = (
         np.cos(theta)
@@ -298,6 +305,7 @@ def background_field_rz(theta: float, n_bkg: float, k0: float, m: int, x):
 
 
 def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
+    """Cylindrical harmonics of background field (φ component)."""
     k = k0 * n_bkg
     a_p = (
         np.cos(theta)
@@ -369,10 +377,12 @@ def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
 
 
 def pml_coordinate(x, r, alpha: float, k0: float, radius_dom: float, radius_pml: float):
+    """Coordinate transformation for PML in cylindrical coordinates."""
     return x + 1j * alpha / k0 * x * (r - radius_dom) / (radius_pml * r)
 
 
 def create_eps_mu(pml, rho, eps_bkg, mu_bkg):
+    """Create PML permittivity and permeability tensors."""
     J = ufl.grad(pml)
 
     # Transform the 2x2 Jacobian into a 3x3 matrix.
@@ -388,7 +398,7 @@ def create_eps_mu(pml, rho, eps_bkg, mu_bkg):
 
 # We can now define some constants and geometrical parameters, and then
 # we can generate the mesh with Gmsh, by using the function
-# `generate_mesh_sphere_axis` in `mesh_sphere_axis.py`:
+# `generate_mesh_sphere_axis`:
 
 
 # +
@@ -453,6 +463,8 @@ MPI.COMM_WORLD.barrier()
 
 # Visually check of the mesh and of the subdomains using PyVista:
 
+out_folder = Path("out_axis")
+out_folder.mkdir(parents=True, exist_ok=True)
 tdim = mesh_data.mesh.topology.dim
 if have_pyvista:
     topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
@@ -468,8 +480,7 @@ if have_pyvista:
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:
-        pyvista.start_xvfb()
-        figure = plotter.screenshot("sphere_axis_mesh.png", window_size=[500, 500])
+        figure = plotter.screenshot(out_folder / "sphere_axis_mesh.png", window_size=[500, 500])
 
 # For the $\hat{\rho}$ and $\hat{z}$ components of the electric field,
 # we will use Nedelec elements, while for the $\hat{\phi}$ components we
@@ -783,6 +794,6 @@ if has_vtx:
     Es_dg = fem.Function(W)
     Es_expr = fem.Expression(Esh, W.element.interpolation_points)
     Es_dg.interpolate(Es_expr)
-    with VTXWriter(mesh_data.mesh.comm, "sols/Es.bp", Es_dg) as f:
+    with VTXWriter(mesh_data.mesh.comm, out_folder / "Es.bp", Es_dg) as f:
         f.write(0.0)
 # -

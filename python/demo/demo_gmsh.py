@@ -12,8 +12,13 @@
 #
 # Copyright (C) 2020-2023 Garth N. Wells and Jørgen S. Dokken
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_gmsh.py>`
+# * {download}`Jupyter notebook <./demo_gmsh.ipynb>`
+# ```
+
 # This demo shows how to create meshes using the Gmsh Python interface.
-# It is implemented in {download}`demo_gmsh.py`.
 #
 # The Gmsh module is required for this demo.
 
@@ -34,8 +39,10 @@ from dolfinx.io import gmsh as gmshio
 
 # +
 def gmsh_sphere(model: gmsh.model, name: str) -> gmsh.model:
-    """Create a Gmsh model of a sphere and tag sub entitites
-    from all co-dimensions (peaks, ridges, facets and cells).
+    """Create a Gmsh model of a sphere.
+
+    Tags sub entitites for all co-dimensions (peaks, ridges, facets and
+    cells).
 
     Args:
         model: Gmsh model to add the mesh to.
@@ -43,7 +50,6 @@ def gmsh_sphere(model: gmsh.model, name: str) -> gmsh.model:
 
     Returns:
         Gmsh model with a sphere mesh added.
-
     """
     model.add(name)
     model.setCurrent(name)

@@ -100,6 +100,7 @@ def create_vector(V: FunctionSpace, dtype: npt.DTypeLike = default_scalar_type) 
 
     Args:
         V: A function space.
+        dtype: Data type of the vector.
 
     Returns:
         A vector compatible with the function space.
@@ -111,8 +112,7 @@ def create_vector(V: FunctionSpace, dtype: npt.DTypeLike = default_scalar_type) 
 
 
 def create_matrix(a: Form, block_mode: la.BlockMode | None = None) -> la.MatrixCSR:
-    """Create a sparse matrix that is compatible with a given bilinear
-    form.
+    """Create a sparse matrix that is compatible with a bilinear form.
 
     Args:
         a: Bilinear form.
@@ -138,8 +138,9 @@ def assemble_scalar(
     constants: npt.NDArray | None = None,
     coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
 ) -> float | complex:
-    """Assemble functional. The returned value is local and not
-    accumulated across processes.
+    """Assemble functional.
+
+    The returned value is local and not accumulated across processes.
 
     Args:
         M: The functional to compute.
@@ -173,6 +174,7 @@ def assemble_vector(
     constants: npt.NDArray | None = None,
     coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
 ) -> la.Vector:
+    """Assemble linear form into a vector."""
     return _assemble_vector_form(L, constants, coeffs)
 
 
@@ -223,9 +225,9 @@ def _assemble_vector_array(
     """Assemble linear form into an existing array.
 
     Args:
-        b: The array to assemble the contribution from the calling MPI
+        b: Array to assemble the contribution from the calling MPI
             rank into. It must have the required size.
-        L: The linear form assemble.
+        L: Linear form assemble.
         constants: Constants that appear in the form. If ``None``,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
@@ -268,14 +270,14 @@ def assemble_matrix(
             Degrees-of-freedom constrained by a boundary condition will
             have their rows/columns zeroed and the value ``diagonal``
             set on on the matrix diagonal.
-        diagonal: Value to set on the matrix diagonal for Dirichlet
+        diag: Value to set on the matrix diagonal for Dirichlet
             boundary condition constrained degrees-of-freedom belonging
             to the same trial and test space.
         constants: Constants that appear in the form. If ``None``,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
-         block_mode: Block size mode for the returned space matrix. If
+        block_mode: Block size mode for the returned space matrix. If
             ``None``, default is used.
 
     Returns:
@@ -310,7 +312,7 @@ def _assemble_matrix_csr(
             Degrees-of-freedom constrained by a boundary condition will
             have their rows/columns zeroed and the value ``diagonal``
             set on the diagonal.
-        diagonal: Value to set on the matrix diagonal for Dirichlet
+        diag: Value to set on the matrix diagonal for Dirichlet
             boundary condition constrained degrees-of-freedom belonging
             to the same trial and test space.
         constants: Constants that appear in the form. If not provided,
@@ -347,8 +349,7 @@ def apply_lifting(
     constants: npt.NDArray | None = None,
     coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
 ) -> None:
-    """Modify right-hand side vector ``b`` for lifting of Dirichlet
-    boundary conditions.
+    """Modify right-hand side for lifting of Dirichlet conditions.
 
     Consider the discrete algebraic system:
 
@@ -440,7 +441,7 @@ def apply_lifting(
         Boundary condition values are *not* set in ``b`` by this
         function. Use :func:`dolfinx.fem.DirichletBC.set` to set values
         in ``b``.
-    """
+    """  # noqa: D301
     x0 = [] if x0 is None else x0
     constants = (
         [pack_constants(form) if form is not None else np.array([], dtype=b.dtype) for form in a]  # type: ignore[assignment]

@@ -53,8 +53,7 @@ ONBUILD WORKDIR /src
 
 # This leaves the sources inside the container. This is a limitation of
 # Docker. There is some trickery in the intermediate and DOLFINx
-# containers that can be used to remove this source if needed, see
-# below.
+# containers that is used to remove this source, see below.
 ONBUILD COPY basix/ /src/basix/
 ONBUILD COPY ufl/ /src/ufl/
 ONBUILD COPY ffcx/ /src/ffcx/
@@ -71,7 +70,9 @@ ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
 # Using pip install `.[test]` with --no-dependencies and --no-build-isolation
 # does not install necessary packages, hence install build and optional
 # dependencies manually here.
-ONBUILD RUN pip install --no-cache-dir -r dolfinx/python/build-requirements.txt && \
+ONBUILD RUN cd dolfinx/python && \
+            pip install --no-cache-dir scikit-build-core && \
+            python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install --no-cache-dir && \
             pip install --no-cache-dir pyamg pytest scipy matplotlib numba # test + optional set
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/
@@ -156,12 +157,11 @@ RUN pip install --no-cache-dir jupyter jupyterlab
 
 # pyvista dependencies from apt
 RUN apt-get -qq update && \
-    apt-get -y install libgl1-mesa-dev xvfb && \
+    apt-get -y install libgl1-mesa-dev mesa-utils  && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install pyvista from PyPI. pyvisa depends on (py)vtk), but vtk wheels are not
-# available on pypi for linux/arm64, so we use a custom build wheel.
+# Install pyvista.
 # matplotlib improves plotting quality with better color maps and
 # properly rendering colorbars.
 # trame is the preferred backend for pyvista.
@@ -175,4 +175,5 @@ COPY dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3
 
 EXPOSE 8888/tcp
 ENV SHELL /bin/bash
+ENV PYVISTA_JUPYTER_BACKEND=trame
 ENTRYPOINT ["jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]

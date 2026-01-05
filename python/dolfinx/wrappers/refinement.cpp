@@ -40,9 +40,27 @@ template <std::floating_point T>
 void export_refinement(nb::module_& m)
 {
   m.def(
-      "uniform_refine", [](const dolfinx::mesh::Mesh<T>& mesh)
-      { return dolfinx::refinement::uniform_refine<T>(mesh); },
-      nb::arg("mesh"));
+      "uniform_refine",
+      [](const dolfinx::mesh::Mesh<T>& mesh,
+         std::optional<
+             dolfinx_wrappers::part::impl::PythonCellPartitionFunction>
+             partitioner)
+      {
+        dolfinx_wrappers::part::impl::CppCellPartitionFunction cpp_partitioner;
+        if (partitioner.has_value())
+        {
+          cpp_partitioner
+              = dolfinx_wrappers::part::impl::create_cell_partitioner_cpp(
+                  partitioner.value());
+        }
+        else
+        {
+          cpp_partitioner
+              = dolfinx_wrappers::part::impl::CppCellPartitionFunction(nullptr);
+        }
+        return dolfinx::refinement::uniform_refine<T>(mesh, cpp_partitioner);
+      },
+      nb::arg("mesh"), nb::arg("partitioner").none());
 
   m.def(
       "refine",

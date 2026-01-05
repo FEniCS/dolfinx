@@ -1213,15 +1213,10 @@ void fem(nb::module_& m)
                     const std::vector<std::vector<std::vector<int>>>&,
                     const std::vector<int>&,
                     const std::vector<dolfinx::fem::ElementDofLayout>&>(),
-           nb::arg("block_size"), nb::arg("endity_dofs"),
+           nb::arg("block_size"), nb::arg("entity_dofs"),
            nb::arg("entity_closure_dofs"), nb::arg("parent_map"),
            nb::arg("sub_layouts"))
       .def_prop_ro("num_dofs", &dolfinx::fem::ElementDofLayout::num_dofs)
-      .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs,
-           nb::arg("dim"))
-      .def("num_entity_closure_dofs",
-           &dolfinx::fem::ElementDofLayout::num_entity_closure_dofs,
-           nb::arg("dim"))
       .def("entity_dofs", &dolfinx::fem::ElementDofLayout::entity_dofs,
            nb::arg("dim"), nb::arg("entity_index"))
       .def("entity_closure_dofs",
@@ -1273,7 +1268,8 @@ void fem(nb::module_& m)
              "exterior facet integral")
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet,
              "exterior facet integral")
-      .value("vertex", dolfinx::fem::IntegralType::vertex, "vertex integral");
+      .value("vertex", dolfinx::fem::IntegralType::vertex, "vertex integral")
+      .value("ridge", dolfinx::fem::IntegralType::ridge, "ridge integral");
 
   declare_function_space<float>(m, "float32");
   declare_function_space<double>(m, "float64");

@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Test that interpolation is done correctly"""
+"""Test that interpolation is done correctly."""
 
 import random
 
@@ -270,7 +270,7 @@ def run_vector_test(V, poly_order):
 @parametrize_cell_types
 @pytest.mark.parametrize("order", range(1, 5))
 def test_Lagrange_interpolation(cell_type, order):
-    """Test that interpolation is correct in a function space"""
+    """Test that interpolation is correct in a function space."""
     mesh = one_cell_mesh(cell_type)
     V = functionspace(mesh, ("Lagrange", order))
     run_scalar_test(V, order)
@@ -282,7 +282,7 @@ def test_Lagrange_interpolation(cell_type, order):
 )
 @pytest.mark.parametrize("order", range(1, 5))
 def test_serendipity_interpolation(cell_type, order):
-    """Test that interpolation is correct in a function space"""
+    """Test that interpolation is correct in a function space."""
     mesh = one_cell_mesh(cell_type)
     V = functionspace(mesh, ("S", order))
     run_scalar_test(V, order)
@@ -339,7 +339,7 @@ def test_NCE_interpolation(cell_type, order):
 
 
 def test_mixed_sub_interpolation():
-    """Test interpolation of sub-functions"""
+    """Test interpolation of sub-functions."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
 
     def f(x):
@@ -732,7 +732,7 @@ def test_interpolate_subset(order, dim, affine, callable_):
 
 
 def test_interpolate_callable():
-    """Test interpolation with callables"""
+    """Test interpolation with callables."""
     numba = pytest.importorskip("numba")
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 1)
     V = functionspace(mesh, ("Lagrange", 2))
@@ -751,7 +751,7 @@ def test_interpolate_callable():
 
 @pytest.mark.parametrize("bound", [1.5, 0.5])
 def test_interpolate_callable_subset(bound):
-    """Test interpolation on subsets with callables"""
+    """Test interpolation on subsets with callables."""
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 4)
     cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[1] <= bound + 1e-10)
     num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
@@ -795,7 +795,7 @@ def test_interpolate_callable_subset(bound):
 def test_vector_element_interpolation(scalar_element):
     """Test interpolation into a range of vector elements."""
     mesh = create_unit_square(
-        MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell.cellname())
+        MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell.cellname)
     )
     V = functionspace(mesh, blocked_element(scalar_element, shape=(2,)))
     u = Function(V)
@@ -1088,7 +1088,7 @@ def test_submesh_interpolation():
 
 
 def xtest_submesh_expression_interpolation():
-    """Test interpolation of an expression between a submesh and its parent"""
+    """Test interpolation of an expression between a submesh and its parent."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 8, cell_type=CellType.quadrilateral)
 
     def left_locator(x):

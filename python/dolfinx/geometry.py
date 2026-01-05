@@ -29,13 +29,13 @@ __all__ = [
     "compute_collisions_trees",
     "compute_distance_gjk",
     "create_midpoint_tree",
+    "determine_point_ownership",
     "squared_distance",
 ]
 
 
 class PointOwnershipData:
-    """Convenience class for storing data related to the ownership of
-    points."""
+    """Class for storing data related to the ownership of points."""
 
     _cpp_object: _cpp.geometry.PointOwnershipData_float32 | _cpp.geometry.PointOwnershipData_float64
 
@@ -45,8 +45,7 @@ class PointOwnershipData:
 
     @property
     def src_owner(self) -> npt.NDArray[np.int32]:
-        """Ranks owning each point sent into ownership determination for
-        current process."""
+        """Ranks owning points sent into ownership determination."""
         return self._cpp_object.src_owner
 
     @property
@@ -61,8 +60,7 @@ class PointOwnershipData:
 
     @property
     def dest_cells(self) -> npt.NDArray[np.int32]:
-        """Cell indices (local to process) where each entry of
-        ``dest_points`` is located."""
+        """Cell indices where each entry of ``dest_points`` is located."""
         return self._cpp_object.dest_cells
 
 
@@ -110,6 +108,7 @@ class BoundingBoxTree:
         return self._cpp_object.get_bbox(i)
 
     def create_global_tree(self, comm) -> BoundingBoxTree:
+        """Create a global bounding box tree."""
         return BoundingBoxTree(self._cpp_object.create_global_tree(comm))
 
 
@@ -212,8 +211,7 @@ def compute_closest_entity(
 
 
 def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) -> BoundingBoxTree:
-    """Create a bounding box tree for the midpoints of a subset of
-    entities.
+    """Create bounding box tree for the midpoints of a subset of entities.
 
     Args:
         mesh: The mesh.
@@ -222,22 +220,20 @@ def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) 
 
     Returns:
         Bounding box tree for midpoints of cell entities.
-
     """
     return BoundingBoxTree(_cpp.geometry.create_midpoint_tree(mesh._cpp_object, dim, entities))
 
 
 def compute_colliding_cells(
-    mesh: Mesh, candidates: AdjacencyList, x: npt.NDArray[np.floating]
+    msh: Mesh, candidates: AdjacencyList, x: npt.NDArray[np.floating]
 ) -> AdjacencyList:
     """From a mesh, find which cells collide with a set of points.
 
     Args:
-        mesh: The mesh.
-        candidate_cells: Adjacency list of candidate colliding cells for
+        msh: The mesh.
+        candidates: Adjacency list of candidate colliding cells for
             the ith point in ``x``.
-        points: The points to check for collision
-            ``shape=(num_points, 3)``,
+        x: Points to check for collision ``shape=(num_points, 3)``,
 
     Returns:
         Adjacency list where the ith node is the list of entities that
@@ -245,7 +241,7 @@ def compute_colliding_cells(
 
     """
     return AdjacencyList(
-        _cpp.geometry.compute_colliding_cells(mesh._cpp_object, candidates._cpp_object, x)
+        _cpp.geometry.compute_colliding_cells(msh._cpp_object, candidates._cpp_object, x)
     )
 
 
@@ -274,10 +270,10 @@ def squared_distance(
 def compute_distance_gjk(
     p: npt.NDArray[np.floating], q: npt.NDArray[np.floating]
 ) -> npt.NDArray[np.floating]:
-    """Compute the distance between two convex bodies p and q, each defined
-    by a set of points.
+    """Compute the distance between two convex bodies.
 
-    Uses the Gilbert-Johnson-Keerthi (GJK) distance algorithm.
+    Each body is defined by a set of points. Uses the
+    Gilbert-Johnson-Keerthi (GJK) distance algorithm.
 
     Args:
         p: Body 1 list of points (``shape=(num_points, gdim)``).
@@ -285,7 +281,6 @@ def compute_distance_gjk(
 
     Returns:
         Shortest vector between the two bodies.
-
     """
     assert p.dtype == q.dtype
     if np.issubdtype(p.dtype, np.float32):

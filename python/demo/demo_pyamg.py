@@ -10,11 +10,14 @@
 
 # # Solve the Poisson and linearised elasticity equations using pyamg
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_pyamg.py>`
+# * {download}`Jupyter notebook <./demo_pyamg.ipynb>`
+# ```
 # The demo illustrates solving the Poisson and linearised elasticity
 # equations with using algebraic multigrid from
-# [pyamg](https://github.com/pyamg/pyamg). It is implemented in
-# {download}`demo_pyamg.py`.
-#
+# [pyamg](https://github.com/pyamg/pyamg).
 # pyamg is not MPI-parallel, therefore this demo runs in serial only.
 
 # +
@@ -54,7 +57,6 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
         solver_type: pyamg solver type, either "ruge_stuben" or
             "smoothed_aggregation"
     """
-
     real_type = np.real(dtype(0)).dtype
     mesh = create_box(
         comm=MPI.COMM_WORLD,
@@ -153,8 +155,9 @@ def nullspace_elasticty(Q: fem.FunctionSpace) -> list[np.ndarray]:
 
 # +
 def elasticity_problem(dtype) -> None:
-    """Solve a 3D linearised elasticity problem using a smoothed
-    aggregation algebraic multigrid method.
+    """Solve a 3D linearised elasticity problem using AMG.
+
+    Uses a smoothed aggregation algebraic multigrid method.
 
     Args:
         dtype: Scalar type to use.
@@ -185,8 +188,7 @@ def elasticity_problem(dtype) -> None:
     λ = E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
 
     def σ(v):
-        """Return an expression for the stress σ given a displacement
-        field"""
+        """Expression for the stress σ given a displacement field."""
         return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(
             len(v)
         )
@@ -226,15 +228,17 @@ def elasticity_problem(dtype) -> None:
 
 
 # Solve Poission problem with different scalar types
+
 poisson_problem(np.float32, "ruge_stuben")
 poisson_problem(np.float64, "ruge_stuben")
 
 # For complex, pyamg requires smoothed aggregation multigrid
+
 if not sys.platform.startswith("win32"):
     poisson_problem(np.complex64, "smoothed_aggregation")
     poisson_problem(np.complex128, "smoothed_aggregation")
 
 # Solve elasticity problem with different scalar types
+
 elasticity_problem(np.float32)
 elasticity_problem(np.float64)
-# -
