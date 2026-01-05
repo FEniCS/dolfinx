@@ -1,4 +1,4 @@
-# Copyright (C) 2026 Jørgen S. Dokken and Paul T. Kühner
+# Copyright (C) 2021-2026 Jørgen S. Dokken and Paul T. Kühner
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
