@@ -1283,8 +1283,8 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
       throw std::runtime_error(
           "Interpolation: elements have different value dimensions");
     }
-    if ((element1 == element0 or *element1 == *element0)
-        and (mesh == u0.function_space()->mesh()))
+    if ((mesh == u0.function_space()->mesh())
+        and (element1 == element0 or *element1 == *element0))
     {
       // Same element, same mesh, different dofmaps
       // (or just a subset of cells)
