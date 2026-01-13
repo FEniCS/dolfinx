@@ -160,10 +160,8 @@ def lid_velocity_expression(x):
 # continuous piecewise quadratic basis (vector) and `P1` to a continuous
 # piecewise linear basis (scalar).
 
-
-P2 = element(
-    "Lagrange", msh.basix_cell(), degree=2, shape=(msh.geometry.dim,), dtype=default_real_type
-)
+gdim = msh.geometry.dim
+P2 = element("Lagrange", msh.basix_cell(), degree=2, shape=(gdim,), dtype=default_real_type)
 P1 = element("Lagrange", msh.basix_cell(), degree=1, dtype=default_real_type)
 V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
@@ -171,7 +169,7 @@ V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # +
 # No-slip condition on boundaries where x = 0, x = 1, and y = 0
-noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)  # type: ignore
+noslip = np.zeros(gdim, dtype=PETSc.ScalarType)  # type: ignore
 facets = locate_entities_boundary(msh, 1, noslip_boundary)
 bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
@@ -377,9 +375,7 @@ def nested_iterative_solver_low_level():
     # `scatter_forward`.
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/velocity.xdmf", "w") as ufile_xdmf:
         u.x.scatter_forward()
-        P1 = element(
-            "Lagrange", msh.basix_cell(), 1, shape=(msh.geometry.dim,), dtype=default_real_type
-        )
+        P1 = element("Lagrange", msh.basix_cell(), 1, shape=(gdim,), dtype=default_real_type)
         u1 = Function(functionspace(msh, P1))
         u1.interpolate(u)
         ufile_xdmf.write_mesh(msh)
