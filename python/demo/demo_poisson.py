@@ -117,7 +117,7 @@ V = fem.functionspace(msh, ("Lagrange", 1))
 # boundary and `False` otherwise.
 
 tdim = msh.topology.dim
-fdim = tdim -1 
+fdim = tdim - 1
 facets = mesh.locate_entities_boundary(
     msh,
     dim=fdim,
