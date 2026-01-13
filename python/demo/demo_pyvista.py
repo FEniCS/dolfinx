@@ -320,7 +320,7 @@ def plot_streamlines():
     cells, types, x = plot.vtk_mesh(V)
     num_dofs = x.shape[0]
     values = np.zeros((num_dofs, 3), dtype=np.float64)
-    values[:, : msh.geometry.dim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)
+    values[:, : gdim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)
 
     # Create a point cloud of glyphs
     grid = pyvista.UnstructuredGrid(cells, types, x)
