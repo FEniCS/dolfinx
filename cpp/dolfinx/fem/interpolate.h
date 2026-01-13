@@ -1288,7 +1288,6 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
     {
       // Same element, same mesh, different dofmaps
       // (or just a subset of cells)
-      const int tdim = mesh1->topology()->dim();
       assert(element1->block_size() == element0->block_size());
 
       // Get dofmaps
