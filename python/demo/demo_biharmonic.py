@@ -168,7 +168,8 @@ facets = mesh.exterior_facet_indices(msh.topology)
 # boundary facets using {py:func}`locate_dofs_topological
 # <dolfinx.fem.locate_dofs_topological>`
 
-dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+fdim = tdim - 1
+dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
 # {py:class}`DirichletBC <dolfinx.fem.DirichletBC>`
