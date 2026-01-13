@@ -172,7 +172,7 @@ def elasticity_problem(dtype) -> None:
     )
 
     tdim = mesh.topology.dim
-    fdim = tdim -1
+    fdim = tdim - 1
     facets = locate_entities_boundary(
         mesh,
         dim=fdim,

@@ -161,9 +161,7 @@ def lid_velocity_expression(x):
 # piecewise linear basis (scalar).
 
 gdim = msh.geometry.dim
-P2 = element(
-    "Lagrange", msh.basix_cell(), degree=2, shape=(gdim,), dtype=default_real_type
-)
+P2 = element("Lagrange", msh.basix_cell(), degree=2, shape=(gdim,), dtype=default_real_type)
 P1 = element("Lagrange", msh.basix_cell(), degree=1, dtype=default_real_type)
 V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
@@ -377,9 +375,7 @@ def nested_iterative_solver_low_level():
     # `scatter_forward`.
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/velocity.xdmf", "w") as ufile_xdmf:
         u.x.scatter_forward()
-        P1 = element(
-            "Lagrange", msh.basix_cell(), 1, shape=(gdim,), dtype=default_real_type
-        )
+        P1 = element("Lagrange", msh.basix_cell(), 1, shape=(gdim,), dtype=default_real_type)
         u1 = Function(functionspace(msh, P1))
         u1.interpolate(u)
         ufile_xdmf.write_mesh(msh)
