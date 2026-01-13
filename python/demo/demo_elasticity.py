@@ -134,8 +134,8 @@ def σ(v):
 # A function space space is created and the elasticity variational
 # problem defined:
 
-
-V = functionspace(msh, ("Lagrange", 1, (msh.geometry.dim,)))
+gdim = msh.geometry.dim
+V = functionspace(msh, ("Lagrange", 1, (gdim,)))
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 a = form(ufl.inner(σ(u), ufl.grad(v)) * ufl.dx)
 L = form(ufl.inner(f, v) * ufl.dx)
@@ -143,12 +143,13 @@ L = form(ufl.inner(f, v) * ufl.dx)
 # A homogeneous (zero) boundary condition is created on $x_0 = 0$ and
 # $x_1 = 1$ by finding all facets on these boundaries, and then creating
 # a Dirichlet boundary condition object.
-
+tdim = msh.topology.dim
+fdim = tdim - 1
 facets = locate_entities_boundary(
-    msh, dim=2, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
+    msh, dim=fdim, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
 )
 bc = dirichletbc(
-    np.zeros(3, dtype=dtype), locate_dofs_topological(V, entity_dim=2, entities=facets), V=V
+    np.zeros(gdim, dtype=dtype), locate_dofs_topological(V, entity_dim=fdim, entities=facets), V=V
 )
 
 # ## Assemble and solve
