@@ -1253,15 +1253,15 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
 
   assert(u1.function_space());
   assert(u0.function_space());
-  auto mesh = u1.function_space()->mesh();
-  assert(mesh);
+  auto mesh1 = u1.function_space()->mesh();
+  assert(mesh1);
   assert(cells0.size() == cells1.size());
 
-  auto cell_map0 = mesh->topology()->index_map(mesh->topology()->dim());
-  assert(cell_map0);
-  std::size_t num_cells0 = cell_map0->size_local() + cell_map0->num_ghosts();
+  auto cell_map1 = mesh1->topology()->index_map(mesh1->topology()->dim());
+  assert(cell_map1);
+  std::size_t num_cells1 = cell_map1->size_local() + cell_map1->num_ghosts();
   if (u1.function_space() == u0.function_space()
-      and cells1.size() == num_cells0)
+      and cells0.size() == num_cells1)
   {
     // Same function spaces and on whole mesh
     std::span<T> u1_array = u1.x()->array();
@@ -1283,14 +1283,12 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
       throw std::runtime_error(
           "Interpolation: elements have different value dimensions");
     }
-    if ((mesh == u0.function_space()->mesh())
+    if ((mesh1 == u0.function_space()->mesh())
         and (element1 == element0 or *element1 == *element0))
     {
       // Same element, same mesh, different dofmaps
       // (or just a subset of cells)
-      const int tdim = mesh->topology()->dim();
-      auto cell_map1 = mesh->topology()->index_map(tdim);
-      assert(cell_map1);
+      const int tdim = mesh1->topology()->dim();
       assert(element1->block_size() == element0->block_size());
 
       // Get dofmaps
