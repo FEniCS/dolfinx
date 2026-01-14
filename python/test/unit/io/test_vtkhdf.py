@@ -9,9 +9,17 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import basix
 import dolfinx
 import ufl
-from dolfinx.io.vtkhdf import read_mesh, write_cell_data, write_mesh, write_point_data
+from dolfinx.io.vtkhdf import (
+    read_cg1_function,
+    read_mesh,
+    write_cell_data,
+    write_function,
+    write_mesh,
+    write_point_data,
+)
 from dolfinx.mesh import CellType, Mesh, create_unit_cube, create_unit_square
 
 
@@ -206,3 +214,43 @@ def test_write_mixed_topology_data(mixed_topology_mesh):
     b = sum([im.size_local for im in mesh.topology.index_maps(mesh.topology.dim)])
     cell_data = np.arange(b, dtype=np.float64)
     write_cell_data(filename, mesh, cell_data, 0.0)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("width", [1, 3])
+def test_write_read_cg1_function(dtype, width):
+    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, dtype=dtype)
+    elem = basix.ufl.element("Lagrange", mesh.basix_cell(), 1, shape=(width,), dtype=dtype)
+    V = dolfinx.fem.functionspace(mesh, elem)
+    f = dolfinx.fem.Function(V, dtype=dtype)
+    f.interpolate(lambda x: np.vstack([np.sin(x[0]) ** 2 + np.cos(x[1] ** 2 * x[2])] * width))
+
+    filename = f"cg1_fun_{width}.vtkhdf"
+    write_mesh(filename, mesh)
+    write_function(filename, mesh, f, 0)
+
+    mesh2 = read_mesh(mesh.comm, filename, dtype=dtype)
+    f_2 = read_cg1_function(filename, mesh2)
+
+    filename2 = f"cg1_fun2_{width}.vtkhdf"
+    write_mesh(filename2, mesh2)
+    write_function(filename2, mesh2, f_2, 0)
+
+    cell_map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells_on_proc = cell_map.size_local + cell_map.num_ghosts
+    cells = np.arange(num_cells_on_proc, dtype=np.int32)
+    padding = 1e-14 if dtype == np.float64 else 1e-5
+    interpolation_data = dolfinx.fem.create_interpolation_data(
+        V, f_2.function_space, cells, padding=padding
+    )
+
+    f_i = dolfinx.fem.Function(V, dtype=dtype)
+    f_i.interpolate_nonmatching(f_2, cells, interpolation_data=interpolation_data)
+    f_i.x.scatter_forward()
+
+    filename_i = f"cg1_funi_{width}.vtkhdf"
+    write_mesh(filename_i, mesh)
+    write_function(filename_i, mesh, f_i, 0)
+
+    tol = 1e-14 if dtype == np.float64 else 1e-6
+    np.testing.assert_allclose(f.x.array, f_i.x.array, rtol=tol)
