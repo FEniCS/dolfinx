@@ -1253,15 +1253,35 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
 
   assert(u1.function_space());
   assert(u0.function_space());
-  auto mesh = u1.function_space()->mesh();
-  assert(mesh);
+  auto mesh1 = u1.function_space()->mesh();
+  assert(mesh1);
   assert(cells0.size() == cells1.size());
 
-  auto cell_map0 = mesh->topology()->index_map(mesh->topology()->dim());
-  assert(cell_map0);
-  std::size_t num_cells0 = cell_map0->size_local() + cell_map0->num_ghosts();
-  if (u1.function_space() == u0.function_space()
-      and cells1.size() == num_cells0)
+  // Check if cells0 is equal to cells1 and contains all cells on the process,
+  // if True use a direct copy of the array.
+  bool is_same_space = u1.function_space() == u0.function_space();
+  auto cell_map1 = mesh1->topology()->index_map(mesh1->topology()->dim());
+  assert(cell_map1);
+  std::size_t num_cells1 = cell_map1->size_local() + cell_map1->num_ghosts();
+  bool contains_all_cells = (std::size_t)cells1.size() == num_cells1;
+  if (contains_all_cells)
+  {
+    // Check that cells0 is equal to cells1
+    auto last_match
+        = std::mismatch(cells0.begin(), cells0.end(), cells1.begin());
+    contains_all_cells = last_match.first == cells0.end();
+    // Check that the unique elements in cells0 spans all cells on the process
+    if (contains_all_cells)
+    {
+      std::vector<std::int32_t> sorted_cells(cells0.begin(), cells0.end());
+      std::ranges::sort(sorted_cells);
+      auto [unique_end, range_end] = std::ranges::unique(sorted_cells);
+      std::size_t num_unique_cells
+          = std::distance(sorted_cells.begin(), unique_end);
+      contains_all_cells = (num_unique_cells == num_cells1);
+    }
+  }
+  if (is_same_space and contains_all_cells)
   {
     // Same function spaces and on whole mesh
     std::span<T> u1_array = u1.x()->array();
@@ -1283,13 +1303,11 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
       throw std::runtime_error(
           "Interpolation: elements have different value dimensions");
     }
-
-    if (element1 == element0 or *element1 == *element0)
+    if ((mesh1 == u0.function_space()->mesh())
+        and (element1 == element0 or *element1 == *element0))
     {
-      // Same element, different dofmaps (or just a subset of cells)
-      const int tdim = mesh->topology()->dim();
-      auto cell_map1 = mesh->topology()->index_map(tdim);
-      assert(cell_map1);
+      // Same element, same mesh, different dofmaps
+      // (or just a subset of cells)
       assert(element1->block_size() == element0->block_size());
 
       // Get dofmaps
