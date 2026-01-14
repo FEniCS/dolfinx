@@ -1266,21 +1266,22 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
   bool contains_all_cells = cells1.size() == num_cells1;
   if (contains_all_cells)
   {
-      // Check that cells0 is equal to cells1
-      auto last_match = std::mismatch(cells0.begin(), cells0.end(), cells1.begin());
-      contains_all_cells = last_match.first == cells0.end();
-      // Check that the unique elements in cells0 spans all cells on the process
-      if (contains_all_cells)
-      {
-        std::vector<std::int32_t> sorted_cells(cells0.begin(), cells0.end());
-        std::ranges::sort(sorted_cells);
-        auto [unique_end, range_end] = std::ranges::unique(sorted_cells);
-        auto num_unique_cells = std::distance(sorted_cells.begin(), unique_end);
-        contains_all_cells = (num_unique_cells == num_cells1);
-      }
+    // Check that cells0 is equal to cells1
+    auto last_match
+        = std::mismatch(cells0.begin(), cells0.end(), cells1.begin());
+    contains_all_cells = last_match.first == cells0.end();
+    // Check that the unique elements in cells0 spans all cells on the process
+    if (contains_all_cells)
+    {
+      std::vector<std::int32_t> sorted_cells(cells0.begin(), cells0.end());
+      std::ranges::sort(sorted_cells);
+      auto [unique_end, range_end] = std::ranges::unique(sorted_cells);
+      auto num_unique_cells = std::distance(sorted_cells.begin(), unique_end);
+      contains_all_cells = (num_unique_cells == num_cells1);
+    }
   }
   if (is_same_space and contains_all_cells)
-  {    
+  {
     // Same function spaces and on whole mesh
     std::span<T> u1_array = u1.x()->array();
     std::span<const T> u0_array = u0.x()->array();
