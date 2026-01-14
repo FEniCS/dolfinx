@@ -1204,8 +1204,7 @@ def test_submesh_interpolation_mapped(ghost_mode):
 
 @pytest.mark.skip_in_parallel
 def test_subset_interpolation():
-    """
-    Test that interpolation on a subset of cells is correct in the case of having
+    """Test that interpolation on a subset of cells is correct in the case of having
     as many cells (including duplicates) as those owned by the process.
     """
     N = 5
