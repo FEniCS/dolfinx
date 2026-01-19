@@ -64,10 +64,10 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      CIBW_BUILD: cp39-manylinux_x86_64
+      CIBW_BUILD: cp310-manylinux_x86_64
       CIBW_BUILD_VERBOSITY: 1
       CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple MAKEFLAGS=-j3
-      CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64:2024-11-24-a3012f3
+      CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64
 
     steps:
       - uses: actions/setup-python@v6
@@ -143,7 +143,7 @@ jobs:
             dnf -y install boost-devel boost-program-options cmake hdf5-devel hdf5-mpich-devel make mpich-devel openblas-devel pugixml-devel spdlog-devel &&
             module load mpi/mpich-$(arch) &&
             pip -v install mpi4py -i https://pypi.anaconda.org/mpi4py/simple &&
-            pip -v install 'fenics-basix==0.10.0.dev0' 'fenics-ffcx==0.10.0.dev0' 'fenics-ufl==2024.3.0.dev0' &&
+            pip -v install 'fenics-basix==0.11.0.dev0' 'fenics-ffcx==0.11.0.dev0' 'fenics-ufl==2025.3.0.dev0' &&
             pip -v install scikit-build-core[pyproject] nanobind &&
             /usr/bin/cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) -DHDF5_C_INCLUDE_DIR=/usr/include/mpich-$(arch) -DHDF5_C_LIBRARIES=/usr/lib64/mpich/lib &&
             /usr/bin/cmake --build build-dir &&
