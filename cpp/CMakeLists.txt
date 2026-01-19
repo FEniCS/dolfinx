@@ -277,9 +277,9 @@ find_package(pugixml REQUIRED)
 find_package(spdlog REQUIRED)
 
 # Note: When updating Boost version, also update DOLFINXConfig.cmake.in
-#if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
-#  set(Boost_NO_SYSTEM_PATHS on)
-#endif()
+if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
+  set(Boost_NO_SYSTEM_PATHS on)
+endif()
 
 if (DEFINED ENV{BOOST_USE_MULTITHREADED})
   set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
