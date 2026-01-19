@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      CIBW_BUILD: cp310-manylinux_x86_64
+      CIBW_BUILD: cp313-manylinux_x86_64
       CIBW_BUILD_VERBOSITY: 1
       CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple MAKEFLAGS=-j3
       CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64
