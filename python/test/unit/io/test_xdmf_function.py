@@ -225,7 +225,8 @@ def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type):
 def test_higher_order_function(tempdir):
     """Test Function output for higher-order meshes."""
     gmsh = pytest.importorskip("gmsh")
-    from dolfinx.io import gmshio
+
+    from dolfinx.io import gmsh as gmshio
 
     gmsh.initialize()
 
@@ -245,8 +246,8 @@ def test_higher_order_function(tempdir):
             model.mesh.setOrder(order)
             gmsh.option.setNumber("General.Terminal", 0)
 
-        msh, _, _ = gmshio.model_to_mesh(model, comm, 0)
-        return msh
+        mesh_data = gmshio.model_to_mesh(model, comm, 0)
+        return mesh_data.mesh
 
     def gmsh_hex_model(order):
         model = gmsh.model()
@@ -281,8 +282,8 @@ def test_higher_order_function(tempdir):
             model.addPhysicalGroup(3, volume_entities, tag=1)
             model.setPhysicalName(3, 1, "Mesh volume")
 
-        msh, _, _ = gmshio.model_to_mesh(gmsh.model, comm, 0)
-        return msh
+        mesh_data = gmshio.model_to_mesh(gmsh.model, comm, 0)
+        return mesh_data.mesh
 
     # -- Degree 1 mesh (tet)
     msh = gmsh_tet_model(1)

@@ -18,12 +18,12 @@ from dolfinx.mesh import create_mesh
 
 
 def distance_point_to_line_3D(P1, P2, point):
-    """Distance from point to line"""
+    """Distance from point to line."""
     return np.linalg.norm(np.cross(P2 - P1, P1 - point)) / np.linalg.norm(P2 - P1)
 
 
 def distance_point_to_plane_3D(P1, P2, P3, point):
-    """Distance from point to plane"""
+    """Distance from point to plane."""
     return np.abs(
         np.dot(np.cross(P2 - P1, P3 - P1) / np.linalg.norm(np.cross(P2 - P1, P3 - P1)), point - P2)
     )
@@ -174,7 +174,11 @@ def test_cube_distance(delta, scale, dtype):
             cube1 = cubes[c1] + np.array([dx + delta, 0, 0])
             c0rot = r.apply(cube0)
             c1rot = r.apply(cube1)
-            distance = np.linalg.norm(compute_distance_gjk(c0rot, c1rot))
+            assert c0rot.dtype == dtype
+            assert c1rot.dtype == dtype
+            d = compute_distance_gjk(c0rot, c1rot)
+            assert d.dtype == dtype
+            distance = np.linalg.norm(d)
             assert np.isclose(distance, delta)
 
 
@@ -186,14 +190,14 @@ def test_collision_2nd_order_triangle(dtype):
     )
     cells = np.array([[0, 1, 2, 3, 4, 5]])
     domain = ufl.Mesh(element("Lagrange", "triangle", 2, shape=(2,), dtype=dtype))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
 
     # Sample points along an interior line of the domain. The last point
     # is outside the simplex made by the vertices.
     sample_points = np.array([[0.1, 0.3, 0.0], [0.2, 0.5, 0.0], [0.6, 0.6, 0.0]])
 
     # Create boundingboxtree
-    tree = geometry.bb_tree(mesh, mesh.geometry.dim)
+    tree = geometry.bb_tree(mesh, mesh.geometry.dim, padding=0.0)
     cell_candidates = geometry.compute_collisions_points(tree, sample_points)
     colliding_cells = geometry.compute_colliding_cells(mesh, cell_candidates, sample_points)
     # Check for collision

@@ -21,15 +21,17 @@ void log(nb::module_& m)
 {
   // log level enums
   nb::enum_<spdlog::level::level_enum>(m, "LogLevel", nb::is_arithmetic())
-      .value("OFF", spdlog::level::level_enum::off)
+      .value("TRACE", spdlog::level::level_enum::trace)
       .value("DEBUG", spdlog::level::level_enum::debug)
       .value("INFO", spdlog::level::level_enum::info)
       .value("WARNING", spdlog::level::level_enum::warn)
-      .value("ERROR", spdlog::level::level_enum::err);
+      .value("ERROR", spdlog::level::level_enum::err)
+      .value("CRITICAL", spdlog::level::level_enum::critical)
+      .value("OFF", spdlog::level::level_enum::off);
 
   m.def(
       "set_output_file",
-      [](std::string filename)
+      [](const std::string& filename)
       {
         try
         {
@@ -38,14 +40,14 @@ void log(nb::module_& m)
         }
         catch (const spdlog::spdlog_ex& ex)
         {
-          std::cout << "Log init failed: " << ex.what() << std::endl;
+          std::cout << "Log init failed: " << ex.what() << "\n";
         }
       },
       nb::arg("filename"));
 
   m.def(
       "set_thread_name",
-      [](std::string thread_name)
+      [](const std::string& thread_name)
       {
         std::string fmt
             = "[%Y-%m-%d %H:%M:%S.%e] [" + thread_name + "] [%l] %v";
@@ -59,10 +61,16 @@ void log(nb::module_& m)
   m.def("get_log_level", []() { return spdlog::get_level(); });
   m.def(
       "log",
-      [](spdlog::level::level_enum level, std::string s)
+      [](spdlog::level::level_enum level, const std::string& s)
       {
         switch (level)
         {
+        case (spdlog::level::level_enum::trace):
+          spdlog::trace(s.c_str());
+          break;
+        case (spdlog::level::level_enum::debug):
+          spdlog::debug(s.c_str());
+          break;
         case (spdlog::level::level_enum::info):
           spdlog::info(s.c_str());
           break;
@@ -71,6 +79,11 @@ void log(nb::module_& m)
           break;
         case (spdlog::level::level_enum::err):
           spdlog::error(s.c_str());
+          break;
+        case (spdlog::level::level_enum::critical):
+          spdlog::critical(s.c_str());
+          break;
+        case (spdlog::level::level_enum::off):
           break;
         default:
           throw std::runtime_error("Log level not supported");

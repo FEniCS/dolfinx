@@ -1,15 +1,14 @@
-# Copyright (C) 2017-2021 Garth N. Wells
+# Copyright (C) 2017-2025 Garth N. Wells, Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Linear algebra functionality"""
-
-import typing
+"""Linear algebra functionality."""
 
 import numpy as np
 import numpy.typing as npt
 
+import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
@@ -19,32 +18,125 @@ __all__ = [
     "MatrixCSR",
     "Norm",
     "Vector",
-    "create_petsc_vector",
     "is_orthonormal",
     "matrix_csr",
+    "norm",
     "orthonormalize",
     "vector",
 ]
 
 
-class MatrixCSR:
-    _cpp_object: typing.Union[
-        _cpp.la.MatrixCSR_float32,
-        _cpp.la.MatrixCSR_float64,
-        _cpp.la.MatrixCSR_complex64,
-        _cpp.la.MatrixCSR_complex128,
-    ]
+class Vector:
+    """Distributed vector object."""
+
+    _cpp_object: (
+        _cpp.la.Vector_float32
+        | _cpp.la.Vector_float64
+        | _cpp.la.Vector_complex64
+        | _cpp.la.Vector_complex128
+        | _cpp.la.Vector_int8
+        | _cpp.la.Vector_int32
+        | _cpp.la.Vector_int64
+    )
 
     def __init__(
         self,
-        A: typing.Union[
-            _cpp.la.MatrixCSR_float32,
-            _cpp.la.MatrixCSR_float64,
-            _cpp.la.MatrixCSR_complex64,
-            _cpp.la.MatrixCSR_complex128,
-        ],
+        x: (
+            _cpp.la.Vector_float32
+            | _cpp.la.Vector_float64
+            | _cpp.la.Vector_complex64
+            | _cpp.la.Vector_complex128
+            | _cpp.la.Vector_int8
+            | _cpp.la.Vector_int32
+            | _cpp.la.Vector_int64
+        ),
     ):
-        """A distributed sparse matrix that uses compressed sparse row storage.
+        """Create a distributed vector.
+
+        Args:
+            x: C++ Vector object.
+
+        Note:
+            This initialiser is intended for internal library use only.
+            User code should call :func:`vector` to create a vector object.
+        """
+        self._cpp_object = x
+        self._petsc_x = None
+
+    def __del__(self):
+        """Delete the PETSc vector if it was created."""
+        if self._petsc_x is not None:
+            self._petsc_x.destroy()
+
+    @property
+    def index_map(self) -> IndexMap:
+        """Index map that describes size and parallel distribution."""
+        return self._cpp_object.index_map
+
+    @property
+    def block_size(self) -> int:
+        """Block size for the vector."""
+        return self._cpp_object.bs
+
+    @property
+    def array(self) -> np.ndarray:
+        """Local representation of the vector."""
+        return self._cpp_object.array
+
+    @property
+    def petsc_vec(self):
+        """PETSc vector holding the entries of the vector.
+
+        Upon first call, this function creates a PETSc ``Vec`` object
+        that wraps the degree-of-freedom data. The ``Vec`` object is
+        cached and the cached ``Vec`` is returned upon subsequent calls.
+
+        Note:
+          When the object is destroyed it will destroy the underlying
+          petsc4py vector automatically.
+        """
+        assert dolfinx.has_petsc4py
+
+        from dolfinx.la.petsc import create_vector_wrap
+
+        if self._petsc_x is None:
+            self._petsc_x = create_vector_wrap(self)
+        return self._petsc_x
+
+    def scatter_forward(self) -> None:
+        """Update ghost entries."""
+        self._cpp_object.scatter_forward()
+
+    def scatter_reverse(self, mode: InsertMode) -> None:
+        """Scatter ghost entries to owner.
+
+        Args:
+            mode: Control how scattered values are set/accumulated by
+                owner.
+        """
+        self._cpp_object.scatter_reverse(mode)
+
+
+class MatrixCSR:
+    """Distributed compressed sparse row matrix."""
+
+    _cpp_object: (
+        _cpp.la.MatrixCSR_float32
+        | _cpp.la.MatrixCSR_float64
+        | _cpp.la.MatrixCSR_complex64
+        | _cpp.la.MatrixCSR_complex128
+    )
+
+    def __init__(
+        self,
+        A: (
+            _cpp.la.MatrixCSR_float32
+            | _cpp.la.MatrixCSR_float64
+            | _cpp.la.MatrixCSR_complex64
+            | _cpp.la.MatrixCSR_complex128
+        ),
+    ):
+        """Create a distributed compressed sparse row matrix.
 
         Note:
             Objects of this type should be created using
@@ -63,8 +155,17 @@ class MatrixCSR:
         """
         return self._cpp_object.index_map(i)
 
+    def mult(self, x: Vector, y: Vector) -> None:
+        """Compute ``y += Ax``.
+
+        Args:
+            x: Input Vector
+            y: Output Vector
+        """
+        self._cpp_object.mult(x._cpp_object, y._cpp_object)
+
     @property
-    def block_size(self):
+    def block_size(self) -> list:
         """Block sizes for the matrix."""
         return self._cpp_object.bs
 
@@ -94,7 +195,7 @@ class MatrixCSR:
         Args:
             x: The value to set all non-zero entries to.
         """
-        self._cpp_object.set_value(x)
+        self.data[:] = x
 
     def scatter_reverse(self) -> None:
         """Scatter and accumulate ghost values."""
@@ -128,11 +229,10 @@ class MatrixCSR:
 
         Note:
             Typically used for debugging.
-
         """
         return self._cpp_object.to_dense()
 
-    def to_scipy(self, ghosted=False):
+    def to_scipy(self, ghosted: bool = False):
         """Convert to a SciPy CSR/BSR matrix. Data is shared.
 
         Note:
@@ -183,7 +283,8 @@ def matrix_csr(
     Args:
         sp: The sparsity pattern that defines the nonzero structure of
             the matrix the parallel distribution of the matrix.
-        dtype: The scalar type.
+        block_mode: Block mode to use.
+        dtype: Scalar type.
 
     Returns:
         A sparse matrix.
@@ -200,90 +301,6 @@ def matrix_csr(
         raise NotImplementedError(f"Type {dtype} not supported.")
 
     return MatrixCSR(ftype(sp, block_mode))
-
-
-class Vector:
-    _cpp_object: typing.Union[
-        _cpp.la.Vector_float32,
-        _cpp.la.Vector_float64,
-        _cpp.la.Vector_complex64,
-        _cpp.la.Vector_complex128,
-        _cpp.la.Vector_int8,
-        _cpp.la.Vector_int32,
-        _cpp.la.Vector_int64,
-    ]
-
-    def __init__(
-        self,
-        x: typing.Union[
-            _cpp.la.Vector_float32,
-            _cpp.la.Vector_float64,
-            _cpp.la.Vector_complex64,
-            _cpp.la.Vector_complex128,
-            _cpp.la.Vector_int8,
-            _cpp.la.Vector_int32,
-            _cpp.la.Vector_int64,
-        ],
-    ):
-        """A distributed vector object.
-
-        Args:
-            x: C++ Vector object.
-
-        Note:
-            This initialiser is intended for internal library use only.
-            User code should call :func:`vector` to create a vector object.
-        """
-        self._cpp_object = x
-        self._petsc_x = None
-
-    def __del__(self):
-        if self._petsc_x is not None:
-            self._petsc_x.destroy()
-
-    @property
-    def index_map(self) -> IndexMap:
-        """Index map that describes size and parallel distribution."""
-        return self._cpp_object.index_map
-
-    @property
-    def block_size(self) -> int:
-        """Block size for the vector."""
-        return self._cpp_object.bs
-
-    @property
-    def array(self) -> np.ndarray:
-        """Local representation of the vector."""
-        return self._cpp_object.array
-
-    @property
-    def petsc_vec(self):
-        """PETSc vector holding the entries of the vector.
-
-        Upon first call, this function creates a PETSc ``Vec`` object
-        that wraps the degree-of-freedom data. The ``Vec`` object is
-        cached and the cached ``Vec`` is returned upon subsequent calls.
-
-        Note:
-          When the object is destroyed it will destroy the underlying petsc4py
-          vector automatically.
-        """
-        if self._petsc_x is None:
-            self._petsc_x = create_petsc_vector_wrap(self)
-        return self._petsc_x
-
-    def scatter_forward(self) -> None:
-        """Update ghost entries."""
-        self._cpp_object.scatter_forward()
-
-    def scatter_reverse(self, mode: InsertMode) -> None:
-        """Scatter ghost entries to owner.
-
-        Args:
-            mode: Control how scattered values are set/accumulated by
-                owner.
-        """
-        self._cpp_object.scatter_reverse(mode)
 
 
 def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
@@ -318,57 +335,8 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     return Vector(vtype(map, bs))
 
 
-def create_petsc_vector_wrap(x: Vector):
-    """Wrap a distributed DOLFINx vector as a PETSc vector.
-
-    Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
-
-    Args:
-        x: The vector to wrap as a PETSc vector.
-
-    Returns:
-        A PETSc vector that shares data with ``x``.
-
-    """
-    from petsc4py import PETSc
-
-    map = x.index_map
-    ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
-    bs = x.block_size
-    size = (map.size_local * bs, map.size_global * bs)
-    return PETSc.Vec().createGhostWithArray(ghosts, x.array, size=size, bsize=bs, comm=map.comm)  # type: ignore
-
-
-def create_petsc_vector(map, bs: int):
-    """Create a distributed PETSc vector.
-
-    Note:
-        Due to subtle issues in the interaction between petsc4py memory management
-        and the Python garbage collector, it is recommended that the method ``PETSc.Vec.destroy()``
-        is called on the returned object once the object is no longer required. Note that
-        ``PETSc.Vec.destroy()`` is collective over the object's MPI communicator.
-
-    Args:
-        map: Index map that describes the size and parallel layout of
-            the vector to create.
-        bs: Block size of the vector.
-
-    Returns:
-        PETSc Vec object.
-    """
-    from petsc4py import PETSc
-
-    ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
-    size = (map.size_local * bs, map.size_global * bs)
-    return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)  # type: ignore
-
-
 def orthonormalize(basis: list[Vector]):
-    """Orthogonalise set of PETSc vectors in-place."""
+    """Orthogonalise set of vectors in-place."""
     _cpp.la.orthonormalize([x._cpp_object for x in basis])
 
 

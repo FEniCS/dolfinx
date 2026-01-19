@@ -43,7 +43,7 @@ def test_create(cell_type):
 
 
 def test_ufl_id():
-    """Test that UFL can process MeshTags (tests ufl_id attribute)"""
+    """Test that UFL can process MeshTags (tests ufl_id attribute)."""
     comm = MPI.COMM_WORLD
     msh = create_unit_cube(comm, 6, 6, 6)
     tdim = msh.topology.dim
@@ -82,7 +82,8 @@ def test_distribute_entity_data():
     sorted_facets = stacked_facets[facet_sort]
     sorted_values = stacked_values[facet_sort]
 
-    # Covert local facet indices into facets defined by their global vertex indices
+    # Convert local facet indices into facets defined by their global
+    # vertex indices
     msh.topology.create_connectivity(msh.topology.dim - 1, 0)
     facets_as_vertices = []
     for facet in sorted_facets:

@@ -3,6 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Convert C++ demos in Jupytext 'light' into MyST markdown."""
 
 import pathlib
 import shutil
@@ -11,10 +12,10 @@ import jupytext
 
 
 def process():
-    """Convert C++ demos in the Jupytext 'light' format into MyST
-    flavoured markdown (and ipynb?) using Jupytext. These files can then be
-    included in Sphinx documentation.
+    """Convert Python demos in Jupytext 'light' into MyST markdown.
 
+    Uses Jupytext. These files can then be included in Sphinx
+    documentation.
     """
     # Make demo doc directory
     demo_doc_dir = pathlib.Path("./demos")
@@ -54,7 +55,7 @@ def process():
             with open(myst_file, "w") as fw:
                 fw.write(cpp_myst_text)
 
-            # There is a posibility to use jupyter-notebooks with C++/C kernels
+            # There is a possibility to use jupyter-notebooks with C++/C kernels
             # ipynb_file = (demo_doc_dir / fname.name).with_suffix(".ipynb")
             # jupytext.write(cpp_demo, ipynb_file, fmt="ipynb")
 

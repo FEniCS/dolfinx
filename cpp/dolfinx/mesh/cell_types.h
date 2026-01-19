@@ -18,7 +18,7 @@ namespace dolfinx::mesh
 {
 
 /// Cell type identifier
-enum class CellType : int
+enum class CellType : std::int8_t
 {
   // NOTE: Simplex cells have index > 0, see mesh::is_simplex
   point = 1,

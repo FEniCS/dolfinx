@@ -7,7 +7,6 @@
 
 import datetime
 import functools
-import typing
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (
@@ -27,6 +26,7 @@ from dolfinx.cpp.common import (
 
 __all__ = [
     "IndexMap",
+    "Reduction",
     "Timer",
     "git_commit_hash",
     "has_adios2",
@@ -38,7 +38,9 @@ __all__ = [
     "has_petsc4py",
     "has_ptscotch",
     "has_slepc",
+    "list_timings",
     "timed",
+    "timing",
     "ufcx_signature",
 ]
 
@@ -75,26 +77,26 @@ class Timer:
 
     Example:
         With a context manager, the timer is started when entering
-        and stopped at exit. With a named ``Timer``::
+        and stopped at exit. With a named :class:`Timer`::
 
-            with Timer(\"Some costly operation\"):
+            with Timer("Some costly operation"):
                 costly_call_1()
                 costly_call_2()
 
-            delta = timing(\"Some costly operation\")
+            delta = timing("Some costly operation")
             print(delta)
 
-        or with an un-named ``Timer``::
+        or with an un-named :class:`Timer`::
 
             with Timer() as t:
                 costly_call_1()
                 costly_call_2()
-                print(f\"Elapsed time: {t.elapsed()}\")
+                print(f"Elapsed time: {t.elapsed()}")
 
     Example:
         It is possible to start and stop a timer explicitly::
 
-            t = Timer(\"Some costly operation\")
+            t = Timer("Some costly operation")
             costly_call()
             delta = t.stop()
 
@@ -102,22 +104,22 @@ class Timer:
 
             delta = t.elapsed()
 
-        To flush the timing data for a named ``Timer`` to the logger, the
-        timer should be stopped and flushed::
+        To flush the timing data for a named :class:`Timer` to the logger,
+        the timer should be stopped and flushed::
 
             t.stop()
             t.flush()
 
     Timings are stored globally (if task name is given) and once flushed
     (if used without a context manager) may be printed using functions
-    ``timing`` and ``list_timings``, e.g.::
+    :func:`timing` and :func:`list_timings`, e.g.::
 
         list_timings(comm)
     """
 
     _cpp_object: _cpp.common.Timer
 
-    def __init__(self, name: typing.Optional[str] = None):
+    def __init__(self, name: str | None = None):
         """Create timer.
 
         Args:
@@ -126,10 +128,12 @@ class Timer:
         self._cpp_object = _cpp.common.Timer(name)
 
     def __enter__(self):
+        """Start timer."""
         self._cpp_object.start()
         return self
 
     def __exit__(self, *args):
+        """Stop timer and flush timing data to logger."""
         self._cpp_object.stop()
         self._cpp_object.flush()
 

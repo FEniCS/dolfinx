@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Test that interpolation is done correctly"""
+"""Test that interpolation is done correctly."""
 
 import random
 
@@ -142,7 +142,7 @@ def one_cell_mesh(cell_type):
             "Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],), dtype=default_real_type
         )
     )
-    return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
+    return create_mesh(MPI.COMM_WORLD, cells, domain, ordered_points)
 
 
 def two_cell_mesh(cell_type):
@@ -202,7 +202,7 @@ def two_cell_mesh(cell_type):
     domain = ufl.Mesh(
         element("Lagrange", cell_type.name, 1, shape=(points.shape[1],), dtype=default_real_type)
     )
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     return mesh
 
 
@@ -270,7 +270,7 @@ def run_vector_test(V, poly_order):
 @parametrize_cell_types
 @pytest.mark.parametrize("order", range(1, 5))
 def test_Lagrange_interpolation(cell_type, order):
-    """Test that interpolation is correct in a function space"""
+    """Test that interpolation is correct in a function space."""
     mesh = one_cell_mesh(cell_type)
     V = functionspace(mesh, ("Lagrange", order))
     run_scalar_test(V, order)
@@ -282,7 +282,7 @@ def test_Lagrange_interpolation(cell_type, order):
 )
 @pytest.mark.parametrize("order", range(1, 5))
 def test_serendipity_interpolation(cell_type, order):
-    """Test that interpolation is correct in a function space"""
+    """Test that interpolation is correct in a function space."""
     mesh = one_cell_mesh(cell_type)
     V = functionspace(mesh, ("S", order))
     run_scalar_test(V, order)
@@ -339,7 +339,7 @@ def test_NCE_interpolation(cell_type, order):
 
 
 def test_mixed_sub_interpolation():
-    """Test interpolation of sub-functions"""
+    """Test interpolation of sub-functions."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
 
     def f(x):
@@ -548,7 +548,7 @@ def test_interpolation_non_affine():
     )
     cells = np.array([range(len(points))], dtype=np.int32)
     domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,), dtype=default_real_type))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     W = functionspace(mesh, ("NCE", 1))
     V = functionspace(mesh, ("NCE", 2))
     w, v = Function(W), Function(V)
@@ -593,7 +593,7 @@ def test_interpolation_non_affine_nonmatching_maps():
     )
     cells = np.array([range(len(points))], dtype=np.int32)
     domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,), dtype=default_real_type))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     gdim = mesh.geometry.dim
     W = functionspace(mesh, ("DG", 1, (gdim,)))
     V = functionspace(mesh, ("NCE", 4))
@@ -618,7 +618,7 @@ def test_nedelec_spatial(order, dim):
     # The expression (x,y,z) is contained in the N1curl function space
     # order>1
     f_ex = x
-    f = Expression(f_ex, V.element.interpolation_points())
+    f = Expression(f_ex, V.element.interpolation_points)
     u.interpolate(f)
     assert np.abs(assemble_scalar(form(ufl.inner(u - f_ex, u - f_ex) * ufl.dx))) == pytest.approx(
         0, abs=1e-10
@@ -628,7 +628,7 @@ def test_nedelec_spatial(order, dim):
     # order
     V2 = functionspace(mesh, ("N2curl", 1))
     w = Function(V2)
-    f2 = Expression(f_ex, V2.element.interpolation_points())
+    f2 = Expression(f_ex, V2.element.interpolation_points)
     w.interpolate(f2)
     assert np.abs(assemble_scalar(form(ufl.inner(w - f_ex, w - f_ex) * ufl.dx))) == pytest.approx(0)
 
@@ -650,7 +650,7 @@ def test_vector_interpolation_spatial(order, dim, affine):
 
     # The expression (x,y,z)^n is contained in space
     f = ufl.as_vector([x[i] ** order for i in range(dim)])
-    u.interpolate(Expression(f, V.element.interpolation_points()))
+    u.interpolate(Expression(f, V.element.interpolation_points))
     assert np.abs(assemble_scalar(form(ufl.inner(u - f, u - f) * ufl.dx))) == pytest.approx(0)
 
 
@@ -663,7 +663,7 @@ def test_2D_lagrange_to_curl(order):
     u1 = Function(W)
     u1.interpolate(lambda x: x[0])
     f = ufl.as_vector((u0, u1))
-    f_expr = Expression(f, V.element.interpolation_points())
+    f_expr = Expression(f, V.element.interpolation_points)
     u.interpolate(f_expr)
     x = ufl.SpatialCoordinate(mesh)
     f_ex = ufl.as_vector((-x[1], x[0]))
@@ -679,7 +679,7 @@ def test_de_rahm_2D(order):
     g = ufl.grad(w)
     Q = functionspace(mesh, ("N2curl", order - 1))
     q = Function(Q)
-    q.interpolate(Expression(g, Q.element.interpolation_points()))
+    q.interpolate(Expression(g, Q.element.interpolation_points))
     x = ufl.SpatialCoordinate(mesh)
     g_ex = ufl.as_vector((1 + x[1], 4 * x[1] + x[0]))
     assert np.abs(assemble_scalar(form(ufl.inner(q - g_ex, q - g_ex) * ufl.dx))) == pytest.approx(
@@ -692,7 +692,7 @@ def test_de_rahm_2D(order):
     def curl2D(u):
         return ufl.as_vector((ufl.Dx(u[1], 0), -ufl.Dx(u[0], 1)))
 
-    v.interpolate(Expression(curl2D(ufl.grad(w)), V.element.interpolation_points()))
+    v.interpolate(Expression(curl2D(ufl.grad(w)), V.element.interpolation_points))
     h_ex = ufl.as_vector((1, -1))
     assert np.abs(assemble_scalar(form(ufl.inner(v - h_ex, v - h_ex) * ufl.dx))) == pytest.approx(
         0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
@@ -720,7 +720,7 @@ def test_interpolate_subset(order, dim, affine, callable_):
     x = ufl.SpatialCoordinate(mesh)
     f = x[1] ** order
     if not callable_:
-        expr = Expression(f, V.element.interpolation_points())
+        expr = Expression(f, V.element.interpolation_points)
         u.interpolate(expr, cells_local)
     else:
         u.interpolate(lambda x: x[1] ** order, cells_local)
@@ -732,7 +732,7 @@ def test_interpolate_subset(order, dim, affine, callable_):
 
 
 def test_interpolate_callable():
-    """Test interpolation with callables"""
+    """Test interpolation with callables."""
     numba = pytest.importorskip("numba")
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 1)
     V = functionspace(mesh, ("Lagrange", 2))
@@ -751,7 +751,7 @@ def test_interpolate_callable():
 
 @pytest.mark.parametrize("bound", [1.5, 0.5])
 def test_interpolate_callable_subset(bound):
-    """Test interpolation on subsets with callables"""
+    """Test interpolation on subsets with callables."""
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 4)
     cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[1] <= bound + 1e-10)
     num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
@@ -760,7 +760,7 @@ def test_interpolate_callable_subset(bound):
     u0, u1 = Function(V), Function(V)
     x = ufl.SpatialCoordinate(mesh)
     f = x[0]
-    expr = Expression(f, V.element.interpolation_points())
+    expr = Expression(f, V.element.interpolation_points)
     u0.interpolate(lambda x: x[0], cells_local)
     u1.interpolate(expr, cells_local)
     assert np.allclose(u0.x.array, u1.x.array, rtol=1.0e-6, atol=1.0e-6)
@@ -795,7 +795,7 @@ def test_interpolate_callable_subset(bound):
 def test_vector_element_interpolation(scalar_element):
     """Test interpolation into a range of vector elements."""
     mesh = create_unit_square(
-        MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell.cellname())
+        MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell.cellname)
     )
     V = functionspace(mesh, blocked_element(scalar_element, shape=(2,)))
     u = Function(V)
@@ -1025,7 +1025,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     u1_exact.x.scatter_forward()
 
     # Find the single cell in mesh1 which is overlapped by mesh2
-    tree1 = bb_tree(mesh1, mesh1.topology.dim)
+    tree1 = bb_tree(mesh1, mesh1.topology.dim, padding=0.0)
     cells_overlapped1 = compute_collisions_points(
         tree1, np.array([p0_mesh2, p0_mesh2, 0.0]) / 2
     ).array
@@ -1054,7 +1054,7 @@ def test_submesh_interpolation():
 
     tdim = mesh.topology.dim
     cells = locate_entities(mesh, tdim, left_locator)
-    submesh, parent_cells, _, _ = create_submesh(mesh, tdim, cells)
+    submesh, entity_map, _, _ = create_submesh(mesh, tdim, cells)
 
     u0 = Function(functionspace(mesh, ("Lagrange", 2)))
     u0.interpolate(ref_func)
@@ -1062,9 +1062,13 @@ def test_submesh_interpolation():
     V1 = functionspace(submesh, ("DG", 3))
     u1 = Function(V1)
 
+    smsh_cell_imap = submesh.topology.index_map(tdim)
+    smsh_cells = np.arange(smsh_cell_imap.size_local + smsh_cell_imap.num_ghosts)
+    parent_cells = entity_map.sub_topology_to_topology(smsh_cells, inverse=False)
+
     # Interpolate u0 (defined on 'full' mesh) into u0 (defined on
     # 'sub'0mesh)
-    u1.interpolate(u0, cells0=parent_cells, cells1=np.arange(len(parent_cells)))
+    u1.interpolate(u0, cells0=parent_cells, cells1=smsh_cells)
 
     u1_exact = Function(V1)
     u1_exact.interpolate(ref_func)
@@ -1084,7 +1088,7 @@ def test_submesh_interpolation():
 
 
 def xtest_submesh_expression_interpolation():
-    """Test interpolation of an expression between a submesh and its parent"""
+    """Test interpolation of an expression between a submesh and its parent."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 8, cell_type=CellType.quadrilateral)
 
     def left_locator(x):
@@ -1114,7 +1118,7 @@ def xtest_submesh_expression_interpolation():
     V_sub = functionspace(submesh, ("N2curl", 1))
     u_sub = Function(V_sub)
 
-    parent_expr = Expression(ufl.grad(u), V_sub.element.interpolation_points())
+    parent_expr = Expression(ufl.grad(u), V_sub.element.interpolation_points)
 
     # Map from parent to sub mesh
 
@@ -1136,7 +1140,7 @@ def xtest_submesh_expression_interpolation():
 
     # Map exact solution (based on quadrature points) back to parent mesh
     sub_vec = ufl.as_vector((-0.2 * u_sub_exact[1], 0.1 * u_sub_exact[0]))
-    sub_expr = Expression(sub_vec, W.element.interpolation_points())
+    sub_expr = Expression(sub_vec, W.element.interpolation_points)
 
     # Mapping back needs to be restricted to the subset of cells in the submesh
     w.interpolate(sub_expr, cells=sub_to_parent, expr_mesh=submesh, cell_map=parent_to_sub)

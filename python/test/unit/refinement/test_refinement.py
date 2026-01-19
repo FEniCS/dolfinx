@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2024 Chris N Richardson and Jørgen S. Dokken
+# Copyright (C) 2018-2025 Chris N Richardson, Jørgen S. Dokken and Paul T. Kühner
 
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -20,6 +20,7 @@ from dolfinx.mesh import (
     RefinementOption,
     compute_incident_entities,
     create_unit_cube,
+    create_unit_interval,
     create_unit_square,
     locate_entities,
     locate_entities_boundary,
@@ -42,8 +43,7 @@ def test_refine_create_unit_square():
 
 
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-@pytest.mark.parametrize("redistribute", [True, False])
-def test_refine_create_unit_cube(ghost_mode, redistribute):
+def test_refine_create_unit_cube(ghost_mode):
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
@@ -56,7 +56,7 @@ def test_refine_create_unit_cube(ghost_mode, redistribute):
 
 
 def test_refine_create_form():
-    """Check that forms can be assembled on refined mesh"""
+    """Check that forms can be assembled on refined mesh."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     mesh.topology.create_entities(1)
     mesh, _, _ = refine(mesh)
@@ -70,7 +70,7 @@ def test_refine_create_form():
 
 
 def test_sub_refine():
-    """Test that refinement of a subset of edges works"""
+    """Test that refinement of a subset of edges works."""
     msh = create_unit_square(
         MPI.COMM_WORLD, 3, 4, diagonal=DiagonalType.left, ghost_mode=GhostMode.none
     )
@@ -88,7 +88,7 @@ def test_sub_refine():
 
 
 def test_refine_from_cells():
-    """Check user interface for using local cells to define edges"""
+    """Check user interface for using local cells to define edges."""
     Nx, Ny = 8, 3
     assert Nx % 2 == 0
     msh = create_unit_square(
@@ -212,3 +212,30 @@ def test_refine_ufl_cargo():
     msh.topology.create_entities(1)
     msh1, _, _ = refine(msh)
     assert msh1.ufl_domain().ufl_cargo() != msh.ufl_domain().ufl_cargo()
+
+
+@pytest.mark.parametrize("tdim", [1, 2, 3])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+def test_identity_partitioner(tdim, ghost_mode):
+    n = 2
+    if tdim == 1:
+        mesh = create_unit_interval(MPI.COMM_WORLD, n)
+    elif tdim == 2:
+        mesh = create_unit_square(MPI.COMM_WORLD, n, n)
+    else:
+        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n)
+
+    cells = mesh.topology.index_map(mesh.topology.dim)
+    owning_process = np.full(cells.size_local + cells.num_ghosts, MPI.COMM_WORLD.rank)
+    owning_process[cells.size_local :] = cells.owners
+
+    mesh.topology.create_entities(1)
+    [mesh_fine, parent_cells, _] = refine(mesh)
+
+    cells_fine = mesh_fine.topology.index_map(mesh.topology.dim)
+    owning_process_fine = np.full(
+        cells_fine.size_local + cells_fine.num_ghosts, MPI.COMM_WORLD.rank
+    )
+    owning_process_fine[cells_fine.size_local :] = cells_fine.owners
+
+    assert np.all(owning_process_fine[: cells_fine.size_local] == owning_process[parent_cells])

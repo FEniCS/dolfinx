@@ -80,7 +80,7 @@ public:
   /// @param[in] u List of functions to write to file
   /// @param[in] t Time parameter to associate with @p u
   /// @pre All Functions in `u` must share the same mesh
-  template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+  template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
   void
   write(const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,
         double t);

@@ -3,17 +3,16 @@
 # system built petsc4py and mpi4py.
 # NOTE: petsc4py is an optional build dependency, therefore we don't
 # list it here.
-# pip install -r build-requirements.txt
 [build-system]
-requires = ["scikit-build-core[pyproject]>=0.10", "nanobind>=2.2.0", "mpi4py"]
+requires = ["scikit-build-core[pyproject]>=0.10", "nanobind>=2.5.0", "mpi4py"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "fenics-dolfinx"
-version = "0.10.0.dev0"
+version = "0.11.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
-requires-python = ">=3.9.0"
+requires-python = ">=3.10.0"
 license = { file = "../COPYING.LESSER" }
 authors = [
       { email = "fenics-steering-council@googlegroups.com" },
@@ -21,11 +20,11 @@ authors = [
 ]
 dependencies = [
       "numpy>=1.21",
-      "cffi<1.17",                           # See https://github.com/FEniCS/dolfinx/issues/3340
+      "cffi",
       "mpi4py",
-      "fenics-basix>=0.10.0.dev0,<0.11.0",
-      "fenics-ffcx>=0.10.0.dev0,<0.11.0",
-      "fenics-ufl>=2024.3.0.dev0,<2024.4.0",
+      "fenics-basix>=0.11.0.dev0",
+      "fenics-ffcx>=0.11.0.dev0",
+      "fenics-ufl>=2025.3.0.dev0",
 ]
 
 [project.optional-dependencies]
@@ -35,14 +34,25 @@ docs = [
       "markdown",
       "matplotlib",
       "myst_parser",
+      "numba",
+      "scipy",
+      "packaging",
       "pyyaml",
       "sphinx",
       "sphinx_rtd_theme",
+      "sphinx_codeautolink[ipython]",
 ]
 lint = ["ruff>=0.2.0"]
 optional = ["numba", "pyamg"]
 petsc4py = ["petsc4py"]
-test = ["pytest", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
+test = [
+      "matplotlib",
+      "networkx",
+      "packaging",
+      "pytest>=9.0.0",
+      "scipy",
+      "fenics-dolfinx[optional]",
+]
 ci = [
       "mypy",
       "pytest-xdist",
@@ -62,8 +72,6 @@ wheel.license-files = ["../COPYING*"]
 
 [tool.pytest]
 junit_family = "xunit2"
-
-[tool.pytest.ini_options]
 markers = [
       "skip_in_parallel: marks tests that should be run in serial only.",
       "petsc4py: tests that require PETSc/petsc4py (deselect with '-m \"not petsc4py\"').",
@@ -91,6 +99,7 @@ indent-width = 4
 
 [tool.ruff.lint]
 select = [
+      "D",      # pydocstyle
       "E",      # pycodestyle
       "W",      # pycodestyle
       "F",      # pyflakes
@@ -102,8 +111,8 @@ select = [
       "FLY",    # use f-string not static joins
       "NPY201", # numpy 2.x ruleset
 ]
-ignore = ["UP007", "RUF012"]
-allowed-confusables = ["σ"]
+ignore = ["RUF012"]
+allowed-confusables = ["σ", "ρ"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
@@ -119,3 +128,15 @@ section-order = [
 
 [tool.ruff.lint.isort.sections]
 "mpi" = ["mpi4py", "petsc4py"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"demo*.py" = ["D100"] # undocumented-public-module
+"test*.py" = [
+    "D100",
+    "D103",  # undocumented-public-function
+    "D205"  # missing-blank-line-after-summary
+]
+"conf.py" = ["D100", "D103", "D205"]

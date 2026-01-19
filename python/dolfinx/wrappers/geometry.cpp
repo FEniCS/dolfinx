@@ -4,8 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "caster_mpi.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
 #include <array>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
@@ -16,8 +16,10 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
+#include <optional>
 #include <span>
 
 namespace nb = nanobind;
@@ -25,7 +27,7 @@ namespace nb = nanobind;
 namespace
 {
 template <typename T>
-void declare_bbtree(nb::module_& m, std::string type)
+void declare_bbtree(nb::module_& m, const std::string& type)
 {
   // dolfinx::geometry::BoundingBoxTree
   std::string pyclass_name = "BoundingBoxTree_" + type;
@@ -33,20 +35,36 @@ void declare_bbtree(nb::module_& m, std::string type)
       .def(
           "__init__",
           [](dolfinx::geometry::BoundingBoxTree<T>* bbt,
-             const dolfinx::mesh::Mesh<T>& mesh, int dim,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
-                 entities,
-             double padding)
+             const dolfinx::mesh::Mesh<T>& mesh, int dim, double padding,
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 entities)
           {
-            new (bbt) dolfinx::geometry::BoundingBoxTree<T>(
-                mesh, dim,
-                std::span<const std::int32_t>(entities.data(), entities.size()),
-                padding);
+            std::optional<std::span<const std::int32_t>> ents
+                = entities ? std::span<const std::int32_t>(
+                                 entities->data(),
+                                 entities->data() + entities->size())
+                           : std::optional<std::span<const std::int32_t>>(
+                                 std::nullopt);
+            new (bbt)
+                dolfinx::geometry::BoundingBoxTree<T>(mesh, dim, padding, ents);
           },
-          nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"),
-          nb::arg("padding") = 0.0)
+          nb::arg("mesh"), nb::arg("dim"), nb::arg("padding"),
+          nb::arg("entities").none())
       .def_prop_ro("num_bboxes",
                    &dolfinx::geometry::BoundingBoxTree<T>::num_bboxes)
+      .def_prop_ro(
+          "bbox_coordinates",
+          [](dolfinx::geometry::BoundingBoxTree<T>& self)
+          {
+            std::span<T> bbox_coordinates = self.bbox_coordinates();
+            return nb::ndarray<T, nb::shape<-1, 3>, nb::numpy>(
+                bbox_coordinates.data(), {bbox_coordinates.size() / 3, 3});
+          },
+          nb::rv_policy::reference_internal,
+          "Return coordinates of bounding boxes."
+          "Row `2*ibbox` and `2*ibbox+1` correspond "
+          "to the lower and upper corners of bounding box `ibbox`.")
       .def(
           "get_bbox",
           [](const dolfinx::geometry::BoundingBoxTree<T>& self,
@@ -153,18 +171,24 @@ void declare_bbtree(nb::module_& m, std::string type)
       },
       nb::arg("mesh"), nb::arg("candidate_cells"), nb::arg("points"));
 
+  std::string gjk_name = "compute_distance_gjk_" + type;
   m.def(
-      "compute_distance_gjk",
+      gjk_name.c_str(),
       [](nb::ndarray<const T, nb::c_contig> p,
          nb::ndarray<const T, nb::c_contig> q)
       {
         std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
         std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
         std::span<const T> _p(p.data(), 3 * p_s0), _q(q.data(), 3 * q_s0);
-        std::array<T, 3> d = dolfinx::geometry::compute_distance_gjk<T>(_p, _q);
+        // Use double when T==float, and double_extended when T==double
+        using U = std::conditional<
+            std::is_same_v<T, float>, double,
+            boost::multiprecision::cpp_bin_float_double_extended>::type;
+
+        std::array<T, 3> d
+            = dolfinx::geometry::compute_distance_gjk<T, U>(_p, _q);
         return nb::ndarray<T, nb::numpy>(d.data(), {d.size()}).cast();
       },
-      //   nb::rv_policy::copy,
       nb::arg("p"), nb::arg("q"));
 
   m.def(
@@ -180,15 +204,27 @@ void declare_bbtree(nb::module_& m, std::string type)
                 mesh, dim, std::span(indices.data(), indices.size()), _p));
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("indices"), nb::arg("points"));
-  m.def("determine_point_ownership",
-        [](const dolfinx::mesh::Mesh<T>& mesh,
-           nb::ndarray<const T, nb::c_contig> points, const T padding)
-        {
-          std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-          std::span<const T> _p(points.data(), 3 * p_s0);
-          return dolfinx::geometry::determine_point_ownership<T>(mesh, _p,
-                                                                 padding);
-        });
+  m.def(
+      "determine_point_ownership",
+      [](const dolfinx::mesh::Mesh<T>& mesh,
+         nb::ndarray<const T, nb::c_contig> points, const T padding,
+         std::optional<
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+             cells)
+      {
+        std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+        std::span<const T> _p(points.data(), 3 * p_s0);
+        std::optional<std::span<const std::int32_t>> _cells
+            = cells.has_value()
+                  ? std::span<const std::int32_t>(cells.value().data(),
+                                                  cells.value().size())
+                  : std::optional<std::span<const std::int32_t>>(std::nullopt);
+        return dolfinx::geometry::determine_point_ownership<T>(mesh, _p,
+                                                               padding, _cells);
+      },
+      nb::arg("mesh"), nb::arg("points"), nb::arg("padding"),
+      nb::arg("cells").none(),
+      "Compute point ownership data for mesh-points pair.");
 
   std::string pod_pyclass_name = "PointOwnershipData_" + type;
   nb::class_<dolfinx::geometry::PointOwnershipData<T>>(m,

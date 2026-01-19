@@ -14,9 +14,12 @@
 
 # # Biharmonic equation
 #
-# This demo is implemented in a single Python file,
-# {download}`demo_biharmonic.py`, which contains both the variational forms
-# and the solver. It illustrates how to:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_biharmonic.py>`
+# * {download}`Jupyter notebook <./demo_biharmonic.ipynb>`
+# ```
+# This demo illustrates how to:
 #
 # - Solve a linear partial differential equation
 # - Use a discontinuous Galerkin method
@@ -33,23 +36,23 @@
 # \nabla^{4} u = f \quad {\rm in} \ \Omega,
 # $$
 #
-# where $\nabla^{4} \equiv \nabla^{2} \nabla^{2}$ is the biharmonic operator
-# and $f$ is a prescribed source term.
+# where $\nabla^{4} \equiv \nabla^{2} \nabla^{2}$ is the biharmonic
+# operator and $f$ is a prescribed source term.
 # To formulate a complete boundary value problem, the biharmonic equation
 # must be complemented by suitable boundary conditions.
 #
 # ### Weak formulation
 #
 # Multiplying the biharmonic equation by a test function and integrating
-# by parts twice leads to a problem of second-order derivatives, which would
-# require $H^{2}$ conforming (roughly $C^{1}$ continuous) basis functions.
-# To solve the biharmonic equation using Lagrange finite element basis
-# functions, the biharmonic equation can be split into two second-order
-# equations (see the Mixed Poisson demo for a mixed method for the Poisson
-# equation), or a variational formulation can be constructed that imposes
-# weak continuity of normal derivatives between finite element cells.
-# This demo uses a discontinuous Galerkin approach to impose continuity
-# of the normal derivative weakly.
+# by parts twice leads to a problem of second-order derivatives, which
+# would require $H^{2}$ conforming (roughly $C^{1}$ continuous) basis
+# functions. To solve the biharmonic equation using Lagrange finite element
+# basis functions, the biharmonic equation can be split into two second-
+# order equations (see the Mixed Poisson demo for a mixed method for the
+# Poisson equation), or a variational formulation can be constructed that
+# imposes weak continuity of normal derivatives between finite element
+# cells. This demo uses a discontinuous Galerkin approach to impose
+# continuity of the normal derivative weakly.
 #
 # Consider a triangulation $\mathcal{T}$ of the domain $\Omega$, where
 # the set of interior facets is denoted by $\mathcal{E}_h^{\rm int}$.
@@ -71,7 +74,8 @@
 # \end{align}
 # $$
 #
-# a weak formulation of the biharmonic problem reads: find $u \in V$ such that
+# a weak formulation of the biharmonic problem reads: find $u \in V$ such
+# that
 #
 # $$
 # a(u,v)=L(v) \quad \forall \ v \in V,
@@ -110,28 +114,17 @@
 #
 # We first import the modules and functions that the program uses:
 
-import importlib.util
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-    from petsc4py.PETSc import ScalarType  # type: ignore
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
-
-from mpi4py import MPI
 
 # +
-import dolfinx
+from pathlib import Path
+
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType  # type: ignore
+
 import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
-from ufl import CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner, jump, pi, sin
 
 # -
 
@@ -155,12 +148,16 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 # degree)`, where `family` is the finite element family, and `degree`
 # specifies the polynomial degree. in this case `V` consists of
 # second-order, continuous Lagrange finite element functions.
+# For further details of how one can specify
+# finite elements as tuples, see {py:class}`ElementMetaData
+# <dolfinx.fem.ElementMetaData>`.
 #
 # Next, we locate the mesh facets that lie on the boundary
 # $\Gamma_D = \partial\Omega$.
 # We do this using using {py:func}`exterior_facet_indices
-# <dolfinx.mesh.exterior_facet_indices>` which returns all mesh boundary facets
-# (Note: if we are only interested in a subset of those, consider {py:func}`locate_entities_boundary
+# <dolfinx.mesh.exterior_facet_indices>` which returns all mesh boundary
+# facets (Note: if we are only interested in a subset of those, consider
+# {py:func}`locate_entities_boundary
 # <dolfinx.mesh.locate_entities_boundary>`).
 
 tdim = msh.topology.dim
@@ -171,7 +168,8 @@ facets = mesh.exterior_facet_indices(msh.topology)
 # boundary facets using {py:func}`locate_dofs_topological
 # <dolfinx.fem.locate_dofs_topological>`
 
-dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+fdim = tdim - 1
+dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
 # {py:class}`DirichletBC <dolfinx.fem.DirichletBC>`
@@ -183,8 +181,8 @@ bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
 # Next, we express the variational problem using UFL.
 #
-# First, the penalty parameter $\alpha$ is defined. In addition, we define a
-# variable `h` for the cell diameter $h_E$, a variable `n`for the
+# First, the penalty parameter $\alpha$ is defined. In addition, we define
+# a variable `h` for the cell diameter $h_E$, a variable `n`for the
 # outward-facing normal vector $n$ and a variable `h_avg` for the
 # average size of cells sharing a facet
 # $\left< h \right> = \frac{1}{2} (h_{+} + h_{-})$. Here, the UFL syntax
@@ -192,16 +190,16 @@ bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 # sides of a facet.
 
 alpha = ScalarType(8.0)
-h = CellDiameter(msh)
-n = FacetNormal(msh)
+h = ufl.CellDiameter(msh)
+n = ufl.FacetNormal(msh)
 h_avg = (h("+") + h("-")) / 2.0
 
-# After that, we can define the variational problem consisting of the bilinear
-# form $a$ and the linear form $L$. The source term is prescribed as
-# $f = 4.0 \pi^4\sin(\pi x)\sin(\pi y)$. Note that with `dS`, integration is
-# carried out over all the interior facets $\mathcal{E}_h^{\rm int}$, whereas
-# with `ds` it would be only the facets on the boundary of the domain, i.e.
-# $\partial\Omega$. The jump operator
+# After that, we can define the variational problem consisting of the
+# bilinear form $a$ and the linear form $L$. The source term is prescribed
+# as $f = 4.0 \pi^4\sin(\pi x)\sin(\pi y)$. Note that with `dS`,
+# integration is carried out over all the interior facets
+# $\mathcal{E}_h^{\rm int}$, whereas with `ds` it would be only the facets
+# on the boundary of the domain, i.e. $\partial\Omega$. The jump operator
 # $[\!\![ w ]\!\!] = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}$ w.r.t. the
 # outward-facing normal vector $n$ is in UFL available as `jump(w, n)`.
 
@@ -210,15 +208,15 @@ h_avg = (h("+") + h("-")) / 2.0
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(msh)
-f = 4.0 * pi**4 * sin(pi * x[0]) * sin(pi * x[1])
+f = 4.0 * ufl.pi**4 * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
 
 a = (
-    inner(div(grad(u)), div(grad(v))) * dx
-    - inner(avg(div(grad(u))), jump(grad(v), n)) * dS
-    - inner(jump(grad(u), n), avg(div(grad(v)))) * dS
-    + alpha / h_avg * inner(jump(grad(u), n), jump(grad(v), n)) * dS
+    ufl.inner(ufl.div(ufl.grad(u)), ufl.div(ufl.grad(v))) * ufl.dx
+    - ufl.inner(ufl.avg(ufl.div(ufl.grad(u))), ufl.jump(ufl.grad(v), n)) * ufl.dS
+    - ufl.inner(ufl.jump(ufl.grad(u), n), ufl.avg(ufl.div(ufl.grad(v)))) * ufl.dS
+    + alpha / h_avg * ufl.inner(ufl.jump(ufl.grad(u), n), ufl.jump(ufl.grad(v), n)) * ufl.dS
 )
-L = inner(f, v) * dx
+L = ufl.inner(f, v) * ufl.dx
 # -
 
 # We create a {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
@@ -227,13 +225,23 @@ L = inner(f, v) * dx
 # case we use a direct (LU) solver. The {py:func}`solve
 # <dolfinx.fem.petsc.LinearProblem.solve>` will compute a solution.
 
-problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(
+    a,
+    L,
+    bcs=[bc],
+    petsc_options_prefix="demo_biharmonic_",
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
+)
 uh = problem.solve()
+assert isinstance(uh, fem.Function)
+assert problem.solver.getConvergedReason() > 0
 
 # The solution can be written to a  {py:class}`XDMFFile
 # <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt
 
-with io.XDMFFile(msh.comm, "out_biharmonic/biharmonic.xdmf", "w") as file:
+out_folder = Path("out_biharmonic")
+out_folder.mkdir(parents=True, exist_ok=True)
+with io.XDMFFile(msh.comm, out_folder / "biharmonic.xdmf", "w") as file:
     V1 = fem.functionspace(msh, ("Lagrange", 1))
     u1 = fem.Function(V1)
     u1.interpolate(uh)
@@ -255,8 +263,7 @@ try:
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
     if pyvista.OFF_SCREEN:
-        pyvista.start_xvfb(wait=0.1)
-        plotter.screenshot("uh_biharmonic.png")
+        plotter.screenshot(out_folder / "uh_biharmonic.png")
     else:
         plotter.show()
 except ModuleNotFoundError:

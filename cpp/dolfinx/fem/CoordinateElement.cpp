@@ -18,7 +18,7 @@ using namespace dolfinx::fem;
 template <std::floating_point T>
 CoordinateElement<T>::CoordinateElement(
     std::shared_ptr<const basix::FiniteElement<T>> element)
-    : _element(element)
+    : _element(std::move(element))
 {
   int degree = _element->degree();
   mesh::CellType cell = this->cell_shape();
@@ -103,15 +103,14 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   std::vector<T> Xk_b(tdim);
   mdspan2_t<T> Xk(Xk_b.data(), 1, tdim);
 
-  std::array<T, 3> xk = {0, 0, 0};
+  std::array<T, 3> xk{0, 0, 0};
   std::vector<T> dX(tdim);
   std::vector<T> J_b(gdim * tdim);
   mdspan2_t<T> J(J_b.data(), gdim, tdim);
   std::vector<T> K_b(tdim * gdim);
   mdspan2_t<T> K(K_b.data(), tdim, gdim);
 
-  using mdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+  using mdspan4_t = md::mdspan<T, md::dextents<std::size_t, 4>>;
 
   const std::array<std::size_t, 4> bsize = _element->tabulate_shape(1, 1);
   std::vector<T> basis_b(
@@ -120,20 +119,20 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   std::vector<T> phi(basis.extent(2));
   for (std::size_t p = 0; p < num_points; ++p)
   {
-    std::ranges::fill(Xk_b, 0.0);
+    std::ranges::fill(Xk_b, 0);
     int k;
     for (k = 0; k < maxit; ++k)
     {
       _element->tabulate(1, Xk_b, {1, tdim}, basis_b);
 
       // x = cell_geometry * phi
-      std::ranges::fill(xk, 0.0);
+      std::ranges::fill(xk, 0);
       for (std::size_t i = 0; i < cell_geometry.extent(0); ++i)
         for (std::size_t j = 0; j < cell_geometry.extent(1); ++j)
           xk[j] += cell_geometry(i, j) * basis(0, 0, i, 0);
 
       // Compute Jacobian, its inverse and determinant
-      std::ranges::fill(J_b, 0.0);
+      std::ranges::fill(J_b, 0);
       for (std::size_t i = 0; i < tdim; ++i)
         for (std::size_t j = 0; j < basis.extent(2); ++j)
           dphi(i, j) = basis(i + 1, 0, j, 0);
@@ -214,6 +213,13 @@ basix::element::lagrange_variant CoordinateElement<T>::variant() const
 {
   assert(_element);
   return _element->lagrange_variant();
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+std::uint64_t CoordinateElement<T>::hash() const
+{
+  assert(_element);
+  return _element->hash();
 }
 //-----------------------------------------------------------------------------
 template class fem::CoordinateElement<float>;

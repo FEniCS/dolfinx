@@ -15,6 +15,9 @@ find_dependency(pugixml REQUIRED)
 if(POLICY CMP0167)
   cmake_policy(SET CMP0167 NEW)  # Boost CONFIG mode
 endif()
+if(POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW)  # https://cmake.org/cmake/help/latest/policy/CMP0144.html
+endif()
 
 # Check for Boost
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
@@ -64,7 +67,7 @@ if(NOT TARGET hdf5::hdf5)
   set(HDF5_PREFER_PARALLEL TRUE)
   set(HDF5_FIND_DEBUG TRUE)
   find_dependency(HDF5 COMPONENTS C)
-  if(HDF5_FOUND AND NOT HDF5_IS_PARALLEL)
+  if (NOT (HDF5_IS_PARALLEL OR HDF5_PROVIDES_PARALLEL))
     message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required")
   endif()
 endif()
@@ -96,7 +99,7 @@ if(@SLEPC_FOUND@)
 endif()
 
 if(@ADIOS2_FOUND@)
-  find_dependency(ADIOS2 2.8.1)
+  find_dependency(ADIOS2 2.8.1 COMPONENTS CXX)
 endif()
 
 if(NOT TARGET dolfinx)

@@ -43,13 +43,10 @@ message(STATUS "Checking for package 'KaHIP'")
 if(MPI_CXX_FOUND)
   find_path(
     KAHIP_INCLUDE_DIRS parhip_interface.h
-    HINTS ${KAHIP_DIR}/include $ENV{KAHIP_DIR}/include
     PATH_SUFFIXES kahip
   )
-  find_library(
-    PARHIP_LIBRARY parhip_interface HINTS ${KAHIP_DIR}/lib $ENV{KAHIP_DIR}/lib
-  )
-  find_library(KAHIP_LIBRARY kahip HINTS ${KAHIP_DIR}/lib $ENV{KAHIP_DIR}/lib)
+  find_library(PARHIP_LIBRARY parhip_interface)
+  find_library(KAHIP_LIBRARY kahip)
 
   set(KAHIP_LIBRARIES ${PARHIP_LIBRARY} ${KAHIP_LIBRARY})
 
@@ -68,7 +65,7 @@ if(MPI_CXX_FOUND)
       # Set flags for building test program
       set(CMAKE_REQUIRED_INCLUDES ${KAHIP_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
       set(CMAKE_REQUIRED_LIBRARIES ${KAHIP_LIBRARIES} ${MPI_CXX_LIBRARIES})
-      set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
+      set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
       check_cxx_source_runs(
         "
         #define MPICH_IGNORE_CXX_SEEK 1

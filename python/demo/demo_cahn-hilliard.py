@@ -10,6 +10,11 @@
 
 # # Cahn-Hilliard equation
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_cahn-hilliard.py>`
+# * {download}`Jupyter notebook <./demo_cahn-hilliard.ipynb>`
+# ```
 # This example demonstrates the solution of the Cahn-Hilliard equation,
 # a nonlinear, time-dependent fourth-order PDE.
 #
@@ -18,14 +23,9 @@
 # - Automatic linearisation
 # - Use of the class
 #   {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>`
-# - The built-in Newton solver
-#   ({py:class}`NewtonSolver<dolfinx.nls.petsc.NewtonSolver>`)
-# - Form compiler options
 # - Interpolation of functions
 # - Visualisation of a running simulation with
 #   [PyVista](https://pyvista.org/)
-#
-# This demo is implemented in {download}`demo_cahn-hilliard.py`.
 #
 # ## Equation and problem definition
 #
@@ -62,7 +62,8 @@
 # \begin{align}
 # \frac{\partial c}{\partial t} - \nabla \cdot M \nabla\mu
 #     &= 0 \quad {\rm in} \ \Omega, \\
-# \mu -  \frac{d f}{d c} + \lambda \nabla^{2}c &= 0 \quad {\rm in} \ \Omega.
+# \mu -  \frac{d f}{d c} + \lambda \nabla^{2}c &= 0 \quad {\rm in}
+#   \ \Omega.
 # \end{align}
 # $$
 #
@@ -74,8 +75,8 @@
 # \int_{\Omega} \frac{\partial c}{\partial t} q \, {\rm d} x +
 #     \int_{\Omega} M \nabla\mu \cdot \nabla q \, {\rm d} x
 #     &= 0 \quad \forall \ q \in V,  \\
-# \int_{\Omega} \mu v \, {\rm d} x - \int_{\Omega} \frac{d f}{d c} v \, {\rm d} x
-#   - \int_{\Omega} \lambda \nabla c \cdot \nabla v \, {\rm d} x
+# \int_{\Omega} \mu v \, {\rm d} x - \int_{\Omega} \frac{d f}{d c} v \,
+#   {\rm d} x - \int_{\Omega} \lambda \nabla c \cdot \nabla v \, {\rm d} x
 #    &= 0 \quad \forall \ v \in V.
 # \end{align}
 # $$
@@ -89,15 +90,16 @@
 # $$
 # \begin{align}
 # \int_{\Omega} \frac{c_{n+1} - c_{n}}{dt} q \, {\rm d} x
-# + \int_{\Omega} M \nabla \mu_{n+\theta} \cdot \nabla q \, {\rm d} x
-#        &= 0 \quad \forall \ q \in V  \\
-# \int_{\Omega} \mu_{n+1} v  \, {\rm d} x - \int_{\Omega} \frac{d f_{n+1}}{d c} v  \, {\rm d} x
-# - \int_{\Omega} \lambda \nabla c_{n+1} \cdot \nabla v \, {\rm d} x
-#        &= 0 \quad \forall \ v \in V
+#   + \int_{\Omega} M \nabla \mu_{n+\theta} \cdot \nabla q \, {\rm d} x
+#   &= 0 \quad \forall \ q \in V  \\
+# \int_{\Omega} \mu_{n+1} v  \, {\rm d} x - \int_{\Omega}
+#   \frac{d f_{n+1}}{d c} v  \, {\rm d} x - \int_{\Omega} \lambda \nabla
+#   c_{n+1} \cdot \nabla v \, {\rm d} x &= 0 \quad \forall \ v \in V
 # \end{align}
 # $$
 #
-# where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} = (1-\theta) \mu_{n} + \theta \mu_{n+1}$.
+# where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} = (1-\theta) \mu_{n} +
+# \theta \mu_{n+1}$.
 # The task is: given $c_{n}$ and $\mu_{n}$, solve the above equation to
 # find $c_{n+1}$ and $\mu_{n+1}$.
 #
@@ -114,26 +116,13 @@
 # - $\theta = 0.5$
 #
 # ## Implementation
-#
-# This demo is implemented in the {download}`demo_cahn-hilliard.py`
-# file.
 
 # +
 import os
-
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
+from pathlib import Path
 
 from mpi4py import MPI
+from petsc4py import PETSc
 
 import numpy as np
 
@@ -144,19 +133,16 @@ from dolfinx.fem import Function, functionspace
 from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
-from dolfinx.nls.petsc import NewtonSolver
-from ufl import dx, grad, inner
 
 try:
     import pyvista as pv
     import pyvistaqt as pvqt
 
     have_pyvista = True
-    if pv.OFF_SCREEN:
-        pv.start_xvfb(wait=0.5)
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
+
 
 # Save all logging to file
 log.set_output_file("log.txt")
@@ -167,6 +153,7 @@ log.set_output_file("log.txt")
 lmbda = 1.0e-02  # surface parameter
 dt = 5.0e-06  # time step
 theta = 0.5  # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicholson
+t = 0.0  # Current time
 
 # A unit square mesh with 96 cells edges in each direction is created,
 # and on this mesh a
@@ -200,7 +187,7 @@ c, mu = ufl.split(u)
 c0, mu0 = ufl.split(u0)
 # -
 
-# The line `c, mu = ufl.split(u)` permits direct access to the
+# The line `c, mu = split(u)` permits direct access to the
 # components of a mixed function. Note that `c` and `mu` are references
 # for components of `u`, and not copies.
 #
@@ -210,8 +197,6 @@ c0, mu0 = ufl.split(u0)
 # The initial conditions are interpolated into a finite element space:
 
 # +
-# Zero u
-u.x.array[:] = 0.0
 
 # Interpolate initial condition
 rng = np.random.default_rng(42)
@@ -243,14 +228,21 @@ dfdc = ufl.diff(f, c)
 #
 # It is convenient to introduce an expression for $\mu_{n+\theta}$:
 
-# mu_(n+theta)
-mu_mid = (1.0 - theta) * mu0 + theta * mu
+mu_mid = (1.0 - theta) * mu0 + theta * mu  # mu_(n+theta)
 
 # which is then used in the definition of the variational forms:
 
 # Weak statement of the equations
-F0 = inner(c, q) * dx - inner(c0, q) * dx + dt * inner(grad(mu_mid), grad(q)) * dx
-F1 = inner(mu, v) * dx - inner(dfdc, v) * dx - lmbda * inner(grad(c), grad(v)) * dx
+F0 = (
+    ufl.inner(c, q) * ufl.dx
+    - ufl.inner(c0, q) * ufl.dx
+    + dt * ufl.inner(ufl.grad(mu_mid), ufl.grad(q)) * ufl.dx
+)
+F1 = (
+    ufl.inner(mu, v) * ufl.dx
+    - ufl.inner(dfdc, v) * ufl.dx
+    - lmbda * ufl.inner(ufl.grad(c), ufl.grad(v)) * ufl.dx
+)
 F = F0 + F1
 
 # This is a statement of the time-discrete equations presented as part
@@ -259,63 +251,56 @@ F = F0 + F1
 # ```{index} single: Newton solver; (in Cahn-Hilliard demo)
 # ```
 #
-# The DOLFINx Newton solver requires a
-# {py:class}`NonlinearProblem<dolfinx.fem.NonlinearProblem>` object to
-# solve a system of nonlinear equations
+# To solve the nonlinear system of equations,
+# {py:class}`NonlinearProblem<dolfinx.fem.petsc.NonlinearProblem>` object
+# to solve a system of nonlinear equations.
+# For the factorisation of the underlying linearized problems, prefer
+# MUMPS, then superlu_dist, then default.
+# We measure convergence by looking at the norm of the increment of the
+# solution between two iterations, called `stol` in PETSc, see:
+# [`SNES convegence tests`](https://petsc.org/release/manual/snes/#convergence-tests)
+# for further details.
 
 # +
-# Create nonlinear problem and Newton solver
-problem = NonlinearProblem(F, u)
-solver = NewtonSolver(MPI.COMM_WORLD, problem)
-solver.convergence_criterion = "incremental"
-solver.rtol = np.sqrt(np.finfo(default_real_type).eps) * 1e-2
-
-# We can customize the linear solver used inside the NewtonSolver by
-# modifying the PETSc options
-ksp = solver.krylov_solver
-opts = PETSc.Options()  # type: ignore
-option_prefix = ksp.getOptionsPrefix()
-opts[f"{option_prefix}ksp_type"] = "preonly"
-opts[f"{option_prefix}pc_type"] = "lu"
-sys = PETSc.Sys()  # type: ignore
-# For factorisation prefer MUMPS, then superlu_dist, then default
 use_superlu = PETSc.IntType == np.int64  # or PETSc.ScalarType == np.complex64
+sys = PETSc.Sys()  # type: ignore
 if sys.hasExternalPackage("mumps") and not use_superlu:
-    opts[f"{option_prefix}pc_factor_mat_solver_type"] = "mumps"
+    linear_solver = "mumps"
 elif sys.hasExternalPackage("superlu_dist"):
-    opts[f"{option_prefix}pc_factor_mat_solver_type"] = "superlu_dist"
-ksp.setFromOptions()
+    linear_solver = "superlu_dist"
+else:
+    linear_solver = "petsc"
+petsc_options = {
+    "snes_type": "newtonls",
+    "snes_linesearch_type": "none",
+    "snes_stol": np.sqrt(np.finfo(default_real_type).eps) * 1e-2,
+    "snes_atol": 0,
+    "snes_rtol": 0,
+    "ksp_type": "preonly",
+    "pc_type": "lu",
+    "pc_factor_mat_solver_type": linear_solver,
+    "snes_monitor": None,
+}
+problem = NonlinearProblem(
+    F, u, petsc_options_prefix="demo_cahn-hilliard_", petsc_options=petsc_options
+)
 # -
 
-# The setting of `convergence_criterion` to `"incremental"` specifies
-# that the Newton solver should compute a norm of the solution increment
-# to check for convergence (the other possibility is to use
-# `"residual"`, or to provide a user-defined check). The tolerance for
-# convergence is specified by `rtol`.
-#
-# To run the solver and save the output to a VTK file for later
-# visualization, the solver is advanced in time from $t_{n}$ to
-# $t_{n+1}$ until a terminal time $T$ is reached:
+# We prepare output files and pyvista for time-dependent visualization:
 
-# +
-# Output file
-file = XDMFFile(MPI.COMM_WORLD, "demo_ch/output.xdmf", "w")
+out_folder = Path("demo_ch")
+out_folder.mkdir(parents=True, exist_ok=True)
+file = XDMFFile(MPI.COMM_WORLD, out_folder / "output.xdmf", "w")  # Output file
 file.write_mesh(msh)
 
-# Step in time
-t = 0.0
-
-#  Reduce run time if on test (CI) server
-if "CI" in os.environ.keys() or "GITHUB_ACTIONS" in os.environ.keys():
-    T = 3 * dt
-else:
-    T = 50 * dt
-
 # Get the sub-space for c and the corresponding dofs in the mixed space
-# vector
+# vector. This is used for visualization on the collapsed subspace with
+# pyvista.
+
 V0, dofs = ME.sub(0).collapse()
 
 # Prepare viewer for plotting the solution during the computation
+
 if have_pyvista:
     # Create a VTK 'mesh' with 'nodes' at the function dofs
     topology, cell_types, x = plot.vtk_mesh(V0)
@@ -327,17 +312,37 @@ if have_pyvista:
 
     p = pvqt.BackgroundPlotter(title="concentration", auto_update=True)
     p.add_mesh(grid, clim=[0, 1])
-    p.view_xy(True)
+    p.view_xy(negative=True)
     p.add_text(f"time: {t}", font_size=12, name="timelabel")
 
+
+# Reduce run time if on test (CI) server
+if "CI" in os.environ.keys() or "GITHUB_ACTIONS" in os.environ.keys():
+    T = 3 * dt
+else:
+    T = 50 * dt
+
+# The solver is advanced in time from $t_{n}$ to
+# $t_{n+1}$ until a terminal time $T$ is reached
+
+# +
 c = u.sub(0)
 u0.x.array[:] = u.x.array
+step = 0
 while t < T:
     t += dt
-    r = solver.solve(u)
-    print(f"Step {int(t / dt)}: num iterations: {r[0]}")
+    _ = problem.solve()
+    converged_reason = problem.solver.getConvergedReason()
+    assert converged_reason > 0
+    num_iterations = problem.solver.getIterationNumber()
+    print(f"Step {step}: {converged_reason=} {num_iterations=}")
     u0.x.array[:] = u.x.array
     file.write_function(c, t)
+
+    # Flushing the output ensures that the full output is written to the
+    # disk.
+    file.flush()
+    step += 1
 
     # Update the plot window
     if have_pyvista:
@@ -346,12 +351,11 @@ while t < T:
         p.app.processEvents()
 
 file.close()
+# -
 
-# Update ghost entries and plot
+# Update plot
+
 if have_pyvista:
-    u.x.scatter_forward()
     grid.point_data["c"] = u.x.array[dofs].real
-    screenshot = None
-    if pv.OFF_SCREEN:
-        screenshot = "c.png"
+    screenshot = out_folder / "ch.png" if pv.OFF_SCREEN else None
     pv.plot(grid, show_edges=True, screenshot=screenshot)

@@ -12,7 +12,6 @@ set(HEADERS_common
     ${CMAKE_CURRENT_SOURCE_DIR}/Table.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Timer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/timing.h
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
     PARENT_SCOPE
@@ -20,12 +19,10 @@ set(HEADERS_common
 
 target_sources(
   dolfinx
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/defines.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.cpp
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/IndexMap.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/log.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/MPI.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/Table.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogger.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/TimeLogManager.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/timing.cpp
 )
