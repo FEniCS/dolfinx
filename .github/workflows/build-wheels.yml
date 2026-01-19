@@ -145,7 +145,7 @@ jobs:
             git clone --branch v7.0.9 --single-branch https://gitlab.inria.fr/scotch/scotch.git &&
             cd scotch &&
             mkdir build && cd build &&
-            cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../ &&
+            cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON ../ &&
             make install &&
             cd ../../ &&
             pip -v install mpi4py -i https://pypi.anaconda.org/mpi4py/simple &&
