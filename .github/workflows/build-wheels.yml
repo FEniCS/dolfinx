@@ -145,7 +145,7 @@ jobs:
             pip -v install mpi4py -i https://pypi.anaconda.org/mpi4py/simple &&
             pip -v install 'fenics-basix==0.11.0.dev0' 'fenics-ffcx==0.11.0.dev0' 'fenics-ufl==2025.3.0.dev0' &&
             pip -v install scikit-build-core[pyproject] nanobind &&
-            /usr/bin/cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) -DHDF5_C_INCLUDE_DIR=/usr/include/mpich-$(arch) -DHDF5_C_LIBRARIES=/usr/lib64/mpich/lib &&
+            /usr/bin/cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) -DHDF5_C_INCLUDE_DIR=/usr/include/mpich-$(arch) -DHDF5_C_LIBRARIES=/usr/lib64/mpich/lib -DSCOTCH_INCLUDE_DIR=/usr/include/mpich-$(arch) -DSCOTCH_LIBRARY_DIR=/usr/lib64/mpich/lib &&
             /usr/bin/cmake --build build-dir &&
             /usr/bin/cmake --install build-dir
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} && auditwheel repair -w {dest_dir} {wheel}
