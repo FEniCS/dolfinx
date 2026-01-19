@@ -144,7 +144,7 @@ jobs:
             module load mpi/mpich-$(arch) &&
             git clone --branch v7.0.9 --single-branch https://gitlab.inria.fr/scotch/scotch.git &&
             cd scotch &&
-            mkdir -p build &&
+            mkdir build && cd build &&
             cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../ &&
             make install &&
             cd ../../ &&
