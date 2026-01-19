@@ -140,7 +140,7 @@ jobs:
             dnf install -y epel-release &&
             /usr/bin/crb enable &&
             dnf -y update &&
-            dnf -y install boost-devel boost-program-options cmake hdf5-devel hdf5-mpich-devel make mpich-devel openblas-devel ptscotch-mpich pugixml-devel spdlog-devel &&
+            dnf -y install boost-devel boost-program-options cmake hdf5-devel hdf5-mpich-devel make mpich-devel openblas-devel ptscotch-mpich-devel pugixml-devel spdlog-devel &&
             module load mpi/mpich-$(arch) &&
             pip -v install mpi4py -i https://pypi.anaconda.org/mpi4py/simple &&
             pip -v install 'fenics-basix==0.11.0.dev0' 'fenics-ffcx==0.11.0.dev0' 'fenics-ufl==2025.3.0.dev0' &&
