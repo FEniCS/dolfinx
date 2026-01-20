@@ -86,8 +86,7 @@ jobs:
       - name: Build Basix wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         run: |
-          cd basix/
-          python -m cibuildwheel --output-dir ../wheelhouse/ .
+          python -m cibuildwheel --output-dir wheelhouse/ basix/
 
       - name: Checkout UFL
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
@@ -119,7 +118,7 @@ jobs:
         run: |
           mkdir -p simple
           cp wheelhouse/* simple/
-          python -m simple503 --base-url file:///project/simple simple
+          python -m simple503 --base-url file:///${{ github.workspace }}/simple simple/
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v6
@@ -156,7 +155,7 @@ jobs:
             cmake --build build-dir &&
             cmake --install build-dir
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} && auditwheel repair -w {dest_dir} {wheel}
-          CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple MAKEFLAGS=-j3
+          CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///${{ github.workspace }}/simple MAKEFLAGS=-j3
           CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
 
       - name: Update temporary simple503 repository
