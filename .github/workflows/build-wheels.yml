@@ -131,7 +131,8 @@ jobs:
       # mpi4py and petsc4py are build_requirements of DOLFINx Python
       - name: Build DOLFINx wheel
         run: |
-          python -m cibuildwheel --output-dir wheelhouse/ dolfinx/python
+          cd dolfinx/python
+          python -m cibuildwheel --output-dir ../../wheelhouse
         env:
           CIBW_BEFORE_BUILD: |
             . /etc/profile &&
