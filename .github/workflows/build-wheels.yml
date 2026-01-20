@@ -66,7 +66,7 @@ jobs:
     env:
       CIBW_BUILD: cp313-manylinux_x86_64
       CIBW_BUILD_VERBOSITY: 1
-      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple MAKEFLAGS=-j3
+      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///${{ github.workspace }}/simple MAKEFLAGS=-j3
       CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64
 
     steps:
@@ -74,19 +74,6 @@ jobs:
 
       - name: Install Python dependencies
         run: python -m pip install cibuildwheel simple503 build
-
-      - name: Checkout Basix
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        uses: actions/checkout@v6
-        with:
-          repository: FEniCS/basix
-          path: basix
-          ref: ${{ github.event.inputs.basix_ref }}
-
-      - name: Build Basix wheel
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        run: |
-          python -m cibuildwheel --output-dir wheelhouse/ basix/
 
       - name: Checkout UFL
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
@@ -113,6 +100,20 @@ jobs:
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         run: |
           python -m build -o wheelhouse/ ffcx/
+      
+      - name: Checkout Basix
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        uses: actions/checkout@v6
+        with:
+          repository: FEniCS/basix
+          path: basix
+          ref: ${{ github.event.inputs.basix_ref }}
+
+      - name: Build Basix wheel
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        run: |
+          cd basix
+          python -m cibuildwheel --output-dir ../wheelhouse/ .
 
       - name: Make temporary simple503 repository
         run: |
@@ -155,7 +156,6 @@ jobs:
             cmake --build build-dir &&
             cmake --install build-dir
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} && auditwheel repair -w {dest_dir} {wheel}
-          CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///${{ github.workspace }}/simple MAKEFLAGS=-j3
           CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
 
       - name: Update temporary simple503 repository
