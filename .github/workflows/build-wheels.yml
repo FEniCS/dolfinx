@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      CIBW_BUILD: cp313-manylinux_x86_64
+      CIBW_BUILD: cp312-manylinux_x86_64
       CIBW_BUILD_VERBOSITY: 1
       CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple MAKEFLAGS=-j3
       CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64
@@ -154,7 +154,7 @@ jobs:
             cmake --build build-dir &&
             cmake --install build-dir
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} && auditwheel repair --exclude libsz.so.* --exclude libmpi.so.* --exclude libhwloc.so.* -w {dest_dir} {wheel}
-          CIBW_CONFIG_SETTINGS: "cmake.args=-DMPI_HOME=/usr/lib64/mpich;-DHDF5_C_INCLUDE_DIR=/usr/include/mpich-x86_64;-DHDF5_C_LIBRARIES=/usr/lib64/mpich/lib"
+          CIBW_CONFIG_SETTINGS: "cmake.args=-DMPI_HOME=/usr/lib64/mpich;-DHDF5_C_INCLUDE_DIR=/usr/include/mpich-x86_64;-DHDF5_C_LIBRARIES=/usr/lib64/mpich/lib wheel.py-api=cp312"
           CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
 
       - name: Update temporary simple503 repository
