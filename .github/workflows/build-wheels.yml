@@ -153,7 +153,7 @@ jobs:
             cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) -DHDF5_C_INCLUDE_DIR=/usr/include/mpich-$(arch) -DHDF5_C_LIBRARIES=/usr/lib64/mpich/lib &&
             cmake --build build-dir &&
             cmake --install build-dir
-          CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} && auditwheel repair --exclude libsz.so.* --exclude libmpi.so.* --exclude libhwloc.so.* -w {dest_dir} {wheel}
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} && auditwheel repair --exclude libmpi.so.* --exclude libhwloc.so.* -w {dest_dir} {wheel}
           CIBW_CONFIG_SETTINGS: "cmake.args=-DMPI_HOME=/usr/lib64/mpich;-DHDF5_C_INCLUDE_DIR=/usr/include/mpich-x86_64;-DHDF5_C_LIBRARIES=/usr/lib64/mpich/lib wheel.py-api=cp312"
           CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
 
