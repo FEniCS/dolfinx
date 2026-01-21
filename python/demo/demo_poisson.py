@@ -77,8 +77,9 @@ from petsc4py.PETSc import ScalarType  # type: ignore
 
 import numpy as np
 
+import dolfinx.common
 import ufl
-from dolfinx import fem, io, mesh, plot
+from dolfinx import fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
 
 # -
@@ -92,12 +93,16 @@ from dolfinx.fem.petsc import LinearProblem
 # <dolfinx.fem.FunctionSpace>` $V$ on the mesh.
 
 # +
-msh = mesh.create_rectangle(
+msh = mesh.create_box(
     comm=MPI.COMM_WORLD,
-    points=((0.0, 0.0), (2.0, 1.0)),
-    n=(32, 16),
-    cell_type=mesh.CellType.triangle,
+    points=((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+    n=(32, 32, 100),
+    cell_type=mesh.CellType.tetrahedron,
 )
+
+msh.topology.create_entities(1)
+
+
 V = fem.functionspace(msh, ("Lagrange", 1))
 # -
 
@@ -126,7 +131,7 @@ facets = mesh.locate_entities_boundary(
 # boundary facets using {py:func}`locate_dofs_topological
 # <dolfinx.fem.locate_dofs_topological>`:
 
-dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+dofs = fem.locate_dofs_topological(V=V, entity_dim=2, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
 # {py:class}`DirichletBC <dolfinx.fem.DirichletBC>` class that
@@ -161,7 +166,7 @@ problem = LinearProblem(
     petsc_options_prefix="demo_poisson_",
     petsc_options={"ksp_type": "preonly", "pc_type": "lu", "ksp_error_if_not_converged": True},
 )
-uh = problem.solve()
+uh = fem.Function(V)  # problem.solve()
 assert isinstance(uh, fem.Function)
 # -
 
@@ -180,22 +185,25 @@ with io.XDMFFile(msh.comm, out_folder / "poisson.xdmf", "w") as file:
 # and displayed using [pyvista](https://docs.pyvista.org/).
 
 # +
-try:
-    import pyvista
+# try:
+#     import pyvista
 
-    cells, types, x = plot.vtk_mesh(V)
-    grid = pyvista.UnstructuredGrid(cells, types, x)
-    grid.point_data["u"] = uh.x.array.real
-    grid.set_active_scalars("u")
-    plotter = pyvista.Plotter()
-    plotter.add_mesh(grid, show_edges=True)
-    warped = grid.warp_by_scalar()
-    plotter.add_mesh(warped)
-    if pyvista.OFF_SCREEN:
-        plotter.screenshot(out_folder / "uh_poisson.png")
-    else:
-        plotter.show()
-except ModuleNotFoundError:
-    print("'pyvista' is required to visualise the solution.")
-    print("To install pyvista with pip: 'python3 -m pip install pyvista'.")
+#     cells, types, x = plot.vtk_mesh(V)
+#     grid = pyvista.UnstructuredGrid(cells, types, x)
+#     grid.point_data["u"] = uh.x.array.real
+#     grid.set_active_scalars("u")
+#     plotter = pyvista.Plotter()
+#     plotter.add_mesh(grid, show_edges=True)
+#     warped = grid.warp_by_scalar()
+#     plotter.add_mesh(warped)
+#     if pyvista.OFF_SCREEN:
+#         plotter.screenshot(out_folder / "uh_poisson.png")
+#     else:
+#         plotter.show()
+# except ModuleNotFoundError:
+#     print("'pyvista' is required to visualise the solution.")
+#     print("To install pyvista with pip: 'python3 -m pip install
+# pyvista'.")
 # -
+
+dolfinx.common.list_timings(MPI.COMM_WORLD)
