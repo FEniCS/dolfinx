@@ -134,26 +134,22 @@ jobs:
           python -m cibuildwheel --output-dir wheelhouse/ dolfinx/python
         env:
           CIBW_BEFORE_BUILD: >
-            . /etc/profile &&
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
             dnf install -y epel-release &&
             /usr/bin/crb enable &&
             dnf -y update &&
             dnf -y install boost-devel boost-program-options git hdf5-mpich-devel make mpich-devel openblas-devel pugixml-devel spdlog-devel &&
-            module load mpi/mpich-$(arch) &&
             ln -s /usr/include/mpich-x86_64 /usr/lib64/mpich/include &&
             git clone --branch v7.0.9 --single-branch https://gitlab.inria.fr/scotch/scotch.git &&
-            cd scotch &&
-            mkdir build && cd build &&
-            cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON ../ &&
-            make install &&
-            cd ../../ &&
-            pip -v install 'fenics-basix==0.11.0.dev0' 'fenics-ffcx==0.11.0.dev0' 'fenics-ufl==2025.3.0.dev0' &&
+            cmake -G Ninja -S scotch/ -B scotch-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON -DMPI_HOME=/usr/lib64/mpich &&
+            cmake --build scotch-build-dir/ &&
+            cmake --install scotch-build-dir/ &&
+            pip -v install 'fenics-basix==0.11.0.dev0' &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
-            cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) -DHDF5_ROOT=/usr/lib64/mpich &&
-            cmake --build build-dir &&
-            cmake --install build-dir
+            cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DPython3_EXECUTABLE=$(which python) -DHDF5_ROOT=/usr/lib64/mpich -DMPI_HOME=/usr/lib64/mpich &&
+            cmake --build dolfinx-build-dir/ &&
+            cmake --install dolfinx-build-dir/
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
             auditwheel repair --exclude libmpi.so.* --exclude libhwloc.so.* -w {dest_dir} {wheel}
@@ -170,7 +166,8 @@ jobs:
       # Artifact can be unzipped into $(pwd) and tested with e.g.:
       # docker run -ti -v $(pwd):/shared -w /shared --env PIP_EXTRA_INDEX_URL=file:///shared python:3.13 /bin/bash -l
       # apt update
-      # apt install mpich # Like mpi4py, we do not ship libmpi etc.
+      # apt install mpich # or:
+      # pip install mpich
       # pip install fenics-dolfinx
       - name: Upload simple503-test artifact
         uses: actions/upload-artifact@v6
