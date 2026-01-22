@@ -138,7 +138,7 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir wheelhouse/ dolfinx/python
         env:
-          CIBW_BEFORE_BUILD: >
+          CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
             dnf install -y epel-release &&
@@ -157,9 +157,9 @@ jobs:
             cmake --install dolfinx-build-dir/
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
-            auditwheel repair --exclude libmpi.so.* --exclude libhwloc.so.* -w {dest_dir} {wheel}
+            auditwheel repair --exclude libmpi.so.* --exclude libhwloc.so.* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
-          CIBW_CONFIG_SETTINGS: > 
+          CIBW_CONFIG_SETTINGS_LINUX: > 
             cmake.args="-DMPI_HOME=/usr/lib64/mpich;-DHDF5_ROOT=/usr/lib64/mpich"
             wheel.py-api=cp312
           CIBW_BUILD_FRONTEND: "build; args: -nx"
