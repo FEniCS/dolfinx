@@ -178,13 +178,13 @@ jobs:
       - name: Upload simple503-test artifact
         uses: actions/upload-artifact@v6
         with:
-          name: "simple503-test"
+          name: simple503-test-${{ matrix.os }}
           path: simple/*
 
       - name: Upload wheelhouse artifact
         uses: actions/upload-artifact@v6
         with:
-          name: wheelhouse
+          name: wheelhouse-${{ matrix.os }}
           path: wheelhouse/*
 
       - name: Update FEniCS Project simple503 repository
@@ -195,5 +195,5 @@ jobs:
       - name: Upload simple503 artifact
         uses: actions/upload-artifact@v6
         with:
-          name: "simple503"
+          name: simple503-${{ matrix.os }}
           path: simple/*
