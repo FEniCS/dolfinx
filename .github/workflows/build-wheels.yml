@@ -62,12 +62,17 @@ jobs:
   build_wheels:
     name: Build wheels
     runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
 
     env:
-      CIBW_BUILD: cp312-manylinux_x86_64
+      CIBW_BUILD: cp312-manylinux_x86_64,cp312-manylinux_aarch64
       CIBW_BUILD_VERBOSITY: 1
-      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple MAKEFLAGS=-j3
-      CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64
+      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple
+      CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64:latest
+      CIBW_MANYLINUX_AARCH64_IMAGE: quay.io/pypa/manylinux_2_34_aarch64:latest
 
     steps:
       - uses: actions/setup-python@v6
@@ -140,12 +145,12 @@ jobs:
             /usr/bin/crb enable &&
             dnf -y update &&
             dnf -y install boost-devel boost-program-options git hdf5-mpich-devel make mpich-devel openblas-devel pugixml-devel spdlog-devel &&
-            ln -s /usr/include/mpich-x86_64 /usr/lib64/mpich/include &&
+            ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
             git clone --branch v7.0.9 --single-branch https://gitlab.inria.fr/scotch/scotch.git &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON -DMPI_HOME=/usr/lib64/mpich &&
             cmake --build scotch-build-dir/ &&
             cmake --install scotch-build-dir/ &&
-            pip -v install 'fenics-basix==0.11.0.dev0' &&
+            pip -v install 'fenics-basix==0.11.0.dev0' 'fenics-ffcx==0.11.0.dev0' &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DPython3_EXECUTABLE=$(which python) -DHDF5_ROOT=/usr/lib64/mpich -DMPI_HOME=/usr/lib64/mpich &&
             cmake --build dolfinx-build-dir/ &&
@@ -153,10 +158,12 @@ jobs:
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
             auditwheel repair --exclude libmpi.so.* --exclude libhwloc.so.* -w {dest_dir} {wheel}
+            pipx run abi3audit --verbose --strict --report {wheel}
+
           CIBW_CONFIG_SETTINGS: > 
             cmake.args="-DMPI_HOME=/usr/lib64/mpich;-DHDF5_ROOT=/usr/lib64/mpich"
             wheel.py-api=cp312
-          CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
+          CIBW_BUILD_FRONTEND: "build; args: -nx"
 
       - name: Update temporary simple503 repository
         run: |
