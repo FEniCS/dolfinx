@@ -61,7 +61,6 @@ on:
 jobs:
   build_wheels:
     name: Build wheels
-    runs-on: ubuntu-latest
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -159,7 +158,6 @@ jobs:
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
             auditwheel repair --exclude libmpi.so.* --exclude libhwloc.so.* -w {dest_dir} {wheel}
             pipx run abi3audit --verbose --strict --report {wheel}
-
           CIBW_CONFIG_SETTINGS: > 
             cmake.args="-DMPI_HOME=/usr/lib64/mpich;-DHDF5_ROOT=/usr/lib64/mpich"
             wheel.py-api=cp312
