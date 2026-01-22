@@ -144,7 +144,7 @@ jobs:
             dnf install -y epel-release &&
             /usr/bin/crb enable &&
             dnf -y update &&
-            dnf -y install boost-devel boost-program-options git hdf5-mpich-devel make mpich-devel openblas-devel pugixml-devel spdlog-devel &&
+            dnf -y install boost-devel boost-program-options git hdf5-mpich-devel make mpich-devel ninja openblas-devel pugixml-devel spdlog-devel &&
             ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
             git clone --branch v7.0.9 --single-branch https://gitlab.inria.fr/scotch/scotch.git &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON -DMPI_HOME=/usr/lib64/mpich &&
