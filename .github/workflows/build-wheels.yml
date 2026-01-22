@@ -117,8 +117,7 @@ jobs:
       - name: Build Basix wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         run: |
-          cd basix
-          python -m cibuildwheel --output-dir ../wheelhouse/ .
+          python -m cibuildwheel --output-dir wheelhouse/ basix/
 
       - name: Make temporary simple503 repository
         run: |
