@@ -116,7 +116,7 @@ jobs:
 
       - name: Build Basix wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        working_directory: basix/
+        working-directory: basix/
         run: |
           python -m cibuildwheel --output-dir ../wheelhouse/ .
 
