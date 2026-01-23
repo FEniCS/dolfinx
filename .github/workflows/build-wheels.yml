@@ -168,7 +168,7 @@ jobs:
             auditwheel repair --exclude libmpi.so.* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_TEST_REQUIRES: pytest-xdist
-          CIBW_TEST_EXTRAS: demo,test
+          CIBW_TEST_EXTRAS: test
           CIBW_TEST_COMMAND: >
             . /etc/profile &&
             module load mpi/mpich-$(arch) &&
