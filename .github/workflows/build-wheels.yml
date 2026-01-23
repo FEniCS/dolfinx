@@ -168,7 +168,7 @@ jobs:
             auditwheel repair --exclude libmpi.so.* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_TEST_REQUIRES: pytest-xdist
-          CIBW_TEST_EXTRAS: test
+          CIBW_TEST_EXTRAS: demo,test
           CIBW_TEST_COMMAND: >
             . /etc/profile &&
             module load mpi/mpich-$(arch) &&
@@ -184,17 +184,27 @@ jobs:
           cp wheelhouse/* simple
           python -m simple503 --base-url file:///shared simple
 
-      # Artifact can be unzipped into $(pwd) and tested with e.g.:
-      # docker run -ti -v $(pwd):/shared -w /shared --env PIP_EXTRA_INDEX_URL=file:///shared python:3.13 /bin/bash -l
-      # apt update
-      # apt install mpich # or:
-      # pip install mpich
-      # pip install fenics-dolfinx
       - name: Upload simple503-test artifact
         uses: actions/upload-artifact@v6
         with:
           name: simple503-test-${{ matrix.os }}
           path: simple/*
+
+      - name: Test in clean python image with pypi MPICH
+        run: >
+          cd dolfinx &&
+          git clean -fdx && cd ../ &&
+          docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
+            --env PIP_EXTRA_INDEX_URL=file:///shared python:3.13 \
+            /bin/bash -l -c "pip install mpich fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
+
+      - name: Test in clean python image with pypi Intel MPI
+        run: >
+          cd dolfinx &&
+          git clean -fdx && cd ../ &&
+          docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
+            --env PIP_EXTRA_INDEX_URL=file:///shared python:3.14 \
+            /bin/bash -l -c "pip install impi-rt fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Upload wheelhouse artifact
         uses: actions/upload-artifact@v6
@@ -206,7 +216,6 @@ jobs:
         run: |
           python -m simple503 --base-url http://packages.fenicsproject.org/simple simple
 
-      # For manual upload.
       - name: Upload simple503 artifact
         uses: actions/upload-artifact@v6
         with:
