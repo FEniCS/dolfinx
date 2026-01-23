@@ -155,15 +155,22 @@ jobs:
             cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DPython3_EXECUTABLE=$(which python) -DHDF5_ROOT=/usr/lib64/mpich -DMPI_HOME=/usr/lib64/mpich -DCMAKE_BUILD_TYPE=Debug &&
             cmake --build dolfinx-build-dir/ &&
             cmake --install dolfinx-build-dir/
-          CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
-            export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
-            auditwheel repair --exclude libmpi.so.* --exclude libhwloc.so.* -w {dest_dir} {wheel} &&
-            pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_CONFIG_SETTINGS_LINUX: > 
             cmake.args="-DMPI_HOME=/usr/lib64/mpich;-DHDF5_ROOT=/usr/lib64/mpich"
             wheel.py-api=cp312
             cmake.build-type="Debug"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
+            export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
+            auditwheel repair --exclude libmpi.so.* --exclude libhwloc.so.* -w {dest_dir} {wheel} &&
+            pipx run abi3audit --verbose --strict --report {wheel}
+          CIBW_TEST_REQUIRES: pytest-xdist
+          CIBW_TEST_EXTRAS: test
+          CIBW_TEST_COMMAND: >
+            python -m pytest -n auto -m "not adios2 and not petsc4py" {project}/python/test/unit &&
+            mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/python/test/unit &&
+            python -m pytest -n auto -m serial --durations=10 {project}/python/demo/test.py &&
+            python -m pytest -m mpi --num-proc=3 {project}/python/demo/test.py
 
       - name: Update temporary simple503 repository
         run: |
