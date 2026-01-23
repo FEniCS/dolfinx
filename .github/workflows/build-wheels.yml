@@ -144,7 +144,7 @@ jobs:
             dnf install -y epel-release &&
             /usr/bin/crb enable &&
             dnf -y update &&
-            dnf -y install boost-devel boost-program-options git hdf5-mpich-devel make
+            dnf -y install boost-devel boost-program-options git hdf5-mpich-devel make \
               mpich-devel ninja-build openblas-devel pugixml-devel spdlog-devel &&
             ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
             git clone --branch v7.0.9 --single-branch https://gitlab.inria.fr/scotch/scotch.git &&
@@ -154,14 +154,14 @@ jobs:
             cmake --install scotch-build-dir/ &&
             pip -v install 'fenics-basix==0.11.0.dev0' 'fenics-ffcx==0.11.0.dev0' &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
-            cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DPython3_EXECUTABLE=$(which python)
-              -DHDF5_ROOT=/usr/lib64/mpich -DMPI_HOME=/usr/lib64/mpich -DCMAKE_BUILD_TYPE=Debug &&
+            cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DPython3_EXECUTABLE=$(which python) \
+              -DHDF5_ROOT=/usr/lib64/mpich -DMPI_HOME=/usr/lib64/mpich -DCMAKE_BUILD_TYPE=RelWithDebug &&
             cmake --build dolfinx-build-dir/ &&
             cmake --install dolfinx-build-dir/
           CIBW_CONFIG_SETTINGS_LINUX: > 
             cmake.args="-DMPI_HOME=/usr/lib64/mpich;-DHDF5_ROOT=/usr/lib64/mpich"
             wheel.py-api=cp312
-            cmake.build-type="Debug"
+            cmake.build-type="RelWithDebug"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
@@ -170,11 +170,11 @@ jobs:
           CIBW_TEST_REQUIRES: pytest-xdist mpich
           CIBW_TEST_EXTRAS: test
           CIBW_TEST_COMMAND: >
-            mpiexec -n 1 python -m pytest -n auto
-              -k "not write_cell_data and not write_point_data and not write_mixed_topology_data"
+            mpiexec -n 1 python -m pytest -n auto \
+              -k "not write_cell_data and not write_point_data and not write_mixed_topology_data" \
               -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
-            mpiexec -n 2 python -m pytest
-              -k "not write_cell_data and not write_point_data and not write_mixed_topology_data"
+            mpiexec -n 2 python -m pytest \
+              -k "not write_cell_data and not write_point_data and not write_mixed_topology_data" \
               -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             python -m pytest -n auto -m serial --durations=10 {project}/dolfinx/python/demo/test.py &&
             python -m pytest -m mpi --num-proc=3 {project}/dolfinx/python/demo/test.py
