@@ -164,7 +164,7 @@ jobs:
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
             auditwheel repair --exclude libmpi.so.* --exclude libhwloc.so.* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
-          CIBW_TEST_REQUIRES: pytest-xdist
+          CIBW_TEST_REQUIRES: pytest-xdist mpich
           CIBW_TEST_EXTRAS: test
           CIBW_TEST_COMMAND: >
             python -m pytest -n auto -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
