@@ -167,14 +167,14 @@ jobs:
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
             auditwheel repair --exclude libmpi.so.* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
-          CIBW_TEST_REQUIRES: pytest-xdist mpich
+          CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_EXTRAS: test
           CIBW_TEST_COMMAND: >
+            . /etc/profile &&
+            module load mpi/mpich-$(arch) &&
             mpiexec -n 1 python -m pytest -n auto \
-              -k "not write_cell_data and not write_point_data and not write_mixed_topology_data" \
               -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest \
-              -k "not write_cell_data and not write_point_data and not write_mixed_topology_data" \
               -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             python -m pytest -n auto -m serial --durations=10 {project}/dolfinx/python/demo/test.py &&
             python -m pytest -m mpi --num-proc=3 {project}/dolfinx/python/demo/test.py
