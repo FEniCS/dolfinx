@@ -157,6 +157,11 @@ void write_dataset(hid_t file_handle, const std::string& dataset_path,
     throw std::runtime_error("Cannot write dataset to HDF5 file"
                              "Only rank 1 and rank 2 dataset are supported");
   }
+  if (rank != 2 && use_chunking)
+  {
+    throw std::runtime_error(
+        "Cannot use chunking. Only rank-2 datasets are supported.");
+  }
 
   // Get HDF5 data type
   const hid_t h5type = hdf5::hdf5_type<T>();
