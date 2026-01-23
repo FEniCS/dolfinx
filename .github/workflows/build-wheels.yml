@@ -191,7 +191,7 @@ jobs:
       - name: Test in clean python image with pypi MPICH
         run: >
           cd dolfinx &&
-          git clean -fdx && cd ../ &&
+          sudo git clean -fdx && cd ../ &&
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
             --env PIP_EXTRA_INDEX_URL=file:///shared python:3.13 \
             /bin/bash -l -c "pip install mpich fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
@@ -200,7 +200,7 @@ jobs:
         if: runner.arch == 'X64'
         run: >
           cd dolfinx &&
-          git clean -fdx && cd ../ &&
+          sudo git clean -fdx && cd ../ &&
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
             --env PIP_EXTRA_INDEX_URL=file:///shared python:3.14 \
             /bin/bash -l -c "pip install impi-rt fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
