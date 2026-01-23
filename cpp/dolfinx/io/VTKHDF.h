@@ -225,7 +225,7 @@ void write_data(std::string point_or_cell, std::string filename,
   auto append_dataset
       = [&h5file]<typename T>(const std::string& dset_name, T value)
   {
-    std::int32_t s = 0;
+    std::int64_t s = 0;
     if (hdf5::has_dataset(h5file, dset_name))
     {
       std::vector<std::int64_t> shape
@@ -234,7 +234,7 @@ void write_data(std::string point_or_cell, std::string filename,
       s = shape[0];
     }
     hdf5::write_dataset(h5file, dset_name, &value, {s, s + 1}, {s + 1}, true,
-                        true);
+                        false);
   };
 
   // Mesh remains the same, so these values are the same for each time step
