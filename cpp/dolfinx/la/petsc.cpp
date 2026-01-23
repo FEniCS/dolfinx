@@ -42,7 +42,8 @@ void la::petsc::error(PetscErrorCode error_code, const std::string& filename,
   // Log detailed error info
   spdlog::info("PETSc error in '{}', '{}'", filename.c_str(),
                petsc_function.c_str());
-  spdlog::info("PETSc error code '{}' '{}'", (int)error_code, desc);
+  spdlog::info("PETSc error code '{}' '{}'", static_cast<int>(error_code),
+               desc);
   throw std::runtime_error("Failed to successfully call PETSc function '"
                            + petsc_function + "'. PETSc error code is: "
                            + std ::to_string(error_code) + ", "
