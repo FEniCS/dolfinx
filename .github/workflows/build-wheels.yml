@@ -175,7 +175,7 @@ jobs:
             python -m pytest -n auto \
               -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest \
-              -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
+              -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
 
       - name: Update temporary simple503 repository
         run: |
