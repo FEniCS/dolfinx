@@ -37,8 +37,9 @@ int main(int argc, char* argv[])
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
 
-    auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(mesh, element, {}));
+    auto V
+        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+            mesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
     // Prepare and set Constants for the bilinear form
     auto kappa = std::make_shared<fem::Constant<T>>(2.0);
@@ -103,12 +104,12 @@ int main(int argc, char* argv[])
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
                     L->function_spaces()[0]->dofmap()->index_map_bs());
 
-    A.set(0.0);
+    std::ranges::fill(A.values(), 0.0);
     fem::assemble_matrix(A.mat_add_values(), *a, {bc});
     A.scatter_rev();
     fem::set_diagonal<T, U>(A.mat_set_values(), *V, {bc});
 
-    b.set(0.0);
+    std::ranges::fill(b.array(), 0.0);
     fem::assemble_vector(b.array(), *L);
     fem::apply_lifting<T, U>(b.array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
@@ -149,7 +150,7 @@ int main(int argc, char* argv[])
     //   file.write<T>({u}, 0.0);
   }
 
-  dolfinx::list_timings(MPI_COMM_WORLD, {TimingType::wall});
+  dolfinx::list_timings(MPI_COMM_WORLD);
 
   MPI_Finalize();
   return 0;
