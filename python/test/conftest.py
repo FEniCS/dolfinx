@@ -15,8 +15,8 @@ from dolfinx.la import vector as dolfinx_vector
 
 def pytest_runtest_teardown(item):
     """Collect garbage after every test to force calling
-    destructors which might be collective"""
-
+    destructors which might be collective.
+    """
     # Do the normal teardown
     item.teardown()
 
@@ -43,7 +43,8 @@ def pytest_runtest_setup(item):
 @pytest.fixture(scope="module")
 def datadir(request):
     """Return the directory of the shared test data. Assumes run from
-    within repository filetree."""
+    within repository filetree.
+    """
     d = os.path.dirname(os.path.abspath(request.module.__file__))
     t = os.path.join(d, "data")
     while not os.path.isdir(t):
@@ -149,7 +150,8 @@ def tempdir(request):
 def cg_solver():
     """Conjugate Gradient solver for SPD problems, which can work in
     serial or parallel for testing use. Not suitable for large
-    problems."""
+    problems.
+    """
 
     def _cg(comm, A, b, x, maxit=500, rtol=None):
         rtol2 = 10 * np.finfo(x.array.dtype).eps if rtol is None else rtol**2
@@ -192,7 +194,7 @@ def cg_solver():
             p.array[:nr] = beta * p.array[:nr] + r
 
         raise RuntimeError(
-            f"Solver exceeded max iterations ({maxit}). Relative residual={rnorm/rnorm0}."
+            f"Solver exceeded max iterations ({maxit}). Relative residual={rnorm / rnorm0}."
         )
 
     return _cg

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "types.h"
+#include <algorithm>
 #include <array>
 #include <basix/mdspan.hpp>
 #include <cmath>
@@ -221,21 +222,15 @@ void pinv(U A, V P)
   {
     std::array<T, 6> ATb;
     std::array<T, 4> ATAb, Invb;
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 2, 3>>
-        AT(ATb.data(), 2, 3);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 2, 2>>
-        ATA(ATAb.data(), 2, 2);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 2, 2>>
-        Inv(Invb.data(), 2, 2);
+    md::mdspan<T, md::extents<std::size_t, 2, 3>> AT(ATb.data(), 2, 3);
+    md::mdspan<T, md::extents<std::size_t, 2, 2>> ATA(ATAb.data(), 2, 2);
+    md::mdspan<T, md::extents<std::size_t, 2, 2>> Inv(Invb.data(), 2, 2);
 
     for (std::size_t i = 0; i < AT.extent(0); ++i)
       for (std::size_t j = 0; j < AT.extent(1); ++j)
         AT(i, j) = A(j, i);
 
-    std::fill(ATAb.begin(), ATAb.end(), 0.0);
+    std::ranges::fill(ATAb, 0.0);
     for (std::size_t i = 0; i < P.extent(0); ++i)
       for (std::size_t j = 0; j < P.extent(1); ++j)
         P(i, j) = 0;

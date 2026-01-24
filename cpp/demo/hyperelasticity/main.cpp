@@ -15,6 +15,7 @@
 // ## C++ program
 
 #include "hyperelasticity.h"
+#include <algorithm>
 #include <basix/finite-element.h>
 #include <climits>
 #include <cmath>
@@ -24,29 +25,34 @@
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/nls/NewtonSolver.h>
+#include <numbers>
+#include <petscmat.h>
+#include <petscsys.h>
+#include <petscsystypes.h>
+#include <petscvec.h>
 
 using namespace dolfinx;
 using T = PetscScalar;
-using U = typename dolfinx::scalar_value_type_t<T>;
+using U = typename dolfinx::scalar_value_t<T>;
 
 /// Hyperelastic problem class
 class HyperElasticProblem
 {
 public:
   /// Constructor
-  HyperElasticProblem(
-      std::shared_ptr<fem::Form<T>> L, std::shared_ptr<fem::Form<T>> J,
-      std::vector<std::shared_ptr<const fem::DirichletBC<T>>> bcs)
-      : _l(L), _j(J), _bcs(bcs),
-        _b(L->function_spaces()[0]->dofmap()->index_map,
-           L->function_spaces()[0]->dofmap()->index_map_bs()),
-        _matA(la::petsc::Matrix(fem::petsc::create_matrix(*J, "aij"), false))
+  HyperElasticProblem(fem::Form<T>& L, fem::Form<T>& J,
+                      const std::vector<fem::DirichletBC<T>>& bcs)
+      : _l(L), _j(J), _bcs(bcs.begin(), bcs.end()),
+        _b(L.function_spaces()[0]->dofmap()->index_map,
+           L.function_spaces()[0]->dofmap()->index_map_bs()),
+        _matA(la::petsc::Matrix(fem::petsc::create_matrix(J, "aij"), false))
   {
-    auto map = L->function_spaces()[0]->dofmap()->index_map;
-    const int bs = L->function_spaces()[0]->dofmap()->index_map_bs();
+    auto map = L.function_spaces()[0]->dofmap()->index_map;
+    const int bs = L.function_spaces()[0]->dofmap()->index_map_bs();
     std::int32_t size_local = bs * map->size_local();
 
     std::vector<PetscInt> ghosts(map->ghosts().begin(), map->ghosts().end());
@@ -80,9 +86,9 @@ public:
     return [&](const Vec x, Vec)
     {
       // Assemble b and update ghosts
-      std::span<T> b(_b.mutable_array());
-      std::fill(b.begin(), b.end(), 0.0);
-      fem::assemble_vector<T>(b, *_l);
+      std::span b(_b.array());
+      std::ranges::fill(b, 0);
+      fem::assemble_vector(b, _l);
       VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
       VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
 
@@ -91,10 +97,11 @@ public:
       VecGhostGetLocalForm(x, &x_local);
       PetscInt n = 0;
       VecGetSize(x_local, &n);
-      const T* array = nullptr;
-      VecGetArrayRead(x_local, &array);
-      fem::set_bc<T>(b, _bcs, std::span<const T>(array, n), -1.0);
-      VecRestoreArrayRead(x, &array);
+      const T* _x = nullptr;
+      VecGetArrayRead(x_local, &_x);
+      std::ranges::for_each(_bcs, [b, x = std::span(_x, n)](auto& bc)
+                            { bc.get().set(b, x, -1); });
+      VecRestoreArrayRead(x_local, &_x);
     };
   }
 
@@ -104,12 +111,12 @@ public:
     return [&](const Vec, Mat A)
     {
       MatZeroEntries(A);
-      fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), *_j,
+      fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), _j,
                            _bcs);
       MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
       MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
       fem::set_diagonal(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
-                        *_j->function_spaces()[0], _bcs);
+                        *_j.function_spaces()[0], _bcs);
       MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
       MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
     };
@@ -122,8 +129,9 @@ public:
   Mat matrix() { return _matA.mat(); }
 
 private:
-  std::shared_ptr<fem::Form<T>> _l, _j;
-  std::vector<std::shared_ptr<const fem::DirichletBC<T>>> _bcs;
+  fem::Form<T>& _l;
+  fem::Form<T>& _j;
+  std::vector<std::reference_wrapper<const fem::DirichletBC<T>>> _bcs;
   la::Vector<T> _b;
   Vec _b_petsc = nullptr;
   la::petsc::Matrix _matA;
@@ -135,8 +143,7 @@ int main(int argc, char* argv[])
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   // Set the logging thread name to show the process rank
-  int mpi_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
   std::string fmt = "[%Y-%m-%d %H:%M:%S.%e] [RANK " + std::to_string(mpi_rank)
                     + "] [%l] %v";
   spdlog::set_pattern(fmt);
@@ -159,20 +166,22 @@ int main(int argc, char* argv[])
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
 
-    auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(mesh, element, {3}));
+    auto V
+        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+            mesh, std::make_shared<fem::FiniteElement<U>>(
+                      element, std::vector<std::size_t>{3})));
 
     auto B = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
     auto traction = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
 
     // Define solution function
     auto u = std::make_shared<fem::Function<T>>(V);
-    auto a = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_hyperelasticity_J_form, {V, V}, {{"u", u}},
-                            {{"B", B}, {"T", traction}}, {}));
-    auto L = std::make_shared<fem::Form<T>>(
-        fem::create_form<T>(*form_hyperelasticity_F_form, {V}, {{"u", u}},
-                            {{"B", B}, {"T", traction}}, {}));
+    fem::Form<T> a
+        = fem::create_form<T>(*form_hyperelasticity_J_form, {V, V}, {{"u", u}},
+                              {{"B", B}, {"T", traction}}, {}, {});
+    fem::Form<T> L
+        = fem::create_form<T>(*form_hyperelasticity_F_form, {V}, {{"u", u}},
+                              {{"B", B}, {"T", traction}}, {}, {});
 
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
@@ -185,15 +194,12 @@ int main(int argc, char* argv[])
           constexpr U x2_c = 0.5;
 
           // Large angle of rotation (60 degrees)
-          constexpr U theta = 1.04719755;
+          constexpr U theta = std::numbers::pi / 3;
 
           // New coordinates
-          std::vector<U> fdata(3 * x.extent(1), 0.0);
-          MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              U, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-                     std::size_t, 3,
-                     MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
-              f(fdata.data(), 3, x.extent(1));
+          std::vector<U> fdata(3 * x.extent(1), 0);
+          md::mdspan<U, md::extents<std::size_t, 3, md::dynamic_extent>> f(
+              fdata.data(), 3, x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
             U x1 = x(1, p);
@@ -236,10 +242,9 @@ int main(int argc, char* argv[])
           }
           return marker;
         });
-    std::vector bcs = {
-        std::make_shared<const fem::DirichletBC<T>>(std::vector<T>{0, 0, 0},
-                                                    bdofs_left, V),
-        std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};
+    std::vector bcs
+        = {fem::DirichletBC<T>(std::vector<T>{0, 0, 0}, bdofs_left, V),
+           fem::DirichletBC<T>(u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);
     nls::petsc::NewtonSolver newton_solver(mesh->comm());
@@ -255,6 +260,9 @@ int main(int argc, char* argv[])
 
     // Compute Cauchy stress. Construct appropriate Basix element for
     // stress.
+    fem::Expression sigma_expression = fem::create_expression<T, U>(
+        *expression_hyperelasticity_sigma, {{"u", u}}, {});
+
     constexpr auto family = basix::element::family::P;
     auto cell_type
         = mesh::cell_type_to_basix_type(mesh->topology()->cell_type());
@@ -263,23 +271,23 @@ int main(int argc, char* argv[])
     basix::FiniteElement S_element = basix::create_element<U>(
         family, cell_type, k, basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, discontinuous);
-    auto S = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
-        mesh, S_element, std::vector<std::size_t>{3, 3}));
-    auto sigma_expression = fem::create_expression<T, U>(
-        *expression_hyperelasticity_sigma, {{"u", u}}, {});
+    auto S
+        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+            mesh, std::make_shared<fem::FiniteElement<U>>(
+                      S_element, std::vector<std::size_t>{3, 3})));
 
-    auto sigma = fem::Function<T>(S);
+    fem::Function<T> sigma(S);
     sigma.name = "cauchy_stress";
     sigma.interpolate(sigma_expression);
 
     // Save solution in VTK format
     io::VTKFile file_u(mesh->comm(), "u.pvd", "w");
-    file_u.write<T>({*u}, 0.0);
+    file_u.write<T>({*u}, 0);
 
     // Save Cauchy stress in XDMF format
     io::XDMFFile file_sigma(mesh->comm(), "sigma.xdmf", "w");
     file_sigma.write_mesh(*mesh);
-    file_sigma.write_function(sigma, 0.0);
+    file_sigma.write_function(sigma, 0);
   }
 
   PetscFinalize();

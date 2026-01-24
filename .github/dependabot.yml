@@ -9,3 +9,11 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+  - package-ecosystem: "pip" # See documentation for possible values
+    directory: "python/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker"
+    directory: "docker/"
+    schedule:
+      interval: "weekly"

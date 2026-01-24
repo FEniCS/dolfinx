@@ -6,6 +6,7 @@
 //
 // Unit tests for Distributed la::Vector
 
+#include <algorithm>
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <complex>
@@ -17,7 +18,6 @@ using namespace dolfinx;
 
 namespace
 {
-
 template <typename T>
 void test_vector()
 {
@@ -39,12 +39,12 @@ void test_vector()
       MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
 
   la::Vector<T> v(index_map, 1);
-  std::fill(v.mutable_array().begin(), v.mutable_array().end(), 1.0);
+  std::ranges::fill(v.array(), 1.0);
 
   double norm2 = la::squared_norm(v);
   CHECK(norm2 == mpi_size * size_local);
 
-  std::fill(v.mutable_array().begin(), v.mutable_array().end(), mpi_rank);
+  std::ranges::fill(v.array(), mpi_rank);
 
   double sumn2
       = size_local * (mpi_size - 1) * mpi_size * (2 * mpi_size - 1) / 6;
@@ -54,10 +54,52 @@ void test_vector()
   CHECK(la::norm(v, la::Norm::linf) == static_cast<T>(mpi_size - 1));
 }
 
+void test_vector_cast()
+{
+  using T = double;
+  using U = float;
+
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+  constexpr int size_local = 100;
+
+  // Create some ghost entries on next process
+  int num_ghosts = (mpi_size - 1) * 3;
+  std::vector<std::int64_t> ghosts(num_ghosts);
+  for (int i = 0; i < num_ghosts; ++i)
+    ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
+
+  std::vector<int> global_ghost_owner(ghosts.size(), (mpi_rank + 1) % mpi_size);
+
+  // Create an IndexMap
+  auto index_map = std::make_shared<common::IndexMap>(
+      MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
+
+  la::Vector<T> v(index_map, 1);
+  std::ranges::fill(v.array(), 1);
+
+  la::Vector<U, std::vector<U>, std::vector<std::int64_t>> v1(v);
+
+  U norm2 = la::squared_norm(v1);
+  CHECK(norm2 == mpi_size * size_local);
+
+  std::ranges::fill(v1.array(), mpi_rank);
+
+  U sumn2 = size_local * (mpi_size - 1) * mpi_size * (2 * mpi_size - 1) / 6;
+  CHECK(la::squared_norm(v1) == sumn2);
+  CHECK(la::norm(v1, la::Norm::l2) == std::sqrt(sumn2));
+  CHECK(la::inner_product(v1, v1) == sumn2);
+  CHECK(la::norm(v1, la::Norm::linf) == static_cast<U>(mpi_size - 1));
+}
 } // namespace
 
 TEMPLATE_TEST_CASE("Linear Algebra Vector", "[la_vector]", double,
                    std::complex<double>)
 {
   CHECK_NOTHROW(test_vector<TestType>());
+}
+
+TEST_CASE("Linear Algebra Vector", "[la_vector]")
+{
+  CHECK_NOTHROW(test_vector_cast());
 }

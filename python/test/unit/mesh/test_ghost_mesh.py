@@ -18,13 +18,6 @@ from dolfinx.mesh import (
 )
 
 
-@pytest.mark.xfail(reason="Shared vertex currently disabled")
-def test_ghost_vertex_1d():
-    mesh = create_unit_interval(MPI.COMM_WORLD, 20, ghost_mode=GhostMode.shared_vertex)
-    assert mesh.topology.index_map(0).size_global == 21
-    assert mesh.topology.index_map(1).size_global == 20
-
-
 def test_ghost_facet_1d():
     N = 40
     mesh = create_unit_interval(MPI.COMM_WORLD, N, ghost_mode=GhostMode.shared_facet)
@@ -32,20 +25,10 @@ def test_ghost_facet_1d():
     assert mesh.topology.index_map(1).size_global == N
 
 
-@pytest.mark.parametrize(
-    "mode",
-    [
-        GhostMode.shared_facet,
-        pytest.param(
-            GhostMode.shared_vertex,
-            marks=pytest.mark.xfail(reason="Shared vertex currently disabled"),
-        ),
-    ],
-)
-def test_ghost_2d(mode):
+def test_ghost_2d():
     N = 8
     num_cells = N * N * 2
-    mesh = create_unit_square(MPI.COMM_WORLD, N, N, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, N, N, ghost_mode=GhostMode.shared_facet)
     if mesh.comm.size > 1:
         map = mesh.topology.index_map(2)
         num_cells_local = map.size_local + map.num_ghosts
@@ -54,11 +37,10 @@ def test_ghost_2d(mode):
     assert mesh.topology.index_map(2).size_global == num_cells
 
 
-@pytest.mark.parametrize("mode", [GhostMode.shared_facet])
-def test_ghost_3d(mode):
+def test_ghost_3d():
     N = 2
     num_cells = N * N * N * 6
-    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, ghost_mode=mode)
+    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, ghost_mode=GhostMode.shared_facet)
     if mesh.comm.size > 1:
         map = mesh.topology.index_map(3)
         num_cells_local = map.size_local + map.num_ghosts
@@ -72,10 +54,6 @@ def test_ghost_3d(mode):
     [
         GhostMode.none,
         GhostMode.shared_facet,
-        pytest.param(
-            GhostMode.shared_vertex,
-            marks=pytest.mark.xfail(reason="Shared vertex currently disabled"),
-        ),
     ],
 )
 def test_ghost_connectivities(mode):
@@ -95,12 +73,11 @@ def test_ghost_connectivities(mode):
     map_f = topology.index_map(tdim - 1)
     num_facets = map_f.size_local + map_f.num_ghosts
 
-    reference = dict()
     meshR.topology.create_connectivity(tdim - 1, tdim)
     facet_mp = compute_midpoints(meshR, tdim - 1, np.arange(num_facets))
     meshR.topology.create_connectivity(tdim, tdim)
     cell_mp = compute_midpoints(meshR, tdim, np.arange(num_cells))
-    reference = dict.fromkeys([tuple(row) for row in facet_mp], [])
+    reference = {tuple(row): [] for row in facet_mp}
     for i in range(num_facets):
         for cidx in meshR.topology.connectivity(1, 2).links(i):
             reference[tuple(facet_mp[i])].append(cell_mp[cidx].tolist())

@@ -4,16 +4,18 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
-#include "caster_mpi.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
 #include <basix/mdspan.hpp>
 #include <dolfinx/common/defines.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/io/VTKFile.h>
+#include <dolfinx/io/VTKHDF.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/utils.h>
 #include <dolfinx/io/vtk_utils.h>
 #include <dolfinx/io/xdmf_utils.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -24,6 +26,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/filesystem.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
@@ -33,14 +36,14 @@
 #include <vector>
 
 namespace nb = nanobind;
+namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 namespace dolfinx_wrappers
 {
 namespace
 {
 template <typename T, std::size_t ndim>
-using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+using mdspan_t = md::mdspan<const T, md::dextents<std::size_t, ndim>>;
 
 template <typename T>
 void xdmf_real_fn(auto&& m)
@@ -48,14 +51,14 @@ void xdmf_real_fn(auto&& m)
   m.def(
       "write_mesh",
       [](dolfinx::io::XDMFFile& self, const dolfinx::mesh::Mesh<T>& mesh,
-         std::string xpath) { self.write_mesh(mesh, xpath); },
+         const std::string& xpath) { self.write_mesh(mesh, xpath); },
       nb::arg("mesh"), nb::arg("xpath") = "/Xdmf/Domain");
   m.def(
       "write_meshtags",
       [](dolfinx::io::XDMFFile& self,
          const dolfinx::mesh::MeshTags<std::int32_t>& meshtags,
-         const dolfinx::mesh::Geometry<T>& x, std::string geometry_xpath,
-         std::string xpath)
+         const dolfinx::mesh::Geometry<T>& x, const std::string& geometry_xpath,
+         const std::string& xpath)
       { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
       nb::arg("meshtags"), nb::arg("x"), nb::arg("geometry_xpath"),
       nb::arg("xpath") = "/Xdmf/Domain");
@@ -67,7 +70,7 @@ void xdmf_scalar_fn(auto&& m)
   m.def(
       "write_function",
       [](dolfinx::io::XDMFFile& self, const dolfinx::fem::Function<T, U>& u,
-         double t, std::string mesh_xpath)
+         double t, const std::string& mesh_xpath)
       { self.write_function(u, t, mesh_xpath); },
       nb::arg("u"), nb::arg("t"),
       nb::arg("mesh_xpath") = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
@@ -80,7 +83,7 @@ void vtk_real_fn(auto&& m)
       "write",
       [](dolfinx::io::VTKFile& self, const dolfinx::mesh::Mesh<T>& mesh,
          double t) { self.write(mesh, t); },
-      nb::arg("mesh"), nb::arg("t") = 0.0);
+      nb::arg("mesh"), nb::arg("t") = 0);
 }
 
 template <typename T, typename U>
@@ -89,24 +92,25 @@ void vtk_scalar_fn(auto&& m)
   m.def(
       "write",
       [](dolfinx::io::VTKFile& self,
-         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>
+         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
              u_ptr,
          double t)
       {
         std::vector<std::reference_wrapper<const dolfinx::fem::Function<T, U>>>
             u;
-        for (auto q : u_ptr)
+        u.reserve(u_ptr.size());
+        for (auto& q : u_ptr)
           u.push_back(*q);
 
         self.write(u, t);
       },
-      nb::arg("u"), nb::arg("t") = 0.0);
+      nb::arg("u"), nb::arg("t") = 0);
 }
 
-template <typename T>
-void declare_vtx_writer(nb::module_& m, std::string type)
-{
 #ifdef HAS_ADIOS2
+template <typename T>
+void declare_vtx_writer(nb::module_& m, const std::string& type)
+{
   {
     std::string pyclass_name = "VTXWriter_" + type;
     nb::class_<dolfinx::io::VTXWriter<T>>(m, pyclass_name.c_str())
@@ -115,7 +119,8 @@ void declare_vtx_writer(nb::module_& m, std::string type)
             [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
                std::filesystem::path filename,
                std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-               std::string engine) {
+               std::string engine)
+            {
               new (self)
                   dolfinx::io::VTXWriter<T>(comm.get(), filename, mesh, engine);
             },
@@ -132,7 +137,7 @@ void declare_vtx_writer(nb::module_& m, std::string type)
                        const dolfinx::fem::Function<std::complex<float>, T>>,
                    std::shared_ptr<const dolfinx::fem::Function<
                        std::complex<double>, T>>>>& u,
-               std::string engine, dolfinx::io::VTXMeshPolicy policy)
+               const std::string& engine, dolfinx::io::VTXMeshPolicy policy)
             {
               new (self) dolfinx::io::VTXWriter<T>(comm.get(), filename, u,
                                                    engine, policy);
@@ -145,58 +150,19 @@ void declare_vtx_writer(nb::module_& m, std::string type)
             "write", [](dolfinx::io::VTXWriter<T>& self, double t)
             { self.write(t); }, nb::arg("t"));
   }
-
-  {
-    std::string pyclass_name = "FidesWriter_" + type;
-    nb::class_<dolfinx::io::FidesWriter<T>>(m, pyclass_name.c_str(),
-                                            "FidesWriter object")
-        .def(
-            "__init__",
-            [](dolfinx::io::FidesWriter<T>* self, MPICommWrapper comm,
-               std::filesystem::path filename,
-               std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-               std::string engine) {
-              new (self) dolfinx::io::FidesWriter<T>(comm.get(), filename, mesh,
-                                                     engine);
-            },
-            nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"),
-            nb::arg("engine") = "BPFile")
-        .def(
-            "__init__",
-            [](dolfinx::io::FidesWriter<T>* self, MPICommWrapper comm,
-               std::filesystem::path filename,
-               const std::vector<std::variant<
-                   std::shared_ptr<const dolfinx::fem::Function<float, T>>,
-                   std::shared_ptr<const dolfinx::fem::Function<double, T>>,
-                   std::shared_ptr<
-                       const dolfinx::fem::Function<std::complex<float>, T>>,
-                   std::shared_ptr<const dolfinx::fem::Function<
-                       std::complex<double>, T>>>>& u,
-               std::string engine, dolfinx::io::FidesMeshPolicy policy)
-            {
-              new (self) dolfinx::io::FidesWriter<T>(comm.get(), filename, u,
-                                                     engine, policy);
-            },
-            nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
-            nb::arg("engine") = "BPFile",
-            nb::arg("policy") = dolfinx::io::FidesMeshPolicy::update)
-        .def("close", [](dolfinx::io::FidesWriter<T>& self) { self.close(); })
-        .def(
-            "write", [](dolfinx::io::FidesWriter<T>& self, double t)
-            { self.write(t); }, nb::arg("t"));
-  }
-#endif
 }
+#endif
 
 template <typename T>
 void declare_data_types(nb::module_& m)
 {
   m.def(
       "distribute_entity_data",
-      [](const dolfinx::mesh::Topology topology,
+      [](const dolfinx::mesh::Topology& topology,
          nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
              input_global_indices,
-         std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
+         std::int64_t num_nodes_g,
+         const dolfinx::fem::ElementDofLayout& cmap_dof_layout,
          nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> xdofmap,
          int entity_dim,
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> entities,
@@ -211,7 +177,7 @@ void declare_data_types(nb::module_& m)
         std::span<const std::int64_t> input_global_indices_span(
             input_global_indices.data(), input_global_indices.size());
         std::pair<std::vector<std::int32_t>, std::vector<T>> entities_values
-            = dolfinx::io::xdmf_utils::distribute_entity_data<T>(
+            = dolfinx::io::distribute_entity_data<T>(
                 topology, input_global_indices_span, num_nodes_g,
                 cmap_dof_layout, xdofmap_span, entity_dim, entities_span,
                 std::span(values.data(), values.size()));
@@ -249,11 +215,30 @@ void io(nb::module_& m)
                                                 dofmap.shape(1));
         auto [cells, shape]
             = dolfinx::io::extract_vtk_connectivity(_dofmap, cell);
-        return as_nbarray(std::move(cells), shape.size(), shape.data());
+        return as_nbarray(std::move(cells), shape);
       },
       nb::arg("dofmap"), nb::arg("celltype"),
       "Extract the mesh topology with VTK ordering using "
       "geometry indices");
+
+  m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>)
+      .def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<float>);
+  m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<double>);
+  m.def("write_vtkhdf_data", &dolfinx::io::VTKHDF::write_data<float>);
+  m.def("read_vtkhdf_mesh_float64",
+        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
+           std::optional<std::int32_t> max_facet_to_cell_links)
+        {
+          return dolfinx::io::VTKHDF::read_mesh<double>(
+              comm.get(), filename, gdim, max_facet_to_cell_links);
+        });
+  m.def("read_vtkhdf_mesh_float32",
+        [](MPICommWrapper comm, const std::string& filename, std::size_t gdim,
+           std::optional<std::int32_t> max_facet_to_cell_links)
+        {
+          return dolfinx::io::VTKHDF::read_mesh<float>(
+              comm.get(), filename, gdim, max_facet_to_cell_links);
+        });
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, nb::arg("type"),
@@ -276,8 +261,9 @@ void io(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::io::XDMFFile* x, MPICommWrapper comm,
-             std::filesystem::path filename, std::string file_mode,
-             dolfinx::io::XDMFFile::Encoding encoding) {
+             std::filesystem::path filename, const std::string& file_mode,
+             dolfinx::io::XDMFFile::Encoding encoding)
+          {
             new (x) dolfinx::io::XDMFFile(comm.get(), filename, file_mode,
                                           encoding);
           },
@@ -289,19 +275,21 @@ void io(nb::module_& m)
            nb::arg("xpath") = "/Xdmf/Domain")
       .def(
           "read_topology_data",
-          [](dolfinx::io::XDMFFile& self, std::string name, std::string xpath)
+          [](dolfinx::io::XDMFFile& self, const std::string& name,
+             const std::string& xpath)
           {
             auto [cells, shape] = self.read_topology_data(name, xpath);
-            return as_nbarray(std::move(cells), shape.size(), shape.data());
+            return as_nbarray(std::move(cells), shape);
           },
           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def(
           "read_geometry_data",
-          [](dolfinx::io::XDMFFile& self, std::string name, std::string xpath)
+          [](dolfinx::io::XDMFFile& self, const std::string& name,
+             const std::string& xpath)
           {
             auto [x, shape] = self.read_geometry_data(name, xpath);
             std::vector<double>& _x = std::get<std::vector<double>>(x);
-            return as_nbarray(std::move(_x), shape.size(), shape.data());
+            return as_nbarray(std::move(_x), shape);
           },
           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
@@ -309,11 +297,13 @@ void io(nb::module_& m)
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
            nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           nb::arg("mesh"), nb::arg("name"), nb::arg("xpath") = "/Xdmf/Domain")
+           nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name").none(),
+           nb::arg("xpath"))
       .def("write_information", &dolfinx::io::XDMFFile::write_information,
            nb::arg("name"), nb::arg("value"), nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
            nb::arg("name"), nb::arg("xpath") = "/Xdmf/Domain")
+      .def("flush", &dolfinx::io::XDMFFile::flush)
       .def_prop_ro(
           "comm", [](dolfinx::io::XDMFFile& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
@@ -331,7 +321,7 @@ void io(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::io::VTKFile* v, MPICommWrapper comm,
-             std::filesystem::path filename, std::string mode)
+             std::filesystem::path filename, const std::string& mode)
           { new (v) dolfinx::io::VTKFile(comm.get(), filename, mode); },
           nb::arg("comm"), nb::arg("filename"), nb::arg("mode"))
       .def("close", &dolfinx::io::VTKFile::close);
@@ -344,19 +334,16 @@ void io(nb::module_& m)
   vtk_scalar_fn<std::complex<double>, double>(vtk_file);
 
 #ifdef HAS_ADIOS2
-  nb::enum_<dolfinx::io::FidesMeshPolicy>(m, "FidesMeshPolicy")
-      .value("update", dolfinx::io::FidesMeshPolicy::update)
-      .value("reuse", dolfinx::io::FidesMeshPolicy::reuse);
-
   nb::enum_<dolfinx::io::VTXMeshPolicy>(m, "VTXMeshPolicy")
       .value("update", dolfinx::io::VTXMeshPolicy::update)
       .value("reuse", dolfinx::io::VTXMeshPolicy::reuse);
-#endif
 
   declare_vtx_writer<float>(m, "float32");
   declare_vtx_writer<double>(m, "float64");
+#endif
 
   declare_data_types<std::int32_t>(m);
+  declare_data_types<std::int64_t>(m);
   declare_data_types<float>(m);
   declare_data_types<std::complex<float>>(m);
   declare_data_types<double>(m);

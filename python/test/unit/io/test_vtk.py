@@ -138,7 +138,7 @@ def test_save_2d_vector_CG2(tempdir):
     )
     cells = np.array([[0, 1, 2, 3, 4, 5], [1, 6, 2, 7, 3, 8]])
     domain = ufl.Mesh(element("Lagrange", "triangle", 2, shape=(2,), dtype=default_real_type))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     gdim = mesh.geometry.dim
     u = Function(functionspace(mesh, ("Lagrange", 2, (gdim,))))
     u.interpolate(lambda x: np.vstack((x[0], x[1])))
@@ -203,7 +203,7 @@ def test_save_vector_element(tempdir, cell_type):
 
 
 def test_save_vtk_cell_point(tempdir):
-    """Test writing cell-wise and point-wise data"""
+    """Test writing cell-wise and point-wise data."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     P2 = element("Lagrange", mesh.basix_cell(), 1, shape=(3,), dtype=default_real_type)
     P1 = element("Discontinuous Lagrange", mesh.basix_cell(), 0, dtype=default_real_type)

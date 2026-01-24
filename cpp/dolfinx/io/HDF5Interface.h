@@ -20,7 +20,6 @@
 
 namespace dolfinx::io::hdf5
 {
-
 /// C++ type to HDF5 data type
 template <typename T>
 hid_t hdf5_type()
@@ -37,6 +36,8 @@ hid_t hdf5_type()
     return H5T_NATIVE_INT64;
   else if constexpr (std::is_same_v<T, std::uint64_t>)
     return H5T_NATIVE_UINT64;
+  else if constexpr (std::is_same_v<T, std::uint8_t>)
+    return H5T_NATIVE_UINT8;
   else if constexpr (std::is_same_v<T, std::size_t>)
   {
     throw std::runtime_error(
@@ -77,6 +78,18 @@ std::filesystem::path get_filename(hid_t handle);
 /// @return True if @p dataset_path is in the file
 bool has_dataset(hid_t handle, const std::string& dataset_path);
 
+/// @brief Set an attribute on a dataset or group.
+///
+/// @param[in] handle Dataset or group handle.
+/// @param[in] attr_name Name of attribute.
+/// @param[in] value Value to set.
+void set_attribute(hid_t handle, const std::string& attr_name,
+                   const std::string& value);
+void set_attribute(hid_t handle, const std::string& attr_name,
+                   const std::vector<std::int32_t>& value);
+void set_attribute(hid_t handle, const std::string& attr_name,
+                   std::int32_t value);
+
 /// Open dataset
 /// @param[in] handle HDF5 file handle.
 /// @param[in] path Data set path.
@@ -90,10 +103,13 @@ hid_t open_dataset(hid_t handle, const std::string& path);
 std::vector<std::int64_t> get_dataset_shape(hid_t handle,
                                             const std::string& dataset_path);
 
-/// Set MPI atomicity. See
+/// @brief Set MPI atomicity.
+///
+/// See
 /// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-SetMpiAtomicity
 /// and
 /// https://www.open-mpi.org/doc/v2.0/man3/MPI_File_set_atomicity.3.php
+///
 /// Writes must be followed by an MPI_Barrier on the communicator before
 /// any subsequent reads are guaranteed to return the same data.
 void set_mpi_atomicity(hid_t handle, bool atomic);
@@ -109,22 +125,30 @@ bool get_mpi_atomicity(hid_t handle);
 /// @param[in] dataset_path Data set path to add
 void add_group(hid_t handle, const std::string& dataset_path);
 
-/// Write data to existing HDF file as defined by range blocks on each
-/// process
-/// @param[in] file_handle HDF5 file handle
-/// @param[in] dataset_path Path for the dataset in the HDF5 file
+/// @brief Write data to existing HDF file as defined by range blocks on
+/// each process.
+///
+/// @param[in] file_handle HDF5 file handle.
+/// @param[in] dataset_path Path for the dataset in the HDF5 file.
 /// @param[in] data Data to be written, flattened into 1D vector
-///   (row-major storage)
-/// @param[in] range The local range on this processor
-/// @param[in] global_size The global shape shape of the array
-/// @param[in] use_mpi_io True if MPI-IO should be used
-/// @param[in] use_chunking True if chunking should be used
+/// (row-major storage).
+/// @param[in] range Local range on this processor.
+/// @param[in] global_size Global shape of the array.
+/// @param[in] use_mpi_io `true` if MPI-IO should be used.
+/// @param[in] use_chunking `true` if chunking should be used, required
+/// for extensible datasets.
+/// @note Can be used to resize and write into an existing dataset.
+/// @note Chunking is required for extensible datasets.
 template <typename T>
 void write_dataset(hid_t file_handle, const std::string& dataset_path,
                    const T* data, std::array<std::int64_t, 2> range,
                    const std::vector<int64_t>& global_size, bool use_mpi_io,
                    bool use_chunking)
 {
+  // Check that group exists and recursively create if required
+  const std::string group_name(dataset_path, 0, dataset_path.rfind('/'));
+  add_group(file_handle, group_name);
+
   // Data rank
   const int rank = global_size.size();
   assert(rank != 0);
@@ -148,52 +172,79 @@ void write_dataset(hid_t file_handle, const std::string& dataset_path,
   // Dataset dimensions
   const std::vector<hsize_t> dimsf(global_size.begin(), global_size.end());
 
-  // Create a global data space
-  const hid_t filespace0 = H5Screate_simple(rank, dimsf.data(), nullptr);
-  if (filespace0 == H5I_INVALID_HID)
-    throw std::runtime_error("Failed to create HDF5 data space");
-
-  // Set chunking parameters
-  hid_t chunking_properties;
-  if (use_chunking)
+  // Writing into an existing dataset
+  if (has_dataset(file_handle, dataset_path))
   {
-    // Set chunk size and limit to 1kB min/1MB max
-    hsize_t chunk_size = dimsf[0] / 2;
-    if (chunk_size > 1048576)
-      chunk_size = 1048576;
-    if (chunk_size < 1024)
-      chunk_size = 1024;
-
-    hsize_t chunk_dims[2] = {chunk_size, dimsf[1]};
-    chunking_properties = H5Pcreate(H5P_DATASET_CREATE);
-    H5Pset_chunk(chunking_properties, rank, chunk_dims);
+    // Resize to new global size
+    hid_t dset_id = hdf5::open_dataset(file_handle, dataset_path.c_str());
+    H5Dset_extent(dset_id, dimsf.data());
+    H5Dclose(dset_id);
   }
   else
-    chunking_properties = H5P_DEFAULT;
+  {
+    std::vector<hsize_t> maxdims(dimsf.begin(), dimsf.end());
 
-  // Check that group exists and recursively create if required
-  const std::string group_name(dataset_path, 0, dataset_path.rfind('/'));
-  add_group(file_handle, group_name);
+    // Set chunking parameters
+    hid_t chunking_properties;
+    if (use_chunking)
+    {
+      // Make array extensible, if chunking is set
+      std::fill(maxdims.begin(), maxdims.end(), H5S_UNLIMITED);
 
-  // Create global dataset (using dataset_path)
-  const hid_t dset_id
-      = H5Dcreate2(file_handle, dataset_path.c_str(), h5type, filespace0,
-                   H5P_DEFAULT, chunking_properties, H5P_DEFAULT);
-  if (dset_id == H5I_INVALID_HID)
-    throw std::runtime_error("Failed to create HDF5 global dataset.");
+      // Set chunk size and limit to 1kB min/1MB max
+      hsize_t chunk_size = dimsf[0] / 2;
+      if (chunk_size > 1048576)
+        chunk_size = 1048576;
+      if (chunk_size < 1024)
+        chunk_size = 1024;
 
-  // Close global data space
-  if (herr_t status = H5Sclose(filespace0); status < 0)
-    throw std::runtime_error("Failed to close HDF5 global data space.");
+      std::vector<hsize_t> chunk_dims = {chunk_size};
+      if (rank == 2)
+        chunk_dims.push_back(dimsf[1]);
+      chunking_properties = H5Pcreate(H5P_DATASET_CREATE);
+      H5Pset_chunk(chunking_properties, rank, chunk_dims.data());
+    }
+    else
+      chunking_properties = H5P_DEFAULT;
 
-  // Create a local data space
-  const hid_t memspace = H5Screate_simple(rank, count.data(), nullptr);
-  if (memspace == H5I_INVALID_HID)
-    throw std::runtime_error("Failed to create HDF5 local data space.");
+    // Create a global data space
+    const hid_t filespace0
+        = H5Screate_simple(rank, dimsf.data(), maxdims.data());
+    if (filespace0 == H5I_INVALID_HID)
+      throw std::runtime_error("Failed to create HDF5 data space");
 
-  // Create a file dataspace within the global space - a hyperslab
-  const hid_t filespace1 = H5Dget_space(dset_id);
-  herr_t status = H5Sselect_hyperslab(filespace1, H5S_SELECT_SET, offset.data(),
+    // Create global dataset (using dataset_path)
+    const hid_t dset_id
+        = H5Dcreate2(file_handle, dataset_path.c_str(), h5type, filespace0,
+                     H5P_DEFAULT, chunking_properties, H5P_DEFAULT);
+    if (dset_id == H5I_INVALID_HID)
+      throw std::runtime_error("Failed to create HDF5 global dataset.");
+
+    // Close global data space
+    if (H5Sclose(filespace0) < 0)
+      throw std::runtime_error("Failed to close HDF5 global data space.");
+
+    if (use_chunking)
+    {
+      // Close chunking properties
+      if (H5Pclose(chunking_properties) < 0)
+        throw std::runtime_error("Failed to close HDF5 chunking properties.");
+    }
+
+    // Close dataset collectively
+    if (H5Dclose(dset_id) < 0)
+      throw std::runtime_error("Failed to close HDF5 dataset.");
+  }
+
+  // Reopen dataset and write data
+  hid_t dset_id = hdf5::open_dataset(file_handle, dataset_path.c_str());
+  assert(dset_id != H5I_INVALID_HID);
+
+  hid_t dataspace = H5Dget_space(dset_id);
+  if (dataspace == H5I_INVALID_HID)
+    throw std::runtime_error("Failed to open HDF5 data space.");
+
+  herr_t status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset.data(),
                                       nullptr, count.data(), nullptr);
   if (status < 0)
     throw std::runtime_error("Failed to create HDF5 dataspace.");
@@ -210,32 +261,21 @@ void write_dataset(hid_t file_handle, const std::string& dataset_path,
     }
   }
 
-  // Write local dataset into selected hyperslab
-  if (H5Dwrite(dset_id, h5type, memspace, filespace1, plist_id, data) < 0)
+  // Create a local data space
+  const hid_t memspace = H5Screate_simple(rank, count.data(), nullptr);
+  if (memspace == H5I_INVALID_HID)
+    throw std::runtime_error("Failed to create HDF5 local data space.");
+
+  // Write local dataset
+  if (H5Dwrite(dset_id, h5type, memspace, dataspace, plist_id, data) < 0)
   {
-    throw std::runtime_error(
-        "Failed to write HDF5 local dataset into hyperslab.");
+    throw std::runtime_error("Failed to write HDF5 local dataset.");
   }
 
-  if (use_chunking)
-  {
-    // Close chunking properties
-    if (H5Pclose(chunking_properties) < 0)
-      throw std::runtime_error("Failed to close HDF5 chunking properties.");
-  }
+  H5Sclose(memspace);
+  H5Sclose(dataspace);
 
-  // Close dataset collectively
-  if (H5Dclose(dset_id) < 0)
-    throw std::runtime_error("Failed to close HDF5 dataset.");
-
-  // Close hyperslab
-  if (H5Sclose(filespace1) < 0)
-    throw std::runtime_error("Failed to close HDF5 hyperslab.");
-
-  // Close local dataset
-  if (H5Sclose(memspace) < 0)
-    throw std::runtime_error("Failed to close local HDF5 dataset.");
-
+  H5Dclose(dset_id);
   // Release file-access template
   if (H5Pclose(plist_id) < 0)
     throw std::runtime_error("Failed to release HDF5 file-access template.");

@@ -42,7 +42,7 @@ struct dofmap_t
 /// [0:owned_size).
 /// @param[in] dofmaps The local dofmaps (cell -> dofs)
 /// @param[in] owned_size Number of dofs owned by this process
-/// @param[in] original_to_contiguous Map from dof indices in @p dofmap
+/// @param[in] original_to_contiguous Map from dof indices in `dofmap`.
 /// to new indices that are ordered such that owned indices are [0,
 /// owned_size)
 /// @param[in] reorder_fn The graph reordering function to apply
@@ -58,7 +58,7 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
 
   // Compute maximum number of graph out edges edges per dof
   std::vector<int> num_edges(owned_size);
-  for (const auto& dofmap : dofmaps)
+  for (auto& dofmap : dofmaps)
   {
     std::size_t num_cells = dofmap.array.size() / dofmap.width;
     std::vector<std::int32_t> node_temp;
@@ -82,7 +82,7 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
   std::partial_sum(num_edges.begin(), num_edges.end(),
                    std::next(offsets.begin(), 1));
   std::vector<std::int32_t> edges(offsets.back());
-  for (const auto& dofmap : dofmaps)
+  for (auto& dofmap : dofmaps)
   {
     std::size_t num_cells = dofmap.array.size() / dofmap.width;
     std::vector<std::int32_t> node_temp;
@@ -116,16 +116,14 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
   std::int32_t current_offset = 0;
   for (std::size_t i = 0; i < num_edges.size(); ++i)
   {
-    std::sort(std::next(edges.begin(), current_offset),
-              std::next(edges.begin(), current_offset + num_edges[i]));
-    const auto it
-        = std::unique(std::next(edges.begin(), current_offset),
-                      std::next(edges.begin(), current_offset + num_edges[i]));
-    graph_data.insert(graph_data.end(),
-                      std::next(edges.begin(), current_offset), it);
-    graph_offsets[i + 1]
-        = graph_offsets[i]
-          + std::distance(std::next(edges.begin(), current_offset), it);
+    auto range_begin = std::next(edges.begin(), current_offset);
+    auto edge_range = std::ranges::subrange(
+        range_begin, std::next(range_begin, num_edges[i]));
+    std::ranges::sort(edge_range);
+    auto it = std::ranges::unique(edge_range).begin();
+
+    graph_data.insert(graph_data.end(), range_begin, it);
+    graph_offsets[i + 1] = graph_offsets[i] + std::distance(range_begin, it);
     current_offset += num_edges[i];
   }
 
@@ -171,7 +169,7 @@ build_basic_dofmaps(
   std::vector<std::pair<std::int8_t, std::int8_t>> required_dim_et;
   std::vector<std::int32_t> num_entity_dofs_et;
   std::vector<std::shared_ptr<const common::IndexMap>> topo_index_maps;
-  std::vector<std::int32_t> local_entity_offsets = {0};
+  std::vector<std::int32_t> local_entity_offsets{0};
 
   std::vector<std::vector<mesh::CellType>> entity_types(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
@@ -211,7 +209,9 @@ build_basic_dofmaps(
                 local_entity_offsets.back()
                 + num_entity_dofs * (im->size_local() + im->num_ghosts()));
 
-            if (d < D and !topology.connectivity({D, i}, {d, et_index}))
+            if (d < D
+                and !topology.connectivity({int(D), int(i)},
+                                           {int(d), int(et_index)}))
             {
               throw std::runtime_error("Missing needed connectivity. Cell type:"
                                        + std::to_string(i)
@@ -281,10 +281,17 @@ build_basic_dofmaps(
 
         const std::vector<std::vector<int>>& e_dofs_d = entity_dofs[d];
 
+        // Skip over undefined topology, e.g. quad facets of tetrahedra
+        if (d < D
+            and !topology.connectivity({int(D), int(i)}, {int(d), int(et)}))
+          continue;
+
         // Iterate over each entity of current dimension d and type et
         std::span<const std::int32_t> c_to_e
-            = d < D ? topology.connectivity({D, i}, {d, et})->links(c)
-                    : std::span<const std::int32_t>(&c, 1);
+            = d < D
+                  ? topology.connectivity({int(D), int(i)}, {int(d), int(et)})
+                        ->links(c)
+                  : std::span<const std::int32_t>(&c, 1);
 
         int w = 0;
         for (std::size_t e = 0; e < e_dofs_d.size(); ++e)
@@ -337,7 +344,7 @@ build_basic_dofmaps(
   for (std::size_t k = 0; k < required_dim_et.size(); ++k)
   {
     const int num_entity_dofs = num_entity_dofs_et[k];
-    auto map = topo_index_maps[k];
+    auto& map = topo_index_maps[k];
     assert(map);
     std::vector<std::int64_t> global_indices = map->global_indices();
 
@@ -372,9 +379,10 @@ build_basic_dofmaps(
 /// same range
 /// @param [in] dof_entity Map from dof index to (index_map, entity_index),
 /// where entity_index is the local mesh entity index in the given index_map
-/// @param [in] index_maps The set of IndexMaps, one for each topological
-/// entity type used in the dofmap. The location in this array is referred to by
-/// the first item in each entry of @p dof_entity
+/// @param [in] index_maps The set of IndexMaps, one for each
+/// topological entity type used in the dofmap. The location in this
+/// array is referred to by the first item in each entry of
+/// `dof_entity`.
 /// @param [in] reorder_fn Graph reordering function that is applied for
 /// dof re-ordering
 /// @return The pair (old-to-new local index map, M), where M is the
@@ -390,8 +398,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 
   // Get mesh entity ownership offset for each IndexMap
   std::vector<std::int32_t> offset(index_maps.size(), -1);
-  std::transform(index_maps.begin(), index_maps.end(), offset.begin(),
-                 [](auto map) { return map->size_local(); });
+  std::ranges::transform(index_maps, offset.begin(),
+                         [](auto& map) { return map->size_local(); });
 
   // Compute the number of dofs 'owned' by this process
   const std::int32_t owned_size = std::accumulate(
@@ -405,7 +413,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // owned dofs. Set to -1 for unowned dofs.
   std::vector<int> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t counter_owned(0), counter_unowned(owned_size);
-  for (auto dofmap : dofmaps)
+  for (auto& dofmap : dofmaps)
   {
     for (std::int32_t dof : dofmap.array)
     {
@@ -441,10 +449,10 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     // Apply graph reordering to owned dofs
     const std::vector<int> node_remap = reorder_owned(
         dofmaps, owned_size, original_to_contiguous, reorder_fn);
-    std::transform(original_to_contiguous.begin(), original_to_contiguous.end(),
-                   original_to_contiguous.begin(),
-                   [&node_remap, owned_size](auto index)
-                   { return index < owned_size ? node_remap[index] : index; });
+    std::ranges::transform(
+        original_to_contiguous, original_to_contiguous.begin(),
+        [&node_remap, owned_size](auto index)
+        { return index < owned_size ? node_remap[index] : index; });
   }
 
   return {std::move(original_to_contiguous), owned_size};
@@ -479,14 +487,14 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   std::vector<std::vector<std::int8_t>> shared_entity(index_maps.size());
   for (std::size_t d = 0; d < index_maps.size(); ++d)
   {
-    auto map = index_maps[d];
+    auto& map = index_maps[d];
     assert(map);
 
     shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
     const std::vector<std::int32_t> forward_indices = map->shared_indices();
-    std::for_each(forward_indices.begin(), forward_indices.end(),
-                  [&entities = shared_entity[d]](auto idx)
-                  { entities[idx] = true; });
+    std::ranges::for_each(forward_indices,
+                          [&entities = shared_entity[d]](auto idx)
+                          { entities[idx] = true; });
   }
 
   // Build list of (global old, global new) index pairs for dofs that
@@ -512,10 +520,11 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   std::vector<MPI_Request> requests(index_maps.size());
   std::vector<MPI_Comm> comm(index_maps.size(), MPI_COMM_NULL);
   std::vector<std::vector<std::int64_t>> all_dofs_received(index_maps.size());
+  std::vector<std::vector<int>> size_recv(index_maps.size());
   std::vector<std::vector<int>> disp_recv(index_maps.size());
   for (std::size_t d = 0; d < index_maps.size(); ++d)
   {
-    auto map = index_maps[d];
+    auto& map = index_maps[d];
     assert(map);
 
     std::span src = map->src();
@@ -526,23 +535,22 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
     // Number and values to send and receive
     const int num_indices = global[d].size();
-    std::vector<int> size_recv;
-    size_recv.reserve(1); // ensure data is not a nullptr
-    size_recv.resize(src.size());
-    MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv.data(), 1,
+    size_recv[d].reserve(1); // ensure data is not a nullptr
+    size_recv[d].resize(src.size());
+    MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv[d].data(), 1,
                            MPI_INT, comm[d]);
 
     // Compute displacements for data to receive. Last entry has total
     // number of received items.
     disp_recv[d].resize(src.size() + 1);
-    std::partial_sum(size_recv.begin(), size_recv.begin() + src.size(),
+    std::partial_sum(size_recv[d].begin(), size_recv[d].begin() + src.size(),
                      disp_recv[d].begin() + 1);
 
     // TODO: use MPI_Ineighbor_alltoallv
     // Send global index of dofs to neighbors
     all_dofs_received[d].resize(disp_recv[d].back());
     MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
-                             all_dofs_received[d].data(), size_recv.data(),
+                             all_dofs_received[d].data(), size_recv[d].data(),
                              disp_recv[d].data(), MPI_INT64_T, comm[d],
                              &requests[requests_dim.size()]);
     requests_dim.push_back(d);
@@ -579,13 +587,12 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     global_old_new.reserve(disp_recv[d].back());
     for (std::size_t j = 0; j < all_dofs_received[d].size(); j += 2)
     {
-      const auto pos
-          = std::upper_bound(disp_recv[d].begin(), disp_recv[d].end(), j);
+      const auto pos = std::ranges::upper_bound(disp_recv[d], j);
       const int owner = std::distance(disp_recv[d].begin(), pos) - 1;
       global_old_new.push_back(
           {all_dofs_received[d][j], {all_dofs_received[d][j + 1], src[owner]}});
     }
-    std::sort(global_old_new.begin(), global_old_new.end());
+    std::ranges::sort(global_old_new);
 
     // Build the dimension d part of local_to_global_new vector
     for (std::size_t i = 0; i < local_new_to_global_old[d].size(); i += 2)
@@ -593,9 +600,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       std::pair<std::int64_t, std::pair<int64_t, int>> idx_old
           = {local_new_to_global_old[d][i], {0, 0}};
 
-      auto it = std::lower_bound(global_old_new.begin(), global_old_new.end(),
-                                 idx_old, [](auto& a, auto& b)
-                                 { return a.first < b.first; });
+      auto it = std::ranges::lower_bound(global_old_new, idx_old,
+                                         [](auto& a, auto& b)
+                                         { return a.first < b.first; });
       assert(it != global_old_new.end() and it->first == idx_old.first);
 
       local_to_global_new[local_new_to_global_old[d][i + 1]] = it->second.first;

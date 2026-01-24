@@ -115,7 +115,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
         dest = np.floor(midpoints[:, 0] % mpi_comm.size).astype(np.int32)
         return dolfinx.cpp.graph.AdjacencyList_int32(dest)
 
-    new_mesh = create_mesh(mpi_comm, topo, x, domain, partitioner)
+    new_mesh = create_mesh(mpi_comm, topo, domain, x, partitioner)
 
     tdim = new_mesh.topology.dim
     assert (
@@ -166,7 +166,7 @@ def test_asymmetric_partitioner():
         offsets = np.array(offsets, dtype=np.int32)
         return dolfinx.cpp.graph.AdjacencyList_int32(dests, offsets)
 
-    new_mesh = create_mesh(mpi_comm, topo, x, domain, partitioner)
+    new_mesh = create_mesh(mpi_comm, topo, domain, x, partitioner)
     if r == 0 and n > 1:
         assert new_mesh.topology.index_map(2).num_ghosts == 20
     else:
@@ -195,11 +195,11 @@ def test_mixed_topology_partitioning():
         v5 = v1 + (nx + 1) * (ny + 1)
         v6 = v2 + (nx + 1) * (ny + 1)
         v7 = v3 + (nx + 1) * (ny + 1)
-        if ix < nx // 2:
+        if iz < nz // 2:
             cells[0] += [v0, v1, v2, v3, v4, v5, v6, v7]
             orig_idx[0] += [idx]
             idx += 1
-        elif ix == nx // 2:
+        elif iz == nz // 2:
             # pyramid
             cells[1] += [v0, v1, v2, v3, v6]
             orig_idx[1] += [idx]

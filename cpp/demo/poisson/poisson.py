@@ -1,3 +1,4 @@
+"""Poisson problem."""
 # The first step is to define the variational problem at hand. We define
 # the variational problem in UFL terms in a separate form file
 # {download}`demo_poisson/poisson.py`.  We begin by defining the finite

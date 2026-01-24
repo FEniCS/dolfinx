@@ -18,6 +18,7 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -35,7 +36,7 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
   std::vector<int> local_vertices(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {
-    const std::vector<int> local_index = layout.entity_dofs(0, i);
+    const std::vector<int>& local_index = layout.entity_dofs(0, i);
     assert(local_index.size() == 1);
     local_vertices[i] = local_index[0];
   }
@@ -46,8 +47,8 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
   for (std::size_t c = 0; c < cells.size() / num_node_per_cell; ++c)
   {
     auto p = cells.subspan(c * num_node_per_cell, num_node_per_cell);
-    auto t = std::span(topology.data() + c * num_vertices_per_cell,
-                       num_vertices_per_cell);
+    std::span t(topology.data() + c * num_vertices_per_cell,
+                num_vertices_per_cell);
     for (int j = 0; j < num_vertices_per_cell; ++j)
       t[j] = p[local_vertices[j]];
   }
@@ -55,39 +56,52 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
   return topology;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
+std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology,
+                                                       int facet_type_idx)
 {
   const int tdim = topology.dim();
-  auto facet_map = topology.index_map(tdim - 1);
-  if (!facet_map)
-    throw std::runtime_error("Facets have not been computed.");
+  auto f_to_c = topology.connectivity(tdim - 1, tdim);
+  if (!f_to_c)
+  {
+    throw std::runtime_error(
+        "Facet to cell connectivity has not been computed.");
+  }
 
   // Find all owned facets (not ghost) with only one attached cell
-  const int num_facets = facet_map->size_local();
-  auto f_to_c = topology.connectivity(tdim - 1, tdim);
-  assert(f_to_c);
+  auto facet_map = topology.index_maps(tdim - 1).at(facet_type_idx);
+
   std::vector<std::int32_t> facets;
-  for (std::int32_t f = 0; f < num_facets; ++f)
+  for (std::int32_t f = 0; f < facet_map->size_local(); ++f)
   {
     if (f_to_c->num_links(f) == 1)
       facets.push_back(f);
   }
 
   // Remove facets on internal inter-process boundary
-  const std::vector<std::int32_t>& interprocess_facets
-      = topology.interprocess_facets();
   std::vector<std::int32_t> ext_facets;
-  std::set_difference(facets.begin(), facets.end(), interprocess_facets.begin(),
-                      interprocess_facets.end(),
-                      std::back_inserter(ext_facets));
+  std::ranges::set_difference(facets,
+                              topology.interprocess_facets(facet_type_idx),
+                              std::back_inserter(ext_facets));
+
   return ext_facets;
 }
 //------------------------------------------------------------------------------
-mesh::CellPartitionFunction
-mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
-                              const graph::partition_fn& partfn)
+std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
 {
-  return [partfn, ghost_mode](
+  if (topology.entity_types(topology.dim() - 1).size() > 1)
+  {
+    throw std::runtime_error("Multiple facet types in mesh. Call "
+                             "exterior_facet_indices with facet type index.");
+  }
+
+  return mesh::exterior_facet_indices(topology, 0);
+}
+//------------------------------------------------------------------------------
+mesh::CellPartitionFunction mesh::create_cell_partitioner(
+    mesh::GhostMode ghost_mode, const graph::partition_fn& partfn,
+    std::optional<std::int32_t> max_facet_to_cell_links)
+{
+  return [partfn, ghost_mode, max_facet_to_cell_links](
              MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
              const std::vector<std::span<const std::int64_t>>& cells)
              -> graph::AdjacencyList<std::int32_t>
@@ -96,7 +110,7 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
 
     // Compute distributed dual graph (for the cells on this process)
     const graph::AdjacencyList dual_graph
-        = build_dual_graph(comm, cell_types, cells);
+        = build_dual_graph(comm, cell_types, cells, max_facet_to_cell_links);
 
     // Just flag any kind of ghosting for now
     bool ghosting = (ghost_mode != GhostMode::none);
@@ -139,9 +153,10 @@ mesh::compute_incident_entities(const Topology& topology,
     entities1.insert(entities1.end(), e.begin(), e.end());
   }
 
-  std::sort(entities1.begin(), entities1.end());
-  entities1.erase(std::unique(entities1.begin(), entities1.end()),
-                  entities1.end());
+  std::ranges::sort(entities1);
+  auto [unique_end, range_end] = std::ranges::unique(entities1);
+  entities1.erase(unique_end, range_end);
+
   return entities1;
 }
 //-----------------------------------------------------------------------------

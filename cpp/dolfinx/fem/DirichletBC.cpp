@@ -115,18 +115,17 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
     // Convert dofs indices to 'block' map indices
     std::vector<std::int32_t> dofs_local_m;
     dofs_local_m.reserve(dofs_local.size());
-    std::transform(dofs_local.begin(), dofs_local.end(),
-                   std::back_inserter(dofs_local_m),
-                   [bs_map](auto dof) { return dof / bs_map; });
+    std::ranges::transform(dofs_local, std::back_inserter(dofs_local_m),
+                           [bs_map](auto dof) { return dof / bs_map; });
 
     // Compute global index of each block
     map.local_to_global(dofs_local_m, dofs_global);
 
     // Add offset
-    std::transform(dofs_global.begin(), dofs_global.end(), dofs_local.begin(),
-                   dofs_global.begin(),
-                   [bs_map](auto global_block, auto local_dof)
-                   { return bs_map * global_block + (local_dof % bs_map); });
+    std::ranges::transform(
+        dofs_global, dofs_local, dofs_global.begin(),
+        [bs_map](auto global_block, auto local_dof)
+        { return bs_map * global_block + (local_dof % bs_map); });
   }
 
   MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -155,6 +154,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
   // NOTE: Should we use map here or just one vector with ghosts and
   // std::distance?
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
+  global_local_ghosts.reserve(ghosts.size());
   const std::int32_t local_size = range[1] - range[0];
   for (std::size_t i = 0; i < ghosts.size(); ++i)
     global_local_ghosts.emplace_back(ghosts[i], i + local_size);
@@ -195,6 +195,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
   // entity_dim
   const int num_cell_entities = mesh::cell_num_entities(cell_type, dim);
   std::vector<std::vector<int>> entity_dofs;
+  entity_dofs.reserve(num_cell_entities);
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
@@ -206,8 +207,9 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       = find_local_entity_index(topology, entities, dim);
 
   std::vector<std::int32_t> dofs;
-  dofs.reserve(entities.size()
-               * dofmap.element_dof_layout().num_entity_closure_dofs(dim));
+  dofs.reserve(
+      entities.size()
+      * dofmap.element_dof_layout().entity_closure_dofs(dim, 0).size());
 
   // V is a sub space we need to take the block size of the dofmap and
   // the index map into account as they can differ
@@ -249,8 +251,9 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
-  std::sort(dofs.begin(), dofs.end());
-  dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+  std::ranges::sort(dofs);
+  auto [unique_end, range_end] = std::ranges::unique(dofs);
+  dofs.erase(unique_end, range_end);
 
   if (remote)
   {
@@ -266,9 +269,9 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       std::span src = map->src();
       std::span dest = map->dest();
       std::vector<int> ranks;
-      std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
-                     std::back_inserter(ranks));
-      ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+      std::ranges::set_union(src, dest, std::back_inserter(ranks));
+      auto [unique_end, range_end] = std::ranges::unique(ranks);
+      ranks.erase(unique_end, range_end);
       MPI_Dist_graph_create_adjacent(
           map->comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
           ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
@@ -285,8 +288,9 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     // Add received bc indices to dofs_local, sort, and remove
     // duplicates
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
-    std::sort(dofs.begin(), dofs.end());
-    dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+    std::ranges::sort(dofs);
+    auto [unique_end, range_end] = std::ranges::unique(dofs);
+    dofs.erase(unique_end, range_end);
   }
 
   return dofs;
@@ -309,6 +313,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // Build vector of local dofs for each cell entity
   const int num_cell_entities = mesh::cell_num_entities(cell_type, dim);
   std::vector<std::vector<int>> entity_dofs;
+  entity_dofs.reserve(num_cell_entities);
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
@@ -324,12 +329,14 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // Iterate over marked facets
   const int element_bs = dofmap0.element_dof_layout().block_size();
   std::array<std::vector<std::int32_t>, 2> bc_dofs;
-  bc_dofs[0].reserve(entities.size()
-                     * dofmap0.element_dof_layout().num_entity_closure_dofs(dim)
-                     * element_bs);
-  bc_dofs[1].reserve(entities.size()
-                     * dofmap0.element_dof_layout().num_entity_closure_dofs(dim)
-                     * element_bs);
+  bc_dofs[0].reserve(
+      entities.size()
+      * dofmap0.element_dof_layout().entity_closure_dofs(dim, 0).size()
+      * element_bs);
+  bc_dofs[1].reserve(
+      entities.size()
+      * dofmap0.element_dof_layout().entity_closure_dofs(dim, 0).size()
+      * element_bs);
   for (auto [cell, entity_local_index] : entity_indices)
   {
     // Get cell dofmap
@@ -357,15 +364,17 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // Remove duplicates
   std::vector<std::int32_t> perm(bc_dofs[0].size());
   std::iota(perm.begin(), perm.end(), 0);
-  dolfinx::argsort_radix<std::int32_t>(bc_dofs[0], perm);
+  dolfinx::radix_sort(perm,
+                      [&dofs = bc_dofs[0]](auto index) { return dofs[index]; });
+
   std::array<std::vector<std::int32_t>, 2> sorted_bc_dofs = bc_dofs;
   for (std::size_t b = 0; b < 2; ++b)
   {
-    std::transform(perm.cbegin(), perm.cend(), sorted_bc_dofs[b].begin(),
-                   [&bc_dofs = bc_dofs[b]](auto p) { return bc_dofs[p]; });
-    sorted_bc_dofs[b].erase(
-        std::unique(sorted_bc_dofs[b].begin(), sorted_bc_dofs[b].end()),
-        sorted_bc_dofs[b].end());
+    std::ranges::transform(perm, sorted_bc_dofs[b].begin(),
+                           [&bc_dofs = bc_dofs[b]](auto p)
+                           { return bc_dofs[p]; });
+    auto [unique_end, range_end] = std::ranges::unique(sorted_bc_dofs[b]);
+    sorted_bc_dofs[b].erase(unique_end, range_end);
   }
 
   if (!remote)
@@ -385,9 +394,9 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
       std::span src = map0->src();
       std::span dest = map0->dest();
       std::vector<int> ranks;
-      std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
-                     std::back_inserter(ranks));
-      ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+      std::ranges::set_union(src, dest, std::back_inserter(ranks));
+      auto [unique_end, range_end] = std::ranges::unique(ranks);
+      ranks.erase(unique_end, range_end);
       MPI_Dist_graph_create_adjacent(map0->comm(), ranks.size(), ranks.data(),
                                      MPI_UNWEIGHTED, ranks.size(), ranks.data(),
                                      MPI_UNWEIGHTED, MPI_INFO_NULL, false,
@@ -412,15 +421,17 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // Remove duplicates and sort
     perm.resize(sorted_bc_dofs[0].size());
     std::iota(perm.begin(), perm.end(), 0);
-    dolfinx::argsort_radix<std::int32_t>(sorted_bc_dofs[0], perm);
+    dolfinx::radix_sort(perm, [&dofs = sorted_bc_dofs[0]](auto index)
+                        { return dofs[index]; });
+
     std::array<std::vector<std::int32_t>, 2> out_dofs = sorted_bc_dofs;
     for (std::size_t b = 0; b < 2; ++b)
     {
-      std::transform(perm.cbegin(), perm.cend(), out_dofs[b].begin(),
-                     [&sorted_dofs = sorted_bc_dofs[b]](auto p)
-                     { return sorted_dofs[p]; });
-      out_dofs[b].erase(std::unique(out_dofs[b].begin(), out_dofs[b].end()),
-                        out_dofs[b].end());
+      std::ranges::transform(perm, out_dofs[b].begin(),
+                             [&sorted_dofs = sorted_bc_dofs[b]](auto p)
+                             { return sorted_dofs[p]; });
+      auto [unique_end, range_end] = std::ranges::unique(out_dofs[b]);
+      out_dofs[b].erase(unique_end, range_end);
     }
 
     assert(out_dofs[0].size() == out_dofs[1].size());

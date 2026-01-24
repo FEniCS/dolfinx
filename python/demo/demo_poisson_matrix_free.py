@@ -14,18 +14,19 @@
 
 # # Matrix-free conjugate gradient solver for the Poisson equation
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_poisson_matrix_free.py>`
+# * {download}`Jupyter notebook <./demo_poisson_matrix_free.ipynb>`
+# ```
 # This demo illustrates how to solve the Poisson equation using a
 # matrix-free conjugate gradient (CG) solver. In particular, it
-# illustrates how to
+# illustrates how to:
 #
 # - Solve a linear partial differential equation using a matrix-free
-# conjugate gradient (CG) solver
-# - Create and apply Dirichlet boundary conditions
-# - Compute approximation error as compared with a known exact
-# solution,
-#
-# {download}`Python script <./demo_poisson_matrix_free.py>`\
-# {download}`Jupyter notebook <./demo_poisson_matrix_free.ipynb>`
+#   conjugate gradient (CG) solver.
+# - Create and apply Dirichlet boundary conditions.
+# - Compute approximation error as compared with a known exact solution.
 #
 # ```{note}
 # This demo illustrates the use of a matrix-free conjugate gradient
@@ -36,7 +37,8 @@
 # ## Problem definition
 #
 # For a domain $\Omega \subset \mathbb{R}^n$ with boundary $\partial
-# \Omega$, the Poisson equation with Dirichlet boundary conditions reads:
+# \Omega$, the Poisson equation with Dirichlet boundary conditions
+# reads:
 #
 # $$
 # \begin{align}
@@ -69,12 +71,14 @@
 # - $u_{\rm D} = 1 + x^2 + 2y^2$
 # - $f = -6$
 #
-# The function $u_{\rm D}$ is futher the exact solution of the posed problem.
+# The function $u_{\rm D}$ is further the exact solution of the posed
+# problem.
 #
 # ## Implementation
 #
 # The modules that will be used are imported:
 
+# +
 from mpi4py import MPI
 
 import numpy as np
@@ -82,7 +86,8 @@ import numpy as np
 import dolfinx
 import ufl
 from dolfinx import fem, la
-from ufl import action, dx, grad, inner
+
+# -
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
@@ -93,9 +98,7 @@ from ufl import action, dx, grad, inner
 dtype = dolfinx.default_scalar_type
 real_type = np.real(dtype(0.0)).dtype
 comm = MPI.COMM_WORLD
-mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], dtype=real_type)
-
-# Create function space
+mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], (10, 10), dtype=real_type)
 degree = 2
 V = fem.functionspace(mesh, ("Lagrange", degree))
 
@@ -107,9 +110,10 @@ V = fem.functionspace(mesh, ("Lagrange", degree))
 #
 # Next, we locate the mesh facets that lie on the domain boundary
 # $\partial\Omega$. We do this by first calling
-# {py:func}`create_connectivity <dolfinx.mesh.topology.create_connectivity>`
-# and then retrieving all facets on the boundary using
-# {py:func}`exterior_facet_indices <dolfinx.mesh.exterior_facet_indices>`.
+# {py:func}`create_connectivity
+# <dolfinx.mesh.topology.create_connectivity>`  and then retrieving all
+# facets on the boundary using {py:func}`exterior_facet_indices
+# <dolfinx.mesh.exterior_facet_indices>`.
 
 tdim = mesh.topology.dim
 mesh.topology.create_connectivity(tdim - 1, tdim)
@@ -137,8 +141,8 @@ x = ufl.SpatialCoordinate(mesh)
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 f = fem.Constant(mesh, dtype(-6.0))
-a = inner(grad(u), grad(v)) * dx
-L = inner(f, v) * dx
+a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+L = ufl.inner(f, v) * ufl.dx
 L_fem = fem.form(L, dtype=dtype)
 
 # For the matrix-free solvers we also define a second linear form `M` as
@@ -151,34 +155,38 @@ L_fem = fem.form(L, dtype=dtype)
 # $$
 
 ui = fem.Function(V, dtype=dtype)
-M = action(a, ui)
+M = ufl.action(a, ui)
 M_fem = fem.form(M, dtype=dtype)
 
 # ### Matrix-free conjugate gradient solver
 #
-# The right hand side vector $b - A x_{\rm bc}$ is the assembly of the linear
-# form $L$ where the essential Dirichlet boundary conditions are implemented
-# using lifting. Since we want to avoid assembling the matrix `A`, we compute
-# the necessary matrix-vector product using the linear form `M` explicitly.
+# The right hand side vector $b - A x_{\rm bc}$ is the assembly of the
+# linear form $L$ where the essential Dirichlet boundary conditions are
+# implemented using lifting. Since we want to avoid assembling the matrix
+# `A`, we compute the necessary matrix-vector product using the linear form
+# `M` explicitly.
 
 # Apply lifting: b <- b - A * x_bc
 b = fem.assemble_vector(L_fem)
 ui.x.array[:] = 0.0
-fem.set_bc(ui.x.array, [bc], scale=-1.0)
+bc.set(ui.x.array, alpha=-1.0)
 fem.assemble_vector(b.array, M_fem)
 b.scatter_reverse(la.InsertMode.add)
 
 # Set BC dofs to zero on right hand side
-fem.set_bc(b.array, [bc], scale=0.0)
+
+bc.set(b.array, alpha=0.0)
 b.scatter_forward()
 
-# To implement the matrix-free CG solver using *DOLFINx* vectors, we define the
-# function `action_A` to compute the matrix-vector product $y = A x$.
+# To implement the matrix-free CG solver using *DOLFINx* vectors, we
+# define the function `action_A` to compute the matrix-vector product $y
+# = A x$.
 
 
 def action_A(x, y):
-    # Set coefficient vector of the linear form M and ensure it is updated
-    # across processes
+    """Compute the action of the matrix A on vector x, result in y."""
+    # Set coefficient vector of the linear form M and ensure it is
+    # updated across processes
     ui.x.array[:] = x.array
     ui.x.scatter_forward()
 
@@ -188,18 +196,19 @@ def action_A(x, y):
     y.scatter_reverse(la.InsertMode.add)
 
     # Set BC dofs to zero
-    fem.set_bc(y.array, [bc], scale=0.0)
+    bc.set(y.array, alpha=0.0)
 
 
 # ### Basic conjugate gradient solver
 #
-# Solves the problem `A x = b`, using the function `action_A` as the operator,
-# `x` as an initial guess of the solution, and `b` as the right hand side
-# vector. `comm` is the MPI Communicator, `max_iter` is the maximum number of
-# iterations, `rtol` is the relative tolerance.
+# Solves the problem `A x = b`, using the function `action_A` as the
+# operator, `x` as an initial guess of the solution, and `b` as the
+# right hand side vector. `comm` is the MPI Communicator, `max_iter` is
+# the maximum number of iterations, `rtol` is the relative tolerance.
 
 
 def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int = 200, rtol: float = 1e-6):
+    """Conjugate gradient solver for the linear system A x = b."""
     rtol2 = rtol**2
 
     nr = b.index_map.size_local
@@ -239,26 +248,31 @@ def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int = 200, rtol: fl
     raise RuntimeError(f"Solver exceeded max iterations ({max_iter}).")
 
 
-# This matrix-free solver is now used to compute the finite element solution.
-# The finite element solution's approximation error as compared with the
-# exact solution is measured in the $L_2$-norm.
+# This matrix-free solver is now used to compute the finite element
+# solution. The finite element solution's approximation error as
+# compared with the exact solution is measured in the $L_2$-norm.
 
 rtol = 1e-6
 u = fem.Function(V, dtype=dtype)
 iter_cg1 = cg(mesh.comm, action_A, u.x, b, max_iter=200, rtol=rtol)
 
 # Set BC values in the solution vector
-fem.set_bc(u.x.array, [bc], scale=1.0)
+
+bc.set(u.x.array, alpha=1.0)
+
+# Print CG iteration number and error
 
 
+# +
 def L2Norm(u):
-    val = fem.assemble_scalar(fem.form(inner(u, u) * dx, dtype=dtype))
+    """Compute the L2 norm of a finite element function."""
+    val = fem.assemble_scalar(fem.form(ufl.inner(u, u) * ufl.dx, dtype=dtype))
     return np.sqrt(comm.allreduce(val, op=MPI.SUM))
 
 
-# Print CG iteration number and error
 error_L2_cg1 = L2Norm(u - uD)
 if mesh.comm.rank == 0:
     print("Matrix-free CG solver using DOLFINx vectors:")
-    print(f"CG iterations until convergence:  {iter_cg1}")
-    print(f"L2 approximation error:  {error_L2_cg1:.4e}")
+    print(f"CG iterations until convergence: {iter_cg1}")
+    print(f"L2 approximation error: {error_L2_cg1:.4e}")
+# -

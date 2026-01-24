@@ -12,14 +12,14 @@ namespace dolfinx
 {
 
 /// Return DOLFINx version string
-std::string version();
+consteval std::string_view version() { return DOLFINX_VERSION; }
 
 /// Return UFC signature string
-std::string ufcx_signature();
+consteval std::string_view ufcx_signature() { return UFCX_SIGNATURE; }
 
 /// Return git changeset hash (returns "unknown" if changeset is
 /// not known)
-std::string git_commit_hash();
+consteval std::string_view git_commit_hash() { return DOLFINX_GIT_COMMIT_HASH; }
 
 /// Return true if DOLFINx is compiled in debugging mode,
 /// i.e., with assertions on

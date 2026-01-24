@@ -49,8 +49,8 @@ public:
                                            std::vector<T>>
   MeshTags(std::shared_ptr<const Topology> topology, int dim, U&& indices,
            V&& values)
-      : _topology(topology), _dim(dim), _indices(std::forward<U>(indices)),
-        _values(std::forward<V>(values))
+      : _topology(std::move(topology)), _dim(dim),
+        _indices(std::forward<U>(indices)), _values(std::forward<V>(values))
   {
     if (_indices.size() != _values.size())
     {
@@ -58,7 +58,7 @@ public:
           "Indices and values arrays must have same size.");
     }
 #ifndef NDEBUG
-    if (!std::is_sorted(_indices.begin(), _indices.end()))
+    if (!std::ranges::is_sorted(_indices))
       throw std::runtime_error("MeshTag data is not sorted");
     if (std::adjacent_find(_indices.begin(), _indices.end()) != _indices.end())
       throw std::runtime_error("MeshTag data has duplicates");
@@ -88,7 +88,7 @@ public:
     std::size_t n = std::count(_values.begin(), _values.end(), value);
     std::vector<std::int32_t> indices;
     indices.reserve(n);
-    for (std::int32_t i = 0; i < _values.size(); ++i)
+    for (std::size_t i = 0; i < _values.size(); ++i)
     {
       if (_values[i] == value)
         indices.push_back(_indices[i]);
@@ -127,8 +127,8 @@ private:
 };
 
 /// @brief Create MeshTags from arrays
-/// @param[in] topology Mesh topology that the tags are associated with
-/// @param[in] dim Topological dimension of tagged entities
+/// @param[in] topology Mesh topology that the tags are associated with.
+/// @param[in] dim Topological dimension of tagged entities.
 /// @param[in] entities Local vertex indices for tagged entities.
 /// @param[in] values Tag values for each entity in `entities`. The
 /// length of `values` must be equal to number of rows in `entities`.
@@ -157,7 +157,7 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
   auto [indices_sorted, values_sorted] = common::sort_unique(indices, values);
 
   // Remove any entities that were not found (these have an index of -1)
-  auto it0 = std::lower_bound(indices_sorted.begin(), indices_sorted.end(), 0);
+  auto it0 = std::ranges::lower_bound(indices_sorted, 0);
   std::size_t pos0 = std::distance(indices_sorted.begin(), it0);
   indices_sorted.erase(indices_sorted.begin(), it0);
   values_sorted.erase(values_sorted.begin(),

@@ -26,7 +26,6 @@ from dolfinx.fem import (
     form,
     functionspace,
     locate_dofs_topological,
-    set_bc,
 )
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (
@@ -35,7 +34,6 @@ from dolfinx.mesh import (
     create_unit_cube,
     create_unit_square,
     exterior_facet_indices,
-    locate_entities_boundary,
 )
 from ufl import (
     CellDiameter,
@@ -94,7 +92,7 @@ def run_scalar_test(mesh, V, degree, cg_solver):
     b = assemble_vector(L)
     apply_lifting(b.array, [a], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
-    set_bc(b.array, [bc])
+    bc.set(b.array)
 
     a = form(a, dtype=dtype)
     A = assemble_matrix(a, bcs=[bc])
@@ -144,7 +142,8 @@ def run_vector_test(mesh, V, degree, cg_solver, maxit=500, rtol=None):
 
 def run_dg_test(mesh, V, degree, cg_solver):
     """Manufactured Poisson problem, solving u = x[component]**n, where
-    n is the degree of the Lagrange function space."""
+    n is the degree of the Lagrange function space.
+    """
     u, v = TrialFunction(V), TestFunction(V)
 
     # Exact solution
@@ -239,6 +238,7 @@ def test_petsc_curl_curl_eigenvalue(family, order):
         [np.array([0.0, 0.0]), np.array([np.pi, np.pi])],
         [24, 24],
         CellType.triangle,
+        dtype=default_real_type,
     )
 
     e = element(family, basix.CellType.triangle, order, dtype=default_real_type)
@@ -250,19 +250,19 @@ def test_petsc_curl_curl_eigenvalue(family, order):
     a = inner(ufl.curl(u), ufl.curl(v)) * dx
     b = inner(u, v) * dx
 
-    boundary_facets = locate_entities_boundary(
-        mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool)
-    )
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    boundary_facets = exterior_facet_indices(mesh.topology)
     boundary_dofs = locate_dofs_topological(V, mesh.topology.dim - 1, boundary_facets)
 
-    zero_u = Function(V)
+    zero_u = Function(V, dtype=dolfinx.default_scalar_type)
     zero_u.x.array[:] = 0
     bcs = [dirichletbc(zero_u, boundary_dofs)]
 
     a, b = form(a), form(b)
     A = petsc_assemble_matrix(a, bcs=bcs)
     A.assemble()
-    B = petsc_assemble_matrix(b, bcs=bcs, diagonal=0.01)
+    B = petsc_assemble_matrix(b, bcs=bcs, diag=0.01)
     B.assemble()
 
     eps = SLEPc.EPS().create()
@@ -377,9 +377,7 @@ def test_biharmonic(family, dtype):
 
     # Strong (Dirichlet) boundary condition
     tdim = mesh.topology.dim
-    boundary_facets = locate_entities_boundary(
-        mesh, tdim - 1, lambda x: np.full(x.shape[1], True, dtype=bool)
-    )
+    boundary_facets = exterior_facet_indices(mesh.topology)
     boundary_dofs = locate_dofs_topological((V.sub(1), V_1), tdim - 1, boundary_facets)
 
     bcs = [dirichletbc(zero_u, boundary_dofs, V.sub(1))]
@@ -389,7 +387,8 @@ def test_biharmonic(family, dtype):
     b = assemble_vector(L)
     apply_lifting(b.array, [a], bcs=[bcs])
     b.scatter_reverse(la.InsertMode.add)
-    set_bc(b.array, bcs)
+    for bc in bcs:
+        bc.set(b.array)
 
     x_h = Function(V, dtype=dtype)
     x_h.x.array[:] = scipy.sparse.linalg.spsolve(A.to_scipy(), b.array)

@@ -8,6 +8,7 @@
 #include "cells.h"
 #include "vtk_utils.h"
 #include "xdmf_utils.h"
+#include <algorithm>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -26,21 +27,13 @@
 #include <string>
 
 using namespace dolfinx;
+namespace impl = dolfinx::io::impl;
 
 namespace
 {
 /// String suffix for real and complex components of a vector-valued
 /// field
 constexpr std::array field_ext = {"_real", "_imag"};
-
-/// Return true if element is a cell-wise constant, otherwise false
-template <std::floating_point T>
-bool is_cellwise(const fem::FiniteElement<T>& e)
-{
-  return e.space_dimension() / e.block_size() == 1;
-}
-
-//----------------------------------------------------------------------------
 
 /// Get counter string to include in filename
 std::string get_counter(const pugi::xml_node& node, const std::string& name)
@@ -62,7 +55,7 @@ std::stringstream container_to_string(const T& x, int precision)
 {
   std::stringstream s;
   s.precision(precision);
-  std::for_each(x.begin(), x.end(), [&s](auto e) { s << e << " "; });
+  std::ranges::for_each(x, [&s](auto e) { s << e << " "; });
   return s;
 }
 //----------------------------------------------------------------------------
@@ -154,12 +147,10 @@ void add_data(const std::string& name,
   {
     using U = typename T::value_type;
     std::vector<U> v(values.size());
-    std::transform(values.begin(), values.end(), v.begin(),
-                   [](auto x) { return x.real(); });
+    std::ranges::transform(values, v.begin(), [](auto x) { return x.real(); });
     add_data_float(name + field_ext[0], num_components, std::span<const U>(v),
                    node);
-    std::transform(values.begin(), values.end(), v.begin(),
-                   [](auto x) { return x.imag(); });
+    std::ranges::transform(values, v.begin(), [](auto x) { return x.imag(); });
     add_data_float(name + field_ext[1], num_components, std::span<const U>(v),
                    node);
   }
@@ -206,8 +197,7 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   connectivity_node.append_attribute("format") = "ascii";
   {
     std::stringstream ss;
-    std::for_each(cells.begin(), cells.end(),
-                  [&ss](auto& v) { ss << v << " "; });
+    std::ranges::for_each(cells, [&ss](auto& v) { ss << v << " "; });
     connectivity_node.append_child(pugi::node_pcdata)
         .set_value(ss.str().c_str());
   }
@@ -265,8 +255,8 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
     const std::int64_t cell_offset = cellmap.local_range()[0];
     for (std::int32_t c = 0; c < cellmap.size_local(); ++c)
       ss << cell_offset + c << " ";
-    std::for_each(cellmap.ghosts().begin(), cellmap.ghosts().end(),
-                  [&ss](auto& idx) { ss << idx << " "; });
+    std::ranges::for_each(cellmap.ghosts(),
+                          [&ss](auto& idx) { ss << idx << " "; });
     cell_id_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
   }
 
@@ -275,9 +265,9 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   if (!cellmap.ghosts().empty())
   {
     std::span ghosts = cellmap.ghosts();
-    auto minmax = std::minmax_element(ghosts.begin(), ghosts.end());
-    min_idx = std::min(min_idx, *minmax.first);
-    max_idx = std::max(max_idx, *minmax.second);
+    auto [min, max] = std::ranges::minmax_element(ghosts);
+    min_idx = std::min(min_idx, *min);
+    max_idx = std::max(max_idx, *max);
   }
   cell_id_node.append_attribute("RangeMin") = min_idx;
   cell_id_node.append_attribute("RangeMax") = max_idx;
@@ -292,15 +282,14 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   point_id_node.append_attribute("format") = "ascii";
   {
     std::stringstream ss;
-    std::for_each(x_id.begin(), x_id.end(),
-                  [&ss](auto idx) { ss << idx << " "; });
+    std::ranges::for_each(x_id, [&ss](auto idx) { ss << idx << " "; });
     point_id_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
   }
   if (!x_id.empty())
   {
-    auto minmax = std::minmax_element(x_id.begin(), x_id.end());
-    point_id_node.append_attribute("RangeMin") = *minmax.first;
-    point_id_node.append_attribute("RangeMax") = *minmax.second;
+    auto [min, max] = std::ranges::minmax_element(x_id);
+    point_id_node.append_attribute("RangeMin") = *min;
+    point_id_node.append_attribute("RangeMax") = *max;
   }
 
   // Point ghosts
@@ -310,16 +299,15 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   point_ghost_node.append_attribute("format") = "ascii";
   {
     std::stringstream ss;
-    std::for_each(x_ghost.begin(), x_ghost.end(),
-                  [&ss](int ghost) { ss << ghost << " "; });
+    std::ranges::for_each(x_ghost, [&ss](int ghost) { ss << ghost << " "; });
     point_ghost_node.append_child(pugi::node_pcdata)
         .set_value(ss.str().c_str());
   }
   if (!x_ghost.empty())
   {
-    auto minmax = std::minmax_element(x_ghost.begin(), x_ghost.end());
-    point_ghost_node.append_attribute("RangeMin") = *minmax.first;
-    point_ghost_node.append_attribute("RangeMax") = *minmax.second;
+    auto [min, max] = std::ranges::minmax_element(x_ghost);
+    point_ghost_node.append_attribute("RangeMin") = *min;
+    point_ghost_node.append_attribute("RangeMax") = *max;
   }
 }
 //----------------------------------------------------------------------------
@@ -342,7 +330,7 @@ void write_function(
   {
     auto V = v.get().function_space();
     assert(V);
-    if (!is_cellwise(*V->element()))
+    if (!impl::is_cellwise(*V->element()))
     {
       V0 = V;
       break;
@@ -381,7 +369,7 @@ void write_function(
     }
 
     // Check that pointwise elements are the same (up to the block size)
-    if (!is_cellwise(*e))
+    if (!impl::is_cellwise(*e))
     {
       if (*e != *element0)
       {
@@ -416,7 +404,7 @@ void write_function(
   std::vector<std::uint8_t> x_ghost;
   std::vector<std::int64_t> cells;
   std::array<std::size_t, 2> cshape;
-  if (is_cellwise(*V0->element()))
+  if (impl::is_cellwise(*V0->element()))
   {
     std::vector<std::int64_t> tmp;
     std::tie(tmp, cshape) = io::extract_vtk_connectivity(
@@ -459,11 +447,11 @@ void write_function(
     assert(_u.get().function_space());
     auto e = _u.get().function_space()->element();
     assert(e);
-    auto data_type = is_cellwise(*e) ? "CellData" : "PointData";
+    auto data_type = impl::is_cellwise(*e) ? "CellData" : "PointData";
     if (piece_node.child(data_type).empty())
       piece_node.append_child(data_type);
 
-    const int rank = _u.get().function_space()->value_shape().size();
+    const int rank = _u.get().function_space()->element()->value_shape().size();
     pugi::xml_node data_node = piece_node.child(data_type);
     if (data_node.attribute(tensor_str[rank]).empty())
       data_node.append_attribute(tensor_str[rank]);
@@ -480,7 +468,7 @@ void write_function(
 
     // Pad to 3D if vector/tensor is product of dimensions is smaller than
     // 3**rank to ensure that we can visualize them correctly in Paraview
-    std::span<const std::size_t> value_shape = V->value_shape();
+    std::span<const std::size_t> value_shape = V->element()->value_shape();
     int rank = value_shape.size();
     int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                      std::multiplies{});
@@ -491,7 +479,7 @@ void write_function(
     if (rank > 0)
       component_vector[0] = num_components;
 
-    if (is_cellwise(*e))
+    if (impl::is_cellwise(*e))
     {
       // -- Cell-wise data
 
@@ -544,7 +532,7 @@ void write_function(
         if (mesh0->geometry().dim() == 3)
           add_data(_u.get().name,
                    std::span<const std::size_t>(component_vector),
-                   _u.get().x()->array(), data_node);
+                   std::span(_u.get().x()->array()), data_node);
         else
         {
           // Pad with zeros and then add
@@ -637,7 +625,7 @@ void write_function(
     grid_node.append_attribute("GhostLevel") = 1;
     for (auto _u : u)
     {
-      if (auto e = _u.get().function_space()->element(); is_cellwise(*e))
+      if (auto e = _u.get().function_space()->element(); impl::is_cellwise(*e))
       {
         if (grid_node.child("PCellData").empty())
           grid_node.append_child("PCellData");
@@ -659,12 +647,12 @@ void write_function(
       assert(V);
       auto e = V->element();
       assert(e);
-      std::string d_type = is_cellwise(*e) ? "PCellData" : "PPointData";
+      std::string d_type = impl::is_cellwise(*e) ? "PCellData" : "PPointData";
       pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
 
       // Pad to 3D if vector/tensor is product of dimensions is smaller than
       // 3**rank to ensure that we can visualize them correctly in Paraview
-      std::span<const std::size_t> value_shape = V->value_shape();
+      std::span<const std::size_t> value_shape = V->element()->value_shape();
       int rank = value_shape.size();
       int num_components = std::reduce(value_shape.begin(), value_shape.end(),
                                        1, std::multiplies{});

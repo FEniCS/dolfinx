@@ -1,9 +1,9 @@
-# Copyright (C) 2009-2020 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
+# Copyright (C) 2009-2024 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for dofmap construction"""
+"""Unit tests for dofmap construction."""
 
 import random
 
@@ -16,7 +16,7 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
 from dolfinx.fem import Function, assemble_scalar, form, functionspace
-from dolfinx.mesh import create_mesh
+from dolfinx.mesh import create_mesh, create_unit_cube
 
 
 def randomly_ordered_mesh(cell_type):
@@ -108,42 +108,42 @@ def randomly_ordered_mesh(cell_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        return create_mesh(MPI.COMM_WORLD, cells, points, domain)
+        return create_mesh(MPI.COMM_WORLD, cells, domain, points)
     else:
         if cell_type == "triangle":
             return create_mesh(
                 MPI.COMM_WORLD,
                 np.ndarray((0, 3)),
-                np.ndarray((0, 2), dtype=default_real_type),
                 domain,
+                np.ndarray((0, 2), dtype=default_real_type),
             )
         elif cell_type == "quadrilateral":
             return create_mesh(
                 MPI.COMM_WORLD,
                 np.ndarray((0, 4)),
-                np.ndarray((0, 2), dtype=default_real_type),
                 domain,
+                np.ndarray((0, 2), dtype=default_real_type),
             )
         elif cell_type == "tetrahedron":
             return create_mesh(
                 MPI.COMM_WORLD,
                 np.ndarray((0, 4)),
-                np.ndarray((0, 3), dtype=default_real_type),
                 domain,
+                np.ndarray((0, 3), dtype=default_real_type),
             )
         elif cell_type == "hexahedron":
             return create_mesh(
                 MPI.COMM_WORLD,
                 np.ndarray((0, 8)),
-                np.ndarray((0, 3), dtype=default_real_type),
                 domain,
+                np.ndarray((0, 3), dtype=default_real_type),
             )
 
 
 @pytest.mark.parametrize("space_type", [("P", 1), ("P", 2), ("P", 3), ("P", 4)])
 @pytest.mark.parametrize("cell_type", ["triangle", "tetrahedron", "quadrilateral", "hexahedron"])
 def test_dof_positions(cell_type, space_type):
-    """Checks that dofs on shared triangle edges match up"""
+    """Checks that dofs on shared triangle edges match up."""
     mesh = randomly_ordered_mesh(cell_type)
 
     if cell_type == "triangle":
@@ -166,7 +166,7 @@ def test_dof_positions(cell_type, space_type):
     entities = {i: {} for i in range(1, tdim)}
     for cell in range(coord_dofs.shape[0]):
         # Push coordinates forward
-        X = V.element.interpolation_points()
+        X = V.element.interpolation_points
         xg = x_g[coord_dofs[cell], :tdim]
         x = cmap.push_forward(X, xg)
 
@@ -276,7 +276,7 @@ def random_evaluation_mesh(cell_type):
                 cell_order += [c + diff for c in cell_order]
 
         cells.append([order[cell[i]] for i in cell_order])
-    return create_mesh(MPI.COMM_WORLD, np.array(cells), points, domain)
+    return create_mesh(MPI.COMM_WORLD, np.array(cells), domain, points)
 
 
 @pytest.mark.skip_in_parallel
@@ -392,3 +392,31 @@ def test_integral(cell_type, space_type, space_order):
 
             value = assemble_scalar(form(_form))
             assert np.isclose(value, 0.0, rtol=1.0e-6, atol=1.0e-6)
+
+
+@pytest.mark.parametrize(
+    "data_types",
+    [
+        (np.float32, np.float32),
+        (np.float64, np.float64),
+        (np.float32, np.complex64),
+        (np.float64, np.complex128),
+    ],
+)
+@pytest.mark.parametrize("space_order", range(3, 5))
+def test_permutation_wrappers(space_order, data_types):
+    s_type, d_type = data_types
+    domain = create_unit_cube(MPI.COMM_WORLD, 5, 3, 4, dtype=s_type)
+    V = functionspace(domain, ("N1curl", space_order))
+    u = Function(V, name="u", dtype=d_type)
+    u.interpolate(lambda x: np.array([x[0], x[1], x[2]]))
+
+    arr = u.x.array[V.dofmap.list]
+
+    domain.topology.create_entity_permutations()
+    cell_perm = domain.topology.get_cell_permutation_info()
+    org_data = arr.copy()
+    V.element.Tt_apply(arr.reshape(-1), cell_perm, 1)
+    V.element.Tt_inv_apply(arr.reshape(-1), cell_perm, 1)
+    eps = 100 * np.finfo(s_type).eps
+    np.testing.assert_allclose(org_data.reshape(-1), arr.reshape(-1), atol=eps)

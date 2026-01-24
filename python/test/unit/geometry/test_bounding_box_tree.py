@@ -1,16 +1,15 @@
-# Copyright (C) 2013-2021 Anders Logg, Jørgen S. Dokken, Chris Richardson
+# Copyright (C) 2013-2025 Anders Logg, Jørgen S. Dokken, Chris Richardson
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for BoundingBoxTree"""
+"""Unit tests for BoundingBoxTree."""
 
 from mpi4py import MPI
 
 import numpy as np
 import pytest
 
-from dolfinx import cpp as _cpp
 from dolfinx.geometry import (
     bb_tree,
     compute_closest_entity,
@@ -19,13 +18,17 @@ from dolfinx.geometry import (
     compute_collisions_trees,
     compute_distance_gjk,
     create_midpoint_tree,
+    determine_point_ownership,
 )
 from dolfinx.mesh import (
     CellType,
+    compute_incident_entities,
+    compute_midpoints,
     create_box,
     create_unit_cube,
     create_unit_interval,
     create_unit_square,
+    entities_to_geometry,
     exterior_facet_indices,
     locate_entities,
     locate_entities_boundary,
@@ -34,12 +37,11 @@ from dolfinx.mesh import (
 
 def extract_geometricial_data(mesh, dim, entities):
     """For a set of entities in a mesh, return the coordinates of the
-    vertices"""
+    vertices.
+    """
     mesh_nodes = []
     geom = mesh.geometry
-    g_indices = _cpp.mesh.entities_to_geometry(
-        mesh._cpp_object, dim, np.array(entities, dtype=np.int32), False
-    )
+    g_indices = entities_to_geometry(mesh, dim, np.array(entities, dtype=np.int32), False)
     for cell in g_indices:
         nodes = np.zeros((len(cell), 3), dtype=np.float64)
         for j, entity in enumerate(cell):
@@ -49,7 +51,7 @@ def extract_geometricial_data(mesh, dim, entities):
 
 
 def expand_bbox(bbox, dtype):
-    """Expand min max bbox to convex hull"""
+    """Expand min max bbox to convex hull."""
     return np.array(
         [
             [bbox[0][0], bbox[0][1], bbox[0][2]],
@@ -67,13 +69,13 @@ def expand_bbox(bbox, dtype):
 
 def find_colliding_cells(mesh, bbox, dtype):
     """Given a mesh and a bounding box((xmin, ymin, zmin), (xmax, ymax,
-    zmax)) find all colliding cells"""
-
+    zmax)) find all colliding cells.
+    """
     # Find actual cells using known bounding box tree
     colliding_cells = []
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    x_indices = _cpp.mesh.entities_to_geometry(
-        mesh._cpp_object, mesh.topology.dim, np.arange(num_cells, dtype=np.int32), False
+    x_indices = entities_to_geometry(
+        mesh, mesh.topology.dim, np.arange(num_cells, dtype=np.int32), False
     )
     points = mesh.geometry.x
     bounding_box = expand_bbox(bbox, dtype)
@@ -98,7 +100,8 @@ def find_colliding_cells(mesh, bbox, dtype):
 def test_padded_bbox(padding, dtype):
     """Test collision between two meshes separated by a distance of
     epsilon, and check if padding the mesh creates a possible
-    collision"""
+    collision.
+    """
     eps = 1e-4
     x0 = np.array([0, 0, 0], dtype=dtype)
     x1 = np.array([1, 1, 1 - eps], dtype=dtype)
@@ -147,7 +150,7 @@ def rotation_matrix(axis, angle):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_empty_tree(dtype):
     mesh = create_unit_interval(MPI.COMM_WORLD, 16, dtype=dtype)
-    bbtree = bb_tree(mesh, mesh.topology.dim, np.array([], dtype=dtype))
+    bbtree = bb_tree(mesh, mesh.topology.dim, padding=0.0, entities=np.empty(0, dtype=dtype))
     assert bbtree.num_bboxes == 0
 
 
@@ -164,12 +167,14 @@ def test_compute_collisions_point_1d(dtype):
 
     # Compute collision
     tdim = mesh.topology.dim
-    tree = bb_tree(mesh, tdim)
+    tree = bb_tree(mesh, tdim, padding=0.0)
     entities = compute_collisions_points(tree, p)
+
+    assert repr(entities) == "<AdjacencyList> with 1 nodes\n  0: [4 ]\n"
     assert len(entities.array) == 1
 
     # Get the vertices of the geometry
-    geom_entities = _cpp.mesh.entities_to_geometry(mesh._cpp_object, tdim, entities.array, False)[0]
+    geom_entities = entities_to_geometry(mesh, tdim, entities.array, False)[0]
     x = mesh.geometry.x
     cell_vertices = x[geom_entities]
     # Check that we get the cell with correct vertices
@@ -186,7 +191,7 @@ def test_compute_collisions_tree_1d(point, dtype):
         return x[0] >= point[0]
 
     # Locate all vertices of mesh A that should collide
-    vertices_A = _cpp.mesh.locate_entities(mesh_A._cpp_object, 0, locator_A)
+    vertices_A = locate_entities(mesh_A, 0, locator_A)
     mesh_A.topology.create_connectivity(0, mesh_A.topology.dim)
     v_to_c = mesh_A.topology.connectivity(0, mesh_A.topology.dim)
 
@@ -201,7 +206,7 @@ def test_compute_collisions_tree_1d(point, dtype):
         return x[0] <= 1
 
     # Locate all vertices of mesh B that should collide
-    vertices_B = _cpp.mesh.locate_entities(mesh_B._cpp_object, 0, locator_B)
+    vertices_B = locate_entities(mesh_B, 0, locator_B)
     mesh_B.topology.create_connectivity(0, mesh_B.topology.dim)
     v_to_c = mesh_B.topology.connectivity(0, mesh_B.topology.dim)
 
@@ -209,8 +214,8 @@ def test_compute_collisions_tree_1d(point, dtype):
     cells_B = np.sort(np.unique(np.hstack([v_to_c.links(vertex) for vertex in vertices_B])))
 
     # Find colliding entities using bounding box trees
-    tree_A = bb_tree(mesh_A, mesh_A.topology.dim)
-    tree_B = bb_tree(mesh_B, mesh_B.topology.dim)
+    tree_A = bb_tree(mesh_A, mesh_A.topology.dim, padding=0.0)
+    tree_B = bb_tree(mesh_B, mesh_B.topology.dim, padding=0.0)
     entities = compute_collisions_trees(tree_A, tree_B)
     entities_A = np.sort(np.unique([q[0] for q in entities]))
     entities_B = np.sort(np.unique([q[1] for q in entities]))
@@ -226,8 +231,8 @@ def test_compute_collisions_tree_2d(point, dtype):
     mesh_B = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     bgeom = mesh_B.geometry.x
     bgeom += point
-    tree_A = bb_tree(mesh_A, mesh_A.topology.dim)
-    tree_B = bb_tree(mesh_B, mesh_B.topology.dim)
+    tree_A = bb_tree(mesh_A, mesh_A.topology.dim, padding=0.0)
+    tree_B = bb_tree(mesh_B, mesh_B.topology.dim, padding=0.0)
     entities = compute_collisions_trees(tree_A, tree_B)
 
     entities_A = np.sort(np.unique([q[0] for q in entities]))
@@ -248,8 +253,8 @@ def test_compute_collisions_tree_3d(point, dtype):
     bgeom = mesh_B.geometry.x
     bgeom += point
 
-    tree_A = bb_tree(mesh_A, mesh_A.topology.dim)
-    tree_B = bb_tree(mesh_B, mesh_B.topology.dim)
+    tree_A = bb_tree(mesh_A, mesh_A.topology.dim, padding=0.0)
+    tree_B = bb_tree(mesh_B, mesh_B.topology.dim, padding=0.0)
     entities = compute_collisions_trees(tree_A, tree_B)
     entities_A = np.sort(np.unique([q[0] for q in entities]))
     entities_B = np.sort(np.unique([q[1] for q in entities]))
@@ -266,7 +271,7 @@ def test_compute_closest_entity_1d(dim, dtype):
     N = 16
     points = np.array([[-ref_distance, 0, 0], [2 / N, 2 * ref_distance, 0]], dtype=dtype)
     mesh = create_unit_interval(MPI.COMM_WORLD, N, dtype=dtype)
-    tree = bb_tree(mesh, dim)
+    tree = bb_tree(mesh, dim, padding=0.0)
     num_entities_local = (
         mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     )
@@ -300,7 +305,7 @@ def test_compute_closest_entity_2d(dim, dtype):
     points = np.array([-1.0, -0.01, 0.0], dtype=dtype)
     mesh = create_unit_square(MPI.COMM_WORLD, 15, 15, dtype=dtype)
     mesh.topology.create_entities(dim)
-    tree = bb_tree(mesh, dim)
+    tree = bb_tree(mesh, dim, padding=0.0)
     num_entities_local = (
         mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     )
@@ -332,7 +337,7 @@ def test_compute_closest_entity_3d(dim, dtype):
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, dtype=dtype)
     mesh.topology.create_entities(dim)
 
-    tree = bb_tree(mesh, dim)
+    tree = bb_tree(mesh, dim, padding=0.0)
     num_entities_local = (
         mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     )
@@ -358,14 +363,14 @@ def test_compute_closest_entity_3d(dim, dtype):
 @pytest.mark.parametrize("dim", [1, 2, 3])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_compute_closest_sub_entity(dim, dtype):
-    """Compute distance from subset of cells in a mesh to a point inside the mesh"""
+    """Compute distance from subset of cells in a mesh to a point inside the mesh."""
     ref_distance = 0.31
     xc, yc, zc = 0.5, 0.5, 0.5
     points = np.array([xc + ref_distance, yc, zc], dtype=dtype)
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, dtype=dtype)
     mesh.topology.create_entities(dim)
     left_entities = locate_entities(mesh, dim, lambda x: x[0] <= xc)
-    tree = bb_tree(mesh, dim, left_entities)
+    tree = bb_tree(mesh, dim, padding=0.0, entities=left_entities)
     midpoint_tree = create_midpoint_tree(mesh, dim, left_entities)
     closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
@@ -386,14 +391,14 @@ def test_compute_closest_sub_entity(dim, dtype):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_surface_bbtree(dtype):
-    """Test creation of BBTree on subset of entities(surface cells)"""
+    """Test creation of BBTree on subset of entities(surface cells)."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, dtype=dtype)
     mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
     sf = exterior_facet_indices(mesh.topology)
     tdim = mesh.topology.dim
     f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
     cells = np.array([f_to_c.links(f)[0] for f in sf], dtype=np.int32)
-    bbtree = bb_tree(mesh, tdim, cells)
+    bbtree = bb_tree(mesh, tdim, padding=0.0, entities=cells)
 
     # test collision (should not collide with any)
     p = np.array([0.5, 0.5, 0.5])
@@ -402,15 +407,15 @@ def test_surface_bbtree(dtype):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sub_bbtree_codim1(dtype):
-    """Testing point collision with a BoundingBoxTree of sub entities"""
+    """Testing point collision with a BoundingBoxTree of sub entities."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type=CellType.hexahedron, dtype=dtype)
     tdim = mesh.topology.dim
     fdim = tdim - 1
 
     top_facets = locate_entities_boundary(mesh, fdim, lambda x: np.isclose(x[2], 1))
-    f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
-    cells = np.array([f_to_c.links(f)[0] for f in top_facets], dtype=np.int32)
-    bbtree = bb_tree(mesh, tdim, cells)
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    cells = compute_incident_entities(mesh.topology, top_facets, fdim, tdim)
+    bbtree = bb_tree(mesh, tdim, padding=0.0, entities=cells)
 
     # Compute a BBtree for all processes
     process_bbtree = bbtree.create_global_tree(mesh.comm)
@@ -421,9 +426,13 @@ def test_sub_bbtree_codim1(dtype):
 
     # Compute local collisions
     cells = compute_collisions_points(bbtree, point)
-    if MPI.COMM_WORLD.rank in ranks.array:
-        assert len(cells.links(0)) > 0
-    else:
+
+    # Relationship to test: if cells has link => ranks must also hold a value.
+    if len(cells.links(0)) > 0:
+        assert len(ranks.links(0)) > 0
+
+    # Negated: ranks holds no value => cells has no link
+    if len(ranks.links(0)) == 0:
         assert len(cells.links(0)) == 0
 
 
@@ -438,7 +447,7 @@ def test_serial_global_bb_tree(dtype, comm):
     # entity tree with a serial mesh
     x = np.array([[2.0, 2.0, 3.0], [0.3, 0.2, 0.1]], dtype=dtype)
 
-    tree = bb_tree(mesh, mesh.topology.dim)
+    tree = bb_tree(mesh, mesh.topology.dim, padding=0.0)
     global_tree = tree.create_global_tree(mesh.comm)
 
     tree_col = compute_collisions_points(tree, x)
@@ -454,7 +463,7 @@ def test_serial_global_bb_tree(dtype, comm):
 @pytest.mark.parametrize("N", [7, 13])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sub_bbtree_box(ct, N, dtype):
-    """Test that the bounding box of the stem of the bounding box tree is what we expect"""
+    """Test that the bounding box of the stem of the bounding box tree is what we expect."""
     mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=ct, dtype=dtype)
     tdim = mesh.topology.dim
     fdim = tdim - 1
@@ -462,19 +471,19 @@ def test_sub_bbtree_box(ct, N, dtype):
     facets = locate_entities_boundary(mesh, fdim, lambda x: np.isclose(x[1], 1.0))
     f_to_c = mesh.topology.connectivity(fdim, tdim)
     cells = np.int32(np.unique([f_to_c.links(f)[0] for f in facets]))
-    bbtree = bb_tree(mesh, tdim, cells)
+    bbtree = bb_tree(mesh, tdim, padding=0.0, entities=cells)
     num_boxes = bbtree.num_bboxes
     if num_boxes > 0:
         bbox = bbtree.get_bbox(num_boxes - 1)
         assert np.isclose(bbox[0][1], (N - 1) / N)
-    tree = bb_tree(mesh, tdim)
+    tree = bb_tree(mesh, tdim, padding=0.0)
     assert num_boxes < tree.num_bboxes
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_surface_bbtree_collision(dtype):
-    """Compute collision between two meshes, where only one cell of each mesh are colliding"""
+    """Compute collision between two meshes, where only one cell of each mesh are colliding."""
     tdim = 3
     mesh1 = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron, dtype=dtype)
     mesh2 = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron, dtype=dtype)
@@ -486,13 +495,112 @@ def test_surface_bbtree_collision(dtype):
 
     # Compute unique set of cells (some will be counted multiple times)
     cells = np.array(list(set([f_to_c.links(f)[0] for f in sf])), dtype=np.int32)
-    bbtree1 = bb_tree(mesh1, tdim, cells)
+    bbtree1 = bb_tree(mesh1, tdim, padding=0.0, entities=cells)
 
     mesh2.topology.create_connectivity(mesh2.topology.dim - 1, mesh2.topology.dim)
     sf = exterior_facet_indices(mesh2.topology)
     f_to_c = mesh2.topology.connectivity(tdim - 1, tdim)
     cells = np.array(list(set([f_to_c.links(f)[0] for f in sf])), dtype=np.int32)
-    bbtree2 = bb_tree(mesh2, tdim, cells)
+    bbtree2 = bb_tree(mesh2, tdim, padding=0.0, entities=cells)
 
     collisions = compute_collisions_trees(bbtree1, bbtree2)
     assert len(collisions) == 1
+
+
+@pytest.mark.parametrize("ct", [CellType.tetrahedron])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_shift_bbtree(ct, dtype):
+    tdim = 3
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, ct, dtype=dtype)
+    bbtree = bb_tree(mesh, tdim, padding=0.0)
+    rng = np.random.default_rng(0)
+    points = rng.random((10, 3))
+
+    # Point-tree collisions pre-motion
+    collisions_pre = compute_collisions_points(bbtree, points)
+    # Shift everything
+    shift = np.array([1.0, 2.0, 3.0], dtype=dtype)
+    points[:] += shift
+    bbtree.bbox_coordinates[:] += shift
+
+    collisions_post = compute_collisions_points(bbtree, points)
+    assert (collisions_pre.array == collisions_post.array).all()
+
+
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("affine", [True, False])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_determine_point_ownership(dim, affine, dtype):
+    """Find point owners (ranks and cells) using bounding box trees + global communication
+    and compare to point ownership data results.
+    """
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    mpi_dtype = MPI.DOUBLE if dtype == np.float64 else MPI.FLOAT
+
+    tdim = dim
+    num_cells_side = 4
+    if tdim == 2:
+        ct = CellType.triangle if affine else CellType.quadrilateral
+        mesh = create_unit_square(MPI.COMM_WORLD, num_cells_side, num_cells_side, ct, dtype=dtype)
+    else:
+        ct = CellType.tetrahedron if affine else CellType.hexahedron
+        mesh = create_unit_cube(
+            MPI.COMM_WORLD,
+            num_cells_side,
+            num_cells_side,
+            num_cells_side,
+            ct,
+            dtype=dtype,
+        )
+    cell_map = mesh.topology.index_map(tdim)
+    cells_local = np.arange(cell_map.size_local, dtype=np.int32)
+    num_cells_global = mesh.topology.index_map(tdim).size_global
+
+    # Check point ownership for midpoints of each owned cell
+    # (should be owned by the calling process)
+    local_midpoints = compute_midpoints(mesh, tdim, cells_local)
+    po = determine_point_ownership(mesh, local_midpoints, 0.0, cells_local)
+    assert len(po.dest_cells) == local_midpoints.shape[0]
+    np.testing.assert_allclose(po.dest_owner, rank)
+    np.testing.assert_allclose(po.dest_cells, cells_local)
+    np.testing.assert_allclose(po.dest_points, local_midpoints)
+    np.testing.assert_allclose(po.src_owner, rank)
+
+    # Gather all midpoints to all processes and check that calling determine_point_ownership
+    # assignes data to the original rank.
+    midpoints_per_rank = np.zeros(comm.size, dtype=np.int32)
+    midpoints_offsets = np.zeros(comm.size, dtype=np.int32)
+    comm.Allgather(np.array([local_midpoints.shape[0]], dtype=np.int32), midpoints_per_rank)
+    midpoints_offsets[1:] = np.cumsum(midpoints_per_rank[:-1])
+    all_midpoints = np.zeros((num_cells_global, 3), dtype=dtype)
+    comm.Allgatherv(
+        local_midpoints, [all_midpoints, midpoints_per_rank * 3, midpoints_offsets * 3, mpi_dtype]
+    )
+
+    # Gather ownership ranges of process sent to all processes
+    ownership_ranges = np.empty(MPI.COMM_WORLD.size + 1, dtype=np.int32)
+    ownership_ranges[0] = 0
+    ownership_ranges[1:] = comm.allgather(cell_map.local_range[1])
+
+    # Check that point ownership matches the original rank
+    global_po = determine_point_ownership(mesh, all_midpoints, 0.0, cells_local)
+    assigned_ranks = np.empty(num_cells_global, dtype=np.int32)
+    for i in range(comm.size):
+        assigned_ranks[ownership_ranges[i] : ownership_ranges[i + 1]] = i
+    np.testing.assert_allclose(global_po.src_owner, assigned_ranks)
+    # Check that each process is assigned as many points as it has cells
+    # (from each other process)
+    assert len(global_po.dest_cells) == comm.size * (cell_map.size_local)
+
+    for cell, point in zip(global_po.dest_cells, global_po.dest_points):
+        np.testing.assert_allclose(local_midpoints[cell], point)
+
+    # Check ownership for subset of cells
+    left_cells = locate_entities(mesh, tdim, lambda x: x[0] <= 0.5 + 1e-14)
+    left_cells = left_cells[left_cells < cell_map.size_local]
+
+    subset_po = determine_point_ownership(mesh, local_midpoints, 0.0, left_cells)
+    right_cells = np.delete(cells_local, left_cells)
+    np.testing.assert_allclose(subset_po.src_owner[right_cells], -1)
+    assert len(subset_po.dest_cells) == len(left_cells)

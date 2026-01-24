@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Test that the vectors in vector spaces are correctly oriented"""
+"""Test that the vectors in vector spaces are correctly oriented."""
 
 from mpi4py import MPI
 
@@ -21,12 +21,12 @@ from dolfinx.mesh import create_mesh
 @pytest.mark.parametrize("space_type", ["RT"])
 @pytest.mark.parametrize("order", [1, 2, 3, 4, 5])
 def test_div_conforming_triangle(space_type, order):
-    """Checks that the vectors in div conforming spaces on a triangle are correctly oriented"""
+    """Checks that the vectors in div conforming spaces on a triangle are correctly oriented."""
 
     # Create simple triangle mesh
     def perform_test(points, cells):
         domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type))
-        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+        mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
         V = functionspace(mesh, (space_type, order))
         f = Function(V)
         x = f.x.array
@@ -52,14 +52,14 @@ def test_div_conforming_triangle(space_type, order):
 @pytest.mark.parametrize("space_type", ["RT"])
 @pytest.mark.parametrize("order", [1, 2, 3, 4, 5])
 def test_div_conforming_tetrahedron(space_type, order):
-    """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented"""
+    """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented."""
 
     # Create simple tetrahedron cell mesh
     def perform_test(points, cells):
         domain = ufl.Mesh(
             element("Lagrange", "tetrahedron", 1, shape=(3,), dtype=default_real_type)
         )
-        mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+        mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
         V = functionspace(mesh, (space_type, order))
         f = Function(V)
         output = []

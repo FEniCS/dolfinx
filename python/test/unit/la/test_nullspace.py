@@ -18,8 +18,7 @@ from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 
 def build_elastic_nullspace(V, dtype):
-    """Function to build nullspace for 2D/3D elasticity"""
-
+    """Function to build nullspace for 2D/3D elasticity."""
     # Get geometric dim
     gdim = V.mesh.geometry.dim
     assert gdim == 2 or gdim == 3
@@ -59,7 +58,7 @@ def build_elastic_nullspace(V, dtype):
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_orthogonal(gdim, degree, dtype):
-    """Test null spaces orthogonalisation"""
+    """Test null spaces orthogonalisation."""
     xtype = dtype(0).real.dtype
     if gdim == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 13, dtype=xtype)
@@ -86,7 +85,6 @@ def test_nullspace_orthogonal(gdim, degree, dtype):
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_check(gdim, degree, dtype):
     """Test that elasticity nullspace is actually a nullspace."""
-
     # TODO: Once we support SpMV, run on MPI.COMM_WORLD
     comm = MPI.COMM_SELF
     xtype = dtype(0).real.dtype
@@ -95,7 +93,7 @@ def test_nullspace_check(gdim, degree, dtype):
     elif gdim == 3:
         mesh = create_box(
             comm,
-            [np.array([0.8, -0.2, 1.2]), np.array([3.0, 11.0, -5.0])],
+            [np.array([0.8, -0.2, -5.0]), np.array([3.0, 11.0, 1.2])],
             [12, 18, 25],
             cell_type=CellType.tetrahedron,
             ghost_mode=GhostMode.none,

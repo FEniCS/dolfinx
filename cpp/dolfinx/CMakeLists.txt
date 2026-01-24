@@ -2,8 +2,10 @@
 include(GNUInstallDirs)
 
 # ------------------------------------------------------------------------------
-# Declare the library (target)
+# Declare the library (target) and set C++ standard
+set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(dolfinx)
+target_compile_features(dolfinx PUBLIC cxx_std_20)
 
 # ------------------------------------------------------------------------------
 # Add source files to the target
@@ -34,6 +36,7 @@ target_include_directories(
 
 # ------------------------------------------------------------------------------
 # Configure the common/version.h file
+
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/common/version.h.in common/version.h @ONLY
 )
@@ -46,20 +49,27 @@ set_target_properties(
              SOVERSION ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR}
 )
 
-# Add git revision flag to the one affected file
-set_source_files_properties(
-  common/defines.cpp
-  PROPERTIES
-    COMPILE_DEFINITIONS
-    "UFCX_SIGNATURE=\"${UFCX_SIGNATURE}\";DOLFINX_GIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\""
-)
+if(ENABLE_CLANG_TIDY)
+  find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
+  set_target_properties(dolfinx PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy")
+endif()
+
+# Add git revision and UFCx signature
+target_compile_definitions(dolfinx PUBLIC
+                           UFCX_SIGNATURE="${UFCX_SIGNATURE}"
+                           DOLFINX_GIT_COMMIT_HASH="${GIT_COMMIT_HASH}")
 
 # ------------------------------------------------------------------------------
 # Set compiler options and definitions
 
 # Set 'Developer' build type flags
 target_compile_options(
-  dolfinx PRIVATE $<$<CONFIG:Developer>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  dolfinx PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+)
+
+# Set 'Developer' compile definitions
+target_compile_definitions(
+  dolfinx PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 
 # Add version to definitions (public)
@@ -95,7 +105,6 @@ target_link_libraries(dolfinx PUBLIC Basix::basix)
 
 # Boost
 target_link_libraries(dolfinx PUBLIC Boost::headers)
-target_link_libraries(dolfinx PUBLIC Boost::timer)
 
 # MPI
 target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
@@ -111,7 +120,17 @@ target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 # ADIOS2
 if(ADIOS2_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
-  target_link_libraries(dolfinx PUBLIC adios2::cxx11_mpi)
+  # ADIOS2 2.11 and later
+  if(TARGET adios2::cxx_mpi)
+    set(_adios2_mpi_target adios2::cxx_mpi)
+  # And prior
+  elseif(TARGET adios2::cxx11_mpi)
+    set(_adios2_mpi_target adios2::cxx11_mpi)
+  else()
+    message(FATAL_ERROR
+      "ADIOS2 found, but no adios2::cxx*_mpi target found.")
+  endif()
+  target_link_libraries(dolfinx PUBLIC ${_adios2_mpi_target})
 endif()
 
 # PETSc
@@ -151,39 +170,28 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Install dolfinx library and header files
-if(WIN32)
-  install(
+install(
     TARGETS dolfinx
     EXPORT DOLFINXTargets
     RUNTIME_DEPENDENCY_SET dependencies
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeExecutables
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
-  )
+)
 
-  if(INSTALL_RUNTIME_DEPENDENCIES)
-    list(APPEND PRE_EXCLUDE_REGEXES "api-ms-.*")
-    list(APPEND PRE_EXCLUDE_REGEXES "ext-ms-.*")
-    install(
-      RUNTIME_DEPENDENCY_SET
-      dependencies
-      DESTINATION
-      ${CMAKE_INSTALL_BINDIR}
-      PRE_EXCLUDE_REGEXES
-      ${PRE_EXCLUDE_REGEXES}
-      POST_EXCLUDE_REGEXES
-      ".*system32/.*\\.dll"
-      DIRECTORIES
-      $<TARGET_FILE_DIR:Basix::basix>
-    )
-  endif()
-else()
+if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
   install(
-    TARGETS dolfinx
-    EXPORT DOLFINXTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeExecutables
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
+    RUNTIME_DEPENDENCY_SET
+    dependencies
+    DESTINATION
+    ${CMAKE_INSTALL_BINDIR}
+    PRE_EXCLUDE_REGEXES
+    [[api-ms-win-.*]] [[ext-ms-.*]]
+    POST_EXCLUDE_REGEXES
+    [[.*(\\|/)system32(\\|/).*\.dll]]
+    DIRECTORIES
+    $<TARGET_FILE_DIR:Basix::basix>
+    $<TARGET_FILE_DIR:hdf5::hdf5>
   )
 endif()
 
@@ -275,7 +283,8 @@ foreach(_target ${PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES})
       list(APPEND PKGCONFIG_DOLFINX_LIBS ${_target})
     endif()
 
-    # Special handling for compiled Boost imported targets
+    # Special handling to extract data for compiled Boost imported
+    # targets to use in generate pkg-config file
     if(("${_target}" MATCHES "^.*Boost::.*$") AND NOT "${_target}" STREQUAL
                                                   "Boost::headers"
     )
@@ -293,6 +302,7 @@ list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES)
 list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_LIBS)
 
 # Convert include dirs to -I<incdir> form
+set(PKG_INCLUDES)
 foreach(_inc_dir ${PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES})
   set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
 endforeach()
@@ -343,11 +353,6 @@ endforeach()
 separate_arguments(PKG_LINKFLAGS)
 list(REMOVE_DUPLICATES PKG_LINKFLAGS)
 string(REPLACE ";" " " PKG_LINKFLAGS "${PKG_LINKFLAGS}")
-
-# Add additional link flags
-foreach(_linkflag ${DOLFINX_LINK_FLAGS})
-  set(PKG_LINKFLAGS "${PKG_LINKFLAGS} ${_linkflag}")
-endforeach()
 
 # Boost include dir (used as pkg-config variable)
 get_target_property(

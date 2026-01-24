@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for the Function class"""
+"""Unit tests for the Function class."""
 
 import importlib
 
@@ -90,7 +90,7 @@ def test_eval(V, W, Q, mesh):
     u3.interpolate(e3)
 
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
-    tree = bb_tree(mesh, mesh.geometry.dim)
+    tree = bb_tree(mesh, mesh.topology.dim, padding=0.0)
     cell_candidates = compute_collisions_points(tree, x0)
     cell = compute_colliding_cells(mesh, cell_candidates, x0).array
     assert len(cell) > 0
@@ -107,7 +107,7 @@ def test_eval_manifold():
     )
     cells = [(0, 1, 2), (0, 1, 3)]
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, vertices)
     Q = functionspace(mesh, ("Lagrange", 1))
     u = Function(Q)
     u.interpolate(lambda x: x[0] + x[1])

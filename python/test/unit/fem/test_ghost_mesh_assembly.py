@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for assembly"""
+"""Unit tests for assembly."""
 
 from mpi4py import MPI
 
@@ -34,10 +34,6 @@ def dS_from_ufl(mesh):
     [
         GhostMode.none,
         GhostMode.shared_facet,
-        pytest.param(
-            GhostMode.shared_vertex,
-            marks=pytest.mark.xfail(reason="Shared vertex currently disabled"),
-        ),
     ],
 )
 @pytest.mark.parametrize("dx", [dx_from_ufl])
@@ -78,10 +74,6 @@ def test_ghost_mesh_assembly(mode, dx, ds):
                 condition=MPI.COMM_WORLD.size > 1,
                 reason="Unghosted interior facets fail in parallel",
             ),
-        ),
-        pytest.param(
-            GhostMode.shared_vertex,
-            marks=pytest.mark.xfail(reason="Shared vertex currently disabled"),
         ),
     ],
 )

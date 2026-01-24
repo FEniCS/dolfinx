@@ -85,12 +85,16 @@
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/petsc.h>
+#include <dolfinx/la/petsc.h>
+#include <petscmat.h>
+#include <petscsys.h>
+#include <petscsystypes.h>
 #include <utility>
 #include <vector>
 
 using namespace dolfinx;
 using T = PetscScalar;
-using U = typename dolfinx::scalar_value_type_t<T>;
+using U = typename dolfinx::scalar_value_t<T>;
 
 // Then follows the definition of the coefficient functions (for $f$ and
 // $g$), which are derived from the {cpp:class}`Expression` class in
@@ -120,8 +124,9 @@ int main(int argc, char* argv[])
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
 
-    auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(mesh, element, {}));
+    auto V
+        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+            mesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
     //  Next, we define the variational formulation by initializing the
     //  bilinear and linear forms ($a$, $L$) using the previously
@@ -135,17 +140,17 @@ int main(int argc, char* argv[])
     auto g = std::make_shared<fem::Function<T>>(V);
 
     // Define variational forms
-    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}));
-    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}));
+    fem::Form<T> a = fem::create_form<T>(*form_poisson_a, {V, V}, {},
+                                         {{"kappa", kappa}}, {}, {});
+    fem::Form<T> L = fem::create_form<T>(*form_poisson_L, {V},
+                                         {{"f", f}, {"g", g}}, {}, {}, {});
 
     //  Now, the Dirichlet boundary condition ($u = 0$) can be created
     //  using the class {cpp:class}`DirichletBC`. A
     //  {cpp:class}`DirichletBC` takes two arguments: the value of the
     //  boundary condition, and the part of the boundary on which the
     //  condition applies. In our example, the value of the boundary
-    //  condition (0.0) can represented using a {cpp:class}`Function`,
+    //  condition (0) can represented using a {cpp:class}`Function`,
     //  and the Dirichlet boundary is defined by the indices of degrees
     //  of freedom to which the boundary condition applies. The
     //  definition of the Dirichlet boundary condition then looks as
@@ -153,7 +158,7 @@ int main(int argc, char* argv[])
 
     // Define boundary condition
 
-    auto facets = mesh::locate_entities_boundary(
+    std::vector facets = mesh::locate_entities_boundary(
         *mesh, 1,
         [](auto x)
         {
@@ -168,9 +173,9 @@ int main(int argc, char* argv[])
           }
           return marker;
         });
-    const auto bdofs = fem::locate_dofs_topological(
+    std::vector bdofs = fem::locate_dofs_topological(
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
+    fem::DirichletBC<T> bc(0, bdofs, V);
 
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -203,13 +208,13 @@ int main(int argc, char* argv[])
     //  and `bc` as follows:
 
     auto u = std::make_shared<fem::Function<T>>(V);
-    auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
-    la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
-                    L->function_spaces()[0]->dofmap()->index_map_bs());
+    la::petsc::Matrix A(fem::petsc::create_matrix(a), false);
+    la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
+                    L.function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
     fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
-                         *a, {bc});
+                         a, {bc});
     MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
     fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
@@ -217,11 +222,11 @@ int main(int argc, char* argv[])
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
-    b.set(0.0);
-    fem::assemble_vector(b.mutable_array(), *L);
-    fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
+    std::ranges::fill(b.array(), 0);
+    fem::assemble_vector(b.array(), L);
+    fem::apply_lifting(b.array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
-    fem::set_bc<T, U>(b.mutable_array(), {bc});
+    bc.set(b.array(), std::nullopt);
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");
@@ -243,7 +248,7 @@ int main(int argc, char* argv[])
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    file.write<T>({*u}, 0.0);
+    file.write<T>({*u}, 0);
 
 #ifdef HAS_ADIOS2
     // Save solution in VTX format

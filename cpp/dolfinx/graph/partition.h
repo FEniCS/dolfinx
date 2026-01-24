@@ -63,7 +63,7 @@ namespace build
 /// 1. Received adjacency list for this process
 /// 2. Source ranks for each node in the adjacency list
 /// 3. Original global index for each node in the adjacency list
-/// 4. Owner rank of ghost nodes
+/// 4. Owning rank of ghost nodes.
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
@@ -75,16 +75,19 @@ distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
 /// the offset for this rank.
 ///
 /// @param[in] comm MPI Communicator
-/// @param[in] list A flattened 2D row major array
-/// @param[in] shape The shape of the array
-/// @param[in] destinations Destination ranks for the ith row of the
-/// array. The first rank is the 'owner' of the node.
+/// @param[in] list Constant degree (valency) adjacency list. The array
+/// shape is (num_nodes, degree). Storage is row-major.
+/// @param[in] shape Shape `(num_nodes, degree)` of `list`.
+/// @param[in] destinations Destination ranks for the ith node (row) of
+/// `list`. The first rank is the 'owner' of the node.
 /// @return
-/// 1. Received list for this process
-/// 2. Original global index for each node
-/// 3. Owner rank of ghost nodes
-std::tuple<std::vector<std::int64_t>, std::vector<std::int64_t>,
-           std::vector<int>>
+/// 1. Received adjacency list on this process. The array shape is
+/// (num_nodes, degree). Storage is row-major.
+/// 2. Source rank for each received node.
+/// 3. Original global index for each received node.
+/// 4. Owning rank of ghost nodes.
+std::tuple<std::vector<std::int64_t>, std::vector<int>,
+           std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, std::span<const std::int64_t> list,
            std::array<std::size_t, 2> shape,
            const graph::AdjacencyList<std::int32_t>& destinations);

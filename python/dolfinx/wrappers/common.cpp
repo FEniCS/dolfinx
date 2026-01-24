@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "caster_mpi.h"
+#include "dolfinx_wrappers/MPICommWrapper.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
@@ -20,34 +20,141 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
+#include <nanobind/stl/chrono.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
-#include <nanobind/stl/tuple.h>
+#include <nanobind/stl/string_view.h>
 #include <nanobind/stl/vector.h>
+#include <optional>
 #include <span>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace nb = nanobind;
 
 namespace dolfinx_wrappers
 {
+
+/// Return true if DOLFINx is compiled with petsc4py
+consteval bool has_petsc4py()
+{
+#ifdef HAS_PETSC4PY
+  return true;
+#else
+  return false;
+#endif
+}
+
+template <typename T>
+void add_scatter_functions(nb::class_<dolfinx::common::Scatterer<>>& sc)
+{
+  sc.def(
+      "scatter_fwd",
+      [](dolfinx::common::Scatterer<>& self,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> local_data,
+         nb::ndarray<T, nb::ndim<1>, nb::c_contig> remote_data)
+      {
+        if (local_data.size() < self.remote_indices().size())
+        {
+          throw std::runtime_error(
+              "Local data buffer too small in forward scatter.");
+        }
+        if (remote_data.size() < self.remote_indices().size())
+        {
+          throw std::runtime_error(
+              "Ghost data buffer too small in forward scatter.");
+        }
+
+        std::vector<T> send_buffer(self.local_indices().size());
+        {
+          auto _local_data = local_data.view();
+          auto& idx = self.local_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            send_buffer[i] = _local_data(idx[i]);
+        }
+        std::vector<T> recv_buffer(self.remote_indices().size());
+        MPI_Request request = MPI_REQUEST_NULL;
+        self.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
+        self.scatter_end(request);
+        {
+          auto _remote_data = remote_data.view();
+          auto& idx = self.remote_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            _remote_data(idx[i]) = recv_buffer[i];
+        }
+      },
+      nb::arg("local_data"), nb::arg("remote_data"));
+
+  sc.def(
+      "scatter_rev",
+      [](dolfinx::common::Scatterer<>& self,
+         nb::ndarray<T, nb::ndim<1>, nb::c_contig> local_data,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> remote_data)
+      {
+        if (local_data.size() < self.local_indices().size())
+        {
+          throw std::runtime_error(
+              "Local data buffer too small in reverse scatter.");
+        }
+        if (remote_data.size() < self.remote_indices().size())
+        {
+          throw std::runtime_error(
+              "Ghost data buffer too small in reverse scatter.");
+        }
+
+        std::vector<T> send_buffer(self.remote_indices().size());
+        {
+          auto _remote_data = remote_data.view();
+          auto& idx = self.remote_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            send_buffer[i] = _remote_data(idx[i]);
+        }
+        std::vector<T> recv_buffer(self.local_indices().size());
+        MPI_Request request = MPI_REQUEST_NULL;
+        self.scatter_rev_begin<T>(send_buffer.data(), recv_buffer.data(),
+                                  request);
+        self.scatter_end(request);
+        {
+          auto _local_data = local_data.view();
+          auto& idx = self.local_indices();
+          for (std::size_t i = 0; i < idx.size(); ++i)
+            _local_data(idx[i]) += recv_buffer[i];
+        }
+      },
+      nb::arg("local_data"), nb::arg("remote_data"));
+}
+
 // Interface for dolfinx/common
 void common(nb::module_& m)
 {
   // From dolfinx/common/defines.h
-  m.attr("has_debug") = dolfinx::has_debug();
-  m.attr("has_parmetis") = dolfinx::has_parmetis();
-  m.attr("has_kahip") = dolfinx::has_kahip();
-  m.attr("has_petsc") = dolfinx::has_petsc();
-  m.attr("has_slepc") = dolfinx::has_slepc();
-  m.attr("has_adios2") = dolfinx::has_adios2();
   m.attr("git_commit_hash") = dolfinx::git_commit_hash();
+  m.attr("has_adios2") = dolfinx::has_adios2();
+  m.attr("has_complex_ufcx_kernels") = dolfinx::has_complex_ufcx_kernels();
+  m.attr("has_debug") = dolfinx::has_debug();
+  m.attr("has_kahip") = dolfinx::has_kahip();
+  m.attr("has_parmetis") = dolfinx::has_parmetis();
+  m.attr("has_petsc") = dolfinx::has_petsc();
+  m.attr("has_petsc4py") = has_petsc4py();
+  m.attr("has_ptscotch") = dolfinx::has_ptscotch();
+  m.attr("has_slepc") = dolfinx::has_slepc();
+  m.attr("ufcx_signature") = dolfinx::ufcx_signature();
+  m.attr("version") = dolfinx::version();
 
   nb::enum_<dolfinx::Table::Reduction>(m, "Reduction")
       .value("max", dolfinx::Table::Reduction::max)
       .value("min", dolfinx::Table::Reduction::min)
       .value("average", dolfinx::Table::Reduction::average);
+
+  auto sc = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
+                .def(nb::init<dolfinx::common::IndexMap&, int>(),
+                     nb::arg("index_map"), nb::arg("block_size"));
+  add_scatter_functions<std::int64_t>(sc);
+  add_scatter_functions<double>(sc);
+  add_scatter_functions<float>(sc);
 
   // dolfinx::common::IndexMap
   nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")
@@ -62,14 +169,15 @@ void common(nb::module_& m)
           [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
              std::int32_t local_size,
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> ghosts,
-             nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners)
+             nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners,
+             int tag)
           {
             new (self) dolfinx::common::IndexMap(
                 comm.get(), local_size, std::span(ghosts.data(), ghosts.size()),
-                std::span(ghost_owners.data(), ghost_owners.size()));
+                std::span(ghost_owners.data(), ghost_owners.size()), tag);
           },
           nb::arg("comm"), nb::arg("local_size"), nb::arg("ghosts"),
-          nb::arg("ghost_owners"))
+          nb::arg("ghost_owners"), nb::arg("tag"))
       .def(
           "__init__",
           [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
@@ -101,15 +209,13 @@ void common(nb::module_& m)
                    "Range of indices owned by this map")
       .def("index_to_dest_ranks",
            &dolfinx::common::IndexMap::index_to_dest_ranks)
-      .def("imbalance", &dolfinx::common::IndexMap::imbalance,
-           "Imbalance of the current IndexMap.")
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
           {
             std::span ghosts = self.ghosts();
-            return nb::ndarray<const std::int64_t, nb::numpy>(
-                ghosts.data(), {ghosts.size()}, nb::handle());
+            return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
+                                                              {ghosts.size()});
           },
           nb::rv_policy::reference_internal, "Return list of ghost indices")
       .def_prop_ro(
@@ -117,8 +223,8 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self)
           {
             std::span owners = self.owners();
-            return nb::ndarray<nb::numpy, const int, nb::ndim<1>>(
-                owners.data(), {owners.size()}, nb::handle());
+            return nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
+                owners.data(), {owners.size()});
           },
           nb::rv_policy::reference_internal)
       .def(
@@ -142,32 +248,36 @@ void common(nb::module_& m)
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
           nb::arg("global"));
-  // dolfinx::common::Timer
-  nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")
-      .def(nb::init<>())
-      .def(nb::init<std::string>(), nb::arg("task"))
-      .def("start", &dolfinx::common::Timer::start, "Start timer")
-      .def("stop", &dolfinx::common::Timer::stop, "Stop timer")
-      .def("resume", &dolfinx::common::Timer::resume)
-      .def("elapsed", &dolfinx::common::Timer::elapsed);
 
-  // dolfinx::common::Timer enum
-  nb::enum_<dolfinx::TimingType>(m, "TimingType")
-      .value("wall", dolfinx::TimingType::wall)
-      .value("system", dolfinx::TimingType::system)
-      .value("user", dolfinx::TimingType::user);
+  // dolfinx::common::Timer
+  nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
+      m, "Timer", "Timer class")
+      .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
+      .def("start",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::start,
+           "Start timer")
+      .def("elapsed",
+           &dolfinx::common::Timer<
+               std::chrono::high_resolution_clock>::elapsed<>,
+           "Elapsed time")
+      .def("stop",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::stop<>,
+           "Stop timer")
+      .def("resume",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::resume,
+           "Resume timer")
+      .def("flush",
+           &dolfinx::common::Timer<std::chrono::high_resolution_clock>::flush,
+           "Flush timer");
 
   m.def("timing", &dolfinx::timing);
+  m.def("timings", &dolfinx::timings);
 
   m.def(
       "list_timings",
-      [](MPICommWrapper comm, std::vector<dolfinx::TimingType> type,
-         dolfinx::Table::Reduction reduction)
-      {
-        std::set<dolfinx::TimingType> _type(type.begin(), type.end());
-        dolfinx::list_timings(comm.get(), _type, reduction);
-      },
-      nb::arg("comm"), nb::arg("type"), nb::arg("reduction"));
+      [](MPICommWrapper comm, dolfinx::Table::Reduction reduction)
+      { dolfinx::list_timings(comm.get(), reduction); }, nb::arg("comm"),
+      nb::arg("reduction"));
 
   m.def(
       "init_logging",

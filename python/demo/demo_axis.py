@@ -2,10 +2,13 @@
 #
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This demo is implemented in three files: one for the mesh generation
-# with gmsh, one for the calculation of analytical efficiencies, and one
-# for the variational forms and the solver. It illustrates how to:
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_axis.py>`
+# * {download}`Jupyter notebook <./demo_axis.ipynb>`
+# ```
 #
+# This demo illustrates how to:
 # - Setup and solve Maxwell's equations for axisymmetric geometries
 # - Implement (axisymmetric) perfectly matched layers
 #
@@ -16,39 +19,16 @@
 # +
 import sys
 from functools import partial
+from pathlib import Path
 
 from mpi4py import MPI
+from petsc4py import PETSc
 
+import gmsh
 import numpy as np
 from scipy.special import jv, jvp
 
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
-        # Note: when PETSc.IntType == np.int32, superlu_dist is used
-        # rather than MUMPS and does not trigger memory failures.
-        exit(0)
-
-    # The time-harmonic Maxwell equation is complex-valued PDE. PETSc
-    # must therefore have compiled with complex scalars.
-    if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
-        print("Demo can only be executed when PETSc using complex scalars.")
-        exit(0)
-
-    scalar_type = PETSc.ScalarType
-    real_type = PETSc.RealType
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
-
+import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, io, mesh, plot
@@ -63,18 +43,19 @@ except ImportError:
     has_vtx = False
 
 try:
-    import gmsh
-except ModuleNotFoundError:
-    print("This demo requires gmsh to be installed.")
-    sys.exit(0)
-
-try:
     import pyvista
 
     have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
+
+# The time-harmonic Maxwell equation is complex-valued. PETSc must
+# therefore have been compiled with complex scalars.
+if not np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
+    print("Demo can only be executed when PETSc using complex scalars.")
+    exit(0)
+
 # -
 
 
@@ -92,6 +73,7 @@ def generate_mesh_sphere_axis(
     pml_tag: int,
     scatt_tag: int,
 ):
+    """Generate axisymmetric mesh of a sphere with surrounding PML."""
     gmsh.model.add("geometry")
 
     gmsh.model.occ.addCircle(0, 0, 0, radius_sph * 0.5, angle1=-np.pi / 2, angle2=np.pi / 2, tag=1)
@@ -160,8 +142,8 @@ def generate_mesh_sphere_axis(
 # \cdot (\nabla \times \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2}
 # \mathbf{E}_s \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}
 # -\varepsilon_b\right)\mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d} x\\
-# +\int_{\Omega_{pml}}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times \mathbf{E}_s
-# \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
+# +\int_{\Omega_{pml}}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times
+# \mathbf{E}_s \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
 # \left[\boldsymbol{\varepsilon}_{pml} \mathbf{E}_s \right]\cdot
 # \bar{\mathbf{v}}~ d x=0
 # \end{split}
@@ -178,8 +160,8 @@ def generate_mesh_sphere_axis(
 # -\varepsilon_b\right)\mathbf{E}_b \cdot
 # \bar{\mathbf{v}}~ \rho d\rho dz d \phi\\
 # +\int_{\Omega_{cs}}
-# \int_{0}^{2\pi}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times \mathbf{E}_s
-# \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
+# \int_{0}^{2\pi}\left[\boldsymbol{\mu}^{-1}_{pml} \nabla \times
+# \mathbf{E}_s \right]\cdot \nabla \times \bar{\mathbf{v}}-k_{0}^{2}
 # \left[\boldsymbol{\varepsilon}_{pml} \mathbf{E}_s \right]\cdot
 # \bar{\mathbf{v}}~ \rho d\rho dz d \phi=0
 # \end{split}
@@ -190,8 +172,10 @@ def generate_mesh_sphere_axis(
 #
 # $$
 # \begin{align}
-# \mathbf{E}_s(\rho, z, \phi) &= \sum_m\mathbf{E}^{(m)}_s(\rho, z)e^{-jm\phi} \\
-# \mathbf{E}_b(\rho, z, \phi) &= \sum_m\mathbf{E}^{(m)}_b(\rho, z)e^{-jm\phi} \\
+# \mathbf{E}_s(\rho, z, \phi) &= \sum_m\mathbf{E}^{(m)}_s(\rho, z)
+#   e^{-jm\phi} \\
+# \mathbf{E}_b(\rho, z, \phi) &= \sum_m\mathbf{E}^{(m)}_b(\rho, z)
+#   e^{-jm\phi} \\
 # \bar{\mathbf{v}}(\rho, z, \phi) &=
 # \sum_m\bar{\mathbf{v}}^{(m)}(\rho, z)e^{+jm\phi}
 # \end{align}
@@ -268,6 +252,7 @@ def generate_mesh_sphere_axis(
 
 
 def curl_axis(a, m: int, rho):
+    """Curl operator in cylindrical coordinates."""
     curl_r = -a[2].dx(1) - 1j * m / rho * a[1]
     curl_z = a[2] / rho + a[2].dx(0) + 1j * m / rho * a[0]
     curl_p = a[0].dx(1) - a[1].dx(0)
@@ -302,6 +287,7 @@ def curl_axis(a, m: int, rho):
 
 # +
 def background_field_rz(theta: float, n_bkg: float, k0: float, m: int, x):
+    """Cylindrical harmonics of background field (ρ and z components)."""
     k = k0 * n_bkg
     a_r = (
         np.cos(theta)
@@ -319,6 +305,7 @@ def background_field_rz(theta: float, n_bkg: float, k0: float, m: int, x):
 
 
 def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
+    """Cylindrical harmonics of background field (φ component)."""
     k = k0 * n_bkg
     a_p = (
         np.cos(theta)
@@ -390,10 +377,12 @@ def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
 
 
 def pml_coordinate(x, r, alpha: float, k0: float, radius_dom: float, radius_pml: float):
+    """Coordinate transformation for PML in cylindrical coordinates."""
     return x + 1j * alpha / k0 * x * (r - radius_dom) / (radius_pml * r)
 
 
 def create_eps_mu(pml, rho, eps_bkg, mu_bkg):
+    """Create PML permittivity and permeability tensors."""
     J = ufl.grad(pml)
 
     # Transform the 2x2 Jacobian into a 3x3 matrix.
@@ -409,7 +398,7 @@ def create_eps_mu(pml, rho, eps_bkg, mu_bkg):
 
 # We can now define some constants and geometrical parameters, and then
 # we can generate the mesh with Gmsh, by using the function
-# `generate_mesh_sphere_axis` in `mesh_sphere_axis.py`:
+# `generate_mesh_sphere_axis`:
 
 
 # +
@@ -463,7 +452,10 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-msh, cell_tags, facet_tags = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
+partitioner = dolfinx.cpp.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet)
+mesh_data = io.gmsh.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
+assert mesh_data.cell_tags is not None, "Cell tags are missing"
+assert mesh_data.facet_tags is not None, "Facet tags are missing"
 
 gmsh.finalize()
 MPI.COMM_WORLD.barrier()
@@ -471,36 +463,41 @@ MPI.COMM_WORLD.barrier()
 
 # Visually check of the mesh and of the subdomains using PyVista:
 
-tdim = msh.topology.dim
+out_folder = Path("out_axis")
+out_folder.mkdir(parents=True, exist_ok=True)
+tdim = mesh_data.mesh.topology.dim
 if have_pyvista:
-    topology, cell_types, geometry = plot.vtk_mesh(msh, 2)
+    topology, cell_types, geometry = plot.vtk_mesh(mesh_data.mesh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
-    num_local_cells = msh.topology.index_map(tdim).size_local
-    grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
+    num_local_cells = mesh_data.mesh.topology.index_map(tdim).size_local
+    grid.cell_data["Marker"] = mesh_data.cell_tags.values[
+        mesh_data.cell_tags.indices < num_local_cells
+    ]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
     plotter.view_xy()
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:
-        pyvista.start_xvfb()
-        figure = plotter.screenshot("sphere_axis_mesh.png", window_size=[500, 500])
+        figure = plotter.screenshot(out_folder / "sphere_axis_mesh.png", window_size=[500, 500])
 
 # For the $\hat{\rho}$ and $\hat{z}$ components of the electric field,
 # we will use Nedelec elements, while for the $\hat{\phi}$ components we
 # will use Lagrange elements:
 
 degree = 3
-curl_el = element("N1curl", msh.basix_cell(), degree, dtype=real_type)
-lagr_el = element("Lagrange", msh.basix_cell(), degree, dtype=real_type)
-V = fem.functionspace(msh, mixed_element([curl_el, lagr_el]))
+curl_el = element("N1curl", mesh_data.mesh.basix_cell(), degree, dtype=PETSc.RealType)
+lagr_el = element("Lagrange", mesh_data.mesh.basix_cell(), degree, dtype=PETSc.RealType)
+V = fem.functionspace(mesh_data.mesh, mixed_element([curl_el, lagr_el]))
 
 # The integration domains of our problem are the following:
 
 # +
 # Measures for subdomains
-dx = ufl.Measure("dx", msh, subdomain_data=cell_tags, metadata={"quadrature_degree": 5})
+dx = ufl.Measure(
+    "dx", mesh_data.mesh, subdomain_data=mesh_data.cell_tags, metadata={"quadrature_degree": 5}
+)
 dDom = dx((au_tag, bkg_tag))
 dPml = dx(pml_tag)
 # -
@@ -512,10 +509,10 @@ n_bkg = 1  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 eps_au = -1.0782 + 1j * 5.8089
 
-D = fem.functionspace(msh, ("DG", 0))
+D = fem.functionspace(mesh_data.mesh, ("DG", 0))
 eps = fem.Function(D)
-au_cells = cell_tags.find(au_tag)
-bkg_cells = cell_tags.find(bkg_tag)
+au_cells = mesh_data.cell_tags.find(au_tag)
+bkg_cells = mesh_data.cell_tags.find(bkg_tag)
 eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=eps.x.array.dtype)
 eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=eps.x.array.dtype)
 eps.x.scatter_forward()
@@ -559,7 +556,7 @@ I0 = 0.5 * n_bkg / Z0  # Intensity
 # We now now define `eps_pml` and `mu_pml`:
 
 # +
-rho, z = ufl.SpatialCoordinate(msh)
+rho, z = ufl.SpatialCoordinate(mesh_data.mesh)
 alpha = 5
 r = ufl.sqrt(rho**2 + z**2)
 
@@ -580,7 +577,7 @@ eps_pml, mu_pml = create_eps_mu(pml_coords, rho, eps_bkg, 1)
 Eh_m = fem.Function(V)
 Esh = fem.Function(V)
 
-n = ufl.FacetNormal(msh)
+n = ufl.FacetNormal(mesh_data.mesh)
 n_3d = ufl.as_vector((n[0], n[1], 0))
 
 # Geometrical cross section of the sphere, for efficiency calculation
@@ -588,10 +585,12 @@ gcs = np.pi * radius_sph**2
 
 # Marker functions for the scattering efficiency integral
 marker = fem.Function(D)
-scatt_facets = facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(msh.topology, scatt_facets, tdim - 1, tdim)
-msh.topology.create_connectivity(tdim, tdim)
-midpoints = mesh.compute_midpoints(msh, tdim, incident_cells)
+scatt_facets = mesh_data.facet_tags.find(scatt_tag)
+incident_cells = mesh.compute_incident_entities(
+    mesh_data.mesh.topology, scatt_facets, tdim - 1, tdim
+)
+mesh_data.mesh.topology.create_connectivity(tdim, tdim)
+midpoints = mesh.compute_midpoints(mesh_data.mesh, tdim, incident_cells)
 inner_cells = incident_cells[(midpoints[:, 0] ** 2 + midpoints[:, 1] ** 2) < (radius_scatt) ** 2]
 marker.x.array[inner_cells] = 1
 
@@ -599,7 +598,7 @@ marker.x.array[inner_cells] = 1
 dAu = dx(au_tag)
 
 # Define integration facet for the scattering efficiency
-dS = ufl.Measure("dS", msh, subdomain_data=facet_tags)
+dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
 # -
 
 # We also specify a variable `phi`, corresponding to the $\phi$ angle of
@@ -623,7 +622,7 @@ dS = ufl.Measure("dS", msh, subdomain_data=facet_tags)
 phi = np.pi / 4
 
 # Initialize phase term
-phase = fem.Constant(msh, scalar_type(np.exp(1j * 0 * phi)))
+phase = fem.Constant(mesh_data.mesh, PETSc.ScalarType(np.exp(1j * 0 * phi)))
 # -
 
 # We now solve the problem:
@@ -651,9 +650,31 @@ for m in m_list:
         + k0**2 * ufl.inner(eps_pml * Es_m, v_m) * rho * dPml
     )
     a, L = ufl.lhs(F), ufl.rhs(F)
-
-    problem = LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+    sys = PETSc.Sys()  # type: ignore
+    use_superlu = PETSc.IntType == np.int64
+    if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
+        mat_factor_backend = "mumps"
+    elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
+        mat_factor_backend = "superlu_dist"
+    else:
+        if mesh_data.mesh.comm.size > 1:
+            raise RuntimeError("This demo requires a parallel linear algebra backend.")
+        else:
+            mat_factor_backend = "petsc"
+    problem = LinearProblem(
+        a,
+        L,
+        bcs=[],
+        petsc_options_prefix="demo_axis_",
+        petsc_options={
+            "ksp_type": "preonly",
+            "pc_type": "lu",
+            "pc_factor_mat_solver_type": mat_factor_backend,
+        },
+    )
     Esh_m = problem.solve()
+    assert isinstance(Esh_m, fem.Function)
+    assert problem.solver.getConvergedReason() > 0
 
     # Scattered magnetic field
     Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)
@@ -688,8 +709,8 @@ for m in m_list:
         q_sca_fenics_proc = (
             fem.assemble_scalar(fem.form((P("+") + P("-")) * rho * dS(scatt_tag))) / gcs / I0
         ).real
-        q_abs_fenics = msh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
-        q_sca_fenics = msh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+        q_abs_fenics = mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_sca_fenics = mesh_data.mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
     elif m == m_list[0]:  # initialize and add 2 factor
         P = 2 * np.pi * ufl.inner(-ufl.cross(Esh_m, ufl.conj(Hsh_m)), n_3d) * marker
         Q = 2 * np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0 / n_bkg
@@ -697,8 +718,8 @@ for m in m_list:
         q_sca_fenics_proc = (
             fem.assemble_scalar(fem.form((P("+") + P("-")) * rho * dS(scatt_tag))) / gcs / I0
         ).real
-        q_abs_fenics = msh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
-        q_sca_fenics = msh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+        q_abs_fenics = mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_sca_fenics = mesh_data.mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
     else:  # do not initialize and add 2 factor
         P = 2 * np.pi * ufl.inner(-ufl.cross(Esh_m, ufl.conj(Hsh_m)), n_3d) * marker
         Q = 2 * np.pi * eps_au.imag * k0 * (ufl.inner(Eh_m, Eh_m)) / Z0 / n_bkg
@@ -706,8 +727,8 @@ for m in m_list:
         q_sca_fenics_proc = (
             fem.assemble_scalar(fem.form((P("+") + P("-")) * rho * dS(scatt_tag))) / gcs / I0
         ).real
-        q_abs_fenics += msh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
-        q_sca_fenics += msh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
+        q_abs_fenics += mesh_data.mesh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
+        q_sca_fenics += mesh_data.mesh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)
 
 q_ext_fenics = q_abs_fenics + q_sca_fenics
 # -
@@ -725,8 +746,10 @@ q_ext_fenics = q_abs_fenics + q_sca_fenics
 # m = np.sqrt(eps_au)/n_bkg
 # x = 2*np.pi*radius_sph/wl0*n_bkg
 #
-# q_sca_analyt, q_abs_analyt = scattnlay(np.array([x], dtype=np.complex128),
-#                                        np.array([m], dtype=np.complex128))[2:4]
+# q_sca_analyt, q_abs_analyt = scattnlay(
+#   np.array([x], dtype=np.complex128),
+#   np.array([m], dtype=np.complex128)
+# )[2:4]
 # ```
 #
 # The numerical values are reported here below:
@@ -766,11 +789,11 @@ if MPI.COMM_WORLD.rank == 0:
 # assert err_ext < 0.01
 
 if has_vtx:
-    v_dg_el = element("DG", msh.basix_cell(), degree, shape=(3,), dtype=real_type)
-    W = fem.functionspace(msh, v_dg_el)
+    v_dg_el = element("DG", mesh_data.mesh.basix_cell(), degree, shape=(3,), dtype=PETSc.RealType)
+    W = fem.functionspace(mesh_data.mesh, v_dg_el)
     Es_dg = fem.Function(W)
-    Es_expr = fem.Expression(Esh, W.element.interpolation_points())
+    Es_expr = fem.Expression(Esh, W.element.interpolation_points)
     Es_dg.interpolate(Es_expr)
-    with VTXWriter(msh.comm, "sols/Es.bp", Es_dg) as f:
+    with VTXWriter(mesh_data.mesh.comm, out_folder / "Es.bp", Es_dg) as f:
         f.write(0.0)
 # -

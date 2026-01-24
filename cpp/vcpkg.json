@@ -4,7 +4,7 @@
     "boost-algorithm",
     "boost-functional",
     "boost-lexical-cast",
-    "boost-timer",
+    "boost-multiprecision",
     "boost-unordered",
     "boost-uuid",
     "catch2",

@@ -14,6 +14,12 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_pyvista.py>`
+# * {download}`Jupyter notebook <./demo_pyvista.ipynb>`
+# ```
+#
 # # Visualization with PyVista
 #
 # [PyVista](https://pyvista.org/) can be used with DOLFINx for
@@ -22,38 +28,36 @@
 # To start, the required modules are imported and some PyVista
 # parameters set.
 
-from mpi4py import MPI
 
 # +
+from pathlib import Path
+
+from mpi4py import MPI
+
 import numpy as np
+import pyvista
 
 import dolfinx.plot as plot
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import CellType, compute_midpoints, create_unit_cube, create_unit_square, meshtags
 
-try:
-    import pyvista
-except ModuleNotFoundError:
-    print("pyvista is required for this demo")
-    exit(0)
-
-# If environment variable PYVISTA_OFF_SCREEN is set to true save a png
-# otherwise create interactive plot
-if pyvista.OFF_SCREEN:
-    pyvista.start_xvfb(wait=0.1)
-
 # Set some global options for all plots
 transparent = False
 figsize = 800
+out_folder = Path("out_pyvista")
+out_folder.mkdir(parents=True, exist_ok=True)
 # -
 
 # ## Plotting a finite element Function using warp by scalar
 
 
 def plot_scalar():
+    """Plot a scalar finite element function using warp by scalar."""
     # We start by creating a unit square mesh and interpolating a
     # function into a degree 1 Lagrange space
-    msh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+    msh = create_unit_square(
+        MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral, dtype=np.float64
+    )
     V = functionspace(msh, ("Lagrange", 1))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
@@ -97,7 +101,7 @@ def plot_scalar():
     subplotter.add_mesh(warped, show_edges=True, scalar_bar_args=sargs)
     if pyvista.OFF_SCREEN:
         subplotter.screenshot(
-            "2D_function_warp.png",
+            out_folder / "2D_function_warp.png",
             transparent_background=transparent,
             window_size=[figsize, figsize],
         )
@@ -109,11 +113,15 @@ def plot_scalar():
 
 
 def plot_meshtags():
+    """Plot mesh tags using subplots."""
     # Create a mesh
-    msh = create_unit_square(MPI.COMM_WORLD, 25, 25, cell_type=CellType.quadrilateral)
+    msh = create_unit_square(
+        MPI.COMM_WORLD, 25, 25, cell_type=CellType.quadrilateral, dtype=np.float64
+    )
 
     # Create a geometric indicator function
     def in_circle(x):
+        """Indicator function for points inside a circle."""
         return np.array((x.T[0] - 0.5) ** 2 + (x.T[1] - 0.5) ** 2 < 0.2**2, dtype=np.int32)
 
     # Create cell tags - if midpoint is inside circle, it gets value 1,
@@ -151,7 +159,9 @@ def plot_meshtags():
 
     if pyvista.OFF_SCREEN:
         subplotter.screenshot(
-            "2D_markers.png", transparent_background=transparent, window_size=[2 * figsize, figsize]
+            out_folder / "2D_markers.png",
+            transparent_background=transparent,
+            window_size=[2 * figsize, figsize],
         )
     else:
         subplotter.show()
@@ -163,11 +173,15 @@ def plot_meshtags():
 
 
 def plot_higher_order():
+    """Plot a higher-order discontinuous finite element function."""
     # Create a mesh
-    msh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
+    msh = create_unit_square(
+        MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral, dtype=np.float64
+    )
 
     # Define a geometric indicator function
     def in_circle(x):
+        """Indicator function for points inside a circle."""
         return np.array((x.T[0] - 0.5) ** 2 + (x.T[1] - 0.5) ** 2 < 0.2**2, dtype=np.int32)
 
     # Create mesh tags for all cells. If midpoint is inside the circle,
@@ -218,7 +232,7 @@ def plot_higher_order():
     plotter.view_xy()
     if pyvista.OFF_SCREEN:
         plotter.screenshot(
-            f"DG_{MPI.COMM_WORLD.rank}.png",
+            out_folder / f"DG_{MPI.COMM_WORLD.rank}.png",
             transparent_background=transparent,
             window_size=[figsize, figsize],
         )
@@ -233,7 +247,10 @@ def plot_higher_order():
 
 
 def plot_nedelec():
-    msh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron)
+    """Plot Nédélec finite element function with vectors."""
+    msh = create_unit_cube(
+        MPI.COMM_WORLD, 4, 3, 5, cell_type=CellType.tetrahedron, dtype=np.float64
+    )
 
     # We create a pyvista plotter
     plotter = pyvista.Plotter()
@@ -248,8 +265,8 @@ def plot_nedelec():
     # Add this grid (as a wireframe) to the plotter
     plotter.add_mesh(grid, style="wireframe", line_width=2, color="black")
 
-    # Create a function space consisting of first order Nédélec (first kind)
-    # elements and interpolate a vector-valued expression
+    # Create a function space consisting of first order Nédélec (first
+    # kind) elements and interpolate a vector-valued expression
     V = functionspace(msh, ("N1curl", 2))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: (x[2] ** 2, np.zeros(x.shape[1]), -x[0] * x[2]))
@@ -268,7 +285,8 @@ def plot_nedelec():
     cells, cell_types, x = plot.vtk_mesh(V0)
     grid = pyvista.UnstructuredGrid(cells, cell_types, x)
 
-    # Create point cloud of vertices, and add the vertex values to the cloud
+    # Create point cloud of vertices, and add the vertex values to the
+    # cloud
     grid.point_data["u"] = u0.x.array.reshape(x.shape[0], V0.dofmap.index_map_bs)
     glyphs = grid.glyph(orient="u", factor=0.1)
 
@@ -278,7 +296,7 @@ def plot_nedelec():
     # Save as png if we are using a container with no rendering
     if pyvista.OFF_SCREEN:
         plotter.screenshot(
-            "3D_wireframe_with_vectors.png",
+            out_folder / "3D_wireframe_with_vectors.png",
             transparent_background=transparent,
             window_size=[figsize, figsize],
         )
@@ -292,7 +310,8 @@ def plot_nedelec():
 
 
 def plot_streamlines():
-    msh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
+    """Plot streamlines of a vector field in 3D."""
+    msh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron, dtype=np.float64)
     gdim = msh.geometry.dim
     V = functionspace(msh, ("Discontinuous Lagrange", 2, (gdim,)))
     u = Function(V, dtype=np.float64)
@@ -301,7 +320,7 @@ def plot_streamlines():
     cells, types, x = plot.vtk_mesh(V)
     num_dofs = x.shape[0]
     values = np.zeros((num_dofs, 3), dtype=np.float64)
-    values[:, : msh.geometry.dim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)
+    values[:, :gdim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)
 
     # Create a point cloud of glyphs
     grid = pyvista.UnstructuredGrid(cells, types, x)
@@ -321,7 +340,7 @@ def plot_streamlines():
     plotter.view_xy()
     if pyvista.OFF_SCREEN:
         plotter.screenshot(
-            f"streamlines_{MPI.COMM_WORLD.rank}.png",
+            out_folder / f"streamlines_{MPI.COMM_WORLD.rank}.png",
             transparent_background=transparent,
             window_size=[figsize, figsize],
         )

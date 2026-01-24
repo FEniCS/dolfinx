@@ -1,4 +1,4 @@
-name: Spack build
+name: Test Spack builds
 
 on:
   # Uncomment the below 'push' to trigger on push
@@ -7,129 +7,131 @@ on:
   #    - "**"
   schedule:
     # '*' is a special character in YAML, so string must be quoted
-    - cron: "0 2 * * THU"
+    - cron: "0 2 * * *"
   workflow_dispatch:
     inputs:
-      spack_repo:
-        description: "Spack repository to test"
-        default: "spack/spack"
+      spack_package_repo:
+        description: "Spack package repository to test"
+        default: "spack/spack-packages"
         type: string
-      spack_ref:
-        description: "Spack repository branch/tag to test"
+      spack_package_ref:
+        description: "Spack package repository branch/tag to test"
         default: "develop"
         type: string
-      dolfinx_version:
-        description: "DOLFINx release branch/tag to test"
-        default: "0.8.0"
-        type: string
+
+env:
+  GITHUB_USER: ${{ github.actor }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  OMPI_ALLOW_RUN_AS_ROOT: 1
+  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+  PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
+  OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
 
 jobs:
-  build:
+
+  cpp-main:
+    name: Build DOLFINx (C++, main)
     runs-on: ubuntu-latest
     container: ubuntu:24.04
-
-    env:
-      OMPI_ALLOW_RUN_AS_ROOT: 1
-      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
-      OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
-
-      DOLFINX_RELEASE_VERSION: "${{ github.event_name != 'workflow_dispatch' && '0.8.0' || github.event.inputs.dolfinx_version }}"
-
     steps:
-      - name: Get Spack
-        if: github.event_name != 'workflow_dispatch'
-        uses: actions/checkout@v4
-        with:
-          path: ./spack
-          repository: spack/spack
-      - name: Get Spack
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v4
-        with:
-          path: ./spack
-          repository: ${{ github.event.inputs.spack_repo }}
-          ref: ${{ github.event.inputs.spack_ref }}
-
       - name: Install Spack requirements
         run: |
           apt-get -y update
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
           apt-get install -y g++ gfortran  # compilers
-
-      - name: Build DOLFINx (C++) development version via Spack
-        run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env create cpp-main
-          spack env activate cpp-main
-          spack add fenics-dolfinx@main+adios2
-          spack install
-      - name: Get DOLFINx code (to access test files)
-        uses: actions/checkout@v4
+      - name: Get DOLFINx code (to access Spack config and test files)
+        uses: actions/checkout@v6
+      - name: Set up Spack
+        uses: spack/setup-spack@main
         with:
-          path: ./dolfinx-main
-      - name: Run a C++ test (development version)
+          ref: develop      # Spack version (examples: develop, releases/v0.23)
+          color: true       # Force color output (SPACK_COLOR=always)
+          path: spack-src   # Where to clone Spack
+      - name: Add Spack package repository
+        if: github.event_name == 'workflow_dispatch'
+        shell: spack-bash {0}
         run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env create cpp-main-test
-          spack env activate cpp-main-test
-          spack add fenics-dolfinx@main+adios2 cmake py-fenics-ffcx@main
-          spack install
-          cd dolfinx-main/cpp/
-          cd demo/poisson
+          spack repo update
+          spack repo add --name test_pkgs https://github.com/${{ github.event.inputs.spack_package_repo }}.git ~/test_pkgs
+          spack repo update --branch ${{ github.event.inputs.spack_package_ref }} test_pkgs
+          spack repo list
+          spack config get repos
+      - name: Build DOLFINx
+        shell: spack-bash {0}
+        run: |
+          spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yml
+          spack -e dolfinx install -j4 -p2 --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc
+          spack repo list
+          spack config get repos
+      - name: Run a C++ test
+        shell: spack-bash {0}
+        run: |
+          cat .github/workflows/spack-config/gh-actions-env.yml
+          spack env create dolfinx-test .github/workflows/spack-config/gh-actions-env.yml
+          spack -e dolfinx-test install -j4 -p2 --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc py-fenics-ffcx@main
+          spack env activate dolfinx-test
+          spack load cmake
+          cd cpp/demo/poisson
           cmake .
-          export VERBOSE=1
-          make -j 4
+          make
           mpirun -np 2 ./demo_poisson
-
-      - name: Build DOLFINx (C++) release version via Spack
+      - name: Push packages and update index
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env create cpp-release
-          spack env activate cpp-release
-          spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+adios2
-          spack install
-      - name: Get DOLFINx release code (to access test files)
-        uses: actions/checkout@v4
+          spack -e dolfinx buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
+        if: ${{ !cancelled() }}
+
+  python-main:
+    name: Build DOLFINx (Python, main)
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
+    steps:
+      - name: Install Spack requirements
+        run: |
+          apt-get -y update
+          apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
+          apt-get install -y g++ gfortran  # compilers
+      - name: Get DOLFINx code (to access Spack config and test files)
+        uses: actions/checkout@v6
+      - name: Set up Spack
+        uses: spack/setup-spack@main
         with:
-          ref:  v${{ env.DOLFINX_RELEASE_VERSION }}
-          path: ./dolfinx-release
-      - name: Run a C++ test (release version)
+          ref: develop      # Spack version (examples: develop, releases/v0.23)
+          color: true       # Force color output (SPACK_COLOR=always)
+          path: spack-src   # Where to clone Spack
+      - name: Add Spack package repository
+        if: github.event_name == 'workflow_dispatch'
+        shell: spack-bash {0}
         run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env create cpp-release-test
-          spack env activate cpp-release-test
-          spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+adios2 cmake py-fenics-ffcx
-          spack install
-          cd dolfinx-release/cpp/
-          cd demo/poisson
-          cmake .
-          export VERBOSE=1
-          make -j 4
-          mpirun -np 2 ./demo_poisson
-
-      - name: Build DOLFINx (Python, development)
+          spack repo update
+          spack repo add --name test_pkgs https://github.com/${{ github.event.inputs.spack_package_repo }}.git ~/test_pkgs
+          spack repo update --branch ${{ github.event.inputs.spack_package_ref }} test_pkgs
+          spack repo list
+          spack config get repos
+      - name: Build DOLFINx
+        shell: spack-bash {0}
         run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env create py-main
-          spack env activate py-main
-          spack add py-fenics-dolfinx@main
-          spack install
-      - name: Run DOLFINx (Python, development) test
+          cat .github/workflows/spack-config/gh-actions-env.yml
+          spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yml
+          spack -e dolfinx install -j4 -p2 --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main %fenics-dolfinx+petsc~adios2
+          spack repo list
+          spack config get repos
+      - name: Run a Python test
+        shell: spack-bash {0}
         run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env activate py-main
-          mpirun -np 2 python3 ./dolfinx-main/python/demo/demo_elasticity.py
-
-      - name: Build DOLFINx (Python, release version)
+          cat .github/workflows/spack-config/gh-actions-env.yml
+          spack env create dolfinx-test .github/workflows/spack-config/gh-actions-env.yml
+          spack -e dolfinx-test install -j4 -p2 --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main +petsc4py +slepc4py %fenics-dolfinx~adios2 py-setuptools
+          spack env activate dolfinx-test
+          spack compiler find
+          spack load gcc
+          mpirun -np 2 python python/demo/demo_elasticity.py
+      - name: Push packages and update index
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env create py-release
-          spack env activate py-release
-          spack add py-fenics-dolfinx@${DOLFINX_RELEASE_VERSION}
-          spack install -j 4
-      - name: Run DOLFINx (Python, release) test
-        run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env activate py-release
-          mpirun -np 2 python3 ./dolfinx-release/python/demo/demo_elasticity.py
+          spack -e dolfinx buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
+        if: ${{ !cancelled() }}
