@@ -262,12 +262,32 @@ public:
   /// mesh. Otherwise the length of `cells` and the length of `cells0`
   /// must be the same.
   void interpolate(const Function<value_type, geometry_type>& u0,
-                   std::span<const std::int32_t> cells0,
-                   std::span<const std::int32_t> cells1 = {})
+                   std::ranges::input_range auto&& cells0,
+                   std::ranges::input_range auto&& cells1)
   {
-    if (cells1.empty())
-      cells1 = cells0;
     fem::interpolate(*this, cells1, u0, cells0);
+  }
+
+  /// @brief Interpolate a Function over a subset of cells.
+  ///
+  /// The Function being interpolated from and the Function being
+  /// interpolated into can be defined on different sub-meshes, i.e.
+  /// views into a subset a cells.
+  ///
+  /// @param[in] u0 Function to be interpolated.
+  /// @param[in] cells0 Cells to interpolate from. These are the indices
+  /// of the cells in the mesh associated with `u0`.
+  /// @param[in] cells1 Cell indices associated with the mesh of `this`
+  /// that will be interpolated to. If `cells0[i]` is the index of a
+  /// cell in the mesh associated with `u0`, then `cells1[i]` is the
+  /// index of the *same* cell but in the mesh associated with `this`.
+  /// This argument can be empty when `this` and `u0` share the same
+  /// mesh. Otherwise the length of `cells` and the length of `cells0`
+  /// must be the same.
+  void interpolate(const Function<value_type, geometry_type>& u0,
+                   std::ranges::input_range auto&& cells)
+  {
+    fem::interpolate(*this, cells, u0, cells);
   }
 
   /// @brief Interpolate an Expression on all cells.
@@ -303,8 +323,8 @@ public:
   /// mesh. Otherwise the length of `cells` and the length of
   /// `cells0` must be the same.
   void interpolate(const Expression<value_type, geometry_type>& e0,
-                   std::span<const std::int32_t> cells0,
-                   std::span<const std::int32_t> cells1 = {})
+                   std::ranges::input_range auto&& cells0,
+                   std::ranges::input_range auto&& cells1)
   {
     // Extract mesh
     const mesh::Mesh<geometry_type>* mesh0 = nullptr;
@@ -335,9 +355,7 @@ public:
     // If cells1 is empty and Function and Expression meshes are the
     // same, make cells1 the same as cells0. Otherwise check that
     // lengths of cells0 and cells1 are the same.
-    if (cells1.empty() and mesh0 == _function_space->mesh().get())
-      cells1 = cells0;
-    else if (cells0.size() != cells1.size())
+    if (cells0.size() != cells1.size())
       throw std::runtime_error("Cells lists have different lengths.");
 
     // Check that Function and Expression spaces are compatible
@@ -345,6 +363,7 @@ public:
     std::size_t value_size = e0.value_size();
     if (e0.argument_space())
       throw std::runtime_error("Cannot interpolate Expression with Argument.");
+
     if (value_size != (std::size_t)_function_space->element()->value_size())
     {
       throw std::runtime_error(
@@ -380,8 +399,9 @@ public:
         fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
+    std::vector<std::int32_t> _cells0(cells0.begin(), cells0.end());
     tabulate_expression(std::span(fdata), e0, *mesh0,
-                        md::mdspan(cells0.data(), cells0.size()));
+                        md::mdspan(_cells0.data(), _cells0.size()));
 
     // Reshape evaluated data to fit interpolate.
     // Expression returns matrix of shape (num_cells, num_points *
@@ -415,6 +435,28 @@ public:
                    const geometry::PointOwnershipData<U>& interpolation_data)
   {
     fem::interpolate(*this, v, cells, interpolation_data);
+  }
+
+  /// @brief Interpolate an Expression over a subset of cells.
+  ///
+  /// @param[in] e0 Expression to be interpolated. The Expression must
+  /// have been created using the reference coordinates created by
+  /// FiniteElement::interpolation_points for the element associated
+  /// with `this`.
+  /// @param[in] cells0 Cells in the mesh associated with `e0` to
+  /// interpolate from if `e0` has Function coefficients. If no mesh can
+  /// be associated with `e0` then the mesh associated with `this` is used.
+  /// @param[in] cells1 Cell indices associated with the mesh of `this`
+  /// that will be interpolated to. If `cells0[i]` is the index of a
+  /// cell in the mesh associated with `u0`, then `cells1[i]` is the
+  /// index of the *same* cell but in the mesh associated with `this`.
+  /// This argument can be empty when `this` and `u0` share the same
+  /// mesh. Otherwise the length of `cells` and the length of
+  /// `cells0` must be the same.
+  void interpolate(const Expression<value_type, geometry_type>& e0,
+                   std::ranges::input_range auto&& cells)
+  {
+    interpolate(e0, cells, cells);
   }
 
   /// @brief Evaluate the Function at points.
