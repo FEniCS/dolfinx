@@ -741,7 +741,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
 
     // Loop over cells
     spdlog::info("Loop over cells");
-    for (auto cell = cells.begin(); cells != cells.end(); ++cell)
+    for (auto cell = cells.begin(); cell != cells.end(); ++cell)
     {
       std::size_t c = std::distance(cells.begin(), cell);
 
@@ -783,7 +783,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
   else
   {
     // Loop over cells
-    for (auto cell = cells.begin(); cells != cells.end(); ++cell)
+    for (auto cell = cells.begin(); cell != cells.end(); ++cell)
     {
       std::size_t c = std::distance(cells.begin(), cell);
       std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell);
@@ -819,7 +819,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
 template <dolfinx::scalar T, std::floating_point U>
 void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
                                 const DofMap& dofmap,
-                                std::span<const std::int32_t> cells,
+                                std::ranges::input_range auto&& cells,
                                 std::span<const std::uint32_t> cell_info,
                                 std::span<const T> f,
                                 std::array<std::size_t, 2> fshape,
@@ -835,13 +835,11 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const int num_scalar_dofs = element.space_dimension() / element_bs;
   const int dofmap_bs = dofmap.bs();
 
-  std::vector<T> _coeffs(num_scalar_dofs);
-
   const int element_vs = element.reference_value_size();
   if (element_vs > 1 and element_bs > 1)
-  {
     throw std::runtime_error("Interpolation into this element not supported.");
-  }
+
+  std::vector<T> _coeffs(num_scalar_dofs);
 
   // Get interpolation operator
   const auto [_Pi, pi_shape] = element.interpolation_operator();
@@ -857,10 +855,10 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   std::vector<T> ref_data_b(num_interp_points);
   md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 1>> ref_data(
       ref_data_b.data(), num_interp_points, 1);
-  for (std::size_t c = 0; c < cells.size(); ++c)
+  for (auto cell = cells.begin(); cell != cells.end(); ++cell)
   {
-    const std::int32_t cell = cells[c];
-    std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
+    std::size_t c = std::distance(cells.begin(), cell);
+    std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell);
     for (int k = 0; k < element_bs; ++k)
     {
       for (int i = 0; i < element_vs; ++i)
@@ -871,8 +869,9 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
             num_interp_points / element_vs,
             std::next(ref_data_b.begin(), i * num_interp_points / element_vs));
       }
+
       impl::interpolation_apply(Pi, ref_data, std::span(_coeffs), 1);
-      apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+      apply_inv_transpose_dof_transformation(_coeffs, cell_info, *cell, 1);
       for (int i = 0; i < num_scalar_dofs; ++i)
       {
         const int dof = i * element_bs + k;
