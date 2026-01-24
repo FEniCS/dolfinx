@@ -275,15 +275,8 @@ public:
   /// views into a subset a cells.
   ///
   /// @param[in] u0 Function to be interpolated.
-  /// @param[in] cells0 Cells to interpolate from. These are the indices
+  /// @param[in] cells Cells to interpolate from. These are the indices
   /// of the cells in the mesh associated with `u0`.
-  /// @param[in] cells1 Cell indices associated with the mesh of `this`
-  /// that will be interpolated to. If `cells0[i]` is the index of a
-  /// cell in the mesh associated with `u0`, then `cells1[i]` is the
-  /// index of the *same* cell but in the mesh associated with `this`.
-  /// This argument can be empty when `this` and `u0` share the same
-  /// mesh. Otherwise the length of `cells` and the length of `cells0`
-  /// must be the same.
   void interpolate(const Function<value_type, geometry_type>& u0,
                    std::ranges::input_range auto&& cells)
   {
@@ -443,16 +436,9 @@ public:
   /// have been created using the reference coordinates created by
   /// FiniteElement::interpolation_points for the element associated
   /// with `this`.
-  /// @param[in] cells0 Cells in the mesh associated with `e0` to
+  /// @param[in] cells Cells in the mesh associated with `e0` to
   /// interpolate from if `e0` has Function coefficients. If no mesh can
   /// be associated with `e0` then the mesh associated with `this` is used.
-  /// @param[in] cells1 Cell indices associated with the mesh of `this`
-  /// that will be interpolated to. If `cells0[i]` is the index of a
-  /// cell in the mesh associated with `u0`, then `cells1[i]` is the
-  /// index of the *same* cell but in the mesh associated with `this`.
-  /// This argument can be empty when `this` and `u0` share the same
-  /// mesh. Otherwise the length of `cells` and the length of
-  /// `cells0` must be the same.
   void interpolate(const Expression<value_type, geometry_type>& e0,
                    std::ranges::input_range auto&& cells)
   {
