@@ -13,7 +13,7 @@
 
 using namespace dolfinx;
 using T = SCALAR;
-using U = double;
+using U = dolfinx::scalar_value_t<SCALAR>;
 
 int main(int argc, char* argv[])
 {
@@ -37,8 +37,8 @@ int main(int argc, char* argv[])
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
 
-    auto V
-        = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+    auto V = std::make_shared<const fem::FunctionSpace<U>>(
+        fem::create_functionspace<U>(
             mesh, std::make_shared<fem::FiniteElement<U>>(element)));
 
     // Prepare and set Constants for the bilinear form
@@ -46,11 +46,16 @@ int main(int argc, char* argv[])
     auto f = std::make_shared<fem::Function<T, U>>(V);
     auto g = std::make_shared<fem::Function<T, U>>(V);
 
-    // Define variational forms
-    auto a = std::make_shared<fem::Form<T, U>>(fem::create_form<T, U>(
-        *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}));
-    auto L = std::make_shared<fem::Form<T, U>>(fem::create_form<T, U>(
-        *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}));
+    fem::Form<T, U> a = fem::create_form<T, U>(*form_poisson_a, {V, V}, {},
+                                               {{"kappa", kappa}}, {}, {});
+    fem::Form<T, U> L = fem::create_form<T, U>(
+        *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}, {});
+
+    // // Define variational forms
+    // auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+    //     *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}, {}));
+    // auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+    //     *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}, {}));
 
     // Define boundary condition
 
@@ -98,22 +103,22 @@ int main(int argc, char* argv[])
 
     // Compute solution
     fem::Function<T, U> u(V);
-    la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
+    la::SparsityPattern sp = fem::create_sparsity_pattern(a);
     sp.finalize();
     la::MatrixCSR<T> A(sp);
-    la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
-                    L->function_spaces()[0]->dofmap()->index_map_bs());
+    la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
+                    L.function_spaces()[0]->dofmap()->index_map_bs());
 
     std::ranges::fill(A.values(), 0.0);
-    fem::assemble_matrix(A.mat_add_values(), *a, {bc});
+    fem::assemble_matrix(A.mat_add_values(), a, {*bc});
     A.scatter_rev();
-    fem::set_diagonal<T, U>(A.mat_set_values(), *V, {bc});
+    fem::set_diagonal<T, U>(A.mat_set_values(), *V, {*bc});
 
     std::ranges::fill(b.array(), 0.0);
-    fem::assemble_vector(b.array(), *L);
-    fem::apply_lifting<T, U>(b.array(), {a}, {{bc}}, {}, T(1));
+    fem::assemble_vector(b.array(), L);
+    fem::apply_lifting<std::vector<T>&, U>(b.array(), {a}, {{*bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
-    fem::set_bc<T, U>(b.array(), {bc});
+    bc->set(b.array(), std::nullopt);
 
     // Solver: A.u = b
     dolfinx::common::Timer tfac("[MUMPS Factorize]");
@@ -130,24 +135,7 @@ int main(int argc, char* argv[])
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    if constexpr (std::is_same_v<T, float>)
-    {
-      fem::Function<double, U> udouble(V);
-      // Convert float to double
-      std::copy(u.x()->array().begin(), u.x()->array().end(),
-                udouble.x()->array().begin());
-      file.write<double>({udouble}, 0.0);
-    }
-    else if constexpr (std::is_same_v<T, std::complex<float>>)
-    {
-      fem::Function<std::complex<double>, U> udouble(V);
-      // Convert float to double
-      std::copy(u.x()->array().begin(), u.x()->array().end(),
-                udouble.x()->array().begin());
-      file.write<std::complex<double>>({udouble}, 0.0);
-    }
-    // else
-    //   file.write<T>({u}, 0.0);
+    file.write<T, U>({u}, 0.0);
   }
 
   dolfinx::list_timings(MPI_COMM_WORLD);

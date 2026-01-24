@@ -57,7 +57,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_executable(${PROJECT_NAME} mumps.cpp main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
 target_link_directories(${PROJECT_NAME} PUBLIC ${PETSC_LIBRARY_DIRS})
-target_link_directories(${PROJECT_NAME} PUBLIC /opt/homebrew/Cellar/gcc/13.2.0/lib/gcc/13/)
+target_link_directories(${PROJECT_NAME} PUBLIC /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/15/)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_Fortran_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC dolfinx zmumps cmumps dmumps smumps mumps_common metis scalapack parmetis blas lapack pord gfortran)
