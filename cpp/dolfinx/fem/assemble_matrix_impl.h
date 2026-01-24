@@ -165,16 +165,24 @@ void assemble_cells_matrix(
   }
 }
 
-/// @brief Execute kernel over exterior facets and accumulate result in
-/// a matrix.
+/// @brief Execute kernel over entities of codimension ≥ 1 and accumulate result
+/// in a matrix.
+///
+/// Each entity is represented by (i) a cell that the entity is attached to
+/// and (ii) the local index of the entity  with respect to the cell. The
+/// kernel is executed for each entity. The kernel can access data
+/// (e.g., coefficients, basis functions) associated with the attached cell.
+/// However, entities may be attached to more than one cell. This function
+/// therefore computes 'one-sided' integrals, i.e. evaluates integrals as seen
+/// from cell used to define the entity.
 ///
 /// @tparam T Matrix/form scalar type.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
 /// @param[in] x Mesh geometry (coordinates).
-/// @param[in] facets Facet indices (in the integration domain mesh) to
-/// execute the kernel over.
+/// @param[in] entities Integration entities (in the integration domain mesh) to
+/// execute the kernel over. These are pairs (cell, local entity index)
 /// @param[in] dofmap0 Test function (row) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
@@ -197,7 +205,7 @@ void assemble_cells_matrix(
 /// function mesh.
 /// @param[in] cell_info1 Cell permutation information for the trial
 /// function mesh.
-/// @param[in] perms Facet permutation integer. Empty if facet
+/// @param[in] perms Entity permutation integer. Empty if entity
 /// permutations are not required.
 /// @param Ab Buffer for local element matrix. Size must be at least
 /// `(bs0 * num_dofs0) * (bs1 * num_dofs1)`, where `bs0 * num_dofs0` is
@@ -206,14 +214,14 @@ void assemble_cells_matrix(
 /// @param cdofs_b Buffer for local element geometry. Size must be at
 /// least `3 * x_dofmap.extent(1))`.
 template <dolfinx::scalar T>
-void assemble_exterior_facets(
+void assemble_entities(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
                md::extents<std::size_t, md::dynamic_extent, 3>>
         x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
-        facets,
+        entities,
     std::tuple<mdspan2_t, int,
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2>>>
@@ -231,11 +239,11 @@ void assemble_exterior_facets(
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
     std::span<T> Ab, std::span<scalar_value_t<T>> cdofs_b)
 {
-  if (facets.empty())
+  if (entities.empty())
     return;
 
-  const auto [dmap0, bs0, facets0] = dofmap0;
-  const auto [dmap1, bs1, facets1] = dofmap1;
+  const auto [dmap0, bs0, entities0] = dofmap0;
+  const auto [dmap1, bs1, entities1] = dofmap1;
 
   std::size_t num_dofs0 = dmap0.extent(1);
   std::size_t num_dofs1 = dmap1.extent(1);
@@ -248,13 +256,13 @@ void assemble_exterior_facets(
   auto Ae = Ab.first(ndim0 * ndim1);
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
-    // Cell in the integration domain, local facet index relative to the
+    // Cell in the integration domain, local entity index relative to the
     // integration domain cell, and cells in the test and trial function
     // meshes
-    std::int32_t cell = facets(f, 0);
-    std::int32_t local_facet = facets(f, 1);
-    std::int32_t cell0 = facets0(f, 0);
-    std::int32_t cell1 = facets1(f, 0);
+    std::int32_t cell = entities(f, 0);
+    std::int32_t local_entity = entities(f, 1);
+    std::int32_t cell0 = entities0(f, 0);
+    std::int32_t cell1 = entities1(f, 0);
 
     // Get cell coordinates/geometry
     auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
@@ -262,7 +270,7 @@ void assemble_exterior_facets(
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
     // Permutations
-    std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_facet);
+    std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
@@ -641,7 +649,7 @@ void assemble_matrix(
           cell_info0, cell_info1, std::span(Ab), std::span(cdofs_b));
     }
 
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms;
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
     if (a.needs_facet_permutations())
     {
       mesh::CellType cell_type = mesh->topology()->cell_types()[cell_type_idx];

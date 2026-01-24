@@ -35,11 +35,10 @@ void declare_bbtree(nb::module_& m, const std::string& type)
       .def(
           "__init__",
           [](dolfinx::geometry::BoundingBoxTree<T>* bbt,
-             const dolfinx::mesh::Mesh<T>& mesh, int dim,
+             const dolfinx::mesh::Mesh<T>& mesh, int dim, double padding,
              std::optional<
                  nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
-                 entities,
-             double padding)
+                 entities)
           {
             std::optional<std::span<const std::int32_t>> ents
                 = entities ? std::span<const std::int32_t>(
@@ -47,12 +46,11 @@ void declare_bbtree(nb::module_& m, const std::string& type)
                                  entities->data() + entities->size())
                            : std::optional<std::span<const std::int32_t>>(
                                  std::nullopt);
-
             new (bbt)
-                dolfinx::geometry::BoundingBoxTree<T>(mesh, dim, ents, padding);
+                dolfinx::geometry::BoundingBoxTree<T>(mesh, dim, padding, ents);
           },
-          nb::arg("mesh"), nb::arg("dim"), nb::arg("entities").none(),
-          nb::arg("padding") = 0)
+          nb::arg("mesh"), nb::arg("dim"), nb::arg("padding"),
+          nb::arg("entities").none())
       .def_prop_ro("num_bboxes",
                    &dolfinx::geometry::BoundingBoxTree<T>::num_bboxes)
       .def_prop_ro(
@@ -206,15 +204,27 @@ void declare_bbtree(nb::module_& m, const std::string& type)
                 mesh, dim, std::span(indices.data(), indices.size()), _p));
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("indices"), nb::arg("points"));
-  m.def("determine_point_ownership",
-        [](const dolfinx::mesh::Mesh<T>& mesh,
-           nb::ndarray<const T, nb::c_contig> points, const T padding)
-        {
-          std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-          std::span<const T> _p(points.data(), 3 * p_s0);
-          return dolfinx::geometry::determine_point_ownership<T>(mesh, _p,
-                                                                 padding);
-        });
+  m.def(
+      "determine_point_ownership",
+      [](const dolfinx::mesh::Mesh<T>& mesh,
+         nb::ndarray<const T, nb::c_contig> points, const T padding,
+         std::optional<
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+             cells)
+      {
+        std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+        std::span<const T> _p(points.data(), 3 * p_s0);
+        std::optional<std::span<const std::int32_t>> _cells
+            = cells.has_value()
+                  ? std::span<const std::int32_t>(cells.value().data(),
+                                                  cells.value().size())
+                  : std::optional<std::span<const std::int32_t>>(std::nullopt);
+        return dolfinx::geometry::determine_point_ownership<T>(mesh, _p,
+                                                               padding, _cells);
+      },
+      nb::arg("mesh"), nb::arg("points"), nb::arg("padding"),
+      nb::arg("cells").none(),
+      "Compute point ownership data for mesh-points pair.");
 
   std::string pod_pyclass_name = "PointOwnershipData_" + type;
   nb::class_<dolfinx::geometry::PointOwnershipData<T>>(m,

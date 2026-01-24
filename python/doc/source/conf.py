@@ -6,7 +6,15 @@ import datetime
 import os
 import sys
 
+import mpi4py
+
+import numpy as np
+import packaging
+
+import basix
 import dolfinx
+import ffcx
+import ufl
 
 sys.path.insert(0, os.path.abspath("."))
 import jupytext_process  # isort:skip
@@ -33,6 +41,8 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "myst_parser",
+    "sphinx_codeautolink",
+    "sphinx.ext.intersphinx",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -147,6 +157,51 @@ autodoc_default_options = {
 autosummary_generate = True
 autosummary_ignore_module_all = False
 autoclass_content = "both"
+
+codeautolink_concat_default = True
+
+intersphinx_resolve_self = "dolfinx"
+
+# Could be reimplemented using packaging.version
+basix_version = "main" if "dev0" in basix.__version__ else "v" + basix.__version__
+ffcx_version = "main" if "dev0" in ffcx.__version__ else "v" + ffcx.__version__
+ufl_version = "main" if "dev0" in ufl.__version__ else ufl.__version__
+
+numpy_version = packaging.version.parse(np.__version__)
+numpy_doc_version = f"{numpy_version.major}.{numpy_version.minor}"
+
+# Note that as of late 2025 pyvista and petsc4py only have docs for the latest
+# releases.
+intersphinx_mapping = {
+    "petsc4py": (
+        "https://petsc.org/release/petsc4py",
+        None,
+    ),
+    "numpy": (
+        f"https://numpy.org/doc/{numpy_doc_version}",
+        None,
+    ),
+    "pyvista": (
+        "https://docs.pyvista.org",
+        None,
+    ),
+    "mpi4py": (
+        f"https://mpi4py.readthedocs.io/en/{mpi4py.__version__}",
+        None,
+    ),
+    "basix": (
+        f"https://docs.fenicsproject.org/basix/{basix_version}/python",
+        None,
+    ),
+    "ffcx": (
+        f"https://docs.fenicsproject.org/ffcx/{ffcx_version}",
+        None,
+    ),
+    "ufl": (
+        f"https://docs.fenicsproject.org/ufl/{ufl_version}",
+        None,
+    ),
+}
 
 napoleon_google_docstring = True
 napoleon_use_admonition_for_notes = False

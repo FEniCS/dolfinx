@@ -3,6 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Generate CMakeLists.txt files for C++ demo programs."""
 
 import os
 import warnings
@@ -194,7 +195,7 @@ exclude_projects = []
 
 
 def generate_cmake_files(subdirectory, generated_files):
-    """Search for C++ code and write CMakeLists.txt files"""
+    """Search for C++ code and write CMakeLists.txt files."""
     cwd = os.getcwd()
     executable_prefix = executable_prefixes[subdirectory]
     main_file_name = main_file_names[subdirectory]

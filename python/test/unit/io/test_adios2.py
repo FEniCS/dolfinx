@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Jørgen S. Dokken
+# Copyright (C) 2021-2026 Jørgen S. Dokken and Paul T. Kühner
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
@@ -40,8 +40,11 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
 
 @pytest.mark.adios2
 class TestVTX:
+    """Test VTXWriter functionality."""
+
     @pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")
     def test_second_order_vtx(self, tempdir):
+        """Test saving a simple second order mesh with VTXWriter."""
         from dolfinx.io import VTXWriter
 
         filename = Path(tempdir, "mesh_vtx.bp")
@@ -55,6 +58,7 @@ class TestVTX:
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
     def test_vtx_mesh(self, tempdir, dim, simplex):
+        """Test saving mesh with VTXWriter."""
         from dolfinx.io import VTXWriter
 
         filename = Path(tempdir, "mesh_vtx.bp")
@@ -74,6 +78,20 @@ class TestVTX:
         gdim = mesh.geometry.dim
         v = Function(functionspace(mesh, ("Lagrange", 2, (gdim,))))
         w = Function(functionspace(mesh, ("Lagrange", 1)))
+        filename = Path(tempdir, "v.bp")
+        with pytest.raises(RuntimeError):
+            VTXWriter(mesh.comm, filename, [v, w])
+
+    @pytest.mark.parametrize("dim", [2, 3])
+    @pytest.mark.parametrize("simplex", [True, False])
+    def test_vtx_names_fail(self, tempdir, dim, simplex):
+        """Test for error when elements differ."""
+        from dolfinx.io import VTXWriter
+
+        mesh = generate_mesh(dim, simplex)
+        gdim = mesh.geometry.dim
+        v = Function(functionspace(mesh, ("Lagrange", 1, (gdim,))), name="f")
+        w = Function(functionspace(mesh, ("Lagrange", 1)), name="f")
         filename = Path(tempdir, "v.bp")
         with pytest.raises(RuntimeError):
             VTXWriter(mesh.comm, filename, [v, w])
@@ -102,7 +120,7 @@ class TestVTX:
         mesh = generate_mesh(dim, simplex, dtype=xtype)
         gdim = mesh.geometry.dim
         V = functionspace(mesh, ("DG", 2, (gdim,)))
-        v = Function(V, dtype=dtype)
+        v = Function(V, dtype=dtype, name="v")
         bs = V.dofmap.index_map_bs
 
         def vel(x):
@@ -114,7 +132,7 @@ class TestVTX:
         v.interpolate(vel)
 
         W = functionspace(mesh, ("DG", 2))
-        w = Function(W, dtype=v.dtype)
+        w = Function(W, dtype=v.dtype, name="w")
         w.interpolate(lambda x: x[0] + x[1])
 
         filename = Path(tempdir, f"v-{np.dtype(dtype).num}.bp")
@@ -163,7 +181,7 @@ class TestVTX:
         )
 
         def partitioner(comm, nparts, local_graph, num_ghost_nodes):
-            """Leave cells on the current rank"""
+            """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
             return adjacencylist(dest)._cpp_object
 
@@ -224,3 +242,33 @@ class TestVTX:
             else:
                 assert int(var["AvailableStepsCount"]) == target_all
         adios_file.close()
+
+    def test_dg_0_data(self, tempdir):
+        """Test that we can mix DG-0 and other Lagrange functions."""
+        from dolfinx.io import VTXWriter
+
+        adios2 = pytest.importorskip("adios2", minversion="2.10.0")
+        if not adios2.is_built_with_mpi:
+            pytest.skip("Require adios2 built with MPI support")
+
+        mesh = generate_mesh(2, False)
+        v = Function(functionspace(mesh, ("Lagrange", 2, (2,))))
+        filename = Path(tempdir, "v.bp")
+        v.name = "v"
+        v.interpolate(lambda x: (x[0], -x[1]))
+        z = Function(v.function_space)
+        z.name = "z"
+        z.interpolate(lambda x: (np.sin(x[0]), x[1]))
+
+        q = Function(functionspace(mesh, ("DG", 0, (2,))))
+        q.name = "q"
+        q.x.array[:] = np.arange(q.x.array.size, dtype=q.x.array.dtype)
+
+        # Save three steps
+        writer = VTXWriter(mesh.comm, filename, [v, q])
+        writer.write(0)
+        v.interpolate(lambda x: (0.5 * x[0], x[1]))
+        writer.write(1)
+        q.interpolate(lambda x: (x[1], x[0]))
+        writer.write(2)
+        writer.close()

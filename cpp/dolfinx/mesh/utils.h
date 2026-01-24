@@ -860,10 +860,11 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto topology = mesh.topology();
   assert(topology);
   CellType cell_type = topology->cell_type();
-  if (cell_type == CellType::prism and dim == 2)
+  if ((cell_type == CellType::prism or cell_type == CellType::pyramid)
+      and dim == 2)
   {
-    throw std::runtime_error(
-        "mesh::entities_to_geometry for prism cells not yet supported.");
+    throw std::runtime_error("mesh::entities_to_geometry for prism/pyramid "
+                             "cell facets not yet supported.");
   }
 
   const int tdim = topology->dim();
@@ -873,7 +874,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   // Get the DOF layout and the number of DOFs per entity
   const fem::CoordinateElement<T>& coord_ele = geometry.cmap();
   const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
-  const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
+  const std::size_t num_entity_dofs = layout.entity_closure_dofs(dim, 0).size();
   std::vector<std::int32_t> entity_xdofs;
   entity_xdofs.reserve(entities.size() * num_entity_dofs);
   std::array<std::size_t, 2> eshape{entities.size(), num_entity_dofs};
@@ -1159,10 +1160,17 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // a Geometry object
   for (int i = 0; i < num_cell_types; ++i)
   {
-    for (int e = 1; e < topology.dim(); ++e)
+    const auto& entity_dofs = doflayouts[i].entity_dofs_all();
+    for (int dim = 1; dim < topology.dim(); ++dim)
     {
-      if (doflayouts[i].num_entity_dofs(e) > 0)
-        topology.create_entities(e);
+      // Accumulate count of all dofs on this dimension
+      int dim_sum
+          = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
+                            [](int c, auto v) { return c + v.size(); });
+
+      spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
+      if (dim_sum > 0)
+        topology.create_entities(dim);
     }
 
     if (elements[i].needs_dof_permutations())

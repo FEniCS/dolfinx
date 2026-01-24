@@ -10,6 +10,11 @@
 
 # # Creating TNT elements using Basix's custom element interface
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_tnt-elements.py>`
+# * {download}`Jupyter notebook <./demo_tnt-elements.ipynb>`
+# ```
 # Basix provides numerous finite elements, but there are many other
 # possible elements a user may want to use. This demo
 # ({download}`demo_tnt-elements.py`) shows how the Basix custom element
@@ -157,6 +162,7 @@ tnt_degree1 = basix.ufl.custom_element(
 
 
 def create_tnt_quad(degree):
+    """Create a TNT element of given degree on quadrilaterals."""
     assert degree > 1
     # Polyset
     ndofs = (degree + 1) ** 2 + 4
@@ -244,6 +250,7 @@ def create_tnt_quad(degree):
 
 
 def poisson_error(V: fem.FunctionSpace):
+    """Compute the L2 error of the Poisson problem solution in V."""
     msh = V.mesh
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 

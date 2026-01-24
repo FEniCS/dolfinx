@@ -257,7 +257,7 @@ void write_data(std::string point_or_cell, std::string filename,
   hdf5::add_group(h5file, group_name);
 
   // Add point/cell data into dataset, extending each time by
-  // size_global with each process writing its own part.
+  // global_size with each process writing its own part.
   std::int64_t range0 = std::accumulate(index_maps.begin(), index_maps.end(), 0,
                                         [](int a, auto im)
                                         { return a + im->local_range()[0]; });
