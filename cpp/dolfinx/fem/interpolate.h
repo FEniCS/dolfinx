@@ -1282,8 +1282,8 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
 
     std::vector<std::int32_t> cells_sorted(cells0.begin(), cells0.end());
     std::ranges::sort(cells_sorted);
-    auto iota = std::ranges::views::iota(std::int32_t(0)(std::int32_t)
-                                             cells_sorted.size());
+    auto iota = std::ranges::views::iota(std::int32_t(0),
+                                         (std::int32_t)cells_sorted.size());
     if (!std::ranges::equal(cells_sorted, iota))
     {
       throw std::runtime_error(
