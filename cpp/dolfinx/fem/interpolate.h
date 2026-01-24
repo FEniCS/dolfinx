@@ -361,8 +361,9 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 /// elements must share the same basis function map. Neither is checked
 /// by the function.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
+void interpolate_same_map(Function<T, U>& u1,
                           std::span<const std::int32_t> cells1,
+                          const Function<T, U>& u0,
                           std::span<const std::int32_t> cells0)
 {
   auto V0 = u0.function_space();
@@ -1251,64 +1252,45 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
   if (cells0.size() != cells1.size())
     throw std::runtime_error("Length of cell lists do not match.");
 
-  assert(u1.function_space());
-  assert(u0.function_space());
-  auto mesh1 = u1.function_space()->mesh();
-  assert(mesh1);
-  assert(cells0.size() == cells1.size());
-
-  // Check if cells0 is equal to cells1 and contains all cells on the process,
-  // if True use a direct copy of the array.
-  bool is_same_space = u1.function_space() == u0.function_space();
-  auto cell_map1 = mesh1->topology()->index_map(mesh1->topology()->dim());
-  assert(cell_map1);
-  std::size_t num_cells1 = cell_map1->size_local() + cell_map1->num_ghosts();
-  bool contains_all_cells = (std::size_t)cells1.size() == num_cells1;
-  if (contains_all_cells)
+  auto num_cells_fn = [](auto&& mesh) -> std::size_t
   {
-    // Check that cells0 is equal to cells1
-    auto last_match
-        = std::mismatch(cells0.begin(), cells0.end(), cells1.begin());
-    contains_all_cells = last_match.first == cells0.end();
-    // Check that the unique elements in cells0 spans all cells on the process
-    if (contains_all_cells)
-    {
-      std::vector<std::int32_t> sorted_cells(cells0.begin(), cells0.end());
-      std::ranges::sort(sorted_cells);
-      auto [unique_end, range_end] = std::ranges::unique(sorted_cells);
-      std::size_t num_unique_cells
-          = std::distance(sorted_cells.begin(), unique_end);
-      contains_all_cells = (num_unique_cells == num_cells1);
-    }
-  }
-  if (is_same_space and contains_all_cells)
+    auto map = mesh.topology()->index_map(mesh.topology()->dim());
+    assert(map);
+    return map->size_local() + map->num_ghosts();
+  };
+
+  auto V1 = u1.function_space();
+  assert(V1);
+  auto mesh1 = V1->mesh();
+  assert(mesh1);
+  if (V1 == u0.function_space() and cells1.size() == num_cells_fn(*mesh1))
   {
     // Same function spaces and on whole mesh
-    std::span<T> u1_array = u1.x()->array();
-    std::span<const T> u0_array = u0.x()->array();
-    std::ranges::copy(u0_array, u1_array.begin());
+    std::ranges::copy(u0.x()->array(), u1.x()->array().begin());
   }
   else
   {
     // Get elements and check value shape
-    auto fs0 = u0.function_space();
-    auto element0 = fs0->element();
+    auto V0 = u0.function_space();
+    assert(V0);
+    auto element0 = V0->element();
     assert(element0);
-    auto fs1 = u1.function_space();
-    auto element1 = fs1->element();
+    auto element1 = V1->element();
     assert(element1);
-    if (!std::ranges::equal(fs0->element()->value_shape(),
-                            fs1->element()->value_shape()))
+    if (!std::ranges::equal(V0->element()->value_shape(),
+                            V1->element()->value_shape()))
     {
       throw std::runtime_error(
           "Interpolation: elements have different value dimensions");
     }
+
     if ((mesh1 == u0.function_space()->mesh())
         and (element1 == element0 or *element1 == *element0))
     {
-      // Same element, same mesh, different dofmaps
-      // (or just a subset of cells)
-      assert(element1->block_size() == element0->block_size());
+      // Same element, same mesh, different dofmaps, or a subset of
+      // cells
+      if (element1->block_size() != element0->block_size())
+        throw std::runtime_error("Mismatch in element block size.");
 
       // Get dofmaps
       std::shared_ptr<const DofMap> dofmap0 = u0.function_space()->dofmap();
@@ -1316,12 +1298,11 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
       std::shared_ptr<const DofMap> dofmap1 = u1.function_space()->dofmap();
       assert(dofmap1);
 
-      std::span<T> u1_array = u1.x()->array();
-      std::span<const T> u0_array = u0.x()->array();
-
       // Iterate over mesh and interpolate on each cell
       const int bs0 = dofmap0->bs();
       const int bs1 = dofmap1->bs();
+      std::span<T> u1_array = u1.x()->array();
+      std::span<const T> u0_array = u0.x()->array();
       for (std::size_t c = 0; c < cells1.size(); ++c)
       {
         std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);
@@ -1342,7 +1323,7 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
     else if (element1->map_type() == element0->map_type())
     {
       // Different elements, same basis function map type
-      impl::interpolate_same_map(u1, u0, cells1, cells0);
+      impl::interpolate_same_map(u1, cells1, u0, cells0);
     }
     else
     {
