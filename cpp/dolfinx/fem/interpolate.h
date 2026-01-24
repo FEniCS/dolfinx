@@ -1244,10 +1244,16 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 /// the mesh associated with `u1`, then `cells0[i]` is the index of the
 /// *same* cell but in the mesh associated with `u0`. `cells0` and
 /// `cells1` must be the same size.
+///
+/// @pre `cells1` and `cells0` must not contain duplicates.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
                  const Function<T, U>& u0, std::span<const std::int32_t> cells0)
 {
+  // TODO: the logic in this function could be improved to robusty
+  // support direct copy of the dofs when possible. Probably best via a
+  // different function with feweer arguments.
+
   if (cells0.size() != cells1.size())
     throw std::runtime_error("Length of cell lists do not match.");
 
@@ -1266,6 +1272,25 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
   {
     // FIXME: if cells0/cells1 contains duplicates, this will compute
     // the wrong result
+#ifndef NDEBUG
+    if (!std::ranges::equal(cells0, cells1))
+    {
+      throw std::runtime_error(
+          "When interpolating between identical function spaces, the cell "
+          "lists must be identical.");
+    }
+
+    std::vector<std::int32_t> cells_sorted(cells0.begin(), cells0.end());
+    std::ranges::sort(cells_sorted);
+    auto iota = std::ranges::views::iota(std::int32_t(0)(std::int32_t)
+                                             cells_sorted.size());
+    if (!std::ranges::equal(cells_sorted, iota))
+    {
+      throw std::runtime_error(
+          "When interpolating between identical function spaces, the cell "
+          "lists must not contain duplicates and must cover all cells.");
+    }
+#endif
 
     // Same function spaces and on whole mesh
     std::ranges::copy(u0.x()->array(), u1.x()->array().begin());
