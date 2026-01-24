@@ -1264,8 +1264,8 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
   assert(mesh1);
   if (V1 == u0.function_space() and cells1.size() == num_cells_fn(*mesh1))
   {
-    // FIXME: if cells0 contains duplicates, this will compute the wrong
-    // result
+    // FIXME: if cells0/cells1 contains duplicates, this will compute
+    // the wrong result
 
     // Same function spaces and on whole mesh
     std::ranges::copy(u0.x()->array(), u1.x()->array().begin());
