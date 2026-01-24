@@ -121,9 +121,11 @@ V = fem.functionspace(msh, ("Lagrange", 1))
 # with a 'marker' function that returns `True` for points `x` on the
 # boundary and `False` otherwise.
 
+tdim = msh.topology.dim
+fdim = tdim - 1
 facets = mesh.locate_entities_boundary(
     msh,
-    dim=(msh.topology.dim - 1),
+    dim=fdim,
     marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0),
 )
 
@@ -131,7 +133,7 @@ facets = mesh.locate_entities_boundary(
 # boundary facets using {py:func}`locate_dofs_topological
 # <dolfinx.fem.locate_dofs_topological>`:
 
-dofs = fem.locate_dofs_topological(V=V, entity_dim=2, entities=facets)
+dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
 # {py:class}`DirichletBC <dolfinx.fem.DirichletBC>` class that
