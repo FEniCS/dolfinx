@@ -165,9 +165,8 @@ public:
     int tdim = _function_space->mesh()->topology()->dim();
     auto cmap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cmap);
-    std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(), 0);
-    std::iota(cells.begin(), cells.end(), 0);
-    interpolate(f, cells);
+    interpolate(
+        f, std::ranges::iota_view(0, cmap->size_local() + cmap->num_ghosts()));
   }
 
   /// @brief Interpolate an expression f(x) over a set of cells.
@@ -178,7 +177,7 @@ public:
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
               md::mdspan<const geometry_type,
                          md::extents<std::size_t, 3, md::dynamic_extent>>)>& f,
-      std::span<const std::int32_t> cells)
+      std::ranges::input_range auto&& cells)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -241,9 +240,11 @@ public:
     int tdim = _function_space->mesh()->topology()->dim();
     auto cmap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cmap);
-    std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(), 0);
-    std::iota(cells.begin(), cells.end(), 0);
-    interpolate(u, cells, cells);
+    // std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(),
+    // 0); std::iota(cells.begin(), cells.end(), 0);
+    const auto iota
+        = std::ranges::iota_view(0, cmap->size_local() + cmap->num_ghosts());
+    interpolate(u, iota, iota);
   }
 
   /// @brief Interpolate a Function over a subset of cells.
@@ -283,9 +284,10 @@ public:
     int tdim = _function_space->mesh()->topology()->dim();
     auto cmap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cmap);
-    std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(), 0);
-    std::iota(cells.begin(), cells.end(), 0);
-    interpolate(e, cells);
+    // std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(),
+    // 0); std::iota(cells.begin(), cells.end(), 0);
+    interpolate(
+        e, std::ranges::iota_view(0, cmap->size_local() + cmap->num_ghosts()));
   }
 
   /// @brief Interpolate an Expression over a subset of cells.
@@ -413,7 +415,7 @@ public:
   /// interpolation points of `this` with cells in `v`. Can be computed
   /// with `fem::create_interpolation_data`.
   void interpolate(const Function<value_type, geometry_type>& v,
-                   std::span<const std::int32_t> cells,
+                   std::ranges::input_range auto&& cells,
                    const geometry::PointOwnershipData<U>& interpolation_data)
   {
     fem::interpolate(*this, v, cells, interpolation_data);
@@ -432,7 +434,7 @@ public:
   /// with the correct size. Storage is row-major.
   /// @param[in] ushape Shape of `u`.
   void eval(std::span<const geometry_type> x, std::array<std::size_t, 2> xshape,
-            std::span<const std::int32_t> cells, std::span<value_type> u,
+            std::ranges::input_range auto&& cells, std::span<value_type> u,
             std::array<std::size_t, 2> ushape) const
   {
     if (cells.empty())
@@ -548,16 +550,15 @@ public:
     std::vector<geometry_type> det_scratch(2 * gdim * tdim);
 
     // Prepare geometry data in each cell
-    for (std::size_t p = 0; p < cells.size(); ++p)
+    // for (std::size_t p = 0; p < cells.size(); ++p)
+    for (auto cell = cells.begin(); cell != cells.end(); ++cell)
     {
-      const int cell_index = cells[p];
-
       // Skip negative cell indices
-      if (cell_index < 0)
+      if (*cell < 0)
         continue;
 
       // Get cell geometry (coordinate dofs)
-      auto x_dofs = md::submdspan(x_dofmap, cell_index, md::full_extent);
+      auto x_dofs = md::submdspan(x_dofmap, *cell, md::full_extent);
       assert(x_dofs.size() == num_dofs_g);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
       {
@@ -566,6 +567,7 @@ public:
           coord_dofs(i, j) = x_g[pos + j];
       }
 
+      std::size_t p = std::distance(cells.begin(), cell);
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x[p * xshape[1] + j];
 

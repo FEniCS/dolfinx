@@ -897,7 +897,7 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 template <dolfinx::scalar T, std::floating_point U>
 void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
                              const DofMap& dofmap,
-                             std::span<const std::int32_t> cells,
+                             std::ranges::input_range auto&& cells,
                              std::span<const std::uint32_t> cell_info,
                              std::span<const T> f,
                              std::array<std::size_t, 2> fshape,
@@ -991,10 +991,10 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   auto pull_back_fn
       = element.basix_element().template map_fn<U_t, u_t, J_t, K_t>();
 
-  for (std::size_t c = 0; c < cells.size(); ++c)
+  for (auto cell = cells.begin(); cell != cells.end(); ++cell)
   {
-    const std::int32_t cell = cells[c];
-    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
+    const std::size_t c = std::distance(cells.begin(), cell);
+    auto x_dofs = md::submdspan(x_dofmap, *cell, md::full_extent);
     for (int i = 0; i < num_dofs_g; ++i)
     {
       const int pos = 3 * x_dofs[i];
@@ -1014,7 +1014,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
     }
 
-    std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
+    std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell);
     for (int k = 0; k < element_bs; ++k)
     {
       // Extract computed expression values for element block k
@@ -1039,7 +1039,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
       auto ref = md::submdspan(ref_data, md::full_extent, 0, md::full_extent);
       impl::interpolation_apply(Pi, ref, std::span(_coeffs), element_bs);
-      apply_inverse_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+      apply_inverse_transpose_dof_transformation(_coeffs, cell_info, *cell, 1);
 
       // Copy interpolation dofs into coefficient vector
       assert(_coeffs.size() == num_scalar_dofs);
@@ -1059,7 +1059,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
-                 std::span<const std::int32_t> cells)
+                 std::ranges::input_range auto&& cells)
 {
   // TODO: Index for mixed-topology, zero for now
   const int index = 0;
@@ -1081,7 +1081,9 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   if (fshape[0]
           != (std::size_t)u.function_space()->elements(index)->value_size()
       or f.size() != fshape[0] * fshape[1])
+  {
     throw std::runtime_error("Interpolation data has the wrong shape/size.");
+  }
 
   spdlog::debug("Check for dof transformation");
   std::span<const std::uint32_t> cell_info;
@@ -1175,7 +1177,7 @@ geometry::PointOwnershipData<T> create_interpolation_data(
 /// fem::create_interpolation_data.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, const Function<T, U>& v,
-                 std::span<const std::int32_t> cells,
+                 std::ranges::input_range auto&& cells,
                  const geometry::PointOwnershipData<U>& interpolation_data)
 {
   auto mesh = u.function_space()->mesh();
@@ -1251,8 +1253,9 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 ///
 /// @pre `cells1` and `cells0` must not contain duplicates.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
-                 const Function<T, U>& u0, std::span<const std::int32_t> cells0)
+void interpolate(Function<T, U>& u1, std::ranges::input_range auto&& cells1,
+                 const Function<T, U>& u0,
+                 std::ranges::input_range auto&& cells0)
 {
   // TODO: the logic in this function could be improved to robustly
   // support direct copy of the dofs when possible. Probably best via a
