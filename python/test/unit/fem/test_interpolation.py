@@ -1154,9 +1154,7 @@ def xtest_submesh_expression_interpolation():
 
 @pytest.mark.parametrize("ghost_mode", [GhostMode.shared_facet, GhostMode.none])
 def test_submesh_interpolation_mapped(ghost_mode):
-    """Test that mapping Piola mapped finite elements onto submeshes
-    uses the correct dof permutations.
-    """
+    """Test interpolation of Piola mapped cells with submeshes."""
     comm = MPI.COMM_WORLD
 
     N = 8
@@ -1167,7 +1165,6 @@ def test_submesh_interpolation_mapped(ghost_mode):
     sub_cells = locate_entities(domain, tdim, lambda x: x[0] <= 0.5 + eps)
 
     submesh, sub_to_parent = create_submesh(domain, tdim, sub_cells)[:2]
-
     submesh.topology.create_entity_permutations()
     domain.topology.create_entity_permutations()
 

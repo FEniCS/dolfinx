@@ -325,9 +325,9 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
   }
   else
   {
-    const std::size_t cols = Pi.extent(1);
     assert(data.extent(0) == Pi.extent(1));
     assert(data.extent(1) == bs);
+    std::size_t cols = Pi.extent(1);
     for (int k = 0; k < bs; ++k)
     {
       for (std::size_t i = 0; i < Pi.extent(0); ++i)
@@ -417,8 +417,7 @@ void interpolate_same_map(Function<T, U>& u1,
   std::vector<T> local1(element1->space_dimension());
 
   // Create interpolation operator
-  const auto [i_m, im_shape]
-      = element1->create_interpolation_operator(*element0);
+  auto [i_m, im_shape] = element1->create_interpolation_operator(*element0);
 
   // Iterate over mesh and interpolate on each cell
   using X = typename dolfinx::scalar_value_t<T>;
@@ -520,7 +519,6 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
 
   const CoordinateElement<U>& cmap = mesh0->geometry().cmap();
   auto x_dofmap = mesh0->geometry().dofmap();
-  const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh0->geometry().x();
 
   // (0) is derivative index, (1) is the point index, (2) is the basis
@@ -567,6 +565,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
       mapped_values0(mapped_values_b.data(), Xshape[0], 1,
                      V1->element()->value_size());
 
+  const std::size_t num_dofs_g = cmap.dim();
   std::vector<U> coord_dofs_b(num_dofs_g * gdim);
   md::mdspan<U, std::dextents<std::size_t, 2>> coord_dofs(coord_dofs_b.data(),
                                                           num_dofs_g, gdim);
@@ -1265,6 +1264,9 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
   assert(mesh1);
   if (V1 == u0.function_space() and cells1.size() == num_cells_fn(*mesh1))
   {
+    // FIXME: if cells0 contains duplicates, this will compute the wrong
+    // result
+
     // Same function spaces and on whole mesh
     std::ranges::copy(u0.x()->array(), u1.x()->array().begin());
   }
