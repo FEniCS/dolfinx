@@ -1143,9 +1143,11 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// runtime of this function, as one has to determine what entity is
 /// closest if there is no intersection.
 template <std::floating_point T>
-geometry::PointOwnershipData<T> create_interpolation_data(
-    const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
-    const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells, T padding)
+geometry::PointOwnershipData<T>
+create_interpolation_data(const mesh::Geometry<T>& geometry0,
+                          const FiniteElement<T>& element0,
+                          const mesh::Mesh<T>& mesh1,
+                          std::ranges::input_range auto&& cells, T padding)
 {
   // Collect all the points at which values are needed to define the
   // interpolating function

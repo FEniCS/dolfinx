@@ -240,8 +240,6 @@ public:
     int tdim = _function_space->mesh()->topology()->dim();
     auto cmap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cmap);
-    // std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(),
-    // 0); std::iota(cells.begin(), cells.end(), 0);
     const auto iota
         = std::ranges::iota_view(0, cmap->size_local() + cmap->num_ghosts());
     interpolate(u, iota, iota);
@@ -284,8 +282,6 @@ public:
     int tdim = _function_space->mesh()->topology()->dim();
     auto cmap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cmap);
-    // std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(),
-    // 0); std::iota(cells.begin(), cells.end(), 0);
     interpolate(
         e, std::ranges::iota_view(0, cmap->size_local() + cmap->num_ghosts()));
   }
