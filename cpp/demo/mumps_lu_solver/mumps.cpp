@@ -104,7 +104,8 @@ void MUMPSLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-int MUMPSLUSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
+int MUMPSLUSolver<T>::solve(const dolfinx::la::Vector<T>& b,
+                            dolfinx::la::Vector<T>& u)
 {
   // Set RHS data
   id.rhs_loc = reinterpret_cast<MUMPS_Type*>(const_cast<T*>(b.array().data()));
@@ -176,15 +177,14 @@ int MUMPSLUSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
                 MPI_INT, recv_indices.data(), recv_sizes.data(),
                 recv_offsets.data(), MPI_INT, _comm);
   MPI_Alltoallv(sol_sort.data(), send_sizes.data(), send_offsets.data(),
-                dolfinx::MPI::mpi_type<T>(), recv_data.data(),
-                recv_sizes.data(), recv_offsets.data(),
-                dolfinx::MPI::mpi_type<T>(), _comm);
+                dolfinx::MPI::mpi_t<T>, recv_data.data(), recv_sizes.data(),
+                recv_offsets.data(), dolfinx::MPI::mpi_t<T>, _comm);
 
   // Should receive exactly enough data for local part of vector
   assert(recv_data.size() == m_loc);
 
   // Refill into u
-  auto uvec = u.mutable_array();
+  auto uvec = u.array();
   for (int i = 0; i < m_loc; ++i)
     uvec[recv_indices[i] - local_row_offset] = recv_data[i];
   u.scatter_fwd();

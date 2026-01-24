@@ -109,10 +109,10 @@ int main(int argc, char* argv[])
     fem::set_diagonal<T, U>(A.mat_set_values(), *V, {bc});
 
     b.set(0.0);
-    fem::assemble_vector(b.mutable_array(), *L);
-    fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
+    fem::assemble_vector(b.array(), *L);
+    fem::apply_lifting<T, U>(b.array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
-    fem::set_bc<T, U>(b.mutable_array(), {bc});
+    fem::set_bc<T, U>(b.array(), {bc});
 
     // Solver: A.u = b
     dolfinx::common::Timer tfac("[MUMPS Factorize]");
@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
       fem::Function<double, U> udouble(V);
       // Convert float to double
       std::copy(u.x()->array().begin(), u.x()->array().end(),
-                udouble.x()->mutable_array().begin());
+                udouble.x()->array().begin());
       file.write<double>({udouble}, 0.0);
     }
     else if constexpr (std::is_same_v<T, std::complex<float>>)
@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
       fem::Function<std::complex<double>, U> udouble(V);
       // Convert float to double
       std::copy(u.x()->array().begin(), u.x()->array().end(),
-                udouble.x()->mutable_array().begin());
+                udouble.x()->array().begin());
       file.write<std::complex<double>>({udouble}, 0.0);
     }
     // else

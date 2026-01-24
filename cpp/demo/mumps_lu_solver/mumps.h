@@ -41,13 +41,13 @@ public:
   /// Set the LHS matrix A
   /// @param Amat The LHS matrix to be factorised
   /// @note Analysis and factorisation takes place when calling `set_operator`
-  void set_operator(const la::MatrixCSR<T>& Amat);
+  void set_operator(const dolfinx::la::MatrixCSR<T>& Amat);
 
   /// Solve A.u=b
   /// @param b RHS Vector
   /// @param u Solution Vector
   /// @note Must be compatible with A
-  int solve(const la::Vector<T>& b, la::Vector<T>& u);
+  int solve(const dolfinx::la::Vector<T>& b, dolfinx::la::Vector<T>& u);
 
 private:
   // Convenient wrapper around call to MUMPS
