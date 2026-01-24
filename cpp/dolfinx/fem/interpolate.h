@@ -1250,7 +1250,7 @@ template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
                  const Function<T, U>& u0, std::span<const std::int32_t> cells0)
 {
-  // TODO: the logic in this function could be improved to robusty
+  // TODO: the logic in this function could be improved to robustly
   // support direct copy of the dofs when possible. Probably best via a
   // different function with feweer arguments.
 
