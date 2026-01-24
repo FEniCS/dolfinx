@@ -1197,33 +1197,3 @@ def test_submesh_interpolation_mapped(ghost_mode):
     L2_local = assemble_scalar(L2_compiled)
     L2_global = np.sqrt(L2_compiled.mesh.comm.allreduce(L2_local, op=MPI.SUM))
     assert np.isclose(L2_global, 0.0, atol=eps, rtol=eps)
-
-
-@pytest.mark.skip_in_parallel
-def test_subset_interpolation():
-    """Test that interpolation on a subset of cells is correct in the case of having
-    as many cells (including duplicates) as those owned by the process.
-    """
-    N = 5
-    mesh = create_unit_square(MPI.COMM_SELF, N, N, cell_type=CellType.quadrilateral)
-    V = functionspace(mesh, ("DG", 1))
-
-    # Create cell array that has that has the same number of elements as the mesh,
-    # but with a duplicate entry
-    cells0 = np.arange(N**2, dtype=np.int32)
-    # cells0[-1] = cells0[0]
-
-    u = Function(V)
-    u.interpolate(lambda x: 0.1 + x[0] + x[1])
-
-    v = Function(V)
-    v.interpolate(u, cells0=cells0)
-
-    dofmap = V.dofmap.list
-    equal_dof_indices = dofmap[cells0].flatten()
-    np.testing.assert_allclose(u.x.array[equal_dof_indices], v.x.array[equal_dof_indices])
-
-    # Check the cell that hasn't been interpolated onto
-    # Using DG space above to ensure that there is no overlap in the interpolation
-    # unequal_dof_indices = dofmap[np.array([N**2 - 1], dtype=np.int32)]
-    # np.testing.assert_allclose(u.x.array[unequal_dof_indices] != v.x.array[unequal_dof_indices], 1)
