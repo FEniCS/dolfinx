@@ -272,13 +272,13 @@ public:
   /// interpolated into can be defined on different sub-meshes, i.e.
   /// views into a subset a cells.
   ///
-  /// @param[in] u0 Function to be interpolated.
+  /// @param[in] u Function to be interpolated.
   /// @param[in] cells Cells to interpolate from. These are the indices
   /// of the cells in the mesh associated with `u0`.
-  void interpolate(const Function<value_type, geometry_type>& u0,
+  void interpolate(const Function<value_type, geometry_type>& u,
                    std::ranges::input_range auto&& cells)
   {
-    fem::interpolate(*this, cells, u0, cells);
+    fem::interpolate(*this, u, cells);
   }
 
   /// @brief Interpolate an Expression on all cells.

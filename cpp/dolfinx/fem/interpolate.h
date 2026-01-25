@@ -1323,10 +1323,30 @@ void interpolate(Function<T, U>& u1, std::ranges::input_range auto&& cells1,
 }
 
 /// @brief Interpolate from one finite element Function to another
-/// Function on the whole mesh.
+/// Function on a subset of cells.
 ///
 /// The two Functions must share the same mesh, otherwose and exception
 /// is thrown.
+///
+/// @param[out] u1 Function to interpolate into.
+/// @param[in] u0 Function to b interpolated from.
+/// @param[in] cells Cell indices to interpolate onto.
+template <dolfinx::scalar T, std::floating_point U>
+void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
+                 std::ranges::input_range auto&& cells)
+{
+  assert(u1.function_space());
+  assert(u0.function_space());
+  if (u1.function_space()->mesh() == u0.function_space()->mesh())
+    interpolate<T, U>(u1, cells, u0, cells);
+  else
+    throw std::runtime_error("Meshes do no match.");
+}
+
+/// @brief Interpolate from one finite element Function to another
+/// Function on the whole mesh.
+///
+/// The two Functions must share the same mesh.
 ///
 /// @param[out] u1 Function to interpolate into.
 /// @param[in] u0 Function to b interpolated from.
@@ -1340,18 +1360,15 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0)
     // Same function spaces, direct copy of dofs
     std::ranges::copy(u0.x()->array(), u1.x()->array().begin());
   }
-  else if (auto mesh1 = V1->mesh(); mesh1 == u0.function_space()->mesh())
+  else
   {
-    // Same mesh, different function spaces
-    assert(mesh1->topology());
-    auto map = mesh1->topology()->index_map(mesh1->topology()->dim());
+    auto mesh = V1->mesh();
+    assert(mesh);
+    assert(mesh->topology());
+    auto map = mesh->topology()->index_map(mesh->topology()->dim());
     assert(map);
     std::int32_t num_cells = map->size_local() + map->num_ghosts();
-    assert(mesh1);
-    const auto cells = std::ranges::views::iota(0, num_cells);
-    interpolate<T, U>(u1, cells, u0, cells);
+    interpolate<T, U>(u1, u0, std::ranges::views::iota(0, num_cells));
   }
-  else
-    throw std::runtime_error("Meshes do no match.");
 }
 } // namespace dolfinx::fem
