@@ -33,6 +33,14 @@ namespace dolfinx::fem
 template <dolfinx::scalar T, std::floating_point U>
 class Expression;
 
+// template <typename R>
+// concept CellRange
+//     = std::ranges::input_range<R>
+//       && std::ranges::sized_range<R>
+//       // && std::same_as<std::ranges::range_value_t<R>, std::int32_t>
+//       && std::same_as<std::remove_const<std::ranges::range_value_t<R>>,
+//                       std::int32_t>;
+
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
 ///
@@ -160,7 +168,7 @@ public:
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
               md::mdspan<const geometry_type,
                          md::extents<std::size_t, 3, md::dynamic_extent>>)>& f,
-      std::ranges::input_range auto&& cells)
+      CellRange auto&& cells)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -245,8 +253,7 @@ public:
   /// mesh. Otherwise the length of `cells` and the length of `cells0`
   /// must be the same.
   void interpolate(const Function<value_type, geometry_type>& u0,
-                   std::ranges::input_range auto&& cells0,
-                   std::ranges::input_range auto&& cells1)
+                   CellRange auto&& cells0, CellRange auto&& cells1)
   {
     fem::interpolate(*this, cells1, u0, cells0);
   }
@@ -257,7 +264,7 @@ public:
   /// @param[in] cells Cells to interpolate from. These are the indices
   /// of the cells in the mesh associated with `u0`.
   void interpolate(const Function<value_type, geometry_type>& u,
-                   std::ranges::input_range auto&& cells)
+                   CellRange auto&& cells)
   {
     fem::interpolate(*this, u, cells);
   }
@@ -294,8 +301,7 @@ public:
   /// mesh. Otherwise the length of `cells` and the length of
   /// `cells0` must be the same.
   void interpolate(const Expression<value_type, geometry_type>& e0,
-                   std::ranges::input_range auto&& cells0,
-                   std::ranges::input_range auto&& cells1)
+                   CellRange auto&& cells0, CellRange auto&& cells1)
   {
     // Extract mesh
     const mesh::Mesh<geometry_type>* mesh0 = nullptr;
@@ -399,7 +405,7 @@ public:
   /// interpolate from if `e0` has Function coefficients. If no mesh can
   /// be associated with `e0` then the mesh associated with `this` is used.
   void interpolate(const Expression<value_type, geometry_type>& e0,
-                   std::ranges::input_range auto&& cells)
+                   CellRange auto&& cells)
   {
     interpolate(e0, cells, cells);
   }
@@ -414,10 +420,10 @@ public:
     assert(_function_space);
     assert(_function_space->mesh());
     int tdim = _function_space->mesh()->topology()->dim();
-    auto cmap = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cmap);
+    auto map = _function_space->mesh()->topology()->index_map(tdim);
+    assert(map);
     interpolate(
-        e, std::ranges::iota_view(0, cmap->size_local() + cmap->num_ghosts()));
+        e, std::ranges::iota_view(0, map->size_local() + map->num_ghosts()));
   }
 
   /// @brief Interpolate a Function defined on a different mesh.
@@ -429,7 +435,7 @@ public:
   /// interpolation points of `this` with cells in `v`. Can be computed
   /// with `fem::create_interpolation_data`.
   void interpolate(const Function<value_type, geometry_type>& v,
-                   std::ranges::input_range auto&& cells,
+                   CellRange auto&& cells,
                    const geometry::PointOwnershipData<U>& interpolation_data)
   {
     fem::interpolate(*this, v, cells, interpolation_data);
@@ -448,7 +454,7 @@ public:
   /// with the correct size. Storage is row-major.
   /// @param[in] ushape Shape of `u`.
   void eval(std::span<const geometry_type> x, std::array<std::size_t, 2> xshape,
-            std::ranges::input_range auto&& cells, std::span<value_type> u,
+            CellRange auto&& cells, std::span<value_type> u,
             std::array<std::size_t, 2> ushape) const
   {
     if (cells.empty())
@@ -568,7 +574,12 @@ public:
     {
       // Skip negative cell indices
       if (*cell < 0)
+      {
+        throw std::runtime_error(
+            "Function::eval: Cannot evaluate at points with negative cell "
+            "index.");
         continue;
+      }
 
       // Get cell geometry (coordinate dofs)
       auto x_dofs = md::submdspan(x_dofmap, *cell, md::full_extent);
@@ -662,7 +673,12 @@ public:
     for (auto cell = cells.begin(); cell != cells.end(); ++cell)
     {
       if (*cell < 0) // Skip negative cell indices
+      {
+        throw std::runtime_error(
+            "Function::eval: Cannot evaluate at points with negative cell "
+            "index.");
         continue;
+      }
 
       // Permute the reference basis function values to account for the
       // cell's orientation

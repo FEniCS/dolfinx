@@ -36,6 +36,15 @@ concept MDSpan = requires(T x, std::size_t idx) {
   { x.extent(1) } -> std::integral;
 };
 
+template <typename R>
+concept CellRange = std::ranges::input_range<R> && std::ranges::sized_range<R>
+    // &&
+    // std::is_integral_v<std::remove_const_t<std::ranges::range_value_t<R>>>
+    // && std::same_as<std::ranges::range_value_t<R>, std::int32_t>
+    // && std::same_as<std::remove_const_t<std::ranges::range_value_t<R>>,
+    //                 std::int32_t>
+    ;
+
 /// @brief Compute the evaluation points in the physical space at which
 /// an expression should be computed to interpolate it in a finite
 /// element space.
@@ -49,7 +58,7 @@ concept MDSpan = requires(T x, std::size_t idx) {
 template <std::floating_point T>
 std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
                                     const mesh::Geometry<T>& geometry,
-                                    std::ranges::input_range auto&& cells)
+                                    CellRange auto&& cells)
 {
   // Find CoordinateElement appropriate to element
   const std::vector<CoordinateElement<T>>& cmaps = geometry.cmaps();
@@ -131,8 +140,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 /// calling `interpolation_coords`.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
-                 std::array<std::size_t, 2> fshape,
-                 std::ranges::input_range auto&& cells);
+                 std::array<std::size_t, 2> fshape, CellRange auto&& cells);
 
 namespace impl
 {
@@ -361,10 +369,8 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 /// elements must share the same basis function map. Neither is checked
 /// by the function.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate_same_map(Function<T, U>& u1,
-                          std::ranges::input_range auto&& cells1,
-                          const Function<T, U>& u0,
-                          std::ranges::input_range auto&& cells0)
+void interpolate_same_map(Function<T, U>& u1, CellRange auto&& cells1,
+                          const Function<T, U>& u0, CellRange auto&& cells0)
 {
   auto V0 = u0.function_space();
   assert(V0);
@@ -463,10 +469,9 @@ void interpolate_same_map(Function<T, U>& u1,
 /// @pre Functions `u1` and `u0` must share the same mesh. This is not
 /// checked by the function.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate_nonmatching_maps(Function<T, U>& u1,
-                                  std::ranges::input_range auto&& cells1,
+void interpolate_nonmatching_maps(Function<T, U>& u1, CellRange auto&& cells1,
                                   const Function<T, U>& u0,
-                                  std::ranges::input_range auto&& cells0)
+                                  CellRange auto&& cells0)
 {
   // Get mesh
   auto V0 = u0.function_space();
@@ -714,8 +719,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
 /// @param [out] coeffs Output Function coefficients.
 template <dolfinx::scalar T, std::floating_point U>
 void point_evaluation(const FiniteElement<U>& element, bool symmetric,
-                      const DofMap& dofmap,
-                      std::ranges::input_range auto&& cells,
+                      const DofMap& dofmap, CellRange auto&& cells,
                       std::span<const std::uint32_t> cell_info,
                       std::span<const T> f, std::array<std::size_t, 2> fshape,
                       std::span<T> coeffs)
@@ -818,8 +822,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
 /// @param [out] coeffs Output Function coefficients.
 template <dolfinx::scalar T, std::floating_point U>
 void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
-                                const DofMap& dofmap,
-                                std::ranges::input_range auto&& cells,
+                                const DofMap& dofmap, CellRange auto&& cells,
                                 std::span<const std::uint32_t> cell_info,
                                 std::span<const T> f,
                                 std::array<std::size_t, 2> fshape,
@@ -896,8 +899,7 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 /// @param [out] coeffs Output Function coefficients.
 template <dolfinx::scalar T, std::floating_point U>
 void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
-                             const DofMap& dofmap,
-                             std::ranges::input_range auto&& cells,
+                             const DofMap& dofmap, CellRange auto&& cells,
                              std::span<const std::uint32_t> cell_info,
                              std::span<const T> f,
                              std::array<std::size_t, 2> fshape,
@@ -1058,8 +1060,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
-                 std::array<std::size_t, 2> fshape,
-                 std::ranges::input_range auto&& cells)
+                 std::array<std::size_t, 2> fshape, CellRange auto&& cells)
 {
   // TODO: Index for mixed-topology, zero for now
   const int index = 0;
@@ -1143,11 +1144,9 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// runtime of this function, as one has to determine what entity is
 /// closest if there is no intersection.
 template <std::floating_point T>
-geometry::PointOwnershipData<T>
-create_interpolation_data(const mesh::Geometry<T>& geometry0,
-                          const FiniteElement<T>& element0,
-                          const mesh::Mesh<T>& mesh1,
-                          std::ranges::input_range auto&& cells, T padding)
+geometry::PointOwnershipData<T> create_interpolation_data(
+    const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
+    const mesh::Mesh<T>& mesh1, CellRange auto&& cells, T padding)
 {
   // Collect all the points at which values are needed to define the
   // interpolating function
@@ -1179,7 +1178,7 @@ create_interpolation_data(const mesh::Geometry<T>& geometry0,
 /// fem::create_interpolation_data.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, const Function<T, U>& v,
-                 std::ranges::input_range auto&& cells,
+                 CellRange auto&& cells,
                  const geometry::PointOwnershipData<U>& interpolation_data)
 {
   auto mesh = u.function_space()->mesh();
@@ -1253,9 +1252,8 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 /// *same* cell but in the mesh associated with `u0`. `cells0` and
 /// `cells1` must be the same size.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate(Function<T, U>& u1, std::ranges::input_range auto&& cells1,
-                 const Function<T, U>& u0,
-                 std::ranges::input_range auto&& cells0)
+void interpolate(Function<T, U>& u1, CellRange auto&& cells1,
+                 const Function<T, U>& u0, CellRange auto&& cells0)
 {
   if (cells0.size() != cells1.size())
     throw std::runtime_error("Length of cell lists do not match.");
