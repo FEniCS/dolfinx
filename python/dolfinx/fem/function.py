@@ -464,10 +464,14 @@ class Function(ufl.Coefficient):
             mesh = self.function_space.mesh
             map = mesh.topology.index_map(mesh.topology.dim)
             _cells0 = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
+        else:
+            _cells0 = cells0
 
         if cells1 is None:
             # cells1 = np.arange(0, dtype=np.int32)
-            _cells1 = cells0
+            _cells1 = _cells0
+        else:
+            _cells1 = cells1
 
         @singledispatch
         def _interpolate(u0):

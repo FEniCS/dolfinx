@@ -478,20 +478,21 @@ void declare_objects(nb::module_& m, std::string type)
           {
             if (!cells0.has_value() and !cells1.has_value())
               self.interpolate(u0);
-            else if (cells0.has_value())
+            else if (cells0.has_value() and !cells1.has_value())
               self.interpolate(u0, std::span(cells0->data(), cells0->size()));
-            else if (cells1.has_value())
+            else if (!cells0.has_value() and cells1.has_value())
             {
               throw std::runtime_error(
                   "If cells1 is provided, cells0 must also be provided.");
             }
             else
             {
+              std::cout << "Both cells0 and cells1 provided" << std::endl;
               self.interpolate(u0, std::span(cells0->data(), cells0->size()),
                                std::span(cells1->data(), cells1->size()));
             }
           },
-          nb::arg("u"), nb::arg("cells0"), nb::arg("cells1"),
+          nb::arg("u0"), nb::arg("cells0").none(), nb::arg("cells1").none(),
           "Interpolate a finite element function.")
       .def(
           "interpolate",
