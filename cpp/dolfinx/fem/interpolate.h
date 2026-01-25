@@ -512,9 +512,8 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, CellRange auto&& cells1,
   const int bs1 = element1->block_size();
   auto apply_dof_transformation0 = element0->template dof_transformation_fn<U>(
       doftransform::standard, false);
-  auto apply_inverse_dof_transform1
-      = element1->template dof_transformation_fn<T>(
-          doftransform::inverse_transpose, false);
+  auto apply_inv_dof_transform1 = element1->template dof_transformation_fn<T>(
+      doftransform::inverse_transpose, false);
 
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
@@ -693,7 +692,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, CellRange auto&& cells1,
     auto values
         = md::submdspan(mapped_values0, md::full_extent, 0, md::full_extent);
     interpolation_apply(Pi_1, values, std::span(local1), bs1);
-    apply_inverse_dof_transform1(local1, cell_info1, *cell1_it, 1);
+    apply_inv_dof_transform1(local1, cell_info1, *cell1_it, 1);
 
     // Copy local coefficients to the correct position in u dof array
     const int dof_bs1 = dofmap1->bs();
@@ -974,7 +973,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
   std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
-      apply_inverse_transpose_dof_transformation
+      apply_inv_trans_dof_transformation
       = element.template dof_transformation_fn<T>(
           doftransform::inverse_transpose);
 
@@ -1038,8 +1037,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
       auto ref = md::submdspan(ref_data, md::full_extent, 0, md::full_extent);
       impl::interpolation_apply(Pi, ref, std::span(_coeffs), element_bs);
-      apply_inverse_transpose_dof_transformation(_coeffs, cell_info, *cell_it,
-                                                 1);
+      apply_inv_trans_dof_transformation(_coeffs, cell_info, *cell_it, 1);
 
       // Copy interpolation dofs into coefficient vector
       assert(_coeffs.size() == num_scalar_dofs);
