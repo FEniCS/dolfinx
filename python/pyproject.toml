@@ -28,19 +28,26 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+demo = [
+  "gmsh",
+  "networkx",
+  "numba",
+  "matplotlib",
+  "scipy",
+  "pyamg",
+  "pyvista",
+]
 docs = [
       "breathe",
       "jupytext",
       "markdown",
-      "matplotlib",
       "myst_parser",
-      "numba",
-      "scipy",
       "packaging",
       "pyyaml",
       "sphinx",
       "sphinx_rtd_theme",
       "sphinx_codeautolink[ipython]",
+      "fenics-dolfinx[demo]",
 ]
 lint = ["ruff>=0.2.0"]
 optional = ["numba", "pyamg"]
