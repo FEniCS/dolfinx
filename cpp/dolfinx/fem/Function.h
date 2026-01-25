@@ -152,23 +152,6 @@ public:
   /// @brief Underlying vector.
   std::shared_ptr<la::Vector<value_type>> x() { return _x; }
 
-  /// @brief Interpolate an expression f(x) on the whole domain.
-  /// @param[in] f Expression to be interpolated.
-  void interpolate(
-      const std::function<
-          std::pair<std::vector<value_type>, std::vector<std::size_t>>(
-              md::mdspan<const geometry_type,
-                         md::extents<std::size_t, 3, md::dynamic_extent>>)>& f)
-  {
-    assert(_function_space);
-    assert(_function_space->mesh());
-    int tdim = _function_space->mesh()->topology()->dim();
-    auto cmap = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cmap);
-    interpolate(
-        f, std::ranges::iota_view(0, cmap->size_local() + cmap->num_ghosts()));
-  }
-
   /// @brief Interpolate an expression f(x) over a set of cells.
   /// @param[in] f Expression function to be interpolated.
   /// @param[in] cells Cells to interpolate on.
@@ -228,6 +211,23 @@ public:
                      _fshape, cells);
   }
 
+  /// @brief Interpolate an expression f(x) on the whole domain.
+  /// @param[in] f Expression to be interpolated.
+  void interpolate(
+      const std::function<
+          std::pair<std::vector<value_type>, std::vector<std::size_t>>(
+              md::mdspan<const geometry_type,
+                         md::extents<std::size_t, 3, md::dynamic_extent>>)>& f)
+  {
+    assert(_function_space);
+    assert(_function_space->mesh());
+    int tdim = _function_space->mesh()->topology()->dim();
+    auto cmap = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cmap);
+    interpolate(
+        f, std::ranges::iota_view(0, cmap->size_local() + cmap->num_ghosts()));
+  }
+
   /// @brief Interpolate a Function over all cells.
   ///
   /// @param[in] u Function to be interpolated.
@@ -281,22 +281,6 @@ public:
     fem::interpolate(*this, u, cells);
   }
 
-  /// @brief Interpolate an Expression on all cells.
-  ///
-  /// @param[in] e Expression to be interpolated.
-  /// @pre If a mesh is associated with Function coefficients of `e`, it
-  /// must be the same as the mesh::Mesh associated with `this`.
-  void interpolate(const Expression<value_type, geometry_type>& e)
-  {
-    assert(_function_space);
-    assert(_function_space->mesh());
-    int tdim = _function_space->mesh()->topology()->dim();
-    auto cmap = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cmap);
-    interpolate(
-        e, std::ranges::iota_view(0, cmap->size_local() + cmap->num_ghosts()));
-  }
-
   /// @brief Interpolate an Expression over a subset of cells.
   ///
   /// @param[in] e0 Expression to be interpolated. The Expression must
@@ -324,12 +308,8 @@ public:
       assert(c);
       assert(c->function_space());
       assert(c->function_space()->mesh());
-      if (const mesh::Mesh<geometry_type>* mesh
-          = c->function_space()->mesh().get();
-          !mesh0)
-      {
+      if (auto mesh = c->function_space()->mesh().get(); !mesh0)
         mesh0 = mesh;
-      }
       else if (mesh != mesh0)
       {
         throw std::runtime_error(
@@ -413,21 +393,6 @@ public:
                      {value_size, num_cells * num_points}, cells1);
   }
 
-  /// @brief Interpolate a Function defined on a different mesh.
-  ///
-  /// @param[in] v Function to be interpolated.
-  /// @param[in] cells Cells in the mesh associated with `this` to
-  /// interpolate into.
-  /// @param[in] interpolation_data Data required for associating the
-  /// interpolation points of `this` with cells in `v`. Can be computed
-  /// with `fem::create_interpolation_data`.
-  void interpolate(const Function<value_type, geometry_type>& v,
-                   std::ranges::input_range auto&& cells,
-                   const geometry::PointOwnershipData<U>& interpolation_data)
-  {
-    fem::interpolate(*this, v, cells, interpolation_data);
-  }
-
   /// @brief Interpolate an Expression over a subset of cells.
   ///
   /// @param[in] e0 Expression to be interpolated. The Expression must
@@ -441,6 +406,37 @@ public:
                    std::ranges::input_range auto&& cells)
   {
     interpolate(e0, cells, cells);
+  }
+
+  /// @brief Interpolate an Expression on all cells.
+  ///
+  /// @param[in] e Expression to be interpolated.
+  /// @pre If a mesh is associated with Function coefficients of `e`, it
+  /// must be the same as the mesh::Mesh associated with `this`.
+  void interpolate(const Expression<value_type, geometry_type>& e)
+  {
+    assert(_function_space);
+    assert(_function_space->mesh());
+    int tdim = _function_space->mesh()->topology()->dim();
+    auto cmap = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cmap);
+    interpolate(
+        e, std::ranges::iota_view(0, cmap->size_local() + cmap->num_ghosts()));
+  }
+
+  /// @brief Interpolate a Function defined on a different mesh.
+  ///
+  /// @param[in] v Function to be interpolated.
+  /// @param[in] cells Cells in the mesh associated with `this` to
+  /// interpolate into.
+  /// @param[in] interpolation_data Data required for associating the
+  /// interpolation points of `this` with cells in `v`. Can be computed
+  /// with `fem::create_interpolation_data`.
+  void interpolate(const Function<value_type, geometry_type>& v,
+                   std::ranges::input_range auto&& cells,
+                   const geometry::PointOwnershipData<U>& interpolation_data)
+  {
+    fem::interpolate(*this, v, cells, interpolation_data);
   }
 
   /// @brief Evaluate the Function at points.

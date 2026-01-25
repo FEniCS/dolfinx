@@ -1101,8 +1101,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   // Result will be stored to coeffs
   std::span<T> coeffs = u.x()->array();
 
-  const bool symmetric = u.function_space()->symmetric();
-  if (element->map_ident() && element->interpolation_ident())
+  if (bool symmetric = u.function_space()->symmetric();
+      element->map_ident() and element->interpolation_ident())
   {
     spdlog::debug("Interpolate: point evaluation");
     // This assumes that any element with an identity interpolation

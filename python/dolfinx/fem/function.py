@@ -486,7 +486,7 @@ class Function(ufl.Coefficient):
         @_interpolate.register(int)
         def _(u0_ptr: int):
             """Interpolate using a pointer to a function f(x)."""
-            self._cpp_object.interpolate_ptr(u0_ptr, _cells0)  # type: ignore
+            self._cpp_object.interpolate_ptr(u0_ptr, cells0)  # type: ignore
 
         @_interpolate.register(Expression)
         def _(e0: Expression):
