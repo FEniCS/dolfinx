@@ -1238,10 +1238,10 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 }
 
 /// @brief Interpolate from one finite element Function to another
-/// Function for a subeste of cells on the same (sub)mesh.
+/// Function on a subset of cells.
 ///
-/// Interpolation can be performed on a subset of mesh cells and
-/// Functions may be defined on 'sub-meshes'.
+/// The Functions must share the same mesh, or one can be defined on a
+/// submesh of the other.
 ///
 /// @param[out] u1 Function to interpolate into.
 /// @param[in] cells1 Cell indices associated with the mesh of `u1` that
@@ -1262,12 +1262,10 @@ void interpolate(Function<T, U>& u1, std::ranges::input_range auto&& cells1,
 
   auto V1 = u1.function_space();
   assert(V1);
-  auto mesh1 = V1->mesh();
-  assert(mesh1);
-
-  // Get elements and check value shape
   auto V0 = u0.function_space();
   assert(V0);
+
+  // Get elements and check value shape
   auto e0 = V0->element();
   assert(e0);
   auto e1 = V1->element();
@@ -1278,16 +1276,16 @@ void interpolate(Function<T, U>& u1, std::ranges::input_range auto&& cells1,
         "Interpolation: elements have different value dimensions");
   }
 
-  if (mesh1 == u0.function_space()->mesh() and (e1 == e0 or *e1 == *e0))
+  if (V1->mesh() == V0->mesh() and (e1 == e0 or *e1 == *e0))
   {
     // Same element and same mesh
     if (e1->block_size() != e0->block_size())
       throw std::runtime_error("Mismatch in element block size.");
 
     // Get dofmaps
-    std::shared_ptr<const DofMap> dofmap0 = u0.function_space()->dofmap();
+    std::shared_ptr<const DofMap> dofmap0 = V0->dofmap();
     assert(dofmap0);
-    std::shared_ptr<const DofMap> dofmap1 = u1.function_space()->dofmap();
+    std::shared_ptr<const DofMap> dofmap1 = V1->dofmap();
     assert(dofmap1);
 
     // Iterate over mesh and interpolate on each cell
@@ -1322,7 +1320,6 @@ void interpolate(Function<T, U>& u1, std::ranges::input_range auto&& cells1,
     //  Different elements with different maps for basis functions
     impl::interpolate_nonmatching_maps(u1, cells1, u0, cells0);
   }
-  // }
 }
 
 /// @brief Interpolate from one finite element Function to another
@@ -1343,7 +1340,7 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0)
     // Same function spaces, direct copy of dofs
     std::ranges::copy(u0.x()->array(), u1.x()->array().begin());
   }
-  else if (auto mesh1 = V1.mesh(); mesh1 == u0.function_space()->mesh())
+  else if (auto mesh1 = V1->mesh(); mesh1 == u0.function_space()->mesh())
   {
     // Same mesh, different function spaces
     assert(mesh1->topology());
