@@ -198,9 +198,9 @@ void write_dataset(hid_t file_handle, const std::string& dataset_path,
       if (chunk_size < 1024)
         chunk_size = 1024;
 
-      std::vector<hsize_t> chunk_dims = {chunk_size};
+      std::array<hsize_t, 2> chunk_dims = {chunk_size, hsize_t(0)};
       if (rank == 2)
-        chunk_dims.push_back(dimsf[1]);
+        chunk_dims[1] = dimsf[1];
       chunking_properties = H5Pcreate(H5P_DATASET_CREATE);
       H5Pset_chunk(chunking_properties, rank, chunk_dims.data());
     }

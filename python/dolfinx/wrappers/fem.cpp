@@ -464,33 +464,35 @@ void declare_objects(nb::module_& m, std::string type)
                                       {f.shape(0), f.shape(1)},
                                       std::span(cells.data(), cells.size()));
           },
-          nb::arg("f"), nb::arg("cells"), "Interpolate an expression function")
-      .def(
-          "interpolate",
-          [](dolfinx::fem::Function<T, U>& self,
-             const dolfinx::fem::Function<T, U>& u) { self.interpolate(u); },
-          nb::arg("u"),
-          "Interpolate a finite element function on the same mesh.")
-      .def(
-          "interpolate",
-          [](dolfinx::fem::Function<T, U>& self,
-             const dolfinx::fem::Function<T, U>& u,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
-          { self.interpolate(u, std::span(cells.data(), cells.size())); },
-          nb::arg("u"), nb::arg("cells"),
-          "Interpolate a finite element function over a subset of cell.")
+          nb::arg("f"), nb::arg("cells"), "Interpolate an expression.")
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
              const dolfinx::fem::Function<T, U>& u0,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells0,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells1)
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 cells0,
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 cells1)
           {
-            self.interpolate(u0, std::span(cells0.data(), cells0.size()),
-                             std::span(cells1.data(), cells1.size()));
+            if (!cells0.has_value() and !cells1.has_value())
+              self.interpolate(u0);
+            else if (cells0.has_value())
+              self.interpolate(u0, std::span(cells0->data(), cells0->size()));
+            else if (cells1.has_value())
+            {
+              throw std::runtime_error(
+                  "If cells1 is provided, cells0 must also be provided.");
+            }
+            else
+            {
+              self.interpolate(u0, std::span(cells0->data(), cells0->size()),
+                               std::span(cells1->data(), cells1->size()));
+            }
           },
           nb::arg("u"), nb::arg("cells0"), nb::arg("cells1"),
-          "Interpolate a finite element function")
+          "Interpolate a finite element function.")
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,

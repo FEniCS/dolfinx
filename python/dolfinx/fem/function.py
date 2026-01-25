@@ -463,11 +463,11 @@ class Function(ufl.Coefficient):
         if cells0 is None:
             mesh = self.function_space.mesh
             map = mesh.topology.index_map(mesh.topology.dim)
-            cells0 = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
+            _cells0 = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
 
         if cells1 is None:
             # cells1 = np.arange(0, dtype=np.int32)
-            cells1 = cells0
+            _cells1 = cells0
 
         @singledispatch
         def _interpolate(u0):
@@ -482,12 +482,12 @@ class Function(ufl.Coefficient):
         @_interpolate.register(int)
         def _(u0_ptr: int):
             """Interpolate using a pointer to a function f(x)."""
-            self._cpp_object.interpolate_ptr(u0_ptr, cells0)  # type: ignore
+            self._cpp_object.interpolate_ptr(u0_ptr, _cells0)  # type: ignore
 
         @_interpolate.register(Expression)
         def _(e0: Expression):
             """Interpolate a fem.Expression."""
-            self._cpp_object.interpolate(e0._cpp_object, cells0, cells1)  # type: ignore
+            self._cpp_object.interpolate(e0._cpp_object, _cells0, _cells1)  # type: ignore
 
         try:
             # u is a Function or Expression (or pointer to one)
@@ -496,9 +496,9 @@ class Function(ufl.Coefficient):
             # u0 is callable
             assert callable(u0)
             x = _cpp.fem.interpolation_coords(
-                self._V.element._cpp_object, self._V.mesh.geometry._cpp_object, cells0
+                self._V.element._cpp_object, self._V.mesh.geometry._cpp_object, _cells0
             )
-            self._cpp_object.interpolate(np.asarray(u0(x), dtype=self.dtype), cells0)  # type: ignore
+            self._cpp_object.interpolate(np.asarray(u0(x), dtype=self.dtype), _cells0)  # type: ignore
 
     def copy(self) -> Function:
         """Create a copy of the Function.
