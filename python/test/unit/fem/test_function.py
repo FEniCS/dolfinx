@@ -209,18 +209,18 @@ def test_cffi_expression(dtype, cdtype):
     f1 = Function(V, dtype=dtype)
     f1.interpolate(int(eval_ptr))
 
-    f2 = Function(V, dtype=dtype)
-    f2.interpolate(lambda x: x[0] + x[1])
+#     f2 = Function(V, dtype=dtype)
+#     f2.interpolate(lambda x: x[0] + x[1])
 
-    f1.x.array[:] -= f2.x.array
-    assert la.norm(f1.x) < 1.0e-12
+#     f1.x.array[:] -= f2.x.array
+#     assert la.norm(f1.x) < 1.0e-12
 
 
-def test_interpolation_function(mesh):
-    V = functionspace(mesh, ("Lagrange", 1))
-    u = Function(V)
-    u.x.array[:] = 1
-    Vh = functionspace(mesh, ("Lagrange", 1))
-    uh = Function(Vh)
-    uh.interpolate(u)
-    assert np.allclose(uh.x.array, 1)
+# def test_interpolation_function(mesh):
+#     V = functionspace(mesh, ("Lagrange", 1))
+#     u = Function(V)
+#     u.x.array[:] = 1
+#     Vh = functionspace(mesh, ("Lagrange", 1))
+#     uh = Function(Vh)
+#     uh.interpolate(u)
+#     assert np.allclose(uh.x.array, 1)

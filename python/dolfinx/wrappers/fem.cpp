@@ -528,7 +528,7 @@ void declare_objects(nb::module_& m, std::string type)
             }
           },
           nb::arg("u0"), nb::arg("cells0").none(), nb::arg("cells1").none(),
-          "Interpolate a finite element function.")
+          "Interpolate a finite element Function.")
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
@@ -540,37 +540,61 @@ void declare_objects(nb::module_& m, std::string type)
                              interpolation_data);
           },
           nb::arg("u"), nb::arg("cells"), nb::arg("interpolation_data"),
-          "Interpolate a finite element function on non-matching meshes")
+          "Interpolate a finite element Function on non-matching meshes")
       // NOLINTBEGIN(performance-no-int-to-ptr)
       .def(
           "interpolate_ptr",
           [](dolfinx::fem::Function<T, U>& self, std::uintptr_t addr,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 cells)
           {
-            assert(self.function_space());
-            auto element = self.function_space()->element();
+            auto V = self.function_space();
+            assert(V);
+            auto element = V->element();
             assert(element);
-
-            assert(self.function_space()->mesh());
-            const std::vector<U> x = dolfinx::fem::interpolation_coords(
-                *element, self.function_space()->mesh()->geometry(),
-                std::span(cells.data(), cells.size()));
+            auto mesh = V->mesh();
+            assert(mesh);
+            assert(mesh->topology());
 
             // Compute value size
-            auto vshape = self.function_space()->element()->value_shape();
+            std::span<const std::size_t> vshape = element->value_shape();
             std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
                                                  1, std::multiplies{});
 
-            std::array<std::size_t, 2> shape{value_size, x.size() / 3};
-            std::vector<T> values(shape[0] * shape[1]);
             std::function<void(T*, int, int, const U*, void*)> f
                 = reinterpret_cast<void (*)(T*, int, int, const U*, void*)>(
                     addr);
-            f(values.data(), shape[1], shape[0], x.data(), nullptr);
-            dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
-                                      std::span(cells.data(), cells.size()));
+
+            if (cells.has_value())
+            {
+              std::span _cells(cells->data(), cells->size());
+              std::vector<U> x = dolfinx::fem::interpolation_coords(
+                  *element, mesh->geometry(), _cells);
+
+              std::array<std::size_t, 2> shape{value_size, x.size() / 3};
+              std::vector<T> values(shape[0] * shape[1]);
+              f(values.data(), shape[1], shape[0], x.data(), nullptr);
+              dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
+                                        _cells);
+            }
+            else
+            {
+              auto map = mesh->topology()->index_map(mesh->topology()->dim());
+              assert(map);
+              std::int32_t num_cells = map->size_local() + map->num_ghosts();
+              auto iota = std::ranges::views::iota(0, num_cells);
+              std::vector<U> x = dolfinx::fem::interpolation_coords(
+                  *element, self.function_space()->mesh()->geometry(), iota);
+
+              std::array<std::size_t, 2> shape{value_size, x.size() / 3};
+              std::vector<T> values(shape[0] * shape[1]);
+              f(values.data(), shape[1], shape[0], x.data(), nullptr);
+              dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
+                                        iota);
+            }
           },
-          nb::arg("f_ptr"), nb::arg("cells"),
+          nb::arg("f_ptr"), nb::arg("cells").none(),
           "Interpolate using a pointer to an expression with a C signature")
       .def(
           "interpolate",
