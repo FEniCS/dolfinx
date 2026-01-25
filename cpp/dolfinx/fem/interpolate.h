@@ -742,7 +742,6 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
       ++matrix_size;
 
     // Loop over cells
-    spdlog::info("Loop over cells");
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
       std::size_t c = std::distance(cells.begin(), cell_it);
