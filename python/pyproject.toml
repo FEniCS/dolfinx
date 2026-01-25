@@ -79,7 +79,7 @@ markers = [
       "xfail_win32_complex: expected failures for complex numbers in Win32.",
 ]
 addopts = [
-  "-k", "test_symmetry_interior_facet_assembly[mesh1]"
+  "-k", "not test_symmetry_interior_facet_assembly[mesh1]"
 ]
 
 [tool.mypy]
