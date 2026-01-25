@@ -468,7 +468,7 @@ void declare_objects(nb::module_& m, std::string type)
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
-             dolfinx::fem::Function<T, U>& u0,
+             const dolfinx::fem::Function<T, U>& u0,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells0,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells1)
           {
@@ -480,7 +480,7 @@ void declare_objects(nb::module_& m, std::string type)
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
-             dolfinx::fem::Function<T, U>& u,
+             const dolfinx::fem::Function<T, U>& u,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
              const dolfinx::geometry::PointOwnershipData<U>& interpolation_data)
           {
