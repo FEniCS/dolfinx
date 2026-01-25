@@ -1238,7 +1238,7 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 }
 
 /// @brief Interpolate from one finite element Function to another
-/// Function on the same (sub)mesh.
+/// Function for a subeste of cells on the same (sub)mesh.
 ///
 /// Interpolation can be performed on a subset of mesh cells and
 /// Functions may be defined on 'sub-meshes'.
@@ -1252,121 +1252,109 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 /// the mesh associated with `u1`, then `cells0[i]` is the index of the
 /// *same* cell but in the mesh associated with `u0`. `cells0` and
 /// `cells1` must be the same size.
-///
-/// @pre `cells1` and `cells0` must not contain duplicates.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, std::ranges::input_range auto&& cells1,
                  const Function<T, U>& u0,
                  std::ranges::input_range auto&& cells0)
 {
-  // TODO: the logic in this function could be improved to robustly
-  // support direct copy of the dofs when possible. Probably best via a
-  // different function with feweer arguments.
-
   if (cells0.size() != cells1.size())
     throw std::runtime_error("Length of cell lists do not match.");
-
-  auto num_cells_fn = [](auto&& mesh) -> std::size_t
-  {
-    auto map = mesh.topology()->index_map(mesh.topology()->dim());
-    assert(map);
-    return map->size_local() + map->num_ghosts();
-  };
 
   auto V1 = u1.function_space();
   assert(V1);
   auto mesh1 = V1->mesh();
   assert(mesh1);
-  if (V1 == u0.function_space() and cells1.size() == num_cells_fn(*mesh1))
+
+  // Get elements and check value shape
+  auto V0 = u0.function_space();
+  assert(V0);
+  auto e0 = V0->element();
+  assert(e0);
+  auto e1 = V1->element();
+  assert(e1);
+  if (!std::ranges::equal(e0->value_shape(), e1->value_shape()))
   {
-#ifndef NDEBUG
-    if (!std::ranges::equal(cells0, cells1))
-    {
-      throw std::runtime_error(
-          "When interpolating between identical function spaces, the cell "
-          "lists must be identical.");
-    }
-
-    std::vector<std::int32_t> cells_sorted(cells0.begin(), cells0.end());
-    std::ranges::sort(cells_sorted);
-    auto iota = std::ranges::views::iota(std::int32_t(0),
-                                         (std::int32_t)cells_sorted.size());
-    if (!std::ranges::equal(cells_sorted, iota))
-    {
-      throw std::runtime_error(
-          "When interpolating between identical function spaces, the cell "
-          "lists must not contain duplicates and must cover all cells.");
-    }
-#endif
-
-    // FIXME: if cells0/cells1 contains duplicates, this will compute
-    // the wrong result
-
-    // Same function spaces and on whole mesh
-    std::ranges::copy(u0.x()->array(), u1.x()->array().begin());
+    throw std::runtime_error(
+        "Interpolation: elements have different value dimensions");
   }
-  else
+
+  if (mesh1 == u0.function_space()->mesh() and (e1 == e0 or *e1 == *e0))
   {
-    // Get elements and check value shape
-    auto V0 = u0.function_space();
-    assert(V0);
-    auto element0 = V0->element();
-    assert(element0);
-    auto element1 = V1->element();
-    assert(element1);
-    if (!std::ranges::equal(V0->element()->value_shape(),
-                            V1->element()->value_shape()))
+    // Same element and same mesh
+    if (e1->block_size() != e0->block_size())
+      throw std::runtime_error("Mismatch in element block size.");
+
+    // Get dofmaps
+    std::shared_ptr<const DofMap> dofmap0 = u0.function_space()->dofmap();
+    assert(dofmap0);
+    std::shared_ptr<const DofMap> dofmap1 = u1.function_space()->dofmap();
+    assert(dofmap1);
+
+    // Iterate over mesh and interpolate on each cell
+    const int bs0 = dofmap0->bs();
+    const int bs1 = dofmap1->bs();
+    std::span<T> u1_array = u1.x()->array();
+    std::span<const T> u0_array = u0.x()->array();
+    for (std::size_t c = 0; c < cells1.size(); ++c)
     {
-      throw std::runtime_error(
-          "Interpolation: elements have different value dimensions");
-    }
-
-    if (mesh1 == u0.function_space()->mesh()
-        and (element1 == element0 or *element1 == *element0))
-    {
-      // Same element, same mesh, different dofmaps, or a subset of
-      // cells
-      if (element1->block_size() != element0->block_size())
-        throw std::runtime_error("Mismatch in element block size.");
-
-      // Get dofmaps
-      std::shared_ptr<const DofMap> dofmap0 = u0.function_space()->dofmap();
-      assert(dofmap0);
-      std::shared_ptr<const DofMap> dofmap1 = u1.function_space()->dofmap();
-      assert(dofmap1);
-
-      // Iterate over mesh and interpolate on each cell
-      const int bs0 = dofmap0->bs();
-      const int bs1 = dofmap1->bs();
-      std::span<T> u1_array = u1.x()->array();
-      std::span<const T> u0_array = u0.x()->array();
-      for (std::size_t c = 0; c < cells1.size(); ++c)
+      std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);
+      std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cells1[c]);
+      assert(bs0 * dofs0.size() == bs1 * dofs1.size());
+      for (std::size_t i = 0; i < dofs0.size(); ++i)
       {
-        std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);
-        std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cells1[c]);
-        assert(bs0 * dofs0.size() == bs1 * dofs1.size());
-        for (std::size_t i = 0; i < dofs0.size(); ++i)
+        for (int k = 0; k < bs0; ++k)
         {
-          for (int k = 0; k < bs0; ++k)
-          {
-            int index = bs0 * i + k;
-            std::div_t dv1 = std::div(index, bs1);
-            u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
-                = u0_array[bs0 * dofs0[i] + k];
-          }
+          int index = bs0 * i + k;
+          std::div_t dv1 = std::div(index, bs1);
+          u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
+              = u0_array[bs0 * dofs0[i] + k];
         }
       }
     }
-    else if (element1->map_type() == element0->map_type())
-    {
-      // Different elements, same basis function map type
-      impl::interpolate_same_map(u1, cells1, u0, cells0);
-    }
-    else
-    {
-      //  Different elements with different maps for basis functions
-      impl::interpolate_nonmatching_maps(u1, cells1, u0, cells0);
-    }
   }
+  else if (e1->map_type() == e0->map_type())
+  {
+    // Different elements, same basis function map type
+    impl::interpolate_same_map(u1, cells1, u0, cells0);
+  }
+  else
+  {
+    //  Different elements with different maps for basis functions
+    impl::interpolate_nonmatching_maps(u1, cells1, u0, cells0);
+  }
+  // }
+}
+
+/// @brief Interpolate from one finite element Function to another
+/// Function on the whole mesh.
+///
+/// The two Functions must share the same mesh, otherwose and exception
+/// is thrown.
+///
+/// @param[out] u1 Function to interpolate into.
+/// @param[in] u0 Function to b interpolated from.
+template <dolfinx::scalar T, std::floating_point U>
+void interpolate(Function<T, U>& u1, const Function<T, U>& u0)
+{
+  assert(u1.function_space());
+  assert(u0.function_space());
+  if (auto V1 = u1.function_space(); V1 == u0.function_space())
+  {
+    // Same function spaces, direct copy of dofs
+    std::ranges::copy(u0.x()->array(), u1.x()->array().begin());
+  }
+  else if (auto mesh1 = V1.mesh(); mesh1 == u0.function_space()->mesh())
+  {
+    // Same mesh, different function spaces
+    assert(mesh1->topology());
+    auto map = mesh1->topology()->index_map(mesh1->topology()->dim());
+    assert(map);
+    std::int32_t num_cells = map->size_local() + map->num_ghosts();
+    assert(mesh1);
+    const auto cells = std::ranges::views::iota(0, num_cells);
+    interpolate<T, U>(u1, cells, u0, cells);
+  }
+  else
+    throw std::runtime_error("Meshes do no match.");
 }
 } // namespace dolfinx::fem

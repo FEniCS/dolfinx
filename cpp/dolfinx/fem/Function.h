@@ -240,9 +240,7 @@ public:
     int tdim = _function_space->mesh()->topology()->dim();
     auto cmap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cmap);
-    const auto iota
-        = std::ranges::iota_view(0, cmap->size_local() + cmap->num_ghosts());
-    interpolate(u, iota, iota);
+    fem::interpolate(*this, u);
   }
 
   /// @brief Interpolate a Function over a subset of cells.
