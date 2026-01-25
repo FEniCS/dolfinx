@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2024 Chris N. Richardson, Garth N. Wells,
+# Copyright (C) 2009-2026 Chris N. Richardson, Garth N. Wells,
 # Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -457,21 +457,9 @@ class Function(ufl.Coefficient):
                 over. If ``None`` then all cells are interpolated over.
             cells1: Cells in the mesh associated with ``self`` to
                 interpolate over. If ``None``, then taken to be the same
-                cells as ``cells0``. If ``cells1`` is not ``None``, then
-                it must have the same length as ``cells0``.
+                cells as ``cells0``. If ``cells1`` is not ``None`` it
+                must have the same length as ``cells0``.
         """
-        if cells0 is None:
-            mesh = self.function_space.mesh
-            map = mesh.topology.index_map(mesh.topology.dim)
-            _cells0 = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
-        else:
-            _cells0 = cells0
-
-        if cells1 is None:
-            # cells1 = np.arange(0, dtype=np.int32)
-            _cells1 = _cells0
-        else:
-            _cells1 = cells1
 
         @singledispatch
         def _interpolate(u0):
@@ -491,7 +479,7 @@ class Function(ufl.Coefficient):
         @_interpolate.register(Expression)
         def _(e0: Expression):
             """Interpolate a fem.Expression."""
-            self._cpp_object.interpolate(e0._cpp_object, _cells0, _cells1)  # type: ignore
+            self._cpp_object.interpolate_expr(e0._cpp_object, cells0, cells1)  # type: ignore
 
         try:
             # u is a Function or Expression (or pointer to one)

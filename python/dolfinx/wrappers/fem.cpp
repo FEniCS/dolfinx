@@ -594,16 +594,38 @@ void declare_objects(nb::module_& m, std::string type)
           nb::arg("f_ptr"), nb::arg("cells").none(),
           "Interpolate using a pointer to an expression with a C signature")
       .def(
-          "interpolate",
+          "interpolate_expr",
           [](dolfinx::fem::Function<T, U>& self,
              const dolfinx::fem::Expression<T, U>& e0,
-             nb::ndarray<const std::int32_t, nb::c_contig> cells0,
-             nb::ndarray<const std::int32_t, nb::c_contig> cells1)
+             std::optional<nb::ndarray<const std::int32_t, nb::c_contig>>
+                 cells0,
+             std::optional<nb::ndarray<const std::int32_t, nb::c_contig>>
+                 cells1)
           {
-            self.interpolate(e0, std::span(cells0.data(), cells0.size()),
-                             std::span(cells1.data(), cells1.size()));
+            auto span = [](auto& x) { return std::span(x.data(), x.size()); };
+            if (!cells0.has_value() and !cells1.has_value())
+            {
+              assert(self.function_space());
+              assert(self.function_space()->mesh());
+              assert(self.function_space()->mesh()->topology());
+              auto map = self.function_space()->mesh()->topology()->index_map(
+                  t->dim());
+              assert(map);
+              std::int32_t num_cells = map->size_local() + map->num_ghosts();
+              auto iota = std::ranges::views::iota(0, num_cells);
+              self.interpolate(e0, iota, iota);
+            }
+            else if (cells0.has_value() and !cells1.has_value())
+              self.interpolate(e0, span(*cells0), span(*cells0));
+            else if (cells0.has_value() and cells1.has_value())
+              self.interpolate(e0, span(*cells0), span(*cells1));
+            else
+            {
+              throw std::runtime_error(
+                  "If cells1 is provided, cells0 must also be provided.");
+            }
           },
-          nb::arg("e0"), nb::arg("cells0"), nb::arg("cells1"),
+          nb::arg("e0"), nb::arg("cells0").none(), nb::arg("cells1").none(),
           "Interpolate an Expression on a set of cells")
       .def_prop_ro(
           "x", nb::overload_cast<>(&dolfinx::fem::Function<T, U>::x),
