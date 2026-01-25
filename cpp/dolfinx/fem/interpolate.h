@@ -421,7 +421,9 @@ void interpolate_same_map(Function<T, U>& u1,
 
   // Iterate over mesh and interpolate on each cell
   using X = typename dolfinx::scalar_value_t<T>;
-  for (auto cell0 = cells0.begin(); cell0 != cells0.end(); ++cell0)
+  assert(cells0.size() == cells1.size());
+  for (auto cell0 = cells0.begin(), cell1 = cells1.begin();
+       cell0 != cells0.end() and cell1 != cells1.end(); ++cell0, ++cell1)
   {
     // Pack and transform cell dofs to reference ordering
     std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(*cell0);
@@ -438,8 +440,6 @@ void interpolate_same_map(Function<T, U>& u1,
       for (std::size_t j = 0; j < im_shape[1]; ++j)
         local1[i] += static_cast<X>(i_m[im_shape[1] * i + j]) * local0[j];
 
-    std::size_t dist = std::distance(cells0.begin(), cell0);
-    auto cell1 = std::next(cells1.begin(), dist);
     apply_inverse_dof_transform(local1, cell_info1, *cell1, 1);
     std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(*cell1);
     for (std::size_t i = 0; i < dofs1.size(); ++i)
@@ -601,7 +601,9 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   // Iterate over mesh and interpolate on each cell
   std::span<const T> array0 = u0.x()->array();
   std::span<T> array1 = u1.x()->array();
-  for (auto cell0 = cells0.begin(); cell0 != cells0.end(); ++cell0)
+  assert(cells0.size() == cells1.size());
+  for (auto cell0 = cells0.begin(), cell1 = cells1.begin();
+       cell0 != cells0.end() and cell1 != cells0.end(); ++cell0, ++cell1)
   {
     // Get cell geometry (coordinate dofs)
     auto x_dofs = md::submdspan(x_dofmap, *cell0, md::full_extent);
@@ -685,8 +687,6 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
       pull_back_fn1(_U, _u, _K, 1.0 / detJ[i], _J);
     }
 
-    std::size_t dist = std::distance(cells0.begin(), cell0);
-    auto cell1 = std::next(cells1.begin(), dist);
     auto values
         = md::submdspan(mapped_values0, md::full_extent, 0, md::full_extent);
     interpolation_apply(Pi_1, values, std::span(local1), bs1);
@@ -1293,10 +1293,12 @@ void interpolate(Function<T, U>& u1, std::ranges::input_range auto&& cells1,
     const int bs1 = dofmap1->bs();
     std::span<T> u1_array = u1.x()->array();
     std::span<const T> u0_array = u0.x()->array();
-    for (std::size_t c = 0; c < cells1.size(); ++c)
+    for (auto cell0 = cells0.begin(), cell1 = cells1.begin();
+         cell0 != cells0.end() and cell1 != cells1.end(); ++cell0, ++cell1)
+
     {
-      std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);
-      std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cells1[c]);
+      std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(*cell0);
+      std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(*cell1);
       assert(bs0 * dofs0.size() == bs1 * dofs1.size());
       for (std::size_t i = 0; i < dofs0.size(); ++i)
       {

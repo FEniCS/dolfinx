@@ -663,19 +663,19 @@ public:
     }
 
     const std::size_t num_basis_values = space_dimension * reference_value_size;
-    for (std::size_t p = 0; p < cells.size(); ++p)
+    for (auto cell = cells.begin(); cell != cells.end(); ++cell)
     {
-      const int cell_index = cells[p];
-      if (cell_index < 0) // Skip negative cell indices
+      if (*cell < 0) // Skip negative cell indices
         continue;
 
       // Permute the reference basis function values to account for the
       // cell's orientation
+      std::size_t p = std::distance(cells.begin(), cell);
       apply_dof_transformation(
           std::span(basis_derivatives_reference_values_b.data()
                         + p * num_basis_values,
                     num_basis_values),
-          cell_info, cell_index, reference_value_size);
+          cell_info, *cell, reference_value_size);
 
       {
         auto _U = md::submdspan(basis_derivatives_reference_values, 0, p,
@@ -686,16 +686,16 @@ public:
       }
 
       // Get degrees of freedom for current cell
-      std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
+      std::span<const std::int32_t> dofs = dofmap->cell_dofs(*cell);
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 
       if (element->symmetric())
       {
+        // Compute expansion
         int row = 0;
         int rowstart = 0;
-        // Compute expansion
         for (int k = 0; k < bs_element; ++k)
         {
           if (k - rowstart > row)
