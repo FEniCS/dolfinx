@@ -228,21 +228,6 @@ public:
         f, std::ranges::iota_view(0, cmap->size_local() + cmap->num_ghosts()));
   }
 
-  /// @brief Interpolate a Function over all cells.
-  ///
-  /// @param[in] u Function to be interpolated.
-  /// @pre The mesh associated with `this` and the mesh associated with
-  /// `u` must be the same mesh::Mesh.
-  void interpolate(const Function<value_type, geometry_type>& u)
-  {
-    assert(_function_space);
-    assert(_function_space->mesh());
-    int tdim = _function_space->mesh()->topology()->dim();
-    auto cmap = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cmap);
-    fem::interpolate(*this, u);
-  }
-
   /// @brief Interpolate a Function over a subset of cells.
   ///
   /// The Function being interpolated from and the Function being
@@ -268,10 +253,6 @@ public:
 
   /// @brief Interpolate a Function over a subset of cells.
   ///
-  /// The Function being interpolated from and the Function being
-  /// interpolated into can be defined on different sub-meshes, i.e.
-  /// views into a subset a cells.
-  ///
   /// @param[in] u Function to be interpolated.
   /// @param[in] cells Cells to interpolate from. These are the indices
   /// of the cells in the mesh associated with `u0`.
@@ -279,6 +260,21 @@ public:
                    std::ranges::input_range auto&& cells)
   {
     fem::interpolate(*this, u, cells);
+  }
+
+  /// @brief Interpolate a Function over all cells.
+  ///
+  /// @param[in] u Function to be interpolated.
+  /// @pre The mesh associated with `this` and the mesh associated with
+  /// `u` must be the same mesh::Mesh.
+  void interpolate(const Function<value_type, geometry_type>& u)
+  {
+    assert(_function_space);
+    assert(_function_space->mesh());
+    int tdim = _function_space->mesh()->topology()->dim();
+    auto cmap = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cmap);
+    fem::interpolate(*this, u);
   }
 
   /// @brief Interpolate an Expression over a subset of cells.

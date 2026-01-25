@@ -973,8 +973,8 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), md::full_extent,
                             md::full_extent, 0);
 
-  const std::function<void(std::span<T>, std::span<const std::uint32_t>,
-                           std::int32_t, int)>
+  std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
+                     int)>
       apply_inverse_transpose_dof_transformation
       = element.template dof_transformation_fn<T>(
           doftransform::inverse_transpose);
@@ -993,7 +993,6 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
   for (auto cell = cells.begin(); cell != cells.end(); ++cell)
   {
-    const std::size_t c = std::distance(cells.begin(), cell);
     auto x_dofs = md::submdspan(x_dofmap, *cell, md::full_extent);
     for (int i = 0; i < num_dofs_g; ++i)
     {
@@ -1014,6 +1013,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
     }
 
+    const std::size_t c = std::distance(cells.begin(), cell);
     std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell);
     for (int k = 0; k < element_bs; ++k)
     {
@@ -1093,8 +1093,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
-  spdlog::debug("Interpolate: get dofmap");
   // Get dofmap
+  spdlog::debug("Interpolate: get dofmap");
   const auto dofmap = u.function_space()->dofmaps(index);
   assert(dofmap);
 
@@ -1104,9 +1104,9 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   if (bool symmetric = u.function_space()->symmetric();
       element->map_ident() and element->interpolation_ident())
   {
-    spdlog::debug("Interpolate: point evaluation");
     // This assumes that any element with an identity interpolation
     // matrix is a point evaluation
+    spdlog::debug("Interpolate: point evaluation");
     impl::point_evaluation(*element, symmetric, *dofmap, cells, cell_info, f,
                            fshape, coeffs);
   }
