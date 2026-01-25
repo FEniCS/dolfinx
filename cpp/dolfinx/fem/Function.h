@@ -568,7 +568,6 @@ public:
     std::vector<geometry_type> det_scratch(2 * gdim * tdim);
 
     // Prepare geometry data in each cell
-    // for (std::size_t p = 0; p < cells.size(); ++p)
     for (auto cell = cells.begin(); cell != cells.end(); ++cell)
     {
       // Skip negative cell indices

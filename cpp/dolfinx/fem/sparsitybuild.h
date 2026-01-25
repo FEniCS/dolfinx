@@ -39,9 +39,6 @@ void cells(la::SparsityPattern& pattern, std::pair<R0, R1>&& cells,
   assert(cells.first.size() == cells.second.size());
   const DofMap& map0 = dofmaps[0].get();
   const DofMap& map1 = dofmaps[1].get();
-  //   for (std::size_t i = 0; i < cells[0].size(); ++i)
-  //     pattern.insert(map0.cell_dofs(cells[0][i]),
-  //     map1.cell_dofs(cells[1][i]));
   for (auto cell0 = cells.first.begin(), cell1 = cells.second.begin();
        cell0 != cells.first.end() and cell1 != cells.second.end();
        ++cell0, ++cell1)
