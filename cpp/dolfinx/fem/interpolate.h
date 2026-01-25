@@ -37,13 +37,9 @@ concept MDSpan = requires(T x, std::size_t idx) {
 };
 
 template <typename R>
-concept CellRange = std::ranges::input_range<R> && std::ranges::sized_range<R>
-    // &&
-    // std::is_integral_v<std::remove_const_t<std::ranges::range_value_t<R>>>
-    // && std::same_as<std::ranges::range_value_t<R>, std::int32_t>
-    // && std::same_as<std::remove_const_t<std::ranges::range_value_t<R>>,
-    //                 std::int32_t>
-    ;
+concept CellRange = std::ranges::input_range<R> and std::ranges::sized_range<R>
+                    and std::is_integral_v<
+                        std::remove_const_t<std::ranges::range_value_t<R>>>;
 
 /// @brief Compute the evaluation points in the physical space at which
 /// an expression should be computed to interpolate it in a finite

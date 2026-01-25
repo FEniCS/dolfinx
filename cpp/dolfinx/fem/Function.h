@@ -33,14 +33,6 @@ namespace dolfinx::fem
 template <dolfinx::scalar T, std::floating_point U>
 class Expression;
 
-// template <typename R>
-// concept CellRange
-//     = std::ranges::input_range<R>
-//       && std::ranges::sized_range<R>
-//       // && std::same_as<std::ranges::range_value_t<R>, std::int32_t>
-//       && std::same_as<std::remove_const<std::ranges::range_value_t<R>>,
-//                       std::int32_t>;
-
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
 ///
@@ -570,10 +562,10 @@ public:
     std::vector<geometry_type> det_scratch(2 * gdim * tdim);
 
     // Prepare geometry data in each cell
-    for (auto cell = cells.begin(); cell != cells.end(); ++cell)
+    for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
       // Skip negative cell indices
-      if (*cell < 0)
+      if (*cell_it < 0)
       {
         throw std::runtime_error(
             "Function::eval: Cannot evaluate at points with negative cell "
@@ -582,7 +574,7 @@ public:
       }
 
       // Get cell geometry (coordinate dofs)
-      auto x_dofs = md::submdspan(x_dofmap, *cell, md::full_extent);
+      auto x_dofs = md::submdspan(x_dofmap, *cell_it, md::full_extent);
       assert(x_dofs.size() == num_dofs_g);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
       {
@@ -591,7 +583,7 @@ public:
           coord_dofs(i, j) = x_g[pos + j];
       }
 
-      std::size_t p = std::distance(cells.begin(), cell);
+      std::size_t p = std::distance(cells.begin(), cell_it);
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x[p * xshape[1] + j];
 
@@ -670,9 +662,9 @@ public:
     }
 
     const std::size_t num_basis_values = space_dimension * reference_value_size;
-    for (auto cell = cells.begin(); cell != cells.end(); ++cell)
+    for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
-      if (*cell < 0) // Skip negative cell indices
+      if (*cell_it < 0) // Skip negative cell indices
       {
         throw std::runtime_error(
             "Function::eval: Cannot evaluate at points with negative cell "
@@ -682,12 +674,12 @@ public:
 
       // Permute the reference basis function values to account for the
       // cell's orientation
-      std::size_t p = std::distance(cells.begin(), cell);
+      std::size_t p = std::distance(cells.begin(), cell_it);
       apply_dof_transformation(
           std::span(basis_derivatives_reference_values_b.data()
                         + p * num_basis_values,
                     num_basis_values),
-          cell_info, *cell, reference_value_size);
+          cell_info, *cell_it, reference_value_size);
 
       {
         auto _U = md::submdspan(basis_derivatives_reference_values, 0, p,
@@ -698,7 +690,7 @@ public:
       }
 
       // Get degrees of freedom for current cell
-      std::span<const std::int32_t> dofs = dofmap->cell_dofs(*cell);
+      std::span<const std::int32_t> dofs = dofmap->cell_dofs(*cell_it);
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
