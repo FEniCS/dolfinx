@@ -84,10 +84,10 @@ endif()
 include(CheckCXXCompilerFlag)
 
 # Add some strict compiler checks
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
+check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic -Wno-sign-compare" HAVE_PEDANTIC)
 
 if(HAVE_PEDANTIC)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic;-Wno-sign-compare)
 endif()
 
 # Debug flags
