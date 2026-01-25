@@ -99,7 +99,7 @@ if(@SLEPC_FOUND@)
 endif()
 
 if(@ADIOS2_FOUND@)
-  find_dependency(ADIOS2 2.8.1 COMPONENTS CXX)
+  find_dependency(ADIOS2 2.8.1 COMPONENTS CXX MPI)
 endif()
 
 if(NOT TARGET dolfinx)
