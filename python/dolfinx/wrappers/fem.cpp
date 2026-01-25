@@ -604,19 +604,9 @@ void declare_objects(nb::module_& m, std::string type)
           {
             auto span = [](auto& x) { return std::span(x.data(), x.size()); };
             if (!cells0.has_value() and !cells1.has_value())
-            {
-              assert(self.function_space());
-              assert(self.function_space()->mesh());
-              assert(self.function_space()->mesh()->topology());
-              auto map = self.function_space()->mesh()->topology()->index_map(
-                  t->dim());
-              assert(map);
-              std::int32_t num_cells = map->size_local() + map->num_ghosts();
-              auto iota = std::ranges::views::iota(0, num_cells);
-              self.interpolate(e0, iota, iota);
-            }
+              self.interpolate(e0);
             else if (cells0.has_value() and !cells1.has_value())
-              self.interpolate(e0, span(*cells0), span(*cells0));
+              self.interpolate(e0, span(*cells0));
             else if (cells0.has_value() and cells1.has_value())
               self.interpolate(e0, span(*cells0), span(*cells1));
             else
