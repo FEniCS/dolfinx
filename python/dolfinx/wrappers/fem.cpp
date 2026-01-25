@@ -444,7 +444,7 @@ void declare_objects(nb::module_& m, std::string type)
       .def("collapse", &dolfinx::fem::Function<T, U>::collapse,
            "Collapse sub-function view")
       .def(
-          "interpolate",
+          "interpolate_f",
           [](dolfinx::fem::Function<T, U>& self,
              nb::ndarray<const T, nb::ndim<1>, nb::c_contig> f,
              std::optional<
@@ -474,7 +474,7 @@ void declare_objects(nb::module_& m, std::string type)
           nb::arg("f"), nb::arg("cells").none(),
           "Interpolate an expression function")
       .def(
-          "interpolate",
+          "interpolate_f",
           [](dolfinx::fem::Function<T, U>& self,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> f,
              std::optional<
@@ -490,7 +490,6 @@ void declare_objects(nb::module_& m, std::string type)
               auto map = mesh->topology()->index_map(mesh->topology()->dim());
               assert(map);
               std::int32_t num_cells = map->size_local() + map->num_ghosts();
-
               dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
                                         {f.shape(0), f.shape(1)},
                                         std::ranges::views::iota(0, num_cells));
@@ -559,8 +558,6 @@ void declare_objects(nb::module_& m, std::string type)
               auto mesh = V->mesh();
               assert(mesh);
               assert(mesh->topology());
-
-              // Compute value size
               std::span<const std::size_t> vshape = element->value_shape();
               std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
                                                    1, std::multiplies{});

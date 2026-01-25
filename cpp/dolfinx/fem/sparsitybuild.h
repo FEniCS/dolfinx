@@ -13,11 +13,6 @@
 #include <functional>
 #include <span>
 
-// namespace dolfinx::la
-// {
-// class SparsityPattern;
-// }
-
 namespace dolfinx::fem
 {
 class DofMap;

@@ -13,18 +13,6 @@ using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-// void sparsitybuild::cells(
-//     la::SparsityPattern& pattern,
-//     std::array<std::span<const std::int32_t>, 2> cells,
-//     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
-// {
-//   assert(cells[0].size() == cells[1].size());
-//   const DofMap& map0 = dofmaps[0].get();
-//   const DofMap& map1 = dofmaps[1].get();
-//   for (std::size_t i = 0; i < cells[0].size(); ++i)
-//     pattern.insert(map0.cell_dofs(cells[0][i]), map1.cell_dofs(cells[1][i]));
-// }
-//-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
     la::SparsityPattern& pattern,
     std::array<std::span<const std::int32_t>, 2> cells,

@@ -1346,7 +1346,9 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
 /// @brief Interpolate from one finite element Function to another
 /// Function on the whole mesh.
 ///
-/// The two Functions must share the same mesh.
+/// The two Functions must share the same mesh. The function has an
+/// optimization for the case when both Functions are defined on the
+/// same function space.
 ///
 /// @param[out] u1 Function to interpolate into.
 /// @param[in] u0 Function to b interpolated from.
