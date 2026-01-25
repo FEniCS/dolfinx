@@ -476,20 +476,17 @@ void declare_objects(nb::module_& m, std::string type)
                  nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
                  cells1)
           {
+            auto span = [](auto& x) { return std::span(x.data(), x.size()); };
             if (!cells0.has_value() and !cells1.has_value())
               self.interpolate(u0);
             else if (cells0.has_value() and !cells1.has_value())
-              self.interpolate(u0, std::span(cells0->data(), cells0->size()));
-            else if (!cells0.has_value() and cells1.has_value())
+              self.interpolate(u0, span(*cells0));
+            else if (cells0.has_value() and cells1.has_value())
+              self.interpolate(u0, span(*cells0), span(*cells1));
+            else
             {
               throw std::runtime_error(
                   "If cells1 is provided, cells0 must also be provided.");
-            }
-            else
-            {
-              std::cout << "Both cells0 and cells1 provided" << std::endl;
-              self.interpolate(u0, std::span(cells0->data(), cells0->size()),
-                               std::span(cells1->data(), cells1->size()));
             }
           },
           nb::arg("u0"), nb::arg("cells0").none(), nb::arg("cells1").none(),
