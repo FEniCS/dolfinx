@@ -91,7 +91,7 @@ jobs:
       - name: Configure (C++)
         working-directory: cpp
         run: >
-          cmake -B build -S . -Werror=dev --warn-uninitialized -G Ninja
+          cmake -B build -S . -Werror=dev --warn-uninitialized -G Ninja \
             -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true
 
       - name: Build and install (C++)
