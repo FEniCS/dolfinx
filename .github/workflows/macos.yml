@@ -49,9 +49,9 @@ jobs:
           pip install cython setuptools wheel
           pip install mpi4py numpy
 
-      - name: Cache PETSc and petsc4py
-        id: cache-petsc
-        uses: actions/cache@v5
+      - name: Restore cache PETSc and petsc4py
+        id: cache-petsc-restore
+        uses: actions/cache/restore@v5
         with:
           path: |
             ${{ env.PETSC_DIR }}
@@ -59,7 +59,7 @@ jobs:
           key: ${{ runner.os }}-petsc-${{ env.PETSC_VERSION }}-${{ steps.cp3.outputs.python-version }}
 
       - name: Install minimal PETSc and petsc4py
-        if: steps.cache-petsc.outputs.cache-hit != 'true'
+        if: steps.cache-petsc-restore.outputs.cache-hit != 'true'
         run: |
           export PATH="$(brew --prefix gfortran)/bin:$(brew --prefix bison)/bin:$PATH"
           export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
@@ -82,6 +82,15 @@ jobs:
           cd src/binding/petsc4py
           arch -arm64 pip -v install --user --no-build-isolation .
 
+      - name: Save cache PETSc and petsc4py
+        id: cache-petsc-save
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ${{ env.PETSC_DIR }}
+            ~/Library/Python/
+          key: ${{ steps.cache-petsc-restore.outputs.cache-primary-key }} 
+      
       - name: Install FEniCSx dependencies
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
