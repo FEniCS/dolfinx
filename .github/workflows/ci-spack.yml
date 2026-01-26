@@ -99,7 +99,7 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install -Ccmake.build-type="Developer" git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure and build C++
@@ -144,7 +144,7 @@ jobs:
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate py
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e 'dolfinx-src/python/[test]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Developer --config-settings=build-dir="build" -e 'dolfinx-src/python/[test]'
 
       - name: Set default DOLFINx JIT options
         run: |

@@ -111,7 +111,7 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           # Ensure build provenance by adding manually and providing git sha
           spack -e cxx add fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD)
-          spack -e cxx add py-fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD)
+          spack -e cxx add py-fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD) build_type=Developer
           spack -e cxx add py-fenics-ufl@main commit=$(git -C $GITHUB_WORKSPACE/ufl-src rev-parse HEAD)
           spack -e cxx add fenics-ufcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           spack -e cxx add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
@@ -170,7 +170,7 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           # Ensure build provenance by adding manually and providing git sha
           spack -e py add fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD)
-          spack -e py add py-fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD)
+          spack -e py add py-fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD) build_type=Developer
           spack -e py add py-fenics-ufl@main commit=$(git -C $GITHUB_WORKSPACE/ufl-src rev-parse HEAD)
           spack -e py add fenics-ufcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
           spack -e py add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
