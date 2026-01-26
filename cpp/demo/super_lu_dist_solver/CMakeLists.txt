@@ -2,9 +2,9 @@
 #
 # python cmake/scripts/generate-cmakefiles from dolfinx/cpp
 #
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 
-set(PROJECT_NAME demo_mumps)
+set(PROJECT_NAME demo_superlu)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
 # Set C++20 standard
@@ -16,9 +16,6 @@ if(NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
-enable_language(Fortran)
-find_package(MPI REQUIRED)
-
 if(DEFINED SCALAR)
   set(CPP_SCALAR ${SCALAR})
 
@@ -28,8 +25,6 @@ if(DEFINED SCALAR)
     set(CPP_SCALAR "float")
   elseif(${SCALAR} STREQUAL "complex128")
     set(CPP_SCALAR "std::complex<double>")
-  elseif(${SCALAR} STREQUAL "complex64")
-    set(CPP_SCALAR "std::complex<float>")
   else()
     message(FATAL_ERROR "Unrecognised SCALAR type: ${SCALAR}")
   endif()
@@ -56,12 +51,7 @@ find_package(PkgConfig REQUIRED)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
-target_link_directories(${PROJECT_NAME} PUBLIC ${PETSC_LIBRARY_DIRS})
-target_link_directories(${PROJECT_NAME} PUBLIC /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/15/)
-target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_Fortran_LIBRARIES})
-
-target_link_libraries(${PROJECT_NAME} PUBLIC dolfinx zmumps cmumps dmumps smumps mumps_common metis scalapack parmetis blas lapack pord gfortran)
-# target_link_libraries(${PROJECT_NAME} PUBLIC dolfinx superlu_dist)
+target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which
 # includes LaTeX)

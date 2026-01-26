@@ -1,5 +1,3 @@
-#include "poisson.h"
-#include <dolfinx/la/superlu.h>
 
 #include <cmath>
 #include <dolfinx.h>
@@ -8,8 +6,12 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/la/superlu.h>
+
 #include <utility>
 #include <vector>
+
+#include "poisson.h"
 
 using namespace dolfinx;
 using T = SCALAR;
