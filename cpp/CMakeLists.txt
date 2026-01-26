@@ -206,19 +206,19 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
-if(DOLFINX_ENABLE_MUMPS)
-  set(_REQUIRE_MUMPS TRUE CACHE BOOL "Is MUMPS REQUIRED?")
+if(DOLFINX_ENABLE_SUPERLU_DIST)
+  set(_REQUIRE_SUPERLU_DIST TRUE CACHE BOOL "Is SuperLU-dist REQUIRED?")
 else()
-  set(_REQUIRE_MUMPS FALSE CACHE BOOL "Is MUMPS REQUIRED?")
+  set(_REQUIRE_SUPERLU_DIST FALSE CACHE BOOL "Is SuperLU-dist REQUIRED?")
 endif()
 
-option(DOLFINX_ENABLE_MUMPS "Compile with support for MUMPS." ON)
+option(DOLFINX_ENABLE_SUPERLU_DIST "Compile with support for SuperLU-dist." ON)
 set_package_properties(
-  MUMPS PROPERTIES
+  SuperLUDist PROPERTIES
   TYPE OPTIONAL
-  DESCRIPTION "LU Direct Solver"
-  URL "https://mumps-solver.org"
-  PURPOSE "Linear Algebra"
+  DESCRIPTION "Distributed direct LU Solver"
+  URL "https://superlu/"
+  PURPOSE "Linear Algebra Solver"
 )
 
 # ------------------------------------------------------------------------------
@@ -487,10 +487,10 @@ elseif(DOLFINX_ENABLE_KAHIP)
   find_package(KaHIP)
 endif()
 
-if(DOLFINX_ENABLE_MUMPS AND _REQUIRE_MUMPS)
-  find_package(MUMPS REQUIRED)
-elseif(DOLFINX_ENABLE_MUMPS)
-  find_package(MUMPS)
+if(DOLFINX_ENABLE_SUPERLU_DIST AND _REQUIRE_SUPERLU_DIST)
+  find_package(SuperLUDist REQUIRED)
+elseif(DOLFINX_ENABLE_SUPERLU_DIST)
+  find_package(SuperLUDist)
 endif()
 
 # ------------------------------------------------------------------------------

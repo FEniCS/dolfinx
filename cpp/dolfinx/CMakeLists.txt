@@ -168,11 +168,11 @@ if(DOLFINX_ENABLE_KAHIP AND KAHIP_FOUND)
   target_include_directories(dolfinx SYSTEM PRIVATE ${KAHIP_INCLUDE_DIRS})
 endif()
 
-# MUMPS
-if(DOLFINX_ENABLE_MUMPS AND MUMPS_FOUND)
-  target_compile_definitions(dolfinx PUBLIC HAS_MUMPS)
-  target_link_libraries(dolfinx PRIVATE ${MUMPS_LIBRARIES} scalapack)
-  target_include_directories(dolfinx SYSTEM PRIVATE ${MUMPS_INCLUDE_DIRS})
+# SuperLUDist
+if(DOLFINX_ENABLE_SUPERLU_DIST AND SuperLUDist_FOUND)
+  target_compile_definitions(dolfinx PUBLIC HAS_SUPERLU_DIST)
+  target_link_libraries(dolfinx PRIVATE ${SuperLUDist_LIBRARY})
+  target_include_directories(dolfinx SYSTEM PRIVATE ${SuperLUDist_INCLUDE_DIR})
 endif()
 
 # ------------------------------------------------------------------------------
