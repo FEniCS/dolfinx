@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <dolfinx/la/SparsityPattern.h>
 #include <functional>
+#include <ranges>
 #include <span>
 
 namespace dolfinx::fem
@@ -32,7 +33,7 @@ namespace sparsitybuild
 /// `cells[1]` must have the same size.
 /// @param dofmaps Dofmaps to used in building the sparsity pattern.
 /// @note The sparsity pattern is not finalised.
-template <typename R0, typename R1>
+template <std::ranges::input_range R0, std::ranges::input_range R1>
 void cells(la::SparsityPattern& pattern, std::pair<R0, R1>&& cells,
            std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
 {
