@@ -168,12 +168,6 @@ if(DOLFINX_ENABLE_KAHIP AND KAHIP_FOUND)
   target_include_directories(dolfinx SYSTEM PRIVATE ${KAHIP_INCLUDE_DIRS})
 endif()
 
-get_target_property(DOLFINX_COMPILE_OPTIONS dolfinx COMPILE_OPTIONS)
-get_target_property(DOLFINX_COMPILE_DEFINITIONS dolfinx COMPILE_DEFINITIONS)
-
-message(STATUS "dolfinx compile_options: ${DOLFINX_COMPILE_OPTIONS}")
-message(STATUS "dolfinx compile_definitions: ${DOLFINX_COMPILE_DEFINITIONS}")
-
 # ------------------------------------------------------------------------------
 # Install dolfinx library and header files
 install(
