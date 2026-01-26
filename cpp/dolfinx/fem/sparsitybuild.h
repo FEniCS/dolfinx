@@ -34,7 +34,7 @@ namespace sparsitybuild
 /// @param dofmaps Dofmaps to used in building the sparsity pattern.
 /// @note The sparsity pattern is not finalised.
 template <std::ranges::input_range R0, std::ranges::input_range R1>
-void cells(la::SparsityPattern& pattern, std::pair<R0, R1>&& cells,
+void cells(la::SparsityPattern& pattern, const std::pair<R0, R1>& cells,
            std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
 {
   assert(cells.first.size() == cells.second.size());
