@@ -11,7 +11,7 @@ endif(WIN32)
 
 find_package(
   Python
-  COMPONENTS Interpreter Development ${SKBUILD_SABI_COMPONENT}
+  COMPONENTS Interpreter Development.Module ${SKBUILD_SABI_COMPONENT}
   REQUIRED
 )
 

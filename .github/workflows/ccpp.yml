@@ -219,7 +219,7 @@ jobs:
       - name: Build tests (C++, standalone)
         working-directory: cpp/test
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=Developer
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Developer -GNinja
           cmake --build build
 
       - name: Run tests (C++, serial)
