@@ -566,12 +566,7 @@ public:
     {
       // Skip negative cell indices
       if (*cell_it < 0)
-      {
-        throw std::runtime_error(
-            "Function::eval: Cannot evaluate at points with negative cell "
-            "index.");
         continue;
-      }
 
       // Get cell geometry (coordinate dofs)
       auto x_dofs = md::submdspan(x_dofmap, *cell_it, md::full_extent);
@@ -665,12 +660,7 @@ public:
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
       if (*cell_it < 0) // Skip negative cell indices
-      {
-        throw std::runtime_error(
-            "Function::eval: Cannot evaluate at points with negative cell "
-            "index.");
         continue;
-      }
 
       // Permute the reference basis function values to account for the
       // cell's orientation
