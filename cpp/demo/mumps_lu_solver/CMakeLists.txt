@@ -55,7 +55,7 @@ add_custom_command(
 find_package(PkgConfig REQUIRED)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_executable(${PROJECT_NAME} mumps.cpp main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
+add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
 target_link_directories(${PROJECT_NAME} PUBLIC ${PETSC_LIBRARY_DIRS})
 target_link_directories(${PROJECT_NAME} PUBLIC /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/15/)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_Fortran_LIBRARIES})

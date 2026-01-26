@@ -206,6 +206,21 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
+if(DOLFINX_ENABLE_MUMPS)
+  set(_REQUIRE_MUMPS TRUE CACHE BOOL "Is MUMPS REQUIRED?")
+else()
+  set(_REQUIRE_MUMPS FALSE CACHE BOOL "Is MUMPS REQUIRED?")
+endif()
+
+option(DOLFINX_ENABLE_MUMPS "Compile with support for MUMPS." ON)
+set_package_properties(
+  MUMPS PROPERTIES
+  TYPE OPTIONAL
+  DESCRIPTION "LU Direct Solver"
+  URL "https://mumps-solver.org"
+  PURPOSE "Linear Algebra"
+)
+
 # ------------------------------------------------------------------------------
 # Check for MPI
 find_package(MPI 3 REQUIRED)
@@ -470,6 +485,12 @@ if(DOLFINX_ENABLE_KAHIP AND _REQUIRE_KAHIP)
   find_package(KaHIP REQUIRED)
 elseif(DOLFINX_ENABLE_KAHIP)
   find_package(KaHIP)
+endif()
+
+if(DOLFINX_ENABLE_MUMPS AND _REQUIRE_MUMPS)
+  find_package(MUMPS REQUIRED)
+elseif(DOLFINX_ENABLE_MUMPS)
+  find_package(MUMPS)
 endif()
 
 # ------------------------------------------------------------------------------
