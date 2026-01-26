@@ -153,6 +153,7 @@ public:
   std::shared_ptr<la::Vector<value_type>> x() { return _x; }
 
   /// @brief Interpolate an expression f(x) over a set of cells.
+  ///
   /// @param[in] f Expression function to be interpolated.
   /// @param[in] cells Cells to interpolate on.
   void interpolate(
@@ -212,6 +213,7 @@ public:
   }
 
   /// @brief Interpolate an expression f(x) on the whole domain.
+  ///
   /// @param[in] f Expression to be interpolated.
   void interpolate(
       const std::function<
@@ -241,9 +243,8 @@ public:
   /// that will be interpolated to. If `cells0[i]` is the index of a
   /// cell in the mesh associated with `u0`, then `cells1[i]` is the
   /// index of the *same* cell but in the mesh associated with `this`.
-  /// This argument can be empty when `this` and `u0` share the same
-  /// mesh. Otherwise the length of `cells` and the length of `cells0`
-  /// must be the same.
+  ///
+  /// @pre `cells0` and `cells1` must have the same length.
   void interpolate(const Function<value_type, geometry_type>& u0,
                    CellRange auto&& cells0, CellRange auto&& cells1)
   {
@@ -252,9 +253,10 @@ public:
 
   /// @brief Interpolate a Function over a subset of cells.
   ///
+  /// The Function%s must be defined on the same mesh.
+  ///
   /// @param[in] u Function to be interpolated.
-  /// @param[in] cells Cells to interpolate from. These are the indices
-  /// of the cells in the mesh associated with `u0`.
+  /// @param[in] cells Cells to interpolate from.
   void interpolate(const Function<value_type, geometry_type>& u,
                    CellRange auto&& cells)
   {
@@ -263,9 +265,9 @@ public:
 
   /// @brief Interpolate a Function over all cells.
   ///
+  /// The Function%s must be defined on the same mesh.
+  ///
   /// @param[in] u Function to be interpolated.
-  /// @pre The mesh associated with `this` and the mesh associated with
-  /// `u` must be the same mesh::Mesh.
   void interpolate(const Function<value_type, geometry_type>& u)
   {
     assert(_function_space);
@@ -289,9 +291,8 @@ public:
   /// that will be interpolated to. If `cells0[i]` is the index of a
   /// cell in the mesh associated with `u0`, then `cells1[i]` is the
   /// index of the *same* cell but in the mesh associated with `this`.
-  /// This argument can be empty when `this` and `u0` share the same
-  /// mesh. Otherwise the length of `cells` and the length of
-  /// `cells0` must be the same.
+  ///
+  /// @pre `cells0` `cells1` must have the same length.
   void interpolate(const Expression<value_type, geometry_type>& e0,
                    CellRange auto&& cells0, CellRange auto&& cells1)
   {
@@ -317,9 +318,6 @@ public:
     if (!mesh0)
       mesh0 = _function_space->mesh().get();
 
-    // If cells1 is empty and Function and Expression meshes are the
-    // same, make cells1 the same as cells0. Otherwise check that
-    // lengths of cells0 and cells1 are the same.
     if (cells0.size() != cells1.size())
       throw std::runtime_error("Cell lists have different lengths.");
 
@@ -420,17 +418,17 @@ public:
 
   /// @brief Interpolate a Function defined on a different mesh.
   ///
-  /// @param[in] v Function to be interpolated.
+  /// @param[in] u Function to be interpolated.
   /// @param[in] cells Cells in the mesh associated with `this` to
   /// interpolate into.
   /// @param[in] interpolation_data Data required for associating the
-  /// interpolation points of `this` with cells in `v`. Can be computed
+  /// interpolation points of `this` with cells in `u`. Can be computed
   /// with `fem::create_interpolation_data`.
-  void interpolate(const Function<value_type, geometry_type>& v,
+  void interpolate(const Function<value_type, geometry_type>& u,
                    CellRange auto&& cells,
                    const geometry::PointOwnershipData<U>& interpolation_data)
   {
-    fem::interpolate(*this, v, cells, interpolation_data);
+    fem::interpolate(*this, u, cells, interpolation_data);
   }
 
   /// @brief Evaluate the Function at points.
@@ -439,7 +437,7 @@ public:
   /// (num_points, 3) and storage is row-major.
   /// @param[in] xshape Shape of `x`.
   /// @param[in] cells Cell indices such that `cells[i]` is the index of
-  /// the cell that contains the point x(i). Negative cell indices can
+  /// the cell that contains the point `x(i)`. Negative cell indices can
   /// be passed, in which case the corresponding point is ignored.
   /// @param[out] u Values at the points. Values are not computed for
   /// points with a negative cell index. This argument must be passed
@@ -527,7 +525,7 @@ public:
     impl::mdspan_t<geometry_type, 2> xp(xp_b.data(), 1, gdim);
 
     // Loop over points
-    std::ranges::fill(u, 0.0);
+    std::ranges::fill(u, 0);
     std::span<const value_type> _v = _x->array();
 
     // Evaluate geometry basis at point (0, 0, 0) on the reference cell.
@@ -646,8 +644,8 @@ public:
         = element->template dof_transformation_fn<geometry_type>(
             doftransform::standard);
 
-    // Size of tensor for symmetric elements, unused in non-symmetric case, but
-    // placed outside the loop for pre-computation.
+    // Size of tensor for symmetric elements, unused in non-symmetric
+    // case, but placed outside the loop for pre-computation.
     int matrix_size;
     if (element->symmetric())
     {

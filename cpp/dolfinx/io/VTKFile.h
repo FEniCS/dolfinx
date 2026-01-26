@@ -72,7 +72,7 @@ public:
   /// step.
   ///
   /// Supports arbitrary order Lagrange isoparametric cells.
-    ///
+  ///
   /// @pre fem::Function%s in `u` cannot be sub-%fem::Function%s.
   /// Extract sub-%fem::Function%s before output.
   ///
