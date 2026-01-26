@@ -217,7 +217,7 @@ set_package_properties(
   SuperLUDist PROPERTIES
   TYPE OPTIONAL
   DESCRIPTION "Distributed direct LU Solver"
-  URL "https://superlu/"
+  URL "https://portal.nersc.gov/project/sparse/superlu/"
   PURPOSE "Linear Algebra Solver"
 )
 

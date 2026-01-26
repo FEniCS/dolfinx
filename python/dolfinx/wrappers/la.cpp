@@ -13,6 +13,7 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/la/superlu.h>
 #include <dolfinx/la/utils.h>
 #include <memory>
 #include <nanobind/nanobind.h>
@@ -288,6 +289,43 @@ void la(nb::module_& m)
                                  ptr.data(), {ptr.size()}));
           },
           nb::rv_policy::reference_internal);
+
+#if defined(HAS_SUPERLU_DIST)
+  // dolfinx::la::SuperLUSolver
+  nb::class_<dolfinx::la::SuperLUSolver<double>>(m, "SuperLUSolver_float64")
+      .def(
+          "__init__",
+          [](dolfinx::la::SuperLUSolver<double>* solver, MPICommWrapper comm)
+          { new (solver) dolfinx::la::SuperLUSolver<double>(comm.get()); },
+          nb::arg("comm"))
+      .def("set_operator", &dolfinx::la::SuperLUSolver<double>::set_operator)
+      .def("solve", &dolfinx::la::SuperLUSolver<double>::solve);
+
+  nb::class_<dolfinx::la::SuperLUSolver<float>>(m, "SuperLUSolver_float32")
+      .def(
+          "__init__",
+          [](dolfinx::la::SuperLUSolver<float>* solver, MPICommWrapper comm)
+          { new (solver) dolfinx::la::SuperLUSolver<float>(comm.get()); },
+          nb::arg("comm"))
+      .def("set_operator", &dolfinx::la::SuperLUSolver<float>::set_operator)
+      .def("solve", &dolfinx::la::SuperLUSolver<float>::solve);
+
+  nb::class_<dolfinx::la::SuperLUSolver<std::complex<double>>>(
+      m, "SuperLUSolver_complex128")
+      .def(
+          "__init__",
+          [](dolfinx::la::SuperLUSolver<std::complex<double>>* solver,
+             MPICommWrapper comm)
+          {
+            new (solver)
+                dolfinx::la::SuperLUSolver<std::complex<double>>(comm.get());
+          },
+          nb::arg("comm"))
+      .def("set_operator",
+           &dolfinx::la::SuperLUSolver<std::complex<double>>::set_operator)
+      .def("solve", &dolfinx::la::SuperLUSolver<std::complex<double>>::solve);
+
+#endif
 
   // Declare objects that are templated over type
   declare_objects<std::int8_t>(m, "int8");
