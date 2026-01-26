@@ -321,7 +321,7 @@ public:
     // same, make cells1 the same as cells0. Otherwise check that
     // lengths of cells0 and cells1 are the same.
     if (cells0.size() != cells1.size())
-      throw std::runtime_error("Cells lists have different lengths.");
+      throw std::runtime_error("Cell lists have different lengths.");
 
     // Check that Function and Expression spaces are compatible
     assert(_function_space->element());
