@@ -79,8 +79,7 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
   std::vector<std::int64_t> global_col_indices(
       Amat.index_map(1)->global_indices());
   std::transform(Amat.cols().begin(), std::next(Amat.cols().begin(), nnz_loc),
-                 cols.begin(),
-                 [&](std::int64_t local_index)
+                 cols.begin(), [&](std::int64_t local_index)
                  { return global_col_indices[local_index]; });
 
   auto Amatdata = const_cast<T*>(Amat.values().data());
