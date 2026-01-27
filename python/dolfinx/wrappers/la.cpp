@@ -207,6 +207,23 @@ void declare_functions(nb::module_& m)
       nb::arg("basis"), nb::arg("eps"));
 }
 
+template <typename T>
+void declare_solver(nb::module_& m, const std::string& type)
+{
+  // dolfinx::la::SuperLUSolver
+  std::string name = std::string("SuperLUSolver_") + type;
+
+  nb::class_<dolfinx::la::SuperLUSolver<T>>(m, name.c_str())
+      .def(
+          "__init__",
+          [](dolfinx::la::SuperLUSolver<T>* solver,
+             dolfinx_wrappers::MPICommWrapper comm)
+          { new (solver) dolfinx::la::SuperLUSolver<T>(comm.get()); },
+          nb::arg("comm"))
+      .def("set_operator", &dolfinx::la::SuperLUSolver<T>::set_operator)
+      .def("solve", &dolfinx::la::SuperLUSolver<T>::solve);
+}
+
 } // namespace
 
 namespace dolfinx_wrappers
@@ -291,40 +308,9 @@ void la(nb::module_& m)
           nb::rv_policy::reference_internal);
 
 #if defined(HAS_SUPERLU_DIST)
-  // dolfinx::la::SuperLUSolver
-  nb::class_<dolfinx::la::SuperLUSolver<double>>(m, "SuperLUSolver_float64")
-      .def(
-          "__init__",
-          [](dolfinx::la::SuperLUSolver<double>* solver, MPICommWrapper comm)
-          { new (solver) dolfinx::la::SuperLUSolver<double>(comm.get()); },
-          nb::arg("comm"))
-      .def("set_operator", &dolfinx::la::SuperLUSolver<double>::set_operator)
-      .def("solve", &dolfinx::la::SuperLUSolver<double>::solve);
-
-  nb::class_<dolfinx::la::SuperLUSolver<float>>(m, "SuperLUSolver_float32")
-      .def(
-          "__init__",
-          [](dolfinx::la::SuperLUSolver<float>* solver, MPICommWrapper comm)
-          { new (solver) dolfinx::la::SuperLUSolver<float>(comm.get()); },
-          nb::arg("comm"))
-      .def("set_operator", &dolfinx::la::SuperLUSolver<float>::set_operator)
-      .def("solve", &dolfinx::la::SuperLUSolver<float>::solve);
-
-  nb::class_<dolfinx::la::SuperLUSolver<std::complex<double>>>(
-      m, "SuperLUSolver_complex128")
-      .def(
-          "__init__",
-          [](dolfinx::la::SuperLUSolver<std::complex<double>>* solver,
-             MPICommWrapper comm)
-          {
-            new (solver)
-                dolfinx::la::SuperLUSolver<std::complex<double>>(comm.get());
-          },
-          nb::arg("comm"))
-      .def("set_operator",
-           &dolfinx::la::SuperLUSolver<std::complex<double>>::set_operator)
-      .def("solve", &dolfinx::la::SuperLUSolver<std::complex<double>>::solve);
-
+  declare_solver<double>(m, "float64");
+  declare_solver<float>(m, "float32");
+  declare_solver<std::complex<double>>(m, "complex128");
 #endif
 
   // Declare objects that are templated over type
