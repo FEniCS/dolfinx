@@ -217,10 +217,9 @@ void declare_solver(nb::module_& m, const std::string& type)
       .def(
           "__init__",
           [](dolfinx::la::SuperLUSolver<T>* solver,
-             dolfinx_wrappers::MPICommWrapper comm)
-          { new (solver) dolfinx::la::SuperLUSolver<T>(comm.get()); },
+             std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat)
+          { new (solver) dolfinx::la::SuperLUSolver<T>(Amat); },
           nb::arg("comm"))
-      .def("set_operator", &dolfinx::la::SuperLUSolver<T>::set_operator)
       .def("solve", &dolfinx::la::SuperLUSolver<T>::solve);
 }
 

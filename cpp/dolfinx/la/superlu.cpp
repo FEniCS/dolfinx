@@ -31,26 +31,22 @@ SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
   int npcol = 1;
   _grid = new gridinfo_t; // Allocate memory for grid
   superlu_gridinit(Amat->comm(), nprow, npcol, (gridinfo_t*)_grid);
+  _A = new SuperMatrix; // Allocate memory for SuperMatrix
   set_operator(*Amat);
 }
-
+//---------------------------------------------------------------------------------------
 template <typename T>
 SuperLUSolver<T>::~SuperLUSolver()
 {
-  if (_A)
-  {
-    Destroy_SuperMatrix_Store_dist((SuperMatrix*)_A);
-    delete (SuperMatrix*)_A;
-  }
+  Destroy_SuperMatrix_Store_dist((SuperMatrix*)_A);
+  delete (SuperMatrix*)_A; // Free SuperMatrix
   superlu_gridexit((gridinfo_t*)_grid);
   delete (gridinfo_t*)_grid; // Free memory for grid
 }
-
+//---------------------------------------------------------------------------------------
 template <typename T>
 void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
 {
-  if (_A)
-    throw std::runtime_error("Operator A already set");
   spdlog::info("Set operator");
   // Global size
   m = Amat.index_map(0)->size_global();
@@ -81,7 +77,6 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
                  [&](std::int64_t local_index)
                  { return global_col_indices[local_index]; });
 
-  _A = new SuperMatrix;
   auto Amatdata = const_cast<T*>(Amat.values().data());
   if constexpr (std::is_same_v<T, double>)
   {
@@ -104,12 +99,11 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
   }
   spdlog::info("Done set operator");
 }
-
+//---------------------------------------------------------------------------------------
 template <typename T>
 int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
 {
-  if (!_A)
-    throw std::runtime_error("Operator A not set");
+  assert(_A);
 
   // RHS
   int ldb = m_loc;
@@ -208,7 +202,7 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
   uvec.scatter_fwd();
   return info;
 }
-
+//---------------------------------------------------------------------------------------
 template class la::SuperLUSolver<double>;
 template class la::SuperLUSolver<float>;
 template class la::SuperLUSolver<std::complex<double>>;

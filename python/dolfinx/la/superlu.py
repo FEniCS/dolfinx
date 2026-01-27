@@ -6,7 +6,6 @@
 """SuperLU Dist support."""
 
 import numpy as np
-import numpy.typing as npt
 
 import dolfinx.cpp as _cpp
 
@@ -33,17 +32,18 @@ class SuperLUSolver:
         """
         self._cpp_object = solver
 
-    def set_operator(self, A):
-        """Set Operator."""
-        self._cpp_object.set_operator(A._cpp_object)
-
     def solve(self, b, u):
         """Solver A.u=b."""
         self._cpp_object.solve(b._cpp_object, u._cpp_object)
 
 
-def superlu_solver(comm, dtype: npt.DTypeLike = np.float64):
-    """Create a SuperLU-dist solver object."""
+def superlu_solver(A):
+    """Create a SuperLU-dist solver object.
+
+    Args:
+        A: MatrixCSR object.
+    """
+    dtype = A.dtype
     if np.issubdtype(dtype, np.float32):
         stype = _cpp.la.SuperLUSolver_float32
     elif np.issubdtype(dtype, np.float64):
@@ -52,4 +52,4 @@ def superlu_solver(comm, dtype: npt.DTypeLike = np.float64):
         stype = _cpp.la.SuperLUSolver_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
-    return SuperLUSolver(stype(comm))
+    return SuperLUSolver(stype(A))
