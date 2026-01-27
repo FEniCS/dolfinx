@@ -49,13 +49,13 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
 {
   spdlog::info("Set operator");
   // Global size
-  m = Amat.index_map(0)->size_global();
+  int m = Amat.index_map(0)->size_global();
   int n = Amat.index_map(1)->size_global();
   if (m != n)
     throw std::runtime_error("Can't solve non-square system");
 
   // Number of local rows
-  m_loc = Amat.num_owned_rows();
+  int m_loc = Amat.num_owned_rows();
 
   // First row
   int first_row = Amat.index_map(0)->local_range()[0];
@@ -104,6 +104,8 @@ template <typename T>
 int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
 {
   assert(_A);
+  int m = _Amat->index_map(0)->size_global();
+  int m_loc = _Amat->num_owned_rows();
 
   // RHS
   int ldb = m_loc;

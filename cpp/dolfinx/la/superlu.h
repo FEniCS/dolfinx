@@ -40,12 +40,13 @@ private:
   // Pointer to SuperMatrix
   void* _A;
 
+  // Saved matrix operator with rows and cols in
+  // required integer type
   std::shared_ptr<const la::MatrixCSR<T>> _Amat;
   std::vector<int> cols;
   std::vector<int> rowptr;
 
-  int m_loc, m;
-  MPI_Comm _comm;
+  // Flag for diagnostic output
   bool _verbose;
 };
 } // namespace dolfinx::la
