@@ -57,7 +57,7 @@ SuperLUSolver<T>::~SuperLUSolver()
 template <typename T>
 void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
 {
-  spdlog::info("Set operator");
+  spdlog::info("Start set operator");
   // Global size
   int m = Amat.index_map(0)->size_global();
   int n = Amat.index_map(1)->size_global();
@@ -106,7 +106,7 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
                                    cols.data(), rowptr.data(), SLU_NR_loc,
                                    SLU_Z, SLU_GE);
   }
-  spdlog::info("Done set operator");
+  spdlog::info("Finished set operator");
 }
 //---------------------------------------------------------------------------------------
 template <typename T>
@@ -198,10 +198,11 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
   {
     static_assert(dependent_false_v<T>, "Invalid scalar type");
   }
+  spdlog::info("Finished solve");
 
   if (info != 0)
   {
-    std::cout << "ERROR: INFO = " << info << " returned from p*gssvx()"
+    std::cout << "ERROR: INFO = " << info << " returned from SuperLU_dist p*gssvx()"
               << std::endl
               << std::flush;
   }
@@ -210,8 +211,6 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
     PStatPrint(&options, &stat, _grid.get());
   PStatFree(&stat);
 
-  // Update ghosts in u
-  uvec.scatter_fwd();
   return info;
 }
 //---------------------------------------------------------------------------------------
