@@ -13,13 +13,20 @@
 namespace dolfinx::la
 {
 template <typename T>
+
+/// Solver using SuperLU-dist
 class SuperLUSolver
 {
 public:
+  /// @brief SuperLU-dist solver wrapper
+  /// @param comm MPI Communicator
+  /// @param verbose Verbosity
   SuperLUSolver(MPI_Comm comm, bool verbose = false);
 
   ~SuperLUSolver();
 
+  /// @brief Set the matrix operator
+  /// @param Amat MatrixCSR
   void set_operator(const dolfinx::la::MatrixCSR<T>& Amat);
 
   /// Solve A.u=b
