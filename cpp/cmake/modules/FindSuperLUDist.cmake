@@ -1,9 +1,9 @@
 # - Try to find SuperLU-dist
 # Once done this will define
-#  SuperLUDist_FOUND - System has Mumps
-#  SuperLUDist_INCLUDE_DIRS - The Mumps include directories
-#  SuperLUDist_LIBRARY_DIRS - The library directories needed to use Mumps
-#  SuperLUDist_LIBRARIES    - The libraries needed to use Mumps
+#  SuperLUDist_FOUND - System has SuperLU-dist
+#  SuperLUDist_INCLUDE_DIRS - The SuperLU-dist include directories
+#  SuperLUDist_LIBRARY_DIRS - The library directories needed to use SuperLU-dist
+#  SuperLUDist_LIBRARIES    - The libraries needed to use SuperLU-dist
 
 find_path(SuperLUDist_INCLUDE_DIR NAMES superlu_dist_config.h
      PATHS "${PETSC_INCLUDE_DIRS}/"
