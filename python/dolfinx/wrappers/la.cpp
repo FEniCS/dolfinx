@@ -219,7 +219,7 @@ void declare_solver(nb::module_& m, const std::string& type)
           [](dolfinx::la::SuperLUSolver<T>* solver,
              std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat)
           { new (solver) dolfinx::la::SuperLUSolver<T>(Amat); },
-          nb::arg("comm"))
+          nb::arg("A"))
       .def("solve", &dolfinx::la::SuperLUSolver<T>::solve);
 }
 
