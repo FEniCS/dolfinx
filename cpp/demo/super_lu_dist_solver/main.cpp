@@ -107,14 +107,14 @@ int main(int argc, char* argv[])
     fem::Function<T, U> u(V);
     la::SparsityPattern sp = fem::create_sparsity_pattern(a);
     sp.finalize();
-    la::MatrixCSR<T> A(sp);
+    auto A = std::make_shared<la::MatrixCSR<T>>(sp);
     la::Vector<T> b(L.function_spaces()[0]->dofmap()->index_map,
                     L.function_spaces()[0]->dofmap()->index_map_bs());
 
-    std::ranges::fill(A.values(), 0.0);
-    fem::assemble_matrix(A.mat_add_values(), a, {*bc});
-    A.scatter_rev();
-    fem::set_diagonal<T, U>(A.mat_set_values(), *V, {*bc});
+    std::ranges::fill(A->values(), 0.0);
+    fem::assemble_matrix(A->mat_add_values(), a, {*bc});
+    A->scatter_rev();
+    fem::set_diagonal<T, U>(A->mat_set_values(), *V, {*bc});
 
     std::ranges::fill(b.array(), 0.0);
     fem::assemble_vector(b.array(), L);
@@ -124,8 +124,7 @@ int main(int argc, char* argv[])
 
     // Solver: A.u = b
     dolfinx::common::Timer tfac("[SuperLU-dist Factorize]");
-    dolfinx::la::SuperLUSolver<T> LU(mesh->comm());
-    LU.set_operator(A);
+    dolfinx::la::SuperLUSolver<T> LU(A);
     tfac.stop();
 
     dolfinx::common::Timer tsolve("[MUMPS Solve]");

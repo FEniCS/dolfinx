@@ -12,22 +12,18 @@
 
 namespace dolfinx::la
 {
-template <typename T>
-
 /// Solver using SuperLU-dist
+template <typename T>
 class SuperLUSolver
 {
 public:
   /// @brief SuperLU-dist solver wrapper
-  /// @param comm MPI Communicator
+  /// @param Amat Assembled matrix to solve for
   /// @param verbose Verbosity
-  SuperLUSolver(MPI_Comm comm, bool verbose = false);
+  SuperLUSolver(std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat,
+                bool verbose = false);
 
   ~SuperLUSolver();
-
-  /// @brief Set the matrix operator
-  /// @param Amat MatrixCSR
-  void set_operator(const dolfinx::la::MatrixCSR<T>& Amat);
 
   /// Solve A.u=b
   /// @param b RHS Vector
@@ -36,11 +32,15 @@ public:
   int solve(const dolfinx::la::Vector<T>& b, dolfinx::la::Vector<T>& u);
 
 private:
+  /// Set the matrix operator
+  void set_operator(const la::MatrixCSR<T>& Amat);
+
   // Pointer to struct gridinfo_t
   void* _grid;
   // Pointer to SuperMatrix
   void* _A;
 
+  std::shared_ptr<const la::MatrixCSR<T>> _Amat;
   std::vector<int> cols;
   std::vector<int> rowptr;
 
@@ -48,5 +48,5 @@ private:
   MPI_Comm _comm;
   bool _verbose;
 };
-}
+} // namespace dolfinx::la
 #endif

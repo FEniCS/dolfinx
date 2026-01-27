@@ -7,9 +7,12 @@
 #ifdef HAS_SUPERLU_DIST
 
 #include "superlu.h"
+extern "C"
+{
 #include "superlu_ddefs.h"
 #include "superlu_sdefs.h"
 #include "superlu_zdefs.h"
+}
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <iostream>
@@ -18,15 +21,17 @@ using namespace dolfinx;
 using namespace dolfinx::la;
 
 template <typename T>
-SuperLUSolver<T>::SuperLUSolver(MPI_Comm comm, bool verbose)
-    : _grid(nullptr), _A(nullptr), _comm(comm), _verbose(verbose)
+SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
+                                bool verbose)
+    : _grid(nullptr), _A(nullptr), _Amat(Amat), _verbose(verbose)
 {
-  int size = dolfinx::MPI::size(comm);
+  int size = dolfinx::MPI::size(Amat->comm());
 
   int nprow = size;
   int npcol = 1;
   _grid = new gridinfo_t; // Allocate memory for grid
-  superlu_gridinit(MPI_COMM_WORLD, nprow, npcol, (gridinfo_t*)_grid);
+  superlu_gridinit(Amat->comm(), nprow, npcol, (gridinfo_t*)_grid);
+  set_operator(*Amat);
 }
 
 template <typename T>
