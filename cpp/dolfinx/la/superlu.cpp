@@ -200,10 +200,10 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
   }
   spdlog::info("Finished solve");
 
-  if (info != 0)
+  if (info != 0 and dolfinx::MPI::rank(_Amat->comm()) == 0)
   {
-    std::cout << "ERROR: INFO = " << info << " returned from SuperLU_dist p*gssvx()"
-              << std::endl
+    std::cout << "ERROR: INFO = " << info
+              << " returned from SuperLU_dist p*gssvx()" << std::endl
               << std::flush;
   }
 
