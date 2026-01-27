@@ -57,7 +57,7 @@ SuperLUSolver<T>::~SuperLUSolver()
 template <typename T>
 void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
 {
-  spdlog::info("Start set operator");
+  spdlog::info("Start set_operator");
   // Global size
   int m = Amat.index_map(0)->size_global();
   int n = Amat.index_map(1)->size_global();
@@ -106,7 +106,7 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
                                    cols.data(), rowptr.data(), SLU_NR_loc,
                                    SLU_Z, SLU_GE);
   }
-  spdlog::info("Finished set operator");
+  spdlog::info("Finished set_operator");
 }
 //---------------------------------------------------------------------------------------
 template <typename T>
@@ -149,7 +149,7 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
             nrhs, _grid.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);
 
-    spdlog::info("Solve finalize");
+    spdlog::info("Finalize solve");
     dSolveFinalize(&options, &SOLVEstruct);
     dScalePermstructFree(&ScalePermstruct);
     dLUstructFree(&LUstruct);
@@ -169,7 +169,7 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
             nrhs, _grid.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);
 
-    spdlog::info("Solve finalize");
+    spdlog::info("Finalize solve");
     sSolveFinalize(&options, &SOLVEstruct);
     sScalePermstructFree(&ScalePermstruct);
     sLUstructFree(&LUstruct);
@@ -189,7 +189,7 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
             reinterpret_cast<doublecomplex*>(uvec.array().data()), ldb, nrhs,
             _grid.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat, &info);
 
-    spdlog::info("Solve finalize");
+    spdlog::info("Finalize solve");
     zSolveFinalize(&options, &SOLVEstruct);
     zScalePermstructFree(&ScalePermstruct);
     zLUstructFree(&LUstruct);
@@ -202,8 +202,8 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
 
   if (info != 0 and dolfinx::MPI::rank(_Amat->comm()) == 0)
   {
-    std::cout << "ERROR: INFO = " << info
-              << " returned from SuperLU_dist p*gssvx()" << std::endl
+    std::cout << "SuperLU_dist p*gssvx() error: " << info
+              << std::endl
               << std::flush;
   }
 
