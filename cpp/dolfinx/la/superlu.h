@@ -10,11 +10,16 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 
-typedef struct SuperMatrix SuperMatrix;
-typedef struct gridinfo_t gridinfo_t;
-
 namespace dolfinx::la
 {
+
+class SuperLUStructs
+{
+public:
+  struct SuperMatrix;
+  struct gridinfo_t;
+};
+
 /// Solver using SuperLU-dist
 template <typename T>
 class SuperLUSolver
@@ -23,6 +28,7 @@ public:
   /// @brief SuperLU-dist solver wrapper
   /// @param Amat Assembled matrix to solve for
   /// @param verbose Verbosity
+  /// @tparam T Scalar type
   SuperLUSolver(std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat,
                 bool verbose = false);
 
@@ -39,9 +45,9 @@ private:
   void set_operator(const la::MatrixCSR<T>& Amat);
 
   // Pointer to struct gridinfo_t
-  std::unique_ptr<gridinfo_t> _grid;
+  std::unique_ptr<SuperLUStructs::gridinfo_t> _grid;
   // Pointer to SuperMatrix
-  std::unique_ptr<SuperMatrix> _A;
+  std::unique_ptr<SuperLUStructs::SuperMatrix> _A;
 
   // Saved matrix operator with rows and cols in
   // required integer type
