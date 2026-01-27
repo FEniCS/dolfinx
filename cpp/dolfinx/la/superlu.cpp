@@ -29,9 +29,9 @@ SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
 
   int nprow = size;
   int npcol = 1;
-  _grid = new gridinfo_t; // Allocate memory for grid
-  superlu_gridinit(Amat->comm(), nprow, npcol, (gridinfo_t*)_grid);
-  _A = new SuperMatrix; // Allocate memory for SuperMatrix
+  _grid = std::make_unique<gridinfo_t>(); // Allocate memory for grid
+  superlu_gridinit(Amat->comm(), nprow, npcol, &_grid);
+  _A = std::make_unique<SuperMatrix>(); // Allocate memory for SuperMatrix
   set_operator(*Amat);
 }
 //---------------------------------------------------------------------------------------
@@ -39,9 +39,7 @@ template <typename T>
 SuperLUSolver<T>::~SuperLUSolver()
 {
   Destroy_SuperMatrix_Store_dist((SuperMatrix*)_A);
-  delete (SuperMatrix*)_A; // Free SuperMatrix
   superlu_gridexit((gridinfo_t*)_grid);
-  delete (gridinfo_t*)_grid; // Free memory for grid
 }
 //---------------------------------------------------------------------------------------
 template <typename T>

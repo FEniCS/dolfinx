@@ -10,6 +10,9 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 
+typedef struct SuperMatrix SuperMatrix;
+typedef struct gridinfo_t gridinfo_t;
+
 namespace dolfinx::la
 {
 /// Solver using SuperLU-dist
@@ -36,9 +39,9 @@ private:
   void set_operator(const la::MatrixCSR<T>& Amat);
 
   // Pointer to struct gridinfo_t
-  void* _grid;
+  std::unique_ptr<gridinfo_t> _grid;
   // Pointer to SuperMatrix
-  void* _A;
+  std::unique_ptr<SuperMatrix> _A;
 
   // Saved matrix operator with rows and cols in
   // required integer type
