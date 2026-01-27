@@ -28,6 +28,9 @@ struct dolfinx::la::SuperLUStructs::gridinfo_t : public ::gridinfo_t
 using namespace dolfinx;
 using namespace dolfinx::la;
 
+template<class...>
+inline constexpr bool dependent_false_v = false;
+
 template <typename T>
 SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
                                 bool verbose)
@@ -39,6 +42,7 @@ SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
   int npcol = 1;
   _grid = std::make_unique<dolfinx::la::SuperLUStructs::gridinfo_t>();
   superlu_gridinit(Amat->comm(), nprow, npcol, _grid.get());
+
   _A = std::make_unique<dolfinx::la::SuperLUStructs::SuperMatrix>();
   set_operator(*Amat);
 }
@@ -58,7 +62,7 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
   int m = Amat.index_map(0)->size_global();
   int n = Amat.index_map(1)->size_global();
   if (m != n)
-    throw std::runtime_error("Can't solve non-square system");
+    throw std::runtime_error("Cannot solve non-square system");
 
   // Number of local rows
   int m_loc = Amat.num_owned_rows();
@@ -126,7 +130,7 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
   SuperLUStat_t stat;
   PStatInit(&stat);
 
-  // Copy b to u (SuperLU replaces RHS with solution)
+  // Copy b to u (SuperLU reads b from u and then overwrites u with solution)
   std::copy(bvec.array().begin(), std::next(bvec.array().begin(), m_loc),
             uvec.array().begin());
 
@@ -145,10 +149,10 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
             nrhs, _grid.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);
 
-    dScalePermstructFree(&ScalePermstruct);
-    dLUstructFree(&LUstruct);
     spdlog::info("Solve finalize");
     dSolveFinalize(&options, &SOLVEstruct);
+    dScalePermstructFree(&ScalePermstruct);
+    dLUstructFree(&LUstruct);
   }
   else if constexpr (std::is_same_v<T, float>)
   {
@@ -185,17 +189,20 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
             reinterpret_cast<doublecomplex*>(uvec.array().data()), ldb, nrhs,
             _grid.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat, &info);
 
-    zScalePermstructFree(&ScalePermstruct);
-    zLUstructFree(&LUstruct);
     spdlog::info("Solve finalize");
     zSolveFinalize(&options, &SOLVEstruct);
+    zScalePermstructFree(&ScalePermstruct);
+    zLUstructFree(&LUstruct);
   }
   else
-    throw std::runtime_error("Invalid scalar type");
-
-  if (info)
   {
-    std::cout << "ERROR: INFO = " << info << " returned from p*gssvx()\n"
+    static_assert(dependent_false_v<T>, "Invalid scalar type");
+  }
+
+  if (info != 0)
+  {
+    std::cout << "ERROR: INFO = " << info << " returned from p*gssvx()"
+              << std::endl
               << std::flush;
   }
 
