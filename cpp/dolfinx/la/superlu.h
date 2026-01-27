@@ -30,9 +30,9 @@ public:
 
 private:
   // Pointer to struct gridinfo_t
-  std::shared_ptr<void> _grid;
+  void* _grid;
   // Pointer to SuperMatrix
-  std::shared_ptr<void> _A;
+  void* _A;
 
   std::vector<int> cols;
   std::vector<int> rowptr;
