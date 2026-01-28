@@ -36,26 +36,26 @@ using namespace dolfinx;
 using namespace dolfinx::la;
 
 template <typename T>
-void SuperLUSolver<T>::GridDeleter::operator()(
-    SuperLUStructs::gridinfo_t* g) const noexcept
+void SuperLUSolver<T>::GridInfoDeleter::operator()(
+    SuperLUStructs::gridinfo_t* gridinfo) const noexcept
 {
-  superlu_gridexit(g);
-  delete g;
+  superlu_gridexit(gridinfo);
+  delete gridinfo;
 }
 
 template <typename T>
-void SuperLUSolver<T>::MatrixDeleter::operator()(
-    SuperLUStructs::SuperMatrix* A) const noexcept
+void SuperLUSolver<T>::SuperMatrixDeleter::operator()(
+    SuperLUStructs::SuperMatrix* supermatrix) const noexcept
 {
-  Destroy_SuperMatrix_Store_dist(A);
-  delete A;
+  Destroy_SuperMatrix_Store_dist(supermatrix);
+  delete supermatrix;
 }
 
 template <typename T>
 SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
                                 bool verbose)
-    : _grid(new SuperLUStructs::gridinfo_t, GridDeleter{}),
-      _A(new SuperLUStructs::SuperMatrix, MatrixDeleter{}), _Amat(Amat),
+    : _gridinfo(new SuperLUStructs::gridinfo_t, GridInfoDeleter{}),
+      _supermatrix(new SuperLUStructs::SuperMatrix, SuperMatrixDeleter{}), _Amat(Amat),
       _verbose(verbose)
 {
   int size = dolfinx::MPI::size(Amat->comm());
@@ -63,7 +63,7 @@ SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
   int nprow = size;
   int npcol = 1;
 
-  superlu_gridinit(Amat->comm(), nprow, npcol, _grid.get());
+  superlu_gridinit(Amat->comm(), nprow, npcol, _gridinfo.get());
   set_operator(*Amat);
 }
 //---------------------------------------------------------------------------------------
@@ -102,19 +102,19 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
   auto Amatdata = const_cast<T*>(Amat.values().data());
   if constexpr (std::is_same_v<T, double>)
   {
-    dCreate_CompRowLoc_Matrix_dist(_A.get(), m, n, nnz_loc, m_loc, first_row,
+    dCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
                                    Amatdata, cols.data(), rowptr.data(),
                                    SLU_NR_loc, SLU_D, SLU_GE);
   }
   if constexpr (std::is_same_v<T, float>)
   {
-    sCreate_CompRowLoc_Matrix_dist(_A.get(), m, n, nnz_loc, m_loc, first_row,
+    sCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
                                    Amatdata, cols.data(), rowptr.data(),
                                    SLU_NR_loc, SLU_S, SLU_GE);
   }
   if constexpr (std::is_same_v<T, std::complex<double>>)
   {
-    zCreate_CompRowLoc_Matrix_dist(_A.get(), m, n, nnz_loc, m_loc, first_row,
+    zCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
                                    reinterpret_cast<doublecomplex*>(Amatdata),
                                    cols.data(), rowptr.data(), SLU_NR_loc,
                                    SLU_Z, SLU_GE);
@@ -158,8 +158,8 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
     dSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call pdgssvx");
-    pdgssvx(&options, _A.get(), &ScalePermstruct, uvec.array().data(), ldb,
-            nrhs, _grid.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
+    pdgssvx(&options, _supermatrix.get(), &ScalePermstruct, uvec.array().data(), ldb,
+            nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);
 
     spdlog::info("Finalize solve");
@@ -178,8 +178,8 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
     sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call psgssvx");
-    psgssvx(&options, _A.get(), &ScalePermstruct, uvec.array().data(), ldb,
-            nrhs, _grid.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
+    psgssvx(&options, _supermatrix.get(), &ScalePermstruct, uvec.array().data(), ldb,
+            nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);
 
     spdlog::info("Finalize solve");
@@ -198,9 +198,9 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
     zSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call pzgssvx");
-    pzgssvx(&options, _A.get(), &ScalePermstruct,
+    pzgssvx(&options, _supermatrix.get(), &ScalePermstruct,
             reinterpret_cast<doublecomplex*>(uvec.array().data()), ldb, nrhs,
-            _grid.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat, &info);
+            _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat, &info);
 
     spdlog::info("Finalize solve");
     zSolveFinalize(&options, &SOLVEstruct);
@@ -220,7 +220,7 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
   }
 
   if (_verbose)
-    PStatPrint(&options, &stat, _grid.get());
+    PStatPrint(&options, &stat, _gridinfo.get());
   PStatFree(&stat);
 
   return info;

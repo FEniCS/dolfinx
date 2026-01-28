@@ -39,12 +39,12 @@ public:
   int solve(const dolfinx::la::Vector<T>& b, dolfinx::la::Vector<T>& u);
 
 private:
-  struct GridDeleter
+  struct GridInfoDeleter
   {
     void operator()(SuperLUStructs::gridinfo_t* g) const noexcept;
   };
 
-  struct MatrixDeleter
+  struct SuperMatrixDeleter
   {
     void operator()(SuperLUStructs::SuperMatrix* A) const noexcept;
   };
@@ -53,9 +53,9 @@ private:
   void set_operator(const la::MatrixCSR<T>& Amat);
 
   // Pointer to struct gridinfo_t
-  std::unique_ptr<SuperLUStructs::gridinfo_t, GridDeleter> _grid;
+  std::unique_ptr<SuperLUStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
   // Pointer to SuperMatrix
-  std::unique_ptr<SuperLUStructs::SuperMatrix, MatrixDeleter> _A;
+  std::unique_ptr<SuperLUStructs::SuperMatrix, SuperMatrixDeleter> _supermatrix;
 
   // Saved matrix operator with rows and cols in
   // required integer type
