@@ -71,6 +71,8 @@ private:
   // Saved matrix operator with rows and cols in
   // required integer type
   std::shared_ptr<const la::MatrixCSR<T>> _Amat;
+  // cols is required in type "int_t" of SuperLU-dist. Since we don't know what
+  // it is, use int64_t and cast later.
   std::vector<std::int64_t> cols;
   std::vector<int> rowptr;
 
