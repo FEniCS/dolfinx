@@ -104,22 +104,22 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
   auto Amatdata = const_cast<T*>(Amat.values().data());
   if constexpr (std::is_same_v<T, double>)
   {
-    dCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
-                                   Amatdata, cols.data(), rowptr.data(),
-                                   SLU_NR_loc, SLU_D, SLU_GE);
+    dCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc,
+                                   first_row, Amatdata, cols.data(),
+                                   rowptr.data(), SLU_NR_loc, SLU_D, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, float>)
   {
-    sCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
-                                   Amatdata, cols.data(), rowptr.data(),
-                                   SLU_NR_loc, SLU_S, SLU_GE);
+    sCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc,
+                                   first_row, Amatdata, cols.data(),
+                                   rowptr.data(), SLU_NR_loc, SLU_S, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
-    zCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
-                                   reinterpret_cast<doublecomplex*>(Amatdata),
-                                   cols.data(), rowptr.data(), SLU_NR_loc,
-                                   SLU_Z, SLU_GE);
+    zCreate_CompRowLoc_Matrix_dist(
+        _supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
+        reinterpret_cast<doublecomplex*>(Amatdata), cols.data(), rowptr.data(),
+        SLU_NR_loc, SLU_Z, SLU_GE);
   }
   else
   {
@@ -129,7 +129,8 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
 }
 //---------------------------------------------------------------------------------------
 template <typename T>
-int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec) const
+int SuperLUSolver<T>::solve(const la::Vector<T>& bvec,
+                            la::Vector<T>& uvec) const
 {
   int m = _Amat->index_map(0)->size_global();
   int m_loc = _Amat->num_owned_rows();
@@ -164,9 +165,9 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec) cons
     dSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call pdgssvx");
-    pdgssvx(&options, _supermatrix.get(), &ScalePermstruct, uvec.array().data(), ldb,
-            nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
-            &info);
+    pdgssvx(&options, _supermatrix.get(), &ScalePermstruct, uvec.array().data(),
+            ldb, nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(),
+            &stat, &info);
 
     spdlog::info("Finalize solve");
     dSolveFinalize(&options, &SOLVEstruct);
@@ -184,9 +185,9 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec) cons
     sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call psgssvx");
-    psgssvx(&options, _supermatrix.get(), &ScalePermstruct, uvec.array().data(), ldb,
-            nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
-            &info);
+    psgssvx(&options, _supermatrix.get(), &ScalePermstruct, uvec.array().data(),
+            ldb, nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(),
+            &stat, &info);
 
     spdlog::info("Finalize solve");
     sSolveFinalize(&options, &SOLVEstruct);
@@ -206,7 +207,8 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec) cons
     spdlog::info("Call pzgssvx");
     pzgssvx(&options, _supermatrix.get(), &ScalePermstruct,
             reinterpret_cast<doublecomplex*>(uvec.array().data()), ldb, nrhs,
-            _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat, &info);
+            _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
+            &info);
 
     spdlog::info("Finalize solve");
     zSolveFinalize(&options, &SOLVEstruct);
