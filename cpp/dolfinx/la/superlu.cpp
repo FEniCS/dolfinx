@@ -39,8 +39,6 @@ template <typename T>
 void SuperLUSolver<T>::GridDeleter::operator()(
     SuperLUStructs::gridinfo_t* g) const noexcept
 {
-  if (!g)
-    return;
   superlu_gridexit(g);
   delete g;
 }
@@ -49,8 +47,6 @@ template <typename T>
 void SuperLUSolver<T>::MatrixDeleter::operator()(
     SuperLUStructs::SuperMatrix* A) const noexcept
 {
-  if (!A)
-    return;
   Destroy_SuperMatrix_Store_dist(A);
   delete A;
 }
