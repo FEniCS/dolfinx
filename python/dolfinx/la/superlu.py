@@ -7,8 +7,10 @@
 
 import numpy as np
 
+import dolfinx
 import dolfinx.cpp as _cpp
 
+assert dolfinx.has_superlu_dist
 
 class SuperLUSolver:
     """SuperLU Solver."""
