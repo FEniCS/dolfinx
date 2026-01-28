@@ -119,10 +119,11 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
-    zCreate_CompRowLoc_Matrix_dist(
-        _supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
-        reinterpret_cast<doublecomplex*>(Amatdata), (int_t*)cols.data(),
-        rowptr.data(), SLU_NR_loc, SLU_Z, SLU_GE);
+    zCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc,
+                                   first_row,
+                                   reinterpret_cast<doublecomplex*>(Amatdata),
+                                   reinterpret_cast<int_t*>(cols.data()),
+                                   rowptr.data(), SLU_NR_loc, SLU_Z, SLU_GE);
   }
   else
   {
