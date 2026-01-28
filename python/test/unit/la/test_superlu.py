@@ -1,0 +1,71 @@
+# Copyright (C) 2026 Jack S. Hale, Chris Richardson
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for MatrixCSR."""
+
+from mpi4py import MPI
+
+import dolfinx
+
+import numpy as np
+import pytest
+
+from ufl import dx, grad, TrialFunction, TestFunction, inner, SpatialCoordinate, div
+from dolfinx.mesh import create_unit_square, exterior_facet_indices
+from dolfinx.fem import functionspace, form, Function, locate_dofs_topological, dirichletbc, assemble_vector, apply_lifting, assemble_matrix, assemble_scalar
+from dolfinx.la import InsertMode
+
+@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_dist")
+def test_superlu_solver(dtype):
+    """Manufactured Poisson problem solving u = x[1]**3 with P3 elements.
+    """
+    from dolfinx.la.superlu import superlu_solver
+   
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=np.float64)
+    V = functionspace(mesh, ("Lagrange", 3))
+    u, v = TrialFunction(V), TestFunction(V)
+    a = inner(grad(u), grad(v)) * dx
+
+    a = inner(grad(u), grad(v)) * dx
+    a = form(a, dtype=dtype)
+
+    # Source term
+    x = SpatialCoordinate(mesh)
+    u_exact = x[1] ** 3
+    f = -div(grad(u_exact))
+
+    L = inner(f, v) * dx
+    L = form(L, dtype=dtype)
+
+    u_bc = Function(V, dtype=dtype)
+    u_bc.interpolate(lambda x: x[1]**3)
+
+    # Create Dirichlet boundary condition
+    facetdim = mesh.topology.dim - 1
+    mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
+    bndry_facets = exterior_facet_indices(mesh.topology)
+    bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
+    bc = dirichletbc(u_bc, bdofs)
+
+    b = assemble_vector(L)
+    apply_lifting(b.array, [a], bcs=[[bc]])
+    b.scatter_reverse(InsertMode.add)
+    bc.set(b.array)
+
+    a = form(a, dtype=dtype)
+    A = assemble_matrix(a, bcs=[bc])
+    A.scatter_reverse()
+
+    uh = Function(V, dtype=dtype)
+    solver = superlu_solver(A)
+    solver.solve(b._cpp_object, uh.x._cpp_object)
+    uh.x.scatter_forward()
+
+    M = (u_exact - uh) ** 2 * dx
+    M = form(M, dtype=dtype)
+    error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
+    eps = np.sqrt(np.finfo(dtype).eps)
+    assert np.isclose(error, 0.0, atol=eps)

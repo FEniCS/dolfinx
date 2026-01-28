@@ -7,11 +7,13 @@
 
 import numpy as np
 
+import dolfinx
 import dolfinx.cpp as _cpp
 
+assert dolfinx.has_superlu_dist
 
 class SuperLUSolver:
-    """SuperLU Solver."""
+    """SuperLU_dist Solver."""
 
     _cpp_object: (
         _cpp.la.SuperLUSolver_float32
@@ -42,12 +44,12 @@ class SuperLUSolver:
 
 
 def superlu_solver(A):
-    """Create a SuperLU_dist solver object.
+    """Create a SuperLU_dist solver.
 
     Args:
         A: MatrixCSR object.
     """
-    dtype = A.dtype
+    dtype = A.data.dtype
     if np.issubdtype(dtype, np.float32):
         stype = _cpp.la.SuperLUSolver_float32
     elif np.issubdtype(dtype, np.float64):
@@ -56,4 +58,4 @@ def superlu_solver(A):
         stype = _cpp.la.SuperLUSolver_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
-    return SuperLUSolver(stype(A))
+    return stype(A._cpp_object)

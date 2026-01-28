@@ -1,4 +1,4 @@
-// Copyright (C) 2026 Chris N. Richardson
+// Copyright (C) 2026 Jack S. Hale, Chris N. Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -17,7 +17,7 @@ extern "C"
 #include <dolfinx/la/Vector.h>
 #include <iostream>
 
-// Declarations of anonymous typedef structs from SuperLU
+// Trick for declaring anonymous typedef structs from SuperLU
 struct dolfinx::la::SuperLUStructs::SuperMatrix : public ::SuperMatrix
 {
 };

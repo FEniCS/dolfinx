@@ -207,6 +207,7 @@ void declare_functions(nb::module_& m)
       nb::arg("basis"), nb::arg("eps"));
 }
 
+#if defined(HAS_SUPERLU_DIST)
 template <typename T>
 void declare_superlu_solver(nb::module_& m, const std::string& type)
 {
@@ -222,6 +223,7 @@ void declare_superlu_solver(nb::module_& m, const std::string& type)
           nb::arg("A"))
       .def("solve", &dolfinx::la::SuperLUSolver<T>::solve);
 }
+#endif // HAS_SUPERLU_DIST
 
 } // namespace
 
@@ -310,7 +312,7 @@ void la(nb::module_& m)
   declare_superlu_solver<double>(m, "float64");
   declare_superlu_solver<float>(m, "float32");
   declare_superlu_solver<std::complex<double>>(m, "complex128");
-#endif
+#endif // HAS_SUPERLU_DIST
 
   // Declare objects that are templated over type
   declare_objects<std::int8_t>(m, "int8");
