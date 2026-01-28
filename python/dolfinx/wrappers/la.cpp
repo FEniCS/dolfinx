@@ -208,7 +208,7 @@ void declare_functions(nb::module_& m)
 }
 
 template <typename T>
-void declare_solver(nb::module_& m, const std::string& type)
+void declare_superlu_solver(nb::module_& m, const std::string& type)
 {
   // dolfinx::la::SuperLUSolver
   std::string name = std::string("SuperLUSolver_") + type;
@@ -307,9 +307,9 @@ void la(nb::module_& m)
           nb::rv_policy::reference_internal);
 
 #if defined(HAS_SUPERLU_DIST)
-  declare_solver<double>(m, "float64");
-  declare_solver<float>(m, "float32");
-  declare_solver<std::complex<double>>(m, "complex128");
+  declare_superlu_solver<double>(m, "float64");
+  declare_superlu_solver<float>(m, "float32");
+  declare_superlu_solver<std::complex<double>>(m, "complex128");
 #endif
 
   // Declare objects that are templated over type

@@ -20,7 +20,7 @@ class SuperLUSolver:
     )
 
     def __init__(self, solver):
-        """Create a SuperLU-dist solver.
+        """Create a SuperLU_dist solver.
 
         Args:
             solver: C++ SuperLUSolver object.
@@ -33,12 +33,16 @@ class SuperLUSolver:
         self._cpp_object = solver
 
     def solve(self, b, u):
-        """Solver A.u=b."""
-        self._cpp_object.solve(b._cpp_object, u._cpp_object)
+        """Solver linear system Au = b.
+
+        Args:
+            b:
+        """
+        return self._cpp_object.solve(b._cpp_object, u._cpp_object)
 
 
 def superlu_solver(A):
-    """Create a SuperLU-dist solver object.
+    """Create a SuperLU_dist solver object.
 
     Args:
         A: MatrixCSR object.
