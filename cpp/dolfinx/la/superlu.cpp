@@ -63,7 +63,9 @@ SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
   int nprow = size;
   int npcol = 1;
 
+  spdlog::info("Start gridinit");
   superlu_gridinit(Amat->comm(), nprow, npcol, _gridinfo.get());
+  spdlog::info("Finished gridinit");
   set_operator(*Amat);
 }
 //---------------------------------------------------------------------------------------
