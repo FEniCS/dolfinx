@@ -29,10 +29,12 @@ public:
   /// @param Amat Assembled matrix to solve for
   /// @param verbose Verbosity
   /// @tparam T Scalar type
-  SuperLUSolver(std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat,
-                bool verbose = false);
+  SuperLUSolver(std::shared_ptr<const MatrixCSR<T>> Amat, bool verbose = false);
 
+  /// Copy constructor
   SuperLUSolver(const SuperLUSolver&) = delete;
+
+  /// Copy assignment
   SuperLUSolver& operator=(const SuperLUSolver&) = delete;
 
   /// Solve linear system Au = b
