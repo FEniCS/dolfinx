@@ -32,6 +32,9 @@ public:
   SuperLUSolver(std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat,
                 bool verbose = false);
 
+  SuperLUSolver(const SuperLUSolver&) = delete;
+  SuperLUSolver& operator=(const SuperLUSolver&) = delete;
+
   /// Solve linear system Au = b
   /// @param b Right-hand side Vector
   /// @param u Solution Vector
@@ -47,12 +50,12 @@ private:
   };
 
   // Call library cleanup and delete pointer. For use with std::unique_ptr
-  // holding SuperMatrix. 
+  // holding SuperMatrix.
   struct SuperMatrixDeleter
   {
     void operator()(SuperLUStructs::SuperMatrix* A) const noexcept;
   };
-  
+
   /// Set the matrix operator
   void set_operator(const la::MatrixCSR<T>& Amat);
 
