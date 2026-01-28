@@ -71,7 +71,7 @@ private:
   // Saved matrix operator with rows and cols in
   // required integer type
   std::shared_ptr<const la::MatrixCSR<T>> _Amat;
-  std::vector<int> cols;
+  std::vector<std::int64_t> cols;
   std::vector<int> rowptr;
 
   // Flag for diagnostic output
