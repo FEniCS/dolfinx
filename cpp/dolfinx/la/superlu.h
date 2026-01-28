@@ -39,11 +39,15 @@ public:
   int solve(const dolfinx::la::Vector<T>& b, dolfinx::la::Vector<T>& u);
 
 private:
+  // Calls library cleanup and delete pointer. For use with std::unique_ptr
+  // holding gridinfo_t.
   struct GridInfoDeleter
   {
     void operator()(SuperLUStructs::gridinfo_t* g) const noexcept;
   };
 
+  // Calls library cleanup and delete pointer. For use with std::unique_ptr
+  // holding SuperMatrix. 
   struct SuperMatrixDeleter
   {
     void operator()(SuperLUStructs::SuperMatrix* A) const noexcept;
