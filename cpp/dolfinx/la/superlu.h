@@ -1,4 +1,4 @@
-// Copyright (C) 2026 Chris N. Richardson
+// Copyright (C) 2026 Jack S. Hale, Chris N. Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -13,6 +13,8 @@
 namespace dolfinx::la
 {
 
+// Trick for foreword declaration of anonymous structs from SuperLU
+// Avoids including SuperLU headers in DOLFINx headers
 class SuperLUStructs
 {
 public:
