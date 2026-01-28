@@ -38,7 +38,11 @@ class SuperLUSolver:
         """Solver linear system Au = b.
 
         Args:
-            b:
+            b: Right-hand side vector
+            u: Solution vector
+
+        Returns:
+            Solution vector, same object as u.
         """
         return self._cpp_object.solve(b._cpp_object, u._cpp_object)
 
