@@ -106,18 +106,22 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
                                    Amatdata, cols.data(), rowptr.data(),
                                    SLU_NR_loc, SLU_D, SLU_GE);
   }
-  if constexpr (std::is_same_v<T, float>)
+  else if constexpr (std::is_same_v<T, float>)
   {
     sCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
                                    Amatdata, cols.data(), rowptr.data(),
                                    SLU_NR_loc, SLU_S, SLU_GE);
   }
-  if constexpr (std::is_same_v<T, std::complex<double>>)
+  else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     zCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
                                    reinterpret_cast<doublecomplex*>(Amatdata),
                                    cols.data(), rowptr.data(), SLU_NR_loc,
                                    SLU_Z, SLU_GE);
+  }
+  else
+  {
+    static_assert(dependent_false_v<T>, "Invalid scalar type");
   }
   spdlog::info("Finished set_operator");
 }
