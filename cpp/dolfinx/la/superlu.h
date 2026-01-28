@@ -25,15 +25,15 @@ template <typename T>
 class SuperLUSolver
 {
 public:
-  /// @brief SuperLU-dist solver wrapper
+  /// @brief SuperLU_dist solver wrapper
   /// @param Amat Assembled matrix to solve for
   /// @param verbose Verbosity
   /// @tparam T Scalar type
   SuperLUSolver(std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat,
                 bool verbose = false);
 
-  /// Solve A.u=b
-  /// @param b RHS Vector
+  /// Solve linear system Au = b
+  /// @param b Right-hand side Vector
   /// @param u Solution Vector
   /// @note Must be compatible with A
   int solve(const dolfinx::la::Vector<T>& b, dolfinx::la::Vector<T>& u);
