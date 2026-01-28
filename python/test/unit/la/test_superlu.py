@@ -36,7 +36,6 @@ def test_superlu_solver(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     V = functionspace(mesh, ("Lagrange", 3))
     u, v = TrialFunction(V), TestFunction(V)
-    a = inner(grad(u), grad(v)) * dx
 
     a = inner(grad(u), grad(v)) * dx
     a = form(a, dtype=dtype)
