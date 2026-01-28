@@ -24,16 +24,6 @@ public:
 template <typename T>
 class SuperLUSolver
 {
-  struct GridDeleter
-  {
-    void operator()(SuperLUStructs::gridinfo_t* g) const noexcept;
-  };
-
-  struct MatrixDeleter
-  {
-    void operator()(SuperLUStructs::SuperMatrix* A) const noexcept;
-  };
-
 public:
   /// @brief SuperLU-dist solver wrapper
   /// @param Amat Assembled matrix to solve for
@@ -49,6 +39,16 @@ public:
   int solve(const dolfinx::la::Vector<T>& b, dolfinx::la::Vector<T>& u);
 
 private:
+  struct GridDeleter
+  {
+    void operator()(SuperLUStructs::gridinfo_t* g) const noexcept;
+  };
+
+  struct MatrixDeleter
+  {
+    void operator()(SuperLUStructs::SuperMatrix* A) const noexcept;
+  };
+  
   /// Set the matrix operator
   void set_operator(const la::MatrixCSR<T>& Amat);
 
