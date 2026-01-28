@@ -42,6 +42,7 @@ from dolfinx.common import (
     has_petsc4py,
     has_ptscotch,
     has_slepc,
+    has_superlu_dist,
     ufcx_signature,
 )
 

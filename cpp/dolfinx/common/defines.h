@@ -92,6 +92,16 @@ consteval bool has_ptscotch()
 #endif
 }
 
+/// Return true if DOLFINX is compiled with SuperLU-dist
+consteval bool has_superlu_dist()
+{
+#ifdef HAS_SUPERLU_DIST
+  return true;
+#else
+  return false;
+#endif
+}
+
 /// Return true if DOLFINx supports UFCx kernels with arguments of type C99
 /// _Complex. When DOLFINx was built with MSVC this returns false. This
 /// returning false does not preclude using DOLFINx with kernels accepting

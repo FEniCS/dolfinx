@@ -206,6 +206,21 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
+if(DOLFINX_ENABLE_SUPERLU_DIST)
+  set(_REQUIRE_SUPERLU_DIST TRUE CACHE BOOL "Is SuperLU-dist REQUIRED?")
+else()
+  set(_REQUIRE_SUPERLU_DIST FALSE CACHE BOOL "Is SuperLU-dist REQUIRED?")
+endif()
+
+option(DOLFINX_ENABLE_SUPERLU_DIST "Compile with support for SuperLU-dist." ON)
+set_package_properties(
+  SuperLUDist PROPERTIES
+  TYPE OPTIONAL
+  DESCRIPTION "Distributed direct LU Solver"
+  URL "https://portal.nersc.gov/project/sparse/superlu/"
+  PURPOSE "Linear Algebra Solver"
+)
+
 # ------------------------------------------------------------------------------
 # Check for MPI
 find_package(MPI 3 REQUIRED)
@@ -471,6 +486,12 @@ if(DOLFINX_ENABLE_KAHIP AND _REQUIRE_KAHIP)
   find_package(KaHIP REQUIRED)
 elseif(DOLFINX_ENABLE_KAHIP)
   find_package(KaHIP)
+endif()
+
+if(DOLFINX_ENABLE_SUPERLU_DIST AND _REQUIRE_SUPERLU_DIST)
+  find_package(SuperLUDist REQUIRED)
+elseif(DOLFINX_ENABLE_SUPERLU_DIST)
+  find_package(SuperLUDist)
 endif()
 
 # ------------------------------------------------------------------------------
