@@ -21,15 +21,18 @@ extern "C"
 struct dolfinx::la::SuperLUStructs::SuperMatrix : public ::SuperMatrix
 {
 };
+
 struct dolfinx::la::SuperLUStructs::gridinfo_t : public ::gridinfo_t
 {
 };
 
+namespace {
+  template<typename...>
+  inline constexpr bool dependent_false_v = false;
+}
+
 using namespace dolfinx;
 using namespace dolfinx::la;
-
-template<class...>
-inline constexpr bool dependent_false_v = false;
 
 template <typename T>
 SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
@@ -40,6 +43,7 @@ SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
 
   int nprow = size;
   int npcol = 1;
+
   _grid = std::make_unique<dolfinx::la::SuperLUStructs::gridinfo_t>();
   superlu_gridinit(Amat->comm(), nprow, npcol, _grid.get());
 
