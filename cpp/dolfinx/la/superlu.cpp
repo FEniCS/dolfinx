@@ -26,26 +26,31 @@ struct dolfinx::la::SuperLUStructs::gridinfo_t : public ::gridinfo_t
 {
 };
 
-namespace {
-  template<typename...>
-  inline constexpr bool dependent_false_v = false;
+namespace
+{
+template <typename...>
+inline constexpr bool dependent_false_v = false;
 }
 
 using namespace dolfinx;
 using namespace dolfinx::la;
 
 template <typename T>
-void SuperLUSolver<T>::GridDeleter::operator()(SuperLUStructs::gridinfo_t* g) const noexcept
+void SuperLUSolver<T>::GridDeleter::operator()(
+    SuperLUStructs::gridinfo_t* g) const noexcept
 {
-  if (!g) return;
+  if (!g)
+    return;
   superlu_gridexit(g);
   delete g;
 }
 
 template <typename T>
-void SuperLUSolver<T>::MatrixDeleter::operator()(SuperLUStructs::SuperMatrix* A) const noexcept
+void SuperLUSolver<T>::MatrixDeleter::operator()(
+    SuperLUStructs::SuperMatrix* A) const noexcept
 {
-  if (!A) return;
+  if (!A)
+    return;
   Destroy_SuperMatrix_Store_dist(A);
   delete A;
 }
@@ -53,7 +58,9 @@ void SuperLUSolver<T>::MatrixDeleter::operator()(SuperLUStructs::SuperMatrix* A)
 template <typename T>
 SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
                                 bool verbose)
-    :  _grid(new SuperLUStructs::gridinfo_t, GridDeleter{}), _A(new SuperLUStructs::SuperMatrix, MatrixDeleter{}), _Amat(Amat), _verbose(verbose)
+    : _grid(new SuperLUStructs::gridinfo_t, GridDeleter{}),
+      _A(new SuperLUStructs::SuperMatrix, MatrixDeleter{}), _Amat(Amat),
+      _verbose(verbose)
 {
   int size = dolfinx::MPI::size(Amat->comm());
 
@@ -212,8 +219,7 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
 
   if (info != 0 and dolfinx::MPI::rank(_Amat->comm()) == 0)
   {
-    std::cout << "SuperLU_dist p*gssvx() error: " << info
-              << std::endl
+    std::cout << "SuperLU_dist p*gssvx() error: " << info << std::endl
               << std::flush;
   }
 
