@@ -29,7 +29,7 @@ struct dolfinx::la::SuperLUStructs::gridinfo_t : public ::gridinfo_t
 namespace
 {
 template <typename...>
-inline constexpr bool dependent_false_v = false;
+constexpr bool dependent_false_v = false;
 }
 
 using namespace dolfinx;
