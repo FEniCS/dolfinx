@@ -35,27 +35,33 @@ using namespace dolfinx;
 using namespace dolfinx::la;
 
 template <typename T>
+void SuperLUSolver<T>::GridDeleter::operator()(SuperLUStructs::gridinfo_t* g) const noexcept
+{
+  if (!g) return;
+  superlu_gridexit(g);
+  delete g;
+}
+
+template <typename T>
+void SuperLUSolver<T>::MatrixDeleter::operator()(SuperLUStructs::SuperMatrix* A) const noexcept
+{
+  if (!A) return;
+  Destroy_SuperMatrix_Store_dist(A);
+  delete A;
+}
+
+template <typename T>
 SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
                                 bool verbose)
-    : _Amat(Amat), _verbose(verbose)
+    :  _grid(new SuperLUStructs::gridinfo_t), _A(new SuperLUStructs::SuperMatrix), _Amat(Amat), _verbose(verbose)
 {
   int size = dolfinx::MPI::size(Amat->comm());
 
   int nprow = size;
   int npcol = 1;
 
-  _grid = std::make_unique<dolfinx::la::SuperLUStructs::gridinfo_t>();
   superlu_gridinit(Amat->comm(), nprow, npcol, _grid.get());
-
-  _A = std::make_unique<dolfinx::la::SuperLUStructs::SuperMatrix>();
   set_operator(*Amat);
-}
-//---------------------------------------------------------------------------------------
-template <typename T>
-SuperLUSolver<T>::~SuperLUSolver()
-{
-  Destroy_SuperMatrix_Store_dist(_A.get());
-  superlu_gridexit(_grid.get());
 }
 //---------------------------------------------------------------------------------------
 template <typename T>

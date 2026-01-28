@@ -24,6 +24,16 @@ public:
 template <typename T>
 class SuperLUSolver
 {
+  struct GridDeleter
+  {
+    void operator()(SuperLUStructs::gridinfo_t* g) const noexcept;
+  };
+
+  struct MatrixDeleter
+  {
+    void operator()(SuperLUStructs::SuperMatrix* A) const noexcept;
+  };
+
 public:
   /// @brief SuperLU-dist solver wrapper
   /// @param Amat Assembled matrix to solve for
@@ -31,8 +41,6 @@ public:
   /// @tparam T Scalar type
   SuperLUSolver(std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat,
                 bool verbose = false);
-
-  ~SuperLUSolver();
 
   /// Solve A.u=b
   /// @param b RHS Vector
@@ -45,9 +53,9 @@ private:
   void set_operator(const la::MatrixCSR<T>& Amat);
 
   // Pointer to struct gridinfo_t
-  std::unique_ptr<SuperLUStructs::gridinfo_t> _grid;
+  std::unique_ptr<SuperLUStructs::gridinfo_t, GridDeleter> _grid;
   // Pointer to SuperMatrix
-  std::unique_ptr<SuperLUStructs::SuperMatrix> _A;
+  std::unique_ptr<SuperLUStructs::SuperMatrix, MatrixDeleter> _A;
 
   // Saved matrix operator with rows and cols in
   // required integer type
