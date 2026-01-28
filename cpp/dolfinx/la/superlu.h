@@ -41,7 +41,7 @@ public:
   /// @param b Right-hand side Vector
   /// @param u Solution Vector
   /// @note Must be compatible with A
-  int solve(const dolfinx::la::Vector<T>& b, dolfinx::la::Vector<T>& u);
+  int solve(const dolfinx::la::Vector<T>& b, dolfinx::la::Vector<T>& u) const;
 
 private:
   // Call library cleanup and delete pointer. For use with std::unique_ptr

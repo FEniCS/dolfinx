@@ -129,7 +129,7 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
 }
 //---------------------------------------------------------------------------------------
 template <typename T>
-int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
+int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec) const
 {
   int m = _Amat->index_map(0)->size_global();
   int m_loc = _Amat->num_owned_rows();
