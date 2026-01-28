@@ -223,6 +223,7 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec) cons
   {
     std::cout << "SuperLU_dist p*gssvx() error: " << info << std::endl
               << std::flush;
+    spdlog::info("SuperLU_dist p*gssvx() error: {}", info);
   }
 
   if (_verbose)
