@@ -7,27 +7,35 @@
 
 from mpi4py import MPI
 
-import dolfinx
-
 import numpy as np
 import pytest
 
-from ufl import dx, grad, TrialFunction, TestFunction, inner, SpatialCoordinate, div
-from dolfinx.mesh import create_unit_square, exterior_facet_indices
-from dolfinx.fem import functionspace, form, Function, locate_dofs_topological, dirichletbc, assemble_vector, apply_lifting, assemble_matrix, assemble_scalar
+import dolfinx
+from dolfinx.fem import (
+    Function,
+    apply_lifting,
+    assemble_matrix,
+    assemble_scalar,
+    assemble_vector,
+    dirichletbc,
+    form,
+    functionspace,
+    locate_dofs_topological,
+)
 from dolfinx.la import InsertMode
+from dolfinx.mesh import create_unit_square, exterior_facet_indices
+from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, inner
 
-@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_dist")
 def test_superlu_solver(dtype):
-    """Manufactured Poisson problem solving u = x[1]**3 with P3 elements.
-    """
+    """Manufactured Poisson problem solving u = x[1]**3 with P3 elements."""
     from dolfinx.la.superlu import superlu_solver
-   
-    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=np.float64)
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     V = functionspace(mesh, ("Lagrange", 3))
     u, v = TrialFunction(V), TestFunction(V)
-    a = inner(grad(u), grad(v)) * dx
 
     a = inner(grad(u), grad(v)) * dx
     a = form(a, dtype=dtype)
@@ -41,7 +49,7 @@ def test_superlu_solver(dtype):
     L = form(L, dtype=dtype)
 
     u_bc = Function(V, dtype=dtype)
-    u_bc.interpolate(lambda x: x[1]**3)
+    u_bc.interpolate(lambda x: x[1] ** 3)
 
     # Create Dirichlet boundary condition
     facetdim = mesh.topology.dim - 1
