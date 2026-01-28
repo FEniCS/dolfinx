@@ -53,7 +53,7 @@ void SuperLUSolver<T>::MatrixDeleter::operator()(SuperLUStructs::SuperMatrix* A)
 template <typename T>
 SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const la::MatrixCSR<T>> Amat,
                                 bool verbose)
-    :  _grid(new SuperLUStructs::gridinfo_t), _A(new SuperLUStructs::SuperMatrix), _Amat(Amat), _verbose(verbose)
+    :  _grid(new SuperLUStructs::gridinfo_t, GridDeleter{}), _A(new SuperLUStructs::SuperMatrix, MatrixDeleter{}), _Amat(Amat), _verbose(verbose)
 {
   int size = dolfinx::MPI::size(Amat->comm());
 
