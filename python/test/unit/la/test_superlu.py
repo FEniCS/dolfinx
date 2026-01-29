@@ -42,15 +42,16 @@ def test_superlu_solver(dtype):
     a = form(a, dtype=dtype)
 
     # Source term
-    x = SpatialCoordinate(mesh)
-    u_exact = x[1] ** 3
-    f = -div(grad(u_exact))
+    def u_ex(x):
+        return x[1] ** 3
 
+    x = SpatialCoordinate(mesh)
+    f = -div(grad(u_ex(x)))
     L = inner(f, v) * dx
     L = form(L, dtype=dtype)
 
     u_bc = Function(V, dtype=dtype)
-    u_bc.interpolate(lambda x: x[1] ** 3)
+    u_bc.interpolate(u_ex)
 
     # Create Dirichlet boundary condition
     facetdim = mesh.topology.dim - 1
