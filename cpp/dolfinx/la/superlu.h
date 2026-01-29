@@ -61,6 +61,11 @@ private:
     void operator()(SuperLUStructs::SuperMatrix* A) const noexcept;
   };
 
+  struct VecIntDeleter
+  {
+    void operator()(SuperLUStructs::vec_int_t* v) const noexcept;
+  };
+
   /// Set the matrix operator
   void set_operator(const la::MatrixCSR<T>& Amat);
 
@@ -73,7 +78,7 @@ private:
   // required integer type
   std::shared_ptr<const la::MatrixCSR<T>> _Amat;
   // cols is required in opaque type "int_t" of SuperLU-dist.
-  std::unique_ptr<SuperLUStructs::vec_int_t> cols;
+  std::unique_ptr<SuperLUStructs::vec_int_t, VecIntDeleter> cols;
   std::vector<int> rowptr;
 
   // Flag for diagnostic output

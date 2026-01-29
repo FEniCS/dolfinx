@@ -57,11 +57,19 @@ void SuperLUSolver<T>::SuperMatrixDeleter::operator()(
 }
 
 template <typename T>
+void SuperLUSolver<T>::VecIntDeleter::operator()(
+    SuperLUStructs::vec_int_t* vec) const noexcept
+{
+  delete vec;
+}
+
+template <typename T>
 SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const MatrixCSR<T>> Amat,
                                 bool verbose)
     : _gridinfo(new SuperLUStructs::gridinfo_t, GridInfoDeleter{}),
       _supermatrix(new SuperLUStructs::SuperMatrix, SuperMatrixDeleter{}),
-      _Amat(Amat), _verbose(verbose)
+      _Amat(Amat), cols(new SuperLUStructs::vec_int_t, VecIntDeleter{}),
+      _verbose(verbose)
 {
   int size = dolfinx::MPI::size(Amat->comm());
 
@@ -92,7 +100,6 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
 
   // Local number of non-zeros
   int nnz_loc = Amat.row_ptr()[m_loc];
-  cols = std::make_unique<SuperLUStructs::vec_int_t>();
   cols->vec.resize(nnz_loc);
   rowptr.resize(m_loc + 1);
 
