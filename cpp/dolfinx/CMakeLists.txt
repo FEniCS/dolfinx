@@ -168,11 +168,10 @@ if(DOLFINX_ENABLE_KAHIP AND KAHIP_FOUND)
   target_include_directories(dolfinx SYSTEM PRIVATE ${KAHIP_INCLUDE_DIRS})
 endif()
 
-# SuperLUDist
-if(DOLFINX_ENABLE_SUPERLU_DIST AND SuperLUDist_FOUND)
+# SuperLU_Dist
+if(DOLFINX_ENABLE_SUPERLU_DIST AND SUPERLU_DIST_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_SUPERLU_DIST)
-  target_link_libraries(dolfinx PRIVATE ${SuperLUDist_LIBRARY})
-  target_include_directories(dolfinx SYSTEM PRIVATE ${SuperLUDist_INCLUDE_DIR})
+  target_link_libraries(dolfinx PRIVATE PkgConfig::SUPERLU_DIST)
 endif()
 
 # ------------------------------------------------------------------------------
