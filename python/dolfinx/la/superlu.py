@@ -35,8 +35,11 @@ class SuperLUSolver:
         """
         self._cpp_object = solver
 
-    def solve(self, b, u):
+    def solve(self, b: dolfinx.la.Vector, u: dolfinx.la.Vector) -> dolfinx.la.Vector:
         """Solver linear system Au = b.
+
+        Note:
+            The caller must call `u.scatter_forward()` after the solve.
 
         Args:
             b: Right-hand side vector
@@ -48,7 +51,7 @@ class SuperLUSolver:
         return self._cpp_object.solve(b._cpp_object, u._cpp_object)
 
 
-def superlu_solver(A):
+def superlu_solver(A: dolfinx.la.MatrixCSR) -> SuperLUSolver:
     """Create a SuperLU_dist solver.
 
     Args:
