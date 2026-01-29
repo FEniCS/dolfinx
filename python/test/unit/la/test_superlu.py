@@ -69,7 +69,7 @@ def test_superlu_solver(dtype):
 
     uh = Function(V, dtype=dtype)
     solver = superlu_solver(A)
-    solver.solve(b._cpp_object, uh.x._cpp_object)
+    solver.solve(b, uh.x)
     uh.x.scatter_forward()
 
     M = (u_exact - uh) ** 2 * dx

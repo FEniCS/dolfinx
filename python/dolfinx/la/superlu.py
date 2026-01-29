@@ -63,4 +63,4 @@ def superlu_solver(A):
         stype = _cpp.la.SuperLUSolver_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
-    return stype(A._cpp_object)
+    return SuperLUSolver(stype(A._cpp_object))
