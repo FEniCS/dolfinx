@@ -26,8 +26,10 @@ struct dolfinx::la::SuperLUStructs::gridinfo_t : public ::gridinfo_t
 {
 };
 
+/// Struct holding vector of type int_t
 struct dolfinx::la::SuperLUStructs::vec_int_t
 {
+  /// @brief vector
   std::vector<int_t> vec;
 };
 
