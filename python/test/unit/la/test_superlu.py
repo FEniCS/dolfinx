@@ -30,18 +30,18 @@ from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, i
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_dist")
 def test_superlu_solver(dtype):
-    """Manufactured Poisson problem solving u = x[1]**3 with P3 elements."""
+    """Manufactured Poisson problem with exact solution u = x[1]**3."""
     from dolfinx.la.superlu import superlu_solver
 
     mesh_dtype = dtype().real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=mesh_dtype)
-    V = functionspace(mesh, ("Lagrange", 3))
+    V = functionspace(mesh, ("Lagrange", 4))
     u, v = TrialFunction(V), TestFunction(V)
 
     a = inner(grad(u), grad(v)) * dx
     a = form(a, dtype=dtype)
 
-    # Source term
+    # Exact solution
     def u_ex(x):
         return x[1] ** 3
 
@@ -74,7 +74,7 @@ def test_superlu_solver(dtype):
     solver.solve(b, uh.x)
     uh.x.scatter_forward()
 
-    M = (u_exact - uh) ** 2 * dx
+    M = (u_ex(x) - uh) ** 2 * dx
     M = form(M, dtype=dtype)
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     eps = np.sqrt(np.finfo(dtype).eps)
