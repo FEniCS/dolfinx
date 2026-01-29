@@ -33,7 +33,8 @@ def test_superlu_solver(dtype):
     """Manufactured Poisson problem solving u = x[1]**3 with P3 elements."""
     from dolfinx.la.superlu import superlu_solver
 
-    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
+    mesh_dtype = dtype().real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=mesh_dtype)
     V = functionspace(mesh, ("Lagrange", 3))
     u, v = TrialFunction(V), TestFunction(V)
 
