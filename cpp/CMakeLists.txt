@@ -207,14 +207,14 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_SUPERLU_DIST)
-  set(_REQUIRE_SUPERLU_DIST TRUE CACHE BOOL "Is SuperLU-dist REQUIRED?")
+  set(_REQUIRE_SUPERLU_DIST TRUE CACHE BOOL "Is SuperLU_DIST REQUIRED?")
 else()
-  set(_REQUIRE_SUPERLU_DIST FALSE CACHE BOOL "Is SuperLU-dist REQUIRED?")
+  set(_REQUIRE_SUPERLU_DIST FALSE CACHE BOOL "Is SuperLU_DIST REQUIRED?")
 endif()
 
-option(DOLFINX_ENABLE_SUPERLU_DIST "Compile with support for SuperLU-dist." ON)
+option(DOLFINX_ENABLE_SUPERLU_DIST "Compile with support for SuperLU_DIST." ON)
 set_package_properties(
-  SuperLUDist PROPERTIES
+  SuperLU_DIST PROPERTIES
   TYPE OPTIONAL
   DESCRIPTION "Distributed direct LU Solver"
   URL "https://portal.nersc.gov/project/sparse/superlu/"
@@ -438,7 +438,7 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   endif()
 
   if(_REQUIRE_SLEPC)
-    pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
+    pkg_search_module(slepc required imported_target slepc>=3.15)
   else()
     pkg_search_module(SLEPC IMPORTED_TARGET slepc>=3.15)
   endif()
@@ -487,10 +487,30 @@ elseif(DOLFINX_ENABLE_KAHIP)
   find_package(KaHIP)
 endif()
 
-if(DOLFINX_ENABLE_SUPERLU_DIST AND _REQUIRE_SUPERLU_DIST)
-  find_package(SuperLUDist REQUIRED)
-elseif(DOLFINX_ENABLE_SUPERLU_DIST)
-  find_package(SuperLUDist)
+if(DOLFINX_ENABLE_SUPERLU_DIST)
+  find_package(PkgConfig REQUIRED)
+
+  if (DEFINED ENV{PKG_CONFIG_PATH})
+    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
+  else()
+    set(ENV_PKG_CONFIG_PATH})
+  endif()
+  # If PETSc was built with SuperLU_DIST then pickup install there
+  if(DEFINED ENV{PETSC_DIR})
+    set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/lib/pkgconfig:ENV_PKG_CONFIG_PATH")
+    if(DEFINED ENV{PETSC_ARCH})
+      set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+    endif()
+  endif()
+
+  pkg_search_module(SUPERLU_DIST REQUIRED IMPORTED_TARGET superlu_dist)
+
+  if(SUPERLU_DIST_FOUND)
+    message(STATUS "Found SuperLU_dist version ${SUPERLU_DIST_VERSION}, prefix: ${SUPERLU_DIST_PREFIX}")
+    set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND SuperLU_DIST)
+  else()
+    set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SuperLU_DIST)
+  endif()
 endif()
 
 # ------------------------------------------------------------------------------
