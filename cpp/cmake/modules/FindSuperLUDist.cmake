@@ -9,15 +9,19 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(SuperLUDist superlu_dist)
 
 if(NOT SuperLUDist_FOUND)
+  if(PETSC_INCLUDE_DIRS)
   find_path(SuperLUDist_INCLUDE_DIR NAMES superlu_dist_config.h
     PATHS "${PETSC_INCLUDE_DIRS}/"
     "/usr/include/"
   )
+  endif()
 
+  if(PETSC_LIBRARY_DIRS)
   find_library(SuperLUDist_LIBRARY
     superlu_dist
     PATHS "${PETSC_LIBRARY_DIRS}/lib/"
     "/usr/lib")
+  endif()
 endif()
 
 include(FindPackageHandleStandardArgs)
