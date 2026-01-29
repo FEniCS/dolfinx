@@ -39,7 +39,7 @@ class SuperLUSolver:
         """Solver linear system Au = b.
 
         Note:
-            The caller must call `u.scatter_forward()` after the solve.
+            The caller must `u.scatter_forward()` after the solve.
 
         Args:
             b: Right-hand side vector
