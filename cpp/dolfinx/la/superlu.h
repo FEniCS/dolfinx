@@ -20,6 +20,7 @@ class SuperLUStructs
 public:
   struct SuperMatrix;
   struct gridinfo_t;
+  struct vec_int_t;
 };
 
 /// Solver using SuperLU-dist
@@ -73,7 +74,7 @@ private:
   std::shared_ptr<const la::MatrixCSR<T>> _Amat;
   // cols is required in type "int_t" of SuperLU-dist. Since we don't know what
   // it is, use int64_t and cast later.
-  std::vector<std::int64_t> cols;
+  std::unique_ptr<SuperLUStructs::vec_int_t> cols;
   std::vector<int> rowptr;
 
   // Flag for diagnostic output

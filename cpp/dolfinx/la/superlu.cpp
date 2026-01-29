@@ -26,6 +26,11 @@ struct dolfinx::la::SuperLUStructs::gridinfo_t : public ::gridinfo_t
 {
 };
 
+struct dolfinx::la::SuperLUStructs::vec_int_t
+{
+  std::vector<int_t> vec;
+};
+
 namespace
 {
 template <typename...>
@@ -87,7 +92,8 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
 
   // Local number of non-zeros
   int nnz_loc = Amat.row_ptr()[m_loc];
-  cols.resize(nnz_loc);
+  cols = std::make_unique<SuperLUStructs::vec_int_t>();
+  cols->vec.resize(nnz_loc);
   rowptr.resize(m_loc + 1);
 
   // Copy row_ptr from int64
@@ -98,32 +104,28 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
   std::vector<std::int64_t> global_col_indices(
       Amat.index_map(1)->global_indices());
   std::transform(Amat.cols().begin(), std::next(Amat.cols().begin(), nnz_loc),
-                 reinterpret_cast<int_t*>(cols.data()),
-                 [&](std::int64_t local_index) -> int_t
+                 cols->vec.begin(), [&](std::int64_t local_index) -> int_t
                  { return global_col_indices[local_index]; });
 
   auto Amatdata = const_cast<T*>(Amat.values().data());
   if constexpr (std::is_same_v<T, double>)
   {
     dCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc,
-                                   first_row, Amatdata,
-                                   reinterpret_cast<int_t*>(cols.data()),
+                                   first_row, Amatdata, cols->vec.data(),
                                    rowptr.data(), SLU_NR_loc, SLU_D, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, float>)
   {
     sCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc,
-                                   first_row, Amatdata,
-                                   reinterpret_cast<int_t*>(cols.data()),
+                                   first_row, Amatdata, cols->vec.data(),
                                    rowptr.data(), SLU_NR_loc, SLU_S, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
-    zCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc,
-                                   first_row,
-                                   reinterpret_cast<doublecomplex*>(Amatdata),
-                                   reinterpret_cast<int_t*>(cols.data()),
-                                   rowptr.data(), SLU_NR_loc, SLU_Z, SLU_GE);
+    zCreate_CompRowLoc_Matrix_dist(
+        _supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
+        reinterpret_cast<doublecomplex*>(Amatdata), cols->vec.data(),
+        rowptr.data(), SLU_NR_loc, SLU_Z, SLU_GE);
   }
   else
   {
