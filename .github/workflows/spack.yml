@@ -68,7 +68,7 @@ jobs:
         run: |
           cat .github/workflows/spack-config/gh-actions-env.yml
           spack env create dolfinx-test .github/workflows/spack-config/gh-actions-env.yml
-          spack -e dolfinx-test install -j4 -p2 --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc py-fenics-ffcx@main
+          spack -e dolfinx-test install -j4 -p2 --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc py-fenics-ffcx@main petsc+mumps
           spack env activate dolfinx-test
           spack load cmake
           cd cpp/demo/poisson
