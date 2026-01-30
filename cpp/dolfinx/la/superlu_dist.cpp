@@ -66,8 +66,8 @@ void SuperLUDistSolver<T>::VecIntDeleter::operator()(
 }
 
 template <typename T>
-SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> Amat,
-                                bool verbose)
+SuperLUDistSolver<T>::SuperLUDistSolver(
+    std::shared_ptr<const MatrixCSR<T>> Amat, bool verbose)
     : _gridinfo(new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{}),
       _supermatrix(new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{}),
       _Amat(Amat), cols(new SuperLUDistStructs::vec_int_t, VecIntDeleter{}),
@@ -145,7 +145,7 @@ void SuperLUDistSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
 //---------------------------------------------------------------------------------------
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
-                            la::Vector<T>& uvec) const
+                                la::Vector<T>& uvec) const
 {
   int m = _Amat->index_map(0)->size_global();
   int m_loc = _Amat->num_owned_rows();
@@ -165,7 +165,8 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
   SuperLUStat_t stat;
   PStatInit(&stat);
 
-  // Copy b to u (SuperLU_DIST reads b from u and then overwrites u with solution)
+  // Copy b to u (SuperLU_DIST reads b from u and then overwrites u with
+  // solution)
   std::copy(bvec.array().begin(), std::next(bvec.array().begin(), m_loc),
             uvec.array().begin());
 

@@ -32,7 +32,8 @@ public:
   /// @param Amat Assembled matrix to invert
   /// @param verbose Verbosity
   /// @tparam T Scalar type
-  SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> Amat, bool verbose = false);
+  SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> Amat,
+                    bool verbose = false);
 
   /// Copy constructor
   SuperLUDistSolver(const SuperLUDistSolver&) = delete;
@@ -72,7 +73,8 @@ private:
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
   // Pointer to SuperMatrix
-  std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter> _supermatrix;
+  std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
+      _supermatrix;
 
   // Saved matrix operator with rows and cols in
   // required integer type
