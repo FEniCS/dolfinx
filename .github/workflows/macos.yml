@@ -49,9 +49,9 @@ jobs:
           pip install cython setuptools wheel
           pip install mpi4py numpy
 
-      - name: Cache PETSc and petsc4py
-        id: cache-petsc
-        uses: actions/cache@v5
+      - name: Restore cache PETSc and petsc4py
+        id: cache-petsc-restore
+        uses: actions/cache/restore@v5
         with:
           path: |
             ${{ env.PETSC_DIR }}
@@ -59,7 +59,7 @@ jobs:
           key: ${{ runner.os }}-petsc-${{ env.PETSC_VERSION }}-${{ steps.cp3.outputs.python-version }}
 
       - name: Install minimal PETSc and petsc4py
-        if: steps.cache-petsc.outputs.cache-hit != 'true'
+        if: steps.cache-petsc-restore.outputs.cache-hit != 'true'
         run: |
           export PATH="$(brew --prefix gfortran)/bin:$(brew --prefix bison)/bin:$PATH"
           export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
@@ -82,15 +82,26 @@ jobs:
           cd src/binding/petsc4py
           arch -arm64 pip -v install --user --no-build-isolation .
 
+      - name: Save cache PETSc and petsc4py
+        id: cache-petsc-save
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ${{ env.PETSC_DIR }}
+            ~/Library/Python/
+          key: ${{ steps.cache-petsc-restore.outputs.cache-primary-key }} 
+      
       - name: Install FEniCSx dependencies
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install --config-settings=cmake.build-type="Developer" git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure (C++)
         working-directory: cpp
-        run: cmake -B build -S . -Werror=dev --warn-uninitialized -G Ninja -DBUILD_TESTING=true
+        run: >
+          cmake -B build -S . -Werror=dev --warn-uninitialized -G Ninja \
+            -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true
 
       - name: Build and install (C++)
         working-directory: cpp/build
@@ -109,7 +120,7 @@ jobs:
         run: |
           pip install scikit-build-core
           python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
-          pip install --check-build-dependencies --no-build-isolation './[test]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" './[test]'
 
       - name: Basic test
         run: |

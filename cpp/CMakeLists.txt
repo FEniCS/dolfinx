@@ -454,10 +454,11 @@ elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
   message(FATAL_ERROR "SLEPc requested, but no configured because PETSc was not found.")
 endif()
 
+# SCOTCH 7.0.1 was first version with ScotchConfig.cmake
 if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)
-  find_package(SCOTCH REQUIRED CONFIG)
+  find_package(SCOTCH 7.0.1 REQUIRED CONFIG)
 elseif(DOLFINX_ENABLE_SCOTCH)
-  find_package(SCOTCH CONFIG)
+  find_package(SCOTCH 7.0.1 CONFIG)
 endif()
 
 if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
