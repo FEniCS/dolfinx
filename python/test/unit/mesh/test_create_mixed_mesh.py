@@ -71,10 +71,10 @@ def test_create_mixed_mesh():
         geom += [[ix / nx, iy / ny, iz / nz]]
 
     if MPI.COMM_WORLD.rank == 0:
-        cells_np = [np.array(c) for c in cells]
+        cells_np = [np.array(c, dtype=np.int64) for c in cells]
         geomx = np.array(geom, dtype=np.float64)
     else:
-        cells_np = [np.zeros(0) for c in cells]
+        cells_np = [np.zeros(0, dtype=np.int64) for c in cells]
         geomx = np.zeros((0, 3), dtype=np.float64)
 
     hexahedron = coordinate_element(CellType.hexahedron, 1)
