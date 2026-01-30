@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for MatrixCSR."""
+"""Unit tests for SuperLU_DIST."""
 
 from mpi4py import MPI
 
