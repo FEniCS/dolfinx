@@ -445,7 +445,7 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
   endif()
 elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
-  message(FATAL_ERROR "SLEPc requested, but not configured because PETSc was not found.")
+  message(FATAL_ERROR "SLEPc required, but not configured because PETSc was not found.")
 endif()
 
 # SCOTCH 7.0.1 was first version with ScotchConfig.cmake
