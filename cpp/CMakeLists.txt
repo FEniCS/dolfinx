@@ -505,6 +505,7 @@ if(DOLFINX_ENABLE_SUPERLU_DIST)
   else()
     set(ENV_PKG_CONFIG_PATH})
   endif()
+
   # If PETSc was built with SuperLU_DIST then pickup install there
   if(DEFINED ENV{PETSC_DIR})
     set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/lib/pkgconfig:ENV_PKG_CONFIG_PATH")
@@ -516,7 +517,7 @@ if(DOLFINX_ENABLE_SUPERLU_DIST)
   if(_REQUIRE_SUPERLU_DIST)
     pkg_search_module(SUPERLU_DIST REQUIRED IMPORTED_TARGET superlu_dist)
   else()
-    pkg_search_module(SUPERLU_DIST IMPORTED_TARGET superlu_dist)
+    pkg_search_module(SUPERLU_DIST OPTIONAL IMPORTED_TARGET superlu_dist)
   endif()
 
   if(SUPERLU_DIST_FOUND)
