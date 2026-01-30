@@ -504,7 +504,7 @@ if(DOLFINX_ENABLE_SUPERLU_DIST)
     endif()
   endif()
 
-  pkg_search_module(SUPERLU_DIST REQUIRED IMPORTED_TARGET superlu_dist)
+  pkg_search_module(SUPERLU_DIST IMPORTED_TARGET superlu_dist)
 
   if(SUPERLU_DIST_FOUND)
     message(STATUS "Found SuperLU_dist version ${SUPERLU_DIST_VERSION}, prefix: ${SUPERLU_DIST_PREFIX}")
