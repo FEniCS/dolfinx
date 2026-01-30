@@ -6,7 +6,7 @@
 
 #ifdef HAS_SUPERLU_DIST
 
-#include "superlu.h"
+#include "superlu_dist.h"
 extern "C"
 {
 #include "superlu_ddefs.h"
@@ -17,17 +17,17 @@ extern "C"
 #include <dolfinx/la/Vector.h>
 #include <iostream>
 
-// Trick for declaring anonymous typedef structs from SuperLU
-struct dolfinx::la::SuperLUStructs::SuperMatrix : public ::SuperMatrix
+// Trick for declaring anonymous typedef structs from SuperLU_DIST
+struct dolfinx::la::SuperLUDistStructs::SuperMatrix : public ::SuperMatrix
 {
 };
 
-struct dolfinx::la::SuperLUStructs::gridinfo_t : public ::gridinfo_t
+struct dolfinx::la::SuperLUDistStructs::gridinfo_t : public ::gridinfo_t
 {
 };
 
 /// Struct holding vector of type int_t
-struct dolfinx::la::SuperLUStructs::vec_int_t
+struct dolfinx::la::SuperLUDistStructs::vec_int_t
 {
   /// @brief vector
   std::vector<int_t> vec;
@@ -43,34 +43,34 @@ using namespace dolfinx;
 using namespace dolfinx::la;
 
 template <typename T>
-void SuperLUSolver<T>::GridInfoDeleter::operator()(
-    SuperLUStructs::gridinfo_t* gridinfo) const noexcept
+void SuperLUDistSolver<T>::GridInfoDeleter::operator()(
+    SuperLUDistStructs::gridinfo_t* gridinfo) const noexcept
 {
   superlu_gridexit(gridinfo);
   delete gridinfo;
 }
 
 template <typename T>
-void SuperLUSolver<T>::SuperMatrixDeleter::operator()(
-    SuperLUStructs::SuperMatrix* supermatrix) const noexcept
+void SuperLUDistSolver<T>::SuperMatrixDeleter::operator()(
+    SuperLUDistStructs::SuperMatrix* supermatrix) const noexcept
 {
   Destroy_SuperMatrix_Store_dist(supermatrix);
   delete supermatrix;
 }
 
 template <typename T>
-void SuperLUSolver<T>::VecIntDeleter::operator()(
-    SuperLUStructs::vec_int_t* vec) const noexcept
+void SuperLUDistSolver<T>::VecIntDeleter::operator()(
+    SuperLUDistStructs::vec_int_t* vec) const noexcept
 {
   delete vec;
 }
 
 template <typename T>
-SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const MatrixCSR<T>> Amat,
+SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> Amat,
                                 bool verbose)
-    : _gridinfo(new SuperLUStructs::gridinfo_t, GridInfoDeleter{}),
-      _supermatrix(new SuperLUStructs::SuperMatrix, SuperMatrixDeleter{}),
-      _Amat(Amat), cols(new SuperLUStructs::vec_int_t, VecIntDeleter{}),
+    : _gridinfo(new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{}),
+      _supermatrix(new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{}),
+      _Amat(Amat), cols(new SuperLUDistStructs::vec_int_t, VecIntDeleter{}),
       _verbose(verbose)
 {
   int size = dolfinx::MPI::size(Amat->comm());
@@ -85,7 +85,7 @@ SuperLUSolver<T>::SuperLUSolver(std::shared_ptr<const MatrixCSR<T>> Amat,
 }
 //---------------------------------------------------------------------------------------
 template <typename T>
-void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
+void SuperLUDistSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
 {
   spdlog::info("Start set_operator");
   // Global size
@@ -144,7 +144,7 @@ void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
 }
 //---------------------------------------------------------------------------------------
 template <typename T>
-int SuperLUSolver<T>::solve(const la::Vector<T>& bvec,
+int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
                             la::Vector<T>& uvec) const
 {
   int m = _Amat->index_map(0)->size_global();
@@ -165,7 +165,7 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec,
   SuperLUStat_t stat;
   PStatInit(&stat);
 
-  // Copy b to u (SuperLU reads b from u and then overwrites u with solution)
+  // Copy b to u (SuperLU_DIST reads b from u and then overwrites u with solution)
   std::copy(bvec.array().begin(), std::next(bvec.array().begin(), m_loc),
             uvec.array().begin());
 
@@ -238,9 +238,9 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec,
 
   if (info != 0 and dolfinx::MPI::rank(_Amat->comm()) == 0)
   {
-    std::cout << "SuperLU_dist p*gssvx() error: " << info << std::endl
+    std::cout << "SuperLU_DIST p*gssvx() error: " << info << std::endl
               << std::flush;
-    spdlog::info("SuperLU_dist p*gssvx() error: {}", info);
+    spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
   }
 
   if (_verbose)
@@ -250,8 +250,8 @@ int SuperLUSolver<T>::solve(const la::Vector<T>& bvec,
   return info;
 }
 //---------------------------------------------------------------------------------------
-template class la::SuperLUSolver<double>;
-template class la::SuperLUSolver<float>;
-template class la::SuperLUSolver<std::complex<double>>;
+template class la::SuperLUDistSolver<double>;
+template class la::SuperLUDistSolver<float>;
+template class la::SuperLUDistSolver<std::complex<double>>;
 
 #endif

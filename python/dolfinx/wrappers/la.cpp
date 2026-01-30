@@ -13,7 +13,7 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
-#include <dolfinx/la/superlu.h>
+#include <dolfinx/la/superlu_dist.h>
 #include <dolfinx/la/utils.h>
 #include <memory>
 #include <nanobind/nanobind.h>
@@ -209,19 +209,19 @@ void declare_functions(nb::module_& m)
 
 #if defined(HAS_SUPERLU_DIST)
 template <typename T>
-void declare_superlu_solver(nb::module_& m, const std::string& type)
+void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
 {
-  // dolfinx::la::SuperLUSolver
-  std::string name = std::string("SuperLUSolver_") + type;
+  // dolfinx::la::SuperLUDistSolver
+  std::string name = std::string("SuperLUDistSolver_") + type;
 
-  nb::class_<dolfinx::la::SuperLUSolver<T>>(m, name.c_str())
+  nb::class_<dolfinx::la::SuperLUDistSolver<T>>(m, name.c_str())
       .def(
           "__init__",
-          [](dolfinx::la::SuperLUSolver<T>* solver,
+          [](dolfinx::la::SuperLUDistSolver<T>* solver,
              std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat)
-          { new (solver) dolfinx::la::SuperLUSolver<T>(Amat); },
+          { new (solver) dolfinx::la::SuperLUDistSolver<T>(Amat); },
           nb::arg("A"))
-      .def("solve", &dolfinx::la::SuperLUSolver<T>::solve);
+      .def("solve", &dolfinx::la::SuperLUDistSolver<T>::solve);
 }
 #endif // HAS_SUPERLU_DIST
 
@@ -309,9 +309,9 @@ void la(nb::module_& m)
           nb::rv_policy::reference_internal);
 
 #if defined(HAS_SUPERLU_DIST)
-  declare_superlu_solver<double>(m, "float64");
-  declare_superlu_solver<float>(m, "float32");
-  declare_superlu_solver<std::complex<double>>(m, "complex128");
+  declare_superlu_dist_solver<double>(m, "float64");
+  declare_superlu_dist_solver<float>(m, "float32");
+  declare_superlu_dist_solver<std::complex<double>>(m, "complex128");
 #endif // HAS_SUPERLU_DIST
 
   // Declare objects that are templated over type

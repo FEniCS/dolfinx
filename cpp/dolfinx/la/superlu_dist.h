@@ -14,8 +14,8 @@ namespace dolfinx::la
 {
 
 // Trick for forward declaration of anonymous structs from SuperLU
-// Avoids including SuperLU headers in DOLFINx headers
-class SuperLUStructs
+// Avoids including SuperLU_DIST headers in DOLFINx headers
+class SuperLUDistStructs
 {
 public:
   struct SuperMatrix;
@@ -23,22 +23,22 @@ public:
   struct vec_int_t;
 };
 
-/// Solver using SuperLU-dist
+/// Linear solver using SuperLU_DIST
 template <typename T>
-class SuperLUSolver
+class SuperLUDistSolver
 {
 public:
-  /// @brief SuperLU_dist solver wrapper
-  /// @param Amat Assembled matrix to solve for
+  /// @brief SuperLU_DIST solver wrapper
+  /// @param Amat Assembled matrix to invert
   /// @param verbose Verbosity
   /// @tparam T Scalar type
-  SuperLUSolver(std::shared_ptr<const MatrixCSR<T>> Amat, bool verbose = false);
+  SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> Amat, bool verbose = false);
 
   /// Copy constructor
-  SuperLUSolver(const SuperLUSolver&) = delete;
+  SuperLUDistSolver(const SuperLUDistSolver&) = delete;
 
   /// Copy assignment
-  SuperLUSolver& operator=(const SuperLUSolver&) = delete;
+  SuperLUDistSolver& operator=(const SuperLUDistSolver&) = delete;
 
   /// Solve linear system Au = b
   /// @param b Right-hand side Vector
@@ -51,34 +51,34 @@ private:
   // holding gridinfo_t.
   struct GridInfoDeleter
   {
-    void operator()(SuperLUStructs::gridinfo_t* g) const noexcept;
+    void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
   };
 
   // Call library cleanup and delete pointer. For use with std::unique_ptr
   // holding SuperMatrix.
   struct SuperMatrixDeleter
   {
-    void operator()(SuperLUStructs::SuperMatrix* A) const noexcept;
+    void operator()(SuperLUDistStructs::SuperMatrix* A) const noexcept;
   };
 
   struct VecIntDeleter
   {
-    void operator()(SuperLUStructs::vec_int_t* v) const noexcept;
+    void operator()(SuperLUDistStructs::vec_int_t* v) const noexcept;
   };
 
   /// Set the matrix operator
   void set_operator(const la::MatrixCSR<T>& Amat);
 
   // Pointer to struct gridinfo_t
-  std::unique_ptr<SuperLUStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
+  std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
   // Pointer to SuperMatrix
-  std::unique_ptr<SuperLUStructs::SuperMatrix, SuperMatrixDeleter> _supermatrix;
+  std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter> _supermatrix;
 
   // Saved matrix operator with rows and cols in
   // required integer type
   std::shared_ptr<const la::MatrixCSR<T>> _Amat;
   // cols is required in opaque type "int_t" of SuperLU-dist.
-  std::unique_ptr<SuperLUStructs::vec_int_t, VecIntDeleter> cols;
+  std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> cols;
   std::vector<int> rowptr;
 
   // Flag for diagnostic output
