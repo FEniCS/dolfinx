@@ -78,7 +78,7 @@ jobs:
             --download-mumps \
             --download-mumps-avoid-mpi-in-place \
             --download-parmetis \
-            --download-superlu-dist
+            --download-superlu_dist
           make all
           cd src/binding/petsc4py
           arch -arm64 pip -v install --user --no-build-isolation .
