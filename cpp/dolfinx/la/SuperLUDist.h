@@ -79,9 +79,9 @@ private:
   // Saved matrix operator with rows and cols in
   // required integer type
   std::shared_ptr<const la::MatrixCSR<T>> _Amat;
-  // cols is required in opaque type "int_t" of SuperLU-dist.
+  // cols and rowptr are required in opaque type "int_t" of SuperLU-dist.
   std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> cols;
-  std::vector<int> rowptr;
+  std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> rowptr;
 
   // Flag for diagnostic output
   bool _verbose;
