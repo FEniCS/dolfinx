@@ -172,6 +172,7 @@ jobs:
           CIBW_TEST_COMMAND: >
             . /etc/profile &&
             module load mpi/mpich-$(arch) &&
+            python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_superlu_dist; assert dolfinx.has_ptscotch" 
             python -m pytest -n auto \
               -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest \
