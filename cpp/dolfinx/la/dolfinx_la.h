@@ -12,5 +12,5 @@ namespace dolfinx::la
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/la/slepc.h>
-#include <dolfinx/la/superlu.h>
+#include <dolfinx/la/superlu_dist.h>
 #include <dolfinx/la/utils.h>
