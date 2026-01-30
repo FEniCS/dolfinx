@@ -6,7 +6,7 @@
 
 #ifdef HAS_SUPERLU_DIST
 
-#include "superlu_dist.h"
+#include "SuperLUDist.h"
 extern "C"
 {
 #include "superlu_ddefs.h"
@@ -237,10 +237,8 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
   }
   spdlog::info("Finished solve");
 
-  if (info != 0 and dolfinx::MPI::rank(_Amat->comm()) == 0)
+  if (info != 0)
   {
-    std::cout << "SuperLU_DIST p*gssvx() error: " << info << std::endl
-              << std::flush;
     spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
   }
 

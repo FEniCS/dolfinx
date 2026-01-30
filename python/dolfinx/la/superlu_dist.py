@@ -35,18 +35,21 @@ class SuperLUDistSolver:
         """
         self._cpp_object = solver
 
-    def solve(self, b: dolfinx.la.Vector, u: dolfinx.la.Vector) -> dolfinx.la.Vector:
+    def solve(self, b: dolfinx.la.Vector, u: dolfinx.la.Vector) -> int:
         """Solver linear system Au = b.
+
+        Note:
+            The caller should check the return int for success (== 0).
 
         Note:
             The caller must `u.scatter_forward()` after the solve.
 
         Args:
-            b: Right-hand side vector
-            u: Solution vector
+            b: Right-hand side vector.
+            u: Solution vector.
 
         Returns:
-            Solution vector, same object as u.
+           SuperLU_DIST return int from p*gssvx routine.
         """
         return self._cpp_object.solve(b._cpp_object, u._cpp_object)
 
