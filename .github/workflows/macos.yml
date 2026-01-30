@@ -104,7 +104,7 @@ jobs:
           cmake -B build -S . -Werror=dev --warn-uninitialized -G Ninja \
             -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
             -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_PARMETIS=true \
-            -DDOLFINX_ENABLE_PETSC=true
+            -DDOLFINX_ENABLE_PETSC=true -DDOLFINX_ENABLE_SUPERLU_DIST=true
 
       - name: Build and install (C++)
         working-directory: cpp/build
