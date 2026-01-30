@@ -92,7 +92,7 @@ consteval bool has_ptscotch()
 #endif
 }
 
-/// Return true if DOLFINX is compiled with SuperLU-dist
+/// Return true if DOLFINx is compiled with SuperLU_DIST
 consteval bool has_superlu_dist()
 {
 #ifdef HAS_SUPERLU_DIST
