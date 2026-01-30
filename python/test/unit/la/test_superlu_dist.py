@@ -72,7 +72,7 @@ def test_superlu_solver(dtype):
     uh = Function(V, dtype=dtype)
     solver = superlu_dist_solver(A)
     error_code = solver.solve(b, uh.x)
-    assert(error_code == 0)
+    assert error_code == 0
     uh.x.scatter_forward()
 
     M = (u_ex(x) - uh) ** 2 * dx
