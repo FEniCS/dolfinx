@@ -385,13 +385,15 @@ endif()
 
 if(DOLFINX_ENABLE_PETSC)
   find_package(PkgConfig REQUIRED)
+  
   if (DEFINED ENV{PKG_CONFIG_PATH})
     set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
   else()
-    set(ENV_PKG_CONFIG_PATH})
+    set(ENV_PKG_CONFIG_PATH)
   endif()
+  
   if(DEFINED ENV{PETSC_DIR})
-    set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+    set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/lib/pkgconfig:$ENV_PKG_CONFIG_PATH")
     if(DEFINED ENV{PETSC_ARCH})
       set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
     endif()
@@ -415,8 +417,15 @@ endif()
 
 if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   find_package(PkgConfig REQUIRED)
+  
+  if (DEFINED ENV{PKG_CONFIG_PATH})
+    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
+  else()
+    set(ENV_PKG_CONFIG_PATH)
+  endif()
+  
   if(DEFINED ENV{SLEPC_DIR})
-    set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+    set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV_PKG_CONFIG_PATH")
     if(DEFINED ENV{PETSC_ARCH})
       set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
     endif()
@@ -425,7 +434,7 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   if(_REQUIRE_SLEPC)
     pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
   else()
-    pkg_search_module(SLEPC IMPORTED_TARGET slepc>=3.15)
+    pkg_search_module(SLEPC OPTIONAL IMPORTED_TARGET slepc>=3.15)
   endif()
 
   # Setting for FeatureSummary
@@ -436,7 +445,7 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
   endif()
 elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
-  message(FATAL_ERROR "SLEPc requested, but no configured because PETSc was not found.")
+  message(FATAL_ERROR "SLEPc requested, but not configured because PETSc was not found.")
 endif()
 
 # SCOTCH 7.0.1 was first version with ScotchConfig.cmake
