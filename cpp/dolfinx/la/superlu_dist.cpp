@@ -71,6 +71,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
     : _gridinfo(new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{}),
       _supermatrix(new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{}),
       _Amat(Amat), cols(new SuperLUDistStructs::vec_int_t, VecIntDeleter{}),
+      rowptr(new SuperLUDistStructs::vec_int_t, VecIntDeleter{}),
       _verbose(verbose)
 {
   int size = dolfinx::MPI::size(Amat->comm());
@@ -103,11 +104,11 @@ void SuperLUDistSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
   // Local number of non-zeros
   int nnz_loc = Amat.row_ptr()[m_loc];
   cols->vec.resize(nnz_loc);
-  rowptr.resize(m_loc + 1);
+  rowptr->vec.resize(m_loc + 1);
 
   // Copy row_ptr from int64
   std::copy(Amat.row_ptr().begin(),
-            std::next(Amat.row_ptr().begin(), m_loc + 1), rowptr.begin());
+            std::next(Amat.row_ptr().begin(), m_loc + 1), rowptr->vec.begin());
 
   // Convert local to global indices (and cast to int_t)
   std::vector<std::int64_t> global_col_indices(
@@ -119,22 +120,22 @@ void SuperLUDistSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
   auto Amatdata = const_cast<T*>(Amat.values().data());
   if constexpr (std::is_same_v<T, double>)
   {
-    dCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc,
-                                   first_row, Amatdata, cols->vec.data(),
-                                   rowptr.data(), SLU_NR_loc, SLU_D, SLU_GE);
+    dCreate_CompRowLoc_Matrix_dist(
+        _supermatrix.get(), m, n, nnz_loc, m_loc, first_row, Amatdata,
+        cols->vec.data(), rowptr->vec.data(), SLU_NR_loc, SLU_D, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, float>)
   {
-    sCreate_CompRowLoc_Matrix_dist(_supermatrix.get(), m, n, nnz_loc, m_loc,
-                                   first_row, Amatdata, cols->vec.data(),
-                                   rowptr.data(), SLU_NR_loc, SLU_S, SLU_GE);
+    sCreate_CompRowLoc_Matrix_dist(
+        _supermatrix.get(), m, n, nnz_loc, m_loc, first_row, Amatdata,
+        cols->vec.data(), rowptr->vec.data(), SLU_NR_loc, SLU_S, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     zCreate_CompRowLoc_Matrix_dist(
         _supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
         reinterpret_cast<doublecomplex*>(Amatdata), cols->vec.data(),
-        rowptr.data(), SLU_NR_loc, SLU_Z, SLU_GE);
+        rowptr->vec.data(), SLU_NR_loc, SLU_Z, SLU_GE);
   }
   else
   {
