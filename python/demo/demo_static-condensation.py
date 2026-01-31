@@ -243,7 +243,7 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL, cu
 
 formtype = form_cpp_class(dtype)  # type: ignore
 cells = np.arange(msh.topology.index_map(msh.topology.dim).size_local)
-integrals = {IntegralType.cell: [(0, tabulate_A.address, cells, np.array([], dtype=np.int8))]}
+integrals = {IntegralType.cell: [(0, tabulate_A.address, cells, np.array([], dtype=np.int8), None)]}
 a_cond = Form(
     formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, [], mesh=msh._cpp_object)
 )
