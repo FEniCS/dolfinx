@@ -58,7 +58,7 @@ class SuperLUDistSolver:
             u: Solution vector :math:`u`, overwritten during solve.
 
         Returns:
-           SuperLU_DIST return int from p*gssvx routine.
+           SuperLU_DIST return int from ``p*gssvx`` routine.
         """
         return self._cpp_object.solve(b._cpp_object, u._cpp_object)
 
