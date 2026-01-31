@@ -10,7 +10,7 @@ To build the documentation:
 
 2. Run in this directory:
  
-       python -m sphinx -w -b html source/ build/html/
+       python -m sphinx -W -b html source/ build/html/
 
 ## Processing of the demo programs
 
