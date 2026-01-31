@@ -48,7 +48,8 @@ class SuperLUDistSolver:
         """Solve linear system :math:`Au = b`.
 
         Note:
-            The caller must check the return integer for success ``(== 0)``.
+            The caller must check the return integer for success
+            ``(== 0)``.
 
         Note:
             The caller must ``u.scatter_forward()`` after the solve.
