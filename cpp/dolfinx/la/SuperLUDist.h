@@ -13,7 +13,7 @@
 namespace dolfinx::la
 {
 
-// Trick for forward declaration of anonymous structs from SuperLU
+// Trick for forward declaration of anonymous structs
 // Avoids including SuperLU_DIST headers in DOLFINx headers
 class SuperLUDistStructs
 {
@@ -79,7 +79,7 @@ private:
   // Saved matrix operator with rows and cols in
   // required integer type
   std::shared_ptr<const la::MatrixCSR<T>> _Amat;
-  // cols and rowptr are required in opaque type "int_t" of SuperLU-dist.
+  // cols and rowptr are required in opaque type "int_t" of SuperLU_DIST.
   std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> cols;
   std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> rowptr;
 

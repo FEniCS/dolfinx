@@ -70,7 +70,7 @@ def test_superlu_solver(dtype):
     A.scatter_reverse()
 
     uh = Function(V, dtype=dtype)
-    solver = superlu_dist_solver(A)
+    solver = superlu_dist_solver(A, verbose=False)
     error_code = solver.solve(b, uh.x)
     assert error_code == 0
     uh.x.scatter_forward()
