@@ -27,7 +27,6 @@ import dolfinx
 from dolfinx.common import IndexMap
 from dolfinx.la import Vector
 
-
 assert dolfinx.has_petsc4py
 
 __all__ = ["assign", "create_vector", "create_vector_wrap"]
@@ -37,7 +36,7 @@ def _ghost_update(
     x: PETSc.Vec, insert_mode: PETSc.InsertModeSpec, scatter_mode: PETSc.ScatterModeSpec
 ):
     """Helper function for ghost updating PETSc vectors."""
-    if x.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
+    if x.getType() == PETSc.Vec.Type.NEST:
         for x_sub in x.getNestSubVecs():
             x_sub.ghostUpdate(addv=insert_mode, mode=scatter_mode)
             x_sub.destroy()
@@ -45,9 +44,9 @@ def _ghost_update(
         x.ghostUpdate(addv=insert_mode, mode=scatter_mode)
 
 
-def _zero_vector(x: PETSc.Vec):  # type: ignore[name-defined]
+def _zero_vector(x: PETSc.Vec):
     """Helper function for zeroing out PETSc vectors."""
-    if x.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
+    if x.getType() == PETSc.Vec.Type.NEST:
         for x_sub in x.getNestSubVecs():
             with x_sub.localForm() as x_sub_local:
                 x_sub_local.set(0.0)
@@ -57,7 +56,7 @@ def _zero_vector(x: PETSc.Vec):  # type: ignore[name-defined]
             x_local.set(0.0)
 
 
-def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
+def create_vector_wrap(x: Vector) -> PETSc.Vec:
     """Wrap a distributed DOLFINx vector as a PETSc vector.
 
     Args:
@@ -83,7 +82,7 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
 
 def create_vector(
     maps: typing.Sequence[tuple[IndexMap, int]], kind: str | None = None
-) -> PETSc.Vec:  # type: ignore[name-defined]
+) -> PETSc.Vec:
     """Create a PETSc vector from a sequence of maps and blocksizes.
 
     Three cases are supported:
@@ -132,16 +131,16 @@ def create_vector(
         index_map, bs = maps[0]
         ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore[attr-defined]
         size = (index_map.size_local * bs, index_map.size_global * bs)
-        b = PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore
-        if kind == PETSc.Vec.Type.MPI:  # type: ignore[attr-defined]
+        b = PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)
+        if kind == PETSc.Vec.Type.MPI:
             _assign_block_data(maps, b)
         return b
 
-    if kind is None or kind == PETSc.Vec.Type.MPI:  # type: ignore[attr-defined]
+    if kind is None or kind == PETSc.Vec.Type.MPI:
         b = dolfinx.cpp.fem.petsc.create_vector_block(maps)
         _assign_block_data(maps, b)
         return b
-    elif kind == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
+    elif kind == PETSc.Vec.Type.NEST:
         return dolfinx.cpp.fem.petsc.create_vector_nest(maps)
     else:
         raise NotImplementedError(
