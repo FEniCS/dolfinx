@@ -15,7 +15,6 @@ extern "C"
 }
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
-#include <iostream>
 
 // Trick for declaring anonymous typedef structs from SuperLU_DIST
 struct dolfinx::la::SuperLUDistStructs::SuperMatrix : public ::SuperMatrix
