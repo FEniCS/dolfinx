@@ -27,6 +27,7 @@ import dolfinx
 from dolfinx.common import IndexMap
 from dolfinx.la import Vector
 
+
 assert dolfinx.has_petsc4py
 
 __all__ = ["assign", "create_vector", "create_vector_wrap"]
@@ -73,10 +74,10 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:  # type: ignore[name-defined]
     # TODO: needs strub fix in PETSc
     return PETSc.Vec().createGhostWithArray(
         ghosts,
-        x.array,
+        x.array,  # type: ignore[arg-type]
         size=size,
         bsize=bs,
-        comm=index_map.comm,  # type: ignore[arg-type]
+        comm=index_map.comm,
     )
 
 
@@ -152,8 +153,8 @@ def create_vector(
 
 @functools.singledispatch
 def assign(
-    x0: PETSc.Vec,
-    x1: PETSc.Vec | npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
+    x0: PETSc.Vec | npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
+    x1: PETSc.Vec,
 ):
     """Assign ``x0`` values to a PETSc vector ``x1``.
 
