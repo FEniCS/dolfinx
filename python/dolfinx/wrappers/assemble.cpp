@@ -37,6 +37,7 @@
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
+#include <ranges>
 #include <span>
 #include <string>
 #include <utility>
@@ -73,9 +74,8 @@ create_sparsity(const dolfinx::fem::FunctionSpace<U>& V0,
   int tdim = mesh->topology()->dim();
   auto map = mesh->topology()->index_map(tdim);
   assert(map);
-  std::vector<std::int32_t> c(map->size_local(), 0);
-  std::iota(c.begin(), c.end(), 0);
-  dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
+  auto c = std::ranges::views::iota(0, map->size_local());
+  dolfinx::fem::sparsitybuild::cells(sp, std::pair{c, c}, {*dofmap1, *dofmap0});
   sp.finalize();
 
   return sp;

@@ -27,12 +27,15 @@
 #include <utility>
 #include <vector>
 
+#include <iostream>
+
 using namespace dolfinx;
 
 namespace
 {
 
-void cell_entry(int c0, int c1, std::vector<std::int32_t>* entity_list,
+void cell_entry(std::int32_t c0, std::int32_t num_cells,
+                std::span<std::int32_t> entity_list,
                 const graph::AdjacencyList<std::int32_t>& cells,
                 const graph::AdjacencyList<std::int32_t>& e_vertices,
                 mesh::CellType entity_type,
@@ -43,30 +46,33 @@ void cell_entry(int c0, int c1, std::vector<std::int32_t>* entity_list,
   int num_vertices_per_entity = num_cell_vertices(entity_type);
   int num_entities_per_cell = cell_type_entities_k.size();
 
-  for (int c = c0; c < c1; ++c)
+  // for (int c = c0; c < c0 + num_cells; ++c)
+  for (int c = 0; c < num_cells; ++c)
   {
     // Get vertices from each cell
-    auto vertices = cells.links(c);
+    auto vertices = cells.links(c + c0);
 
     for (int i = 0; i < num_entities_per_cell; ++i)
     {
-      const std::int32_t idx = c * num_entities_per_cell + i;
       auto ev = e_vertices.links(cell_type_entities_k[i]);
 
       // Get entity vertices. Padded with -1 if fewer than
-      // max_vertices_per_entity
-      // NOTE Entity orientation is determined by vertex ordering. The
-      // orientation of an entity with respect to the cell may differ from its
-      // global mesh orientation. Hence, we reorder the vertices so that
-      // each entity's orientation agrees with their global orientation.
-      // FIXME This might be better below when the entity to vertex
+      // max_vertices_per_entity.
+      //
+      // NOTE: Entity orientation is determined by vertex ordering. The
+      // orientation of an entity with respect to the cell may differ
+      // from its global mesh orientation. Hence, we reorder the
+      // vertices so that each entity's orientation agrees with their
+      // global orientation.
+      //
+      // FIXME: This might be better below when the entity to vertex
       // connectivity is computed
       std::vector<std::int32_t> entity_vertices(ev.size());
       for (std::size_t j = 0; j < ev.size(); ++j)
         entity_vertices[j] = vertices[ev[j]];
 
-      // Orient the entities. Simply sort according to global vertex index
-      // for simplices
+      // Orient the entities. Simply sort according to global vertex
+      // index for simplices
       std::vector<std::int64_t> global_vertices(entity_vertices.size());
       vertex_index_map->local_to_global(entity_vertices, global_vertices);
 
@@ -74,8 +80,9 @@ void cell_entry(int c0, int c1, std::vector<std::int32_t>* entity_list,
       std::iota(perm.begin(), perm.end(), 0);
       std::ranges::sort(perm, [&global_vertices](std::size_t i0, std::size_t i1)
                         { return global_vertices[i0] < global_vertices[i1]; });
-      // For quadrilaterals, the vertex opposite the lowest vertex should
-      // be last
+
+      // For quadrilaterals, the vertex opposite the lowest vertex
+      // should be last
       if (entity_type == mesh::CellType::quadrilateral)
       {
         std::size_t min_vertex_idx = perm[0];
@@ -85,9 +92,12 @@ void cell_entry(int c0, int c1, std::vector<std::int32_t>* entity_list,
         std::rotate(it, it + 1, perm.end());
       }
 
+      const std::int32_t idx = (c + c0) * num_entities_per_cell + i;
       for (std::size_t j = 0; j < ev.size(); ++j)
-        (*entity_list)[(cell_type_offset_k + idx) * num_vertices_per_entity + j]
+      {
+        entity_list[(cell_type_offset_k + idx) * num_vertices_per_entity + j]
             = entity_vertices[perm[j]];
+      }
     }
   }
 }
@@ -267,15 +277,14 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       }
     }
 
-    perm.resize(entity_to_local_idx.size() / (num_vertices_per_e + 1));
-    std::iota(perm.begin(), perm.end(), 0);
-
     auto range_by_index = [&, shape = num_vertices_per_e + 1](auto e)
     {
       auto begin = std::next(entity_to_local_idx.begin(), e * shape);
       return std::ranges::subrange(begin, std::next(begin, shape));
     };
 
+    perm.resize(entity_to_local_idx.size() / (num_vertices_per_e + 1));
+    std::iota(perm.begin(), perm.end(), 0);
     std::ranges::sort(perm, std::ranges::lexicographical_compare,
                       range_by_index);
 
@@ -540,7 +549,8 @@ compute_entities_by_key_matching(
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
     mesh::CellType cell_type = std::get<0>(cell_lists[k]);
-    auto cells = std::get<1>(cell_lists[k]);
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> cells
+        = std::get<1>(cell_lists[k]);
     const std::size_t num_cells = cells->num_nodes();
 
     for (int i = 0; i < cell_num_entities(cell_type, dim); ++i)
@@ -558,29 +568,35 @@ compute_entities_by_key_matching(
 
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
-    auto cell_type = std::get<0>(cell_lists[k]);
-    auto cells = std::get<1>(cell_lists[k]);
-    auto cell_index_map = std::get<2>(cell_lists[k]);
+    mesh::CellType cell_type = std::get<0>(cell_lists[k]);
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> cells
+        = std::get<1>(cell_lists[k]);
+    std::shared_ptr<const common::IndexMap> cell_index_map
+        = std::get<2>(cell_lists[k]);
 
     // Get indices of desired entities within cell. Usually this will be all
     // entities, but for prism or pyramid facets, we will just pick out
     // triangle or quad facets.
 
     // Create map from cell vertices to entity vertices
-    auto e_vertices = get_entity_vertices(cell_type, dim);
+    const graph::AdjacencyList e_vertices = get_entity_vertices(cell_type, dim);
 
     dolfinx::common::Timer t_thread("Threaded part");
     const std::size_t num_cells = cells->num_nodes();
     // int num_entities_per_cell = cell_type_entities[k].size();
+    // int num_threads = std::thread::hardware_concurrency();
     int num_threads = 2;
+    std::cout << "Using " << num_threads << " threads\n";
     std::vector<std::jthread> threads(num_threads);
     for (int i = 0; i < num_threads; ++i)
     {
-      int c0 = i * num_cells / num_threads;
-      int c1 = (i + 1) * num_cells / num_threads;
-      threads[i] = std::jthread(cell_entry, c0, c1, &entity_list, *cells,
-                                e_vertices, entity_type, cell_type_entities[k],
-                                cell_type_offsets[k], vertex_index_map);
+      std::int32_t c0 = i * num_cells / num_threads;
+      std::int32_t c1 = (i + 1) * num_cells / num_threads;
+      // std::size_t e_offset = ;
+      threads[i]
+          = std::jthread(cell_entry, c0, c1 - c0, std::span(entity_list),
+                         *cells, e_vertices, entity_type, cell_type_entities[k],
+                         cell_type_offsets[k], vertex_index_map);
     }
     for (auto& t : threads)
       t.join();
@@ -641,11 +657,13 @@ compute_entities_by_key_matching(
   std::vector<std::int8_t> ghost_status(entity_count, 1);
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
-    auto cells = std::get<1>(cell_lists[k]);
-    [[maybe_unused]] const std::size_t num_cells = cells->num_nodes();
-    auto cell_map = std::get<2>(cell_lists[k]);
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> cells
+        = std::get<1>(cell_lists[k]);
+    std::shared_ptr<const common::IndexMap> cell_map
+        = std::get<2>(cell_lists[k]);
     int num_entities_per_cell = cell_type_entities[k].size();
-    assert(cell_map->size_local() + cell_map->num_ghosts() == (int)num_cells);
+    assert(cell_map->size_local() + cell_map->num_ghosts()
+           == (std::int32_t)cells->num_nodes());
 
     const std::int32_t ghost_offset = cell_map->size_local();
     // Tag all entities in local cells with 0, leaving entities which only
