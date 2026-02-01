@@ -7,13 +7,13 @@
 #pragma once
 
 #ifdef HAS_SUPERLU_DIST
+
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <memory>
 
 namespace dolfinx::la
 {
-
 // Delcare structs to avoid exposing SuperLU_DIST headers in DOLFINx.
 class SuperLUDistStructs
 {

@@ -213,7 +213,6 @@ void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
 {
   // dolfinx::la::SuperLUDistSolver
   std::string name = std::string("SuperLUDistSolver_") + type;
-
   nb::class_<dolfinx::la::SuperLUDistSolver<T>>(m, name.c_str())
       .def(
           "__init__",
