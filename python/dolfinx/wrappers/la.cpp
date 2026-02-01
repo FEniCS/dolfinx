@@ -25,6 +25,16 @@
 #include <nanobind/stl/vector.h>
 #include <span>
 
+#if defined(HAS_SUPERLU_DIST)
+#include "superlu_defs.h"
+/// Struct holding vector of type int_t
+struct dolfinx::la::SuperLUDistStructs::vec_int_t
+{
+  /// @brief vector
+  std::vector<int_t> vec;
+};
+#endif // HAS_SUPERLU_DIST
+
 namespace nb = nanobind;
 using namespace nb::literals;
 

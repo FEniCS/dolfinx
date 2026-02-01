@@ -68,17 +68,12 @@ private:
     void operator()(SuperLUDistStructs::SuperMatrix* A) const noexcept;
   };
 
-  struct VecIntDeleter
-  {
-    void operator()(SuperLUDistStructs::vec_int_t* v) const noexcept;
-  };
-
   // Saved matrix operator with rows and cols in required integer type.
   // cols and rowptr are required in opaque type "int_t" of
   // SuperLU_DIST.
   std::shared_ptr<const la::MatrixCSR<T>> _Amat;
-  std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> _cols;
-  std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> _rowptr;
+  std::unique_ptr<SuperLUDistStructs::vec_int_t> _cols;
+  std::unique_ptr<SuperLUDistStructs::vec_int_t> _rowptr;
 
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;

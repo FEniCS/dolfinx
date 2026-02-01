@@ -53,13 +53,6 @@ void SuperLUDistSolver<T>::SuperMatrixDeleter::operator()(
   delete supermatrix;
 }
 
-template <typename T>
-void SuperLUDistSolver<T>::VecIntDeleter::operator()(
-    SuperLUDistStructs::vec_int_t* vec) const noexcept
-{
-  delete vec;
-}
-
 namespace
 {
 template <typename...>
@@ -91,10 +84,9 @@ std::vector<int_t> row_indices(const auto& A)
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
                                         bool verbose)
-    : _Amat(A), _cols(new SuperLUDistStructs::vec_int_t{col_indices(*A)},
-                      VecIntDeleter{}),
-      _rowptr(new SuperLUDistStructs::vec_int_t{row_indices(*A)},
-              VecIntDeleter{}),
+    : _Amat(A),
+      _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*A))),
+      _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*A))),
       _gridinfo(
           [comm = A->comm()]
           {
