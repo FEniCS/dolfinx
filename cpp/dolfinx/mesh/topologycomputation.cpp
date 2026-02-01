@@ -594,7 +594,8 @@ compute_entities_by_key_matching(
 
     // Build entity list in parallel (threaded)
     dolfinx::common::Timer t_thread("Threaded part");
-    int num_threads = std::thread::hardware_concurrency();
+    int num_threads = 1;
+    // int num_threads = std::thread::hardware_concurrency();
     std::cout << "Using " << num_threads << " threads\n";
     {
       const graph::AdjacencyList<std::int32_t>& cells
