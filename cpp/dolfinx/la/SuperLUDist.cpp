@@ -123,7 +123,7 @@ void SuperLUDistSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
                  cols->vec.begin(), [&](std::int64_t local_index) -> int_t
                  { return global_col_indices[local_index]; });
 
-  auto Amatdata = const_cast<T*>(Amat.values().data());
+  T* Amatdata = const_cast<T*>(Amat.values().data());
   if constexpr (std::is_same_v<T, double>)
   {
     dCreate_CompRowLoc_Matrix_dist(
