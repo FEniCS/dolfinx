@@ -32,9 +32,7 @@ assert dolfinx.has_petsc4py
 __all__ = ["assign", "create_vector", "create_vector_wrap"]
 
 
-def _ghost_update(
-    x: PETSc.Vec, insert_mode: PETSc.InsertModeSpec, scatter_mode: PETSc.ScatterModeSpec
-):
+def _ghost_update(x: PETSc.Vec, insert_mode: int, scatter_mode: int):
     """Helper function for ghost updating PETSc vectors."""
     if x.getType() == PETSc.Vec.Type.NEST:
         for x_sub in x.getNestSubVecs():
@@ -70,7 +68,7 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:
     bs = x.block_size
     size = (index_map.size_local * bs, index_map.size_global * bs)
 
-    # TODO: needs strub fix in PETSc
+    # TODO: needs stub fix in PETSc
     return PETSc.Vec().createGhostWithArray(
         ghosts,
         x.array,  # type: ignore[arg-type]
