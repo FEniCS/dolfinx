@@ -571,7 +571,7 @@ compute_entities_by_key_matching(
     dolfinx::common::Timer t_thread("Threaded part");
     const std::size_t num_cells = cells->num_nodes();
     // int num_entities_per_cell = cell_type_entities[k].size();
-    int num_threads = 1;
+    int num_threads = 2;
     std::vector<std::jthread> threads(num_threads);
     for (int i = 0; i < num_threads; ++i)
     {

@@ -592,7 +592,9 @@ mesh::build_local_dual_graph(
   //           v_n1, v_n2,   -1, -1, ..., -1, n]
 
   const int shape1 = max_vertices_per_facet + 1;
-  std::vector<std::int64_t> facets(facet_count * shape1);
+  std::vector<std::int64_t> facets;
+  facets.reserve(facet_count * shape1);
+  constexpr std::int32_t padding_value = -1;
 
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
@@ -604,35 +606,22 @@ mesh::build_local_dual_graph(
     graph::AdjacencyList<int> cell_facets
         = mesh::get_entity_vertices(cell_type, tdim - 1);
 
-    auto loop_insert_fn
-        = [](std::int32_t c, int j, int num_cell_vertices, auto _cells,
-             auto cell_facets, int shape1, auto facets, auto cell_offsets)
+    for (std::int32_t c = 0; c < num_cells; ++c)
     {
-      constexpr std::int32_t padding_value = -1;
-
       // Loop over cell facets
       std::span v = _cells.subspan(num_cell_vertices * c, num_cell_vertices);
       for (int f = 0; f < cell_facets.num_nodes(); ++f)
       {
         std::span facet_vertices = cell_facets.links(f);
-        std::ranges::transform(facet_vertices,
-                               std::next(facets.begin(), c * shape1),
+        std::ranges::transform(facet_vertices, std::back_inserter(facets),
                                [v](auto idx) { return v[idx]; });
         // TODO: radix_sort?
-        std::sort(
-            std::next(facets.begin(), c * shape1),
-            std::next(facets.begin() + c * shape1 + facet_vertices.size()));
-        std::fill(
-            std::next(facets.begin() + c * shape1 + facet_vertices.size()),
-            std::next(facets.begin(), (c + 1) * shape1 - 1), padding_value);
-        facets[(c + 1) * shape1 - 1] = c + cell_offsets[j];
+        std::sort(std::prev(facets.end(), facet_vertices.size()), facets.end());
+        facets.insert(facets.end(),
+                      max_vertices_per_facet - facet_vertices.size(),
+                      padding_value);
+        facets.push_back(c + cell_offsets[j]);
       }
-    };
-
-    for (std::int32_t c = 0; c < num_cells; ++c)
-    {
-      loop_insert_fn(c, j, num_cell_vertices, _cells, cell_facets, shape1,
-                     facets, cell_offsets);
     }
   }
 
