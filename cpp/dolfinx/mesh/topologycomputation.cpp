@@ -48,7 +48,7 @@ namespace
 /// index for entity `e`.
 /// @param[in] entity_type Type of entity to extract.
 /// @param[in] cell_type_entities_k Indices of entities of type `entity_type`
-/// @param[in] vertex_index_map
+/// @param[in] vertex_index_map Index map for the vertices.
 void cell_entry(std::int32_t c0, std::int32_t num_cells,
                 std::span<std::int32_t> entity_list,
                 const graph::AdjacencyList<std::int32_t>& cells,
@@ -107,11 +107,10 @@ void cell_entry(std::int32_t c0, std::int32_t num_cells,
       }
 
       const std::int32_t idx = c * num_entities_per_cell + i;
-      for (std::size_t j = 0; j < ev.size(); ++j)
-      {
-        entity_list[idx * num_vertices_per_entity + j]
-            = entity_vertices[perm[j]];
-      }
+      auto e_list = entity_list.subspan(idx * num_vertices_per_entity,
+                                        num_vertices_per_entity);
+      for (int j = 0; j < num_vertices_per_entity; ++j)
+        e_list[j] = entity_vertices[perm[j]];
     }
   }
 }
