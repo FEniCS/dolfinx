@@ -98,19 +98,6 @@ if(@SLEPC_FOUND@)
   endif()
 endif()
 
-if(@SUPERLU_DIST_FOUND@)
-  if(NOT TARGET PkgConfig::SUPERLU_DIST)
-    find_package(PkgConfig REQUIRED)
-    set(ENV{PKG_CONFIG_PATH}
-        "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-    )
-    set(ENV{PKG_CONFIG_PATH}
-        "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}"
-    )
-    pkg_search_module(SUPERLU_DIST REQUIRED IMPORTED_TARGET superlu_dist)
-  endif()
-endif()
-
 if(@ADIOS2_FOUND@)
   find_dependency(ADIOS2 2.8.1 COMPONENTS CXX MPI)
 endif()

@@ -9,9 +9,9 @@
 #include "SuperLUDist.h"
 extern "C"
 {
-#include "superlu_ddefs.h"
-#include "superlu_sdefs.h"
-#include "superlu_zdefs.h"
+#include <superlu_ddefs.h>
+#include <superlu_sdefs.h>
+#include <superlu_zdefs.h>
 }
 #include <algorithm>
 #include <dolfinx/la/MatrixCSR.h>

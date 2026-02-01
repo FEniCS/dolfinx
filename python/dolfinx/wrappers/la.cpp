@@ -26,7 +26,7 @@
 #include <span>
 
 #if defined(HAS_SUPERLU_DIST)
-#include "superlu_defs.h"
+#include <superlu_defs.h>
 /// Struct holding vector of type int_t
 struct dolfinx::la::SuperLUDistStructs::vec_int_t
 {
