@@ -68,20 +68,25 @@ void SuperLUDistSolver<T>::VecIntDeleter::operator()(
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(
     std::shared_ptr<const MatrixCSR<T>> Amat, bool verbose)
-    : _gridinfo(new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{}),
+    : _Amat(Amat),
+      _gridinfo(
+          [Amat]
+          {
+            int size = dolfinx::MPI::size(Amat->comm());
+            int nprow = size;
+            int npcol = 1;
+
+            std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> p(
+                new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{});
+
+            superlu_gridinit(Amat->comm(), nprow, npcol, p.get());
+            return p;
+          }()),
       _supermatrix(new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{}),
-      _Amat(Amat), cols(new SuperLUDistStructs::vec_int_t, VecIntDeleter{}),
+      cols(new SuperLUDistStructs::vec_int_t, VecIntDeleter{}),
       rowptr(new SuperLUDistStructs::vec_int_t, VecIntDeleter{}),
       _verbose(verbose)
 {
-  int size = dolfinx::MPI::size(Amat->comm());
-
-  int nprow = size;
-  int npcol = 1;
-
-  spdlog::info("Start gridinit");
-  superlu_gridinit(Amat->comm(), nprow, npcol, _gridinfo.get());
-  spdlog::info("Finished gridinit");
   set_operator(*Amat);
 }
 //---------------------------------------------------------------------------------------

@@ -70,15 +70,16 @@ private:
   /// Set the matrix operator
   void set_operator(const la::MatrixCSR<T>& Amat);
 
+  // Saved matrix operator with rows and cols in
+  // required integer type
+  std::shared_ptr<const la::MatrixCSR<T>> _Amat;
+
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
   // Pointer to SuperMatrix
   std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
       _supermatrix;
 
-  // Saved matrix operator with rows and cols in
-  // required integer type
-  std::shared_ptr<const la::MatrixCSR<T>> _Amat;
   // cols and rowptr are required in opaque type "int_t" of SuperLU_DIST.
   std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> cols;
   std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> rowptr;
