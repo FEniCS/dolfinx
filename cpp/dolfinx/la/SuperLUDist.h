@@ -28,11 +28,14 @@ template <typename T>
 class SuperLUDistSolver
 {
 public:
-  /// @brief SuperLU_DIST solver wrapper
-  /// @param Amat Assembled matrix to invert
-  /// @param verbose Verbosity
-  /// @tparam T Scalar type
-  SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> Amat,
+  /// @brief SuperLU_DIST solver wrapper.
+  ///
+  /// Solves Au = b using SuperLU_DIST.
+  ///
+  /// @tparam T Scalar type.
+  /// @param A Matrix to solver for
+  /// @param verbose Verbose outout.
+  SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
                     bool verbose = false);
 
   /// Copy constructor
@@ -41,22 +44,23 @@ public:
   /// Copy assignment
   SuperLUDistSolver& operator=(const SuperLUDistSolver&) = delete;
 
-  /// Solve linear system Au = b
+  /// @brief Solve linear system Au = b.
+  ///
   /// @param b Right-hand side Vector
   /// @param u Solution Vector
   /// @note Must be compatible with A
   int solve(const dolfinx::la::Vector<T>& b, dolfinx::la::Vector<T>& u) const;
 
 private:
-  // Call library cleanup and delete pointer. For use with std::unique_ptr
-  // holding gridinfo_t.
+  // Call library cleanup and delete pointer. For use with
+  // std::unique_ptr holding gridinfo_t.
   struct GridInfoDeleter
   {
     void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
   };
 
-  // Call library cleanup and delete pointer. For use with std::unique_ptr
-  // holding SuperMatrix.
+  // Call library cleanup and delete pointer. For use with
+  // std::unique_ptr holding SuperMatrix.
   struct SuperMatrixDeleter
   {
     void operator()(SuperLUDistStructs::SuperMatrix* A) const noexcept;
@@ -67,12 +71,12 @@ private:
     void operator()(SuperLUDistStructs::vec_int_t* v) const noexcept;
   };
 
-  /// Set the matrix operator
-  void set_operator(const la::MatrixCSR<T>& Amat);
-
-  // Saved matrix operator with rows and cols in
-  // required integer type
+  // Saved matrix operator with rows and cols in required integer type.
+  // cols and rowptr are required in opaque type "int_t" of
+  // SuperLU_DIST.
   std::shared_ptr<const la::MatrixCSR<T>> _Amat;
+  std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> _cols;
+  std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> _rowptr;
 
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
@@ -80,9 +84,6 @@ private:
   std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
       _supermatrix;
 
-  // cols and rowptr are required in opaque type "int_t" of SuperLU_DIST.
-  std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> cols;
-  std::unique_ptr<SuperLUDistStructs::vec_int_t, VecIntDeleter> rowptr;
 
   // Flag for diagnostic output
   bool _verbose;

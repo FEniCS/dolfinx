@@ -33,12 +33,6 @@ struct dolfinx::la::SuperLUDistStructs::vec_int_t
   std::vector<int_t> vec;
 };
 
-namespace
-{
-template <typename...>
-constexpr bool dependent_false_v = false;
-}
-
 using namespace dolfinx;
 using namespace dolfinx::la;
 
@@ -65,100 +59,107 @@ void SuperLUDistSolver<T>::VecIntDeleter::operator()(
   delete vec;
 }
 
-template <typename T>
-SuperLUDistSolver<T>::SuperLUDistSolver(
-    std::shared_ptr<const MatrixCSR<T>> Amat, bool verbose)
-    : _Amat(Amat),
-      _gridinfo(
-          [comm = Amat->comm()]
-          {
-            int size = dolfinx::MPI::size(comm);
-            int nprow = size;
-            int npcol = 1;
+namespace
+{
+template <typename...>
+constexpr bool dependent_false_v = false;
 
+std::vector<int_t> col_indices(const auto& A)
+{
+  // Local number of non-zeros
+  std::int32_t m_loc = A.num_owned_rows();
+  std::int64_t nnz_loc = A.row_ptr().at(m_loc);
+
+  std::vector global_indices(A.index_map(1)->global_indices());
+  std::vector<int_t> col_indices(nnz_loc);
+  std::transform(A.cols().begin(), std::next(A.cols().begin(), nnz_loc),
+                 col_indices.begin(), [&global_indices](auto idx) -> int_t
+                 { return global_indices[idx]; });
+  return col_indices;
+}
+
+std::vector<int_t> row_indices(const auto& A)
+{
+  return std::vector<int_t>(
+      A.row_ptr().begin(),
+      std::next(A.row_ptr().begin(), A.num_owned_rows() + 1));
+}
+} // namespace
+
+//----------------------------------------------------------------------------
+template <typename T>
+SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
+                                        bool verbose)
+    : _Amat(A), _cols(new SuperLUDistStructs::vec_int_t{col_indices(*A)},
+                      VecIntDeleter{}),
+      _rowptr(new SuperLUDistStructs::vec_int_t{row_indices(*A)},
+              VecIntDeleter{}),
+      _gridinfo(
+          [comm = A->comm()]
+          {
+            int nprow = dolfinx::MPI::size(comm);
+            int npcol = 1;
             std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> p(
                 new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{});
-
             superlu_gridinit(comm, nprow, npcol, p.get());
             return p;
           }()),
       _supermatrix(new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{}),
-      cols(new SuperLUDistStructs::vec_int_t, VecIntDeleter{}),
-      rowptr(new SuperLUDistStructs::vec_int_t, VecIntDeleter{}),
       _verbose(verbose)
 {
-  set_operator(*Amat);
-}
-//---------------------------------------------------------------------------------------
-template <typename T>
-void SuperLUDistSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
-{
   spdlog::info("Start set_operator");
+
+  auto map0 = A->index_map(0);
+  assert(map0);
+  auto map1 = A->index_map(1);
+  assert(map1);
+
   // Global size
-  int m = Amat.index_map(0)->size_global();
-  int n = Amat.index_map(1)->size_global();
+  std::int64_t m = map0->size_global();
+  std::int64_t n = map1->size_global();
   if (m != n)
     throw std::runtime_error("Cannot solve non-square system");
 
-  // Number of local rows
-  int m_loc = Amat.num_owned_rows();
+  // Number of local rows, first row and local number of non-zeros
+  std::int32_t m_loc = A->num_owned_rows();
+  std::int64_t first_row = map0->local_range().front();
+  std::int64_t nnz_loc = A->row_ptr().at(m_loc);
 
-  // First row
-  int first_row = Amat.index_map(0)->local_range()[0];
-
-  // Local number of non-zeros
-  int nnz_loc = Amat.row_ptr()[m_loc];
-  cols->vec.resize(nnz_loc);
-  rowptr->vec.resize(m_loc + 1);
-
-  // Copy row_ptr from int64
-  std::copy(Amat.row_ptr().begin(),
-            std::next(Amat.row_ptr().begin(), m_loc + 1), rowptr->vec.begin());
-
-  // SuperLU_DIST header defines int_t and can be int or long int.
-  // Convert local to global indices (and cast to int_t)
-  std::vector<std::int64_t> global_col_indices(
-      Amat.index_map(1)->global_indices());
-  std::transform(Amat.cols().begin(), std::next(Amat.cols().begin(), nnz_loc),
-                 cols->vec.begin(), [&](std::int64_t local_index) -> int_t
-                 { return global_col_indices[local_index]; });
-
-  T* Amatdata = const_cast<T*>(Amat.values().data());
+  T* Amatdata = const_cast<T*>(A->values().data());
   if constexpr (std::is_same_v<T, double>)
   {
     dCreate_CompRowLoc_Matrix_dist(
         _supermatrix.get(), m, n, nnz_loc, m_loc, first_row, Amatdata,
-        cols->vec.data(), rowptr->vec.data(), SLU_NR_loc, SLU_D, SLU_GE);
+        _cols->vec.data(), _rowptr->vec.data(), SLU_NR_loc, SLU_D, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, float>)
   {
     sCreate_CompRowLoc_Matrix_dist(
         _supermatrix.get(), m, n, nnz_loc, m_loc, first_row, Amatdata,
-        cols->vec.data(), rowptr->vec.data(), SLU_NR_loc, SLU_S, SLU_GE);
+        _cols->vec.data(), _rowptr->vec.data(), SLU_NR_loc, SLU_S, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     zCreate_CompRowLoc_Matrix_dist(
         _supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
-        reinterpret_cast<doublecomplex*>(Amatdata), cols->vec.data(),
-        rowptr->vec.data(), SLU_NR_loc, SLU_Z, SLU_GE);
+        reinterpret_cast<doublecomplex*>(Amatdata), _cols->vec.data(),
+        _rowptr->vec.data(), SLU_NR_loc, SLU_Z, SLU_GE);
   }
   else
-  {
     static_assert(dependent_false_v<T>, "Invalid scalar type");
-  }
-  spdlog::info("Finished set_operator");
+
+    spdlog::info("Finished set_operator");
 }
-//---------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
                                 la::Vector<T>& uvec) const
 {
-  int m = _Amat->index_map(0)->size_global();
-  int m_loc = _Amat->num_owned_rows();
+  std::int64_t m = _Amat->index_map(0)->size_global();
+  std::int32_t m_loc = _Amat->num_owned_rows();
 
   // RHS
-  int ldb = m_loc;
+  std::int32_t ldb = m_loc;
   int nrhs = 1;
 
   superlu_dist_options_t options;
@@ -237,15 +238,11 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
     zLUstructFree(&LUstruct);
   }
   else
-  {
     static_assert(dependent_false_v<T>, "Invalid scalar type");
-  }
   spdlog::info("Finished solve");
 
   if (info != 0)
-  {
     spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
-  }
 
   if (_verbose)
     PStatPrint(&options, &stat, _gridinfo.get());
@@ -253,9 +250,10 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
 
   return info;
 }
-//---------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 template class la::SuperLUDistSolver<double>;
 template class la::SuperLUDistSolver<float>;
 template class la::SuperLUDistSolver<std::complex<double>>;
+//----------------------------------------------------------------------------
 
 #endif
