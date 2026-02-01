@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
     // Create mesh and function space
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
     auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_box<U>(
-        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {2.0, 1.0, 1.0}}}, {16, 16, 8},
+        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {2.0, 1.0, 1.0}}}, {32, 16, 64},
         mesh::CellType::tetrahedron, part));
 
     //     auto element = basix::create_element<U>(
@@ -264,7 +264,6 @@ int main(int argc, char* argv[])
   }
 
   dolfinx::list_timings(MPI_COMM_WORLD);
-
   PetscFinalize();
 
   return 0;

@@ -96,7 +96,7 @@ from dolfinx.fem.petsc import LinearProblem
 msh = mesh.create_box(
     comm=MPI.COMM_WORLD,
     points=((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
-    n=(12, 12, 12),
+    n=(64, 64, 128),
     cell_type=mesh.CellType.tetrahedron,
 )
 
