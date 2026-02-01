@@ -9,12 +9,12 @@
 #ifdef HAS_SUPERLU_DIST
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
+#include <memory>
 
 namespace dolfinx::la
 {
 
-// Trick for forward declaration of anonymous structs
-// Avoids including SuperLU_DIST headers in DOLFINx headers
+// Delcare structs to avoid exposing SuperLU_DIST headers in DOLFINx.
 class SuperLUDistStructs
 {
 public:
@@ -23,18 +23,18 @@ public:
   struct vec_int_t;
 };
 
-/// Linear solver using SuperLU_DIST
+/// SuperLU_DIST linear solver interface.
 template <typename T>
 class SuperLUDistSolver
 {
 public:
-  /// @brief SuperLU_DIST solver wrapper.
+  /// @brief Create solver for a matrix operator.
   ///
   /// Solves Au = b using SuperLU_DIST.
   ///
   /// @tparam T Scalar type.
-  /// @param A Matrix to solver for
-  /// @param verbose Verbose outout.
+  /// @param A Matrix to solve for.
+  /// @param verbose Verbose output.
   SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
                     bool verbose = false);
 
@@ -46,10 +46,12 @@ public:
 
   /// @brief Solve linear system Au = b.
   ///
-  /// @param b Right-hand side Vector
-  /// @param u Solution Vector
-  /// @note Must be compatible with A
-  int solve(const dolfinx::la::Vector<T>& b, dolfinx::la::Vector<T>& u) const;
+  /// @param b Right-hand side vector.
+  /// @param u Solution vector.
+  /// @returns SuperLU_DIST info flag.
+  /// @note Vectors must have size and parallel layout that is
+  /// compatible with `A`.
+  int solve(const Vector<T>& b, Vector<T>& u) const;
 
 private:
   // Call library cleanup and delete pointer. For use with
@@ -83,7 +85,6 @@ private:
   // Pointer to SuperMatrix
   std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
       _supermatrix;
-
 
   // Flag for diagnostic output
   bool _verbose;

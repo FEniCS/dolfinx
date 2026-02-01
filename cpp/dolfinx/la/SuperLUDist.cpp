@@ -13,8 +13,10 @@ extern "C"
 #include "superlu_sdefs.h"
 #include "superlu_zdefs.h"
 }
+#include <algorithm>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
+#include <vector>
 
 // Trick for declaring anonymous typedef structs from SuperLU_DIST
 struct dolfinx::la::SuperLUDistStructs::SuperMatrix : public ::SuperMatrix
@@ -108,6 +110,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
 {
   spdlog::info("Start set_operator");
 
+  assert(A);
   auto map0 = A->index_map(0);
   assert(map0);
   auto map1 = A->index_map(1);
@@ -147,12 +150,11 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
   else
     static_assert(dependent_false_v<T>, "Invalid scalar type");
 
-    spdlog::info("Finished set_operator");
+  spdlog::info("Finished set_operator");
 }
 //----------------------------------------------------------------------------
 template <typename T>
-int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
-                                la::Vector<T>& uvec) const
+int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 {
   std::int64_t m = _Amat->index_map(0)->size_global();
   std::int32_t m_loc = _Amat->num_owned_rows();
@@ -174,8 +176,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
 
   // Copy b to u (SuperLU_DIST reads b from u and then overwrites u with
   // solution)
-  std::copy(bvec.array().begin(), std::next(bvec.array().begin(), m_loc),
-            uvec.array().begin());
+  std::copy_n(b.array().begin(), m_loc, u.array().begin());
 
   std::vector<scalar_value_t<T>> berr(nrhs);
   if constexpr (std::is_same_v<T, double>)
@@ -188,7 +189,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
     dSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call pdgssvx");
-    pdgssvx(&options, _supermatrix.get(), &ScalePermstruct, uvec.array().data(),
+    pdgssvx(&options, _supermatrix.get(), &ScalePermstruct, u.array().data(),
             ldb, nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(),
             &stat, &info);
 
@@ -207,7 +208,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
     sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call psgssvx");
-    psgssvx(&options, _supermatrix.get(), &ScalePermstruct, uvec.array().data(),
+    psgssvx(&options, _supermatrix.get(), &ScalePermstruct, u.array().data(),
             ldb, nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(),
             &stat, &info);
 
@@ -227,7 +228,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
 
     spdlog::info("Call pzgssvx");
     pzgssvx(&options, _supermatrix.get(), &ScalePermstruct,
-            reinterpret_cast<doublecomplex*>(uvec.array().data()), ldb, nrhs,
+            reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
             _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);
 
