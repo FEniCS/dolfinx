@@ -39,12 +39,11 @@ void test_read_named_meshtags()
   std::iota(std::begin(indices), std::end(indices), 0);
 
   std::vector<std::int32_t> domain_values(n_cells, domain_value);
-  std::vector<std::int32_t> material_values(n_cells, material_value);
-
   mesh::MeshTags<std::int32_t> mt_domains(mesh->topology(), 2, indices,
                                           domain_values);
   mt_domains.name = "domain";
 
+  std::vector<std::int32_t> material_values(n_cells, material_value);
   mesh::MeshTags<std::int32_t> mt_materials(mesh->topology(), 2, indices,
                                             material_values);
   mt_materials.name = "material";

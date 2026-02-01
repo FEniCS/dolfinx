@@ -267,15 +267,14 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       }
     }
 
-    perm.resize(entity_to_local_idx.size() / (num_vertices_per_e + 1));
-    std::iota(perm.begin(), perm.end(), 0);
-
     auto range_by_index = [&, shape = num_vertices_per_e + 1](auto e)
     {
       auto begin = std::next(entity_to_local_idx.begin(), e * shape);
       return std::ranges::subrange(begin, std::next(begin, shape));
     };
 
+    perm.resize(entity_to_local_idx.size() / (num_vertices_per_e + 1));
+    std::iota(perm.begin(), perm.end(), 0);
     std::ranges::sort(perm, std::ranges::lexicographical_compare,
                       range_by_index);
 

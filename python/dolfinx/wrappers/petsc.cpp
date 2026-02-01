@@ -72,9 +72,9 @@ void declare_petsc_discrete_operators(nb::module_& m)
         int tdim = mesh->topology()->dim();
         auto map = mesh->topology()->index_map(tdim);
         assert(map);
-        std::vector<std::int32_t> c(map->size_local(), 0);
-        std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
+        auto c = std::ranges::views::iota(0, map->size_local());
+        dolfinx::fem::sparsitybuild::cells(sp, std::pair{c, c},
+                                           {*dofmap1, *dofmap0});
         sp.finalize();
 
         // Build operator
@@ -112,9 +112,9 @@ void declare_petsc_discrete_operators(nb::module_& m)
         int tdim = mesh->topology()->dim();
         auto map = mesh->topology()->index_map(tdim);
         assert(map);
-        std::vector<std::int32_t> c(map->size_local(), 0);
-        std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
+        auto c = std::ranges::views::iota(0, map->size_local());
+        dolfinx::fem::sparsitybuild::cells(sp, std::pair{c, c},
+                                           {*dofmap1, *dofmap0});
         sp.finalize();
 
         // Build operator
@@ -153,9 +153,9 @@ void declare_petsc_discrete_operators(nb::module_& m)
         int tdim = mesh->topology()->dim();
         auto map = mesh->topology()->index_map(tdim);
         assert(map);
-        std::vector<std::int32_t> c(map->size_local(), 0);
-        std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
+        auto c = std::ranges::views::iota(0, map->size_local());
+        dolfinx::fem::sparsitybuild::cells(sp, std::pair{c, c},
+                                           {*dofmap1, *dofmap0});
         sp.finalize();
 
         // Build operator
