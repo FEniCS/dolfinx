@@ -115,6 +115,7 @@ void SuperLUDistSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
   std::copy(Amat.row_ptr().begin(),
             std::next(Amat.row_ptr().begin(), m_loc + 1), rowptr->vec.begin());
 
+  // SuperLU_DIST header defines int_t and can be int or long int.
   // Convert local to global indices (and cast to int_t)
   std::vector<std::int64_t> global_col_indices(
       Amat.index_map(1)->global_indices());
@@ -176,9 +177,9 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
   std::copy(bvec.array().begin(), std::next(bvec.array().begin(), m_loc),
             uvec.array().begin());
 
+  std::vector<scalar_value_t<T>> berr(nrhs);
   if constexpr (std::is_same_v<T, double>)
   {
-    std::vector<T> berr(nrhs);
     spdlog::info("Start solve [float64]");
     dScalePermstruct_t ScalePermstruct;
     dLUstruct_t LUstruct;
@@ -198,7 +199,6 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
   }
   else if constexpr (std::is_same_v<T, float>)
   {
-    std::vector<T> berr(nrhs);
     spdlog::info("Start solve [float32]");
     sScalePermstruct_t ScalePermstruct;
     sLUstruct_t LUstruct;
@@ -218,8 +218,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& bvec,
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
-    std::vector<double> berr(nrhs);
-    spdlog::info("Start solve [complex]");
+    spdlog::info("Start solve [complex128]");
     zScalePermstruct_t ScalePermstruct;
     zLUstruct_t LUstruct;
     zScalePermstructInit(m, m, &ScalePermstruct);
