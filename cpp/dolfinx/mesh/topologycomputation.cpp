@@ -32,26 +32,25 @@ using namespace dolfinx;
 namespace
 {
 
-void cell_entry(int c0, int c1, std::vector<std::int32_t>* entity_list,
+void cell_entry(int c0, int c1, std::span<std::int32_t> entity_list,
                 const graph::AdjacencyList<std::int32_t>& cells,
                 const graph::AdjacencyList<std::int32_t>& e_vertices,
                 mesh::CellType entity_type,
                 const std::vector<std::int32_t>& cell_type_entities_k,
-                std::int32_t cell_type_offset_k,
+                /*std::int32_t cell_type_offset_k,*/
                 std::shared_ptr<const common::IndexMap> vertex_index_map)
 {
   int num_vertices_per_entity = num_cell_vertices(entity_type);
   int num_entities_per_cell = cell_type_entities_k.size();
 
-  for (int c = c0; c < c1; ++c)
+  for (int c = 0; c < c1 - c0; ++c)
   {
     // Get vertices from each cell
-    auto vertices = cells.links(c);
+    auto vertices = cells.links(c + c0);
 
-    for (int i = 0; i < num_entities_per_cell; ++i)
+    for (int e = 0; e < num_entities_per_cell; ++e)
     {
-      const std::int32_t idx = c * num_entities_per_cell + i;
-      auto ev = e_vertices.links(cell_type_entities_k[i]);
+      auto ev = e_vertices.links(cell_type_entities_k[e]);
 
       // Get entity vertices. Padded with -1 if fewer than
       // max_vertices_per_entity
@@ -85,9 +84,12 @@ void cell_entry(int c0, int c1, std::vector<std::int32_t>* entity_list,
         std::rotate(it, it + 1, perm.end());
       }
 
+      const std::int32_t idx = c * num_entities_per_cell + e;
       for (std::size_t j = 0; j < ev.size(); ++j)
-        (*entity_list)[(cell_type_offset_k + idx) * num_vertices_per_entity + j]
+      {
+        entity_list[idx * num_vertices_per_entity + j]
             = entity_vertices[perm[j]];
+      }
     }
   }
 }
@@ -570,16 +572,23 @@ compute_entities_by_key_matching(
 
     dolfinx::common::Timer t_thread("Threaded part");
     const std::size_t num_cells = cells->num_nodes();
-    // int num_entities_per_cell = cell_type_entities[k].size();
-    int num_threads = 2;
+    int num_entities_per_cell = cell_type_entities[k].size();
+    // int num_threads = 2;
+    int num_threads = std::thread::hardware_concurrency();
     std::vector<std::jthread> threads(num_threads);
     for (int i = 0; i < num_threads; ++i)
     {
-      int c0 = i * num_cells / num_threads;
-      int c1 = (i + 1) * num_cells / num_threads;
-      threads[i] = std::jthread(cell_entry, c0, c1, &entity_list, *cells,
+      auto [c0, c1] = dolfinx::MPI::local_range(i, num_cells, num_threads);
+      // int c0 = i * num_cells / num_threads;
+      // int c1 = (i + 1) * num_cells / num_threads;
+      std::span<std::int32_t> _entity_list(
+          entity_list.data() + cell_type_offsets[k] * num_vertices_per_entity
+              + c0 * num_vertices_per_entity * num_entities_per_cell,
+          (c1 - c0) * num_vertices_per_entity * num_entities_per_cell);
+      threads[i] = std::jthread(cell_entry, c0, c1, _entity_list, *cells,
                                 e_vertices, entity_type, cell_type_entities[k],
-                                cell_type_offsets[k], vertex_index_map);
+                                /*cell_type_offsets[k], */
+                                vertex_index_map);
     }
     for (auto& t : threads)
       t.join();
