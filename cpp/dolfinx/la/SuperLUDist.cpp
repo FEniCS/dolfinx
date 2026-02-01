@@ -70,16 +70,16 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
     std::shared_ptr<const MatrixCSR<T>> Amat, bool verbose)
     : _Amat(Amat),
       _gridinfo(
-          [Amat]
+          [comm = Amat->comm()]
           {
-            int size = dolfinx::MPI::size(Amat->comm());
+            int size = dolfinx::MPI::size(comm);
             int nprow = size;
             int npcol = 1;
 
             std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> p(
                 new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{});
 
-            superlu_gridinit(Amat->comm(), nprow, npcol, p.get());
+            superlu_gridinit(comm, nprow, npcol, p.get());
             return p;
           }()),
       _supermatrix(new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{}),
