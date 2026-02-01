@@ -1668,7 +1668,7 @@ def get_petsc_lib() -> pathlib.Path:
     import petsc4py as _petsc4py
 
     petsc_dir = _petsc4py.get_config()["PETSC_DIR"]
-    petsc_arch = _petsc4py.lib.getPathArchPETSc()[1]
+    petsc_arch = _petsc4py.lib.getPathArchPETSc()[1]  # type: ignore
     candidate_paths = [
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"),
