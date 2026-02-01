@@ -86,7 +86,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev \
              libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev \
-             libspdlog-dev mpi-default-dev ninja-build pkg-config
+             libspdlog-dev libsuperlu-dist-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -114,6 +114,8 @@ jobs:
           -DCMAKE_BUILD_TYPE=Developer
           -DBUILD_TESTING=true
           -DDOLFINX_ENABLE_PETSC=false
+          -DDOLFINX_ENABLE_SUPERLU_DIST=true
+          -DDOLFINX_ENABLE_PARMETIS=true
 
       - name: Build and install (C++)
         working-directory: cpp/build
@@ -128,7 +130,7 @@ jobs:
       - name: Build Python interface
         run: |
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test]'
-          python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc4py"
+          python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
       - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
         working-directory: python
