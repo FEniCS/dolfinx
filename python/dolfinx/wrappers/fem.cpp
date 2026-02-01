@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2021 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -444,43 +444,94 @@ void declare_objects(nb::module_& m, std::string type)
       .def("collapse", &dolfinx::fem::Function<T, U>::collapse,
            "Collapse sub-function view")
       .def(
-          "interpolate",
+          "interpolate_f",
           [](dolfinx::fem::Function<T, U>& self,
              nb::ndarray<const T, nb::ndim<1>, nb::c_contig> f,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 cells)
           {
-            dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
-                                      {1, f.size()},
-                                      std::span(cells.data(), cells.size()));
+            if (!cells.has_value())
+            {
+              assert(self.function_space());
+              auto mesh = self.function_space()->mesh();
+              assert(mesh);
+              assert(mesh->topology());
+              auto map = mesh->topology()->index_map(mesh->topology()->dim());
+              assert(map);
+              std::int32_t num_cells = map->size_local() + map->num_ghosts();
+              dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
+                                        {1, f.size()},
+                                        std::ranges::views::iota(0, num_cells));
+            }
+            else
+            {
+              dolfinx::fem::interpolate(
+                  self, std::span(f.data(), f.size()), {1, f.size()},
+                  std::span(cells->data(), cells->size()));
+            }
           },
-          nb::arg("f"), nb::arg("cells"), "Interpolate an expression function")
+          nb::arg("f"), nb::arg("cells").none(),
+          "Interpolate an expression function")
       .def(
-          "interpolate",
+          "interpolate_f",
           [](dolfinx::fem::Function<T, U>& self,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> f,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 cells)
           {
-            dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
-                                      {f.shape(0), f.shape(1)},
-                                      std::span(cells.data(), cells.size()));
+            if (!cells.has_value())
+            {
+              assert(self.function_space());
+              auto mesh = self.function_space()->mesh();
+              assert(mesh);
+              assert(mesh->topology());
+              auto map = mesh->topology()->index_map(mesh->topology()->dim());
+              assert(map);
+              std::int32_t num_cells = map->size_local() + map->num_ghosts();
+              dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
+                                        {f.shape(0), f.shape(1)},
+                                        std::ranges::views::iota(0, num_cells));
+            }
+            else
+            {
+              dolfinx::fem::interpolate(
+                  self, std::span(f.data(), f.size()), {f.shape(0), f.shape(1)},
+                  std::span(cells->data(), cells->size()));
+            }
           },
-          nb::arg("f"), nb::arg("cells"), "Interpolate an expression function")
+          nb::arg("f"), nb::arg("cells").none(), "Interpolate an expression.")
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
-             dolfinx::fem::Function<T, U>& u0,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells0,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells1)
+             const dolfinx::fem::Function<T, U>& u0,
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 cells0,
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 cells1)
           {
-            self.interpolate(u0, std::span(cells0.data(), cells0.size()),
-                             std::span(cells1.data(), cells1.size()));
+            auto span = [](auto& x) { return std::span(x.data(), x.size()); };
+            if (!cells0.has_value() and !cells1.has_value())
+              self.interpolate(u0);
+            else if (cells0.has_value() and !cells1.has_value())
+              self.interpolate(u0, span(*cells0));
+            else if (cells0.has_value() and cells1.has_value())
+              self.interpolate(u0, span(*cells0), span(*cells1));
+            else
+            {
+              throw std::runtime_error(
+                  "If cells1 is provided, cells0 must also be provided.");
+            }
           },
-          nb::arg("u"), nb::arg("cells0"), nb::arg("cells1"),
-          "Interpolate a finite element function")
+          nb::arg("u0"), nb::arg("cells0").none(), nb::arg("cells1").none(),
+          "Interpolate a finite element Function.")
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
-             dolfinx::fem::Function<T, U>& u,
+             const dolfinx::fem::Function<T, U>& u,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
              const dolfinx::geometry::PointOwnershipData<U>& interpolation_data)
           {
@@ -488,49 +539,80 @@ void declare_objects(nb::module_& m, std::string type)
                              interpolation_data);
           },
           nb::arg("u"), nb::arg("cells"), nb::arg("interpolation_data"),
-          "Interpolate a finite element function on non-matching meshes")
+          "Interpolate a finite element Function on non-matching meshes")
       // NOLINTBEGIN(performance-no-int-to-ptr)
       .def(
           "interpolate_ptr",
           [](dolfinx::fem::Function<T, U>& self, std::uintptr_t addr,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 cells)
           {
-            assert(self.function_space());
-            auto element = self.function_space()->element();
-            assert(element);
+            auto interp_pr = [](dolfinx::fem::Function<T, U>& self,
+                                std::uintptr_t addr, auto&& cells)
+            {
+              auto V = self.function_space();
+              assert(V);
+              auto element = V->element();
+              assert(element);
+              auto mesh = V->mesh();
+              assert(mesh);
+              assert(mesh->topology());
+              std::span<const std::size_t> vshape = element->value_shape();
+              std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
+                                                   1, std::multiplies{});
+              std::function<void(T*, int, int, const U*, void*)> f
+                  = reinterpret_cast<void (*)(T*, int, int, const U*, void*)>(
+                      addr);
+              std::vector<U> x = dolfinx::fem::interpolation_coords(
+                  *element, mesh->geometry(), cells);
+              std::array<std::size_t, 2> shape{value_size, x.size() / 3};
+              std::vector<T> values(shape[0] * shape[1]);
+              f(values.data(), shape[1], shape[0], x.data(), nullptr);
+              dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
+                                        cells);
+            };
 
-            assert(self.function_space()->mesh());
-            const std::vector<U> x = dolfinx::fem::interpolation_coords(
-                *element, self.function_space()->mesh()->geometry(),
-                std::span(cells.data(), cells.size()));
-
-            // Compute value size
-            auto vshape = self.function_space()->element()->value_shape();
-            std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
-                                                 1, std::multiplies{});
-
-            std::array<std::size_t, 2> shape{value_size, x.size() / 3};
-            std::vector<T> values(shape[0] * shape[1]);
-            std::function<void(T*, int, int, const U*, void*)> f
-                = reinterpret_cast<void (*)(T*, int, int, const U*, void*)>(
-                    addr);
-            f(values.data(), shape[1], shape[0], x.data(), nullptr);
-            dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
-                                      std::span(cells.data(), cells.size()));
+            if (cells.has_value())
+              interp_pr(self, addr, std::span(cells->data(), cells->size()));
+            else
+            {
+              auto V = self.function_space();
+              assert(V);
+              auto mesh = V->mesh();
+              assert(mesh);
+              assert(mesh->topology());
+              auto map = mesh->topology()->index_map(mesh->topology()->dim());
+              assert(map);
+              std::int32_t num_cells = map->size_local() + map->num_ghosts();
+              interp_pr(self, addr, std::ranges::views::iota(0, num_cells));
+            }
           },
-          nb::arg("f_ptr"), nb::arg("cells"),
+          nb::arg("f_ptr"), nb::arg("cells").none(),
           "Interpolate using a pointer to an expression with a C signature")
       .def(
-          "interpolate",
+          "interpolate_expr",
           [](dolfinx::fem::Function<T, U>& self,
              const dolfinx::fem::Expression<T, U>& e0,
-             nb::ndarray<const std::int32_t, nb::c_contig> cells0,
-             nb::ndarray<const std::int32_t, nb::c_contig> cells1)
+             std::optional<nb::ndarray<const std::int32_t, nb::c_contig>>
+                 cells0,
+             std::optional<nb::ndarray<const std::int32_t, nb::c_contig>>
+                 cells1)
           {
-            self.interpolate(e0, std::span(cells0.data(), cells0.size()),
-                             std::span(cells1.data(), cells1.size()));
+            auto span = [](auto& x) { return std::span(x.data(), x.size()); };
+            if (!cells0.has_value() and !cells1.has_value())
+              self.interpolate(e0);
+            else if (cells0.has_value() and !cells1.has_value())
+              self.interpolate(e0, span(*cells0));
+            else if (cells0.has_value() and cells1.has_value())
+              self.interpolate(e0, span(*cells0), span(*cells1));
+            else
+            {
+              throw std::runtime_error(
+                  "If cells1 is provided, cells0 must also be provided.");
+            }
           },
-          nb::arg("e0"), nb::arg("cells0"), nb::arg("cells1"),
+          nb::arg("e0"), nb::arg("cells0").none(), nb::arg("cells1").none(),
           "Interpolate an Expression on a set of cells")
       .def_prop_ro(
           "x", nb::overload_cast<>(&dolfinx::fem::Function<T, U>::x),
@@ -1124,13 +1206,25 @@ void declare_real_functions(nb::module_& m)
       "interpolation_coords",
       [](const dolfinx::fem::FiniteElement<T>& e,
          const dolfinx::mesh::Geometry<T>& geometry,
-         nb::ndarray<std::int32_t, nb::ndim<1>, nb::c_contig> cells)
+         std::optional<nb::ndarray<std::int32_t, nb::ndim<1>, nb::c_contig>>
+             cells)
       {
-        std::vector<T> x = dolfinx::fem::interpolation_coords(
-            e, geometry, std::span(cells.data(), cells.size()));
+        std::vector<T> x;
+        if (cells.has_value())
+        {
+          x = dolfinx::fem::interpolation_coords(
+              e, geometry, std::span(cells->data(), cells->size()));
+        }
+        else
+        {
+          std::int32_t num_cells = geometry.dofmap().extent(0);
+          auto iota = std::ranges::iota_view(0, num_cells);
+          x = dolfinx::fem::interpolation_coords(e, geometry, iota);
+        }
+
         return dolfinx_wrappers::as_nbarray(std::move(x), {3, x.size() / 3});
       },
-      nb::arg("element"), nb::arg("V"), nb::arg("cells"));
+      nb::arg("element"), nb::arg("V"), nb::arg("cells").none());
 
   m.def(
       "create_interpolation_data",
@@ -1152,7 +1246,6 @@ void declare_real_functions(nb::module_& m)
 
 namespace dolfinx_wrappers
 {
-
 void fem(nb::module_& m)
 {
   declare_objects<float>(m, "float32");

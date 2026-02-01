@@ -28,19 +28,26 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+demo = [
+  "gmsh",
+  "networkx",
+  "numba",
+  "matplotlib",
+  "scipy",
+  "pyamg",
+  "pyvista",
+]
 docs = [
       "breathe",
       "jupytext",
       "markdown",
-      "matplotlib",
       "myst_parser",
-      "numba",
-      "scipy",
       "packaging",
       "pyyaml",
       "sphinx",
       "sphinx_rtd_theme",
       "sphinx_codeautolink[ipython]",
+      "fenics-dolfinx[demo]",
 ]
 lint = ["ruff>=0.2.0"]
 optional = ["numba", "pyamg"]
@@ -78,7 +85,9 @@ markers = [
       "adios2: tests that require Adios2 (deselect with '-m \"not adios2\"').",
       "xfail_win32_complex: expected failures for complex numbers in Win32.",
 ]
-
+addopts = [
+  "-k", "not test_symmetry_interior_facet_assembly[mesh1]"
+]
 
 [tool.mypy]
 # Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/

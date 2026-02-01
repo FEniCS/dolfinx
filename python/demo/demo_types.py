@@ -112,8 +112,11 @@ def poisson(dtype):
         cell_type=mesh.CellType.triangle,
         dtype=np.real(dtype(0)).dtype,
     )
+
+    tdim = msh.topology.dim
+    fdim = tdim - 1
     facets = mesh.locate_entities_boundary(
-        msh, dim=1, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0)
+        msh, dim=fdim, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0)
     )
 
     # Define a variational problem.
@@ -130,7 +133,7 @@ def poisson(dtype):
     # In preparation for constructing Dirichlet boundary conditions, locate
     # facets on the constrained boundary and the corresponding
     # degrees-of-freedom.
-    dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+    dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
     # Process forms. This will compile the forms for the requested type.
     a0 = fem.form(a, dtype=dtype)
@@ -173,8 +176,11 @@ def elasticity(dtype) -> fem.Function:
         cell_type=mesh.CellType.triangle,
         dtype=np.real(dtype(0)).dtype,
     )
+
+    tdim = msh.topology.dim
+    fdim = tdim - 1
     facets = mesh.locate_entities_boundary(
-        msh, dim=1, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0)
+        msh, dim=fdim, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0)
     )
 
     # Define the variational problem.
@@ -197,7 +203,7 @@ def elasticity(dtype) -> fem.Function:
     a = ufl.inner(σ(u), ufl.grad(v)) * ufl.dx
     L = ufl.inner(f, v) * ufl.dx
 
-    dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+    dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
     # Process forms. This will compile the forms for the requested type.
     a0, L0 = fem.form(a, dtype=dtype), fem.form(L, dtype=dtype)

@@ -206,15 +206,14 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       }
     }
 
-    perm.resize(entity_to_local_idx.size() / (num_vertices_per_e + 1));
-    std::iota(perm.begin(), perm.end(), 0);
-
     auto range_by_index = [&, shape = num_vertices_per_e + 1](auto e)
     {
       auto begin = std::next(entity_to_local_idx.begin(), e * shape);
       return std::ranges::subrange(begin, std::next(begin, shape));
     };
 
+    perm.resize(entity_to_local_idx.size() / (num_vertices_per_e + 1));
+    std::iota(perm.begin(), perm.end(), 0);
     std::ranges::sort(perm, std::ranges::lexicographical_compare,
                       range_by_index);
 
@@ -522,10 +521,13 @@ compute_entities_by_key_matching(
 
         // Get entity vertices. Padded with -1 if fewer than
         // max_vertices_per_entity
+        //
         // NOTE Entity orientation is determined by vertex ordering. The
-        // orientation of an entity with respect to the cell may differ from its
-        // global mesh orientation. Hence, we reorder the vertices so that
-        // each entity's orientation agrees with their global orientation.
+        // orientation of an entity with respect to the cell may differ
+        // from its global mesh orientation. Hence, we reorder the
+        // vertices so that each entity's orientation agrees with their
+        // global orientation.
+        ///
         // FIXME This might be better below when the entity to vertex
         // connectivity is computed
         std::vector<std::int32_t> entity_vertices(ev.size());
@@ -542,8 +544,9 @@ compute_entities_by_key_matching(
         std::ranges::sort(
             perm, [&global_vertices](std::size_t i0, std::size_t i1)
             { return global_vertices[i0] < global_vertices[i1]; });
-        // For quadrilaterals, the vertex opposite the lowest vertex should
-        // be last
+
+        // For quadrilaterals, the vertex opposite the lowest vertex
+        // should be last
         if (entity_type == mesh::CellType::quadrilateral)
         {
           std::size_t min_vertex_idx = perm[0];
@@ -554,9 +557,11 @@ compute_entities_by_key_matching(
         }
 
         for (std::size_t j = 0; j < ev.size(); ++j)
+        {
           entity_list[(cell_type_offsets[k] + idx) * num_vertices_per_entity
                       + j]
               = entity_vertices[perm[j]];
+        }
       }
     }
   }

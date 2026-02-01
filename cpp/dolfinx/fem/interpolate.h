@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2024 Garth N. Wells, Igor A. Baratta, Massimiliano Leoni
+// Copyright (C) 2020-2026 Garth N. Wells, Igor A. Baratta, Massimiliano Leoni
 // and Jørgen S.Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -36,6 +36,12 @@ concept MDSpan = requires(T x, std::size_t idx) {
   { x.extent(1) } -> std::integral;
 };
 
+/// Requirement on range of cell indices.
+template <typename R>
+concept CellRange = std::ranges::input_range<R> and std::ranges::sized_range<R>
+                    and std::is_integral_v<
+                        std::remove_const_t<std::ranges::range_value_t<R>>>;
+
 /// @brief Compute the evaluation points in the physical space at which
 /// an expression should be computed to interpolate it in a finite
 /// element space.
@@ -44,13 +50,12 @@ concept MDSpan = requires(T x, std::size_t idx) {
 /// @param[in] geometry Mesh geometry.
 /// @param[in] cells Indices of the cells in the mesh to compute
 /// interpolation coordinates for.
-/// @return The coordinates in the physical space at which to evaluate
-/// an expression. The shape is `(3, num_points)` and storage is
-/// row-major.
+/// @return Coordinates in the physical space at which to evaluate an
+/// expression. The shape is `(3, num_points)` and storage is row-major.
 template <std::floating_point T>
 std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
                                     const mesh::Geometry<T>& geometry,
-                                    std::span<const std::int32_t> cells)
+                                    CellRange auto&& cells)
 {
   // Find CoordinateElement appropriate to element
   const std::vector<CoordinateElement<T>>& cmaps = geometry.cmaps();
@@ -87,10 +92,10 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
   // (x) for each cell
   std::vector<T> coordinate_dofs(num_dofs_g * gdim, 0);
   std::vector<T> x(3 * (cells.size() * Xshape[0]), 0);
-  for (std::size_t c = 0; c < cells.size(); ++c)
+  for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
   {
     // Get geometry data for current cell
-    auto x_dofs = md::submdspan(x_dofmap, cells[c], md::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, *cell_it, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), gdim,
@@ -98,6 +103,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
     }
 
     // Push forward coordinates (X -> x)
+    std::size_t offset = std::distance(cells.begin(), cell_it);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       for (std::size_t j = 0; j < gdim; ++j)
@@ -105,7 +111,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
         T acc = 0;
         for (std::size_t k = 0; k < num_dofs_g; ++k)
           acc += phi(p, k) * coordinate_dofs[k * gdim + j];
-        x[j * (cells.size() * Xshape[0]) + c * Xshape[0] + p] = acc;
+        x[j * (cells.size() * Xshape[0]) + offset * Xshape[0] + p] = acc;
       }
     }
   }
@@ -131,8 +137,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 /// calling `interpolation_coords`.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
-                 std::array<std::size_t, 2> fshape,
-                 std::span<const std::int32_t> cells);
+                 std::array<std::size_t, 2> fshape, CellRange auto&& cells);
 
 namespace impl
 {
@@ -325,9 +330,9 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
   }
   else
   {
-    const std::size_t cols = Pi.extent(1);
     assert(data.extent(0) == Pi.extent(1));
     assert(data.extent(1) == bs);
+    std::size_t cols = Pi.extent(1);
     for (int k = 0; k < bs; ++k)
     {
       for (std::size_t i = 0; i < Pi.extent(0); ++i)
@@ -357,13 +362,12 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 /// *same* cell but in the mesh associated with `u0`. `cells0` and
 /// `cells1` have be the same size.
 ///
-/// @pre fem::Functions `u1` and `u0` must share the same mesh and the
+/// @pre Function%s `u1` and `u0` must share the same mesh and the
 /// elements must share the same basis function map. Neither is checked
 /// by the function.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
-                          std::span<const std::int32_t> cells1,
-                          std::span<const std::int32_t> cells0)
+void interpolate_same_map(Function<T, U>& u1, CellRange auto&& cells1,
+                          const Function<T, U>& u0, CellRange auto&& cells0)
 {
   auto V0 = u0.function_space();
   assert(V0);
@@ -416,20 +420,22 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   std::vector<T> local1(element1->space_dimension());
 
   // Create interpolation operator
-  const auto [i_m, im_shape]
-      = element1->create_interpolation_operator(*element0);
+  auto [i_m, im_shape] = element1->create_interpolation_operator(*element0);
 
   // Iterate over mesh and interpolate on each cell
   using X = typename dolfinx::scalar_value_t<T>;
-  for (std::size_t c = 0; c < cells0.size(); c++)
+  assert(cells0.size() == cells1.size());
+  for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
+       cell0_it != cells0.end() and cell1_it != cells1.end();
+       ++cell0_it, ++cell1_it)
   {
     // Pack and transform cell dofs to reference ordering
-    std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);
+    std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(*cell0_it);
     for (std::size_t i = 0; i < dofs0.size(); ++i)
       for (int k = 0; k < bs0; ++k)
         local0[bs0 * i + k] = u0_array[bs0 * dofs0[i] + k];
 
-    apply_dof_transformation(local0, cell_info0, cells0[c], 1);
+    apply_dof_transformation(local0, cell_info0, *cell0_it, 1);
 
     // FIXME: Get compile-time ranges from Basix
     // Apply interpolation operator
@@ -438,8 +444,8 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
       for (std::size_t j = 0; j < im_shape[1]; ++j)
         local1[i] += static_cast<X>(i_m[im_shape[1] * i + j]) * local0[j];
 
-    apply_inverse_dof_transform(local1, cell_info1, cells1[c], 1);
-    std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cells1[c]);
+    apply_inverse_dof_transform(local1, cell_info1, *cell1_it, 1);
+    std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(*cell1_it);
     for (std::size_t i = 0; i < dofs1.size(); ++i)
       for (int k = 0; k < bs1; ++k)
         u1_array[bs1 * dofs1[i] + k] = local1[bs1 * i + k];
@@ -458,13 +464,12 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
 /// @param[in] cells1 Cells to interpolate on.
 /// @param[in] u0 Function to interpolate from.
 /// @param[in] cells0 Equivalent cell in `u0` for each cell in `u1`.
-/// @pre The functions `u1` and `u0` must share the same mesh. This is
-/// not checked by the function.
+/// @pre Function%s `u1` and `u0` must share the same mesh. This is not
+/// checked by the function.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate_nonmatching_maps(Function<T, U>& u1,
-                                  std::span<const std::int32_t> cells1,
+void interpolate_nonmatching_maps(Function<T, U>& u1, CellRange auto&& cells1,
                                   const Function<T, U>& u0,
-                                  std::span<const std::int32_t> cells0)
+                                  CellRange auto&& cells0)
 {
   // Get mesh
   auto V0 = u0.function_space();
@@ -508,9 +513,8 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   const int bs1 = element1->block_size();
   auto apply_dof_transformation0 = element0->template dof_transformation_fn<U>(
       doftransform::standard, false);
-  auto apply_inverse_dof_transform1
-      = element1->template dof_transformation_fn<T>(
-          doftransform::inverse_transpose, false);
+  auto apply_inv_dof_transform1 = element1->template dof_transformation_fn<T>(
+      doftransform::inverse_transpose, false);
 
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
@@ -519,7 +523,6 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
 
   const CoordinateElement<U>& cmap = mesh0->geometry().cmap();
   auto x_dofmap = mesh0->geometry().dofmap();
-  const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh0->geometry().x();
 
   // (0) is derivative index, (1) is the point index, (2) is the basis
@@ -566,6 +569,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
       mapped_values0(mapped_values_b.data(), Xshape[0], 1,
                      V1->element()->value_size());
 
+  const std::size_t num_dofs_g = cmap.dim();
   std::vector<U> coord_dofs_b(num_dofs_g * gdim);
   md::mdspan<U, std::dextents<std::size_t, 2>> coord_dofs(coord_dofs_b.data(),
                                                           num_dofs_g, gdim);
@@ -599,10 +603,13 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   // Iterate over mesh and interpolate on each cell
   std::span<const T> array0 = u0.x()->array();
   std::span<T> array1 = u1.x()->array();
-  for (std::size_t c = 0; c < cells0.size(); c++)
+  assert(cells0.size() == cells1.size());
+  for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
+       cell0_it != cells0.end() and cell1_it != cells0.end();
+       ++cell0_it, ++cell1_it)
   {
     // Get cell geometry (coordinate dofs)
-    auto x_dofs = md::submdspan(x_dofmap, cells0[c], md::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, *cell0_it, md::full_extent);
     for (std::size_t i = 0; i < num_dofs_g; ++i)
     {
       const int pos = 3 * x_dofs[i];
@@ -636,7 +643,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
       apply_dof_transformation0(
           std::span(basis_reference0_b.data() + p * dim0 * value_size_ref0,
                     dim0 * value_size_ref0),
-          cell_info0, cells0[c], value_size_ref0);
+          cell_info0, *cell0_it, value_size_ref0);
     }
 
     for (std::size_t i = 0; i < basis0.extent(0); ++i)
@@ -651,7 +658,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
 
     // Copy expansion coefficients for v into local array
     const int dof_bs0 = dofmap0->bs();
-    std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);
+    std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(*cell0_it);
     for (std::size_t i = 0; i < dofs0.size(); ++i)
       for (int k = 0; k < dof_bs0; ++k)
         coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
@@ -686,30 +693,31 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
     auto values
         = md::submdspan(mapped_values0, md::full_extent, 0, md::full_extent);
     interpolation_apply(Pi_1, values, std::span(local1), bs1);
-    apply_inverse_dof_transform1(local1, cell_info1, cells1[c], 1);
+    apply_inv_dof_transform1(local1, cell_info1, *cell1_it, 1);
 
     // Copy local coefficients to the correct position in u dof array
     const int dof_bs1 = dofmap1->bs();
-    std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
+    std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(*cell1_it);
     for (std::size_t i = 0; i < dofs1.size(); ++i)
       for (int k = 0; k < dof_bs1; ++k)
         array1[dof_bs1 * dofs1[i] + k] = local1[dof_bs1 * i + k];
   }
 }
 
-/// @brief Interpolate data into coefficients for an identity-mapped point
-/// evaluation element.
-/// @param [in] element Element
-/// @param [in] symmetric Is the element symmetric
-/// @param [in] dofmap DofMap for cells
-/// @param [in] cells Cells to interpolate over
-/// @param [in] cell_info Cell permutation information, if required
-/// @param [in] f Input data evaluated at points
-/// @param [in] fshape Shape of input data
-/// @param [out] coeffs Output Function coefficients
+/// @brief Interpolate data into coefficients for an identity-mapped
+/// point evaluation element.
+///
+/// @param [in] element Element.
+/// @param [in] symmetric Is the element symmetric?
+/// @param [in] dofmap DofMap for cells.
+/// @param [in] cells Cells to interpolate over.
+/// @param [in] cell_info Cell permutation information, if required.
+/// @param [in] f Input data evaluated at points.
+/// @param [in] fshape Shape of input data.
+/// @param [out] coeffs Output Function coefficients.
 template <dolfinx::scalar T, std::floating_point U>
 void point_evaluation(const FiniteElement<U>& element, bool symmetric,
-                      const DofMap& dofmap, std::span<const std::int32_t> cells,
+                      const DofMap& dofmap, CellRange auto&& cells,
                       std::span<const std::uint32_t> cell_info,
                       std::span<const T> f, std::array<std::size_t, 2> fshape,
                       std::span<T> coeffs)
@@ -721,21 +729,18 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
   const int num_scalar_dofs = element.space_dimension() / element_bs;
   const int dofmap_bs = dofmap.bs();
 
-  std::vector<T> _coeffs(num_scalar_dofs);
-
   auto apply_inv_transpose_dof_transformation
       = element.template dof_transformation_fn<T>(
           doftransform::inverse_transpose, true);
-
+  std::vector<T> coeffs_b(num_scalar_dofs);
   if (symmetric)
   {
     std::size_t matrix_size = 0;
     while (matrix_size * matrix_size < fshape[0])
       ++matrix_size;
 
-    spdlog::info("Loop over cells");
     // Loop over cells
-    for (std::size_t c = 0; c < cells.size(); ++c)
+    for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
       // The entries of a symmetric matrix are numbered (for an
       // example 4x4 element):
@@ -747,8 +752,8 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
       // row of this matrix, and (k - rowstart) is the column
       std::size_t row = 0;
       std::size_t rowstart = 0;
-      const std::int32_t cell = cells[c];
-      std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
+      std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
+      std::size_t offset = std::distance(cells.begin(), cell_it);
       for (int k = 0; k < element_bs; ++k)
       {
         if (k - rowstart > row)
@@ -761,14 +766,15 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
         // cell in this case (interpolation matrix is identity)
         std::copy_n(
             std::next(f.begin(), (row * matrix_size + k - rowstart) * fshape[1]
-                                     + c * num_scalar_dofs),
-            num_scalar_dofs, _coeffs.begin());
-        apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+                                     + offset * num_scalar_dofs),
+            num_scalar_dofs, coeffs_b.data());
+        apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
+                                               1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
           const int dof = i * element_bs + k;
           std::div_t pos = std::div(dof, dofmap_bs);
-          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
         }
       }
     }
@@ -776,22 +782,24 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
   else
   {
     // Loop over cells
-    for (std::size_t c = 0; c < cells.size(); ++c)
+    for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
-      const std::int32_t cell = cells[c];
-      std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
+      std::size_t offset = std::distance(cells.begin(), cell_it);
+      std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
       for (int k = 0; k < element_bs; ++k)
       {
         // num_scalar_dofs is the number of interpolation points per
         // cell in this case (interpolation matrix is identity)
-        std::copy_n(std::next(f.begin(), k * fshape[1] + c * num_scalar_dofs),
-                    num_scalar_dofs, _coeffs.begin());
-        apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+        std::copy_n(
+            std::next(f.begin(), k * fshape[1] + offset * num_scalar_dofs),
+            num_scalar_dofs, coeffs_b.data());
+        apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
+                                               1);
         for (int i = 0; i < num_scalar_dofs; ++i)
         {
           const int dof = i * element_bs + k;
           std::div_t pos = std::div(dof, dofmap_bs);
-          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
         }
       }
     }
@@ -800,18 +808,18 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
 
 /// @brief Interpolate data into coefficients for an identity-mapped but
 /// non-point evaluation element.
-/// @param [in] element Element
-/// @param [in] symmetric Is the element symmetric
-/// @param [in] dofmap DofMap for cells
-/// @param [in] cells Cells to interpolate over
-/// @param [in] cell_info Cell permutation information, if required
-/// @param [in] f Input data evaluated at points
-/// @param [in] fshape Shape of input data
-/// @param [out] coeffs Output Function coefficients
+///
+/// @param [in] element Element.
+/// @param [in] symmetric Is the element symmetric?.
+/// @param [in] dofmap DofMap for cells.
+/// @param [in] cells Cells to interpolate over.
+/// @param [in] cell_info Cell permutation information, if required.
+/// @param [in] f Input data evaluated at points.
+/// @param [in] fshape Shape of input data.
+/// @param [out] coeffs Output Function coefficients.
 template <dolfinx::scalar T, std::floating_point U>
 void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
-                                const DofMap& dofmap,
-                                std::span<const std::int32_t> cells,
+                                const DofMap& dofmap, CellRange auto&& cells,
                                 std::span<const std::uint32_t> cell_info,
                                 std::span<const T> f,
                                 std::array<std::size_t, 2> fshape,
@@ -820,23 +828,16 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   // Not a point evaluation, but the geometric map is the identity,
   // e.g. not Piola mapped
 
+  if (symmetric)
+    throw std::runtime_error("Interpolation into this element not supported.");
+
   const int element_bs = element.block_size();
   const int num_scalar_dofs = element.space_dimension() / element_bs;
   const int dofmap_bs = dofmap.bs();
 
-  std::vector<T> _coeffs(num_scalar_dofs);
-
-  if (symmetric)
-  {
-    throw std::runtime_error("Interpolation into this element not supported.");
-  }
-
   const int element_vs = element.reference_value_size();
-
   if (element_vs > 1 and element_bs > 1)
-  {
     throw std::runtime_error("Interpolation into this element not supported.");
-  }
 
   // Get interpolation operator
   const auto [_Pi, pi_shape] = element.interpolation_operator();
@@ -852,27 +853,29 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   std::vector<T> ref_data_b(num_interp_points);
   md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 1>> ref_data(
       ref_data_b.data(), num_interp_points, 1);
-  for (std::size_t c = 0; c < cells.size(); ++c)
+  std::vector<T> coeffs_b(num_scalar_dofs);
+  for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
   {
-    const std::int32_t cell = cells[c];
-    std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
+    std::size_t offset = std::distance(cells.begin(), cell_it);
+    std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
     for (int k = 0; k < element_bs; ++k)
     {
       for (int i = 0; i < element_vs; ++i)
       {
         std::copy_n(
-            std::next(f.begin(),
-                      (i + k) * fshape[1] + c * num_interp_points / element_vs),
+            std::next(f.begin(), (i + k) * fshape[1]
+                                     + offset * num_interp_points / element_vs),
             num_interp_points / element_vs,
             std::next(ref_data_b.begin(), i * num_interp_points / element_vs));
       }
-      impl::interpolation_apply(Pi, ref_data, std::span(_coeffs), 1);
-      apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+
+      impl::interpolation_apply(Pi, ref_data, std::span(coeffs_b), 1);
+      apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it, 1);
       for (int i = 0; i < num_scalar_dofs; ++i)
       {
         const int dof = i * element_bs + k;
         std::div_t pos = std::div(dof, dofmap_bs);
-        coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+        coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
       }
     }
   }
@@ -880,26 +883,29 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
 /// @brief Interpolate data into coefficients for a Piola-mapped point
 /// evaluation element.
-/// @param [in] element Element
-/// @param [in] symmetric Is the element symmetric
-/// @param [in] dofmap DofMap for cells
-/// @param [in] cells Cells to interpolate over
-/// @param [in] cell_info Cell permutation information, if required
-/// @param [in] f Input data evaluated at points
-/// @param [in] fshape Shape of input data
-/// @param [in] mesh Mesh
-/// @param [out] coeffs Output Function coefficients
+///
+/// @param [in] element Element.
+/// @param [in] symmetric Is the element symmetric?
+/// @param [in] dofmap DofMap for cells.
+/// @param [in] cells Cells to interpolate over.
+/// @param [in] cell_info Cell permutation information, if required.
+/// @param [in] f Input data evaluated at points.
+/// @param [in] fshape Shape of input data.
+/// @param [in] mesh Mesh.
+/// @param [out] coeffs Output Function coefficients.
 template <dolfinx::scalar T, std::floating_point U>
 void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
-                             const DofMap& dofmap,
-                             std::span<const std::int32_t> cells,
+                             const DofMap& dofmap, CellRange auto&& cells,
                              std::span<const std::uint32_t> cell_info,
                              std::span<const T> f,
                              std::array<std::size_t, 2> fshape,
                              const mesh::Mesh<U>& mesh, std::span<T> coeffs)
 {
+  if (symmetric)
+    throw std::runtime_error("Interpolation into this element not supported.");
 
   const int gdim = mesh.geometry().dim();
+  assert(mesh.topology());
   const int tdim = mesh.topology()->dim();
 
   const int element_bs = element.block_size();
@@ -907,13 +913,8 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const int value_size = element.reference_value_size();
   const int dofmap_bs = dofmap.bs();
 
-  std::vector<T> _coeffs(num_scalar_dofs);
   md::mdspan<const T, md::dextents<std::size_t, 2>> _f(f.data(), fshape);
 
-  if (symmetric)
-  {
-    throw std::runtime_error("Interpolation into this element not supported.");
-  }
   // Get the interpolation points on the reference cells
   const auto [X, Xshape] = element.interpolation_points();
   if (X.empty())
@@ -969,9 +970,9 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), md::full_extent,
                             md::full_extent, 0);
 
-  const std::function<void(std::span<T>, std::span<const std::uint32_t>,
-                           std::int32_t, int)>
-      apply_inverse_transpose_dof_transformation
+  std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
+                     int)>
+      apply_inv_trans_dof_transformation
       = element.template dof_transformation_fn<T>(
           doftransform::inverse_transpose);
 
@@ -987,10 +988,10 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   auto pull_back_fn
       = element.basix_element().template map_fn<U_t, u_t, J_t, K_t>();
 
-  for (std::size_t c = 0; c < cells.size(); ++c)
+  std::vector<T> coeffs_b(num_scalar_dofs);
+  for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
   {
-    const std::int32_t cell = cells[c];
-    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, *cell_it, md::full_extent);
     for (int i = 0; i < num_dofs_g; ++i)
     {
       const int pos = 3 * x_dofs[i];
@@ -1010,7 +1011,8 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
     }
 
-    std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
+    const std::size_t offset = std::distance(cells.begin(), cell_it);
+    std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
     for (int k = 0; k < element_bs; ++k)
     {
       // Extract computed expression values for element block k
@@ -1019,7 +1021,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
         for (std::size_t k0 = 0; k0 < Xshape[0]; ++k0)
         {
           _vals(k0, 0, m)
-              = f[fshape[1] * (k * value_size + m) + c * Xshape[0] + k0];
+              = f[fshape[1] * (k * value_size + m) + offset * Xshape[0] + k0];
         }
       }
 
@@ -1034,16 +1036,16 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       }
 
       auto ref = md::submdspan(ref_data, md::full_extent, 0, md::full_extent);
-      impl::interpolation_apply(Pi, ref, std::span(_coeffs), element_bs);
-      apply_inverse_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+      impl::interpolation_apply(Pi, ref, std::span(coeffs_b), element_bs);
+      apply_inv_trans_dof_transformation(coeffs_b, cell_info, *cell_it, 1);
 
       // Copy interpolation dofs into coefficient vector
-      assert(_coeffs.size() == num_scalar_dofs);
+      assert(coeffs_b.size() == num_scalar_dofs);
       for (int i = 0; i < num_scalar_dofs; ++i)
       {
         const int dof = i * element_bs + k;
         std::div_t pos = std::div(dof, dofmap_bs);
-        coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+        coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
       }
     }
   }
@@ -1051,72 +1053,6 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
 //----------------------------------------------------------------------------
 } // namespace impl
-
-template <dolfinx::scalar T, std::floating_point U>
-void interpolate(Function<T, U>& u, std::span<const T> f,
-                 std::array<std::size_t, 2> fshape,
-                 std::span<const std::int32_t> cells)
-{
-  // TODO: Index for mixed-topology, zero for now
-  const int index = 0;
-  auto element = u.function_space()->elements(index);
-  assert(element);
-  const int element_bs = element->block_size();
-  if (int num_sub = element->num_sub_elements();
-      num_sub > 0 and num_sub != element_bs)
-  {
-    throw std::runtime_error("Cannot directly interpolate a mixed space. "
-                             "Interpolate into subspaces.");
-  }
-
-  // Get mesh
-  assert(u.function_space());
-  auto mesh = u.function_space()->mesh();
-  assert(mesh);
-
-  if (fshape[0]
-          != (std::size_t)u.function_space()->elements(index)->value_size()
-      or f.size() != fshape[0] * fshape[1])
-    throw std::runtime_error("Interpolation data has the wrong shape/size.");
-
-  spdlog::debug("Check for dof transformation");
-  std::span<const std::uint32_t> cell_info;
-  if (element->needs_dof_transformations())
-  {
-    mesh->topology_mutable()->create_entity_permutations();
-    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
-  }
-
-  spdlog::debug("Interpolate: get dofmap");
-  // Get dofmap
-  const auto dofmap = u.function_space()->dofmaps(index);
-  assert(dofmap);
-
-  // Result will be stored to coeffs
-  std::span<T> coeffs = u.x()->array();
-
-  const bool symmetric = u.function_space()->symmetric();
-  if (element->map_ident() && element->interpolation_ident())
-  {
-    spdlog::debug("Interpolate: point evaluation");
-    // This assumes that any element with an identity interpolation matrix
-    // is a point evaluation
-    impl::point_evaluation(*element, symmetric, *dofmap, cells, cell_info, f,
-                           fshape, coeffs);
-  }
-  else if (element->map_ident())
-  {
-    spdlog::debug("Interpolate: identity-mapped evaluation");
-    impl::identity_mapped_evaluation(*element, symmetric, *dofmap, cells,
-                                     cell_info, f, fshape, coeffs);
-  }
-  else
-  {
-    spdlog::debug("Interpolate: Piola-mapped evaluation");
-    impl::piola_mapped_evaluation(*element, symmetric, *dofmap, cells,
-                                  cell_info, f, fshape, *mesh, coeffs);
-  }
-}
 
 /// @brief Generate data needed to interpolate finite element
 /// fem::Function's across different meshes.
@@ -1139,7 +1075,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 template <std::floating_point T>
 geometry::PointOwnershipData<T> create_interpolation_data(
     const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
-    const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells, T padding)
+    const mesh::Mesh<T>& mesh1, CellRange auto&& cells, T padding)
 {
   // Collect all the points at which values are needed to define the
   // interpolating function
@@ -1157,31 +1093,99 @@ geometry::PointOwnershipData<T> create_interpolation_data(
                                                 std::nullopt);
 }
 
+template <dolfinx::scalar T, std::floating_point U>
+void interpolate(Function<T, U>& u, std::span<const T> f,
+                 std::array<std::size_t, 2> fshape, CellRange auto&& cells)
+{
+  // TODO: Index for mixed-topology, zero for now
+  const int index = 0;
+  auto element = u.function_space()->elements(index);
+  assert(element);
+  const int element_bs = element->block_size();
+  if (int num_sub = element->num_sub_elements();
+      num_sub > 0 and num_sub != element_bs)
+  {
+    throw std::runtime_error("Cannot directly interpolate a mixed space. "
+                             "Interpolate into subspaces.");
+  }
+
+  // Get mesh
+  assert(u.function_space());
+  auto mesh = u.function_space()->mesh();
+  assert(mesh);
+
+  if (fshape[0]
+          != (std::size_t)u.function_space()->elements(index)->value_size()
+      or f.size() != fshape[0] * fshape[1])
+  {
+    throw std::runtime_error("Interpolation data has the wrong shape/size.");
+  }
+
+  spdlog::debug("Check for dof transformation");
+  std::span<const std::uint32_t> cell_info;
+  if (element->needs_dof_transformations())
+  {
+    mesh->topology_mutable()->create_entity_permutations();
+    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
+  }
+
+  // Get dofmap
+  spdlog::debug("Interpolate: get dofmap");
+  const auto dofmap = u.function_space()->dofmaps(index);
+  assert(dofmap);
+
+  // Result will be stored to coeffs
+  std::span<T> coeffs = u.x()->array();
+
+  if (bool symmetric = u.function_space()->symmetric();
+      element->map_ident() and element->interpolation_ident())
+  {
+    // This assumes that any element with an identity interpolation
+    // matrix is a point evaluation
+    spdlog::debug("Interpolate: point evaluation");
+    impl::point_evaluation(*element, symmetric, *dofmap, cells, cell_info, f,
+                           fshape, coeffs);
+  }
+  else if (element->map_ident())
+  {
+    spdlog::debug("Interpolate: identity-mapped evaluation");
+    impl::identity_mapped_evaluation(*element, symmetric, *dofmap, cells,
+                                     cell_info, f, fshape, coeffs);
+  }
+  else
+  {
+    spdlog::debug("Interpolate: Piola-mapped evaluation");
+    impl::piola_mapped_evaluation(*element, symmetric, *dofmap, cells,
+                                  cell_info, f, fshape, *mesh, coeffs);
+  }
+}
+
 /// @brief Interpolate a finite element Function defined on a mesh to a
 /// finite element Function defined on different (non-matching) mesh.
 ///
 /// @tparam T Function scalar type.
 /// @tparam U mesh::Mesh geometry scalar type.
-/// @param u Function to interpolate into.
-/// @param v Function to interpolate from.
+/// @param u1 Function to interpolate into.
+/// @param u0 Function to interpolate from.
 /// @param cells Cells indices relative to the mesh associated with `u`
 /// that will be interpolated into.
 /// @param interpolation_data Data required for associating the
 /// interpolation points of `u` with cells in `v`. This is computed by
 /// fem::create_interpolation_data.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate(Function<T, U>& u, const Function<T, U>& v,
-                 std::span<const std::int32_t> cells,
+void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
+                 CellRange auto&& cells,
                  const geometry::PointOwnershipData<U>& interpolation_data)
 {
-  auto mesh = u.function_space()->mesh();
-  assert(mesh);
-  MPI_Comm comm = mesh->comm();
+  auto mesh1 = u1.function_space()->mesh();
+  assert(mesh1);
+  MPI_Comm comm = mesh1->comm();
   {
-    auto mesh_v = v.function_space()->mesh();
-    assert(mesh_v);
+    assert(u0.function_space());
+    auto mesh0 = u0.function_space()->mesh();
+    assert(mesh0);
     int result;
-    MPI_Comm_compare(comm, mesh_v->comm(), &result);
+    MPI_Comm_compare(comm, mesh0->comm(), &result);
     if (result == MPI_UNEQUAL)
     {
       throw std::runtime_error("Interpolation on different meshes is only "
@@ -1189,12 +1193,12 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
     }
   }
 
-  assert(mesh->topology());
-  auto cell_map = mesh->topology()->index_map(mesh->topology()->dim());
+  assert(mesh1->topology());
+  auto cell_map = mesh1->topology()->index_map(mesh1->topology()->dim());
   assert(cell_map);
-  auto element_u = u.function_space()->element();
-  assert(element_u);
-  const std::size_t value_size = u.function_space()->element()->value_size();
+  auto element1 = u1.function_space()->element();
+  assert(element1);
+  const std::size_t value_size = element1->value_size();
 
   const std::vector<int>& dest_ranks = interpolation_data.src_owner;
   const std::vector<int>& src_ranks = interpolation_data.dest_owners;
@@ -1204,8 +1208,8 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 
   // Evaluate the interpolating function where possible
   std::vector<T> send_values(recv_points.size() / 3 * value_size);
-  v.eval(recv_points, {recv_points.size() / 3, (std::size_t)3},
-         evaluation_cells, send_values, {recv_points.size() / 3, value_size});
+  u0.eval(recv_points, {recv_points.size() / 3, (std::size_t)3},
+          evaluation_cells, send_values, {recv_points.size() / 3, value_size});
 
   // Send values back to owning process
   std::vector<T> values_b(dest_ranks.size() * value_size);
@@ -1225,15 +1229,15 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
       valuesT(j, i) = values(i, j);
 
   // Call local interpolation operator
-  fem::interpolate<T>(u, valuesT_b, {valuesT.extent(0), valuesT.extent(1)},
+  fem::interpolate<T>(u1, valuesT_b, {valuesT.extent(0), valuesT.extent(1)},
                       cells);
 }
 
 /// @brief Interpolate from one finite element Function to another
-/// Function on the same (sub)mesh.
+/// Function on a subset of cells.
 ///
-/// Interpolation can be performed on a subset of mesh cells and
-/// Functions may be defined on 'sub-meshes'.
+/// The Function%s must share the same mesh, or one can be defined on a
+/// submesh of the other.
 ///
 /// @param[out] u1 Function to interpolate into.
 /// @param[in] cells1 Cell indices associated with the mesh of `u1` that
@@ -1242,95 +1246,128 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 /// @param[in] cells0 Cell indices associated with the mesh of `u0` that
 /// will be interpolated from. If `cells1[i]` is the index of a cell in
 /// the mesh associated with `u1`, then `cells0[i]` is the index of the
-/// *same* cell but in the mesh associated with `u0`. `cells0` and
-/// `cells1` must be the same size.
+/// *same* cell but in the mesh associated with `u0`.
+///
+/// @pre `cells0` and `cells1` have the same size.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
-                 const Function<T, U>& u0, std::span<const std::int32_t> cells0)
+void interpolate(Function<T, U>& u1, CellRange auto&& cells1,
+                 const Function<T, U>& u0, CellRange auto&& cells0)
 {
   if (cells0.size() != cells1.size())
     throw std::runtime_error("Length of cell lists do not match.");
 
-  assert(u1.function_space());
-  assert(u0.function_space());
-  auto mesh = u1.function_space()->mesh();
-  assert(mesh);
-  assert(cells0.size() == cells1.size());
+  auto V1 = u1.function_space();
+  assert(V1);
+  auto V0 = u0.function_space();
+  assert(V0);
 
-  auto cell_map0 = mesh->topology()->index_map(mesh->topology()->dim());
-  assert(cell_map0);
-  std::size_t num_cells0 = cell_map0->size_local() + cell_map0->num_ghosts();
-  if (u1.function_space() == u0.function_space()
-      and cells1.size() == num_cells0)
+  // Get elements and check value shape
+  auto e0 = V0->element();
+  assert(e0);
+  auto e1 = V1->element();
+  assert(e1);
+  if (!std::ranges::equal(e0->value_shape(), e1->value_shape()))
   {
-    // Same function spaces and on whole mesh
+    throw std::runtime_error(
+        "Interpolation: elements have different value dimensions");
+  }
+
+  if (V1->mesh() == V0->mesh() and (e1 == e0 or *e1 == *e0))
+  {
+    // Same element and same mesh
+    if (e1->block_size() != e0->block_size())
+      throw std::runtime_error("Mismatch in element block size.");
+
+    // Get dofmaps
+    std::shared_ptr<const DofMap> dofmap0 = V0->dofmap();
+    assert(dofmap0);
+    std::shared_ptr<const DofMap> dofmap1 = V1->dofmap();
+    assert(dofmap1);
+
+    // Iterate over mesh and interpolate on each cell
+    const int bs0 = dofmap0->bs();
+    const int bs1 = dofmap1->bs();
     std::span<T> u1_array = u1.x()->array();
     std::span<const T> u0_array = u0.x()->array();
-    std::ranges::copy(u0_array, u1_array.begin());
-  }
-  else
-  {
-    // Get elements and check value shape
-    auto fs0 = u0.function_space();
-    auto element0 = fs0->element();
-    assert(element0);
-    auto fs1 = u1.function_space();
-    auto element1 = fs1->element();
-    assert(element1);
-    if (!std::ranges::equal(fs0->element()->value_shape(),
-                            fs1->element()->value_shape()))
+    assert(cells0.size() == cells1.size());
+    for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
+         cell0_it != cells0.end() and cell1_it != cells1.end();
+         ++cell0_it, ++cell1_it)
+
     {
-      throw std::runtime_error(
-          "Interpolation: elements have different value dimensions");
-    }
-
-    if (element1 == element0 or *element1 == *element0)
-    {
-      // Same element, different dofmaps (or just a subset of cells)
-      const int tdim = mesh->topology()->dim();
-      auto cell_map1 = mesh->topology()->index_map(tdim);
-      assert(cell_map1);
-      assert(element1->block_size() == element0->block_size());
-
-      // Get dofmaps
-      std::shared_ptr<const DofMap> dofmap0 = u0.function_space()->dofmap();
-      assert(dofmap0);
-      std::shared_ptr<const DofMap> dofmap1 = u1.function_space()->dofmap();
-      assert(dofmap1);
-
-      std::span<T> u1_array = u1.x()->array();
-      std::span<const T> u0_array = u0.x()->array();
-
-      // Iterate over mesh and interpolate on each cell
-      const int bs0 = dofmap0->bs();
-      const int bs1 = dofmap1->bs();
-      for (std::size_t c = 0; c < cells1.size(); ++c)
+      std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(*cell0_it);
+      std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(*cell1_it);
+      assert(bs0 * dofs0.size() == bs1 * dofs1.size());
+      for (std::size_t i = 0; i < dofs0.size(); ++i)
       {
-        std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);
-        std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cells1[c]);
-        assert(bs0 * dofs0.size() == bs1 * dofs1.size());
-        for (std::size_t i = 0; i < dofs0.size(); ++i)
+        for (int k = 0; k < bs0; ++k)
         {
-          for (int k = 0; k < bs0; ++k)
-          {
-            int index = bs0 * i + k;
-            std::div_t dv1 = std::div(index, bs1);
-            u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
-                = u0_array[bs0 * dofs0[i] + k];
-          }
+          int index = bs0 * i + k;
+          std::div_t dv1 = std::div(index, bs1);
+          u1_array[bs1 * dofs1[dv1.quot] + dv1.rem]
+              = u0_array[bs0 * dofs0[i] + k];
         }
       }
     }
-    else if (element1->map_type() == element0->map_type())
-    {
-      // Different elements, same basis function map type
-      impl::interpolate_same_map(u1, u0, cells1, cells0);
-    }
-    else
-    {
-      //  Different elements with different maps for basis functions
-      impl::interpolate_nonmatching_maps(u1, cells1, u0, cells0);
-    }
+  }
+  else if (e1->map_type() == e0->map_type())
+  {
+    // Different elements, same basis function map type
+    impl::interpolate_same_map(u1, cells1, u0, cells0);
+  }
+  else
+  {
+    //  Different elements with different maps for basis functions
+    impl::interpolate_nonmatching_maps(u1, cells1, u0, cells0);
+  }
+}
+
+/// @brief Interpolate from one finite element Function to another
+/// Function on a subset of cells.
+///
+/// The two Function%s must share the same mesh, otherwise an exception
+/// is thrown.
+///
+/// @param[out] u1 Function to interpolate into.
+/// @param[in] u0 Function to b interpolated from.
+/// @param[in] cells Cell indices to interpolate onto.
+template <dolfinx::scalar T, std::floating_point U>
+void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
+                 std::ranges::input_range auto&& cells)
+{
+  assert(u1.function_space());
+  assert(u0.function_space());
+  if (u1.function_space()->mesh() == u0.function_space()->mesh())
+    interpolate<T, U>(u1, cells, u0, cells);
+  else
+    throw std::runtime_error("Meshes do no match.");
+}
+
+/// @brief Interpolate from one finite element Function to another
+/// Function on the whole mesh.
+///
+/// The two Function%s must share the same mesh. This function has an
+/// optimization for the case when both Function%s are defined on the
+/// same function space.
+///
+/// @param[out] u1 Function to interpolate into.
+/// @param[in] u0 Function to b interpolated from.
+template <dolfinx::scalar T, std::floating_point U>
+void interpolate(Function<T, U>& u1, const Function<T, U>& u0)
+{
+  assert(u1.function_space());
+  assert(u0.function_space());
+  if (auto V1 = u1.function_space(); V1 == u0.function_space())
+    std::ranges::copy(u0.x()->array(), u1.x()->array().begin());
+  else
+  {
+    auto mesh = V1->mesh();
+    assert(mesh);
+    assert(mesh->topology());
+    auto map = mesh->topology()->index_map(mesh->topology()->dim());
+    assert(map);
+    std::int32_t num_cells = map->size_local() + map->num_ghosts();
+    interpolate<T, U>(u1, u0, std::ranges::views::iota(0, num_cells));
   }
 }
 } // namespace dolfinx::fem
