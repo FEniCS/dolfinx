@@ -42,11 +42,18 @@ void cell_entry(std::int32_t c0, std::int32_t num_cells,
 {
   int num_vertices_per_entity = num_cell_vertices(entity_type);
   int num_entities_per_cell = cell_type_entities.size();
+
+  std::vector<std::int32_t> entity_vertices(num_vertices_per_entity);
+  std::vector<std::int64_t> global_vertices(num_vertices_per_entity);
+  std::vector<std::size_t> perm(num_vertices_per_entity);
+
+  // Iterate over cells
   for (int c = 0; c < num_cells; ++c)
   {
     // Get vertices from each cell
     auto vertices = cells.links(c + c0);
 
+    // Iterate over cell entities of given type
     for (int e = 0; e < num_entities_per_cell; ++e)
     {
       auto ev = e_vertices.links(cell_type_entities[e]);
@@ -62,16 +69,17 @@ void cell_entry(std::int32_t c0, std::int32_t num_cells,
       //
       // FIXME: This might be better below when the entity to vertex
       // connectivity is computed
-      std::vector<std::int32_t> entity_vertices(ev.size());
+      assert(ev.size() == entity_vertices.size());
       for (std::size_t j = 0; j < ev.size(); ++j)
         entity_vertices[j] = vertices[ev[j]];
 
       // Orient the entities. Simply sort according to global vertex
       // index for simplices.
-      std::vector<std::int64_t> global_vertices(entity_vertices.size());
+      // std::vector<std::int64_t> global_vertices(entity_vertices.size());
+      assert(entity_vertices.size() == global_vertices.size());
       vertex_index_map.local_to_global(entity_vertices, global_vertices);
 
-      std::vector<std::size_t> perm(global_vertices.size());
+      // std::vector<std::size_t> perm(global_vertices.size());
       std::iota(perm.begin(), perm.end(), 0);
       std::ranges::sort(perm, [&global_vertices](std::size_t i0, std::size_t i1)
                         { return global_vertices[i0] < global_vertices[i1]; });
@@ -92,6 +100,8 @@ void cell_entry(std::int32_t c0, std::int32_t num_cells,
                                        num_vertices_per_entity);
       for (std::size_t j = 0; j < ev.size(); ++j)
         elist[j] = entity_vertices[perm[j]];
+
+      // std::ranges::sort(elist);
     }
   }
 }
@@ -559,7 +569,6 @@ compute_entities_by_key_matching(
   int num_vertices_per_entity = num_cell_vertices(entity_type);
   std::vector<std::int32_t> entity_list(cell_type_offsets.back()
                                         * num_vertices_per_entity);
-
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
     // Get indices of desired entities within cell. Usually this will be
