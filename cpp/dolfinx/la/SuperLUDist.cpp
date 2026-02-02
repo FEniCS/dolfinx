@@ -218,7 +218,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     dLUstructInit(m, &LUstruct);
     dSOLVEstruct_t SOLVEstruct;
 
-    spdlog::info("Call pdgssvx");
+    spdlog::info("Call SuperLU_DIST pdgssvx()");
     pdgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct,
             u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
             &SOLVEstruct, berr.data(), &stat, &info);
@@ -237,7 +237,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     sLUstructInit(m, &LUstruct);
     sSOLVEstruct_t SOLVEstruct;
 
-    spdlog::info("Call psgssvx");
+    spdlog::info("Call SuperLU_DIST psgssvx()");
     psgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct,
             u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
             &SOLVEstruct, berr.data(), &stat, &info);
@@ -256,7 +256,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     zLUstructInit(m, &LUstruct);
     zSOLVEstruct_t SOLVEstruct;
 
-    spdlog::info("Call pzgssvx");
+    spdlog::info("Call SuperLU_DIST pzgssvx()");
     pzgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct,
             reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
             _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
