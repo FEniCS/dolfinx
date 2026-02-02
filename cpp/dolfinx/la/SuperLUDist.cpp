@@ -131,11 +131,21 @@ supermatrix(const auto& A, auto& rowptr, auto& cols)
 
 //----------------------------------------------------------------------------
 template <typename T>
-SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
+SuperLUMatrix<T>::SuperLUMatrix(std::shared_ptr<const MatrixCSR<T>> A,
                                         bool verbose)
     : _Amat(A),
       _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*A))),
       _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*A))),
+      _supermatrix(supermatrix<T>(*A, *_rowptr, *_cols)), _verbose(verbose)
+{
+}
+//----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
+template <typename T>
+SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const SuperLUMatrix<T>> A,
+                                        bool verbose)
+    : _Amat(A),
       _gridinfo(
           [comm = A->comm()]
           {

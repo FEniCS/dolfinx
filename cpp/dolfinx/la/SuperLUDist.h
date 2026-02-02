@@ -37,6 +37,41 @@ struct SuperMatrixDeleter
   void operator()(SuperLUDistStructs::SuperMatrix* A) const noexcept;
 };
 
+/// SuperLU_DIST matrix interface.
+template <typename T>
+class SuperLUMatrix
+{
+public:
+  /// @brief Create matrix operator.
+  ///
+  /// @tparam T Scalar type.
+  /// @param A Matrix.
+  /// @param verbose Verbose output.
+  SuperLUMatrix(std::shared_ptr<const MatrixCSR<T>> A,
+                    bool verbose = false);
+
+  /// Copy constructor
+  SuperLUMatrix(const SuperLUMatrix&) = delete;
+
+  /// Copy assignment
+  SuperLUMatrix& operator=(const SuperLUMatrix&) = delete;
+
+private:
+  // Saved matrix operator with rows and cols in required integer type.
+  // cols and rowptr are required in opaque type "int_t" of
+  // SuperLU_DIST.
+  std::shared_ptr<const la::MatrixCSR<T>> _Amat;
+  std::unique_ptr<SuperLUDistStructs::vec_int_t> _cols;
+  std::unique_ptr<SuperLUDistStructs::vec_int_t> _rowptr;
+
+  // Pointer to SuperMatrix
+  std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
+      _supermatrix;
+
+  // Flag for diagnostic output
+  bool _verbose;
+};
+
 /// SuperLU_DIST linear solver interface.
 template <typename T>
 class SuperLUDistSolver
@@ -49,7 +84,7 @@ public:
   /// @tparam T Scalar type.
   /// @param A Matrix to solve for.
   /// @param verbose Verbose output.
-  SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
+  SuperLUDistSolver(std::shared_ptr<const SuperLUMatrix<T>> A,
                     bool verbose = false);
 
   /// Copy constructor
@@ -68,18 +103,10 @@ public:
   int solve(const Vector<T>& b, Vector<T>& u) const;
 
 private:
-  // Saved matrix operator with rows and cols in required integer type.
-  // cols and rowptr are required in opaque type "int_t" of
-  // SuperLU_DIST.
-  std::shared_ptr<const la::MatrixCSR<T>> _Amat;
-  std::unique_ptr<SuperLUDistStructs::vec_int_t> _cols;
-  std::unique_ptr<SuperLUDistStructs::vec_int_t> _rowptr;
+  std::shared_ptr<const SuperLUMatrix<T>> _Amat;
 
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
-  // Pointer to SuperMatrix
-  std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
-      _supermatrix;
 
   // Flag for diagnostic output
   bool _verbose;
