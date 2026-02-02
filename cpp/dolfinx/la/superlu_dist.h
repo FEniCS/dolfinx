@@ -39,6 +39,8 @@ class SuperLUDistMatrix
 public:
   /// @brief Create SuperLU_DIST matrix operator.
   ///
+  /// Handles RAII-type memory management of underlying C objects.
+  ///
   /// @tparam T Scalar type.
   /// @param A Matrix.
   /// @param verbose Verbose output.
@@ -51,10 +53,10 @@ public:
   /// Copy assignment
   SuperLUDistMatrix& operator=(const SuperLUDistMatrix&) = delete;
 
-  // Get underlying MatrixCSR (const-version)
+  /// Get address to underlying MatrixCSR object.
   const la::MatrixCSR<T>& Amat() const;
 
-  // Get pointer to native SuperMatrix
+  /// Get non-const pointer to SuperLU_DIST native SuperMatrix.
   SuperLUDistStructs::SuperMatrix* supermatrix() const;
 
 private:
@@ -113,7 +115,8 @@ public:
   int solve(const Vector<T>& b, Vector<T>& u) const;
 
 private:
-  std::unique_ptr<const SuperLUDistMatrix<T>> _A_superlu_mat;
+  // Wrapped SuperLU SuperMatrix
+  const SuperLUDistMatrix<T> _A_superlu_mat;
 
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;

@@ -163,7 +163,7 @@ void GridInfoDeleter::operator()(
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
                                         bool verbose)
-    : _A_superlu_mat(std::make_unique<SuperLUDistMatrix<T>>(A, verbose)),
+    : _A_superlu_mat(SuperLUDistMatrix<T>(A, verbose)),
       _gridinfo(
           [comm = A->comm()]
           {
@@ -182,8 +182,8 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 {
-  int_t m = _A_superlu_mat->supermatrix()->nrow;
-  int_t m_loc = ((NRformat_loc*)(_A_superlu_mat->supermatrix()->Store))->m_loc;
+  int_t m = _A_superlu_mat.supermatrix()->nrow;
+  int_t m_loc = ((NRformat_loc*)(_A_superlu_mat.supermatrix()->Store))->m_loc;
 
   // RHS
   int_t ldb = m_loc;
@@ -215,7 +215,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     dSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pdgssvx()");
-    pdgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct,
+    pdgssvx(&options, _A_superlu_mat.supermatrix(), &ScalePermstruct,
             u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
             &SOLVEstruct, berr.data(), &stat, &info);
 
@@ -234,7 +234,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST psgssvx()");
-    psgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct,
+    psgssvx(&options, _A_superlu_mat.supermatrix(), &ScalePermstruct,
             u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
             &SOLVEstruct, berr.data(), &stat, &info);
 
@@ -253,7 +253,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     zSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pzgssvx()");
-    pzgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct,
+    pzgssvx(&options, _A_superlu_mat.supermatrix(), &ScalePermstruct,
             reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
             _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);
