@@ -43,6 +43,9 @@ if(DOLFINX_FOUND)
   message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 endif()
 
+# SuperLU_DIST Python interface requires the superlu_defs.h header for int_t.
+pkg_search_module(SUPERLU_DIST OPTIONAL IMPORTED_TARGET superlu_dist)
+
 # Create the binding library nanobind handles its own calls to
 # target_link_libraries
 
@@ -68,6 +71,7 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
+target_include_directories(cpp PRIVATE ${SUPERLU_DIST_INCLUDE_DIRS})
 
 if(NANOBIND_SABI)
   # mpi4py and petsc4py use generated Cython headers so tell
