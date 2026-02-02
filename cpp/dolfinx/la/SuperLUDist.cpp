@@ -18,6 +18,9 @@ extern "C"
 #include <dolfinx/la/Vector.h>
 #include <vector>
 
+using namespace dolfinx;
+using namespace dolfinx::la;
+
 // Trick for declaring anonymous typedef structs from SuperLU_DIST
 struct dolfinx::la::SuperLUDistStructs::SuperMatrix : public ::SuperMatrix
 {
@@ -34,8 +37,6 @@ struct dolfinx::la::SuperLUDistStructs::vec_int_t
   std::vector<int_t> vec;
 };
 
-using namespace dolfinx;
-using namespace dolfinx::la;
 
 void GridInfoDeleter::operator()(
     SuperLUDistStructs::gridinfo_t* gridinfo) const noexcept
@@ -79,7 +80,7 @@ std::vector<int_t> row_indices(const auto& A)
 
 template <typename T>
 std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
-supermatrix(const auto& A, auto& rowptr, auto& cols)
+create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 {
   spdlog::info("Start set_operator");
 
@@ -156,7 +157,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const SuperLUMatrix<T>> 
             superlu_gridinit(comm, nprow, npcol, p.get());
             return p;
           }()),
-      _supermatrix(supermatrix<T>(*A, *_rowptr, *_cols)), _verbose(verbose)
+   _verbose(verbose)
 {
 }
 //----------------------------------------------------------------------------
@@ -262,5 +263,4 @@ template class la::SuperLUDistSolver<double>;
 template class la::SuperLUDistSolver<float>;
 template class la::SuperLUDistSolver<std::complex<double>>;
 //----------------------------------------------------------------------------
-
 #endif
