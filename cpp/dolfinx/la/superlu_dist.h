@@ -60,7 +60,7 @@ private:
   // Saved matrix operator with rows and cols in required integer type.
   // cols and rowptr are required in opaque type "int_t" of
   // SuperLU_DIST.
-  std::shared_ptr<const MatrixCSR<T>> _Amat;
+  std::shared_ptr<const MatrixCSR<T>> _matA;
   std::unique_ptr<SuperLUDistStructs::vec_int_t> _cols;
   std::unique_ptr<SuperLUDistStructs::vec_int_t> _rowptr;
 
@@ -113,7 +113,7 @@ public:
 
 private:
   // Wrapped SuperLU SuperMatrix
-  const SuperLUDistMatrix<T> _A_superlu_mat;
+  const SuperLUDistMatrix<T> _superlu_matA;
 
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
