@@ -26,24 +26,12 @@ struct dolfinx::la::SuperLUDistStructs::SuperMatrix : public ::SuperMatrix
 {
 };
 
-struct dolfinx::la::SuperLUDistStructs::gridinfo_t : public ::gridinfo_t
-{
-};
-
 /// Struct holding vector of type int_t
 struct dolfinx::la::SuperLUDistStructs::vec_int_t
 {
   /// @brief vector
   std::vector<int_t> vec;
 };
-
-
-void GridInfoDeleter::operator()(
-    SuperLUDistStructs::gridinfo_t* gridinfo) const noexcept
-{
-  superlu_gridexit(gridinfo);
-  delete gridinfo;
-}
 
 void SuperMatrixDeleter::operator()(
     SuperLUDistStructs::SuperMatrix* supermatrix) const noexcept
@@ -161,10 +149,24 @@ template class la::SuperLUMatrix<float>;
 template class la::SuperLUMatrix<std::complex<double>>;
 
 //----------------------------------------------------------------------------
+// Trick for declaring anonymous typedef structs from SuperLU_DIST
+struct dolfinx::la::SuperLUDistStructs::gridinfo_t : public ::gridinfo_t
+{
+};
+
+//----------------------------------------------------------------------------
+void GridInfoDeleter::operator()(
+    SuperLUDistStructs::gridinfo_t* gridinfo) const noexcept
+{
+  superlu_gridexit(gridinfo);
+  delete gridinfo;
+}
+
+//----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const SuperLUMatrix<T>> A,
                                         bool verbose)
-    : _Amat(A),
+    : _A_superlu_mat(A),
       _gridinfo(
           [comm = A->Amat().comm()]
           {
@@ -182,8 +184,8 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const SuperLUMatrix<T>> 
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 {
-  std::int64_t m = _Amat->Amat().index_map(0)->size_global();
-  std::int32_t m_loc = _Amat->Amat().num_owned_rows();
+  std::int64_t m = _A_superlu_mat->Amat().index_map(0)->size_global();
+  std::int32_t m_loc = _A_superlu_mat->Amat().num_owned_rows();
 
   // RHS
   std::int32_t ldb = m_loc;
@@ -215,7 +217,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     dSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call pdgssvx");
-    pdgssvx(&options, _Amat->supermatrix(), &ScalePermstruct, u.array().data(),
+    pdgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct, u.array().data(),
             ldb, nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(),
             &stat, &info);
 
@@ -234,7 +236,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call psgssvx");
-    psgssvx(&options, _Amat->supermatrix(), &ScalePermstruct, u.array().data(),
+    psgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct, u.array().data(),
             ldb, nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(),
             &stat, &info);
 
@@ -253,7 +255,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     zSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call pzgssvx");
-    pzgssvx(&options, _Amat->supermatrix(), &ScalePermstruct,
+    pzgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct,
             reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
             _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);

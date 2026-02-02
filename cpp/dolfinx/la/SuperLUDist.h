@@ -42,7 +42,7 @@ template <typename T>
 class SuperLUMatrix
 {
 public:
-  /// @brief Create matrix operator.
+  /// @brief Create SuperLU_DIST matrix operator.
   ///
   /// @tparam T Scalar type.
   /// @param A Matrix.
@@ -109,7 +109,7 @@ public:
   int solve(const Vector<T>& b, Vector<T>& u) const;
 
 private:
-  std::shared_ptr<const SuperLUMatrix<T>> _Amat;
+  std::shared_ptr<const SuperLUMatrix<T>> _A_superlu_mat;
 
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
