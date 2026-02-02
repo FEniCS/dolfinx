@@ -144,10 +144,6 @@ SuperLUDistStructs::SuperMatrix* SuperLUDistMatrix<T>::supermatrix() const
 {
   return _supermatrix.get();
 }
-//----------------------------------------------------------------------------
-template class la::SuperLUDistMatrix<double>;
-template class la::SuperLUDistMatrix<float>;
-template class la::SuperLUDistMatrix<std::complex<double>>;
 
 //----------------------------------------------------------------------------
 // Trick for declaring anonymous typedef structs from SuperLU_DIST
@@ -166,10 +162,10 @@ void GridInfoDeleter::operator()(
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(
-    std::shared_ptr<const SuperLUDistMatrix<T>> A, bool verbose)
-    : _A_superlu_mat(A),
+    std::shared_ptr<const MatrixCSR<T>> A, bool verbose)
+    : _A_superlu_mat(new SuperLUDistMatrix(A, verbose)),
       _gridinfo(
-          [comm = A->Amat().comm()]
+          [comm = A->comm()]
           {
             int nprow = dolfinx::MPI::size(comm);
             int npcol = 1;

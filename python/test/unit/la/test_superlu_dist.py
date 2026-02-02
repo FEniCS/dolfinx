@@ -23,7 +23,6 @@ from dolfinx.fem import (
     locate_dofs_topological,
 )
 from dolfinx.la import InsertMode
-from dolfinx.la.superlu_dist import superlu_dist_matrix
 from dolfinx.mesh import create_unit_square, exterior_facet_indices
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, inner
 
@@ -69,10 +68,9 @@ def test_superlu_solver(dtype):
     a = form(a, dtype=dtype)
     A = assemble_matrix(a, bcs=[bc])
     A.scatter_reverse()
-    A_superlu = superlu_dist_matrix(A)
 
     uh = Function(V, dtype=dtype)
-    solver = superlu_dist_solver(A_superlu, verbose=False)
+    solver = superlu_dist_solver(A, verbose=False)
     error_code = solver.solve(b, uh.x)
     assert error_code == 0
     uh.x.scatter_forward()

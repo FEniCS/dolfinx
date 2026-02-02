@@ -219,21 +219,6 @@ void declare_functions(nb::module_& m)
 
 #if defined(HAS_SUPERLU_DIST)
 template <typename T>
-void declare_superlu_dist_matrix(nb::module_& m, const std::string& type)
-{
-  // dolfinx::la::SuperLUDistMatrix
-  std::string name = std::string("SuperLUDistMatrix_") + type;
-  nb::class_<dolfinx::la::SuperLUDistMatrix<T>>(m, name.c_str())
-      .def(
-          "__init__",
-          [](dolfinx::la::SuperLUDistMatrix<T>* matrix,
-             std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat,
-             bool verbose)
-          { new (matrix) dolfinx::la::SuperLUDistMatrix<T>(Amat, verbose); },
-          nb::arg("A"), nb::arg("verbose"));
-}
-
-template <typename T>
 void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
 {
   // dolfinx::la::SuperLUDistSolver
@@ -242,7 +227,7 @@ void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
       .def(
           "__init__",
           [](dolfinx::la::SuperLUDistSolver<T>* solver,
-             std::shared_ptr<const dolfinx::la::SuperLUDistMatrix<T>> Amat,
+             std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat,
              bool verbose)
           { new (solver) dolfinx::la::SuperLUDistSolver<T>(Amat, verbose); },
           nb::arg("A"), nb::arg("verbose"))
@@ -334,9 +319,6 @@ void la(nb::module_& m)
           nb::rv_policy::reference_internal);
 
 #if defined(HAS_SUPERLU_DIST)
-  declare_superlu_dist_matrix<double>(m, "float64");
-  declare_superlu_dist_matrix<float>(m, "float32");
-  declare_superlu_dist_matrix<std::complex<double>>(m, "complex128");
   declare_superlu_dist_solver<double>(m, "float64");
   declare_superlu_dist_solver<float>(m, "float32");
   declare_superlu_dist_solver<std::complex<double>>(m, "complex128");
