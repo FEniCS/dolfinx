@@ -60,7 +60,7 @@ public:
   const la::MatrixCSR<T>& Amat() const;
   
   // Get pointer to SuperLU SuperMatrix 
-  SuperLUDistStructs::SuperMatrix* supermatrix();
+  SuperLUDistStructs::SuperMatrix* supermatrix() const;
 
 private:
   // Saved matrix operator with rows and cols in required integer type.

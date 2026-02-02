@@ -137,9 +137,10 @@ SuperLUMatrix<T>::SuperLUMatrix(std::shared_ptr<const MatrixCSR<T>> A,
     : _Amat(A),
       _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*A))),
       _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*A))),
-      _supermatrix(supermatrix<T>(*A, *_rowptr, *_cols)), _verbose(verbose)
+      _supermatrix(create_supermatrix<T>(*A, *_rowptr, *_cols)), _verbose(verbose)
 {
 }
+
 //----------------------------------------------------------------------------
 template <typename T>
 const la::MatrixCSR<T>& SuperLUMatrix<T>::Amat() const
@@ -147,6 +148,17 @@ const la::MatrixCSR<T>& SuperLUMatrix<T>::Amat() const
   assert(_Amat);
   return *_Amat;
 }
+
+//----------------------------------------------------------------------------
+template <typename T>
+SuperLUDistStructs::SuperMatrix* SuperLUMatrix<T>::supermatrix() const
+{
+  return _supermatrix.get();
+}
+//----------------------------------------------------------------------------
+template class la::SuperLUMatrix<double>;
+template class la::SuperLUMatrix<float>;
+template class la::SuperLUMatrix<std::complex<double>>;
 
 //----------------------------------------------------------------------------
 template <typename T>
@@ -203,7 +215,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     dSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call pdgssvx");
-    pdgssvx(&options, _supermatrix.get(), &ScalePermstruct, u.array().data(),
+    pdgssvx(&options, _Amat->supermatrix(), &ScalePermstruct, u.array().data(),
             ldb, nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(),
             &stat, &info);
 
@@ -222,7 +234,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call psgssvx");
-    psgssvx(&options, _supermatrix.get(), &ScalePermstruct, u.array().data(),
+    psgssvx(&options, _Amat->supermatrix(), &ScalePermstruct, u.array().data(),
             ldb, nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(),
             &stat, &info);
 
@@ -241,7 +253,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     zSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call pzgssvx");
-    pzgssvx(&options, _supermatrix.get(), &ScalePermstruct,
+    pzgssvx(&options, _Amat->supermatrix(), &ScalePermstruct,
             reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
             _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);
