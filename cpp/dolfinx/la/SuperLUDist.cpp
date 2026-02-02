@@ -120,7 +120,7 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 
 //----------------------------------------------------------------------------
 template <typename T>
-SuperLUMatrix<T>::SuperLUMatrix(std::shared_ptr<const MatrixCSR<T>> A,
+SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
                                 bool verbose)
     : _Amat(A),
       _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*A))),
@@ -132,7 +132,7 @@ SuperLUMatrix<T>::SuperLUMatrix(std::shared_ptr<const MatrixCSR<T>> A,
 
 //----------------------------------------------------------------------------
 template <typename T>
-const la::MatrixCSR<T>& SuperLUMatrix<T>::Amat() const
+const la::MatrixCSR<T>& SuperLUDistMatrix<T>::Amat() const
 {
   assert(_Amat);
   return *_Amat;
@@ -140,14 +140,14 @@ const la::MatrixCSR<T>& SuperLUMatrix<T>::Amat() const
 
 //----------------------------------------------------------------------------
 template <typename T>
-SuperLUDistStructs::SuperMatrix* SuperLUMatrix<T>::supermatrix() const
+SuperLUDistStructs::SuperMatrix* SuperLUDistMatrix<T>::supermatrix() const
 {
   return _supermatrix.get();
 }
 //----------------------------------------------------------------------------
-template class la::SuperLUMatrix<double>;
-template class la::SuperLUMatrix<float>;
-template class la::SuperLUMatrix<std::complex<double>>;
+template class la::SuperLUDistMatrix<double>;
+template class la::SuperLUDistMatrix<float>;
+template class la::SuperLUDistMatrix<std::complex<double>>;
 
 //----------------------------------------------------------------------------
 // Trick for declaring anonymous typedef structs from SuperLU_DIST
@@ -166,7 +166,7 @@ void GridInfoDeleter::operator()(
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(
-    std::shared_ptr<const SuperLUMatrix<T>> A, bool verbose)
+    std::shared_ptr<const SuperLUDistMatrix<T>> A, bool verbose)
     : _A_superlu_mat(A),
       _gridinfo(
           [comm = A->Amat().comm()]

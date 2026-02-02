@@ -34,7 +34,7 @@ struct SuperMatrixDeleter
 
 /// SuperLU_DIST matrix interface.
 template <typename T>
-class SuperLUMatrix
+class SuperLUDistMatrix
 {
 public:
   /// @brief Create SuperLU_DIST matrix operator.
@@ -42,18 +42,18 @@ public:
   /// @tparam T Scalar type.
   /// @param A Matrix.
   /// @param verbose Verbose output.
-  SuperLUMatrix(std::shared_ptr<const MatrixCSR<T>> A, bool verbose = false);
+  SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A, bool verbose = false);
 
   /// Copy constructor
-  SuperLUMatrix(const SuperLUMatrix&) = delete;
+  SuperLUDistMatrix(const SuperLUDistMatrix&) = delete;
 
   /// Copy assignment
-  SuperLUMatrix& operator=(const SuperLUMatrix&) = delete;
+  SuperLUDistMatrix& operator=(const SuperLUDistMatrix&) = delete;
 
   // Get underlying MatrixCSR (const-version)
   const la::MatrixCSR<T>& Amat() const;
 
-  // Get pointer to SuperLU SuperMatrix
+  // Get pointer to native SuperMatrix
   SuperLUDistStructs::SuperMatrix* supermatrix() const;
 
 private:
@@ -64,7 +64,7 @@ private:
   std::unique_ptr<SuperLUDistStructs::vec_int_t> _cols;
   std::unique_ptr<SuperLUDistStructs::vec_int_t> _rowptr;
 
-  // Pointer to SuperMatrix
+  // Pointer to native SuperMatrix
   std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
       _supermatrix;
 
@@ -93,7 +93,7 @@ public:
   /// @tparam T Scalar type.
   /// @param A Matrix to solve for.
   /// @param verbose Verbose output.
-  SuperLUDistSolver(std::shared_ptr<const SuperLUMatrix<T>> A,
+  SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A,
                     bool verbose = false);
 
   /// Copy constructor
@@ -112,7 +112,7 @@ public:
   int solve(const Vector<T>& b, Vector<T>& u) const;
 
 private:
-  std::shared_ptr<const SuperLUMatrix<T>> _A_superlu_mat;
+  std::shared_ptr<const SuperLUDistMatrix<T>> _A_superlu_mat;
 
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
