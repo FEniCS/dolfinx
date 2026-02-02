@@ -14,7 +14,7 @@
 
 namespace dolfinx::la
 {
-// Delcare structs to avoid exposing SuperLU_DIST headers in DOLFINx.
+// Declare structs to avoid exposing SuperLU_DIST headers in DOLFINx.
 class SuperLUDistStructs
 {
 public:
@@ -23,17 +23,21 @@ public:
   struct vec_int_t;
 };
 
-// Call library cleanup and delete pointer. For use with
-// std::unique_ptr holding gridinfo_t.
+/// Call library cleanup and delete pointer. For use with
+/// std::unique_ptr holding gridinfo_t.
 struct GridInfoDeleter
 {
+  /// @brief Deletion of gridinfo_t
+  /// @param g
   void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
 };
 
-// Call library cleanup and delete pointer. For use with
-// std::unique_ptr holding SuperMatrix.
+/// Call library cleanup and delete pointer. For use with
+/// std::unique_ptr holding SuperMatrix.
 struct SuperMatrixDeleter
 {
+  /// @brief Deletion on SuperMatrix
+  /// @param A
   void operator()(SuperLUDistStructs::SuperMatrix* A) const noexcept;
 };
 
