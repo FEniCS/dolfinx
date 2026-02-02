@@ -37,16 +37,14 @@ struct dolfinx::la::SuperLUDistStructs::vec_int_t
 using namespace dolfinx;
 using namespace dolfinx::la;
 
-template <typename T>
-void SuperLUDistSolver<T>::GridInfoDeleter::operator()(
+void GridInfoDeleter::operator()(
     SuperLUDistStructs::gridinfo_t* gridinfo) const noexcept
 {
   superlu_gridexit(gridinfo);
   delete gridinfo;
 }
 
-template <typename T>
-void SuperLUDistSolver<T>::SuperMatrixDeleter::operator()(
+void SuperMatrixDeleter::operator()(
     SuperLUDistStructs::SuperMatrix* supermatrix) const noexcept
 {
   Destroy_SuperMatrix_Store_dist(supermatrix);
@@ -78,6 +76,57 @@ std::vector<int_t> row_indices(const auto& A)
       A.row_ptr().begin(),
       std::next(A.row_ptr().begin(), A.num_owned_rows() + 1));
 }
+
+template <typename T>
+std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
+supermatrix(const auto& A, auto& rowptr, auto& cols)
+{
+  spdlog::info("Start set_operator");
+
+  auto map0 = A.index_map(0);
+  auto map1 = A.index_map(1);
+
+  // Global size
+  std::int64_t m = map0->size_global();
+  std::int64_t n = map1->size_global();
+  if (m != n)
+    throw std::runtime_error("Cannot solve non-square system");
+
+  // Number of local rows, first row and local number of non-zeros
+  std::int32_t m_loc = A.num_owned_rows();
+  std::int64_t first_row = map0->local_range().front();
+  std::int64_t nnz_loc = A.row_ptr().at(m_loc);
+
+  std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter> p(
+      new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{});
+
+  // Note that the SuperMatrix shares the underlying data of A.
+  T* Amatdata = const_cast<T*>(A.values().data());
+  if constexpr (std::is_same_v<T, double>)
+  {
+    dCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
+                                   Amatdata, cols.vec.data(), rowptr.vec.data(),
+                                   SLU_NR_loc, SLU_D, SLU_GE);
+  }
+  else if constexpr (std::is_same_v<T, float>)
+  {
+    sCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
+                                   Amatdata, cols.vec.data(), rowptr.vec.data(),
+                                   SLU_NR_loc, SLU_S, SLU_GE);
+  }
+  else if constexpr (std::is_same_v<T, std::complex<double>>)
+  {
+    zCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
+                                   reinterpret_cast<doublecomplex*>(Amatdata),
+                                   cols.vec.data(), rowptr.vec.data(),
+                                   SLU_NR_loc, SLU_Z, SLU_GE);
+  }
+  else
+    static_assert(dependent_false_v<T>, "Invalid scalar type");
+
+  spdlog::info("Finished set_operator");
+  return p;
+}
 } // namespace
 
 //----------------------------------------------------------------------------
@@ -97,52 +146,8 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
             superlu_gridinit(comm, nprow, npcol, p.get());
             return p;
           }()),
-      _supermatrix(new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{}),
-      _verbose(verbose)
+      _supermatrix(supermatrix<T>(*A, *_rowptr, *_cols)), _verbose(verbose)
 {
-  spdlog::info("Start set_operator");
-
-  assert(A);
-  auto map0 = A->index_map(0);
-  assert(map0);
-  auto map1 = A->index_map(1);
-  assert(map1);
-
-  // Global size
-  std::int64_t m = map0->size_global();
-  std::int64_t n = map1->size_global();
-  if (m != n)
-    throw std::runtime_error("Cannot solve non-square system");
-
-  // Number of local rows, first row and local number of non-zeros
-  std::int32_t m_loc = A->num_owned_rows();
-  std::int64_t first_row = map0->local_range().front();
-  std::int64_t nnz_loc = A->row_ptr().at(m_loc);
-
-  T* Amatdata = const_cast<T*>(A->values().data());
-  if constexpr (std::is_same_v<T, double>)
-  {
-    dCreate_CompRowLoc_Matrix_dist(
-        _supermatrix.get(), m, n, nnz_loc, m_loc, first_row, Amatdata,
-        _cols->vec.data(), _rowptr->vec.data(), SLU_NR_loc, SLU_D, SLU_GE);
-  }
-  else if constexpr (std::is_same_v<T, float>)
-  {
-    sCreate_CompRowLoc_Matrix_dist(
-        _supermatrix.get(), m, n, nnz_loc, m_loc, first_row, Amatdata,
-        _cols->vec.data(), _rowptr->vec.data(), SLU_NR_loc, SLU_S, SLU_GE);
-  }
-  else if constexpr (std::is_same_v<T, std::complex<double>>)
-  {
-    zCreate_CompRowLoc_Matrix_dist(
-        _supermatrix.get(), m, n, nnz_loc, m_loc, first_row,
-        reinterpret_cast<doublecomplex*>(Amatdata), _cols->vec.data(),
-        _rowptr->vec.data(), SLU_NR_loc, SLU_Z, SLU_GE);
-  }
-  else
-    static_assert(dependent_false_v<T>, "Invalid scalar type");
-
-  spdlog::info("Finished set_operator");
 }
 //----------------------------------------------------------------------------
 template <typename T>

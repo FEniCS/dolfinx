@@ -23,6 +23,20 @@ public:
   struct vec_int_t;
 };
 
+// Call library cleanup and delete pointer. For use with
+// std::unique_ptr holding gridinfo_t.
+struct GridInfoDeleter
+{
+  void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
+};
+
+// Call library cleanup and delete pointer. For use with
+// std::unique_ptr holding SuperMatrix.
+struct SuperMatrixDeleter
+{
+  void operator()(SuperLUDistStructs::SuperMatrix* A) const noexcept;
+};
+
 /// SuperLU_DIST linear solver interface.
 template <typename T>
 class SuperLUDistSolver
@@ -54,20 +68,6 @@ public:
   int solve(const Vector<T>& b, Vector<T>& u) const;
 
 private:
-  // Call library cleanup and delete pointer. For use with
-  // std::unique_ptr holding gridinfo_t.
-  struct GridInfoDeleter
-  {
-    void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
-  };
-
-  // Call library cleanup and delete pointer. For use with
-  // std::unique_ptr holding SuperMatrix.
-  struct SuperMatrixDeleter
-  {
-    void operator()(SuperLUDistStructs::SuperMatrix* A) const noexcept;
-  };
-
   // Saved matrix operator with rows and cols in required integer type.
   // cols and rowptr are required in opaque type "int_t" of
   // SuperLU_DIST.
