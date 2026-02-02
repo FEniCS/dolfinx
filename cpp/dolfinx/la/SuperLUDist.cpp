@@ -141,6 +141,12 @@ SuperLUMatrix<T>::SuperLUMatrix(std::shared_ptr<const MatrixCSR<T>> A,
 {
 }
 //----------------------------------------------------------------------------
+template <typename T>
+const la::MatrixCSR<T>& SuperLUMatrix<T>::Amat() const
+{
+  assert(_Amat);
+  return *_Amat;
+}
 
 //----------------------------------------------------------------------------
 template <typename T>
@@ -148,7 +154,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const SuperLUMatrix<T>> 
                                         bool verbose)
     : _Amat(A),
       _gridinfo(
-          [comm = A->comm()]
+          [comm = A->Amat().comm()]
           {
             int nprow = dolfinx::MPI::size(comm);
             int npcol = 1;
@@ -164,8 +170,8 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const SuperLUMatrix<T>> 
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 {
-  std::int64_t m = _Amat->index_map(0)->size_global();
-  std::int32_t m_loc = _Amat->num_owned_rows();
+  std::int64_t m = _Amat->Amat().index_map(0)->size_global();
+  std::int32_t m_loc = _Amat->Amat().num_owned_rows();
 
   // RHS
   std::int32_t ldb = m_loc;

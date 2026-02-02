@@ -56,6 +56,12 @@ public:
   /// Copy assignment
   SuperLUMatrix& operator=(const SuperLUMatrix&) = delete;
 
+  // Get underlying MatrixCSR (const-version)
+  const la::MatrixCSR<T>& Amat() const;
+  
+  // Get pointer to SuperLU SuperMatrix 
+  SuperLUDistStructs::SuperMatrix* supermatrix();
+
 private:
   // Saved matrix operator with rows and cols in required integer type.
   // cols and rowptr are required in opaque type "int_t" of
