@@ -70,7 +70,7 @@ def superlu_dist_solver(A: dolfinx.la.MatrixCSR, verbose: bool = False) -> Super
     For solving linear systems :math:`Au = b` via LU decomposition.
 
     Args:
-        A: Left-hand side matrix :math:`A`.
+        A: Assembled left-hand side matrix :math:`A`.
         verbose: Enable verbose output from SuperLU_DIST.
     """
     dtype = A.data.dtype
