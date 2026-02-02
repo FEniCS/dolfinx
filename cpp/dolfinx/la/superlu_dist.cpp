@@ -142,6 +142,10 @@ SuperLUDistStructs::SuperMatrix* SuperLUDistMatrix<T>::supermatrix() const
 struct dolfinx::la::SuperLUDistStructs::gridinfo_t : public ::gridinfo_t
 {
 };
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t : public ::superlu_dist_options_t
+{
+};
 
 //----------------------------------------------------------------------------
 void GridInfoDeleter::operator()(
@@ -156,6 +160,7 @@ template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
                                         bool verbose)
     : _superlu_matA(SuperLUDistMatrix<T>(A, verbose)),
+      _options(std::make_unique<SuperLUDistStructs::superlu_dist_options_t>()),
       _gridinfo(
           [comm = A->comm()]
           {
@@ -168,6 +173,11 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
           }()),
       _verbose(verbose)
 {
+  set_default_options_dist(_options.get());
+  _options.get()->DiagInv = YES;
+  _options.get()->ReplaceTinyPivot = YES;
+  if (!_verbose)
+    _options.get()->PrintStat = NO;
 }
 
 //----------------------------------------------------------------------------
@@ -180,13 +190,6 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   // RHS
   int_t ldb = m_loc;
   int_t nrhs = 1;
-
-  superlu_dist_options_t options;
-  set_default_options_dist(&options);
-  options.DiagInv = YES;
-  options.ReplaceTinyPivot = YES;
-  if (!_verbose)
-    options.PrintStat = NO;
 
   int info = 0;
   SuperLUStat_t stat;
@@ -207,12 +210,12 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     dSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pdgssvx()");
-    pdgssvx(&options, _superlu_matA.supermatrix(), &ScalePermstruct,
+    pdgssvx(_options.get(), _superlu_matA.supermatrix(), &ScalePermstruct,
             u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
             &SOLVEstruct, berr.data(), &stat, &info);
 
     spdlog::info("Finalize solve");
-    dSolveFinalize(&options, &SOLVEstruct);
+    dSolveFinalize(_options.get(), &SOLVEstruct);
     dScalePermstructFree(&ScalePermstruct);
     dLUstructFree(&LUstruct);
   }
@@ -226,12 +229,12 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST psgssvx()");
-    psgssvx(&options, _superlu_matA.supermatrix(), &ScalePermstruct,
+    psgssvx(_options.get(), _superlu_matA.supermatrix(), &ScalePermstruct,
             u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
             &SOLVEstruct, berr.data(), &stat, &info);
 
     spdlog::info("Finalize solve");
-    sSolveFinalize(&options, &SOLVEstruct);
+    sSolveFinalize(_options.get(), &SOLVEstruct);
     sScalePermstructFree(&ScalePermstruct);
     sLUstructFree(&LUstruct);
   }
@@ -245,13 +248,13 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     zSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pzgssvx()");
-    pzgssvx(&options, _superlu_matA.supermatrix(), &ScalePermstruct,
+    pzgssvx(_options.get(), _superlu_matA.supermatrix(), &ScalePermstruct,
             reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
             _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);
 
     spdlog::info("Finalize solve");
-    zSolveFinalize(&options, &SOLVEstruct);
+    zSolveFinalize(_options.get(), &SOLVEstruct);
     zScalePermstructFree(&ScalePermstruct);
     zLUstructFree(&LUstruct);
   }
@@ -263,7 +266,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
 
   if (_verbose)
-    PStatPrint(&options, &stat, _gridinfo.get());
+    PStatPrint(_options.get(), &stat, _gridinfo.get());
   PStatFree(&stat);
 
   return info;

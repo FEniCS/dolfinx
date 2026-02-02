@@ -20,6 +20,7 @@ class SuperLUDistStructs
 public:
   struct SuperMatrix;
   struct gridinfo_t;
+  struct superlu_dist_options_t; 
   struct vec_int_t;
 };
 
@@ -115,6 +116,9 @@ private:
   // Wrapped SuperLU SuperMatrix
   const SuperLUDistMatrix<T> _superlu_matA;
 
+  // Pointer to struct gridinfo_t
+  std::unique_ptr<SuperLUDistStructs::superlu_dist_options_t> _options;
+  
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
 
