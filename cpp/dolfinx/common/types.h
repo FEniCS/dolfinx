@@ -30,12 +30,14 @@ struct scalar_value
   /// @internal
   typedef T type;
 };
+
 /// @private
 template <scalar T>
 struct scalar_value<T, std::void_t<typename T::value_type>>
 {
   typedef typename T::value_type type;
 };
+
 /// @private Convenience typedef
 template <scalar T>
 using scalar_value_t = typename scalar_value<T>::type;

@@ -84,7 +84,7 @@ double assemble_matrix0(std::shared_ptr<const fem::FunctionSpace<T>> V,
   auto sp = la::SparsityPattern(
       V->mesh()->comm(), {dofmap->index_map, dofmap->index_map},
       {dofmap->index_map_bs(), dofmap->index_map_bs()});
-  fem::sparsitybuild::cells(sp, {cells, cells}, {*dofmap, *dofmap});
+  fem::sparsitybuild::cells(sp, std::pair{cells, cells}, {*dofmap, *dofmap});
   sp.finalize();
   la::MatrixCSR<T> A(sp);
   common::Timer timer("Assembler0 std::function (matrix)");
@@ -135,7 +135,7 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   auto sp = la::SparsityPattern(dofmap.index_map->comm(),
                                 {dofmap.index_map, dofmap.index_map},
                                 {dofmap.index_map_bs(), dofmap.index_map_bs()});
-  fem::sparsitybuild::cells(sp, {cells, cells}, {dofmap, dofmap});
+  fem::sparsitybuild::cells(sp, std::pair{cells, cells}, {dofmap, dofmap});
   sp.finalize();
   la::MatrixCSR<T> A(sp);
   auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required

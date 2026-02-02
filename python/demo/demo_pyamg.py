@@ -68,14 +68,15 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
 
     V = functionspace(mesh, ("Lagrange", 1))
 
+    tdim = mesh.topology.dim
+    fdim = tdim - 1
     facets = locate_entities_boundary(
         mesh,
-        dim=(mesh.topology.dim - 1),
+        dim=fdim,
         marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 3.0),
     )
 
-    tdim = mesh.topology.dim
-    dofs = locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
+    dofs = locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
     bc = dirichletbc(value=dtype(0), dofs=dofs, V=V)
 
@@ -170,9 +171,11 @@ def elasticity_problem(dtype) -> None:
         dtype=dtype,
     )
 
+    tdim = mesh.topology.dim
+    fdim = tdim - 1
     facets = locate_entities_boundary(
         mesh,
-        dim=(mesh.topology.dim - 1),
+        dim=fdim,
         marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 3.0),
     )
 
@@ -198,8 +201,7 @@ def elasticity_problem(dtype) -> None:
     a = form(ufl.inner(σ(u), ufl.grad(v)) * ufl.dx, dtype=dtype)
     L = form(ufl.inner(f, v) * ufl.dx, dtype=dtype)
 
-    tdim = mesh.topology.dim
-    dofs = locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
+    dofs = locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
     bc = dirichletbc(np.zeros(3, dtype=dtype), dofs, V=V)
 
     A = assemble_matrix(a, bcs=[bc]).to_scipy()

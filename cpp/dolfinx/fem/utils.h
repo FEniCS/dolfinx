@@ -274,10 +274,11 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
       case IntegralType::cell:
         for (int i = 0; i < a.num_integrals(type, cell_type_idx); ++i)
         {
-          sparsitybuild::cells(pattern,
-                               {a.domain_arg(type, 0, i, cell_type_idx),
-                                a.domain_arg(type, 1, i, cell_type_idx)},
-                               {{dofmaps[0], dofmaps[1]}});
+          sparsitybuild::cells(
+              pattern,
+              std::pair{a.domain_arg(type, 0, i, cell_type_idx),
+                        a.domain_arg(type, 1, i, cell_type_idx)},
+              {{dofmaps[0], dofmaps[1]}});
         }
         break;
       case IntegralType::interior_facet:
@@ -295,10 +296,11 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
       case IntegralType::vertex:
         for (int i = 0; i < a.num_integrals(type, cell_type_idx); ++i)
         {
-          sparsitybuild::cells(pattern,
-                               {extract_cells(a.domain_arg(type, 0, i, 0)),
-                                extract_cells(a.domain_arg(type, 1, i, 0))},
-                               {{dofmaps[0], dofmaps[1]}});
+          sparsitybuild::cells(
+              pattern,
+              std::pair{extract_cells(a.domain_arg(type, 0, i, 0)),
+                        extract_cells(a.domain_arg(type, 1, i, 0))},
+              {{dofmaps[0], dofmaps[1]}});
         }
         break;
       default:
