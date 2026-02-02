@@ -40,8 +40,7 @@ public:
   /// @tparam T Scalar type.
   /// @param A Matrix.
   /// @param verbose Verbose output.
-  SuperLUMatrix(std::shared_ptr<const MatrixCSR<T>> A,
-                    bool verbose = false);
+  SuperLUMatrix(std::shared_ptr<const MatrixCSR<T>> A, bool verbose = false);
 
   /// Copy constructor
   SuperLUMatrix(const SuperLUMatrix&) = delete;
@@ -51,8 +50,8 @@ public:
 
   // Get underlying MatrixCSR (const-version)
   const la::MatrixCSR<T>& Amat() const;
-  
-  // Get pointer to SuperLU SuperMatrix 
+
+  // Get pointer to SuperLU SuperMatrix
   SuperLUDistStructs::SuperMatrix* supermatrix() const;
 
 private:

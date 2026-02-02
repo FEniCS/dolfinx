@@ -121,11 +121,12 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUMatrix<T>::SuperLUMatrix(std::shared_ptr<const MatrixCSR<T>> A,
-                                        bool verbose)
+                                bool verbose)
     : _Amat(A),
       _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*A))),
       _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*A))),
-      _supermatrix(create_supermatrix<T>(*A, *_rowptr, *_cols)), _verbose(verbose)
+      _supermatrix(create_supermatrix<T>(*A, *_rowptr, *_cols)),
+      _verbose(verbose)
 {
 }
 
@@ -164,8 +165,8 @@ void GridInfoDeleter::operator()(
 
 //----------------------------------------------------------------------------
 template <typename T>
-SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const SuperLUMatrix<T>> A,
-                                        bool verbose)
+SuperLUDistSolver<T>::SuperLUDistSolver(
+    std::shared_ptr<const SuperLUMatrix<T>> A, bool verbose)
     : _A_superlu_mat(A),
       _gridinfo(
           [comm = A->Amat().comm()]
@@ -177,9 +178,10 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const SuperLUMatrix<T>> 
             superlu_gridinit(comm, nprow, npcol, p.get());
             return p;
           }()),
-   _verbose(verbose)
+      _verbose(verbose)
 {
 }
+
 //----------------------------------------------------------------------------
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
@@ -217,9 +219,9 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     dSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call pdgssvx");
-    pdgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct, u.array().data(),
-            ldb, nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(),
-            &stat, &info);
+    pdgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct,
+            u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
+            &SOLVEstruct, berr.data(), &stat, &info);
 
     spdlog::info("Finalize solve");
     dSolveFinalize(&options, &SOLVEstruct);
@@ -236,9 +238,9 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call psgssvx");
-    psgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct, u.array().data(),
-            ldb, nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(),
-            &stat, &info);
+    psgssvx(&options, _A_superlu_mat->supermatrix(), &ScalePermstruct,
+            u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
+            &SOLVEstruct, berr.data(), &stat, &info);
 
     spdlog::info("Finalize solve");
     sSolveFinalize(&options, &SOLVEstruct);
@@ -278,6 +280,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 
   return info;
 }
+
 //----------------------------------------------------------------------------
 template class la::SuperLUDistSolver<double>;
 template class la::SuperLUDistSolver<float>;
