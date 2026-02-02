@@ -174,10 +174,10 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
       _verbose(verbose)
 {
   set_default_options_dist(_options.get());
-  _options.get()->DiagInv = YES;
-  _options.get()->ReplaceTinyPivot = YES;
+  _options->DiagInv = YES;
+  _options->ReplaceTinyPivot = YES;
   if (!_verbose)
-    _options.get()->PrintStat = NO;
+    _options->PrintStat = NO;
 }
 
 //----------------------------------------------------------------------------
