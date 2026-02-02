@@ -6,7 +6,7 @@
 
 #ifdef HAS_SUPERLU_DIST
 
-#include "SuperLUDist.h"
+#include "superlu_dist.h"
 extern "C"
 {
 #include <superlu_ddefs.h>
@@ -18,12 +18,11 @@ extern "C"
 #include <dolfinx/la/Vector.h>
 #include <vector>
 
+using namespace dolfinx;
+using namespace dolfinx::la;
+
 // Trick for declaring anonymous typedef structs from SuperLU_DIST
 struct dolfinx::la::SuperLUDistStructs::SuperMatrix : public ::SuperMatrix
-{
-};
-
-struct dolfinx::la::SuperLUDistStructs::gridinfo_t : public ::gridinfo_t
 {
 };
 
@@ -33,16 +32,6 @@ struct dolfinx::la::SuperLUDistStructs::vec_int_t
   /// @brief vector
   std::vector<int_t> vec;
 };
-
-using namespace dolfinx;
-using namespace dolfinx::la;
-
-void GridInfoDeleter::operator()(
-    SuperLUDistStructs::gridinfo_t* gridinfo) const noexcept
-{
-  superlu_gridexit(gridinfo);
-  delete gridinfo;
-}
 
 void SuperMatrixDeleter::operator()(
     SuperLUDistStructs::SuperMatrix* supermatrix) const noexcept
@@ -79,7 +68,7 @@ std::vector<int_t> row_indices(const auto& A)
 
 template <typename T>
 std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
-supermatrix(const auto& A, auto& rowptr, auto& cols)
+create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 {
   spdlog::info("Start set_operator");
 
@@ -131,11 +120,42 @@ supermatrix(const auto& A, auto& rowptr, auto& cols)
 
 //----------------------------------------------------------------------------
 template <typename T>
-SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
+SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
                                         bool verbose)
     : _Amat(A),
       _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*A))),
       _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*A))),
+      _supermatrix(create_supermatrix<T>(*A, *_rowptr, *_cols)),
+      _verbose(verbose)
+{
+}
+
+//----------------------------------------------------------------------------
+template <typename T>
+SuperLUDistStructs::SuperMatrix* SuperLUDistMatrix<T>::supermatrix() const
+{
+  return _supermatrix.get();
+}
+
+//----------------------------------------------------------------------------
+// Trick for declaring anonymous typedef structs from SuperLU_DIST
+struct dolfinx::la::SuperLUDistStructs::gridinfo_t : public ::gridinfo_t
+{
+};
+
+//----------------------------------------------------------------------------
+void GridInfoDeleter::operator()(
+    SuperLUDistStructs::gridinfo_t* gridinfo) const noexcept
+{
+  superlu_gridexit(gridinfo);
+  delete gridinfo;
+}
+
+//----------------------------------------------------------------------------
+template <typename T>
+SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
+                                        bool verbose)
+    : _A_superlu_mat(SuperLUDistMatrix<T>(A, verbose)),
       _gridinfo(
           [comm = A->comm()]
           {
@@ -146,19 +166,20 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
             superlu_gridinit(comm, nprow, npcol, p.get());
             return p;
           }()),
-      _supermatrix(supermatrix<T>(*A, *_rowptr, *_cols)), _verbose(verbose)
+      _verbose(verbose)
 {
 }
+
 //----------------------------------------------------------------------------
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 {
-  std::int64_t m = _Amat->index_map(0)->size_global();
-  std::int32_t m_loc = _Amat->num_owned_rows();
+  int_t m = _A_superlu_mat.supermatrix()->nrow;
+  int_t m_loc = ((NRformat_loc*)(_A_superlu_mat.supermatrix()->Store))->m_loc;
 
   // RHS
-  std::int32_t ldb = m_loc;
-  int nrhs = 1;
+  int_t ldb = m_loc;
+  int_t nrhs = 1;
 
   superlu_dist_options_t options;
   set_default_options_dist(&options);
@@ -186,9 +207,9 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     dSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pdgssvx()");
-    pdgssvx(&options, _supermatrix.get(), &ScalePermstruct, u.array().data(),
-            ldb, nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(),
-            &stat, &info);
+    pdgssvx(&options, _A_superlu_mat.supermatrix(), &ScalePermstruct,
+            u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
+            &SOLVEstruct, berr.data(), &stat, &info);
 
     spdlog::info("Finalize solve");
     dSolveFinalize(&options, &SOLVEstruct);
@@ -205,9 +226,9 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST psgssvx()");
-    psgssvx(&options, _supermatrix.get(), &ScalePermstruct, u.array().data(),
-            ldb, nrhs, _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(),
-            &stat, &info);
+    psgssvx(&options, _A_superlu_mat.supermatrix(), &ScalePermstruct,
+            u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
+            &SOLVEstruct, berr.data(), &stat, &info);
 
     spdlog::info("Finalize solve");
     sSolveFinalize(&options, &SOLVEstruct);
@@ -224,7 +245,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     zSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pzgssvx()");
-    pzgssvx(&options, _supermatrix.get(), &ScalePermstruct,
+    pzgssvx(&options, _A_superlu_mat.supermatrix(), &ScalePermstruct,
             reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
             _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);
@@ -247,10 +268,10 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 
   return info;
 }
+
 //----------------------------------------------------------------------------
 template class la::SuperLUDistSolver<double>;
 template class la::SuperLUDistSolver<float>;
 template class la::SuperLUDistSolver<std::complex<double>>;
 //----------------------------------------------------------------------------
-
 #endif

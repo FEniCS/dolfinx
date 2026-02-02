@@ -24,15 +24,6 @@ public:
 };
 
 /// Call library cleanup and delete pointer. For use with
-/// std::unique_ptr holding gridinfo_t.
-struct GridInfoDeleter
-{
-  /// @brief Deletion of gridinfo_t
-  /// @param g
-  void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
-};
-
-/// Call library cleanup and delete pointer. For use with
 /// std::unique_ptr holding SuperMatrix.
 struct SuperMatrixDeleter
 {
@@ -41,12 +32,61 @@ struct SuperMatrixDeleter
   void operator()(SuperLUDistStructs::SuperMatrix* A) const noexcept;
 };
 
+/// SuperLU_DIST matrix interface.
+template <typename T>
+class SuperLUDistMatrix
+{
+public:
+  /// @brief Create SuperLU_DIST matrix operator.
+  ///
+  /// Handles RAII-type memory management of underlying C objects.
+  ///
+  /// @tparam T Scalar type.
+  /// @param A Matrix.
+  /// @param verbose Verbose output.
+  SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
+                    bool verbose = false);
+
+  /// Copy constructor
+  SuperLUDistMatrix(const SuperLUDistMatrix&) = delete;
+
+  /// Copy assignment
+  SuperLUDistMatrix& operator=(const SuperLUDistMatrix&) = delete;
+
+  /// Get non-const pointer to SuperLU_DIST native SuperMatrix.
+  SuperLUDistStructs::SuperMatrix* supermatrix() const;
+
+private:
+  // Saved matrix operator with rows and cols in required integer type.
+  // cols and rowptr are required in opaque type "int_t" of
+  // SuperLU_DIST.
+  std::shared_ptr<const MatrixCSR<T>> _Amat;
+  std::unique_ptr<SuperLUDistStructs::vec_int_t> _cols;
+  std::unique_ptr<SuperLUDistStructs::vec_int_t> _rowptr;
+
+  // Pointer to native SuperMatrix
+  std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
+      _supermatrix;
+
+  // Flag for diagnostic output
+  bool _verbose;
+};
+
+/// Call library cleanup and delete pointer. For use with
+/// std::unique_ptr holding gridinfo_t.
+struct GridInfoDeleter
+{
+  /// @brief Deletion of gridinfo_t
+  /// @param g
+  void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
+};
+
 /// SuperLU_DIST linear solver interface.
 template <typename T>
 class SuperLUDistSolver
 {
 public:
-  /// @brief Create solver for a matrix operator.
+  /// @brief Create solver for a SuperLU_DIST matrix operator.
   ///
   /// Solves Au = b using SuperLU_DIST.
   ///
@@ -72,18 +112,11 @@ public:
   int solve(const Vector<T>& b, Vector<T>& u) const;
 
 private:
-  // Saved matrix operator with rows and cols in required integer type.
-  // cols and rowptr are required in opaque type "int_t" of
-  // SuperLU_DIST.
-  std::shared_ptr<const la::MatrixCSR<T>> _Amat;
-  std::unique_ptr<SuperLUDistStructs::vec_int_t> _cols;
-  std::unique_ptr<SuperLUDistStructs::vec_int_t> _rowptr;
+  // Wrapped SuperLU SuperMatrix
+  const SuperLUDistMatrix<T> _A_superlu_mat;
 
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
-  // Pointer to SuperMatrix
-  std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
-      _supermatrix;
 
   // Flag for diagnostic output
   bool _verbose;
