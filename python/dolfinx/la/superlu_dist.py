@@ -13,7 +13,6 @@ Note:
 """
 
 import numpy as np
-import numpy.typing as npt
 
 import dolfinx
 import dolfinx.cpp as _cpp
