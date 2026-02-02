@@ -75,11 +75,9 @@ void cell_entry(std::int32_t c0, std::int32_t num_cells,
 
       // Orient the entities. Simply sort according to global vertex
       // index for simplices.
-      // std::vector<std::int64_t> global_vertices(entity_vertices.size());
       assert(entity_vertices.size() == global_vertices.size());
       vertex_index_map.local_to_global(entity_vertices, global_vertices);
 
-      // std::vector<std::size_t> perm(global_vertices.size());
       std::iota(perm.begin(), perm.end(), 0);
       std::ranges::sort(perm, [&global_vertices](std::size_t i0, std::size_t i1)
                         { return global_vertices[i0] < global_vertices[i1]; });
