@@ -122,7 +122,7 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 template <typename T>
 SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
                                         bool verbose)
-    : _Amat(A),
+    : _matA(A),
       _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*A))),
       _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*A))),
       _supermatrix(create_supermatrix<T>(*A, *_rowptr, *_cols)),
@@ -155,7 +155,7 @@ void GridInfoDeleter::operator()(
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
                                         bool verbose)
-    : _A_superlu_mat(SuperLUDistMatrix<T>(A, verbose)),
+    : _superlu_matA(SuperLUDistMatrix<T>(A, verbose)),
       _gridinfo(
           [comm = A->comm()]
           {
@@ -174,8 +174,8 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 {
-  int_t m = _A_superlu_mat.supermatrix()->nrow;
-  int_t m_loc = ((NRformat_loc*)(_A_superlu_mat.supermatrix()->Store))->m_loc;
+  int_t m = _superlu_matA.supermatrix()->nrow;
+  int_t m_loc = ((NRformat_loc*)(_superlu_matA.supermatrix()->Store))->m_loc;
 
   // RHS
   int_t ldb = m_loc;
@@ -207,7 +207,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     dSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pdgssvx()");
-    pdgssvx(&options, _A_superlu_mat.supermatrix(), &ScalePermstruct,
+    pdgssvx(&options, _superlu_matA.supermatrix(), &ScalePermstruct,
             u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
             &SOLVEstruct, berr.data(), &stat, &info);
 
@@ -226,7 +226,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST psgssvx()");
-    psgssvx(&options, _A_superlu_mat.supermatrix(), &ScalePermstruct,
+    psgssvx(&options, _superlu_matA.supermatrix(), &ScalePermstruct,
             u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
             &SOLVEstruct, berr.data(), &stat, &info);
 
@@ -245,7 +245,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     zSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pzgssvx()");
-    pzgssvx(&options, _A_superlu_mat.supermatrix(), &ScalePermstruct,
+    pzgssvx(&options, _superlu_matA.supermatrix(), &ScalePermstruct,
             reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
             _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);
