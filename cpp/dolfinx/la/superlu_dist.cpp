@@ -132,14 +132,6 @@ SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
 
 //----------------------------------------------------------------------------
 template <typename T>
-const la::MatrixCSR<T>& SuperLUDistMatrix<T>::Amat() const
-{
-  assert(_Amat);
-  return *_Amat;
-}
-
-//----------------------------------------------------------------------------
-template <typename T>
 SuperLUDistStructs::SuperMatrix* SuperLUDistMatrix<T>::supermatrix() const
 {
   return _supermatrix.get();

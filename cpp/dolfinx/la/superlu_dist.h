@@ -53,9 +53,6 @@ public:
   /// Copy assignment
   SuperLUDistMatrix& operator=(const SuperLUDistMatrix&) = delete;
 
-  /// Get address to underlying MatrixCSR object.
-  const la::MatrixCSR<T>& Amat() const;
-
   /// Get non-const pointer to SuperLU_DIST native SuperMatrix.
   SuperLUDistStructs::SuperMatrix* supermatrix() const;
 
