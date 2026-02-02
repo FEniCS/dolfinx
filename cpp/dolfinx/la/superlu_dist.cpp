@@ -6,7 +6,7 @@
 
 #ifdef HAS_SUPERLU_DIST
 
-#include "SuperLUDist.h"
+#include "superlu_dist.h"
 extern "C"
 {
 #include <superlu_ddefs.h>

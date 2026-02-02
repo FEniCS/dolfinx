@@ -12,7 +12,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
-#include <dolfinx/la/SuperLUDist.h>
+#include <dolfinx/la/superlu_dist.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/la/utils.h>
 #include <memory>
