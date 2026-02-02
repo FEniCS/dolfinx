@@ -82,7 +82,7 @@ template <typename T>
 class SuperLUDistSolver
 {
 public:
-  /// @brief Create solver for a matrix operator.
+  /// @brief Create solver for a SuperLU_DIST matrix operator.
   ///
   /// Solves Au = b using SuperLU_DIST.
   ///
