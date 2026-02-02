@@ -182,12 +182,12 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 {
-  std::int64_t m = _A_superlu_mat->Amat().index_map(0)->size_global();
-  std::int32_t m_loc = _A_superlu_mat->Amat().num_owned_rows();
+  int_t m = _A_superlu_mat->supermatrix()->nrow;
+  int_t m_loc = ((NRformat_loc*)(_A_superlu_mat->supermatrix()->Store))->m_loc;
 
   // RHS
-  std::int32_t ldb = m_loc;
-  int nrhs = 1;
+  int_t ldb = m_loc;
+  int_t nrhs = 1;
 
   superlu_dist_options_t options;
   set_default_options_dist(&options);
