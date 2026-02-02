@@ -24,13 +24,6 @@ public:
 };
 
 // Call library cleanup and delete pointer. For use with
-// std::unique_ptr holding gridinfo_t.
-struct GridInfoDeleter
-{
-  void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
-};
-
-// Call library cleanup and delete pointer. For use with
 // std::unique_ptr holding SuperMatrix.
 struct SuperMatrixDeleter
 {
@@ -76,6 +69,13 @@ private:
 
   // Flag for diagnostic output
   bool _verbose;
+};
+
+// Call library cleanup and delete pointer. For use with
+// std::unique_ptr holding gridinfo_t.
+struct GridInfoDeleter
+{
+  void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
 };
 
 /// SuperLU_DIST linear solver interface.
