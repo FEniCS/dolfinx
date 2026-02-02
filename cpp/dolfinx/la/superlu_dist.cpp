@@ -121,7 +121,7 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
-                                bool verbose)
+                                        bool verbose)
     : _Amat(A),
       _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*A))),
       _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*A))),
@@ -161,9 +161,9 @@ void GridInfoDeleter::operator()(
 
 //----------------------------------------------------------------------------
 template <typename T>
-SuperLUDistSolver<T>::SuperLUDistSolver(
-    std::shared_ptr<const MatrixCSR<T>> A, bool verbose)
-    : _A_superlu_mat(new SuperLUDistMatrix(A, verbose)),
+SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
+                                        bool verbose)
+    : _A_superlu_mat(std::make_unique<SuperLUDistMatrix<T>>(A, verbose)),
       _gridinfo(
           [comm = A->comm()]
           {
