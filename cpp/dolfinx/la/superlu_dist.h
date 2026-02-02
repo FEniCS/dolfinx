@@ -42,7 +42,8 @@ public:
   /// @tparam T Scalar type.
   /// @param A Matrix.
   /// @param verbose Verbose output.
-  SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A, bool verbose = false);
+  SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
+                    bool verbose = false);
 
   /// Copy constructor
   SuperLUDistMatrix(const SuperLUDistMatrix&) = delete;
