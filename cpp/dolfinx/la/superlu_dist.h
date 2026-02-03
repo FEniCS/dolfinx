@@ -54,8 +54,11 @@ public:
   /// Copy assignment
   SuperLUDistMatrix& operator=(const SuperLUDistMatrix&) = delete;
 
-  /// Get non-const pointer to SuperLU_DIST native SuperMatrix.
+  /// Get non-const pointer to SuperLU_DIST SuperMatrix.
   SuperLUDistStructs::SuperMatrix* supermatrix() const;
+
+  /// Get MatrixCSR (const).
+  const MatrixCSR<T>& matA() const;
 
 private:
   // Saved matrix operator with rows and cols in required integer type.
@@ -94,7 +97,7 @@ public:
   /// @tparam T Scalar type.
   /// @param A Matrix to solve for.
   /// @param verbose Verbose output.
-  SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
+  SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A,
                     bool verbose = false);
 
   /// Copy constructor
@@ -114,7 +117,7 @@ public:
 
 private:
   // Wrapped SuperLU SuperMatrix
-  const SuperLUDistMatrix<T> _superlu_matA;
+  std::shared_ptr<const SuperLUDistMatrix<T>> _superlu_matA;
 
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::superlu_dist_options_t> _options;
