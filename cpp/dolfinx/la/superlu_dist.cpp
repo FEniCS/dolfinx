@@ -14,9 +14,9 @@ extern "C"
 #include <superlu_zdefs.h>
 }
 #include <algorithm>
-#include <boost/numeric/conversion/cast.hpp>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
+#include <stdexcept>
 #include <vector>
 
 using namespace dolfinx;
@@ -59,14 +59,14 @@ std::vector<int_t> col_indices(const auto& A)
                  { return global_indices[idx]; });
   return col_indices;
 }
-
+//----------------------------------------------------------------------------
 std::vector<int_t> row_indices(const auto& A)
 {
   return std::vector<int_t>(
       A.row_ptr().begin(),
       std::next(A.row_ptr().begin(), A.num_owned_rows() + 1));
 }
-
+//----------------------------------------------------------------------------
 template <typename T>
 std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
 create_supermatrix(const auto& A, auto& rowptr, auto& cols)
@@ -87,12 +87,20 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
   std::int64_t first_row = map0->local_range().front();
   std::int64_t nnz_loc = A.row_ptr().at(m_loc);
 
-  // Safely cast to SuperLU int_t (int or long int)
-  int_t m_c = boost::numeric_cast<int_t>(m);
-  int_t n_c = boost::numeric_cast<int_t>(n);
-  int_t m_loc_c = boost::numeric_cast<int_t>(m_loc);
-  int_t first_row_c = boost::numeric_cast<int_t>(first_row);
-  int_t nnz_loc_c = boost::numeric_cast<int_t>(nnz_loc);
+  // Check values fit into upper range of int_t.
+  auto check = [](std::int64_t x)
+  {
+    if (x >= static_cast<std::int64_t>(std::numeric_limits<int_t>::max()))
+    {
+      throw std::out_of_range(
+          "Value outside upper range of SuperLU_DIST int_t.");
+    }
+  };
+  check(m);
+  check(n);
+  check(m_loc);
+  check(first_row);
+  check(nnz_loc);
 
   std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter> p(
       new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{});
@@ -101,22 +109,22 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
   T* Amatdata = const_cast<T*>(A.values().data());
   if constexpr (std::is_same_v<T, double>)
   {
-    dCreate_CompRowLoc_Matrix_dist(
-        p.get(), m_c, n_c, nnz_loc_c, m_loc_c, first_row_c, Amatdata,
-        cols.vec.data(), rowptr.vec.data(), SLU_NR_loc, SLU_D, SLU_GE);
+    dCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
+                                   Amatdata, cols.vec.data(), rowptr.vec.data(),
+                                   SLU_NR_loc, SLU_D, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, float>)
   {
-    sCreate_CompRowLoc_Matrix_dist(
-        p.get(), m_c, n_c, nnz_loc_c, m_loc_c, first_row_c, Amatdata,
-        cols.vec.data(), rowptr.vec.data(), SLU_NR_loc, SLU_S, SLU_GE);
+    sCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
+                                   Amatdata, cols.vec.data(), rowptr.vec.data(),
+                                   SLU_NR_loc, SLU_S, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
-    zCreate_CompRowLoc_Matrix_dist(
-        p.get(), m_c, n_c, nnz_loc_c, m_loc_c, first_row_c,
-        reinterpret_cast<doublecomplex*>(Amatdata), cols.vec.data(),
-        rowptr.vec.data(), SLU_NR_loc, SLU_Z, SLU_GE);
+    zCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
+                                   reinterpret_cast<doublecomplex*>(Amatdata),
+                                   cols.vec.data(), rowptr.vec.data(),
+                                   SLU_NR_loc, SLU_Z, SLU_GE);
   }
   else
     static_assert(dependent_false_v<T>, "Invalid scalar type");
@@ -125,7 +133,6 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
   return p;
 }
 } // namespace
-
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
@@ -139,21 +146,18 @@ SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
       _verbose(verbose)
 {
 }
-
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistStructs::SuperMatrix* SuperLUDistMatrix<T>::supermatrix() const
 {
   return _supermatrix.get();
 }
-
 //----------------------------------------------------------------------------
 template <typename T>
 const MatrixCSR<T>& SuperLUDistMatrix<T>::matA() const
 {
   return *_matA;
 }
-
 //----------------------------------------------------------------------------
 template class la::SuperLUDistMatrix<double>;
 template class la::SuperLUDistMatrix<float>;
@@ -165,7 +169,6 @@ template class la::SuperLUDistMatrix<std::complex<double>>;
 struct dolfinx::la::SuperLUDistStructs::gridinfo_t : public ::gridinfo_t
 {
 };
-
 //----------------------------------------------------------------------------
 void GridInfoDeleter::operator()(
     SuperLUDistStructs::gridinfo_t* gridinfo) const noexcept
@@ -192,7 +195,6 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
       _verbose(verbose)
 {
 }
-
 //----------------------------------------------------------------------------
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
@@ -291,7 +293,6 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 
   return info;
 }
-
 //----------------------------------------------------------------------------
 template class la::SuperLUDistSolver<double>;
 template class la::SuperLUDistSolver<float>;
