@@ -45,8 +45,9 @@ From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
 
 - `ADIOS2 <https://github.com/ornladios/ADIOS2/>`_ (additional parallel
   IO support)
-- `PETSc <https://petsc.org/>`_ [1]_
-- `SLEPc <https://slepc.upv.es/>`_ (eigenvalue computations)
+- `PETSc <https://petsc.org/>`_ [1]_ (linear and non-linear problems)
+- `SLEPc <https://slepc.upv.es/>`_ (eigenvalue problems)
+- `SuperLU_DIST <https://github.com/xiaoyeli/superlu_dist/>`_ [2]_ (direct problems with ``dolfinx::la::MatrixCSR``).
 
 .. rubric:: Optional for demos
 
@@ -57,28 +58,41 @@ PETSc and FFCx are optional but recommended.
 Python interface
 ****************
 
-Requirements for the Python interface, in addition to the C++
-requirements.
+Requirements for the Python interface, in addition to the C++ requirements.
+Please see ``python/pyproject.toml`` for precise specification. Below we
+use the `pypi <https://pypi.org>`_ names.
 
-.. rubric:: Required
+.. rubric:: Build system requirements
+
+- `scikit-build-core[pyproject] <https://scikit-build-core.readthedocs.io>`_
+- `mpi4py <https://mpi4py.readthedocs.io/>`_
+- `nanobind <https://github.com/wjakob/nanobind>`_ (static linking)
+- petsc4py (recommended, optional) 
+
+.. rubric:: Required runtime dependencies
 
 - Python
-- Python CFFI (https://cffi.readthedocs.io/)
-- FFCx, UFL and Basix Python interface.
-- mpi4py (https://mpi4py.readthedocs.io/)
-- nanobind (https://github.com/wjakob/nanobind)
-- NumPy (https://www.numpy.org)
-- scikit-build-core[pyproject] (https://scikit-build-core.readthedocs.io)
+- DOLFINx C++ interface, Basix C++ and Python interfaces, FFCx and UFL.
+- `cffi <https://cffi.readthedocs.io/>`_
+- `mpi4py <https://mpi4py.readthedocs.io/>`_
+- `numpy <https://www.numpy.org>`_
 
 .. rubric:: Optional
 
 - petsc4py (recommended)
+- numba (custom kernels and assemblers)
+- `pyamg <https://github.com/pyamg/pyamg>`_ + scipy (serial linear problems)
 
 .. rubric:: Optional for demos
 
-- Numba
+- gmsh
+- networkx 
+- numba
+- matplotlib
+- petsc4py
 - pyamg
-- pyvista (for plotting)
+- pyvista
+- scipy
 - slepc4py
 
 Building and installing
@@ -118,4 +132,4 @@ the Python interface can be installed using::
        additionally configure MUMPS via PETSc with
        ``--download-mumps-avoid-mpi-in-place``.
 
-.. [2] PETSc can download and configure and build these libraries.
+.. [2] PETSc can also download, configure and build these libraries.
