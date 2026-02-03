@@ -123,8 +123,10 @@ template <typename T>
 SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
                                         bool verbose)
     : _matA(std::move(A)),
-      _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*_matA))),
-      _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*_matA))),
+      _cols(
+          std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*_matA))),
+      _rowptr(
+          std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*_matA))),
       _supermatrix(create_supermatrix<T>(*_matA, *_rowptr, *_cols)),
       _verbose(verbose)
 {
