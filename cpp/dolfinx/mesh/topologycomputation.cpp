@@ -562,7 +562,7 @@ compute_entities_by_key_matching(
         std::reference_wrapper<const common::IndexMap>>>
         cell_lists,
     const common::IndexMap& vertex_index_map, mesh::CellType entity_type,
-    int dim)
+    int dim, int num_threads)
 {
   if (dim == 0)
   {
@@ -588,7 +588,7 @@ compute_entities_by_key_matching(
 
     const graph::AdjacencyList<std::int32_t>& cells
         = std::get<1>(cell_lists[k]);
-    const std::size_t num_cells = cells.num_nodes();
+    std::size_t num_cells = cells.num_nodes();
     cell_type_offsets.push_back(cell_type_offsets.back()
                                 + num_cells * cell_type_entities[k].size());
   }
@@ -612,7 +612,7 @@ compute_entities_by_key_matching(
         = std::get<1>(cell_lists[k]);
     int num_entities_per_cell = cell_type_entities[k].size();
     // int num_threads = 2;
-    int num_threads = std::thread::hardware_concurrency();
+    // int num_threads = std::thread::hardware_concurrency();
     std::vector<std::jthread> threads(num_threads);
     for (int i = 0; i < num_threads; ++i)
     {
@@ -646,8 +646,8 @@ compute_entities_by_key_matching(
         = dolfinx::sort_by_perm<std::int32_t>(entity_list_sorted,
                                               num_vertices_per_entity);
 
-    std::vector<std::int32_t> entity(num_vertices_per_entity),
-        entity0(num_vertices_per_entity);
+    std::vector<std::int32_t> entity(num_vertices_per_entity);
+    std::vector<std::int32_t> entity0(num_vertices_per_entity);
     auto it = sort_order.begin();
     while (it != sort_order.end())
     {
@@ -835,7 +835,8 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
-mesh::compute_entities(const Topology& topology, int dim, CellType entity_type)
+mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
+                       int num_threads)
 {
   spdlog::info("Computing mesh entities of dimension {}", dim);
 
@@ -884,7 +885,7 @@ mesh::compute_entities(const Topology& topology, int dim, CellType entity_type)
 
   // c->e, e->v
   auto [d0, d1, im, interprocess_entities] = compute_entities_by_key_matching(
-      topology.comm(), cell_lists, *vertex_map, entity_type, dim);
+      topology.comm(), cell_lists, *vertex_map, entity_type, dim, num_threads);
 
   return {d0,
           std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d1)),

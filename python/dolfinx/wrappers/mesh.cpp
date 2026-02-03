@@ -586,9 +586,13 @@ void mesh(nb::module_& m)
   m.def(
       "compute_entities",
       [](const dolfinx::mesh::Topology& topology, int dim,
-         dolfinx::mesh::CellType entity_type)
-      { return dolfinx::mesh::compute_entities(topology, dim, entity_type); },
-      nb::arg("topology"), nb::arg("dim"), nb::arg("entity_type"));
+         dolfinx::mesh::CellType entity_type, int num_threads)
+      {
+        return dolfinx::mesh::compute_entities(topology, dim, entity_type,
+                                               num_threads);
+      },
+      nb::arg("topology"), nb::arg("dim"), nb::arg("entity_type"),
+      nb::arg("num_threads") = 1);
   m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity,
         nb::arg("topology"), nb::arg("d0"), nb::arg("d1"));
 
