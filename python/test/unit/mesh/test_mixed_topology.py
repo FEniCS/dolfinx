@@ -23,7 +23,7 @@ from dolfinx.cpp.mesh import (
 )
 from dolfinx.fem import coordinate_element
 from dolfinx.log import LogLevel, set_log_level
-from dolfinx.mesh import CellType, GhostMode, Mesh, create_unit_cube
+from dolfinx.mesh import CellType, GhostMode, Mesh, Topology, create_unit_cube
 
 
 def test_mixed_topology_mesh():
@@ -34,13 +34,15 @@ def test_mixed_topology_mesh():
     ghost_owners = [[], []]
     boundary_vertices = []
 
-    topology = create_topology(
-        MPI.COMM_SELF,
-        [CellType.triangle, CellType.quadrilateral],
-        cells,
-        orig_index,
-        ghost_owners,
-        boundary_vertices,
+    topology = Topology(
+        create_topology(
+            MPI.COMM_SELF,
+            [CellType.triangle, CellType.quadrilateral],
+            cells,
+            orig_index,
+            ghost_owners,
+            boundary_vertices,
+        )
     )
 
     maps = topology.index_maps(topology.dim)
@@ -80,7 +82,9 @@ def test_mixed_topology_mesh():
     nodes = np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)
     xdofs = np.array([0, 1, 2, 1, 2, 3, 2, 3, 4, 5], dtype=np.int64)
     x = np.array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 0.0], dtype=np.float64)
-    geom = create_geometry(topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x, 2)
+    geom = create_geometry(
+        topology._cpp_object, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x, 2
+    )
     print(geom.x)
     print(geom.index_map().size_local)
     print(geom.dofmaps(0))
@@ -95,13 +99,15 @@ def test_mixed_topology_mesh_3d():
     ghost_owners = [[], [], []]
     boundary_vertices = []
 
-    topology = create_topology(
-        MPI.COMM_SELF,
-        [CellType.tetrahedron, CellType.prism, CellType.hexahedron],
-        cells,
-        orig_index,
-        ghost_owners,
-        boundary_vertices,
+    topology = Topology(
+        create_topology(
+            MPI.COMM_SELF,
+            [CellType.tetrahedron, CellType.prism, CellType.hexahedron],
+            cells,
+            orig_index,
+            ghost_owners,
+            boundary_vertices,
+        )
     )
 
     entity_types = topology.entity_types
@@ -124,7 +130,8 @@ def test_mixed_topology_mesh_3d():
     ti = topology.entity_types[2].index(CellType.triangle)
 
     # Tet -> quad
-    assert topology.connectivity((3, 0), (2, qi)) is None
+    with pytest.raises(RuntimeError):
+        t = topology.connectivity((3, 0), (2, qi))
     # Tet -> triangle
     t = topology.connectivity((3, 0), (2, ti))
     assert t.num_nodes == 2
@@ -144,7 +151,8 @@ def test_mixed_topology_mesh_3d():
     assert t.num_nodes == 1
     assert len(t.links(0)) == 6
     # Hex -> triangle
-    assert topology.connectivity((3, 2), (2, ti)) is None
+    with pytest.raises(RuntimeError):
+        t = topology.connectivity((3, 2), (2, ti))
 
     # Quad -> vertex
     t = topology.connectivity((2, qi), (0, 0))
