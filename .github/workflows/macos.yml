@@ -75,9 +75,10 @@ jobs:
             --with-ptscotch-dir=$(brew --prefix scotch) \
             --with-scalapack-dir=$(brew --prefix scalapack) \
             --download-metis \
-            --download-parmetis \
             --download-mumps \
-            --download-mumps-avoid-mpi-in-place
+            --download-mumps-avoid-mpi-in-place \
+            --download-parmetis \
+            --download-superlu_dist
           make all
           cd src/binding/petsc4py
           arch -arm64 pip -v install --user --no-build-isolation .
@@ -101,7 +102,9 @@ jobs:
         working-directory: cpp
         run: >
           cmake -B build -S . -Werror=dev --warn-uninitialized -G Ninja \
-            -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true
+            -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
+            -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_PARMETIS=true \
+            -DDOLFINX_ENABLE_PETSC=true -DDOLFINX_ENABLE_SUPERLU_DIST=true
 
       - name: Build and install (C++)
         working-directory: cpp/build
@@ -124,8 +127,9 @@ jobs:
 
       - name: Basic test
         run: |
-          mpiexec -np 1 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-          mpiexec -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          mpiexec -np 1 python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_parmetis and dolfinx.has_petsc and dolfinx.has_superlu_dist and dolfinx.has_ptscotch"
+          mpiexec -np 1 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          mpiexec -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
 
       - name: Run tests (Python)
         run: |

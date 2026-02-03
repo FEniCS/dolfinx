@@ -77,7 +77,7 @@ jobs:
       - name: Add dependencies to environment
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack -e py add mpi petsc+mpi+shared+mumps slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
+          spack -e py add mpi petsc+mpi+shared+mumps+superlu-dist slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
           spack -e py add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
           spack -e py add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
 
@@ -116,7 +116,9 @@ jobs:
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate py
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DBUILD_TESTING=true -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_PETSC=on -DDOLFINX_ENABLE_SLEPC=true -DDOLFINX_ENABLE_PARMETIS=true -B build -S dolfinx-src/cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DBUILD_TESTING=true -DCMAKE_BUILD_TYPE=Developer \
+            -DDOLFINX_ENABLE_PETSC=on -DDOLFINX_ENABLE_SLEPC=true \
+            -DDOLFINX_ENABLE_PARMETIS=true -DDOLFINX_ENABLE_SUPERLU_DIST=true -B build -S dolfinx-src/cpp/
           cmake --build build
 
       - name: Run tests without install (C++, serial and MPI np=2)
