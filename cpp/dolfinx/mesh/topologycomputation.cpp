@@ -611,8 +611,6 @@ compute_entities_by_key_matching(
     const graph::AdjacencyList<std::int32_t>& cells
         = std::get<1>(cell_lists[k]);
     int num_entities_per_cell = cell_type_entities[k].size();
-    // int num_threads = 2;
-    // int num_threads = std::thread::hardware_concurrency();
     std::vector<std::jthread> threads(num_threads);
     for (int i = 0; i < num_threads; ++i)
     {
