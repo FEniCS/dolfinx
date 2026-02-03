@@ -31,11 +31,11 @@ C++
 - `Boost <https://www.boost.org>`_
 - `CMake <https://cmake.org>`_ [build dependency]
 - HDF5 (with MPI support enabled)
-- MPI (MPI-3 or later).
+- MPI (MPI-3 or later)
 - `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ [build dependency]
 - `pugixml <https://pugixml.org/>`_
 - `spdlog <https://github.com/gabime/spdlog/>`_
-- UFCx [``ufcx.h``, provided by FFCx package or FFCx UFCx CMake install
+- UFCx [``ufcx.h``, provided by FFCx Python package or FFCx UFCx CMake install
   at ``ffcx/cmake/*``]
 - At least one of ParMETIS [2]_, KaHIP or PT-SCOTCH [2]_
 
@@ -47,8 +47,7 @@ From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
   IO support)
 - `PETSc <https://petsc.org/>`_ [1]_ (linear and non-linear problems)
 - `SLEPc <https://slepc.upv.es/>`_ (eigenvalue problems)
-- `SuperLU_DIST <https://github.com/xiaoyeli/superlu_dist/>`_ [2]_ 
-   (linear problems with ``dolfinx::la::MatrixCSR``).
+- `SuperLU_DIST <https://github.com/xiaoyeli/superlu_dist/>`_ [2]_ (linear problems with ``dolfinx::la::MatrixCSR``).
 
 .. rubric:: Optional for demos
 
@@ -60,12 +59,12 @@ Python interface
 ****************
 
 Requirements for the Python interface. Please see ``python/pyproject.toml`` for
-precise specification. Below we use the `pypi <https://pypi.org>`_ names.
+precise specification. Below we use the `pypi <https://pypi.org>`_ package names.
 
 .. rubric:: Build system requirements
 
 - Python
-- DOLFINx C++ interface and all requirements.
+- DOLFINx C++ interface and all requirements
 - `scikit-build-core[pyproject] <https://scikit-build-core.readthedocs.io>`_
 - `mpi4py <https://mpi4py.readthedocs.io/>`_
 - `nanobind <https://github.com/wjakob/nanobind>`_ (static linking)
@@ -74,7 +73,7 @@ precise specification. Below we use the `pypi <https://pypi.org>`_ names.
 .. rubric:: Required runtime dependencies
 
 - Python
-- Basix (Python interface), FFCx and UFL.
+- fenics-basix, fenics-ffcx and fenics-ufl
 - `cffi <https://cffi.readthedocs.io/>`_
 - `mpi4py <https://mpi4py.readthedocs.io/>`_
 - `numpy <https://www.numpy.org>`_
