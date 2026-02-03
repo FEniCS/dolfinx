@@ -70,7 +70,8 @@ template <typename T>
 std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
 create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 {
-  spdlog::info("Start set_operator");
+  spdlog::info("Start create_supermatrix");
+  assert(A);
 
   auto map0 = A.index_map(0);
   auto map1 = A.index_map(1);
@@ -113,7 +114,7 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
   else
     static_assert(dependent_false_v<T>, "Invalid scalar type");
 
-  spdlog::info("Finished set_operator");
+  spdlog::info("Finished create_supermatrix");
   return p;
 }
 } // namespace
