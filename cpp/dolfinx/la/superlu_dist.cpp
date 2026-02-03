@@ -125,7 +125,7 @@ SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
     : _matA(std::move(A)),
       _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*A))),
       _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*A))),
-      _supermatrix(create_supermatrix<T>(*A, *_rowptr, *_cols)),
+      _supermatrix(create_supermatrix<T>(*_matA, *_rowptr, *_cols)),
       _verbose(verbose)
 {
 }
@@ -170,7 +170,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
     std::shared_ptr<const SuperLUDistMatrix<T>> A, bool verbose)
     : _superlu_matA(std::move(A)),
       _gridinfo(
-          [comm = A->matA().comm()]
+          [comm = _superlu_matA->matA().comm()]
           {
             int nprow = dolfinx::MPI::size(comm);
             int npcol = 1;
