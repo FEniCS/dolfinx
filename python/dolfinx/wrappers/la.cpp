@@ -229,7 +229,12 @@ void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
           [](dolfinx::la::SuperLUDistSolver<T>* solver,
              std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat,
              bool verbose)
-          { new (solver) dolfinx::la::SuperLUDistSolver<T>(Amat, verbose); },
+          {
+            auto A_superlu
+                = std::make_shared<const dolfinx::la::SuperLUDistMatrix<T>>(
+                    Amat, verbose);
+            new (solver) dolfinx::la::SuperLUDistSolver<T>(A_superlu, verbose);
+          },
           nb::arg("A"), nb::arg("verbose"))
       .def("solve", &dolfinx::la::SuperLUDistSolver<T>::solve);
 }
