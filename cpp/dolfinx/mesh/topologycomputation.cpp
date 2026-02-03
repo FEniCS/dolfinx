@@ -607,7 +607,7 @@ compute_entities_by_key_matching(
     mesh::CellType cell_type = std::get<0>(cell_lists[k]);
     auto e_vertices = get_entity_vertices(cell_type, dim);
 
-    dolfinx::common::Timer t_thread("Threaded part");
+    common::Timer t_thread("Threaded part");
 
     const graph::AdjacencyList<std::int32_t>& cells
         = std::get<1>(cell_lists[k]);
