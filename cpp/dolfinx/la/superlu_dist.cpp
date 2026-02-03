@@ -14,6 +14,7 @@ extern "C"
 #include <superlu_zdefs.h>
 }
 #include <algorithm>
+#include <boost/numeric/conversion/cast.hpp>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <vector>
@@ -86,6 +87,13 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
   std::int64_t first_row = map0->local_range().front();
   std::int64_t nnz_loc = A.row_ptr().at(m_loc);
 
+  // Safely cast to SuperLU int_t (int or long int)
+  int_t m_c = boost::numeric_cast<int_t>(m);
+  int_t n_c = boost::numeric_cast<int_t>(n);
+  int_t m_loc_c = boost::numeric_cast<int_t>(m_loc);
+  int_t first_row_c = boost::numeric_cast<int_t>(first_row);
+  int_t nnz_loc_c = boost::numeric_cast<int_t>(nnz_loc);
+
   std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter> p(
       new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{});
 
@@ -93,22 +101,22 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
   T* Amatdata = const_cast<T*>(A.values().data());
   if constexpr (std::is_same_v<T, double>)
   {
-    dCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
-                                   Amatdata, cols.vec.data(), rowptr.vec.data(),
-                                   SLU_NR_loc, SLU_D, SLU_GE);
+    dCreate_CompRowLoc_Matrix_dist(
+        p.get(), m_c, n_c, nnz_loc_c, m_loc_c, first_row_c, Amatdata,
+        cols.vec.data(), rowptr.vec.data(), SLU_NR_loc, SLU_D, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, float>)
   {
-    sCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
-                                   Amatdata, cols.vec.data(), rowptr.vec.data(),
-                                   SLU_NR_loc, SLU_S, SLU_GE);
+    sCreate_CompRowLoc_Matrix_dist(
+        p.get(), m_c, n_c, nnz_loc_c, m_loc_c, first_row_c, Amatdata,
+        cols.vec.data(), rowptr.vec.data(), SLU_NR_loc, SLU_S, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
-    zCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
-                                   reinterpret_cast<doublecomplex*>(Amatdata),
-                                   cols.vec.data(), rowptr.vec.data(),
-                                   SLU_NR_loc, SLU_Z, SLU_GE);
+    zCreate_CompRowLoc_Matrix_dist(
+        p.get(), m_c, n_c, nnz_loc_c, m_loc_c, first_row_c,
+        reinterpret_cast<doublecomplex*>(Amatdata), cols.vec.data(),
+        rowptr.vec.data(), SLU_NR_loc, SLU_Z, SLU_GE);
   }
   else
     static_assert(dependent_false_v<T>, "Invalid scalar type");
