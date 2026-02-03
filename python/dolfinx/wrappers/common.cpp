@@ -275,8 +275,7 @@ void common(nb::module_& m)
   m.def("timing", &dolfinx::timing);
   m.def("timings", &dolfinx::timings);
 
-  m.def("hardware_concurrency",
-        []() { return std::thread::hardware_concurrency(); });
+  m.def("hardware_concurrency", &std::thread::hardware_concurrency);
 
   m.def(
       "list_timings",

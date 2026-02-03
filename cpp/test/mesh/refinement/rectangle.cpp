@@ -20,7 +20,7 @@
 #include <limits>
 #include <mpi.h>
 #include <optional>
-#include <threads>
+#include <thread>
 
 using namespace dolfinx;
 using namespace Catch::Matchers;
