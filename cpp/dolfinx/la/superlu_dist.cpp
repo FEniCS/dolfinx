@@ -71,7 +71,6 @@ std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
 create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 {
   spdlog::info("Start create_supermatrix");
-  assert(A);
 
   auto map0 = A.index_map(0);
   auto map1 = A.index_map(1);
