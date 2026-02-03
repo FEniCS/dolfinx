@@ -32,7 +32,7 @@ C++
 - `CMake <https://cmake.org>`_ [build dependency]
 - HDF5 (with MPI support enabled)
 - MPI (MPI-3 or later).
-- `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
+- `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ [build dependency]
 - `pugixml <https://pugixml.org/>`_
 - `spdlog <https://github.com/gabime/spdlog/>`_
 - UFCx [``ufcx.h``, provided by FFCx package or FFCx UFCx CMake install
@@ -47,7 +47,8 @@ From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
   IO support)
 - `PETSc <https://petsc.org/>`_ [1]_ (linear and non-linear problems)
 - `SLEPc <https://slepc.upv.es/>`_ (eigenvalue problems)
-- `SuperLU_DIST <https://github.com/xiaoyeli/superlu_dist/>`_ [2]_ (direct problems with ``dolfinx::la::MatrixCSR``).
+- `SuperLU_DIST <https://github.com/xiaoyeli/superlu_dist/>`_ [2]_ 
+   (linear problems with ``dolfinx::la::MatrixCSR``).
 
 .. rubric:: Optional for demos
 
@@ -58,28 +59,30 @@ PETSc and FFCx are optional but recommended.
 Python interface
 ****************
 
-Requirements for the Python interface, in addition to the C++ requirements.
-Please see ``python/pyproject.toml`` for precise specification. Below we
-use the `pypi <https://pypi.org>`_ names.
+Requirements for the Python interface. Please see ``python/pyproject.toml`` for
+precise specification. Below we use the `pypi <https://pypi.org>`_ names.
 
 .. rubric:: Build system requirements
 
+- Python
+- DOLFINx C++ interface and all requirements.
 - `scikit-build-core[pyproject] <https://scikit-build-core.readthedocs.io>`_
 - `mpi4py <https://mpi4py.readthedocs.io/>`_
 - `nanobind <https://github.com/wjakob/nanobind>`_ (static linking)
-- petsc4py (recommended, optional) 
+- petsc4py (recommended, optional)
 
 .. rubric:: Required runtime dependencies
 
 - Python
-- DOLFINx C++ interface, Basix C++ and Python interfaces, FFCx and UFL.
+- Basix (Python interface), FFCx and UFL.
 - `cffi <https://cffi.readthedocs.io/>`_
 - `mpi4py <https://mpi4py.readthedocs.io/>`_
 - `numpy <https://www.numpy.org>`_
+- `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
 
-.. rubric:: Optional
+.. rubric:: Optional runtime dependencies
 
-- petsc4py (recommended)
+- petsc4py (linear and non-linear problems, recommended)
 - numba (custom kernels and assemblers)
 - `pyamg <https://github.com/pyamg/pyamg>`_ + scipy (serial linear problems)
 
