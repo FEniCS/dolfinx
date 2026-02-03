@@ -12,6 +12,7 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (
     IndexMap,
     git_commit_hash,
+    hardware_concurrency,
     has_adios2,
     has_complex_ufcx_kernels,
     has_debug,
@@ -30,6 +31,7 @@ __all__ = [
     "Reduction",
     "Timer",
     "git_commit_hash",
+    "hardware_concurrency",
     "has_adios2",
     "has_complex_ufcx_kernels",
     "has_debug",

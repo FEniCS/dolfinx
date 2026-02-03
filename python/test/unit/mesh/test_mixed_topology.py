@@ -11,6 +11,7 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import dolfinx
 from dolfinx.cpp.log import set_thread_name
 from dolfinx.cpp.mesh import (
     Mesh_float64,
@@ -60,7 +61,7 @@ def test_mixed_topology_mesh():
     entity_types = topology.entity_types
     assert len(entity_types[0]) == 1
 
-    topology.create_entities(1)
+    topology.create_entities(1, dolfinx.hardware_concurrency())
     entity_types = topology.entity_types
     assert len(entity_types[1]) == 1
     assert CellType.interval in entity_types[1]
@@ -113,18 +114,18 @@ def test_mixed_topology_mesh_3d():
     entity_types = topology.entity_types
     assert len(entity_types[0]) == 1
 
-    topology.create_entities(1)
+    topology.create_entities(1, dolfinx.hardware_concurrency())
     entity_types = topology.entity_types
     assert len(entity_types[1]) == 1
 
-    topology.create_entities(2)
+    topology.create_entities(2, dolfinx.hardware_concurrency())
     entity_types = topology.entity_types
     assert len(entity_types[2]) == 2
 
     assert len(entity_types[3]) == 3
 
     # Create triangle and quadrilateral facets
-    topology.create_entities(2)
+    topology.create_entities(2, dolfinx.hardware_concurrency())
 
     qi = topology.entity_types[2].index(CellType.quadrilateral)
     ti = topology.entity_types[2].index(CellType.triangle)
@@ -265,7 +266,7 @@ def test_create_entities():
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, CellType.prism, ghost_mode=GhostMode.none)
 
     # Make triangle and quadrilateral facets
-    mesh.topology.create_entities(2)
+    mesh.topology.create_entities(2, dolfinx.hardware_concurrency())
 
     assert len(mesh.topology.entity_types[2]) == 2
     qi = mesh.topology.entity_types[2].index(CellType.quadrilateral)
@@ -289,7 +290,7 @@ def test_create_entities():
     assert ims[ti].size_global == 24
     assert len(tri_v.links(0)) == 3
 
-    mesh.topology.create_entities(1)
+    mesh.topology.create_entities(1, dolfinx.hardware_concurrency())
     # 9 edges on each prism
     cell_edge = mesh.topology.connectivity((3, 0), (1, 0))
     assert cell_edge.links(0).size == 9
@@ -367,7 +368,7 @@ def test_locate_entities():
 
 def test_mixed_cell_pairs(mixed_topology_mesh):
     mesh = Mesh(mixed_topology_mesh, None)
-    mesh.topology.create_entities(2)
+    mesh.topology.create_entities(2, dolfinx.hardware_concurrency())
     mesh.topology.create_connectivity(2, 3)
     cell_types = mesh.topology.entity_types[3]
     facet_types = mesh.topology.entity_types[2]
