@@ -658,7 +658,7 @@ void mesh(nb::module_& m)
           nb::arg("cell_type"), nb::arg("vertex_map"), nb::arg("cell_map"),
           nb::arg("cells"), nb::arg("original_index").none())
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
-           nb::arg("dim"))
+           nb::arg("dim"), nb::arg("num_threads"))
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations)
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity,
