@@ -17,6 +17,7 @@
 #include <optional>
 #include <ranges>
 #include <span>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -524,7 +525,7 @@ std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
 mesh::build_local_dual_graph(
     std::span<const CellType> celltypes,
     const std::vector<std::span<const std::int64_t>>& cells,
-    std::optional<std::int32_t> max_facet_to_cell_links)
+    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
 {
   spdlog::info("Build local part of mesh dual graph (mixed)");
   common::Timer timer("Compute local part of mesh dual graph (mixed)");
@@ -593,7 +594,6 @@ mesh::build_local_dual_graph(
 
   const int shape1 = max_vertices_per_facet + 1;
   std::vector<std::int64_t> facets(facet_count * shape1);
-  // constexpr std::int32_t padding_value = -1;
 
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
@@ -604,12 +604,11 @@ mesh::build_local_dual_graph(
     std::int32_t num_cells = _cells.size() / num_cell_vertices;
     graph::AdjacencyList<int> cell_facets
         = mesh::get_entity_vertices(cell_type, tdim - 1);
+    std::int32_t cell_offsets_j = cell_offsets[j];
 
-    auto insert_cell_facets =
-        [](std::int32_t c0, std::int32_t c1, std::span<std::int64_t> facets,
-           int num_cell_vertices, const graph::AdjacencyList<int>& cell_facets,
-           const std::span<const std::int64_t>& _cells, int shape1,
-           const std::span<std::int32_t> cell_offsets, int j)
+    auto insert_cell_facets
+        = [shape1, num_cell_vertices, cell_offsets_j, &cell_facets, &_cells,
+           &facets](std::int32_t c0, std::int32_t c1)
     {
       constexpr std::int32_t padding_value = -1;
 
@@ -630,20 +629,17 @@ mesh::build_local_dual_graph(
                     std::next(facet_c.begin(), facet_vertices.size()));
           std::fill(std::next(facet_c.begin(), facet_vertices.size()),
                     facet_c.end(), padding_value);
-          facet_c.back() = (c + cell_offsets[j]);
+          facet_c.back() = (c + cell_offsets_j);
         }
       }
     };
 
-    int num_threads = 5;
     std::vector<std::jthread> threads(num_threads);
     for (int i = 0; i < num_threads; ++i)
     {
       int c0 = i * num_cells / num_threads;
       int c1 = (i + 1) * num_cells / num_threads;
-      threads[i] = std::jthread(insert_cell_facets, c0, c1, std::span(facets),
-                                num_cell_vertices, std::cref(cell_facets),
-                                _cells, shape1, std::span(cell_offsets), j);
+      threads[i] = std::jthread(insert_cell_facets, c0, c1);
     }
   }
 
@@ -753,14 +749,15 @@ mesh::build_local_dual_graph(
 graph::AdjacencyList<std::int64_t>
 mesh::build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                        const std::vector<std::span<const std::int64_t>>& cells,
-                       std::optional<std::int32_t> max_facet_to_cell_links)
+                       std::optional<std::int32_t> max_facet_to_cell_links,
+                       int num_threads)
 {
   spdlog::info("Building mesh dual graph");
 
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
-  auto [local_graph, facets, shape1, fcells]
-      = mesh::build_local_dual_graph(celltypes, cells, max_facet_to_cell_links);
+  auto [local_graph, facets, shape1, fcells] = mesh::build_local_dual_graph(
+      celltypes, cells, max_facet_to_cell_links, num_threads);
 
   // Extend with nonlocal edges and convert to global indices
   graph::AdjacencyList graph
