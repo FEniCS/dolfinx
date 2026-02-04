@@ -29,6 +29,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -140,6 +141,7 @@ void common(nb::module_& m)
   m.attr("has_petsc") = dolfinx::has_petsc();
   m.attr("has_petsc4py") = has_petsc4py();
   m.attr("has_ptscotch") = dolfinx::has_ptscotch();
+  m.attr("has_superlu_dist") = dolfinx::has_superlu_dist();
   m.attr("has_slepc") = dolfinx::has_slepc();
   m.attr("ufcx_signature") = dolfinx::ufcx_signature();
   m.attr("version") = dolfinx::version();
@@ -272,6 +274,9 @@ void common(nb::module_& m)
 
   m.def("timing", &dolfinx::timing);
   m.def("timings", &dolfinx::timings);
+
+  m.def("hardware_concurrency",
+        []() { return std::max<int>(1, std::thread::hardware_concurrency()); });
 
   m.def(
       "list_timings",

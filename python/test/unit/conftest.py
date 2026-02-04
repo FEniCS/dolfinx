@@ -97,7 +97,7 @@ def mixed_topology_mesh():
             ix = p % (nx + 1)
             geom += [[ix / nx, iy / ny, iz / nz]]
 
-    cells_np = [np.array(c) for c in cells]
+    cells_np = [np.array(c, dtype=np.int64) for c in cells]
     geomx = np.array(geom, dtype=np.float64)
     if len(geom) == 0:
         geomx = np.empty((0, 3), dtype=np.float64)
