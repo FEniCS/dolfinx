@@ -14,6 +14,7 @@ extern "C"
 #include <superlu_zdefs.h>
 }
 #include <algorithm>
+#include <dolfinx/common/Timer.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <vector>
@@ -44,6 +45,23 @@ namespace
 {
 template <typename...>
 constexpr bool dependent_false_v = false;
+
+template <typename V, typename W>
+void option_setter(W& option, const std::vector<V>& values,
+                   const std::vector<std::string>& value_names,
+                   const std::string value_in)
+{
+  for (std::size_t i = 0; i < value_names.size(); ++i)
+  {
+    if (value_in == value_names[i])
+    {
+      option = values[i];
+      spdlog::info("Set to {}", value_in);
+      return;
+    }
+  }
+  std::runtime_error("Invalid option for SuperLU");
+}
 
 std::vector<int_t> col_indices(const auto& A)
 {
@@ -155,12 +173,19 @@ void GridInfoDeleter::operator()(
   delete gridinfo;
 }
 
+void SuperLUDistOptionsDeleter::operator()(
+    SuperLUDistStructs::superlu_dist_options_t* opt) const noexcept
+{
+  delete opt;
+}
+
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
                                         bool verbose)
     : _superlu_matA(SuperLUDistMatrix<T>(A, verbose)),
-      _options(std::make_unique<SuperLUDistStructs::superlu_dist_options_t>()),
+      _options(new SuperLUDistStructs::superlu_dist_options_t,
+               SuperLUDistOptionsDeleter{}),
       _gridinfo(
           [comm = A->comm()]
           {
@@ -180,10 +205,86 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const MatrixCSR<T>> A,
     _options->PrintStat = NO;
 }
 
+template <typename T>
+void SuperLUDistSolver<T>::set_option(std::string option, std::string value)
+{
+  spdlog::info("Set SuperLU_DIST option {} to {}", option, value);
+  const std::map<std::string, yes_no_t&> map_bool
+      = {{"Equil", _options->Equil},
+         {"DiagInv", _options->DiagInv},
+         {"SymmetricMode", _options->SymmetricMode},
+         {"PivotGrowth", _options->PivotGrowth},
+         {"ConditionNumber", _options->ConditionNumber},
+         {"ReplaceTinyPivot", _options->ReplaceTinyPivot},
+         {"SolveInitialized", _options->SolveInitialized},
+         {"RefineInitialized", _options->RefineInitialized},
+         {"PrintStat", _options->PrintStat},
+         {"lookahead_etree", _options->lookahead_etree},
+         {"SymPattern", _options->SymPattern},
+         {"Use_TensorCore", _options->Use_TensorCore},
+         {"Algo3d", _options->Algo3d}};
+
+  // Search in map_bool first
+  auto it = map_bool.find(option);
+  if (it != map_bool.end())
+  {
+    if (value == "True")
+    {
+      spdlog::info("Set {} to True", option);
+      it->second = YES;
+    }
+    else if (value == "False")
+    {
+      spdlog::info("Set {} to False", option);
+      it->second = NO;
+    }
+    else
+    {
+      throw std::runtime_error("Cannot set option to value requested");
+    }
+  }
+
+  // Search some enum types
+  if (option == "Fact")
+  {
+    option_setter<fact_t>(
+        _options->Fact,
+        {DOFACT, SamePattern, SamePattern_SameRowPerm, FACTORED},
+        {"DOFACT", "SamePattern", "SamePattern_SameRowPerm", "FACTORED"},
+        value);
+  }
+  else if (option == "Trans")
+  {
+    option_setter<trans_t>(_options->Trans, {NOTRANS, TRANS, CONJ},
+                           {"NOTRANS", "TRANS", "CONJ"}, value);
+  }
+  else if (option == "ColPerm")
+  {
+    option_setter<colperm_t>(
+        _options->ColPerm,
+        {NATURAL, MMD_ATA, MMD_AT_PLUS_A, COLAMD, METIS_AT_PLUS_A, PARMETIS,
+         METIS_ATA, ZOLTAN, MY_PERMC},
+        {"NATURAL", "MMD_ATA", "MMD_AT_PLUS_A", "COLAMD", "METIS_AT_PLUS_A",
+         "PARMETIS", "METIS_ATA", "ZOLTAN", "MY_PERMC"},
+        value);
+  }
+  else if (option == "RowPerm")
+  {
+    option_setter<rowperm_t>(
+        _options->RowPerm,
+        {NOROWPERM, LargeDiag_MC64, LargeDiag_HWPM, MY_PERMR},
+        {"NOROWPERM", "LargeDiag_MC64", "LargeDiag_HWPM", "MY_PERMR"}, value);
+  }
+  else
+  {
+    std::runtime_error("Unsupported option");
+  }
+}
 //----------------------------------------------------------------------------
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 {
+  common::Timer tsolve("SuperLU Solve");
   int_t m = _superlu_matA.supermatrix()->nrow;
   int_t m_loc = ((NRformat_loc*)(_superlu_matA.supermatrix()->Store))->m_loc;
 

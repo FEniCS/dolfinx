@@ -441,7 +441,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
 /// Compute entities of dimension d
 ///
-/// @param[in] comm MPI communicator (TODO: full or neighbor hood?)
+/// @param[in] comm MPI communicator (TODO: full or neighborhood?)
 /// @param[in] cells Adjacency list for cell-vertex connectivity
 /// @param[in] shared_vertices TODO
 /// @param[in] cell_type Cell type

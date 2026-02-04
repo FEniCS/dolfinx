@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 import dolfinx
+from dolfinx.common import list_timings
 from dolfinx.fem import (
     Function,
     apply_lifting,
@@ -34,7 +35,7 @@ def test_superlu_solver(dtype):
     from dolfinx.la.superlu_dist import superlu_dist_solver
 
     mesh_dtype = dtype().real.dtype
-    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=mesh_dtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 530, 50, dtype=mesh_dtype)
     V = functionspace(mesh, ("Lagrange", 4))
     u, v = TrialFunction(V), TestFunction(V)
 
@@ -71,7 +72,11 @@ def test_superlu_solver(dtype):
 
     uh = Function(V, dtype=dtype)
     solver = superlu_dist_solver(A, verbose=False)
+    solver._cpp_object.set_option("SymmetricMode", "False")
     error_code = solver.solve(b, uh.x)
+    assert error_code == 0
+
+    list_timings(MPI.COMM_WORLD)
     assert error_code == 0
     uh.x.scatter_forward()
 
