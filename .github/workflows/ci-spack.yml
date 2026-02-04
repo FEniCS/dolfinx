@@ -36,23 +36,33 @@ jobs:
           dnf -y install file bzip2 ca-certificates git gzip patch python3 tar \
             unzip xz zstd gcc gcc-c++ gcc-gfortran
 
-      - name: Checkout Spack
+      - name: Get Spack
         uses: actions/checkout@v6
         with:
           repository: spack/spack
+          ref: develop
           path: spack-src
 
-      - name: Get Spack packages (custom)
+      - name: Get upstream Spack packages
         uses: actions/checkout@v6
         with:
-          repository: fenics/spack-packages
-          ref: fenics-testing
+          repository: spack/spack-packages
+          ref: develop
           path: spack-packages
+      - name: Get FEniCS Spack packages
+        uses: actions/checkout@v6
+        with:
+          repository: fenics/spack-fenics
+          ref: main
+          path: spack-fenics
+
       - name: Add Spack packages repo
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo add --name builtin $GITHUB_WORKSPACE/spack-packages/repos/spack_repo/builtin
+          spack repo add --name fenics $GITHUB_WORKSPACE/spack-fenics/spack_repo/fenics
           spack config get repos
+          spack repo list
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v6
@@ -67,7 +77,7 @@ jobs:
       - name: Add dependencies to environment
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack -e py add mpi petsc+mpi+shared+mumps slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
+          spack -e py add mpi petsc+mpi+shared+mumps+superlu-dist slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
           spack -e py add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
           spack -e py add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
 
@@ -99,14 +109,16 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install -Ccmake.build-type="Developer" git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure and build C++
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate py
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DBUILD_TESTING=true -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_PETSC=on -DDOLFINX_ENABLE_SLEPC=true -DDOLFINX_ENABLE_PARMETIS=true -B build -S dolfinx-src/cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -DBUILD_TESTING=true -DCMAKE_BUILD_TYPE=Developer \
+            -DDOLFINX_ENABLE_PETSC=on -DDOLFINX_ENABLE_SLEPC=true \
+            -DDOLFINX_ENABLE_PARMETIS=true -DDOLFINX_ENABLE_SUPERLU_DIST=true -B build -S dolfinx-src/cpp/
           cmake --build build
 
       - name: Run tests without install (C++, serial and MPI np=2)
@@ -144,7 +156,7 @@ jobs:
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate py
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e 'dolfinx-src/python/[test]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Developer --config-settings=build-dir="build" -e 'dolfinx-src/python/[test]'
 
       - name: Set default DOLFINx JIT options
         run: |

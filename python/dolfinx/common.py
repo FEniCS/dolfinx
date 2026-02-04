@@ -21,6 +21,7 @@ from dolfinx.cpp.common import (
     has_petsc4py,
     has_ptscotch,
     has_slepc,
+    has_superlu_dist,
     ufcx_signature,
 )
 
@@ -38,6 +39,7 @@ __all__ = [
     "has_petsc4py",
     "has_ptscotch",
     "has_slepc",
+    "has_superlu_dist",
     "list_timings",
     "timed",
     "timing",
