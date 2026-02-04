@@ -506,7 +506,12 @@ class EntityMap:
         return self._sub_topology
 
 
-def entity_map(topology, sub_topology, dim, sub_topology_to_topology):
+def entity_map(
+    topology: Topology,
+    sub_topology: Topology,
+    dim: int,
+    sub_topology_to_topology: npt.NDArray[np.int32],
+) -> EntityMap:
     """Create a bidirectional map between (sub) topologies.
 
     The map relates entities of dimension `dim` in `topology` and
@@ -522,8 +527,10 @@ def entity_map(topology, sub_topology, dim, sub_topology_to_topology):
             `sub_topology_to_topology[i]` is the index in `topology`
             corresponding to entity `i` in `sub_topology`.
     """
-    return _cpp.mesh.EntityMap(
-        topology._cpp_object, sub_topology._cpp_object, dim, sub_topology_to_topology
+    return EntityMap(
+        _cpp.mesh.EntityMap(
+            topology._cpp_object, sub_topology._cpp_object, dim, sub_topology_to_topology
+        )
     )
 
 
