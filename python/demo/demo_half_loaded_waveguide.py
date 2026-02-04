@@ -128,10 +128,12 @@ except ImportError:
 def TMx_condition(
     kx_d: complex, kx_v: complex, eps_d: complex, eps_v: complex, d: float, h: float
 ) -> float:
+    """Transcendental equation for TMx modes."""
     return kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d))
 
 
 def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> float:
+    """Transcendental equation for TEx modes."""
     return kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d))
 
 
@@ -153,6 +155,7 @@ def verify_mode(
     eps_v: complex,
     threshold: float,
 ) -> np.bool_:
+    """Verify if given kz satisfies the mode conditions."""
     k0 = 2 * np.pi / lmbd0
     ky = np.pi / w  # we assume n = 1
     kx_d_target = np.sqrt(k0**2 * eps_d - ky**2 + -(kz**2) + 0j)

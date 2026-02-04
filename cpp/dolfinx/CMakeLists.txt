@@ -54,13 +54,10 @@ if(ENABLE_CLANG_TIDY)
   set_target_properties(dolfinx PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy")
 endif()
 
-# Add git revision flag to the one affected file
-set_source_files_properties(
-  common/defines.cpp
-  PROPERTIES
-    COMPILE_DEFINITIONS
-    "UFCX_SIGNATURE=\"${UFCX_SIGNATURE}\";DOLFINX_GIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\""
-)
+# Add git revision and UFCx signature
+target_compile_definitions(dolfinx PUBLIC
+                           UFCX_SIGNATURE="${UFCX_SIGNATURE}"
+                           DOLFINX_GIT_COMMIT_HASH="${GIT_COMMIT_HASH}")
 
 # ------------------------------------------------------------------------------
 # Set compiler options and definitions
@@ -169,6 +166,12 @@ if(DOLFINX_ENABLE_KAHIP AND KAHIP_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_KAHIP)
   target_link_libraries(dolfinx PRIVATE ${KAHIP_LIBRARIES})
   target_include_directories(dolfinx SYSTEM PRIVATE ${KAHIP_INCLUDE_DIRS})
+endif()
+
+# SuperLU_DIST
+if(DOLFINX_ENABLE_SUPERLU_DIST AND SUPERLU_DIST_FOUND)
+  target_compile_definitions(dolfinx PUBLIC HAS_SUPERLU_DIST)
+  target_link_libraries(dolfinx PRIVATE PkgConfig::SUPERLU_DIST)
 endif()
 
 # ------------------------------------------------------------------------------

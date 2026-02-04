@@ -132,8 +132,10 @@ E, nu = 1.0, 1.0 / 3.0
 
 
 def sigma_u(u):
-    """Constitutive relation for stress-strain. Assuming plane-stress in
-    XY"""
+    """Constitutive relation for stress-strain.
+
+    Assuming plane-stress in XY.
+    """
     eps = 0.5 * (ufl.grad(u) + ufl.grad(u).T)
     sigma = E / (1.0 - nu**2) * ((1.0 - nu) * eps + nu * ufl.Identity(2) * ufl.tr(eps))
     return sigma
@@ -194,7 +196,6 @@ Usize = U.element.space_dimension
 @numba.cfunc(ufcx_signature(dtype, rtype), nopython=True)  # type: ignore
 def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL, custom_data=None):
     """Element kernel that applies static condensation."""
-
     # Prepare target condensed local element tensor
     A = numba.carray(A_, (Usize, Usize), dtype=dtype)
 

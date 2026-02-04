@@ -574,7 +574,7 @@ public:
   /// @brief Coefficient function mesh integration entity indices.
   ///
   /// This method is equivalent to ::domain_arg, but returns mesh entity
-  /// indices for coefficient \link Function Functions. \endlink
+  /// indices for coefficient Function%s.
   ///
   /// @param[in] type Integral type.
   /// @param[in] idx Integral identifier.

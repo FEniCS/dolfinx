@@ -57,7 +57,7 @@ out_folder.mkdir(parents=True, exist_ok=True)
 
 
 def display_scalar(u, name, filter=np.real):
-    """Plot the solution using pyvista"""
+    """Plot the solution using pyvista."""
     try:
         import pyvista
 
@@ -78,7 +78,7 @@ def display_scalar(u, name, filter=np.real):
 
 
 def display_vector(u, name, filter=np.real):
-    """Plot the solution using pyvista"""
+    """Plot the solution using pyvista."""
     try:
         import pyvista
 
@@ -99,14 +99,11 @@ def display_vector(u, name, filter=np.real):
 
 
 def poisson(dtype):
-    """Poisson problem solver
+    """Poisson problem solver.
 
     Args:
         dtype: Scalar type to use.
-
-
     """
-
     # Create a mesh and locate facets by a geometric condition
     msh = mesh.create_rectangle(
         comm=comm,
@@ -115,8 +112,11 @@ def poisson(dtype):
         cell_type=mesh.CellType.triangle,
         dtype=np.real(dtype(0)).dtype,
     )
+
+    tdim = msh.topology.dim
+    fdim = tdim - 1
     facets = mesh.locate_entities_boundary(
-        msh, dim=1, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0)
+        msh, dim=fdim, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0)
     )
 
     # Define a variational problem.
@@ -133,7 +133,7 @@ def poisson(dtype):
     # In preparation for constructing Dirichlet boundary conditions, locate
     # facets on the constrained boundary and the corresponding
     # degrees-of-freedom.
-    dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+    dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
     # Process forms. This will compile the forms for the requested type.
     a0 = fem.form(a, dtype=dtype)
@@ -168,7 +168,6 @@ def poisson(dtype):
 
 def elasticity(dtype) -> fem.Function:
     """Linearised elasticity problem solver."""
-
     # Create a mesh and locate facets by a geometric condition
     msh = mesh.create_rectangle(
         comm=comm,
@@ -177,8 +176,11 @@ def elasticity(dtype) -> fem.Function:
         cell_type=mesh.CellType.triangle,
         dtype=np.real(dtype(0)).dtype,
     )
+
+    tdim = msh.topology.dim
+    fdim = tdim - 1
     facets = mesh.locate_entities_boundary(
-        msh, dim=1, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0)
+        msh, dim=fdim, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0)
     )
 
     # Define the variational problem.
@@ -192,8 +194,7 @@ def elasticity(dtype) -> fem.Function:
     μ, λ = E / (2.0 * (1.0 + ν)), E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
 
     def σ(v):
-        """Return an expression for the stress σ given a displacement
-        field"""
+        """Expression for the stress σ given a displacement field."""
         return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(
             len(v)
         )
@@ -202,7 +203,7 @@ def elasticity(dtype) -> fem.Function:
     a = ufl.inner(σ(u), ufl.grad(v)) * ufl.dx
     L = ufl.inner(f, v) * ufl.dx
 
-    dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+    dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
     # Process forms. This will compile the forms for the requested type.
     a0, L0 = fem.form(a, dtype=dtype), fem.form(L, dtype=dtype)

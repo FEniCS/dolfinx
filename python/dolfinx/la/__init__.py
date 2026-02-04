@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Linear algebra functionality"""
+"""Linear algebra functionality."""
 
 import numpy as np
 import numpy.typing as npt
@@ -27,6 +27,8 @@ __all__ = [
 
 
 class Vector:
+    """Distributed vector object."""
+
     _cpp_object: (
         _cpp.la.Vector_float32
         | _cpp.la.Vector_float64
@@ -49,7 +51,7 @@ class Vector:
             | _cpp.la.Vector_int64
         ),
     ):
-        """A distributed vector object.
+        """Create a distributed vector.
 
         Args:
             x: C++ Vector object.
@@ -62,6 +64,7 @@ class Vector:
         self._petsc_x = None
 
     def __del__(self):
+        """Delete the PETSc vector if it was created."""
         if self._petsc_x is not None:
             self._petsc_x.destroy()
 
@@ -115,6 +118,8 @@ class Vector:
 
 
 class MatrixCSR:
+    """Distributed compressed sparse row matrix."""
+
     _cpp_object: (
         _cpp.la.MatrixCSR_float32
         | _cpp.la.MatrixCSR_float64
@@ -131,8 +136,7 @@ class MatrixCSR:
             | _cpp.la.MatrixCSR_complex128
         ),
     ):
-        """A distributed sparse matrix that uses compressed sparse row
-        storage.
+        """Create a distributed compressed sparse row matrix.
 
         Note:
             Objects of this type should be created using
@@ -279,7 +283,8 @@ def matrix_csr(
     Args:
         sp: The sparsity pattern that defines the nonzero structure of
             the matrix the parallel distribution of the matrix.
-        dtype: The scalar type.
+        block_mode: Block mode to use.
+        dtype: Scalar type.
 
     Returns:
         A sparse matrix.

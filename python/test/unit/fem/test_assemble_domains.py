@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for assembly over domains"""
+"""Unit tests for assembly over domains."""
 
 from mpi4py import MPI
 
@@ -245,7 +245,8 @@ def test_additivity(mode):
 def test_manual_integration_domains():
     """Test that specifying integration domains manually i.e.
     by passing a list of cell indices or (cell, local facet) pairs to
-    form gives the same result as the usual approach of tagging"""
+    form gives the same result as the usual approach of tagging.
+    """
     n = 4
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
 

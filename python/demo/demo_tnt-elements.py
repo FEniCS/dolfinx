@@ -162,6 +162,7 @@ tnt_degree1 = basix.ufl.custom_element(
 
 
 def create_tnt_quad(degree):
+    """Create a TNT element of given degree on quadrilaterals."""
     assert degree > 1
     # Polyset
     ndofs = (degree + 1) ** 2 + 4
@@ -249,6 +250,7 @@ def create_tnt_quad(degree):
 
 
 def poisson_error(V: fem.FunctionSpace):
+    """Compute the L2 error of the Poisson problem solution in V."""
     msh = V.mesh
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 

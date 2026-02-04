@@ -3,6 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Support for VTKHDF5 file format."""
 
 from pathlib import Path
 
@@ -69,7 +70,7 @@ def read_mesh(
 
 
 def write_mesh(filename: str | Path, mesh: Mesh):
-    """Write a mesh to file in VTKHDF format
+    """Write a mesh to file in VTKHDF format.
 
     Args:
         filename: File to write to.

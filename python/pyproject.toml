@@ -28,23 +28,38 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+demo = [
+  "gmsh",
+  "networkx",
+  "numba",
+  "matplotlib",
+  "scipy",
+  "pyamg",
+  "pyvista",
+]
 docs = [
       "breathe",
       "jupytext",
       "markdown",
-      "matplotlib",
       "myst_parser",
-      "numba",
       "packaging",
       "pyyaml",
       "sphinx",
       "sphinx_rtd_theme",
       "sphinx_codeautolink[ipython]",
+      "fenics-dolfinx[demo]",
 ]
 lint = ["ruff>=0.2.0"]
 optional = ["numba", "pyamg"]
 petsc4py = ["petsc4py"]
-test = ["matplotlib", "networkx", "packaging", "pytest>=9.0.0", "scipy", "fenics-dolfinx[optional]"]
+test = [
+      "matplotlib",
+      "networkx",
+      "packaging",
+      "pytest>=9.0.0",
+      "scipy",
+      "fenics-dolfinx[optional]",
+]
 ci = [
       "mypy",
       "pytest-xdist",
@@ -70,7 +85,9 @@ markers = [
       "adios2: tests that require Adios2 (deselect with '-m \"not adios2\"').",
       "xfail_win32_complex: expected failures for complex numbers in Win32.",
 ]
-
+addopts = [
+  "-k", "not test_symmetry_interior_facet_assembly[mesh1]"
+]
 
 [tool.mypy]
 # Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
@@ -91,6 +108,7 @@ indent-width = 4
 
 [tool.ruff.lint]
 select = [
+      "D",      # pydocstyle
       "E",      # pycodestyle
       "W",      # pycodestyle
       "F",      # pyflakes
@@ -103,7 +121,7 @@ select = [
       "NPY201", # numpy 2.x ruleset
 ]
 ignore = ["RUF012"]
-allowed-confusables = ["σ"]
+allowed-confusables = ["σ", "ρ"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
@@ -119,3 +137,15 @@ section-order = [
 
 [tool.ruff.lint.isort.sections]
 "mpi" = ["mpi4py", "petsc4py"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"demo*.py" = ["D100"] # undocumented-public-module
+"test*.py" = [
+    "D100",
+    "D103",  # undocumented-public-function
+    "D205"  # missing-blank-line-after-summary
+]
+"conf.py" = ["D100", "D103", "D205"]

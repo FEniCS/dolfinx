@@ -175,7 +175,7 @@ inline constexpr __radix_sort radix_sort{};
 /// for (row-major storage).
 /// @param[in] shape1 The number of columns of `x`.
 /// @return The permutation array such that `x[perm[i]] <= x[perm[i
-/// +1]].
+/// +1]]`.
 /// @pre `x.size()` must be a multiple of `shape1`.
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.
