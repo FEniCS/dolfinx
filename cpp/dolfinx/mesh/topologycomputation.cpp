@@ -50,8 +50,9 @@ namespace
 /// @param[in] entity_type Type of entity to extract.
 /// @param[in] cell_type_entities Indices of entities of type `entity_type`
 /// @param[in] vertex_index_map Index map for the vertices.
-void build_entity_list(std::span<std::int32_t> entity_list, std::int32_t c0,
-                       std::int32_t num_cells,
+void build_entity_list(std::span<std::int32_t> entity_list,
+                       std::span<std::int32_t> entity_list_sorted,
+                       std::int32_t c0, std::int32_t num_cells,
                        const graph::AdjacencyList<std::int32_t>& cells,
                        const graph::AdjacencyList<std::int32_t>& e_vertices,
                        mesh::CellType entity_type,
@@ -117,7 +118,10 @@ void build_entity_list(std::span<std::int32_t> entity_list, std::int32_t c0,
       for (std::size_t j = 0; j < ev.size(); ++j)
         elist[j] = entity_vertices[perm[j]];
 
-      // std::ranges::sort(elist);
+      auto elist_sorted = entity_list_sorted.subspan(
+          idx * num_vertices_per_entity, num_vertices_per_entity);
+      std::ranges::copy(elist, elist_sorted.begin());
+      std::ranges::sort(elist_sorted);
     }
   }
 }
@@ -596,6 +600,8 @@ compute_entities_by_key_matching(
   int num_vertices_per_entity = num_cell_vertices(entity_type);
   std::vector<std::int32_t> entity_list(cell_type_offsets.back()
                                         * num_vertices_per_entity);
+  std::vector<std::int32_t> entity_list_sorted(cell_type_offsets.back()
+                                               * num_vertices_per_entity);
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
     // Get indices of desired entities within cell. Usually this
@@ -616,13 +622,17 @@ compute_entities_by_key_matching(
     {
       auto [c0, c1]
           = dolfinx::MPI::local_range(i, cells.num_nodes(), num_threads);
-      std::span<std::int32_t> _entity_list(
-          entity_list.data() + cell_type_offsets[k] * num_vertices_per_entity
-              + c0 * num_vertices_per_entity * num_entities_per_cell,
-          (c1 - c0) * num_vertices_per_entity * num_entities_per_cell);
+
+      std::size_t offset
+          = cell_type_offsets[k] * num_vertices_per_entity
+            + c0 * num_vertices_per_entity * num_entities_per_cell;
+      std::size_t count
+          = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
       threads[i] = std::jthread(
-          build_entity_list, _entity_list, c0, c1 - c0, cells, e_vertices,
-          entity_type, cell_type_entities[k], std::cref(vertex_index_map));
+          build_entity_list, std::span(entity_list.data() + offset, count),
+          std::span(entity_list_sorted.data() + offset, count), c0, c1 - c0,
+          cells, e_vertices, entity_type, cell_type_entities[k],
+          std::cref(vertex_index_map));
     }
   }
 
@@ -630,15 +640,6 @@ compute_entities_by_key_matching(
   std::vector<std::int32_t> entity_index(cell_type_offsets.back());
   std::int32_t entity_count = 0;
   {
-    // Copy list and sort vertices of each entity into order
-    std::vector<std::int32_t> entity_list_sorted = entity_list;
-    for (std::size_t j = 0; j < entity_index.size(); ++j)
-    {
-      auto it
-          = std::next(entity_list_sorted.begin(), j * num_vertices_per_entity);
-      std::sort(it, std::next(it, num_vertices_per_entity));
-    }
-
     // Sort the list and label uniquely
     const std::vector<std::int32_t> sort_order
         = dolfinx::sort_by_perm<std::int32_t>(entity_list_sorted,
