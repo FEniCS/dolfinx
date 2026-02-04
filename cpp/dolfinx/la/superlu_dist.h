@@ -11,6 +11,7 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <memory>
+#include <string>
 
 namespace dolfinx::la
 {
@@ -20,7 +21,7 @@ class SuperLUDistStructs
 public:
   struct SuperMatrix;
   struct gridinfo_t;
-  struct superlu_dist_options_t; 
+  struct superlu_dist_options_t;
   struct vec_int_t;
 };
 
@@ -100,6 +101,14 @@ struct GridInfoDeleter
   void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
 };
 
+struct SuperLUDistOptionsDeleter
+{
+  /// @brief Deletion
+  /// @param opt
+  void
+  operator()(SuperLUDistStructs::superlu_dist_options_t* opt) const noexcept;
+};
+
 /// SuperLU_DIST linear solver interface.
 template <typename T>
 class SuperLUDistSolver
@@ -130,13 +139,17 @@ public:
   /// compatible with `A`.
   int solve(const Vector<T>& b, Vector<T>& u) const;
 
+  void set_option(std::string option, std::string value);
+
 private:
   // Wrapped SuperLU SuperMatrix
   std::shared_ptr<const SuperLUDistMatrix<T>> _superlu_matA;
 
-  // Pointer to struct gridinfo_t
-  std::unique_ptr<SuperLUDistStructs::superlu_dist_options_t> _options;
-  
+  // Pointer to struct superlu_dist_options_t
+  std::unique_ptr<SuperLUDistStructs::superlu_dist_options_t,
+                  SuperLUDistOptionsDeleter>
+      _options;
+
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
 

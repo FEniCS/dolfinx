@@ -22,6 +22,7 @@
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include <span>
 
@@ -237,7 +238,8 @@ void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
                                                            verbose);
           },
           nb::arg("A"), nb::arg("verbose"))
-      .def("solve", &dolfinx::la::SuperLUDistSolver<T>::solve);
+      .def("solve", &dolfinx::la::SuperLUDistSolver<T>::solve)
+      .def("set_option", &dolfinx::la::SuperLUDistSolver<T>::set_option);
 }
 #endif // HAS_SUPERLU_DIST
 
