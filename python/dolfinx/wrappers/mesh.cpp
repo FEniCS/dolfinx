@@ -586,9 +586,13 @@ void mesh(nb::module_& m)
   m.def(
       "compute_entities",
       [](const dolfinx::mesh::Topology& topology, int dim,
-         dolfinx::mesh::CellType entity_type)
-      { return dolfinx::mesh::compute_entities(topology, dim, entity_type); },
-      nb::arg("topology"), nb::arg("dim"), nb::arg("entity_type"));
+         dolfinx::mesh::CellType entity_type, int num_threads)
+      {
+        return dolfinx::mesh::compute_entities(topology, dim, entity_type,
+                                               num_threads);
+      },
+      nb::arg("topology"), nb::arg("dim"), nb::arg("entity_type"),
+      nb::arg("num_threads") = 1);
   m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity,
         nb::arg("topology"), nb::arg("d0"), nb::arg("d1"));
 
@@ -654,7 +658,7 @@ void mesh(nb::module_& m)
           nb::arg("cell_type"), nb::arg("vertex_map"), nb::arg("cell_map"),
           nb::arg("cells"), nb::arg("original_index").none())
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
-           nb::arg("dim"))
+           nb::arg("dim"), nb::arg("num_threads") = 1)
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations)
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity,
