@@ -330,7 +330,6 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   // Copy b to u (SuperLU_DIST reads b from u and then overwrites u with
   // solution)
   std::copy_n(b.array().begin(), m_loc, u.array().begin());
-  _options->Fact = DOFACT;
 
   std::vector<scalar_value_t<T>> berr(nrhs);
   if constexpr (std::is_same_v<T, double>)

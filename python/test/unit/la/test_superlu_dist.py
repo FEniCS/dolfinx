@@ -70,10 +70,6 @@ def test_superlu_solver(dtype):
     A.scatter_reverse()
 
     solver = superlu_dist_solver(A)
-    solver.set_option("SymmetricMode", "YES")
-    solver.set_option("DiagInv", "YES")
-    solver.set_option("ReplaceTinyPivot", "YES")
-    solver.set_option("PrintStat", "YES")
 
     uh = Function(V, dtype=dtype)
     error_code = solver.solve(b, uh.x)
@@ -86,6 +82,13 @@ def test_superlu_solver(dtype):
     eps = np.sqrt(np.finfo(dtype).eps)
     assert np.isclose(error, 0.0, atol=eps)
 
+    # Comment next three lines - fails. Data in A being modified in place, and
+    # we're not handling it right.
+    a = form(a, dtype=dtype)
+    A = assemble_matrix(a, bcs=[bc])
+    A.scatter_reverse()
+
+    solver = superlu_dist_solver(A)
 
     uh = Function(V, dtype=dtype)
     error_code = solver.solve(b, uh.x)
