@@ -158,15 +158,13 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 } // namespace
 //----------------------------------------------------------------------------
 template <typename T>
-SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
-                                        bool verbose)
+SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A)
     : _matA(std::move(A)),
       _cols(
           std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*_matA))),
       _rowptr(
           std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*_matA))),
-      _supermatrix(create_supermatrix<T>(*_matA, *_rowptr, *_cols)),
-      _verbose(verbose)
+      _supermatrix(create_supermatrix<T>(*_matA, *_rowptr, *_cols))
 {
 }
 //----------------------------------------------------------------------------
@@ -203,14 +201,21 @@ void GridInfoDeleter::operator()(
 {
   superlu_gridexit(gridinfo);
   delete gridinfo;
-}
+};
 
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(
-    std::shared_ptr<const SuperLUDistMatrix<T>> A, bool verbose)
+    std::shared_ptr<const SuperLUDistMatrix<T>> A)
     : _superlu_matA(std::move(A)),
-      _options(std::make_unique<SuperLUDistStructs::superlu_dist_options_t>()),
+      _options(
+          []
+          {
+            auto o = std::make_unique<
+                SuperLUDistStructs::superlu_dist_options_t>();
+            set_default_options_dist(o.get());
+            return o;
+          }()),
       _gridinfo(
           [comm = _superlu_matA->matA().comm()]
           {
@@ -220,14 +225,8 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
                 new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{});
             superlu_gridinit(comm, nprow, npcol, p.get());
             return p;
-          }()),
-      _verbose(verbose)
+          }())
 {
-  set_default_options_dist(_options.get());
-  _options->DiagInv = YES;
-  _options->ReplaceTinyPivot = YES;
-  if (!_verbose)
-    _options->PrintStat = NO;
 }
 
 template <typename T>
@@ -400,8 +399,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   if (info != 0)
     spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
 
-  if (_verbose)
-    PStatPrint(_options.get(), &stat, _gridinfo.get());
+  PStatPrint(_options.get(), &stat, _gridinfo.get());
   PStatFree(&stat);
 
   return info;

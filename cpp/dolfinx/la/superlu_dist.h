@@ -43,9 +43,7 @@ public:
   ///
   /// @tparam T Scalar type.
   /// @param A Matrix.
-  /// @param verbose Verbose output.
-  SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
-                    bool verbose = false);
+  SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A);
 
   /// Copy constructor
   SuperLUDistMatrix(const SuperLUDistMatrix&) = delete;
@@ -70,9 +68,6 @@ private:
   // Pointer to native SuperMatrix
   std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
       _supermatrix;
-
-  // Flag for diagnostic output
-  bool _verbose;
 };
 
 /// Call library cleanup and delete pointer. For use with
@@ -96,14 +91,16 @@ public:
   /// @tparam T Scalar type.
   /// @param A Matrix to solve for.
   /// @param verbose Verbose output.
-  SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A,
-                    bool verbose = false);
+  SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A);
 
   /// Copy constructor
   SuperLUDistSolver(const SuperLUDistSolver&) = delete;
 
   /// Copy assignment
   SuperLUDistSolver& operator=(const SuperLUDistSolver&) = delete;
+
+  void set_option(std::string option, std::string value);
+  void set_options(SuperLUDistStructs::superlu_dist_options_t options);
 
   /// @brief Solve linear system Au = b.
   ///
@@ -114,9 +111,6 @@ public:
   /// compatible with `A`.
   int solve(const Vector<T>& b, Vector<T>& u) const;
 
-  void set_option(std::string option, std::string value);
-  void set_options(SuperLUDistStructs::superlu_dist_options_t options);
-
 private:
   // Wrapped SuperLU SuperMatrix
   std::shared_ptr<const SuperLUDistMatrix<T>> _superlu_matA;
@@ -126,9 +120,6 @@ private:
 
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
-
-  // Flag for diagnostic output
-  bool _verbose;
 };
 } // namespace dolfinx::la
 #endif
