@@ -590,33 +590,6 @@ mesh::build_local_dual_graph(
   //             ⋮     ⋮      ⋮    ⋮   ⋱    ⋮  ⋮
   //           v_n1, v_n2,   -1, -1, ..., -1, n]
 
-  auto insert_cell_facets
-      = [](int shape1, int num_cell_vertices, int cell_offsets,
-           const graph::AdjacencyList<int>& cell_facets,
-           std::span<const std::int64_t> cells, std::int32_t c0,
-           std::int32_t c1, std::span<std::int64_t> facets)
-  {
-    constexpr std::int32_t padding_value = -1;
-    for (std::int32_t c = c0; c < c1; ++c)
-    {
-      // Loop over cell facets
-      std::span v = cells.subspan(num_cell_vertices * c, num_cell_vertices);
-      for (int f = 0; f < cell_facets.num_nodes(); ++f)
-      {
-        std::span facet_vertices = cell_facets.links(f);
-        auto facet_c = facets.subspan(
-            (c * cell_facets.num_nodes() + f) * shape1, shape1);
-        std::ranges::transform(facet_vertices, facet_c.begin(),
-                               [v](auto idx) { return v[idx]; });
-
-        // TODO: radix_sort?
-        auto it = std::next(facet_c.begin(), facet_vertices.size());
-        std::sort(facet_c.begin(), it);
-        std::fill(it, facet_c.end(), padding_value);
-        facet_c.back() = (c + cell_offsets);
-      }
-    }
-  };
   const int shape1 = max_vertices_per_facet + 1;
   std::vector<std::int64_t> facets(facet_count * shape1);
 
@@ -631,13 +604,40 @@ mesh::build_local_dual_graph(
         = mesh::get_entity_vertices(cell_type, tdim - 1);
     std::int32_t cell_offsets_j = cell_offsets[j];
 
+    auto insert_cell_facets
+        = [shape1, num_cell_vertices, cell_offsets_j, &cell_facets, &_cells,
+           &facets](std::int32_t c0, std::int32_t c1)
+    {
+      constexpr std::int32_t padding_value = -1;
+
+      for (std::int32_t c = c0; c < c1; ++c)
+      {
+        // Loop over cell facets
+        std::span v = _cells.subspan(num_cell_vertices * c, num_cell_vertices);
+        for (int f = 0; f < cell_facets.num_nodes(); ++f)
+        {
+          std::span facet_vertices = cell_facets.links(f);
+          std::span facet_c(facets.begin()
+                                + (c * cell_facets.num_nodes() + f) * shape1,
+                            shape1);
+          std::ranges::transform(facet_vertices, facet_c.begin(),
+                                 [v](auto idx) { return v[idx]; });
+          // TODO: radix_sort?
+          std::sort(facet_c.begin(),
+                    std::next(facet_c.begin(), facet_vertices.size()));
+          std::fill(std::next(facet_c.begin(), facet_vertices.size()),
+                    facet_c.end(), padding_value);
+          facet_c.back() = (c + cell_offsets_j);
+        }
+      }
+    };
+
     std::vector<std::jthread> threads(num_threads);
     for (int i = 0; i < num_threads; ++i)
     {
-      auto [c0, c1] = dolfinx::MPI::local_range(i, num_cells, num_threads);
-      threads[i] = std::jthread(insert_cell_facets, shape1, num_cell_vertices,
-                                cell_offsets_j, cell_facets, _cells, c0, c1,
-                                std::span(facets));
+      int c0 = i * num_cells / num_threads;
+      int c1 = (i + 1) * num_cells / num_threads;
+      threads[i] = std::jthread(insert_cell_facets, c0, c1);
     }
   }
 
