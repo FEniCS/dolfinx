@@ -50,8 +50,11 @@ constexpr bool dependent_false_v = false;
 template <typename V, typename W>
 void option_setter(W& option, const std::vector<V>& values,
                    const std::vector<std::string>& value_names,
-                   const std::string value_in)
+                   const std::string& value_in)
 {
+  if (values.size() != value_names.size())
+    throw std::logic_error("values/value_names size mismatch.");
+
   for (std::size_t i = 0; i < value_names.size(); ++i)
   {
     if (value_in == value_names[i])
@@ -61,7 +64,7 @@ void option_setter(W& option, const std::vector<V>& values,
       return;
     }
   }
-  std::runtime_error("Invalid option for SuperLU");
+  throw std::runtime_error("Invalid option, see SuperLU_DIST manual.");
 }
 
 std::vector<int_t> col_indices(const auto& A)
@@ -237,7 +240,7 @@ template <typename T>
 void SuperLUDistSolver<T>::set_option(std::string option, std::string value)
 {
   spdlog::info("Set SuperLU_DIST option {} to {}", option, value);
-  const std::map<std::string, yes_no_t&> map_bool
+  const std::map<std::string, std::reference_wrapper<yes_no_t>> map_bool
       = {{"Equil", _options->Equil},
          {"DiagInv", _options->DiagInv},
          {"SymmetricMode", _options->SymmetricMode},
@@ -259,12 +262,12 @@ void SuperLUDistSolver<T>::set_option(std::string option, std::string value)
     if (value == "YES")
     {
       spdlog::info("Set {} to YES", option);
-      it->second = YES;
+      it->second.get() = YES;
     }
     else if (value == "NO")
     {
       spdlog::info("Set {} to NO", option);
-      it->second = NO;
+      it->second.get() = NO;
     }
     else
     {
@@ -305,7 +308,7 @@ void SuperLUDistSolver<T>::set_option(std::string option, std::string value)
   }
   else
   {
-    std::runtime_error("Unsupported option");
+    std::runtime_error("Unsupported option.");
   }
 }
 //----------------------------------------------------------------------------
