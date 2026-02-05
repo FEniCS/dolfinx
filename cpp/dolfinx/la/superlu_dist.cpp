@@ -16,6 +16,7 @@ extern "C"
 #include <algorithm>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
+#include <stdexcept>
 #include <vector>
 
 using namespace dolfinx;
@@ -58,14 +59,14 @@ std::vector<int_t> col_indices(const auto& A)
                  { return global_indices[idx]; });
   return col_indices;
 }
-
+//----------------------------------------------------------------------------
 std::vector<int_t> row_indices(const auto& A)
 {
   return std::vector<int_t>(
       A.row_ptr().begin(),
       std::next(A.row_ptr().begin(), A.num_owned_rows() + 1));
 }
-
+//----------------------------------------------------------------------------
 template <typename T>
 std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
 create_supermatrix(const auto& A, auto& rowptr, auto& cols)
@@ -85,6 +86,21 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
   std::int32_t m_loc = A.num_owned_rows();
   std::int64_t first_row = map0->local_range().front();
   std::int64_t nnz_loc = A.row_ptr().at(m_loc);
+
+  // Check values fit into upper range of int_t.
+  auto check = [](std::int64_t x)
+  {
+    if (x >= static_cast<std::int64_t>(std::numeric_limits<int_t>::max()))
+    {
+      throw std::out_of_range(
+          "Value outside upper range of SuperLU_DIST int_t.");
+    }
+  };
+  check(m);
+  check(n);
+  check(m_loc);
+  check(first_row);
+  check(nnz_loc);
 
   std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter> p(
       new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{});
@@ -117,7 +133,6 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
   return p;
 }
 } // namespace
-
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
@@ -131,21 +146,18 @@ SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
       _verbose(verbose)
 {
 }
-
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistStructs::SuperMatrix* SuperLUDistMatrix<T>::supermatrix() const
 {
   return _supermatrix.get();
 }
-
 //----------------------------------------------------------------------------
 template <typename T>
 const MatrixCSR<T>& SuperLUDistMatrix<T>::matA() const
 {
   return *_matA;
 }
-
 //----------------------------------------------------------------------------
 template class la::SuperLUDistMatrix<double>;
 template class la::SuperLUDistMatrix<float>;
@@ -157,7 +169,6 @@ template class la::SuperLUDistMatrix<std::complex<double>>;
 struct dolfinx::la::SuperLUDistStructs::gridinfo_t : public ::gridinfo_t
 {
 };
-
 //----------------------------------------------------------------------------
 void GridInfoDeleter::operator()(
     SuperLUDistStructs::gridinfo_t* gridinfo) const noexcept
@@ -184,7 +195,6 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
       _verbose(verbose)
 {
 }
-
 //----------------------------------------------------------------------------
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
@@ -283,7 +293,6 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 
   return info;
 }
-
 //----------------------------------------------------------------------------
 template class la::SuperLUDistSolver<double>;
 template class la::SuperLUDistSolver<float>;

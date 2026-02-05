@@ -25,7 +25,6 @@ Public user interface
    dolfinx.la.superlu_dist
    dolfinx.mesh
    dolfinx.nls.petsc
-   dolfinx.pkgconfig
    dolfinx.plot
 
 

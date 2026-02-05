@@ -136,17 +136,18 @@ class Topology:
         """
         self._cpp_object.create_connectivity(d0, d1)
 
-    def create_entities(self, dim: int) -> bool:
+    def create_entities(self, dim: int, num_threads: int = 1) -> bool:
         """Create entities of given topological dimension.
 
         Args:
             dim: Topological dimension of entities to create.
+            num_threads: Number of CPU threads to use when creating.
 
         Returns:
             ``True` is entities are created, ``False`` is if entities
             already existed.
         """
-        return self._cpp_object.create_entities(dim)
+        return self._cpp_object.create_entities(dim, num_threads)
 
     def create_entity_permutations(self):
         """Compute entity permutations and reflections."""
@@ -505,7 +506,12 @@ class EntityMap:
         return self._sub_topology
 
 
-def entity_map(topology, sub_topology, dim, sub_topology_to_topology):
+def entity_map(
+    topology: Topology,
+    sub_topology: Topology,
+    dim: int,
+    sub_topology_to_topology: npt.NDArray[np.int32],
+) -> EntityMap:
     """Create a bidirectional map between (sub) topologies.
 
     The map relates entities of dimension `dim` in `topology` and
@@ -521,8 +527,10 @@ def entity_map(topology, sub_topology, dim, sub_topology_to_topology):
             `sub_topology_to_topology[i]` is the index in `topology`
             corresponding to entity `i` in `sub_topology`.
     """
-    return _cpp.mesh.EntityMap(
-        topology._cpp_object, sub_topology._cpp_object, dim, sub_topology_to_topology
+    return EntityMap(
+        _cpp.mesh.EntityMap(
+            topology._cpp_object, sub_topology._cpp_object, dim, sub_topology_to_topology
+        )
     )
 
 
