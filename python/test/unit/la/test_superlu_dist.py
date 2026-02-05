@@ -71,7 +71,6 @@ def test_superlu_solver(dtype):
 
     solver = superlu_dist_solver(A)
     solver.set_option("SymmetricMode", "YES")
-    solver.set_option("PrintStat", "YES")
     
     uh = Function(V, dtype=dtype)
     error_code = solver.solve(b, uh.x)
