@@ -70,7 +70,8 @@ class SuperLUDistSolver:
             The caller must ``u.scatter_forward()`` after the solve.
 
         Note:
-            Vectors must have size and parallel layout compatible with ``A``.
+            Vectors must have size and parallel layout compatible with
+            ``A``.
 
         Args:
             b: Right-hand side vector :math:`b`.
