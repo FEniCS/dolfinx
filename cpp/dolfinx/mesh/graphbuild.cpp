@@ -634,8 +634,7 @@ mesh::build_local_dual_graph(
     std::vector<std::jthread> threads(num_threads);
     for (int i = 0; i < num_threads; ++i)
     {
-      int c0 = i * num_cells / num_threads;
-      int c1 = (i + 1) * num_cells / num_threads;
+      auto [c0, c1] = dolfinx::MPI::local_range(i, num_cells, num_threads);
       threads[i] = std::jthread(insert_cell_facets, shape1, num_cell_vertices,
                                 cell_offsets_j, cell_facets, _cells, c0, c1,
                                 std::span(facets));
