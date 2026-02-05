@@ -563,9 +563,7 @@ mesh::build_local_dual_graph(
   {
     CellType cell_type = celltypes[j];
     std::span<const std::int64_t> _cells = cells[j];
-
     assert(tdim == mesh::cell_dim(cell_type));
-
     int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
     int num_cell_facets = mesh::cell_num_entities(cell_type, tdim - 1);
 
