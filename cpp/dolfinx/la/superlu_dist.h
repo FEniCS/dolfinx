@@ -20,9 +20,9 @@ class SuperLUDistStructs
 {
 public:
   struct SuperMatrix;
+  struct vec_int_t;
   struct gridinfo_t;
   struct superlu_dist_options_t;
-  struct vec_int_t;
 };
 
 /// Call library cleanup and delete pointer. For use with
@@ -33,23 +33,6 @@ struct SuperMatrixDeleter
   /// @param A
   void operator()(SuperLUDistStructs::SuperMatrix* A) const noexcept;
 };
-
-/// SuperLU_DIST options interface.
-class SuperLUDistOptions
-{
-public:
-  // Default, setting verbosity.
-  SuperLUDistOptions(bool verbose = false);
-  
-  // Pass existing C by value.
-  SuperLUDistOptions(SuperLUDistStructs::superlu_dist_options_t);
-  
-  /// Get non-const pointer to SuperLU_DIST options.
-  SuperLUDistStructs::superlu_dist_options_t* options() const;
-
-private:
-  std::unique_ptr<SuperLUDistOptions::superlu_dist_options_t> _options; 
-}
 
 /// SuperLU_DIST matrix interface.
 template <typename T>
@@ -122,7 +105,7 @@ public:
   /// @param A Matrix to solve for.
   /// @param verbose Verbose output.
   SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A,
-                    SuperLUDistOptions options);
+                    bool verbose = false);
 
   /// Copy constructor
   SuperLUDistSolver(const SuperLUDistSolver&) = delete;
@@ -153,7 +136,8 @@ private:
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
 
-  SuperLUDistOptions _options;
+  // Flag for diagnostic output
+  bool _verbose;
 };
 } // namespace dolfinx::la
 #endif

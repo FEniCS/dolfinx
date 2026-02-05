@@ -18,11 +18,11 @@ jobs:
 
   mac-os-build:
     name: macOS Homebrew install and test
-    runs-on: macos-15
+    runs-on: macos-26
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
-      PETSC_VERSION: 3.24.2
+      PETSC_VERSION: 3.24.4
       PYTEST_ADDOPTS: "-W error"
 
     steps:
@@ -90,7 +90,7 @@ jobs:
           path: |
             ${{ env.PETSC_DIR }}
             ~/Library/Python/
-          key: ${{ steps.cache-petsc-restore.outputs.cache-primary-key }} 
+          key: ${{ steps.cache-petsc-restore.outputs.cache-primary-key }}
 
       - name: Install FEniCSx dependencies
         run: |
