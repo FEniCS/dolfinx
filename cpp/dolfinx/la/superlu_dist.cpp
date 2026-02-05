@@ -17,6 +17,7 @@ extern "C"
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
+#include <ranges>
 #include <stdexcept>
 #include <vector>
 
@@ -48,18 +49,19 @@ template <typename...>
 constexpr bool dependent_false_v = false;
 
 template <typename V, typename W>
-void option_setter(W& option, const std::vector<V>& values,
-                   const std::vector<std::string>& value_names,
-                   const std::string& value_in)
+void option_setter(W& option, std::initializer_list<V> values,
+                   std::initializer_list<std::string_view> value_names,
+                   const std::string_view value_in)
 {
   if (values.size() != value_names.size())
     throw std::logic_error("values/value_names size mismatch.");
 
-  for (std::size_t i = 0; i < value_names.size(); ++i)
+  // TODO: Can be done nicely with std::views::zip in C++23.
+  for (std::size_t i : std::views::iota(std::size_t{0}, value_names.size()))
   {
-    if (value_in == value_names[i])
+    if (value_in == *(value_names.begin() + i))
     {
-      option = values[i];
+      option = *(values.begin() + i);
       spdlog::info("Set to {}", value_in);
       return;
     }
@@ -271,14 +273,15 @@ void SuperLUDistSolver<T>::set_option(std::string option, std::string value)
     }
     else
     {
-      throw std::runtime_error("SuperLU_dist boolean options must be 'YES' or 'NO'.");
+      throw std::runtime_error(
+          "SuperLU_dist boolean options must be 'YES' or 'NO'.");
     }
   }
 
   // Search some enum types
   if (option == "Fact")
   {
-    option_setter<fact_t>(
+    option_setter(
         _options->Fact,
         {DOFACT, SamePattern, SamePattern_SameRowPerm, FACTORED},
         {"DOFACT", "SamePattern", "SamePattern_SameRowPerm", "FACTORED"},
@@ -286,25 +289,25 @@ void SuperLUDistSolver<T>::set_option(std::string option, std::string value)
   }
   else if (option == "Trans")
   {
-    option_setter<trans_t>(_options->Trans, {NOTRANS, TRANS, CONJ},
-                           {"NOTRANS", "TRANS", "CONJ"}, value);
+    option_setter(_options->Trans, {NOTRANS, TRANS, CONJ},
+                  {"NOTRANS", "TRANS", "CONJ"}, value);
   }
   else if (option == "ColPerm")
   {
-    option_setter<colperm_t>(
-        _options->ColPerm,
-        {NATURAL, MMD_ATA, MMD_AT_PLUS_A, COLAMD, METIS_AT_PLUS_A, PARMETIS,
-         METIS_ATA, ZOLTAN, MY_PERMC},
-        {"NATURAL", "MMD_ATA", "MMD_AT_PLUS_A", "COLAMD", "METIS_AT_PLUS_A",
-         "PARMETIS", "METIS_ATA", "ZOLTAN", "MY_PERMC"},
-        value);
+    option_setter(_options->ColPerm,
+                  {NATURAL, MMD_ATA, MMD_AT_PLUS_A, COLAMD, METIS_AT_PLUS_A,
+                   PARMETIS, METIS_ATA, ZOLTAN, MY_PERMC},
+                  {"NATURAL", "MMD_ATA", "MMD_AT_PLUS_A", "COLAMD",
+                   "METIS_AT_PLUS_A", "PARMETIS", "METIS_ATA", "ZOLTAN",
+                   "MY_PERMC"},
+                  value);
   }
   else if (option == "RowPerm")
   {
-    option_setter<rowperm_t>(
-        _options->RowPerm,
-        {NOROWPERM, LargeDiag_MC64, LargeDiag_HWPM, MY_PERMR},
-        {"NOROWPERM", "LargeDiag_MC64", "LargeDiag_HWPM", "MY_PERMR"}, value);
+    option_setter(_options->RowPerm,
+                  {NOROWPERM, LargeDiag_MC64, LargeDiag_HWPM, MY_PERMR},
+                  {"NOROWPERM", "LargeDiag_MC64", "LargeDiag_HWPM", "MY_PERMR"},
+                  value);
   }
   else
   {
