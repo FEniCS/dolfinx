@@ -188,7 +188,8 @@ struct dolfinx::la::SuperLUDistStructs::gridinfo_t : public ::gridinfo_t
 {
 };
 //----------------------------------------------------------------------------
-struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t : public ::superlu_dist_options_t
+struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t
+    : public ::superlu_dist_options_t
 {
 };
 //----------------------------------------------------------------------------
@@ -199,19 +200,12 @@ void GridInfoDeleter::operator()(
   delete gridinfo;
 }
 
-void SuperLUDistOptionsDeleter::operator()(
-    SuperLUDistStructs::superlu_dist_options_t* opt) const noexcept
-{
-  delete opt;
-}
-
 //----------------------------------------------------------------------------
 template <typename T>
-SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A,
-                                        bool verbose)
+SuperLUDistSolver<T>::SuperLUDistSolver(
+    std::shared_ptr<const SuperLUDistMatrix<T>> A, bool verbose)
     : _superlu_matA(std::move(A)),
-      _options(new SuperLUDistStructs::superlu_dist_options_t,
-               SuperLUDistOptionsDeleter{}),
+      _options(std::make_unique<SuperLUDistStructs::superlu_dist_options_t>()),
       _gridinfo(
           [comm = _superlu_matA->matA().comm()]
           {
@@ -229,6 +223,14 @@ SuperLUDistSolver<T>::SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<
   _options->ReplaceTinyPivot = YES;
   if (!_verbose)
     _options->PrintStat = NO;
+}
+
+template <typename T>
+void SuperLUDistSolver<T>::set_options(
+    SuperLUDistStructs::superlu_dist_options_t options)
+{
+  _options = std::make_unique<SuperLUDistStructs::superlu_dist_options_t>(
+      std::move(options));
 }
 
 template <typename T>

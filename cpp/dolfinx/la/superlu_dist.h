@@ -84,14 +84,6 @@ struct GridInfoDeleter
   void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
 };
 
-struct SuperLUDistOptionsDeleter
-{
-  /// @brief Deletion
-  /// @param opt
-  void
-  operator()(SuperLUDistStructs::superlu_dist_options_t* opt) const noexcept;
-};
-
 /// SuperLU_DIST linear solver interface.
 template <typename T>
 class SuperLUDistSolver
@@ -123,15 +115,14 @@ public:
   int solve(const Vector<T>& b, Vector<T>& u) const;
 
   void set_option(std::string option, std::string value);
+  void set_options(SuperLUDistStructs::superlu_dist_options_t options);
 
 private:
   // Wrapped SuperLU SuperMatrix
   std::shared_ptr<const SuperLUDistMatrix<T>> _superlu_matA;
 
   // Pointer to struct superlu_dist_options_t
-  std::unique_ptr<SuperLUDistStructs::superlu_dist_options_t,
-                  SuperLUDistOptionsDeleter>
-      _options;
+  std::unique_ptr<SuperLUDistStructs::superlu_dist_options_t> _options;
 
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
