@@ -34,7 +34,7 @@ def test_superlu_solver(dtype):
     from dolfinx.la.superlu_dist import superlu_dist_solver
 
     mesh_dtype = dtype().real.dtype
-    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=mesh_dtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=mesh_dtype)
     V = functionspace(mesh, ("Lagrange", 4))
     u, v = TrialFunction(V), TestFunction(V)
 
@@ -71,6 +71,21 @@ def test_superlu_solver(dtype):
 
     solver = superlu_dist_solver(A)
     solver.set_option("SymmetricMode", "YES")
+    solver.set_option("DiagInv", "YES")
+    solver.set_option("ReplaceTinyPivot", "YES")
+    solver.set_option("PrintStat", "YES")
+
+    uh = Function(V, dtype=dtype)
+    error_code = solver.solve(b, uh.x)
+    assert error_code == 0
+    uh.x.scatter_forward()
+
+    M = (u_ex(x) - uh) ** 2 * dx
+    M = form(M, dtype=dtype)
+    error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
+    eps = np.sqrt(np.finfo(dtype).eps)
+    assert np.isclose(error, 0.0, atol=eps)
+
 
     uh = Function(V, dtype=dtype)
     error_code = solver.solve(b, uh.x)
