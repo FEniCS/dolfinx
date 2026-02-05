@@ -88,6 +88,9 @@ public:
   ///
   /// Solves linear system Au = b via LU decomposition.
   ///
+  /// The SuperLU_DIST solver has options set to upstream defaults,
+  /// except PrintStat (verbose solver output) set to NO.
+  ///
   /// @tparam T Scalar type.
   /// @param A Assembled left-hand side matrix.
   SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A);
