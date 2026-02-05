@@ -34,6 +34,10 @@ struct dolfinx::la::SuperLUDistStructs::vec_int_t
   /// @brief vector
   std::vector<int_t> vec;
 };
+/// Struct defining superlu_options_t
+struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t : public ::superlu_dist_options_t
+{
+};
 #endif // HAS_SUPERLU_DIST
 
 namespace nb = nanobind;
@@ -228,16 +232,15 @@ void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
       .def(
           "__init__",
           [](dolfinx::la::SuperLUDistSolver<T>* solver,
-             std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat,
-             bool verbose)
+             std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat)
           {
             auto A_superlu
                 = std::make_shared<const dolfinx::la::SuperLUDistMatrix<T>>(
-                    std::move(Amat), verbose);
-            new (solver) dolfinx::la::SuperLUDistSolver<T>(std::move(A_superlu),
-                                                           verbose);
+                    std::move(Amat));
+            new (solver)
+                dolfinx::la::SuperLUDistSolver<T>(std::move(A_superlu));
           },
-          nb::arg("A"), nb::arg("verbose"))
+          nb::arg("A"))
       .def("solve", &dolfinx::la::SuperLUDistSolver<T>::solve)
       .def("set_option", &dolfinx::la::SuperLUDistSolver<T>::set_option);
 }

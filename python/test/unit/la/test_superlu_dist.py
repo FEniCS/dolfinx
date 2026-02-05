@@ -71,8 +71,8 @@ def test_superlu_solver(dtype):
     A.scatter_reverse()
 
     uh = Function(V, dtype=dtype)
-    solver = superlu_dist_solver(A, verbose=False)
-    solver._cpp_object.set_option("SymmetricMode", "False")
+    solver = superlu_dist_solver(A)
+    solver._cpp_object.set_option("SymmetricMode", "NO")
     error_code = solver.solve(b, uh.x)
     assert error_code == 0
 

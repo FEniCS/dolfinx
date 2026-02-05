@@ -64,7 +64,7 @@ class SuperLUDistSolver:
         return self._cpp_object.solve(b._cpp_object, u._cpp_object)
 
 
-def superlu_dist_solver(A: dolfinx.la.MatrixCSR, verbose: bool = False) -> SuperLUDistSolver:
+def superlu_dist_solver(A: dolfinx.la.MatrixCSR) -> SuperLUDistSolver:
     """Create a SuperLU_DIST linear solver.
 
     For solving linear systems :math:`Au = b` via LU decomposition.
@@ -82,4 +82,4 @@ def superlu_dist_solver(A: dolfinx.la.MatrixCSR, verbose: bool = False) -> Super
         stype = _cpp.la.SuperLUDistSolver_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
-    return SuperLUDistSolver(stype(A._cpp_object, verbose))
+    return SuperLUDistSolver(stype(A._cpp_object))
