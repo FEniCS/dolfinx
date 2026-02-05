@@ -554,19 +554,21 @@ mesh::build_local_dual_graph(
   //    used data structures
 
   // TODO: cell_offsets can be removed?
-  // std::vector<std::int32_t> cell_offsets{0};
-  // cell_offsets.reserve(cells.size() + 1);
+  std::vector<std::int32_t> cell_offsets{0};
+  cell_offsets.reserve(cells.size() + 1);
 
   int max_vertices_per_facet = 0;
   int facet_count = 0;
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
     CellType cell_type = celltypes[j];
+    std::span<const std::int64_t> _cells = cells[j];
     assert(tdim == mesh::cell_dim(cell_type));
     int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
     int num_cell_facets = mesh::cell_num_entities(cell_type, tdim - 1);
 
-    std::int32_t num_cells = cells[j].size() / num_cell_vertices;
+    std::int32_t num_cells = _cells.size() / num_cell_vertices;
+    cell_offsets.push_back(cell_offsets.back() + num_cells);
     facet_count += num_cell_facets * num_cells;
 
     graph::AdjacencyList<std::int32_t> cell_facets
@@ -588,12 +590,9 @@ mesh::build_local_dual_graph(
   //             ⋮     ⋮      ⋮    ⋮   ⋱    ⋮  ⋮
   //           v_n1, v_n2,   -1, -1, ..., -1, n]
 
-  std::vector<std::jthread> threads(num_threads);
-
   const int shape1 = max_vertices_per_facet + 1;
   std::vector<std::int64_t> facets(facet_count * shape1);
 
-  std::int32_t cell_offsets = 0;
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
     const CellType& cell_type = celltypes[j];
@@ -603,9 +602,10 @@ mesh::build_local_dual_graph(
     std::int32_t num_cells = _cells.size() / num_cell_vertices;
     graph::AdjacencyList<int> cell_facets
         = mesh::get_entity_vertices(cell_type, tdim - 1);
+    std::int32_t cell_offsets_j = cell_offsets[j];
 
     auto insert_cell_facets
-        = [shape1, num_cell_vertices, cell_offsets, &cell_facets, &_cells,
+        = [shape1, num_cell_vertices, cell_offsets_j, &cell_facets, &_cells,
            &facets](std::int32_t c0, std::int32_t c1)
     {
       constexpr std::int32_t padding_value = -1;
@@ -627,19 +627,18 @@ mesh::build_local_dual_graph(
                     std::next(facet_c.begin(), facet_vertices.size()));
           std::fill(std::next(facet_c.begin(), facet_vertices.size()),
                     facet_c.end(), padding_value);
-          facet_c.back() = (c + cell_offsets);
+          facet_c.back() = (c + cell_offsets_j);
         }
       }
     };
 
+    std::vector<std::jthread> threads(num_threads);
     for (int i = 0; i < num_threads; ++i)
     {
-      auto [c0, c1] = dolfinx::MPI::local_range(i, num_cells, num_threads);
+      int c0 = i * num_cells / num_threads;
+      int c1 = (i + 1) * num_cells / num_threads;
       threads[i] = std::jthread(insert_cell_facets, c0, c1);
     }
-
-    int num_cell_facets = mesh::cell_num_entities(cell_type, tdim - 1);
-    cell_offsets += num_cell_facets * num_cells;
   }
 
   // 3) Sort facets by vertex key
@@ -721,7 +720,8 @@ mesh::build_local_dual_graph(
   //    edges, we add both forward and backward to the final data
   //    structure.
 
-  std::vector<std::int32_t> num_links(cell_offsets, 0);
+  std::vector<std::int32_t> num_links(cell_offsets.back(), 0);
+
   for (auto [a, b] : edges)
   {
     ++num_links[a];
