@@ -256,19 +256,19 @@ void SuperLUDistSolver<T>::set_option(std::string option, std::string value)
   auto it = map_bool.find(option);
   if (it != map_bool.end())
   {
-    if (value == "True")
+    if (value == "YES")
     {
-      spdlog::info("Set {} to True", option);
+      spdlog::info("Set {} to YES", option);
       it->second = YES;
     }
-    else if (value == "False")
+    else if (value == "NO")
     {
-      spdlog::info("Set {} to False", option);
+      spdlog::info("Set {} to NO", option);
       it->second = NO;
     }
     else
     {
-      throw std::runtime_error("Cannot set option to value requested");
+      throw std::runtime_error("SuperLU_dist boolean options must be 'YES' or 'NO'.");
     }
   }
 
