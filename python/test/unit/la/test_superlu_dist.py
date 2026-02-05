@@ -11,7 +11,6 @@ import numpy as np
 import pytest
 
 import dolfinx
-from dolfinx.common import list_timings
 from dolfinx.fem import (
     Function,
     apply_lifting,
@@ -29,13 +28,13 @@ from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, i
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
-@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_dist")
+@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
 def test_superlu_solver(dtype):
     """Manufactured Poisson problem with exact solution u = x[1]**3."""
     from dolfinx.la.superlu_dist import superlu_dist_solver
 
     mesh_dtype = dtype().real.dtype
-    mesh = create_unit_square(MPI.COMM_WORLD, 530, 50, dtype=mesh_dtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=mesh_dtype)
     V = functionspace(mesh, ("Lagrange", 4))
     u, v = TrialFunction(V), TestFunction(V)
 
@@ -70,13 +69,12 @@ def test_superlu_solver(dtype):
     A = assemble_matrix(a, bcs=[bc])
     A.scatter_reverse()
 
-    uh = Function(V, dtype=dtype)
     solver = superlu_dist_solver(A)
-    solver._cpp_object.set_option("SymmetricMode", "NO")
+    solver.set_option("SymmetricMode", "YES")
+    solver.set_option("PrintStat", "YES")
+    
+    uh = Function(V, dtype=dtype)
     error_code = solver.solve(b, uh.x)
-    assert error_code == 0
-
-    list_timings(MPI.COMM_WORLD)
     assert error_code == 0
     uh.x.scatter_forward()
 

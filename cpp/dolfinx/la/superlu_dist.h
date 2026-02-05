@@ -51,7 +51,7 @@ public:
   /// Copy assignment
   SuperLUDistMatrix& operator=(const SuperLUDistMatrix&) = delete;
 
-  /// Get non-const pointer to SuperLU_DIST SuperMatrix.
+  /// Get pointer to SuperLU_DIST SuperMatrix (non-const).
   SuperLUDistStructs::SuperMatrix* supermatrix() const;
 
   /// Get MatrixCSR (const).
@@ -86,11 +86,10 @@ class SuperLUDistSolver
 public:
   /// @brief Create solver for a SuperLU_DIST matrix operator.
   ///
-  /// Solves Au = b using SuperLU_DIST.
+  /// Solves linear system Au = b via LU decomposition.
   ///
   /// @tparam T Scalar type.
-  /// @param A Matrix to solve for.
-  /// @param verbose Verbose output.
+  /// @param A Assembled left-hand side matrix.
   SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A);
 
   /// Copy constructor
@@ -99,20 +98,49 @@ public:
   /// Copy assignment
   SuperLUDistSolver& operator=(const SuperLUDistSolver&) = delete;
 
+  /// @brief Set solver option (name, value)
+  ///
+  /// See SuperLU_DIST User's Guide for option names and values.
+  ///
+  /// @param name Option name.
+  /// @param value Option value.
   void set_option(std::string option, std::string value);
+
+  /// @brief Set all solver options (native struct)
+  ///
+  /// See SuperLU_DIST User's Guide for option names and values.
+  ///
+  /// Callers must complete the forward declared struct, e.g.:
+  ///
+  /// ```cpp
+  /// #include <superlu_defs.h>
+  /// struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t
+  ///  : public ::superlu_dist_options_t
+  /// {
+  /// };
+  ///
+  /// SuperLUDistStructs::superlu_dist_options_t options;
+  /// set_default_options_dist(&options);
+  /// options.PrintStat = YES;
+  /// // Setup SuperLUDistMatrix and SuperLUDistSolver
+  /// solver.set_options(options);
+  /// ```
+  ///
+  /// @param options SuperLU_DIST option struct.
   void set_options(SuperLUDistStructs::superlu_dist_options_t options);
 
   /// @brief Solve linear system Au = b.
   ///
   /// @param b Right-hand side vector.
-  /// @param u Solution vector.
-  /// @returns SuperLU_DIST info flag.
-  /// @note Vectors must have size and parallel layout that is
-  /// compatible with `A`.
+  /// @param u Solution vector, overwritten during solve.
+  /// @returns SuperLU_DIST info integer.
+  /// @note The caller must check the return code for success `(== 0)`.
+  /// @note The caller must `u.scatter_forward()` after the solve.
+  /// @note Vectors must have size and parallel layout compatible with `A`.
   int solve(const Vector<T>& b, Vector<T>& u) const;
 
 private:
-  // Wrapped SuperLU SuperMatrix
+  // Assembled left-hand side matrix
   std::shared_ptr<const SuperLUDistMatrix<T>> _superlu_matA;
 
   // Pointer to struct superlu_dist_options_t

@@ -49,24 +49,22 @@ template <typename...>
 constexpr bool dependent_false_v = false;
 
 template <typename V, typename W>
-void option_setter(W& option, std::initializer_list<V> values,
+void option_setter(std::string_view option_name, W& option,
+                   const std::initializer_list<V> values,
                    std::initializer_list<std::string_view> value_names,
-                   const std::string_view value_in)
+                   std::string_view value_in)
 {
-  if (values.size() != value_names.size())
-    throw std::logic_error("values/value_names size mismatch.");
-
   // TODO: Can be done nicely with std::views::zip in C++23.
-  for (std::size_t i : std::views::iota(std::size_t{0}, value_names.size()))
+  for (auto i : std::views::iota(std::size_t{0}, value_names.size()))
   {
     if (value_in == *(value_names.begin() + i))
     {
       option = *(values.begin() + i);
-      spdlog::info("Set to {}", value_in);
+      spdlog::info("Set {} to {}", option_name, value_in);
       return;
     }
   }
-  throw std::runtime_error("Invalid option, see SuperLU_DIST manual.");
+  throw std::runtime_error("Unsupported value");
 }
 
 std::vector<int_t> col_indices(const auto& A)
@@ -214,6 +212,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
             auto o = std::make_unique<
                 SuperLUDistStructs::superlu_dist_options_t>();
             set_default_options_dist(o.get());
+            o->PrintStat = NO;
             return o;
           }()),
       _gridinfo(
@@ -238,9 +237,9 @@ void SuperLUDistSolver<T>::set_options(
 }
 
 template <typename T>
-void SuperLUDistSolver<T>::set_option(std::string option, std::string value)
+void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
 {
-  spdlog::info("Set SuperLU_DIST option {} to {}", option, value);
+  spdlog::info("Attempting to set option {} to {}", name, value);
   const std::map<std::string, std::reference_wrapper<yes_no_t>> map_bool
       = {{"Equil", _options->Equil},
          {"DiagInv", _options->DiagInv},
@@ -257,43 +256,42 @@ void SuperLUDistSolver<T>::set_option(std::string option, std::string value)
          {"Algo3d", _options->Algo3d}};
 
   // Search in map_bool first
-  auto it = map_bool.find(option);
+  auto it = map_bool.find(name);
   if (it != map_bool.end())
   {
     if (value == "YES")
     {
-      spdlog::info("Set {} to YES", option);
+      spdlog::info("Set {} to YES", name);
       it->second.get() = YES;
     }
     else if (value == "NO")
     {
-      spdlog::info("Set {} to NO", option);
+      spdlog::info("Set {} to NO", name);
       it->second.get() = NO;
     }
     else
     {
-      throw std::runtime_error(
-          "SuperLU_dist boolean options must be 'YES' or 'NO'.");
+      throw std::runtime_error("Boolean values must be string 'YES' or 'NO'");
     }
   }
 
   // Search some enum types
-  if (option == "Fact")
+  if (name == "Fact")
   {
     option_setter(
-        _options->Fact,
+        name, _options->Fact,
         {DOFACT, SamePattern, SamePattern_SameRowPerm, FACTORED},
         {"DOFACT", "SamePattern", "SamePattern_SameRowPerm", "FACTORED"},
         value);
   }
-  else if (option == "Trans")
+  else if (name == "Trans")
   {
-    option_setter(_options->Trans, {NOTRANS, TRANS, CONJ},
+    option_setter(name, _options->Trans, {NOTRANS, TRANS, CONJ},
                   {"NOTRANS", "TRANS", "CONJ"}, value);
   }
-  else if (option == "ColPerm")
+  else if (name == "ColPerm")
   {
-    option_setter(_options->ColPerm,
+    option_setter(name, _options->ColPerm,
                   {NATURAL, MMD_ATA, MMD_AT_PLUS_A, COLAMD, METIS_AT_PLUS_A,
                    PARMETIS, METIS_ATA, ZOLTAN, MY_PERMC},
                   {"NATURAL", "MMD_ATA", "MMD_AT_PLUS_A", "COLAMD",
@@ -301,16 +299,16 @@ void SuperLUDistSolver<T>::set_option(std::string option, std::string value)
                    "MY_PERMC"},
                   value);
   }
-  else if (option == "RowPerm")
+  else if (name == "RowPerm")
   {
-    option_setter(_options->RowPerm,
+    option_setter(name, _options->RowPerm,
                   {NOROWPERM, LargeDiag_MC64, LargeDiag_HWPM, MY_PERMR},
                   {"NOROWPERM", "LargeDiag_MC64", "LargeDiag_HWPM", "MY_PERMR"},
                   value);
   }
   else
   {
-    std::runtime_error("Unsupported option.");
+    std::runtime_error("Unsupported name");
   }
 }
 //----------------------------------------------------------------------------
