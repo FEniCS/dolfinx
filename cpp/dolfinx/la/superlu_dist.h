@@ -104,7 +104,7 @@ public:
   ///
   /// @param name Option name.
   /// @param value Option value.
-  void set_option(std::string option, std::string value);
+  void set_option(std::string name, std::string value);
 
   /// @brief Set all solver options (native struct)
   ///
