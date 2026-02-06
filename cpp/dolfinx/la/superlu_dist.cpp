@@ -391,19 +391,11 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
             &stat, &info);
 
     spdlog::info("Finalize solve");
-
-    // Unclear if this is a deleter.
     dSolveFinalize(_options.get(), _solvestruct.get());
   }
-  /*
   else if constexpr (std::is_same_v<T, float>)
   {
     spdlog::info("Start solve [float32]");
-    sScalePermstruct_t ScalePermstruct;
-    sLUstruct_t LUstruct;
-    sScalePermstructInit(m, m, &ScalePermstruct);
-    sLUstructInit(m, &LUstruct);
-    sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST psgssvx()");
     psgssvx(_options.get(), _superlu_matA->supermatrix(), &ScalePermstruct,
@@ -412,17 +404,10 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 
     spdlog::info("Finalize solve");
     sSolveFinalize(_options.get(), &SOLVEstruct);
-    sScalePermstructFree(&ScalePermstruct);
-    sLUstructFree(&LUstruct);
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     spdlog::info("Start solve [complex128]");
-    zScalePermstruct_t ScalePermstruct;
-    zLUstruct_t LUstruct;
-    zScalePermstructInit(m, m, &ScalePermstruct);
-    zLUstructInit(m, &LUstruct);
-    zSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pzgssvx()");
     pzgssvx(_options.get(), _superlu_matA->supermatrix(), &ScalePermstruct,
@@ -432,10 +417,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 
     spdlog::info("Finalize solve");
     zSolveFinalize(_options.get(), &SOLVEstruct);
-    zScalePermstructFree(&ScalePermstruct);
-    zLUstructFree(&LUstruct);
   }
-  */
   else
     static_assert(dependent_false_v<T>, "Invalid scalar type");
   spdlog::info("Finished solve");
