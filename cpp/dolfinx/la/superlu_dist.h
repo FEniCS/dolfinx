@@ -8,6 +8,7 @@
 
 #ifdef HAS_SUPERLU_DIST
 
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <memory>
@@ -41,31 +42,37 @@ class SuperLUDistMatrix
 public:
   /// @brief Create SuperLU_DIST matrix operator.
   ///
+  /// Copies from A sparse matrix data for SuperLU_DIST solver.
+  ///
   /// @tparam T Scalar type.
   /// @param A Matrix.
-  SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A);
+  SuperLUDistMatrix(const MatrixCSR<T>* A);
 
-  /// Copy constructor
+  /// @brief Copy constructor (deleted)
   SuperLUDistMatrix(const SuperLUDistMatrix&) = delete;
 
-  /// Copy assignment
+  /// @brief Copy assignment (deleted)
   SuperLUDistMatrix& operator=(const SuperLUDistMatrix&) = delete;
+  
+  /// @brief Get MPI communicator that matrix is defined on.
+  MPI_Comm comm() const;
 
-  /// Get pointer to SuperLU_DIST SuperMatrix (non-const).
+  /// @brief Get pointer to SuperLU_DIST SuperMatrix (non-const).
   SuperLUDistStructs::SuperMatrix* supermatrix() const;
 
-  /// Get MatrixCSR (const).
-  const MatrixCSR<T>& matA() const;
-
 private:
+  // No public accessors - changes should be made using MatrixCSR interfaces
+  // before constructing an instance of this class.
+  dolfinx::MPI::Comm _comm;
+  // Deep copied values from MatrixCSR.
+  std::vector<T> _matA_values;
   // Saved matrix operator with rows and cols in required integer type.
   // cols and rowptr are required in opaque type "int_t" of
   // SuperLU_DIST.
-  std::shared_ptr<const MatrixCSR<T>> _matA;
   std::unique_ptr<SuperLUDistStructs::vec_int_t> _cols;
   std::unique_ptr<SuperLUDistStructs::vec_int_t> _rowptr;
 
-  // Pointer to native SuperMatrix
+  // Pointer to native SuperMatrix for use in solver
   std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
       _supermatrix;
 };

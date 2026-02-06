@@ -156,26 +156,24 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 } // namespace
 //----------------------------------------------------------------------------
 template <typename T>
-SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A)
-    : _matA(std::move(A)),
+SuperLUDistMatrix<T>::SuperLUDistMatrix(const MatrixCSR<T>* A)
+    : _comm(A->comm()),
+      _matA_values(A->values()),
       _cols(
-          std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*_matA))),
+          std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*A))),
       _rowptr(
-          std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*_matA))),
-      _supermatrix(create_supermatrix<T>(*_matA, *_rowptr, *_cols))
+          std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*A))),
+      _supermatrix(create_supermatrix<T>(*A, *_rowptr, *_cols))
 {
 }
+/// @brief Get MPI communicator that matrix is defined on.
+template <typename T>
+MPI_Comm SuperLUDistMatrix<T>::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistStructs::SuperMatrix* SuperLUDistMatrix<T>::supermatrix() const
 {
   return _supermatrix.get();
-}
-//----------------------------------------------------------------------------
-template <typename T>
-const MatrixCSR<T>& SuperLUDistMatrix<T>::matA() const
-{
-  return *_matA;
 }
 //----------------------------------------------------------------------------
 template class la::SuperLUDistMatrix<double>;
@@ -216,7 +214,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
             return o;
           }()),
       _gridinfo(
-          [comm = _superlu_matA->matA().comm()]
+          [comm = _superlu_matA->comm()]
           {
             int nprow = dolfinx::MPI::size(comm);
             int npcol = 1;
@@ -227,7 +225,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
           }())
 {
 }
-
+//----------------------------------------------------------------------------
 template <typename T>
 void SuperLUDistSolver<T>::set_options(
     SuperLUDistStructs::superlu_dist_options_t options)
@@ -235,7 +233,7 @@ void SuperLUDistSolver<T>::set_options(
   _options = std::make_unique<SuperLUDistStructs::superlu_dist_options_t>(
       std::move(options));
 }
-
+//----------------------------------------------------------------------------
 template <typename T>
 void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
 {
