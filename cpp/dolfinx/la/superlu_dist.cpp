@@ -157,18 +157,18 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistMatrix<T>::SuperLUDistMatrix(const MatrixCSR<T>* A)
-    : _comm(A->comm()),
-      _matA_values(A->values()),
-      _cols(
-          std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*A))),
-      _rowptr(
-          std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*A))),
+    : _comm(A->comm()), _matA_values(A->values()),
+      _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*A))),
+      _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*A))),
       _supermatrix(create_supermatrix<T>(*A, *_rowptr, *_cols))
 {
 }
 /// @brief Get MPI communicator that matrix is defined on.
 template <typename T>
-MPI_Comm SuperLUDistMatrix<T>::comm() const { return _comm.comm(); }
+MPI_Comm SuperLUDistMatrix<T>::comm() const
+{
+  return _comm.comm();
+}
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistStructs::SuperMatrix* SuperLUDistMatrix<T>::supermatrix() const

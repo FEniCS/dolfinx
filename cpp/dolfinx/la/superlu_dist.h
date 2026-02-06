@@ -53,7 +53,7 @@ public:
 
   /// @brief Copy assignment (deleted)
   SuperLUDistMatrix& operator=(const SuperLUDistMatrix&) = delete;
-  
+
   /// @brief Get MPI communicator that matrix is defined on.
   MPI_Comm comm() const;
 
