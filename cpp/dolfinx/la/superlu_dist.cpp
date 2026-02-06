@@ -28,21 +28,21 @@ using namespace dolfinx::la;
 struct dolfinx::la::SuperLUDistStructs::SuperMatrix : public ::SuperMatrix
 {
 };
-
+//----------------------------------------------------------------------------
 /// Struct holding vector of type int_t
 struct dolfinx::la::SuperLUDistStructs::vec_int_t
 {
   /// @brief vector
   std::vector<int_t> vec;
 };
-
+//----------------------------------------------------------------------------
 void SuperMatrixDeleter::operator()(
     SuperLUDistStructs::SuperMatrix* supermatrix) const noexcept
 {
   Destroy_SuperMatrix_Store_dist(supermatrix);
   delete supermatrix;
 }
-
+//----------------------------------------------------------------------------
 namespace
 {
 template <typename...>
@@ -66,7 +66,7 @@ void option_setter(std::string_view option_name, W& option,
   }
   throw std::runtime_error("Unsupported value");
 }
-
+//----------------------------------------------------------------------------
 std::vector<int_t> col_indices(const auto& A)
 {
   // Local number of non-zeros
@@ -177,8 +177,6 @@ SuperLUDistStructs::SuperMatrix* SuperLUDistMatrix<T>::supermatrix() const
 }
 //----------------------------------------------------------------------------
 template class la::SuperLUDistMatrix<double>;
-template class la::SuperLUDistMatrix<float>;
-template class la::SuperLUDistMatrix<std::complex<double>>;
 //----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
@@ -192,13 +190,35 @@ struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t
 {
 };
 //----------------------------------------------------------------------------
-void GridInfoDeleter::operator()(
-    SuperLUDistStructs::gridinfo_t* gridinfo) const noexcept
+struct dolfinx::la::SuperLUDistStructs::dScalePermstruct_t
+    : public ::dScalePermstruct_t
 {
-  superlu_gridexit(gridinfo);
-  delete gridinfo;
 };
-
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::dLUstruct_t : public ::dLUstruct_t
+{
+};
+//----------------------------------------------------------------------------
+void GridInfoDeleter::operator()(
+    SuperLUDistStructs::gridinfo_t* g) const noexcept
+{
+  superlu_gridexit(g);
+  delete g;
+};
+//----------------------------------------------------------------------------
+void ScalePermStructDeleter::operator()(
+    SuperLUDistStructs::dScalePermstruct_t* s) const noexcept
+{
+  dScalePermstructFree(s);
+  delete s;
+};
+//----------------------------------------------------------------------------
+void LUStructDeleter::operator()(
+    SuperLUDistStructs::dLUstruct_t* l) const noexcept
+{
+  dLUstructFree(l);
+  delete l;
+};
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(
@@ -222,6 +242,31 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
                 new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{});
             superlu_gridinit(comm, nprow, npcol, p.get());
             return p;
+          }()),
+      _scalepermstruct(
+          [m = _superlu_matA->supermatrix()->nrow]
+          {
+            std::unique_ptr<typename map_t<T>::ScalePermstruct_t,
+                            ScalePermStructDeleter>
+                s(new map_t<T>::ScalePermstruct_t, ScalePermStructDeleter{});
+
+            if constexpr (std::is_same_v<T, double>)
+            {
+              dScalePermstructInit(m, m, s.get());
+            }
+            return s;
+          }()),
+      _lustruct(
+          [m = _superlu_matA->supermatrix()->nrow]
+          {
+            std::unique_ptr<typename map_t<T>::LUstruct_t, LUStructDeleter> l(
+                new map_t<T>::LUstruct_t, LUStructDeleter{});
+
+            if constexpr (std::is_same_v<T, double>)
+            {
+              dLUstructInit(m, l.get());
+            }
+            return l;
           }())
 {
 }
@@ -314,13 +359,13 @@ template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 {
   common::Timer tsolve("SuperLU Solve");
-  int_t m = _superlu_matA->supermatrix()->nrow;
   int_t m_loc = ((NRformat_loc*)(_superlu_matA->supermatrix()->Store))->m_loc;
 
   // RHS
   int_t ldb = m_loc;
   int_t nrhs = 1;
 
+  // Remains
   int info = 0;
   SuperLUStat_t stat;
   PStatInit(&stat);
@@ -333,22 +378,21 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   if constexpr (std::is_same_v<T, double>)
   {
     spdlog::info("Start solve [float64]");
-    dScalePermstruct_t ScalePermstruct;
-    dLUstruct_t LUstruct;
-    dScalePermstructInit(m, m, &ScalePermstruct);
-    dLUstructInit(m, &LUstruct);
-    dSOLVEstruct_t SOLVEstruct;
 
+    // Partially construct inline.
+    dSOLVEstruct_t SOLVEstruct;
     spdlog::info("Call SuperLU_DIST pdgssvx()");
-    pdgssvx(_options.get(), _superlu_matA->supermatrix(), &ScalePermstruct,
-            u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
-            &SOLVEstruct, berr.data(), &stat, &info);
+    pdgssvx(_options.get(), _superlu_matA->supermatrix(),
+            _scalepermstruct.get(), u.array().data(), ldb, nrhs,
+            _gridinfo.get(), _lustruct.get(), &SOLVEstruct, berr.data(), &stat,
+            &info);
 
     spdlog::info("Finalize solve");
+
+    // Unclear if this is a deleter.
     dSolveFinalize(_options.get(), &SOLVEstruct);
-    dScalePermstructFree(&ScalePermstruct);
-    dLUstructFree(&LUstruct);
   }
+  /*
   else if constexpr (std::is_same_v<T, float>)
   {
     spdlog::info("Start solve [float32]");
@@ -388,6 +432,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     zScalePermstructFree(&ScalePermstruct);
     zLUstructFree(&LUstruct);
   }
+  */
   else
     static_assert(dependent_false_v<T>, "Invalid scalar type");
   spdlog::info("Finished solve");
@@ -402,7 +447,5 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 }
 //----------------------------------------------------------------------------
 template class la::SuperLUDistSolver<double>;
-template class la::SuperLUDistSolver<float>;
-template class la::SuperLUDistSolver<std::complex<double>>;
 //----------------------------------------------------------------------------
 #endif

@@ -143,31 +143,31 @@ struct GridInfoDeleter
 struct ScalePermStructDeleter
 {
   void operator()(
-      dolfinx::la::SuperLUDistStructs::sScalePermstruct_t* s) const noexcept;
+      SuperLUDistStructs::sScalePermstruct_t* s) const noexcept;
   void operator()(
-      dolfinx::la::SuperLUDistStructs::dScalePermstruct_t* s) const noexcept;
+      SuperLUDistStructs::dScalePermstruct_t* s) const noexcept;
   void operator()(
-      dolfinx::la::SuperLUDistStructs::zScalePermstruct_t* s) const noexcept;
+      SuperLUDistStructs::zScalePermstruct_t* s) const noexcept;
 };
 
 struct LUStructDeleter
 {
   void
-  operator()(dolfinx::la::SuperLUDistStructs::sLUstruct_t* l) const noexcept;
+  operator()(SuperLUDistStructs::sLUstruct_t* l) const noexcept;
   void
-  operator()(dolfinx::la::SuperLUDistStructs::dLUstruct_t* l) const noexcept;
+  operator()(SuperLUDistStructs::dLUstruct_t* l) const noexcept;
   void
-  operator()(dolfinx::la::SuperLUDistStructs::zLUstruct_t* l) const noexcept;
+  operator()(SuperLUDistStructs::zLUstruct_t* l) const noexcept;
 };
 
 struct SolveStructDeleter
 {
   void
-  operator()(dolfinx::la::SuperLUDistStructs::sSOLVEstruct_t* S) const noexcept;
+  operator()(SuperLUDistStructs::sSOLVEstruct_t* S) const noexcept;
   void
-  operator()(dolfinx::la::SuperLUDistStructs::dSOLVEstruct_t* S) const noexcept;
+  operator()(SuperLUDistStructs::dSOLVEstruct_t* S) const noexcept;
   void
-  operator()(dolfinx::la::SuperLUDistStructs::zSOLVEstruct_t* S) const noexcept;
+  operator()(SuperLUDistStructs::zSOLVEstruct_t* S) const noexcept;
 };
 
 /// SuperLU_DIST linear solver interface.
@@ -245,13 +245,13 @@ private:
 
   // Pointer to 'typed' struct *ScalePermstruct_t
   std::unique_ptr<typename map_t<T>::ScalePermstruct_t, ScalePermStructDeleter>
-      ScalePermstruct;
+      _scalepermstruct;
   // Pointer to 'typed' struct *LUstruct_t
-  std::unique_ptr<typename map_t<T>::LUstruct_t, LUStructDeleter> LUstruct;
+  std::unique_ptr<typename map_t<T>::LUstruct_t, LUStructDeleter> _lustruct;
   // Pointer to 'typed' struct *SOLVEstruct
   // TODO: Does this have a deleter? Need to check.
   std::unique_ptr<typename map_t<T>::SOLVEstruct_t, SolveStructDeleter>
-      SOLVEstruct;
+      _solvestruct;
 };
 } // namespace dolfinx::la
 #endif
