@@ -42,7 +42,7 @@ class SuperLUDistMatrix
 public:
   /// @brief Create SuperLU_DIST matrix operator.
   ///
-  /// Copies from A sparse matrix data for SuperLU_DIST solver.
+  /// Copies data from native CSR into SuperLU_DIST format.
   ///
   /// @tparam T Scalar type.
   /// @param A Matrix.
@@ -61,10 +61,8 @@ public:
   SuperLUDistStructs::SuperMatrix* supermatrix() const;
 
 private:
-  // No public accessors - changes should be made using MatrixCSR interfaces
-  // before constructing an instance of this class.
   dolfinx::MPI::Comm _comm;
-  // Deep copied values from MatrixCSR.
+  // Deep copy of values from MatrixCSR.
   std::vector<T> _matA_values;
   // Saved matrix operator with rows and cols in required integer type.
   // cols and rowptr are required in opaque type "int_t" of
