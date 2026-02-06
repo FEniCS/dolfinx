@@ -236,7 +236,8 @@ void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
              const dolfinx::la::MatrixCSR<T>* Amat)
           {
             auto Amat_superlu
-                = std::make_shared<const dolfinx::la::SuperLUDistMatrix<T>>(Amat);
+                = std::make_shared<const dolfinx::la::SuperLUDistMatrix<T>>(
+                    Amat);
             new (solver)
                 dolfinx::la::SuperLUDistSolver<T>(std::move(Amat_superlu));
           },
