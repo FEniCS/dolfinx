@@ -332,8 +332,8 @@ void la(nb::module_& m)
 
 #if defined(HAS_SUPERLU_DIST)
   declare_superlu_dist_solver<double>(m, "float64");
-  declare_superlu_dist_solver<float>(m, "float32");
-  declare_superlu_dist_solver<std::complex<double>>(m, "complex128");
+//  declare_superlu_dist_solver<float>(m, "float32");
+//  declare_superlu_dist_solver<std::complex<double>>(m, "complex128");
 #endif // HAS_SUPERLU_DIST
 
   // Declare objects that are templated over type

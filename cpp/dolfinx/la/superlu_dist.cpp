@@ -199,6 +199,10 @@ struct dolfinx::la::SuperLUDistStructs::dLUstruct_t : public ::dLUstruct_t
 {
 };
 //----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::dSOLVEstruct_t : public ::dSOLVEstruct_t
+{
+};
+//----------------------------------------------------------------------------
 void GridInfoDeleter::operator()(
     SuperLUDistStructs::gridinfo_t* g) const noexcept
 {
@@ -267,7 +271,8 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
               dLUstructInit(m, l.get());
             }
             return l;
-          }())
+          }()),
+      _solvestruct(std::make_unique<typename map_t<T>::SOLVEstruct_t>())
 {
 }
 //----------------------------------------------------------------------------
@@ -379,18 +384,16 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   {
     spdlog::info("Start solve [float64]");
 
-    // Partially construct inline.
-    dSOLVEstruct_t SOLVEstruct;
     spdlog::info("Call SuperLU_DIST pdgssvx()");
     pdgssvx(_options.get(), _superlu_matA->supermatrix(),
             _scalepermstruct.get(), u.array().data(), ldb, nrhs,
-            _gridinfo.get(), _lustruct.get(), &SOLVEstruct, berr.data(), &stat,
-            &info);
+            _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
+            &stat, &info);
 
     spdlog::info("Finalize solve");
 
     // Unclear if this is a deleter.
-    dSolveFinalize(_options.get(), &SOLVEstruct);
+    dSolveFinalize(_options.get(), _solvestruct.get());
   }
   /*
   else if constexpr (std::is_same_v<T, float>)

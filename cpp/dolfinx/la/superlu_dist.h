@@ -250,7 +250,7 @@ private:
   std::unique_ptr<typename map_t<T>::LUstruct_t, LUStructDeleter> _lustruct;
   // Pointer to 'typed' struct *SOLVEstruct
   // TODO: Does this have a deleter? Need to check.
-  std::unique_ptr<typename map_t<T>::SOLVEstruct_t, SolveStructDeleter>
+  std::unique_ptr<typename map_t<T>::SOLVEstruct_t>
       _solvestruct;
 };
 } // namespace dolfinx::la
