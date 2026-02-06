@@ -749,8 +749,8 @@ void declare_form(nb::module_& m, std::string type)
                  std::vector<std::tuple<
                      int, std::uintptr_t,
                      nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>,
-                     nb::ndarray<const std::int8_t, nb::ndim<1>,
-                                 nb::c_contig>>>>& integrals,
+                     nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>,
+                     std::optional<std::uintptr_t>>>>& integrals,
              const std::vector<std::shared_ptr<
                  const dolfinx::fem::Function<T, U>>>& coefficients,
              const std::vector<
@@ -766,17 +766,22 @@ void declare_form(nb::module_& m, std::string type)
             // Loop over kernel for each entity type
             for (auto& [type, kernels] : integrals)
             {
-              for (auto& [id, ptr, e, c] : kernels)
+              for (auto& [id, ptr, e, c, custom_data] : kernels)
               {
                 auto kn_ptr
                     = (void (*)(T*, const T*, const T*,
                                 const typename geom_type<T>::value_type*,
                                 const int*, const std::uint8_t*, void*))ptr;
+                // Convert custom_data from std::optional<uintptr_t> to
+                // std::optional<void*>
+                std::optional<void*> cd = std::nullopt;
+                if (custom_data.has_value())
+                  cd = reinterpret_cast<void*>(custom_data.value());
                 _integrals.insert(
                     {{type, id, 0},
                      {kn_ptr,
                       std::vector<std::int32_t>(e.data(), e.data() + e.size()),
-                      std::vector<int>(c.data(), c.data() + c.size())}});
+                      std::vector<int>(c.data(), c.data() + c.size()), cd}});
               }
             }
 
@@ -843,6 +848,34 @@ void declare_form(nb::module_& m, std::string type)
       .def_prop_ro("integral_types", &dolfinx::fem::Form<T, U>::integral_types)
       .def_prop_ro("needs_facet_permutations",
                    &dolfinx::fem::Form<T, U>::needs_facet_permutations)
+      .def(
+          "custom_data",
+          [](const dolfinx::fem::Form<T, U>& self,
+             dolfinx::fem::IntegralType type, int id,
+             int kernel_idx) -> std::optional<std::uintptr_t>
+          {
+            /* We use std::uintptr_t to map void* into Python to allow
+            seamless interop with numpy.ctypes.data.
+            Example:
+            # Create data to pass to kernel:
+            data = np.array([2.0], dtype=np.float64)
+            # Pass pointer at Form creation via integrals tuple:
+            integrals = {IntegralType.cell: [(id, kernel_ptr, cells,
+            coeffs, data.ctypes.data)]}
+            formtype = form_cpp_class(dtype)
+            L = Form(formtype([V._cpp_object], integrals, [], [], False, [],
+            mesh=mesh._cpp_object)) Important: You must keep the NumPy array
+            alive in Python while the form is being used; if the array is
+            garbage collected, the pointer becomes invalid! */
+            auto cd = self.custom_data(type, id, kernel_idx);
+            return cd ? std::optional<std::uintptr_t>((std::uintptr_t)*cd)
+                      : std::nullopt;
+          },
+          nb::arg("type"), nb::arg("id"), nb::arg("kernel_idx"),
+          "Get custom data pointer for an integral, or None if not set. "
+          "Warning: void-pointers are inherently unsafe and cannot be type "
+          "or bounds checked. Incorrect usage of this feature can and will "
+          "lead to undefined behaviour and crashes.")
       .def(
           "domains",
           [](const dolfinx::fem::Form<T, U>& self,
