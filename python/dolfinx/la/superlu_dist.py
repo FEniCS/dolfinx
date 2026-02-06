@@ -9,7 +9,7 @@ This module provides basic support for parallel solution of linear systems
 assembled into :class:`dolfinx.la.MatrixCSR`.
 
 Note:
-  Users with more advanced needs should use petsc4py.
+  Users with more advanced linear solver needs should use PETSc/petsc4py.
 """
 
 import numpy as np
@@ -44,34 +44,55 @@ class SuperLUDistSolver:
         """
         self._cpp_object = solver
 
+    def set_option(self, name: str, value: str):
+        """Set SuperLU_DIST option for solve.
+
+        See SuperLU_DIST User's Guide for option names and values.
+
+        Examples:
+            solver.set_option("SymmetricMode", "YES")
+            solver.set_option("Trans", "NOTRANS")
+
+        Args:
+            name: Option name.
+            value: Option value.
+        """
+        self._cpp_object.set_option(name, value)
+
     def solve(self, b: dolfinx.la.Vector, u: dolfinx.la.Vector) -> int:
         """Solve linear system :math:`Au = b`.
 
         Note:
-            The caller must check the return integer for success
+            The caller must check the return integer for success.
             ``(== 0)``.
 
         Note:
             The caller must ``u.scatter_forward()`` after the solve.
+
+        Note:
+            Vectors must have size and parallel layout compatible with
+            ``A``.
 
         Args:
             b: Right-hand side vector :math:`b`.
             u: Solution vector :math:`u`, overwritten during solve.
 
         Returns:
-           SuperLU_DIST return int from ``p*gssvx`` routine.
+           SuperLU_DIST return integer from ``p*gssvx`` routine.
         """
         return self._cpp_object.solve(b._cpp_object, u._cpp_object)
 
 
-def superlu_dist_solver(A: dolfinx.la.MatrixCSR, verbose: bool = False) -> SuperLUDistSolver:
+def superlu_dist_solver(A: dolfinx.la.MatrixCSR) -> SuperLUDistSolver:
     """Create a SuperLU_DIST linear solver.
 
-    For solving linear systems :math:`Au = b` via LU decomposition.
+    Solve linear system :math:`Au = b` via LU decomposition.
+
+    The SuperLU_DIST solver has options set to upstream defaults, except
+    PrintStat (verbose solver output) set to NO.
 
     Args:
         A: Assembled left-hand side matrix :math:`A`.
-        verbose: Enable verbose output from SuperLU_DIST.
     """
     dtype = A.data.dtype
     if np.issubdtype(dtype, np.float32):
@@ -82,4 +103,4 @@ def superlu_dist_solver(A: dolfinx.la.MatrixCSR, verbose: bool = False) -> Super
         stype = _cpp.la.SuperLUDistSolver_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
-    return SuperLUDistSolver(stype(A._cpp_object, verbose))
+    return SuperLUDistSolver(stype(A._cpp_object))

@@ -14,8 +14,10 @@ extern "C"
 #include <superlu_zdefs.h>
 }
 #include <algorithm>
+#include <dolfinx/common/Timer.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
+#include <ranges>
 #include <stdexcept>
 #include <vector>
 
@@ -45,6 +47,25 @@ namespace
 {
 template <typename...>
 constexpr bool dependent_false_v = false;
+
+template <typename V, typename W>
+void option_setter(std::string_view option_name, W& option,
+                   const std::initializer_list<V> values,
+                   std::initializer_list<std::string_view> value_names,
+                   std::string_view value_in)
+{
+  // TODO: Can be done nicely with std::views::zip in C++23.
+  for (auto i : std::views::iota(std::size_t{0}, value_names.size()))
+  {
+    if (value_in == *(value_names.begin() + i))
+    {
+      option = *(values.begin() + i);
+      spdlog::info("Set {} to {}", option_name, value_in);
+      return;
+    }
+  }
+  throw std::runtime_error("Unsupported value");
+}
 
 std::vector<int_t> col_indices(const auto& A)
 {
@@ -135,15 +156,13 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 } // namespace
 //----------------------------------------------------------------------------
 template <typename T>
-SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A,
-                                        bool verbose)
+SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A)
     : _matA(std::move(A)),
       _cols(
           std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*_matA))),
       _rowptr(
           std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*_matA))),
-      _supermatrix(create_supermatrix<T>(*_matA, *_rowptr, *_cols)),
-      _verbose(verbose)
+      _supermatrix(create_supermatrix<T>(*_matA, *_rowptr, *_cols))
 {
 }
 //----------------------------------------------------------------------------
@@ -170,18 +189,32 @@ struct dolfinx::la::SuperLUDistStructs::gridinfo_t : public ::gridinfo_t
 {
 };
 //----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t
+    : public ::superlu_dist_options_t
+{
+};
+//----------------------------------------------------------------------------
 void GridInfoDeleter::operator()(
     SuperLUDistStructs::gridinfo_t* gridinfo) const noexcept
 {
   superlu_gridexit(gridinfo);
   delete gridinfo;
-}
+};
 
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(
-    std::shared_ptr<const SuperLUDistMatrix<T>> A, bool verbose)
+    std::shared_ptr<const SuperLUDistMatrix<T>> A)
     : _superlu_matA(std::move(A)),
+      _options(
+          []
+          {
+            auto o = std::make_unique<
+                SuperLUDistStructs::superlu_dist_options_t>();
+            set_default_options_dist(o.get());
+            o->PrintStat = NO;
+            return o;
+          }()),
       _gridinfo(
           [comm = _superlu_matA->matA().comm()]
           {
@@ -191,27 +224,104 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
                 new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{});
             superlu_gridinit(comm, nprow, npcol, p.get());
             return p;
-          }()),
-      _verbose(verbose)
+          }())
 {
+}
+
+template <typename T>
+void SuperLUDistSolver<T>::set_options(
+    SuperLUDistStructs::superlu_dist_options_t options)
+{
+  _options = std::make_unique<SuperLUDistStructs::superlu_dist_options_t>(
+      std::move(options));
+}
+
+template <typename T>
+void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
+{
+  spdlog::info("Attempting to set option {} to {}", name, value);
+  const std::map<std::string, std::reference_wrapper<yes_no_t>> map_bool
+      = {{"Equil", _options->Equil},
+         {"DiagInv", _options->DiagInv},
+         {"SymmetricMode", _options->SymmetricMode},
+         {"PivotGrowth", _options->PivotGrowth},
+         {"ConditionNumber", _options->ConditionNumber},
+         {"ReplaceTinyPivot", _options->ReplaceTinyPivot},
+         {"SolveInitialized", _options->SolveInitialized},
+         {"RefineInitialized", _options->RefineInitialized},
+         {"PrintStat", _options->PrintStat},
+         {"lookahead_etree", _options->lookahead_etree},
+         {"SymPattern", _options->SymPattern},
+         {"Use_TensorCore", _options->Use_TensorCore},
+         {"Algo3d", _options->Algo3d}};
+
+  // Search in map_bool first
+  auto it = map_bool.find(name);
+  if (it != map_bool.end())
+  {
+    if (value == "YES")
+    {
+      spdlog::info("Set {} to YES", name);
+      it->second.get() = YES;
+    }
+    else if (value == "NO")
+    {
+      spdlog::info("Set {} to NO", name);
+      it->second.get() = NO;
+    }
+    else
+    {
+      throw std::runtime_error("Boolean values must be string 'YES' or 'NO'");
+    }
+  }
+
+  // Search some enum types
+  if (name == "Fact")
+  {
+    option_setter(
+        name, _options->Fact,
+        {DOFACT, SamePattern, SamePattern_SameRowPerm, FACTORED},
+        {"DOFACT", "SamePattern", "SamePattern_SameRowPerm", "FACTORED"},
+        value);
+  }
+  else if (name == "Trans")
+  {
+    option_setter(name, _options->Trans, {NOTRANS, TRANS, CONJ},
+                  {"NOTRANS", "TRANS", "CONJ"}, value);
+  }
+  else if (name == "ColPerm")
+  {
+    option_setter(name, _options->ColPerm,
+                  {NATURAL, MMD_ATA, MMD_AT_PLUS_A, COLAMD, METIS_AT_PLUS_A,
+                   PARMETIS, METIS_ATA, ZOLTAN, MY_PERMC},
+                  {"NATURAL", "MMD_ATA", "MMD_AT_PLUS_A", "COLAMD",
+                   "METIS_AT_PLUS_A", "PARMETIS", "METIS_ATA", "ZOLTAN",
+                   "MY_PERMC"},
+                  value);
+  }
+  else if (name == "RowPerm")
+  {
+    option_setter(name, _options->RowPerm,
+                  {NOROWPERM, LargeDiag_MC64, LargeDiag_HWPM, MY_PERMR},
+                  {"NOROWPERM", "LargeDiag_MC64", "LargeDiag_HWPM", "MY_PERMR"},
+                  value);
+  }
+  else
+  {
+    std::runtime_error("Unsupported name");
+  }
 }
 //----------------------------------------------------------------------------
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 {
+  common::Timer tsolve("SuperLU Solve");
   int_t m = _superlu_matA->supermatrix()->nrow;
   int_t m_loc = ((NRformat_loc*)(_superlu_matA->supermatrix()->Store))->m_loc;
 
   // RHS
   int_t ldb = m_loc;
   int_t nrhs = 1;
-
-  superlu_dist_options_t options;
-  set_default_options_dist(&options);
-  options.DiagInv = YES;
-  options.ReplaceTinyPivot = YES;
-  if (!_verbose)
-    options.PrintStat = NO;
 
   int info = 0;
   SuperLUStat_t stat;
@@ -232,12 +342,12 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     dSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pdgssvx()");
-    pdgssvx(&options, _superlu_matA->supermatrix(), &ScalePermstruct,
+    pdgssvx(_options.get(), _superlu_matA->supermatrix(), &ScalePermstruct,
             u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
             &SOLVEstruct, berr.data(), &stat, &info);
 
     spdlog::info("Finalize solve");
-    dSolveFinalize(&options, &SOLVEstruct);
+    dSolveFinalize(_options.get(), &SOLVEstruct);
     dScalePermstructFree(&ScalePermstruct);
     dLUstructFree(&LUstruct);
   }
@@ -251,12 +361,12 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST psgssvx()");
-    psgssvx(&options, _superlu_matA->supermatrix(), &ScalePermstruct,
+    psgssvx(_options.get(), _superlu_matA->supermatrix(), &ScalePermstruct,
             u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
             &SOLVEstruct, berr.data(), &stat, &info);
 
     spdlog::info("Finalize solve");
-    sSolveFinalize(&options, &SOLVEstruct);
+    sSolveFinalize(_options.get(), &SOLVEstruct);
     sScalePermstructFree(&ScalePermstruct);
     sLUstructFree(&LUstruct);
   }
@@ -270,13 +380,13 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     zSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pzgssvx()");
-    pzgssvx(&options, _superlu_matA->supermatrix(), &ScalePermstruct,
+    pzgssvx(_options.get(), _superlu_matA->supermatrix(), &ScalePermstruct,
             reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
             _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
             &info);
 
     spdlog::info("Finalize solve");
-    zSolveFinalize(&options, &SOLVEstruct);
+    zSolveFinalize(_options.get(), &SOLVEstruct);
     zScalePermstructFree(&ScalePermstruct);
     zLUstructFree(&LUstruct);
   }
@@ -287,8 +397,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   if (info != 0)
     spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
 
-  if (_verbose)
-    PStatPrint(&options, &stat, _gridinfo.get());
+  PStatPrint(_options.get(), &stat, _gridinfo.get());
   PStatFree(&stat);
 
   return info;
