@@ -24,7 +24,63 @@ public:
   struct vec_int_t;
   struct gridinfo_t;
   struct superlu_dist_options_t;
+
+  struct sScalePermstruct_t;
+  struct dScalePermstruct_t;
+  struct zScalePermstruct_t;
+
+  struct sLUstruct_t;
+  struct dLUstruct_t;
+  struct zLUstruct_t;
+
+  struct sSOLVEstruct_t;
+  struct dSOLVEstruct_t;
+  struct zSOLVEstruct_t;
 };
+
+// SuperLU_DIST has structs that are 'typed' with prefixes d, s, z. This allows
+// the solver class to select the typed set based on T.
+namespace detail
+{
+template <typename...>
+constexpr bool always_false_v = false;
+
+template <typename T>
+struct map
+{
+  static_assert(
+      always_false_v<T>,
+      "Unsupported T. Supported: float, double, std::complex<double>.");
+};
+
+template <>
+struct map<float>
+{
+  using ScalePermstruct_t = SuperLUDistStructs::sScalePermstruct_t;
+  using LUstruct_t = SuperLUDistStructs::sLUstruct_t;
+  using SOLVEstruct_t = SuperLUDistStructs::sSOLVEstruct_t;
+};
+
+template <>
+struct map<double>
+{
+  using ScalePermstruct_t = SuperLUDistStructs::dScalePermstruct_t;
+  using LUstruct_t = SuperLUDistStructs::dLUstruct_t;
+  using SOLVEstruct_t = SuperLUDistStructs::dSOLVEstruct_t;
+};
+
+template <>
+struct map<std::complex<double>>
+{
+  using ScalePermstruct_t = SuperLUDistStructs::zScalePermstruct_t;
+  using LUstruct_t = SuperLUDistStructs::zLUstruct_t;
+  using SOLVEstruct_t = SuperLUDistStructs::zSOLVEstruct_t;
+};
+
+} // namespace detail
+
+template <class T>
+using map_t = detail::map<T>;
 
 /// Call library cleanup and delete pointer. For use with
 /// std::unique_ptr holding SuperMatrix.
@@ -82,6 +138,36 @@ struct GridInfoDeleter
   /// @brief Deletion of gridinfo_t
   /// @param g
   void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
+};
+
+struct ScalePermStructDeleter
+{
+  void operator()(
+      dolfinx::la::SuperLUDistStructs::sScalePermstruct_t* s) const noexcept;
+  void operator()(
+      dolfinx::la::SuperLUDistStructs::dScalePermstruct_t* s) const noexcept;
+  void operator()(
+      dolfinx::la::SuperLUDistStructs::zScalePermstruct_t* s) const noexcept;
+};
+
+struct LUStructDeleter
+{
+  void
+  operator()(dolfinx::la::SuperLUDistStructs::sLUstruct_t* l) const noexcept;
+  void
+  operator()(dolfinx::la::SuperLUDistStructs::dLUstruct_t* l) const noexcept;
+  void
+  operator()(dolfinx::la::SuperLUDistStructs::zLUstruct_t* l) const noexcept;
+};
+
+struct SolveStructDeleter
+{
+  void
+  operator()(dolfinx::la::SuperLUDistStructs::sSOLVEstruct_t* S) const noexcept;
+  void
+  operator()(dolfinx::la::SuperLUDistStructs::dSOLVEstruct_t* S) const noexcept;
+  void
+  operator()(dolfinx::la::SuperLUDistStructs::zSOLVEstruct_t* S) const noexcept;
 };
 
 /// SuperLU_DIST linear solver interface.
@@ -156,6 +242,16 @@ private:
 
   // Pointer to struct gridinfo_t
   std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
+
+  // Pointer to 'typed' struct *ScalePermstruct_t
+  std::unique_ptr<typename map_t<T>::ScalePermstruct_t, ScalePermStructDeleter>
+      ScalePermstruct;
+  // Pointer to 'typed' struct *LUstruct_t
+  std::unique_ptr<typename map_t<T>::LUstruct_t, LUStructDeleter> LUstruct;
+  // Pointer to 'typed' struct *SOLVEstruct
+  // TODO: Does this have a deleter? Need to check.
+  std::unique_ptr<typename map_t<T>::SOLVEstruct_t, SolveStructDeleter>
+      SOLVEstruct;
 };
 } // namespace dolfinx::la
 #endif
