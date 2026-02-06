@@ -28,15 +28,19 @@
 
 #if defined(HAS_SUPERLU_DIST)
 #include <superlu_defs.h>
-/// Struct holding vector of type int_t
+#include <superlu_ddefs.h>
 struct dolfinx::la::SuperLUDistStructs::vec_int_t
 {
   /// @brief vector
   std::vector<int_t> vec;
 };
-/// Struct defining superlu_options_t
+
 struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t
     : public ::superlu_dist_options_t
+{
+};
+
+struct dolfinx::la::SuperLUDistStructs::dSOLVEstruct_t : public ::dSOLVEstruct_t
 {
 };
 #endif // HAS_SUPERLU_DIST
