@@ -55,9 +55,17 @@ find_local_entity_index(const mesh::Topology& topology,
 
   std::vector<std::pair<std::int32_t, int>> entity_indices;
   entity_indices.reserve(entities.size());
+  std::int32_t num_entities_local = e_to_c->num_nodes();
   for (std::int32_t e : entities)
   {
     // Get first attached cell
+    if (num_entities_local <= e)
+    {
+      throw std::runtime_error(
+          "Input entity " + std::to_string(e)
+          + " is bigger than the number of entities on this process ("
+          + std::to_string(num_entities_local) + ").");
+    }
     assert(e_to_c->num_links(e) > 0);
     const int cell = e_to_c->links(e).front();
 
