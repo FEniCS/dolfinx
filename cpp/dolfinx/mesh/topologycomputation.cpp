@@ -16,6 +16,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
 #include <memory>
 #include <mpi.h>
 #include <numeric>
@@ -631,8 +632,8 @@ compute_entities_by_key_matching(
       threads[i] = std::jthread(
           build_entity_list, std::span(entity_list.data() + offset, count),
           std::span(entity_list_sorted.data() + offset, count), c0, c1 - c0,
-          cells, e_vertices, entity_type, cell_type_entities[k],
-          std::cref(vertex_index_map));
+          std::cref(cells), std::cref(e_vertices), entity_type,
+          std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
     }
   }
 
