@@ -674,7 +674,7 @@ mesh::build_local_dual_graph(
       std::int32_t cell_count = matching_facets.size();
       assert(cell_count >= 1);
       if (!max_facet_to_cell_links.has_value()
-          or (cell_count < *max_facet_to_cell_links))
+          or cell_count < *max_facet_to_cell_links)
       {
         // Store unmatched facets and the attached cell
         for (std::int32_t i = 0; i < cell_count; i++)
@@ -690,7 +690,7 @@ mesh::build_local_dual_graph(
       // added later). In the range [it, it_next_facet), all
       // combinations are added.
       for (auto facet_a_it = it; facet_a_it != matching_facets.end();
-           facet_a_it++)
+           ++facet_a_it)
       {
         std::span facet_a(facets.data() + *facet_a_it * shape1, shape1);
         std::int32_t cell_a = facet_a.back();
