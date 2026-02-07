@@ -22,7 +22,7 @@ jobs:
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
-      PETSC_VERSION: 3.24.4
+      PETSC_VERSION: 3.24.3
       PYTEST_ADDOPTS: "-W error"
 
     steps:
