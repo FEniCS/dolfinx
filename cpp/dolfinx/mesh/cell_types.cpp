@@ -107,7 +107,7 @@ mesh::CellType mesh::cell_facet_type(CellType type, int index)
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> mesh::get_entity_vertices(CellType type, int dim)
 {
-  const std::vector<std::vector<int>> topology
+  std::vector<std::vector<int>> topology
       = basix::cell::topology(cell_type_to_basix_type(type))[dim];
   return graph::AdjacencyList<int>(topology);
 }
@@ -121,7 +121,7 @@ graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
   else if (type == CellType::point)
     return graph::AdjacencyList<int>(0);
 
-  const std::vector<std::vector<std::vector<int>>> connectivity
+  std::vector<std::vector<std::vector<int>>> connectivity
       = basix::cell::sub_entity_connectivity(
           cell_type_to_basix_type(type))[dim0];
   std::vector<std::vector<int>> subset;
