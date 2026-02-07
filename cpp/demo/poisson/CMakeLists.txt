@@ -4,6 +4,8 @@
 #
 cmake_minimum_required(VERSION 3.21)
 
+set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(PROJECT_NAME demo_poisson)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
@@ -43,9 +45,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
 target_link_libraries(${PROJECT_NAME} dolfinx)
 
-# Set C++20 standard
-set(CMAKE_CXX_EXTENSIONS OFF)
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20 c_std_23)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which
 # includes LaTeX)
