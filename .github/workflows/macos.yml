@@ -22,7 +22,7 @@ jobs:
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
-      PETSC_VERSION: 3.24.3
+      PETSC_VERSION: 3.24.4
       PYTEST_ADDOPTS: "-W error"
 
     steps:
@@ -37,7 +37,7 @@ jobs:
         uses: actions/setup-python@v6
         id: cp3
         with:
-          python-version: "3.14"
+          python-version: "3.13"
 
       - name: Install Homebrew dependencies
         run: |
