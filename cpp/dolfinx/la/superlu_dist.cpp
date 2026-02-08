@@ -466,11 +466,11 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   int_t m_loc = ((NRformat_loc*)(_superlu_matA->supermatrix()->Store))->m_loc;
 
   if (b.array().size() != u.array().size())
-    raise std::runtime_error("b and u have incompatible size/layout");
-  if (b.array().size() != m_loc)
-    raise std::runtime_error("b and A have incompatible size/layout");
-  if (u.array().size() != m_loc)
-    raise std::runtime_error("u and A have incompatible size/layout");
+    throw std::runtime_error("b and u have incompatible size/layout");
+  if (b.array().size() != static_cast<std::size_t>(m_loc))
+    throw std::runtime_error("b and A have incompatible size/layout");
+  if (u.array().size() != static_cast<std::size_t>(m_loc))
+    throw std::runtime_error("u and A have incompatible size/layout");
 
   // RHS
   int_t ldb = m_loc;

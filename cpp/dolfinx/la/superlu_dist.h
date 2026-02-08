@@ -48,12 +48,9 @@ constexpr bool always_false_v = false;
 template <typename T>
 struct map
 {
-  static_assert(
-      always_false_v<T>,
-      "Unsupported T. Supported: float, double, std::complex<double>.");
+  static_assert(always_false_v<T>, "Invalid scalar type");
 };
 
-template <>
 /// Map double type to float 'typed' structs
 template <>
 struct map<double>
@@ -66,6 +63,7 @@ struct map<double>
 };
 
 /// Map float type to float 'typed' structs
+template <>
 struct map<float>
 {
   /// \cond
