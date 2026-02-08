@@ -26,7 +26,9 @@ class SuperLUDistSolver:
     """SuperLU_DIST solver."""
 
     _cpp_object: (
-        _cpp.la.SuperLUDistSolver_float64
+        _cpp.la.SuperLUDistSolver_float32
+        | _cpp.la.SuperLUDistSolver_float64
+        | _cpp.la.SuperLUDistSolver_complex128
     )
 
     def __init__(self, solver):
@@ -93,8 +95,12 @@ def superlu_dist_solver(A: dolfinx.la.MatrixCSR) -> SuperLUDistSolver:
         A: Assembled left-hand side matrix :math:`A`.
     """
     dtype = A.data.dtype
-    if np.issubdtype(dtype, np.float64):
+    if np.issubdtype(dtype, np.float32):
+        stype = _cpp.la.SuperLUDistSolver_float32
+    elif np.issubdtype(dtype, np.float64):
         stype = _cpp.la.SuperLUDistSolver_float64
+    elif np.issubdtype(dtype, np.complex128):
+        stype = _cpp.la.SuperLUDistSolver_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
     return SuperLUDistSolver(stype(A._cpp_object))
