@@ -84,7 +84,7 @@ def test_superlu_solver(dtype):
     assert np.isclose(error, 0.0, atol=eps)
 
     solver.set_option("Fact", "FACTORED")
-    
+
     uh = Function(V, dtype=dtype)
     error_code = solver.solve(b, uh.x)
     assert error_code == 0

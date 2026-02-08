@@ -166,10 +166,10 @@ template class la::SuperLUDistMatrix<std::complex<double>>;
 namespace
 {
 template <typename V, typename W>
-void option_setter(W& option, const std::string_view value_in,
-                   const std::string_view option_name,
-                   const std::initializer_list<V> values,
-                   const std::initializer_list<std::string_view> value_names)
+void option_setter(W& option, std::string_view value_in,
+                   std::string_view option_name,
+                   std::initializer_list<V> values,
+                   std::initializer_list<std::string_view> value_names)
 {
   // TODO: Can be done nicely with std::views::zip in C++23.
   for (auto i : std::views::iota(std::size_t{0}, value_names.size()))
@@ -442,7 +442,7 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 {
-  common::Timer tsolve("SuperLU Solve");
+  common::Timer tsolve("SuperLU_DIST solve");
   int_t m_loc = ((NRformat_loc*)(_superlu_matA->supermatrix()->Store))->m_loc;
 
   // RHS
@@ -501,13 +501,14 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   }
   else
     static_assert(dependent_false_v<T>, "Invalid scalar type");
-  spdlog::info("Finished solve");
 
   if (info != 0)
     spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
 
   PStatPrint(_options.get(), &stat, _gridinfo.get());
   PStatFree(&stat);
+  
+  spdlog::info("Finished SuperLU_DIST solve");
 
   return info;
 }
