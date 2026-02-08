@@ -97,7 +97,7 @@ def create_cell_partitioner(part: Callable, mode: GhostMode = GhostMode.none):
 
 
 @create_cell_partitioner.register(GhostMode)
-def _(mode: GhostMode, max_facet_to_cell_links: int, num_threads: int):
+def _(mode: GhostMode, max_facet_to_cell_links: int = 2, num_threads: int = 1):
     """Create a function to partition a mesh.
 
     Args:
