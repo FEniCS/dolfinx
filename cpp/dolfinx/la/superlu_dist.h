@@ -239,6 +239,13 @@ public:
   /// @param options SuperLU_DIST option struct.
   void set_options(SuperLUDistStructs::superlu_dist_options_t options);
 
+  /// @brief Set assembled left-hand side matrix A.
+  ///
+  /// For advanced use with SuperLU_DIST option `Factor` allowing
+  /// use of previously computed factors with a new matrix A.
+  /// @param A Assembled left-hand side matrix.
+  void set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A);
+
   /// @brief Solve linear system Au = b.
   ///
   /// @param b Right-hand side vector.
