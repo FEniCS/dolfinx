@@ -99,6 +99,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
 /// @param[in] celltype Cell shape.
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
+/// @param[in] num_threads Number of threads to use.
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return Mesh
 template <std::floating_point T = double>
@@ -151,6 +152,7 @@ create_box(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
 /// @param[in] celltype Cell shape.
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
+/// @param[in] num_threads Number of threads to use.
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return Mesh
 template <std::floating_point T = double>
@@ -179,6 +181,7 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
 /// @param[in] diagonal Direction of diagonals
+/// @param[in] num_threads Number of threads to use.
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return Mesh
 template <std::floating_point T = double>
@@ -249,6 +252,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
+/// @param[in] num_threads Number of threads to use.
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return A mesh.
 template <std::floating_point T = double>

@@ -163,14 +163,16 @@ list_timings(MPI.COMM_WORLD)
 #     L,
 #     bcs=[bc],
 #     petsc_options_prefix="demo_poisson_",
-#     petsc_options={"ksp_type": "preonly", "pc_type": "lu", "ksp_error_if_not_converged": True},
+#     petsc_options={"ksp_type": "preonly", "pc_type": "lu",
+#  "ksp_error_if_not_converged": True},
 # )
 # uh = problem.solve()
 # assert isinstance(uh, fem.Function)
 # # -
 
 # # The solution can be written to a {py:class}`XDMFFile
-# # <dolfinx.io.XDMFFile>` file visualization with [ParaView](https://www.paraview.org/)
+# # <dolfinx.io.XDMFFile>` file visualization with
+# [ParaView](https://www.paraview.org/)
 # # or [VisIt](https://visit-dav.github.io/visit-website/):
 
 # # +
@@ -201,5 +203,5 @@ list_timings(MPI.COMM_WORLD)
 #         plotter.show()
 # except ModuleNotFoundError:
 #     print("'pyvista' is required to visualise the solution.")
-#     print("To install pyvista with pip: 'python3 -m pip install pyvista'.")
+#     print("Install pyvista with pip")
 # # -

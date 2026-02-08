@@ -223,6 +223,7 @@ using CellReorderFunction = std::function<std::vector<std::int32_t>(
 /// reorder the cells.
 /// @param[in] max_facet_to_cell_links Maximum number of cells a facet can be
 /// connected to.
+/// @param[in] num_threads Number of threads to use.
 /// @return Boundary vertices function which can be passed to `create_mesh`.
 /// TODO: offload to cpp?
 inline auto
@@ -962,6 +963,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet needs to be connected to to be considered *matched* (not on boundary
 /// for non-branching meshes).
+/// @param[in] num_threads Number of threads to use.
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction
 create_cell_partitioner(mesh::GhostMode ghost_mode = mesh::GhostMode::none,
@@ -975,11 +977,7 @@ create_cell_partitioner(mesh::GhostMode ghost_mode = mesh::GhostMode::none,
 /// dual graph of the mesh.
 ///
 /// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
-/// @param[in] partfn Partitioning function for distributing cells
-/// across MPI ranks.
-/// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet needs to be connected to to be considered *matched* (not on boundary
-/// for non-branching meshes).
+/// @param[in] num_threads Number of threads to use.
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction create_cell_partitioner(mesh::GhostMode ghost_mode,
                                               int num_threads);
@@ -1036,6 +1034,7 @@ compute_incident_entities(const Topology& topology,
 /// redistributed.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet can be connected to.
+/// @param[in] num_threads Number of threads to use.
 /// @param[in] reorder_fn Function that reorders (locally) cells that
 /// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
@@ -1251,6 +1250,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// rank for each cell. If not callable, cells are not redistributed.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet can be connected to.
+/// @param[in] num_threads Number of threads to use.
 /// @param[in] reorder_fn Function that reorders (locally) cells that
 /// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
@@ -1261,7 +1261,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::optional<std::int32_t> max_facet_to_cell_links = 2, int num_threds = 1,
+    std::optional<std::int32_t> max_facet_to_cell_links = 2,
+    int num_threads = 1,
     const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
@@ -1288,6 +1289,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] ghost_mode Required type of cell ghosting/overlap.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet can be connected to. For a non-manifold mesh this is 2.
+/// @param[in] num_threads Number of threads to use.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
