@@ -1267,7 +1267,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
                      commg, x, xshape, partitioner, max_facet_to_cell_links,
-                     num_threds, reorder_fn);
+                     num_threads, reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
