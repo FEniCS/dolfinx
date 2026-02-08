@@ -33,11 +33,11 @@ jobs:
           cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
           echo DYLD_LIBRARY_PATH=/usr/local/lib >> $GITHUB_ENV
 
-      # - name: Set up Python
-      #   uses: actions/setup-python@v6
-      #   id: cp3
-      #   with:
-      #     python-version: "3.14"
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        id: cp3
+        with:
+          python-version: "3.14"
 
       - name: Install Homebrew dependencies
         run: |
@@ -46,7 +46,7 @@ jobs:
 
       - name: Install Python dependencies (petsc4py)
         run: |
-          pip install cython setuptools wheel
+          pip install cython setuptools==80 wheel
           pip install mpi4py numpy
 
       - name: Restore cache PETSc and petsc4py
