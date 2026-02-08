@@ -17,6 +17,7 @@ extern "C"
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
+#include <initializer_list>
 #include <ranges>
 #include <stdexcept>
 #include <vector>
@@ -48,25 +49,6 @@ namespace
 template <typename...>
 constexpr bool dependent_false_v = false;
 
-template <typename V, typename W>
-void option_setter(std::string_view option_name, W& option,
-                   const std::initializer_list<V> values,
-                   std::initializer_list<std::string_view> value_names,
-                   std::string_view value_in)
-{
-  // TODO: Can be done nicely with std::views::zip in C++23.
-  for (auto i : std::views::iota(std::size_t{0}, value_names.size()))
-  {
-    if (value_in == *(value_names.begin() + i))
-    {
-      option = *(values.begin() + i);
-      spdlog::info("Set {} to {}", option_name, value_in);
-      return;
-    }
-  }
-  throw std::runtime_error("Unsupported value");
-}
-//----------------------------------------------------------------------------
 std::vector<int_t> col_indices(const auto& A)
 {
   // Local number of non-zeros
@@ -177,7 +159,31 @@ SuperLUDistStructs::SuperMatrix* SuperLUDistMatrix<T>::supermatrix() const
 }
 //----------------------------------------------------------------------------
 template class la::SuperLUDistMatrix<double>;
+template class la::SuperLUDistMatrix<float>;
+template class la::SuperLUDistMatrix<std::complex<double>>;
 //----------------------------------------------------------------------------
+
+namespace
+{
+template <typename V, typename W>
+void option_setter(std::string_view option_name, W& option,
+                   const std::initializer_list<V> values,
+                   std::initializer_list<std::string_view> value_names,
+                   std::string_view value_in)
+{
+  // TODO: Can be done nicely with std::views::zip in C++23.
+  for (auto i : std::views::iota(std::size_t{0}, value_names.size()))
+  {
+    if (value_in == *(value_names.begin() + i))
+    {
+      option = *(values.begin() + i);
+      spdlog::info("Set {} to {}", option_name, value_in);
+      return;
+    }
+  }
+  throw std::runtime_error("Unsupported value");
+}
+} // namespace
 
 //----------------------------------------------------------------------------
 // Trick for declaring anonymous typedef structs from SuperLU_DIST
@@ -195,11 +201,37 @@ struct dolfinx::la::SuperLUDistStructs::dScalePermstruct_t
 {
 };
 //----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::sScalePermstruct_t
+    : public ::sScalePermstruct_t
+{
+};
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::zScalePermstruct_t
+    : public ::zScalePermstruct_t
+{
+};
+//----------------------------------------------------------------------------
 struct dolfinx::la::SuperLUDistStructs::dLUstruct_t : public ::dLUstruct_t
 {
 };
 //----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::sLUstruct_t : public ::sLUstruct_t
+{
+};
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::zLUstruct_t : public ::zLUstruct_t
+{
+};
+//----------------------------------------------------------------------------
 struct dolfinx::la::SuperLUDistStructs::dSOLVEstruct_t : public ::dSOLVEstruct_t
+{
+};
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::sSOLVEstruct_t : public ::sSOLVEstruct_t
+{
+};
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::zSOLVEstruct_t : public ::zSOLVEstruct_t
 {
 };
 //----------------------------------------------------------------------------
@@ -217,10 +249,38 @@ void ScalePermStructDeleter::operator()(
   delete s;
 };
 //----------------------------------------------------------------------------
+void ScalePermStructDeleter::operator()(
+    SuperLUDistStructs::sScalePermstruct_t* s) const noexcept
+{
+  sScalePermstructFree(s);
+  delete s;
+};
+//----------------------------------------------------------------------------
+void ScalePermStructDeleter::operator()(
+    SuperLUDistStructs::zScalePermstruct_t* s) const noexcept
+{
+  zScalePermstructFree(s);
+  delete s;
+};
+//----------------------------------------------------------------------------
 void LUStructDeleter::operator()(
     SuperLUDistStructs::dLUstruct_t* l) const noexcept
 {
   dLUstructFree(l);
+  delete l;
+};
+//----------------------------------------------------------------------------
+void LUStructDeleter::operator()(
+    SuperLUDistStructs::sLUstruct_t* l) const noexcept
+{
+  sLUstructFree(l);
+  delete l;
+};
+//----------------------------------------------------------------------------
+void LUStructDeleter::operator()(
+    SuperLUDistStructs::zLUstruct_t* l) const noexcept
+{
+  zLUstructFree(l);
   delete l;
 };
 //----------------------------------------------------------------------------
@@ -258,6 +318,16 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
             {
               dScalePermstructInit(m, m, s.get());
             }
+            else if constexpr (std::is_same_v<T, float>)
+            {
+              sScalePermstructInit(m, m, s.get());
+            }
+            else if constexpr (std::is_same_v<T, std::complex<double>>)
+            {
+              zScalePermstructInit(m, m, s.get());
+            }
+            else
+              static_assert(dependent_false_v<T>, "Invalid scalar type");
             return s;
           }()),
       _lustruct(
@@ -270,6 +340,16 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
             {
               dLUstructInit(m, l.get());
             }
+            else if constexpr (std::is_same_v<T, float>)
+            {
+              sLUstructInit(m, l.get());
+            }
+            else if constexpr (std::is_same_v<T, std::complex<double>>)
+            {
+              zLUstructInit(m, l.get());
+            }
+            else
+              static_assert(dependent_false_v<T>, "Invalid scalar type");
             return l;
           }()),
       _solvestruct(std::make_unique<typename map_t<T>::SOLVEstruct_t>())
@@ -398,25 +478,27 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     spdlog::info("Start solve [float32]");
 
     spdlog::info("Call SuperLU_DIST psgssvx()");
-    psgssvx(_options.get(), _superlu_matA->supermatrix(), &ScalePermstruct,
-            u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
-            &SOLVEstruct, berr.data(), &stat, &info);
+    psgssvx(_options.get(), _superlu_matA->supermatrix(),
+            _scalepermstruct.get(), u.array().data(), ldb, nrhs,
+            _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
+            &stat, &info);
 
     spdlog::info("Finalize solve");
-    sSolveFinalize(_options.get(), &SOLVEstruct);
+    sSolveFinalize(_options.get(), _solvestruct.get());
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     spdlog::info("Start solve [complex128]");
 
     spdlog::info("Call SuperLU_DIST pzgssvx()");
-    pzgssvx(_options.get(), _superlu_matA->supermatrix(), &ScalePermstruct,
+    pzgssvx(_options.get(), _superlu_matA->supermatrix(),
+            _scalepermstruct.get(),
             reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
-            _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
-            &info);
+            _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
+            &stat, &info);
 
     spdlog::info("Finalize solve");
-    zSolveFinalize(_options.get(), &SOLVEstruct);
+    zSolveFinalize(_options.get(), _solvestruct.get());
   }
   else
     static_assert(dependent_false_v<T>, "Invalid scalar type");
@@ -432,5 +514,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 }
 //----------------------------------------------------------------------------
 template class la::SuperLUDistSolver<double>;
+template class la::SuperLUDistSolver<float>;
+template class la::SuperLUDistSolver<std::complex<double>>;
 //----------------------------------------------------------------------------
 #endif
