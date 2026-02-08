@@ -27,20 +27,26 @@
 #include <span>
 
 #if defined(HAS_SUPERLU_DIST)
-#include <superlu_defs.h>
 #include <superlu_ddefs.h>
+#include <superlu_defs.h>
+#include <superlu_sdefs.h>
+#include <superlu_zdefs.h>
 struct dolfinx::la::SuperLUDistStructs::vec_int_t
 {
   /// @brief vector
   std::vector<int_t> vec;
 };
-
 struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t
     : public ::superlu_dist_options_t
 {
 };
-
 struct dolfinx::la::SuperLUDistStructs::dSOLVEstruct_t : public ::dSOLVEstruct_t
+{
+};
+struct dolfinx::la::SuperLUDistStructs::sSOLVEstruct_t : public ::sSOLVEstruct_t
+{
+};
+struct dolfinx::la::SuperLUDistStructs::zSOLVEstruct_t : public ::zSOLVEstruct_t
 {
 };
 #endif // HAS_SUPERLU_DIST
@@ -237,7 +243,7 @@ void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
       .def(
           "__init__",
           [](dolfinx::la::SuperLUDistSolver<T>* solver,
-             const dolfinx::la::MatrixCSR<T>* Amat)
+             const dolfinx::la::MatrixCSR<T>& Amat)
           {
             auto Amat_superlu
                 = std::make_shared<const dolfinx::la::SuperLUDistMatrix<T>>(
@@ -336,8 +342,8 @@ void la(nb::module_& m)
 
 #if defined(HAS_SUPERLU_DIST)
   declare_superlu_dist_solver<double>(m, "float64");
-//  declare_superlu_dist_solver<float>(m, "float32");
-//  declare_superlu_dist_solver<std::complex<double>>(m, "complex128");
+  declare_superlu_dist_solver<float>(m, "float32");
+  declare_superlu_dist_solver<std::complex<double>>(m, "complex128");
 #endif // HAS_SUPERLU_DIST
 
   // Declare objects that are templated over type
