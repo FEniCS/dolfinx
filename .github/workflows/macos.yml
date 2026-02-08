@@ -81,7 +81,7 @@ jobs:
             --download-superlu_dist
           make all
           cd src/binding/petsc4py
-          arch -arm64 pip -v install --user  .
+          pip -v install --user .
 
       - name: Save cache PETSc and petsc4py
         id: cache-petsc-save
