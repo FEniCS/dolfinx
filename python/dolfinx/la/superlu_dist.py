@@ -5,8 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """SuperLU_DIST linear solver support.
 
-This module provides basic support for parallel solution of linear systems
-assembled into :class:`dolfinx.la.MatrixCSR`.
+This module provides support for parallel solution of linear systems assembled
+into :class:`dolfinx.la.MatrixCSR` using SuperLU_DIST.
 
 Note:
   Users with more advanced linear solver needs should use PETSc/petsc4py.
@@ -19,7 +19,54 @@ import dolfinx.cpp as _cpp
 
 assert dolfinx.has_superlu_dist
 
-__all__ = ["SuperLUDistSolver", "superlu_dist_solver"]
+__all__ = ["SuperLUDistMatrix", "SuperLUDistSolver", "superlu_dist_solver"]
+
+
+class SuperLUDistMatrix:
+    """SuperLU_DIST matrix."""
+
+    _cpp_object: (
+        _cpp.la.SuperLUDistMatrix_float32
+        | _cpp.la.SuperLUDistMatrix_float64
+        | _cpp.la.SuperLUDistMatrix_complex128
+    )
+
+    def __init__(self, matrix):
+        """Create a SuperLU_DIST matrix.
+
+        Args:
+            Matrix object.
+
+        Note:
+            This initialiser is intended for internal library use only.
+            User code should call :func:`superlu_dist_matrix` to create a
+            :class:`SuperLUDistMatrix` object.
+        """
+        self._cpp_object = matrix
+
+
+def superlu_dist_matrix(A: dolfinx.la.MatrixCSR) -> SuperLUDistMatrix:
+    """Create a SuperLU_DIST matrix.
+
+    Deep copies all necessary data from ``A``. For use with
+    :class:``dolfinx.la.SuperLUDistSolver``.
+
+    Args:
+        A: Assembled matrix.
+
+    Returns:
+        A SuperLU_DIST matrix.
+    """
+    dtype = A.data.dtype
+    if np.issubdtype(dtype, np.float32):
+        stype = _cpp.la.SuperLUDistMatrix_float32
+    elif np.issubdtype(dtype, np.float64):
+        stype = _cpp.la.SuperLUDistMatrix_float64
+    elif np.issubdtype(dtype, np.complex128):
+        stype = _cpp.la.SuperLUDistMatrix_complex128
+    else:
+        raise NotImplementedError(f"Type {dtype} not supported.")
+    return SuperLUDistMatrix(stype(A._cpp_object))
 
 
 class SuperLUDistSolver:
@@ -93,6 +140,8 @@ def superlu_dist_solver(A: dolfinx.la.MatrixCSR) -> SuperLUDistSolver:
 
     Args:
         A: Assembled left-hand side matrix :math:`A`.
+    Returns:
+        A SuperLU_DIST solver.
     """
     dtype = A.data.dtype
     if np.issubdtype(dtype, np.float32):

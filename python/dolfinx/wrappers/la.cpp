@@ -345,6 +345,9 @@ void la(nb::module_& m)
           nb::rv_policy::reference_internal);
 
 #if defined(HAS_SUPERLU_DIST)
+  declare_superlu_dist_matrix<double>(m, "float64");
+  declare_superlu_dist_matrix<float>(m, "float32");
+  declare_superlu_dist_matrix<std::complex<double>>(m, "complex128");
   declare_superlu_dist_solver<double>(m, "float64");
   declare_superlu_dist_solver<float>(m, "float32");
   declare_superlu_dist_solver<std::complex<double>>(m, "complex128");
