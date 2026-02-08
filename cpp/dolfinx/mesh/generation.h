@@ -45,12 +45,13 @@ template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
                   const CellPartitionFunction& partitioner,
-                  DiagonalType diagonal, const CellReorderFunction& reorder_fn);
+                  DiagonalType diagonal, int num_threads,
+                  const CellReorderFunction& reorder_fn);
 
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
-                   const CellPartitionFunction& partitioner,
+                   const CellPartitionFunction& partitioner, int num_threads,
                    const CellReorderFunction& reorder_fn);
 
 template <std::floating_point T>
@@ -61,21 +62,21 @@ template <std::floating_point T>
 Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
-                  const CellPartitionFunction& partitioner,
+                  const CellPartitionFunction& partitioner, int num_threads,
                   const CellReorderFunction& reorder_fn);
 
 template <std::floating_point T>
 Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
-                  const CellPartitionFunction& partitioner,
+                  const CellPartitionFunction& partitioner, int num_threads,
                   const CellReorderFunction& reorder_fn);
 
 template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
                     std::array<std::array<T, 3>, 2> p,
                     std::array<std::int64_t, 3> n,
-                    const CellPartitionFunction& partitioner,
+                    const CellPartitionFunction& partitioner, int num_threads,
                     const CellReorderFunction& reorder_fn);
 } // namespace impl
 
@@ -101,11 +102,11 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
-                   std::array<std::array<T, 3>, 2> p,
-                   std::array<std::int64_t, 3> n, CellType celltype,
-                   CellPartitionFunction partitioner = nullptr,
-                   const CellReorderFunction& reorder_fn = graph::reorder_gps)
+Mesh<T>
+create_box(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
+           std::array<std::int64_t, 3> n, CellType celltype,
+           CellPartitionFunction partitioner = nullptr, int num_threads = 1,
+           const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell per dimension is required");
@@ -117,16 +118,19 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
-    partitioner = create_cell_partitioner();
+    partitioner = create_cell_partitioner(mesh::GhostMode::none, 1);
 
   switch (celltype)
   {
   case CellType::tetrahedron:
-    return impl::build_tet<T>(comm, subcomm, p, n, partitioner, reorder_fn);
+    return impl::build_tet<T>(comm, subcomm, p, n, partitioner, num_threads,
+                              reorder_fn);
   case CellType::hexahedron:
-    return impl::build_hex<T>(comm, subcomm, p, n, partitioner, reorder_fn);
+    return impl::build_hex<T>(comm, subcomm, p, n, partitioner, num_threads,
+                              reorder_fn);
   case CellType::prism:
-    return impl::build_prism<T>(comm, subcomm, p, n, partitioner, reorder_fn);
+    return impl::build_prism<T>(comm, subcomm, p, n, partitioner, num_threads,
+                                reorder_fn);
   default:
     throw std::runtime_error("Generate box mesh. Wrong cell type");
   }
@@ -153,9 +157,11 @@ template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    const CellPartitionFunction& partitioner = nullptr,
+                   int num_threads = 1,
                    const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
-  return create_box<T>(comm, comm, p, n, celltype, partitioner, reorder_fn);
+  return create_box<T>(comm, comm, p, n, celltype, partitioner, num_threads,
+                       reorder_fn);
 }
 
 /// @brief Create a uniform mesh::Mesh over the rectangle spanned by the
@@ -180,6 +186,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          std::array<std::int64_t, 2> n, CellType celltype,
                          CellPartitionFunction partitioner,
                          DiagonalType diagonal = DiagonalType::right,
+                         int num_threads = 1,
                          const CellReorderFunction& reorder_fn
                          = graph::reorder_gps)
 {
@@ -193,14 +200,16 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
   }
 
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
-    partitioner = create_cell_partitioner();
+    partitioner = create_cell_partitioner(mesh::GhostMode::none, 1);
 
   switch (celltype)
   {
   case CellType::triangle:
-    return impl::build_tri<T>(comm, p, n, partitioner, diagonal, reorder_fn);
+    return impl::build_tri<T>(comm, p, n, partitioner, diagonal, num_threads,
+                              reorder_fn);
   case CellType::quadrilateral:
-    return impl::build_quad<T>(comm, p, n, partitioner, reorder_fn);
+    return impl::build_quad<T>(comm, p, n, partitioner, num_threads,
+                               reorder_fn);
   default:
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
   }
@@ -246,6 +255,7 @@ template <std::floating_point T = double>
 Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
                         mesh::GhostMode ghost_mode = mesh::GhostMode::none,
                         CellPartitionFunction partitioner = nullptr,
+                        int num_threads = 1,
                         const CellReorderFunction& reorder_fn
                         = graph::reorder_gps)
 {
@@ -262,19 +272,20 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
   }
 
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
-    partitioner = create_cell_partitioner(ghost_mode);
+    partitioner = create_cell_partitioner(ghost_mode, num_threads);
 
   fem::CoordinateElement<T> element(CellType::interval, 1);
   if (dolfinx::MPI::rank(comm) == 0)
   {
     auto [x, cells] = impl::create_interval_cells<T>(p, n);
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size(), 1}, partitioner, 2, reorder_fn);
+                       {x.size(), 1}, partitioner, 2, num_threads, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 1}, partitioner, 2, reorder_fn);
+                       std::vector<T>{}, {0, 1}, partitioner, 2, num_threads,
+                       reorder_fn);
   }
 }
 
@@ -356,10 +367,12 @@ template <std::floating_point T>
 Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
-                  const CellPartitionFunction& partitioner,
+                  const CellPartitionFunction& partitioner, int num_threads,
                   const CellReorderFunction& reorder_fn)
 {
   common::Timer timer("Build BoxMesh (tetrahedra)");
+
+  common::Timer timer1("Build BoxMesh data (tetrahedra)");
   std::vector<T> x;
   std::vector<std::int64_t> cells;
   fem::CoordinateElement<T> element(CellType::tetrahedron, 1);
@@ -397,15 +410,19 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
     }
   }
 
+  timer1.stop();
+  timer1.flush();
+
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner, 2, reorder_fn);
+                     {x.size() / 3, 3}, partitioner, 2, num_threads,
+                     reorder_fn);
 }
 
 template <std::floating_point T>
 mesh::Mesh<T>
 build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
           std::array<std::int64_t, 3> n,
-          const CellPartitionFunction& partitioner,
+          const CellPartitionFunction& partitioner, int num_threads,
           const std::function<std::vector<std::int32_t>(
               const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
@@ -443,14 +460,15 @@ build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner, 2, reorder_fn);
+                     {x.size() / 3, 3}, partitioner, 2, num_threads,
+                     reorder_fn);
 }
 
 template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
                     std::array<std::array<T, 3>, 2> p,
                     std::array<std::int64_t, 3> n,
-                    const CellPartitionFunction& partitioner,
+                    const CellPartitionFunction& partitioner, int num_threads,
                     const CellReorderFunction& reorder_fn)
 {
   std::vector<T> x;
@@ -491,14 +509,16 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner, 2, reorder_fn);
+                     {x.size() / 3, 3}, partitioner, 2, num_threads,
+                     reorder_fn);
 }
 
 template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
                   const CellPartitionFunction& partitioner,
-                  DiagonalType diagonal, const CellReorderFunction& reorder_fn)
+                  DiagonalType diagonal, int num_threads,
+                  const CellReorderFunction& reorder_fn)
 {
   fem::CoordinateElement<T> element(CellType::triangle, 1);
   if (dolfinx::MPI::rank(comm) == 0)
@@ -641,19 +661,21 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     }
 
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size() / 2, 2}, partitioner, 2, reorder_fn);
+                       {x.size() / 2, 2}, partitioner, 2, num_threads,
+                       reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 2}, partitioner, 2, reorder_fn);
+                       std::vector<T>{}, {0, 2}, partitioner, 2, num_threads,
+                       reorder_fn);
   }
 }
 
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
-                   const CellPartitionFunction& partitioner,
+                   const CellPartitionFunction& partitioner, int num_threads,
                    const CellReorderFunction& reorder_fn)
 {
   fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
@@ -690,12 +712,14 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     }
 
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size() / 2, 2}, partitioner, 2, reorder_fn);
+                       {x.size() / 2, 2}, partitioner, 2, num_threads,
+                       reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 2}, partitioner, 2, reorder_fn);
+                       std::vector<T>{}, {0, 2}, partitioner, 2, num_threads,
+                       reorder_fn);
   }
 }
 } // namespace impl

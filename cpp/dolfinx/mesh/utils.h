@@ -227,8 +227,8 @@ using CellReorderFunction = std::function<std::vector<std::int32_t>(
 /// TODO: offload to cpp?
 inline auto
 create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
-                            std::optional<std::int32_t> max_facet_to_cell_links
-                            = 2)
+                            std::optional<std::int32_t> max_facet_to_cell_links,
+                            int num_threads)
 {
   /// brief Function that computes the process boundary vertices of a mesh
   /// during creation.
@@ -241,13 +241,13 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
   /// param[out] original_idx Contains the permutation applied to the cells per
   /// celltype.
   /// return Boundary vertices (for all cell types).
-  return [&, max_facet_to_cell_links](
-             const std::vector<CellType>& celltypes,
-             const std::vector<fem::ElementDofLayout>& doflayouts,
-             const std::vector<std::vector<int>>& ghost_owners,
-             std::vector<std::vector<std::int64_t>>& cells,
-             std::vector<std::vector<std::int64_t>>& cells_v,
-             std::vector<std::vector<std::int64_t>>& original_idx)
+  return [&reorder_fn, max_facet_to_cell_links,
+          num_threads](const std::vector<CellType>& celltypes,
+                       const std::vector<fem::ElementDofLayout>& doflayouts,
+                       const std::vector<std::vector<int>>& ghost_owners,
+                       std::vector<std::vector<std::int64_t>>& cells,
+                       std::vector<std::vector<std::int64_t>>& cells_v,
+                       std::vector<std::vector<std::int64_t>>& original_idx)
              -> std::vector<std::int64_t>
   {
     // Build local dual graph for owned cells to (i) get list of vertices
@@ -273,7 +273,7 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
       auto [graph, unmatched_facets, max_v, _facet_attached_cells]
           = build_local_dual_graph(std::vector{celltypes[i]},
                                    std::vector{cells1_v_local.back()},
-                                   max_facet_to_cell_links);
+                                   max_facet_to_cell_links, num_threads);
 
       // Store unmatched_facets for current cell type
       facets.emplace_back(std::move(unmatched_facets), max_v);
@@ -955,6 +955,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// @brief Create a function that computes destination rank for mesh
 /// cells on this rank by applying the default graph partitioner to the
 /// dual graph of the mesh.
+///
 /// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
 /// @param[in] partfn Partitioning function for distributing cells
 /// across MPI ranks.
@@ -962,10 +963,26 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// facet needs to be connected to to be considered *matched* (not on boundary
 /// for non-branching meshes).
 /// @return Function that computes the destination ranks for each cell.
-CellPartitionFunction create_cell_partitioner(
-    mesh::GhostMode ghost_mode = mesh::GhostMode::none,
-    const graph::partition_fn& partfn = &graph::partition_graph,
-    std::optional<std::int32_t> max_facet_to_cell_links = 2);
+CellPartitionFunction
+create_cell_partitioner(mesh::GhostMode ghost_mode = mesh::GhostMode::none,
+                        const graph::partition_fn& partfn
+                        = &graph::partition_graph,
+                        std::optional<std::int32_t> max_facet_to_cell_links = 2,
+                        int num_threads = 1);
+
+/// @brief Create a function that computes destination rank for mesh
+/// cells on this rank by applying the default graph partitioner to the
+/// dual graph of the mesh.
+///
+/// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
+/// @param[in] partfn Partitioning function for distributing cells
+/// across MPI ranks.
+/// @param[in] max_facet_to_cell_links Bound on the number of cells a
+/// facet needs to be connected to to be considered *matched* (not on boundary
+/// for non-branching meshes).
+/// @return Function that computes the destination ranks for each cell.
+CellPartitionFunction create_cell_partitioner(mesh::GhostMode ghost_mode,
+                                              int num_threads);
 
 /// @brief Compute incident entities.
 /// @param[in] topology The topology.
@@ -1030,7 +1047,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::optional<std::int32_t> max_facet_to_cell_links,
+    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
     const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   assert(cells.size() == elements.size());
@@ -1135,8 +1152,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                  cells1_v[i].size());
   }
 
-  auto boundary_v_fn
-      = create_boundary_vertices_fn(reorder_fn, max_facet_to_cell_links);
+  auto boundary_v_fn = create_boundary_vertices_fn(
+      reorder_fn, max_facet_to_cell_links, num_threads);
   const std::vector<std::int64_t> boundary_v = boundary_v_fn(
       celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1);
 
@@ -1154,7 +1171,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                          [](auto& c) { return std::span(c); });
   Topology topology
       = create_topology(comm, celltypes, cells1_v_span, original_idx1_span,
-                        ghost_owners_span, boundary_v);
+                        ghost_owners_span, boundary_v, num_threads);
 
   // Create connectivities required higher-order geometries for creating
   // a Geometry object
@@ -1244,12 +1261,12 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::optional<std::int32_t> max_facet_to_cell_links = 2,
+    std::optional<std::int32_t> max_facet_to_cell_links = 2, int num_threds = 1,
     const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
                      commg, x, xshape, partitioner, max_facet_to_cell_links,
-                     reorder_fn);
+                     num_threds, reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
@@ -1270,7 +1287,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] xshape Shape of `x`. It should be `(num_points, gdim)`.
 /// @param[in] ghost_mode Required type of cell ghosting/overlap.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet can be connected to.
+/// facet can be connected to. For a non-manifold mesh this is 2.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
@@ -1278,18 +1295,20 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
             const fem::CoordinateElement<
                 std::remove_reference_t<typename U::value_type>>& elements,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode,
-            std::optional<std::int32_t> max_facet_to_cell_links = 2)
+            std::optional<std::int32_t> max_facet_to_cell_links = 2,
+            int num_threads = 1)
 {
   if (dolfinx::MPI::size(comm) == 1)
   {
     return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
-                       comm, x, xshape, nullptr, max_facet_to_cell_links);
+                       comm, x, xshape, nullptr, max_facet_to_cell_links,
+                       num_threads);
   }
   else
   {
     return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
                        comm, x, xshape, create_cell_partitioner(ghost_mode),
-                       max_facet_to_cell_links);
+                       max_facet_to_cell_links, num_threads);
   }
 }
 

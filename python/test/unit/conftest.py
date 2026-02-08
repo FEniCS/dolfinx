@@ -106,7 +106,7 @@ def mixed_topology_mesh():
 
     cell_types = [CellType.hexahedron, CellType.prism, CellType.tetrahedron, CellType.pyramid]
     coordinate_elements = [coordinate_element(cell, 1) for cell in cell_types]
-    part = create_cell_partitioner(GhostMode.none)
+    part = create_cell_partitioner(GhostMode.none, 2, 1)
     max_cells_per_facet = 2
     return create_mesh(
         MPI.COMM_WORLD,
@@ -115,4 +115,5 @@ def mixed_topology_mesh():
         geomx,
         part,
         max_cells_per_facet,
+        1,
     )

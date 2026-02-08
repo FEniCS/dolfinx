@@ -327,14 +327,14 @@ def test_locate_entities():
         cells = [np.array([], dtype=np.int64), np.array([], dtype=np.int64)]
         geom = np.array([], dtype=np.float64)
 
-    part = create_cell_partitioner(GhostMode.none)
+    part = create_cell_partitioner(GhostMode.none, 2, 1)
 
     hexahedron = coordinate_element(CellType.hexahedron, 1)
     prism = coordinate_element(CellType.prism, 1)
     comm = MPI.COMM_WORLD
     max_cells_per_facet = 2
     mesh = create_mesh(
-        comm, cells, [hexahedron._cpp_object, prism._cpp_object], geom, part, max_cells_per_facet
+        comm, cells, [hexahedron._cpp_object, prism._cpp_object], geom, part, max_cells_per_facet, 1
     )
 
     fdim = mesh.topology.dim - 1

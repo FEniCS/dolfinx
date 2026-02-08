@@ -228,7 +228,7 @@ def test_mixed_topology_partitioning():
         cells_np = [np.zeros(0) for c in cells]
 
     nparts = 4
-    part = create_cell_partitioner(GhostMode.none)
+    part = create_cell_partitioner(GhostMode.none, 2, 1)
     p = part(
         MPI.COMM_WORLD,
         nparts,

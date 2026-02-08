@@ -139,7 +139,7 @@ def mesh_2d(dtype):
         CellType.triangle,
         dtype,
         GhostMode.none,
-        create_cell_partitioner(GhostMode.none),
+        create_cell_partitioner(GhostMode.none, 2, 1),
         DiagonalType.left,
     )
     i1 = np.where((np.isclose(mesh2d.geometry.x, (1.0, 1.0, 0.0))).all(axis=1))[0][0]

@@ -14,6 +14,8 @@
 #include <map>
 #include <memory>
 
+#include <boost/sort/sort.hpp>
+
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
@@ -390,12 +392,12 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
           std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-graph::build::compute_ghost_indices(MPI_Comm comm,
-                                    std::span<const std::int64_t> owned_indices,
-                                    std::span<const std::int64_t> ghost_indices,
-                                    std::span<const int> ghost_owners)
+std::vector<std::int64_t> graph::build::compute_ghost_indices(
+    MPI_Comm comm, std::span<const std::int64_t> owned_indices,
+    std::span<const std::int64_t> ghost_indices,
+    std::span<const int> ghost_owners, int num_threads)
 {
+  common::Timer timer("Compute ghost indices");
   spdlog::info("Compute ghost indices");
 
   // Get number of local cells determine global offset
@@ -406,6 +408,7 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
               &request_offset_scan);
 
   // Find out how many ghosts are on each neighboring process
+  common::Timer timer1("Compute ghost indices (1)");
   std::vector<int> ghost_index_count;
   std::vector<int> neighbors;
   std::map<int, int> proc_to_neighbor;
@@ -422,9 +425,14 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
     ++ghost_index_count[it->second];
   }
 
+  timer1.stop();
+  timer1.flush();
+
+  common::Timer timer2("Compute ghost indices (2)");
   MPI_Comm neighbor_comm_fwd, neighbor_comm_rev;
 
-  std::vector<int> in_edges = MPI::compute_graph_edges_pcx(comm, neighbors);
+  std::vector<int> in_edges
+      = dolfinx::MPI::compute_graph_edges_pcx(comm, neighbors);
   MPI_Dist_graph_create_adjacent(comm, in_edges.size(), in_edges.data(),
                                  MPI_UNWEIGHTED, neighbors.size(),
                                  neighbors.data(), MPI_UNWEIGHTED,
@@ -458,6 +466,11 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
     }
   }
 
+  timer2.stop();
+  timer2.flush();
+
+  common::Timer timer3("Compute ghost indices (3)");
+
   std::vector<int> recv_sizes(in_edges.size());
   ghost_index_count.reserve(1);
   recv_sizes.reserve(1);
@@ -479,6 +492,11 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   // Complete global_offset scan
   MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
 
+  timer3.stop();
+  timer3.flush();
+
+  common::Timer timer4("Compute ghost indices (4)");
+
   std::vector<std::array<std::int64_t, 2>> old_to_new;
   old_to_new.reserve(owned_indices.size());
 
@@ -487,7 +505,14 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
     old_to_new.push_back(
         {idx, static_cast<std::int64_t>(offset_local + old_to_new.size())});
   }
-  std::ranges::sort(old_to_new);
+  // std::ranges::sort(old_to_new);
+  boost::sort::block_indirect_sort(old_to_new.begin(), old_to_new.end(),
+                                   num_threads);
+
+  timer4.stop();
+  timer4.flush();
+
+  common::Timer timer5("Compute ghost indices (5)");
 
   // Replace values in recv_data with new_index and send back
   std::ranges::transform(recv_data, recv_data.begin(),
@@ -508,6 +533,10 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   MPI_Comm_free(&neighbor_comm_fwd);
   MPI_Comm_free(&neighbor_comm_rev);
 
+  timer5.stop();
+  timer5.flush();
+
+  common::Timer timer6("Compute ghost indices (6)");
   // Build (old id,  new id) pairs
   std::vector<std::array<std::int64_t, 2>> old_to_new1(send_data.size());
   std::ranges::transform(send_data, new_recv, old_to_new1.begin(),
@@ -526,6 +555,9 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
                            assert(it != old_to_new1.end() and it->front() == q);
                            return (*it)[1];
                          });
+
+  timer6.stop();
+  timer6.flush();
 
   return ghost_global_indices;
 }

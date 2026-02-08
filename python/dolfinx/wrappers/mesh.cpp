@@ -47,6 +47,7 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
 {
   if (p)
   {
+    std::cout << "Have part" << std::endl;
     return [p](MPI_Comm comm, int n,
                const std::vector<dolfinx::mesh::CellType>& cell_types,
                const std::vector<std::span<const std::int64_t>>& cells)
@@ -63,7 +64,10 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
     };
   }
   else
+  {
+    std::cout << "No part" << std::endl;
     return nullptr;
+  }
 }
 } // namespace part::impl
 
@@ -259,29 +263,31 @@ void declare_mesh(nb::module_& m, std::string type)
       [](MPICommWrapper comm, std::array<std::array<T, 2>, 2> p,
          std::array<std::int64_t, 2> n, dolfinx::mesh::CellType celltype,
          const part::impl::PythonCellPartitionFunction& part,
-         dolfinx::mesh::DiagonalType diagonal)
+         dolfinx::mesh::DiagonalType diagonal, int num_threads)
       {
         return dolfinx::mesh::create_rectangle<T>(
             comm.get(), p, n, celltype,
-            part::impl::create_cell_partitioner_cpp(part), diagonal);
+            part::impl::create_cell_partitioner_cpp(part), diagonal,
+            num_threads);
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
-      nb::arg("partitioner").none(), nb::arg("diagonal"));
+      nb::arg("partitioner").none(), nb::arg("diagonal"),
+      nb::arg("num_threads"));
 
   std::string create_box("create_box_" + type);
   m.def(
       create_box.c_str(),
       [](MPICommWrapper comm, std::array<std::array<T, 3>, 2> p,
          std::array<std::int64_t, 3> n, dolfinx::mesh::CellType celltype,
-         const part::impl::PythonCellPartitionFunction& part)
+         const part::impl::PythonCellPartitionFunction& part, int num_threads)
       {
         MPI_Comm _comm = comm.get();
         return dolfinx::mesh::create_box<T>(
             _comm, _comm, p, n, celltype,
-            part::impl::create_cell_partitioner_cpp(part));
+            part::impl::create_cell_partitioner_cpp(part), num_threads);
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
-      nb::arg("partitioner").none());
+      nb::arg("partitioner").none(), nb::arg("num_threads"));
 
   m.def("create_mesh",
         [](MPICommWrapper comm,
@@ -290,7 +296,7 @@ void declare_mesh(nb::module_& m, std::string type)
            const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
            nb::ndarray<const T, nb::c_contig> x,
            const part::impl::PythonCellPartitionFunction& p,
-           std::optional<std::int32_t> max_facet_to_cell_links)
+           std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
         {
           std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
 
@@ -319,13 +325,15 @@ void declare_mesh(nb::module_& m, std::string type)
             return dolfinx::mesh::create_mesh(
                 comm.get(), comm.get(), cells, elements, comm.get(),
                 std::span(x.data(), x.size()), {x.shape(0), shape1}, p_wrap,
-                max_facet_to_cell_links);
+                max_facet_to_cell_links, num_threads);
           }
           else
+          {
             return dolfinx::mesh::create_mesh(
                 comm.get(), comm.get(), cells, elements, comm.get(),
                 std::span(x.data(), x.size()), {x.shape(0), shape1}, nullptr,
-                max_facet_to_cell_links);
+                max_facet_to_cell_links, num_threads);
+          }
         });
 
   m.def(
@@ -355,6 +363,7 @@ void declare_mesh(nb::module_& m, std::string type)
                 });
             return p(MPICommWrapper(comm), n, cell_types, cells_nb);
           };
+
           return dolfinx::mesh::create_mesh(
               comm.get(), comm.get(), std::span(cells.data(), cells.size()),
               element, comm.get(), std::span(x.data(), x.size()),
@@ -549,33 +558,32 @@ void mesh(nb::module_& m)
   m.def(
       "build_dual_graph",
       [](const MPICommWrapper comm, dolfinx::mesh::CellType cell_type,
-         const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+         const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+         int num_threads)
       {
         std::vector<dolfinx::mesh::CellType> c = {cell_type};
         return dolfinx::mesh::build_dual_graph(comm.get(), std::span{c},
                                                {cells.array()});
       },
       nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells"),
-      "Build dual graph for cells");
+      nb::arg("num_threads"), "Build dual graph for cells");
 
   m.def(
       "build_dual_graph",
       [](const MPICommWrapper comm,
          std::vector<dolfinx::mesh::CellType>& cell_types,
          const std::vector<
-             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>& cells)
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>& cells,
+         int num_threads)
       {
-        std::vector<std::span<const std::int64_t>> cell_span(cells.size());
+        std::vector<std::span<const std::int64_t>> cell_span;
         for (std::size_t i = 0; i < cells.size(); ++i)
-        {
-          cell_span[i]
-              = std::span<const std::int64_t>(cells[i].data(), cells[i].size());
-        }
+          cell_span.emplace_back(cells[i].data(), cells[i].size());
         return dolfinx::mesh::build_dual_graph(comm.get(), cell_types,
-                                               cell_span);
+                                               cell_span, num_threads);
       },
       nb::arg("comm"), nb::arg("cell_types"), nb::arg("cells"),
-      "Build dual graph for cells");
+      nb::arg("num_threads"), "Build dual graph for cells");
 
   // dolfinx::mesh::GhostMode enums
   nb::enum_<dolfinx::mesh::GhostMode>(m, "GhostMode")
@@ -761,7 +769,7 @@ void mesh(nb::module_& m)
          const std::vector<std::vector<std::int64_t>>& cells,
          const std::vector<std::vector<std::int64_t>>& original_cell_index,
          const std::vector<std::vector<int>>& ghost_owners,
-         const std::vector<std::int64_t>& boundary_vertices)
+         const std::vector<std::int64_t>& boundary_vertices, int num_threads)
       {
         std::vector<std::span<const std::int64_t>> cells_span(cells.begin(),
                                                               cells.end());
@@ -774,7 +782,7 @@ void mesh(nb::module_& m)
 
         return dolfinx::mesh::create_topology(
             comm.get(), cell_type, cells_span, original_cell_index_span,
-            ghost_owners_span, boundary_vertices_span);
+            ghost_owners_span, boundary_vertices_span, num_threads);
       },
       "Create a Topology object.");
 
@@ -791,16 +799,16 @@ void mesh(nb::module_& m)
   m.def(
       "create_cell_partitioner",
       [](dolfinx::mesh::GhostMode mode,
-         std::optional<std::int32_t> max_facet_to_cell_links)
-          -> part::impl::PythonCellPartitionFunction
+         std::optional<std::int32_t> max_facet_to_cell_links,
+         int num_threads) -> part::impl::PythonCellPartitionFunction
       {
         return part::impl::create_cell_partitioner_py(
             dolfinx::mesh::create_cell_partitioner(
-                mode, &dolfinx::graph::partition_graph,
-                max_facet_to_cell_links));
+                mode, &dolfinx::graph::partition_graph, max_facet_to_cell_links,
+                num_threads));
       },
-      nb::arg("mode"), nb::arg("max_facet_to_cell_links") = 2,
-      "Create default cell partitioner.");
+      nb::arg("mode"), nb::arg("max_facet_to_cell_links"),
+      nb::arg("num_threads"), "Create default cell partitioner.");
   m.def(
       "create_cell_partitioner",
       [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(

@@ -29,6 +29,8 @@
 #include <utility>
 #include <vector>
 
+#include <boost/sort/sort.hpp>
+
 using namespace dolfinx;
 
 namespace
@@ -69,7 +71,6 @@ auto build_entity_list
   std::vector<std::size_t> perm(num_vertices_per_entity);
 
   // Iterate over cells
-  // for (std::int32_t c = 0; c < num_cells; ++c)
   auto it_e = entity_list.begin();
   auto it_e_sorted = entity_list_sorted.begin();
   for (std::int32_t c : cell_idx)
@@ -117,15 +118,10 @@ auto build_entity_list
         std::rotate(it, it + 1, perm.end());
       }
 
-      // const std::int32_t idx = c * num_entities_per_cell + e;
-      // auto elist = entity_list.subspan(idx * num_vertices_per_entity,
-      //                                  num_vertices_per_entity);
       auto elist = std::span(it_e, num_vertices_per_entity);
       for (std::size_t j = 0; j < ev.size(); ++j)
         elist[j] = entity_vertices[perm[j]];
 
-      // auto elist_sorted = entity_list_sorted.subspan(
-      //     idx * num_vertices_per_entity, num_vertices_per_entity);
       auto elist_sorted = std::span(it_e_sorted, num_vertices_per_entity);
       std::ranges::copy(elist, elist_sorted.begin());
       std::ranges::sort(elist_sorted);
@@ -139,15 +135,13 @@ auto build_entity_list
 /// @brief Create an adjacency list from array of pairs, where
 /// the first value in the pair is the node and the second value
 /// is the edge.
-/// @param[in] data List if pairs
-/// @param[in] size The number of edges in the graph. For
-/// example, this can be used to build an adjacency list that
-/// includes 'owned' nodes only.
+/// @param[in] data List of pairs.
+/// @param[in] size Number of edges in the graph. For example, this can
+/// be used to build an adjacency list that includes 'owned' nodes only.
 /// @pre The `data` array must be sorted.
 template <typename U>
 graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 {
-  std::ranges::sort(data);
   auto [unique_end, range_end] = std::ranges::unique(data);
   data.erase(unique_end, range_end);
 
@@ -430,9 +424,11 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
     }
   }
 
+  std::ranges::sort(shared_entities_data);
   const graph::AdjacencyList<int> shared_entities
       = create_adj_list(shared_entities_data, entity_count);
 
+  std::ranges::sort(shared_entity_to_global_vertices_data);
   const graph::AdjacencyList<int> shared_entities_v
       = create_adj_list(shared_entity_to_global_vertices_data, entity_count);
 
@@ -650,10 +646,23 @@ compute_entities_by_key_matching(
   std::vector<std::int32_t> entity_index(cell_type_offsets.back());
   std::int32_t entity_count = 0;
   {
+    common::Timer timer("Compute entities by key matching: number entities");
+
     // Sort the list and label uniquely
-    const std::vector<std::int32_t> sort_order
-        = dolfinx::sort_by_perm<std::int32_t>(entity_list_sorted,
-                                              num_vertices_per_entity);
+    std::vector<std::int32_t> sort_order(
+        entity_list_sorted.size() / num_vertices_per_entity, 0);
+    std::iota(sort_order.begin(), sort_order.end(), 0);
+    boost::sort::parallel_stable_sort(
+        sort_order.begin(), sort_order.end(),
+        [&facets = entity_list_sorted,
+         shape1 = num_vertices_per_entity](auto f0, auto f1)
+        {
+          auto it0 = std::next(facets.begin(), f0 * shape1);
+          auto it1 = std::next(facets.begin(), f1 * shape1);
+          return std::lexicographical_compare(it0, std::next(it0, shape1), it1,
+                                              std::next(it1, shape1));
+        },
+        num_threads);
 
     std::vector<std::int32_t> entity(num_vertices_per_entity);
     std::vector<std::int32_t> entity0(num_vertices_per_entity);

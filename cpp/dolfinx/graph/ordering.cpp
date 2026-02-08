@@ -14,6 +14,8 @@
 #include <limits>
 #include <span>
 
+#include <iostream>
+
 using namespace dolfinx;
 
 namespace
@@ -25,6 +27,8 @@ std::vector<std::vector<int>>
 residual_graph_components(const graph::AdjacencyList<int>& graph,
                           std::span<const int> indices)
 {
+  common::Timer t("GPS: residual_graph_components");
+
   if (indices.empty())
     return std::vector<std::vector<int>>();
 
@@ -140,6 +144,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   // ALGORITHM I. Finding endpoints of a pseudo-diameter.
 
   // A. Pick an arbitrary vertex of minimal degree and call it v
+  common::Timer timerA("Gibbs-Poole-Stockmeyer ordering: I.A");
   std::int32_t v = 0;
   std::int32_t dmin = std::numeric_limits<std::int32_t>::max();
   for (std::int32_t i = 0; i < n; ++i)
@@ -150,8 +155,11 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
       dmin = d;
     }
   }
+  timerA.stop();
+  timerA.flush();
 
   // B. Generate a level structure Lv rooted at vertex v.
+  common::Timer timerB("Gibbs-Poole-Stockmeyer ordering: I.B");
   graph::AdjacencyList<int> lv = create_level_structure(graph, v);
   graph::AdjacencyList<int> lu(0);
   bool done = false;
@@ -162,6 +170,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
     // Sort final level S of Lv into increasing degree order
     auto lv_final = lv.links(lv.num_nodes() - 1);
     S.resize(lv_final.size());
+
     std::partial_sort_copy(lv_final.begin(), lv_final.end(), S.begin(), S.end(),
                            cmp_degree);
 
@@ -203,8 +212,12 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   assert(lv.num_nodes() == lu.num_nodes());
   const int k = lv.num_nodes();
   spdlog::info("GPS pseudo-diameter:({}) {}-{}", k, u, v);
+  timerB.stop();
+  timerB.flush();
 
   // ALGORITHM II. Minimizing level width.
+
+  common::Timer timerII("Gibbs-Poole-Stockmeyer ordering: II");
 
   // Level pair (i, j) associated with each node
   std::vector<std::array<int, 2>> lvp(n);
@@ -274,8 +287,13 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
         ls[lvp[w][side]].push_back(w);
     }
   }
+  timerII.stop();
+  timerII.flush();
 
   // ALGORITHM III. Numbering
+
+  common::Timer timerIII("Gibbs-Poole-Stockmeyer ordering: III");
+
   std::vector<int> rv;
   rv.reserve(n);
   std::vector<std::int8_t> labelled(n, false);
@@ -318,12 +336,14 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
         }
 
         // Add nodes to rv in order of increasing degree
+        // std::cout << "sort a size: " << nbr.size() << std::endl;
         std::ranges::sort(nbr, cmp_degree);
         rv.insert(rv.end(), nbr.begin(), nbr.end());
         for (int w : nbr)
           labelled[w] = true;
 
         // Save nodes for next level to a separate list, rv_next
+        // std::cout << "sort b size: " << nbr.size() << std::endl;
         std::ranges::sort(nbr_next, cmp_degree);
         rv_next.insert(rv_next.end(), nbr_next.begin(), nbr_next.end());
         for (int w : nbr_next)
@@ -342,6 +362,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
       if (nrem.size() == 0)
         break;
 
+      // std::cout << "Sort size: " << nrem.size() << std::endl;
       std::ranges::sort(nrem, cmp_degree);
       rv.push_back(nrem.front());
       labelled[nrem.front()] = true;
@@ -350,6 +371,8 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
     // Insert already-labelled nodes of next level
     rv.insert(rv.end(), rv_next.begin(), rv_next.end());
   }
+  timerIII.stop();
+  timerIII.flush();
 
   return rv;
 }

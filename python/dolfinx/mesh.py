@@ -28,7 +28,6 @@ from dolfinx.cpp.mesh import (
     GhostMode,
     build_dual_graph,
     cell_dim,
-    create_cell_partitioner,
     to_string,
     to_type,
 )
@@ -80,6 +79,21 @@ __all__ = [
     "transfer_meshtag",
     "uniform_refine",
 ]
+
+
+def create_cell_partitioner(mode: GhostMode, max_facet_to_cell_links: int, num_threads: int):
+    """Create a function to partition a mesh.
+
+    Args:
+        mode: Ghosting mode to use
+        max_facet_to_cell_links: Maximum number of cells that can be
+            connected to a facet. Typically 2.
+        num_threads: Number of threads to use.
+
+    Return:
+        Partitioning function.
+    """
+    return _cpp.mesh.createcreate_cell_partitioner(mode, max_facet_to_cell_links, num_threads)
 
 
 class Topology:
@@ -749,7 +763,7 @@ def create_mesh(
         A mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = create_cell_partitioner(GhostMode.none)
+        partitioner = create_cell_partitioner(GhostMode.none, 2, 1)
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:
@@ -934,7 +948,7 @@ def create_interval(
         An interval mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2, 1)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1011,7 +1025,7 @@ def create_rectangle(
         A mesh of a rectangle.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2, 1)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1081,6 +1095,7 @@ def create_box(
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
     partitioner=None,
+    num_threads=1,
 ) -> Mesh:
     """Create a box mesh.
 
@@ -1095,12 +1110,13 @@ def create_box(
         ghost_mode: The ghost mode used in the mesh partitioning.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
+        num_threads: Number of threads to use.
 
     Returns:
         A mesh of a box domain.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2, num_threads)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1112,9 +1128,9 @@ def create_box(
         )
     )  # type: ignore
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)
+        msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner, num_threads)
     elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner)
+        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner, num_threads)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
 
