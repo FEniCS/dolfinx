@@ -27,14 +27,15 @@
 #include <span>
 
 #if defined(HAS_SUPERLU_DIST)
+#include <superlu_ddefs.h>
 #include <superlu_defs.h>
-/// Struct holding vector of type int_t
+#include <superlu_sdefs.h>
+#include <superlu_zdefs.h>
 struct dolfinx::la::SuperLUDistStructs::vec_int_t
 {
   /// @brief vector
   std::vector<int_t> vec;
 };
-/// Struct defining superlu_options_t
 struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t
     : public ::superlu_dist_options_t
 {
@@ -233,13 +234,13 @@ void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
       .def(
           "__init__",
           [](dolfinx::la::SuperLUDistSolver<T>* solver,
-             std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat)
+             const dolfinx::la::MatrixCSR<T>& Amat)
           {
-            auto A_superlu
+            auto Amat_superlu
                 = std::make_shared<const dolfinx::la::SuperLUDistMatrix<T>>(
-                    std::move(Amat));
+                    Amat);
             new (solver)
-                dolfinx::la::SuperLUDistSolver<T>(std::move(A_superlu));
+                dolfinx::la::SuperLUDistSolver<T>(std::move(Amat_superlu));
           },
           nb::arg("A"))
       .def("solve", &dolfinx::la::SuperLUDistSolver<T>::solve)
