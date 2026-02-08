@@ -513,15 +513,13 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   else
     static_assert(dependent_false_v<T>, "Invalid scalar type");
 
-  spdlog::info("Finalize solve");
-
   if (info != 0)
     spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
 
   PStatPrint(_options.get(), &stat, _gridinfo.get());
   PStatFree(&stat);
 
-  spdlog::info("Finished SuperLU_DIST solve");
+  spdlog::info("Finished solve");
 
   return info;
 }
