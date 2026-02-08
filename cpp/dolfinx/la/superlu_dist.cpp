@@ -284,6 +284,27 @@ void LUStructDeleter::operator()(
   delete l;
 };
 //----------------------------------------------------------------------------
+void SolveStructDeleter::operator()(
+    SuperLUDistStructs::dSOLVEstruct_t* s) const noexcept
+{
+  dSolveFinalize(o, s);
+  delete s;
+};
+//----------------------------------------------------------------------------
+void SolveStructDeleter::operator()(
+    SuperLUDistStructs::sSOLVEstruct_t* s) const noexcept
+{
+  sSolveFinalize(o, s);
+  delete s;
+};
+//----------------------------------------------------------------------------
+void SolveStructDeleter::operator()(
+    SuperLUDistStructs::zSOLVEstruct_t* s) const noexcept
+{
+  zSolveFinalize(o, s);
+  delete s;
+};
+//----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(
     std::shared_ptr<const SuperLUDistMatrix<T>> A)
@@ -352,7 +373,8 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
               static_assert(dependent_false_v<T>, "Invalid scalar type");
             return l;
           }()),
-      _solvestruct(std::make_unique<typename map_t<T>::SOLVEstruct_t>())
+      _solvestruct(new typename map_t<T>::SOLVEstruct_t{},
+                   SolveStructDeleter{_options.get()})
 {
 }
 //----------------------------------------------------------------------------
@@ -470,7 +492,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
             &stat, &info);
 
     spdlog::info("Finalize solve");
-    dSolveFinalize(_options.get(), _solvestruct.get());
+    // dSolveFinalize(_options.get(), _solvestruct.get());
   }
   else if constexpr (std::is_same_v<T, float>)
   {
@@ -483,7 +505,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
             &stat, &info);
 
     spdlog::info("Finalize solve");
-    sSolveFinalize(_options.get(), _solvestruct.get());
+    // sSolveFinalize(_options.get(), _solvestruct.get());
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
@@ -497,7 +519,6 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
             &stat, &info);
 
     spdlog::info("Finalize solve");
-    zSolveFinalize(_options.get(), _solvestruct.get());
   }
   else
     static_assert(dependent_false_v<T>, "Invalid scalar type");
@@ -507,7 +528,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 
   PStatPrint(_options.get(), &stat, _gridinfo.get());
   PStatFree(&stat);
-  
+
   spdlog::info("Finished SuperLU_DIST solve");
 
   return info;
