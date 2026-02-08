@@ -166,10 +166,10 @@ template class la::SuperLUDistMatrix<std::complex<double>>;
 namespace
 {
 template <typename V, typename W>
-void option_setter(std::string_view option_name, W& option,
+void option_setter(W& option, const std::string_view value_in,
+                   const std::string_view option_name,
                    const std::initializer_list<V> values,
-                   std::initializer_list<std::string_view> value_names,
-                   std::string_view value_in)
+                   const std::initializer_list<std::string_view> value_names)
 {
   // TODO: Can be done nicely with std::views::zip in C++23.
   for (auto i : std::views::iota(std::size_t{0}, value_names.size()))
@@ -399,7 +399,8 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
     }
     else
     {
-      throw std::runtime_error("Boolean values must be string 'YES' or 'NO'");
+      throw std::runtime_error(
+          "'Boolean' option values must be string 'YES' or 'NO'");
     }
   }
 
@@ -407,36 +408,34 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
   if (name == "Fact")
   {
     option_setter(
-        name, _options->Fact,
+        _options->Fact, value, "Fact",
         {DOFACT, SamePattern, SamePattern_SameRowPerm, FACTORED},
-        {"DOFACT", "SamePattern", "SamePattern_SameRowPerm", "FACTORED"},
-        value);
+        {"DOFACT", "SamePattern", "SamePattern_SameRowPerm", "FACTORED"});
   }
   else if (name == "Trans")
   {
-    option_setter(name, _options->Trans, {NOTRANS, TRANS, CONJ},
-                  {"NOTRANS", "TRANS", "CONJ"}, value);
+    option_setter(_options->Trans, value, "Trans", {NOTRANS, TRANS, CONJ},
+                  {"NOTRANS", "TRANS", "CONJ"});
   }
   else if (name == "ColPerm")
   {
-    option_setter(name, _options->ColPerm,
+    option_setter(_options->ColPerm, value, "ColPerm",
                   {NATURAL, MMD_ATA, MMD_AT_PLUS_A, COLAMD, METIS_AT_PLUS_A,
                    PARMETIS, METIS_ATA, ZOLTAN, MY_PERMC},
                   {"NATURAL", "MMD_ATA", "MMD_AT_PLUS_A", "COLAMD",
                    "METIS_AT_PLUS_A", "PARMETIS", "METIS_ATA", "ZOLTAN",
-                   "MY_PERMC"},
-                  value);
+                   "MY_PERMC"});
   }
   else if (name == "RowPerm")
   {
-    option_setter(name, _options->RowPerm,
-                  {NOROWPERM, LargeDiag_MC64, LargeDiag_HWPM, MY_PERMR},
-                  {"NOROWPERM", "LargeDiag_MC64", "LargeDiag_HWPM", "MY_PERMR"},
-                  value);
+    option_setter(
+        _options->RowPerm, value, "RowPerm",
+        {NOROWPERM, LargeDiag_MC64, LargeDiag_HWPM, MY_PERMR},
+        {"NOROWPERM", "LargeDiag_MC64", "LargeDiag_HWPM", "MY_PERMR"});
   }
   else
   {
-    std::runtime_error("Unsupported name");
+    std::runtime_error("Unsupported option name");
   }
 }
 //----------------------------------------------------------------------------
