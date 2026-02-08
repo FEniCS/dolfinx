@@ -83,7 +83,7 @@ __all__ = [
 
 
 @singledispatch
-def create_cell_partitioner(part, mode: GhostMode = GhostMode.none):
+def create_cell_partitioner(part: Callable, mode: GhostMode = GhostMode.none):
     """Create a function to partition a mesh.
 
     Args:
@@ -96,7 +96,7 @@ def create_cell_partitioner(part, mode: GhostMode = GhostMode.none):
     return _cpp.mesh.create_cell_partitioner(part, mode)
 
 
-@create_cell_partitioner.register
+@create_cell_partitioner.register(GhostMode)
 def _(mode: GhostMode, max_facet_to_cell_links: int, num_threads: int):
     """Create a function to partition a mesh.
 
@@ -779,7 +779,7 @@ def create_mesh(
         A mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = create_cell_partitioner(GhostMode.none, 2, 1)
+        partitioner = create_cell_partitioner(GhostMode.none, 2, 1)  # type: ignore
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:
@@ -964,7 +964,7 @@ def create_interval(
         An interval mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2, 1)
+        partitioner = create_cell_partitioner(ghost_mode, 2, 1)  # type: ignore
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1041,7 +1041,7 @@ def create_rectangle(
         A mesh of a rectangle.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2, 1)
+        partitioner = create_cell_partitioner(ghost_mode, 2, 1)  # type: ignore
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1139,7 +1139,7 @@ def create_box(
         A mesh of a box domain.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2, num_threads)
+        partitioner = create_cell_partitioner(ghost_mode, 2, num_threads)  # type: ignore
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
