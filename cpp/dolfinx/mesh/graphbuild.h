@@ -33,6 +33,7 @@ enum class CellType : std::int8_t;
 /// manifold meshes. Passing std::nullopt (no upper bound) corresponds
 /// to `max_facet_to_cell_links`=∞, i.e. every facet is considered
 /// unmatched.
+/// @param[in] num_threads Number of threads to use.
 ///
 /// @return
 /// 1. Local dual graph
@@ -60,7 +61,8 @@ std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
 build_local_dual_graph(std::span<const CellType> celltypes,
                        const std::vector<std::span<const std::int64_t>>& cells,
-                       std::optional<std::int32_t> max_facet_to_cell_links = 2);
+                       std::optional<std::int32_t> max_facet_to_cell_links = 2,
+                       int num_threads = 1);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.
@@ -83,6 +85,7 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// manifold meshes. Passing std::nullopt (no upper bound) corresponds
 /// to `max_facet_to_cell_links`=∞, i.e. every facet is considered
 /// unmatched.
+/// @param[in] num_threads Number of threads to use.
 ///
 /// @return The dual graph.
 ///
@@ -96,6 +99,7 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 graph::AdjacencyList<std::int64_t>
 build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                  const std::vector<std::span<const std::int64_t>>& cells,
-                 std::optional<std::int32_t> max_facet_to_cell_links = 2);
+                 std::optional<std::int32_t> max_facet_to_cell_links = 2,
+                 int num_threads = 1);
 
 } // namespace dolfinx::mesh
