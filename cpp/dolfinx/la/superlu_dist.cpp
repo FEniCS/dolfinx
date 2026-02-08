@@ -463,7 +463,8 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A) {
+void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A)
+{
   _superlu_matA = A;
 }
 //----------------------------------------------------------------------------

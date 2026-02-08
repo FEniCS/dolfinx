@@ -226,6 +226,20 @@ void declare_functions(nb::module_& m)
 
 #if defined(HAS_SUPERLU_DIST)
 template <typename T>
+void declare_superlu_dist_matrix(nb::module_& m, const std::string& type)
+{
+  // dolfinx::la::SuperLUDistMatrix
+  std::string name = std::string("SuperLUDistMatrix_") + type;
+  nb::class_<dolfinx::la::SuperLUDistMatrix<T>>(m, name.c_str())
+      .def(
+          "__init__",
+          [](dolfinx::la::SuperLUDistMatrix<T>* Amat_superlu,
+             const dolfinx::la::MatrixCSR<T>& Amat)
+          { new (Amat_superlu) dolfinx::la::SuperLUDistMatrix<T>(Amat); },
+          nb::arg("A"));
+}
+
+template <typename T>
 void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
 {
   // dolfinx::la::SuperLUDistSolver
@@ -234,17 +248,16 @@ void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
       .def(
           "__init__",
           [](dolfinx::la::SuperLUDistSolver<T>* solver,
-             const dolfinx::la::MatrixCSR<T>& Amat)
+             std::shared_ptr<const dolfinx::la::SuperLUDistMatrix<T>>
+                 Amat_superlu)
           {
-            auto Amat_superlu
-                = std::make_shared<const dolfinx::la::SuperLUDistMatrix<T>>(
-                    Amat);
             new (solver)
                 dolfinx::la::SuperLUDistSolver<T>(std::move(Amat_superlu));
           },
           nb::arg("A"))
-      .def("solve", &dolfinx::la::SuperLUDistSolver<T>::solve)
-      .def("set_option", &dolfinx::la::SuperLUDistSolver<T>::set_option);
+      .def("set_option", &dolfinx::la::SuperLUDistSolver<T>::set_option)
+      .def("set_A", &dolfinx::la::SuperLUDistSolver<T>::set_A)
+      .def("solve", &dolfinx::la::SuperLUDistSolver<T>::solve);
 }
 #endif // HAS_SUPERLU_DIST
 
