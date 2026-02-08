@@ -488,9 +488,6 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
             _scalepermstruct.get(), u.array().data(), ldb, nrhs,
             _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
             &stat, &info);
-
-    spdlog::info("Finalize solve");
-    // dSolveFinalize(_options.get(), _solvestruct.get());
   }
   else if constexpr (std::is_same_v<T, float>)
   {
@@ -501,9 +498,6 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
             _scalepermstruct.get(), u.array().data(), ldb, nrhs,
             _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
             &stat, &info);
-
-    spdlog::info("Finalize solve");
-    // sSolveFinalize(_options.get(), _solvestruct.get());
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
@@ -515,11 +509,11 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
             reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
             _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
             &stat, &info);
-
-    spdlog::info("Finalize solve");
   }
   else
     static_assert(dependent_false_v<T>, "Invalid scalar type");
+
+  spdlog::info("Finalize solve");
 
   if (info != 0)
     spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);

@@ -156,7 +156,7 @@ struct LUStructDeleter
 
 struct SolveStructDeleter
 {
-  // *SolveFinalize requires both superlu_dist_options_t and sSOLVEstruct_t. 
+  // *SolveFinalize requires both superlu_dist_options_t and sSOLVEstruct_t.
   SuperLUDistStructs::superlu_dist_options_t* o;
 
   void operator()(SuperLUDistStructs::sSOLVEstruct_t* S) const noexcept;
@@ -243,7 +243,8 @@ private:
   // Pointer to 'typed' struct *LUstruct_t
   std::unique_ptr<typename map_t<T>::LUstruct_t, LUStructDeleter> _lustruct;
   // Pointer to 'typed' struct *SOLVEstruct
-  std::unique_ptr<typename map_t<T>::SOLVEstruct_t, SolveStructDeleter> _solvestruct;
+  std::unique_ptr<typename map_t<T>::SOLVEstruct_t, SolveStructDeleter>
+      _solvestruct;
 };
 } // namespace dolfinx::la
 #endif
