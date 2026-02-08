@@ -563,7 +563,7 @@ void mesh(nb::module_& m)
       {
         std::vector<dolfinx::mesh::CellType> c = {cell_type};
         return dolfinx::mesh::build_dual_graph(comm.get(), std::span{c},
-                                               {cells.array()});
+                                               {cells.array()}, num_threads);
       },
       nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells"),
       nb::arg("num_threads"), "Build dual graph for cells");
