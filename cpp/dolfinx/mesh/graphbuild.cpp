@@ -557,6 +557,9 @@ mesh::build_local_dual_graph(
   //    number of vertices per facet -> size computations for later on
   //    used data structures
 
+  common::Timer timer1(
+      "Compute local part of mesh dual graph (1. index offset)");
+
   // TODO: cell_offsets can be removed?
   std::vector<std::int32_t> cell_offsets{0};
   cell_offsets.reserve(cells.size() + 1);
@@ -584,6 +587,9 @@ mesh::build_local_dual_graph(
         { max = std::max(max, cell_facets.num_links(node)); });
   }
 
+  timer1.stop();
+  timer1.flush();
+
   // 2) Build a list of (all) facets, defined by sorted vertices, with
   //    the connected cell index after the vertices. For v_ij the j-th
   //    vertex of the i-th facet. The last index is the cell index (non
@@ -592,6 +598,9 @@ mesh::build_local_dual_graph(
   //           v_21, v_22, v_23, -1, ..., -1, 0,
   //             ⋮     ⋮      ⋮    ⋮   ⋱    ⋮  ⋮
   //           v_n1, v_n2,   -1, -1, ..., -1, n]
+
+  common::Timer timer2(
+      "Compute local part of mesh dual graph (2. list of facets)");
 
   const int shape1 = max_vertices_per_facet + 1;
   // std::vector<std::int64_t> facets;
@@ -632,7 +641,12 @@ mesh::build_local_dual_graph(
     }
   }
 
+  timer2.stop();
+  timer2.flush();
+
   // 3) Sort facets by vertex key
+  common::Timer timer3(
+      "Compute local part of mesh dual graph (3. sort facets by key)");
   std::vector<std::size_t> perm(facets.size() / shape1, 0);
   std::iota(perm.begin(), perm.end(), 0);
   std::ranges::sort(perm, std::ranges::lexicographical_compare,
@@ -647,6 +661,7 @@ mesh::build_local_dual_graph(
   //    one cell lead to a graph edge to be added. Facets that are not
   //    shared are stored as these might be shared by a cell on another
   //    process.
+  common::Timer timer4("Compute local part of mesh dual graph (4. add edges)");
   std::vector<std::int64_t> unmatched_facets;
   std::vector<std::int32_t> local_cells;
   std::vector<std::array<std::int32_t, 2>> edges;
@@ -706,13 +721,17 @@ mesh::build_local_dual_graph(
     }
   }
 
+  timer4.stop();
+  timer4.flush();
+
   // 5) Build adjacency list data. Prepare data structure and assemble
   //    into. Important: we have only computed one direction of the dual
   //    edges, we add both forward and backward to the final data
   //    structure.
 
+  common::Timer timer5(
+      "Compute local part of mesh dual graph (5. adj list data)");
   std::vector<std::int32_t> num_links(cell_offsets.back(), 0);
-
   for (auto [a, b] : edges)
   {
     ++num_links[a];
@@ -729,6 +748,8 @@ mesh::build_local_dual_graph(
                           data[pos[e[0]]++] = e[1];
                           data[pos[e[1]]++] = e[0];
                         });
+  timer5.stop();
+  timer5.flush();
 
   return {graph::AdjacencyList(std::move(data), std::move(offsets)),
           std::move(unmatched_facets), max_vertices_per_facet,
