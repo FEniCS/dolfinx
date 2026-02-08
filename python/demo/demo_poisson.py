@@ -89,7 +89,7 @@ from dolfinx.common import list_timings
 # +
 msh = mesh.create_box(
     comm=MPI.COMM_WORLD,
-    points=((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+    points=[(0.0, 0.0, 0.0), (2.0, 1.0, 1.0)],
     n=(132, 116, 128),
     cell_type=mesh.CellType.tetrahedron,
     num_threads=10,
