@@ -372,6 +372,8 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
                   std::span<const std::int64_t> global_indices,
                   std::span<const std::int32_t> local_indices)
 {
+  common::Timer timer("Topology: exchange indexing");
+
   const int mpi_rank = dolfinx::MPI::rank(comm);
 
   // Build src and destination ranks
@@ -1072,6 +1074,8 @@ Topology mesh::create_topology(
   // Iterate over vertices that have 'unknown' ownership, and if flagged
   // as owned by determine_sharing_ranks update ownership status
   {
+    common::Timer timer("Topology: mark vertex ownership");
+
     const int mpi_rank = dolfinx::MPI::rank(comm);
     std::vector<std::int64_t> owned_shared_vertices;
     for (std::size_t i = 0; i < boundary_vertices.size(); ++i)
@@ -1099,6 +1103,7 @@ Topology mesh::create_topology(
   // Number all owned vertices, iterating over vertices cell-wise
   std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
   {
+    common::Timer timer("Topology: number owned vertices");
     std::int32_t v = 0;
     for (std::size_t i = 0; i < cell_types.size(); ++i)
     {
@@ -1200,8 +1205,8 @@ Topology mesh::create_topology(
                          recv_data_i.end());
       }
 
-      // Unpack received data and add to arrays of ghost indices and ghost
-      // owners
+      // Unpack received data and add to arrays of ghost indices and
+      // ghost owners
       for (std::array<std::int64_t, 3>& data : recv_data)
       {
         std::int64_t global_idx_old = data[0];
