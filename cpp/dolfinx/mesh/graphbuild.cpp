@@ -531,8 +531,8 @@ mesh::build_local_dual_graph(
     const std::vector<std::span<const std::int64_t>>& cells,
     std::optional<std::int32_t> max_facet_to_cell_links)
 {
-  spdlog::info("Build local part of mesh dual graph (mixed)");
-  common::Timer timer("Compute local part of mesh dual graph (mixed)");
+  spdlog::info("Build local part of mesh dual graph");
+  common::Timer timer("Compute local part of mesh dual graph");
 
   if (std::size_t ncells_local
       = std::accumulate(cells.begin(), cells.end(), 0,
@@ -566,12 +566,11 @@ mesh::build_local_dual_graph(
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
     CellType cell_type = celltypes[j];
-    std::span<const std::int64_t> _cells = cells[j];
     assert(tdim == mesh::cell_dim(cell_type));
     int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
     int num_cell_facets = mesh::cell_num_entities(cell_type, tdim - 1);
 
-    std::int32_t num_cells = _cells.size() / num_cell_vertices;
+    std::int32_t num_cells = cells[j].size() / num_cell_vertices;
     cell_offsets.push_back(cell_offsets.back() + num_cells);
     facet_count += num_cell_facets * num_cells;
 
@@ -620,7 +619,6 @@ mesh::build_local_dual_graph(
         std::ranges::transform(facet_vertices, facet_c.begin(),
                                [v](auto idx) { return v[idx]; });
 
-        // TODO: radix_sort?
         auto it = std::next(facet_c.begin(), facet_vertices.size());
         std::sort(facet_c.begin(), it);
         std::fill(it, facet_c.end(), padding_value);
