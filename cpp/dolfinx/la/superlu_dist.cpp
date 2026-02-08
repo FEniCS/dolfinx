@@ -465,10 +465,16 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   common::Timer tsolve("SuperLU_DIST solve");
   int_t m_loc = ((NRformat_loc*)(_superlu_matA->supermatrix()->Store))->m_loc;
 
-  assert();
+  if (b.array().size() != u.array().size())
+    raise std::runtime_error("b and u have incompatible size/layout");
+  if (b.array().size() != m_loc)
+    raise std::runtime_error("b and A have incompatible size/layout");
+  if (u.array().size() != m_loc)
+    raise std::runtime_error("u and A have incompatible size/layout");
 
   // RHS
   int_t ldb = m_loc;
+  // TODO: Support for multiple right-hand sides?
   int_t nrhs = 1;
 
   int info = 0;
@@ -477,7 +483,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 
   // Copy b to u (SuperLU_DIST reads b from u and then overwrites u with
   // solution)
-  std::copy_n(b.array().begin(), m_loc, u.array().begin());
+  std::copy_n(b.array().begin(), b.array().size(), u.array().begin());
 
   std::vector<scalar_value_t<T>> berr(nrhs);
   if constexpr (std::is_same_v<T, double>)
@@ -513,8 +519,6 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   }
   else
     static_assert(always_false_v<T>, "Invalid scalar type");
-
-  spdlog::info("Finalize solve");
 
   if (info != 0)
     spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
