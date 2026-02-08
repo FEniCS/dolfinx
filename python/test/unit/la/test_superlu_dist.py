@@ -34,7 +34,7 @@ def test_superlu_solver(dtype):
     from dolfinx.la.superlu_dist import superlu_dist_solver
 
     mesh_dtype = dtype().real.dtype
-    mesh = create_unit_square(MPI.COMM_WORLD, 100, 100, dtype=mesh_dtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=mesh_dtype)
     V = functionspace(mesh, ("Lagrange", 4))
     u, v = TrialFunction(V), TestFunction(V)
 
@@ -69,6 +69,7 @@ def test_superlu_solver(dtype):
     A = assemble_matrix(a, bcs=[bc])
     A.scatter_reverse()
 
+    # Standard solve
     solver = superlu_dist_solver(A)
     solver.set_option("SymmetricMode", "YES")
 
@@ -83,7 +84,23 @@ def test_superlu_solver(dtype):
     eps = np.sqrt(np.finfo(dtype).eps)
     assert np.isclose(error, 0.0, atol=eps)
 
+    # Check second solve using same factors as previous solve
     solver.set_option("Fact", "FACTORED")
+
+    uh = Function(V, dtype=dtype)
+    error_code = solver.solve(b, uh.x)
+    assert error_code == 0
+    uh.x.scatter_forward()
+
+    M = (u_ex(x) - uh) ** 2 * dx
+    M = form(M, dtype=dtype)
+    error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
+    eps = np.sqrt(np.finfo(dtype).eps)
+    assert np.isclose(error, 0.0, atol=eps)
+
+    # Check can do same solve with MatrixCSR A again.
+    solver = superlu_dist_solver(A)
+    solver.set_option("SymmetricMode", "YES")
 
     uh = Function(V, dtype=dtype)
     error_code = solver.solve(b, uh.x)
