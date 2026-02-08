@@ -92,7 +92,7 @@ msh = mesh.create_box(
     points=[(0.0, 0.0, 0.0), (2.0, 1.0, 1.0)],
     n=(132, 116, 128),
     cell_type=mesh.CellType.tetrahedron,
-    num_threads=10,
+    num_threads=5,
 )
 
 # msh.topology.create_entities(1, 5)

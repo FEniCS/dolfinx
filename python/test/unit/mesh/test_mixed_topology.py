@@ -43,6 +43,7 @@ def test_mixed_topology_mesh():
             orig_index,
             ghost_owners,
             boundary_vertices,
+            1,
         )
     )
 
@@ -108,6 +109,7 @@ def test_mixed_topology_mesh_3d():
             orig_index,
             ghost_owners,
             boundary_vertices,
+            1,
         )
     )
 
@@ -220,6 +222,7 @@ def test_parallel_mixed_mesh():
         orig_index,
         ghost_owners,
         boundary_vertices,
+        1,
     )
 
     # Cell types appear in order as in create_topology

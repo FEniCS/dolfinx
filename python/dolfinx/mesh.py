@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import typing
 from collections.abc import Callable, Sequence
+from functools import singledispatch
 
 from mpi4py import MPI as _MPI
 
@@ -81,7 +82,21 @@ __all__ = [
 ]
 
 
-def create_cell_partitioner(mode: GhostMode, max_facet_to_cell_links: int, num_threads: int):
+@singledispatch
+def create_cell_partitioner(part, mode: GhostMode = GhostMode.none):
+    """Create a function to partition a mesh.
+
+    Args:
+        part: Ghosting mode to use
+
+    Return:
+        Partitioning function.
+    """
+    return _cpp.mesh.create_cell_partitioner(part, mode)
+
+
+@create_cell_partitioner.register
+def _(mode: GhostMode, max_facet_to_cell_links: int, num_threads: int):
     """Create a function to partition a mesh.
 
     Args:
@@ -93,7 +108,7 @@ def create_cell_partitioner(mode: GhostMode, max_facet_to_cell_links: int, num_t
     Return:
         Partitioning function.
     """
-    return _cpp.mesh.createcreate_cell_partitioner(mode, max_facet_to_cell_links, num_threads)
+    return _cpp.mesh.create_cell_partitioner(mode, max_facet_to_cell_links, num_threads)
 
 
 class Topology:
@@ -1037,9 +1052,13 @@ def create_rectangle(
         )
     )  # type: ignore
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
+        msh = _cpp.mesh.create_rectangle_float32(
+            comm, points, n, cell_type, partitioner, diagonal, 1
+        )
     elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, partitioner, diagonal)
+        msh = _cpp.mesh.create_rectangle_float64(
+            comm, points, n, cell_type, partitioner, diagonal, 1
+        )
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
 
@@ -1054,6 +1073,7 @@ def create_unit_square(
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
     partitioner=None,
+    num_threads=1,
     diagonal: DiagonalType = DiagonalType.right,
 ) -> Mesh:
     """Create a mesh of a unit square.
