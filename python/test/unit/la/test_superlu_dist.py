@@ -34,7 +34,7 @@ def test_superlu_solver(dtype):
     from dolfinx.la.superlu_dist import superlu_dist_solver
 
     mesh_dtype = dtype().real.dtype
-    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=mesh_dtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 100, 100, dtype=mesh_dtype)
     V = functionspace(mesh, ("Lagrange", 4))
     u, v = TrialFunction(V), TestFunction(V)
 

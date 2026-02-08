@@ -72,7 +72,7 @@ std::vector<int_t> row_indices(const auto& A)
 //----------------------------------------------------------------------------
 template <typename T>
 std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
-create_supermatrix(const auto& A, auto& rowptr, auto& cols)
+create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
 {
   spdlog::info("Start create_supermatrix");
 
@@ -108,26 +108,24 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
   std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter> p(
       new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{});
 
-  // Note that the SuperMatrix shares the underlying data of A.
-  T* Amatdata = const_cast<T*>(A.values().data());
   if constexpr (std::is_same_v<T, double>)
   {
-    dCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
-                                   Amatdata, cols.vec.data(), rowptr.vec.data(),
-                                   SLU_NR_loc, SLU_D, SLU_GE);
+    dCreate_CompRowLoc_Matrix_dist(
+        p.get(), m, n, nnz_loc, m_loc, first_row, A_mat_values.data(),
+        cols.vec.data(), rowptr.vec.data(), SLU_NR_loc, SLU_D, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, float>)
   {
-    sCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
-                                   Amatdata, cols.vec.data(), rowptr.vec.data(),
-                                   SLU_NR_loc, SLU_S, SLU_GE);
+    sCreate_CompRowLoc_Matrix_dist(
+        p.get(), m, n, nnz_loc, m_loc, first_row, A_mat_values.data(),
+        cols.vec.data(), rowptr.vec.data(), SLU_NR_loc, SLU_S, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
-    zCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
-                                   reinterpret_cast<doublecomplex*>(Amatdata),
-                                   cols.vec.data(), rowptr.vec.data(),
-                                   SLU_NR_loc, SLU_Z, SLU_GE);
+    zCreate_CompRowLoc_Matrix_dist(
+        p.get(), m, n, nnz_loc, m_loc, first_row,
+        reinterpret_cast<doublecomplex*>(A_mat_values.data()), cols.vec.data(),
+        rowptr.vec.data(), SLU_NR_loc, SLU_Z, SLU_GE);
   }
   else
     static_assert(dependent_false_v<T>, "Invalid scalar type");
@@ -142,7 +140,7 @@ SuperLUDistMatrix<T>::SuperLUDistMatrix(const MatrixCSR<T>& A)
     : _comm(A.comm()), _matA_values(A.values()),
       _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(A))),
       _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(A))),
-      _supermatrix(create_supermatrix<T>(A, *_rowptr, *_cols))
+      _supermatrix(create_supermatrix<T>(A, _matA_values, *_rowptr, *_cols))
 {
 }
 /// @brief Get MPI communicator that matrix is defined on.
