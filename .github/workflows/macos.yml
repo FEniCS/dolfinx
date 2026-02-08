@@ -56,8 +56,7 @@ jobs:
           path: |
             ${{ env.PETSC_DIR }}
             ~/Library/Python/
-          key: ${{ runner.os }}-petsc-${{ env.PETSC_VERSION }}
-          # key: ${{ runner.os }}-petsc-${{ env.PETSC_VERSION }}-${{ steps.cp3.outputs.python-version }}
+          key: ${{ runner.os }}-petsc-${{ env.PETSC_VERSION }}-${{ steps.cp3.outputs.python-version }}
 
       - name: Install minimal PETSc and petsc4py
         if: steps.cache-petsc-restore.outputs.cache-hit != 'true'
