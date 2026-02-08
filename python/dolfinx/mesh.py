@@ -87,7 +87,8 @@ def create_cell_partitioner(part, mode: GhostMode = GhostMode.none):
     """Create a function to partition a mesh.
 
     Args:
-        part: Ghosting mode to use
+        part: Partition function.
+        mode: Ghosting mode to use.
 
     Return:
         Partitioning function.
@@ -1091,6 +1092,8 @@ def create_unit_square(
         diagonal:
             Direction of diagonal. See :class:`DiagonalType` for
             available options.
+        num_threads: Number of threads to use.
+
 
     Returns:
         A mesh of a square with corners at ``(0, 0)`` and ``(1, 1)``.
