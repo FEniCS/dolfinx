@@ -119,7 +119,7 @@ class SuperLUDistSolver:
         Args:
             A: Assembled left-hand side matrix :math:`A`.
         """
-        self._cpp_object.set_A(A)
+        self._cpp_object.set_A(A._cpp_object)
 
     def solve(self, b: dolfinx.la.Vector, u: dolfinx.la.Vector) -> int:
         """Solve linear system :math:`Au = b`.

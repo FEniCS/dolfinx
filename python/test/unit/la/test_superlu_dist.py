@@ -116,7 +116,21 @@ def test_superlu_solver(dtype):
     eps = np.sqrt(np.finfo(dtype).eps)
     assert np.isclose(error, 0.0, atol=eps)
 
-    # Advanced usage where we solve with A_1, replace the solver operator with
-    # A_2 (with same sparsity pattern as A_1), and then solve with A_2 reusing
-    # column permutations.
-    A_superlu = superlu_dist_matrix(A)
+    # Advanced usage where we solved with A_1, replace the solver operator with
+    # A_2 (with same sparsity pattern and similar values as A_1), and then
+    # solve with A_2 reusing column permutations.
+    # TODO: Change this so A_superlu_3 is different to A_superlu_2.
+    A_superlu_3 = superlu_dist_matrix(A)
+    solver.set_A(A_superlu_3)
+    solver.set_option("Fact", "SamePattern")
+
+    uh = Function(V, dtype=dtype)
+    error_code = solver.solve(b, uh.x)
+    assert error_code == 0
+    uh.x.scatter_forward()
+
+    M = (u_ex(x) - uh) ** 2 * dx
+    M = form(M, dtype=dtype)
+    error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
+    eps = np.sqrt(np.finfo(dtype).eps)
+    assert np.isclose(error, 0.0, atol=eps)
