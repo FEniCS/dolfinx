@@ -23,6 +23,7 @@ from dolfinx.fem import (
     locate_dofs_topological,
 )
 from dolfinx.la import InsertMode
+from dolfinx.la.superlu_dist import superlu_dist_matrix
 from dolfinx.mesh import create_unit_square, exterior_facet_indices
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, inner
 
@@ -70,7 +71,8 @@ def test_superlu_solver(dtype):
     A.scatter_reverse()
 
     # Standard solve
-    solver = superlu_dist_solver(A)
+    A_superlu = superlu_dist_matrix(A)
+    solver = superlu_dist_solver(A_superlu)
     solver.set_option("SymmetricMode", "YES")
 
     uh = Function(V, dtype=dtype)
@@ -99,7 +101,8 @@ def test_superlu_solver(dtype):
     assert np.isclose(error, 0.0, atol=eps)
 
     # Check can do same solve with MatrixCSR A again.
-    solver = superlu_dist_solver(A)
+    A_superlu_2 = superlu_dist_matrix(A)
+    solver = superlu_dist_solver(A_superlu_2)
     solver.set_option("SymmetricMode", "YES")
 
     uh = Function(V, dtype=dtype)

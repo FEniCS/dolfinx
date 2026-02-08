@@ -476,10 +476,6 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 
   if (b.array().size() != u.array().size())
     throw std::runtime_error("b and u have incompatible size/layout");
-  if (b.array().size() != static_cast<std::size_t>(m_loc))
-    throw std::runtime_error("b and A have incompatible size/layout");
-  if (u.array().size() != static_cast<std::size_t>(m_loc))
-    throw std::runtime_error("u and A have incompatible size/layout");
 
   // RHS
   int_t ldb = m_loc;
