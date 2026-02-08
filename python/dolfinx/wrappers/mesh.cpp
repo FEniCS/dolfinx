@@ -822,7 +822,7 @@ void mesh(nb::module_& m)
             dolfinx::mesh::create_cell_partitioner(
                 mode, part::impl::create_partitioner_cpp(part)));
       },
-      nb::arg("part"), nb::arg("ghost_mode") = dolfinx::mesh::GhostMode::none,
+      nb::arg("part"), nb::arg("ghost_mode"),
       "Create a cell partitioner from a graph partitioning function.");
 
   m.def(
