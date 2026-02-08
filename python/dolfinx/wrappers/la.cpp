@@ -40,15 +40,6 @@ struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t
     : public ::superlu_dist_options_t
 {
 };
-struct dolfinx::la::SuperLUDistStructs::dSOLVEstruct_t : public ::dSOLVEstruct_t
-{
-};
-struct dolfinx::la::SuperLUDistStructs::sSOLVEstruct_t : public ::sSOLVEstruct_t
-{
-};
-struct dolfinx::la::SuperLUDistStructs::zSOLVEstruct_t : public ::zSOLVEstruct_t
-{
-};
 #endif // HAS_SUPERLU_DIST
 
 namespace nb = nanobind;

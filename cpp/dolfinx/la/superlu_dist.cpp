@@ -526,7 +526,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   PStatPrint(_options.get(), &stat, _gridinfo.get());
   PStatFree(&stat);
 
-  spdlog::info("Finished SuperLU_DIST solve");
+  spdlog::info("Finished solve");
 
   return info;
 }
