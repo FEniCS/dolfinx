@@ -47,7 +47,7 @@ void SuperMatrixDeleter::operator()(
 namespace
 {
 template <typename...>
-constexpr bool dependent_false_v = false;
+constexpr bool always_false_v = false;
 
 std::vector<int_t> col_indices(const auto& A)
 {
@@ -128,7 +128,7 @@ create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
         rowptr.vec.data(), SLU_NR_loc, SLU_Z, SLU_GE);
   }
   else
-    static_assert(dependent_false_v<T>, "Invalid scalar type");
+    static_assert(always_false_v<T>, "Invalid scalar type");
 
   spdlog::info("Finished create_supermatrix");
   return p;
@@ -346,7 +346,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
               zScalePermstructInit(m, m, s.get());
             }
             else
-              static_assert(dependent_false_v<T>, "Invalid scalar type");
+              static_assert(always_false_v<T>, "Invalid scalar type");
             return s;
           }()),
       _lustruct(
@@ -368,7 +368,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
               zLUstructInit(m, l.get());
             }
             else
-              static_assert(dependent_false_v<T>, "Invalid scalar type");
+              static_assert(always_false_v<T>, "Invalid scalar type");
             return l;
           }()),
       _solvestruct(new typename map_t<T>::SOLVEstruct_t{},
@@ -465,11 +465,12 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   common::Timer tsolve("SuperLU_DIST solve");
   int_t m_loc = ((NRformat_loc*)(_superlu_matA->supermatrix()->Store))->m_loc;
 
+  assert();
+
   // RHS
   int_t ldb = m_loc;
   int_t nrhs = 1;
 
-  // Remains
   int info = 0;
   SuperLUStat_t stat;
   PStatInit(&stat);
@@ -511,7 +512,7 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
             &stat, &info);
   }
   else
-    static_assert(dependent_false_v<T>, "Invalid scalar type");
+    static_assert(always_false_v<T>, "Invalid scalar type");
 
   spdlog::info("Finalize solve");
 

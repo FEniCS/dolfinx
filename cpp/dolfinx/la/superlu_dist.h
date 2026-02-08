@@ -16,7 +16,7 @@
 
 namespace dolfinx::la
 {
-// Declare structs to avoid exposing SuperLU_DIST headers in DOLFINx.
+/// Forward declare structs to avoid exposing SuperLU_DIST headers.
 class SuperLUDistStructs
 {
 public:
@@ -40,7 +40,7 @@ public:
 
 // SuperLU_DIST has structs that are 'typed' with prefixes d, s, z. This allows
 // the solver class to select the typed set based on T.
-namespace detail
+namespace impl
 {
 template <typename...>
 constexpr bool always_false_v = false;
@@ -54,33 +54,43 @@ struct map
 };
 
 template <>
-struct map<float>
-{
-  using ScalePermstruct_t = SuperLUDistStructs::sScalePermstruct_t;
-  using LUstruct_t = SuperLUDistStructs::sLUstruct_t;
-  using SOLVEstruct_t = SuperLUDistStructs::sSOLVEstruct_t;
-};
-
+/// Map double type to float 'typed' structs
 template <>
 struct map<double>
 {
+  /// \cond
   using ScalePermstruct_t = SuperLUDistStructs::dScalePermstruct_t;
   using LUstruct_t = SuperLUDistStructs::dLUstruct_t;
   using SOLVEstruct_t = SuperLUDistStructs::dSOLVEstruct_t;
+  /// \endcond
 };
 
+/// Map float type to float 'typed' structs
+struct map<float>
+{
+  /// \cond
+  using ScalePermstruct_t = SuperLUDistStructs::sScalePermstruct_t;
+  using LUstruct_t = SuperLUDistStructs::sLUstruct_t;
+  using SOLVEstruct_t = SuperLUDistStructs::sSOLVEstruct_t;
+  /// \endcond
+};
+
+/// Map std::complex type to doublecomplex 'typed' structs
 template <>
 struct map<std::complex<double>>
 {
+  /// \cond
   using ScalePermstruct_t = SuperLUDistStructs::zScalePermstruct_t;
   using LUstruct_t = SuperLUDistStructs::zLUstruct_t;
   using SOLVEstruct_t = SuperLUDistStructs::zSOLVEstruct_t;
+  /// \endcond
 };
 
-} // namespace detail
+} // namespace impl
 
+/// Map scalar type to SuperLU_DIST 'typed' structs
 template <class T>
-using map_t = detail::map<T>;
+using map_t = impl::map<T>;
 
 /// Call library cleanup and delete pointer. For use with
 /// std::unique_ptr holding SuperMatrix.
@@ -120,7 +130,6 @@ private:
   dolfinx::MPI::Comm _comm;
   // Deep copy of values from MatrixCSR.
   std::vector<T> _matA_values;
-  // Saved matrix operator with rows and cols in required integer type.
   // cols and rowptr are required in opaque type "int_t" of
   // SuperLU_DIST.
   std::unique_ptr<SuperLUDistStructs::vec_int_t> _cols;
@@ -140,27 +149,42 @@ struct GridInfoDeleter
   void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
 };
 
+/// Call library cleanup and delete pointer. For use with std::unique_ptr
+/// holding *ScalePermstruct_t
 struct ScalePermStructDeleter
 {
-  void operator()(SuperLUDistStructs::sScalePermstruct_t* s) const noexcept;
+  /// Implementation for double
   void operator()(SuperLUDistStructs::dScalePermstruct_t* s) const noexcept;
+  /// Implementation for float
+  void operator()(SuperLUDistStructs::sScalePermstruct_t* s) const noexcept;
+  /// Implementation for complexdouble
   void operator()(SuperLUDistStructs::zScalePermstruct_t* s) const noexcept;
 };
 
+/// Call library cleanup and delete pointer. For use with std::unique_ptr
+/// holding *sLUstruct_t
 struct LUStructDeleter
 {
-  void operator()(SuperLUDistStructs::sLUstruct_t* l) const noexcept;
+  /// Implementation for double
   void operator()(SuperLUDistStructs::dLUstruct_t* l) const noexcept;
+  /// Implementation for float
+  void operator()(SuperLUDistStructs::sLUstruct_t* l) const noexcept;
+  /// Implementation for complexdouble
   void operator()(SuperLUDistStructs::zLUstruct_t* l) const noexcept;
 };
 
+/// Call library cleanup and delete pointer. For use with std::unique_ptr
+/// holding *SOLVEstruct_t
 struct SolveStructDeleter
 {
-  // *SolveFinalize requires both superlu_dist_options_t and sSOLVEstruct_t.
+  /// Pointer to options - required for *SOLVEstruct_t cleanup function.
   SuperLUDistStructs::superlu_dist_options_t* o;
 
-  void operator()(SuperLUDistStructs::sSOLVEstruct_t* S) const noexcept;
+  /// Implementation for double
   void operator()(SuperLUDistStructs::dSOLVEstruct_t* S) const noexcept;
+  /// Implementation for float
+  void operator()(SuperLUDistStructs::sSOLVEstruct_t* S) const noexcept;
+  /// Implementation for complexdouble
   void operator()(SuperLUDistStructs::zSOLVEstruct_t* S) const noexcept;
 };
 
@@ -186,7 +210,7 @@ public:
   /// Copy assignment
   SuperLUDistSolver& operator=(const SuperLUDistSolver&) = delete;
 
-  /// @brief Set solver option (name, value)
+  /// @brief Set solver option name to value
   ///
   /// See SuperLU_DIST User's Guide for option names and values.
   ///
@@ -210,7 +234,7 @@ public:
   /// SuperLUDistStructs::superlu_dist_options_t options;
   /// set_default_options_dist(&options);
   /// options.PrintStat = YES;
-  /// // Setup SuperLUDistMatrix and SuperLUDistSolver
+  /// // Setup SuperLUDistSolver
   /// solver.set_options(options);
   /// ```
   ///
