@@ -102,7 +102,7 @@ public:
   ///
   /// @tparam T Scalar type.
   /// @param A Matrix.
-  SuperLUDistMatrix(const MatrixCSR<T>* A);
+  SuperLUDistMatrix(const MatrixCSR<T>& A);
 
   /// @brief Copy constructor (deleted)
   SuperLUDistMatrix(const SuperLUDistMatrix&) = delete;
