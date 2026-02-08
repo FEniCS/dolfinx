@@ -558,7 +558,7 @@ mesh::build_local_dual_graph(
   //    used data structures
 
   common::Timer timer1(
-      "Compute local part of mesh dual graph (1. index offset)");
+      "Compute local part of mesh dual graph (1.index offset)");
 
   // TODO: cell_offsets can be removed?
   std::vector<std::int32_t> cell_offsets{0};
@@ -602,24 +602,16 @@ mesh::build_local_dual_graph(
   common::Timer timer2(
       "Compute local part of mesh dual graph (2. list of facets)");
 
-  const int shape1 = max_vertices_per_facet + 1;
-  // std::vector<std::int64_t> facets;
-  // facets.reserve(facet_count * shape1);
-  std::vector<std::int64_t> facets(facet_count * shape1);
-  constexpr std::int32_t padding_value = -1;
-  for (std::size_t j = 0; j < cells.size(); ++j)
+  auto build_facets_fn =
+      [](int shape1, std::int32_t num_cells, int num_cell_vertices,
+         std::size_t cell_offset, const graph::AdjacencyList<int>& cell_facets,
+         std::span<const std::int64_t> cells, std::vector<std::int64_t>& facets)
   {
-    CellType cell_type = celltypes[j];
-    std::span _cells = cells[j];
-
-    int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
-    std::int32_t num_cells = _cells.size() / num_cell_vertices;
-    graph::AdjacencyList<int> cell_facets
-        = mesh::get_entity_vertices(cell_type, tdim - 1);
+    constexpr std::int32_t padding_value = -1;
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       // Loop over cell facets
-      std::span v = _cells.subspan(num_cell_vertices * c, num_cell_vertices);
+      std::span v = cells.subspan(num_cell_vertices * c, num_cell_vertices);
       for (int f = 0; f < cell_facets.num_nodes(); ++f)
       {
         std::span facet_vertices = cell_facets.links(f);
@@ -631,14 +623,23 @@ mesh::build_local_dual_graph(
         auto it = std::next(facet_c.begin(), facet_vertices.size());
         std::sort(facet_c.begin(), it);
         std::fill(it, facet_c.end(), padding_value);
-        facet_c.back() = (c + cell_offsets[j]);
-        // std::sort(std::prev(facets.end(), facet_vertices.size()),
-        // facets.end()); facets.insert(facets.end(),
-        //               max_vertices_per_facet - facet_vertices.size(),
-        //               padding_value);
-        // facets.push_back(c + cell_offsets[j]);
+        facet_c.back() = (c + cell_offset);
       }
     }
+  };
+
+  const int shape1 = max_vertices_per_facet + 1;
+  std::vector<std::int64_t> facets(facet_count * shape1);
+  for (std::size_t j = 0; j < cells.size(); ++j)
+  {
+    CellType cell_type = celltypes[j];
+    int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
+    graph::AdjacencyList<int> cell_facets
+        = mesh::get_entity_vertices(cell_type, tdim - 1);
+    std::span _cells = cells[j];
+    std::int32_t num_cells = _cells.size() / num_cell_vertices;
+    build_facets_fn(shape1, num_cells, num_cell_vertices, cell_offsets[j],
+                    cell_facets, _cells, facets);
   }
 
   timer2.stop();
