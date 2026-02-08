@@ -285,21 +285,24 @@ void LUStructDeleter::operator()(
 void SolveStructDeleter::operator()(
     SuperLUDistStructs::dSOLVEstruct_t* s) const noexcept
 {
-  dSolveFinalize(o, s);
+  if (o->SolveInitialized)
+    dSolveFinalize(o, s);
   delete s;
 };
 //----------------------------------------------------------------------------
 void SolveStructDeleter::operator()(
     SuperLUDistStructs::sSOLVEstruct_t* s) const noexcept
 {
-  sSolveFinalize(o, s);
+  if (o->SolveInitialized)
+    sSolveFinalize(o, s);
   delete s;
 };
 //----------------------------------------------------------------------------
 void SolveStructDeleter::operator()(
     SuperLUDistStructs::zSOLVEstruct_t* s) const noexcept
 {
-  zSolveFinalize(o, s);
+  if (o->SolveInitialized)
+    zSolveFinalize(o, s);
   delete s;
 };
 //----------------------------------------------------------------------------
