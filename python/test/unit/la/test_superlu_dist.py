@@ -115,3 +115,8 @@ def test_superlu_solver(dtype):
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     eps = np.sqrt(np.finfo(dtype).eps)
     assert np.isclose(error, 0.0, atol=eps)
+
+    # Advanced usage where we solve with A_1, replace the solver operator with
+    # A_2 (with same sparsity pattern as A_1), and then solve with A_2 reusing
+    # column permutations.
+    A_superlu = superlu_dist_matrix(A)

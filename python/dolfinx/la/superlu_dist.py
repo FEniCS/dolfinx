@@ -110,6 +110,17 @@ class SuperLUDistSolver:
         """
         self._cpp_object.set_option(name, value)
 
+    def set_A(self, A: SuperLUDistMatrix):
+        """Set assembled left-hand side matrix.
+
+        For advanced use with SuperLU_DIST option `Factor` allowing
+        use of previously computed factors with new matrix A.
+
+        Args:
+            A: Assembled left-hand side matrix :math:`A`.
+        """
+        self._cpp_object.set_A(A)
+
     def solve(self, b: dolfinx.la.Vector, u: dolfinx.la.Vector) -> int:
         """Solve linear system :math:`Au = b`.
 
