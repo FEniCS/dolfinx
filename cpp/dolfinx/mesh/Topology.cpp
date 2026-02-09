@@ -345,18 +345,17 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
   std::ranges::set_difference(ghost_vertex_set, local_vertex_set,
                               std::back_inserter(unowned_vertices));
 
-  // TODO Check this in debug mode only?
-  // Sanity check
-  // No vertices in unowned should also be in boundary...
+#ifndef NDEBUG
+  // Sanity check: no vertices in unowned should also be in boundary.
   std::vector<std::int64_t> unowned_vertices_in_error;
   std::ranges::set_intersection(unowned_vertices, boundary_vertices,
                                 std::back_inserter(unowned_vertices_in_error));
-
   if (!unowned_vertices_in_error.empty())
   {
     throw std::runtime_error(
         "Adding boundary vertices in ghost cells not allowed.");
   }
+#endif
 
   return {std::move(owned_vertices), std::move(unowned_vertices)};
 }
@@ -1143,6 +1142,30 @@ Topology mesh::create_topology(
           std::size_t pos = std::distance(owned_vertices.begin(), it);
           if (local_vertex_indices[pos] < 0)
             local_vertex_indices[pos] = v++;
+        }
+      }
+    }
+  }
+
+  // NEW: Number all owned vertices, iterating over vertices cell-wise
+  // Global: [2, 4, 17, 18, 19, 23, 44]
+  // Local:  [0, 1, 2,      5,  8] (cell type)
+  std::vector<std::int32_t> local_vertex_indices_new(owned_vertices.size(), -1);
+  {
+    std::vector<std::array<std::int64_t, 3>> vertex_data;
+
+    common::Timer timer("Topology: number owned vertices (new)");
+    std::int32_t v = 0;
+    for (auto _cells : cells)
+    {
+      for (auto vtx : _cells)
+      {
+        if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
+            it != owned_vertices.end() and *it == vtx)
+        {
+          std::size_t pos = std::distance(owned_vertices.begin(), it);
+          if (local_vertex_indices_new[pos] < 0)
+            local_vertex_indices_new[pos] = v++;
         }
       }
     }
