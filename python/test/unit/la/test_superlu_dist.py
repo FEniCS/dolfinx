@@ -113,23 +113,14 @@ def test_superlu_solver(dtype):
     a_2 = (inner(grad(u), grad(v)) + gamma * inner(u, v)) * dx
     a_2 = form(a_2, dtype=dtype)
 
-    # Exact solution
-    def u_ex_2(x):
-        return x[1] ** 2
-
-    f_2 = -div(grad(u_ex_2(x))) + gamma * u_ex_2(x)
+    f_2 = -div(grad(u_ex(x))) + gamma * u_ex(x)
     L_2 = inner(f_2, v) * dx
     L_2 = form(L_2, dtype=dtype)
 
-    # Create Dirichlet boundary condition
-    u_bc_2 = Function(V, dtype=dtype)
-    u_bc_2.interpolate(u_ex_2)
-    bc_2 = dirichletbc(u_bc_2, bdofs)
-
     b_2 = assemble_vector(L_2)
-    apply_lifting(b_2.array, [a_2], bcs=[[bc_2]])
+    apply_lifting(b_2.array, [a_2], bcs=[[bc]])
     b_2.scatter_reverse(InsertMode.add)
-    bc_2.set(b_2.array)
+    bc.set(b_2.array)
 
     A_3 = assemble_matrix(a_2, bcs=[bc])
     A_3.scatter_reverse()
@@ -138,4 +129,4 @@ def test_superlu_solver(dtype):
     solver_2.set_A(A_superlu_3)
     solver_2.set_option("Fact", "SamePattern")
     uh_2 = solve_and_check(solver_2, b_2)
-    check_error(u_ex_2, uh_2)
+    check_error(u_ex, uh_2)
