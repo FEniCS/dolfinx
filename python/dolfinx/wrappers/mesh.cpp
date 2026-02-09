@@ -563,11 +563,10 @@ void mesh(nb::module_& m)
       {
         std::vector<dolfinx::mesh::CellType> c = {cell_type};
         return dolfinx::mesh::build_dual_graph(comm.get(), std::span{c},
-                                               {cells.array()}, num_threads);
+                                               {cells.array()}, 2, num_threads);
       },
       nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells"),
       nb::arg("num_threads"), "Build dual graph for cells");
-
   m.def(
       "build_dual_graph",
       [](const MPICommWrapper comm,
@@ -580,7 +579,7 @@ void mesh(nb::module_& m)
         for (std::size_t i = 0; i < cells.size(); ++i)
           cell_span.emplace_back(cells[i].data(), cells[i].size());
         return dolfinx::mesh::build_dual_graph(comm.get(), cell_types,
-                                               cell_span, num_threads);
+                                               cell_span, 2, num_threads);
       },
       nb::arg("comm"), nb::arg("cell_types"), nb::arg("cells"),
       nb::arg("num_threads"), "Build dual graph for cells");
