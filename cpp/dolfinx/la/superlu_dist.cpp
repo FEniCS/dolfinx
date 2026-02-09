@@ -477,6 +477,11 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
   if (b.array().size() != u.array().size())
     throw std::runtime_error("b and u have incompatible size/layout");
 
+  // Warn if Factor is DOFACT but solve already appears to be initialised.
+  if (_options->Fact == DOFACT && _options->SolveInitialized == YES)
+    spdlog::warn(
+        "Option Fact set to DOFACT on second call to solve - try FACTORED.");
+
   // RHS
   int_t ldb = m_loc;
   // TODO: Support for multiple right-hand sides?

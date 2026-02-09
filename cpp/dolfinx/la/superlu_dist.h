@@ -87,7 +87,7 @@ struct map<std::complex<double>>
 } // namespace impl
 
 /// Map scalar type to SuperLU_DIST 'typed' structs
-template <class T>
+template <typename T>
 using map_t = impl::map<T>;
 
 /// Call library cleanup and delete pointer. For use with
@@ -151,24 +151,22 @@ struct GridInfoDeleter
 /// holding *ScalePermstruct_t
 struct ScalePermStructDeleter
 {
-  /// Implementation for double
+  /// \cond
   void operator()(SuperLUDistStructs::dScalePermstruct_t* s) const noexcept;
-  /// Implementation for float
   void operator()(SuperLUDistStructs::sScalePermstruct_t* s) const noexcept;
-  /// Implementation for complexdouble
   void operator()(SuperLUDistStructs::zScalePermstruct_t* s) const noexcept;
+  /// \endcond
 };
 
 /// Call library cleanup and delete pointer. For use with std::unique_ptr
-/// holding *sLUstruct_t
+/// holding *LUstruct_t
 struct LUStructDeleter
 {
-  /// Implementation for double
+  /// \cond
   void operator()(SuperLUDistStructs::dLUstruct_t* l) const noexcept;
-  /// Implementation for float
   void operator()(SuperLUDistStructs::sLUstruct_t* l) const noexcept;
-  /// Implementation for complexdouble
   void operator()(SuperLUDistStructs::zLUstruct_t* l) const noexcept;
+  /// \endcond
 };
 
 /// Call library cleanup and delete pointer. For use with std::unique_ptr
@@ -178,12 +176,11 @@ struct SolveStructDeleter
   /// Pointer to options - required for *SOLVEstruct_t cleanup function.
   SuperLUDistStructs::superlu_dist_options_t* o;
 
-  /// Implementation for double
+  /// \cond
   void operator()(SuperLUDistStructs::dSOLVEstruct_t* S) const noexcept;
-  /// Implementation for float
   void operator()(SuperLUDistStructs::sSOLVEstruct_t* S) const noexcept;
-  /// Implementation for complexdouble
   void operator()(SuperLUDistStructs::zSOLVEstruct_t* S) const noexcept;
+  /// \endcond
 };
 
 /// SuperLU_DIST linear solver interface.
@@ -241,8 +238,9 @@ public:
 
   /// @brief Set assembled left-hand side matrix A.
   ///
-  /// For advanced use with SuperLU_DIST option `Factor` allowing
-  /// use of previously computed factors with a new matrix A.
+  /// For advanced use with SuperLU_DIST option `Factor` allowing use of
+  /// previously computed permutations when solving with new matrix A.
+  ///
   /// @param A Assembled left-hand side matrix.
   void set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A);
 
@@ -251,9 +249,13 @@ public:
   /// @param b Right-hand side vector.
   /// @param u Solution vector, overwritten during solve.
   /// @returns SuperLU_DIST info integer.
+  ///
+  /// @note Vectors must have size and parallel layout compatible with `A`.
   /// @note The caller must check the return code for success `(== 0)`.
   /// @note The caller must `u.scatter_forward()` after the solve.
-  /// @note Vectors must have size and parallel layout compatible with `A`.
+  /// @note The values of `A` are modified in-place during the solve.
+  /// @note To solve with successive right-hand sides the caller must
+  ///   `solver.set_options("Factor", "FACTORED")` after the first solve.
   int solve(const Vector<T>& b, Vector<T>& u) const;
 
 private:

@@ -116,7 +116,7 @@ class SuperLUDistSolver:
         """Set assembled left-hand side matrix.
 
         For advanced use with SuperLU_DIST option `Factor` allowing
-        use of previously computed factors with new matrix A.
+        use of previously computed permutations when solving with new matrix A.
 
         Args:
             A: Assembled left-hand side matrix :math:`A`.
@@ -125,6 +125,10 @@ class SuperLUDistSolver:
 
     def solve(self, b: dolfinx.la.Vector, u: dolfinx.la.Vector) -> int:
         """Solve linear system :math:`Au = b`.
+
+        Note:
+            Vectors must have size and parallel layout compatible with
+            ``A``.
 
         Note:
             The caller must check the return integer for success
@@ -137,13 +141,8 @@ class SuperLUDistSolver:
             The values of ``A`` are modified in-place during the solve.
 
         Note:
-            To solve with successive right-hand sides :math:`b`
-            the user must set ``solver.set_option("Factor", "FACTORED")``
-            after the first solve.
-
-        Note:
-            Vectors must have size and parallel layout compatible with
-            ``A``.
+            To solve with successive right-hand sides `b` the caller must
+            ``solver.set_option("Factor", "FACTORED")`` after the first solve.
 
         Args:
             b: Right-hand side vector :math:`b`.
