@@ -87,12 +87,20 @@ from dolfinx.common import list_timings
 # <dolfinx.fem.FunctionSpace>` $V$ on the mesh.
 
 # +
+# msh = mesh.create_box(
+#     comm=MPI.COMM_WORLD,
+#     points=[(0.0, 0.0, 0.0), (2.0, 1.0, 1.0)],
+#     n=(132, 116, 128),
+#     cell_type=mesh.CellType.tetrahedron,
+#     num_threads=5,
+# )
+
 msh = mesh.create_box(
     comm=MPI.COMM_WORLD,
     points=[(0.0, 0.0, 0.0), (2.0, 1.0, 1.0)],
-    n=(132, 116, 128),
+    n=(32, 16, 28),
     cell_type=mesh.CellType.tetrahedron,
-    num_threads=5,
+    num_threads=1,
 )
 
 # msh.topology.create_entities(1, 5)
