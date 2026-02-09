@@ -27,10 +27,7 @@
 #include <span>
 
 #if defined(HAS_SUPERLU_DIST)
-#include <superlu_ddefs.h>
 #include <superlu_defs.h>
-#include <superlu_sdefs.h>
-#include <superlu_zdefs.h>
 struct dolfinx::la::SuperLUDistStructs::vec_int_t
 {
   /// @brief vector
@@ -351,6 +348,7 @@ void la(nb::module_& m)
   declare_superlu_dist_matrix<double>(m, "float64");
   declare_superlu_dist_matrix<float>(m, "float32");
   declare_superlu_dist_matrix<std::complex<double>>(m, "complex128");
+
   declare_superlu_dist_solver<double>(m, "float64");
   declare_superlu_dist_solver<float>(m, "float32");
   declare_superlu_dist_solver<std::complex<double>>(m, "complex128");
