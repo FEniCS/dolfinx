@@ -219,7 +219,7 @@ using CellReorderFunction = std::function<std::vector<std::int32_t>(
 
 /// @brief Creates the default boundary vertices routine for a given reorder
 /// function.
-/// @param[in] reorder_fn A cell reorder funciton which will be applied to
+/// @param[in] reorder_fn A cell reorder function which will be applied to
 /// reorder the cells.
 /// @param[in] max_facet_to_cell_links Maximum number of cells a facet can be
 /// connected to.
@@ -231,17 +231,17 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
                             std::optional<std::int32_t> max_facet_to_cell_links,
                             int num_threads)
 {
-  /// brief Function that computes the process boundary vertices of a mesh
+  /// @brief Function that computes the process boundary vertices of a mesh
   /// during creation.
-  /// param[in] celltypes List of celltypes in mesh.
-  /// param[in] doflayouts List of DOF layouts in mesh.
-  /// param[in] ghost_owners List of ghost owner per cell per celltype.
-  /// param[out] cells List of cells per celltpye. Reorderd during call.
-  /// param[out] cells_v List of vertices (no higher order nodes) of cell per
+  /// @param[in] celltypes List of celltypes in mesh.
+  /// @param[in] doflayouts List of DOF layouts in mesh.
+  /// @param[in] ghost_owners List of ghost owner per cell per celltype.
+  /// @param[out] cells List of cells per celltpye. Reorderd during call.
+  /// @param[out] cells_v List of vertices (no higher order nodes) of cell per
   /// celltype. Reordered during call.
-  /// param[out] original_idx Contains the permutation applied to the cells per
+  /// @param[out] original_idx Contains the permutation applied to the cells per
   /// celltype.
-  /// return Boundary vertices (for all cell types).
+  /// @return Boundary vertices (for all cell types).
   return [&reorder_fn, max_facet_to_cell_links,
           num_threads](const std::vector<CellType>& celltypes,
                        const std::vector<fem::ElementDofLayout>& doflayouts,
