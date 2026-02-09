@@ -10,6 +10,7 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <algorithm>
+#include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
@@ -20,6 +21,7 @@
 #include <random>
 #include <set>
 
+#include <boost/range/algorithm/set_algorithm.hpp>
 #include <boost/sort/sort.hpp>
 
 using namespace dolfinx;
@@ -1147,6 +1149,7 @@ Topology mesh::create_topology(
     }
   }
 
+  /*
   // NEW: Number all owned vertices, iterating over vertices cell-wise
   // Global: [2, 4, 17, 18, 19, 23, 44]
   // Local:  [0, 1, 2,      5,  8] (cell type)
@@ -1156,20 +1159,52 @@ Topology mesh::create_topology(
 
     common::Timer timer("Topology: number owned vertices (new)");
     std::int32_t v = 0;
+    std::int64_t cell_idx = 0;
     for (auto _cells : cells)
     {
       for (auto vtx : _cells)
       {
-        if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
-            it != owned_vertices.end() and *it == vtx)
-        {
-          std::size_t pos = std::distance(owned_vertices.begin(), it);
-          if (local_vertex_indices_new[pos] < 0)
-            local_vertex_indices_new[pos] = v++;
-        }
+        vertex_data.push_back(
+            {cell_idx, vtx, (std::int64_t)vertex_data.size()});
+
+        // if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
+        //     it != owned_vertices.end() and *it == vtx)
+        // {
+        //   std::size_t pos = std::distance(owned_vertices.begin(), it);
+        //   if (local_vertex_indices_new[pos] < 0)
+        //     local_vertex_indices_new[pos] = v++;
+        // }
       }
+      ++cell_idx;
     }
+
+    std::sort(vertex_data.begin(), vertex_data.end(),
+              [](auto&& a, auto&& b) { return a[1] < b[1]; });
+    vertex_data.erase(std::unique(vertex_data.begin(), vertex_data.end(),
+                                  [](auto&& a, auto&& b)
+                                  { return a[1] == b[1]; }),
+                      vertex_data.end());
+
+    std::vector<std::array<std::int64_t, 3>> v_intersection;
+    std::vector<std::array<std::int64_t, 3>> v_in;
+    boost::range::set_intersection( //
+        owned_vertices,             //
+        vertex_data,                //
+        // v_in,             //
+        v_intersection.begin(),
+        [](const auto a, auto b) { return a < b[1]; });
+    // std::set_intersection(vertex_data.begin(), vertex_data.end(),
+    //                       owned_vertices.begin(), owned_vertices.end(),
+    //                       std::back_inserter(v_intersection),
+    //                       [](auto&& a, auto&& b) { return a[1] < b; });
+
+    //     std::sort(vertex_data.begin(), vertex_data.end(),
+    //               [](auto&& a, auto&& b) { return a[0] < b[0]; });
+    // std::cout << "Sizes: " << vertex_data.size() << ", " <<
+    // local_vertex_indices_new
+    //     for (std::size_t i = 0; i < )
   }
+    */
 
   // Compute the global offset for owned (local) vertex indices
   std::int64_t global_offset_v = 0;
