@@ -49,6 +49,8 @@ from dolfinx.mesh import CellType, Mesh, Topology
 
 # -
 
+exit(0)
+
 if MPI.COMM_WORLD.size > 1:
     print("Not yet running in parallel")
     exit(0)
