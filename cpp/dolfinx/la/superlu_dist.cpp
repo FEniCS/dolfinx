@@ -478,8 +478,8 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 
   // Warn if Factor is DOFACT but solve already appears to be initialised.
   if (_options->Fact == DOFACT && _options->SolveInitialized == YES)
-    spdlog::warn("Second call to solve with option Fact set to DOFACT. "
-                 "This may lead to incorrect results; try FACTORED.");
+    spdlog::warn("Extra call to solve with option Fact set to DOFACT. "
+                 "This leads to incorrect results; try FACTORED.");
 
   int_t m_loc = ((NRformat_loc*)(_superlu_matA->supermatrix()->Store))->m_loc;
   // RHS

@@ -151,22 +151,24 @@ struct GridInfoDeleter
 /// holding *ScalePermstruct_t
 struct ScalePermStructDeleter
 {
-  /// \cond
+  /// double implementation
   void operator()(SuperLUDistStructs::dScalePermstruct_t* s) const noexcept;
+  /// float implementation
   void operator()(SuperLUDistStructs::sScalePermstruct_t* s) const noexcept;
+  /// doublecomplex implementation
   void operator()(SuperLUDistStructs::zScalePermstruct_t* s) const noexcept;
-  /// \endcond
 };
 
 /// Call library cleanup and delete pointer. For use with std::unique_ptr
 /// holding *LUstruct_t
 struct LUStructDeleter
 {
-  /// \cond
+  /// double implementation
   void operator()(SuperLUDistStructs::dLUstruct_t* l) const noexcept;
+  /// float implementation
   void operator()(SuperLUDistStructs::sLUstruct_t* l) const noexcept;
+  /// doublecomplex implementation
   void operator()(SuperLUDistStructs::zLUstruct_t* l) const noexcept;
-  /// \endcond
 };
 
 /// Call library cleanup and delete pointer. For use with std::unique_ptr
@@ -176,11 +178,12 @@ struct SolveStructDeleter
   /// Pointer to options - required for *SOLVEstruct_t cleanup function.
   SuperLUDistStructs::superlu_dist_options_t* o;
 
-  /// \cond
+  /// double implementation
   void operator()(SuperLUDistStructs::dSOLVEstruct_t* S) const noexcept;
+  /// float implementation
   void operator()(SuperLUDistStructs::sSOLVEstruct_t* S) const noexcept;
+  /// doublecomplex implementation
   void operator()(SuperLUDistStructs::zSOLVEstruct_t* S) const noexcept;
-  /// \endcond
 };
 
 /// SuperLU_DIST linear solver interface.
