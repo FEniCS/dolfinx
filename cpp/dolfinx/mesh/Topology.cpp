@@ -490,8 +490,8 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
   return recv_data;
 }
 
-/// @brief Send and receive vertex indices and owning ranks for
-/// vertices that lie in the ghost cell region.
+/// @brief Send and receive vertex indices and owning ranks for vertices
+/// that lie in the ghost cell region.
 ///
 /// Vertices that are attached to ghost cells but which are not attached
 /// to the 'true' boundary between processes may be owned (and therefore
@@ -514,9 +514,10 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
 /// The 'new' global index is `global_local_entities1[i].first +
 /// offset1`. For entities that have not yet been assigned a new index,
 /// the second entry in the pair is `-1`.
-/// @param[in] ghost_owners1 The owning rank for indices that are
-/// not owned. If `idx` is the 'new' global index
-/// @return List of arrays for each entity, where the entity array contains:
+/// @param[in] ghost_owners1 The owning rank for indices that are not
+/// owned. If `idx` is the 'new' global index
+/// @return List of arrays for each entity, where the entity array
+/// contains:
 /// 1. Old entity index
 /// 2. New global index
 /// 3. Rank of the process that owns the entity
@@ -1126,31 +1127,56 @@ Topology mesh::create_topology(
     // Add owned but shared vertices to owned_vertices, and sort
     owned_vertices.insert(owned_vertices.end(), owned_shared_vertices.begin(),
                           owned_shared_vertices.end());
-    common::Timer timerx("Topology: sort");
     dolfinx::radix_sort(owned_vertices);
-  //   boost::sort::block_indirect_sort(owned_vertices.begin(),
-  //                                    owned_vertices.end(), 1);
-  // }
+  }
 
   // Number all owned vertices, iterating over vertices cell-wise
   std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
+  // {
+  //   common::Timer timer("Topology: number owned vertices");
+  //   std::int32_t v = 0;
+  //   for (auto _cells : cells)
+  //   {
+  //     for (auto vtx : _cells)
+  //     {
+  //       if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
+  //           it != owned_vertices.end() and *it == vtx)
+  //       {
+  //         std::size_t pos = std::distance(owned_vertices.begin(), it);
+  //         if (local_vertex_indices[pos] < 0)
+  //           local_vertex_indices[pos] = v++;
+  //       }
+  //     }
+  //   }
+  // }
+
+  // NEW: Number all owned vertices, iterating over vertices cell-wise
+  // Global: [2, 4, 17, 18, 19, 23, 44]
+  // Local:  [0, 1, 2,      5,  8] (cell type)
+  std::vector<std::int32_t> local_vertex_indices_new(owned_vertices.size(), -1);
   {
-    common::Timer timer("Topology: number owned vertices");
-    std::int32_t v = 0;
+    common::Timer timer("Topology: number owned vertices (new)");
+    std::vector<std::int64_t> vertex_data;
     for (auto _cells : cells)
-    {
       for (auto vtx : _cells)
-      {
-        if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
-            it != owned_vertices.end() and *it == vtx)
-        {
-          std::size_t pos = std::distance(owned_vertices.begin(), it);
-          if (local_vertex_indices[pos] < 0)
-            local_vertex_indices[pos] = v++;
-        }
-      }
+        vertex_data.push_back(vtx);
+
+    dolfinx::radix_sort(vertex_data);
+    const auto [it_a, it_end] = std::ranges::unique(vertex_data);
+
+    std::int32_t v = 0;
+    auto it0 = owned_vertices.cbegin();
+    auto it = it_a;
+    while (it0 != owned_vertices.cend() and it != it_end)
+    {
+      it0 = std::find(it0, owned_vertices.cend(), *it);
+      std::size_t d = std::distance(owned_vertices.cbegin(), it0);
+      assert(local_vertex_indices_new[d] == -1);
+      local_vertex_indices_new[d] = v++;
+      it = std::find_if(it, it_end, [x0 = *it](auto x) { return x0 != x; });
     }
   }
+  local_vertex_indices = local_vertex_indices_new;
 
   // Compute the global offset for owned (local) vertex indices
   std::int64_t global_offset_v = 0;
@@ -1608,3 +1634,4 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
 
   return facet_pair_lists;
 }
+//-----------------------------------------------------------------------------
