@@ -273,6 +273,7 @@ class XDMFFile(_cpp.io.XDMFFile):
             x,
             _cpp.mesh.create_cell_partitioner(ghost_mode, 2, 1),
             max_facet_to_cell_links,
+            1,
         )
         msh.name = name
         domain = ufl.Mesh(basix_el)

@@ -427,6 +427,7 @@ def model_to_mesh(
         x[:, :gdim].astype(dtype, copy=False),
         partitioner,
         max_facet_to_cell_links=max_facet_to_cell_links,
+        num_threads=1,
     )
     assert tdim == mesh.topology.dim, (
         f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}"
