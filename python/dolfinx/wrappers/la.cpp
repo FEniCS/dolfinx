@@ -236,7 +236,10 @@ void declare_superlu_dist_matrix(nb::module_& m, const std::string& type)
           [](dolfinx::la::SuperLUDistMatrix<T>* Amat_superlu,
              const dolfinx::la::MatrixCSR<T>& Amat)
           { new (Amat_superlu) dolfinx::la::SuperLUDistMatrix<T>(Amat); },
-          nb::arg("A"));
+          nb::arg("A"))
+      .def_prop_ro("dtype", [](const dolfinx::la::SuperLUDistMatrix<T>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); });
+  ;
 }
 
 template <typename T>

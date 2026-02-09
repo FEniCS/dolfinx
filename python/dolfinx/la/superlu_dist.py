@@ -9,7 +9,7 @@ This module provides support for parallel solution of linear systems
 assembled into :class:`dolfinx.la.MatrixCSR` using SuperLU_DIST.
 
 Note:
-  Users with more advanced linear solver needs should use PETSc/petsc4py.
+  Users with advanced linear solver requirements should use PETSc/petsc4py.
 """
 
 import numpy as np
@@ -33,12 +33,11 @@ class SuperLUDistMatrix:
     )
     _dtype: npt.DTypeLike
 
-    def __init__(self, matrix, dtype):
+    def __init__(self, matrix):
         """Create a SuperLU_DIST matrix.
 
         Args:
             matrix: C++ SuperLUDistMatrix object.
-            dtype: dtype of matrix values.
 
         Note:
             This initialiser is intended for internal library use only.
@@ -46,14 +45,17 @@ class SuperLUDistMatrix:
             :class:`SuperLUDistMatrix` object.
         """
         self._cpp_object = matrix
-        self._dtype = dtype
+
+    @property
+    def dtype(self) -> npt.DTypeLike:
+        """Dtype of matrix values."""
+        return self._cpp_object.dtype
 
 
 def superlu_dist_matrix(A: dolfinx.la.MatrixCSR) -> SuperLUDistMatrix:
     """Create a SuperLU_DIST matrix.
 
-    Deep copies all required data from ``A``. For use with
-    :class:``dolfinx.la.SuperLUDistSolver``.
+    Deep copies all required data from ``A``.
 
     Args:
         A: Assembled matrix.
@@ -70,7 +72,7 @@ def superlu_dist_matrix(A: dolfinx.la.MatrixCSR) -> SuperLUDistMatrix:
         stype = _cpp.la.SuperLUDistMatrix_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
-    return SuperLUDistMatrix(stype(A._cpp_object), dtype)
+    return SuperLUDistMatrix(stype(A._cpp_object))
 
 
 class SuperLUDistSolver:
@@ -125,11 +127,19 @@ class SuperLUDistSolver:
         """Solve linear system :math:`Au = b`.
 
         Note:
-            The caller must check the return integer for success.
+            The caller must check the return integer for success
             ``(== 0)``.
 
         Note:
             The caller must ``u.scatter_forward()`` after the solve.
+
+        Note:
+            The values of ``A`` are modified in-place during the solve.
+
+        Note:
+            To solve with successive right-hand sides :math:`b`
+            the user must set ``solver.set_option("Factor", "FACTORED")``
+            after the first solve.
 
         Note:
             Vectors must have size and parallel layout compatible with
@@ -159,7 +169,7 @@ def superlu_dist_solver(A: SuperLUDistMatrix) -> SuperLUDistSolver:
     Returns:
         A SuperLU_DIST solver.
     """
-    dtype = A._dtype
+    dtype = A.dtype
     if np.issubdtype(dtype, np.float32):
         stype = _cpp.la.SuperLUDistSolver_float32
     elif np.issubdtype(dtype, np.float64):
