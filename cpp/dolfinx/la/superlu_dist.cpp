@@ -17,6 +17,7 @@ extern "C"
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
+#include <initializer_list>
 #include <ranges>
 #include <stdexcept>
 #include <vector>
@@ -28,44 +29,25 @@ using namespace dolfinx::la;
 struct dolfinx::la::SuperLUDistStructs::SuperMatrix : public ::SuperMatrix
 {
 };
-
+//----------------------------------------------------------------------------
 /// Struct holding vector of type int_t
 struct dolfinx::la::SuperLUDistStructs::vec_int_t
 {
   /// @brief vector
   std::vector<int_t> vec;
 };
-
+//----------------------------------------------------------------------------
 void SuperMatrixDeleter::operator()(
     SuperLUDistStructs::SuperMatrix* supermatrix) const noexcept
 {
   Destroy_SuperMatrix_Store_dist(supermatrix);
   delete supermatrix;
 }
-
+//----------------------------------------------------------------------------
 namespace
 {
 template <typename...>
-constexpr bool dependent_false_v = false;
-
-template <typename V, typename W>
-void option_setter(std::string_view option_name, W& option,
-                   const std::initializer_list<V> values,
-                   std::initializer_list<std::string_view> value_names,
-                   std::string_view value_in)
-{
-  // TODO: Can be done nicely with std::views::zip in C++23.
-  for (auto i : std::views::iota(std::size_t{0}, value_names.size()))
-  {
-    if (value_in == *(value_names.begin() + i))
-    {
-      option = *(values.begin() + i);
-      spdlog::info("Set {} to {}", option_name, value_in);
-      return;
-    }
-  }
-  throw std::runtime_error("Unsupported value");
-}
+constexpr bool always_false_v = false;
 
 std::vector<int_t> col_indices(const auto& A)
 {
@@ -90,7 +72,7 @@ std::vector<int_t> row_indices(const auto& A)
 //----------------------------------------------------------------------------
 template <typename T>
 std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter>
-create_supermatrix(const auto& A, auto& rowptr, auto& cols)
+create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
 {
   spdlog::info("Start create_supermatrix");
 
@@ -126,29 +108,27 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
   std::unique_ptr<SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter> p(
       new SuperLUDistStructs::SuperMatrix, SuperMatrixDeleter{});
 
-  // Note that the SuperMatrix shares the underlying data of A.
-  T* Amatdata = const_cast<T*>(A.values().data());
   if constexpr (std::is_same_v<T, double>)
   {
-    dCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
-                                   Amatdata, cols.vec.data(), rowptr.vec.data(),
-                                   SLU_NR_loc, SLU_D, SLU_GE);
+    dCreate_CompRowLoc_Matrix_dist(
+        p.get(), m, n, nnz_loc, m_loc, first_row, A_mat_values.data(),
+        cols.vec.data(), rowptr.vec.data(), SLU_NR_loc, SLU_D, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, float>)
   {
-    sCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
-                                   Amatdata, cols.vec.data(), rowptr.vec.data(),
-                                   SLU_NR_loc, SLU_S, SLU_GE);
+    sCreate_CompRowLoc_Matrix_dist(
+        p.get(), m, n, nnz_loc, m_loc, first_row, A_mat_values.data(),
+        cols.vec.data(), rowptr.vec.data(), SLU_NR_loc, SLU_S, SLU_GE);
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
-    zCreate_CompRowLoc_Matrix_dist(p.get(), m, n, nnz_loc, m_loc, first_row,
-                                   reinterpret_cast<doublecomplex*>(Amatdata),
-                                   cols.vec.data(), rowptr.vec.data(),
-                                   SLU_NR_loc, SLU_Z, SLU_GE);
+    zCreate_CompRowLoc_Matrix_dist(
+        p.get(), m, n, nnz_loc, m_loc, first_row,
+        reinterpret_cast<doublecomplex*>(A_mat_values.data()), cols.vec.data(),
+        rowptr.vec.data(), SLU_NR_loc, SLU_Z, SLU_GE);
   }
   else
-    static_assert(dependent_false_v<T>, "Invalid scalar type");
+    static_assert(always_false_v<T>, "Invalid scalar type");
 
   spdlog::info("Finished create_supermatrix");
   return p;
@@ -156,14 +136,18 @@ create_supermatrix(const auto& A, auto& rowptr, auto& cols)
 } // namespace
 //----------------------------------------------------------------------------
 template <typename T>
-SuperLUDistMatrix<T>::SuperLUDistMatrix(std::shared_ptr<const MatrixCSR<T>> A)
-    : _matA(std::move(A)),
-      _cols(
-          std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(*_matA))),
-      _rowptr(
-          std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(*_matA))),
-      _supermatrix(create_supermatrix<T>(*_matA, *_rowptr, *_cols))
+SuperLUDistMatrix<T>::SuperLUDistMatrix(const MatrixCSR<T>& A)
+    : _comm(A.comm()), _matA_values(A.values()),
+      _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(A))),
+      _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(A))),
+      _supermatrix(create_supermatrix<T>(A, _matA_values, *_rowptr, *_cols))
 {
+}
+/// @brief Get MPI communicator that matrix is defined on.
+template <typename T>
+MPI_Comm SuperLUDistMatrix<T>::comm() const
+{
+  return _comm.comm();
 }
 //----------------------------------------------------------------------------
 template <typename T>
@@ -172,16 +156,32 @@ SuperLUDistStructs::SuperMatrix* SuperLUDistMatrix<T>::supermatrix() const
   return _supermatrix.get();
 }
 //----------------------------------------------------------------------------
-template <typename T>
-const MatrixCSR<T>& SuperLUDistMatrix<T>::matA() const
-{
-  return *_matA;
-}
-//----------------------------------------------------------------------------
 template class la::SuperLUDistMatrix<double>;
 template class la::SuperLUDistMatrix<float>;
 template class la::SuperLUDistMatrix<std::complex<double>>;
 //----------------------------------------------------------------------------
+
+namespace
+{
+template <typename V, typename W>
+void option_setter(W& option, std::string_view value_in,
+                   std::string_view option_name,
+                   std::initializer_list<V> values,
+                   std::initializer_list<std::string_view> value_names)
+{
+  // TODO: Can be done nicely with std::views::zip in C++23.
+  for (auto i : std::views::iota(std::size_t{0}, value_names.size()))
+  {
+    if (value_in == *(value_names.begin() + i))
+    {
+      option = *(values.begin() + i);
+      spdlog::info("Set {} to {}", option_name, value_in);
+      return;
+    }
+  }
+  throw std::runtime_error("Unsupported value");
+}
+} // namespace
 
 //----------------------------------------------------------------------------
 // Trick for declaring anonymous typedef structs from SuperLU_DIST
@@ -194,13 +194,117 @@ struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t
 {
 };
 //----------------------------------------------------------------------------
-void GridInfoDeleter::operator()(
-    SuperLUDistStructs::gridinfo_t* gridinfo) const noexcept
+struct dolfinx::la::SuperLUDistStructs::dScalePermstruct_t
+    : public ::dScalePermstruct_t
 {
-  superlu_gridexit(gridinfo);
-  delete gridinfo;
 };
-
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::sScalePermstruct_t
+    : public ::sScalePermstruct_t
+{
+};
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::zScalePermstruct_t
+    : public ::zScalePermstruct_t
+{
+};
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::dLUstruct_t : public ::dLUstruct_t
+{
+};
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::sLUstruct_t : public ::sLUstruct_t
+{
+};
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::zLUstruct_t : public ::zLUstruct_t
+{
+};
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::dSOLVEstruct_t : public ::dSOLVEstruct_t
+{
+};
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::sSOLVEstruct_t : public ::sSOLVEstruct_t
+{
+};
+//----------------------------------------------------------------------------
+struct dolfinx::la::SuperLUDistStructs::zSOLVEstruct_t : public ::zSOLVEstruct_t
+{
+};
+//----------------------------------------------------------------------------
+void GridInfoDeleter::operator()(
+    SuperLUDistStructs::gridinfo_t* g) const noexcept
+{
+  superlu_gridexit(g);
+  delete g;
+};
+//----------------------------------------------------------------------------
+void ScalePermStructDeleter::operator()(
+    SuperLUDistStructs::dScalePermstruct_t* s) const noexcept
+{
+  dScalePermstructFree(s);
+  delete s;
+};
+//----------------------------------------------------------------------------
+void ScalePermStructDeleter::operator()(
+    SuperLUDistStructs::sScalePermstruct_t* s) const noexcept
+{
+  sScalePermstructFree(s);
+  delete s;
+};
+//----------------------------------------------------------------------------
+void ScalePermStructDeleter::operator()(
+    SuperLUDistStructs::zScalePermstruct_t* s) const noexcept
+{
+  zScalePermstructFree(s);
+  delete s;
+};
+//----------------------------------------------------------------------------
+void LUStructDeleter::operator()(
+    SuperLUDistStructs::dLUstruct_t* l) const noexcept
+{
+  dLUstructFree(l);
+  delete l;
+};
+//----------------------------------------------------------------------------
+void LUStructDeleter::operator()(
+    SuperLUDistStructs::sLUstruct_t* l) const noexcept
+{
+  sLUstructFree(l);
+  delete l;
+};
+//----------------------------------------------------------------------------
+void LUStructDeleter::operator()(
+    SuperLUDistStructs::zLUstruct_t* l) const noexcept
+{
+  zLUstructFree(l);
+  delete l;
+};
+//----------------------------------------------------------------------------
+void SolveStructDeleter::operator()(
+    SuperLUDistStructs::dSOLVEstruct_t* s) const noexcept
+{
+  if (o->SolveInitialized)
+    dSolveFinalize(o, s);
+  delete s;
+};
+//----------------------------------------------------------------------------
+void SolveStructDeleter::operator()(
+    SuperLUDistStructs::sSOLVEstruct_t* s) const noexcept
+{
+  if (o->SolveInitialized)
+    sSolveFinalize(o, s);
+  delete s;
+};
+//----------------------------------------------------------------------------
+void SolveStructDeleter::operator()(
+    SuperLUDistStructs::zSOLVEstruct_t* s) const noexcept
+{
+  if (o->SolveInitialized)
+    zSolveFinalize(o, s);
+  delete s;
+};
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistSolver<T>::SuperLUDistSolver(
@@ -216,7 +320,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
             return o;
           }()),
       _gridinfo(
-          [comm = _superlu_matA->matA().comm()]
+          [comm = _superlu_matA->comm()]
           {
             int nprow = dolfinx::MPI::size(comm);
             int npcol = 1;
@@ -224,10 +328,57 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
                 new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{});
             superlu_gridinit(comm, nprow, npcol, p.get());
             return p;
-          }())
+          }()),
+      _scalepermstruct(
+          [m = _superlu_matA->supermatrix()->nrow]
+          {
+            std::unique_ptr<typename map_t<T>::ScalePermstruct_t,
+                            ScalePermStructDeleter>
+                s(new map_t<T>::ScalePermstruct_t, ScalePermStructDeleter{});
+
+            if constexpr (std::is_same_v<T, double>)
+            {
+              dScalePermstructInit(m, m, s.get());
+            }
+            else if constexpr (std::is_same_v<T, float>)
+            {
+              sScalePermstructInit(m, m, s.get());
+            }
+            else if constexpr (std::is_same_v<T, std::complex<double>>)
+            {
+              zScalePermstructInit(m, m, s.get());
+            }
+            else
+              static_assert(always_false_v<T>, "Invalid scalar type");
+            return s;
+          }()),
+      _lustruct(
+          [m = _superlu_matA->supermatrix()->nrow]
+          {
+            std::unique_ptr<typename map_t<T>::LUstruct_t, LUStructDeleter> l(
+                new map_t<T>::LUstruct_t, LUStructDeleter{});
+
+            if constexpr (std::is_same_v<T, double>)
+            {
+              dLUstructInit(m, l.get());
+            }
+            else if constexpr (std::is_same_v<T, float>)
+            {
+              sLUstructInit(m, l.get());
+            }
+            else if constexpr (std::is_same_v<T, std::complex<double>>)
+            {
+              zLUstructInit(m, l.get());
+            }
+            else
+              static_assert(always_false_v<T>, "Invalid scalar type");
+            return l;
+          }()),
+      _solvestruct(new typename map_t<T>::SOLVEstruct_t{},
+                   SolveStructDeleter{_options.get()})
 {
 }
-
+//----------------------------------------------------------------------------
 template <typename T>
 void SuperLUDistSolver<T>::set_options(
     SuperLUDistStructs::superlu_dist_options_t options)
@@ -235,7 +386,7 @@ void SuperLUDistSolver<T>::set_options(
   _options = std::make_unique<SuperLUDistStructs::superlu_dist_options_t>(
       std::move(options));
 }
-
+//----------------------------------------------------------------------------
 template <typename T>
 void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
 {
@@ -271,7 +422,8 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
     }
     else
     {
-      throw std::runtime_error("Boolean values must be string 'YES' or 'NO'");
+      throw std::runtime_error(
+          "'Boolean' option values must be string 'YES' or 'NO'");
     }
   }
 
@@ -279,48 +431,60 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
   if (name == "Fact")
   {
     option_setter(
-        name, _options->Fact,
+        _options->Fact, value, "Fact",
         {DOFACT, SamePattern, SamePattern_SameRowPerm, FACTORED},
-        {"DOFACT", "SamePattern", "SamePattern_SameRowPerm", "FACTORED"},
-        value);
+        {"DOFACT", "SamePattern", "SamePattern_SameRowPerm", "FACTORED"});
   }
   else if (name == "Trans")
   {
-    option_setter(name, _options->Trans, {NOTRANS, TRANS, CONJ},
-                  {"NOTRANS", "TRANS", "CONJ"}, value);
+    option_setter(_options->Trans, value, "Trans", {NOTRANS, TRANS, CONJ},
+                  {"NOTRANS", "TRANS", "CONJ"});
   }
   else if (name == "ColPerm")
   {
-    option_setter(name, _options->ColPerm,
+    option_setter(_options->ColPerm, value, "ColPerm",
                   {NATURAL, MMD_ATA, MMD_AT_PLUS_A, COLAMD, METIS_AT_PLUS_A,
                    PARMETIS, METIS_ATA, ZOLTAN, MY_PERMC},
                   {"NATURAL", "MMD_ATA", "MMD_AT_PLUS_A", "COLAMD",
                    "METIS_AT_PLUS_A", "PARMETIS", "METIS_ATA", "ZOLTAN",
-                   "MY_PERMC"},
-                  value);
+                   "MY_PERMC"});
   }
   else if (name == "RowPerm")
   {
-    option_setter(name, _options->RowPerm,
-                  {NOROWPERM, LargeDiag_MC64, LargeDiag_HWPM, MY_PERMR},
-                  {"NOROWPERM", "LargeDiag_MC64", "LargeDiag_HWPM", "MY_PERMR"},
-                  value);
+    option_setter(
+        _options->RowPerm, value, "RowPerm",
+        {NOROWPERM, LargeDiag_MC64, LargeDiag_HWPM, MY_PERMR},
+        {"NOROWPERM", "LargeDiag_MC64", "LargeDiag_HWPM", "MY_PERMR"});
   }
   else
   {
-    std::runtime_error("Unsupported name");
+    std::runtime_error("Unsupported option name");
   }
+}
+//----------------------------------------------------------------------------
+template <typename T>
+void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A)
+{
+  _superlu_matA = A;
 }
 //----------------------------------------------------------------------------
 template <typename T>
 int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 {
-  common::Timer tsolve("SuperLU Solve");
-  int_t m = _superlu_matA->supermatrix()->nrow;
-  int_t m_loc = ((NRformat_loc*)(_superlu_matA->supermatrix()->Store))->m_loc;
+  common::Timer tsolve("SuperLU_DIST solve");
 
+  if (b.array().size() != u.array().size())
+    throw std::runtime_error("b and u have incompatible size/layout");
+
+  // Warn if Factor is DOFACT but solve already appears to be initialised.
+  if (_options->Fact == DOFACT && _options->SolveInitialized == YES)
+    spdlog::warn("Extra call to solve with option Fact set to DOFACT. "
+                 "This leads to incorrect results; try FACTORED.");
+
+  int_t m_loc = ((NRformat_loc*)(_superlu_matA->supermatrix()->Store))->m_loc;
   // RHS
   int_t ldb = m_loc;
+  // TODO: Support for multiple right-hand sides?
   int_t nrhs = 1;
 
   int info = 0;
@@ -329,76 +493,50 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 
   // Copy b to u (SuperLU_DIST reads b from u and then overwrites u with
   // solution)
-  std::copy_n(b.array().begin(), m_loc, u.array().begin());
+  std::copy_n(b.array().begin(), b.array().size(), u.array().begin());
 
   std::vector<scalar_value_t<T>> berr(nrhs);
   if constexpr (std::is_same_v<T, double>)
   {
     spdlog::info("Start solve [float64]");
-    dScalePermstruct_t ScalePermstruct;
-    dLUstruct_t LUstruct;
-    dScalePermstructInit(m, m, &ScalePermstruct);
-    dLUstructInit(m, &LUstruct);
-    dSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pdgssvx()");
-    pdgssvx(_options.get(), _superlu_matA->supermatrix(), &ScalePermstruct,
-            u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
-            &SOLVEstruct, berr.data(), &stat, &info);
-
-    spdlog::info("Finalize solve");
-    dSolveFinalize(_options.get(), &SOLVEstruct);
-    dScalePermstructFree(&ScalePermstruct);
-    dLUstructFree(&LUstruct);
+    pdgssvx(_options.get(), _superlu_matA->supermatrix(),
+            _scalepermstruct.get(), u.array().data(), ldb, nrhs,
+            _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
+            &stat, &info);
   }
   else if constexpr (std::is_same_v<T, float>)
   {
     spdlog::info("Start solve [float32]");
-    sScalePermstruct_t ScalePermstruct;
-    sLUstruct_t LUstruct;
-    sScalePermstructInit(m, m, &ScalePermstruct);
-    sLUstructInit(m, &LUstruct);
-    sSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST psgssvx()");
-    psgssvx(_options.get(), _superlu_matA->supermatrix(), &ScalePermstruct,
-            u.array().data(), ldb, nrhs, _gridinfo.get(), &LUstruct,
-            &SOLVEstruct, berr.data(), &stat, &info);
-
-    spdlog::info("Finalize solve");
-    sSolveFinalize(_options.get(), &SOLVEstruct);
-    sScalePermstructFree(&ScalePermstruct);
-    sLUstructFree(&LUstruct);
+    psgssvx(_options.get(), _superlu_matA->supermatrix(),
+            _scalepermstruct.get(), u.array().data(), ldb, nrhs,
+            _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
+            &stat, &info);
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     spdlog::info("Start solve [complex128]");
-    zScalePermstruct_t ScalePermstruct;
-    zLUstruct_t LUstruct;
-    zScalePermstructInit(m, m, &ScalePermstruct);
-    zLUstructInit(m, &LUstruct);
-    zSOLVEstruct_t SOLVEstruct;
 
     spdlog::info("Call SuperLU_DIST pzgssvx()");
-    pzgssvx(_options.get(), _superlu_matA->supermatrix(), &ScalePermstruct,
+    pzgssvx(_options.get(), _superlu_matA->supermatrix(),
+            _scalepermstruct.get(),
             reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
-            _gridinfo.get(), &LUstruct, &SOLVEstruct, berr.data(), &stat,
-            &info);
-
-    spdlog::info("Finalize solve");
-    zSolveFinalize(_options.get(), &SOLVEstruct);
-    zScalePermstructFree(&ScalePermstruct);
-    zLUstructFree(&LUstruct);
+            _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
+            &stat, &info);
   }
   else
-    static_assert(dependent_false_v<T>, "Invalid scalar type");
-  spdlog::info("Finished solve");
+    static_assert(always_false_v<T>, "Invalid scalar type");
 
   if (info != 0)
     spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
 
   PStatPrint(_options.get(), &stat, _gridinfo.get());
   PStatFree(&stat);
+
+  spdlog::info("Finished solve");
 
   return info;
 }

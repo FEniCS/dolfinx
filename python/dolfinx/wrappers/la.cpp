@@ -28,13 +28,11 @@
 
 #if defined(HAS_SUPERLU_DIST)
 #include <superlu_defs.h>
-/// Struct holding vector of type int_t
 struct dolfinx::la::SuperLUDistStructs::vec_int_t
 {
   /// @brief vector
   std::vector<int_t> vec;
 };
-/// Struct defining superlu_options_t
 struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t
     : public ::superlu_dist_options_t
 {
@@ -225,6 +223,23 @@ void declare_functions(nb::module_& m)
 
 #if defined(HAS_SUPERLU_DIST)
 template <typename T>
+void declare_superlu_dist_matrix(nb::module_& m, const std::string& type)
+{
+  // dolfinx::la::SuperLUDistMatrix
+  std::string name = std::string("SuperLUDistMatrix_") + type;
+  nb::class_<dolfinx::la::SuperLUDistMatrix<T>>(m, name.c_str())
+      .def(
+          "__init__",
+          [](dolfinx::la::SuperLUDistMatrix<T>* Amat_superlu,
+             const dolfinx::la::MatrixCSR<T>& Amat)
+          { new (Amat_superlu) dolfinx::la::SuperLUDistMatrix<T>(Amat); },
+          nb::arg("A"))
+      .def_prop_ro("dtype", [](const dolfinx::la::SuperLUDistMatrix<T>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); });
+  ;
+}
+
+template <typename T>
 void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
 {
   // dolfinx::la::SuperLUDistSolver
@@ -233,17 +248,16 @@ void declare_superlu_dist_solver(nb::module_& m, const std::string& type)
       .def(
           "__init__",
           [](dolfinx::la::SuperLUDistSolver<T>* solver,
-             std::shared_ptr<const dolfinx::la::MatrixCSR<T>> Amat)
+             std::shared_ptr<const dolfinx::la::SuperLUDistMatrix<T>>
+                 Amat_superlu)
           {
-            auto A_superlu
-                = std::make_shared<const dolfinx::la::SuperLUDistMatrix<T>>(
-                    std::move(Amat));
             new (solver)
-                dolfinx::la::SuperLUDistSolver<T>(std::move(A_superlu));
+                dolfinx::la::SuperLUDistSolver<T>(std::move(Amat_superlu));
           },
           nb::arg("A"))
-      .def("solve", &dolfinx::la::SuperLUDistSolver<T>::solve)
-      .def("set_option", &dolfinx::la::SuperLUDistSolver<T>::set_option);
+      .def("set_option", &dolfinx::la::SuperLUDistSolver<T>::set_option)
+      .def("set_A", &dolfinx::la::SuperLUDistSolver<T>::set_A)
+      .def("solve", &dolfinx::la::SuperLUDistSolver<T>::solve);
 }
 #endif // HAS_SUPERLU_DIST
 
@@ -331,6 +345,10 @@ void la(nb::module_& m)
           nb::rv_policy::reference_internal);
 
 #if defined(HAS_SUPERLU_DIST)
+  declare_superlu_dist_matrix<double>(m, "float64");
+  declare_superlu_dist_matrix<float>(m, "float32");
+  declare_superlu_dist_matrix<std::complex<double>>(m, "complex128");
+
   declare_superlu_dist_solver<double>(m, "float64");
   declare_superlu_dist_solver<float>(m, "float32");
   declare_superlu_dist_solver<std::complex<double>>(m, "complex128");
