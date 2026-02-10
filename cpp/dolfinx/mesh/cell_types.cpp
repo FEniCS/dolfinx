@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2016 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -59,84 +59,6 @@ mesh::CellType mesh::to_type(const std::string& cell)
     return CellType::hexahedron;
   else
     throw std::runtime_error("Unknown cell type (" + cell + ")");
-}
-//-----------------------------------------------------------------------------
-// int mesh::cell_dim(CellType type)
-// {
-//   switch (type)
-//   {
-//   case CellType::point:
-//     return 0;
-//   case CellType::interval:
-//     return 1;
-//   case CellType::triangle:
-//     return 2;
-//   case CellType::quadrilateral:
-//     return 2;
-//   case CellType::tetrahedron:
-//     return 3;
-//   case CellType::hexahedron:
-//     return 3;
-//   case CellType::prism:
-//     return 3;
-//   case CellType::pyramid:
-//     return 3;
-//   default:
-//     throw std::runtime_error("Unsupported cell type");
-//   }
-// }
-//-----------------------------------------------------------------------------
-// mesh::CellType mesh::cell_entity_type(CellType type, int d, int index)
-// {
-//   if (int dim = cell_dim(type); d == dim)
-//     return type;
-//   else if (d == 1)
-//     return CellType::interval;
-//   else if (d == (dim - 1))
-//     return cell_facet_type(type, index);
-//   else
-//     return CellType::point;
-// }
-//-----------------------------------------------------------------------------
-mesh::CellType mesh::cell_facet_type(CellType type, int index)
-{
-  switch (type)
-  {
-  case CellType::point:
-    return CellType::point;
-  case CellType::interval:
-    return CellType::point;
-  case CellType::triangle:
-    return CellType::interval;
-  case CellType::tetrahedron:
-    return CellType::triangle;
-  case CellType::quadrilateral:
-    return CellType::interval;
-  case CellType::pyramid:
-    if (index == 0)
-      return CellType::quadrilateral;
-    else
-      return CellType::triangle;
-  case CellType::prism:
-    if (index == 0 or index == 4)
-      return CellType::triangle;
-    else
-      return CellType::quadrilateral;
-  case CellType::hexahedron:
-    return CellType::quadrilateral;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-}
-//-----------------------------------------------------------------------------
-std::vector<mesh::CellType> mesh::cell_entity_types(CellType type, int d)
-{
-  std::vector<CellType> types;
-  int num_entities = mesh::cell_num_entities(type, d);
-  types.reserve(num_entities);
-  for (int e = 0; e < num_entities; ++e)
-    types.push_back(cell_entity_type(type, d, e));
-  return types;
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> mesh::get_entity_vertices(CellType type, int dim)

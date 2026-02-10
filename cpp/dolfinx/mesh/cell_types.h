@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Garth N. Wells
+// Copyright (C) 2019-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -73,10 +73,39 @@ inline int cell_dim(CellType type)
 /// facet index, but for prism and pyramid, it can be triangle or
 /// quadrilateral.
 ///
-/// @param[in] type The cell type
-/// @param[in] index The facet index
-/// @return The type of facet for this cell at this index
-CellType cell_facet_type(CellType type, int index);
+/// @param[in] type Cell type.
+/// @param[in] index Facet index (relative to the cell).
+/// @return Type of facet for this cell at this index.
+inline CellType cell_facet_type(CellType type, int index)
+{
+  switch (type)
+  {
+  case CellType::point:
+    return CellType::point;
+  case CellType::interval:
+    return CellType::point;
+  case CellType::triangle:
+    return CellType::interval;
+  case CellType::tetrahedron:
+    return CellType::triangle;
+  case CellType::quadrilateral:
+    return CellType::interval;
+  case CellType::pyramid:
+    if (index == 0)
+      return CellType::quadrilateral;
+    else
+      return CellType::triangle;
+  case CellType::prism:
+    if (index == 0 or index == 4)
+      return CellType::triangle;
+    else
+      return CellType::quadrilateral;
+  case CellType::hexahedron:
+    return CellType::quadrilateral;
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+}
 
 /// Return type of cell for entity of dimension d at given entity index.
 inline CellType cell_entity_type(CellType type, int d, int index)
@@ -91,35 +120,31 @@ inline CellType cell_entity_type(CellType type, int d, int index)
     return CellType::point;
 }
 
-/// @brief Get cell entity types of a given dimension for a cell.
-///
-/// @param[in] type Cell type.
-/// @param[in] d Dimension of the (sub) entities.
-/// @return Sub-entity cell types. List is sorted.
-std::vector<CellType> cell_entity_types(CellType type, int d);
-
 /// Return list of entities, where entities(e, k) is the local vertex
 /// index for the kth vertex of entity e of dimension dim
 graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
 
 /// Get entities of dimension dim1 and that make up entities of dimension
-/// dim0
+/// dim0.
 graph::AdjacencyList<int> get_sub_entities(CellType type, int dim0, int dim1);
 
-/// Number of entities of dimension
-/// @param[in] dim Entity dimension
-/// @param[in] type Cell type
-/// @return Number of entities in cell
+/// @brief Number of entities of dimension.
+///
+/// @param[in] dim Entity dimension.
+/// @param[in] type Cell type.
+/// @return Number of entities in cell.
 int cell_num_entities(CellType type, int dim);
 
-/// Check if cell is a simplex
-/// @param[in] type Cell type
-/// @return True is the cell type is a simplex
+/// @brief Check if cell is a simplex.
+///
+/// @param[in] type Cell type.
+/// @return True is the cell type is a simplex.
 bool is_simplex(CellType type);
 
-/// Number vertices for a cell type
+/// @brief Number vertices for a cell type.
+///
 /// @param[in] type Cell type
-/// @return The number of cell vertices
+/// @return Number of cell vertices
 int num_cell_vertices(CellType type);
 
 // [dim, entity] -> closure{sub_dim, (sub_entities)}

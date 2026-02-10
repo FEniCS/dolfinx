@@ -264,9 +264,14 @@ build_basic_dofmaps(
     dofs[i].array.resize(num_cells * dofmap_width);
     spdlog::info("Cell type: {} dofmap: {}x{}", i, num_cells, dofmap_width);
 
-    std::vector<std::vector<mesh::CellType>> cell_entity_types;
+    std::vector<std::vector<mesh::CellType>> cell_entity_types(D + 1);
     for (std::size_t d = 0; d < D + 1; ++d)
-      cell_entity_types.push_back(mesh::cell_entity_types(cell_type, d));
+    {
+      int num_entities = mesh::cell_num_entities(cell_type, d);
+      cell_entity_types[d].reserve(num_entities);
+      for (int e = 0; e < num_entities; ++e)
+        cell_entity_types[d].push_back(mesh::cell_entity_type(cell_type, d, e));
+    }
 
     std::int32_t dofmap_offset = 0;
     for (std::int32_t c = 0; c < num_cells; ++c)
@@ -299,7 +304,7 @@ build_basic_dofmaps(
                   : std::span<const std::int32_t>(&c, 1);
 
         const std::vector<std::vector<int>>& e_dofs_d = entity_dofs[d];
-        const std::vector<mesh::CellType>& e_types = entity_types[d];
+        const std::vector<mesh::CellType>& e_types = cell_entity_types[d];
         int w = 0;
         for (std::size_t e = 0; e < e_dofs_d.size(); ++e)
         {
