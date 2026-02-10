@@ -1130,41 +1130,61 @@ Topology mesh::create_topology(
     dolfinx::radix_sort(owned_vertices);
   }
 
-  // NEW: Number all owned vertices
-  // TODO: check if this re-ordering affects geometry retrieval
-  // performance
+  // Number all owned vertices, iterating over vertices cell-wise
   std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
   {
-    common::Timer timer("Topology: number owned vertices");
     std::int32_t v = 0;
-    for (auto _cells : cells)
+    for (std::size_t i = 0; i < cell_types.size(); ++i)
     {
-      std::vector<std::int64_t> vertex_data;
-      for (auto vtx : _cells)
-        vertex_data.push_back(vtx);
-      if (num_threads == 1)
-        dolfinx::radix_sort(vertex_data);
-      else
+      for (auto vtx : cells[i])
       {
-        boost::sort::block_indirect_sort(vertex_data.begin(), vertex_data.end(),
-                                         num_threads);
-      }
-
-      auto ret = std::ranges::unique(vertex_data);
-      auto it0 = owned_vertices.cbegin();
-      for (auto it = vertex_data.begin(); it != ret.begin(); ++it)
-      {
-        if (*it == *it0)
+        if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
+            it != owned_vertices.end() and *it == vtx)
         {
-          std::size_t d = std::distance(owned_vertices.cbegin(), it0);
-          assert(d < owned_vertices.size());
-          assert(local_vertex_indices[d] == -1);
-          local_vertex_indices[d] = v++;
-          ++it0;
+          std::size_t pos = std::distance(owned_vertices.begin(), it);
+          if (local_vertex_indices[pos] < 0)
+            local_vertex_indices[pos] = v++;
         }
       }
     }
   }
+
+  // // NEW: Number all owned vertices
+  // // TODO: check if this re-ordering affects geometry retrieval
+  // // performance
+  // std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
+  // {
+  //   common::Timer timer("Topology: number owned vertices");
+  //   std::int32_t v = 0;
+  //   for (auto _cells : cells)
+  //   {
+  //     std::vector<std::int64_t> vertex_data;
+  //     for (auto vtx : _cells)
+  //       vertex_data.push_back(vtx);
+  //     if (num_threads == 1)
+  //       dolfinx::radix_sort(vertex_data);
+  //     else
+  //     {
+  //       boost::sort::block_indirect_sort(vertex_data.begin(),
+  //       vertex_data.end(),
+  //                                        num_threads);
+  //     }
+
+  //     auto ret = std::ranges::unique(vertex_data);
+  //     auto it0 = owned_vertices.cbegin();
+  //     for (auto it = vertex_data.begin(); it != ret.begin(); ++it)
+  //     {
+  //       if (*it == *it0)
+  //       {
+  //         std::size_t d = std::distance(owned_vertices.cbegin(), it0);
+  //         assert(d < owned_vertices.size());
+  //         assert(local_vertex_indices[d] == -1);
+  //         local_vertex_indices[d] = v++;
+  //         ++it0;
+  //       }
+  //     }
+  //   }
+  // }
 
   // Compute the global offset for owned (local) vertex indices
   std::int64_t global_offset_v = 0;

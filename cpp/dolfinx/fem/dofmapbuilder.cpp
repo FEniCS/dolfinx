@@ -375,16 +375,19 @@ build_basic_dofmaps(
 }
 //-----------------------------------------------------------------------------
 
-/// Compute re-ordering map from old local index to new local index. The
-/// M dofs owned by this process are reordered for locality and fill the
-/// positions [0, ..., M). Dof owned by another process are placed at
-/// the end, i.e. in the positions [M, ..., N), where N is the total
+/// @brief Compute re-ordering map from old local index to new local
+/// index.
+///
+/// The M dofs owned by this process are reordered for locality and fill
+/// the positions [0, ..., M). Dof owned by another process are placed
+/// at the end, i.e. in the positions [M, ..., N), where N is the total
 /// number of dofs on this process.
 ///
-/// @param [in] dofmaps The basic dofmap data in multiple dofmaps sharing the
-/// same range
-/// @param [in] dof_entity Map from dof index to (index_map, entity_index),
-/// where entity_index is the local mesh entity index in the given index_map
+/// @param [in] dofmaps The basic dofmap data in multiple dofmaps
+/// sharing the same range
+/// @param [in] dof_entity Map from dof index to (index_map,
+/// entity_index), where entity_index is the local mesh entity index in
+/// the given index_map
 /// @param [in] index_maps The set of IndexMaps, one for each
 /// topological entity type used in the dofmap. The location in this
 /// array is referred to by the first item in each entry of
@@ -433,10 +436,10 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     }
   }
 
-  // Check for any -1's remaining in `original_to_contiguous` due to vertices
-  // on the process that don't belong to a cell. Determine if the dof is owned
-  // or a ghost and map to the ends of the owned and ghost "parts" of the
-  // contiguous array respectively.
+  // Check for any -1's remaining in `original_to_contiguous` due to
+  // vertices on the process that don't belong to a cell. Determine if
+  // the dof is owned or a ghost and map to the ends of the owned and
+  // ghost "parts" of the contiguous array respectively.
   for (std::size_t dof = 0; dof < original_to_contiguous.size(); ++dof)
   {
     if (original_to_contiguous[dof] == -1)
@@ -465,18 +468,18 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 }
 //-----------------------------------------------------------------------------
 
-/// Get global indices for unowned dofs
-/// @param [in] index_maps Set of index maps corresponding to dofs in @p
-/// dof_entity, below.
-/// @param [in] num_owned The number of nodes owned by this process
-/// @param [in] process_offset The node offset for this process, i.e.
-/// the global index of owned node i is i + process_offset
-/// @param [in] global_indices_old The old global index of the old local
+/// @brief Get global indices for unowned dofs
+///
+/// @param[in] index_maps Set of index maps corresponding to dofs in
+/// `dof_entity`, below.
+/// @param[in] num_owned The number of nodes owned by this process
+/// @param[in] process_offset The node offset for this process, i.e. the
+/// global index of owned node i is i + process_offset
+/// @param[in] global_indices_old The old global index of the old local
 /// node i
-/// @param [in] old_to_new The old local index to new local index map
-/// @param [in] dof_entity The ith entry gives (index_map, local
-/// index) of the mesh entity to which node i (old local index) is
-/// associated.
+/// @param[in] old_to_new The old local index to new local index map
+/// @param[in] dof_entity The ith entry gives (index_map, local index)
+/// of the mesh entity to which node i (old local index) is associated.
 /// @returns The (0) global indices for unowned dofs, (1) owner rank of
 /// each unowned dof
 std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(

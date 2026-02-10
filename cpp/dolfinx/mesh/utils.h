@@ -1168,9 +1168,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   std::vector<std::span<const int>> ghost_owners_span;
   std::ranges::transform(ghost_owners, std::back_inserter(ghost_owners_span),
                          [](auto& c) { return std::span(c); });
+  std::cout << "Create topoligy" << std::endl;
   Topology topology
       = create_topology(comm, celltypes, cells1_v_span, original_idx1_span,
                         ghost_owners_span, boundary_v, num_threads);
+  std::cout << "End Create topoligy" << std::endl;
 
   // Create connectivities required higher-order geometries for creating
   // a Geometry object

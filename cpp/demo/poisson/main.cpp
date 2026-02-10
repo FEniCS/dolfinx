@@ -238,23 +238,23 @@ int main(int argc, char* argv[])
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
     lu.solve(_u.vec(), _b.vec());
 
-    // Update ghost values before output
-    u->x()->scatter_fwd();
+    // // Update ghost values before output
+    // u->x()->scatter_fwd();
 
-    //  The function `u` will be modified during the call to solve. A
-    //  {cpp:class}`Function` can be saved to a file. Here, we output
-    //  the solution to a `VTK` file (specified using the suffix `.pvd`)
-    //  for visualisation in an external program such as Paraview.
+    // //  The function `u` will be modified during the call to solve. A
+    // //  {cpp:class}`Function` can be saved to a file. Here, we output
+    // //  the solution to a `VTK` file (specified using the suffix `.pvd`)
+    // //  for visualisation in an external program such as Paraview.
 
-    // Save solution in VTK format
-    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    file.write<T>({*u}, 0);
+    // // Save solution in VTK format
+    // io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+    // file.write<T>({*u}, 0);
 
-#ifdef HAS_ADIOS2
-    // Save solution in VTX format
-    io::VTXWriter<U> vtx(MPI_COMM_WORLD, "u.bp", {u}, "bp4");
-    vtx.write(0);
-#endif
+    // #ifdef HAS_ADIOS2
+    //     // Save solution in VTX format
+    //     io::VTXWriter<U> vtx(MPI_COMM_WORLD, "u.bp", {u}, "bp4");
+    //     vtx.write(0);
+    // #endif
   }
 
   PetscFinalize();
