@@ -41,16 +41,62 @@ std::string to_string(CellType type);
 /// @return The cell type
 CellType to_type(const std::string& cell);
 
-/// Return type of cell for entity of dimension d at given entity index.
-CellType cell_entity_type(CellType type, int d, int index);
+/// Return topological dimension of cell type
+inline int cell_dim(CellType type)
+{
+  switch (type)
+  {
+  case CellType::point:
+    return 0;
+  case CellType::interval:
+    return 1;
+  case CellType::triangle:
+    return 2;
+  case CellType::quadrilateral:
+    return 2;
+  case CellType::tetrahedron:
+    return 3;
+  case CellType::hexahedron:
+    return 3;
+  case CellType::prism:
+    return 3;
+  case CellType::pyramid:
+    return 3;
+  default:
+    throw std::runtime_error("Unsupported cell type");
+  }
+}
 
-/// Return facet type of cell
-/// For simplex and hypercube cell types, this is independent of the facet
-/// index, but for prism and pyramid, it can be triangle or quadrilateral.
+/// @brief Return facet type of cell.
+///
+/// For simplex and hypercube cell types, this is independent of the
+/// facet index, but for prism and pyramid, it can be triangle or
+/// quadrilateral.
+///
 /// @param[in] type The cell type
 /// @param[in] index The facet index
 /// @return The type of facet for this cell at this index
 CellType cell_facet_type(CellType type, int index);
+
+/// Return type of cell for entity of dimension d at given entity index.
+inline CellType cell_entity_type(CellType type, int d, int index)
+{
+  if (int dim = mesh::cell_dim(type); d == dim)
+    return type;
+  else if (d == 1)
+    return CellType::interval;
+  else if (d == (dim - 1))
+    return mesh::cell_facet_type(type, index);
+  else
+    return CellType::point;
+}
+
+/// @brief Get cell entity types of a given dimension for a cell.
+///
+/// @param[in] type Cell type.
+/// @param[in] d Dimension of the (sub) entities.
+/// @return Sub-entity cell types. List is sorted.
+std::vector<CellType> cell_entity_types(CellType type, int d);
 
 /// Return list of entities, where entities(e, k) is the local vertex
 /// index for the kth vertex of entity e of dimension dim
@@ -60,10 +106,7 @@ graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
 /// dim0
 graph::AdjacencyList<int> get_sub_entities(CellType type, int dim0, int dim1);
 
-/// Return topological dimension of cell type
-int cell_dim(CellType type);
-
-/// Number of entities of dimension dim
+/// Number of entities of dimension
 /// @param[in] dim Entity dimension
 /// @param[in] type Cell type
 /// @return Number of entities in cell
