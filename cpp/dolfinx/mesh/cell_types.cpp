@@ -61,18 +61,42 @@ mesh::CellType mesh::to_type(const std::string& cell)
     throw std::runtime_error("Unknown cell type (" + cell + ")");
 }
 //-----------------------------------------------------------------------------
-mesh::CellType mesh::cell_entity_type(CellType type, int d, int index)
-{
-  const int dim = cell_dim(type);
-  if (d == dim)
-    return type;
-  else if (d == 1)
-    return CellType::interval;
-  else if (d == (dim - 1))
-    return cell_facet_type(type, index);
-  else
-    return CellType::point;
-}
+// int mesh::cell_dim(CellType type)
+// {
+//   switch (type)
+//   {
+//   case CellType::point:
+//     return 0;
+//   case CellType::interval:
+//     return 1;
+//   case CellType::triangle:
+//     return 2;
+//   case CellType::quadrilateral:
+//     return 2;
+//   case CellType::tetrahedron:
+//     return 3;
+//   case CellType::hexahedron:
+//     return 3;
+//   case CellType::prism:
+//     return 3;
+//   case CellType::pyramid:
+//     return 3;
+//   default:
+//     throw std::runtime_error("Unsupported cell type");
+//   }
+// }
+//-----------------------------------------------------------------------------
+// mesh::CellType mesh::cell_entity_type(CellType type, int d, int index)
+// {
+//   if (int dim = cell_dim(type); d == dim)
+//     return type;
+//   else if (d == 1)
+//     return CellType::interval;
+//   else if (d == (dim - 1))
+//     return cell_facet_type(type, index);
+//   else
+//     return CellType::point;
+// }
 //-----------------------------------------------------------------------------
 mesh::CellType mesh::cell_facet_type(CellType type, int index)
 {
@@ -105,6 +129,17 @@ mesh::CellType mesh::cell_facet_type(CellType type, int index)
   }
 }
 //-----------------------------------------------------------------------------
+std::vector<mesh::CellType> mesh::cell_entity_types(CellType type, int d)
+{
+  std::vector<CellType> types;
+  int num_entities = mesh::cell_num_entities(type, d);
+  types.reserve(num_entities);
+  for (int e = 0; e < num_entities; ++e)
+    types.push_back(cell_entity_type(type, d, e));
+  std::sort(types.begin(), types.end());
+  return types;
+}
+//-----------------------------------------------------------------------------
 graph::AdjacencyList<int> mesh::get_entity_vertices(CellType type, int dim)
 {
   std::vector<std::vector<int>> topology
@@ -129,11 +164,6 @@ graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
   for (auto& row : connectivity)
     subset.emplace_back(row[dim1]);
   return graph::AdjacencyList<int>(subset);
-}
-//-----------------------------------------------------------------------------
-int mesh::cell_dim(CellType type)
-{
-  return basix::cell::topological_dimension(cell_type_to_basix_type(type));
 }
 //-----------------------------------------------------------------------------
 int mesh::cell_num_entities(CellType type, int dim)

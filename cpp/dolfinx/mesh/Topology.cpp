@@ -1130,53 +1130,41 @@ Topology mesh::create_topology(
     dolfinx::radix_sort(owned_vertices);
   }
 
-  // Number all owned vertices, iterating over vertices cell-wise
+  // NEW: Number all owned vertices
+  // TODO: check if this re-ordering affects geometry retrieval
+  // performance
   std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
-  // {
-  //   common::Timer timer("Topology: number owned vertices");
-  //   std::int32_t v = 0;
-  //   for (auto _cells : cells)
-  //   {
-  //     for (auto vtx : _cells)
-  //     {
-  //       if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
-  //           it != owned_vertices.end() and *it == vtx)
-  //       {
-  //         std::size_t pos = std::distance(owned_vertices.begin(), it);
-  //         if (local_vertex_indices[pos] < 0)
-  //           local_vertex_indices[pos] = v++;
-  //       }
-  //     }
-  //   }
-  // }
-
-  // NEW: Number all owned vertices, iterating over vertices cell-wise
-  // Global: [2, 4, 17, 18, 19, 23, 44]
-  // Local:  [0, 1, 2,      5,  8] (cell type)
-  std::vector<std::int32_t> local_vertex_indices_new(owned_vertices.size(), -1);
   {
-    common::Timer timer("Topology: number owned vertices (new)");
-    std::vector<std::int64_t> vertex_data;
+    common::Timer timer("Topology: number owned vertices");
+    std::int32_t v = 0;
     for (auto _cells : cells)
+    {
+      std::vector<std::int64_t> vertex_data;
       for (auto vtx : _cells)
         vertex_data.push_back(vtx);
+      if (num_threads == 1)
+        dolfinx::radix_sort(vertex_data);
+      else
+      {
+        boost::sort::block_indirect_sort(vertex_data.begin(), vertex_data.end(),
+                                         num_threads);
+      }
 
-    dolfinx::radix_sort(vertex_data);
-    const auto [it_a, it_end] = std::ranges::unique(vertex_data);
-
-    std::int32_t v = 0;
-    auto it0 = owned_vertices.cbegin();
-    auto it = it_a;
-    while (it0 != owned_vertices.cend() and it != it_end)
-    {
-      it0 = std::find(it0, owned_vertices.cend(), *it);
-      std::size_t d = std::distance(owned_vertices.cbegin(), it0);
-      assert(local_vertex_indices_new[d] == -1);
-      local_vertex_indices_new[d] = v++;
-      it = std::find_if(it, it_end, [x0 = *it](auto x) { return x0 != x; });
+      auto ret = std::ranges::unique(vertex_data);
+      auto it0 = owned_vertices.cbegin();
+      for (auto it = vertex_data.begin(); it != ret.begin(); ++it)
+      {
+        if (*it == *it0)
+        {
+          std::size_t d = std::distance(owned_vertices.cbegin(), it0);
+          assert(d < owned_vertices.size());
+          assert(local_vertex_indices[d] == -1);
+          local_vertex_indices[d] = v++;
+          ++it0;
+        }
+      }
     }
   }
-  local_vertex_indices = local_vertex_indices_new;
 
   // Compute the global offset for owned (local) vertex indices
   std::int64_t global_offset_v = 0;

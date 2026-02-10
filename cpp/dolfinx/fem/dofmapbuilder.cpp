@@ -155,7 +155,7 @@ build_basic_dofmaps(
     const std::vector<fem::ElementDofLayout>& element_dof_layouts)
 {
   // Start timer for dofmap initialization
-  common::Timer t0("Init dofmap from element dofmap");
+  common::Timer t0("Dofmap builder: init dofmap from element dofmap");
 
   // Topological dimension
   const std::size_t D = topology.dim();
@@ -208,7 +208,6 @@ build_basic_dofmaps(
             local_entity_offsets.push_back(
                 local_entity_offsets.back()
                 + num_entity_dofs * (im->size_local() + im->num_ghosts()));
-
             if (d < D
                 and !topology.connectivity({int(D), int(i)},
                                            {int(d), int(et_index)}))
@@ -246,6 +245,8 @@ build_basic_dofmaps(
   }
 #endif
 
+  common::Timer t1("Dofmap builder: build dofmap data(1)");
+
   // Dofmaps on each cell type as (width, [cell_dofs])
   std::vector<dofmap_t> dofs(num_cell_types);
   for (std::size_t i = 0; i < num_cell_types; ++i)
@@ -263,6 +264,10 @@ build_basic_dofmaps(
     dofs[i].array.resize(num_cells * dofmap_width);
     spdlog::info("Cell type: {} dofmap: {}x{}", i, num_cells, dofmap_width);
 
+    std::vector<std::vector<mesh::CellType>> cell_entity_types;
+    for (std::size_t d = 0; d < D + 1; ++d)
+      cell_entity_types.push_back(mesh::cell_entity_types(cell_type, d));
+
     std::int32_t dofmap_offset = 0;
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
@@ -279,12 +284,12 @@ build_basic_dofmaps(
         std::size_t et = required_dim_et[k].second;
         mesh::CellType e_type = topology.entity_types(d)[et];
 
-        const std::vector<std::vector<int>>& e_dofs_d = entity_dofs[d];
-
         // Skip over undefined topology, e.g. quad facets of tetrahedra
         if (d < D
             and !topology.connectivity({int(D), int(i)}, {int(d), int(et)}))
+        {
           continue;
+        }
 
         // Iterate over each entity of current dimension d and type et
         std::span<const std::int32_t> c_to_e
@@ -293,13 +298,15 @@ build_basic_dofmaps(
                         ->links(c)
                   : std::span<const std::int32_t>(&c, 1);
 
+        const std::vector<std::vector<int>>& e_dofs_d = entity_dofs[d];
+        const std::vector<mesh::CellType>& e_types = entity_types[d];
         int w = 0;
         for (std::size_t e = 0; e < e_dofs_d.size(); ++e)
         {
           // Skip entities of wrong type (e.g. for facets of prism)
           // Use separate connectivity index 'w' which only advances for
           // correct entities
-          if (mesh::cell_entity_type(cell_type, d, e) == e_type)
+          if (std::ranges::find(e_types, e_type) != e_types.end())
           {
             const std::vector<int>& e_dofs_d_e = e_dofs_d[e];
             std::size_t num_entity_dofs = e_dofs_d_e.size();
@@ -347,7 +354,6 @@ build_basic_dofmaps(
     auto& map = topo_index_maps[k];
     assert(map);
     std::vector<std::int64_t> global_indices = map->global_indices();
-
     for (std::size_t e_index = 0; e_index < global_indices.size(); ++e_index)
     {
       auto e_index_global = global_indices[e_index];
@@ -394,7 +400,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
-  common::Timer t0("Compute dof reordering map");
+  common::Timer t0("Dofmap builder: compute dof reordering map");
 
   // Get mesh entity ownership offset for each IndexMap
   std::vector<std::int32_t> offset(index_maps.size(), -1);
@@ -480,6 +486,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     const std::vector<std::int32_t>& old_to_new,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity)
 {
+  common::Timer t0("Dofmap builder: get dofmap global indices");
+
   assert(dof_entity.size() == global_indices_old.size());
 
   // Build list of flags for owned mesh entities that are shared, i.e.
@@ -630,7 +638,7 @@ fem::build_dofmap_data(
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
-  common::Timer t0("Build dofmap data");
+  common::Timer t0("Dofmap builder: build dofmap data");
 
   // Build a simple dofmap based on mesh entity numbering, returning (i)
   // a local dofmap, (ii) local-to-global map for dof indices, and (iii)

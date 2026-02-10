@@ -81,10 +81,10 @@ residual_graph_components(const graph::AdjacencyList<int>& graph,
 // Get the (maximum) width of a level structure
 int max_level_width(const graph::AdjacencyList<int>& levels)
 {
-  int wmax = 0;
-  for (int i = 0; i < levels.num_nodes(); ++i)
-    wmax = std::max(wmax, levels.num_links(i));
-  return wmax;
+  if (const std::vector<int>& array = levels.array(); array.empty())
+    return 0;
+  else
+    return std::ranges::max(array);
 }
 //-----------------------------------------------------------------------------
 // Create a level structure from graph, rooted at node s
@@ -124,7 +124,6 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
   return graph::AdjacencyList(std::move(level_structure),
                               std::move(level_offsets));
 }
-
 //-----------------------------------------------------------------------------
 // Gibbs-Poole-Stockmeyer algorithm, finding a reordering for the given
 // graph, operating only on nodes which are yet unlabelled (indicated
@@ -138,7 +137,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   const std::int32_t n = graph.num_nodes();
 
   // Degree comparison function
-  auto cmp_degree = [&graph](int a, int b)
+  auto cmp_degree = [&graph](auto a, auto b)
   { return graph.num_links(a) < graph.num_links(b); };
 
   // ALGORITHM I. Finding endpoints of a pseudo-diameter.
@@ -271,8 +270,8 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
                              [](int vl, int vn) { return (vl > vn) ? vl : 0; });
 
       // Find maximum of those that did increase
-      int h0 = *std::ranges::max_element(wh);
-      int l0 = *std::ranges::max_element(wl);
+      int h0 = std::ranges::max(wh);
+      int l0 = std::ranges::max(wl);
 
       // Choose which side to use
       int side = h0 < l0 ? 0 : 1;
@@ -336,14 +335,12 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
         }
 
         // Add nodes to rv in order of increasing degree
-        // std::cout << "sort a size: " << nbr.size() << std::endl;
         std::ranges::sort(nbr, cmp_degree);
         rv.insert(rv.end(), nbr.begin(), nbr.end());
         for (int w : nbr)
           labelled[w] = true;
 
         // Save nodes for next level to a separate list, rv_next
-        // std::cout << "sort b size: " << nbr.size() << std::endl;
         std::ranges::sort(nbr_next, cmp_degree);
         rv_next.insert(rv_next.end(), nbr_next.begin(), nbr_next.end());
         for (int w : nbr_next)
@@ -359,10 +356,9 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
         if (!labelled[w])
           nrem.push_back(w);
 
-      if (nrem.size() == 0)
+      if (nrem.empty())
         break;
 
-      // std::cout << "Sort size: " << nrem.size() << std::endl;
       std::ranges::sort(nrem, cmp_degree);
       rv.push_back(nrem.front());
       labelled[nrem.front()] = true;
