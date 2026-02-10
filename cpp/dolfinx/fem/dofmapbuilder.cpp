@@ -306,7 +306,7 @@ build_basic_dofmaps(
           // Skip entities of wrong type (e.g. for facets of prism)
           // Use separate connectivity index 'w' which only advances for
           // correct entities
-          if (std::ranges::find(e_types, e_type) != e_types.end())
+          if (e_type == e_types[e])
           {
             const std::vector<int>& e_dofs_d_e = e_dofs_d[e];
             std::size_t num_entity_dofs = e_dofs_d_e.size();

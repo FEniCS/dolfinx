@@ -136,7 +136,6 @@ std::vector<mesh::CellType> mesh::cell_entity_types(CellType type, int d)
   types.reserve(num_entities);
   for (int e = 0; e < num_entities; ++e)
     types.push_back(cell_entity_type(type, d, e));
-  std::sort(types.begin(), types.end());
   return types;
 }
 //-----------------------------------------------------------------------------
