@@ -962,10 +962,11 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// facet needs to be connected to to be considered *matched* (not on boundary
 /// for non-branching meshes).
 /// @return Function that computes the destination ranks for each cell.
-CellPartitionFunction create_cell_partitioner(
-    mesh::GhostMode ghost_mode = mesh::GhostMode::none,
-    const graph::partition_fn& partfn = &graph::partition_graph,
-    std::optional<std::int32_t> max_facet_to_cell_links = 2);
+CellPartitionFunction
+create_cell_partitioner(mesh::GhostMode ghost_mode = mesh::GhostMode::none,
+                        const graph::partition_fn& partfn
+                        = &graph::partition_graph,
+                        std::optional<std::int32_t> max_facet_to_cell_links);
 
 /// @brief Compute incident entities.
 /// @param[in] topology The topology.
@@ -1287,9 +1288,10 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
   }
   else
   {
-    return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
-                       comm, x, xshape, create_cell_partitioner(ghost_mode),
-                       max_facet_to_cell_links);
+    return create_mesh(
+        comm, comm, std::vector{cells}, std::vector{elements}, comm, x, xshape,
+        create_cell_partitioner(ghost_mode, max_facet_to_cell_links),
+        max_facet_to_cell_links);
   }
 }
 

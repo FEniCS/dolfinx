@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import typing
 from collections.abc import Callable, Sequence
+from functools import singledispatch
 
 from mpi4py import MPI as _MPI
 
@@ -28,7 +29,6 @@ from dolfinx.cpp.mesh import (
     GhostMode,
     build_dual_graph,
     cell_dim,
-    create_cell_partitioner,
     to_string,
     to_type,
 )
@@ -80,6 +80,36 @@ __all__ = [
     "transfer_meshtag",
     "uniform_refine",
 ]
+
+
+@singledispatch
+def create_cell_partitioner(part: Callable, mode: GhostMode = GhostMode.none):
+    """Create a function to partition a mesh.
+
+    Args:
+        part: Partition function.
+        mode: Ghosting mode to use.
+
+    Return:
+        Partitioning function.
+    """
+    return _cpp.mesh.create_cell_partitioner(part, mode)
+
+
+@create_cell_partitioner.register(GhostMode)
+def _(mode: GhostMode, max_facet_to_cell_links: int):
+    """Create a function to partition a mesh.
+
+    Args:
+        mode: Ghosting mode to use
+        max_facet_to_cell_links: Maximum number of cells that can be
+            connected to a facet. Typically 2.
+        num_threads: Number of threads to use.
+
+    Return:
+        Partitioning function.
+    """
+    return _cpp.mesh.create_cell_partitioner(mode, max_facet_to_cell_links)
 
 
 class Topology:

@@ -799,7 +799,7 @@ void mesh(nb::module_& m)
                 mode, &dolfinx::graph::partition_graph,
                 max_facet_to_cell_links));
       },
-      nb::arg("mode"), nb::arg("max_facet_to_cell_links") = 2,
+      nb::arg("mode"), nb::arg("max_facet_to_cell_links").none(),
       "Create default cell partitioner.");
   m.def(
       "create_cell_partitioner",
