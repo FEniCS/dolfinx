@@ -327,8 +327,7 @@ def test_locate_entities():
         cells = [np.array([], dtype=np.int64), np.array([], dtype=np.int64)]
         geom = np.array([], dtype=np.float64)
 
-    part = create_cell_partitioner(GhostMode.none)
-
+    part = create_cell_partitioner(GhostMode.none, 2)
     hexahedron = coordinate_element(CellType.hexahedron, 1)
     prism = coordinate_element(CellType.prism, 1)
     comm = MPI.COMM_WORLD

@@ -29,8 +29,8 @@ enum class CellType : std::int8_t;
 /// matched facet is not connected any cells on other processes. All
 /// facets connected to less than `max_facet_to_cell_links` cells are
 /// considered *unmatched* and parallel communication will check for
-/// further connections. Defaults to `2`, which covers non-branching
-/// manifold meshes. Passing std::nullopt (no upper bound) corresponds
+/// further connections. Equal to `2` for non-branching manifold meshes.
+/// Passing std::nullopt (no upper bound) corresponds.
 /// to `max_facet_to_cell_links`=∞, i.e. every facet is considered
 /// unmatched.
 ///
