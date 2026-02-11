@@ -262,13 +262,13 @@ build_basic_dofmaps(
     dofs[i].array.resize(num_cells * dofmap_width);
     spdlog::info("Cell type: {} dofmap: {}x{}", i, num_cells, dofmap_width);
 
-    std::vector<std::vector<mesh::CellType>> cell_entity_types;
+    std::vector<std::vector<mesh::CellType>> cell_entity_types(D + 1);
     for (std::size_t d = 0; d < D + 1; ++d)
     {
-      std::vector<mesh::CellType> tmp;
-      for (int e = 0; e < mesh::cell_num_entities(cell_type, d); ++e)
-        tmp.push_back(mesh::cell_entity_type(cell_type, d, e));
-      cell_entity_types.push_back(std::move(tmp));
+      int entities_d = mesh::cell_num_entities(cell_type, d);
+      cell_entity_types[d].reserve(entities_d);
+      for (int e = 0; e < entities_d; ++e)
+        cell_entity_types[d].push_back(mesh::cell_entity_type(cell_type, d, e));
     }
 
     std::int32_t dofmap_offset = 0;
