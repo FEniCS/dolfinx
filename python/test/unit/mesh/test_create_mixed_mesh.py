@@ -2,7 +2,6 @@ from mpi4py import MPI
 
 import numpy as np
 
-import dolfinx.cpp as _cpp
 from dolfinx.cpp.mesh import (
     GhostMode,
     create_mesh,
