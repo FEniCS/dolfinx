@@ -227,8 +227,7 @@ using CellReorderFunction = std::function<std::vector<std::int32_t>(
 /// TODO: offload to cpp?
 inline auto
 create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
-                            std::optional<std::int32_t> max_facet_to_cell_links
-                            = 2)
+                            std::optional<std::int32_t> max_facet_to_cell_links)
 {
   /// brief Function that computes the process boundary vertices of a mesh
   /// during creation.
@@ -955,6 +954,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// @brief Create a function that computes destination rank for mesh
 /// cells on this rank by applying the default graph partitioner to the
 /// dual graph of the mesh.
+///
 /// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
 /// @param[in] partfn Partitioning function for distributing cells
 /// across MPI ranks.
@@ -963,10 +963,25 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// for non-branching meshes).
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction
-create_cell_partitioner(mesh::GhostMode ghost_mode = mesh::GhostMode::none,
-                        const graph::partition_fn& partfn
-                        = &graph::partition_graph,
+create_cell_partitioner(mesh::GhostMode ghost_mode,
+                        const graph::partition_fn& partfn,
                         std::optional<std::int32_t> max_facet_to_cell_links);
+
+/// @brief Create a function that computes destination rank for mesh
+/// cells on this rank by applying the default graph partitioner to the
+/// dual graph of the mesh.
+///
+/// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
+/// @param[in] partfn Partitioning function for distributing cells
+/// across MPI ranks.
+/// @param[in] max_facet_to_cell_links Bound on the number of cells a
+/// facet needs to be connected to to be considered *matched* (not on boundary
+/// for non-branching meshes).
+/// @return Function that computes the destination ranks for each cell.
+CellPartitionFunction
+create_cell_partitioner(mesh::GhostMode ghost_mode,
+                        std::optional<std::int32_t> max_facet_to_cell_links
+                        = 2);
 
 /// @brief Compute incident entities.
 /// @param[in] topology The topology.
@@ -1245,7 +1260,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::optional<std::int32_t> max_facet_to_cell_links = 2,
+    std::optional<std::int32_t> max_facet_to_cell_links,
     const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
