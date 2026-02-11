@@ -26,14 +26,14 @@
 namespace dolfinx_wrappers
 {
 
-/// Declare geometry-related objects (BoundingBoxTree, PointOwnershipData) and functions for a given scalar type
+/// Declare geometry-related objects (BoundingBoxTree, PointOwnershipData) and
+/// functions for a given scalar type
 /// @param m The nanobind module
-/// @param type String representation of the scalar type (e.g., "float64", "float32")
+/// @param type String representation of the scalar type (e.g., "float64",
+/// "float32")
 template <typename T>
-void declare_bbtree(nanobind::module_& m, const std::string& type)
+void declare_bbtree(nb::module_& m, const std::string& type)
 {
-  namespace nb = nanobind;
-
   // dolfinx::geometry::BoundingBoxTree
   std::string pyclass_name = "BoundingBoxTree_" + type;
   nb::class_<dolfinx::geometry::BoundingBoxTree<T>>(m, pyclass_name.c_str())
@@ -219,13 +219,16 @@ void declare_bbtree(nanobind::module_& m, const std::string& type)
       {
         std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
         std::span<const T> _p(points.data(), 3 * p_s0);
-        std::optional<std::span<const std::int32_t>> _cells
-            = cells.has_value()
-                  ? std::span<const std::int32_t>(cells.value().data(),
-                                                  cells.value().size())
-                  : std::optional<std::span<const std::int32_t>>(std::nullopt);
-        return dolfinx::geometry::determine_point_ownership<T>(mesh, _p,
-                                                               padding, _cells);
+        if (cells.has_value())
+        {
+          return dolfinx::geometry::determine_point_ownership<T>(
+              mesh, _p, padding, std::span(cells->data(), cells->size()));
+        }
+        else
+        {
+          return dolfinx::geometry::determine_point_ownership<T>(
+              mesh, _p, padding, std::nullopt);
+        }
       },
       nb::arg("mesh"), nb::arg("points"), nb::arg("padding"),
       nb::arg("cells").none(),
