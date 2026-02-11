@@ -629,7 +629,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   owned.reserve(num_ghost_indices + recv_buffer.size());
   std::copy(indices.begin(), it_owned_end, std::back_inserter(owned));
   std::ranges::transform(recv_buffer, std::back_inserter(owned),
-                         [range = map.local_range()](auto idx)
+                         [range = map.local_range()](auto idx) -> std::int32_t
                          {
                            assert(idx >= range[0]);
                            assert(idx < range[1]);
