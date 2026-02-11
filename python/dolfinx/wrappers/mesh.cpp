@@ -339,14 +339,6 @@ void mesh(nb::module_& m)
 
   m.def("compute_mixed_cell_pairs", &dolfinx::mesh::compute_mixed_cell_pairs);
 
-  declare_meshtags<std::int8_t>(m, "int8");
-  declare_meshtags<std::int32_t>(m, "int32");
-  declare_meshtags<std::int64_t>(m, "int64");
-  declare_meshtags<double>(m, "float64");
-
-  declare_mesh<float>(m, "float32");
-  declare_mesh<double>(m, "float64");
-
   m.def(
       "create_cell_partitioner",
       [](dolfinx::mesh::GhostMode mode,
@@ -403,5 +395,13 @@ void mesh(nb::module_& m)
       .value("crossed", dolfinx::mesh::DiagonalType::crossed)
       .value("left_right", dolfinx::mesh::DiagonalType::left_right)
       .value("right_left", dolfinx::mesh::DiagonalType::right_left);
+
+  declare_meshtags<std::int8_t>(m, "int8");
+  declare_meshtags<std::int32_t>(m, "int32");
+  declare_meshtags<std::int64_t>(m, "int64");
+  declare_meshtags<double>(m, "float64");
+
+  declare_mesh<float>(m, "float32");
+  declare_mesh<double>(m, "float64");
 }
 } // namespace dolfinx_wrappers

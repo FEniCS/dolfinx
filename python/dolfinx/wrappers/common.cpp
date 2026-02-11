@@ -16,6 +16,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
 #include <dolfinx/common/utils.h>
+#include <iostream>
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>

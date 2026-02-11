@@ -55,7 +55,6 @@ endif()
 
 nanobind_add_module(
   cpp
-  NB_SUPPRESS_WARNINGS
   NOMINSIZE
   ${NANOBIND_SABI}
   dolfinx/wrappers/dolfinx.cpp
