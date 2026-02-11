@@ -158,12 +158,12 @@ void io(nb::module_& m)
           "comm", [](dolfinx::io::XDMFFile& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
 
-  xdmf_real_fn<float>(xdmf_file);
-  xdmf_real_fn<double>(xdmf_file);
-  xdmf_scalar_fn<float, float>(xdmf_file);
-  xdmf_scalar_fn<double, double>(xdmf_file);
-  xdmf_scalar_fn<std::complex<float>, float>(xdmf_file);
-  xdmf_scalar_fn<std::complex<double>, double>(xdmf_file);
+  declare_xdmf_real_fn<float>(xdmf_file);
+  declare_xdmf_real_fn<double>(xdmf_file);
+  declare_xdmf_scalar_fn<float, float>(xdmf_file);
+  declare_xdmf_scalar_fn<double, double>(xdmf_file);
+  declare_xdmf_scalar_fn<std::complex<float>, float>(xdmf_file);
+  declare_xdmf_scalar_fn<std::complex<double>, double>(xdmf_file);
 
   // dolfinx::io::VTKFile
   nb::class_<dolfinx::io::VTKFile> vtk_file(m, "VTKFile");
@@ -176,12 +176,12 @@ void io(nb::module_& m)
           nb::arg("comm"), nb::arg("filename"), nb::arg("mode"))
       .def("close", &dolfinx::io::VTKFile::close);
 
-  vtk_real_fn<float>(vtk_file);
-  vtk_real_fn<double>(vtk_file);
-  vtk_scalar_fn<float, float>(vtk_file);
-  vtk_scalar_fn<double, double>(vtk_file);
-  vtk_scalar_fn<std::complex<float>, float>(vtk_file);
-  vtk_scalar_fn<std::complex<double>, double>(vtk_file);
+  declare_vtk_real_fn<float>(vtk_file);
+  declare_vtk_real_fn<double>(vtk_file);
+  declare_vtk_scalar_fn<float, float>(vtk_file);
+  declare_vtk_scalar_fn<double, double>(vtk_file);
+  declare_vtk_scalar_fn<std::complex<float>, float>(vtk_file);
+  declare_vtk_scalar_fn<std::complex<double>, double>(vtk_file);
 
 #ifdef HAS_ADIOS2
   nb::enum_<dolfinx::io::VTXMeshPolicy>(m, "VTXMeshPolicy")

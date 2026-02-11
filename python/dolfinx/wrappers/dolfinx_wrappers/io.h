@@ -40,7 +40,7 @@ using mdspan_t = md::mdspan<const T, md::dextents<std::size_t, ndim>>;
 
 /// Add real-valued mesh functions to XDMFFile
 template <typename T>
-void xdmf_real_fn(auto&& m)
+void declare_xdmf_real_fn(auto&& m)
 {
   namespace nb = nanobind;
 
@@ -62,7 +62,7 @@ void xdmf_real_fn(auto&& m)
 
 /// Add scalar function write methods to XDMFFile
 template <typename T, typename U>
-void xdmf_scalar_fn(auto&& m)
+void declare_xdmf_scalar_fn(auto&& m)
 {
   namespace nb = nanobind;
 
@@ -77,7 +77,7 @@ void xdmf_scalar_fn(auto&& m)
 
 /// Add real-valued mesh write methods to VTKFile
 template <typename T>
-void vtk_real_fn(auto&& m)
+void declare_vtk_real_fn(auto&& m)
 {
   namespace nb = nanobind;
 
@@ -90,7 +90,7 @@ void vtk_real_fn(auto&& m)
 
 /// Add scalar function write methods to VTKFile
 template <typename T, typename U>
-void vtk_scalar_fn(auto&& m)
+void declare_vtk_scalar_fn(auto&& m)
 {
   namespace nb = nanobind;
 
@@ -115,7 +115,8 @@ void vtk_scalar_fn(auto&& m)
 #ifdef HAS_ADIOS2
 /// Declare VTXWriter for a given scalar type
 /// @param m The nanobind module
-/// @param type String representation of the scalar type (e.g., "float64", "float32")
+/// @param type String representation of the scalar type (e.g., "float64",
+/// "float32")
 template <typename T>
 void declare_vtx_writer(nanobind::module_& m, const std::string& type)
 {
