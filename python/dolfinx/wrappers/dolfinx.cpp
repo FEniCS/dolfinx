@@ -79,4 +79,4 @@ NB_MODULE(cpp, m)
   nb::module_ nls = m.def_submodule("nls", "Nonlinear solver module");
   dolfinx_wrappers::petsc(fem, la, nls);
 #endif
-}
+} // namespace dolfinx_wrappers NB_MODULE(cpp,m)

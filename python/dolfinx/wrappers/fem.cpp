@@ -62,24 +62,24 @@ namespace dolfinx_wrappers
 {
 void fem(nb::module_& m)
 {
-  dolfinx_wrappers::declare_objects<float>(m, "float32");
-  dolfinx_wrappers::declare_objects<double>(m, "float64");
-  dolfinx_wrappers::declare_objects<std::complex<float>>(m, "complex64");
-  dolfinx_wrappers::declare_objects<std::complex<double>>(m, "complex128");
+  declare_objects<float>(m, "float32");
+  declare_objects<double>(m, "float64");
+  declare_objects<std::complex<float>>(m, "complex64");
+  declare_objects<std::complex<double>>(m, "complex128");
 
-  dolfinx_wrappers::declare_form<float>(m, "float32");
-  dolfinx_wrappers::declare_form<double>(m, "float64");
-  dolfinx_wrappers::declare_form<std::complex<float>>(m, "complex64");
-  dolfinx_wrappers::declare_form<std::complex<double>>(m, "complex128");
+  declare_form<float>(m, "float32");
+  declare_form<double>(m, "float64");
+  declare_form<std::complex<float>>(m, "complex64");
+  declare_form<std::complex<double>>(m, "complex128");
 
-  dolfinx_wrappers::declare_cmap<float>(m, "float32");
-  dolfinx_wrappers::declare_cmap<double>(m, "float64");
+  declare_cmap<float>(m, "float32");
+  declare_cmap<double>(m, "float64");
 
-  dolfinx_wrappers::declare_function_space<float>(m, "float32");
-  dolfinx_wrappers::declare_function_space<double>(m, "float64");
+  declare_function_space<float>(m, "float32");
+  declare_function_space<double>(m, "float64");
 
-  dolfinx_wrappers::declare_real_functions<float>(m);
-  dolfinx_wrappers::declare_real_functions<double>(m);
+  declare_real_functions<float>(m);
+  declare_real_functions<double>(m);
 
   m.def(
       "build_dofmap",

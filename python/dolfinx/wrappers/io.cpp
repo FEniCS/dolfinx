@@ -45,12 +45,12 @@ namespace dolfinx_wrappers
 void io(nb::module_& m)
 {
 
-  dolfinx_wrappers::declare_data_types<std::int32_t>(m);
-  dolfinx_wrappers::declare_data_types<std::int64_t>(m);
-  dolfinx_wrappers::declare_data_types<float>(m);
-  dolfinx_wrappers::declare_data_types<std::complex<float>>(m);
-  dolfinx_wrappers::declare_data_types<double>(m);
-  dolfinx_wrappers::declare_data_types<std::complex<double>>(m);
+  declare_data_types<std::int32_t>(m);
+  declare_data_types<std::int64_t>(m);
+  declare_data_types<float>(m);
+  declare_data_types<std::complex<float>>(m);
+  declare_data_types<double>(m);
+  declare_data_types<std::complex<double>>(m);
 
   // dolfinx::io::cell vtk cell type converter
   m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type,
@@ -158,12 +158,12 @@ void io(nb::module_& m)
           "comm", [](dolfinx::io::XDMFFile& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
 
-  dolfinx_wrappers::xdmf_real_fn<float>(xdmf_file);
-  dolfinx_wrappers::xdmf_real_fn<double>(xdmf_file);
-  dolfinx_wrappers::xdmf_scalar_fn<float, float>(xdmf_file);
-  dolfinx_wrappers::xdmf_scalar_fn<double, double>(xdmf_file);
-  dolfinx_wrappers::xdmf_scalar_fn<std::complex<float>, float>(xdmf_file);
-  dolfinx_wrappers::xdmf_scalar_fn<std::complex<double>, double>(xdmf_file);
+  xdmf_real_fn<float>(xdmf_file);
+  xdmf_real_fn<double>(xdmf_file);
+  xdmf_scalar_fn<float, float>(xdmf_file);
+  xdmf_scalar_fn<double, double>(xdmf_file);
+  xdmf_scalar_fn<std::complex<float>, float>(xdmf_file);
+  xdmf_scalar_fn<std::complex<double>, double>(xdmf_file);
 
   // dolfinx::io::VTKFile
   nb::class_<dolfinx::io::VTKFile> vtk_file(m, "VTKFile");
@@ -176,20 +176,20 @@ void io(nb::module_& m)
           nb::arg("comm"), nb::arg("filename"), nb::arg("mode"))
       .def("close", &dolfinx::io::VTKFile::close);
 
-  dolfinx_wrappers::vtk_real_fn<float>(vtk_file);
-  dolfinx_wrappers::vtk_real_fn<double>(vtk_file);
-  dolfinx_wrappers::vtk_scalar_fn<float, float>(vtk_file);
-  dolfinx_wrappers::vtk_scalar_fn<double, double>(vtk_file);
-  dolfinx_wrappers::vtk_scalar_fn<std::complex<float>, float>(vtk_file);
-  dolfinx_wrappers::vtk_scalar_fn<std::complex<double>, double>(vtk_file);
+  vtk_real_fn<float>(vtk_file);
+  vtk_real_fn<double>(vtk_file);
+  vtk_scalar_fn<float, float>(vtk_file);
+  vtk_scalar_fn<double, double>(vtk_file);
+  vtk_scalar_fn<std::complex<float>, float>(vtk_file);
+  vtk_scalar_fn<std::complex<double>, double>(vtk_file);
 
 #ifdef HAS_ADIOS2
   nb::enum_<dolfinx::io::VTXMeshPolicy>(m, "VTXMeshPolicy")
       .value("update", dolfinx::io::VTXMeshPolicy::update)
       .value("reuse", dolfinx::io::VTXMeshPolicy::reuse);
 
-  dolfinx_wrappers::declare_vtx_writer<float>(m, "float32");
-  dolfinx_wrappers::declare_vtx_writer<double>(m, "float64");
+  declare_vtx_writer<float>(m, "float32");
+  declare_vtx_writer<double>(m, "float64");
 #endif
 }
 } // namespace dolfinx_wrappers

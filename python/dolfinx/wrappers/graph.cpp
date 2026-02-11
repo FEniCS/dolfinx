@@ -32,25 +32,19 @@ namespace dolfinx_wrappers
 {
 void graph(nb::module_& m)
 {
-  dolfinx_wrappers::declare_adjacency_list_init<std::int32_t, std::nullptr_t>(
-      m, "int32");
-  dolfinx_wrappers::declare_adjacency_list_init<std::int64_t, std::nullptr_t>(
-      m, "int64");
-  dolfinx_wrappers::declare_adjacency_list<
-      std::tuple<int, std::size_t, std::int8_t>,
-      std::pair<std::int32_t, std::int32_t>>(m, "int_sizet_int8__int32_int32");
+  declare_adjacency_list_init<std::int32_t, std::nullptr_t>(m, "int32");
+  declare_adjacency_list_init<std::int64_t, std::nullptr_t>(m, "int64");
+  declare_adjacency_list<std::tuple<int, std::size_t, std::int8_t>,
+                         std::pair<std::int32_t, std::int32_t>>(
+      m, "int_sizet_int8__int32_int32");
 
   using partition_fn
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&, bool)>;
   m.def(
-      "partitioner",
-      []() -> partition_fn
-      {
-        return dolfinx_wrappers::create_partitioner_py(
-            dolfinx::graph::partition_graph);
-      },
+      "partitioner", []() -> partition_fn
+      { return create_partitioner_py(dolfinx::graph::partition_graph); },
       "Default graph partitioner");
 
 #ifdef HAS_PTSCOTCH
@@ -58,9 +52,8 @@ void graph(nb::module_& m)
       "partitioner_scotch",
       [](double imbalance, int seed) -> partition_fn
       {
-        return dolfinx_wrappers::create_partitioner_py(
-            dolfinx::graph::scotch::partitioner(
-                dolfinx::graph::scotch::strategy::none, imbalance, seed));
+        return create_partitioner_py(dolfinx::graph::scotch::partitioner(
+            dolfinx::graph::scotch::strategy::none, imbalance, seed));
       },
       nb::arg("imbalance") = 0.025, nb::arg("seed") = 0,
       "SCOTCH graph partitioner");
@@ -70,7 +63,7 @@ void graph(nb::module_& m)
       "partitioner_parmetis",
       [](double imbalance, std::array<int, 3> options) -> partition_fn
       {
-        return dolfinx_wrappers::create_partitioner_py(
+        return create_partitioner_py(
             dolfinx::graph::parmetis::partitioner(imbalance, options));
       },
       nb::arg("imbalance") = 1.02,
@@ -83,9 +76,8 @@ void graph(nb::module_& m)
       [](int mode = 1, int seed = 1, double imbalance = 0.03,
          bool suppress_output = true) -> partition_fn
       {
-        return dolfinx_wrappers::create_partitioner_py(
-            dolfinx::graph::kahip::partitioner(mode, seed, imbalance,
-                                               suppress_output));
+        return create_partitioner_py(dolfinx::graph::kahip::partitioner(
+            mode, seed, imbalance, suppress_output));
       },
       nb::arg("mode") = 1, nb::arg("seed") = 1, nb::arg("imbalance") = 0.03,
       nb::arg("suppress_output") = true, "KaHIP graph partitioner");

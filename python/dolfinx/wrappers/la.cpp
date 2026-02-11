@@ -49,18 +49,18 @@ void la(nb::module_& m)
 {
 
   // Declare objects that are templated over type
-  dolfinx_wrappers::declare_la_objects<std::int8_t>(m, "int8");
-  dolfinx_wrappers::declare_la_objects<std::int32_t>(m, "int32");
-  dolfinx_wrappers::declare_la_objects<std::int64_t>(m, "int64");
-  dolfinx_wrappers::declare_la_objects<float>(m, "float32");
-  dolfinx_wrappers::declare_la_objects<double>(m, "float64");
-  dolfinx_wrappers::declare_la_objects<std::complex<float>>(m, "complex64");
-  dolfinx_wrappers::declare_la_objects<std::complex<double>>(m, "complex128");
+  declare_la_objects<std::int8_t>(m, "int8");
+  declare_la_objects<std::int32_t>(m, "int32");
+  declare_la_objects<std::int64_t>(m, "int64");
+  declare_la_objects<float>(m, "float32");
+  declare_la_objects<double>(m, "float64");
+  declare_la_objects<std::complex<float>>(m, "complex64");
+  declare_la_objects<std::complex<double>>(m, "complex128");
 
-  dolfinx_wrappers::declare_la_functions<float>(m);
-  dolfinx_wrappers::declare_la_functions<double>(m);
-  dolfinx_wrappers::declare_la_functions<std::complex<float>>(m);
-  dolfinx_wrappers::declare_la_functions<std::complex<double>>(m);
+  declare_la_functions<float>(m);
+  declare_la_functions<double>(m);
+  declare_la_functions<std::complex<float>>(m);
+  declare_la_functions<std::complex<double>>(m);
 
   nb::enum_<dolfinx_wrappers::PyInsertMode>(m, "InsertMode")
       .value("add", dolfinx_wrappers::PyInsertMode::add)
@@ -140,15 +140,13 @@ void la(nb::module_& m)
           nb::rv_policy::reference_internal);
 
 #if defined(HAS_SUPERLU_DIST)
-  dolfinx_wrappers::declare_superlu_dist_matrix<double>(m, "float64");
-  dolfinx_wrappers::declare_superlu_dist_matrix<float>(m, "float32");
-  dolfinx_wrappers::declare_superlu_dist_matrix<std::complex<double>>(
-      m, "complex128");
+  declare_superlu_dist_matrix<double>(m, "float64");
+  declare_superlu_dist_matrix<float>(m, "float32");
+  declare_superlu_dist_matrix<std::complex<double>>(m, "complex128");
 
-  dolfinx_wrappers::declare_superlu_dist_solver<double>(m, "float64");
-  dolfinx_wrappers::declare_superlu_dist_solver<float>(m, "float32");
-  dolfinx_wrappers::declare_superlu_dist_solver<std::complex<double>>(
-      m, "complex128");
+  declare_superlu_dist_solver<double>(m, "float64");
+  declare_superlu_dist_solver<float>(m, "float32");
+  declare_superlu_dist_solver<std::complex<double>>(m, "complex128");
 #endif // HAS_SUPERLU_DIST
 }
 } // namespace dolfinx_wrappers

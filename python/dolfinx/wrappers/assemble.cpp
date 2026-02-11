@@ -52,14 +52,14 @@ namespace dolfinx_wrappers
 void assemble(nb::module_& m)
 {
   // dolfinx::fem::assemble
-  dolfinx_wrappers::declare_assembly_functions<float, float>(m);
-  dolfinx_wrappers::declare_assembly_functions<double, double>(m);
-  dolfinx_wrappers::declare_assembly_functions<std::complex<float>, float>(m);
-  dolfinx_wrappers::declare_assembly_functions<std::complex<double>, double>(m);
+  declare_assembly_functions<float, float>(m);
+  declare_assembly_functions<double, double>(m);
+  declare_assembly_functions<std::complex<float>, float>(m);
+  declare_assembly_functions<std::complex<double>, double>(m);
 
-  dolfinx_wrappers::declare_discrete_operators<float, float>(m);
-  dolfinx_wrappers::declare_discrete_operators<double, double>(m);
-  dolfinx_wrappers::declare_discrete_operators<std::complex<float>, float>(m);
-  dolfinx_wrappers::declare_discrete_operators<std::complex<double>, double>(m);
+  declare_discrete_operators<float, float>(m);
+  declare_discrete_operators<double, double>(m);
+  declare_discrete_operators<std::complex<float>, float>(m);
+  declare_discrete_operators<std::complex<double>, double>(m);
 }
 } // namespace dolfinx_wrappers
