@@ -229,6 +229,7 @@ inline auto
 create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
                             std::optional<std::int32_t> max_facet_to_cell_links)
 {
+  /// @cond
   /// @brief Function that computes the process boundary vertices of a
   /// mesh during creation.
   ///
@@ -242,6 +243,7 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
   /// @param[out] original_idx Contains the permutation applied to the
   /// cells per celltype.
   /// @return Boundary vertices (for all cell types).
+  /// @endcond
   return [&, max_facet_to_cell_links](
              const std::vector<CellType>& celltypes,
              const std::vector<fem::ElementDofLayout>& doflayouts,
@@ -961,8 +963,8 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// @param[in] partfn Partitioning function for distributing cells
 /// across MPI ranks.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet needs to be connected to to be considered *matched* (not on boundary
-/// for non-branching meshes).
+/// facet needs to be connected to to be considered *matched* (not on
+/// boundary for non-branching meshes).
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction
 create_cell_partitioner(mesh::GhostMode ghost_mode,
@@ -974,11 +976,9 @@ create_cell_partitioner(mesh::GhostMode ghost_mode,
 /// dual graph of the mesh.
 ///
 /// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
-/// @param[in] partfn Partitioning function for distributing cells
-/// across MPI ranks.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet needs to be connected to to be considered *matched* (not on boundary
-/// for non-branching meshes).
+/// facet needs to be connected to to be considered *matched* (not on
+/// boundary for non-branching meshes).
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction
 create_cell_partitioner(mesh::GhostMode ghost_mode,
