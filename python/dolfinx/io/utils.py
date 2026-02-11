@@ -271,7 +271,7 @@ class XDMFFile(_cpp.io.XDMFFile):
             cells,
             cmap,
             x,
-            create_cell_partitioner(ghost_mode, max_facet_to_cell_links),
+            create_cell_partitioner(ghost_mode, max_facet_to_cell_links),  # type: ignore
             max_facet_to_cell_links,
         )
         msh.name = name

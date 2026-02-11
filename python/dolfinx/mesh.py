@@ -83,7 +83,9 @@ __all__ = [
 
 
 @singledispatch
-def create_cell_partitioner(part: Callable, mode: GhostMode, max_facet_to_cell_links):
+def create_cell_partitioner(
+    part: Callable, mode: GhostMode, max_facet_to_cell_links: int
+) -> Callable:
     """Create a function to partition a mesh.
 
     Args:
@@ -101,7 +103,7 @@ def create_cell_partitioner(part: Callable, mode: GhostMode, max_facet_to_cell_l
 
 
 @create_cell_partitioner.register(GhostMode)
-def _(mode: GhostMode, max_facet_to_cell_links: int):
+def _(mode: GhostMode, max_facet_to_cell_links: int) -> Callable:
     """Create a function to partition a mesh.
 
     Args:
@@ -784,7 +786,7 @@ def create_mesh(
         A mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = create_cell_partitioner(GhostMode.none)
+        partitioner = create_cell_partitioner(GhostMode.none, 2)  # type: ignore
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:
