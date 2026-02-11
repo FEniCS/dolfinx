@@ -971,7 +971,7 @@ def create_interval(
         An interval mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1137,7 +1137,7 @@ def create_box(
         A mesh of a box domain.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
