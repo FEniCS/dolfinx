@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2024 Anders Logg, Garth N. Wells and Chris Richardson
+// Copyright (C) 2006-2026 Anders Logg, Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,6 +8,7 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
+#include <boost/sort/sort.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -21,6 +22,7 @@
 #include <mpi.h>
 #include <numeric>
 #include <random>
+#include <ranges>
 #include <string>
 #include <thread>
 #include <tuple>
@@ -51,14 +53,14 @@ namespace
 /// @param[in] entity_type Type of entity to extract.
 /// @param[in] cell_type_entities Indices of entities of type `entity_type`
 /// @param[in] vertex_index_map Index map for the vertices.
-void build_entity_list(std::span<std::int32_t> entity_list,
-                       std::span<std::int32_t> entity_list_sorted,
-                       std::int32_t c0, std::int32_t num_cells,
-                       const graph::AdjacencyList<std::int32_t>& cells,
-                       const graph::AdjacencyList<std::int32_t>& e_vertices,
-                       mesh::CellType entity_type,
-                       const std::vector<std::int32_t>& cell_type_entities,
-                       const common::IndexMap& vertex_index_map)
+auto build_entity_list
+    = [](std::span<std::int32_t> entity_list,
+         std::span<std::int32_t> entity_list_sorted, auto&& cell_idx,
+         const graph::AdjacencyList<std::int32_t>& cells,
+         const graph::AdjacencyList<std::int32_t>& e_vertices,
+         mesh::CellType entity_type,
+         const std::vector<std::int32_t>& cell_type_entities,
+         const common::IndexMap& vertex_index_map)
 {
   int num_vertices_per_entity = num_cell_vertices(entity_type);
   int num_entities_per_cell = cell_type_entities.size();
@@ -68,10 +70,12 @@ void build_entity_list(std::span<std::int32_t> entity_list,
   std::vector<std::size_t> perm(num_vertices_per_entity);
 
   // Iterate over cells
-  for (std::int32_t c = 0; c < num_cells; ++c)
+  auto it_e = entity_list.begin();
+  auto it_e_sorted = entity_list_sorted.begin();
+  for (std::int32_t c : cell_idx)
   {
     // Get vertices from each cell
-    auto vertices = cells.links(c + c0);
+    auto vertices = cells.links(c);
 
     // Iterate over cell entities of given type
     for (int e = 0; e < num_entities_per_cell; ++e)
@@ -113,32 +117,30 @@ void build_entity_list(std::span<std::int32_t> entity_list,
         std::rotate(it, it + 1, perm.end());
       }
 
-      const std::int32_t idx = c * num_entities_per_cell + e;
-      auto elist = entity_list.subspan(idx * num_vertices_per_entity,
-                                       num_vertices_per_entity);
+      auto elist = std::span(it_e, num_vertices_per_entity);
       for (std::size_t j = 0; j < ev.size(); ++j)
         elist[j] = entity_vertices[perm[j]];
 
-      auto elist_sorted = entity_list_sorted.subspan(
-          idx * num_vertices_per_entity, num_vertices_per_entity);
+      auto elist_sorted = std::span(it_e_sorted, num_vertices_per_entity);
       std::ranges::copy(elist, elist_sorted.begin());
       std::ranges::sort(elist_sorted);
+
+      std::advance(it_e, num_vertices_per_entity);
+      std::advance(it_e_sorted, num_vertices_per_entity);
     }
   }
-}
+};
 
 /// @brief Create an adjacency list from array of pairs, where
 /// the first value in the pair is the node and the second value
 /// is the edge.
-/// @param[in] data List if pairs
-/// @param[in] size The number of edges in the graph. For
-/// example, this can be used to build an adjacency list that
-/// includes 'owned' nodes only.
+/// @param[in] data List of pairs.
+/// @param[in] size Number of edges in the graph. For example, this can
+/// be used to build an adjacency list that includes 'owned' nodes only.
 /// @pre The `data` array must be sorted.
 template <typename U>
 graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 {
-  std::ranges::sort(data);
   auto [unique_end, range_end] = std::ranges::unique(data);
   data.erase(unique_end, range_end);
 
@@ -421,9 +423,11 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
     }
   }
 
+  std::ranges::sort(shared_entities_data);
   const graph::AdjacencyList<int> shared_entities
       = create_adj_list(shared_entities_data, entity_count);
 
+  std::ranges::sort(shared_entity_to_global_vertices_data);
   const graph::AdjacencyList<int> shared_entities_v
       = create_adj_list(shared_entity_to_global_vertices_data, entity_count);
 
@@ -618,22 +622,37 @@ compute_entities_by_key_matching(
     const graph::AdjacencyList<std::int32_t>& cells
         = std::get<1>(cell_lists[k]);
     int num_entities_per_cell = cell_type_entities[k].size();
-    std::vector<std::jthread> threads(num_threads);
-    for (int i = 0; i < num_threads; ++i)
+    if (num_threads > 1)
     {
-      auto [c0, c1]
-          = dolfinx::MPI::local_range(i, cells.num_nodes(), num_threads);
-
-      std::size_t offset
-          = cell_type_offsets[k] * num_vertices_per_entity
-            + c0 * num_vertices_per_entity * num_entities_per_cell;
+      std::vector<std::jthread> threads(num_threads);
+      for (int i = 0; i < num_threads; ++i)
+      {
+        auto [c0, c1]
+            = dolfinx::MPI::local_range(i, cells.num_nodes(), num_threads);
+        auto cells_idx = std::views::iota(c0, c1);
+        std::size_t offset
+            = cell_type_offsets[k] * num_vertices_per_entity
+              + c0 * num_vertices_per_entity * num_entities_per_cell;
+        std::size_t count = cells_idx.size() * num_vertices_per_entity
+                            * num_entities_per_cell;
+        threads[i] = std::jthread(
+            build_entity_list, std::span(entity_list.data() + offset, count),
+            std::span(entity_list_sorted.data() + offset, count), cells_idx,
+            std::cref(cells), std::cref(e_vertices), entity_type,
+            std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
+      }
+    }
+    else
+    {
+      auto cells_idx = std::views::iota(0, cells.num_nodes());
+      std::size_t offset = cell_type_offsets[k] * num_vertices_per_entity;
       std::size_t count
-          = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
-      threads[i] = std::jthread(
-          build_entity_list, std::span(entity_list.data() + offset, count),
-          std::span(entity_list_sorted.data() + offset, count), c0, c1 - c0,
-          std::cref(cells), std::cref(e_vertices), entity_type,
-          std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
+          = cells_idx.size() * num_vertices_per_entity * num_entities_per_cell;
+      build_entity_list(std::span(entity_list.data() + offset, count),
+                        std::span(entity_list_sorted.data() + offset, count),
+                        cells_idx, std::cref(cells), std::cref(e_vertices),
+                        entity_type, std::cref(cell_type_entities[k]),
+                        std::cref(vertex_index_map));
     }
   }
 
@@ -641,10 +660,23 @@ compute_entities_by_key_matching(
   std::vector<std::int32_t> entity_index(cell_type_offsets.back());
   std::int32_t entity_count = 0;
   {
+    common::Timer timer("Compute entities by key matching: number entities");
+
     // Sort the list and label uniquely
-    const std::vector<std::int32_t> sort_order
-        = dolfinx::sort_by_perm<std::int32_t>(entity_list_sorted,
-                                              num_vertices_per_entity);
+    std::vector<std::int32_t> sort_order(
+        entity_list_sorted.size() / num_vertices_per_entity, 0);
+    std::iota(sort_order.begin(), sort_order.end(), 0);
+    boost::sort::parallel_stable_sort(
+        sort_order.begin(), sort_order.end(),
+        [&facets = entity_list_sorted,
+         shape1 = num_vertices_per_entity](auto f0, auto f1)
+        {
+          auto it0 = std::next(facets.begin(), f0 * shape1);
+          auto it1 = std::next(facets.begin(), f1 * shape1);
+          return std::lexicographical_compare(it0, std::next(it0, shape1), it1,
+                                              std::next(it1, shape1));
+        },
+        num_threads);
 
     std::vector<std::int32_t> entity(num_vertices_per_entity);
     std::vector<std::int32_t> entity0(num_vertices_per_entity);
@@ -677,9 +709,9 @@ compute_entities_by_key_matching(
 
   //---------
   // Set ghost status array values
-  // 0 = entities that are only in ghost cells (i.e. definitely
-  // not owned) 1 = entities with local ownership or ownership
-  // that needs deciding
+  // 0 = entities that are only in ghost cells (i.e. definitely not
+  // owned) 1 = entities with local ownership or ownership that needs
+  // deciding
   std::vector<std::int8_t> ghost_status(entity_count, 1);
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
