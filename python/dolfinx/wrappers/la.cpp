@@ -47,21 +47,6 @@ namespace dolfinx_wrappers
 {
 void la(nb::module_& m)
 {
-
-  // Declare objects that are templated over type
-  declare_la_objects<std::int8_t>(m, "int8");
-  declare_la_objects<std::int32_t>(m, "int32");
-  declare_la_objects<std::int64_t>(m, "int64");
-  declare_la_objects<float>(m, "float32");
-  declare_la_objects<double>(m, "float64");
-  declare_la_objects<std::complex<float>>(m, "complex64");
-  declare_la_objects<std::complex<double>>(m, "complex128");
-
-  declare_la_functions<float>(m);
-  declare_la_functions<double>(m);
-  declare_la_functions<std::complex<float>>(m);
-  declare_la_functions<std::complex<double>>(m);
-
   nb::enum_<dolfinx_wrappers::PyInsertMode>(m, "InsertMode")
       .value("add", dolfinx_wrappers::PyInsertMode::add)
       .value("insert", dolfinx_wrappers::PyInsertMode::insert);
@@ -148,5 +133,19 @@ void la(nb::module_& m)
   declare_superlu_dist_solver<float>(m, "float32");
   declare_superlu_dist_solver<std::complex<double>>(m, "complex128");
 #endif // HAS_SUPERLU_DIST
+
+  // Declare objects that are templated over type
+  declare_la_objects<std::int8_t>(m, "int8");
+  declare_la_objects<std::int32_t>(m, "int32");
+  declare_la_objects<std::int64_t>(m, "int64");
+  declare_la_objects<float>(m, "float32");
+  declare_la_objects<double>(m, "float64");
+  declare_la_objects<std::complex<float>>(m, "complex64");
+  declare_la_objects<std::complex<double>>(m, "complex128");
+
+  declare_la_functions<float>(m);
+  declare_la_functions<double>(m);
+  declare_la_functions<std::complex<float>>(m);
+  declare_la_functions<std::complex<double>>(m);
 }
 } // namespace dolfinx_wrappers
