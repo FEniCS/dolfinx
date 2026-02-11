@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "dolfinx_wrappers/io.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
 #include <basix/mdspan.hpp>
@@ -40,168 +41,17 @@ namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 namespace dolfinx_wrappers
 {
-namespace
-{
-template <typename T, std::size_t ndim>
-using mdspan_t = md::mdspan<const T, md::dextents<std::size_t, ndim>>;
-
-template <typename T>
-void xdmf_real_fn(auto&& m)
-{
-  m.def(
-      "write_mesh",
-      [](dolfinx::io::XDMFFile& self, const dolfinx::mesh::Mesh<T>& mesh,
-         const std::string& xpath) { self.write_mesh(mesh, xpath); },
-      nb::arg("mesh"), nb::arg("xpath") = "/Xdmf/Domain");
-  m.def(
-      "write_meshtags",
-      [](dolfinx::io::XDMFFile& self,
-         const dolfinx::mesh::MeshTags<std::int32_t>& meshtags,
-         const dolfinx::mesh::Geometry<T>& x, const std::string& geometry_xpath,
-         const std::string& xpath)
-      { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
-      nb::arg("meshtags"), nb::arg("x"), nb::arg("geometry_xpath"),
-      nb::arg("xpath") = "/Xdmf/Domain");
-}
-
-template <typename T, typename U>
-void xdmf_scalar_fn(auto&& m)
-{
-  m.def(
-      "write_function",
-      [](dolfinx::io::XDMFFile& self, const dolfinx::fem::Function<T, U>& u,
-         double t, const std::string& mesh_xpath)
-      { self.write_function(u, t, mesh_xpath); },
-      nb::arg("u"), nb::arg("t"),
-      nb::arg("mesh_xpath") = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
-}
-
-template <typename T>
-void vtk_real_fn(auto&& m)
-{
-  m.def(
-      "write",
-      [](dolfinx::io::VTKFile& self, const dolfinx::mesh::Mesh<T>& mesh,
-         double t) { self.write(mesh, t); },
-      nb::arg("mesh"), nb::arg("t") = 0);
-}
-
-template <typename T, typename U>
-void vtk_scalar_fn(auto&& m)
-{
-  m.def(
-      "write",
-      [](dolfinx::io::VTKFile& self,
-         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
-             u_ptr,
-         double t)
-      {
-        std::vector<std::reference_wrapper<const dolfinx::fem::Function<T, U>>>
-            u;
-        u.reserve(u_ptr.size());
-        for (auto& q : u_ptr)
-          u.push_back(*q);
-
-        self.write(u, t);
-      },
-      nb::arg("u"), nb::arg("t") = 0);
-}
-
-#ifdef HAS_ADIOS2
-template <typename T>
-void declare_vtx_writer(nb::module_& m, const std::string& type)
-{
-  {
-    std::string pyclass_name = "VTXWriter_" + type;
-    nb::class_<dolfinx::io::VTXWriter<T>>(m, pyclass_name.c_str())
-        .def(
-            "__init__",
-            [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
-               std::filesystem::path filename,
-               std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-               std::string engine)
-            {
-              new (self)
-                  dolfinx::io::VTXWriter<T>(comm.get(), filename, mesh, engine);
-            },
-            nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"),
-            nb::arg("engine"))
-        .def(
-            "__init__",
-            [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
-               std::filesystem::path filename,
-               const std::vector<std::variant<
-                   std::shared_ptr<const dolfinx::fem::Function<float, T>>,
-                   std::shared_ptr<const dolfinx::fem::Function<double, T>>,
-                   std::shared_ptr<
-                       const dolfinx::fem::Function<std::complex<float>, T>>,
-                   std::shared_ptr<const dolfinx::fem::Function<
-                       std::complex<double>, T>>>>& u,
-               const std::string& engine, dolfinx::io::VTXMeshPolicy policy)
-            {
-              new (self) dolfinx::io::VTXWriter<T>(comm.get(), filename, u,
-                                                   engine, policy);
-            },
-            nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
-            nb::arg("engine") = "BPFile",
-            nb::arg("policy") = dolfinx::io::VTXMeshPolicy::update)
-        .def("close", [](dolfinx::io::VTXWriter<T>& self) { self.close(); })
-        .def(
-            "write", [](dolfinx::io::VTXWriter<T>& self, double t)
-            { self.write(t); }, nb::arg("t"));
-  }
-}
-#endif
-
-template <typename T>
-void declare_data_types(nb::module_& m)
-{
-  m.def(
-      "distribute_entity_data",
-      [](const dolfinx::mesh::Topology& topology,
-         nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
-             input_global_indices,
-         std::int64_t num_nodes_g,
-         const dolfinx::fem::ElementDofLayout& cmap_dof_layout,
-         nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> xdofmap,
-         int entity_dim,
-         nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> entities,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
-      {
-        assert(entities.shape(0) == values.size());
-        mdspan_t<const std::int64_t, 2> entities_span(
-            entities.data(), entities.shape(0), entities.shape(1));
-        mdspan_t<const std::int32_t, 2> xdofmap_span(
-            xdofmap.data(), xdofmap.shape(0), xdofmap.shape(1));
-
-        std::span<const std::int64_t> input_global_indices_span(
-            input_global_indices.data(), input_global_indices.size());
-        std::pair<std::vector<std::int32_t>, std::vector<T>> entities_values
-            = dolfinx::io::distribute_entity_data<T>(
-                topology, input_global_indices_span, num_nodes_g,
-                cmap_dof_layout, xdofmap_span, entity_dim, entities_span,
-                std::span(values.data(), values.size()));
-
-        std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
-            dolfinx::mesh::cell_entity_type(topology.cell_type(), entity_dim,
-                                            0),
-            0);
-        return std::pair(
-            as_nbarray(std::move(entities_values.first),
-                       {entities_values.first.size() / num_vert_per_entity,
-                        num_vert_per_entity}),
-            as_nbarray(std::move(entities_values.second)));
-      },
-      nb::arg("topology"), nb::arg("input_global_indices"),
-      nb::arg("num_nodes_g"), nb::arg("cmap_dof_layout"), nb::arg("xdofmap"),
-      nb::arg("entity_dim"), nb::arg("entities"),
-      nb::arg("values").noconvert());
-}
-
-} // namespace
 
 void io(nb::module_& m)
 {
+
+  dolfinx_wrappers::declare_data_types<std::int32_t>(m);
+  dolfinx_wrappers::declare_data_types<std::int64_t>(m);
+  dolfinx_wrappers::declare_data_types<float>(m);
+  dolfinx_wrappers::declare_data_types<std::complex<float>>(m);
+  dolfinx_wrappers::declare_data_types<double>(m);
+  dolfinx_wrappers::declare_data_types<std::complex<double>>(m);
+
   // dolfinx::io::cell vtk cell type converter
   m.def("get_vtk_cell_type", &dolfinx::io::cells::get_vtk_cell_type,
         nb::arg("cell"), nb::arg("dim"), "Get VTK cell identifier");
@@ -211,8 +61,8 @@ void io(nb::module_& m)
       [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
          dolfinx::mesh::CellType cell)
       {
-        mdspan_t<const std::int32_t, 2> _dofmap(dofmap.data(), dofmap.shape(0),
-                                                dofmap.shape(1));
+        dolfinx_wrappers::mdspan_t<const std::int32_t, 2> _dofmap(
+            dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         auto [cells, shape]
             = dolfinx::io::extract_vtk_connectivity(_dofmap, cell);
         return as_nbarray(std::move(cells), shape);
@@ -308,12 +158,12 @@ void io(nb::module_& m)
           "comm", [](dolfinx::io::XDMFFile& self)
           { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
 
-  xdmf_real_fn<float>(xdmf_file);
-  xdmf_real_fn<double>(xdmf_file);
-  xdmf_scalar_fn<float, float>(xdmf_file);
-  xdmf_scalar_fn<double, double>(xdmf_file);
-  xdmf_scalar_fn<std::complex<float>, float>(xdmf_file);
-  xdmf_scalar_fn<std::complex<double>, double>(xdmf_file);
+  dolfinx_wrappers::xdmf_real_fn<float>(xdmf_file);
+  dolfinx_wrappers::xdmf_real_fn<double>(xdmf_file);
+  dolfinx_wrappers::xdmf_scalar_fn<float, float>(xdmf_file);
+  dolfinx_wrappers::xdmf_scalar_fn<double, double>(xdmf_file);
+  dolfinx_wrappers::xdmf_scalar_fn<std::complex<float>, float>(xdmf_file);
+  dolfinx_wrappers::xdmf_scalar_fn<std::complex<double>, double>(xdmf_file);
 
   // dolfinx::io::VTKFile
   nb::class_<dolfinx::io::VTKFile> vtk_file(m, "VTKFile");
@@ -326,27 +176,20 @@ void io(nb::module_& m)
           nb::arg("comm"), nb::arg("filename"), nb::arg("mode"))
       .def("close", &dolfinx::io::VTKFile::close);
 
-  vtk_real_fn<float>(vtk_file);
-  vtk_real_fn<double>(vtk_file);
-  vtk_scalar_fn<float, float>(vtk_file);
-  vtk_scalar_fn<double, double>(vtk_file);
-  vtk_scalar_fn<std::complex<float>, float>(vtk_file);
-  vtk_scalar_fn<std::complex<double>, double>(vtk_file);
+  dolfinx_wrappers::vtk_real_fn<float>(vtk_file);
+  dolfinx_wrappers::vtk_real_fn<double>(vtk_file);
+  dolfinx_wrappers::vtk_scalar_fn<float, float>(vtk_file);
+  dolfinx_wrappers::vtk_scalar_fn<double, double>(vtk_file);
+  dolfinx_wrappers::vtk_scalar_fn<std::complex<float>, float>(vtk_file);
+  dolfinx_wrappers::vtk_scalar_fn<std::complex<double>, double>(vtk_file);
 
 #ifdef HAS_ADIOS2
   nb::enum_<dolfinx::io::VTXMeshPolicy>(m, "VTXMeshPolicy")
       .value("update", dolfinx::io::VTXMeshPolicy::update)
       .value("reuse", dolfinx::io::VTXMeshPolicy::reuse);
 
-  declare_vtx_writer<float>(m, "float32");
-  declare_vtx_writer<double>(m, "float64");
+  dolfinx_wrappers::declare_vtx_writer<float>(m, "float32");
+  dolfinx_wrappers::declare_vtx_writer<double>(m, "float64");
 #endif
-
-  declare_data_types<std::int32_t>(m);
-  declare_data_types<std::int64_t>(m);
-  declare_data_types<float>(m);
-  declare_data_types<std::complex<float>>(m);
-  declare_data_types<double>(m);
-  declare_data_types<std::complex<double>>(m);
 }
 } // namespace dolfinx_wrappers

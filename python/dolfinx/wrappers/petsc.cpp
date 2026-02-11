@@ -6,6 +6,7 @@
 
 #if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
 
+#include "dolfinx_wrappers/petsc.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
 #include "dolfinx_wrappers/caster_petsc.h"
@@ -42,131 +43,7 @@
 
 namespace
 {
-// Declare assembler function that have multiple scalar types
-template <typename T, std::floating_point U>
-void declare_petsc_discrete_operators(nb::module_& m)
-{
-  m.def(
-      "discrete_curl",
-      [](const dolfinx::fem::FunctionSpace<U>& V0,
-         const dolfinx::fem::FunctionSpace<U>& V1)
-      {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
-
-        auto dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        auto dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        MPI_Comm comm = mesh->comm();
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        auto c = std::ranges::views::iota(0, map->size_local());
-        dolfinx::fem::sparsitybuild::cells(sp, std::pair{c, c},
-                                           {*dofmap1, *dofmap0});
-        sp.finalize();
-
-        // Build operator
-        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::discrete_curl<U, T>(
-            V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
-        return A;
-      },
-      nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));
-
-  m.def(
-      "discrete_gradient",
-      [](const dolfinx::fem::FunctionSpace<U>& V0,
-         const dolfinx::fem::FunctionSpace<U>& V1)
-      {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
-
-        auto dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        auto dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        MPI_Comm comm = mesh->comm();
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        auto c = std::ranges::views::iota(0, map->size_local());
-        dolfinx::fem::sparsitybuild::cells(sp, std::pair{c, c},
-                                           {*dofmap1, *dofmap0});
-        sp.finalize();
-
-        // Build operator
-        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::discrete_gradient<T, U>(
-            *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
-            {*V1.element(), *V1.dofmap()},
-            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
-        return A;
-      },
-      nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));
-  m.def(
-      "interpolation_matrix",
-      [](const dolfinx::fem::FunctionSpace<U>& V0,
-         const dolfinx::fem::FunctionSpace<U>& V1)
-      {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
-
-        auto dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        auto dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        MPI_Comm comm = mesh->comm();
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        auto c = std::ranges::views::iota(0, map->size_local());
-        dolfinx::fem::sparsitybuild::cells(sp, std::pair{c, c},
-                                           {*dofmap1, *dofmap0});
-        sp.finalize();
-
-        // Build operator
-        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::interpolation_matrix<T, U>(
-            V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES));
-        return A;
-      },
-      nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));
-}
+namespace nb = nanobind;
 
 void petsc_la_module(nb::module_& m)
 {
@@ -261,6 +138,8 @@ void petsc_la_module(nb::module_& m)
 
 void petsc_fem_module(nb::module_& m)
 {
+  dolfinx_wrappers::declare_petsc_discrete_operators<PetscScalar, PetscReal>(m);
+
   // Create PETSc vectors and matrices
   m.def(
       "create_vector_block",
@@ -398,8 +277,6 @@ void petsc_fem_module(nb::module_& m)
             diagonal);
       },
       nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"));
-
-  declare_petsc_discrete_operators<PetscScalar, PetscReal>(m);
 }
 
 void petsc_nls_module(nb::module_& m)

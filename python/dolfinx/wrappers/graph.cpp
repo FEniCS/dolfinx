@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "dolfinx_wrappers/graph.h"
 #include "dolfinx_wrappers/caster_mpi.h"
 #include <array>
 #include <dolfinx/common/IndexMap.h>
@@ -27,128 +28,29 @@
 
 namespace nb = nanobind;
 
-namespace
-{
-/// Wrap a C++ graph partitioning function as a Python-ready function
-template <typename Functor>
-auto create_partitioner_py(Functor&& p_cpp)
-{
-  return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
-                 const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-                 bool ghosting)
-  { return p_cpp(comm.get(), nparts, local_graph, ghosting); };
-}
-
-template <typename T, typename U>
-void declare_adjacency_list_init(nb::module_& m, std::string type)
-{
-  std::string pyclass_name = std::string("AdjacencyList_") + type;
-  nb::class_<dolfinx::graph::AdjacencyList<T, U>>(m, pyclass_name.c_str(),
-                                                  "Adjacency List")
-      .def(
-          "__init__",
-          [](dolfinx::graph::AdjacencyList<T, U>* a,
-             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> adj)
-          {
-            std::vector<T> data(adj.data(), adj.data() + adj.size());
-            new (a) dolfinx::graph::AdjacencyList<T, U>(
-                dolfinx::graph::regular_adjacency_list<U>(std::move(data), 1));
-          },
-          nb::arg("adj").noconvert())
-      .def(
-          "__init__",
-          [](dolfinx::graph::AdjacencyList<T, U>* a,
-             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> adj)
-          {
-            std::vector<T> data(adj.data(), adj.data() + adj.size());
-            new (a) dolfinx::graph::AdjacencyList<T, U>(
-                dolfinx::graph::regular_adjacency_list<U>(std::move(data),
-                                                          adj.shape(1)));
-          },
-          nb::arg("adj").noconvert())
-      .def(
-          "__init__",
-          [](dolfinx::graph::AdjacencyList<T, U>* a,
-             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> array,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> displ)
-          {
-            std::vector<T> data(array.data(), array.data() + array.size());
-            std::vector<std::int32_t> offsets(displ.data(),
-                                              displ.data() + displ.size());
-            new (a) dolfinx::graph::AdjacencyList<T, U>(std::move(data),
-                                                        std::move(offsets));
-          },
-          nb::arg("data").noconvert(), nb::arg("offsets"))
-      .def(
-          "links",
-          [](const dolfinx::graph::AdjacencyList<T, U>& self, int i)
-          {
-            std::span<const T> link = self.links(i);
-            return nb::ndarray<const T, nb::numpy>(link.data(), {link.size()});
-          },
-          nb::rv_policy::reference_internal, nb::arg("i"),
-          "Links (edges) of a node")
-      .def_prop_ro(
-          "array",
-          [](const dolfinx::graph::AdjacencyList<T, U>& self)
-          {
-            return nb::ndarray<const T, nb::numpy>(self.array().data(),
-                                                   {self.array().size()});
-          },
-          nb::rv_policy::reference_internal)
-      .def_prop_ro(
-          "offsets",
-          [](const dolfinx::graph::AdjacencyList<T, U>& self)
-          {
-            return nb::ndarray<const std::int32_t, nb::numpy>(
-                self.offsets().data(), {self.offsets().size()});
-          },
-          nb::rv_policy::reference_internal)
-      .def_prop_ro("num_nodes", &dolfinx::graph::AdjacencyList<T, U>::num_nodes)
-      .def("__eq__", &dolfinx::graph::AdjacencyList<T, U>::operator==,
-           nb::is_operator())
-      .def("__repr__", &dolfinx::graph::AdjacencyList<T, U>::str)
-      .def("__len__", &dolfinx::graph::AdjacencyList<T, U>::num_nodes);
-}
-
-template <typename T, typename U>
-void declare_adjacency_list(nb::module_& m, std::string type)
-{
-  std::string pyclass_name = std::string("AdjacencyList_") + type;
-  nb::class_<dolfinx::graph::AdjacencyList<T, U>>(m, pyclass_name.c_str(),
-                                                  "Adjacency List")
-      .def_prop_ro(
-          "offsets",
-          [](const dolfinx::graph::AdjacencyList<T, U>& self)
-          {
-            return nb::ndarray<const std::int32_t, nb::numpy>(
-                self.offsets().data(), {self.offsets().size()});
-          },
-          nb::rv_policy::reference_internal)
-      .def_prop_ro("num_nodes", &dolfinx::graph::AdjacencyList<T, U>::num_nodes)
-      .def("__eq__", &dolfinx::graph::AdjacencyList<T, U>::operator==,
-           nb::is_operator())
-      .def("__len__", &dolfinx::graph::AdjacencyList<T, U>::num_nodes);
-}
-} // namespace
-
 namespace dolfinx_wrappers
 {
 void graph(nb::module_& m)
 {
-  declare_adjacency_list_init<std::int32_t, std::nullptr_t>(m, "int32");
-  declare_adjacency_list_init<std::int64_t, std::nullptr_t>(m, "int64");
-  declare_adjacency_list<std::tuple<int, std::size_t, std::int8_t>,
-                         std::pair<std::int32_t, std::int32_t>>(
-      m, "int_sizet_int8__int32_int32");
+  dolfinx_wrappers::declare_adjacency_list_init<std::int32_t, std::nullptr_t>(
+      m, "int32");
+  dolfinx_wrappers::declare_adjacency_list_init<std::int64_t, std::nullptr_t>(
+      m, "int64");
+  dolfinx_wrappers::declare_adjacency_list<
+      std::tuple<int, std::size_t, std::int8_t>,
+      std::pair<std::int32_t, std::int32_t>>(m, "int_sizet_int8__int32_int32");
 
   using partition_fn
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&, bool)>;
   m.def(
-      "partitioner", []() -> partition_fn
-      { return create_partitioner_py(dolfinx::graph::partition_graph); },
+      "partitioner",
+      []() -> partition_fn
+      {
+        return dolfinx_wrappers::create_partitioner_py(
+            dolfinx::graph::partition_graph);
+      },
       "Default graph partitioner");
 
 #ifdef HAS_PTSCOTCH
@@ -156,8 +58,9 @@ void graph(nb::module_& m)
       "partitioner_scotch",
       [](double imbalance, int seed) -> partition_fn
       {
-        return create_partitioner_py(dolfinx::graph::scotch::partitioner(
-            dolfinx::graph::scotch::strategy::none, imbalance, seed));
+        return dolfinx_wrappers::create_partitioner_py(
+            dolfinx::graph::scotch::partitioner(
+                dolfinx::graph::scotch::strategy::none, imbalance, seed));
       },
       nb::arg("imbalance") = 0.025, nb::arg("seed") = 0,
       "SCOTCH graph partitioner");
@@ -167,7 +70,7 @@ void graph(nb::module_& m)
       "partitioner_parmetis",
       [](double imbalance, std::array<int, 3> options) -> partition_fn
       {
-        return create_partitioner_py(
+        return dolfinx_wrappers::create_partitioner_py(
             dolfinx::graph::parmetis::partitioner(imbalance, options));
       },
       nb::arg("imbalance") = 1.02,
@@ -180,8 +83,9 @@ void graph(nb::module_& m)
       [](int mode = 1, int seed = 1, double imbalance = 0.03,
          bool suppress_output = true) -> partition_fn
       {
-        return create_partitioner_py(dolfinx::graph::kahip::partitioner(
-            mode, seed, imbalance, suppress_output));
+        return dolfinx_wrappers::create_partitioner_py(
+            dolfinx::graph::kahip::partitioner(mode, seed, imbalance,
+                                               suppress_output));
       },
       nb::arg("mode") = 1, nb::arg("seed") = 1, nb::arg("imbalance") = 0.03,
       nb::arg("suppress_output") = true, "KaHIP graph partitioner");
