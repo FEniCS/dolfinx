@@ -14,31 +14,66 @@
 namespace dolfinx_wrappers
 {
 
-/// @brief Return NumPy dtype char type for a C++ type
-/// @tparam T C++ type
-/// @return NumPy dtype
+// Primary template: unimplemented (will cause compile error if not specialized)
+template <typename T>
+struct numpy_dtype_traits;
+
+// Built-in specializations
+template <>
+struct numpy_dtype_traits<float>
+{
+  static constexpr char value = 'f';
+};
+template <>
+struct numpy_dtype_traits<double>
+{
+  static constexpr char value = 'd';
+};
+template <>
+struct numpy_dtype_traits<std::complex<float>>
+{
+  static constexpr char value = 'F';
+};
+template <>
+struct numpy_dtype_traits<std::complex<double>>
+{
+  static constexpr char value = 'D';
+};
+template <>
+struct numpy_dtype_traits<std::int8_t>
+{
+  static constexpr char value = 'b';
+};
+template <>
+struct numpy_dtype_traits<std::uint8_t>
+{
+  static constexpr char value = 'B';
+};
+template <>
+struct numpy_dtype_traits<std::int32_t>
+{
+  static constexpr char value = 'i';
+};
+template <>
+struct numpy_dtype_traits<std::uint32_t>
+{
+  static constexpr char value = 'I';
+};
+template <>
+struct numpy_dtype_traits<std::int64_t>
+{
+  static constexpr char value = 'l';
+};
+template <>
+struct numpy_dtype_traits<std::uint64_t>
+{
+  static constexpr char value = 'L';
+};
+
 template <typename T>
 constexpr char numpy_dtype()
 {
-  if constexpr (std::is_same_v<T, float>)
-    return 'f';
-  else if constexpr (std::is_same_v<T, double>)
-    return 'd';
-  else if constexpr (std::is_same_v<T, std::complex<float>>)
-    return 'F';
-  else if constexpr (std::is_same_v<T, std::complex<double>>)
-    return 'D';
-  else if constexpr (std::is_same_v<T, std::int8_t>)
-    return 'b';
-  else if constexpr (std::is_same_v<T, std::uint8_t>)
-    return 'B';
-  else if constexpr (std::is_same_v<T, std::int32_t>)
-    return 'i';
-  else if constexpr (std::is_same_v<T, std::uint32_t>)
-    return 'I';
-  else if constexpr (std::is_same_v<T, std::int64_t>)
-    return 'l';
-  else if constexpr (std::is_same_v<T, std::uint64_t>)
-    return 'L';
+  return numpy_dtype_traits<T>::value;
 }
+
 } // namespace dolfinx_wrappers

@@ -185,10 +185,3 @@ endif()
 set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 install(TARGETS cpp DESTINATION dolfinx)
-
-# Install wrapper headers for users creating custom wrappers
-install(
-  DIRECTORY dolfinx/wrappers/dolfinx_wrappers/
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/include/dolfinx_wrappers
-  FILES_MATCHING PATTERN "*.h"
-)
