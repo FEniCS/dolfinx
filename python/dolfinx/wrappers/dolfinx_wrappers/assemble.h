@@ -577,5 +577,4 @@ void declare_assembly_functions(nanobind::module_& m)
       "Modify vector for lifted boundary conditions");
 }
 
-
 } // namespace dolfinx_wrappers

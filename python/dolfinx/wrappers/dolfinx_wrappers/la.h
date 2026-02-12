@@ -39,7 +39,8 @@ enum class PyInsertMode : std::uint8_t
 
 /// Declare linear algebra objects (Vector, MatrixCSR) for a given scalar type
 /// @param m The nanobind module
-/// @param type String representation of the scalar type (e.g., "float64", "complex128")
+/// @param type String representation of the scalar type (e.g., "float64",
+/// "complex128")
 template <typename T>
 void declare_la_objects(nanobind::module_& m, const std::string& type)
 {
@@ -174,7 +175,8 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
       .def("scatter_rev_end", &dolfinx::la::MatrixCSR<T>::scatter_rev_end);
 }
 
-/// Declare linear algebra functions (norm, inner_product, orthonormalize) for a given scalar type
+/// Declare linear algebra functions (norm, inner_product, orthonormalize) for a
+/// given scalar type
 /// @param m The nanobind module
 template <typename T>
 void declare_la_functions(nanobind::module_& m)
@@ -218,7 +220,8 @@ void declare_la_functions(nanobind::module_& m)
 #if defined(HAS_SUPERLU_DIST)
 /// Declare SuperLU_DIST matrix wrapper for a given scalar type
 /// @param m The nanobind module
-/// @param type String representation of the scalar type (e.g., "float64", "complex128")
+/// @param type String representation of the scalar type (e.g., "float64",
+/// "complex128")
 template <typename T>
 void declare_superlu_dist_matrix(nanobind::module_& m, const std::string& type)
 {
@@ -241,7 +244,8 @@ void declare_superlu_dist_matrix(nanobind::module_& m, const std::string& type)
 
 /// Declare SuperLU_DIST solver wrapper for a given scalar type
 /// @param m The nanobind module
-/// @param type String representation of the scalar type (e.g., "float64", "complex128")
+/// @param type String representation of the scalar type (e.g., "float64",
+/// "complex128")
 template <typename T>
 void declare_superlu_dist_solver(nanobind::module_& m, const std::string& type)
 {

@@ -17,7 +17,8 @@ namespace dolfinx_wrappers
 {
 
 template <typename T>
-void declare_scatter_functions(nanobind::class_<dolfinx::common::Scatterer<>>& sc)
+void declare_scatter_functions(
+    nanobind::class_<dolfinx::common::Scatterer<>>& sc)
 {
   namespace nb = nanobind;
 
