@@ -1245,5 +1245,4 @@ void declare_real_functions(nb::module_& m)
       nb::arg("cells"), nb ::arg("padding"));
 }
 
-
 } // namespace dolfinx_wrappers
