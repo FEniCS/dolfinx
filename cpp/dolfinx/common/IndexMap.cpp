@@ -968,7 +968,10 @@ void IndexMap::global_to_local(std::span<const std::int64_t> global,
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local(
       _ghosts.size());
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    global_to_local[i] = {_ghosts[i], i + local_size};
+  {
+    global_to_local[i]
+        = {_ghosts[i], static_cast<std::int32_t>(i + local_size)};
+  }
 
   std::ranges::sort(global_to_local);
   std::ranges::transform(
