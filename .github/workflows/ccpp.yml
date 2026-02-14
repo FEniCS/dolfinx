@@ -129,7 +129,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" -Cbuild.verbose=true 'python/[test]'
+          pip install --verbose --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" -Cbuild.verbose=true 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
       - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
@@ -241,7 +241,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" -Cbuild.verbose=true 'python/[test]'
+          pip install --verbose --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" -Cbuild.verbose=true 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
       - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba

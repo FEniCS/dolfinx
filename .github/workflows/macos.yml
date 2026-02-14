@@ -124,7 +124,7 @@ jobs:
           pip install pyamg pybind11>=2.8.0 setuptools_scm[toml]==8.3.0
           pip install scikit-build-core
           python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" -Cbuild.verbose=true './[test]'
+          pip install --verbose --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" -Cbuild.verbose=true './[test]'
 
       - name: Basic test
         run: |
