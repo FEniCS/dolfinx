@@ -50,12 +50,12 @@ jobs:
           ref: develop
           path: spack-packages
 
-      - name: Get FEniCS Spack packages
-        uses: actions/checkout@v6
-        with:
-          repository: fenics/spack-fenics
-          ref: main
-          path: spack-fenics
+      # - name: Get FEniCS Spack packages
+      #   uses: actions/checkout@v6
+      #   with:
+      #     repository: fenics/spack-fenics
+      #     ref: main
+      #     path: spack-fenics
 
       - name: Add Spack packages repo
         run: |
@@ -78,8 +78,8 @@ jobs:
       - name: Add dependencies to environment
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack -e py add mpi petsc+mpi+shared+mumps+superlu-dist slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
-          spack -e py add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
+          spack -e py add mpich petsc+mpi+shared+mumps+superlu-dist slepc parmetis pkgconfig hdf5+mpi boost pugixml spdlog
+          spack -e py add python@3.14 py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
           spack -e py add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
           spack -e py add openblas
 
