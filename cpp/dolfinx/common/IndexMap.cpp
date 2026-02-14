@@ -110,7 +110,7 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
 
     // Count number of ghosts per dest
     std::ranges::transform(send_data, std::back_inserter(send_sizes),
-                           [](auto& d) { return d.size(); });
+                           [](auto& d) -> std::int32_t { return d.size(); });
 
     // Send how many indices I ghost to each owner, and receive how many
     // of my indices other ranks ghost
@@ -1020,9 +1020,6 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
       = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src, tag);
   std::ranges::sort(dest);
 
-  // Array (local idx, ghosting rank) pairs for owned indices
-  std::vector<std::pair<std::int32_t, int>> idx_to_rank;
-
   // 1. Build adjacency list data for owned indices (index, [sharing
   //    ranks])
   std::vector<std::int32_t> offsets{0};
@@ -1085,9 +1082,10 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
     dolfinx::MPI::check_error(_comm.comm(), ierr);
 
     // Build array of (local index, ghosting local rank), and sort
+    std::vector<std::pair<std::int32_t, int>> idx_to_rank;
     for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
       for (int j = recv_disp[r]; j < recv_disp[r + 1]; ++j)
-        idx_to_rank.push_back({recv_buffer[j] - offset, r});
+        idx_to_rank.push_back({recv_buffer[j] - offset, static_cast<int>(r)});
     std::ranges::sort(idx_to_rank);
 
     // -- Send to ranks that ghost my indices all the sharing ranks
