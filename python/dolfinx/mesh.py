@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import typing
 from collections.abc import Callable, Sequence
+from functools import singledispatch
 
 from mpi4py import MPI as _MPI
 
@@ -28,7 +29,6 @@ from dolfinx.cpp.mesh import (
     GhostMode,
     build_dual_graph,
     cell_dim,
-    create_cell_partitioner,
     to_string,
     to_type,
 )
@@ -80,6 +80,43 @@ __all__ = [
     "transfer_meshtag",
     "uniform_refine",
 ]
+
+
+@singledispatch
+def create_cell_partitioner(
+    part: Callable, mode: GhostMode, max_facet_to_cell_links: int
+) -> Callable:
+    """Create a function to partition a mesh.
+
+    Args:
+        part: Partition function.
+        mode: Ghosting mode to use.
+        max_facet_to_cell_links: Maximum number of cells connected to a
+            facet. Equal to 2 for non-branching manifold meshes.
+            ``None`` corresponds to no upper bound on the number of
+            possible connections.
+
+    Return:
+        Partitioning function.
+    """
+    return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links)
+
+
+@create_cell_partitioner.register(GhostMode)
+def _(mode: GhostMode, max_facet_to_cell_links: int) -> Callable:
+    """Create a function to partition a mesh.
+
+    Args:
+        mode: Ghosting mode to use
+        max_facet_to_cell_links: Maximum number of cells connected to a
+            facet. Equal to 2 for non-branching manifold meshes.
+            ``None`` corresponds to no upper bound on the number of
+            possible connections.
+
+    Return:
+        Partitioning function.
+    """
+    return _cpp.mesh.create_cell_partitioner(mode, max_facet_to_cell_links)
 
 
 class Topology:
@@ -749,7 +786,7 @@ def create_mesh(
         A mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = create_cell_partitioner(GhostMode.none)
+        partitioner = create_cell_partitioner(GhostMode.none, 2)  # type: ignore
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:
@@ -934,7 +971,7 @@ def create_interval(
         An interval mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1011,7 +1048,7 @@ def create_rectangle(
         A mesh of a rectangle.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1100,7 +1137,7 @@ def create_box(
         A mesh of a box domain.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
