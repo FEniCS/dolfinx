@@ -139,7 +139,7 @@ void test_distributed_mesh(const mesh::CellPartitionFunction& partitioner)
 
   // Build mesh
   mesh::Mesh mesh = mesh::create_mesh(comm, subset_comm, cells, cmap, comm, x,
-                                      xshape, partitioner);
+                                      xshape, partitioner, 2);
   auto t = mesh.topology();
   int tdim = t->dim();
   CHECK(t->index_map(tdim)->size_global() == 2 * N * N);
@@ -161,11 +161,11 @@ TEST_CASE("Create box", "[create_box]")
 {
 #ifdef HAS_PTSCOTCH
   CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::scotch::partitioner())));
+      mesh::GhostMode::none, graph::scotch::partitioner(), 2)));
 #endif
 #ifdef HAS_PARMETIS
   CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::parmetis::partitioner())));
+      mesh::GhostMode::none, graph::parmetis::partitioner(), 2)));
 #endif
   // #ifdef HAS_KAHIP
   //   CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
@@ -183,14 +183,14 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 
 #ifdef HAS_PTSCOTCH
   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::scotch::partitioner())));
+      mesh::GhostMode::none, graph::scotch::partitioner(), 2)));
 #endif
 #ifdef HAS_PARMETIS
   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::parmetis::partitioner())));
+      mesh::GhostMode::none, graph::parmetis::partitioner(), 2)));
 #endif
 #ifdef HAS_KAHIP
   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::kahip::partitioner(1, 1, 0.03, false))));
+      mesh::GhostMode::none, graph::kahip::partitioner(1, 1, 0.03, false), 2)));
 #endif
 }
