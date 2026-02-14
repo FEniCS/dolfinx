@@ -90,8 +90,10 @@ def test_dofmap_prism_mesh():
     # All vertices are on boundary
     boundary_vertices = [0, 1, 2, 3, 4, 5]
 
-    topology = create_topology(
-        MPI.COMM_SELF, [CellType.prism], cells, orig_index, ghost_owners, boundary_vertices
+    topology = Topology(
+        create_topology(
+            MPI.COMM_SELF, [CellType.prism], cells, orig_index, ghost_owners, boundary_vertices
+        )
     )
     topology.create_entities(2)
 
@@ -112,8 +114,8 @@ def test_dofmap_prism_mesh():
     )
 
     set_log_level(LogLevel.INFO)
-    geom = create_geometry(topology, [prism._cpp_object], nodes, xdofs, x.flatten(), 3)
-    mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
+    geom = create_geometry(topology._cpp_object, [prism._cpp_object], nodes, xdofs, x.flatten(), 3)
+    mesh = Mesh_float64(MPI.COMM_WORLD, topology._cpp_object, geom)
 
     elements, dofmaps = create_element_dofmap(mesh, [basix.CellType.prism], 2)
     assert len(elements) == 1

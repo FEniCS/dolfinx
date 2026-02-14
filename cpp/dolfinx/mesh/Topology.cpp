@@ -744,7 +744,8 @@ Topology::Topology(
     std::shared_ptr<const common::IndexMap> vertex_map,
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
     std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
-    const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
+    const std::optional<std::vector<std::vector<std::int64_t>>>& original_index,
+    int num_threads)
     : original_cell_index(original_index
                               ? *original_index
                               : std::vector<std::vector<std::int64_t>>()),
@@ -777,7 +778,7 @@ Topology::Topology(
   if (tdim == 1)
   {
     auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(*this, 0, CellType::point);
+        = compute_entities(*this, 0, CellType::point, num_threads);
     std::ranges::sort(interprocess_entities);
     _interprocess_facets.push_back(std::move(interprocess_entities));
   }
@@ -898,7 +899,7 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
   return this->interprocess_facets(0);
 }
 //-----------------------------------------------------------------------------
-bool Topology::create_entities(int dim)
+bool Topology::create_entities(int dim, int num_threads)
 {
   // TODO: is this check sufficient/correct? Does not catch the
   // cell_entity entity case. Should there also be a check for
@@ -927,7 +928,7 @@ bool Topology::create_entities(int dim)
 
     // Create local entities
     auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(*this, dim, *entity);
+        = compute_entities(*this, dim, *entity, num_threads);
     for (std::size_t k = 0; k < cell_entity.size(); ++k)
     {
       if (cell_entity[k])
