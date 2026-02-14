@@ -110,8 +110,9 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip -v install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+          python -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
 
       - name: Configure and build C++
         run: |
