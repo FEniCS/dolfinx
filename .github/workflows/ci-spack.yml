@@ -50,18 +50,10 @@ jobs:
           ref: develop
           path: spack-packages
 
-      # - name: Get FEniCS Spack packages
-      #   uses: actions/checkout@v6
-      #   with:
-      #     repository: fenics/spack-fenics
-      #     ref: main
-      #     path: spack-fenics
-
       - name: Add Spack packages repo
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack repo add --name builtin $GITHUB_WORKSPACE/spack-packages/repos/spack_repo/builtin
-          # spack repo add --name fenics $GITHUB_WORKSPACE/spack-fenics/spack_repo/fenics
           spack config get repos
           spack repo list
 
