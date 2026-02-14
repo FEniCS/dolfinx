@@ -34,7 +34,6 @@ demo = [
   "numba",
   "matplotlib",
   "scipy",
-  "pyamg",
   "pyvista",
 ]
 docs = [
@@ -50,7 +49,7 @@ docs = [
       "fenics-dolfinx[demo]",
 ]
 lint = ["ruff>=0.2.0"]
-optional = ["numba", "pyamg"]
+optional = ["numba"]
 petsc4py = ["petsc4py"]
 test = [
       "matplotlib",
@@ -125,7 +124,7 @@ allowed-confusables = ["σ", "ρ"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
-known-third-party = ["gmsh", "numba", "numpy", "pytest", "pyvista", "pyamg"]
+known-third-party = ["gmsh", "numba", "numpy", "pytest", "pyvista"]
 section-order = [
       "future",
       "standard-library",
