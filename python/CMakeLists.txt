@@ -130,13 +130,14 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
 endif()
 
 target_compile_options(
-  cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_FLAGS}>
+  cpp PRIVATE ${DOLFINX_PY_CXX_DEVELOPER_FLAGS}
+  #$<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_FLAGS}>
 )
 target_compile_definitions(
   cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS}>
 )
 
-target_compile_definitions(cpp PRIVATE cxx_std_20)
+# target_compile_definitions(cpp PRIVATE cxx_std_20)
 
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
@@ -144,7 +145,37 @@ if(ENABLE_CLANG_TIDY)
 endif()
 
 # Add DOLFINx libraries
-target_link_libraries(cpp PRIVATE dolfinx)
+# get_target_property(DOLFINX_INCLUDES dolfinx INTERFACE_INCLUDE_DIRECTORIES) 
+
+# get_target_property(DOLFINX_SYSTEM_INCLUDES dolfinx INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
+# get_target_property(DOLFINX_LIBS dolfinx INTERFACE_LINK_LIBRARIES)
+# get_target_property(DOLFINX_DEFINITIONS dolfinx INTERFACE_COMPILE_DEFINITIONS)
+# get_target_property(DOLFINX_INCLUDES dolfinx INTERFACE_INCLUDE_DIRECTORIES)
+
+get_target_property(DOLFINX_INCLUDES dolfinx INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(DOLFINX_SYSTEM_INCLUDES dolfinx INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
+get_target_property(DOLFINX_LIBS dolfinx INTERFACE_LINK_LIBRARIES)
+get_target_property(DOLFINX_DEFINITIONS dolfinx INTERFACE_COMPILE_DEFINITIONS)
+# get_target_property(DOLFINX_OPTIONS dolfinx INTERFACE_COMPILE_OPTIONS)
+
+target_compile_definitions(cpp PRIVATE ${DOLFINX_DEFINITIONS})
+# target_compile_options(cpp PRIVATE ${DOLFINX_OPTIONS})
+
+target_include_directories(cpp PRIVATE
+    ${DOLFINX_INCLUDES}
+    ${DOLFINX_SYSTEM_INCLUDES}
+)
+
+target_link_libraries(cpp PRIVATE ${DOLFINX_LIBS})
+
+# Add regular includes (non-system) from dolfinx
+# message("Adding ${DOLFINX_INCLUDES}")
+# if(DOLFINX_INCLUDES)
+#   target_include_directories(cpp PRIVATE ${DOLFINX_INCLUDES})
+# endif()
+
+# target_link_libraries(cpp PRIVATE dolfinx)
+
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
 if(WIN32)
