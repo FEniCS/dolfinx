@@ -111,7 +111,7 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip -v install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install -Ccmake.define.CMAKE_INSTALL_RPATH_USE_LINK_PATH=on git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
           python -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
 
