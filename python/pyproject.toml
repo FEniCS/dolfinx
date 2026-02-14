@@ -34,7 +34,6 @@ demo = [
   "numba",
   "matplotlib",
   "scipy",
-  "pyamg",
   "pyvista",
 ]
 docs = [
