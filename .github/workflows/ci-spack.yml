@@ -81,6 +81,7 @@ jobs:
           spack -e py add mpi petsc+mpi+shared+mumps+superlu-dist slepc parmetis pkgconfig python hdf5+mpi boost pugixml spdlog
           spack -e py add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
           spack -e py add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
+          spack -e py add openblas
 
       - if: matrix.compiler == 'oneapi'
         name: Add oneAPI compilers to environment
