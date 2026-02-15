@@ -726,7 +726,7 @@ common::stack_index_maps(
 
       // Count number of ghosts per dest
       std::ranges::transform(ghost_by_rank, std::back_inserter(send_sizes),
-                             [](auto& g) { return g.size(); });
+                             [](auto& g) -> std::int64_t { return g.size(); });
 
       // Send buffer and ghost position to send buffer position
       for (auto& g : ghost_by_rank)
@@ -1086,8 +1086,14 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
 
     // Build array of (local index, ghosting local rank), and sort
     for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
+    {
       for (int j = recv_disp[r]; j < recv_disp[r + 1]; ++j)
-        idx_to_rank.push_back({recv_buffer[j] - offset, static_cast<int>(r)});
+      {
+        idx_to_rank.push_back(
+            {static_cast<std::int32_t>(recv_buffer[j] - offset),
+             static_cast<int>(r)});
+      }
+    }
     std::ranges::sort(idx_to_rank);
 
     // -- Send to ranks that ghost my indices all the sharing ranks
@@ -1187,7 +1193,10 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
       std::vector<std::pair<std::int64_t, std::int32_t>> idx_to_pos;
       idx_to_pos.reserve(2 * _ghosts.size());
       for (auto idx : _ghosts)
-        idx_to_pos.push_back({idx, idx_to_pos.size()});
+      {
+        idx_to_pos.push_back(
+            {idx, static_cast<std::int32_t>(idx_to_pos.size())});
+      }
       std::ranges::sort(idx_to_pos);
 
       // Build list of (local ghost position, sharing rank) pairs from
