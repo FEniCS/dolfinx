@@ -64,9 +64,9 @@ public:
   //              and std::is_convertible_v<std::remove_cvref_t<V>,
   //                                        std::vector<std::int32_t>>
   AdjacencyList(W&& data, V&& offsets)
-      : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
+      : _array(std::forward<W>(data)), _offsets(std::forward<V>(offsets))
   {
-    _array.reserve(_offsets.back());
+    // _array.reserve(_offsets.back());
     assert(_offsets.back() == (std::int32_t)_array.size());
   }
 
@@ -86,12 +86,15 @@ public:
   //              and std::is_convertible_v<std::remove_cvref_t<W>,
   //                                        std::vector<NodeData>>
   AdjacencyList(X&& data, V&& offsets, W&& node_data)
-      : _array(std::forward<X>(data)), _offsets(std::forward<V>(offsets)),
+      // : _array(std::forward<X>(data)),
+      : _array(data),
+        //
+        _offsets(std::forward<V>(offsets)),
         _node_data(std::forward<W>(node_data))
   {
     assert(_node_data.has_value()
            and _node_data->size() == _offsets.size() - 1);
-    _array.reserve(_offsets.back());
+    // _array.reserve(_offsets.back());
     assert(_offsets.back() == (std::int32_t)_array.size());
   }
 
