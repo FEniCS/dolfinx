@@ -726,7 +726,7 @@ common::stack_index_maps(
 
       // Count number of ghosts per dest
       std::ranges::transform(ghost_by_rank, std::back_inserter(send_sizes),
-                             [](auto& g) -> std::int64_t { return g.size(); });
+                             [](auto& g) -> std::int32_t { return g.size(); });
 
       // Send buffer and ghost position to send buffer position
       for (auto& g : ghost_by_rank)
@@ -1151,7 +1151,7 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
 
       // Count number of ghosts per destination and build send buffer
       std::ranges::transform(dest_idx_to_rank, std::back_inserter(send_sizes),
-                             [](auto& x) { return x.size(); });
+                             [](auto& x) -> { return x.size(); });
       for (auto& d : dest_idx_to_rank)
         send_buffer.insert(send_buffer.end(), d.begin(), d.end());
 

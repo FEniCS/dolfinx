@@ -1135,7 +1135,7 @@ Topology mesh::create_topology(
     // Create index maps for each cell type
     index_map_c.push_back(std::make_shared<common::IndexMap>(
         comm, num_local_cells[i], cell_ghost_indices[i], ghost_owners[i],
-        static_cast<int>(dolfinx::MPI::tag::consensus_nbx) + i));
+        static_cast<int>(dolfinx::MPI::tag::consensus_nbx + i)));
   }
 
   // Send and receive  ((input vertex index) -> (new global index, owner
