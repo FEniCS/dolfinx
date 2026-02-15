@@ -135,9 +135,10 @@ private:
 /// @note Entities that do not exist on this rank are ignored.
 /// @warning `entities` must not contain duplicate entities.
 template <typename T>
-MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
-                            const graph::AdjacencyList<std::vector<std::int32_t>>& entities,
-                            std::span<const T> values)
+MeshTags<T>
+create_meshtags(std::shared_ptr<const Topology> topology, int dim,
+                const graph::AdjacencyList<std::vector<std::int32_t>>& entities,
+                std::span<const T> values)
 {
   spdlog::info(
       "Building MeshTags object from tagged entities (defined by vertices).");

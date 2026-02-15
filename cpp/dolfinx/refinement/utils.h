@@ -273,7 +273,8 @@ create_new_vertices(MPI_Comm comm,
     offset[m + 1] = 1;
   std::partial_sum(offset.begin(), offset.end(), offset.begin());
 
-  graph::AdjacencyList<std::vector<std::int64_t>> local_edge_to_new_vertex_adj(data, offset);
+  graph::AdjacencyList<std::vector<std::int64_t>> local_edge_to_new_vertex_adj(
+      data, offset);
   return {std::move(local_edge_to_new_vertex_adj), std::move(new_vertex_coords),
           xshape};
 }

@@ -128,7 +128,8 @@ get_simplices(std::span<const std::int64_t> indices,
 
 /// Propagate edge markers according to rules (longest edge of each
 /// face must be marked, if any edge of face is marked)
-void enforce_rules(MPI_Comm comm, const graph::AdjacencyList<std::vector<int>>& shared_edges,
+void enforce_rules(MPI_Comm comm,
+                   const graph::AdjacencyList<std::vector<int>>& shared_edges,
                    std::span<std::int8_t> marked_edges,
                    const mesh::Topology& topology,
                    std::span<const std::int32_t> long_edge);
@@ -478,7 +479,8 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
     throw std::runtime_error("Edges must be initialised");
 
   // Get sharing ranks for each edge
-  graph::AdjacencyList<std::vector<int>> edge_ranks = map_e->index_to_dest_ranks();
+  graph::AdjacencyList<std::vector<int>> edge_ranks
+      = map_e->index_to_dest_ranks();
 
   // Create unique list of ranks that share edges (owners of ghosts plus
   // ranks that ghost owned indices)

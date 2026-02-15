@@ -236,8 +236,8 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
   offset_child.front() = 0;
   std::partial_sum(count_child.begin(), count_child.end(),
                    std::next(offset_child.begin()));
-  graph::AdjacencyList<std::vector<std::int32_t>> p_to_c_facet(std::move(child_facet),
-                                                  std::move(offset_child));
+  graph::AdjacencyList<std::vector<std::int32_t>> p_to_c_facet(
+      std::move(child_facet), std::move(offset_child));
 
   // Copy facet meshtag from parent to child
   std::vector<std::int32_t> facet_indices, tag_values;

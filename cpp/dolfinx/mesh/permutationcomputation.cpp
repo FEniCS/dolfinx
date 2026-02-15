@@ -134,8 +134,12 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
     cell_face_types[i] = mesh::cell_facet_type(cell_type, i);
 
   // Connectivity for each face type
-  std::vector<std::shared_ptr<const graph::AdjacencyList<std::vector<std::int32_t>>>> c_to_f;
-  std::vector<std::shared_ptr<const graph::AdjacencyList<std::vector<std::int32_t>>>> f_to_v;
+  std::vector<
+      std::shared_ptr<const graph::AdjacencyList<std::vector<std::int32_t>>>>
+      c_to_f;
+  std::vector<
+      std::shared_ptr<const graph::AdjacencyList<std::vector<std::int32_t>>>>
+      f_to_v;
 
   // Create mapping for each face type to cell-local face index
   int tdim = topology.dim();

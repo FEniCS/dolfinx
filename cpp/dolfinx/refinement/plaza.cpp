@@ -183,11 +183,10 @@ get_tetrahedra(std::span<const std::int64_t> indices,
 } // namespace
 
 //-----------------------------------------------------------------------------
-void plaza::impl::enforce_rules(MPI_Comm comm,
-                                const graph::AdjacencyList<std::vector<int>>& shared_edges,
-                                std::span<std::int8_t> marked_edges,
-                                const mesh::Topology& topology,
-                                std::span<const std::int32_t> long_edge)
+void plaza::impl::enforce_rules(
+    MPI_Comm comm, const graph::AdjacencyList<std::vector<int>>& shared_edges,
+    std::span<std::int8_t> marked_edges, const mesh::Topology& topology,
+    std::span<const std::int32_t> long_edge)
 {
   common::Timer t0("PLAZA: Enforce rules");
 

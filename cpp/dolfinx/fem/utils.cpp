@@ -189,8 +189,9 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   }
 
   auto get_connectivities = [tdim, &topology](int entity_dim)
-      -> std::pair<std::shared_ptr<const graph::AdjacencyList<std::vector<int>>>,
-                   std::shared_ptr<const graph::AdjacencyList<std::vector<int>>>>
+      -> std::pair<
+          std::shared_ptr<const graph::AdjacencyList<std::vector<int>>>,
+          std::shared_ptr<const graph::AdjacencyList<std::vector<int>>>>
   {
     auto e_to_c = topology.connectivity(entity_dim, tdim);
     if (!e_to_c)

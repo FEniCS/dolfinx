@@ -206,9 +206,10 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// points, should not be included.
 /// @return Destination ranks for each cell on this process.
 /// @note Cells can have multiple destination ranks, when ghosted.
-using CellPartitionFunction = std::function<graph::AdjacencyList<std::vector<std::int32_t>>(
-    MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
-    const std::vector<std::span<const std::int64_t>>& cells)>;
+using CellPartitionFunction
+    = std::function<graph::AdjacencyList<std::vector<std::int32_t>>(
+        MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
+        const std::vector<std::span<const std::int64_t>>& cells)>;
 
 /// @brief Function that reorders (locally) cells that
 /// are owned by this process. It takes the local mesh dual graph as an

@@ -61,15 +61,16 @@ mesh::CellType mesh::to_type(const std::string& cell)
     throw std::runtime_error("Unknown cell type (" + cell + ")");
 }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::vector<int>> mesh::get_entity_vertices(CellType type, int dim)
+graph::AdjacencyList<std::vector<int>> mesh::get_entity_vertices(CellType type,
+                                                                 int dim)
 {
   std::vector<std::vector<int>> topology
       = basix::cell::topology(cell_type_to_basix_type(type))[dim];
   return graph::AdjacencyList<std::vector<int>>(topology);
 }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::vector<int>> mesh::get_sub_entities(CellType type, int dim0,
-                                                 int dim1)
+graph::AdjacencyList<std::vector<int>>
+mesh::get_sub_entities(CellType type, int dim0, int dim1)
 {
   // keep backward compatibility
   if (type == CellType::interval)
@@ -108,7 +109,8 @@ mesh::cell_entity_closure(CellType cell_type)
   for (int i = 0; i <= cell_dim; ++i)
     num_entities[i] = cell_num_entities(cell_type, i);
 
-  const graph::AdjacencyList<std::vector<int>> edge_v = get_entity_vertices(cell_type, 1);
+  const graph::AdjacencyList<std::vector<int>> edge_v
+      = get_entity_vertices(cell_type, 1);
   const auto face_e = get_sub_entities(cell_type, 2, 1);
 
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure;

@@ -85,7 +85,8 @@ int max_level_width(const graph::AdjacencyList<std::vector<int>>& levels)
 //-----------------------------------------------------------------------------
 // Create a level structure from graph, rooted at node s
 graph::AdjacencyList<std::vector<int>>
-create_level_structure(const graph::AdjacencyList<std::vector<int>>& graph, int s)
+create_level_structure(const graph::AdjacencyList<std::vector<int>>& graph,
+                       int s)
 {
   common::Timer t("GPS: create_level_structure");
 
@@ -125,9 +126,9 @@ create_level_structure(const graph::AdjacencyList<std::vector<int>>& graph, int 
 // Gibbs-Poole-Stockmeyer algorithm, finding a reordering for the given
 // graph, operating only on nodes which are yet unlabelled (indicated
 // with -1 in the vector rlabel).
-std::vector<std::int32_t>
-gps_reorder_unlabelled(const graph::AdjacencyList<std::vector<std::int32_t>>& graph,
-                       std::span<const std::int32_t> rlabel)
+std::vector<std::int32_t> gps_reorder_unlabelled(
+    const graph::AdjacencyList<std::vector<std::int32_t>>& graph,
+    std::span<const std::int32_t> rlabel)
 {
   common::Timer timer("Gibbs-Poole-Stockmeyer ordering");
 
@@ -172,7 +173,8 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::vector<std::int32_t>>& gr
     // in order of increasing degree.
     for (int s : S)
     {
-      graph::AdjacencyList<std::vector<int>> lstmp = create_level_structure(graph, s);
+      graph::AdjacencyList<std::vector<int>> lstmp
+          = create_level_structure(graph, s);
       if (lstmp.num_nodes() > lv.num_nodes())
       {
         // Found a deeper level structure, so restart
