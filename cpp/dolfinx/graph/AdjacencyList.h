@@ -159,10 +159,10 @@ public:
   /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
   /// `AdjacencyList::num_links(node)`.
-  std::span<LinkData> links(std::size_t node)
+  std::span<link_type> links(std::size_t node)
   {
-    return std::span<LinkData>(_array.data() + _offsets[node],
-                               _offsets[node + 1] - _offsets[node]);
+    return std::span(_array.data() + _offsets[node],
+                     _offsets[node + 1] - _offsets[node]);
   }
 
   /// @brief Get the links (edges) for given node (const version).
@@ -170,17 +170,17 @@ public:
   /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
   /// `AdjacencyList:num_links(node)`.
-  std::span<const LinkData> links(std::size_t node) const
+  std::span<const link_type> links(std::size_t node) const
   {
-    return std::span<const LinkData>(_array.data() + _offsets[node],
-                                     _offsets[node + 1] - _offsets[node]);
+    return std::span(_array.data() + _offsets[node],
+                     _offsets[node + 1] - _offsets[node]);
   }
 
   /// Return contiguous array of links for all nodes (const version).
-  std::span<const LinkData> array() const { return _array; }
+  std::span<const link_type> array() const { return _array; }
 
   /// Return contiguous array of links for all nodes.
-  std::span<LinkData> array() { return _array; }
+  std::span<link_type> array() { return _array; }
 
   /// Offset for each node in array() (const version).
   std::span<const std::int32_t> offsets() const { return _offsets; }
@@ -219,7 +219,7 @@ public:
 private:
   // Connections (links/edges) for all entities stored as a contiguous
   // array
-  std::vector<LinkData> _array;
+  std::vector<link_type> _array;
 
   // Position of first connection for each entity (using local index)
   std::vector<std::int32_t> _offsets;
