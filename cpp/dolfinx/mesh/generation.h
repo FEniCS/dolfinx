@@ -407,7 +407,7 @@ build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
           std::array<std::int64_t, 3> n,
           const CellPartitionFunction& partitioner,
           const std::function<std::vector<std::int32_t>(
-              const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
+              const graph::AdjacencyList<std::vector<std::int32_t>>&)>& reorder_fn)
 {
   common::Timer timer("Build BoxMesh (hexahedra)");
   std::vector<T> x;

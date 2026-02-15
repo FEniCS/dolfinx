@@ -61,21 +61,21 @@ mesh::CellType mesh::to_type(const std::string& cell)
     throw std::runtime_error("Unknown cell type (" + cell + ")");
 }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<int> mesh::get_entity_vertices(CellType type, int dim)
+graph::AdjacencyList<std::vector<int>> mesh::get_entity_vertices(CellType type, int dim)
 {
   std::vector<std::vector<int>> topology
       = basix::cell::topology(cell_type_to_basix_type(type))[dim];
-  return graph::AdjacencyList<int>(topology);
+  return graph::AdjacencyList<std::vector<int>>(topology);
 }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
+graph::AdjacencyList<std::vector<int>> mesh::get_sub_entities(CellType type, int dim0,
                                                  int dim1)
 {
   // keep backward compatibility
   if (type == CellType::interval)
-    return graph::AdjacencyList<int>(0);
+    return graph::AdjacencyList<std::vector<int>>(0);
   else if (type == CellType::point)
-    return graph::AdjacencyList<int>(0);
+    return graph::AdjacencyList<std::vector<int>>(0);
 
   std::vector<std::vector<std::vector<int>>> connectivity
       = basix::cell::sub_entity_connectivity(
@@ -84,7 +84,7 @@ graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
   subset.reserve(connectivity.size());
   for (auto& row : connectivity)
     subset.emplace_back(row[dim1]);
-  return graph::AdjacencyList<int>(subset);
+  return graph::AdjacencyList<std::vector<int>>(subset);
 }
 //-----------------------------------------------------------------------------
 int mesh::cell_num_entities(CellType type, int dim)
@@ -108,7 +108,7 @@ mesh::cell_entity_closure(CellType cell_type)
   for (int i = 0; i <= cell_dim; ++i)
     num_entities[i] = cell_num_entities(cell_type, i);
 
-  const graph::AdjacencyList<int> edge_v = get_entity_vertices(cell_type, 1);
+  const graph::AdjacencyList<std::vector<int>> edge_v = get_entity_vertices(cell_type, 1);
   const auto face_e = get_sub_entities(cell_type, 2, 1);
 
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure;

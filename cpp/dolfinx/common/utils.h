@@ -121,7 +121,7 @@ std::size_t hash_global(MPI_Comm comm, const T& x)
 /// data is data volume (`weight`) and local/remote memory indicator
 /// (`local==1` is an edge to an shared memory process/rank, other
 /// wise the target node is a remote memory rank).
-std::string comm_to_json(
-    const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
-                               std::pair<std::int32_t, std::int32_t>>& g);
+std::string comm_to_json(const graph::AdjacencyList<
+                         std::vector<std::tuple<int, std::size_t, std::int8_t>>,
+                         std::pair<std::int32_t, std::int32_t>>& g);
 } // namespace dolfinx::common

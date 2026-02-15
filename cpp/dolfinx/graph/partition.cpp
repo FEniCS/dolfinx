@@ -17,10 +17,9 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-graph::partition_graph(MPI_Comm comm, int nparts,
-                       const AdjacencyList<std::int64_t>& local_graph,
-                       bool ghosting)
+graph::AdjacencyList<std::vector<std::int32_t>> graph::partition_graph(
+    MPI_Comm comm, int nparts,
+    const AdjacencyList<std::vector<std::int64_t>>& local_graph, bool ghosting)
 {
 #if HAS_PARMETIS
   return graph::parmetis::partitioner()(comm, nparts, local_graph, ghosting);
@@ -33,11 +32,11 @@ graph::partition_graph(MPI_Comm comm, int nparts,
 #endif
 }
 //-----------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
+std::tuple<graph::AdjacencyList<std::vector<std::int64_t>>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
-graph::build::distribute(MPI_Comm comm,
-                         const graph::AdjacencyList<std::int64_t>& list,
-                         const graph::AdjacencyList<std::int32_t>& destinations)
+graph::build::distribute(
+    MPI_Comm comm, const graph::AdjacencyList<std::vector<std::int64_t>>& list,
+    const graph::AdjacencyList<std::vector<std::int32_t>>& destinations)
 {
   common::Timer timer("Distribute AdjacencyList nodes to destination ranks");
 
@@ -219,17 +218,18 @@ graph::build::distribute(MPI_Comm comm,
   global_indices.shrink_to_fit();
   ghost_index_owner.shrink_to_fit();
 
-  return {
-      graph::AdjacencyList<std::int64_t>(std::move(data), std::move(offsets)),
-      std::move(src_ranks), std::move(global_indices),
-      std::move(ghost_index_owner)};
+  return {graph::AdjacencyList<std::vector<std::int64_t>>(std::move(data),
+                                                          std::move(offsets)),
+          std::move(src_ranks), std::move(global_indices),
+          std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
-graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
-                         std::array<std::size_t, 2> shape,
-                         const graph::AdjacencyList<std::int32_t>& destinations)
+graph::build::distribute(
+    MPI_Comm comm, std::span<const std::int64_t> list,
+    std::array<std::size_t, 2> shape,
+    const graph::AdjacencyList<std::vector<std::int32_t>>& destinations)
 {
   common::Timer timer(
       "Distribute fixed-degree adjacency list to destination ranks");

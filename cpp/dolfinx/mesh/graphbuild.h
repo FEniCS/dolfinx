@@ -56,8 +56,8 @@ enum class CellType : std::int8_t;
 /// @note Facet (2) and cell (4) data will contain multiple entries for
 /// the same facet for branching meshes with `max_facet_to_cell_links>2`
 /// to account for all facet cell connectivies.
-std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
-           std::size_t, std::vector<std::int32_t>>
+std::tuple<graph::AdjacencyList<std::vector<std::int32_t>>,
+           std::vector<std::int64_t>, std::size_t, std::vector<std::int32_t>>
 build_local_dual_graph(std::span<const CellType> celltypes,
                        const std::vector<std::span<const std::int64_t>>& cells,
                        std::optional<std::int32_t> max_facet_to_cell_links);
@@ -93,7 +93,7 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// higher branching) across process boundaries to be picked up by the
 /// dual graph. If the joints do not live on the process boundary this
 /// is not a problem.
-graph::AdjacencyList<std::int64_t>
+graph::AdjacencyList<std::vector<std::int64_t>>
 build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                  const std::vector<std::span<const std::int64_t>>& cells,
                  std::optional<std::int32_t> max_facet_to_cell_links);

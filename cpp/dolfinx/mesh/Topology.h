@@ -58,15 +58,16 @@ public:
   /// @param[in] original_cell_index Original indices for each cell in
   /// `cells`.
   /// @param[in] num_threads Number of threads to use for entity creation.
-  Topology(
-      std::vector<CellType> cell_types,
-      std::shared_ptr<const common::IndexMap> vertex_map,
-      std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
-      std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
-      const std::optional<std::vector<std::vector<std::int64_t>>>&
-          original_cell_index
-      = std::nullopt,
-      int num_threads = 1);
+  Topology(std::vector<CellType> cell_types,
+           std::shared_ptr<const common::IndexMap> vertex_map,
+           std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
+           std::vector<
+               std::shared_ptr<graph::AdjacencyList<std::vector<std::int32_t>>>>
+               cells,
+           const std::optional<std::vector<std::vector<std::int64_t>>>&
+               original_cell_index
+           = std::nullopt,
+           int num_threads = 1);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -127,7 +128,7 @@ public:
   /// incident "entity type" within topological dimension).
   /// @return AdjacencyList of connectivity from entity type in `d0` to
   /// entity types in `d1`, or `nullptr` if not yet computed.
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+  std::shared_ptr<const graph::AdjacencyList<std::vector<std::int32_t>>>
   connectivity(std::array<int, 2> d0, std::array<int, 2> d1) const;
 
   /// @brief Return connectivity from entities of dimension `d0` to
@@ -139,7 +140,7 @@ public:
   /// @return The adjacency list that for each entity of dimension `d0`
   /// gives the list of incident entities of dimension `d1`. Returns
   /// `nullptr` if connectivity has not been computed.
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+  std::shared_ptr<const graph::AdjacencyList<std::vector<std::int32_t>>>
   connectivity(int d0, int d1) const;
 
   /// @brief Returns the permutation information.
@@ -232,7 +233,7 @@ private:
   // where dim0 and dim1 are topological dimensions and i0 and i1
   // are the indices of cell types (following the order in _entity_types).
   std::map<std::pair<std::array<int, 2>, std::array<int, 2>>,
-           std::shared_ptr<graph::AdjacencyList<std::int32_t>>>
+           std::shared_ptr<graph::AdjacencyList<std::vector<std::int32_t>>>>
       _connectivity;
 
   // The facet permutations (local facet, cell))

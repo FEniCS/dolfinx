@@ -143,10 +143,10 @@ void update_logical_edgefunction(
 /// coordinates of the new vertices (row-major storage) and (2) the shape of the
 /// new coordinates.
 template <std::floating_point T>
-std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
+std::tuple<graph::AdjacencyList<std::vector<std::int64_t>>, std::vector<T>,
            std::array<std::size_t, 2>>
 create_new_vertices(MPI_Comm comm,
-                    const graph::AdjacencyList<int>& shared_edges,
+                    const graph::AdjacencyList<std::vector<int>>& shared_edges,
                     const mesh::Mesh<T>& mesh,
                     std::span<const std::int8_t> marked_edges)
 {
@@ -273,7 +273,7 @@ create_new_vertices(MPI_Comm comm,
     offset[m + 1] = 1;
   std::partial_sum(offset.begin(), offset.end(), offset.begin());
 
-  graph::AdjacencyList<std::int64_t> local_edge_to_new_vertex_adj(data, offset);
+  graph::AdjacencyList<std::vector<std::int64_t>> local_edge_to_new_vertex_adj(data, offset);
   return {std::move(local_edge_to_new_vertex_adj), std::move(new_vertex_coords),
           xshape};
 }

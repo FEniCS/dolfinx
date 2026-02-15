@@ -34,7 +34,8 @@ template <typename Functor>
 auto create_partitioner_py(Functor&& p_cpp)
 {
   return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
-                 const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+                 const dolfinx::graph::AdjacencyList<std::vector<std::int64_t>>&
+                     local_graph,
                  bool ghosting)
   { return p_cpp(comm.get(), nparts, local_graph, ghosting); };
 }
@@ -43,45 +44,46 @@ template <typename T, typename U>
 void declare_adjacency_list_init(nb::module_& m, std::string type)
 {
   std::string pyclass_name = std::string("AdjacencyList_") + type;
-  nb::class_<dolfinx::graph::AdjacencyList<T, U>>(m, pyclass_name.c_str(),
-                                                  "Adjacency List")
+  nb::class_<dolfinx::graph::AdjacencyList<std::vector<T>, U>>(
+      m, pyclass_name.c_str(), "Adjacency List")
       .def(
           "__init__",
-          [](dolfinx::graph::AdjacencyList<T, U>* a,
+          [](dolfinx::graph::AdjacencyList<std::vector<T>, U>* a,
              nb::ndarray<const T, nb::ndim<1>, nb::c_contig> adj)
           {
             std::vector<T> data(adj.data(), adj.data() + adj.size());
-            new (a) dolfinx::graph::AdjacencyList<T, U>(
+            new (a) dolfinx::graph::AdjacencyList<std::vector<T>, U>(
                 dolfinx::graph::regular_adjacency_list<U>(std::move(data), 1));
           },
           nb::arg("adj").noconvert())
       .def(
           "__init__",
-          [](dolfinx::graph::AdjacencyList<T, U>* a,
+          [](dolfinx::graph::AdjacencyList<std::vector<T>, U>* a,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> adj)
           {
             std::vector<T> data(adj.data(), adj.data() + adj.size());
-            new (a) dolfinx::graph::AdjacencyList<T, U>(
+            new (a) dolfinx::graph::AdjacencyList<std::vector<T>, U>(
                 dolfinx::graph::regular_adjacency_list<U>(std::move(data),
                                                           adj.shape(1)));
           },
           nb::arg("adj").noconvert())
       .def(
           "__init__",
-          [](dolfinx::graph::AdjacencyList<T, U>* a,
+          [](dolfinx::graph::AdjacencyList<std::vector<T>, U>* a,
              nb::ndarray<const T, nb::ndim<1>, nb::c_contig> array,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> displ)
           {
             std::vector<T> data(array.data(), array.data() + array.size());
             std::vector<std::int32_t> offsets(displ.data(),
                                               displ.data() + displ.size());
-            new (a) dolfinx::graph::AdjacencyList<T, U>(std::move(data),
-                                                        std::move(offsets));
+            new (a) dolfinx::graph::AdjacencyList<std::vector<T>, U>(
+                std::move(data), std::move(offsets));
           },
           nb::arg("data").noconvert(), nb::arg("offsets"))
       .def(
           "links",
-          [](const dolfinx::graph::AdjacencyList<T, U>& self, int i)
+          [](const dolfinx::graph::AdjacencyList<std::vector<T>, U>& self,
+             int i)
           {
             std::span<const T> link = self.links(i);
             return nb::ndarray<const T, nb::numpy>(link.data(), {link.size()});
@@ -90,7 +92,7 @@ void declare_adjacency_list_init(nb::module_& m, std::string type)
           "Links (edges) of a node")
       .def_prop_ro(
           "array",
-          [](const dolfinx::graph::AdjacencyList<T, U>& self)
+          [](const dolfinx::graph::AdjacencyList<std::vector<T>, U>& self)
           {
             return nb::ndarray<const T, nb::numpy>(self.array().data(),
                                                    {self.array().size()});
@@ -98,37 +100,43 @@ void declare_adjacency_list_init(nb::module_& m, std::string type)
           nb::rv_policy::reference_internal)
       .def_prop_ro(
           "offsets",
-          [](const dolfinx::graph::AdjacencyList<T, U>& self)
+          [](const dolfinx::graph::AdjacencyList<std::vector<T>, U>& self)
           {
             return nb::ndarray<const std::int32_t, nb::numpy>(
                 self.offsets().data(), {self.offsets().size()});
           },
           nb::rv_policy::reference_internal)
-      .def_prop_ro("num_nodes", &dolfinx::graph::AdjacencyList<T, U>::num_nodes)
-      .def("__eq__", &dolfinx::graph::AdjacencyList<T, U>::operator==,
+      .def_prop_ro("num_nodes",
+                   &dolfinx::graph::AdjacencyList<std::vector<T>, U>::num_nodes)
+      .def("__eq__",
+           &dolfinx::graph::AdjacencyList<std::vector<T>, U>::operator==,
            nb::is_operator())
-      .def("__repr__", &dolfinx::graph::AdjacencyList<T, U>::str)
-      .def("__len__", &dolfinx::graph::AdjacencyList<T, U>::num_nodes);
+      .def("__repr__", &dolfinx::graph::AdjacencyList<std::vector<T>, U>::str)
+      .def("__len__",
+           &dolfinx::graph::AdjacencyList<std::vector<T>, U>::num_nodes);
 }
 
 template <typename T, typename U>
 void declare_adjacency_list(nb::module_& m, std::string type)
 {
   std::string pyclass_name = std::string("AdjacencyList_") + type;
-  nb::class_<dolfinx::graph::AdjacencyList<T, U>>(m, pyclass_name.c_str(),
-                                                  "Adjacency List")
+  nb::class_<dolfinx::graph::AdjacencyList<std::vector<T>, U>>(
+      m, pyclass_name.c_str(), "Adjacency List")
       .def_prop_ro(
           "offsets",
-          [](const dolfinx::graph::AdjacencyList<T, U>& self)
+          [](const dolfinx::graph::AdjacencyList<std::vector<T>, U>& self)
           {
             return nb::ndarray<const std::int32_t, nb::numpy>(
                 self.offsets().data(), {self.offsets().size()});
           },
           nb::rv_policy::reference_internal)
-      .def_prop_ro("num_nodes", &dolfinx::graph::AdjacencyList<T, U>::num_nodes)
-      .def("__eq__", &dolfinx::graph::AdjacencyList<T, U>::operator==,
+      .def_prop_ro("num_nodes",
+                   &dolfinx::graph::AdjacencyList<std::vector<T>, U>::num_nodes)
+      .def("__eq__",
+           &dolfinx::graph::AdjacencyList<std::vector<T>, U>::operator==,
            nb::is_operator())
-      .def("__len__", &dolfinx::graph::AdjacencyList<T, U>::num_nodes);
+      .def("__len__",
+           &dolfinx::graph::AdjacencyList<std::vector<T>, U>::num_nodes);
 }
 } // namespace
 
@@ -143,9 +151,10 @@ void graph(nb::module_& m)
       m, "int_sizet_int8__int32_int32");
 
   using partition_fn
-      = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+      = std::function<dolfinx::graph::AdjacencyList<std::vector<std::int32_t>>(
           MPICommWrapper, int,
-          const dolfinx::graph::AdjacencyList<std::int64_t>&, bool)>;
+          const dolfinx::graph::AdjacencyList<std::vector<std::int64_t>>&,
+          bool)>;
   m.def(
       "partitioner", []() -> partition_fn
       { return create_partitioner_py(dolfinx::graph::partition_graph); },
@@ -198,7 +207,7 @@ void graph(nb::module_& m)
   m.def(
       "comm_graph_data",
       [](dolfinx::graph::AdjacencyList<
-          std::tuple<int, std::size_t, std::int8_t>,
+          std::vector<std::tuple<int, std::size_t, std::int8_t>>,
           std::pair<std::int32_t, std::int32_t>>& g)
       {
         std::vector<std::tuple<int, int, std::map<std::string, std::size_t>>>
@@ -234,7 +243,7 @@ void graph(nb::module_& m)
   m.def(
       "comm_to_json",
       [](dolfinx::graph::AdjacencyList<
-          std::tuple<int, std::size_t, std::int8_t>,
+          std::vector<std::tuple<int, std::size_t, std::int8_t>>,
           std::pair<std::int32_t, std::int32_t>>& g)
       { return dolfinx::graph::comm_to_json(g); },
       "Build a JSON string representation of a parallel communication "

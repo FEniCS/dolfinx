@@ -33,7 +33,7 @@ namespace dolfinx::graph
 ///
 /// @tparam LinkData_t Graph link (edge) type.
 /// @tparam NodeData_t Data type for graph node data.
-template <typename LinkData, typename NodeData = std::nullptr_t>
+template <typename U, typename NodeData = std::nullptr_t>
 class AdjacencyList
 {
 private:
@@ -47,7 +47,7 @@ private:
 
 public:
   /// @brief Adjacency list link (edge) type
-  using link_type = LinkData;
+  using link_type = typename std::decay_t<U>::value_type;
   /// @brief Adjacency list node data type
   using node_data_type = NodeData;
 
@@ -58,12 +58,12 @@ public:
   /// `offsets[i]` is the first index in `data` for node `i`. The last
   /// index in `offsets` is the equal to the length of `data`. array for
   /// node `i`.
-  template <typename U, typename V>
-    requires std::is_convertible_v<std::remove_cvref_t<U>,
-                                   std::vector<link_type>>
-                 and std::is_convertible_v<std::remove_cvref_t<V>,
-                                           std::vector<std::int32_t>>
-  AdjacencyList(U&& data, V&& offsets)
+  template <typename W, typename V>
+  // requires std::is_convertible_v<std::remove_cvref_t<U>,
+  //                                std::vector<link_type>>
+  //              and std::is_convertible_v<std::remove_cvref_t<V>,
+  //                                        std::vector<std::int32_t>>
+  AdjacencyList(W&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {
     _array.reserve(_offsets.back());
@@ -78,15 +78,15 @@ public:
   /// index in `offsets` is the equal to the length of `data`.
   /// @param[in] node_data Node data array where `node_data[i]` is the
   /// data attached to node `i`.
-  template <typename U, typename V, typename W>
-    requires std::is_convertible_v<std::remove_cvref_t<U>,
-                                   std::vector<link_type>>
-                 and std::is_convertible_v<std::remove_cvref_t<V>,
-                                           std::vector<std::int32_t>>
-                 and std::is_convertible_v<std::remove_cvref_t<W>,
-                                           std::vector<NodeData>>
-  AdjacencyList(U&& data, V&& offsets, W&& node_data)
-      : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets)),
+  template <typename X, typename V, typename W>
+  // requires std::is_convertible_v<std::remove_cvref_t<U>,
+  //                                std::vector<link_type>>
+  //              and std::is_convertible_v<std::remove_cvref_t<V>,
+  //                                        std::vector<std::int32_t>>
+  //              and std::is_convertible_v<std::remove_cvref_t<W>,
+  //                                        std::vector<NodeData>>
+  AdjacencyList(X&& data, V&& offsets, W&& node_data)
+      : _array(std::forward<X>(data)), _offsets(std::forward<V>(offsets)),
         _node_data(std::forward<W>(node_data))
   {
     assert(_node_data.has_value()
@@ -181,7 +181,10 @@ public:
   }
 
   /// Return contiguous array of links for all nodes (const version).
-  std::span<const link_type> array() const { return _array; }
+  std::span<const link_type> array() const
+  {
+    return std::span<const link_type>(_array);
+  }
 
   /// Return contiguous array of links for all nodes.
   std::span<link_type> array() { return _array; }
@@ -223,7 +226,8 @@ public:
 private:
   // Connections (links/edges) for all entities stored as a contiguous
   // array
-  std::vector<link_type> _array;
+  // std::vector<link_type> _array;
+  U _array;
 
   // Position of first connection for each entity (using local index)
   std::vector<std::int32_t> _offsets;
@@ -233,13 +237,17 @@ private:
 };
 
 /// @private Deduction
+// template <typename T, typename U>
+// AdjacencyList(T, U) -> AdjacencyList<typename T::value_type, std::nullptr_t>;
 template <typename T, typename U>
-AdjacencyList(T, U) -> AdjacencyList<typename T::value_type, std::nullptr_t>;
+AdjacencyList(T, U) -> AdjacencyList<T, std::nullptr_t>;
 
 /// @private Deduction
+// template <typename T, typename U, typename W>
+// AdjacencyList(T, U, W)
+//     -> AdjacencyList<typename T::value_type, typename W::value_type>;
 template <typename T, typename U, typename W>
-AdjacencyList(T, U, W)
-    -> AdjacencyList<typename T::value_type, typename W::value_type>;
+AdjacencyList(T, U, W) -> AdjacencyList<T, typename W::value_type>;
 
 /// @brief Construct a constant degree (valency) adjacency list.
 ///
@@ -255,7 +263,7 @@ template <typename V = std::nullptr_t, typename U>
     requires std::convertible_to<
         U, std::vector<typename std::decay_t<U>::value_type>>;
   }
-AdjacencyList<typename std::decay_t<U>::value_type, V>
+AdjacencyList<std::vector<typename std::decay_t<U>::value_type>, V>
 regular_adjacency_list(U&& data, int degree)
 {
   if (degree == 0 and !data.empty())
@@ -274,7 +282,7 @@ regular_adjacency_list(U&& data, int degree)
   std::vector<std::int32_t> offsets(num_nodes + 1, 0);
   for (std::size_t i = 1; i < offsets.size(); ++i)
     offsets[i] = offsets[i - 1] + degree;
-  return AdjacencyList<typename std::decay_t<U>::value_type, V>(
+  return AdjacencyList<std::vector<typename std::decay_t<U>::value_type>, V>(
       std::forward<U>(data), std::move(offsets));
 }
 

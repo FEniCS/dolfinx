@@ -476,7 +476,7 @@ std::vector<std::int32_t> compute_collisions(const BoundingBoxTree<T>& tree0,
 /// @return For each point, the bounding box leaves that collide with
 /// the point.
 template <std::floating_point T>
-graph::AdjacencyList<std::int32_t>
+graph::AdjacencyList<std::vector<std::int32_t>>
 compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 {
   if (tree.num_bboxes() > 0)
@@ -626,9 +626,9 @@ compute_closest_entity(const BoundingBoxTree<T>& tree,
 /// 3)`). Storage is row-major.
 /// @return For each point, the cells that collide with the point.
 template <std::floating_point T>
-graph::AdjacencyList<std::int32_t> compute_colliding_cells(
+graph::AdjacencyList<std::vector<std::int32_t>> compute_colliding_cells(
     const mesh::Mesh<T>& mesh,
-    const graph::AdjacencyList<std::int32_t>& candidate_cells,
+    const graph::AdjacencyList<std::vector<std::int32_t>>& candidate_cells,
     std::span<const T> points)
 {
   std::vector<std::int32_t> offsets = {0};
@@ -783,7 +783,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   auto x_dofmap = geometry.dofmap();
 
   // Compute candidate cells for collisions (and extrapolation)
-  const graph::AdjacencyList<std::int32_t> candidate_collisions
+  const graph::AdjacencyList<std::vector<std::int32_t>> candidate_collisions
       = compute_collisions(bb, std::span<const T>(received_points.data(),
                                                   received_points.size()));
 

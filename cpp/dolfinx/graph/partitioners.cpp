@@ -36,8 +36,9 @@ extern "C"
 using namespace dolfinx;
 
 template <typename T>
-graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
+graph::AdjacencyList<std::vector<int>>
+dolfinx::graph::compute_destination_ranks(
+    MPI_Comm comm, const graph::AdjacencyList<std::vector<std::int64_t>>& graph,
     const std::vector<T>& node_disp, const std::vector<T>& part)
 {
   common::Timer timer("Extend graph destination ranks for halo");
@@ -177,7 +178,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
       data[pos[x0]++] = x1;
   }
 
-  graph::AdjacencyList<int> g(std::move(data), std::move(offsets));
+  graph::AdjacencyList<std::vector<int>> g(std::move(data), std::move(offsets));
 
   // Make sure the owning rank comes first for each node
   for (std::int32_t i = 0; i < g.num_nodes(); ++i)
@@ -192,12 +193,14 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
 }
 
 /// @cond
-template graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
+template graph::AdjacencyList<std::vector<int>>
+dolfinx::graph::compute_destination_ranks(
+    MPI_Comm comm, const graph::AdjacencyList<std::vector<std::int64_t>>& graph,
     const std::vector<int>& node_disp, const std::vector<int>& part);
 
-template graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
+template graph::AdjacencyList<std::vector<int>>
+dolfinx::graph::compute_destination_ranks(
+    MPI_Comm comm, const graph::AdjacencyList<std::vector<std::int64_t>>& graph,
     const std::vector<unsigned long long>& node_disp,
     const std::vector<unsigned long long>& part);
 /// @endcond
@@ -205,9 +208,10 @@ template graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
 //-----------------------------------------------------------------------------
 #ifdef HAS_PARMETIS
 template <typename T>
-std::vector<int> adaptive_repartition(MPI_Comm comm,
-                                      const graph::AdjacencyList<T>& adj_graph,
-                                      double weight)
+std::vector<int>
+adaptive_repartition(MPI_Comm comm,
+                     const graph::AdjacencyList<std::vector<T>>& adj_graph,
+                     double weight)
 {
   common::Timer timer(
       "Compute graph partition (ParMETIS Adaptive Repartition)");
@@ -254,7 +258,8 @@ std::vector<int> adaptive_repartition(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-std::vector<int> refine(MPI_Comm comm, const graph::AdjacencyList<T>& adj_graph)
+std::vector<int> refine(MPI_Comm comm,
+                        const graph::AdjacencyList<std::vector<T>>& adj_graph)
 {
   common::Timer timer("Compute graph partition (ParMETIS Refine)");
 
@@ -310,9 +315,10 @@ std::vector<int> refine(MPI_Comm comm, const graph::AdjacencyList<T>& adj_graph)
 graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                                                double imbalance, int seed)
 {
-  return [imbalance, strategy, seed](MPI_Comm comm, int nparts,
-                                     const AdjacencyList<std::int64_t>& graph,
-                                     bool ghosting)
+  return [imbalance, strategy,
+          seed](MPI_Comm comm, int nparts,
+                const AdjacencyList<std::vector<std::int64_t>>& graph,
+                bool ghosting)
   {
     spdlog::info("Compute graph partition using PT-SCOTCH");
     common::Timer timer("Compute graph partition (SCOTCH)");
@@ -515,9 +521,10 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 graph::partition_fn graph::parmetis::partitioner(double imbalance,
                                                  std::array<int, 3> options)
 {
-  return [imbalance, options](MPI_Comm comm, idx_t nparts,
-                              const graph::AdjacencyList<std::int64_t>& graph,
-                              bool ghosting)
+  return [imbalance,
+          options](MPI_Comm comm, idx_t nparts,
+                   const graph::AdjacencyList<std::vector<std::int64_t>>& graph,
+                   bool ghosting)
   {
     spdlog::info("Compute graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS)");
@@ -585,7 +592,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     if (ghosting and pcomm != MPI_COMM_NULL)
     {
       // FIXME: Is it implicit that the first entry is the owner?
-      graph::AdjacencyList<int> dest
+      graph::AdjacencyList<std::vector<int>> dest
           = graph::compute_destination_ranks(pcomm, graph, node_disp, part);
       if (split_comm)
         MPI_Comm_free(&pcomm);
@@ -612,7 +619,8 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 {
   return [mode, seed, imbalance, suppress_output](
              MPI_Comm comm, int nparts,
-             const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
+             const graph::AdjacencyList<std::vector<std::int64_t>>& graph,
+             bool ghosting)
   {
     spdlog::info("Compute graph partition using (parallel) KaHIP");
 

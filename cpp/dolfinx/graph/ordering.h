@@ -22,6 +22,6 @@ namespace dolfinx::graph
 /// @return Reordering array `map`, where `map[i]` is the new index of
 /// node `i`
 std::vector<std::int32_t>
-reorder_gps(const graph::AdjacencyList<std::int32_t>& graph);
+reorder_gps(const graph::AdjacencyList<std::vector<std::int32_t>>& graph);
 
 } // namespace dolfinx::graph

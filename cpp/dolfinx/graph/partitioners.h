@@ -24,8 +24,8 @@ namespace dolfinx::graph
 /// is the destination of the node with local index `i`.
 /// @return Destination ranks for each local node.
 template <typename T>
-graph::AdjacencyList<int> compute_destination_ranks(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& graph,
+graph::AdjacencyList<std::vector<int>> compute_destination_ranks(
+    MPI_Comm comm, const graph::AdjacencyList<std::vector<std::int64_t>>& graph,
     const std::vector<T>& node_disp, const std::vector<T>& part);
 
 namespace scotch

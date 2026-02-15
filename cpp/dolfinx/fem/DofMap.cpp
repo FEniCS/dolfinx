@@ -115,7 +115,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 } // namespace
 
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
+graph::AdjacencyList<std::vector<std::int32_t>> fem::transpose_dofmap(
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> dofmap,
     std::int32_t num_cells)
 {
@@ -201,14 +201,15 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
                 this->index_map_bs(), std::move(dofmap), 1);
 }
 //-----------------------------------------------------------------------------
-std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
-    MPI_Comm comm, const mesh::Topology& topology,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>&&
-        reorder_fn) const
+std::pair<DofMap, std::vector<std::int32_t>>
+DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology,
+                 std::function<std::vector<int>(
+                     const graph::AdjacencyList<std::vector<std::int32_t>>&)>&&
+                     reorder_fn) const
 {
   if (!reorder_fn)
   {
-    reorder_fn = [](const graph::AdjacencyList<std::int32_t>& g)
+    reorder_fn = [](const graph::AdjacencyList<std::vector<std::int32_t>>& g)
     { return graph::reorder_gps(g); };
   }
   // Create new dofmap

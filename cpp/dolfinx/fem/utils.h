@@ -70,9 +70,9 @@ namespace impl
 /// @param[in] c_to_f Cell to facet connectivity
 /// @return Vector of (cell, local_facet) pairs
 template <int num_cells>
-std::array<std::int32_t, 2 * num_cells>
-get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
-                     const graph::AdjacencyList<std::int32_t>& c_to_f)
+std::array<std::int32_t, 2 * num_cells> get_cell_facet_pairs(
+    std::int32_t f, std::span<const std::int32_t> cells,
+    const graph::AdjacencyList<std::vector<std::int32_t>>& c_to_f)
 {
   // Loop over cells sharing facet
   assert(cells.size() == num_cells);
@@ -100,9 +100,9 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 /// @param[in] c_to_e Cell to entity connectivity
 /// @return Vector of (cell, local_entity) pairs
 template <int num_cells>
-std::array<std::int32_t, 2 * num_cells>
-get_cell_entity_pairs(std::int32_t e, std::span<const std::int32_t> cells,
-                      const graph::AdjacencyList<std::int32_t>& c_to_e)
+std::array<std::int32_t, 2 * num_cells> get_cell_entity_pairs(
+    std::int32_t e, std::span<const std::int32_t> cells,
+    const graph::AdjacencyList<std::vector<std::int32_t>>& c_to_e)
 {
   static_assert(num_cells == 1); // Patch assembly not supported.
 
@@ -355,13 +355,12 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
 /// when transformation is not required.
 /// @param[in] reorder_fn Graph reordering function called on the dofmap
 /// @return A new dof map
-DofMap
-create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
-              mesh::Topology& topology,
-              const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
-                  permute_inv,
-              const std::function<std::vector<int>(
-                  const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
+DofMap create_dofmap(
+    MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
+    const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
+        permute_inv,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::vector<std::int32_t>>&)>& reorder_fn);
 
 /// @brief Create a set of dofmaps on a given topology
 /// @param[in] comm MPI communicator
@@ -379,7 +378,7 @@ std::vector<DofMap> create_dofmaps(
     const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
         permute_inv,
     const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
+        const graph::AdjacencyList<std::vector<std::int32_t>>&)>& reorder_fn);
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufcx_form The UFC form
@@ -924,7 +923,8 @@ template <std::floating_point T>
 FunctionSpace<T> create_functionspace(
     std::shared_ptr<mesh::Mesh<T>> mesh,
     std::shared_ptr<const fem::FiniteElement<T>> e,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+    std::function<std::vector<int>(
+        const graph::AdjacencyList<std::vector<std::int32_t>>&)>
         reorder_fn
     = nullptr)
 {

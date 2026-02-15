@@ -398,7 +398,7 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, const std::string& name,
       mesh::cell_entity_type(mesh.topology()->cell_type(),
                              mesh::cell_dim(cell_type), 0),
       0);
-  const graph::AdjacencyList<std::int32_t> entities_adj
+  const graph::AdjacencyList<std::vector<std::int32_t>> entities_adj
       = graph::regular_adjacency_list(std::move(entities_values.first),
                                       num_vertices_per_entity);
   mesh::MeshTags meshtags = mesh::create_meshtags(

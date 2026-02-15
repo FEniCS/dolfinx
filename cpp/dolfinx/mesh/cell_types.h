@@ -122,11 +122,11 @@ inline CellType cell_entity_type(CellType type, int d, int index)
 
 /// Return list of entities, where entities(e, k) is the local vertex
 /// index for the kth vertex of entity e of dimension dim
-graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
+graph::AdjacencyList<std::vector<int>> get_entity_vertices(CellType type, int dim);
 
 /// Get entities of dimension dim1 and that make up entities of dimension
 /// dim0.
-graph::AdjacencyList<int> get_sub_entities(CellType type, int dim0, int dim1);
+graph::AdjacencyList<std::vector<int>> get_sub_entities(CellType type, int dim0, int dim1);
 
 /// @brief Number of entities of dimension.
 ///

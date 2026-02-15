@@ -33,7 +33,7 @@ namespace dolfinx::refinement::interval
 /// @return New mesh data: cell topology, vertex coordinates and parent
 /// cell indices.
 template <std::floating_point T>
-std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
+std::tuple<graph::AdjacencyList<std::vector<std::int64_t>>, std::vector<T>,
            std::array<std::size_t, 2>, std::optional<std::vector<std::int32_t>>,
            std::optional<std::vector<std::int8_t>>>
 compute_refinement_data(const mesh::Mesh<T>& mesh,
@@ -55,7 +55,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   // TODO: creation of sharing ranks in external function? Also same
   // code in use for plaza
   // Get sharing ranks for each cell
-  graph::AdjacencyList<int> cell_ranks = map_c->index_to_dest_ranks();
+  graph::AdjacencyList<std::vector<int>> cell_ranks = map_c->index_to_dest_ranks();
 
   // Create unique list of ranks that share cells (owners of ghosts plus
   // ranks that ghost owned indices)

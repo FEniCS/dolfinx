@@ -28,8 +28,9 @@ namespace dolfinx::graph
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution
 /// @return Destination rank for each input node
-using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm, int, const AdjacencyList<std::int64_t>&, bool)>;
+using partition_fn
+    = std::function<graph::AdjacencyList<std::vector<std::int32_t>>(
+        MPI_Comm, int, const AdjacencyList<std::vector<std::int64_t>>&, bool)>;
 
 /// @brief Partition graph across processes using the default graph
 /// partitioner.
@@ -41,9 +42,10 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution.
 /// @return Destination rank for each input node.
-AdjacencyList<std::int32_t>
+AdjacencyList<std::vector<std::int32_t>>
 partition_graph(MPI_Comm comm, int nparts,
-                const AdjacencyList<std::int64_t>& local_graph, bool ghosting);
+                const AdjacencyList<std::vector<std::int64_t>>& local_graph,
+                bool ghosting);
 
 /// Tools for distributed graphs
 ///
@@ -64,10 +66,11 @@ namespace build
 /// 2. Source ranks for each node in the adjacency list
 /// 3. Original global index for each node in the adjacency list
 /// 4. Owning rank of ghost nodes.
-std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
+std::tuple<graph::AdjacencyList<std::vector<std::int64_t>>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
-distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
-           const graph::AdjacencyList<std::int32_t>& destinations);
+distribute(MPI_Comm comm,
+           const graph::AdjacencyList<std::vector<std::int64_t>>& list,
+           const graph::AdjacencyList<std::vector<std::int32_t>>& destinations);
 
 /// @brief Distribute fixed size nodes to destination ranks.
 ///
@@ -90,7 +93,7 @@ std::tuple<std::vector<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, std::span<const std::int64_t> list,
            std::array<std::size_t, 2> shape,
-           const graph::AdjacencyList<std::int32_t>& destinations);
+           const graph::AdjacencyList<std::vector<std::int32_t>>& destinations);
 
 /// @brief Take a set of distributed input global indices, including
 /// ghosts, and determine the new global indices after remapping.

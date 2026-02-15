@@ -18,7 +18,7 @@ template <typename Functor>
 auto create_partitioner_cpp(Functor&& p)
 {
   return [p](MPI_Comm comm, int nparts,
-             const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+             const dolfinx::graph::AdjacencyList<std::vector<std::int64_t>>& local_graph,
              bool ghosting)
   {
     return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
@@ -43,13 +43,13 @@ auto create_cell_partitioner_py(Functor&& p)
 }
 
 using PythonCellPartitionFunction
-    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+    = std::function<dolfinx::graph::AdjacencyList<std::vector<std::int32_t>>(
         dolfinx_wrappers::MPICommWrapper, int,
         const std::vector<dolfinx::mesh::CellType>&,
         std::vector<nb::ndarray<const std::int64_t, nb::numpy>>)>;
 
 using CppCellPartitionFunction
-    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+    = std::function<dolfinx::graph::AdjacencyList<std::vector<std::int32_t>>(
         MPI_Comm, int, const std::vector<dolfinx::mesh::CellType>& q,
         const std::vector<std::span<const std::int64_t>>&)>;
 

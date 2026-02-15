@@ -59,7 +59,7 @@ namespace dolfinx::fem
 /// typically used to exclude ghost cell contributions.
 /// @return Map from global (process-wise) index to positions in an
 /// unaassembled array. The links for each node are sorted.
-graph::AdjacencyList<std::int32_t> transpose_dofmap(
+graph::AdjacencyList<std::vector<std::int32_t>> transpose_dofmap(
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> dofmap,
     std::int32_t num_cells);
 
@@ -143,11 +143,11 @@ public:
   /// @param[in] reorder_fn Graph re-ordering function to apply to the
   /// dof data
   /// @return The collapsed dofmap
-  std::pair<DofMap, std::vector<std::int32_t>>
-  collapse(MPI_Comm comm, const mesh::Topology& topology,
-           std::function<std::vector<int>(
-               const graph::AdjacencyList<std::int32_t>&)>&& reorder_fn
-           = nullptr) const;
+  std::pair<DofMap, std::vector<std::int32_t>> collapse(
+      MPI_Comm comm, const mesh::Topology& topology,
+      std::function<std::vector<int>(
+          const graph::AdjacencyList<std::vector<std::int32_t>>&)>&& reorder_fn
+      = nullptr) const;
 
   /// @brief Get dofmap data
   /// @return The adjacency list with dof indices for each cell

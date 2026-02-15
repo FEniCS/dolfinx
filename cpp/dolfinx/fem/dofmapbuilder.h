@@ -36,9 +36,10 @@ class ElementDofLayout;
 /// the dofmaps
 /// @return The index map, block size, and dofmaps for each element type
 std::tuple<common::IndexMap, int, std::vector<std::vector<std::int32_t>>>
-build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
-                  const std::vector<ElementDofLayout>& element_dof_layouts,
-                  const std::function<std::vector<int>(
-                      const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
+build_dofmap_data(
+    MPI_Comm comm, const mesh::Topology& topology,
+    const std::vector<ElementDofLayout>& element_dof_layouts,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::vector<std::int32_t>>&)>& reorder_fn);
 
 } // namespace dolfinx::fem

@@ -128,7 +128,7 @@ get_simplices(std::span<const std::int64_t> indices,
 
 /// Propagate edge markers according to rules (longest edge of each
 /// face must be marked, if any edge of face is marked)
-void enforce_rules(MPI_Comm comm, const graph::AdjacencyList<int>& shared_edges,
+void enforce_rules(MPI_Comm comm, const graph::AdjacencyList<std::vector<int>>& shared_edges,
                    std::span<std::int8_t> marked_edges,
                    const mesh::Topology& topology,
                    std::span<const std::int32_t> long_edge);
@@ -282,12 +282,12 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 /// Shape of the new geometry_shape, (4) Map from new cells to parent cells
 /// and (5) map from refined facets to parent facets.
 template <std::floating_point T>
-std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
+std::tuple<graph::AdjacencyList<std::vector<std::int64_t>>, std::vector<T>,
            std::array<std::size_t, 2>, std::optional<std::vector<std::int32_t>>,
            std::optional<std::vector<std::int8_t>>>
 compute_refinement(MPI_Comm neighbor_comm,
                    std::span<const std::int8_t> marked_edges,
-                   const graph::AdjacencyList<int>& shared_edges,
+                   const graph::AdjacencyList<std::vector<int>>& shared_edges,
                    const mesh::Mesh<T>& mesh,
                    std::span<const std::int32_t> long_edge,
                    std::span<const std::int8_t> edge_ratio_ok, Option option)
@@ -456,7 +456,7 @@ compute_refinement(MPI_Comm neighbor_comm,
 /// @return New mesh data: cell topology, vertex coordinates and parent
 /// cell index, and stored parent facet indices (if requested).
 template <std::floating_point T>
-std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
+std::tuple<graph::AdjacencyList<std::vector<std::int64_t>>, std::vector<T>,
            std::array<std::size_t, 2>, std::optional<std::vector<std::int32_t>>,
            std::optional<std::vector<std::int8_t>>>
 compute_refinement_data(const mesh::Mesh<T>& mesh,
@@ -478,7 +478,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
     throw std::runtime_error("Edges must be initialised");
 
   // Get sharing ranks for each edge
-  graph::AdjacencyList<int> edge_ranks = map_e->index_to_dest_ranks();
+  graph::AdjacencyList<std::vector<int>> edge_ranks = map_e->index_to_dest_ranks();
 
   // Create unique list of ranks that share edges (owners of ghosts plus
   // ranks that ghost owned indices)

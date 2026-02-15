@@ -240,7 +240,7 @@ create_geometry(const Topology& topology,
                 std::span<const std::int64_t> nodes,
                 std::span<const std::int64_t> xdofs, const U& x, int dim,
                 const std::function<std::vector<int>(
-                    const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                    const graph::AdjacencyList<std::vector<std::int32_t>>&)>& reorder_fn
                 = nullptr)
 {
   spdlog::info("Create Geometry (multiple)");

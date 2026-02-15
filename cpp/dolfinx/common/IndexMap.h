@@ -232,7 +232,7 @@ public:
   /// std::int64_t>,std::span<const int>,int) for an explanation of when
   /// `tag` is required.
   /// @return Shared indices.
-  graph::AdjacencyList<int> index_to_dest_ranks(
+  graph::AdjacencyList<std::vector<int>> index_to_dest_ranks(
       int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx)) const;
 
   /// @brief Build a list of owned indices that are ghosted by another

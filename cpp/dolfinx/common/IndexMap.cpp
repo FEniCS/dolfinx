@@ -1004,7 +1004,8 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 //-----------------------------------------------------------------------------
 MPI_Comm IndexMap::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
-graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
+graph::AdjacencyList<std::vector<int>>
+IndexMap::index_to_dest_ranks(int tag) const
 {
   const std::int64_t offset = _local_range[0];
 

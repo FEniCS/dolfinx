@@ -29,7 +29,7 @@ namespace
 {
 template <typename T>
 void CHECK_adjacency_list_equal(
-    const dolfinx::graph::AdjacencyList<T>& adj_list,
+    const dolfinx::graph::AdjacencyList<std::vector<T>>& adj_list,
     const std::vector<std::vector<T>>& expected_list)
 {
   REQUIRE(static_cast<std::size_t>(adj_list.num_nodes())

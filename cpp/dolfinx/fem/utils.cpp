@@ -34,7 +34,7 @@ fem::DofMap fem::create_dofmap(
     const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
         permute_inv,
     const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
+        const graph::AdjacencyList<std::vector<std::int32_t>>&)>& reorder_fn)
 {
   // Create required mesh entities
   const int D = topology.dim();
@@ -81,7 +81,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
     const std::function<void(std::span<std::int32_t>, std::uint32_t)>&
         permute_inv,
     const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
+        const graph::AdjacencyList<std::vector<std::int32_t>>&)>& reorder_fn)
 {
   std::int32_t D = topology.dim();
   assert(layouts.size() == topology.entity_types(D).size());
@@ -189,8 +189,8 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   }
 
   auto get_connectivities = [tdim, &topology](int entity_dim)
-      -> std::pair<std::shared_ptr<const graph::AdjacencyList<int>>,
-                   std::shared_ptr<const graph::AdjacencyList<int>>>
+      -> std::pair<std::shared_ptr<const graph::AdjacencyList<std::vector<int>>>,
+                   std::shared_ptr<const graph::AdjacencyList<std::vector<int>>>>
   {
     auto e_to_c = topology.connectivity(entity_dim, tdim);
     if (!e_to_c)
