@@ -24,6 +24,7 @@
 #include <dolfinx/fem/interpolate.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/EntityMap.h>
@@ -1325,10 +1326,14 @@ void fem(nb::module_& m)
              const dolfinx::fem::ElementDofLayout& element,
              std::shared_ptr<const dolfinx::common::IndexMap> index_map,
              int index_map_bs,
-             const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap, int bs)
+             nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
+             int bs)
           {
-            new (self) dolfinx::fem::DofMap(element, index_map, index_map_bs,
-                                            dofmap.array(), bs);
+            new (self) dolfinx::fem::DofMap(
+                element, index_map, index_map_bs,
+                std::vector<std::int32_t>(dofmap.data(),
+                                          dofmap.data() + dofmap.size()),
+                bs);
           },
           nb::arg("element_dof_layout"), nb::arg("index_map"),
           nb::arg("index_map_bs"), nb::arg("dofmap"), nb::arg("bs"))
