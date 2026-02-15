@@ -15,6 +15,7 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::vector<std::tuple<int, std::size_t, std::int8_t>>,
+                     std::vector<std::int32_t>,
                      std::pair<std::int32_t, std::int32_t>>
 graph::comm_graph(const common::IndexMap& map, int root)
 {
@@ -101,10 +102,10 @@ graph::comm_graph(const common::IndexMap& map, int root)
                               std::move(sizes_remote));
 }
 //-----------------------------------------------------------------------------
-std::string
-graph::comm_to_json(const graph::AdjacencyList<
-                    std::vector<std::tuple<int, std::size_t, std::int8_t>>,
-                    std::pair<std::int32_t, std::int32_t>>& g)
+std::string graph::comm_to_json(
+    const graph::AdjacencyList<
+        std::vector<std::tuple<int, std::size_t, std::int8_t>>,
+        std::vector<std::int32_t>, std::pair<std::int32_t, std::int32_t>>& g)
 {
   const std::vector<std::pair<std::int32_t, std::int32_t>>& node_weights
       = g.node_data().value();

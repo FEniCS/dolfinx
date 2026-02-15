@@ -45,7 +45,7 @@ namespace dolfinx::graph
 /// shared memory node). Node data is (number of owned indices, number
 /// of ghost indices).
 AdjacencyList<std::vector<std::tuple<int, std::size_t, std::int8_t>>,
-              std::pair<std::int32_t, std::int32_t>>
+              std::vector<std::int32_t>, std::pair<std::int32_t, std::int32_t>>
 comm_graph(const common::IndexMap& map, int root = 0);
 
 /// @brief Build communication graph data as a JSON string.
@@ -63,5 +63,6 @@ comm_graph(const common::IndexMap& map, int root = 0);
 /// wise the target node is a remote memory rank).
 std::string comm_to_json(
     const AdjacencyList<std::vector<std::tuple<int, std::size_t, std::int8_t>>,
+                        std::vector<std::int32_t>,
                         std::pair<std::int32_t, std::int32_t>>& g);
 } // namespace dolfinx::graph
