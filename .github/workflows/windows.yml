@@ -79,7 +79,7 @@ jobs:
       - name: Install Basix (C++)
         working-directory: basix/cpp
         run: |
-          cmake -G Ninja -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build-dir -S .
+          cmake -G Ninja -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build-dir -S .
           cmake --build build-dir
           cmake --install build-dir --prefix "D:/a/dolfinx/basix-install"
           echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
