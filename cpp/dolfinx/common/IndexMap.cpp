@@ -421,7 +421,7 @@ compute_submap_indices(const IndexMap& imap,
     std::vector<std::pair<std::int32_t, std::int32_t>> pos;
     pos.reserve(submap_ghost.size());
     for (std::int32_t idx : submap_ghost)
-      pos.emplace_back(idx, pos.size());
+      pos.emplace_back(idx, static_cast<std::int32_t>(pos.size()));
     std::ranges::sort(pos);
 
     // Order ghosts in the sub-map by their position in the parent map

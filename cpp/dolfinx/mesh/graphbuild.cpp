@@ -519,8 +519,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 //-----------------------------------------------------------------------------
 } // namespace
 //-----------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
-           std::size_t, std::vector<std::int32_t>>
+std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>, int,
+           std::vector<std::int32_t>>
 mesh::build_local_dual_graph(
     std::span<const CellType> celltypes,
     const std::vector<std::span<const std::int64_t>>& cells,
