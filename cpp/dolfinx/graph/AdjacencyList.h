@@ -36,20 +36,20 @@ namespace dolfinx::graph
 template <typename LinkData, typename NodeData = std::nullptr_t>
 class AdjacencyList
 {
+private:
+  template <typename X>
+  X create_iota(std::size_t n)
+  {
+    X x(n);
+    std::iota(x.begin(), x.end(), 0);
+    return x;
+  }
+
 public:
   /// @brief Adjacency list link (edge) type
   using link_type = LinkData;
   /// @brief Adjacency list node data type
   using node_data_type = NodeData;
-
-  /// @brief Construct trivial adjacency list where each of the n nodes
-  /// is connected to itself.
-  /// @param[in] n Number of nodes.
-  explicit AdjacencyList(const std::int32_t n) : _array(n), _offsets(n + 1)
-  {
-    std::iota(_array.begin(), _array.end(), 0);
-    std::iota(_offsets.begin(), _offsets.end(), 0);
-  }
 
   /// @brief Construct adjacency list from arrays of link (edge) data
   /// and offsets.
@@ -60,7 +60,7 @@ public:
   /// node `i`.
   template <typename U, typename V>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
-                                   std::vector<LinkData>>
+                                   std::vector<link_type>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
   AdjacencyList(U&& data, V&& offsets)
@@ -80,7 +80,7 @@ public:
   /// data attached to node `i`.
   template <typename U, typename V, typename W>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
-                                   std::vector<LinkData>>
+                                   std::vector<link_type>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
@@ -95,9 +95,20 @@ public:
     assert(_offsets.back() == (std::int32_t)_array.size());
   }
 
+  /// @brief Construct trivial adjacency list where each of the n nodes
+  /// is connected to itself.
+  ///
+  /// @param[in] n Number of nodes.
+  explicit AdjacencyList(std::int32_t n)
+      : AdjacencyList(create_iota<std::vector<std::int32_t>>(n),
+                      create_iota<std::vector<std::int32_t>>(n + 1))
+  {
+  }
+
   /// Set all connections for all entities (T is a '2D' container, e.g.
   /// a `std::vector<<std::vector<std::size_t>>`,
   /// `std::vector<<std::set<std::size_t>>`, etc).
+  ///
   /// @param[in] data Adjacency list data, where `std::next(data, i)`
   /// points to the container of links (edges) for node `i`.
   template <typename X>
@@ -153,27 +164,27 @@ public:
   /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
   /// `AdjacencyList::num_links(node)`.
-  std::span<LinkData> links(std::size_t node)
+  std::span<link_type> links(std::size_t node)
   {
-    return std::span<LinkData>(_array.data() + _offsets[node],
-                               _offsets[node + 1] - _offsets[node]);
+    return std::span<link_type>(_array.data() + _offsets[node],
+                                _offsets[node + 1] - _offsets[node]);
   }
 
   /// @brief Get the links (edges) for given node (const version).
   /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
   /// `AdjacencyList:num_links(node)`.
-  std::span<const LinkData> links(std::size_t node) const
+  std::span<const link_type> links(std::size_t node) const
   {
-    return std::span<const LinkData>(_array.data() + _offsets[node],
-                                     _offsets[node + 1] - _offsets[node]);
+    return std::span<const link_type>(_array.data() + _offsets[node],
+                                      _offsets[node + 1] - _offsets[node]);
   }
 
   /// Return contiguous array of links for all nodes (const version).
-  const std::vector<LinkData>& array() const { return _array; }
+  std::span<const link_type> array() const { return _array; }
 
   /// Return contiguous array of links for all nodes.
-  std::vector<LinkData>& array() { return _array; }
+  std::span<link_type> array() { return _array; }
 
   /// Offset for each node in array() (const version).
   const std::vector<std::int32_t>& offsets() const { return _offsets; }
@@ -212,7 +223,7 @@ public:
 private:
   // Connections (links/edges) for all entities stored as a contiguous
   // array
-  std::vector<LinkData> _array;
+  std::vector<link_type> _array;
 
   // Position of first connection for each entity (using local index)
   std::vector<std::int32_t> _offsets;

@@ -707,7 +707,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   graph::AdjacencyList collisions = compute_collisions(global_bbtree, points);
 
   // Get unique list of outgoing ranks
-  std::vector<std::int32_t> out_ranks = collisions.array();
+  std::vector<std::int32_t> out_ranks(collisions.array().begin(),
+                                      collisions.array().end());
   std::ranges::sort(out_ranks);
   auto [unique_end, range_end] = std::ranges::unique(out_ranks);
   out_ranks.erase(unique_end, range_end);
