@@ -18,7 +18,8 @@ template <typename Functor>
 auto create_partitioner_cpp(Functor&& p)
 {
   return [p](MPI_Comm comm, int nparts,
-             const dolfinx::graph::AdjacencyList<std::vector<std::int64_t>>& local_graph,
+             const dolfinx::graph::AdjacencyList<std::vector<std::int64_t>>&
+                 local_graph,
              bool ghosting)
   {
     return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
