@@ -802,7 +802,8 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   // vertices so AdjacencyList will have same offset pattern
   std::vector<std::int32_t> connections;
   connections.reserve(c_d0_0.array().size());
-  std::vector<std::int32_t> offsets(c_d0_0.offsets());
+  std::vector<std::int32_t> offsets(c_d0_0.offsets().begin(),
+                                    c_d0_0.offsets().end());
 
   // Search for edges of facet in map, and recover index
   const graph::AdjacencyList<int> tri_vertices_ref

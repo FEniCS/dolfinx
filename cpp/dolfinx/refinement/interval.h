@@ -59,7 +59,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
 
   // Create unique list of ranks that share cells (owners of ghosts plus
   // ranks that ghost owned indices)
-  std::vector<int> ranks = cell_ranks.array();
+  std::vector<int> ranks(cell_ranks.array().begin(), cell_ranks.array().end());
   std::ranges::sort(ranks);
   auto to_remove = std::ranges::unique(ranks);
   ranks.erase(to_remove.begin(), to_remove.end());

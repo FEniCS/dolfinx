@@ -82,8 +82,8 @@ public:
   /// of the degrees of freedom.
   /// @param[in] index_map_bs The block size associated with the
   /// `index_map`.
-  /// @param[in] dofmap Adjacency list with the degrees-of-freedom for
-  /// each cell.
+  /// @param[in] dofmap Array with the degrees-of-freedom for each cell.
+  /// Row-major storage.
   /// @param[in] bs The block size of the `dofmap`.
   template <typename E, typename U>
     requires std::is_convertible_v<std::remove_cvref_t<E>,
@@ -97,6 +97,34 @@ public:
         _dofmap(std::forward<U>(dofmap)), _bs(bs),
         _shape1(_element_dof_layout.num_dofs()
                 * _element_dof_layout.block_size() / _bs)
+  {
+    // Do nothing
+  }
+
+public:
+  /// @brief Create a DofMap from the layout of dofs on a reference
+  /// element, an IndexMap defining the distribution of dofs across
+  /// processes and a vector of indices.
+  ///
+  /// @param[in] element The layout of the degrees of freedom on an
+  /// element
+  /// @param[in] index_map The map describing the parallel distribution
+  /// of the degrees of freedom.
+  /// @param[in] index_map_bs The block size associated with the
+  /// `index_map`.
+  /// @param[in] dofmap Array with the degrees-of-freedom for each cell.
+  /// Row-major storage.
+  /// @param[in] bs The block size of the `dofmap`.
+  template <typename E>
+    requires std::is_convertible_v<std::remove_cvref_t<E>,
+                                   fem::ElementDofLayout>
+  DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
+         int index_map_bs, std::span<const std::int32_t> dofmap, int bs)
+      : index_map(std::move(index_map)), _index_map_bs(index_map_bs),
+        _element_dof_layout(std::forward<E>(element)),
+        _dofmap(std::vector<std::int32_t>(dofmap.begin(), dofmap.end())),
+        _bs(bs), _shape1(_element_dof_layout.num_dofs()
+                         * _element_dof_layout.block_size() / _bs)
   {
     // Do nothing
   }

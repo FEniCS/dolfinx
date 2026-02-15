@@ -77,7 +77,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     return graph::AdjacencyList(
         std::vector<std::int64_t>(local_dual_graph.array().begin(),
                                   local_dual_graph.array().end()),
-        local_dual_graph.offsets());
+        std::vector<std::int32_t>(local_dual_graph.offsets().begin(),
+                                  local_dual_graph.offsets().end()));
   }
 
   // Postoffice (PO) setup:

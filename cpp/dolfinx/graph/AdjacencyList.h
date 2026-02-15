@@ -44,6 +44,7 @@ public:
 
   /// @brief Construct trivial adjacency list where each of the n nodes
   /// is connected to itself.
+  ///
   /// @param[in] n Number of nodes.
   explicit AdjacencyList(const std::int32_t n) : _array(n), _offsets(n + 1)
   {
@@ -53,6 +54,7 @@ public:
 
   /// @brief Construct adjacency list from arrays of link (edge) data
   /// and offsets.
+  ///
   /// @param[in] data Adjacency lost data array.
   /// @param[in] offsets Offsets into `data` for each node, where
   /// `offsets[i]` is the first index in `data` for node `i`. The last
@@ -71,6 +73,7 @@ public:
 
   /// @brief Construct adjacency list from arrays of link (edge) data,
   /// offsets, and node data.
+  ///
   /// @param[in] data Adjacency lost data array.
   /// @param[in] offsets Offsets into `data` for each node, where
   /// `offsets[i]` is the first index in `data` for node `i`. The last
@@ -128,7 +131,8 @@ public:
   /// Move assignment operator
   AdjacencyList& operator=(AdjacencyList&& list) = default;
 
-  /// Equality operator
+  /// @brief Equality operator
+  ///
   /// @return True is the adjacency lists are equal
   bool operator==(const AdjacencyList& list) const
   {
@@ -136,10 +140,12 @@ public:
   }
 
   /// @brief Get the number of nodes.
+  ///
   /// @return The number of nodes in the adjacency list
   std::int32_t num_nodes() const { return _offsets.size() - 1; }
 
   /// @brief Number of connections for given node.
+  ///
   /// @param[in] node Node index.
   /// @return The number of outgoing links (edges) from the node.
   int num_links(std::size_t node) const
@@ -149,6 +155,7 @@ public:
   }
 
   /// @brief Get the links (edges) for given node.
+  ///
   /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
   /// `AdjacencyList::num_links(node)`.
@@ -159,6 +166,7 @@ public:
   }
 
   /// @brief Get the links (edges) for given node (const version).
+  ///
   /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
   /// `AdjacencyList:num_links(node)`.
@@ -169,16 +177,16 @@ public:
   }
 
   /// Return contiguous array of links for all nodes (const version).
-  const std::vector<LinkData>& array() const { return _array; }
+  std::span<const LinkData> array() const { return _array; }
 
   /// Return contiguous array of links for all nodes.
-  std::vector<LinkData>& array() { return _array; }
+  std::span<LinkData> array() { return _array; }
 
   /// Offset for each node in array() (const version).
-  const std::vector<std::int32_t>& offsets() const { return _offsets; }
+  std::span<const std::int32_t> offsets() const { return _offsets; }
 
   /// Offset for each node in array().
-  std::vector<std::int32_t>& offsets() { return _offsets; }
+  std::span<std::int32_t> offsets() { return _offsets; }
 
   /// Return node data (if present), where `node_data()[i]` is the data
   /// for node `i` (const version).
@@ -187,8 +195,8 @@ public:
     return _node_data;
   }
 
-  /// Return node data (if present), where `node_data()[i]` is the data for node
-  /// `i`.
+  /// Return node data (if present), where `node_data()[i]` is the data
+  /// for node `i`.
   std::optional<std::vector<NodeData>>& node_data() { return _node_data; }
 
   /// @brief Informal string representation (pretty-print).
