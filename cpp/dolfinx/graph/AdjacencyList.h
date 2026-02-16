@@ -51,6 +51,7 @@ private:
 public:
   /// @brief Adjacency list link (edge) type
   using link_type = typename std::decay_t<EdgeContainer>::value_type;
+  /// @brief Adjacency list offset index type
   using offset_type = typename std::decay_t<OffsetContainer>::value_type;
   /// @brief Adjacency list node data type
   using node_data_type = NodeData;
