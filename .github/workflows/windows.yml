@@ -87,7 +87,7 @@ jobs:
       - name: Install Basix (C++)
         working-directory: basix/cpp
         run: |
-          cmake -DCMAKE_INSTALL_PREFIX="D:/a/dolfinx/basix-install" -DCMAKE_C_COMPILER="$env:CL_PATH" -DCMAKE_CXX_COMPILER="$env:CL_PATH" -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build-dir -S .
+          cmake -DCMAKE_INSTALL_PREFIX="D:/a/dolfinx/basix-install" -DCMAKE_CXX_COMPILER="$env:CL_PATH" -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build-dir -S .
           cmake --build build-dir
           cmake --install build-dir
           echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
@@ -98,7 +98,7 @@ jobs:
       - name: Install Basix (Python)
         working-directory: basix/python
         run: |
-          python -m pip -v install -C cmake.args=-DCMAKE_C_COMPILER="$env:CL_PATH" -C cmake.args=-DCMAKE_CXX_COMPILER="$env:CL_PATH" -C cmake.args=-DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" --check-build-dependencies --no-build-isolation --no-cache-dir ".[ci]"
+          python -m pip -v install -C cmake.args=-DCMAKE_CXX_COMPILER="$env:CL_PATH" -C cmake.args=-DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" --check-build-dependencies --no-build-isolation --no-cache-dir ".[ci]"
 
       - name: Checkout FFCx
         uses: actions/checkout@v6
@@ -110,9 +110,9 @@ jobs:
       - name: Install UFCx header
         working-directory: ffcx
         run: |
-          cmake -B build-dir -S cmake/
+          cmake -DCMAKE_INSTALL_PREFIX="D:/a/dolfinx/ufcx-install" -B build-dir -S cmake/
           cmake --build build-dir
-          cmake --install build-dir --prefix D:/a/dolfinx/ufcx-install
+          cmake --install build-dir
 
       - name: Install FFCx
         working-directory: ffcx
