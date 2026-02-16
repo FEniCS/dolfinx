@@ -279,7 +279,8 @@ regular_adjacency_list(U&& data, int degree)
   // std::vector<std::int32_t> offsets(num_nodes + 1, 0);
   // for (std::size_t i = 1; i < offsets.size(); ++i)
   //   offsets[i] = offsets[i - 1] + degree;
-  using int_type = typename std::decay_t<U>::value_type;
+  // using int_type = typename std::decay_t<U>::value_type;
+  using int_type = typename std::decay_t<OffsetContainer>::value_type;
   auto offsets
       = std::views::iota(int_type(0), int_type(num_nodes + 1))
         | std::views::transform([degree](auto i) { return degree * i; });
