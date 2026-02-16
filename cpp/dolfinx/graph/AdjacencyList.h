@@ -34,7 +34,8 @@ namespace dolfinx::graph
 ///
 /// @tparam LinkData_t Graph link (edge) type.
 /// @tparam NodeData_t Data type for graph node data.
-template <typename U, typename V = std::vector<std::int32_t>,
+template <typename EdgeContainer,
+          typename OffsetContainer = std::vector<std::int32_t>,
           typename NodeData = std::nullptr_t>
 class AdjacencyList
 {
@@ -49,9 +50,8 @@ private:
 
 public:
   /// @brief Adjacency list link (edge) type
-  using link_type = typename std::decay_t<U>::value_type;
-  /// @brief Offset type
-  using offset_type = V;
+  using link_type = typename std::decay_t<EdgeContainer>::value_type;
+  using offset_type = typename std::decay_t<OffsetContainer>::value_type;
   /// @brief Adjacency list node data type
   using node_data_type = NodeData;
 
@@ -198,7 +198,7 @@ public:
   std::span<link_type> array() { return _array; }
 
   /// Offset for each node in array() (const version).
-  const offset_type& offsets() const { return _offsets; }
+  std::span<const offset_type> offsets() const { return _offsets; }
 
   // /// Offset for each node in array().
   // std::vector<std::int32_t>& offsets() { return _offsets; }
@@ -235,11 +235,11 @@ private:
   // Connections (links/edges) for all entities stored as a contiguous
   // array
   // std::vector<link_type> _array;
-  U _array;
+  EdgeContainer _array;
 
   // Position of first connection for each entity (using local index)
   // std::vector<std::int32_t> _offsets;
-  V _offsets;
+  OffsetContainer _offsets;
 
   // Node data, where _node_data[i] is the data associated with node `i`
   std::optional<std::vector<NodeData>> _node_data = std::nullopt;
@@ -253,14 +253,15 @@ private:
 /// @param[in] data Adjacency array.
 /// @param[in] degree Number of (outgoing) links for each node.
 /// @return An adjacency list.
-template <typename V = std::vector<std::int32_t>, typename U>
+template <typename OffsetContainer = std::vector<std::int32_t>, typename U>
 //   requires requires {
 //     typename std::decay_t<U>::value_type;
 //     requires std::convertible_to<
 //         U, std::vector<typename std::decay_t<U>::value_type>>;
 //   }
-AdjacencyList<std::vector<typename std::decay_t<U>::value_type>, V,
-              std::nullptr_t> regular_adjacency_list(U&& data, int degree)
+AdjacencyList<std::vector<typename std::decay_t<U>::value_type>,
+              OffsetContainer, std::nullptr_t>
+regular_adjacency_list(U&& data, int degree)
 {
   if (degree == 0 and !data.empty())
   {
@@ -274,28 +275,31 @@ AdjacencyList<std::vector<typename std::decay_t<U>::value_type>, V,
         "Incompatible data size and degree for constant degree AdjacencyList");
   }
 
-  std::int32_t num_nodes = degree == 0 ? data.size() : data.size() / degree;
+  std::size_t num_nodes = degree == 0 ? data.size() : data.size() / degree;
   // std::vector<std::int32_t> offsets(num_nodes + 1, 0);
   // for (std::size_t i = 1; i < offsets.size(); ++i)
   //   offsets[i] = offsets[i - 1] + degree;
-  auto offsets = std::views::iota(0, num_nodes + 1)
-                 | std::views::transform([degree](std::int32_t i)
-                                         { return degree * i; });
+  using int_type = typename std::decay_t<U>::value_type;
+  auto offsets
+      = std::views::iota(int_type(0), int_type(num_nodes + 1))
+        | std::views::transform([degree](auto i) { return degree * i; });
   return AdjacencyList(std::forward<U>(data),
-                       V(offsets.begin(), offsets.end()));
+                       OffsetContainer(offsets.begin(), offsets.end()));
 }
 
 /// @private Deduction
 // template <typename T, typename U>
 // AdjacencyList(T, U) -> AdjacencyList<typename T::value_type, std::nullptr_t>;
-template <typename T, typename U>
-AdjacencyList(T, U) -> AdjacencyList<T, U, std::nullptr_t>;
+template <typename T, typename OffsetContainer>
+AdjacencyList(T, OffsetContainer)
+    -> AdjacencyList<T, OffsetContainer, std::nullptr_t>;
 
 /// @private Deduction
 // template <typename T, typename U, typename W>
 // AdjacencyList(T, U, W)
 //     -> AdjacencyList<typename T::value_type, typename W::value_type>;
-template <typename T, typename U, typename W>
-AdjacencyList(T, U, W) -> AdjacencyList<T, U, typename W::value_type>;
+template <typename T, typename OffsetContainer, typename W>
+AdjacencyList(T, OffsetContainer, W)
+    -> AdjacencyList<T, OffsetContainer, typename W::value_type>;
 
 } // namespace dolfinx::graph
