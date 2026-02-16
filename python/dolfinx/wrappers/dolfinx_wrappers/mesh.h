@@ -79,6 +79,61 @@ namespace dolfinx_wrappers
 {
 
 template <typename T>
+void declare_meshtags(nb::module_& m, const std::string& type)
+{
+  std::string pyclass_name = std::string("MeshTags_") + type;
+  nb::class_<dolfinx::mesh::MeshTags<T>>(m, pyclass_name.c_str(),
+                                         "MeshTags object")
+      .def(
+          "__init__",
+          [](dolfinx::mesh::MeshTags<T>* self,
+             std::shared_ptr<const dolfinx::mesh::Topology> topology, int dim,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
+             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
+          {
+            std::vector<std::int32_t> indices_vec(
+                indices.data(), indices.data() + indices.size());
+            std::vector<T> values_vec(values.data(),
+                                      values.data() + values.size());
+            new (self) dolfinx::mesh::MeshTags<T>(
+                topology, dim, std::move(indices_vec), std::move(values_vec));
+          })
+      .def_prop_ro("dtype", [](const dolfinx::mesh::MeshTags<T>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
+      .def_rw("name", &dolfinx::mesh::MeshTags<T>::name)
+      .def_prop_ro("dim", &dolfinx::mesh::MeshTags<T>::dim)
+      .def_prop_ro("topology", &dolfinx::mesh::MeshTags<T>::topology)
+      .def_prop_ro(
+          "values",
+          [](const dolfinx::mesh::MeshTags<T>& self)
+          {
+            std::span<const T> v = self.values();
+            return nb::ndarray<const T, nb::numpy>(v.data(), {v.size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def_prop_ro(
+          "indices",
+          [](const dolfinx::mesh::MeshTags<T>& self)
+          {
+            std::span<const std::int32_t> idx = self.indices();
+            return nb::ndarray<const std::int32_t, nb::numpy>(idx.data(),
+                                                              {idx.size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def("find", [](dolfinx::mesh::MeshTags<T>& self, T value)
+           { return as_nbarray(self.find(value)); });
+
+  m.def("create_meshtags",
+        [](std::shared_ptr<const dolfinx::mesh::Topology> topology, int dim,
+           const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
+           nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
+        {
+          return dolfinx::mesh::create_meshtags(
+              topology, dim, entities, std::span(values.data(), values.size()));
+        });
+}
+
+template <typename T>
 void declare_mesh(nb::module_& m, std::string type)
 {
   std::string pyclass_geometry_name = std::string("Geometry_") + type;
@@ -326,7 +381,7 @@ void declare_mesh(nb::module_& m, std::string type)
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
-      nb::arg("max_facet_to_cell_links"),
+      nb::arg("max_facet_to_cell_links").none(),
       "Helper function for creating meshes.");
   m.def(
       "create_submesh",
@@ -461,61 +516,6 @@ void declare_mesh(nb::module_& m, std::string type)
               std::span<const std::int64_t>(nodes.data(), nodes.size()),
               std::span<const std::int64_t>(xdofs.data(), xdofs.size()),
               std::span<const T>(x.data(), x.size()), dim);
-        });
-}
-
-template <typename T>
-void declare_meshtags(nb::module_& m, const std::string& type)
-{
-  std::string pyclass_name = std::string("MeshTags_") + type;
-  nb::class_<dolfinx::mesh::MeshTags<T>>(m, pyclass_name.c_str(),
-                                         "MeshTags object")
-      .def(
-          "__init__",
-          [](dolfinx::mesh::MeshTags<T>* self,
-             std::shared_ptr<const dolfinx::mesh::Topology> topology, int dim,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
-             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
-          {
-            std::vector<std::int32_t> indices_vec(
-                indices.data(), indices.data() + indices.size());
-            std::vector<T> values_vec(values.data(),
-                                      values.data() + values.size());
-            new (self) dolfinx::mesh::MeshTags<T>(
-                topology, dim, std::move(indices_vec), std::move(values_vec));
-          })
-      .def_prop_ro("dtype", [](const dolfinx::mesh::MeshTags<T>&)
-                   { return dolfinx_wrappers::numpy_dtype<T>(); })
-      .def_rw("name", &dolfinx::mesh::MeshTags<T>::name)
-      .def_prop_ro("dim", &dolfinx::mesh::MeshTags<T>::dim)
-      .def_prop_ro("topology", &dolfinx::mesh::MeshTags<T>::topology)
-      .def_prop_ro(
-          "values",
-          [](const dolfinx::mesh::MeshTags<T>& self)
-          {
-            std::span<const T> v = self.values();
-            return nb::ndarray<const T, nb::numpy>(v.data(), {v.size()});
-          },
-          nb::rv_policy::reference_internal)
-      .def_prop_ro(
-          "indices",
-          [](const dolfinx::mesh::MeshTags<T>& self)
-          {
-            std::span<const std::int32_t> idx = self.indices();
-            return nb::ndarray<const std::int32_t, nb::numpy>(idx.data(),
-                                                              {idx.size()});
-          },
-          nb::rv_policy::reference_internal)
-      .def("find", [](dolfinx::mesh::MeshTags<T>& self, T value)
-           { return as_nbarray(self.find(value)); });
-
-  m.def("create_meshtags",
-        [](std::shared_ptr<const dolfinx::mesh::Topology> topology, int dim,
-           const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
-           nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
-        {
-          return dolfinx::mesh::create_meshtags(
-              topology, dim, entities, std::span(values.data(), values.size()));
         });
 }
 

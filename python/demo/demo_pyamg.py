@@ -27,7 +27,6 @@ from mpi4py import MPI
 
 import numpy as np
 import numpy.typing as npt
-import pyamg
 
 import ufl
 from dolfinx import fem, io
@@ -41,6 +40,13 @@ from dolfinx.fem import (
     locate_dofs_topological,
 )
 from dolfinx.mesh import CellType, create_box, locate_entities_boundary
+
+try:
+    import pyamg
+except ImportError:
+    print("This demo requires pyamg.")
+    exit(0)
+
 
 if MPI.COMM_WORLD.size > 1:
     print("This demo works only in serial.")

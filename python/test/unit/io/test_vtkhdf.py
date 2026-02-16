@@ -82,8 +82,8 @@ def test_read_write_higher_order():
         for cell in [dolfinx.mesh.CellType.quadrilateral, dolfinx.mesh.CellType.triangle]
     ]
 
-    part = dolfinx.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.none)
     max_cells_per_facet = 2
+    part = dolfinx.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.none, max_cells_per_facet)
     mesh = dolfinx.cpp.mesh.create_mesh(
         MPI.COMM_WORLD,
         cells_np,
