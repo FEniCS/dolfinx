@@ -98,7 +98,7 @@ jobs:
       - name: Install Basix (Python)
         working-directory: basix/python
         run: |
-          python -m pip -v install -Ccmake.args=-DCMAKE_C_COMPILER="$env:CL_PATH" -Ccmake.args=-DCMAKE_CXX_COMPILER="$env:CL_PATH" -Ccmake.args=-DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" --check-build-dependencies --no-build-isolation --no-cache-dir .[ci]
+          python -m pip -v install -C cmake.args=-DCMAKE_C_COMPILER="$env:CL_PATH" -C cmake.args=-DCMAKE_CXX_COMPILER="$env:CL_PATH" -C cmake.args=-DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" --check-build-dependencies --no-build-isolation --no-cache-dir ".[ci]"
 
       - name: Checkout FFCx
         uses: actions/checkout@v6
@@ -156,7 +156,7 @@ jobs:
       - name: Install DOLFINx (Python)
         working-directory: dolfinx-src/python
         run: |
-          pip -v install --check-build-dependencies --no-build-isolation -Ccmake.args=-DCMAKE_C_COMPILER="$env:CL_PATH" -Ccmake.args=-DCMAKE_CXX_COMPILER="$env:CL_PATH" -Ccmake.args=-DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -Ccmake.args=-Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -Ccmake.args=-DDOLFINX_DIR="D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx" -Ccmake.args=-DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -Ccmake.args=-DVCPKG_OVERLAY_PORTS="../cpp/.vcpkg-overlay" .[test]
+          pip -v install --check-build-dependencies --no-build-isolation -C cmake.args=-DCMAKE_C_COMPILER="$env:CL_PATH" -C cmake.args=-DCMAKE_CXX_COMPILER="$env:CL_PATH" -C cmake.args=-DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -C cmake.args=-Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -Ccmake.args=-DDOLFINX_DIR="D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx" -C cmake.args=-DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -C cmake.args=-DVCPKG_OVERLAY_PORTS="../cpp/.vcpkg-overlay" ".[test]"
 
       - name: Run tests, skip test_mixed_topology_partitioning (Python, serial)
         working-directory: dolfinx-src/python/test
