@@ -260,7 +260,7 @@ template <typename OffsetContainer = std::vector<std::int32_t>, typename U>
 //         U, std::vector<typename std::decay_t<U>::value_type>>;
 //   }
 AdjacencyList<std::vector<typename std::decay_t<U>::value_type>,
-              OffsetContainer, std::nullptr_t>
+              OffsetContainer = std::vector<std::int32_t>, std::nullptr_t>
 regular_adjacency_list(U&& data, int degree)
 {
   if (degree == 0 and !data.empty())
