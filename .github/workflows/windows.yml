@@ -23,7 +23,6 @@ jobs:
       VCPKG_EXE: C:/vcpkg/vcpkg
       FEED_URL: https://nuget.pkg.github.com/FEniCS/index.json
       VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/FEniCS/index.json,readwrite"
-      CMAKE_GENERATOR: Ninja
 
     steps:
       - name: Add NuGet sources
@@ -88,8 +87,8 @@ jobs:
         working-directory: basix/cpp
         run: |
           cmake -DCMAKE_INSTALL_PREFIX="D:/a/dolfinx/basix-install" -DCMAKE_CXX_COMPILER="$env:CL_PATH" -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build-dir -S .
-          cmake --build build-dir
-          cmake --install build-dir
+          cmake --build build-dir --config Release
+          cmake --install build-dir --prefix D:/a/dolfinx/basix-install
           echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Install Basix Python build dependencies
@@ -111,8 +110,8 @@ jobs:
         working-directory: ffcx
         run: |
           cmake -DCMAKE_INSTALL_PREFIX="D:/a/dolfinx/ufcx-install" -B build-dir -S cmake/
-          cmake --build build-dir
-          cmake --install build-dir
+          cmake --build build-dir --config Release
+          cmake --install build-dir --prefix D:/a/dolfinx/ufcx-install
 
       - name: Install FFCx
         working-directory: ffcx
@@ -133,12 +132,12 @@ jobs:
         working-directory: dolfinx-src/cpp
         run: |
           cmake -DCMAKE_INSTALL_PREFIX="D:/a/dolfinx/dolfinx-install" -DCMAKE_C_COMPILER="$env:CL_PATH" -DCMAKE_CXX_COMPILER="$env:CL_PATH" -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS=".vcpkg-overlay" -B build-dir -S .
-          cmake --build build-dir
-          cmake --install build-dir
+          cmake --build build-dir --config Release
+          cmake --install build-dir --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Run tests, skip la_matrix (C++, serial)
-        working-directory: dolfinx-src/cpp/build-dir/test
+        working-directory: dolfinx-src/cpp/build-dir/test/Release
         run: |
           ls
           mpiexec -n 1 ./unittests "~[la_matrix]"
