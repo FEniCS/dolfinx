@@ -137,7 +137,7 @@ jobs:
       - name: Install DOLFINx (C++)
         working-directory: dolfinx-src/cpp
         run: |
-          cmake -DCMAKE_CXX_FLAGS="/fsanitize=address" -DCMAKE_EXE_LINKER_FLAGS="/fsanitize=address" -DCMAKE_SHARED_LINKER_FLAGS="/fsanitize=address" -DCMAKE_INSTALL_PREFIX="D:/a/dolfinx/dolfinx-install" -DCMAKE_C_COMPILER="$env:CL_PATH" -DCMAKE_CXX_COMPILER="$env:CL_PATH" -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS=".vcpkg-overlay" -B build-dir -S .
+          cmake -DCMAKE_CXX_FLAGS="/fsanitize=address /EHsc" -DCMAKE_INSTALL_PREFIX="D:/a/dolfinx/dolfinx-install" -DCMAKE_C_COMPILER="$env:CL_PATH" -DCMAKE_CXX_COMPILER="$env:CL_PATH" -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS=".vcpkg-overlay" -B build-dir -S .
           cmake --build build-dir --config Debug
           cmake --install build-dir --config Debug --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
