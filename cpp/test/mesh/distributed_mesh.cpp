@@ -169,7 +169,7 @@ TEST_CASE("Create box", "[create_box]")
 #endif
 #ifdef HAS_KAHIP
   CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::kahip::partitioner(1, 1, 0.03, false))));
+      mesh::GhostMode::none, graph::kahip::partitioner(1, 1, 0.03, false), 2)));
 #endif
 }
 
