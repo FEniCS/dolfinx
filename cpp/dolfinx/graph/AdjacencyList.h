@@ -253,14 +253,14 @@ private:
 /// @param[in] data Adjacency array.
 /// @param[in] degree Number of (outgoing) links for each node.
 /// @return An adjacency list.
-template <typename OffsetContainer = std::vector<std::int32_t>, typename U>
+template <typename U, typename OffsetContainer = std::vector<std::int32_t>>
 //   requires requires {
 //     typename std::decay_t<U>::value_type;
 //     requires std::convertible_to<
 //         U, std::vector<typename std::decay_t<U>::value_type>>;
 //   }
 AdjacencyList<std::vector<typename std::decay_t<U>::value_type>,
-              OffsetContainer = std::vector<std::int32_t>, std::nullptr_t>
+              OffsetContainer, std::nullptr_t>
 regular_adjacency_list(U&& data, int degree)
 {
   if (degree == 0 and !data.empty())
