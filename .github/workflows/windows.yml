@@ -28,6 +28,7 @@ jobs:
       I_MPI_PIN: 0
       I_MPI_FABRICS: "ofi"
       FI_PROVIDER: "tcp"
+      OMP_NUM_THREADS: 1
 
     steps:
       - name: Add NuGet sources
