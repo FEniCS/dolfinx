@@ -253,15 +253,14 @@ private:
 /// @param[in] data Adjacency array.
 /// @param[in] degree Number of (outgoing) links for each node.
 /// @return An adjacency list.
-template <typename V = std::nullptr_t, typename U>
+template <typename V = std::vector<std::int32_t>, typename U>
 //   requires requires {
 //     typename std::decay_t<U>::value_type;
 //     requires std::convertible_to<
 //         U, std::vector<typename std::decay_t<U>::value_type>>;
 //   }
-// AdjacencyList<std::vector<typename std::decay_t<U>::value_type>,
-//               std::vector<std::int32_t>, V>
-auto regular_adjacency_list(U&& data, int degree)
+AdjacencyList<std::vector<typename std::decay_t<U>::value_type>, V,
+              std::nullptr_t> regular_adjacency_list(U&& data, int degree)
 {
   if (degree == 0 and !data.empty())
   {
@@ -281,10 +280,9 @@ auto regular_adjacency_list(U&& data, int degree)
   //   offsets[i] = offsets[i - 1] + degree;
   auto offsets = std::views::iota(0, num_nodes + 1)
                  | std::views::transform([degree](std::int32_t i)
-                                         { return i + degree; });
-  return AdjacencyList(
-      std::forward<U>(data),
-      std::vector<std::int32_t>(offsets.begin(), offsets.end()));
+                                         { return degree * i; });
+  return AdjacencyList(std::forward<U>(data),
+                       V(offsets.begin(), offsets.end()));
 }
 
 /// @private Deduction

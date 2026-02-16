@@ -56,7 +56,7 @@ void declare_adjacency_list_init(nb::module_& m, std::string type)
             std::vector<T> data(adj.data(), adj.data() + adj.size());
             new (a) dolfinx::graph::AdjacencyList<std::vector<T>,
                                                   std::vector<std::int32_t>, U>(
-                dolfinx::graph::regular_adjacency_list<U>(std::move(data), 1));
+                dolfinx::graph::regular_adjacency_list(std::move(data), 1));
           },
           nb::arg("adj").noconvert())
       .def(
@@ -68,8 +68,8 @@ void declare_adjacency_list_init(nb::module_& m, std::string type)
             std::vector<T> data(adj.data(), adj.data() + adj.size());
             new (a) dolfinx::graph::AdjacencyList<std::vector<T>,
                                                   std::vector<std::int32_t>, U>(
-                dolfinx::graph::regular_adjacency_list<U>(std::move(data),
-                                                          adj.shape(1)));
+                dolfinx::graph::regular_adjacency_list(std::move(data),
+                                                       adj.shape(1)));
           },
           nb::arg("adj").noconvert())
       .def(
