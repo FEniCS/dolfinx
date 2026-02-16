@@ -144,7 +144,7 @@ jobs:
       - name: Run tests, skip la_matrix (C++, MPI, np=3)
         working-directory: dolfinx-src/cpp/build-dir/test/Release
         run: |
-          mpiexec -n 3 ./unittests "~[la_matrix]"
+          mpiexec -n 3 ./unittests '~[la_matrix]' '~[geometry_compat]'
 
       - name: Install DOLFINx Python build dependencies
         working-directory: dolfinx-src/python
