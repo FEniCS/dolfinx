@@ -1158,7 +1158,7 @@ def test_submesh_interpolation_mapped(ghost_mode):
     comm = MPI.COMM_WORLD
 
     N = 8
-    domain = create_unit_cube(comm, N, N, N, ghost_mode=ghost_mode)
+    domain = create_unit_cube(comm, N, N, N, ghost_mode=ghost_mode, dtype=default_real_type)
     tdim = domain.topology.dim
 
     eps = 50 * np.finfo(domain.geometry.x.dtype).eps
@@ -1182,7 +1182,7 @@ def test_submesh_interpolation_mapped(ghost_mode):
     u_sub = Function(V_sub)
 
     def f(x):
-        vals = np.zeros((domain.geometry.dim, x.shape[1]), dtype=np.float64)
+        vals = np.zeros((domain.geometry.dim, x.shape[1]), dtype=default_scalar_type)
         vals[0, :] = x[0, :] * np.cos(np.pi * x[1, :])
         return vals
 
