@@ -23,6 +23,7 @@ jobs:
       VCPKG_EXE: C:/vcpkg/vcpkg
       FEED_URL: https://nuget.pkg.github.com/FEniCS/index.json
       VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/FEniCS/index.json,readwrite"
+      CMAKE_GENERATOR: "Ninja Multi-Config"
 
     steps:
       - name: Add NuGet sources
@@ -140,7 +141,7 @@ jobs:
 #        working-directory: dolfinx-src/cpp/build-dir/test/Release
 #        run: |
 #          mpiexec -n 1 ./unittests "~[la_matrix]"
-      - name: Run tests, skip la_matrix, geometry_compat, create_box (C++, MPI, np=3)
+      - name: Run tests, skip la_matrix (C++, MPI, np=3)
         working-directory: dolfinx-src/cpp/build-dir/test/Release
         run: |
           mpiexec -n 3 ./unittests "~[la_matrix]"
