@@ -1173,7 +1173,7 @@ def test_submesh_interpolation_mapped(ghost_mode):
     parent_cells = sub_to_parent.sub_topology_to_topology(smsh_cells, inverse=False)
 
     degree = 1
-    el = element("N1curl", domain.basix_cell(), degree)
+    el = element("N1curl", domain.basix_cell(), degree, dtype=default_real_type)
 
     V = functionspace(domain, el)
     V_sub = functionspace(submesh, el)
