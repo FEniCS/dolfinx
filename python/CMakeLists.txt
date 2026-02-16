@@ -55,6 +55,7 @@ endif()
 
 nanobind_add_module(
   cpp
+  NB_SUPPRESS_WARNINGS
   NOMINSIZE
   ${NANOBIND_SABI}
   dolfinx/wrappers/dolfinx.cpp
@@ -103,14 +104,6 @@ endif()
 check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
 if(HAVE_O2_OPTIMISATION)
   list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -O2)
-endif()
-
-# Suppress nanobind header warnings with Intel oneAPI (icpx/IntelLLVM),
-# which uses a Clang frontend that diagnoses these in nanobind headers.
-if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS
-       -Wno-deprecated-literal-operator
-       -Wno-zero-length-array)
 endif()
 
 # Enable C++ standard library debugging
