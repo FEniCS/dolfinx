@@ -4,8 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "mesh/Topology.h"
-#include "mesh/cell_types.h"
+#include "dolfinx/mesh/Topology.h"
+#include "dolfinx/mesh/cell_types.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 #include <cstdint>
@@ -16,7 +16,7 @@ using namespace dolfinx::mesh;
 
 TEST_CASE("Topology duplicates", "[topology][interval]")
 {
-  MPI_Comm comm = MPI_COMM_WORLD;
+  MPI_Comm comm = MPI_COMM_SELF;
 
   std::vector<CellType> cell_types{CellType::interval};
   std::array<const std::int64_t, 4> cells_interval{0, 1, 0, 1};
