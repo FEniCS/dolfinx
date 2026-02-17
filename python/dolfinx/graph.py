@@ -89,7 +89,7 @@ class AdjacencyList:
         return self._cpp_object.links(node)
 
     @property
-    def array(self) -> npt.NDArray[np.int32 | np.int64]:
+    def array(self) -> npt.NDArray[_T]:
         """Array representation of the adjacency list.
 
         Note:
