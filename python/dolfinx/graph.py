@@ -121,19 +121,9 @@ class AdjacencyList(Generic[_T]):
         return self._cpp_object.num_nodes
 
 
-@overload
 def adjacencylist(
-    data: npt.NDArray[np.int32], offsets: npt.NDArray[np.int32] | None
-) -> AdjacencyList[np.int32]: ...
-
-
-@overload
-def adjacencylist(
-    data: npt.NDArray[np.int64], offsets: npt.NDArray[np.int32] | None
-) -> AdjacencyList[np.int64]: ...
-
-
-def adjacencylist(data, offsets=None) -> AdjacencyList[_T]:
+    data: npt.NDArray[_T], offsets: npt.NDArray[np.int32] | None = None
+) -> AdjacencyList[_T]:
     """Create an :class:`AdjacencyList` for `int32` or `int64` datasets.
 
     Args:
