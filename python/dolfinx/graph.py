@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Graph representations and operations on graphs."""
 
-from typing import overload
+from typing import TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -41,6 +41,7 @@ __all__ = [
 
 class AdjacencyList:
     """Adjacency list representation of a graph."""
+    _T = TypeVar("_T", np.int32, np.int64)
 
     _cpp_object: (
         _cpp.graph.AdjacencyList_int32
@@ -71,13 +72,8 @@ class AdjacencyList:
         """String representation of the adjacency list."""
         return self._cpp_object.__repr__()
 
-    @overload
-    def links(self, node: np.int32) -> npt.NDArray[np.int32]: ...
 
-    @overload
-    def links(self, node: np.int64) -> npt.NDArray[np.int64]: ...
-
-    def links(self, node):
+    def links(self, node: _T) -> npt.NDArray[_T]:
         """Retrieve the links of a node.
 
         Note:
