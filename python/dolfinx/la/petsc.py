@@ -180,6 +180,7 @@ def assign(
     """
     if x1.getType() == PETSc.Vec.Type().NEST:
         x1_nest = x1.getNestSubVecs()
+        assert isinstance(x0, PETSc.Vec)
         for _x0, _x1 in zip(x0, x1_nest, strict=True):
             with _x1.localForm() as x:
                 x.array_w[:] = _x0
