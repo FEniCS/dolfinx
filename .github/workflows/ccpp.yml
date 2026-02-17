@@ -111,7 +111,7 @@ jobs:
           -Werror=dev
           --warn-uninitialized
           -G Ninja
-          -DCMAKE_BUILD_TYPE=Developer
+          -DCMAKE_BUILD_TYPE=Release
           -DBUILD_TESTING=true
           -DDOLFINX_ENABLE_PETSC=false
           -DDOLFINX_ENABLE_SUPERLU_DIST=true
@@ -206,7 +206,7 @@ jobs:
           -Werror=dev
           --warn-uninitialized
           -G Ninja
-          -DCMAKE_BUILD_TYPE=Developer
+          -DCMAKE_BUILD_TYPE=Release
           -DDOLFINX_ENABLE_ADIOS2=true
           -DDOLFINX_ENABLE_KAHIP=true
           -DDOLFINX_ENABLE_PETSC=true
