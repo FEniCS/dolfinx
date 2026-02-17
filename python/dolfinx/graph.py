@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Graph representations and operations on graphs."""
 
-from typing import Generic, TypeVar, overload
+from typing import Generic, TypeVar
 
 import numpy as np
 import numpy.typing as npt
