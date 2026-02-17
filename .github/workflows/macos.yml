@@ -22,7 +22,8 @@ jobs:
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
-      PETSC_VERSION: 3.24.4
+      # PETSC_VERSION: "3.24.4"
+      PETSC_VERSION: "main"
       PYTEST_ADDOPTS: "-W error"
 
     steps:
@@ -63,7 +64,7 @@ jobs:
         run: |
           export PATH="$(brew --prefix gfortran)/bin:$(brew --prefix bison)/bin:$PATH"
           export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
-          git clone --depth 1 --branch v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git petsc
+          git clone --depth 1 --branch ${PETSC_VERSION} https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           ./configure \
             --with-64-bit-indices=no \
