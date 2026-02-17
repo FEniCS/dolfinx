@@ -86,7 +86,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install catch2 cmake g++ libblas-dev libboost-dev \
              libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev \
-             libspdlog-dev mpi-default-dev ninja-build pkg-config
+             libspdlog-dev libsuperlu-dist-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -101,7 +101,7 @@ jobs:
       - name: Install FEniCS Python components
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure (C++)
@@ -114,6 +114,8 @@ jobs:
           -DCMAKE_BUILD_TYPE=Developer
           -DBUILD_TESTING=true
           -DDOLFINX_ENABLE_PETSC=false
+          -DDOLFINX_ENABLE_SUPERLU_DIST=true
+          -DDOLFINX_ENABLE_PARMETIS=true
 
       - name: Build and install (C++)
         working-directory: cpp/build
@@ -128,7 +130,7 @@ jobs:
       - name: Build Python interface
         run: |
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test]'
-          python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc4py"
+          python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
       - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
         working-directory: python
@@ -194,7 +196,7 @@ jobs:
       - name: Install FEniCS Python components
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure (C++)
@@ -219,7 +221,7 @@ jobs:
       - name: Build tests (C++, standalone)
         working-directory: cpp/test
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=Developer
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Developer -GNinja
           cmake --build build
 
       - name: Run tests (C++, serial)
@@ -308,13 +310,13 @@ jobs:
 
       - name: Configure C++
         run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -B build -S cpp/
           cmake --build build
           cmake --install build
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[docs]'
+          pip install --check-build-dependencies --no-build-isolation 'python/[docs]'
 
       - name: Build C++ interface documentation
         run: |

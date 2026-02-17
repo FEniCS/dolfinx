@@ -35,6 +35,8 @@ class Topology;
 /// @param[in] dim Dimension of the entities to create.
 /// @param[in] entity_type Entity type in dimension `dim` to create.
 /// Entity type must be in the list returned by Topology::entity_types.
+/// @param[in] num_threads Number of threads to use for entity creation.
+///
 /// @return Tuple of (cell->entity connectivity, entity->vertex
 /// connectivity, index map for created entities, list of interprocess
 /// entities). Interprocess entities lie on the "true" boundary between
@@ -44,7 +46,8 @@ class Topology;
 std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
-compute_entities(const Topology& topology, int dim, CellType entity_type);
+compute_entities(const Topology& topology, int dim, CellType entity_type,
+                 int num_threads = 1);
 
 /// @brief Compute connectivity (d0 -> d1) for given pair of entity
 /// types, given by topological dimension and index, as found in

@@ -9,6 +9,7 @@
 #include <cassert>
 #include <functional>
 #include <numeric>
+#include <span>
 #include <stdexcept>
 
 using namespace dolfinx;

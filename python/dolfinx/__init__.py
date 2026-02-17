@@ -33,6 +33,7 @@ from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot
 
 from dolfinx.common import (
     git_commit_hash,
+    hardware_concurrency,
     has_adios2,
     has_complex_ufcx_kernels,
     has_debug,
@@ -42,6 +43,7 @@ from dolfinx.common import (
     has_petsc4py,
     has_ptscotch,
     has_slepc,
+    has_superlu_dist,
     ufcx_signature,
 )
 
@@ -78,6 +80,7 @@ __all__ = [
     "nls",
     "plot",
     "git_commit_hash",
+    "hardware_concurrency",
     "has_adios2",
     "has_complex_ufcx_kernels",
     "has_debug",

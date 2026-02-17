@@ -152,25 +152,8 @@ public:
   /// @brief Underlying vector.
   std::shared_ptr<la::Vector<value_type>> x() { return _x; }
 
-  /// @brief Interpolate an expression f(x) on the whole domain.
-  /// @param[in] f Expression to be interpolated.
-  void interpolate(
-      const std::function<
-          std::pair<std::vector<value_type>, std::vector<std::size_t>>(
-              md::mdspan<const geometry_type,
-                         md::extents<std::size_t, 3, md::dynamic_extent>>)>& f)
-  {
-    assert(_function_space);
-    assert(_function_space->mesh());
-    int tdim = _function_space->mesh()->topology()->dim();
-    auto cmap = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cmap);
-    std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(), 0);
-    std::iota(cells.begin(), cells.end(), 0);
-    interpolate(f, cells);
-  }
-
   /// @brief Interpolate an expression f(x) over a set of cells.
+  ///
   /// @param[in] f Expression function to be interpolated.
   /// @param[in] cells Cells to interpolate on.
   void interpolate(
@@ -178,7 +161,7 @@ public:
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
               md::mdspan<const geometry_type,
                          md::extents<std::size_t, 3, md::dynamic_extent>>)>& f,
-      std::span<const std::int32_t> cells)
+      CellRange auto&& cells)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -229,21 +212,22 @@ public:
                      _fshape, cells);
   }
 
-  /// @brief Interpolate a Function over all cells.
+  /// @brief Interpolate an expression f(x) on the whole domain.
   ///
-  /// @param[in] u Function to be interpolated.
-  /// @pre The mesh associated with `this` and the mesh associated with
-  /// `u` must be the same mesh::Mesh.
-  void interpolate(const Function<value_type, geometry_type>& u)
+  /// @param[in] f Expression to be interpolated.
+  void interpolate(
+      const std::function<
+          std::pair<std::vector<value_type>, std::vector<std::size_t>>(
+              md::mdspan<const geometry_type,
+                         md::extents<std::size_t, 3, md::dynamic_extent>>)>& f)
   {
     assert(_function_space);
     assert(_function_space->mesh());
     int tdim = _function_space->mesh()->topology()->dim();
     auto cmap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cmap);
-    std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(), 0);
-    std::iota(cells.begin(), cells.end(), 0);
-    interpolate(u, cells, cells);
+    std::int32_t num_cells = cmap->size_local() + cmap->num_ghosts();
+    interpolate(f, std::ranges::iota_view(0, num_cells));
   }
 
   /// @brief Interpolate a Function over a subset of cells.
@@ -259,33 +243,39 @@ public:
   /// that will be interpolated to. If `cells0[i]` is the index of a
   /// cell in the mesh associated with `u0`, then `cells1[i]` is the
   /// index of the *same* cell but in the mesh associated with `this`.
-  /// This argument can be empty when `this` and `u0` share the same
-  /// mesh. Otherwise the length of `cells` and the length of `cells0`
-  /// must be the same.
+  ///
+  /// @pre `cells0` and `cells1` must have the same length.
   void interpolate(const Function<value_type, geometry_type>& u0,
-                   std::span<const std::int32_t> cells0,
-                   std::span<const std::int32_t> cells1 = {})
+                   CellRange auto&& cells0, CellRange auto&& cells1)
   {
-    if (cells1.empty())
-      cells1 = cells0;
     fem::interpolate(*this, cells1, u0, cells0);
   }
 
-  /// @brief Interpolate an Expression on all cells.
+  /// @brief Interpolate a Function over a subset of cells.
   ///
-  /// @param[in] e Expression to be interpolated.
-  /// @pre If a mesh is associated with Function coefficients of `e`, it
-  /// must be the same as the mesh::Mesh associated with `this`.
-  void interpolate(const Expression<value_type, geometry_type>& e)
+  /// The Function%s must be defined on the same mesh.
+  ///
+  /// @param[in] u Function to be interpolated.
+  /// @param[in] cells Cells to interpolate from.
+  void interpolate(const Function<value_type, geometry_type>& u,
+                   CellRange auto&& cells)
+  {
+    fem::interpolate(*this, u, cells);
+  }
+
+  /// @brief Interpolate a Function over all cells.
+  ///
+  /// The Function%s must be defined on the same mesh.
+  ///
+  /// @param[in] u Function to be interpolated.
+  void interpolate(const Function<value_type, geometry_type>& u)
   {
     assert(_function_space);
     assert(_function_space->mesh());
     int tdim = _function_space->mesh()->topology()->dim();
     auto cmap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cmap);
-    std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(), 0);
-    std::iota(cells.begin(), cells.end(), 0);
-    interpolate(e, cells);
+    fem::interpolate(*this, u);
   }
 
   /// @brief Interpolate an Expression over a subset of cells.
@@ -301,12 +291,10 @@ public:
   /// that will be interpolated to. If `cells0[i]` is the index of a
   /// cell in the mesh associated with `u0`, then `cells1[i]` is the
   /// index of the *same* cell but in the mesh associated with `this`.
-  /// This argument can be empty when `this` and `u0` share the same
-  /// mesh. Otherwise the length of `cells` and the length of
-  /// `cells0` must be the same.
+  ///
+  /// @pre `cells0` `cells1` must have the same length.
   void interpolate(const Expression<value_type, geometry_type>& e0,
-                   std::span<const std::int32_t> cells0,
-                   std::span<const std::int32_t> cells1 = {})
+                   CellRange auto&& cells0, CellRange auto&& cells1)
   {
     // Extract mesh
     const mesh::Mesh<geometry_type>* mesh0 = nullptr;
@@ -315,12 +303,8 @@ public:
       assert(c);
       assert(c->function_space());
       assert(c->function_space()->mesh());
-      if (const mesh::Mesh<geometry_type>* mesh
-          = c->function_space()->mesh().get();
-          !mesh0)
-      {
+      if (auto mesh = c->function_space()->mesh().get(); !mesh0)
         mesh0 = mesh;
-      }
       else if (mesh != mesh0)
       {
         throw std::runtime_error(
@@ -334,19 +318,15 @@ public:
     if (!mesh0)
       mesh0 = _function_space->mesh().get();
 
-    // If cells1 is empty and Function and Expression meshes are the
-    // same, make cells1 the same as cells0. Otherwise check that
-    // lengths of cells0 and cells1 are the same.
-    if (cells1.empty() and mesh0 == _function_space->mesh().get())
-      cells1 = cells0;
-    else if (cells0.size() != cells1.size())
-      throw std::runtime_error("Cells lists have different lengths.");
+    if (cells0.size() != cells1.size())
+      throw std::runtime_error("Cell lists have different lengths.");
 
     // Check that Function and Expression spaces are compatible
     assert(_function_space->element());
     std::size_t value_size = e0.value_size();
     if (e0.argument_space())
       throw std::runtime_error("Cannot interpolate Expression with Argument.");
+
     if (value_size != (std::size_t)_function_space->element()->value_size())
     {
       throw std::runtime_error(
@@ -382,8 +362,9 @@ public:
         fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
+    std::vector<std::int32_t> _cells0(cells0.begin(), cells0.end());
     tabulate_expression(std::span(fdata), e0, *mesh0,
-                        md::mdspan(cells0.data(), cells0.size()));
+                        md::mdspan(_cells0.data(), _cells0.size()));
 
     // Reshape evaluated data to fit interpolate.
     // Expression returns matrix of shape (num_cells, num_points *
@@ -404,19 +385,50 @@ public:
                      {value_size, num_cells * num_points}, cells1);
   }
 
+  /// @brief Interpolate an Expression over a subset of cells.
+  ///
+  /// @param[in] e0 Expression to be interpolated. The Expression must
+  /// have been created using the reference coordinates created by
+  /// FiniteElement::interpolation_points for the element associated
+  /// with `this`.
+  /// @param[in] cells Cells in the mesh associated with `e0` to
+  /// interpolate from if `e0` has Function coefficients. If no mesh can
+  /// be associated with `e0` then the mesh associated with `this` is used.
+  void interpolate(const Expression<value_type, geometry_type>& e0,
+                   CellRange auto&& cells)
+  {
+    interpolate(e0, cells, cells);
+  }
+
+  /// @brief Interpolate an Expression on all cells.
+  ///
+  /// @param[in] e Expression to be interpolated.
+  /// @pre If a mesh is associated with Function coefficients of `e`, it
+  /// must be the same as the mesh::Mesh associated with `this`.
+  void interpolate(const Expression<value_type, geometry_type>& e)
+  {
+    assert(_function_space);
+    assert(_function_space->mesh());
+    int tdim = _function_space->mesh()->topology()->dim();
+    auto map = _function_space->mesh()->topology()->index_map(tdim);
+    assert(map);
+    interpolate(
+        e, std::ranges::iota_view(0, map->size_local() + map->num_ghosts()));
+  }
+
   /// @brief Interpolate a Function defined on a different mesh.
   ///
-  /// @param[in] v Function to be interpolated.
+  /// @param[in] u Function to be interpolated.
   /// @param[in] cells Cells in the mesh associated with `this` to
   /// interpolate into.
   /// @param[in] interpolation_data Data required for associating the
-  /// interpolation points of `this` with cells in `v`. Can be computed
+  /// interpolation points of `this` with cells in `u`. Can be computed
   /// with `fem::create_interpolation_data`.
-  void interpolate(const Function<value_type, geometry_type>& v,
-                   std::span<const std::int32_t> cells,
+  void interpolate(const Function<value_type, geometry_type>& u,
+                   CellRange auto&& cells,
                    const geometry::PointOwnershipData<U>& interpolation_data)
   {
-    fem::interpolate(*this, v, cells, interpolation_data);
+    fem::interpolate(*this, u, cells, interpolation_data);
   }
 
   /// @brief Evaluate the Function at points.
@@ -425,14 +437,14 @@ public:
   /// (num_points, 3) and storage is row-major.
   /// @param[in] xshape Shape of `x`.
   /// @param[in] cells Cell indices such that `cells[i]` is the index of
-  /// the cell that contains the point x(i). Negative cell indices can
+  /// the cell that contains the point `x(i)`. Negative cell indices can
   /// be passed, in which case the corresponding point is ignored.
   /// @param[out] u Values at the points. Values are not computed for
   /// points with a negative cell index. This argument must be passed
   /// with the correct size. Storage is row-major.
   /// @param[in] ushape Shape of `u`.
   void eval(std::span<const geometry_type> x, std::array<std::size_t, 2> xshape,
-            std::span<const std::int32_t> cells, std::span<value_type> u,
+            CellRange auto&& cells, std::span<value_type> u,
             std::array<std::size_t, 2> ushape) const
   {
     if (cells.empty())
@@ -513,7 +525,7 @@ public:
     impl::mdspan_t<geometry_type, 2> xp(xp_b.data(), 1, gdim);
 
     // Loop over points
-    std::ranges::fill(u, 0.0);
+    std::ranges::fill(u, 0);
     std::span<const value_type> _v = _x->array();
 
     // Evaluate geometry basis at point (0, 0, 0) on the reference cell.
@@ -548,16 +560,14 @@ public:
     std::vector<geometry_type> det_scratch(2 * gdim * tdim);
 
     // Prepare geometry data in each cell
-    for (std::size_t p = 0; p < cells.size(); ++p)
+    for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
-      const int cell_index = cells[p];
-
       // Skip negative cell indices
-      if (cell_index < 0)
+      if (*cell_it < 0)
         continue;
 
       // Get cell geometry (coordinate dofs)
-      auto x_dofs = md::submdspan(x_dofmap, cell_index, md::full_extent);
+      auto x_dofs = md::submdspan(x_dofmap, *cell_it, md::full_extent);
       assert(x_dofs.size() == num_dofs_g);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
       {
@@ -566,6 +576,7 @@ public:
           coord_dofs(i, j) = x_g[pos + j];
       }
 
+      std::size_t p = std::distance(cells.begin(), cell_it);
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x[p * xshape[1] + j];
 
@@ -633,8 +644,8 @@ public:
         = element->template dof_transformation_fn<geometry_type>(
             doftransform::standard);
 
-    // Size of tensor for symmetric elements, unused in non-symmetric case, but
-    // placed outside the loop for pre-computation.
+    // Size of tensor for symmetric elements, unused in non-symmetric
+    // case, but placed outside the loop for pre-computation.
     int matrix_size;
     if (element->symmetric())
     {
@@ -644,19 +655,19 @@ public:
     }
 
     const std::size_t num_basis_values = space_dimension * reference_value_size;
-    for (std::size_t p = 0; p < cells.size(); ++p)
+    for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
-      const int cell_index = cells[p];
-      if (cell_index < 0) // Skip negative cell indices
+      if (*cell_it < 0) // Skip negative cell indices
         continue;
 
       // Permute the reference basis function values to account for the
       // cell's orientation
+      std::size_t p = std::distance(cells.begin(), cell_it);
       apply_dof_transformation(
           std::span(basis_derivatives_reference_values_b.data()
                         + p * num_basis_values,
                     num_basis_values),
-          cell_info, cell_index, reference_value_size);
+          cell_info, *cell_it, reference_value_size);
 
       {
         auto _U = md::submdspan(basis_derivatives_reference_values, 0, p,
@@ -667,16 +678,16 @@ public:
       }
 
       // Get degrees of freedom for current cell
-      std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell_index);
+      std::span<const std::int32_t> dofs = dofmap->cell_dofs(*cell_it);
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 
       if (element->symmetric())
       {
+        // Compute expansion
         int row = 0;
         int rowstart = 0;
-        // Compute expansion
         for (int k = 0; k < bs_element; ++k)
         {
           if (k - rowstart > row)

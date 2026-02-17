@@ -35,7 +35,7 @@ class SparsityPattern;
 namespace petsc
 {
 /// Print error message for PETSc calls that return an error
-void error(int error_code, const std::string& filename,
+void error(PetscErrorCode error_code, const std::string& filename,
            const std::string& petsc_function);
 
 /// Create PETsc vectors from the local data. The data is copied into

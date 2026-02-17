@@ -214,13 +214,16 @@ void declare_bbtree(nb::module_& m, const std::string& type)
       {
         std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
         std::span<const T> _p(points.data(), 3 * p_s0);
-        std::optional<std::span<const std::int32_t>> _cells
-            = cells.has_value()
-                  ? std::span<const std::int32_t>(cells.value().data(),
-                                                  cells.value().size())
-                  : std::optional<std::span<const std::int32_t>>(std::nullopt);
-        return dolfinx::geometry::determine_point_ownership<T>(mesh, _p,
-                                                               padding, _cells);
+        if (cells.has_value())
+        {
+          return dolfinx::geometry::determine_point_ownership<T>(
+              mesh, _p, padding, std::span(cells->data(), cells->size()));
+        }
+        else
+        {
+          return dolfinx::geometry::determine_point_ownership<T>(
+              mesh, _p, padding, std::nullopt);
+        }
       },
       nb::arg("mesh"), nb::arg("points"), nb::arg("padding"),
       nb::arg("cells").none(),
