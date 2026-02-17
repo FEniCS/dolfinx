@@ -6,6 +6,7 @@
 """Graph representations and operations on graphs."""
 
 from typing import overload
+
 import numpy as np
 import numpy.typing as npt
 
