@@ -68,13 +68,8 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:
     bs = x.block_size
     size = (index_map.size_local * bs, index_map.size_global * bs)
 
-    # TODO: needs stub fix in PETSc
     return PETSc.Vec().createGhostWithArray(
-        ghosts,
-        x.array,  # type: ignore[arg-type]
-        size=size,
-        bsize=bs,
-        comm=index_map.comm,
+        ghosts, x.array, size=size, bsize=bs, comm=index_map.comm
     )
 
 
