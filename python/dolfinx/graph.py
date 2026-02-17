@@ -41,6 +41,7 @@ __all__ = [
 
 class AdjacencyList:
     """Adjacency list representation of a graph."""
+
     _T = TypeVar("_T", np.int32, np.int64)
 
     _cpp_object: (
@@ -71,7 +72,6 @@ class AdjacencyList:
     def __repr__(self):
         """String representation of the adjacency list."""
         return self._cpp_object.__repr__()
-
 
     def links(self, node: _T) -> npt.NDArray[_T]:
         """Retrieve the links of a node.
