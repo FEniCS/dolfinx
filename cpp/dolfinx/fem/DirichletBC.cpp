@@ -61,7 +61,7 @@ find_local_entity_index(const mesh::Topology& topology,
     // Get first attached cell
     if (num_entities_local <= e)
     {
-      throw std::runtime_error(
+      throw std::out_of_range(
           "Input entity " + std::to_string(e)
           + " is larger than the number of entities on this process ("
           + std::to_string(num_entities_local) + ").");
