@@ -175,7 +175,7 @@ def assign(
     """
     if x1.getType() == PETSc.Vec.Type().NEST:
         x1_nest = x1.getNestSubVecs()
-        assert isinstance(x0, PETSc.Vec)
+        assert isinstance(x0, Sequence)
         for _x0, _x1 in zip(x0, x1_nest):
             with _x1.localForm() as x:
                 x.array_w[:] = _x0
