@@ -416,6 +416,6 @@ def test_bc_index_out_of_range():
     facets = np.arange(num_facets_on_proc + 1, dtype=np.int32)
     V = functionspace(mesh, ("Lagrange", 1))
     with pytest.raises(
-        RuntimeError, match=r".*is bigger than the number of entities on this process.*"
+        IndexError, match=r".*is bigger than the number of entities on this process.*"
     ):
         locate_dofs_topological(V, mesh.topology.dim - 1, facets)
