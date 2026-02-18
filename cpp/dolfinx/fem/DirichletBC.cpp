@@ -63,7 +63,7 @@ find_local_entity_index(const mesh::Topology& topology,
     {
       throw std::runtime_error(
           "Input entity " + std::to_string(e)
-          + " is bigger than the number of entities on this process ("
+          + " is larger than the number of entities on this process ("
           + std::to_string(num_entities_local) + ").");
     }
     assert(e_to_c->num_links(e) > 0);
