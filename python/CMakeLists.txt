@@ -186,3 +186,28 @@ endif()
 set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 install(TARGETS cpp DESTINATION dolfinx)
+
+nanobind_add_stub(
+  cpp_stub
+  MODULE dolfinx.cpp
+  DEPENDS cpp
+  VERBOSE
+  RECURSIVE
+  INSTALL_TIME
+  OUTPUT_PATH dolfinx
+  OUTPUT
+    cpp/fem/__init__.pyi
+    cpp/fem/petsc.pyi
+    cpp/la/__init__.pyi
+    cpp/la/petsc.pyi
+    cpp/nls/__init__.pyi
+    cpp/nls/petsc.pyi
+    cpp/__init__.pyi
+    cpp/common.pyi
+    cpp/geometry.pyi
+    cpp/graph.pyi
+    cpp/io.pyi
+    cpp/log.pyi
+    cpp/mesh.pyi
+    cpp/refinement.pyi
+)
