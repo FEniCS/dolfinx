@@ -25,7 +25,7 @@ TEST_CASE("Topology duplicates", "[topology][interval]")
   std::array<const std::int64_t, 2> original_cell_index_interval{0, 1};
   std::vector<std::span<const std::int64_t>> original_cell_index{
       original_cell_index_interval};
-  std::vector<std::span<const int>> ghost_owners{};
+  std::vector<std::span<const int>> ghost_owners{{}};
   std::vector<std::int64_t> boundary_vertices{};
   create_topology(comm, cell_types, cells, original_cell_index, ghost_owners,
                   boundary_vertices);
