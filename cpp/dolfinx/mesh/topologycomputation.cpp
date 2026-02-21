@@ -73,7 +73,6 @@ void build_entity_list(std::span<std::int32_t> entity_list,
   for (std::size_t c = 0; c < cells.num_nodes(); ++c)
   {
     // Get vertices from each cell
-    // auto vertices = cells.links(c + c0);
     auto vertices = cells.links(c);
 
     // Iterate over cell entities of given type
@@ -84,20 +83,20 @@ void build_entity_list(std::span<std::int32_t> entity_list,
       // Get entity vertices. Padded with -1 if fewer than
       // max_vertices_per_entity
       //
-      // NOTE: Entity orientation is determined by vertex
-      // ordering. The orientation of an entity with respect to
-      // the cell may differ from its global mesh orientation.
-      // Hence, we reorder the vertices so that each entity's
-      // orientation agrees with their global orientation.
+      // NOTE: Entity orientation is determined by vertex ordering. The
+      // orientation of an entity with respect to the cell may differ
+      // from its global mesh orientation. Hence, we reorder the
+      // vertices so that each entity's orientation agrees with their
+      // global orientation.
       //
-      // FIXME: This might be better below when the entity to
-      // vertex connectivity is computed
+      // FIXME: This might be better below when the entity to vertex
+      // connectivity is computed
       assert(ev.size() == entity_vertices.size());
       for (std::size_t j = 0; j < ev.size(); ++j)
         entity_vertices[j] = vertices[ev[j]];
 
-      // Orient the entities. Simply sort according to global
-      // vertex index for simplices.
+      // Orient the entities. Simply sort according to global vertex
+      // index for simplices.
       assert(entity_vertices.size() == global_vertices.size());
       vertex_index_map.local_to_global(entity_vertices, global_vertices);
 
@@ -105,8 +104,8 @@ void build_entity_list(std::span<std::int32_t> entity_list,
       std::ranges::sort(perm, [&global_vertices](std::size_t i0, std::size_t i1)
                         { return global_vertices[i0] < global_vertices[i1]; });
 
-      // For quadrilaterals, the vertex opposite the lowest
-      // vertex should be last
+      // For quadrilaterals, the vertex opposite the lowest vertex
+      // should be last
       if (entity_type == mesh::CellType::quadrilateral)
       {
         std::size_t min_vertex_idx = perm[0];
@@ -130,13 +129,13 @@ void build_entity_list(std::span<std::int32_t> entity_list,
   }
 }
 
-/// @brief Create an adjacency list from array of pairs, where
-/// the first value in the pair is the node and the second value
-/// is the edge.
+/// @brief Create an adjacency list from array of pairs, where the first
+/// value in the pair is the node and the second value is the edge.
+///
 /// @param[in] data List if pairs
-/// @param[in] size The number of edges in the graph. For
-/// example, this can be used to build an adjacency list that
-/// includes 'owned' nodes only.
+/// @param[in] size The number of edges in the graph. For example, this
+/// can be used to build an adjacency list that includes 'owned' nodes
+/// only.
 /// @pre The `data` array must be sorted.
 template <typename U>
 graph::AdjacencyList<std::vector<int>> create_adj_list(U& data,
@@ -173,9 +172,8 @@ graph::AdjacencyList<std::vector<int>> create_adj_list(U& data,
 template <typename U, typename V>
 int get_ownership(const U& processes, const V& vertices)
 {
-  // Use a deterministic random number generator, seeded with
-  // global vertex indices ensuring all processes get the same
-  // answer
+  // Use a deterministic random number generator, seeded with global
+  // vertex indices ensuring all processes get the same answer
   std::mt19937 gen;
   std::seed_seq seq(vertices.begin(), vertices.end());
   gen.seed(seq);
@@ -185,16 +183,17 @@ int get_ownership(const U& processes, const V& vertices)
   return owner;
 }
 //-----------------------------------------------------------------------------
-/// Communicate with sharing processes to find out which
-/// entities are ghosts and return a map (vector) to move these
-/// local indices to the end of the local range. Also returns
-/// the index map, and shared entities, i.e. the set of all
-/// processes which share each shared entity.
+
+/// Communicate with sharing processes to find out which / entities are
+/// ghosts and return a map (vector) to move these / local indices to
+/// the end of the local range. Also returns / the index map, and shared
+/// entities, i.e. the set of all / processes which share each shared
+/// entity.
 /// @param[in] comm MPI Communicator
 /// @param[in] cell_map Index map for cell distribution
 /// @param[in] vertex_map Index map for vertex distribution
-/// @param[in] entity_list List of entities, each entity
-/// represented by its local vertex indices
+/// @param[in] entity_list List of entities, each entity / represented
+/// by its local vertex indices
 /// @param[in] num_vertices_per_e Number of vertices per entity
 /// @param[in] num_entities_per_cell Number of entities per cell
 /// @param[in] entity_index Initial numbering for each row in
