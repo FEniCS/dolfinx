@@ -41,8 +41,6 @@ namespace
 ///
 /// This code is thread-safe.
 ///
-/// @param[in] c0 Starting cell index.
-/// @param[in] num_cells Number of cells to process.
 /// @param[in,out] entity_list
 /// @param[in] cells Cell-to-vertex connectivity.
 /// @param[in] e_vertices Entity-to-vertices, where
@@ -51,15 +49,17 @@ namespace
 /// @param[in] entity_type Type of entity to extract.
 /// @param[in] cell_type_entities Indices of entities of type `entity_type`
 /// @param[in] vertex_index_map Index map for the vertices.
-void build_entity_list(
-    std::span<std::int32_t> entity_list,
-    std::span<std::int32_t> entity_list_sorted, std::int32_t c0,
-    std::int32_t num_cells,
-    const graph::AdjacencyList<std::vector<std::int32_t>>& cells,
-    const graph::AdjacencyList<std::vector<std::int32_t>>& e_vertices,
-    mesh::CellType entity_type,
-    const std::vector<std::int32_t>& cell_type_entities,
-    const common::IndexMap& vertex_index_map)
+void build_entity_list(std::span<std::int32_t> entity_list,
+                       std::span<std::int32_t> entity_list_sorted,
+                       graph::AdjacencyList<std::span<const std::int32_t>,
+                                            std::span<const std::int32_t>>
+                           cells,
+                       graph::AdjacencyList<std::span<const std::int32_t>,
+                                            std::span<const std::int32_t>>
+                           e_vertices,
+                       mesh::CellType entity_type,
+                       const std::vector<std::int32_t>& cell_type_entities,
+                       const common::IndexMap& vertex_index_map)
 {
   int num_vertices_per_entity = num_cell_vertices(entity_type);
   int num_entities_per_cell = cell_type_entities.size();
@@ -69,10 +69,10 @@ void build_entity_list(
   std::vector<std::size_t> perm(num_vertices_per_entity);
 
   // Iterate over cells
-  for (std::int32_t c = 0; c < num_cells; ++c)
+  for (std::size_t c = 0; c < cells.num_nodes(); ++c)
   {
     // Get vertices from each cell
-    auto vertices = cells.links(c + c0);
+    auto vertices = cells.links(c);
 
     // Iterate over cell entities of given type
     for (int e = 0; e < num_entities_per_cell; ++e)
@@ -582,7 +582,7 @@ compute_entities_by_key_matching(
   assert(cell_dim(entity_type) == dim);
 
   // Start timer
-  common::Timer timer("Compute entities of dim = " + std::to_string(dim));
+  common::Timer timer("Compute entities of dÂim = " + std::to_string(dim));
 
   std::vector<std::vector<std::int32_t>> cell_type_entities(cell_lists.size());
   std::vector<std::int32_t> cell_type_offsets{0};
@@ -633,11 +633,16 @@ compute_entities_by_key_matching(
             + c0 * num_vertices_per_entity * num_entities_per_cell;
       std::size_t count
           = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
+      graph::AdjacencyList<std::span<const std::int32_t>,
+                           std::span<const std::int32_t>>
+          _cells(std::span(cells.array().data() + cells.offsets()[c0],
+                           cells.offsets()[c1] - cells.offsets()[c0]),
+                 std::span(cells.offsets().data() + c0, c1 - c0 + 1));
       threads[i] = std::jthread(
           build_entity_list, std::span(entity_list.data() + offset, count),
-          std::span(entity_list_sorted.data() + offset, count), c0, c1 - c0,
-          std::cref(cells), std::cref(e_vertices), entity_type,
-          std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
+          std::span(entity_list_sorted.data() + offset, count), _cells,
+          e_vertices, entity_type, std::cref(cell_type_entities[k]),
+          std::cref(vertex_index_map));
     }
   }
 

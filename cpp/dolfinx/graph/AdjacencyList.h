@@ -19,9 +19,6 @@
 
 namespace dolfinx::graph
 {
-// template <typename t>
-// concept Number = requires(t p_t) { typename t::element_type; };
-
 /// @brief This class provides a static adjacency list data structure.
 ///
 /// It is commonly used to store directed graphs. For each node in the
@@ -136,14 +133,25 @@ public:
   /// parameters.
   ///
   /// Typical use would be copying to an adjacency list that uses spans.
+  template <typename W0, typename W1>
+  AdjacencyList(const AdjacencyList<W0, W1, std::nullptr_t>& x)
+      : _array(x.array().begin(), x.array().end()),
+        _offsets(x.offsets().begin(), x.offsets().end())
+  {
+  }
+
+  /// @brief Construct an adjacency list with different template
+  /// parameters.
+  ///
+  /// Typical use would be copying to an adjacency list that uses spans.
   template <typename W0, typename W1, typename W2>
   AdjacencyList(const AdjacencyList<W0, W1, W2>& x)
       : _array(x.array().begin(), x.array().end()),
         _offsets(x.offsets().begin(), x.offsets().end())
   {
   }
-  /// Copy constructor
 
+  /// Copy constructor
   AdjacencyList(const AdjacencyList& list) = default;
 
   /// Move constructor
@@ -187,7 +195,7 @@ public:
   /// @param[in] node Node index.
   /// @return Array of outgoing links for the node. The length will be
   /// `AdjacencyList::num_links(node)`.
-  std::span<link_type> links(std::size_t node)
+  auto links(std::size_t node)
   {
     return std::span(_array.data() + *std::next(_offsets.begin(), node),
                      this->num_links(node));
