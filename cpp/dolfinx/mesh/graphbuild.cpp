@@ -578,7 +578,7 @@ mesh::build_local_dual_graph(
 
     // Determine/update maximum number of vertices for facet
     std::ranges::for_each(
-        std::views::iota(0, cell_facets.num_nodes()),
+        std::views::iota(0, (int)cell_facets.num_nodes()),
         [&max = max_vertices_per_facet, &cell_facets](auto node)
         { max = std::max(max, cell_facets.num_links(node)); });
   }

@@ -31,7 +31,7 @@ void CHECK_adjacency_list_equal(
   REQUIRE(static_cast<std::size_t>(adj_list.num_nodes())
           == expected_list.size());
 
-  for (T i = 0; i < adj_list.num_nodes(); i++)
+  for (std::size_t i = 0; i < adj_list.num_nodes(); ++i)
   {
     CHECK_THAT(adj_list.links(i),
                Catch::Matchers::RangeEquals(expected_list[i]));

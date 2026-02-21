@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -135,8 +135,8 @@ template <typename T, typename U>
 void declare_adjacency_list(nb::module_& m, std::string type)
 {
   std::string pyclass_name = std::string("AdjacencyList_") + type;
-  nb::class_<dolfinx::graph::AdjacencyList<std::vector<T>,
-                                           std::vector<std::int32_t>, U>>(
+  nb::class_<dolfinx::graph::AdjacencyList<
+      std::vector<T>, std::vector<std::int32_t>, std::vector<U>>>(
       m, pyclass_name.c_str(), "Adjacency List")
       .def_prop_ro(
           "offsets",
@@ -148,15 +148,18 @@ void declare_adjacency_list(nb::module_& m, std::string type)
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro("num_nodes",
-                   &dolfinx::graph::AdjacencyList<
-                       std::vector<T>, std::vector<std::int32_t>, U>::num_nodes)
+                   &dolfinx::graph::AdjacencyList<std::vector<T>,
+                                                  std::vector<std::int32_t>,
+                                                  std::vector<U>>::num_nodes)
       .def("__eq__",
-           &dolfinx::graph::AdjacencyList<
-               std::vector<T>, std::vector<std::int32_t>, U>::operator==,
+           &dolfinx::graph::AdjacencyList<std::vector<T>,
+                                          std::vector<std::int32_t>,
+                                          std::vector<U>>::operator==,
            nb::is_operator())
       .def("__len__",
-           &dolfinx::graph::AdjacencyList<
-               std::vector<T>, std::vector<std::int32_t>, U>::num_nodes);
+           &dolfinx::graph::AdjacencyList<std::vector<T>,
+                                          std::vector<std::int32_t>,
+                                          std::vector<U>>::num_nodes);
 }
 } // namespace
 
@@ -267,7 +270,8 @@ void graph(nb::module_& m)
       "comm_to_json",
       [](dolfinx::graph::AdjacencyList<
           std::vector<std::tuple<int, std::size_t, std::int8_t>>,
-          std::vector<std::int32_t>, std::pair<std::int32_t, std::int32_t>>& g)
+          std::vector<std::int32_t>,
+          std::vector<std::pair<std::int32_t, std::int32_t>>>& g)
       { return dolfinx::graph::comm_to_json(g); },
       "Build a JSON string representation of a parallel communication "
       "graph that can use used by build a NetworkX graph.");
