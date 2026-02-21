@@ -28,6 +28,8 @@
 #include <utility>
 #include <vector>
 
+#include <iostream>
+
 using namespace dolfinx;
 
 namespace
@@ -41,6 +43,8 @@ namespace
 ///
 /// This code is thread-safe.
 ///
+/// @param[in] c0 Starting cell index.
+/// @param[in] num_cells Number of cells to process.
 /// @param[in,out] entity_list
 /// @param[in] cells Cell-to-vertex connectivity.
 /// @param[in] e_vertices Entity-to-vertices, where
@@ -51,6 +55,7 @@ namespace
 /// @param[in] vertex_index_map Index map for the vertices.
 void build_entity_list(std::span<std::int32_t> entity_list,
                        std::span<std::int32_t> entity_list_sorted,
+                       std::int32_t /*c0*/, std::int32_t num_cells,
                        graph::AdjacencyList<std::span<const std::int32_t>,
                                             std::span<const std::int32_t>>
                            cells,
@@ -69,9 +74,10 @@ void build_entity_list(std::span<std::int32_t> entity_list,
   std::vector<std::size_t> perm(num_vertices_per_entity);
 
   // Iterate over cells
-  for (std::size_t c = 0; c < cells.num_nodes(); ++c)
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get vertices from each cell
+    // auto vertices = cells.links(c + c0);
     auto vertices = cells.links(c);
 
     // Iterate over cell entities of given type
@@ -582,7 +588,7 @@ compute_entities_by_key_matching(
   assert(cell_dim(entity_type) == dim);
 
   // Start timer
-  common::Timer timer("Compute entities of dÂim = " + std::to_string(dim));
+  common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
   std::vector<std::vector<std::int32_t>> cell_type_entities(cell_lists.size());
   std::vector<std::int32_t> cell_type_offsets{0};
@@ -635,13 +641,12 @@ compute_entities_by_key_matching(
           = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
       graph::AdjacencyList<std::span<const std::int32_t>,
                            std::span<const std::int32_t>>
-          _cells(std::span(cells.array().data() + cells.offsets()[c0],
-                           cells.offsets()[c1] - cells.offsets()[c0]),
+          _cells(cells.array(),
                  std::span(cells.offsets().data() + c0, c1 - c0 + 1));
       threads[i] = std::jthread(
           build_entity_list, std::span(entity_list.data() + offset, count),
-          std::span(entity_list_sorted.data() + offset, count), _cells,
-          e_vertices, entity_type, std::cref(cell_type_entities[k]),
+          std::span(entity_list_sorted.data() + offset, count), c0, c1 - c0,
+          _cells, e_vertices, entity_type, std::cref(cell_type_entities[k]),
           std::cref(vertex_index_map));
     }
   }

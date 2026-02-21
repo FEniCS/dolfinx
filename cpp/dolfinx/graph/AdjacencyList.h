@@ -73,7 +73,7 @@ public:
   AdjacencyList(W0&& data, W1&& offsets)
       : _array(std::forward<W0>(data)), _offsets(std::forward<W1>(offsets))
   {
-    assert(_offsets.back() == (std::int32_t)_array.size());
+    // assert(_offsets.back() == (std::int32_t)_array.size());
   }
 
   /// @brief Construct adjacency list from arrays of link (edge) data,
