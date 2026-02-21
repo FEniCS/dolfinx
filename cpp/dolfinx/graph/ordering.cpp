@@ -78,7 +78,7 @@ residual_graph_components(const graph::AdjacencyList<std::vector<int>>& graph,
 int max_level_width(const graph::AdjacencyList<std::vector<int>>& levels)
 {
   int wmax = 0;
-  for (int i = 0; i < levels.num_nodes(); ++i)
+  for (std::size_t i = 0; i < levels.num_nodes(); ++i)
     wmax = std::max(wmax, levels.num_links(i));
   return wmax;
 }

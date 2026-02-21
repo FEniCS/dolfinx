@@ -114,7 +114,7 @@ graph::comm_to_json(const graph::AdjacencyList<
   std::stringstream out;
   out << std::format("{{\"directed\": true, \"multigraph\": false, \"graph\": "
                      "[], \"nodes\": [");
-  for (std::int32_t n = 0; n < g.num_nodes(); ++n)
+  for (std::size_t n = 0; n < g.num_nodes(); ++n)
   {
     // Note: it is helpful to order map keys alphabetically
     out << std::format("{{\"num_ghosts\": {}, \"weight\": {},  \"id\": {}}}",
@@ -124,7 +124,7 @@ graph::comm_to_json(const graph::AdjacencyList<
   }
   out << "], ";
   out << "\"adjacency\": [";
-  for (std::int32_t n = 0; n < g.num_nodes(); ++n)
+  for (std::size_t n = 0; n < g.num_nodes(); ++n)
   {
     out << "[";
     auto links = g.links(n);

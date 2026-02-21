@@ -435,7 +435,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
       throw std::runtime_error("Missing cell-vertex connectivity.");
 
     std::map<std::int64_t, std::int32_t> input_idx_to_vertex;
-    for (int c = 0; c < c_to_v->num_nodes(); ++c)
+    for (std::size_t c = 0; c < c_to_v->num_nodes(); ++c)
     {
       auto vertices = c_to_v->links(c);
       std::span xdofs(xdofmap.data_handle() + c * xdofmap.extent(1),

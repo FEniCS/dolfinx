@@ -469,7 +469,7 @@ graph::AdjacencyList<std::vector<std::int64_t>> compute_nonlocal_dual_graph(
     std::vector<std::int32_t> disp = offsets;
 
     // Copy local data and add cell offset
-    for (std::int32_t i = 0; i < local_dual_graph.num_nodes(); ++i)
+    for (std::size_t i = 0; i < local_dual_graph.num_nodes(); ++i)
     {
       auto e = local_dual_graph.links(i);
       disp[i] += e.size();
@@ -611,7 +611,7 @@ mesh::build_local_dual_graph(
     {
       // Loop over cell facets
       std::span v = _cells.subspan(num_cell_vertices * c, num_cell_vertices);
-      for (int f = 0; f < cell_facets.num_nodes(); ++f)
+      for (std::size_t f = 0; f < cell_facets.num_nodes(); ++f)
       {
         std::span facet_vertices = cell_facets.links(f);
         std::ranges::transform(facet_vertices, std::back_inserter(facets),

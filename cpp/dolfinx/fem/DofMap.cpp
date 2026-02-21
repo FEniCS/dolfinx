@@ -100,7 +100,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                  [&old_to_new](auto idx_old) { return old_to_new[idx_old]; });
 
   // Dimension sanity checks
-  assert((int)dofmap.size()
+  assert(dofmap.size()
          == (cells->num_nodes() * dofmap_view.element_dof_layout().num_dofs()));
   assert(dofmap.size() % dofmap_view.element_dof_layout().num_dofs() == 0);
 
@@ -250,7 +250,7 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology,
   auto cells = topology.connectivity(tdim, 0);
   assert(cells);
   const int bs = dofmap_new.bs();
-  for (std::int32_t c = 0; c < cells->num_nodes(); ++c)
+  for (std::size_t c = 0; c < cells->num_nodes(); ++c)
   {
     std::span<const std::int32_t> cell_dofs_view = this->cell_dofs(c);
     std::span<const std::int32_t> cell_dofs = dofmap_new.cell_dofs(c);

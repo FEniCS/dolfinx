@@ -238,7 +238,7 @@ compute_edge_reflections(const mesh::Topology& topology)
 
   std::vector<std::bitset<BITSETSIZE>> edge_perm(num_cells, 0);
   std::vector<std::int64_t> cell_vertices, vertices;
-  for (int c = 0; c < c_to_v->num_nodes(); ++c)
+  for (std::size_t c = 0; c < c_to_v->num_nodes(); ++c)
   {
     cell_vertices.resize(c_to_v->num_links(c));
     im->local_to_global(c_to_v->links(c), cell_vertices);

@@ -691,7 +691,7 @@ compute_entities_by_key_matching(
     // which only appear in ghost cells tagged.
     const common::IndexMap& cell_map = std::get<2>(cell_lists[k]);
     assert(cell_map.size_local() + cell_map.num_ghosts()
-           == std::get<1>(cell_lists[k]).get().num_nodes());
+           == (std::int32_t)std::get<1>(cell_lists[k]).get().num_nodes());
     const std::int32_t ghost_offset = cell_map.size_local();
     int num_entities_per_cell = cell_type_entities[k].size();
     std::size_t offset = cell_type_offsets[k];
@@ -756,11 +756,9 @@ graph::AdjacencyList<std::vector<std::int32_t>> compute_from_transpose(
 
   // Compute number of connections for each e0
   std::vector<std::int32_t> num_connections(num_entities_d0, 0);
-  for (int e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
-  {
+  for (std::size_t e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
     for (std::int32_t e0 : c_d1_d0.links(e1))
       num_connections[e0]++;
-  }
 
   // Compute offsets
   std::vector<std::int32_t> offsets(num_connections.size() + 1, 0);
@@ -769,7 +767,7 @@ graph::AdjacencyList<std::vector<std::int32_t>> compute_from_transpose(
 
   std::vector<std::int32_t> counter(num_connections.size(), 0);
   std::vector<std::int32_t> connections(offsets[offsets.size() - 1]);
-  for (int e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
+  for (std::size_t e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
     for (std::int32_t e0 : c_d1_d0.links(e1))
       connections[offsets[e0] + counter[e0]++] = e1;
 
@@ -794,7 +792,7 @@ compute_from_map(const graph::AdjacencyList<std::vector<std::int32_t>>& c_d0_0,
   edge_to_index.reserve(c_d1_0.num_nodes());
 
   std::array<std::int32_t, 2> key;
-  for (int e = 0; e < c_d1_0.num_nodes(); ++e)
+  for (std::size_t e = 0; e < c_d1_0.num_nodes(); ++e)
   {
     std::span<const std::int32_t> v = c_d1_0.links(e);
     assert(v.size() == key.size());
@@ -814,7 +812,7 @@ compute_from_map(const graph::AdjacencyList<std::vector<std::int32_t>>& c_d0_0,
       = get_entity_vertices(mesh::CellType::triangle, 1);
   const graph::AdjacencyList<std::vector<int>> quad_vertices_ref
       = get_entity_vertices(mesh::CellType::quadrilateral, 1);
-  for (int e = 0; e < c_d0_0.num_nodes(); ++e)
+  for (std::size_t e = 0; e < c_d0_0.num_nodes(); ++e)
   {
     auto e0 = c_d0_0.links(e);
     auto vref = (e0.size() == 3) ? &tri_vertices_ref : &quad_vertices_ref;

@@ -636,7 +636,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
     auto x_dofmap = mesh.geometry().dofmap(cell_type_idx);
     auto c_to_v = topology->connectivity({tdim, cell_type_idx}, {0, 0});
     assert(c_to_v);
-    for (int c = 0; c < c_to_v->num_nodes(); ++c)
+    for (std::size_t c = 0; c < c_to_v->num_nodes(); ++c)
     {
       auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
       auto vertices = c_to_v->links(c);

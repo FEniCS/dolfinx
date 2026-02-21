@@ -40,7 +40,7 @@ graph::build::distribute(
 {
   common::Timer timer("Distribute AdjacencyList nodes to destination ranks");
 
-  assert(list.num_nodes() == (int)destinations.num_nodes());
+  assert(list.num_nodes() == destinations.num_nodes());
   const int rank = dolfinx::MPI::rank(comm);
 
   // Get global offset for converting local index to global index for
@@ -66,12 +66,12 @@ graph::build::distribute(
   // Build (dest, index, owning rank) list and sort
   std::vector<std::array<int, 3>> dest_to_index;
   dest_to_index.reserve(destinations.array().size());
-  for (std::int32_t i = 0; i < destinations.num_nodes(); ++i)
+  for (std::size_t i = 0; i < destinations.num_nodes(); ++i)
   {
     auto di = destinations.links(i);
     std::ranges::transform(di, std::back_inserter(dest_to_index),
                            [i, d0 = di.front()](auto d) -> std::array<int, 3>
-                           { return {d, i, d0}; });
+                           { return {d, (std::int32_t)i, d0}; });
   }
   std::ranges::sort(dest_to_index);
 
@@ -235,7 +235,7 @@ graph::build::distribute(
       "Distribute fixed-degree adjacency list to destination ranks");
 
   assert(list.size() == shape[0] * shape[1]);
-  assert(destinations.num_nodes() == (std::int32_t)shape[0]);
+  assert(destinations.num_nodes() == shape[0]);
   int rank = dolfinx::MPI::rank(comm);
   std::int64_t num_owned = destinations.num_nodes();
 
@@ -251,12 +251,12 @@ graph::build::distribute(
   // Build (dest, index, owning rank) list and sort
   std::vector<std::array<int, 3>> dest_to_index;
   dest_to_index.reserve(destinations.array().size());
-  for (std::int32_t i = 0; i < destinations.num_nodes(); ++i)
+  for (std::size_t i = 0; i < destinations.num_nodes(); ++i)
   {
     auto di = destinations.links(i);
     std::ranges::transform(di, std::back_inserter(dest_to_index),
                            [i, d0 = di.front()](auto d) -> std::array<int, 3>
-                           { return {d, i, d0}; });
+                           { return {d, (std::int32_t)i, d0}; });
   }
   std::ranges::sort(dest_to_index);
 

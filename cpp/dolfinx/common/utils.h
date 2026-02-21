@@ -124,5 +124,6 @@ std::size_t hash_global(MPI_Comm comm, const T& x)
 std::string
 comm_to_json(const graph::AdjacencyList<
              std::vector<std::tuple<int, std::size_t, std::int8_t>>,
+             std::vector<std::int32_t>,
              std::vector<std::pair<std::int32_t, std::int32_t>>>& g);
 } // namespace dolfinx::common

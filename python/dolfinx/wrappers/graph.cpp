@@ -238,7 +238,7 @@ void graph(nb::module_& m)
       {
         std::vector<std::tuple<int, int, std::map<std::string, std::size_t>>>
             adj;
-        for (std::int32_t n = 0; n < g.num_nodes(); ++n)
+        for (std::size_t n = 0; n < g.num_nodes(); ++n)
         {
           for (auto [e, w, local] : g.links(n))
           {

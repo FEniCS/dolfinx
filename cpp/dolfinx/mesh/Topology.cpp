@@ -376,7 +376,7 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
 
   // Build src and destination ranks
   std::vector<int> src, dest;
-  for (std::int32_t i = 0; i < index_to_ranks.num_nodes(); ++i)
+  for (std::size_t i = 0; i < index_to_ranks.num_nodes(); ++i)
   {
     if (auto ranks = index_to_ranks.links(i); ranks.front() == mpi_rank)
       dest.insert(dest.end(), std::next(ranks.begin()), ranks.end());
@@ -399,7 +399,7 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
   // Pack send data. Use std::vector<std::vector>> since size will be
   // modest (equal to number of neighbour ranks)
   std::vector<std::vector<std::int64_t>> send_buffer(dest.size());
-  for (std::int32_t i = 0; i < index_to_ranks.num_nodes(); ++i)
+  for (std::size_t i = 0; i < index_to_ranks.num_nodes(); ++i)
   {
     // Get (global) ranks that share this vertex. Note that first rank
     // is the owner.
@@ -1501,7 +1501,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
       {
         if (fci)
         {
-          for (std::int32_t k = 0; k < fci->num_nodes(); ++k)
+          for (std::size_t k = 0; k < fci->num_nodes(); ++k)
           {
             if (fci->num_links(k) == 2)
             {
@@ -1523,7 +1523,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
         if (fci and fcj)
         {
           assert(fci->num_nodes() == fcj->num_nodes());
-          for (std::int32_t k = 0; k < fci->num_nodes(); ++k)
+          for (std::size_t k = 0; k < fci->num_nodes(); ++k)
           {
             if (fci->num_links(k) == 1 and fcj->num_links(k) == 1)
             {

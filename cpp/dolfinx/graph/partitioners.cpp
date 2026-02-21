@@ -46,13 +46,13 @@ dolfinx::graph::compute_destination_ranks(
   const int rank = dolfinx::MPI::rank(comm);
   const std::int64_t range0 = node_disp[rank];
   const std::int64_t range1 = node_disp[rank + 1];
-  assert(static_cast<std::int32_t>(range1 - range0) == graph.num_nodes());
+  assert((range1 - range0) == (std::int64_t)graph.num_nodes());
 
   // Wherever an owned 'node' goes, so must the nodes connected to it by
   // an edge ('node1'). Task is to let the owner of node1 know the extra
   // ranks that it needs to send node1 to.
   std::vector<std::array<std::int64_t, 3>> node_to_dest;
-  for (int node0 = 0; node0 < graph.num_nodes(); ++node0)
+  for (std::size_t node0 = 0; node0 < graph.num_nodes(); ++node0)
   {
     // Wherever 'node' goes to, so must the attached 'node1'
     for (auto node1 : graph.links(node0))
@@ -181,7 +181,7 @@ dolfinx::graph::compute_destination_ranks(
   graph::AdjacencyList<std::vector<int>> g(std::move(data), std::move(offsets));
 
   // Make sure the owning rank comes first for each node
-  for (std::int32_t i = 0; i < g.num_nodes(); ++i)
+  for (std::size_t i = 0; i < g.num_nodes(); ++i)
   {
     auto d = g.links(i);
     auto it = std::find(d.begin(), d.end(), part[i]);
@@ -469,7 +469,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       // Create a map of local nodes to their additional destination
       // processes, due to ghosting
       std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
-      for (std::int32_t node0 = 0; node0 < graph.num_nodes(); ++node0)
+      for (std::size_t node0 = 0; node0 < graph.num_nodes(); ++node0)
       {
         // Get all edges outward from node i
         const std::int32_t node0_rank = node_partition[node0];
@@ -485,7 +485,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       timer5.stop();
 
       offsets.reserve(graph.num_nodes() + 1);
-      for (std::int32_t i = 0; i < graph.num_nodes(); ++i)
+      for (std::size_t i = 0; i < graph.num_nodes(); ++i)
       {
         dests.push_back(node_partition[i]);
         if (auto it = local_node_to_dests.find(i);
