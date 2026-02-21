@@ -61,11 +61,11 @@ public:
   /// @brief Construct adjacency list from arrays of link (edge) data
   /// and offsets.
   ///
-  /// @param[in] data Adjacency lost data array.
+  /// @param[in] data Adjacency list data array.
   /// @param[in] offsets Offsets into `data` for each node, where
-  /// `offsets[i]` is the first index in `data` for node `i`. The last
-  /// index in `offsets` is the equal to the length of `data`. array for
-  /// node `i`.
+  /// `offsets[i]` is the first index in `data` for node `i` and
+  /// `offsets[i+1] - offsets[i]` is the number of edges for node `i`.
+  /// The length of `offsets` is equal to the number of nodes plus 1.
   template <typename W0, typename W1>
     requires std::is_convertible_v<std::remove_cvref_t<W0>, EdgeContainer>
                  and std::is_convertible_v<std::remove_cvref_t<W1>,
@@ -73,16 +73,17 @@ public:
   AdjacencyList(W0&& data, W1&& offsets)
       : _array(std::forward<W0>(data)), _offsets(std::forward<W1>(offsets))
   {
-    // assert(_offsets.back() == (std::int32_t)_array.size());
+    assert(_offsets.back() <= (std::int32_t)_array.size());
   }
 
   /// @brief Construct adjacency list from arrays of link (edge) data,
   /// offsets, and node data.
   ///
-  /// @param[in] data Adjacency lost data array.
+  /// @param[in] data Adjacency list data array.
   /// @param[in] offsets Offsets into `data` for each node, where
-  /// `offsets[i]` is the first index in `data` for node `i`. The last
-  /// index in `offsets` is the equal to the length of `data`.
+  /// `offsets[i]` is the first index in `data` for node `i` and
+  /// `offsets[i+1] - offsets[i]` is the number of edges for node `i`.
+  /// The length of `offsets` is equal to the number of nodes plus 1.
   /// @param[in] node_data Node data array where `node_data[i]` is the
   /// data attached to node `i`.
   template <typename W0, typename W1, typename W2>
@@ -96,11 +97,11 @@ public:
         _node_data(std::forward<W2>(node_data))
   {
     assert(_node_data.size() == _offsets.size() - 1);
-    assert(_offsets.back() == (std::int32_t)_array.size());
+    assert(_offsets.back() <= (std::int32_t)_array.size());
   }
 
-  /// @brief Construct trivial adjacency list where each of the n nodes
-  /// is connected to itself.
+  /// @brief Construct trivial adjacency list where each of the `n`
+  /// nodes is connected to itself.
   ///
   /// @param[in] n Number of nodes.
   explicit AdjacencyList(std::int32_t n)
@@ -131,24 +132,26 @@ public:
 
   /// @brief Construct an adjacency list with different template
   /// parameters.
-  ///
-  /// Typical use would be copying to an adjacency list that uses spans.
+  /// @param x Adjacency list to create the new adjacency list from.
   template <typename W0, typename W1>
   AdjacencyList(const AdjacencyList<W0, W1, std::nullptr_t>& x)
       : _array(x.array().begin(), x.array().end()),
         _offsets(x.offsets().begin(), x.offsets().end())
   {
+    assert(_offsets.back() <= (std::int32_t)_array.size());
   }
 
   /// @brief Construct an adjacency list with different template
   /// parameters.
-  ///
-  /// Typical use would be copying to an adjacency list that uses spans.
+  /// @param x Adjacency list to create the new adjacency list from.
   template <typename W0, typename W1, typename W2>
   AdjacencyList(const AdjacencyList<W0, W1, W2>& x)
       : _array(x.array().begin(), x.array().end()),
-        _offsets(x.offsets().begin(), x.offsets().end())
+        _offsets(x.offsets().begin(), x.offsets().end()),
+        _node_data(x.node_data().begin(), x.node_data().end())
   {
+    assert(_offsets.back() <= (std::int32_t)_array.size());
+    assert(_node_data.size() == _offsets.size() - 1);
   }
 
   /// Copy constructor
@@ -181,13 +184,13 @@ public:
   std::size_t num_nodes() const { return _offsets.size() - 1; }
 
   /// @brief Number of connections for given node.
-  /// @param[in] node Node index.
+  /// @param[in] n Node index.
   /// @return The number of outgoing links (edges) from the node.
-  int num_links(std::size_t node) const
+  int num_links(std::size_t n) const
   {
-    assert((node + 1) < _offsets.size());
-    return *std::next(_offsets.begin(), node + 1)
-           - *std::next(_offsets.begin(), node);
+    assert((n + 1) < _offsets.size());
+    return *std::next(_offsets.begin(), n + 1)
+           - *std::next(_offsets.begin(), n);
   }
 
   /// @brief Get the links (edges) for given node.
@@ -202,25 +205,72 @@ public:
   }
 
   /// @brief Get the links (edges) for given node (const version).
-  /// @param[in] node Node index.
+  ///
+  /// @param[in] n Node index.
   /// @return Array of outgoing links for the node. The length will be
   /// `AdjacencyList:num_links(node)`.
-  std::span<const link_type> links(std::size_t node) const
+  std::span<const link_type> links(std::size_t n) const
   {
-    return std::span(_array.data() + *std::next(_offsets.begin(), node),
-                     this->num_links(node));
+    return std::span(_array.data() + *std::next(_offsets.begin(), n),
+                     this->num_links(n));
   }
 
-  /// Return container of links for all nodes (const version).
+  /// @brief Create a sub-view of the adjacency list for a contiguous
+  /// range of nodes.
+  ///
+  /// The range of nodes is [n0, n1), i.e. it includes node n0 but not n1.
+  ///
+  /// @param n0 Start node index (inclusive).
+  /// @param n1 End node index (exclusive).
+  /// @return Sub-view of the adjacency list for nodes in the range [n0, n1).
+  auto sub(std::size_t n0, std::size_t n1) const
+    requires requires(NodeDataContainer) {
+      typename NodeDataContainer::value_type;
+    }
+  {
+    assert(n0 <= n1);
+    assert(n1 <= this->num_nodes());
+    return AdjacencyList<std::span<const link_type>,
+                         std::span<const offset_type>, std::nullptr_t>(
+        std::span(_array), std::span(_offsets.data() + n0, n1 - n0 + 1),
+        std::span(_node_data.data() + n0, n1 - n0));
+  }
+
+  /// @brief Create a sub-view of the adjacency list for a contiguous
+  /// range of nodes.
+  ///
+  /// The range of nodes is [n0, n1), i.e. it includes node n0 but not n1.
+  ///
+  /// @param n0 Start node index (inclusive).
+  /// @param n1 End node index (exclusive).
+  /// @return Sub-view of the adjacency list for nodes in the range [n0, n1).
+  AdjacencyList<std::span<const link_type>, std::span<const offset_type>,
+                std::nullptr_t>
+  sub(std::size_t n0, std::size_t n1) const
+  {
+    assert(n0 <= n1);
+    assert(n1 <= this->num_nodes());
+    return AdjacencyList<std::span<const link_type>,
+                         std::span<const offset_type>, std::nullptr_t>(
+        std::span(_array), std::span(_offsets.data() + n0, n1 - n0 + 1));
+  }
+
+  /// @brief Return container of links for all nodes (const version).
+  ///
+  /// @note The returned container may lager than the data pointed to by
+  /// AdjacencyList::offsets.
   const EdgeContainer& array() const { return _array; }
 
-  /// Return container of links for all nodes.
+  /// @brief Return container of links for all nodes.
+  ///
+  /// @note The returned container may lager than the data pointed to by
+  /// AdjacencyList::offsets.
   EdgeContainer& array() { return _array; }
 
-  /// Offset for each node in array() (const version).
+  /// @brief Offset for each node in array() (const version).
   const OffsetContainer& offsets() const { return _offsets; }
 
-  /// Offset for each node in array().
+  /// @brief Offset for each node in array().
   OffsetContainer& offsets() { return _offsets; }
 
   /// Return node data (if present), where `node_data()[i]` is the data

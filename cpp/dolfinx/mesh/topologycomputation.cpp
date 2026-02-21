@@ -55,7 +55,6 @@ namespace
 /// @param[in] vertex_index_map Index map for the vertices.
 void build_entity_list(std::span<std::int32_t> entity_list,
                        std::span<std::int32_t> entity_list_sorted,
-                       std::int32_t /*c0*/, std::int32_t num_cells,
                        graph::AdjacencyList<std::span<const std::int32_t>,
                                             std::span<const std::int32_t>>
                            cells,
@@ -63,7 +62,7 @@ void build_entity_list(std::span<std::int32_t> entity_list,
                                             std::span<const std::int32_t>>
                            e_vertices,
                        mesh::CellType entity_type,
-                       const std::vector<std::int32_t>& cell_type_entities,
+                       std::span<const std::int32_t> cell_type_entities,
                        const common::IndexMap& vertex_index_map)
 {
   int num_vertices_per_entity = num_cell_vertices(entity_type);
@@ -74,7 +73,7 @@ void build_entity_list(std::span<std::int32_t> entity_list,
   std::vector<std::size_t> perm(num_vertices_per_entity);
 
   // Iterate over cells
-  for (std::int32_t c = 0; c < num_cells; ++c)
+  for (std::size_t c = 0; c < cells.num_nodes(); ++c)
   {
     // Get vertices from each cell
     // auto vertices = cells.links(c + c0);
@@ -633,20 +632,15 @@ compute_entities_by_key_matching(
     {
       auto [c0, c1]
           = dolfinx::MPI::local_range(i, cells.num_nodes(), num_threads);
-
       std::size_t offset
           = cell_type_offsets[k] * num_vertices_per_entity
             + c0 * num_vertices_per_entity * num_entities_per_cell;
       std::size_t count
           = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
-      graph::AdjacencyList<std::span<const std::int32_t>,
-                           std::span<const std::int32_t>>
-          _cells(cells.array(),
-                 std::span(cells.offsets().data() + c0, c1 - c0 + 1));
       threads[i] = std::jthread(
           build_entity_list, std::span(entity_list.data() + offset, count),
-          std::span(entity_list_sorted.data() + offset, count), c0, c1 - c0,
-          _cells, e_vertices, entity_type, std::cref(cell_type_entities[k]),
+          std::span(entity_list_sorted.data() + offset, count),
+          cells.sub(c0, c1), e_vertices, entity_type, cell_type_entities[k],
           std::cref(vertex_index_map));
     }
   }
