@@ -20,13 +20,8 @@
 
 namespace dolfinx::graph
 {
-
-// template <typename T>
-// concept Number = {typename T::element_type;
-// };
-
-template <typename t>
-concept Number = requires(t p_t) { typename t::element_type; };
+// template <typename t>
+// concept Number = requires(t p_t) { typename t::element_type; };
 
 /// @brief This class provides a static adjacency list data structure.
 ///
@@ -98,7 +93,6 @@ public:
   AdjacencyList(W0&& data, W1&& offsets)
       : _array(std::forward<W0>(data)), _offsets(std::forward<W1>(offsets))
   {
-    // _array.reserve(_offsets.back());
     assert(_offsets.back() == (std::int32_t)_array.size());
   }
 
@@ -122,8 +116,6 @@ public:
       : _array(std::forward<W0>(data)), _offsets(std::forward<W1>(offsets)),
         _node_data(std::forward<W2>(node_data))
   {
-    // assert(_node_data.has_value()
-    //        and _node_data->size() == _offsets.size() - 1);
     assert(_node_data.size() == _offsets.size() - 1);
     assert(_offsets.back() == (std::int32_t)_array.size());
   }
@@ -198,7 +190,6 @@ public:
   int num_links(std::size_t node) const
   {
     assert((node + 1) < _offsets.size());
-    // return _offsets[node + 1] - _offsets[node];
     return *std::next(_offsets.begin(), node + 1)
            - *std::next(_offsets.begin(), node);
   }
@@ -266,11 +257,23 @@ public:
 
   /// Return node data (if present), where `node_data()[i]` is the data
   /// for node `i` (const version).
-  const NodeDataContainer& node_data() const { return _node_data; }
+  const NodeDataContainer& node_data() const
+    requires requires(NodeDataContainer) {
+      typename NodeDataContainer::value_type;
+    }
+  {
+    return _node_data;
+  }
 
   /// Return node data (if present), where `node_data()[i]` is the data
   /// for node `i`.
-  NodeDataContainer& node_data() { return _node_data; }
+  NodeDataContainer& node_data()
+    requires requires(NodeDataContainer) {
+      typename NodeDataContainer::value_type;
+    }
+  {
+    return _node_data;
+  }
 
   /// @brief Informal string representation (pretty-print).
   ///
@@ -359,7 +362,8 @@ AdjacencyList(T, OffsetContainer)
 // template <typename T, typename U, typename W>
 // AdjacencyList(T, U, W)
 //     -> AdjacencyList<typename T::value_type, typename W::value_type>;
-template <typename T, typename OffsetContainer, typename W>
-AdjacencyList(T, OffsetContainer, W) -> AdjacencyList<T, OffsetContainer, W>;
+template <typename T, typename OffsetContainer, typename NodeDataContainer>
+AdjacencyList(T, OffsetContainer, NodeDataContainer)
+    -> AdjacencyList<T, OffsetContainer, NodeDataContainer>;
 
 } // namespace dolfinx::graph
