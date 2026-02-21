@@ -36,7 +36,7 @@ class Topology;
 /// @param[in] entity_type Entity type in dimension `dim` to create.
 /// Entity type must be in the list returned by Topology::entity_types.
 /// @param[in] num_threads Number of threads to use for entity creation.
-/// Set to zero to no spawn threads.
+/// Set to zero to not spawn threads.
 ///
 /// @return Tuple of (cell->entity connectivity, entity->vertex
 /// connectivity, index map for created entities, list of interprocess
