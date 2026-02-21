@@ -230,7 +230,8 @@ void graph(nb::module_& m)
       "comm_graph_data",
       [](dolfinx::graph::AdjacencyList<
           std::vector<std::tuple<int, std::size_t, std::int8_t>>,
-          std::vector<std::int32_t>, std::pair<std::int32_t, std::int32_t>>& g)
+          std::vector<std::int32_t>,
+          std::vector<std::pair<std::int32_t, std::int32_t>>>& g)
       {
         std::vector<std::tuple<int, int, std::map<std::string, std::size_t>>>
             adj;
@@ -248,7 +249,7 @@ void graph(nb::module_& m)
             std::pair<std::int32_t, std::map<std::string, std::int32_t>>>
             nodes;
         std::ranges::transform(
-            g.node_data().value(), std::ranges::views::iota(0),
+            g.node_data(), std::ranges::views::iota(0),
             std::back_inserter(nodes),
             [](auto data, auto n)
             {

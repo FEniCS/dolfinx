@@ -45,7 +45,7 @@ void test_adjacency_list_create()
 
   std::vector<std::int64_t> node_data{-1, 5, -20};
   graph::AdjacencyList g1(edges, offsets, node_data);
-  CHECK(std::ranges::equal(g1.node_data().value(), node_data));
+  CHECK(std::ranges::equal(g1.node_data(), node_data));
 }
 
 void test_comm_graphs()
