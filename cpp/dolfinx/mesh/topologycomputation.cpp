@@ -183,6 +183,7 @@ int get_ownership(const U& processes, const V& vertices)
   return owner;
 }
 //-----------------------------------------------------------------------------
+
 /// Communicate with sharing processes to find out which
 /// entities are ghosts and return a map (vector) to move these
 /// local indices to the end of the local range. Also returns
@@ -622,7 +623,7 @@ compute_entities_by_key_matching(
     const graph::AdjacencyList<std::int32_t>& cells
         = std::get<1>(cell_lists[k]);
     int num_entities_per_cell = cell_type_entities[k].size();
-    if (num_threads > 1)
+    if (num_threads > 0)
     {
       std::vector<std::jthread> threads(num_threads);
       for (int i = 0; i < num_threads; ++i)
@@ -662,21 +663,36 @@ compute_entities_by_key_matching(
   {
     common::Timer timer("Compute entities by key matching: number entities");
 
+    auto sort_threaded = [](const auto& entity_list_sorted,
+                            int num_vertices_per_entity, int num_threads)
+    {
+      std::vector<std::int32_t> sort_order(
+          entity_list_sorted.size() / num_vertices_per_entity, 0);
+      std::iota(sort_order.begin(), sort_order.end(), 0);
+      boost::sort::sample_sort(
+          sort_order.begin(), sort_order.end(),
+          [facets = std::cref(entity_list_sorted),
+           shape1 = num_vertices_per_entity](auto f0, auto f1)
+          {
+            auto it0 = std::next(facets.get().begin(), f0 * shape1);
+            auto it1 = std::next(facets.get().begin(), f1 * shape1);
+            return std::lexicographical_compare(it0, std::next(it0, shape1),
+                                                it1, std::next(it1, shape1));
+          },
+          num_threads);
+
+      return sort_order;
+    };
+
     // Sort the list and label uniquely
-    std::vector<std::int32_t> sort_order(
-        entity_list_sorted.size() / num_vertices_per_entity, 0);
-    std::iota(sort_order.begin(), sort_order.end(), 0);
-    boost::sort::parallel_stable_sort(
-        sort_order.begin(), sort_order.end(),
-        [&facets = entity_list_sorted,
-         shape1 = num_vertices_per_entity](auto f0, auto f1)
-        {
-          auto it0 = std::next(facets.begin(), f0 * shape1);
-          auto it1 = std::next(facets.begin(), f1 * shape1);
-          return std::lexicographical_compare(it0, std::next(it0, shape1), it1,
-                                              std::next(it1, shape1));
-        },
-        num_threads);
+    const std::vector<std::int32_t> sort_order
+        = num_threads == 0
+              ? dolfinx::sort_by_perm<std::int32_t, 16>(entity_list_sorted,
+                                                        num_vertices_per_entity)
+              : sort_threaded(entity_list_sorted, num_vertices_per_entity,
+                              num_threads);
+    timer.stop();
+    timer.flush();
 
     std::vector<std::int32_t> entity(num_vertices_per_entity);
     std::vector<std::int32_t> entity0(num_vertices_per_entity);
