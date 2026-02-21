@@ -28,8 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include <iostream>
-
 using namespace dolfinx;
 
 namespace
@@ -43,9 +41,8 @@ namespace
 ///
 /// This code is thread-safe.
 ///
-/// @param[in] c0 Starting cell index.
-/// @param[in] num_cells Number of cells to process.
 /// @param[in,out] entity_list
+/// @param[in,out] entity_list_sorted
 /// @param[in] cells Cell-to-vertex connectivity.
 /// @param[in] e_vertices Entity-to-vertices, where
 /// `e_vertices.links(e)[i]` is the `i`th local (to the cell) vertex
