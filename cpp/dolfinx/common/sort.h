@@ -67,27 +67,16 @@ inline constexpr __unsigned_projection unsigned_projection{};
 /// dolfinx::radix_sort(i, [&](auto i){ return a[i]; }); // yields i = {2, 0,
 /// 1} and a[i] = {1, 2, 3};
 /// @endcode
+/// @tparam BITS The number of bits to sort at a time.
 /// @tparam P Projection type to be applied on range elements to produce
 /// a sorting index.
-/// @tparam BITS The number of bits to sort at a time.
+/// @tparam R Type of the range to sort.
 /// @param[in, out] range The range to sort.
-/// @param[in] P Element projection.
-// template <unsigned short BITS = 16, typename P = std::identity>
-// template <std::ranges::random_access_range R, typename P = std::identity,
-//           std::make_unsigned_t<std::remove_cvref_t<
-//               std::invoke_result_t<P, std::iter_value_t<R>>>>
-//               BITS
-//           = 8>
-//   requires std::integral<decltype(BITS)>
+/// @param[in] proj Element projection.
 template <int _BITS = 8, typename P = std::identity,
           std::ranges::random_access_range R>
-// requires std::integral<decltype(_BITS)>
 constexpr void radix_sort(R&& range, P proj = {})
 {
-  // using R = std::remove_cvref_t<decltype(range)>;
-  // static_assert(std::ranges::random_access_range<R>,
-  //               "Range must be a random access range.");
-
   using bit_t = std::make_unsigned_t<
       std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>>>;
   constexpr bit_t BITS = _BITS;
