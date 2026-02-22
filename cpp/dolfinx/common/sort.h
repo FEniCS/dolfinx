@@ -79,9 +79,9 @@ inline constexpr __unsigned_projection unsigned_projection{};
 //               BITS
 //           = 8>
 //   requires std::integral<decltype(BITS)>
-template <typename P = std::identity, int _BITS = 8,
+template <int _BITS = 8, typename P = std::identity,
           std::ranges::random_access_range R>
-  requires std::integral<decltype(_BITS)>
+// requires std::integral<decltype(_BITS)>
 constexpr void radix_sort(R&& range, P proj = {})
 {
   // using R = std::remove_cvref_t<decltype(range)>;
@@ -204,8 +204,8 @@ std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
     std::size_t col = shape1 - 1 - i;
     for (std::size_t j = 0; j < shape0; ++j)
       column[j] = x[j * shape1 + col];
-    radix_sort(perm, [column = std::cref(column)](auto index)
-               { return column.get()[index]; });
+    radix_sort<BITS>(perm, [column = std::cref(column)](auto index)
+                     { return column.get()[index]; });
   }
 
   return perm;
