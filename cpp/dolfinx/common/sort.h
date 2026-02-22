@@ -73,17 +73,24 @@ inline constexpr __unsigned_projection unsigned_projection{};
 /// @param[in, out] range The range to sort.
 /// @param[in] P Element projection.
 // template <unsigned short BITS = 16, typename P = std::identity>
-template <std::ranges::random_access_range R, typename P = std::identity,
-          std::make_unsigned_t<std::remove_cvref_t<
-              std::invoke_result_t<P, std::iter_value_t<R>>>>
-              BITS
-          = 8>
-  requires std::integral<decltype(BITS)>
+// template <std::ranges::random_access_range R, typename P = std::identity,
+//           std::make_unsigned_t<std::remove_cvref_t<
+//               std::invoke_result_t<P, std::iter_value_t<R>>>>
+//               BITS
+//           = 8>
+//   requires std::integral<decltype(BITS)>
+template <typename P = std::identity, int _BITS = 8,
+          std::ranges::random_access_range R>
+  requires std::integral<decltype(_BITS)>
 constexpr void radix_sort(R&& range, P proj = {})
 {
   // using R = std::remove_cvref_t<decltype(range)>;
   // static_assert(std::ranges::random_access_range<R>,
   //               "Range must be a random access range.");
+
+  using bit_t = std::make_unsigned_t<
+      std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>>>;
+  constexpr bit_t BITS = _BITS;
 
   // value type
   using T = std::iter_value_t<R>;
