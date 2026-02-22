@@ -27,7 +27,6 @@ from mpi4py import MPI
 
 import numpy as np
 import numpy.typing as npt
-import pyamg
 
 import ufl
 from dolfinx import fem, io
@@ -41,6 +40,13 @@ from dolfinx.fem import (
     locate_dofs_topological,
 )
 from dolfinx.mesh import CellType, create_box, locate_entities_boundary
+
+try:
+    import pyamg
+except ImportError:
+    print("This demo requires pyamg.")
+    exit(0)
+
 
 if MPI.COMM_WORLD.size > 1:
     print("This demo works only in serial.")
@@ -68,14 +74,15 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
 
     V = functionspace(mesh, ("Lagrange", 1))
 
+    tdim = mesh.topology.dim
+    fdim = tdim - 1
     facets = locate_entities_boundary(
         mesh,
-        dim=(mesh.topology.dim - 1),
+        dim=fdim,
         marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 3.0),
     )
 
-    tdim = mesh.topology.dim
-    dofs = locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
+    dofs = locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
     bc = dirichletbc(value=dtype(0), dofs=dofs, V=V)
 
@@ -170,9 +177,11 @@ def elasticity_problem(dtype) -> None:
         dtype=dtype,
     )
 
+    tdim = mesh.topology.dim
+    fdim = tdim - 1
     facets = locate_entities_boundary(
         mesh,
-        dim=(mesh.topology.dim - 1),
+        dim=fdim,
         marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 3.0),
     )
 
@@ -198,8 +207,7 @@ def elasticity_problem(dtype) -> None:
     a = form(ufl.inner(σ(u), ufl.grad(v)) * ufl.dx, dtype=dtype)
     L = form(ufl.inner(f, v) * ufl.dx, dtype=dtype)
 
-    tdim = mesh.topology.dim
-    dofs = locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
+    dofs = locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
     bc = dirichletbc(np.zeros(3, dtype=dtype), dofs, V=V)
 
     A = assemble_matrix(a, bcs=[bc]).to_scipy()

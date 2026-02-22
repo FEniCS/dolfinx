@@ -34,7 +34,7 @@ from scipy.sparse.linalg import spsolve
 import basix
 import dolfinx.cpp as _cpp
 import ufl
-from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
+from dolfinx.cpp.mesh import GhostMode, create_mesh
 from dolfinx.fem import (
     FiniteElement,
     FunctionSpace,
@@ -45,7 +45,7 @@ from dolfinx.fem import (
     mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
-from dolfinx.mesh import CellType, Mesh, Topology
+from dolfinx.mesh import CellType, Mesh, Topology, create_cell_partitioner
 
 # -
 
@@ -108,7 +108,7 @@ geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
 
-part = create_cell_partitioner(GhostMode.none)
+part = create_cell_partitioner(GhostMode.none, 2)  # type: ignore
 mesh = create_mesh(
     MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part, 2
 )
