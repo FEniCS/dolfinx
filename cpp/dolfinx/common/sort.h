@@ -79,6 +79,11 @@ constexpr void radix_sort(auto&& range, P proj = {})
   static_assert(std::ranges::random_access_range<R>,
                 "Range must be a random access range.");
 
+  using BIT_t = std::make_unsigned_t<
+      std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>>>;
+
+  constexpr BIT_t _BITS = BITS;
+
   // value type
   using T = std::iter_value_t<R>;
 
@@ -88,7 +93,7 @@ constexpr void radix_sort(auto&& range, P proj = {})
 
   if constexpr (!std::is_same_v<uI, I>)
   {
-    radix_sort<BITS>(std::forward<R>(range), [&](const T& e) -> uI
+    radix_sort<_BITS>(std::forward<R>(range), [&](const T& e) -> uI
                      { return unsigned_projection(proj(e)); });
     return;
   }
@@ -99,8 +104,8 @@ constexpr void radix_sort(auto&& range, P proj = {})
   uI max_value = proj(*std::ranges::max_element(range, std::less{}, proj));
 
   // Sort N bits at a time
-  constexpr uI bucket_size = 1 << BITS;
-  uI mask = (uI(1) << BITS) - 1;
+  constexpr uI bucket_size = 1 << _BITS;
+  uI mask = (uI(1) << _BITS) - 1;
 
   // Compute number of iterations, most significant digit (N bits) of
   // maxvalue
@@ -116,7 +121,7 @@ constexpr void radix_sort(auto&& range, P proj = {})
 
   while (max_value)
   {
-    max_value >>= BITS;
+    max_value >>= _BITS;
     its++;
   }
 
@@ -148,8 +153,8 @@ constexpr void radix_sort(auto&& range, P proj = {})
       counter[bucket]--;
     }
 
-    mask = mask << BITS;
-    mask_offset += BITS;
+    mask = mask << _BITS;
+    mask_offset += _BITS;
 
     std::swap(current_perm, next_perm);
   }
