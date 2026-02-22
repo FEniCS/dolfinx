@@ -72,17 +72,18 @@ inline constexpr __unsigned_projection unsigned_projection{};
 /// @tparam BITS The number of bits to sort at a time.
 /// @param[in, out] range The range to sort.
 /// @param[in] P Element projection.
-template <unsigned short BITS = 16, typename P = std::identity>
-constexpr void radix_sort(auto&& range, P proj = {})
+// template <unsigned short BITS = 16, typename P = std::identity>
+template <std::ranges::random_access_range R, typename P = std::identity,
+          std::make_unsigned_t<std::remove_cvref_t<
+              std::invoke_result_t<P, std::iter_value_t<R>>>>
+              BITS
+          = 8>
+  requires std::integral<decltype(BITS)>
+constexpr void radix_sort(R&& range, P proj = {})
 {
-  using R = std::remove_cvref_t<decltype(range)>;
-  static_assert(std::ranges::random_access_range<R>,
-                "Range must be a random access range.");
-
-  using BIT_t = std::make_unsigned_t<
-      std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>>>;
-
-  constexpr BIT_t _BITS = BITS;
+  // using R = std::remove_cvref_t<decltype(range)>;
+  // static_assert(std::ranges::random_access_range<R>,
+  //               "Range must be a random access range.");
 
   // value type
   using T = std::iter_value_t<R>;
@@ -93,8 +94,8 @@ constexpr void radix_sort(auto&& range, P proj = {})
 
   if constexpr (!std::is_same_v<uI, I>)
   {
-    radix_sort<_BITS>(std::forward<R>(range), [&](const T& e) -> uI
-                      { return unsigned_projection(proj(e)); });
+    radix_sort(std::forward<R>(range),
+               [&](const T& e) -> uI { return unsigned_projection(proj(e)); });
     return;
   }
 
@@ -104,8 +105,8 @@ constexpr void radix_sort(auto&& range, P proj = {})
   uI max_value = proj(*std::ranges::max_element(range, std::less{}, proj));
 
   // Sort N bits at a time
-  constexpr uI bucket_size = 1 << _BITS;
-  uI mask = (uI(1) << _BITS) - 1;
+  constexpr uI bucket_size = 1 << BITS;
+  uI mask = (uI(1) << BITS) - 1;
 
   // Compute number of iterations, most significant digit (N bits) of
   // maxvalue
@@ -121,7 +122,7 @@ constexpr void radix_sort(auto&& range, P proj = {})
 
   while (max_value)
   {
-    max_value >>= _BITS;
+    max_value >>= BITS;
     its++;
   }
 
@@ -153,8 +154,8 @@ constexpr void radix_sort(auto&& range, P proj = {})
       counter[bucket]--;
     }
 
-    mask = mask << _BITS;
-    mask_offset += _BITS;
+    mask = mask << BITS;
+    mask_offset += BITS;
 
     std::swap(current_perm, next_perm);
   }
@@ -174,7 +175,7 @@ constexpr void radix_sort(auto&& range, P proj = {})
 /// @pre `x.size()` must be a multiple of `shape1`.
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.
-template <typename T, unsigned short BITS = 16>
+template <typename T, int BITS = 16>
 std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
 {
   static_assert(std::is_integral_v<T>, "Integral required.");
@@ -196,8 +197,8 @@ std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
     std::size_t col = shape1 - 1 - i;
     for (std::size_t j = 0; j < shape0; ++j)
       column[j] = x[j * shape1 + col];
-    radix_sort<BITS>(perm, [column = std::cref(column)](auto index)
-                     { return column.get()[index]; });
+    radix_sort(perm, [column = std::cref(column)](auto index)
+               { return column.get()[index]; });
   }
 
   return perm;
