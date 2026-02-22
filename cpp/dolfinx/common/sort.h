@@ -94,7 +94,7 @@ constexpr void radix_sort(auto&& range, P proj = {})
   if constexpr (!std::is_same_v<uI, I>)
   {
     radix_sort<_BITS>(std::forward<R>(range), [&](const T& e) -> uI
-                     { return unsigned_projection(proj(e)); });
+                      { return unsigned_projection(proj(e)); });
     return;
   }
 
