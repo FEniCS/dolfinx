@@ -127,9 +127,9 @@ int main(int argc, char* argv[])
 
     //  Next, we define the variational formulation by initializing the
     //  bilinear and linear forms ($a$, $L$) using the previously
-    //  defined {cpp:class}`dolfinx::fem::FunctionSpace` `V`.  Then we can create the
-    //  source and boundary flux term ($f$, $g$) and attach these to the
-    //  linear form.
+    //  defined {cpp:class}`dolfinx::fem::FunctionSpace` `V`.
+    //  Then we can create the source and boundary flux term ($f$, $g$)
+    //  and attach these to the linear form.
 
     // Prepare and set Constants for the bilinear form
     auto kappa = std::make_shared<fem::Constant<T>>(2.0);
@@ -146,12 +146,12 @@ int main(int argc, char* argv[])
     //  using the class {cpp:class}`dolfinx::fem::DirichletBC`. A
     //  {cpp:class}`dolfinx::fem::DirichletBC` takes two arguments:
     //  the value of the boundary condition, and the part of the boundary
-    //  on which the condition applies. In our example, the value of the boundary
-    //  condition (0) can represented using a {cpp:class}`dolfinx::fem::Function`,
-    //  and the Dirichlet boundary is defined by the indices of degrees
-    //  of freedom to which the boundary condition applies. The
-    //  definition of the Dirichlet boundary condition then looks as
-    //  follows:
+    //  on which the condition applies. In our example, the value of the
+    //  boundary condition (0) can represented using a
+    //  {cpp:class}`dolfinx::fem::Function`, and the Dirichlet boundary is
+    //  defined by the indices of degrees of freedom to which the boundary
+    //  condition applies. The definition of the Dirichlet boundary condition
+    //  then looks as follows:
 
     // Define boundary condition
 
