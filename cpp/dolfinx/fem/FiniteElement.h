@@ -588,7 +588,7 @@ public:
                               std::span<const std::uint32_t> cell_info,
                               std::int32_t cell, int data_block_size)
         {
-          const int ebs = block_size();
+          auto ebs = block_size();
           const std::size_t dof_count = data.size() / data_block_size;
           for (int block = 0; block < data_block_size; ++block)
           {

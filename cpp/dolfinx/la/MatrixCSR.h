@@ -16,6 +16,7 @@
 #include <mpi.h>
 #include <numeric>
 #include <span>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -862,13 +863,13 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
   // yi[0] += Ai[0] * xi[0]
   if (_bs[1] == 1)
   {
-    impl::spmv<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
-                          _bs[0], 1);
+    impl::spmv<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                       _bs[0], BS<1>());
   }
   else
   {
-    impl::spmv<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
-                           _bs[0], _bs[1]);
+    impl::spmv<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                       _bs[0], _bs[1]);
   }
 
   // finalize ghost update
@@ -878,13 +879,13 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
   // yi[0] += Ai[1] * xi[1]
   if (_bs[1] == 1)
   {
-    impl::spmv<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
-                          _bs[0], 1);
+    impl::spmv<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                       _bs[0], BS<1>());
   }
   else
   {
-    impl::spmv<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
-                           _bs[0], _bs[1]);
+    impl::spmv<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                       _bs[0], _bs[1]);
   }
 }
 
