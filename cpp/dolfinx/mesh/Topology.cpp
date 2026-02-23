@@ -861,10 +861,13 @@ Topology::connectivity(int d0, int d1) const
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
   // Check if this process owns or ghosts any cells
-  assert(this->index_map(this->dim()));
-  if (auto i_map = this->index_map(this->dim());
-      _cell_permutations.empty()
-      and i_map->size_local() + i_map->num_ghosts() > 0)
+  if (auto im = this->index_maps(this->dim()); im.empty())
+    throw std::runtime_error("Missing IndexMap in Topology.");
+
+  const bool has_cells = std::ranges::any_of(
+      this->index_maps(this->dim()), [](const auto& imap)
+      { return imap->size_local() + imap->num_ghosts() > 0; });
+  if (has_cells and _cell_permutations.empty())
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");

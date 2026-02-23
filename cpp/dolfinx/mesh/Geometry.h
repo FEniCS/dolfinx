@@ -271,8 +271,9 @@ create_geometry(const Topology& topology,
   // If the mesh has higher order geometry, permute the dofmap
   if (elements.front().needs_dof_permutations())
   {
-    const std::int32_t num_cells
-        = topology.connectivity(topology.dim(), 0)->num_nodes();
+    std::int32_t num_cells = 0;
+    for (const auto& imap : topology.index_maps(topology.dim()))
+      num_cells += imap->size_local() + imap->num_ghosts();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
     int d = elements.front().dim();
