@@ -97,6 +97,8 @@ add_executable(
   mesh/refinement/interval.cpp
   mesh/refinement/option.cpp
   mesh/refinement/rectangle.cpp
+  multigrid/transfer_matrix.cpp
+  multigrid/inclusion.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
