@@ -14,8 +14,9 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
-                     std::pair<std::int32_t, std::int32_t>>
+graph::AdjacencyList<std::vector<std::tuple<int, std::size_t, std::int8_t>>,
+                     std::vector<std::int32_t>,
+                     std::vector<std::pair<std::int32_t, std::int32_t>>>
 graph::comm_graph(const common::IndexMap& map, int root)
 {
   MPI_Comm comm = map.comm();
@@ -101,17 +102,19 @@ graph::comm_graph(const common::IndexMap& map, int root)
                               std::move(sizes_remote));
 }
 //-----------------------------------------------------------------------------
-std::string graph::comm_to_json(
-    const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
-                               std::pair<std::int32_t, std::int32_t>>& g)
+std::string
+graph::comm_to_json(const graph::AdjacencyList<
+                    std::vector<std::tuple<int, std::size_t, std::int8_t>>,
+                    std::vector<std::int32_t>,
+                    std::vector<std::pair<std::int32_t, std::int32_t>>>& g)
 {
   const std::vector<std::pair<std::int32_t, std::int32_t>>& node_weights
-      = g.node_data().value();
+      = g.node_data();
 
   std::stringstream out;
   out << std::format("{{\"directed\": true, \"multigraph\": false, \"graph\": "
                      "[], \"nodes\": [");
-  for (std::int32_t n = 0; n < g.num_nodes(); ++n)
+  for (std::size_t n = 0; n < g.num_nodes(); ++n)
   {
     // Note: it is helpful to order map keys alphabetically
     out << std::format("{{\"num_ghosts\": {}, \"weight\": {},  \"id\": {}}}",
@@ -121,7 +124,7 @@ std::string graph::comm_to_json(
   }
   out << "], ";
   out << "\"adjacency\": [";
-  for (std::int32_t n = 0; n < g.num_nodes(); ++n)
+  for (std::size_t n = 0; n < g.num_nodes(); ++n)
   {
     out << "[";
     auto links = g.links(n);

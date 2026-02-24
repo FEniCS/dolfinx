@@ -134,8 +134,12 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
     cell_face_types[i] = mesh::cell_facet_type(cell_type, i);
 
   // Connectivity for each face type
-  std::vector<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>> c_to_f;
-  std::vector<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>> f_to_v;
+  std::vector<
+      std::shared_ptr<const graph::AdjacencyList<std::vector<std::int32_t>>>>
+      c_to_f;
+  std::vector<
+      std::shared_ptr<const graph::AdjacencyList<std::vector<std::int32_t>>>>
+      f_to_v;
 
   // Create mapping for each face type to cell-local face index
   int tdim = topology.dim();
@@ -234,7 +238,7 @@ compute_edge_reflections(const mesh::Topology& topology)
 
   std::vector<std::bitset<BITSETSIZE>> edge_perm(num_cells, 0);
   std::vector<std::int64_t> cell_vertices, vertices;
-  for (int c = 0; c < c_to_v->num_nodes(); ++c)
+  for (std::size_t c = 0; c < c_to_v->num_nodes(); ++c)
   {
     cell_vertices.resize(c_to_v->num_links(c));
     im->local_to_global(c_to_v->links(c), cell_vertices);

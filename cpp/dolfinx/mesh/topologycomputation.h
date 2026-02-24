@@ -43,8 +43,9 @@ class Topology;
 /// owned cells of each process. If entities of type `entity_type`
 /// already exists, then {nullptr, nullptr, nullptr, std::vector()} is
 /// returned.
-std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
-           std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
+std::tuple<std::vector<std::shared_ptr<
+               graph::AdjacencyList<std::vector<std::int32_t>>>>,
+           std::shared_ptr<graph::AdjacencyList<std::vector<std::int32_t>>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
 compute_entities(const Topology& topology, int dim, CellType entity_type,
                  int num_threads = 1);
@@ -61,7 +62,7 @@ compute_entities(const Topology& topology, int dim, CellType entity_type,
 /// (d0, d1) is computed and the computation of (d1, d0) was required as
 /// part of computing (d0, d1), the (d1, d0) is returned as the second
 /// entry. The second entry is otherwise nullptr.
-std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
+std::array<std::shared_ptr<graph::AdjacencyList<std::vector<std::int32_t>>>, 2>
 compute_connectivity(const Topology& topology, std::array<int, 2> d0,
                      std::array<int, 2> d1);
 

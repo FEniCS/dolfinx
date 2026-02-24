@@ -476,7 +476,7 @@ std::vector<std::int32_t> compute_collisions(const BoundingBoxTree<T>& tree0,
 /// @return For each point, the bounding box leaves that collide with
 /// the point.
 template <std::floating_point T>
-graph::AdjacencyList<std::int32_t>
+graph::AdjacencyList<std::vector<std::int32_t>>
 compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 {
   if (tree.num_bboxes() > 0)
@@ -626,9 +626,9 @@ compute_closest_entity(const BoundingBoxTree<T>& tree,
 /// 3)`). Storage is row-major.
 /// @return For each point, the cells that collide with the point.
 template <std::floating_point T>
-graph::AdjacencyList<std::int32_t> compute_colliding_cells(
+graph::AdjacencyList<std::vector<std::int32_t>> compute_colliding_cells(
     const mesh::Mesh<T>& mesh,
-    const graph::AdjacencyList<std::int32_t>& candidate_cells,
+    const graph::AdjacencyList<std::vector<std::int32_t>>& candidate_cells,
     std::span<const T> points)
 {
   std::vector<std::int32_t> offsets = {0};
@@ -636,7 +636,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
   std::vector<std::int32_t> colliding_cells;
   constexpr T eps2 = 1e-12;
   const int tdim = mesh.topology()->dim();
-  for (std::int32_t i = 0; i < candidate_cells.num_nodes(); i++)
+  for (std::size_t i = 0; i < candidate_cells.num_nodes(); ++i)
   {
     auto cells = candidate_cells.links(i);
     std::vector<T> _point(3 * cells.size());
@@ -707,7 +707,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   graph::AdjacencyList collisions = compute_collisions(global_bbtree, points);
 
   // Get unique list of outgoing ranks
-  std::vector<std::int32_t> out_ranks = collisions.array();
+  std::vector<std::int32_t> out_ranks(collisions.array().begin(),
+                                      collisions.array().end());
   std::ranges::sort(out_ranks);
   auto [unique_end, range_end] = std::ranges::unique(out_ranks);
   out_ranks.erase(unique_end, range_end);
@@ -782,7 +783,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   auto x_dofmap = geometry.dofmap();
 
   // Compute candidate cells for collisions (and extrapolation)
-  const graph::AdjacencyList<std::int32_t> candidate_collisions
+  const graph::AdjacencyList<std::vector<std::int32_t>> candidate_collisions
       = compute_collisions(bb, std::span<const T>(received_points.data(),
                                                   received_points.size()));
 

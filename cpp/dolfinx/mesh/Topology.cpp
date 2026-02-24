@@ -39,7 +39,7 @@ namespace
 /// for.
 /// @return Map from global index to sharing ranks for each index in
 /// indices. The owner rank is the first as the first in the of ranks.
-graph::AdjacencyList<int>
+graph::AdjacencyList<std::vector<int>>
 determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 {
   common::Timer timer("Topology: determine shared index ownership");
@@ -367,7 +367,7 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
 /// 3. MPI rank of the owner
 std::vector<std::int64_t>
 exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
-                  const graph::AdjacencyList<int>& index_to_ranks,
+                  const graph::AdjacencyList<std::vector<int>>& index_to_ranks,
                   std::int64_t offset,
                   std::span<const std::int64_t> global_indices,
                   std::span<const std::int32_t> local_indices)
@@ -376,7 +376,7 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
 
   // Build src and destination ranks
   std::vector<int> src, dest;
-  for (std::int32_t i = 0; i < index_to_ranks.num_nodes(); ++i)
+  for (std::size_t i = 0; i < index_to_ranks.num_nodes(); ++i)
   {
     if (auto ranks = index_to_ranks.links(i); ranks.front() == mpi_rank)
       dest.insert(dest.end(), std::next(ranks.begin()), ranks.end());
@@ -399,7 +399,7 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
   // Pack send data. Use std::vector<std::vector>> since size will be
   // modest (equal to number of neighbour ranks)
   std::vector<std::vector<std::int64_t>> send_buffer(dest.size());
-  for (std::int32_t i = 0; i < index_to_ranks.num_nodes(); ++i)
+  for (std::size_t i = 0; i < index_to_ranks.num_nodes(); ++i)
   {
     // Get (global) ranks that share this vertex. Note that first rank
     // is the owner.
@@ -743,7 +743,9 @@ Topology::Topology(
     std::vector<CellType> cell_types,
     std::shared_ptr<const common::IndexMap> vertex_map,
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
-    std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
+    std::vector<
+        std::shared_ptr<graph::AdjacencyList<std::vector<std::int32_t>>>>
+        cells,
     const std::optional<std::vector<std::vector<std::int64_t>>>& original_index,
     int num_threads)
     : original_cell_index(original_index
@@ -762,7 +764,7 @@ Topology::Topology(
   _index_maps.insert({{0, 0}, vertex_map});
   _connectivity.insert(
       {{{0, 0}, {0, 0}},
-       std::make_shared<graph::AdjacencyList<std::int32_t>>(
+       std::make_shared<graph::AdjacencyList<std::vector<std::int32_t>>>(
            vertex_map->size_local() + vertex_map->num_ghosts())});
   if (tdim > 0)
   {
@@ -837,7 +839,7 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
   return im.at(0);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+std::shared_ptr<const graph::AdjacencyList<std::vector<std::int32_t>>>
 Topology::connectivity(std::array<int, 2> d0, std::array<int, 2> d1) const
 {
   if (auto it = _connectivity.find({d0, d1}); it == _connectivity.end())
@@ -846,7 +848,7 @@ Topology::connectivity(std::array<int, 2> d0, std::array<int, 2> d1) const
     return it->second;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+std::shared_ptr<const graph::AdjacencyList<std::vector<std::int32_t>>>
 Topology::connectivity(int d0, int d1) const
 {
   if (this->entity_types(d0).size() > 1 or this->entity_types(d0).size() > 1)
@@ -1066,7 +1068,7 @@ Topology mesh::create_topology(
   // For each vertex whose ownership needs determining, find the sharing
   // ranks. The first index in the list of ranks for a vertex is the
   // owner (as determined by determine_sharing_ranks).
-  const graph::AdjacencyList<int> global_vertex_to_ranks
+  const graph::AdjacencyList<std::vector<int>> global_vertex_to_ranks
       = determine_sharing_ranks(comm, boundary_vertices);
 
   // Iterate over vertices that have 'unknown' ownership, and if flagged
@@ -1281,13 +1283,16 @@ Topology mesh::create_topology(
       static_cast<int>(dolfinx::MPI::tag::consensus_nbx) + cell_types.size());
 
   // Set cell index map and connectivity
-  std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells_c;
+  std::vector<std::shared_ptr<graph::AdjacencyList<std::vector<std::int32_t>>>>
+      cells_c;
   cells_c.reserve(cell_types.size());
   for (std::size_t i = 0; i < cell_types.size(); ++i)
   {
-    cells_c.push_back(std::make_shared<graph::AdjacencyList<std::int32_t>>(
-        graph::regular_adjacency_list(std::move(_cells_local_idx[i]),
-                                      mesh::num_cell_vertices(cell_types[i]))));
+    cells_c.push_back(
+        std::make_shared<graph::AdjacencyList<std::vector<std::int32_t>>>(
+            graph::regular_adjacency_list(
+                std::move(_cells_local_idx[i]),
+                mesh::num_cell_vertices(cell_types[i]))));
   }
 
   // Save original cell index
@@ -1386,8 +1391,9 @@ mesh::create_subtopology(const Topology& topology, int dim,
     sub_e_to_v_offsets.push_back(sub_e_to_v_vec.size());
   }
 
-  auto sub_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-      std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
+  auto sub_e_to_v
+      = std::make_shared<graph::AdjacencyList<std::vector<std::int32_t>>>(
+          std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
 
   return {Topology({entity_type}, submap0, {submap}, {sub_e_to_v}),
           std::move(subentities), std::move(subvertices0)};
@@ -1495,7 +1501,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
       {
         if (fci)
         {
-          for (std::int32_t k = 0; k < fci->num_nodes(); ++k)
+          for (std::size_t k = 0; k < fci->num_nodes(); ++k)
           {
             if (fci->num_links(k) == 2)
             {
@@ -1517,7 +1523,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
         if (fci and fcj)
         {
           assert(fci->num_nodes() == fcj->num_nodes());
-          for (std::int32_t k = 0; k < fci->num_nodes(); ++k)
+          for (std::size_t k = 0; k < fci->num_nodes(); ++k)
           {
             if (fci->num_links(k) == 1 and fcj->num_links(k) == 1)
             {

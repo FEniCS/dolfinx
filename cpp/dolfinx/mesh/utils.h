@@ -206,16 +206,17 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// points, should not be included.
 /// @return Destination ranks for each cell on this process.
 /// @note Cells can have multiple destination ranks, when ghosted.
-using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
-    const std::vector<std::span<const std::int64_t>>& cells)>;
+using CellPartitionFunction
+    = std::function<graph::AdjacencyList<std::vector<std::int32_t>>(
+        MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
+        const std::vector<std::span<const std::int64_t>>& cells)>;
 
 /// @brief Function that reorders (locally) cells that
 /// are owned by this process. It takes the local mesh dual graph as an
 /// argument and returns a list whose `i`th entry is the new index of
 /// cell `i`.
 using CellReorderFunction = std::function<std::vector<std::int32_t>(
-    const graph::AdjacencyList<std::int32_t>&)>;
+    const graph::AdjacencyList<std::vector<std::int32_t>>&)>;
 
 /// @brief Creates the default boundary vertices routine for a given reorder
 /// function.
@@ -635,7 +636,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
     auto x_dofmap = mesh.geometry().dofmap(cell_type_idx);
     auto c_to_v = topology->connectivity({tdim, cell_type_idx}, {0, 0});
     assert(c_to_v);
-    for (int c = 0; c < c_to_v->num_nodes(); ++c)
+    for (std::size_t c = 0; c < c_to_v->num_nodes(); ++c)
     {
       auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
       auto vertices = c_to_v->links(c);
@@ -1076,7 +1077,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   {
     spdlog::info("Using partitioner with cell data ({} cell types)",
                  num_cell_types);
-    graph::AdjacencyList<std::int32_t> dest(0);
+    graph::AdjacencyList<std::vector<std::int32_t>> dest(0);
     if (commt != MPI_COMM_NULL)
     {
       int size = dolfinx::MPI::size(comm);
@@ -1107,7 +1108,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       std::int32_t offset_0 = offsets_i.front();
       std::ranges::for_each(offsets_i,
                             [&offset_0](std::int32_t& j) { j -= offset_0; });
-      graph::AdjacencyList<std::int32_t> dest_i(data_i, offsets_i);
+      graph::AdjacencyList<std::vector<std::int32_t>> dest_i(data_i, offsets_i);
       cell_offset += num_cells;
 
       // Distribute cells (topology, includes higher-order 'nodes') to

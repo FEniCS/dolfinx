@@ -100,7 +100,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                  [&old_to_new](auto idx_old) { return old_to_new[idx_old]; });
 
   // Dimension sanity checks
-  assert((int)dofmap.size()
+  assert(dofmap.size()
          == (cells->num_nodes() * dofmap_view.element_dof_layout().num_dofs()));
   assert(dofmap.size() % dofmap_view.element_dof_layout().num_dofs() == 0);
 
@@ -115,7 +115,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 } // namespace
 
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
+graph::AdjacencyList<std::vector<std::int32_t>> fem::transpose_dofmap(
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> dofmap,
     std::int32_t num_cells)
 {
@@ -201,14 +201,15 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
                 this->index_map_bs(), std::move(dofmap), 1);
 }
 //-----------------------------------------------------------------------------
-std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
-    MPI_Comm comm, const mesh::Topology& topology,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>&&
-        reorder_fn) const
+std::pair<DofMap, std::vector<std::int32_t>>
+DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology,
+                 std::function<std::vector<int>(
+                     const graph::AdjacencyList<std::vector<std::int32_t>>&)>&&
+                     reorder_fn) const
 {
   if (!reorder_fn)
   {
-    reorder_fn = [](const graph::AdjacencyList<std::int32_t>& g)
+    reorder_fn = [](const graph::AdjacencyList<std::vector<std::int32_t>>& g)
     { return graph::reorder_gps(g); };
   }
   // Create new dofmap
@@ -249,7 +250,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
   auto cells = topology.connectivity(tdim, 0);
   assert(cells);
   const int bs = dofmap_new.bs();
-  for (std::int32_t c = 0; c < cells->num_nodes(); ++c)
+  for (std::size_t c = 0; c < cells->num_nodes(); ++c)
   {
     std::span<const std::int32_t> cell_dofs_view = this->cell_dofs(c);
     std::span<const std::int32_t> cell_dofs = dofmap_new.cell_dofs(c);

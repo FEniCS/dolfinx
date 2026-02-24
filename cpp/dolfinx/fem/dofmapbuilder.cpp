@@ -48,11 +48,11 @@ struct dofmap_t
 /// @param[in] reorder_fn The graph reordering function to apply
 /// @return Map from original_to_contiguous[i] to new index after
 /// reordering
-std::vector<int>
-reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
-              const std::vector<int>& original_to_contiguous,
-              const std::function<std::vector<int>(
-                  const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
+std::vector<int> reorder_owned(
+    const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
+    const std::vector<int>& original_to_contiguous,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::vector<std::int32_t>>&)>& reorder_fn)
 {
   std::vector<std::int32_t> graph_data, graph_offsets;
 
@@ -404,7 +404,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
     const std::vector<std::shared_ptr<const common::IndexMap>>& index_maps,
     const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
+        const graph::AdjacencyList<std::vector<std::int32_t>>&)>& reorder_fn)
 {
   common::Timer t0("Dofmap builder: compute dof reordering map");
 
@@ -642,7 +642,7 @@ fem::build_dofmap_data(
     MPI_Comm comm, const mesh::Topology& topology,
     const std::vector<ElementDofLayout>& element_dof_layouts,
     const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
+        const graph::AdjacencyList<std::vector<std::int32_t>>&)>& reorder_fn)
 {
   common::Timer t0("Dofmap builder: build dofmap data");
 

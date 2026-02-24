@@ -50,7 +50,7 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
           parent_cell](MPI_Comm comm, int /*nparts*/,
                        std::vector<mesh::CellType> cell_types,
                        std::vector<std::span<const std::int64_t>> cells)
-             -> graph::AdjacencyList<std::int32_t>
+             -> graph::AdjacencyList<std::vector<std::int32_t>>
   {
     auto parent_cell_im
         = parent_mesh.topology()->index_map(parent_mesh.topology()->dim());

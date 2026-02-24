@@ -27,12 +27,11 @@ namespace
 {
 template <typename T>
 void CHECK_adjacency_list_equal(
-    const dolfinx::graph::AdjacencyList<T>& adj_list,
+    const dolfinx::graph::AdjacencyList<std::vector<T>>& adj_list,
     const std::vector<std::vector<T>>& expected_list)
 {
-  REQUIRE(static_cast<std::size_t>(adj_list.num_nodes())
-          == expected_list.size());
-  for (T i = 0; i < adj_list.num_nodes(); i++)
+  REQUIRE(adj_list.num_nodes() == expected_list.size());
+  for (std::size_t i = 0; i < adj_list.num_nodes(); ++i)
   {
     CHECK_THAT(adj_list.links(i),
                Catch::Matchers::RangeEquals(expected_list[i]));
@@ -177,9 +176,9 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
         = [](MPI_Comm /* comm */, int /* nparts */,
              const std::vector<mesh::CellType>& /* cell_types */,
              const std::vector<std::span<const std::int64_t>>& /* cells */)
-        -> graph::AdjacencyList<std::int32_t>
+        -> graph::AdjacencyList<std::vector<std::int32_t>>
     {
-      return graph::AdjacencyList<std::int32_t>(
+      return graph::AdjacencyList<std::vector<std::int32_t>>(
           dolfinx::MPI::size(MPI_COMM_WORLD));
     };
 

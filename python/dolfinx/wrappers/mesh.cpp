@@ -114,7 +114,8 @@ void declare_meshtags(nb::module_& m, const std::string& type)
 
   m.def("create_meshtags",
         [](std::shared_ptr<const dolfinx::mesh::Topology> topology, int dim,
-           const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
+           const dolfinx::graph::AdjacencyList<std::vector<std::int32_t>>&
+               entities,
            nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
         {
           return dolfinx::mesh::create_meshtags(
@@ -549,7 +550,7 @@ void mesh(nb::module_& m)
   m.def(
       "build_dual_graph",
       [](const MPICommWrapper comm, dolfinx::mesh::CellType cell_type,
-         const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+         const dolfinx::graph::AdjacencyList<std::vector<std::int64_t>>& cells,
          std::optional<std::int32_t> max_facet_to_cell_links)
       {
         std::vector<dolfinx::mesh::CellType> c = {cell_type};
@@ -642,7 +643,9 @@ void mesh(nb::module_& m)
           [](dolfinx::mesh::Topology* t, dolfinx::mesh::CellType cell_type,
              std::shared_ptr<const dolfinx::common::IndexMap> vertex_map,
              std::shared_ptr<const dolfinx::common::IndexMap> cell_map,
-             std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>> cells,
+             std::shared_ptr<
+                 dolfinx::graph::AdjacencyList<std::vector<std::int32_t>>>
+                 cells,
              std::optional<
                  nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
                  original_index)
@@ -805,10 +808,12 @@ void mesh(nb::module_& m)
       "Create default cell partitioner.");
   m.def(
       "create_cell_partitioner",
-      [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-             MPICommWrapper comm, int nparts,
-             const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-             bool ghosting)>& part,
+      [](const std::function<
+             dolfinx::graph::AdjacencyList<std::vector<std::int32_t>>(
+                 MPICommWrapper comm, int nparts,
+                 const dolfinx::graph::AdjacencyList<std::vector<std::int64_t>>&
+                     local_graph,
+                 bool ghosting)>& part,
          dolfinx::mesh::GhostMode mode,
          std::optional<std::int32_t> max_facet_to_cell_links)
           -> part::impl::PythonCellPartitionFunction

@@ -234,14 +234,15 @@ Geometry(std::shared_ptr<const common::IndexMap>, U&&,
 /// @return A mesh geometry.
 template <typename U>
 Geometry<typename std::remove_reference_t<typename U::value_type>>
-create_geometry(const Topology& topology,
-                const std::vector<fem::CoordinateElement<
-                    std::remove_reference_t<typename U::value_type>>>& elements,
-                std::span<const std::int64_t> nodes,
-                std::span<const std::int64_t> xdofs, const U& x, int dim,
-                const std::function<std::vector<int>(
-                    const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-                = nullptr)
+create_geometry(
+    const Topology& topology,
+    const std::vector<fem::CoordinateElement<
+        std::remove_reference_t<typename U::value_type>>>& elements,
+    std::span<const std::int64_t> nodes, std::span<const std::int64_t> xdofs,
+    const U& x, int dim,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::vector<std::int32_t>>&)>& reorder_fn
+    = nullptr)
 {
   spdlog::info("Create Geometry (multiple)");
 

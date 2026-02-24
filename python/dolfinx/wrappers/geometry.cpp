@@ -153,7 +153,7 @@ void declare_bbtree(nb::module_& m, const std::string& type)
   m.def(
       "compute_colliding_cells",
       [](const dolfinx::mesh::Mesh<T>& mesh,
-         const dolfinx::graph::AdjacencyList<int>& candidate_cells,
+         const dolfinx::graph::AdjacencyList<std::vector<int>>& candidate_cells,
          nb::ndarray<const T, nb::shape<3>, nb::c_contig> points)
       {
         return dolfinx::geometry::compute_colliding_cells<T>(
@@ -163,7 +163,7 @@ void declare_bbtree(nb::module_& m, const std::string& type)
   m.def(
       "compute_colliding_cells",
       [](const dolfinx::mesh::Mesh<T>& mesh,
-         const dolfinx::graph::AdjacencyList<int>& candidate_cells,
+         const dolfinx::graph::AdjacencyList<std::vector<int>>& candidate_cells,
          nb::ndarray<const T, nb::shape<-1, 3>, nb::c_contig> points)
       {
         return dolfinx::geometry::compute_colliding_cells<T>(
