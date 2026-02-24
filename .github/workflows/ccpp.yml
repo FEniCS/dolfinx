@@ -129,11 +129,10 @@ jobs:
 
       - name: Build Python interface
         run: >
-          pip install 'python/[test]'
+          pip install -e 'python/[test]'
           --check-build-dependencies
           --no-build-isolation
           --config-settings=cmake.build-type="Developer"
-          --editable
 
       - name: Check Python install
         run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
