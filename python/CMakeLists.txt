@@ -195,6 +195,7 @@ nanobind_add_stub(
   RECURSIVE
   INSTALL_TIME
   OUTPUT_PATH dolfinx
+  MARKER_FILE dolfinx/cpp/py.typed
   OUTPUT
     dolfinx/cpp/fem/__init__.pyi
     dolfinx/cpp/fem/petsc.pyi
