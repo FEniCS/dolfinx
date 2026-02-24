@@ -81,10 +81,10 @@ constexpr void radix_sort(R&& range, P proj = {})
       std::remove_cvref_t<std::invoke_result_t<P, std::iter_value_t<R>>>>;
   constexpr bits_t _BITS = BITS;
 
-  // value type
+  // Value type
   using T = std::iter_value_t<R>;
 
-  // index type (if no projection is provided it holds I == T)
+  // Index type (if no projection is provided it holds I == T)
   using I = std::remove_cvref_t<std::invoke_result_t<P, T>>;
   using uI = std::make_unsigned_t<I>;
 
@@ -108,13 +108,15 @@ constexpr void radix_sort(R&& range, P proj = {})
   // maxvalue
   I its = 0;
 
-  // optimize for case where all first bits are set - then order will
+  // Optimize for case where all first bits are set - then order will
   // not depend on it
-  bool all_first_bit = std::ranges::all_of(
-      range,
-      [&](const auto& e) { return proj(e) & (uI(1) << (sizeof(uI) * 8 - 1)); });
-  if (all_first_bit)
+  if (bool all_first_bit = std::ranges::all_of(
+          range, [&proj](const auto& e)
+          { return proj(e) & (uI(1) << (sizeof(uI) * 8 - 1)); });
+      all_first_bit)
+  {
     max_value = max_value & ~(uI(1) << (sizeof(uI) * 8 - 1));
+  }
 
   while (max_value)
   {
@@ -136,13 +138,13 @@ constexpr void radix_sort(R&& range, P proj = {})
     std::ranges::fill(counter, 0);
 
     // Count number of elements per bucket
-    for (const auto& c : current_perm)
+    for (auto c : current_perm)
       counter[(proj(c) & mask) >> mask_offset]++;
 
     // Prefix sum to get the inserting position
     offset[0] = 0;
     std::partial_sum(counter.begin(), counter.end(), std::next(offset.begin()));
-    for (const auto& c : current_perm)
+    for (auto c : current_perm)
     {
       uI bucket = (proj(c) & mask) >> mask_offset;
       uI new_pos = offset[bucket + 1] - counter[bucket];
