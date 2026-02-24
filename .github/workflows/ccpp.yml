@@ -128,9 +128,15 @@ jobs:
         run: cmake --build . --target test
 
       - name: Build Python interface
-        run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test]'
-          python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
+        run: >
+          pip install 'python/[test]'
+          --check-build-dependencies
+          --no-build-isolation
+          --config-settings=cmake.build-type="Developer"
+          --editable
+
+      - name: Check Python install
+        run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
       - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
         working-directory: python
