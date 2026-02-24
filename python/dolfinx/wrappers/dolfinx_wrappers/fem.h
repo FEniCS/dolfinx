@@ -11,7 +11,6 @@
 #include "numpy_dtype.h"
 #include <array>
 #include <cstdint>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/Constant.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DirichletBC.h>
@@ -26,11 +25,8 @@
 #include <dolfinx/fem/interpolate.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
-#include <dolfinx/graph/ordering.h>
-#include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshTags.h>
 #include <functional>
 #include <map>
 #include <memory>

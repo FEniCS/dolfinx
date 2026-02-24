@@ -8,24 +8,17 @@
 
 #include "dolfinx_wrappers/petsc.h"
 #include "dolfinx_wrappers/array.h"
-#include "dolfinx_wrappers/caster_mpi.h"
-#include "dolfinx_wrappers/caster_petsc.h"
 #include "dolfinx_wrappers/pycoeff.h"
-#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
-#include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/petsc.h>
-#include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/nls/NewtonSolver.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -39,7 +32,6 @@
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <petsc4py/petsc4py.h>
-#include <petscis.h>
 
 namespace
 {

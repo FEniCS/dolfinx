@@ -8,7 +8,6 @@
 
 #include "array.h"
 #include "numpy_dtype.h"
-#include <complex>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>

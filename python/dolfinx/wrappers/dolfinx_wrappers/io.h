@@ -11,10 +11,8 @@
 #include <basix/mdspan.hpp>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/Function.h>
-#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
-#include <dolfinx/io/cells.h>
 #include <dolfinx/io/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>

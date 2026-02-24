@@ -9,14 +9,10 @@
 #include "dolfinx_wrappers/MPICommWrapper.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
-#include "dolfinx_wrappers/numpy_dtype.h"
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/EntityMap.h>
-#include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>

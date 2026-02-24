@@ -8,7 +8,6 @@
 #include "dolfinx_wrappers/MPICommWrapper.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
-#include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
@@ -16,9 +15,6 @@
 #include <dolfinx/common/defines.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
-#include <dolfinx/common/utils.h>
-#include <iostream>
-#include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
@@ -32,7 +28,6 @@
 #include <span>
 #include <string>
 #include <thread>
-#include <tuple>
 #include <utility>
 #include <vector>
 

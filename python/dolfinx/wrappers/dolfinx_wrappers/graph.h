@@ -8,10 +8,6 @@
 
 #include "MPICommWrapper.h"
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/ordering.h>
-#include <dolfinx/graph/partition.h>
-#include <dolfinx/graph/partitioners.h>
-#include <dolfinx/graph/utils.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>

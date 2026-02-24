@@ -6,32 +6,21 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dolfinx_wrappers/refinement.h"
-#include "dolfinx_wrappers/MPICommWrapper.h"
-#include "dolfinx_wrappers/array.h"
-#include "dolfinx_wrappers/mesh.h"
-#include <concepts>
 #include <cstdint>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
-#include <dolfinx/refinement/interval.h>
 #include <dolfinx/refinement/option.h>
 #include <dolfinx/refinement/refine.h>
-#include <dolfinx/refinement/uniform.h>
 #include <dolfinx/refinement/utils.h>
-#include <functional>
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/function.h>
-#include <nanobind/stl/optional.h>
-#include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
-#include <optional>
 #include <span>
 #include <stdexcept>
-#include <variant>
 
 namespace nb = nanobind;
 

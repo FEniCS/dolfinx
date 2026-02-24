@@ -8,9 +8,6 @@
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
 #include <basix/mdspan.hpp>
-#include <dolfinx/common/defines.h>
-#include <dolfinx/fem/Function.h>
-#include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/VTKHDF.h>
@@ -19,10 +16,7 @@
 #include <dolfinx/io/utils.h>
 #include <dolfinx/io/vtk_utils.h>
 #include <dolfinx/io/xdmf_utils.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshTags.h>
 #include <filesystem>
-#include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
@@ -33,7 +27,6 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
-#include <span>
 #include <vector>
 
 namespace nb = nanobind;

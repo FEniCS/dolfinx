@@ -6,7 +6,6 @@
 
 #include "dolfinx_wrappers/graph.h"
 #include "dolfinx_wrappers/caster_mpi.h"
-#include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>

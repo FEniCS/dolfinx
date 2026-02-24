@@ -10,11 +10,8 @@
 #include "pycoeff.h"
 #include <array>
 #include <basix/mdspan.hpp>
-#include <complex>
 #include <cstdint>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DirichletBC.h>
-#include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/FunctionSpace.h>

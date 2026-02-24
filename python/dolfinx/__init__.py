@@ -67,27 +67,6 @@ def get_include(user=False):
         return os.path.join(os.path.dirname(d), "src")
 
 
-def get_include_dirs() -> list[str]:
-    """Return all include dirs needed to compile against dolfinx wrapper headers."""
-    dirs = [get_include()]
-
-    try:
-        import mpi4py
-
-        dirs.append(mpi4py.get_include())
-    except ImportError:
-        pass
-
-    try:
-        import petsc4py
-
-        dirs.append(petsc4py.get_include())
-    except ImportError:
-        pass
-
-    return dirs
-
-
 __all__ = [
     "fem",
     "common",
