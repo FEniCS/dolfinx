@@ -44,9 +44,9 @@ namespace dolfinx_wrappers
 {
 void la(nb::module_& m)
 {
-  nb::enum_<dolfinx_wrappers::PyInsertMode>(m, "InsertMode")
-      .value("add", dolfinx_wrappers::PyInsertMode::add)
-      .value("insert", dolfinx_wrappers::PyInsertMode::insert);
+  nb::enum_<PyInsertMode>(m, "InsertMode")
+      .value("add", PyInsertMode::add)
+      .value("insert", PyInsertMode::insert);
 
   nb::enum_<dolfinx::la::BlockMode>(m, "BlockMode")
       .value("compact", dolfinx::la::BlockMode::compact)
