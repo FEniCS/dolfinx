@@ -216,8 +216,7 @@ void declare_assembly_functions(nanobind::module_& m)
       {
         std::vector<int> coffsets = e.coefficient_offsets();
         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
-            coefficients
-            = e.coefficients();
+            coefficients = e.coefficients();
         std::vector<T> coeffs(entities.shape(0) * coffsets.back());
         std::size_t cstride = coffsets.back();
         std::vector<std::reference_wrapper<const dolfinx::fem::Function<T, U>>>
