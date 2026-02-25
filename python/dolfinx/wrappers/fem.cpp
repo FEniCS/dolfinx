@@ -157,8 +157,8 @@ void fem(nb::module_& m)
   declare_form<std::complex<float>>(m, "complex64");
   declare_form<std::complex<double>>(m, "complex128");
 
-  declare_cmap<float>(m, "float32");
-  declare_cmap<double>(m, "float64");
+  declare_coordinate_element<float>(m, "float32");
+  declare_coordinate_element<double>(m, "float64");
 
   declare_function_space<float>(m, "float32");
   declare_function_space<double>(m, "float64");

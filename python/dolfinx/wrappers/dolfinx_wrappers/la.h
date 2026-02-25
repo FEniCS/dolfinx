@@ -53,7 +53,7 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
            nb::arg("map"), nb::arg("bs"))
       .def(nb::init<const dolfinx::la::Vector<T>&>(), nb::arg("vec"))
       .def_prop_ro("dtype", [](const dolfinx::la::Vector<T>&)
-                   { return dolfinx_wrappers::numpy_dtype<T>(); })
+                   { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def_prop_ro("index_map", &dolfinx::la::Vector<T>::index_map)
       .def_prop_ro("bs", &dolfinx::la::Vector<T>::bs)
       .def_prop_ro(
@@ -95,7 +95,7 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
            nb::arg("p"),
            nb::arg("block_mode") = dolfinx::la::BlockMode::compact)
       .def_prop_ro("dtype", [](const dolfinx::la::MatrixCSR<T>&)
-                   { return dolfinx_wrappers::numpy_dtype<T>(); })
+                   { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def_prop_ro("bs", &dolfinx::la::MatrixCSR<T>::block_size)
       .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
       .def("index_map", &dolfinx::la::MatrixCSR<T>::index_map)
@@ -237,7 +237,7 @@ void declare_superlu_dist_matrix(nanobind::module_& m, const std::string& type)
           { new (Amat_superlu) dolfinx::la::SuperLUDistMatrix<T>(Amat); },
           nb::arg("A"))
       .def_prop_ro("dtype", [](const dolfinx::la::SuperLUDistMatrix<T>&)
-                   { return dolfinx_wrappers::numpy_dtype<T>(); });
+                   { return dolfinx_wrappers::numpy_dtype_v<T>; });
   ;
 }
 

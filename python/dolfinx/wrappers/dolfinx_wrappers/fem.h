@@ -170,7 +170,7 @@ void declare_function_space(nb::module_& m, std::string type)
             nb::arg("symmetry"), "Quadrature element constructor.")
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>&)
-                     { return dolfinx_wrappers::numpy_dtype<T>(); })
+                     { return dolfinx_wrappers::numpy_dtype_v<T>; })
         .def_prop_ro("basix_element",
                      &dolfinx::fem::FiniteElement<T>::basix_element,
                      nb::rv_policy::reference_internal)
@@ -396,7 +396,7 @@ void declare_objects(nb::module_& m, std::string type)
           nb::arg("g").noconvert(), nb::arg("dofs").noconvert(),
           nb::arg("V").noconvert())
       .def_prop_ro("dtype", [](const dolfinx::fem::Function<T, U>&)
-                   { return dolfinx_wrappers::numpy_dtype<T>(); })
+                   { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def(
           "dof_indices",
           [](const dolfinx::fem::DirichletBC<T, U>& self)
@@ -651,7 +651,7 @@ void declare_objects(nb::module_& m, std::string type)
           },
           nb::arg("c").noconvert(), "Create a constant from a value array")
       .def_prop_ro("dtype", [](const dolfinx::fem::Constant<T>&)
-                   { return dolfinx_wrappers::numpy_dtype<T>(); })
+                   { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def_prop_ro(
           "value",
           [](dolfinx::fem::Constant<T>& self)
@@ -696,7 +696,7 @@ void declare_objects(nb::module_& m, std::string type)
              return dolfinx_wrappers::as_nbarray(std::move(X), shape);
            })
       .def_prop_ro("dtype", [](const dolfinx::fem::Expression<T, U>&)
-                   { return dolfinx_wrappers::numpy_dtype<T>(); })
+                   { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def_prop_ro("value_size", &dolfinx::fem::Expression<T, U>::value_size)
       .def_prop_ro(
           "value_shape",
@@ -831,7 +831,7 @@ void declare_form(nb::module_& m, std::string type)
           nb::arg("constants"), nb::arg("subdomains"), nb::arg("entity_maps"),
           nb::arg("mesh").none(), "Create a Form from a pointer to a ufcx_form")
       .def_prop_ro("dtype", [](const dolfinx::fem::Form<T, U>&)
-                   { return dolfinx_wrappers::numpy_dtype<T>(); })
+                   { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def_prop_ro("coefficients", &dolfinx::fem::Form<T, U>::coefficients)
       .def_prop_ro("constants", &dolfinx::fem::Form<T, U>::constants)
       .def_prop_ro("rank", &dolfinx::fem::Form<T, U>::rank)
@@ -955,7 +955,7 @@ void declare_form(nb::module_& m, std::string type)
 }
 
 template <typename T>
-void declare_cmap(nb::module_& m, const std::string& type)
+void declare_coordinate_element(nb::module_& m, const std::string& type)
 {
   std::string pyclass_name = std::string("CoordinateElement_") + type;
   nb::class_<dolfinx::fem::CoordinateElement<T>>(m, pyclass_name.c_str(),
@@ -974,7 +974,7 @@ void declare_cmap(nb::module_& m, const std::string& type)
           },
           nb::arg("celltype"), nb::arg("degree"), nb::arg("variant"))
       .def_prop_ro("dtype", [](const dolfinx::fem::CoordinateElement<T>&)
-                   { return dolfinx_wrappers::numpy_dtype<T>(); })
+                   { return dolfinx_wrappers::numpy_dtype_v<T>; })
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
       .def_prop_ro("degree", &dolfinx::fem::CoordinateElement<T>::degree)
