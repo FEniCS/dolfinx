@@ -123,8 +123,7 @@ std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
 refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges,
        std::variant<IdentityPartitionerPlaceholder, mesh::CellPartitionFunction>
-           partitioner
-       = IdentityPartitionerPlaceholder(),
+           partitioner = IdentityPartitionerPlaceholder(),
        Option option = Option::parent_cell)
 {
   auto topology = mesh.topology();
