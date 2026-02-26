@@ -378,10 +378,7 @@ def form(
         msh = domain.ufl_cargo()
         if msh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
-        if jit_comm is None:
-            comm = msh.comm
-        else:
-            comm = jit_comm
+        comm = mesh.comm if jit_comm is None else jit_comm
 
         ufcx_form, module, code = jit.ffcx_jit(
             comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
