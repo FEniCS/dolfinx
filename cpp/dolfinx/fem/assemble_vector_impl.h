@@ -76,6 +76,8 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// conditions applied.
 /// @param[in] x0 Vector used in the lifting.
 /// @param[in] alpha Scaling to apply.
+/// @param[in] custom_data Optional pointer to user-supplied data passed to the
+/// kernel at runtime.
 template <int _bs0 = -1, int _bs1 = -1, typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
@@ -92,7 +94,8 @@ void _lift_bc_cells(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
-    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha)
+    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha,
+    std::optional<void*> custom_data = std::nullopt)
 {
   if (cells.empty())
     return;
@@ -164,7 +167,7 @@ void _lift_bc_cells(
 
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), &coeffs(index, 0), constants.data(), cdofs.data(),
-           nullptr, nullptr, nullptr);
+           nullptr, nullptr, custom_data.value_or(nullptr));
     P0(Ae, cell_info0, c0, num_cols);
     P1T(Ae, cell_info1, c1, num_rows);
 
@@ -260,6 +263,8 @@ void _lift_bc_cells(
 /// local_facet_idx)` is the permutation value for the facet attached to
 /// the cell `cell_idx` with local index `local_facet_idx` relative to
 /// the cell. Empty if facet permutations are not required.
+/// @param[in] custom_data Optional pointer to user-supplied data passed to the
+/// kernel at runtime.
 template <typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
@@ -286,7 +291,8 @@ void _lift_bc_entities(
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
+    std::optional<void*> custom_data = std::nullopt)
 {
   if (entities.empty())
     return;
@@ -345,7 +351,7 @@ void _lift_bc_entities(
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), &coeffs(index, 0), constants.data(), cdofs.data(),
-           &local_entity, &perm, nullptr);
+           &local_entity, &perm, custom_data.value_or(nullptr));
     P0(Ae, cell_info0, cell0, num_cols);
     P1T(Ae, cell_info1, cell1, num_rows);
 
@@ -415,6 +421,8 @@ void _lift_bc_entities(
 /// local_facet_idx)` is the permutation value for the facet attached to
 /// the cell `cell_idx` with local index `local_facet_idx` relative to
 /// the cell. Empty if facet permutations are not required.
+/// @param[in] custom_data Optional pointer to user-supplied data passed to the
+/// kernel at runtime.
 template <typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
@@ -443,7 +451,8 @@ void _lift_bc_interior_facets(
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T alpha,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
+    std::optional<void*> custom_data = std::nullopt)
 {
   if (facets.empty())
     return;
@@ -559,7 +568,7 @@ void _lift_bc_interior_facets(
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
     kernel(Ae.data(), &coeffs(f, 0, 0), constants.data(), cdofs.data(),
-           local_facet.data(), perm.data(), nullptr);
+           local_facet.data(), perm.data(), custom_data.value_or(nullptr));
 
     if (cells0[0] >= 0)
       P0(Ae, cell_info0, cells0[0], num_cols);
@@ -658,6 +667,8 @@ void _lift_bc_interior_facets(
 /// coefficient for cell `i`.
 /// @param[in] cell_info0 Cell permutation information for the test
 /// function mesh.
+/// @param[in] custom_data Optional pointer to user-supplied data passed to
+/// the kernel at runtime.
 template <int _bs = -1, typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
@@ -671,7 +682,8 @@ void assemble_cells(
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap,
     FEkernel<T> auto kernel, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-    std::span<const std::uint32_t> cell_info0)
+    std::span<const std::uint32_t> cell_info0,
+    std::optional<void*> custom_data = std::nullopt)
 {
   if (cells.empty())
     return;
@@ -697,8 +709,8 @@ void assemble_cells(
 
     // Tabulate vector for cell
     std::ranges::fill(be, 0);
-    kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs.data(),
-           nullptr, nullptr, nullptr);
+    kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs.data(), &c,
+           nullptr, custom_data.value_or(nullptr));
     P0(be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
@@ -751,6 +763,8 @@ void assemble_cells(
 /// function mesh.
 /// @param[in] perms Entity permutation integer. Empty if entity
 /// permutations are not required.
+/// @param[in] custom_data Optional pointer to user-supplied data passed to
+/// the kernel at runtime.
 template <int _bs = -1, typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
@@ -769,7 +783,8 @@ void assemble_entities(
     FEkernel<T> auto kernel, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const std::uint32_t> cell_info0,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
+    std::optional<void*> custom_data = std::nullopt)
 {
   if (entities.empty())
     return;
@@ -801,7 +816,7 @@ void assemble_entities(
     // Tabulate element vector
     std::ranges::fill(be, 0);
     kernel(be.data(), &coeffs(f, 0), constants.data(), cdofs.data(),
-           &local_entity, &perm, nullptr);
+           &local_entity, &perm, custom_data.value_or(nullptr));
     P0(be, cell_info0, cell0, 1);
 
     // Add element vector to global vector
@@ -846,6 +861,8 @@ void assemble_entities(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
+/// @param[in] custom_data Optional pointer to user-supplied data passed to
+/// the kernel at runtime.
 template <int _bs = -1, typename V,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
@@ -866,7 +883,8 @@ void assemble_interior_facets(
                                     md::dynamic_extent>>
         coeffs,
     std::span<const std::uint32_t> cell_info0,
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
+    std::optional<void*> custom_data = std::nullopt)
 {
   using X = scalar_value_t<T>;
 
@@ -918,7 +936,7 @@ void assemble_interior_facets(
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
     kernel(be.data(), &coeffs(f, 0, 0), constants.data(), cdofs.data(),
-           local_facet.data(), perm.data(), nullptr);
+           local_facet.data(), perm.data(), custom_data.value_or(nullptr));
 
     if (cells0[0] >= 0)
       P0(be, cell_info0, cells0[0], 1);
@@ -1026,6 +1044,7 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
     auto kernel = a.kernel(IntegralType::cell, i, 0);
     assert(kernel);
     auto& [_coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+    std::optional<void*> custom_data = a.custom_data(IntegralType::cell, i, 0);
     std::span cells = a.domain(IntegralType::cell, i, 0);
     std::span cells0 = a.domain_arg(IntegralType::cell, 0, i, 0);
     std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, 0);
@@ -1036,20 +1055,21 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
       _lift_bc_cells<1, 1>(b, x_dofmap, x, kernel, cells,
                            {dofmap0, bs0, cells0}, P0, {dofmap1, bs1, cells1},
                            P1T, constants, coeffs, cell_info0, cell_info1,
-                           bc_values1, bc_markers1, x0, alpha);
+                           bc_values1, bc_markers1, x0, alpha, custom_data);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
       _lift_bc_cells<3, 3>(b, x_dofmap, x, kernel, cells,
                            {dofmap0, bs0, cells0}, P0, {dofmap1, bs1, cells1},
                            P1T, constants, coeffs, cell_info0, cell_info1,
-                           bc_values1, bc_markers1, x0, alpha);
+                           bc_values1, bc_markers1, x0, alpha, custom_data);
     }
     else
     {
       _lift_bc_cells(b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells0}, P0,
                      {dofmap1, bs1, cells1}, P1T, constants, coeffs, cell_info0,
-                     cell_info1, bc_values1, bc_markers1, x0, alpha);
+                     cell_info1, bc_values1, bc_markers1, x0, alpha,
+                     custom_data);
     }
   }
 
@@ -1072,6 +1092,8 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
     assert(kernel);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::interior_facet, i});
+    std::optional<void*> custom_data
+        = a.custom_data(IntegralType::interior_facet, i, 0);
 
     using mdspanx22_t
         = md::mdspan<const std::int32_t,
@@ -1089,7 +1111,8 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
         b, x_dofmap, x, kernel, facets, {dofmap0, bs0, facets0}, P0,
         {dofmap1, bs1, facets1}, P1T, constants,
         mdspanx2x_t(coeffs.data(), facets.extent(0), 2, cstride), cell_info0,
-        cell_info1, bc_values1, bc_markers1, x0, alpha, facet_perms);
+        cell_info1, bc_values1, bc_markers1, x0, alpha, facet_perms,
+        custom_data);
   }
 
   for (auto itg_type : {fem::IntegralType::exterior_facet,
@@ -1105,6 +1128,7 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
       auto kernel = a.kernel(itg_type, i, 0);
       assert(kernel);
       auto& [coeffs, cstride] = coefficients.at({itg_type, i});
+      std::optional<void*> custom_data = a.custom_data(itg_type, i, 0);
 
       using mdspanx2_t
           = md::mdspan<const std::int32_t,
@@ -1120,7 +1144,7 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
           b, x_dofmap, x, kernel, entities, {dofmap0, bs0, entities0}, P0,
           {dofmap1, bs1, entities1}, P1T, constants,
           md::mdspan(coeffs.data(), entities.extent(0), cstride), cell_info0,
-          cell_info1, bc_values1, bc_markers1, x0, alpha, perms);
+          cell_info1, bc_values1, bc_markers1, x0, alpha, perms, custom_data);
     }
   }
 }
@@ -1276,24 +1300,29 @@ void assemble_vector(
       std::span cells = L.domain(IntegralType::cell, i, cell_type_idx);
       std::span cells0 = L.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+      void* custom_data = L.custom_data(IntegralType::cell, i, cell_type_idx)
+                              .value_or(nullptr);
       assert(cells.size() * cstride == coeffs.size());
       if (bs == 1)
       {
         impl::assemble_cells<1>(
             P0, b, x_dofmap, x, cells, {dofs, bs, cells0}, fn, constants,
-            md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
+            md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0,
+            custom_data);
       }
       else if (bs == 3)
       {
         impl::assemble_cells<3>(
             P0, b, x_dofmap, x, cells, {dofs, bs, cells0}, fn, constants,
-            md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
+            md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0,
+            custom_data);
       }
       else
       {
-        impl::assemble_cells(
-            P0, b, x_dofmap, x, cells, {dofs, bs, cells0}, fn, constants,
-            md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0);
+        impl::assemble_cells(P0, b, x_dofmap, x, cells, {dofs, bs, cells0}, fn,
+                             constants,
+                             md::mdspan(coeffs.data(), cells.size(), cstride),
+                             cell_info0, custom_data);
       }
     }
 
@@ -1327,6 +1356,8 @@ void assemble_vector(
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
+      void* custom_data
+          = L.custom_data(IntegralType::interior_facet, i, 0).value_or(nullptr);
       std::span facets = L.domain(IntegralType::interior_facet, i, 0);
       std::span facets1 = L.domain_arg(IntegralType::interior_facet, 0, i, 0);
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
@@ -1339,7 +1370,7 @@ void assemble_vector(
              mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
             fn, constants,
             mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            cell_info0, facet_perms);
+            cell_info0, facet_perms, custom_data);
       }
       else if (bs == 3)
       {
@@ -1350,7 +1381,7 @@ void assemble_vector(
              mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
             fn, constants,
             mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            cell_info0, facet_perms);
+            cell_info0, facet_perms, custom_data);
       }
       else
       {
@@ -1361,7 +1392,7 @@ void assemble_vector(
              mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
             fn, constants,
             mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            cell_info0, facet_perms);
+            cell_info0, facet_perms, custom_data);
       }
     }
 
@@ -1378,6 +1409,7 @@ void assemble_vector(
         auto fn = L.kernel(itg_type, i, 0);
         assert(fn);
         auto& [coeffs, cstride] = coefficients.at({itg_type, i});
+        void* custom_data = L.custom_data(itg_type, i, 0).value_or(nullptr);
         std::span e = L.domain(itg_type, i, 0);
         mdspanx2_t entities(e.data(), e.size() / 2, 2);
         std::span e1 = L.domain_arg(itg_type, 0, i, 0);
@@ -1388,7 +1420,7 @@ void assemble_vector(
           impl::assemble_entities<1>(
               P0, b, x_dofmap, x, entities, {dofs, bs, entities1}, fn,
               constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
-              cell_info0, perms);
+              cell_info0, perms, custom_data);
         }
         else if (bs == 3)
         {
@@ -1396,7 +1428,7 @@ void assemble_vector(
               P0, b, x_dofmap, x, entities, {dofs, bs, entities1}, fn,
               constants,
               md::mdspan(coeffs.data(), entities.size() / 2, cstride),
-              cell_info0, perms);
+              cell_info0, perms, custom_data);
         }
         else
         {
@@ -1404,7 +1436,7 @@ void assemble_vector(
               P0, b, x_dofmap, x, entities, {dofs, bs, entities1}, fn,
               constants,
               md::mdspan(coeffs.data(), entities.size() / 2, cstride),
-              cell_info0, perms);
+              cell_info0, perms, custom_data);
         }
       }
     }
