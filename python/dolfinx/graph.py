@@ -74,7 +74,7 @@ class AdjacencyList(Generic[_T]):
         """String representation of the adjacency list."""
         return self._cpp_object.__repr__()
 
-    def links(self, node: _T) -> npt.NDArray[_T]:
+    def links(self, node: int) -> npt.NDArray[_T]:
         """Retrieve the links of a node.
 
         Note:
