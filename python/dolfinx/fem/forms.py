@@ -292,10 +292,7 @@ def mixed_topology_form(
     mesh = domain.ufl_cargo()
     if mesh is None:
         raise RuntimeError("Expecting to find a Mesh in the form.")
-    if jit_comm is None:
-        comm = mesh.comm
-    else:
-        comm = jit_comm
+    comm = mesh.comm if jit_comm is None else jit_comm
 
     ufcx_forms = []
     modules = []
