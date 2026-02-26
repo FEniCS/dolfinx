@@ -17,6 +17,7 @@ set(DOLFINX_DIRS
     io
     la
     mesh
+    multigrid
     nls
     refinement
 )
