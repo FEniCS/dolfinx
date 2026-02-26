@@ -52,7 +52,8 @@
 # Poisson equation), or a variational formulation can be constructed that
 # imposes weak continuity of normal derivatives between finite element
 # cells. This demo uses a discontinuous Galerkin approach to impose
-# continuity of the normal derivative weakly.
+# continuity of the normal derivative weakly, see for instance
+# :cite:t:`babuska1973penalty` or :cite:t:`Georgoulis2009biharmonic`.
 #
 # Consider a triangulation $\mathcal{T}$ of the domain $\Omega$, where
 # the set of interior facets is denoted by $\mathcal{E}_h^{\rm int}$.
@@ -269,3 +270,6 @@ try:
 except ModuleNotFoundError:
     print("'pyvista' is required to visualise the solution")
     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
+# -
+
+# .. bibliography::
