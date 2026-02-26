@@ -14,6 +14,8 @@
 
 # # Biharmonic equation
 #
+# Authors: Julius Herb, Ottar Hellan and Jørgen S. Dokken
+#
 # ```{admonition} Download sources
 # :class: download
 # * {download}`Python script <./demo_biharmonic.py>`
@@ -53,7 +55,7 @@
 # imposes weak continuity of normal derivatives between finite element
 # cells. This demo uses a discontinuous Galerkin approach to impose
 # continuity of the normal derivative weakly, see for instance
-# :cite:t:`babuska1973penalty` or :cite:t:`Georgoulis2009biharmonic`.
+# {cite:t}`babuska1973penalty` or {cite:t}`Georgoulis2009biharmonic`.
 #
 # Consider a triangulation $\mathcal{T}$ of the domain $\Omega$, where
 # the set of interior facets is denoted by $\mathcal{E}_h^{\rm int}$.
@@ -272,4 +274,5 @@ except ModuleNotFoundError:
     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
 # -
 
-# .. bibliography::
+# ```{bibliography}
+# ```
