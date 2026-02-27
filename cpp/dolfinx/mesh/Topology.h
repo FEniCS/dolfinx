@@ -64,8 +64,7 @@ public:
       std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
       std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
       const std::optional<std::vector<std::vector<std::int64_t>>>&
-          original_cell_index
-      = std::nullopt,
+          original_cell_index = std::nullopt,
       int num_threads = 1);
 
   /// Copy constructor

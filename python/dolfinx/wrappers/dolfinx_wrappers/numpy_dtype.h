@@ -1,4 +1,3 @@
-
 // Copyright (C) 2024 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -7,38 +6,69 @@
 
 #include <complex>
 #include <cstdint>
-#include <type_traits>
 
 #pragma once
 
 namespace dolfinx_wrappers
 {
 
-/// @brief Return NumPy dtype char type for a C++ type
-/// @tparam T C++ type
-/// @return NumPy dtype
+// Primary template: unimplemented (will cause compile error if not specialized)
 template <typename T>
-constexpr char numpy_dtype()
+struct numpy_dtype;
+
+// Built-in specializations
+template <>
+struct numpy_dtype<float>
 {
-  if constexpr (std::is_same_v<T, float>)
-    return 'f';
-  else if constexpr (std::is_same_v<T, double>)
-    return 'd';
-  else if constexpr (std::is_same_v<T, std::complex<float>>)
-    return 'F';
-  else if constexpr (std::is_same_v<T, std::complex<double>>)
-    return 'D';
-  else if constexpr (std::is_same_v<T, std::int8_t>)
-    return 'b';
-  else if constexpr (std::is_same_v<T, std::uint8_t>)
-    return 'B';
-  else if constexpr (std::is_same_v<T, std::int32_t>)
-    return 'i';
-  else if constexpr (std::is_same_v<T, std::uint32_t>)
-    return 'I';
-  else if constexpr (std::is_same_v<T, std::int64_t>)
-    return 'l';
-  else if constexpr (std::is_same_v<T, std::uint64_t>)
-    return 'L';
-}
+  static constexpr char value = 'f';
+};
+template <>
+struct numpy_dtype<double>
+{
+  static constexpr char value = 'd';
+};
+template <>
+struct numpy_dtype<std::complex<float>>
+{
+  static constexpr char value = 'F';
+};
+template <>
+struct numpy_dtype<std::complex<double>>
+{
+  static constexpr char value = 'D';
+};
+template <>
+struct numpy_dtype<std::int8_t>
+{
+  static constexpr char value = 'b';
+};
+template <>
+struct numpy_dtype<std::uint8_t>
+{
+  static constexpr char value = 'B';
+};
+template <>
+struct numpy_dtype<std::int32_t>
+{
+  static constexpr char value = 'i';
+};
+template <>
+struct numpy_dtype<std::uint32_t>
+{
+  static constexpr char value = 'I';
+};
+template <>
+struct numpy_dtype<std::int64_t>
+{
+  static constexpr char value = 'l';
+};
+template <>
+struct numpy_dtype<std::uint64_t>
+{
+  static constexpr char value = 'L';
+};
+
+template <typename T>
+inline constexpr char numpy_dtype_v = numpy_dtype<T>::value;
+
 } // namespace dolfinx_wrappers
