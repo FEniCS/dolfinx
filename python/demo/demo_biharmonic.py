@@ -68,7 +68,7 @@
 # $$
 #
 # as the simply supported boundary conditions reduces the system into two
-# sequential Poisson problems, named the Ciarlet-Raviart method
+# sequential Poisson problems, named the Ciarlet-Raviart formulation
 # {cite}`ciarlet1974mixed`.
 
 
@@ -160,11 +160,15 @@ from mpi4py import MPI
 import numpy as np
 
 import ufl
-from dolfinx import default_scalar_type, fem, io, mesh, plot
+from dolfinx import default_real_type, default_scalar_type, fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
 
 # -
+
+if np.issubdtype(default_real_type, np.float32):  # type: ignore
+    print("float32 not yet supported for this demo.")
+    exit(0)
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
@@ -192,7 +196,7 @@ V = fem.functionspace(msh, ("Lagrange", degree))
 # <dolfinx.fem.functionspace>` is a tuple consisting of `(family,
 # degree)`, where `family` is the finite element family, and `degree`
 # specifies the polynomial degree. in this case `V` consists of
-# second-order, continuous Lagrange finite element functions.
+# third-order, continuous Lagrange finite element functions.
 # For further details of how one can specify
 # finite elements as tuples, see {py:class}`ElementMetaData
 # <dolfinx.fem.ElementMetaData>`.
@@ -224,13 +228,13 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 # space of our unknown to apply it as a strong boundary condition
 
 
-def u_manufactured(x):
+def u_manufactured(mod, x):
     """Manufactured solution."""
-    return np.sin(2 * np.pi * x[0]) ** 2 * np.sin(2 * np.pi * x[1]) ** 2
+    return mod.sin(2 * mod.pi * x[0]) ** 2 * mod.sin(2 * mod.pi * x[1]) ** 2
 
 
 g_D = fem.Function(V)
-g_D.interpolate(u_manufactured)
+g_D.interpolate(lambda x: u_manufactured(np, x))
 bc = fem.dirichletbc(value=g_D, dofs=dofs)
 
 # Next, we express the variational problem using UFL.
@@ -263,7 +267,7 @@ h_avg = (h("+") + h("-")) / 2.0
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(msh)
-u_ex = ufl.sin(2 * ufl.pi * x[0]) ** 2 * ufl.sin(2 * ufl.pi * x[1]) ** 2
+u_ex = u_manufactured(ufl, x)
 f = ufl.div(ufl.grad(ufl.div(ufl.grad(u_ex))))
 g_N = ufl.dot(ufl.grad(u_ex), n)
 
@@ -289,6 +293,7 @@ L = (
 # case we use a direct (LU) solver. The {py:func}`solve
 # <dolfinx.fem.petsc.LinearProblem.solve>` will compute a solution.
 
+# +
 problem = LinearProblem(
     a,
     L,
@@ -300,16 +305,17 @@ problem = LinearProblem(
     },
 )
 uh = problem.solve()
+
 assert isinstance(uh, fem.Function)
 assert problem.solver.getConvergedReason() > 0
+# -
 
 # We compute the error between the computed and exact solution:
 
 # +
-error = fem.form(ufl.inner(uh - u_ex, uh - u_ex) * ufl.dx)
+error = fem.form(ufl.inner(uh - g_D, uh - g_D) * ufl.dx)
 local_error = fem.assemble_scalar(error)
 glob_error = np.sqrt(error.mesh.comm.allreduce(local_error, op=MPI.SUM))
-
 print(f"Global_error: {glob_error:.5e}")
 
 assert glob_error < 1e-3
@@ -344,7 +350,6 @@ try:
 except ModuleNotFoundError:
     print("'pyvista' is required to visualise the solution")
     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
-
 # -
 
 # ```{bibliography}
