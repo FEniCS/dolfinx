@@ -154,7 +154,8 @@ jobs:
             cmake --install scotch-build-dir/ &&
             git clone --branch v9.2.1 --single-branch https://github.com/xiaoyeli/superlu_dist.git &&
             cmake -G Ninja -S superlu_dist/ -B superlu_dist-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
-              -DBUILD_SHARED_LIBS=ON -DTPL_ENABLE_PARMETISLIB=OFF -DXSDK_ENABLE_Fortran=OFF &&
+              -DBUILD_SHARED_LIBS=ON -DTPL_ENABLE_PARMETISLIB=OFF -DXSDK_ENABLE_Fortran=OFF \
+              -DMPI_HOME=/usr/lib64/mpich &&
             cmake --build superlu_dist-build-dir/ &&
             cmake --install superlu_dist-build-dir/ &&
             pip -v install 'fenics-basix==0.11.0.dev0' 'fenics-ffcx==0.11.0.dev0' &&
