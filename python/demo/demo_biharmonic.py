@@ -277,7 +277,7 @@ a = (
     - ufl.inner(ufl.jump(ufl.grad(u), n), ufl.avg(ufl.div(ufl.grad(v)))) * ufl.dS
     + beta / h_avg * ufl.inner(ufl.jump(ufl.grad(u), n), ufl.jump(ufl.grad(v), n)) * ufl.dS
     - ufl.inner(ufl.div(ufl.grad(u)), ufl.dot(ufl.grad(v), n)) * ufl.ds
-    - ufl.inner(ufl.div(ufl.grad(v)), ufl.dot(ufl.grad(u), n)) * ufl.ds
+    - ufl.inner(ufl.dot(ufl.grad(u), n), ufl.div(ufl.grad(v))) * ufl.ds
     + beta / h * ufl.inner(ufl.dot(ufl.grad(u), n), ufl.dot(ufl.grad(v), n)) * ufl.ds
 )
 L = (
@@ -313,7 +313,7 @@ assert problem.solver.getConvergedReason() > 0
 # We compute the error between the computed and exact solution:
 
 # +
-error = fem.form(ufl.inner(uh - g_D, uh - g_D) * ufl.dx)
+error = fem.form(ufl.inner(uh - g_D, ufl.conj(uh - g_D)) * ufl.dx)
 local_error = fem.assemble_scalar(error)
 glob_error = np.sqrt(error.mesh.comm.allreduce(local_error, op=MPI.SUM))
 print(f"Global_error: {glob_error:.5e}")
