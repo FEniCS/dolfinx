@@ -247,7 +247,7 @@ def mixed_topology_form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
-    jit_comm: MPI.IntraComm | None = None,
+    jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
 ):
     """Create a mixed-topology from from an array of Forms.
@@ -330,7 +330,7 @@ def form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
-    jit_comm: MPI.IntraComm | None = None,
+    jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
 ):
     """Create a Form or list of Forms.
