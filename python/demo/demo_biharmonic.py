@@ -144,7 +144,7 @@
 # satisfies
 #
 # $$
-# u(x, y) = \sin (2\pi x) \sin (2 \pi y) \text{in } [0, 1] \times [0, 1].
+# u(x, y) = \sin (2\pi x) \sin (2 \pi y) \text{ in } [0, 1] \times [0, 1].
 # $$
 #
 # ## Implementation
@@ -173,8 +173,6 @@ from dolfinx.mesh import CellType, GhostMode
 # $V$ on the mesh.
 
 N = 32
-errors = []
-hs = []
 msh = mesh.create_rectangle(
     comm=MPI.COMM_WORLD,
     points=((0.0, 0.0), (1.0, 1.0)),
