@@ -160,7 +160,7 @@ from mpi4py import MPI
 import numpy as np
 
 import ufl
-from dolfinx import default_real_type, default_scalar_type, fem, io, mesh, plot
+from dolfinx import default_real_type, default_scalar_type, fem, has_adios2, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
 
@@ -324,10 +324,11 @@ assert glob_error < 1e-3
 # The solution can be written to a VTX-file using {py:class}`VTXWriter
 # <dolfinx.io.VTXWriter>` which can be opened with ParaView
 
-out_folder = Path("out_biharmonic")
-out_folder.mkdir(parents=True, exist_ok=True)
-with io.VTXWriter(msh.comm, out_folder / "biharmonic.bp", [uh]) as file:
-    file.write(0.0)
+if has_adios2:
+    out_folder = Path("out_biharmonic")
+    out_folder.mkdir(parents=True, exist_ok=True)
+    with io.VTXWriter(msh.comm, out_folder / "biharmonic.bp", [uh]) as file:
+        file.write(0.0)
 
 # and displayed using [pyvista](https://docs.pyvista.org/).
 
