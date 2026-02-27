@@ -55,44 +55,48 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 
     @functools.wraps(local_jit)
     def mpi_jit(comm, *args, **kwargs):
-        # Just call JIT compiler when running in serial
+        # Just call JIT compiler when running in with one rank
         if comm.size == 1:
             return local_jit(*args, **kwargs)
 
-        # Default status (0 == ok, 1 == fail)
-        status = 0
+        # Remove possibility of unbound variables
+        output = None
+        status = 1  # assume failure
+        error_msg = ""
 
-        # Compile first on process 0
-        root = comm.rank == 0
-        if root:
+        # Compile on rank 0
+        is_root = comm.rank == 0
+        if is_root:
             try:
                 output = local_jit(*args, **kwargs)
+                status = 0
             except Exception as e:
-                status = 1
                 error_msg = str(e)
-
-        # TODO: This would have lower overhead if using the dijitso.jit
-        # features to inject a waiting callback instead of waiting out
-        # here. That approach allows all processes to first look in the
-        # cache, introducing a barrier only on cache miss. There's also
-        # a sketch in dijitso of how to make only one process per
-        # physical cache directory do the compilation.
-
-        # Wait for the compiling process to finish and get status
-        # TODO: Would be better to broadcast the status from root but
-        # this works.
-        global_status = comm.allreduce(status, op=MPI.MAX)
-        if global_status == 0:
-            # Success, call jit on all other processes (this should just
-            # read the cache)
-            if not root:
-                output = local_jit(*args, **kwargs)
         else:
-            # Fail simultaneously on all processes, to allow catching
-            # the error without deadlock
-            if not root:
-                error_msg = "Compilation failed on root node."
-            raise RuntimeError(f"Failed just-in-time compilation of form: {error_msg}")
+            status = None  # placeholder for bcast
+
+        status = comm.bcast(status, root=0)
+        if status != 0:
+            # Only root includes the detailed message.
+            if is_root:
+                raise RuntimeError(f"Failed JIT compilation of form: {error_msg}")
+            else:
+                raise RuntimeError("JIT compilation failed on rank 0.")
+
+        # Load cache on all other processes
+        if not is_root:
+            try:
+                status_local = 0
+                output = local_jit(*args, **kwargs)
+            except Exception as e:
+                status_local = 1
+                print(f"JIT cache load failed on rank {comm.rank}: {e}", flush=True)
+        else:
+            status_local = 0  # root succeeded by definition
+
+        any_fail = comm.allreduce(status_local, op=MPI.MAX)
+        if any_fail:
+            raise RuntimeError("JIT cache load failed on at least one rank.")
 
         return output
 
