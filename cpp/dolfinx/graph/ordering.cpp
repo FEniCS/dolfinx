@@ -75,12 +75,15 @@ residual_graph_components(const graph::AdjacencyList<int>& graph,
 }
 //-----------------------------------------------------------------------------
 // Get the (maximum) width of a level structure
-int max_level_width(const graph::AdjacencyList<int>& levels)
+std::size_t max_level_width(const graph::AdjacencyList<int>& levels)
 {
-  int wmax = 0;
-  for (int i = 0; i < levels.num_nodes(); ++i)
-    wmax = std::max(wmax, levels.num_links(i));
-  return wmax;
+  std::size_t wmax = 0;
+  const std::vector<std::int32_t>& offsets = levels.offsets();
+  for (auto it = offsets.begin(); it != std::prev(offsets.end()); ++it)
+  {
+    std::size_t num_links = *std::next(it) - *it;
+    wmax = std::max(wmax, num_links);
+  }
 }
 //-----------------------------------------------------------------------------
 // Create a level structure from graph, rooted at node s
@@ -120,7 +123,6 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
   return graph::AdjacencyList(std::move(level_structure),
                               std::move(level_offsets));
 }
-
 //-----------------------------------------------------------------------------
 // Gibbs-Poole-Stockmeyer algorithm, finding a reordering for the given
 // graph, operating only on nodes which are yet unlabelled (indicated
@@ -134,7 +136,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   const std::int32_t n = graph.num_nodes();
 
   // Degree comparison function
-  auto cmp_degree = [&graph](int a, int b)
+  auto cmp_degree = [&graph](auto a, auto b)
   { return graph.num_links(a) < graph.num_links(b); };
 
   // ALGORITHM I. Finding endpoints of a pseudo-diameter.
@@ -164,7 +166,6 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
     S.resize(lv_final.size());
     std::partial_sort_copy(lv_final.begin(), lv_final.end(), S.begin(), S.end(),
                            cmp_degree);
-
     int w_min = std::numeric_limits<int>::max();
     done = true;
 
@@ -258,15 +259,15 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
                              [](int vl, int vn) { return (vl > vn) ? vl : 0; });
 
       // Find maximum of those that did increase
-      int h0 = *std::ranges::max_element(wh);
-      int l0 = *std::ranges::max_element(wl);
+      int h0 = std::ranges::max(wh);
+      int l0 = std::ranges::max(wl);
 
       // Choose which side to use
       int side = h0 < l0 ? 0 : 1;
 
-      // If h0 == l0, then use the elements of the level pairs which arise
-      // from the rooted level structure of smaller width. If the widths are
-      // equal, use the first elements. (i.e. lvp[][0]).
+      // If h0 == l0, then use the elements of the level pairs which
+      // arise from the rooted level structure of smaller width. If the
+      // widths are equal, use the first elements. (i.e. lvp[][0]).
       if (h0 == l0)
         side = max_level_width(lu) < max_level_width(lv) ? 1 : 0;
 
@@ -336,10 +337,12 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
       // with lowest degree
       nrem.clear();
       for (int w : lslevel)
+      {
         if (!labelled[w])
           nrem.push_back(w);
+      }
 
-      if (nrem.size() == 0)
+      if (nrem.empty())
         break;
 
       std::ranges::sort(nrem, cmp_degree);
