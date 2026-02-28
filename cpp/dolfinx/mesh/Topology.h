@@ -57,14 +57,15 @@ public:
   /// in `cell_types`.
   /// @param[in] original_cell_index Original indices for each cell in
   /// `cells`.
+  /// @param[in] num_threads Number of threads to use for entity creation.
   Topology(
       std::vector<CellType> cell_types,
       std::shared_ptr<const common::IndexMap> vertex_map,
       std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
       std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
       const std::optional<std::vector<std::vector<std::int64_t>>>&
-          original_cell_index
-      = std::nullopt);
+          original_cell_index = std::nullopt,
+      int num_threads = 1);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -188,10 +189,12 @@ public:
   const std::vector<std::int32_t>& interprocess_facets() const;
 
   /// @brief Create entities of given topological dimension.
+  ///
   /// @param[in] dim Topological dimension of entities to compute.
+  /// @param[in] num_threads Number of threads to use for entity creation.
   /// @return True if entities are created, false if entities already
   /// existed.
-  bool create_entities(int dim);
+  bool create_entities(int dim, int num_threads = 1);
 
   /// @brief Create connectivity between given pair of dimensions, `d0
   /// -> d1`.
