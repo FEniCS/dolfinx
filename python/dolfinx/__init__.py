@@ -24,8 +24,8 @@ try:
 except ImportError:
     import numpy as _np
 
-    default_scalar_type = _np.float64
-    default_real_type = _np.float64
+    default_scalar_type = _np.float64  # type: ignore
+    default_real_type = _np.float64  # type: ignore
 
 from dolfinx import common
 from dolfinx import cpp as _cpp
