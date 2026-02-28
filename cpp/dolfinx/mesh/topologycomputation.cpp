@@ -8,7 +8,6 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
-#include <basix/mdspan.hpp>
 #include <boost/sort/sort.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
@@ -33,9 +32,6 @@ using namespace dolfinx;
 
 namespace
 {
-template <typename T, std::size_t ndim>
-using mdspand_t = md::mdspan<T, md::dextents<std::size_t, ndim>>;
-
 /// @brief  Build list of entities (defined by vertices) of a given
 /// type from cells.
 ///
@@ -106,7 +102,7 @@ auto build_entity_list
       vertex_index_map.local_to_global(entity_vertices, global_vertices);
 
       std::iota(perm.begin(), perm.end(), 0);
-      std::ranges::sort(perm, [&global_vertices](std::size_t i0, std::size_t i1)
+      std::ranges::sort(perm, [&global_vertices](auto i0, auto i1)
                         { return global_vertices[i0] < global_vertices[i1]; });
 
       // For quadrilaterals, the vertex opposite the lowest
@@ -564,10 +560,8 @@ std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::vector<std::int32_t>>
 compute_entities_by_key_matching(
     MPI_Comm comm,
-    std::vector<std::tuple<
-        mesh::CellType,
-        std::reference_wrapper<const graph::AdjacencyList<std::int32_t>>,
-        std::reference_wrapper<const common::IndexMap>>>
+    std::vector<std::tuple<mesh::CellType, std::span<const std::int32_t>,
+                           std::reference_wrapper<const common::IndexMap>>>
         cell_lists,
     const common::IndexMap& vertex_index_map, mesh::CellType entity_type,
     int dim, int num_threads)
@@ -594,9 +588,8 @@ compute_entities_by_key_matching(
         cell_type_entities[k].push_back(e);
     }
 
-    const graph::AdjacencyList<std::int32_t>& cells
-        = std::get<1>(cell_lists[k]);
-    std::size_t num_cells = cells.num_nodes();
+    std::span<const std::int32_t> cells = std::get<1>(cell_lists[k]);
+    std::size_t num_cells = cells.size() / mesh::num_cell_vertices(cell_type);
     cell_type_offsets.push_back(cell_type_offsets.back()
                                 + num_cells * cell_type_entities[k].size());
   }
@@ -619,24 +612,22 @@ compute_entities_by_key_matching(
 
     common::Timer t_thread("Threaded part");
 
-    const graph::AdjacencyList<std::int32_t>& cells
-        = std::get<1>(cell_lists[k]);
+    std::span<const std::int32_t> cells = std::get<1>(cell_lists[k]);
     int num_entities_per_cell = cell_type_entities[k].size();
+    std::size_t num_cells = cells.size() / num_cell_vertices(cell_type);
     if (num_threads > 0)
     {
       std::vector<std::jthread> threads(num_threads);
       for (int i = 0; i < num_threads; ++i)
       {
-        auto [c0, c1]
-            = dolfinx::MPI::local_range(i, cells.num_nodes(), num_threads);
+        auto [c0, c1] = dolfinx::MPI::local_range(i, num_cells, num_threads);
         std::size_t offset
             = cell_type_offsets[k] * num_vertices_per_entity
               + c0 * num_vertices_per_entity * num_entities_per_cell;
         std::size_t count
             = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
-        std::span<const std::int32_t> cells_i(
-            cells.array().data() + c0 * num_vertices_per_cell,
-            (c1 - c0) * num_vertices_per_cell);
+        auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
+                                     (c1 - c0) * num_vertices_per_cell);
         threads[i] = std::jthread(
             build_entity_list, std::span(entity_list.data() + offset, count),
             std::span(entity_list_sorted.data() + offset, count), cells_i,
@@ -648,12 +639,12 @@ compute_entities_by_key_matching(
     {
       std::size_t offset = cell_type_offsets[k] * num_vertices_per_entity;
       std::size_t count
-          = cells.num_nodes() * num_vertices_per_entity * num_entities_per_cell;
-      build_entity_list(
-          std::span(entity_list.data() + offset, count),
-          std::span(entity_list_sorted.data() + offset, count), cells.array(),
-          num_vertices_per_cell, std::cref(e_vertices), entity_type,
-          std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
+          = num_cells * num_vertices_per_entity * num_entities_per_cell;
+      build_entity_list(std::span(entity_list.data() + offset, count),
+                        std::span(entity_list_sorted.data() + offset, count),
+                        cells, num_vertices_per_cell, std::cref(e_vertices),
+                        entity_type, std::cref(cell_type_entities[k]),
+                        std::cref(vertex_index_map));
     }
   }
 
@@ -738,9 +729,10 @@ compute_entities_by_key_matching(
     // Tag all entities in local cells with 0, leaving entities which
     // only appear in ghost cells tagged.
     const common::IndexMap& cell_map = std::get<2>(cell_lists[k]);
-    assert(cell_map.size_local() + cell_map.num_ghosts()
-           == std::get<1>(cell_lists[k]).get().num_nodes());
-    const std::int32_t ghost_offset = cell_map.size_local();
+    assert(std::size_t(cell_map.size_local() + cell_map.num_ghosts())
+           == std::get<1>(cell_lists[k]).size()
+                  / mesh::num_cell_vertices(std::get<0>(cell_lists[k])));
+    std::int32_t ghost_offset = cell_map.size_local();
     int num_entities_per_cell = cell_type_entities[k].size();
     std::size_t offset = cell_type_offsets[k];
     for (std::int32_t i = 0; i < ghost_offset * num_entities_per_cell; ++i)
@@ -917,10 +909,8 @@ mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
 
   // Lists of all cells by cell type
   std::vector<CellType> cell_types = topology.entity_types(tdim);
-  std::vector<std::tuple<
-      mesh::CellType,
-      std::reference_wrapper<const graph::AdjacencyList<std::int32_t>>,
-      std::reference_wrapper<const common::IndexMap>>>
+  std::vector<std::tuple<mesh::CellType, std::span<const std::int32_t>,
+                         std::reference_wrapper<const common::IndexMap>>>
       cell_lists;
 
   auto cell_index_maps = topology.index_maps(tdim);
@@ -931,7 +921,7 @@ mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
     auto cells = topology.connectivity({tdim, int(i)}, {0, 0});
     if (!cells)
       throw std::runtime_error("Cell connectivity missing.");
-    cell_lists.push_back({cell_types[i], *cells, *cell_map});
+    cell_lists.push_back({cell_types[i], cells->array(), *cell_map});
   }
 
   auto vertex_map = topology.index_map(0);
