@@ -50,7 +50,10 @@ EntityMap::sub_topology_to_topology(std::span<const std::int32_t> entities,
     std::unordered_map<std::int32_t, std::int32_t> topology_to_sub_topology;
     topology_to_sub_topology.reserve(_sub_topology_to_topology.size());
     for (std::size_t i = 0; i < _sub_topology_to_topology.size(); ++i)
-      topology_to_sub_topology.insert({_sub_topology_to_topology[i], i});
+    {
+      topology_to_sub_topology.insert(
+          {_sub_topology_to_topology[i], static_cast<std::int32_t>(i)});
+    }
 
     // For each entity index in `entities` (which are indices in
     // `_topology`), get the corresponding entity in `_sub_topology`.
