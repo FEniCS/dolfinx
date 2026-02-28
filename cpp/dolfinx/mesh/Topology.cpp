@@ -56,7 +56,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
   // Build {dest, pos} list, and sort
   std::vector<std::array<int, 2>> dest_to_index;
   {
-    const int size = dolfinx::MPI::size(comm);
+    int size = dolfinx::MPI::size(comm);
     dest_to_index.reserve(indices.size());
     for (auto idx : indices)
     {
@@ -258,7 +258,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
     auto it = recv_buffer1.begin();
     while (it != recv_buffer1.end())
     {
-      const std::size_t d = std::distance(recv_buffer1.begin(), it);
+      std::size_t d = std::distance(recv_buffer1.begin(), it);
       std::int64_t num_ranks = *it;
 
       std::span ranks(recv_buffer1.data() + d + 1, num_ranks);
@@ -843,8 +843,11 @@ Topology::index_maps(int dim) const
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   if (_entity_types[dim].size() > 1)
+  {
     throw std::runtime_error(
         "Multiple index maps of this dimension. Call index_maps instead.");
+  }
+
   auto im = index_maps(dim);
   if (im.empty())
   {
@@ -994,12 +997,12 @@ void Topology::create_connectivity(int d0, int d1)
       auto [c_d0_d1, c_d1_d0] = compute_connectivity(*this, {d0, i0}, {d1, i1});
 
       // NOTE: that to compute the (d0, d1) connections is it sometimes
-      // necessary to compute the (d1, d0) connections. We store the (d1,
-      // d0) for possible later use, but there is a memory overhead if they
-      // are not required. It may be better to not automatically store
-      // connectivity that was not requested, but advise in a docstring the
-      // most efficient order in which to call this function if several
-      // connectivities are needed.
+      // necessary to compute the (d1, d0) connections. We store the
+      // (d1, d0) for possible later use, but there is a memory overhead
+      // if they are not required. It may be better to not automatically
+      // store connectivity that was not requested, but advise in a
+      // docstring the most efficient order in which to call this
+      // function if several connectivities are needed.
 
       // TODO: Caching policy/strategy.
       // Concerning the note above: Provide an overload
@@ -1102,7 +1105,7 @@ Topology mesh::create_topology(
   {
     common::Timer timer2("Topology: 2");
 
-    const int mpi_rank = dolfinx::MPI::rank(comm);
+    int mpi_rank = dolfinx::MPI::rank(comm);
     std::vector<std::int64_t> owned_shared_vertices;
     for (std::size_t i = 0; i < boundary_vertices.size(); ++i)
     {
@@ -1152,7 +1155,7 @@ Topology mesh::create_topology(
   // Compute the global offset for owned (local) vertex indices
   std::int64_t global_offset_v = 0;
   {
-    const std::int64_t nlocal = owned_vertices.size();
+    std::int64_t nlocal = owned_vertices.size();
     MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
   }
 
@@ -1200,7 +1203,7 @@ Topology mesh::create_topology(
     std::int32_t v = owned_vertices.size();
     for (std::size_t i = 0; i < unowned_vertex_data.size(); i += 3)
     {
-      const std::int64_t idx_global = unowned_vertex_data[i];
+      std::int64_t idx_global = unowned_vertex_data[i];
       auto it = std::ranges::lower_bound(unowned_vertices, idx_global);
       assert(it != unowned_vertices.end() and *it == idx_global);
       std::size_t pos = std::distance(unowned_vertices.begin(), it);
@@ -1384,16 +1387,15 @@ mesh::create_subtopology(const Topology& topology, int dim,
     subentities = std::move(_subentities);
   }
 
-  // Get the vertices in the sub-topology. Use subentities
-  // (instead of entities) to ensure vertices for ghost entities are
-  // included.
+  // Get the vertices in the sub-topology. Use subentities (instead of
+  // entities) to ensure vertices for ghost entities are included.
 
   // Get the vertices in the sub-topology owned by this process
   auto map0 = topology.index_map(0);
   assert(map0);
 
-  // Create map from the vertices in the sub-topology to the vertices in the
-  // parent topology, and an index map
+  // Create map from the vertices in the sub-topology to the vertices in
+  // the parent topology, and an index map
   std::shared_ptr<common::IndexMap> submap0;
   std::vector<int32_t> subvertices0;
   {
@@ -1406,7 +1408,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   }
 
   // Sub-topology entity to vertex connectivity
-  const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
+  CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
   int num_vertices_per_entity = cell_num_entities(entity_type, 0);
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
@@ -1417,8 +1419,8 @@ mesh::create_subtopology(const Topology& topology, int dim,
 
   // Create vertex-to-subvertex vertex map (i.e. the inverse of
   // subvertex_to_vertex)
-  // NOTE: Depending on the sub-topology, this may be densely or sparsely
-  // populated. Is a different data structure more appropriate?
+  // NOTE: Depending on the sub-topology, this may be densely or
+  // sparsely populated. Is a different data structure more appropriate?
   std::vector<std::int32_t> vertex_to_subvertex(
       map0->size_local() + map0->num_ghosts(), -1);
   for (std::size_t i = 0; i < subvertices0.size(); ++i)
@@ -1466,8 +1468,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
   // (value)
   std::map<std::vector<std::int32_t>, std::int32_t> entity_key_to_index;
   std::vector<std::int32_t> key(num_vertices_per_entity);
-  const int num_entities_mesh = map_e->size_local() + map_e->num_ghosts();
-  for (int e = 0; e < num_entities_mesh; ++e)
+  for (std::int32_t e = 0; e < map_e->size_local() + map_e->num_ghosts(); ++e)
   {
     auto vertices = e_to_v->links(e);
     std::ranges::copy(vertices, key.begin());
@@ -1586,3 +1587,4 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
 
   return facet_pair_lists;
 }
+//-----------------------------------------------------------------------------
