@@ -68,8 +68,7 @@ def norm_L2(v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx) -> np.inexact:
 
 
 def compute_cell_boundary_facets(msh: dolfinx.mesh.Mesh) -> np.ndarray:
-    """Compute the integration entities for integrals around the
-    boundaries of all cells in msh.
+    """Integration entities for integrals on boundaries of all cells.
 
     Parameters:
         msh: The mesh.

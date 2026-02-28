@@ -47,7 +47,7 @@ def test_refine_create_unit_cube(ghost_mode):
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh, partitioner=create_cell_partitioner(ghost_mode))
+    mesh, _, _ = refine(mesh, partitioner=create_cell_partitioner(ghost_mode, 2))
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
@@ -56,7 +56,7 @@ def test_refine_create_unit_cube(ghost_mode):
 
 
 def test_refine_create_form():
-    """Check that forms can be assembled on refined mesh"""
+    """Check that forms can be assembled on refined mesh."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     mesh.topology.create_entities(1)
     mesh, _, _ = refine(mesh)
@@ -70,7 +70,7 @@ def test_refine_create_form():
 
 
 def test_sub_refine():
-    """Test that refinement of a subset of edges works"""
+    """Test that refinement of a subset of edges works."""
     msh = create_unit_square(
         MPI.COMM_WORLD, 3, 4, diagonal=DiagonalType.left, ghost_mode=GhostMode.none
     )
@@ -88,7 +88,7 @@ def test_sub_refine():
 
 
 def test_refine_from_cells():
-    """Check user interface for using local cells to define edges"""
+    """Check user interface for using local cells to define edges."""
     Nx, Ny = 8, 3
     assert Nx % 2 == 0
     msh = create_unit_square(

@@ -99,6 +99,7 @@ def generate_mesh_wire(
     scatt_tag: int,
     pml_tag: int,
 ):
+    """Generate the mesh of the wire with surrounding PML."""
     dim = 2
     # A dummy circle for setting a finer mesh
     c1 = gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire * 0.8, angle1=0.0, angle2=2 * np.pi)
@@ -212,6 +213,7 @@ def generate_mesh_wire(
 
 
 def compute_a(nu: int, m: complex, alpha: float) -> float:
+    """Compute the Mie coefficient a_nu for a cylinder."""
     J_nu_alpha = jv(nu, alpha)
     J_nu_malpha = jv(nu, m * alpha)
     J_nu_alpha_p = jvp(nu, alpha, 1)
@@ -228,6 +230,7 @@ def compute_a(nu: int, m: complex, alpha: float) -> float:
 def calculate_analytical_efficiencies(
     eps: complex, n_bkg: float, wl0: float, radius_wire: float, num_n: int = 50
 ) -> tuple[float, float, float]:
+    """Analytical scattering, extinction and absorption efficiencies."""
     m = np.sqrt(np.conj(eps)) / n_bkg
     alpha = 2 * np.pi * radius_wire / wl0 * n_bkg
     c = 2 / alpha
@@ -284,6 +287,7 @@ def calculate_analytical_efficiencies(
 
 # +
 def background_field(theta: float, n_b: float, k0: complex, x: np.typing.NDArray[np.float64]):
+    """Compute the background plane wave field at point x."""
     kx = n_b * k0 * np.cos(theta)
     ky = n_b * k0 * np.sin(theta)
     phi = kx * x[0] + ky * x[1]
@@ -296,6 +300,7 @@ def background_field(theta: float, n_b: float, k0: complex, x: np.typing.NDArray
 
 
 def curl_2d(a: fem.Function):
+    """Compute the 2D curl of a vector field a."""
     return ufl.as_vector((0, 0, a[1].dx(0) - a[0].dx(1)))
 
 
@@ -317,6 +322,7 @@ def curl_2d(a: fem.Function):
 
 
 def pml_coordinates(x: ufl.indexed.Indexed, alpha: float, k0: complex, l_dom: float, l_pml: float):
+    """Apply PML coordinate transformation to point x."""
     return x + 1j * alpha / k0 * x * (ufl.algebra.Abs(x) - l_dom / 2) / (l_pml / 2 - l_dom / 2) ** 2
 
 
@@ -369,7 +375,7 @@ if MPI.COMM_WORLD.rank == 0:
         pml_tag,
     )
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = dolfinx.cpp.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet)
+partitioner = mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet, 2)  # type: ignore
 
 mesh_data = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
@@ -565,6 +571,7 @@ def create_eps_mu(
     eps_bkg: float | ufl.tensors.ListTensor,
     mu_bkg: float | ufl.tensors.ListTensor,
 ) -> tuple[ufl.tensors.ComponentTensor, ufl.tensors.ComponentTensor]:
+    """Permittivity and permeability tensors in the PML region."""
     J = ufl.grad(pml)
 
     # Transform the 2x2 Jacobian into a 3x3 matrix.

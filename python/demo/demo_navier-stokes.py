@@ -198,14 +198,14 @@ if np.issubdtype(PETSc.ScalarType, np.complexfloating):
 
 # +
 def norm_L2(comm, v):
-    """Compute the L2(Ω)-norm of v"""
+    """Compute the L2(Ω)-norm of v."""
     return np.sqrt(
         comm.allreduce(fem.assemble_scalar(fem.form(ufl.inner(v, v) * ufl.dx)), op=MPI.SUM)
     )
 
 
 def domain_average(msh, v):
-    """Compute the average of a function over the domain"""
+    """Compute the average of a function over the domain."""
     vol = msh.comm.allreduce(
         fem.assemble_scalar(fem.form(fem.Constant(msh, default_real_type(1.0)) * ufl.dx)),
         op=MPI.SUM,
@@ -214,7 +214,7 @@ def domain_average(msh, v):
 
 
 def u_e_expr(x):
-    """Expression for the exact velocity solution to Kovasznay flow"""
+    """Expression for the exact velocity solution to Kovasznay flow."""
     return np.vstack(
         (
             1
@@ -229,12 +229,12 @@ def u_e_expr(x):
 
 
 def p_e_expr(x):
-    """Expression for the exact pressure solution to Kovasznay flow"""
+    """Expression for the exact pressure solution to Kovasznay flow."""
     return (1 / 2) * (1 - np.exp(2 * (Re / 2 - np.sqrt(Re**2 / 4 + 4 * np.pi**2)) * x[0]))
 
 
 def f_expr(x):
-    """Expression for the applied force"""
+    """Expression for the applied force."""
     return np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0])))
 
 
@@ -278,6 +278,7 @@ n = ufl.FacetNormal(msh)
 
 
 def jump(phi, n):
+    """Compute the jump of a vector valued function phi across facets."""
     return ufl.outer(phi("+"), n("+")) + ufl.outer(phi("-"), n("-"))
 
 

@@ -13,6 +13,8 @@ Below is guidance for building the DOLFINx Python interface.
 
           pip install --check-build-dependencies --no-build-isolation .
 
-To build in debug and editable mode for development:
+To build in Developer and editable mode for development:
 
-     pip -v install --check-build-dependencies --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug"  --config-settings=install.strip=false --no-build-isolation -e .
+     pip -v install --check-build-dependencies --config-settings=build-dir="build" --config-settings=cmake.build-type="Developer"  --config-settings=install.strip=false --no-build-isolation -e .
+
+Note that our Developer mode is significantly stricter than CMake's default Debug mode.

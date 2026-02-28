@@ -22,7 +22,7 @@ from dolfinx import mesh
 def test_refine_interval(n, ghost_mode, ghost_mode_refined, option):
     msh = mesh.create_interval(MPI.COMM_WORLD, n, [0, 1], ghost_mode=ghost_mode)
     msh_refined, edges, _vertices = mesh.refine(
-        msh, option=option, partitioner=mesh.create_cell_partitioner(ghost_mode_refined)
+        msh, option=option, partitioner=mesh.create_cell_partitioner(ghost_mode_refined, 2)
     )
     # TODO: add create_cell_partitioner(ghost_mode) when works
 

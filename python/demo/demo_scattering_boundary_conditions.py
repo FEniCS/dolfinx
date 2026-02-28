@@ -104,6 +104,7 @@ def generate_mesh_wire(
     bkg_tag: int,
     boundary_tag: int,
 ):
+    """Generate mesh for scattering from a wire."""
     gmsh.model.add("wire")
 
     # A dummy boundary is added for setting a finer mesh
@@ -218,6 +219,7 @@ def generate_mesh_wire(
 
 # +
 def compute_a(nu: int, m: complex, alpha: float) -> float:
+    """Compute the a_nu coefficient."""
     J_nu_alpha = jv(nu, alpha)
     J_nu_malpha = jv(nu, m * alpha)
     J_nu_alpha_p = jvp(nu, alpha, 1)
@@ -234,6 +236,7 @@ def compute_a(nu: int, m: complex, alpha: float) -> float:
 def calculate_analytical_efficiencies(
     eps: complex, n_bkg: float, wl0: float, radius_wire: float, num_n: int = 50
 ) -> tuple[float, float, float]:
+    """Analytical absorption, scattering and extinction efficiencies."""
     m = np.sqrt(np.conj(eps)) / n_bkg
     alpha = 2 * np.pi * radius_wire / wl0 * n_bkg
     c = 2 / alpha
@@ -252,7 +255,7 @@ def calculate_analytical_efficiencies(
 # with complex numbers.
 
 if not np.issubdtype(default_scalar_type, np.complexfloating):
-    print("Demo should only be executed with DOLFINx complex mode")
+    print("Demo should only be executed with DOLFINx complex mode.")
     exit(0)
 
 
@@ -298,7 +301,10 @@ if not np.issubdtype(default_scalar_type, np.complexfloating):
 
 
 class BackgroundElectricField:
+    """Background electric field expression."""
+
     def __init__(self, theta: float, n_bkg: float, k0: complex):
+        """Initialize background electric field expression."""
         self.theta = theta  # incident angle
         self.k0 = k0  # vacuum wavevector
         self.n_bkg = n_bkg  # background refractive index
@@ -306,6 +312,7 @@ class BackgroundElectricField:
     def eval(
         self, x: np.typing.NDArray[np.float64]
     ) -> tuple[np.typing.NDArray[np.complex128], np.typing.NDArray[np.complex128]]:
+        """Evaluate the background electric field at points x."""
         kx = self.n_bkg * self.k0 * np.cos(self.theta)
         ky = self.n_bkg * self.k0 * np.sin(self.theta)
         phi = kx * x[0] + ky * x[1]
@@ -370,12 +377,12 @@ class BackgroundElectricField:
 
 # +
 def radial_distance(x: ufl.SpatialCoordinate):
-    """Returns the radial distance from the origin"""
+    """Returns the radial distance from the origin."""
     return ufl.sqrt(x[0] ** 2 + x[1] ** 2)
 
 
 def curl_2d(f: fem.Function):
-    """Returns the curl of two 2D vectors as a 3D vector"""
+    """Returns the curl of two 2D vectors as a 3D vector."""
     return ufl.as_vector((0, 0, f[1].dx(0) - f[0].dx(1)))
 
 
