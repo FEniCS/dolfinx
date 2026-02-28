@@ -93,7 +93,7 @@ def test_dofmap_prism_mesh():
 
     topology = Topology(
         create_topology(
-            MPI.COMM_SELF, [CellType.prism], cells, orig_index, ghost_owners, boundary_vertices
+            MPI.COMM_SELF, [CellType.prism], cells, orig_index, ghost_owners, boundary_vertices, 0
         )
     )
     topology.create_entities(2)
