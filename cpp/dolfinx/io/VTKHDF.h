@@ -6,9 +6,13 @@
 
 #include "HDF5Interface.h"
 #include <algorithm>
+#include <basix/element-families.h>
+#include <basix/finite-element.h>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/fem/Function.h>
 #include <dolfinx/io/cells.h>
+#include <dolfinx/io/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/utils.h>
@@ -298,6 +302,131 @@ void write_data(std::string point_or_cell,
   }
 
   hdf5::close_file(h5file);
+}
+
+/// @brief Write a function to VTKHDF.
+///
+/// Adds a function to an existing VTKHDF file, which already contains a mesh.
+///
+/// @tparam U Scalar type.
+/// @param[in] filename File for output.
+/// @param[in] mesh Mesh, which must be the same as the original mesh
+/// used in the file.
+/// @param[in] u Function to write to file.
+/// @param[in] time Timestamp.
+///
+/// @note Mesh must be written to file first using `VTKHDF::write_mesh`.
+/// @note Only one dataset "u" can be written per file at present, with
+/// multiple timesteps.
+/// @note Limited support for floating point types at present (no
+/// complex number support). This function only supports DG0 and CG1 functions.
+template <std::floating_point U>
+void write_function(std::string filename, const mesh::Mesh<U>& mesh,
+                    const fem::Function<U>& u, double time)
+{
+  auto dofmap = u.function_space()->dofmap();
+  assert(dofmap);
+  const int bs = dofmap->bs();
+
+  auto map_c = mesh.topology()->index_map(mesh.topology()->dim());
+  assert(map_c);
+
+  std::shared_ptr<const fem::FiniteElement<U>> element
+      = u.function_space()->element();
+  assert(element);
+
+  std::span<const std::size_t> value_shape = element->value_shape();
+  int rank = value_shape.size();
+  std::int32_t num_components = std::reduce(
+      value_shape.begin(), value_shape.end(), 1, std::multiplies{});
+
+  std::span<const U> x = u.x()->array();
+
+  // Check that it is a Lagrange family element
+  if (element->basix_element().family() != basix::element::family::P)
+  {
+    throw std::runtime_error("Unsupported function space. Only DG0 and CG1 are "
+                             "supported at the moment.");
+  }
+
+  // DG0
+  if (element->basix_element().degree() == 0)
+  {
+    const std::int32_t num_local_cells = map_c->size_local();
+    std::vector<U> data(num_local_cells * num_components);
+
+    for (std::int32_t c = 0; c < num_local_cells; ++c)
+    {
+      auto dofs = dofmap->cell_dofs(c);
+      assert(dofs.size() == 1);
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+      {
+        std::copy_n(std::cbegin(x) + bs * dofs[i], bs,
+                    std::begin(data) + num_components * c);
+      }
+    }
+
+    io::VTKHDF::write_data<U>("Cell", filename, mesh, data, time);
+  }
+  // CG1
+  else if (element->basix_element().discontinuous() == false
+           and element->basix_element().degree() == 1)
+  {
+    auto map_x = mesh.geometry().index_map();
+    assert(map_x);
+
+    auto& geometry = mesh.geometry();
+    auto& cmap = geometry.cmap();
+    int cmap_dim = cmap.dim();
+    int cell_dim = element->space_dimension() / element->block_size();
+    if (cmap_dim != cell_dim)
+    {
+      throw std::runtime_error("Degree of output Function must be the same as "
+                               "mesh degree. Maybe the "
+                               "Function needs to be interpolated?");
+    }
+
+    // Check that dofmap layouts are equal and check Lagrange variants
+    if (dofmap->element_dof_layout() != cmap.create_dof_layout())
+    {
+      throw std::runtime_error("Function and Mesh dof layouts do not match. "
+                               "Maybe the Function needs to be interpolated?");
+    }
+    if (cmap.degree() > 2
+        and element->basix_element().lagrange_variant() != cmap.variant())
+    {
+      throw std::runtime_error("Mismatch in Lagrange family. Maybe the "
+                               "Function needs to be interpolated?");
+    }
+
+    std::int32_t num_cells = map_c->size_local() + map_c->num_ghosts();
+    std::int32_t num_local_points = map_x->size_local();
+
+    // Get dof array and pack into array (padded where appropriate)
+    auto dofmap_x = geometry.dofmap();
+    std::vector<U> data(num_local_points * num_components);
+    for (std::int32_t c = 0; c < num_cells; ++c)
+    {
+      auto dofs = dofmap->cell_dofs(c);
+      auto dofs_x = md::submdspan(dofmap_x, c, md::full_extent);
+      assert(dofs.size() == dofs_x.size());
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+      {
+        if (dofs_x[i] < num_local_points)
+        {
+          std::copy_n(std::cbegin(x) + bs * dofs[i], bs,
+                      std::begin(data) + num_components * dofs_x[i]);
+        }
+      }
+    }
+
+    io::VTKHDF::write_data<U>("Point", filename, mesh, data, time);
+  }
+  else
+  {
+    throw std::runtime_error("Unsupported function space. Only DG0 and CG1 are "
+                             "supported at the moment.");
+  }
 }
 
 /// @brief Read a mesh from a VTKHDF format file.
