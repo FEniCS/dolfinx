@@ -157,7 +157,10 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
   global_local_ghosts.reserve(ghosts.size());
   const std::int32_t local_size = range[1] - range[0];
   for (std::size_t i = 0; i < ghosts.size(); ++i)
-    global_local_ghosts.emplace_back(ghosts[i], i + local_size);
+  {
+    global_local_ghosts.emplace_back(ghosts[i],
+                                     static_cast<std::int32_t>(i + local_size));
+  }
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
 
