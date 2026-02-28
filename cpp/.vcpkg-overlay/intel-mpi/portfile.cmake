@@ -55,7 +55,7 @@ file(INSTALL "${SOURCE_DEBUG_LIB_PATH}/impi.lib"
 # 'libfabric.dll' is not needed for the compilation but it is needed for the
 # runtime and should be in the PATH for 'mpiexec' to work
 file(INSTALL "${SOURCE_LIBFABRIC_PATH}/libfabric.dll"
-     "${SOURCE_BIN_PATH}/impi.dll" "${SOURCE_BIN_PATH}/impi.pdb"
+     "${SOURCE_BIN_PATH}/impi.dll"
      DESTINATION "${CURRENT_PACKAGES_DIR}/bin"
 )
 
