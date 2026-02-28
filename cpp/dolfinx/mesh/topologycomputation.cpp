@@ -22,7 +22,6 @@
 #include <mpi.h>
 #include <numeric>
 #include <random>
-#include <ranges>
 #include <thread>
 #include <tuple>
 #include <utility>
