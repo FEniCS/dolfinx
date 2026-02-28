@@ -145,9 +145,10 @@ using U = typename dolfinx::scalar_value_t<T>;
 
 // Inside the `main` function, we begin by defining a mesh of the
 // domain. As the unit square is a very standard domain, we can use a
-// built-in mesh provided by the {cpp:class}`UnitSquareMesh` factory. In
-// order to create a mesh consisting of 32 x 32 squares with each square
-// divided into two triangles, and the finite element space (specified
+// built-in mesh generator provided by the
+// {cpp:func}`dolfinx::mesh::create_rectangle()` function.
+// In order to create a mesh consisting of 32 x 32 squares with each
+// square divided into two triangles, and the finite element space (specified
 // in the form file) defined relative to this mesh, we do as follows
 
 int main(int argc, char* argv[])
