@@ -18,6 +18,7 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -96,11 +97,11 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   return mesh::exterior_facet_indices(topology, 0);
 }
 //------------------------------------------------------------------------------
-mesh::CellPartitionFunction
-mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
-                              const graph::partition_fn& partfn)
+mesh::CellPartitionFunction mesh::create_cell_partitioner(
+    mesh::GhostMode ghost_mode, const graph::partition_fn& partfn,
+    std::optional<std::int32_t> max_facet_to_cell_links)
 {
-  return [partfn, ghost_mode](
+  return [partfn, ghost_mode, max_facet_to_cell_links](
              MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
              const std::vector<std::span<const std::int64_t>>& cells)
              -> graph::AdjacencyList<std::int32_t>
@@ -108,8 +109,8 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
     spdlog::info("Compute partition of cells across ranks");
 
     // Compute distributed dual graph (for the cells on this process)
-    const graph::AdjacencyList dual_graph
-        = build_dual_graph(comm, cell_types, cells);
+    graph::AdjacencyList dual_graph
+        = build_dual_graph(comm, cell_types, cells, max_facet_to_cell_links);
 
     // Just flag any kind of ghosting for now
     bool ghosting = (ghost_mode != GhostMode::none);
@@ -117,6 +118,14 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
     // Compute partition
     return partfn(comm, nparts, dual_graph, ghosting);
   };
+}
+//-----------------------------------------------------------------------------
+mesh::CellPartitionFunction mesh::create_cell_partitioner(
+    mesh::GhostMode ghost_mode,
+    std::optional<std::int32_t> max_facet_to_cell_links)
+{
+  return create_cell_partitioner(ghost_mode, &graph::partition_graph,
+                                 max_facet_to_cell_links);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>

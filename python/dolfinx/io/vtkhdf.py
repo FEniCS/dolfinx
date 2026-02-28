@@ -3,8 +3,8 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Support for VTKHDF5 file format."""
 
-import typing
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -22,14 +22,23 @@ from dolfinx.cpp.io import (
 )
 from dolfinx.mesh import Mesh
 
+__all__ = ["read_mesh", "write_cell_data", "write_mesh", "write_point_data"]
+
 
 def read_mesh(
     comm: _MPI.Comm,
-    filename: typing.Union[str, Path],
+    filename: str | Path,
     dtype: npt.DTypeLike = np.float64,
     gdim: int = 3,
+    max_facet_to_cell_links: int = 2,
 ):
-    """Read a mesh from a VTKHDF format file
+    """Read a mesh from a VTKHDF format file.
+
+    Note:
+        Changing `max_facet_to_cell_links` from the default value should
+        only be required when working on branching manifolds. Changing this
+        value on non-branching meshes will only result in a slower mesh
+        partitioning and creation.
 
     Args:
         comm: An MPI communicator.
@@ -37,11 +46,13 @@ def read_mesh(
         dtype: Scalar type of mesh geometry (need not match dtype in
             file).
         gdim: Geometric dimension of the mesh.
+        max_facet_to_cell_links: Maximum number of cells that can be
+            linked to a facet.
     """
     if dtype == np.float64:
-        mesh_cpp = read_vtkhdf_mesh_float64(comm, filename, gdim)
+        mesh_cpp = read_vtkhdf_mesh_float64(comm, filename, gdim, max_facet_to_cell_links)
     elif dtype == np.float32:
-        mesh_cpp = read_vtkhdf_mesh_float32(comm, filename, gdim)
+        mesh_cpp = read_vtkhdf_mesh_float32(comm, filename, gdim, max_facet_to_cell_links)
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:
@@ -58,8 +69,8 @@ def read_mesh(
     return Mesh(mesh_cpp, domain)
 
 
-def write_mesh(filename: typing.Union[str, Path], mesh: Mesh):
-    """Write a mesh to file in VTKHDF format
+def write_mesh(filename: str | Path, mesh: Mesh):
+    """Write a mesh to file in VTKHDF format.
 
     Args:
         filename: File to write to.
@@ -68,7 +79,7 @@ def write_mesh(filename: typing.Union[str, Path], mesh: Mesh):
     write_vtkhdf_mesh(filename, mesh._cpp_object)
 
 
-def write_point_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.NDArray, time: float):
+def write_point_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float):
     """Write data at vertices of the mesh.
 
     Args:
@@ -80,7 +91,7 @@ def write_point_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.ND
     write_vtkhdf_data("Point", filename, mesh._cpp_object, data, time)
 
 
-def write_cell_data(filename: typing.Union[str, Path], mesh: Mesh, data: npt.NDArray, time: float):
+def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float):
     """Write data at cells of the mesh.
 
     Args:

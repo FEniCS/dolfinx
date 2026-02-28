@@ -8,7 +8,7 @@ on:
     inputs:
       dolfinx_ref:
         description: "dolfinx git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
       build_fenicsx_stack:
@@ -18,24 +18,24 @@ on:
 
       basix_ref:
         description: "basix git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
       ufl_ref:
         description: "ufl git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
       ffcx_ref:
         description: "ffcx git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
   workflow_call:
     inputs:
       dolfinx_ref:
         description: "dolfinx git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
       build_fenicsx_stack:
@@ -45,55 +45,44 @@ on:
 
       basix_ref:
         description: "basix git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
       ufl_ref:
         description: "ufl git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
       ffcx_ref:
         description: "ffcx git ref to checkout"
-        default: ""
+        default: "main"
         type: string
 
 jobs:
   build_wheels:
     name: Build wheels
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
 
     env:
-      MPI4PY_VERSION: 3.1.2
-      PETSC4PY_VERSION: 3.16.1
-      CIBW_MANYLINUX_X86_64_IMAGE: docker.io/fenicsproject/wheelbuilder_x86_64:latest
-      CIBW_BUILD: cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64
+      CIBW_BUILD: cp312-manylinux_x86_64 cp312-manylinux_aarch64
       CIBW_BUILD_VERBOSITY: 1
-      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple PETSC_DIR=/usr/local MAKEFLAGS=-j2
+      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple
+      CIBW_ARCHS_LINUX: native
+      CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64:latest
+      CIBW_MANYLINUX_AARCH64_IMAGE: quay.io/pypa/manylinux_2_34_aarch64:latest
 
     steps:
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
 
       - name: Install Python dependencies
-        run: python -m pip install cibuildwheel simple503 wheel
-
-      - name: Checkout Basix
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        uses: actions/checkout@v4
-        with:
-          repository: FEniCS/basix
-          path: basix
-          ref: ${{ github.event.inputs.basix_ref }}
-
-      - name: Build Basix wheel
-        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        run: |
-          cd basix
-          python -m cibuildwheel --output-dir ../wheelhouse .
+        run: python -m pip install cibuildwheel simple503 build
 
       - name: Checkout UFL
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: FEniCS/ufl
           path: ufl
@@ -101,11 +90,12 @@ jobs:
 
       - name: Build UFL wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        run: python -m pip wheel --no-deps -w wheelhouse ./ufl
+        run: |
+          python -m build -o wheelhouse/ ufl/
 
       - name: Checkout FFCx
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: FEniCS/ffcx
           path: ffcx
@@ -113,41 +103,31 @@ jobs:
 
       - name: Build FFCx wheel
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
-        run: python -m pip wheel --no-deps -w wheelhouse ./ffcx
-
-      - name: Download mpi4py
         run: |
-          curl -L -O https://github.com/mpi4py/mpi4py/releases/download/${MPI4PY_VERSION}/mpi4py-${MPI4PY_VERSION}.tar.gz
-          mkdir -p mpi4py
-          tar -xf mpi4py-${MPI4PY_VERSION}.tar.gz -C mpi4py --strip-components 1
+          python -m build -o wheelhouse/ ffcx/
+      
+      - name: Checkout Basix
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        uses: actions/checkout@v6
+        with:
+          repository: FEniCS/basix
+          path: basix
+          ref: ${{ github.event.inputs.basix_ref }}
 
-      - name: Build mpi4py wheels
-        run: python -m cibuildwheel --output-dir wheelhouse mpi4py
+      - name: Build Basix wheel
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        working-directory: basix/
+        run: |
+          python -m cibuildwheel --output-dir ../wheelhouse/ .
 
       - name: Make temporary simple503 repository
         run: |
           mkdir -p simple
           cp wheelhouse/* simple/
-          python -m simple503 --base-url file:///project/simple simple
-
-      - name: Download petsc4py
-        run: |
-          curl -L -O https://pypi.io/packages/source/p/petsc4py/petsc4py-${PETSC4PY_VERSION}.tar.gz
-          mkdir -p petsc4py
-          tar -xf petsc4py-${PETSC4PY_VERSION}.tar.gz -C petsc4py --strip-components 1
-
-      - name: Build petsc4py wheels
-        run: python -m cibuildwheel --output-dir wheelhouse petsc4py
-        env:
-          CIBW_BEFORE_BUILD: python -m pip install numpy # Not specified correctly in petsc4py
-
-      - name: Update temporary simple503 repository
-        run: |
-          cp wheelhouse/* simple/
-          python -m simple503 --base-url file:///project/simple simple
+          python -m simple503 --base-url file:///project/simple simple/
 
       - name: Checkout DOLFINx
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: dolfinx
           ref: ${{ github.event.inputs.dolfinx_ref }}
@@ -155,50 +135,88 @@ jobs:
       # fenics-ffcx and fenics-basix are required by DOLFINx C++ build
       # mpi4py and petsc4py are build_requirements of DOLFINx Python
       - name: Build DOLFINx wheel
-        run: python -m cibuildwheel --output-dir wheelhouse dolfinx/python
+        run: |
+          python -m cibuildwheel --output-dir wheelhouse/ dolfinx/python
         env:
-          CIBW_BEFORE_BUILD: python -m pip -v install --prefer-binary fenics-ffcx fenics-basix && python -m pip -v install --prefer-binary petsc4py mpi4py && cmake -S dolfinx/cpp -B build-dir -DPython3_EXECUTABLE=$(which python) && cmake --build build-dir && cmake --install build-dir
-          CIBW_REPAIR_WHEEL_COMMAND_LINUX: export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')") && auditwheel repair -w {dest_dir} {wheel}
+          CIBW_BEFORE_BUILD_LINUX: >
+            dnf -y update &&
+            dnf install -y dnf-plugins-core &&
+            dnf install -y epel-release &&
+            /usr/bin/crb enable &&
+            dnf -y update &&
+            dnf -y install boost-devel boost-program-options git hdf5-mpich-devel make \
+              mpich-devel ninja-build openblas-devel pugixml-devel spdlog-devel &&
+            ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
+            git clone --branch v7.0.9 --single-branch https://gitlab.inria.fr/scotch/scotch.git &&
+            cmake -G Ninja -S scotch/ -B scotch-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
+              -DBUILD_SHARED_LIBS=ON -DMPI_HOME=/usr/lib64/mpich &&
+            cmake --build scotch-build-dir/ &&
+            cmake --install scotch-build-dir/ &&
+            pip -v install 'fenics-basix==0.11.0.dev0' 'fenics-ffcx==0.11.0.dev0' &&
+            pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
+            cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DPython3_EXECUTABLE=$(which python) \
+              -DHDF5_ROOT=/usr/lib64/mpich -DMPI_HOME=/usr/lib64/mpich -DCMAKE_BUILD_TYPE=RelWithDebug &&
+            cmake --build dolfinx-build-dir/ &&
+            cmake --install dolfinx-build-dir/
+          CIBW_CONFIG_SETTINGS_LINUX: > 
+            cmake.args="-DMPI_HOME=/usr/lib64/mpich;-DHDF5_ROOT=/usr/lib64/mpich"
+            wheel.py-api=cp312
+            cmake.build-type="RelWithDebug"
+          CIBW_BUILD_FRONTEND: "build; args: -nx"
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
+            export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
+            auditwheel repair --exclude libmpi.so.* -w {dest_dir} {wheel} &&
+            pipx run abi3audit --verbose --strict --report {wheel}
+          CIBW_TEST_REQUIRES: pytest-xdist
+          CIBW_TEST_EXTRAS: test
+          CIBW_TEST_COMMAND: >
+            . /etc/profile &&
+            module load mpi/mpich-$(arch) &&
+            python -m pytest -n auto \
+              -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
+            mpiexec -n 2 python -m pytest \
+              -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
 
       - name: Update temporary simple503 repository
         run: |
           cp wheelhouse/* simple
           python -m simple503 --base-url file:///shared simple
 
-      # Artifact can be unzipped into $(pwd) and tested with e.g.:
-      # docker run -ti -v $(pwd):/shared --env PIP_EXTRA_INDEX_URL=file:///shared python:3.9 /bin/bash -l
       - name: Upload simple503-test artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
-          name: "simple503-test"
+          name: simple503-test-${{ matrix.os }}
           path: simple/*
 
+      - name: Test in clean python image with pypi MPICH
+        run: >
+          cd dolfinx &&
+          sudo git clean -fdx && cd ../ &&
+          docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
+            --env PIP_EXTRA_INDEX_URL=file:///shared python:3.13 \
+            /bin/bash -l -c "pip install mpich fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
+
+      - name: Test in clean python image with pypi Intel MPI (x86_64 only)
+        if: runner.arch == 'X64'
+        run: >
+          cd dolfinx &&
+          sudo git clean -fdx && cd ../ &&
+          docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
+            --env PIP_EXTRA_INDEX_URL=file:///shared python:3.14 \
+            /bin/bash -l -c "pip install impi-rt fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
+
       - name: Upload wheelhouse artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
-          name: wheelhouse
+          name: wheelhouse-${{ matrix.os }}
           path: wheelhouse/*
 
       - name: Update FEniCS Project simple503 repository
         run: |
           python -m simple503 --base-url http://packages.fenicsproject.org/simple simple
 
-      # For manual upload.
       - name: Upload simple503 artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
-          name: "simple503"
+          name: simple503-${{ matrix.os }}
           path: simple/*
-
-      # Extract mpiexec from docker image
-      - name: Extract mpiexec.hydra from Docker image
-        run: |
-          export CONTAINER_ID=$(docker create ${CIBW_MANYLINUX_X86_64_IMAGE})
-          docker cp ${CONTAINER_ID}:/usr/local/bin/mpiexec.hydra mpiexec.hydra
-          docker rm ${CONTAINER_ID}
-
-      - name: Upload mpiexec artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: "mpiexec.hydra"
-          path: mpiexec.hydra

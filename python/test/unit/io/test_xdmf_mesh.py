@@ -14,7 +14,7 @@ import pytest
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
-from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
+from dolfinx.io.gmsh import cell_perm_array, ufl_mesh
 from dolfinx.mesh import (
     CellType,
     GhostMode,
@@ -131,14 +131,14 @@ def test_read_write_p2_mesh(tempdir, encoding):
         assert np.all(idx[srt] == np.arange(len(idx)))
         x = points[srt]
 
-        element_types, element_tags, node_tags = model.mesh.getElements(dim=3)
+        element_types, _element_tags, node_tags = model.mesh.getElements(dim=3)
         (
-            name,
-            dim,
-            order,
+            _name,
+            _dim,
+            _order,
             num_nodes,
-            local_coords,
-            num_first_order_nodes,
+            _local_coords,
+            _num_first_order_nodes,
         ) = model.mesh.getElementProperties(element_types[0])
         cells = node_tags[0].reshape(-1, num_nodes) - 1
         num_nodes, gmsh_cell_id = MPI.COMM_WORLD.bcast(

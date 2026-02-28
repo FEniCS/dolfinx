@@ -4,15 +4,14 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/la.h"
 #include "dolfinx_wrappers/caster_mpi.h"
-#include "dolfinx_wrappers/numpy_dtype.h"
 #include <complex>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
-#include <dolfinx/la/Vector.h>
+#include <dolfinx/la/superlu_dist.h>
 #include <dolfinx/la/utils.h>
 #include <memory>
 #include <nanobind/nanobind.h>
@@ -21,195 +20,25 @@
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include <span>
 
+#if defined(HAS_SUPERLU_DIST)
+#include <superlu_defs.h>
+struct dolfinx::la::SuperLUDistStructs::vec_int_t
+{
+  /// @brief vector
+  std::vector<int_t> vec;
+};
+struct dolfinx::la::SuperLUDistStructs::superlu_dist_options_t
+    : public ::superlu_dist_options_t
+{
+};
+#endif // HAS_SUPERLU_DIST
+
 namespace nb = nanobind;
 using namespace nb::literals;
-
-namespace
-{
-
-// InsertMode types
-enum class PyInsertMode : std::uint8_t
-{
-  add,
-  insert
-};
-
-// Declare objects that have multiple scalar types
-template <typename T>
-void declare_objects(nb::module_& m, const std::string& type)
-{
-  // dolfinx::la::Vector
-  std::string pyclass_vector_name = std::string("Vector_") + type;
-  nb::class_<dolfinx::la::Vector<T>>(m, pyclass_vector_name.c_str())
-      .def(nb::init<std::shared_ptr<const dolfinx::common::IndexMap>, int>(),
-           nb::arg("map"), nb::arg("bs"))
-      .def(nb::init<const dolfinx::la::Vector<T>&>(), nb::arg("vec"))
-      .def_prop_ro("dtype", [](const dolfinx::la::Vector<T>&)
-                   { return dolfinx_wrappers::numpy_dtype<T>(); })
-      .def_prop_ro("index_map", &dolfinx::la::Vector<T>::index_map)
-      .def_prop_ro("bs", &dolfinx::la::Vector<T>::bs)
-      .def_prop_ro(
-          "array",
-          [](dolfinx::la::Vector<T>& self)
-          {
-            std::span<T> x = self.mutable_array();
-            return nb::ndarray<T, nb::numpy>(x.data(), {x.size()});
-          },
-          nb::rv_policy::reference_internal)
-      .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
-      .def(
-          "scatter_reverse",
-          [](dolfinx::la::Vector<T>& self, PyInsertMode mode)
-          {
-            switch (mode)
-            {
-            case PyInsertMode::add: // Add
-              self.scatter_rev(std::plus<T>());
-              break;
-            case PyInsertMode::insert: // Insert
-              self.scatter_rev([](T /*a*/, T b) { return b; });
-              break;
-            default:
-              throw std::runtime_error("InsertMode not recognized.");
-              break;
-            }
-          },
-          nb::arg("mode"));
-
-  // dolfinx::la::MatrixCSR
-  std::string pyclass_matrix_name = std::string("MatrixCSR_") + type;
-  nb::class_<dolfinx::la::MatrixCSR<
-      T, std::vector<T>, std::vector<std::int32_t>, std::vector<std::int64_t>>>(
-      m, pyclass_matrix_name.c_str())
-      .def(nb::init<const dolfinx::la::SparsityPattern&,
-                    dolfinx::la::BlockMode>(),
-           nb::arg("p"),
-           nb::arg("block_mode") = dolfinx::la::BlockMode::compact)
-      .def_prop_ro("dtype", [](const dolfinx::la::MatrixCSR<T>&)
-                   { return dolfinx_wrappers::numpy_dtype<T>(); })
-      .def_prop_ro("bs", &dolfinx::la::MatrixCSR<T>::block_size)
-      .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
-      .def("index_map", &dolfinx::la::MatrixCSR<T>::index_map)
-      .def("add",
-           [](dolfinx::la::MatrixCSR<T>& self, const std::vector<T>& x,
-              const std::vector<std::int32_t>& rows,
-              const std::vector<std::int32_t>& cols, int bs = 1)
-           {
-             if (bs == 1)
-               self.template add<1, 1>(x, rows, cols);
-             else if (bs == 2)
-               self.template add<2, 2>(x, rows, cols);
-             else if (bs == 3)
-               self.template add<3, 3>(x, rows, cols);
-             else
-             {
-               throw std::runtime_error(
-                   "Block size not supported in this function");
-             }
-           })
-      .def("set",
-           [](dolfinx::la::MatrixCSR<T>& self, const std::vector<T>& x,
-              const std::vector<std::int32_t>& rows,
-              const std::vector<std::int32_t>& cols, int bs = 1)
-           {
-             if (bs == 1)
-               self.template set<1, 1>(x, rows, cols);
-             else if (bs == 2)
-               self.template set<2, 2>(x, rows, cols);
-             else if (bs == 3)
-               self.template set<3, 3>(x, rows, cols);
-             else
-             {
-               throw std::runtime_error(
-                   "Block size not supported in this function");
-             }
-           })
-      .def("set_value",
-           static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
-               &dolfinx::la::MatrixCSR<T>::set),
-           nb::arg("x"))
-      .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
-      .def("mult", &dolfinx::la::MatrixCSR<T>::mult)
-      .def("to_dense",
-           [](const dolfinx::la::MatrixCSR<T>& self)
-           {
-             std::array<int, 2> bs = self.block_size();
-             std::size_t nrows = self.num_all_rows() * bs[0];
-             std::size_t ncols = self.index_map(1)->size_global() * bs[1];
-             std::vector<T> dense = self.to_dense();
-             assert(nrows * ncols == dense.size());
-             return dolfinx_wrappers::as_nbarray(std::move(dense),
-                                                 {nrows, ncols});
-           })
-      .def_prop_ro(
-          "data",
-          [](dolfinx::la::MatrixCSR<T>& self)
-          {
-            return nb::ndarray<T, nb::numpy>(self.values().data(),
-                                             {self.values().size()});
-          },
-          nb::rv_policy::reference_internal)
-      .def_prop_ro(
-          "indices",
-          [](dolfinx::la::MatrixCSR<T>& self)
-          {
-            return nb::ndarray<const std::int32_t, nb::numpy>(
-                self.cols().data(), {self.cols().size()});
-          },
-          nb::rv_policy::reference_internal)
-      .def_prop_ro(
-          "indptr",
-          [](dolfinx::la::MatrixCSR<T>& self)
-          {
-            return nb::ndarray<const std::int64_t, nb::numpy>(
-                self.row_ptr().data(), {self.row_ptr().size()});
-          },
-          nb::rv_policy::reference_internal)
-      .def("scatter_rev_begin", &dolfinx::la::MatrixCSR<T>::scatter_rev_begin)
-      .def("scatter_rev_end", &dolfinx::la::MatrixCSR<T>::scatter_rev_end);
-}
-
-// Declare objects that have multiple scalar types
-template <typename T>
-void declare_functions(nb::module_& m)
-{
-  m.def(
-      "norm", [](const dolfinx::la::Vector<T>& x, dolfinx::la::Norm type)
-      { return dolfinx::la::norm(x, type); }, "vector"_a, "type"_a);
-  m.def(
-      "inner_product",
-      [](const dolfinx::la::Vector<T>& x, const dolfinx::la::Vector<T>& y)
-      { return dolfinx::la::inner_product(x, y); }, nb::arg("x"), nb::arg("y"));
-  m.def(
-      "orthonormalize",
-      [](std::vector<dolfinx::la::Vector<T>*> basis)
-      {
-        std::vector<std::reference_wrapper<dolfinx::la::Vector<T>>> _basis;
-        _basis.reserve(basis.size());
-        for (std::size_t i = 0; i < basis.size(); ++i)
-          _basis.push_back(*basis[i]);
-        dolfinx::la::orthonormalize(_basis);
-      },
-      nb::arg("basis"));
-  m.def(
-      "is_orthonormal",
-      [](std::vector<const dolfinx::la::Vector<T>*> basis,
-         dolfinx::scalar_value_t<T> eps)
-      {
-        std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
-            _basis;
-        _basis.reserve(basis.size());
-        for (std::size_t i = 0; i < basis.size(); ++i)
-          _basis.push_back(*basis[i]);
-        return dolfinx::la::is_orthonormal(_basis, eps);
-      },
-      nb::arg("basis"), nb::arg("eps"));
-}
-
-} // namespace
 
 namespace dolfinx_wrappers
 {
@@ -292,18 +121,28 @@ void la(nb::module_& m)
           },
           nb::rv_policy::reference_internal);
 
-  // Declare objects that are templated over type
-  declare_objects<std::int8_t>(m, "int8");
-  declare_objects<std::int32_t>(m, "int32");
-  declare_objects<std::int64_t>(m, "int64");
-  declare_objects<float>(m, "float32");
-  declare_objects<double>(m, "float64");
-  declare_objects<std::complex<float>>(m, "complex64");
-  declare_objects<std::complex<double>>(m, "complex128");
+#if defined(HAS_SUPERLU_DIST)
+  declare_superlu_dist_matrix<double>(m, "float64");
+  declare_superlu_dist_matrix<float>(m, "float32");
+  declare_superlu_dist_matrix<std::complex<double>>(m, "complex128");
 
-  declare_functions<float>(m);
-  declare_functions<double>(m);
-  declare_functions<std::complex<float>>(m);
-  declare_functions<std::complex<double>>(m);
+  declare_superlu_dist_solver<double>(m, "float64");
+  declare_superlu_dist_solver<float>(m, "float32");
+  declare_superlu_dist_solver<std::complex<double>>(m, "complex128");
+#endif // HAS_SUPERLU_DIST
+
+  // Declare objects that are templated over type
+  declare_la_objects<std::int8_t>(m, "int8");
+  declare_la_objects<std::int32_t>(m, "int32");
+  declare_la_objects<std::int64_t>(m, "int64");
+  declare_la_objects<float>(m, "float32");
+  declare_la_objects<double>(m, "float64");
+  declare_la_objects<std::complex<float>>(m, "complex64");
+  declare_la_objects<std::complex<double>>(m, "complex128");
+
+  declare_la_functions<float>(m);
+  declare_la_functions<double>(m);
+  declare_la_functions<std::complex<float>>(m);
+  declare_la_functions<std::complex<double>>(m);
 }
 } // namespace dolfinx_wrappers

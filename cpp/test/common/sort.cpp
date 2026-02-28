@@ -29,7 +29,8 @@ TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int16_t,
   vec.reserve(vec_size);
 
   // Generate a vector of ints with a Uniform Int distribution
-  std::uniform_int_distribution<TestType> distribution(-10000, 10000);
+  constexpr TestType lower_bound = std::is_signed_v<TestType> ? -10000 : 0;
+  std::uniform_int_distribution<TestType> distribution(lower_bound, 10000);
   std::mt19937 engine;
   auto generator = std::bind(distribution, engine);
   std::generate_n(std::back_inserter(vec), vec_size, generator);
@@ -86,7 +87,7 @@ TEMPLATE_TEST_CASE("Test radix sort (projection)", "[radix]", std::int16_t,
     std::vector<TestType> indices(vec_array.size());
     std::iota(indices.begin(), indices.end(), 0);
 
-    auto proj = [&](auto index) { return vec_array[index][0]; };
+    auto proj = [&vec_array](auto index) { return vec_array[index][0]; };
     dolfinx::radix_sort(indices, proj);
     CHECK(std::ranges::is_sorted(indices, std::less{}, proj));
   }

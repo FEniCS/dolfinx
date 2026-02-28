@@ -1,4 +1,4 @@
-# Copyright (C) 2020-2021 Joseph P. Dean, Massimiliano Leoni and Jørgen S. Dokken
+# Copyright (C) 2020-2025 Joseph P. Dean, Massimiliano Leoni and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -32,7 +32,8 @@ from ufl import dx, inner
 
 def test_locate_dofs_geometrical():
     """Test that locate_dofs_geometrical, when passed two function
-    spaces, returns the correct degrees of freedom in each space"""
+    spaces, returns the correct degrees of freedom in each space.
+    """
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
     P0 = element("Lagrange", mesh.basix_cell(), p0, dtype=default_real_type)
@@ -68,7 +69,8 @@ def test_locate_dofs_geometrical():
 
 def test_overlapping_bcs():
     """Test that, when boundaries condition overlap, the last provided
-    boundary condition is applied"""
+    boundary condition is applied.
+    """
     n = 23
     mesh = create_unit_square(MPI.COMM_WORLD, n, n)
     V = functionspace(mesh, ("Lagrange", 1))
@@ -88,7 +90,8 @@ def test_overlapping_bcs():
         dirichletbc(default_scalar_type(123.456), dofs_top, V),
     ]
 
-    A, b = create_matrix(a), create_vector(L)
+    A = create_matrix(a)
+    b = create_vector(V, dtype=L.dtype)
     assemble_matrix(A, a, bcs=bcs)
     A.scatter_reverse()
 
@@ -111,7 +114,7 @@ def test_overlapping_bcs():
 
 
 def test_constant_bc_constructions():
-    """Test construction from constant values"""
+    """Test construction from constant values."""
     msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=default_real_type)
     gdim = msh.geometry.dim
     V0 = functionspace(msh, ("Lagrange", 1))
@@ -159,7 +162,8 @@ def test_constant_bc_constructions():
 )
 def test_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with a constant yields the same
-    result as setting it with a function"""
+    result as setting it with a function.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     V = functionspace(mesh, ("Lagrange", 1))
@@ -194,7 +198,8 @@ def test_constant_bc(mesh_factory):
 )
 def test_vector_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with a vector valued constant
-    yields the same result as setting it with a function"""
+    yields the same result as setting it with a function.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     tdim = mesh.topology.dim
@@ -242,7 +247,8 @@ def test_vector_constant_bc(mesh_factory):
 def test_sub_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with on a component of a vector
     valued function yields the same result as setting it with a
-    function"""
+    function.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     gdim = mesh.geometry.dim
@@ -280,7 +286,8 @@ def test_sub_constant_bc(mesh_factory):
 )
 def test_mixed_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with on a component of a mixed
-    function yields the same result as setting it with a function"""
+    function yields the same result as setting it with a function.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     tdim = mesh.topology.dim
@@ -322,7 +329,8 @@ def test_mixed_constant_bc(mesh_factory):
 
 def test_mixed_blocked_constant():
     """Check that mixed space with blocked component cannot have
-    Dirichlet BC based on a vector valued Constant."""
+    Dirichlet BC based on a vector valued Constant.
+    """
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim - 1, tdim)
@@ -361,3 +369,40 @@ def test_mixed_blocked_constant():
     with pytest.raises(RuntimeError):
         dofs1 = locate_dofs_topological(W.sub(1), tdim - 1, boundary_facets)
         dirichletbc(c1, dofs1, W.sub(1))
+
+
+@pytest.mark.parametrize("shape", [(), (2,), (3, 2)])
+def test_blocked_dof_ownership(shape):
+    """Test that dof ownership is correctly handled for blocked function spaces."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    V = functionspace(mesh, ("Lagrange", 1, shape))
+    u_bc = Function(V)
+
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    boundary_facets = exterior_facet_indices(mesh.topology)
+    boundary_dofs = locate_dofs_topological(V, tdim - 1, boundary_facets)
+
+    # Test full space BC
+    bc = dirichletbc(u_bc, boundary_dofs)
+    unrolled_dofs, num_owned = bc.dof_indices()
+
+    num_owned_blocked = V.dofmap.index_map.size_local
+    bs = V.dofmap.index_map_bs
+    owned_input_dofs = boundary_dofs[boundary_dofs < num_owned_blocked]
+
+    assert len(owned_input_dofs) * bs == num_owned
+    assert len(unrolled_dofs) == len(boundary_dofs) * bs
+
+    # Test subspace BC for tensor spaces
+    if len(shape) > 1:
+        V0, _ = V.sub(0).collapse()
+        boundary_dofs = locate_dofs_topological((V.sub(0), V0), tdim - 1, boundary_facets)
+        bc_sub = dirichletbc(u_bc, boundary_dofs, V)
+        unrolled_dofs_sub, num_owned_sub = bc_sub.dof_indices()
+
+        # Check number of unrolled owned dofs in the full non-collapsed space
+        boundary_dofs_V = boundary_dofs[0]
+        owned_sub_dofs = boundary_dofs_V[boundary_dofs_V < num_owned_blocked * bs]
+        assert len(owned_sub_dofs) == num_owned_sub
+        assert len(unrolled_dofs_sub) == len(boundary_dofs_V)

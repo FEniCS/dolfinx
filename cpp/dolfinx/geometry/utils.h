@@ -663,41 +663,43 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// @param[in] mesh The mesh
 /// @param[in] points Points to check for collision (`shape=(num_points,
 /// 3)`). Storage is row-major.
+/// @param[in] cells Cells to check for ownership
 /// @param[in] padding Amount of absolute padding of bounding boxes of the mesh.
 /// Each bounding box of the mesh is padded with this amount, to increase
 /// the number of candidates, avoiding rounding errors in determining the owner
 /// of a point if the point is on the surface of a cell in the mesh.
-/// @return Tuple `(src_owner, dest_owner, dest_points, dest_cells)`,
-/// where src_owner is a list of ranks corresponding to the input
-/// points. dest_owner is a list of ranks corresponding to dest_points,
-/// the points that this process owns. dest_cells contains the
-/// corresponding cell for each entry in dest_points.
+/// @return Point ownership data.
 ///
 /// @note `dest_owner` is sorted
-/// @note Returns -1 if no colliding process is found
+/// @note `src_owner` is -1 if no colliding process is found
 /// @note dest_points is flattened row-major, shape `(dest_owner.size(),
 /// 3)`
-/// @note Only looks through cells owned by the process
 /// @note A large padding value can increase the runtime of the function by
 /// orders of magnitude, because for non-colliding cells
 /// one has to determine the closest cell among all processes with an
 /// intersecting bounding box, which is an expensive operation to perform.
 template <std::floating_point T>
-PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
-                                                std::span<const T> points,
-                                                T padding)
+PointOwnershipData<T>
+determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
+                          T padding,
+                          std::optional<std::span<const std::int32_t>> cells)
 {
   MPI_Comm comm = mesh.comm();
 
+  const int tdim = mesh.topology()->dim();
+
+  std::vector<std::int32_t> local_cells;
+  if (not(cells.has_value()))
+  {
+    auto cell_map = mesh.topology()->index_map(tdim);
+    local_cells.resize(cell_map->size_local());
+    std::iota(local_cells.begin(), local_cells.end(), 0);
+    cells
+        = std::span<const std::int32_t>(local_cells.data(), local_cells.size());
+  }
   // Create a global bounding-box tree to find candidate processes with
   // cells that could collide with the points
-  const int tdim = mesh.topology()->dim();
-  auto cell_map = mesh.topology()->index_map(tdim);
-  const std::int32_t num_cells = cell_map->size_local();
-  // NOTE: Should we send the cells in as input?
-  std::vector<std::int32_t> cells(num_cells, 0);
-  std::iota(cells.begin(), cells.end(), 0);
-  BoundingBoxTree bb(mesh, tdim, cells, padding);
+  BoundingBoxTree bb(mesh, tdim, padding, cells.value());
   BoundingBoxTree global_bbtree = bb.create_global_tree(comm);
 
   // Compute collisions:

@@ -9,6 +9,7 @@
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
+#include <H5Fpublic.h>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/Function.h>
@@ -185,7 +186,8 @@ void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
 mesh::Mesh<double>
 XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
                     mesh::GhostMode mode, const std::string& name,
-                    const std::string& xpath) const
+                    const std::string& xpath,
+                    std::optional<std::int32_t> max_facet_to_cell_links) const
 {
   // Read mesh data
   auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);
@@ -193,8 +195,8 @@ XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
 
   // Create mesh
   const std::vector<double>& _x = std::get<std::vector<double>>(x);
-  mesh::Mesh<double> mesh
-      = mesh::create_mesh(_comm.comm(), cells, element, _x, xshape, mode);
+  mesh::Mesh<double> mesh = mesh::create_mesh(
+      _comm.comm(), cells, element, _x, xshape, mode, max_facet_to_cell_links);
   mesh.name = name;
   return mesh;
 }
@@ -465,6 +467,12 @@ std::string XDMFFile::read_information(const std::string& name,
   // Read data and trim any leading/trailing whitespace
   std::string value_str = info_node.attribute("Value").as_string();
   return value_str;
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::flush()
+{
+  // _xml_doc already flushed after every write
+  H5Fflush(_h5_id, H5F_SCOPE_GLOBAL);
 }
 //-----------------------------------------------------------------------------
 MPI_Comm XDMFFile::comm() const { return _comm.comm(); }

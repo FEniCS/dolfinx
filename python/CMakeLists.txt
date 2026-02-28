@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(dolfinx_nanobind LANGUAGES CXX)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(WIN32)
   # Windows requires all symbols to be manually exported. This flag exports all
@@ -10,7 +11,7 @@ endif(WIN32)
 
 find_package(
   Python
-  COMPONENTS Interpreter Development
+  COMPONENTS Interpreter Development.Module ${SKBUILD_SABI_COMPONENT}
   REQUIRED
 )
 
@@ -31,18 +32,32 @@ execute_process(
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
 
+# Enabling C here is a workaround for an ADIOS2 bug, see
+# https://github.com/ornladios/ADIOS2/pull/4255. Remove when the ADIOS2
+# fix is released.
+enable_language(C)
+
 find_package(DOLFINX REQUIRED CONFIG)
 
 if(DOLFINX_FOUND)
   message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 endif()
 
+# SuperLU_DIST Python interface requires the superlu_defs.h header for int_t.
+pkg_search_module(SUPERLU_DIST OPTIONAL IMPORTED_TARGET superlu_dist)
+
 # Create the binding library nanobind handles its own calls to
 # target_link_libraries
+
+if(NOT "${SKBUILD_SABI_VERSION}" STREQUAL "")
+  set(NANOBIND_SABI "STABLE_ABI")
+endif()
+
 nanobind_add_module(
   cpp
   NB_SUPPRESS_WARNINGS
   NOMINSIZE
+  ${NANOBIND_SABI}
   dolfinx/wrappers/dolfinx.cpp
   dolfinx/wrappers/assemble.cpp
   dolfinx/wrappers/common.cpp
@@ -56,24 +71,71 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
+target_include_directories(cpp PRIVATE ${SUPERLU_DIST_INCLUDE_DIRS})
 
-# Add strict compiler flags
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
-if(HAVE_PEDANTIC)
-  target_compile_options(cpp PRIVATE -Wall;-Werror;-Wextra;-pedantic)
-
-  # Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
-  # library
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-     AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-     AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
-  )
-    target_compile_options(cpp PRIVATE -Wno-array-bounds;-Wno-stringop-overflow)
-  endif()
+if(NANOBIND_SABI)
+  # mpi4py and petsc4py use generated Cython headers so tell
+  # them that the limited API is in use.
+  target_compile_definitions(cpp PRIVATE MPI4PY_LIMITED_API=1)
+  # Needing to set CYTHON_COMPILING_IN_LIMITED_API is a bug in 
+  # Cython-generated API headers, should become unnecessary with
+  # mpi4py/petsc4py releases published using Cython >= 3.1.4
+  # https://github.com/cython/cython/issues/7108
+  target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
 endif()
 
-set(CMAKE_CXX_EXTENSIONS OFF)
+# Check for some compiler flags
+include(CheckCXXCompilerFlag)
+
+# Add some strict compiler checks
+check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic -Wno-sign-compare" HAVE_PEDANTIC)
+
+if(HAVE_PEDANTIC)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic;-Wno-sign-compare)
+endif()
+
+# Debug flags
+check_cxx_compiler_flag(-g HAVE_DEBUG)
+if(HAVE_DEBUG)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -g)
+endif()
+
+# Optimisation
+check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
+if(HAVE_O2_OPTIMISATION)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -O2)
+endif()
+
+# Enable C++ standard library debugging
+include(CheckCXXSymbolExists)
+
+check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
+check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
+
+if(LIBCPP)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG)
+endif()
+
+if(GLIBCXX)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS _GLIBCXX_ASSERTIONS)
+endif()
+
+# Turn off some checks in gcc12 and gcc13 due to false positives with
+# the fmt library
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
+    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
+)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
+endif()
+
+target_compile_options(
+  cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_FLAGS}>
+)
+target_compile_definitions(
+  cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS}>
+)
+
 target_compile_definitions(cpp PRIVATE cxx_std_20)
 
 if(ENABLE_CLANG_TIDY)

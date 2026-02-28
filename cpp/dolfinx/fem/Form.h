@@ -38,9 +38,10 @@ class Function;
 enum class IntegralType : std::int8_t
 {
   cell = 0,           ///< Cell
-  exterior_facet = 1, ///< Exterior facet
+  exterior_facet = 1, ///< Facet
   interior_facet = 2, ///< Interior facet
-  vertex = 3          ///< Vertex
+  vertex = 3,         ///< Vertex
+  ridge = 4           ///< Ridge
 };
 
 /// @brief Represents integral data, containing the kernel, and a list
@@ -129,9 +130,12 @@ public:
   /// @param[in] V Function spaces for the form arguments, e.g. test and
   /// trial function spaces.
   /// @param[in] integrals Integrals in the form, where
-  /// `integrals[IntegralType, domain ID, kernel index]` returns the
-  /// integral (`integral_data`) of type `IntegralType` over domain `ID`
-  /// with kernel index `kernel index`.
+  /// `integrals[IntegralType, i, kernel index]` returns the `i`th integral
+  /// (`integral_data`) of type `IntegralType` with kernel index `kernel index`.
+  /// The `i`-index refers to the position of a kernel when flattened by
+  /// sorted subdomain ids, sorted by subdomain ids. The subdomain ids can
+  /// contain duplicate entries referring to different kernels over the same
+  /// subdomain.
   /// @param[in] coefficients Coefficients in the form.
   /// @param[in] constants Constants in the form.
   /// @param[in] mesh Mesh of the domain to integrate over (the
@@ -247,7 +251,7 @@ public:
 
     for (auto& space : _function_spaces)
     {
-      // Working map: [integral type, domain ID, kernel_idx]->entities
+      // Working map: [integral type, integral_idx, kernel_idx]->entities
       std::map<std::tuple<IntegralType, int, int>,
                std::variant<std::vector<std::int32_t>,
                             std::span<const std::int32_t>>>
@@ -269,7 +273,7 @@ public:
         bool inverse = emap.sub_topology() == mesh0->topology();
         for (auto& [key, itg] : _integrals)
         {
-          auto [type, id, kernel_idx] = key;
+          auto [type, idx, kernel_idx] = key;
           std::vector<std::int32_t> e;
           if (type == IntegralType::cell)
             e = emap.sub_topology_to_topology(itg.entities, inverse);
@@ -299,13 +303,13 @@ public:
 
     for (auto& [key, integral] : _integrals)
     {
-      auto [type, id, kernel_idx] = key;
+      auto [type, idx, kernel_idx] = key;
       for (int c : integral.coeffs)
       {
         if (auto mesh0 = coefficients.at(c)->function_space()->mesh();
             mesh0 == _mesh)
         {
-          _cdata.insert({{type, id, c}, std::span(integral.entities)});
+          _cdata.insert({{type, idx, c}, std::span(integral.entities)});
         }
         else
         {
@@ -331,8 +335,7 @@ public:
           }
           else
             throw std::runtime_error("Integral type not supported.");
-
-          _cdata.insert({{type, id, c}, std::move(e)});
+          _cdata.insert({{type, idx, c}, std::move(e)});
         }
       }
     }
@@ -370,6 +373,9 @@ public:
   }
 
   /// @brief Get the kernel function for an integral.
+  ///
+  ///
+  ///
   /// @param[in] type Integral type.
   /// @param[in] id Integral subdomain ID.
   /// @param[in] kernel_idx Index of the kernel (we may have multiple
@@ -418,31 +424,29 @@ public:
     return it->second.coeffs;
   }
 
-  /// @brief Get the IDs for integrals (kernels) for given integral
-  /// domain type.
+  /// @brief Get number of integrals (kernels) for a given integral type and
+  /// kernel index.
   ///
-  /// The IDs correspond to the domain IDs which the integrals are
-  /// defined for in the form. `ID=-1` is the default integral over the
-  /// whole domain.
-  ///
+  /// For a form containing two integrals of `integral_a` and `integral_b`
+  /// with subdomain-ids `(1, 4)` and `(3, 4, 5)` respectively, the integrals
+  /// are stored as a flattened list, sorted by sudomain-ids
+  /// ```cpp
+  /// auto form_integrals = {integral_a, integral_b, integral_a, integral_b,
+  /// integral_b}; auto form_integral_ids = {1, 3, 4, 4, 5}.
+  /// ```
   /// @param[in] type Integral type.
-  /// @return List of IDs for given integral type.
-  std::vector<int> integral_ids(IntegralType type) const
+  /// @param[in] kernel_idx Index of the kernel (we may have multiple
+  /// kernels for a integral type in mixed-topology meshes).
+  int num_integrals(IntegralType type, int kernel_idx) const
   {
-    std::vector<int> ids;
-    for (auto& [key, integral] : _integrals)
-    {
-      auto [t, id, kernel_idx] = key;
-      if (t == type)
-        ids.push_back(id);
-    }
 
-    // IDs may be repeated in mixed-topology meshes, so remove
-    // duplicates
-    std::sort(ids.begin(), ids.end());
-    auto it = std::unique(ids.begin(), ids.end());
-    ids.erase(it, ids.end());
-    return ids;
+    int count = std::count_if(_integrals.begin(), _integrals.end(),
+                              [type, kernel_idx](auto& x)
+                              {
+                                auto [t, id, k_idx] = x.first;
+                                return t == type and k_idx == kernel_idx;
+                              });
+    return count;
   }
 
   /// @brief Mesh entity indices to integrate over for a given integral
@@ -463,16 +467,23 @@ public:
   /// is row-major.
   ///
   /// @param[in] type Integral type.
-  /// @param[in] id Integral domain identifier.
+  /// @param[in] idx Integral index in flattened list of integral kernels.
+  /// For a form containing two integrals of `integral_a` and `integral_b`
+  /// with subdomain-ids `(1, 4)` and `(3, 4, 5)` respectively, the integrals
+  /// are stored as a flattened list, sorted by sudomain-ids
+  /// ```cpp
+  /// auto form_integrals = {integral_a, integral_b, integral_a, integral_b,
+  /// integral_b}; auto form_integral_ids = {1, 3, 4, 4, 5}.
+  /// ```
   /// @param[in] kernel_idx Index of the kernel with in the domain (we
   /// may have multiple kernels for a given ID in mixed-topology
   /// meshes).
   /// @return Entity indices in the mesh::Mesh returned by mesh() to
   /// integrate over.
-  std::span<const std::int32_t> domain(IntegralType type, int id,
+  std::span<const std::int32_t> domain(IntegralType type, int idx,
                                        int kernel_idx) const
   {
-    auto it = _integrals.find({type, id, kernel_idx});
+    auto it = _integrals.find({type, idx, kernel_idx});
     if (it == _integrals.end())
       throw std::runtime_error("Requested domain not found.");
     return it->second.entities;
@@ -501,21 +512,21 @@ public:
   /// may exist in one domain but not another. In this case, the entity
   /// is marked with -1.
   ///
-  /// @param type Integral type.
-  /// @param rank Argument index, e.g. `0` for the test function space, `1`
+  /// @param[in] type Integral type.
+  /// @param[in] rank Argument index, e.g. `0` for the test function space, `1`
   /// for the trial function space.
-  /// @param id Integral domain identifier.
-  /// @param kernel_idx Kernel index (cell type).
+  /// @param[in] idx Integral identifier.
+  /// @param[in] kernel_idx Kernel index (cell type).
   /// @return Entity indices in the argument function space mesh that is
   /// integrated over.
   /// - For cell integrals it has shape `(num_cells,)`.
   /// - For exterior/interior facet integrals, it has shape `(num_facts, 2)`
   /// (row-major storage), where `[i, 0]` is the index of a cell and
   /// `[i, 1]` is the local index of the facet relative to the cell.
-  std::span<const std::int32_t> domain_arg(IntegralType type, int rank, int id,
+  std::span<const std::int32_t> domain_arg(IntegralType type, int rank, int idx,
                                            int kernel_idx) const
   {
-    auto it = _edata.at(rank).find({type, id, kernel_idx});
+    auto it = _edata.at(rank).find({type, idx, kernel_idx});
     if (it == _edata.at(rank).end())
       throw std::runtime_error("Requested domain for argument not found.");
     try
@@ -531,21 +542,21 @@ public:
   /// @brief Coefficient function mesh integration entity indices.
   ///
   /// This method is equivalent to ::domain_arg, but returns mesh entity
-  /// indices for coefficient \link Function Functions. \endlink
+  /// indices for coefficient Function%s.
   ///
-  /// @param type Integral type.
-  /// @param id Integral identifier index.
-  /// @param c Coefficient index.
+  /// @param[in] type Integral type.
+  /// @param[in] idx Integral identifier.
+  /// @param[in] c Coefficient index.
   /// @return Entity indices in the coefficient function space mesh that
   /// is integrated over.
   /// - For cell integrals it has shape `(num_cells,)`.
   /// - For exterior/interior facet integrals, it has shape `(num_facts, 2)`
   /// (row-major storage), where `[i, 0]` is the index of a cell and
   /// `[i, 1]` is the local index of the facet relative to the cell.
-  std::span<const std::int32_t> domain_coeff(IntegralType type, int id,
+  std::span<const std::int32_t> domain_coeff(IntegralType type, int idx,
                                              int c) const
   {
-    auto it = _cdata.find({type, id, c});
+    auto it = _cdata.find({type, idx, c});
     if (it == _cdata.end())
       throw std::runtime_error("No domain for requested integral.");
     try

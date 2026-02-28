@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Garth N. Wells
+// Copyright (C) 2019-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -16,7 +16,6 @@
 
 namespace dolfinx::mesh
 {
-
 /// Cell type identifier
 enum class CellType : std::int8_t
 {
@@ -41,9 +40,31 @@ std::string to_string(CellType type);
 /// @return The cell type
 CellType to_type(const std::string& cell);
 
-/// @brief Return type of cell for entity of dimension d at given entity
-/// index.
-CellType cell_entity_type(CellType type, int d, int index);
+/// Return topological dimension of cell type
+inline int cell_dim(CellType type)
+{
+  switch (type)
+  {
+  case CellType::point:
+    return 0;
+  case CellType::interval:
+    return 1;
+  case CellType::triangle:
+    return 2;
+  case CellType::quadrilateral:
+    return 2;
+  case CellType::tetrahedron:
+    return 3;
+  case CellType::hexahedron:
+    return 3;
+  case CellType::prism:
+    return 3;
+  case CellType::pyramid:
+    return 3;
+  default:
+    throw std::runtime_error("Unsupported cell type");
+  }
+}
 
 /// @brief Return facet type of cell.
 ///
@@ -52,35 +73,77 @@ CellType cell_entity_type(CellType type, int d, int index);
 /// quadrilateral.
 ///
 /// @param[in] type Cell type.
-/// @param[in] index Facet index.
+/// @param[in] index Facet index (relative to the cell).
 /// @return Type of facet for this cell at this index.
-CellType cell_facet_type(CellType type, int index);
+inline CellType cell_facet_type(CellType type, int index)
+{
+  switch (type)
+  {
+  case CellType::point:
+    return CellType::point;
+  case CellType::interval:
+    return CellType::point;
+  case CellType::triangle:
+    return CellType::interval;
+  case CellType::tetrahedron:
+    return CellType::triangle;
+  case CellType::quadrilateral:
+    return CellType::interval;
+  case CellType::pyramid:
+    if (index == 0)
+      return CellType::quadrilateral;
+    else
+      return CellType::triangle;
+  case CellType::prism:
+    if (index == 0 or index == 4)
+      return CellType::triangle;
+    else
+      return CellType::quadrilateral;
+  case CellType::hexahedron:
+    return CellType::quadrilateral;
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+}
+
+/// Return type of cell for entity of dimension d at given entity index.
+inline CellType cell_entity_type(CellType type, int d, int index)
+{
+  if (int dim = mesh::cell_dim(type); d == dim)
+    return type;
+  else if (d == 1)
+    return CellType::interval;
+  else if (d == (dim - 1))
+    return mesh::cell_facet_type(type, index);
+  else
+    return CellType::point;
+}
 
 /// @brief List of entities, where entity `(e, k)` is the local vertex
 /// index for the `k`th vertex of entity `e` of dimension `dim`.
 graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
 
-/// @brief Get entities of dimension `dim1` and that make up entities of
-/// dimension `dim0`.
+/// Get entities of dimension dim1 and that make up entities of dimension
+/// dim0.
 graph::AdjacencyList<int> get_sub_entities(CellType type, int dim0, int dim1);
 
-/// Return topological dimension of cell type
-int cell_dim(CellType type);
-
-/// Number of entities of dimension dim
-/// @param[in] dim Entity dimension
-/// @param[in] type Cell type
-/// @return Number of entities in cell
+/// @brief Number of entities of dimension.
+///
+/// @param[in] dim Entity dimension.
+/// @param[in] type Cell type.
+/// @return Number of entities in cell.
 int cell_num_entities(CellType type, int dim);
 
-/// Check if cell is a simplex
-/// @param[in] type Cell type
-/// @return True is the cell type is a simplex
+/// @brief Check if cell is a simplex.
+///
+/// @param[in] type Cell type.
+/// @return True is the cell type is a simplex.
 bool is_simplex(CellType type);
 
-/// Number vertices for a cell type
+/// @brief Number vertices for a cell type.
+///
 /// @param[in] type Cell type
-/// @return The number of cell vertices
+/// @return Number of cell vertices
 int num_cell_vertices(CellType type);
 
 // [dim, entity] -> closure{sub_dim, (sub_entities)}

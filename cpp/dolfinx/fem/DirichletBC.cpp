@@ -157,7 +157,10 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
   global_local_ghosts.reserve(ghosts.size());
   const std::int32_t local_size = range[1] - range[0];
   for (std::size_t i = 0; i < ghosts.size(); ++i)
-    global_local_ghosts.emplace_back(ghosts[i], i + local_size);
+  {
+    global_local_ghosts.emplace_back(ghosts[i],
+                                     static_cast<std::int32_t>(i + local_size));
+  }
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
 
@@ -207,8 +210,9 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       = find_local_entity_index(topology, entities, dim);
 
   std::vector<std::int32_t> dofs;
-  dofs.reserve(entities.size()
-               * dofmap.element_dof_layout().num_entity_closure_dofs(dim));
+  dofs.reserve(
+      entities.size()
+      * dofmap.element_dof_layout().entity_closure_dofs(dim, 0).size());
 
   // V is a sub space we need to take the block size of the dofmap and
   // the index map into account as they can differ
@@ -328,12 +332,14 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // Iterate over marked facets
   const int element_bs = dofmap0.element_dof_layout().block_size();
   std::array<std::vector<std::int32_t>, 2> bc_dofs;
-  bc_dofs[0].reserve(entities.size()
-                     * dofmap0.element_dof_layout().num_entity_closure_dofs(dim)
-                     * element_bs);
-  bc_dofs[1].reserve(entities.size()
-                     * dofmap0.element_dof_layout().num_entity_closure_dofs(dim)
-                     * element_bs);
+  bc_dofs[0].reserve(
+      entities.size()
+      * dofmap0.element_dof_layout().entity_closure_dofs(dim, 0).size()
+      * element_bs);
+  bc_dofs[1].reserve(
+      entities.size()
+      * dofmap0.element_dof_layout().entity_closure_dofs(dim, 0).size()
+      * element_bs);
   for (auto [cell, entity_local_index] : entity_indices)
   {
     // Get cell dofmap

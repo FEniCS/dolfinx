@@ -5,6 +5,7 @@
 [![Actions Conda install](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/conda.yml)
 [![Actions macOS/Homebrew install](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/macos.yml)
 [![Actions Docker images](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml)
+[![Actions Windows/vcpkg install](https://github.com/FEniCS/dolfinx/actions/workflows/windows.yml/badge.svg)](https://github.com/FEniCS/dolfinx/actions/workflows/windows.yml)
 
 DOLFINx is the computational environment of
 [FEniCSx](https://fenicsproject.org) and implements the FEniCS Problem
@@ -19,14 +20,14 @@ link to sign up to the Slack channel).
 
 ## Documentation
 
-Documentation can be viewed at <https://docs.fenicsproject.org>.
+Documentation can be viewed [here](https://docs.fenicsproject.org).
 
 ## Installation
 
 ### From source
 
 For detailed instructions and a list of dependencies, see
-<https://docs.fenicsproject.org/dolfinx/main/python/installation>.
+[here](https://docs.fenicsproject.org/dolfinx/main/python/installation).
 
 #### C++ core
 
@@ -45,7 +46,8 @@ To install the Python interface, first install the C++ core, and then in
 the `python/` directory run:
 
 ```shell
-pip install -r build-requirements.txt
+pip install scikit-build-core
+python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 pip install --check-build-dependencies --no-build-isolation .
 ```
 
@@ -60,11 +62,20 @@ git clone https://github.com/spack/spack.git
 . ./spack/share/spack/setup-env.sh
 spack env create fenicsx-env
 spack env activate fenicsx-env
-spack add fenics-dolfinx+petsc+adios2 py-fenics-dolfinx cflags="-O3" fflags="-O3"
-spack install
+spack install --add py-fenics-dolfinx+petsc4py+slepc4py
 ```
 
 Spack is the recommended approach for HPC systems.
+
+Although Spack already contains FEniCS Project packages, we also maintain a
+separate [overlay package repository](https://github.com/FEniCS/spack-fenics)
+which may contain bug fixes and package specs for newer releases of the FEniCS
+Project components, particularly after a recent release.
+
+```shell
+spack repo add https://github.com/fenics/spack-fenics
+spack repo ls # shows fenics above builtin
+```
 
 ### Binary packages
 
@@ -92,9 +103,10 @@ conda install -c conda-forge fenics-dolfinx mpich pyvista # Linux and macOS
 conda install -c conda-forge fenics-dolfinx pyvista pyamg # Windows
 ```
 
-*Windows only*: Windows conda packages are currently in beta testing.
-PETSc and petsc4py are not available on Windows. Because FEniCS uses
-just-in-time compilation it necessary to install [Microsoft Visual
+*Windows only*: Windows conda packages are currently in beta testing and as of
+12/01/26 are only available for `v0.9.0`. PETSc and petsc4py are not available
+on Windows. Because FEniCS uses just-in-time compilation it necessary to
+install [Microsoft Visual
 Studio](https://visualstudio.microsoft.com/downloads/).
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and

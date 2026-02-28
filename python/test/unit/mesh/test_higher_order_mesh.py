@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit-tests for higher order meshes"""
+"""Unit-tests for higher order meshes."""
 
 import random
 from pathlib import Path
@@ -20,7 +20,7 @@ from dolfinx import default_real_type
 from dolfinx.cpp.io import perm_vtk
 from dolfinx.fem import assemble_scalar, form
 from dolfinx.io import XDMFFile
-from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
+from dolfinx.io.gmsh import cell_perm_array, ufl_mesh
 from dolfinx.mesh import CellType, create_mesh, create_submesh
 from ufl import dx
 
@@ -747,8 +747,9 @@ def test_gmsh_input_2d(order, cell_type, dtype):
         # Force mesh to have no triangles
         gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 3)
 
-    gmsh.model.occ.addSphere(0, 0, 0, 1, tag=1)
+    tag = gmsh.model.occ.addSphere(0, 0, 0, 1)
     gmsh.model.occ.synchronize()
+    gmsh.model.addPhysicalGroup(2, [tag], tag=1)
 
     gmsh.model.mesh.generate(2)
     if cell_type == CellType.quadrilateral:
@@ -761,14 +762,14 @@ def test_gmsh_input_2d(order, cell_type, dtype):
     assert np.all(idx[srt] == np.arange(len(idx)))
     x = points[srt]
 
-    element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=2)
+    element_types, _element_tags, node_tags = gmsh.model.mesh.getElements(dim=2)
     (
-        name,
-        dim,
+        _name,
+        _dim,
         order,
         num_nodes,
-        local_coords,
-        num_first_order_nodes,
+        _local_coords,
+        _num_first_order_nodes,
     ) = gmsh.model.mesh.getElementProperties(element_types[0])
 
     cells = node_tags[0].reshape(-1, num_nodes) - 1
@@ -812,11 +813,12 @@ def test_gmsh_input_3d(order, cell_type, dtype):
     circle = gmsh.model.occ.addDisk(0, 0, 0, 1, 1)
 
     if cell_type == CellType.hexahedron:
-        gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5], recombine=True)
+        tag = gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5], recombine=True)
     else:
-        gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5])
+        tag = gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5])
     gmsh.model.occ.synchronize()
-
+    for dim, idx in tag:
+        gmsh.model.addPhysicalGroup(dim, [idx], tag=idx)
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.setOrder(order)
 
@@ -827,14 +829,14 @@ def test_gmsh_input_3d(order, cell_type, dtype):
     assert np.all(idx[srt] == np.arange(len(idx)))
     x = points[srt]
 
-    element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=3)
+    element_types, _element_tags, node_tags = gmsh.model.mesh.getElements(dim=3)
     (
-        name,
-        dim,
+        _name,
+        _dim,
         order,
         num_nodes,
-        local_coords,
-        num_first_order_nodes,
+        _local_coords,
+        _num_first_order_nodes,
     ) = gmsh.model.mesh.getElementProperties(element_types[0])
 
     cells = node_tags[0].reshape(-1, num_nodes) - 1
@@ -1892,11 +1894,9 @@ def test_vtk_perm_tetrahedron(order):
             261,
         ]
 
-    pt = [0 for i in p]
+    pt = np.zeros_like(p)
     for i, j in enumerate(p):
         pt[j] = i
-    print(" ".join([f"{i}" for i in pt]))
-    print(" ".join([f"{i}" for i in q]))
 
     for i, j in enumerate(p):
         assert q[j] == i

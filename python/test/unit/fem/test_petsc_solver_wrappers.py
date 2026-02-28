@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for high-level wrapper around PETSc for linear and non-linear problems"""
+"""Unit tests for high-level wrapper around PETSc for linear and non-linear problems."""
 
 from mpi4py import MPI
 
@@ -17,12 +17,15 @@ import ufl
 
 @pytest.mark.petsc4py
 class TestPETScSolverWrappers:
+    """Test PETSc solver wrappers for linear and nonlinear problems."""
+
     @pytest.mark.parametrize(
         "mode",
         [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet],
     )
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_compare_solution_linear_vs_nonlinear_problem(self, mode):
-        """Test that the wrapper for Linear problem and NonlinearProblem give the same result"""
+        """Test that the wrapper for Linear problem and NonlinearProblem give the same result."""
         from petsc4py import PETSc
 
         import dolfinx.fem.petsc
@@ -122,7 +125,10 @@ class TestPETScSolverWrappers:
     )
     @pytest.mark.parametrize("kind", [None, "mpi", "nest", [["aij", None], [None, "baij"]]])
     def test_mixed_system(self, mode, kind):
+        """Test solving a mixed system using different PETSc matrix layouts."""
         from petsc4py import PETSc
+
+        import dolfinx.fem.petsc
 
         msh = dolfinx.mesh.create_unit_square(
             MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=PETSc.RealType

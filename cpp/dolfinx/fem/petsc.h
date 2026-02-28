@@ -420,7 +420,7 @@ void apply_lifting(
   std::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
-    fem::apply_lifting<PetscScalar>(_b, a, bcs1, {}, alpha);
+    fem::apply_lifting(_b, a, bcs1, {}, alpha);
   else
   {
     std::vector<std::span<const PetscScalar>> x0_ref;
@@ -437,7 +437,7 @@ void apply_lifting(
     }
 
     std::vector x0_tmp(x0_ref.begin(), x0_ref.end());
-    fem::apply_lifting<PetscScalar>(_b, a, bcs1, x0_tmp, alpha);
+    fem::apply_lifting(_b, a, bcs1, x0_tmp, alpha);
 
     for (std::size_t i = 0; i < x0_local.size(); ++i)
     {

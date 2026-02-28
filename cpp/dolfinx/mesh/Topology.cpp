@@ -15,6 +15,7 @@
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <format>
 #include <numeric>
 #include <random>
 #include <set>
@@ -26,12 +27,12 @@ namespace
 {
 /// @brief Determine owner and sharing ranks sharing an index.
 ///
-/// @note Collective
-///
 /// Indices are sent to a 'post office' rank, which uses a
 /// (deterministic) random number generator to determine which rank is
 /// the 'owner'. This information is sent back to the ranks who sent the
 /// index to the post office.
+///
+/// @note Collective
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] indices Global indices to determine a an owning MPI ranks
@@ -741,7 +742,8 @@ Topology::Topology(
     std::shared_ptr<const common::IndexMap> vertex_map,
     std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
     std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
-    const std::optional<std::vector<std::vector<std::int64_t>>>& original_index)
+    const std::optional<std::vector<std::vector<std::int64_t>>>& original_index,
+    int num_threads)
     : original_cell_index(original_index
                               ? *original_index
                               : std::vector<std::vector<std::int64_t>>()),
@@ -774,7 +776,7 @@ Topology::Topology(
   if (tdim == 1)
   {
     auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = mesh::compute_entities(*this, 0, CellType::point);
+        = mesh::compute_entities(*this, 0, CellType::point, num_threads);
     std::ranges::sort(interprocess_entities);
     _interprocess_facets.push_back(std::move(interprocess_entities));
   }
@@ -902,7 +904,7 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
   return this->interprocess_facets(0);
 }
 //-----------------------------------------------------------------------------
-bool Topology::create_entities(int dim)
+bool Topology::create_entities(int dim, int num_threads)
 {
   // TODO: is this check sufficient/correct? Does not catch the
   // cell_entity entity case. Should there also be a check for
@@ -931,7 +933,7 @@ bool Topology::create_entities(int dim)
 
     // Create local entities
     auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = mesh::compute_entities(*this, dim, *entity);
+        = mesh::compute_entities(*this, dim, *entity, num_threads);
     for (std::size_t k = 0; k < cell_entity.size(); ++k)
     {
       if (cell_entity[k])
@@ -1478,6 +1480,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
 
   std::vector<std::vector<std::int32_t>> facet_pair_lists;
   for (std::size_t i = 0; i < cell_types.size(); ++i)
+  {
     for (std::size_t j = 0; j < cell_types.size(); ++j)
     {
       std::vector<std::int32_t> facet_pairs_ij;
@@ -1524,7 +1527,8 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
           {
             if (fci->num_links(k) == 1 and fcj->num_links(k) == 1)
             {
-              std::int32_t ci = fci->links(k)[0], cj = fcj->links(k)[0];
+              std::int32_t ci = fci->links(k)[0];
+              std::int32_t cj = fcj->links(k)[0];
               facet_pairs_ij.push_back(ci);
               facet_pairs_ij.push_back(local_facet(cfi, ci, k));
               facet_pairs_ij.push_back(cj);
@@ -1535,6 +1539,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
       }
       facet_pair_lists.push_back(facet_pairs_ij);
     }
+  }
 
   return facet_pair_lists;
 }

@@ -25,7 +25,8 @@ namespace dolfinx::io::VTKHDF
 /// @param filename Name of file to write to.
 /// @param mesh Mesh to write to file.
 template <std::floating_point U>
-void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
+void write_mesh(const std::filesystem::path& filename,
+                const mesh::Mesh<U>& mesh)
 {
   hid_t h5file = hdf5::open_file(mesh.comm(), filename, "w", true);
 
@@ -171,7 +172,8 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 /// @note Limited support for floating point types at present (no
 /// complex number support).
 template <std::floating_point U>
-void write_data(std::string point_or_cell, std::string filename,
+void write_data(std::string point_or_cell,
+                const std::filesystem::path& filename,
                 const mesh::Mesh<U>& mesh, const std::vector<U>& data,
                 double time)
 {
@@ -257,7 +259,7 @@ void write_data(std::string point_or_cell, std::string filename,
   hdf5::add_group(h5file, group_name);
 
   // Add point/cell data into dataset, extending each time by
-  // size_global with each process writing its own part.
+  // global_size with each process writing its own part.
   std::int64_t range0 = std::accumulate(index_maps.begin(), index_maps.end(), 0,
                                         [](int a, auto im)
                                         { return a + im->local_range()[0]; });
@@ -306,10 +308,13 @@ void write_data(std::string point_or_cell, std::string filename,
 /// @param gdim Geometric dimension of the mesh. All VTK meshes are
 /// embedded in 3D. Use this argument for meshes that should be in 1D or
 /// 2D.
+/// @param max_facet_to_cell_links The maximum number of cells a
+/// facet can be connected to.
 /// @return The mesh read from file.
 template <std::floating_point U>
-mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
-                        std::size_t gdim = 3)
+mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
+                        std::size_t gdim = 3,
+                        std::optional<std::int32_t> max_facet_to_cell_links = 2)
 {
   hid_t h5file = hdf5::open_file(comm, filename, "r", true);
 
@@ -461,11 +466,13 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
         return fem::CoordinateElement<U>(cell_type, cell_degree, variant);
       });
 
-  auto part = create_cell_partitioner(mesh::GhostMode::none);
+  auto part = create_cell_partitioner(mesh::GhostMode::none,
+                                      dolfinx::graph::partition_graph,
+                                      max_facet_to_cell_links);
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());
   return mesh::create_mesh(comm, comm, cells_span, coordinate_elements, comm,
-                           points_pruned, {(std::size_t)x_shape[0], gdim},
-                           part);
+                           points_pruned, {(std::size_t)x_shape[0], gdim}, part,
+                           max_facet_to_cell_links);
 }
 } // namespace dolfinx::io::VTKHDF

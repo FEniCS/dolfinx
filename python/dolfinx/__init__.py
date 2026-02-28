@@ -29,10 +29,11 @@ except ImportError:
 
 from dolfinx import common
 from dolfinx import cpp as _cpp
-from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, utils
+from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot
 
 from dolfinx.common import (
     git_commit_hash,
+    hardware_concurrency,
     has_adios2,
     has_complex_ufcx_kernels,
     has_debug,
@@ -42,9 +43,13 @@ from dolfinx.common import (
     has_petsc4py,
     has_ptscotch,
     has_slepc,
+    has_superlu_dist,
     ufcx_signature,
 )
-from dolfinx.cpp import __version__
+
+from importlib.metadata import version
+
+__version__ = version("fenics-dolfinx")
 
 _cpp.common.init_logging(sys.argv)
 del _cpp, sys
@@ -74,8 +79,8 @@ __all__ = [
     "mesh",
     "nls",
     "plot",
-    "utils",
     "git_commit_hash",
+    "hardware_concurrency",
     "has_adios2",
     "has_complex_ufcx_kernels",
     "has_debug",

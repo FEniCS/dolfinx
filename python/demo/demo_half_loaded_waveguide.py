@@ -17,18 +17,19 @@
 
 # Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
 #
-# This demo is implemented in two files, one for defining and solving
-# the eigenvalue problem for a half-loaded electromagnetic waveguide
-# with perfect electric conducting walls, and one for verifying if the
-# numerical eigenvalues are consistent with the analytical modes of the
-# problem.
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_half_loaded_waveguide.py>`
+# * {download}`Jupyter notebook <./demo_half_loaded_waveguide.ipynb>`
+# ```
 #
 # The demo shows how to:
-#
 # - Setup an eigenvalue problem for Maxwell's equations
+# - Setup a half-loaded electromagnetic waveguide with perfect electric
+#   conducting walls
 # - Use SLEPc for solving eigenvalue problems
+# - Verification of numerical eigenvalues with analytical modes
 #
-
 # ## Equations and problem definition
 #
 # In this demo, we are going to show how to solve the eigenvalue problem
@@ -39,6 +40,8 @@
 # problem:
 
 # +
+from pathlib import Path
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -125,10 +128,12 @@ except ImportError:
 def TMx_condition(
     kx_d: complex, kx_v: complex, eps_d: complex, eps_v: complex, d: float, h: float
 ) -> float:
+    """Transcendental equation for TMx modes."""
     return kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d))
 
 
 def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> float:
+    """Transcendental equation for TEx modes."""
     return kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d))
 
 
@@ -150,6 +155,7 @@ def verify_mode(
     eps_v: complex,
     threshold: float,
 ) -> np.bool_:
+    """Verify if given kz satisfies the mode conditions."""
     k0 = 2 * np.pi / lmbd0
     ky = np.pi / w  # we assume n = 1
     kx_d_target = np.sqrt(k0**2 * eps_d - ky**2 + -(kz**2) + 0j)
@@ -185,23 +191,13 @@ msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
 eps_v = 1
 eps_d = 2.45
 
-
-def Omega_d(x):
-    return x[1] <= d
-
-
-def Omega_v(x):
-    return x[1] >= d
-
-
 D = fem.functionspace(msh, ("DQ", 0))
 eps = fem.Function(D)
 
-cells_v = locate_entities(msh, msh.topology.dim, Omega_v)
-cells_d = locate_entities(msh, msh.topology.dim, Omega_d)
+cells_d = locate_entities(msh, msh.topology.dim, lambda x: x[1] <= d)
 
-eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=PETSc.ScalarType)
-eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=PETSc.ScalarType)
+eps.x.array[:] = eps_v
+eps.x.array[cells_d] = eps_d
 # -
 
 # In order to find the weak form of our problem, the starting point are
@@ -417,6 +413,7 @@ eps.solve()
 eps.view()
 eps.errorView()
 
+# ## Verification of computed eigenvalues
 # Now we can get the eigenvalues and eigenvectors calculated by SLEPc
 # with the following code. We also verify if the numerical $k_z$ are
 # consistent with the analytical equations of the half-loaded waveguide
@@ -433,6 +430,9 @@ vals.sort(key=lambda x: x[1].real)
 eh = fem.Function(V)
 
 kz_list = []
+
+out_folder = Path("out_half_loaded_waveguide")
+out_folder.mkdir(parents=True, exist_ok=True)
 
 for i, kz in vals:
     # Save eigenvector in eh
@@ -469,10 +469,10 @@ for i, kz in vals:
 
         if has_vtx:
             # Save solutions
-            with VTXWriter(msh.comm, f"sols/Et_{i}.bp", Et_dg) as f:
+            with VTXWriter(msh.comm, out_folder / f"Et_{i}.bp", Et_dg) as f:
                 f.write(0.0)
 
-            with VTXWriter(msh.comm, f"sols/Ez_{i}.bp", ezh) as f:
+            with VTXWriter(msh.comm, out_folder / f"Ez_{i}.bp", ezh) as f:
                 f.write(0.0)
 
         # Visualize solutions with Pyvista
@@ -490,11 +490,10 @@ for i, kz in vals:
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()
             plotter.link_views()
-            if not pyvista.OFF_SCREEN:
-                plotter.show()
+            if pyvista.OFF_SCREEN:
+                plotter.screenshot(out_folder / "Et.png", window_size=[400, 400])
             else:
-                pyvista.start_xvfb()
-                plotter.screenshot("Et.png", window_size=[400, 400])
+                plotter.show()
 
         if have_pyvista:
             V_lagr, lagr_dofs = V.sub(1).collapse()
@@ -505,9 +504,7 @@ for i, kz in vals:
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()
             plotter.link_views()
-            if not pyvista.OFF_SCREEN:
-                plotter.show()
+            if pyvista.OFF_SCREEN:
+                plotter.screenshot(out_folder / "Ez.png", window_size=[400, 400])
             else:
-                pyvista.start_xvfb()
-                plotter.screenshot("Ez.png", window_size=[400, 400])
-# -
+                plotter.show()

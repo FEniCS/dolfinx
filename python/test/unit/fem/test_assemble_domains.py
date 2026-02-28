@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for assembly over domains"""
+"""Unit tests for assembly over domains."""
 
 from mpi4py import MPI
 
@@ -245,7 +245,8 @@ def test_additivity(mode):
 def test_manual_integration_domains():
     """Test that specifying integration domains manually i.e.
     by passing a list of cell indices or (cell, local facet) pairs to
-    form gives the same result as the usual approach of tagging"""
+    form gives the same result as the usual approach of tagging.
+    """
     n = 4
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
 
@@ -348,3 +349,21 @@ def test_manual_integration_domains():
 
     assert np.allclose(A.data, A_mt.data)
     assert np.allclose(b.array, b_mt.array)
+
+
+def test_assemble_exterior_facet():
+    """Check special handling of packing of integration entities for exterior facets,
+    which for any other co-dimensional entity is just a one-sided integral.
+    """
+    domain = create_unit_square(MPI.COMM_WORLD, 2, 2)
+    fdim = domain.topology.dim - 1
+    tag = 1
+
+    # Only tag interior facets
+    facets = locate_entities(domain, fdim, lambda x: np.isclose(x[0], 0.5))
+    ft = meshtags(domain, fdim, facets, np.full_like(facets, tag))
+    ds = ufl.Measure("ds", domain=domain, subdomain_data=ft)
+
+    # Check that integral is 0
+    value = domain.comm.allreduce(assemble_scalar(form(1.0 * ds(tag))), op=MPI.SUM)
+    assert np.isclose(value, 0.0)
