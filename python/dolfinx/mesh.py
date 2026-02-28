@@ -173,12 +173,13 @@ class Topology:
         """
         self._cpp_object.create_connectivity(d0, d1)
 
-    def create_entities(self, dim: int, num_threads: int = 1) -> bool:
+    def create_entities(self, dim: int, num_threads: int = 0) -> bool:
         """Create entities of given topological dimension.
 
         Args:
             dim: Topological dimension of entities to create.
-            num_threads: Number of CPU threads to use when creating.
+            num_threads: Number of CPU threads to use when creating. If
+                0, threads are not spawned.
 
         Returns:
             ``True` is entities are created, ``False`` is if entities
@@ -1261,11 +1262,10 @@ def create_geometry(
     if x.dtype == np.float64:
         ftype = _cpp.mesh.Geometry_float64
     elif x.dtype == np.float32:
-        ftype = _cpp.mesh.Geometry_float64
+        ftype = _cpp.mesh.Geometry_float32
     else:
         raise ValueError("Unknown floating type for geometry, got: {x.dtype}")
 
     if (dtype := np.dtype(element.dtype)) != x.dtype:
         raise ValueError(f"Mismatch in x dtype ({x.dtype}) and coordinate element ({dtype})")
-
-    return Geometry(ftype(index_map, dofmap, element, x, input_global_indices))
+    return Geometry(ftype(index_map, dofmap, element._cpp_object, x, input_global_indices))
