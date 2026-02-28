@@ -691,19 +691,38 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 /// @param[in] global_to_local Sorted array of (global, local) indices.
 std::vector<std::int32_t> convert_to_local_indexing(
     std::span<const std::int64_t> g,
-    std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local)
+    std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local,
+    int num_threads)
 {
+  auto transform =
+      [](std::span<std::int32_t> data, std::span<const std::int64_t> g,
+         std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local)
+  {
+    std::transform(g.begin(), g.end(), data.begin(),
+                   [&global_to_local](auto i)
+                   {
+                     auto it = std::ranges::lower_bound(
+                         global_to_local, i, std::ranges::less(),
+                         [](auto& e) { return e.first; });
+                     assert(it != global_to_local.end());
+                     assert(it->first == i);
+                     return it->second;
+                   });
+  };
+
   std::vector<std::int32_t> data(g.size());
-  std::transform(g.begin(), std::next(g.begin(), data.size()), data.begin(),
-                 [&global_to_local](auto i)
-                 {
-                   auto it = std::ranges::lower_bound(
-                       global_to_local, i, std::ranges::less(),
-                       [](auto& e) { return e.first; });
-                   assert(it != global_to_local.end());
-                   assert(it->first == i);
-                   return it->second;
-                 });
+  if (num_threads > 0)
+  {
+    std::vector<std::jthread> threads(num_threads);
+    for (int i = 0; i < num_threads; ++i)
+    {
+      auto [c0, c1] = dolfinx::MPI::local_range(i, g.size(), num_threads);
+      threads[i] = std::jthread(transform, std::span(data.data() + c0, c1 - c0),
+                                g.subspan(c0, c1 - c0), global_to_local);
+    }
+  }
+  else
+    transform(data, g, global_to_local);
 
   return data;
 }
@@ -735,7 +754,6 @@ build_entity_types(const std::vector<CellType>& cell_types)
   }
   return entity_types;
 }
-
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -830,9 +848,10 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
   auto im = index_maps(dim);
   if (im.empty())
   {
-    throw std::runtime_error(std::format(
-        "Missing IndexMap in Topology. Maybe you need to create_entities({}).",
-        dim));
+    throw std::runtime_error(
+        std::format("Missing IndexMap in Topology. Maybe you need to "
+                    "create_entities({}).",
+                    dim));
   }
   return im.at(0);
 }
@@ -1038,6 +1057,7 @@ Topology mesh::create_topology(
 
   // Check cell data consistency and compile spans of owned and ghost
   // cells
+  common::Timer timer0("Topology: 0");
   spdlog::info("Create topology (generalised)");
   std::vector<std::int32_t> num_local_cells(cell_types.size());
   std::vector<std::span<const std::int64_t>> owned_cells;
@@ -1058,6 +1078,11 @@ Topology mesh::create_topology(
     ghost_cells.push_back(cells[i].last(ghost_owners[i].size() * num_vertices));
   }
 
+  timer0.stop();
+  timer0.flush();
+
+  common::Timer timer1("Topology: 1");
+
   // Create sets of owned and unowned vertices from the cell ownership
   // and the list of boundary vertices
   auto [owned_vertices, unowned_vertices]
@@ -1069,9 +1094,14 @@ Topology mesh::create_topology(
   const graph::AdjacencyList<int> global_vertex_to_ranks
       = determine_sharing_ranks(comm, boundary_vertices);
 
+  timer1.stop();
+  timer1.flush();
+
   // Iterate over vertices that have 'unknown' ownership, and if flagged
   // as owned by determine_sharing_ranks update ownership status
   {
+    common::Timer timer2("Topology: 2");
+
     const int mpi_rank = dolfinx::MPI::rank(comm);
     std::vector<std::int64_t> owned_shared_vertices;
     for (std::size_t i = 0; i < boundary_vertices.size(); ++i)
@@ -1096,13 +1126,15 @@ Topology mesh::create_topology(
     dolfinx::radix_sort(owned_vertices);
   }
 
+  // NOTE: This block is relatively expensive
   // Number all owned vertices, iterating over vertices cell-wise
   std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
   {
+    common::Timer timer3("Topology: 3 ");
     std::int32_t v = 0;
-    for (std::size_t i = 0; i < cell_types.size(); ++i)
+    for (std::span<const std::int64_t> cells_t : cells)
     {
-      for (auto vtx : cells[i])
+      for (auto vtx : cells_t)
       {
         if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
             it != owned_vertices.end() and *it == vtx)
@@ -1114,6 +1146,8 @@ Topology mesh::create_topology(
       }
     }
   }
+
+  common::Timer timer4("Topology: 4");
 
   // Compute the global offset for owned (local) vertex indices
   std::int64_t global_offset_v = 0;
@@ -1138,13 +1172,21 @@ Topology mesh::create_topology(
         static_cast<int>(dolfinx::MPI::tag::consensus_nbx) + i));
   }
 
+  timer4.stop();
+  timer4.flush();
+
   // Send and receive  ((input vertex index) -> (new global index, owner
   // rank)) data with neighbours (for vertices on 'true domain
   // boundary')
+  common::Timer timer5("Topology: 5");
+
   const std::vector<std::int64_t> unowned_vertex_data = exchange_indexing(
       comm, boundary_vertices, global_vertex_to_ranks, global_offset_v,
       owned_vertices, local_vertex_indices);
   assert(unowned_vertex_data.size() % 3 == 0);
+
+  timer5.stop();
+  timer5.flush();
 
   // Unpack received data and build array of ghost vertices and owners
   // of the ghost vertices
@@ -1153,6 +1195,8 @@ Topology mesh::create_topology(
   std::vector<std::int32_t> local_vertex_indices_unowned(
       unowned_vertices.size(), -1);
   {
+    common::Timer timer6("Topology: 6");
+
     std::int32_t v = owned_vertices.size();
     for (std::size_t i = 0; i < unowned_vertex_data.size(); i += 3)
     {
@@ -1238,13 +1282,17 @@ Topology mesh::create_topology(
       { return {idx0, idx1}; });
   std::ranges::sort(global_to_local_vertices);
 
+  common::Timer timer7("Topology: 7");
   std::vector<std::vector<std::int32_t>> _cells_local_idx;
   _cells_local_idx.reserve(cells.size());
   for (std::span<const std::int64_t> c : cells)
   {
     _cells_local_idx.push_back(
-        convert_to_local_indexing(c, global_to_local_vertices));
+        convert_to_local_indexing(c, global_to_local_vertices, num_threads));
   }
+
+  timer7.stop();
+  timer7.flush();
 
   // -- Create Topology object
 
