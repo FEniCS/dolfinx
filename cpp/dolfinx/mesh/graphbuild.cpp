@@ -626,17 +626,8 @@ mesh::build_local_dual_graph(
   // 3) Sort facets by vertex key
   std::vector<std::int32_t> perm
       = dolfinx::sort_by_perm(std::span<const std::int64_t>(facets), shape1);
-  // std::vector<std::size_t> perm(facets.size() / shape1, 0);
-  // std::iota(perm.begin(), perm.end(), 0);
-  // std::ranges::sort(perm, std::ranges::lexicographical_compare,
-  //                   [&facets, shape1](auto f)
-  //                   {
-  //                     auto begin = std::next(facets.begin(), f * shape1);
-  //                     return std::ranges::subrange(begin,
-  //                                                  std::next(begin, shape1));
-  //                   });
 
-  // // 4) Iterate over sorted list of facets. Facets shared by more than
+  // 4) Iterate over sorted list of facets. Facets shared by more than
   //    one cell lead to a graph edge to be added. Facets that are not
   //    shared are stored as these might be shared by a cell on another
   //    process.
