@@ -23,13 +23,13 @@ using namespace dolfinx::fem;
 
 namespace
 {
-
 /// @brief Find the cell (local to process) and index of an entity
 /// (local to cell) for a list of entities.
+///
 /// @param[in] mesh The mesh
 /// @param[in] entities The list of entities
 /// @param[in] dim The dimension of the entities
-/// @returns A list of (cell_index, entity_index) pairs for each input
+/// @returns A list of `(cell_index, entity_index)` pairs for each input
 /// entity.
 std::vector<std::pair<std::int32_t, int>>
 find_local_entity_index(const mesh::Topology& topology,
@@ -55,15 +55,23 @@ find_local_entity_index(const mesh::Topology& topology,
 
   std::vector<std::pair<std::int32_t, int>> entity_indices;
   entity_indices.reserve(entities.size());
+  std::int32_t num_entities_local = e_to_c->num_nodes();
   for (std::int32_t e : entities)
   {
     // Get first attached cell
+    if (e >= num_entities_local)
+    {
+      throw std::out_of_range(
+          "Input entity " + std::to_string(e)
+          + " is larger than the number of entities on this process ("
+          + std::to_string(num_entities_local) + ").");
+    }
     assert(e_to_c->num_links(e) > 0);
-    const int cell = e_to_c->links(e).front();
 
     // Get local index of facet with respect to the cell
+    std::int32_t cell = e_to_c->links(e).front();
     auto entities_d = c_to_e->links(cell);
-    auto it = std::find(entities_d.begin(), entities_d.end(), e);
+    auto it = std::ranges::find(entities_d, e);
     assert(it != entities_d.end());
     std::size_t entity_local_index = std::distance(entities_d.begin(), it);
     entity_indices.emplace_back(cell, entity_local_index);
@@ -74,7 +82,7 @@ find_local_entity_index(const mesh::Topology& topology,
 //-----------------------------------------------------------------------------
 
 /// Find all DOFs on this process that have been detected on another
-/// process
+/// process.
 /// @param[in] comm A symmetric communicator
 /// @param[in] map The index map with the dof layout
 /// @param[in] bs_map The block size of the index map, i.e. the dof
