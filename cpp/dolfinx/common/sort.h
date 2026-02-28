@@ -174,17 +174,17 @@ constexpr void radix_sort(R&& range, P proj = {})
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.
 template <typename T, int BITS = 16>
-std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
+std::vector<std::size_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
 {
   static_assert(std::is_integral_v<T>, "Integral required.");
 
   if (x.empty())
-    return std::vector<std::int32_t>{};
+    return std::vector<std::size_t>{};
 
   assert(shape1 > 0);
   assert(x.size() % shape1 == 0);
   const std::size_t shape0 = x.size() / shape1;
-  std::vector<std::int32_t> perm(shape0);
+  std::vector<std::size_t> perm(shape0);
   std::iota(perm.begin(), perm.end(), 0);
 
   // Sort by each column, right to left. Col 0 has the most significant

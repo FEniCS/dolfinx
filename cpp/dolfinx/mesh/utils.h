@@ -276,7 +276,7 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
       auto [graph, unmatched_facets, max_v, _facet_attached_cells]
           = build_local_dual_graph(std::vector{celltypes[i]},
                                    std::vector{cells1_v_local.back()},
-                                   max_facet_to_cell_links);
+                                   max_facet_to_cell_links, 0);
 
       // Store unmatched_facets for current cell type
       facets.emplace_back(std::move(unmatched_facets), max_v);
@@ -342,7 +342,7 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
       }
 
       // Compute row permutation
-      const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
+      const std::vector<std::size_t> perm = dolfinx::sort_by_perm(
           std::span<const std::int64_t>(facets0), max_v);
 
       // For facets in facets0 that appear only once, store the facet
