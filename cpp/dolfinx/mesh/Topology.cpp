@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2024 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2025 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -143,7 +143,6 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
   // Find which ranks have each index
   std::vector<std::int32_t> num_items_per_dest1(recv_disp0.size() - 1, 0);
   std::vector<std::int32_t> num_items_per_pos1(recv_disp0.back(), 0);
-
   std::vector<int> owner;
   std::vector<int> disp1{0};
   {
@@ -207,8 +206,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
       auto indices_it1 = std::next(indices_it0, num_sharing_ranks);
       for (std::int32_t j = disp1[i]; j < disp1[i + 1]; ++j)
       {
-        auto& data1 = indices_list[j];
-        std::size_t pos = data1[1];
+        std::size_t pos = indices_list[j][1];
         std::int32_t bufferpos = bdisp1[pos];
         send_buffer1[bufferpos] = num_sharing_ranks;
 
@@ -729,8 +727,8 @@ build_entity_types(const std::vector<CellType>& cell_types)
     //  Find all facet types
     std::set<mesh::CellType> e_types;
     for (auto c : entity_types[tdim])
-      for (int i = 0; i < cell_num_entities(c, 2); ++i)
-        e_types.insert(cell_facet_type(c, i));
+      for (int i = 0; i < mesh::cell_num_entities(c, 2); ++i)
+        e_types.insert(mesh::cell_facet_type(c, i));
     entity_types[2] = std::vector(e_types.begin(), e_types.end());
   }
   return entity_types;
@@ -778,7 +776,7 @@ Topology::Topology(
   if (tdim == 1)
   {
     auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(*this, 0, CellType::point, num_threads);
+        = mesh::compute_entities(*this, 0, CellType::point, num_threads);
     std::ranges::sort(interprocess_entities);
     _interprocess_facets.push_back(std::move(interprocess_entities));
   }
@@ -796,11 +794,13 @@ const std::vector<CellType>& Topology::entity_types(int dim) const
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const
 {
-  std::vector<CellType> cell_types = entity_types(dim());
+  std::vector<CellType> cell_types = entity_types(this->dim());
   if (cell_types.size() > 1)
+  {
     throw std::runtime_error(
         "Multiple cell types of this dimension. Call cell_types "
         "instead.");
+  }
   return cell_types.front();
 }
 //-----------------------------------------------------------------------------
@@ -825,15 +825,20 @@ Topology::index_maps(int dim) const
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   if (_entity_types[dim].size() > 1)
+  {
     throw std::runtime_error(
         "Multiple index maps of this dimension. Call index_maps instead.");
-  auto im = index_maps(dim);
+  }
+
+  std::vector<std::shared_ptr<const common::IndexMap>> im
+      = this->index_maps(dim);
   if (im.empty())
   {
     throw std::runtime_error(std::format(
         "Missing IndexMap in Topology. Maybe you need to create_entities({}).",
         dim));
   }
+
   return im.at(0);
 }
 //-----------------------------------------------------------------------------
@@ -878,7 +883,7 @@ const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
   if (auto i_map = this->index_map(this->dim() - 1);
       !i_map
       or (_facet_permutations.empty()
-          and i_map->size_local() + i_map->num_ghosts() > 0))
+          and (i_map->size_local() + i_map->num_ghosts() > 0)))
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
@@ -910,7 +915,7 @@ bool Topology::create_entities(int dim, int num_threads)
   for (int ent_type_idx = 0, num_ent_types = this->entity_types(dim).size();
        ent_type_idx < num_ent_types; ++ent_type_idx)
   {
-    if (!connectivity({dim, ent_type_idx}, {0, 0}))
+    if (!this->connectivity({dim, ent_type_idx}, {0, 0}))
     {
       entities_created = false;
       break;
@@ -928,7 +933,7 @@ bool Topology::create_entities(int dim, int num_threads)
 
     // Create local entities
     auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(*this, dim, *entity, num_threads);
+        = mesh::compute_entities(*this, dim, *entity, num_threads);
     for (std::size_t k = 0; k < cell_entity.size(); ++k)
     {
       if (cell_entity[k])
@@ -959,8 +964,8 @@ bool Topology::create_entities(int dim, int num_threads)
 void Topology::create_connectivity(int d0, int d1)
 {
   // Make sure entities exist
-  create_entities(d0);
-  create_entities(d1);
+  this->create_entities(d0);
+  this->create_entities(d1);
 
   // Get the number of different entity types in each dimension
   int num_d0 = this->entity_types(d0).size();
@@ -972,7 +977,8 @@ void Topology::create_connectivity(int d0, int d1)
     for (int i1 = 0; i1 < num_d1; ++i1)
     {
       // Compute connectivity
-      auto [c_d0_d1, c_d1_d0] = compute_connectivity(*this, {d0, i0}, {d1, i1});
+      auto [c_d0_d1, c_d1_d0]
+          = mesh::compute_connectivity(*this, {d0, i0}, {d1, i1});
 
       // NOTE: that to compute the (d0, d1) connections is it sometimes
       // necessary to compute the (d1, d0) connections. We store the (d1,
@@ -1011,7 +1017,7 @@ void Topology::create_entity_permutations()
     create_entities(d);
 
   auto [facet_permutations, cell_permutations]
-      = compute_entity_permutations(*this);
+      = mesh::compute_entity_permutations(*this);
   _facet_permutations = std::move(facet_permutations);
   _cell_permutations = std::move(cell_permutations);
 }
@@ -1044,7 +1050,7 @@ Topology mesh::create_topology(
   std::vector<std::span<const std::int64_t>> ghost_cells;
   for (std::size_t i = 0; i < cell_types.size(); i++)
   {
-    int num_vertices = num_cell_vertices(cell_types[i]);
+    int num_vertices = mesh::num_cell_vertices(cell_types[i]);
     if (cells[i].size() % num_vertices != 0)
     {
       throw std::runtime_error("Inconsistent number of cell vertices. Got "
@@ -1537,3 +1543,4 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
 
   return facet_pair_lists;
 }
+//-----------------------------------------------------------------------------
