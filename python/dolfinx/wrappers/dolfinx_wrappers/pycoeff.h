@@ -4,6 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#pragma once
+
 #include <algorithm>
 #include <dolfinx/fem/Form.h>
 #include <map>
