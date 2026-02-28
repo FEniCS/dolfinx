@@ -96,14 +96,11 @@ using namespace dolfinx;
 using T = PetscScalar;
 using U = typename dolfinx::scalar_value_t<T>;
 
-// Then follows the definition of the coefficient functions (for $f$ and
-// $g$), which are derived from the {cpp:class}`Expression` class in
-// DOLFINx
-
 // Inside the `main` function, we begin by defining a mesh of the
 // domain. As the unit square is a very standard domain, we can use a
-// built-in mesh provided by the {cpp:class}`UnitSquareMesh` factory. In
-// order to create a mesh consisting of 32 x 32 squares with each square
+// built-in mesh generator provided by the
+// {cpp:func}`dolfinx::mesh::create_rectangle()` function.
+// In order to create a mesh consisting of 32 x 32 squares with each square
 // divided into two triangles, and the finite element space (specified
 // in the form file) defined relative to this mesh, we do as follows:
 
@@ -130,9 +127,9 @@ int main(int argc, char* argv[])
 
     //  Next, we define the variational formulation by initializing the
     //  bilinear and linear forms ($a$, $L$) using the previously
-    //  defined {cpp:class}`FunctionSpace` `V`.  Then we can create the
-    //  source and boundary flux term ($f$, $g$) and attach these to the
-    //  linear form.
+    //  defined {cpp:class}`dolfinx::fem::FunctionSpace` `V`.
+    //  Then we can create the source and boundary flux term ($f$, $g$)
+    //  and attach these to the linear form.
 
     // Prepare and set Constants for the bilinear form
     auto kappa = std::make_shared<fem::Constant<T>>(2.0);
@@ -146,15 +143,15 @@ int main(int argc, char* argv[])
                                          {{"f", f}, {"g", g}}, {}, {}, {});
 
     //  Now, the Dirichlet boundary condition ($u = 0$) can be created
-    //  using the class {cpp:class}`DirichletBC`. A
-    //  {cpp:class}`DirichletBC` takes two arguments: the value of the
-    //  boundary condition, and the part of the boundary on which the
-    //  condition applies. In our example, the value of the boundary
-    //  condition (0) can represented using a {cpp:class}`Function`,
-    //  and the Dirichlet boundary is defined by the indices of degrees
-    //  of freedom to which the boundary condition applies. The
-    //  definition of the Dirichlet boundary condition then looks as
-    //  follows:
+    //  using the class {cpp:class}`dolfinx::fem::DirichletBC`. A
+    //  {cpp:class}`dolfinx::fem::DirichletBC` takes two arguments:
+    //  the value of the boundary condition, and the part of the boundary
+    //  on which the condition applies. In our example, the value of the
+    //  boundary condition (0) can represented using a
+    //  {cpp:class}`dolfinx::fem::Function`, and the Dirichlet boundary is
+    //  defined by the indices of degrees of freedom to which the boundary
+    //  condition applies. The definition of the Dirichlet boundary condition
+    //  then looks as follows:
 
     // Define boundary condition
 
@@ -242,9 +239,10 @@ int main(int argc, char* argv[])
     u->x()->scatter_fwd();
 
     //  The function `u` will be modified during the call to solve. A
-    //  {cpp:class}`Function` can be saved to a file. Here, we output
-    //  the solution to a `VTK` file (specified using the suffix `.pvd`)
-    //  for visualisation in an external program such as Paraview.
+    //  {cpp:class}`dolfinx::fem::Function` can be saved to a file.
+    //  Here, we output the solution to a `VTK` file (specified using
+    //  the suffix `.pvd`) for visualisation in an external program such
+    //  as Paraview.
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
