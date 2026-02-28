@@ -155,8 +155,9 @@ public:
   /// `AdjacencyList::num_links(node)`.
   std::span<LinkData> links(std::size_t node)
   {
-    return std::span<LinkData>(_array.data() + _offsets[node],
-                               _offsets[node + 1] - _offsets[node]);
+    auto it = std::next(_offsets.begin(), node);
+    return std::span<LinkData>(std::next(_array.begin(), *it),
+                               std::next(_array.begin(), *(it + 1)));
   }
 
   /// @brief Get the links (edges) for given node (const version).
@@ -165,8 +166,9 @@ public:
   /// `AdjacencyList:num_links(node)`.
   std::span<const LinkData> links(std::size_t node) const
   {
-    return std::span<const LinkData>(_array.data() + _offsets[node],
-                                     _offsets[node + 1] - _offsets[node]);
+    auto it = std::next(_offsets.begin(), node);
+    return std::span<const LinkData>(std::next(_array.begin(), *it),
+                                     std::next(_array.begin(), *(it + 1)));
   }
 
   /// Return contiguous array of links for all nodes (const version).

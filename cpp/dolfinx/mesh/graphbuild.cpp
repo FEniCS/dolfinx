@@ -519,8 +519,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 //-----------------------------------------------------------------------------
 } // namespace
 //-----------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
-           std::size_t, std::vector<std::int32_t>>
+std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>, int,
+           std::vector<std::int32_t>>
 mesh::build_local_dual_graph(
     std::span<const CellType> celltypes,
     const std::vector<std::span<const std::int64_t>>& cells,
@@ -564,7 +564,6 @@ mesh::build_local_dual_graph(
     std::span<const std::int64_t> _cells = cells[j];
 
     assert(tdim == mesh::cell_dim(cell_type));
-
     int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
     int num_cell_facets = mesh::cell_num_entities(cell_type, tdim - 1);
 
@@ -615,7 +614,6 @@ mesh::build_local_dual_graph(
         std::span facet_vertices = cell_facets.links(f);
         std::ranges::transform(facet_vertices, std::back_inserter(facets),
                                [v](auto idx) { return v[idx]; });
-        // TODO: radix_sort?
         std::sort(std::prev(facets.end(), facet_vertices.size()), facets.end());
         facets.insert(facets.end(),
                       max_vertices_per_facet - facet_vertices.size(),
@@ -626,17 +624,10 @@ mesh::build_local_dual_graph(
   }
 
   // 3) Sort facets by vertex key
-  std::vector<std::size_t> perm(facets.size() / shape1, 0);
-  std::iota(perm.begin(), perm.end(), 0);
-  std::ranges::sort(perm, std::ranges::lexicographical_compare,
-                    [&facets, shape1](auto f)
-                    {
-                      auto begin = std::next(facets.begin(), f * shape1);
-                      return std::ranges::subrange(begin,
-                                                   std::next(begin, shape1));
-                    });
+  std::vector<std::int32_t> perm
+      = dolfinx::sort_by_perm(std::span<const std::int64_t>(facets), shape1);
 
-  // // 4) Iterate over sorted list of facets. Facets shared by more than
+  // 4) Iterate over sorted list of facets. Facets shared by more than
   //    one cell lead to a graph edge to be added. Facets that are not
   //    shared are stored as these might be shared by a cell on another
   //    process.
