@@ -28,7 +28,6 @@
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <dolfinx/nls/NewtonSolver.h>
 #include <numbers>
 #include <petscmat.h>
 #include <petscsys.h>
@@ -47,9 +46,10 @@ public:
   HyperElasticProblem(fem::Form<T>& L, fem::Form<T>& J,
                       const std::vector<fem::DirichletBC<T>>& bcs)
       : _l(L), _j(J), _bcs(bcs.begin(), bcs.end()),
-        _b(L.function_spaces()[0]->dofmap()->index_map,
-           L.function_spaces()[0]->dofmap()->index_map_bs()),
-        _matA(la::petsc::Matrix(fem::petsc::create_matrix(J, "aij"), false))
+        _b_vec(L.function_spaces()[0]->dofmap()->index_map,
+               L.function_spaces()[0]->dofmap()->index_map_bs()),
+        _matJ(la::petsc::Matrix(fem::petsc::create_matrix(J, "aij"), false)),
+        _solver(L.function_spaces()[0]->dofmap()->index_map->comm())
   {
     auto map = L.function_spaces()[0]->dofmap()->index_map;
     const int bs = L.function_spaces()[0]->dofmap()->index_map_bs();
@@ -59,82 +59,163 @@ public:
     std::int64_t size_global = bs * map->size_global();
     VecCreateGhostBlockWithArray(map->comm(), bs, size_local, size_global,
                                  ghosts.size(), ghosts.data(),
-                                 _b.array().data(), &_b_petsc);
+                                 _b_vec.array().data(), &_b);
+
+    // Create linear solver. Default to LU.
+    _solver.set_options_prefix("nls_solve_");
+    la::petsc::options::set("nls_solve_ksp_type", "preonly");
+    la::petsc::options::set("nls_solve_pc_type", "lu");
+    _solver.set_from_options();
   }
 
   /// Destructor
   virtual ~HyperElasticProblem()
   {
-    if (_b_petsc)
-      VecDestroy(&_b_petsc);
+    assert(_b);
+    VecDestroy(&_b);
   }
 
-  /// @brief  Form
-  /// @return
-  auto form()
+  /// @brief Newton Solver
+  /// @param x Solution vector
+  /// @return Iteration count and flag indicating convergence
+  std::pair<int, bool> solve(Vec x)
   {
-    return [](Vec x)
+    int iteration = 0;
+    PetscReal residual0 = 0;
+
+    auto converged
+        = [&iteration, &residual0, this](const Vec r) -> std::pair<double, bool>
     {
-      VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
-      VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+      PetscReal residual = 0;
+      VecNorm(r, NORM_2, &residual);
+
+      // Relative residual
+      const double relative_residual = residual / residual0;
+
+      // Output iteration number and residual
+      spdlog::info("Newton iteration {}"
+                   ": r (abs) = {} (tol = {}), r (rel) = {} (tol = {})",
+                   iteration, residual, atol, relative_residual, rtol);
+
+      // Return true if convergence criterion is met
+      if (relative_residual < rtol or residual < atol)
+        return {residual, true};
+      else
+        return {residual, false};
     };
+
+    assert(_b);
+    F(x);
+
+    auto [residual, newton_converged] = converged(_b);
+
+    _solver.set_operators(_matJ.mat(), _matJ.mat());
+
+    Vec dx;
+    MatCreateVecs(_matJ.mat(), &dx, nullptr);
+
+    int max_it = 50;
+    int krylov_iterations = 0;
+
+    // Start iterations
+    while (!newton_converged and iteration < max_it)
+    {
+      // Compute Jacobian
+      assert(_matJ.mat());
+      J(x, _matJ.mat());
+
+      // Perform linear solve and update total number of Krylov iterations
+      krylov_iterations += _solver.solve(dx, _b);
+
+      // Update solution
+      double relaxation_parameter = 1.0;
+      VecAXPY(x, -relaxation_parameter, dx);
+
+      // Increment iteration count
+      ++iteration;
+
+      // Compute F
+      F(x);
+
+      // Initialize residual0
+      if (iteration == 1)
+        VecNorm(dx, NORM_2, &residual0);
+
+      // Test for convergence
+      std::tie(residual, newton_converged) = converged(_b);
+    }
+
+    if (newton_converged)
+    {
+      spdlog::info("Newton solver finished in {} iterations and {} linear "
+                   "solver iterations.",
+                   iteration, krylov_iterations);
+    }
+    else
+      throw std::runtime_error("Newton solver did not converge.");
+
+    VecDestroy(&dx);
+
+    return {iteration, newton_converged};
   }
 
   /// Compute F at current point x
-  auto F()
+  void F(const Vec x)
   {
-    return [&](const Vec x, Vec)
-    {
-      // Assemble b and update ghosts
-      std::span b(_b.array());
-      std::ranges::fill(b, 0);
-      fem::assemble_vector(b, _l);
-      VecGhostUpdateBegin(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
-      VecGhostUpdateEnd(_b_petsc, ADD_VALUES, SCATTER_REVERSE);
+    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
-      // Set bcs
-      Vec x_local;
-      VecGhostGetLocalForm(x, &x_local);
-      PetscInt n = 0;
-      VecGetSize(x_local, &n);
-      const T* _x = nullptr;
-      VecGetArrayRead(x_local, &_x);
-      std::ranges::for_each(_bcs, [b, x = std::span(_x, n)](auto& bc)
-                            { bc.get().set(b, x, -1); });
-      VecRestoreArrayRead(x_local, &_x);
-    };
+    // Assemble b and update ghosts
+    std::span b(_b_vec.array());
+    std::ranges::fill(b, 0);
+    fem::assemble_vector(b, _l);
+    VecGhostUpdateBegin(_b, ADD_VALUES, SCATTER_REVERSE);
+    VecGhostUpdateEnd(_b, ADD_VALUES, SCATTER_REVERSE);
+
+    // Set bcs
+    Vec x_local;
+    VecGhostGetLocalForm(x, &x_local);
+    PetscInt n = 0;
+    VecGetSize(x_local, &n);
+    const T* _x = nullptr;
+    VecGetArrayRead(x_local, &_x);
+    std::ranges::for_each(_bcs, [b, x = std::span(_x, n)](auto& bc)
+                          { bc.get().set(b, x, -1); });
+    VecRestoreArrayRead(x_local, &_x);
   }
 
   /// Compute J = F' at current point x
-  auto J()
+  void J(const Vec, Mat A)
   {
-    return [&](const Vec, Mat A)
-    {
-      MatZeroEntries(A);
-      fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), _j,
-                           _bcs);
-      MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
-      MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
-      fem::set_diagonal(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
-                        *_j.function_spaces()[0], _bcs);
-      MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-      MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-    };
+    MatZeroEntries(A);
+    fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), _j,
+                         _bcs);
+    MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
+    MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
+    fem::set_diagonal(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
+                      *_j.function_spaces()[0], _bcs);
+    MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
   }
 
-  /// RHS vector
-  Vec vector() { return _b_petsc; }
+  /// @brief Relative convergence tolerance.
+  double rtol = 1e-9;
 
-  /// Jacobian matrix
-  Mat matrix() { return _matA.mat(); }
+  /// @brief Absolute convergence tolerance.
+  double atol = 1e-10;
 
 private:
   fem::Form<T>& _l;
   fem::Form<T>& _j;
   std::vector<std::reference_wrapper<const fem::DirichletBC<T>>> _bcs;
-  la::Vector<T> _b;
-  Vec _b_petsc = nullptr;
-  la::petsc::Matrix _matA;
+  la::Vector<T> _b_vec;
+  Vec _b = nullptr;
+
+  // Jacobian matrix
+  la::petsc::Matrix _matJ;
+
+  // Linear solver
+  dolfinx::la::petsc::KrylovSolver _solver;
 };
 
 int main(int argc, char* argv[])
@@ -247,15 +328,11 @@ int main(int argc, char* argv[])
            fem::DirichletBC<T>(u_rotation, bdofs_right)};
 
     HyperElasticProblem problem(L, a, bcs);
-    nls::petsc::NewtonSolver newton_solver(mesh->comm());
-    newton_solver.setF(problem.F(), problem.vector());
-    newton_solver.setJ(problem.J(), problem.matrix());
-    newton_solver.set_form(problem.form());
-    newton_solver.rtol = 10 * std::numeric_limits<T>::epsilon();
-    newton_solver.atol = 10 * std::numeric_limits<T>::epsilon();
+    problem.rtol = 10 * std::numeric_limits<T>::epsilon();
+    problem.atol = 10 * std::numeric_limits<T>::epsilon();
 
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
-    auto [niter, success] = newton_solver.solve(_u.vec());
+    auto [niter, success] = problem.solve(_u.vec());
     std::cout << "Number of Newton iterations: " << niter << std::endl;
 
     // Compute Cauchy stress. Construct appropriate Basix element for
