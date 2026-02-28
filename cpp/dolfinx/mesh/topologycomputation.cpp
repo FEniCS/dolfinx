@@ -648,7 +648,6 @@ compute_entities_by_key_matching(
   }
 
   // Start numbering entities
-  common::Timer timer0("Create entities 0");
   std::vector<std::int32_t> entity_index(cell_type_offsets.back());
   std::int32_t entity_count = 0;
   {
@@ -682,8 +681,6 @@ compute_entities_by_key_matching(
                                                         num_vertices_per_entity)
               : sort_threaded(entity_list_sorted, num_vertices_per_entity,
                               num_threads);
-    timer.stop();
-    timer.flush();
 
     std::vector<std::int32_t> entity(num_vertices_per_entity);
     std::vector<std::int32_t> entity0(num_vertices_per_entity);
@@ -713,15 +710,12 @@ compute_entities_by_key_matching(
       ++entity_count;
     }
   }
-  timer0.stop();
-  timer0.flush();
 
   //---------
   // Set ghost status array values
   // 0 = entities that are only in ghost cells (i.e. definitely not
   // owned) 1 = entities with local ownership or ownership that needs
   // deciding
-  common::Timer timer1("Create entities 1");
   std::vector<std::int8_t> ghost_status(entity_count, 1);
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
@@ -740,20 +734,13 @@ compute_entities_by_key_matching(
       ghost_status[idx] = 0;
     }
   }
-  timer1.stop();
-  timer1.flush();
 
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-
-  common::Timer timer2("Create entities 2");
   auto [local_index, index_map, interprocess_entities]
       = get_local_indexing(comm, vertex_index_map, entity_list,
                            num_vertices_per_entity, ghost_status, entity_index);
-
-  timer2.stop();
-  timer2.flush();
 
   // Entity-vertex connectivity
   std::vector<std::int32_t> ev_array(entity_count * num_vertices_per_entity);
