@@ -77,13 +77,12 @@ residual_graph_components(const graph::AdjacencyList<int>& graph,
 // Get the (maximum) width of a level structure
 std::size_t max_level_width(const graph::AdjacencyList<int>& levels)
 {
-  std::size_t wmax = 0;
   const std::vector<std::int32_t>& offsets = levels.offsets();
-  for (auto it = offsets.begin(); it != std::prev(offsets.end()); ++it)
-  {
-    std::size_t num_links = *std::next(it) - *it;
-    wmax = std::max(wmax, num_links);
-  }
+  return std::transform_reduce(
+      offsets.begin(), std::prev(offsets.end()), std::next(offsets.begin()),
+      std::size_t(0),
+      [](auto x0, auto x1) -> std::size_t { return std::max(x1, x0); },
+      [](auto x0, auto x1) -> std::size_t { return x1 - x0; });
 }
 //-----------------------------------------------------------------------------
 // Create a level structure from graph, rooted at node s

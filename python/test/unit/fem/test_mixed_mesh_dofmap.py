@@ -39,6 +39,7 @@ def test_dofmap_mixed_topology():
         orig_index,
         ghost_owners,
         boundary_vertices,
+        0,
     )
     # Create dofmaps for Geometry
     tri = coordinate_element(CellType.triangle, 1)

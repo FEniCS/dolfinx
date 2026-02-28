@@ -1028,7 +1028,7 @@ Topology mesh::create_topology(
     std::vector<std::span<const std::int64_t>> cells,
     std::vector<std::span<const std::int64_t>> original_cell_index,
     std::vector<std::span<const int>> ghost_owners,
-    std::span<const std::int64_t> boundary_vertices)
+    std::span<const std::int64_t> boundary_vertices, int num_threads)
 {
   common::Timer timer("Topology: create");
 
@@ -1130,7 +1130,7 @@ Topology mesh::create_topology(
     std::span cell_idx(original_cell_index[i]);
     cell_ghost_indices.push_back(graph::build::compute_ghost_indices(
         comm, cell_idx.first(num_local_cells[i]),
-        cell_idx.last(ghost_owners[i].size()), ghost_owners[i]));
+        cell_idx.last(ghost_owners[i].size()), ghost_owners[i], num_threads));
 
     // Create index maps for each cell type
     index_map_c.push_back(std::make_shared<common::IndexMap>(
@@ -1303,11 +1303,12 @@ Topology
 mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                       std::span<const std::int64_t> original_cell_index,
                       std::span<const int> ghost_owners, CellType cell_type,
-                      std::span<const std::int64_t> boundary_vertices)
+                      std::span<const std::int64_t> boundary_vertices,
+                      int num_threads)
 {
   spdlog::info("Create topology (single cell type)");
   return create_topology(comm, {cell_type}, {cells}, {original_cell_index},
-                         {ghost_owners}, boundary_vertices);
+                         {ghost_owners}, boundary_vertices, num_threads);
 }
 //-----------------------------------------------------------------------------
 std::tuple<Topology, std::vector<int32_t>, std::vector<int32_t>>
