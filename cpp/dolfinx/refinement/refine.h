@@ -74,7 +74,7 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
     if (comm == MPI_COMM_NULL)
       return graph::regular_adjacency_list(std::move(destinations), 1);
 
-    auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells, 2);
+    auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells, 2, 0);
     std::vector<std::int32_t> node_disp(MPI::size(comm) + 1, 0);
     std::int32_t local_size = dual_graph.num_nodes();
     MPI_Allgather(&local_size, 1, dolfinx::MPI::mpi_t<std::int32_t>,

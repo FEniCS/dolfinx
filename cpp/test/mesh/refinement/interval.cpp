@@ -115,7 +115,7 @@ TEMPLATE_TEST_CASE("Interval adaptive refinement",
   // TODO: parent_facet
   auto [refined_mesh, parent_edge, parent_facet] = refinement::refine(
       mesh, std::span(edges),
-      mesh::create_cell_partitioner(mesh::GhostMode::shared_facet),
+      mesh::create_cell_partitioner(mesh::GhostMode::shared_facet, 2),
       refinement::Option::parent_cell);
 
   std::vector<T> expected_x = {

@@ -283,7 +283,7 @@ TEST_CASE("dual_graph_branching_parallel")
   }
 
   auto dual_graph = mesh::build_dual_graph(
-      comm, celltypes, std::vector<std::span<const std::int64_t>>{cells}, 3);
+      comm, celltypes, std::vector<std::span<const std::int64_t>>{cells}, 3, 0);
 
   if (dolfinx::MPI::rank(comm) == 0)
   {
