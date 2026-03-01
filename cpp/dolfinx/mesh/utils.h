@@ -276,7 +276,7 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
       auto [graph, unmatched_facets, max_v, _facet_attached_cells]
           = build_local_dual_graph(std::vector{celltypes[i]},
                                    std::vector{cells1_v_local.back()},
-                                   max_facet_to_cell_links);
+                                   max_facet_to_cell_links, 0);
 
       // Store unmatched_facets for current cell type
       facets.emplace_back(std::move(unmatched_facets), max_v);
@@ -982,8 +982,7 @@ create_cell_partitioner(mesh::GhostMode ghost_mode,
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction
 create_cell_partitioner(mesh::GhostMode ghost_mode,
-                        std::optional<std::int32_t> max_facet_to_cell_links
-                        = 2);
+                        std::optional<std::int32_t> max_facet_to_cell_links);
 
 /// @brief Compute incident entities.
 /// @param[in] topology The topology.
