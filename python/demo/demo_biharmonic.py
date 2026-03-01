@@ -230,13 +230,8 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
 
 # +
-def u_manufactured(x):
-    """Manufactured solution."""
-    return ufl.sin(2 * ufl.pi * x[0]) ** 2 * ufl.sin(2 * ufl.pi * x[1]) ** 2
-
-
 x = ufl.SpatialCoordinate(msh)
-u_ex = u_manufactured(x)
+u_ex = ufl.sin(2 * ufl.pi * x[0]) ** 2 * ufl.sin(2 * ufl.pi * x[1]) ** 2
 g_D_expr = fem.Expression(u_ex, V.element.interpolation_points)
 g_D = fem.Function(V)
 g_D.interpolate(g_D_expr)
