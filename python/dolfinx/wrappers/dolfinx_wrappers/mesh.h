@@ -77,7 +77,6 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p);
 
 namespace dolfinx_wrappers
 {
-
 template <typename T>
 void declare_meshtags(nb::module_& m, const std::string& type)
 {

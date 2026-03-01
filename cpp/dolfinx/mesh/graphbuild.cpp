@@ -751,12 +751,12 @@ mesh::build_local_dual_graph(
                                                    f1_it);
                                }));
 
-      std::size_t cell_count = matching_facets.size();
+      std::int32_t cell_count = matching_facets.size();
       assert(cell_count >= 1);
       if (!max_facet_to_cell_links or cell_count < *max_facet_to_cell_links)
       {
         // Store unmatched facets and the attached cell
-        for (std::size_t i = 0; i < cell_count; i++)
+        for (std::int32_t i = 0; i < cell_count; i++)
         {
           unmatched_facets.insert(unmatched_facets.end(), facet.begin(),
                                   std::prev(facet.end()));
