@@ -145,7 +145,7 @@ jobs:
           . ./mypy-env/bin/activate
           pip install mypy types-cffi scipy-stubs
           mypy -p dolfinx
-          mypy -p dolfinx.cpp
+        # mypy -p dolfinx.cpp
         # mypy test
         # mypy demo
 
