@@ -52,19 +52,20 @@
 # *simply supported* condition, see for instance {cite:t}`Gander2017bcs`.
 #
 # $$
-# \begin{align}
-# u &= \frac{\partial u}{\partial n} = 0 \text{ on } \partial\Omega\\
-# u &= \Delta u = 0 \text{ on } \partial \Omega
-# \end{align}
+# \begin{aligned}
+# u =0 &\qquad \frac{\partial u}{\partial n} = 0
+# # \text{ on } \partial\Omega,\\
+# u =0 &\qquad \Delta u = 0 \text{ on } \partial \Omega.
+# \end{aligned}
 # $$
 #
 # In this demo we will consider the clamped boundary conditions
 #
 # $$
-# \begin{align}
-# u &= g_D \text{ on } \partial\Omega\\
-# \frac{\partial u}{\partial n} &= g_N \text{ on } \partial\Omega\\
-# \end{align}
+# \begin{aligned}
+# u &= g_D \text{ on } \partial\Omega,\\
+# \frac{\partial u}{\partial n} &= g_N \text{ on } \partial\Omega,\\
+# \end{aligned}
 # $$
 #
 # as the simply supported boundary conditions reduces the system into two
@@ -88,13 +89,11 @@
 # {cite:t}`Georgoulis2009biharmonic`.
 #
 # In this demo, we consider equation 3.20-3.21 from
-# {cite:t}`Georgoulis2009biharmonic`, but instead of use a broken
-# (discontinuous) finite element space for the unknown $u$, we use a
-# continuous space, which simplifies the formulation to
-#
-#
-# a weak formulation of the biharmonic problem reads: find $u \in V_{g_D}$
-# such that
+# {cite:t}`Georgoulis2009biharmonic`, a $\mathcal{C}^0$-interior penalty
+# method. However, instead of using a broken (discontinuous)
+# finite element space for the unknown $u$, we use a continuous space,
+# which simplifies the formulation to a weak formulation of the
+# biharmonic problem reads: find $u \in V_{g_D}$ such that
 #
 # $$
 # a(u,v)=L(v) \quad \forall \ v \in V,
@@ -103,7 +102,7 @@
 # where the bilinear form is
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # a(u, v) &=
 # \sum_{K \in \mathcal{T}} \int_{K} \Delta u \Delta v ~{\rm d}x \\
 # &+\sum_{E \in \mathcal{E}_h^{\rm int}}\int_{E}\left(
@@ -115,7 +114,7 @@
 # - \Delta u  \nabla v \cdot n - \Delta v \nabla u \cdot n
 # + \frac{\beta}{h_E} \nabla u \cdot n \nabla v \cdot n
 # \right)~{\rm d}s
-# \end{align}
+# \end{aligned}
 # $$
 #
 # and the linear form is
@@ -124,20 +123,25 @@
 # L(v) = \int_{\Omega} fv ~{\rm d}x
 # +\sum_{E \in \mathcal{E}_h^{\rm ext}}\int_{E}\left(
 # -g_N \Delta v + \frac{\beta}{h_E} g_N \nabla v \cdot n
-# \right) ~{\rm d}s
+# \right) ~{\rm d}s.
 # $$
 #
 # Furthermore, $\left< u \right> = \frac{1}{2} (u_{+} + u_{-})$,
 # $[\!\![ w ]\!\!]  = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}$,
 # $\beta \ge 0$ is a penalty parameter and
-# $h_E$ is a measure of the cell size.
+# $h_E$ is a measure of the cell size. We use the penalty parameter
+# described in {cite:t}`Bringmann2024penalty`.
 #
 # where $K$ is an element of the mesh, while $\mathcal{E}_h^{\rm int}$
 # is the collection of all interior facets, while
 # $\mathcal{E}_h^{\rm ext}$ is the set of exterior facets.
 #
+# ```{note}
 # Note that the Dirichlet condition for $u$ will be enforced strongly
 # in this example.
+# ```
+#
+# ## Implementation
 #
 # We follow the example of {cite:t}`Georgoulis2009biharmonic` and use the
 # method of manufactured solutions to construct a $f$, $g_D$, $g_N$ that
@@ -147,10 +151,7 @@
 # u(x, y) = \sin (2\pi x) \sin (2 \pi y) \text{ in } [0, 1] \times [0, 1].
 # $$
 #
-# ## Implementation
-#
 # We first import the modules and functions that the program uses:
-
 
 # +
 from pathlib import Path
@@ -164,11 +165,11 @@ from dolfinx import default_real_type, default_scalar_type, fem, has_adios2, io,
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
 
-# -
-
 if np.issubdtype(default_real_type, np.float32):  # type: ignore
     print("float32 not yet supported for this demo.")
     exit(0)
+# -
+
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
@@ -177,10 +178,10 @@ if np.issubdtype(default_real_type, np.float32):  # type: ignore
 # $V$ on the mesh.
 
 N = 32
-msh = mesh.create_rectangle(
-    comm=MPI.COMM_WORLD,
-    points=((0.0, 0.0), (1.0, 1.0)),
-    n=(N, N),
+msh = mesh.create_unit_square(
+    MPI.COMM_WORLD,
+    N,
+    N,
     cell_type=CellType.triangle,
     ghost_mode=GhostMode.shared_facet,
 )
@@ -228,14 +229,19 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 # space of our unknown to apply it as a strong boundary condition
 
 
-def u_manufactured(mod, x):
+# +
+def u_manufactured(x):
     """Manufactured solution."""
-    return mod.sin(2 * mod.pi * x[0]) ** 2 * mod.sin(2 * mod.pi * x[1]) ** 2
+    return ufl.sin(2 * ufl.pi * x[0]) ** 2 * ufl.sin(2 * ufl.pi * x[1]) ** 2
 
 
+x = ufl.SpatialCoordinate(msh)
+u_ex = u_manufactured(x)
+g_D_expr = fem.Expression(u_ex, V.element.interpolation_points)
 g_D = fem.Function(V)
-g_D.interpolate(lambda x: u_manufactured(np, x))
+g_D.interpolate(g_D_expr)
 bc = fem.dirichletbc(value=g_D, dofs=dofs)
+# -
 
 # Next, we express the variational problem using UFL.
 #
@@ -247,8 +253,11 @@ bc = fem.dirichletbc(value=g_D, dofs=dofs)
 # `('+')` and `('-')` restricts a function to the `('+')` and `('-')`
 # sides of a facet.
 
-beta = fem.Constant(msh, default_scalar_type(50.0))
+a = fem.Constant(msh, default_scalar_type(4.0))
+vol = ufl.CellVolume(msh)
 h = ufl.CellDiameter(msh)
+beta = 3.0 * a * degree * (degree - 1) / 8.0 * h("+") ** 2 * ufl.avg(1 / vol)
+beta_boundary = 3.0 * a * degree * (degree - 1) * h**2 / vol
 n = ufl.FacetNormal(msh)
 h_avg = (h("+") + h("-")) / 2.0
 
@@ -266,8 +275,6 @@ h_avg = (h("+") + h("-")) / 2.0
 # Define variational problem
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
-x = ufl.SpatialCoordinate(msh)
-u_ex = u_manufactured(ufl, x)
 f = ufl.div(ufl.grad(ufl.div(ufl.grad(u_ex))))
 g_N = ufl.dot(ufl.grad(u_ex), n)
 
@@ -278,12 +285,12 @@ a = (
     + beta / h_avg * ufl.inner(ufl.jump(ufl.grad(u), n), ufl.jump(ufl.grad(v), n)) * ufl.dS
     - ufl.inner(ufl.div(ufl.grad(u)), ufl.dot(ufl.grad(v), n)) * ufl.ds
     - ufl.inner(ufl.dot(ufl.grad(u), n), ufl.div(ufl.grad(v))) * ufl.ds
-    + beta / h * ufl.inner(ufl.dot(ufl.grad(u), n), ufl.dot(ufl.grad(v), n)) * ufl.ds
+    + beta_boundary / h * ufl.inner(ufl.dot(ufl.grad(u), n), ufl.dot(ufl.grad(v), n)) * ufl.ds
 )
 L = (
     ufl.inner(f, v) * ufl.dx
     - ufl.inner(g_N, ufl.div(ufl.grad(v))) * ufl.ds
-    + beta / h * ufl.inner(g_N, ufl.dot(ufl.grad(v), n)) * ufl.ds
+    + beta_boundary / h * ufl.inner(g_N, ufl.dot(ufl.grad(v), n)) * ufl.ds
 )
 # -
 
@@ -310,7 +317,8 @@ assert isinstance(uh, fem.Function)
 assert problem.solver.getConvergedReason() > 0
 # -
 
-# We compute the error between the computed and exact solution:
+# We compute the absolute $L^2$-error between the computed
+# and exact solution:
 
 # +
 error = fem.form(ufl.inner(uh - g_D, ufl.conj(uh - g_D)) * ufl.dx)
@@ -353,5 +361,6 @@ except ModuleNotFoundError:
     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
 # -
 
+# ## References
 # ```{bibliography}
 # ```
