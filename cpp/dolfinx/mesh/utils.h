@@ -982,8 +982,7 @@ create_cell_partitioner(mesh::GhostMode ghost_mode,
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction
 create_cell_partitioner(mesh::GhostMode ghost_mode,
-                        std::optional<std::int32_t> max_facet_to_cell_links
-                        = 2);
+                        std::optional<std::int32_t> max_facet_to_cell_links);
 
 /// @brief Compute incident entities.
 /// @param[in] topology The topology.
