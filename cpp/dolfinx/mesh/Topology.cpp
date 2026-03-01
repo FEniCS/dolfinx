@@ -1201,7 +1201,8 @@ Topology mesh::create_topology(
   //       dolfinx::radix_sort(vertex_data);
   //     else
   //     {
-  //       boost::sort::block_indirect_sort(vertex_data.begin(), vertex_data.end(),
+  //       boost::sort::block_indirect_sort(vertex_data.begin(),
+  //       vertex_data.end(),
   //                                        num_threads);
   //     }
 
