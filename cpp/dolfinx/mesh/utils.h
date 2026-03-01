@@ -965,11 +965,12 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet needs to be connected to to be considered *matched* (not on
 /// boundary for non-branching meshes).
+/// @param[in] num_threads Number of threads to use. Use 0 to not launch
+/// threads.
 /// @return Function that computes the destination ranks for each cell.
-CellPartitionFunction
-create_cell_partitioner(mesh::GhostMode ghost_mode,
-                        const graph::partition_fn& partfn,
-                        std::optional<std::int32_t> max_facet_to_cell_links);
+CellPartitionFunction create_cell_partitioner(
+    mesh::GhostMode ghost_mode, const graph::partition_fn& partfn,
+    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads = 0);
 
 /// @brief Create a function that computes destination rank for mesh
 /// cells on this rank by applying the default graph partitioner to the
@@ -979,10 +980,13 @@ create_cell_partitioner(mesh::GhostMode ghost_mode,
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet needs to be connected to to be considered *matched* (not on
 /// boundary for non-branching meshes).
+/// @param[in] num_threads Number of threads to use. Use 0 to not launch
+/// threads.
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction
 create_cell_partitioner(mesh::GhostMode ghost_mode,
-                        std::optional<std::int32_t> max_facet_to_cell_links);
+                        std::optional<std::int32_t> max_facet_to_cell_links,
+                        int num_threads = 0);
 
 /// @brief Compute incident entities.
 /// @param[in] topology The topology.
@@ -1306,7 +1310,7 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
   {
     return create_mesh(
         comm, comm, std::vector{cells}, std::vector{elements}, comm, x, xshape,
-        create_cell_partitioner(ghost_mode, max_facet_to_cell_links),
+        create_cell_partitioner(ghost_mode, max_facet_to_cell_links, 0),
         max_facet_to_cell_links);
   }
 }

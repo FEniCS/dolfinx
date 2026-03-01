@@ -1164,62 +1164,62 @@ Topology mesh::create_topology(
 
   // NOTE: This block is relatively expensive
   // Number all owned vertices, iterating over vertices cell-wise
-  // std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
-  // {
-  //   common::Timer timer3("Topology: 3");
-  //   std::int32_t v = 0;
-  //   for (std::span<const std::int64_t> cells_t : cells)
-  //   {
-  //     for (auto vtx : cells_t)
-  //     {
-  //       if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
-  //           it != owned_vertices.end() and *it == vtx)
-  //       {
-  //         std::size_t pos = std::distance(owned_vertices.begin(), it);
-  //         if (local_vertex_indices[pos] < 0)
-  //           local_vertex_indices[pos] = v++;
-  //       }
-  //     }
-  //   }
-  // }
-
-  // NEW: Number all owned vertices
-  // TODO: check if this re-ordering affects geometry retrieval
-  // performance
   std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
   {
     common::Timer timer3("Topology: 3");
-
-    common::Timer timer("Topology: number owned vertices");
     std::int32_t v = 0;
-    for (auto _cells : cells)
+    for (std::span<const std::int64_t> cells_t : cells)
     {
-      std::vector<std::int64_t> vertex_data;
-      for (auto vtx : _cells)
-        vertex_data.push_back(vtx);
-      if (num_threads == 0)
-        dolfinx::radix_sort(vertex_data);
-      else
+      for (auto vtx : cells_t)
       {
-        boost::sort::block_indirect_sort(vertex_data.begin(), vertex_data.end(),
-                                         num_threads);
-      }
-
-      auto ret = std::ranges::unique(vertex_data);
-      auto it0 = owned_vertices.cbegin();
-      for (auto it = vertex_data.begin(); it != ret.begin(); ++it)
-      {
-        if (*it == *it0)
+        if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
+            it != owned_vertices.end() and *it == vtx)
         {
-          std::size_t d = std::distance(owned_vertices.cbegin(), it0);
-          assert(d < owned_vertices.size());
-          assert(local_vertex_indices[d] == -1);
-          local_vertex_indices[d] = v++;
-          ++it0;
+          std::size_t pos = std::distance(owned_vertices.begin(), it);
+          if (local_vertex_indices[pos] < 0)
+            local_vertex_indices[pos] = v++;
         }
       }
     }
   }
+
+  // // NEW: Number all owned vertices
+  // // TODO: check if this re-ordering affects geometry retrieval
+  // // performance
+  // std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
+  // {
+  //   common::Timer timer3("Topology: 3");
+
+  //   common::Timer timer("Topology: number owned vertices");
+  //   std::int32_t v = 0;
+  //   for (auto _cells : cells)
+  //   {
+  //     std::vector<std::int64_t> vertex_data;
+  //     for (auto vtx : _cells)
+  //       vertex_data.push_back(vtx);
+  //     if (num_threads == 0)
+  //       dolfinx::radix_sort(vertex_data);
+  //     else
+  //     {
+  //       boost::sort::block_indirect_sort(vertex_data.begin(), vertex_data.end(),
+  //                                        num_threads);
+  //     }
+
+  //     auto ret = std::ranges::unique(vertex_data);
+  //     auto it0 = owned_vertices.cbegin();
+  //     for (auto it = vertex_data.begin(); it != ret.begin(); ++it)
+  //     {
+  //       if (*it == *it0)
+  //       {
+  //         std::size_t d = std::distance(owned_vertices.cbegin(), it0);
+  //         assert(d < owned_vertices.size());
+  //         assert(local_vertex_indices[d] == -1);
+  //         local_vertex_indices[d] = v++;
+  //         ++it0;
+  //       }
+  //     }
+  //   }
+  // }
 
   common::Timer timer4("Topology: 4");
 
