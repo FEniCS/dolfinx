@@ -1,5 +1,5 @@
 // Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells, Igor Baratta,
-// Joseph P. Dean and Jørgen S. Dokken
+// Joseph P. Dean, Jørgen S. Dokken and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -1384,5 +1384,20 @@ std::array<std::vector<int>, 2> IndexMap::rank_type(int split_type) const
   dolfinx::MPI::check_error(comm_s, ierr);
 
   return {std::move(split_dest), std::move(split_src)};
+}
+//-----------------------------------------------------------------------------
+
+std::size_t dolfinx::common::impl::memory(const IndexMap& im)
+{
+  std::size_t size = 0;
+
+  size += sizeof(IndexMap);
+  size += memory(im.local_range());
+  size += memory(im.ghosts());
+  size += memory(im.owners());
+  size += memory(im.src());
+  size += memory(im.dest());
+
+  return size;
 }
 //-----------------------------------------------------------------------------

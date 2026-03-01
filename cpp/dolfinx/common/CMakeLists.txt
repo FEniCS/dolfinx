@@ -7,6 +7,8 @@ set(HEADERS_common
     ${CMAKE_CURRENT_SOURCE_DIR}/sort.h
     ${CMAKE_CURRENT_SOURCE_DIR}/types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/math.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/memory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/memory_fwd.h
     ${CMAKE_CURRENT_SOURCE_DIR}/MPI.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Scatterer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Table.h
