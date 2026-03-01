@@ -63,7 +63,7 @@ std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>, int,
 build_local_dual_graph(std::span<const CellType> celltypes,
                        const std::vector<std::span<const std::int64_t>>& cells,
                        std::optional<std::int32_t> max_facet_to_cell_links,
-                       int num_threads = 0);
+                       int num_threads);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.
