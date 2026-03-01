@@ -966,9 +966,10 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// facet needs to be connected to to be considered *matched* (not on
 /// boundary for non-branching meshes).
 /// @return Function that computes the destination ranks for each cell.
-CellPartitionFunction create_cell_partitioner(
-    mesh::GhostMode ghost_mode, const graph::partition_fn& partfn,
-    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads = 0);
+CellPartitionFunction
+create_cell_partitioner(mesh::GhostMode ghost_mode,
+                        const graph::partition_fn& partfn,
+                        std::optional<std::int32_t> max_facet_to_cell_links);
 
 /// @brief Create a function that computes destination rank for mesh
 /// cells on this rank by applying the default graph partitioner to the

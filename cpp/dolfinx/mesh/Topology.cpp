@@ -1085,7 +1085,6 @@ Topology mesh::create_topology(
     std::vector<std::span<const int>> ghost_owners,
     std::span<const std::int64_t> boundary_vertices, int num_threads)
 {
-  num_threads = 10;
   common::Timer timer("Topology: create");
 
   assert(cell_types.size() == cells.size());

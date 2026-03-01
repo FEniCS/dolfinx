@@ -348,8 +348,8 @@ void mesh(nb::module_& m)
       {
         return part::impl::create_cell_partitioner_py(
             dolfinx::mesh::create_cell_partitioner(
-                mode, &dolfinx::graph::partition_graph, max_facet_to_cell_links,
-                0));
+                mode, &dolfinx::graph::partition_graph,
+                max_facet_to_cell_links));
       },
       nb::arg("mode"), nb::arg("max_facet_to_cell_links").none(),
       "Create default cell partitioner.");
@@ -366,7 +366,7 @@ void mesh(nb::module_& m)
         return part::impl::create_cell_partitioner_py(
             dolfinx::mesh::create_cell_partitioner(
                 mode, part::impl::create_partitioner_cpp(part),
-                max_facet_to_cell_links, 0));
+                max_facet_to_cell_links));
       },
       nb::arg("part"), nb::arg("ghost_mode"),
       nb::arg("max_facet_to_cell_links").none(),
