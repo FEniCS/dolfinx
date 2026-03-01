@@ -779,6 +779,8 @@ def create_mesh(
             cells across MPI ranks.
         max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
+        num_threads: Number of CPU threads to use when creating the
+            mesh. If 0, threads are not spawned.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
