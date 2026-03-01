@@ -10,6 +10,8 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <algorithm>
+#include <array>
+#include <boost/sort/sort.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
@@ -19,6 +21,7 @@
 #include <numeric>
 #include <random>
 #include <set>
+#include <thread>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -40,7 +43,8 @@ namespace
 /// @return Map from global index to sharing ranks for each index in
 /// indices. The owner rank is the first as the first in the of ranks.
 graph::AdjacencyList<int>
-determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
+determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices,
+                        int num_threads)
 {
   common::Timer timer("Topology: determine shared index ownership");
 
@@ -63,7 +67,13 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
       int dest = dolfinx::MPI::index_owner(size, idx, global_range);
       dest_to_index.push_back({dest, static_cast<int>(dest_to_index.size())});
     }
-    std::ranges::sort(dest_to_index);
+    if (num_threads > 0)
+    {
+      boost::sort::block_indirect_sort(dest_to_index.begin(),
+                                       dest_to_index.end(), num_threads);
+    }
+    else
+      std::ranges::sort(dest_to_index);
   }
 
   // Build list of neighbour dest ranks and count number of indices to
@@ -135,10 +145,13 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 
   // Build {global index, pos, src} list
   std::vector<std::array<std::int64_t, 3>> indices_list;
-  for (std::size_t p = 0; p < recv_disp0.size() - 1; ++p)
-    for (std::int32_t i = recv_disp0[p]; i < recv_disp0[p + 1]; ++i)
-      indices_list.push_back({recv_buffer0[i], i, int(p)});
-  std::ranges::sort(indices_list);
+  {
+    common::Timer timer("Topology: XXXXX");
+    for (std::size_t p = 0; p < recv_disp0.size() - 1; ++p)
+      for (std::int32_t i = recv_disp0[p]; i < recv_disp0[p + 1]; ++i)
+        indices_list.push_back({recv_buffer0[i], i, int(p)});
+    std::ranges::sort(indices_list);
+  }
 
   // Find which ranks have each index
   std::vector<std::int32_t> num_items_per_dest1(recv_disp0.size() - 1, 0);
@@ -286,7 +299,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
     const std::vector<std::span<const std::int64_t>>& cells_owned,
     const std::vector<std::span<const std::int64_t>>& cells_ghost,
-    std::span<const std::int64_t> boundary_vertices)
+    std::span<const std::int64_t> boundary_vertices, int num_threads)
 {
   common::Timer timer("Topology: determine vertex ownership groups (owned, "
                       "undetermined, unowned)");
@@ -300,10 +313,17 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
     local_vertex_set.insert(local_vertex_set.end(), c.begin(), c.end());
 
   {
-    dolfinx::radix_sort(local_vertex_set);
+    if (num_threads > 0)
+    {
+      boost::sort::block_indirect_sort(local_vertex_set.begin(),
+                                       local_vertex_set.end(), 10);
+    }
+    else
+      dolfinx::radix_sort(local_vertex_set);
     auto [unique_end, range_end] = std::ranges::unique(local_vertex_set);
     local_vertex_set.erase(unique_end, range_end);
   }
+
   // Build set of ghost cell vertices (attached to a ghost cell)
   std::vector<std::int64_t> ghost_vertex_set;
   ghost_vertex_set.reserve(
@@ -313,10 +333,19 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
     ghost_vertex_set.insert(ghost_vertex_set.end(), c.begin(), c.end());
 
   {
-    dolfinx::radix_sort(ghost_vertex_set);
+    if (num_threads > 0)
+    {
+
+      boost::sort::block_indirect_sort(ghost_vertex_set.begin(),
+                                       ghost_vertex_set.end(), 10);
+    }
+    else
+      dolfinx::radix_sort(ghost_vertex_set);
+
     auto [unique_end, range_end] = std::ranges::unique(ghost_vertex_set);
     ghost_vertex_set.erase(unique_end, range_end);
   }
+
   // Build difference 1: Vertices attached only to owned cells, and
   // therefore owned by this rank
   std::vector<std::int64_t> owned_vertices;
@@ -329,7 +358,7 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
   std::ranges::set_difference(ghost_vertex_set, local_vertex_set,
                               std::back_inserter(unowned_vertices));
 
-  // TODO Check this in debug mode only?
+#ifndef NDEBUG
   // Sanity check
   // No vertices in unowned should also be in boundary...
   std::vector<std::int64_t> unowned_vertices_in_error;
@@ -341,6 +370,7 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
     throw std::runtime_error(
         "Adding boundary vertices in ghost cells not allowed.");
   }
+#endif
 
   return {std::move(owned_vertices), std::move(unowned_vertices)};
 }
@@ -711,12 +741,12 @@ std::vector<std::int32_t> convert_to_local_indexing(
   std::vector<std::int32_t> data(g.size());
   if (num_threads > 0)
   {
-    std::vector<std::jthread> threads(num_threads);
+    std::vector<std::jthread> threads;
     for (int i = 0; i < num_threads; ++i)
     {
       auto [c0, c1] = dolfinx::MPI::local_range(i, g.size(), num_threads);
-      threads[i] = std::jthread(transform, std::span(data.data() + c0, c1 - c0),
-                                g.subspan(c0, c1 - c0), global_to_local);
+      threads.emplace_back(transform, std::span(data.data() + c0, c1 - c0),
+                           g.subspan(c0, c1 - c0), global_to_local);
     }
   }
   else
@@ -1091,17 +1121,17 @@ Topology mesh::create_topology(
 
   // Create sets of owned and unowned vertices from the cell ownership
   // and the list of boundary vertices
-  auto [owned_vertices, unowned_vertices]
-      = vertex_ownership_groups(owned_cells, ghost_cells, boundary_vertices);
+  auto [owned_vertices, unowned_vertices] = vertex_ownership_groups(
+      owned_cells, ghost_cells, boundary_vertices, num_threads);
+
+  timer1.stop();
+  timer1.flush();
 
   // For each vertex whose ownership needs determining, find the sharing
   // ranks. The first index in the list of ranks for a vertex is the
   // owner (as determined by determine_sharing_ranks).
   const graph::AdjacencyList<int> global_vertex_to_ranks
-      = determine_sharing_ranks(comm, boundary_vertices);
-
-  timer1.stop();
-  timer1.flush();
+      = determine_sharing_ranks(comm, boundary_vertices, num_threads);
 
   // Iterate over vertices that have 'unknown' ownership, and if flagged
   // as owned by determine_sharing_ranks update ownership status
@@ -1136,7 +1166,7 @@ Topology mesh::create_topology(
   // Number all owned vertices, iterating over vertices cell-wise
   std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
   {
-    common::Timer timer3("Topology: 3 ");
+    common::Timer timer3("Topology: 3");
     std::int32_t v = 0;
     for (std::span<const std::int64_t> cells_t : cells)
     {
@@ -1152,6 +1182,45 @@ Topology mesh::create_topology(
       }
     }
   }
+
+  // // NEW: Number all owned vertices
+  // // TODO: check if this re-ordering affects geometry retrieval
+  // // performance
+  // std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
+  // {
+  //   common::Timer timer3("Topology: 3");
+
+  //   common::Timer timer("Topology: number owned vertices");
+  //   std::int32_t v = 0;
+  //   for (auto _cells : cells)
+  //   {
+  //     std::vector<std::int64_t> vertex_data;
+  //     for (auto vtx : _cells)
+  //       vertex_data.push_back(vtx);
+  //     if (num_threads == 0)
+  //       dolfinx::radix_sort(vertex_data);
+  //     else
+  //     {
+  //       boost::sort::block_indirect_sort(vertex_data.begin(),
+  //       vertex_data.end(),
+  //                                        num_threads);
+  //     }
+
+  //     auto ret = std::ranges::unique(vertex_data);
+  //     auto it0 = owned_vertices.cbegin();
+  //     for (auto it = vertex_data.begin(); it != ret.begin(); ++it)
+  //     {
+  //       if (*it == *it0)
+  //       {
+  //         std::size_t d = std::distance(owned_vertices.cbegin(), it0);
+  //         assert(d < owned_vertices.size());
+  //         assert(local_vertex_indices[d] == -1);
+  //         local_vertex_indices[d] = v++;
+  //         ++it0;
+  //       }
+  //     }
+  //   }
+  // }
 
   common::Timer timer4("Topology: 4");
 

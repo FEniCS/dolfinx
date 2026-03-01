@@ -30,7 +30,7 @@ namespace
 template <std::floating_point T>
 la::MatrixCSR<T> create_operator(MPI_Comm comm)
 {
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none, 2);
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none, 2, 0);
   auto mesh = std::make_shared<mesh::Mesh<T>>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));

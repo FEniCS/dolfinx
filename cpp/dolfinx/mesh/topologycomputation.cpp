@@ -656,7 +656,7 @@ compute_entities_by_key_matching(
     auto sort_threaded = [](const auto& entity_list_sorted,
                             int num_vertices_per_entity, int num_threads)
     {
-      std::vector<std::int32_t> sort_order(
+      std::vector<std::size_t> sort_order(
           entity_list_sorted.size() / num_vertices_per_entity, 0);
       std::iota(sort_order.begin(), sort_order.end(), 0);
       boost::sort::sample_sort(
@@ -675,7 +675,7 @@ compute_entities_by_key_matching(
     };
 
     // Sort the list and label uniquely
-    const std::vector<std::int32_t> sort_order
+    const std::vector<std::size_t> sort_order
         = num_threads == 0
               ? dolfinx::sort_by_perm<std::int32_t, 16>(entity_list_sorted,
                                                         num_vertices_per_entity)
