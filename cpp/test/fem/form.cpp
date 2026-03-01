@@ -54,7 +54,7 @@ TEST_CASE("Create Expression/Form (mismatch of mesh geometry)",
   auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_box<double>(
       MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {0.96, 4.5, 2.0}}}, {2, 4, 5},
       mesh::CellType::hexahedron,
-      mesh::create_cell_partitioner(mesh::GhostMode::none)));
+      mesh::create_cell_partitioner(mesh::GhostMode::none, 2)));
   auto element = basix::create_element<double>(
       basix::element::family::P, basix::cell::type::hexahedron, 1,
       basix::element::lagrange_variant::unset,
