@@ -1056,7 +1056,7 @@ def create_rectangle(
         A mesh of a rectangle.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2, 0)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
