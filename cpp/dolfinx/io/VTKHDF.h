@@ -473,6 +473,6 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                                                         cells_local.end());
   return mesh::create_mesh(comm, comm, cells_span, coordinate_elements, comm,
                            points_pruned, {(std::size_t)x_shape[0], gdim}, part,
-                           max_facet_to_cell_links);
+                           max_facet_to_cell_links, 0);
 }
 } // namespace dolfinx::io::VTKHDF

@@ -69,7 +69,7 @@ Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<T, 3>, 2> p,
                   std::array<std::int64_t, 3> n,
                   const CellPartitionFunction& partitioner,
-                  const CellReorderFunction& reorder_fn);
+                  const CellReorderFunction& reorder_fn, int num_threads);
 
 template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
@@ -124,7 +124,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
   case CellType::tetrahedron:
     return impl::build_tet<T>(comm, subcomm, p, n, partitioner, reorder_fn);
   case CellType::hexahedron:
-    return impl::build_hex<T>(comm, subcomm, p, n, partitioner, reorder_fn);
+    return impl::build_hex<T>(comm, subcomm, p, n, partitioner, reorder_fn, 0);
   case CellType::prism:
     return impl::build_prism<T>(comm, subcomm, p, n, partitioner, reorder_fn);
   default:
@@ -269,12 +269,12 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
   {
     auto [x, cells] = impl::create_interval_cells<T>(p, n);
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size(), 1}, partitioner, 2, reorder_fn);
+                       {x.size(), 1}, partitioner, 2, 0, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 1}, partitioner, 2, reorder_fn);
+                       std::vector<T>{}, {0, 1}, partitioner, 2, 0, reorder_fn);
   }
 }
 
@@ -309,6 +309,8 @@ template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                            std::array<std::int64_t, 3> n)
 {
+  common::Timer timer("Build built-in mesh geometry");
+
   // Extract data
   auto [p0, p1] = p;
   const auto [nx, ny, nz] = n;
@@ -367,6 +369,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
   {
     x = create_geom<T>(subcomm, p, n);
 
+    common::Timer timer("Build BoxMesh (tetrahedra): topology");
     const auto [nx, ny, nz] = n;
     const std::int64_t n_cells = nx * ny * nz;
 
@@ -398,7 +401,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner, 2, reorder_fn);
+                     {x.size() / 3, 3}, partitioner, 2, 0, reorder_fn);
 }
 
 template <std::floating_point T>
@@ -407,7 +410,8 @@ build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
           std::array<std::int64_t, 3> n,
           const CellPartitionFunction& partitioner,
           const std::function<std::vector<std::int32_t>(
-              const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
+              const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
+          int num_threads)
 {
   common::Timer timer("Build BoxMesh (hexahedra)");
   std::vector<T> x;
@@ -416,6 +420,8 @@ build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
   if (subcomm != MPI_COMM_NULL)
   {
     x = create_geom<T>(subcomm, p, n);
+
+    common::Timer timer("Build BoxMesh (hexahedra): topology");
 
     // Create cuboids
     const auto [nx, ny, nz] = n;
@@ -443,7 +449,8 @@ build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner, 2, reorder_fn);
+                     {x.size() / 3, 3}, partitioner, 2, num_threads,
+                     reorder_fn);
 }
 
 template <std::floating_point T>
@@ -491,7 +498,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner, 2, reorder_fn);
+                     {x.size() / 3, 3}, partitioner, 2, 0, reorder_fn);
 }
 
 template <std::floating_point T>
@@ -641,12 +648,12 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     }
 
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size() / 2, 2}, partitioner, 2, reorder_fn);
+                       {x.size() / 2, 2}, partitioner, 2, 0, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 2}, partitioner, 2, reorder_fn);
+                       std::vector<T>{}, {0, 2}, partitioner, 2, 0, reorder_fn);
   }
 }
 
@@ -690,12 +697,12 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     }
 
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {x.size() / 2, 2}, partitioner, 2, reorder_fn);
+                       {x.size() / 2, 2}, partitioner, 2, 0, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, 2}, partitioner, 2, reorder_fn);
+                       std::vector<T>{}, {0, 2}, partitioner, 2, 0, reorder_fn);
   }
 }
 } // namespace impl

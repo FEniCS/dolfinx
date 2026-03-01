@@ -1119,6 +1119,7 @@ def create_box(
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
     partitioner=None,
+    num_threads: int = 0,
 ) -> Mesh:
     """Create a box mesh.
 
@@ -1133,12 +1134,14 @@ def create_box(
         ghost_mode: The ghost mode used in the mesh partitioning.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
+        num_threads: Number of threads to use when creating the mesh. If
+            0, no threads are launched..
 
     Returns:
         A mesh of a box domain.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2, num_threads)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
