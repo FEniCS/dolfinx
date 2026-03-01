@@ -105,7 +105,7 @@ def create_cell_partitioner(
 
 
 @create_cell_partitioner.register(GhostMode)
-def _(mode: GhostMode, max_facet_to_cell_links: int) -> Callable:
+def _(mode: GhostMode, max_facet_to_cell_links: int, num_threads: int = 0) -> Callable:
     """Create a function to partition a mesh.
 
     Args:
@@ -114,11 +114,13 @@ def _(mode: GhostMode, max_facet_to_cell_links: int) -> Callable:
             facet. Equal to 2 for non-branching manifold meshes.
             ``None`` corresponds to no upper bound on the number of
             possible connections.
+        num_threads: Number of CPU threads to use when creating. If 0,
+            threads are not spawned.
 
     Return:
         Partitioning function.
     """
-    return _cpp.mesh.create_cell_partitioner(mode, max_facet_to_cell_links)
+    return _cpp.mesh.create_cell_partitioner(mode, max_facet_to_cell_links, num_threads)
 
 
 class Topology:
