@@ -382,7 +382,7 @@ void declare_mesh(nb::module_& m, std::string type)
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
-      nb::arg("max_facet_to_cell_links").none(),
+      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"),
       "Helper function for creating meshes.");
   m.def(
       "create_submesh",
