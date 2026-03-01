@@ -343,16 +343,16 @@ void mesh(nb::module_& m)
   m.def(
       "create_cell_partitioner",
       [](dolfinx::mesh::GhostMode mode,
-         std::optional<std::int32_t> max_facet_to_cell_links)
-          -> part::impl::PythonCellPartitionFunction
+         std::optional<std::int32_t> max_facet_to_cell_links,
+         int num_threads) -> part::impl::PythonCellPartitionFunction
       {
         return part::impl::create_cell_partitioner_py(
             dolfinx::mesh::create_cell_partitioner(
-                mode, &dolfinx::graph::partition_graph,
-                max_facet_to_cell_links));
+                mode, &dolfinx::graph::partition_graph, max_facet_to_cell_links,
+                num_threads));
       },
       nb::arg("mode"), nb::arg("max_facet_to_cell_links").none(),
-      "Create default cell partitioner.");
+      nb::arg("num_threads"), "Create a default cell partitioner.");
   m.def(
       "create_cell_partitioner",
       [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
@@ -360,16 +360,16 @@ void mesh(nb::module_& m)
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
              bool ghosting)>& part,
          dolfinx::mesh::GhostMode mode,
-         std::optional<std::int32_t> max_facet_to_cell_links)
-          -> part::impl::PythonCellPartitionFunction
+         std::optional<std::int32_t> max_facet_to_cell_links,
+         int num_threads) -> part::impl::PythonCellPartitionFunction
       {
         return part::impl::create_cell_partitioner_py(
             dolfinx::mesh::create_cell_partitioner(
                 mode, part::impl::create_partitioner_cpp(part),
-                max_facet_to_cell_links));
+                max_facet_to_cell_links, num_threads));
       },
       nb::arg("part"), nb::arg("ghost_mode"),
-      nb::arg("max_facet_to_cell_links").none(),
+      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"),
       "Create a cell partitioner from a graph partitioning function.");
 
   m.def(

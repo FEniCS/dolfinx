@@ -84,7 +84,7 @@ __all__ = [
 
 @singledispatch
 def create_cell_partitioner(
-    part: Callable, mode: GhostMode, max_facet_to_cell_links: int
+    part: Callable, mode: GhostMode, max_facet_to_cell_links: int, num_threads: int = 0
 ) -> Callable:
     """Create a function to partition a mesh.
 
@@ -95,11 +95,13 @@ def create_cell_partitioner(
             facet. Equal to 2 for non-branching manifold meshes.
             ``None`` corresponds to no upper bound on the number of
             possible connections.
+        num_threads: Number of CPU threads to use when creating. If 0,
+            threads are not spawned.
 
     Return:
         Partitioning function.
     """
-    return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links)
+    return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links, num_threads)
 
 
 @create_cell_partitioner.register(GhostMode)
