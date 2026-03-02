@@ -80,7 +80,10 @@ int main(int argc, char* argv[])
             u_hex->function_space()->mesh()->geometry(),
             *u_hex->function_space()->element(),
             *u_tet->function_space()->mesh(), cells, 1e-8);
-    u_hex->interpolate(*u_tet, cells, interpolation_data);
+    // Tolerance and maximum number of iterations for nonaffine pullbacks
+    const double eps = 1.0e4 * std::numeric_limits<T>::epsilon();
+    int max_iter = 15;
+    u_hex->interpolate(*u_tet, cells, eps, max_iter, interpolation_data);
 
 #ifdef HAS_ADIOS2
     io::VTXWriter<double> write_tet(mesh_tet->comm(), "u_tet.bp", {u_tet});
