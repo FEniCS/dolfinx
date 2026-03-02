@@ -312,13 +312,13 @@ assert isinstance(uh, fem.Function)
 assert problem.solver.getConvergedReason() > 0
 # -
 
-# We compute the absolute $L^2$-error between the computed
+# We compute the relative $L^2$-error between the computed
 # and exact solution:
 
-error = fem.form(ufl.inner(uh - g_D, ufl.conj(uh - g_D)) * ufl.dx)
+error = fem.form(ufl.inner(uh - g_D, uh - g_D) * ufl.dx)
 local_error = fem.assemble_scalar(error)
 glob_error = error.mesh.comm.allreduce(local_error, op=MPI.SUM)
-ref_scale = fem.form(ufl.inner(u_ex, ufl.conj(u_ex)) * ufl.dx)
+ref_scale = fem.form(ufl.inner(u_ex, u_ex) * ufl.dx)
 local_scale = fem.assemble_scalar(ref_scale)
 scale = ref_scale.mesh.comm.allreduce(local_scale, op=MPI.SUM)
 print("||u_h-u_ex||_{L^2}^2/||u_ex||_L^2^2: ", f"{glob_error / scale:.5e}")
