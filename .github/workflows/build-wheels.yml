@@ -183,7 +183,7 @@ jobs:
           python -m simple503 --base-url file:///shared simple
 
       - name: Upload simple503-test artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: simple503-test-${{ matrix.os }}
           path: simple/*
@@ -206,7 +206,7 @@ jobs:
             /bin/bash -l -c "pip install impi-rt fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Upload wheelhouse artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: wheelhouse-${{ matrix.os }}
           path: wheelhouse/*
@@ -216,7 +216,7 @@ jobs:
           python -m simple503 --base-url http://packages.fenicsproject.org/simple simple
 
       - name: Upload simple503 artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: simple503-${{ matrix.os }}
           path: simple/*
