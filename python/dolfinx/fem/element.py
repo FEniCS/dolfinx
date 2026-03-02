@@ -84,6 +84,8 @@ class CoordinateElement:
         self,
         x: npt.NDArray[np.float32] | npt.NDArray[np.float64],
         cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+        tol: float = 1.0e-6,
+        maxit: int = 15,
     ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
         """Pull points on the physical cell back to the reference cell.
 
@@ -96,11 +98,15 @@ class CoordinateElement:
                 shape ``(num_of_geometry_basis_functions,
                 geometrical_dimension)``. They can be created by accessing
                 ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
+            tol: Tolerance for convergence in Newton method for
+                nonaffine pullbacks.
+            maxit: Maximum number of Newton iterations for
+                nonaffine pullbacks.
 
         Returns:
             Reference coordinates of the physical points ``x``.
         """
-        return self._cpp_object.pull_back(x, cell_geometry)
+        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit)
 
     @property
     def variant(self) -> int:
