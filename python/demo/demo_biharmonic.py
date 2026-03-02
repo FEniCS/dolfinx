@@ -322,7 +322,7 @@ ref_scale = fem.form(ufl.inner(u_ex, ufl.conj(u_ex)) * ufl.dx)
 local_scale = fem.assemble_scalar(ref_scale)
 scale = ref_scale.mesh.comm.allreduce(local_scale, op=MPI.SUM)
 print("||u_h-u_ex||_{L^2}^2/||u_ex||_L^2^2: ", f"{glob_error / scale:.5e}")
-assert glob_error / scale < 1e-6
+assert default_real_type(glob_error) / default_real_type(scale) < 1e-6
 
 # The solution can be written to a VTX-file using {py:class}`VTXWriter
 # <dolfinx.io.VTXWriter>` which can be opened with ParaView
