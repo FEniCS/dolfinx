@@ -14,6 +14,8 @@
 
 # # Biharmonic equation
 #
+# Authors: Julius Herb, Ottar Hellan and Jørgen S. Dokken
+#
 # ```{admonition} Download sources
 # :class: download
 # * {download}`Python script <./demo_biharmonic.py>`
@@ -24,6 +26,7 @@
 # - Solve a linear partial differential equation
 # - Use a discontinuous Galerkin method
 # - Solve a fourth-order differential equation
+# - Use the method of manufactured solutions
 #
 # ## Equation and problem definition
 #
@@ -36,11 +39,40 @@
 # \nabla^{4} u = f \quad {\rm in} \ \Omega,
 # $$
 #
-# where $\nabla^{4} \equiv \nabla^{2} \nabla^{2}$ is the biharmonic
-# operator and $f$ is a prescribed source term.
+# where $\nabla^{4} \equiv \nabla^{2} \nabla^{2}=\Delta\Delta$ is the
+# biharmonic operator and $f$ is a prescribed source term.
 # To formulate a complete boundary value problem, the biharmonic equation
 # must be complemented by suitable boundary conditions.
 #
+#  ### Choice of boundary conditions
+# As we have a fourth order partial differential equation, we are required
+# to supply two boundary conditions.
+# There are two common sets of conditions that people use for the
+# biharmonic equation, namely the *clamped* condition and the
+# *simply supported* condition, see for instance {cite:t}`Gander2017bcs`.
+#
+# $$
+# \begin{aligned}
+# u =0 &\qquad \frac{\partial u}{\partial n} = 0
+# # \text{ on } \partial\Omega,\\
+# u =0 &\qquad \Delta u = 0 \text{ on } \partial \Omega.
+# \end{aligned}
+# $$
+#
+# In this demo we will consider the clamped boundary conditions
+#
+# $$
+# \begin{aligned}
+# u &= g_D \text{ on } \partial\Omega,\\
+# \frac{\partial u}{\partial n} &= g_N \text{ on } \partial\Omega,\\
+# \end{aligned}
+# $$
+#
+# as the simply supported boundary conditions reduces the system into two
+# sequential Poisson problems, named the Ciarlet-Raviart formulation
+# {cite}`ciarlet1974mixed`.
+
+
 # ### Weak formulation
 #
 # Multiplying the biharmonic equation by a test function and integrating
@@ -48,34 +80,20 @@
 # would require $H^{2}$ conforming (roughly $C^{1}$ continuous) basis
 # functions. To solve the biharmonic equation using Lagrange finite element
 # basis functions, the biharmonic equation can be split into two second-
-# order equations (see the Mixed Poisson demo for a mixed method for the
-# Poisson equation), or a variational formulation can be constructed that
-# imposes weak continuity of normal derivatives between finite element
-# cells. This demo uses a discontinuous Galerkin approach to impose
-# continuity of the normal derivative weakly.
+# order equations (see the [Mixed Poisson demo](./demo_mixed-poisson)
+# for an example of a mixed method), or a variational
+# formulation can be constructed that imposes weak continuity of normal
+# derivatives between finite element cells. This demo uses a discontinuous
+# Galerkin approach to impose continuity of the normal derivative weakly,
+# see for instance {cite:t}`babuska1973penalty` or
+# {cite:t}`Georgoulis2009biharmonic`.
 #
-# Consider a triangulation $\mathcal{T}$ of the domain $\Omega$, where
-# the set of interior facets is denoted by $\mathcal{E}_h^{\rm int}$.
-# Functions evaluated on opposite sides of a facet are indicated by the
-# subscripts $+$ and $-$.
-# Using the standard continuous Lagrange finite element space
-#
-# $$
-# V = \left\{v \in H^{1}_{0}(\Omega)\,:\, v \in P_{k}(K) \
-# \forall \ K \in \mathcal{T} \right\}
-# $$
-#
-# and considering the boundary conditions
-#
-# $$
-# \begin{align}
-# u &= 0 \quad {\rm on} \ \partial\Omega, \\
-# \nabla^{2} u &= 0 \quad {\rm on} \ \partial\Omega,
-# \end{align}
-# $$
-#
-# a weak formulation of the biharmonic problem reads: find $u \in V$ such
-# that
+# In this demo, we consider equation 3.20-3.21 from
+# {cite:t}`Georgoulis2009biharmonic`, a $\mathcal{C}^0$-interior penalty
+# method. However, instead of using a broken (discontinuous)
+# finite element space for the unknown $u$, we use a continuous space,
+# which simplifies the formulation to a weak formulation of the
+# biharmonic problem reads: find $u \in V_{g_D}$ such that
 #
 # $$
 # a(u,v)=L(v) \quad \forall \ v \in V,
@@ -84,49 +102,74 @@
 # where the bilinear form is
 #
 # $$
-# a(u, v) =
-# \sum_{K \in \mathcal{T}} \int_{K} \nabla^{2} u \nabla^{2} v \, {\rm d}x \
-# +\sum_{E \in \mathcal{E}_h^{\rm int}}\left(\int_{E} \frac{\alpha}{h_E}
-# [\!\![ \nabla u ]\!\!] [\!\![ \nabla v ]\!\!] \, {\rm d}s
-# - \int_{E} \left<\nabla^{2} u \right>[\!\![ \nabla v ]\!\!]  \, {\rm d}s
-# - \int_{E} [\!\![ \nabla u ]\!\!] \left<\nabla^{2} v \right> \,
-# {\rm d}s\right)
+# \begin{aligned}
+# a(u, v) &=
+# \sum_{K \in \mathcal{T}} \int_{K} \Delta u \Delta v ~{\rm d}x \\
+# &+\sum_{E \in \mathcal{E}_h^{\rm int}}\int_{E}\left(
+# - \left<\Delta u \right>[\!\![ \nabla v ]\!\!]
+# - [\!\![ \nabla u ]\!\!] \left<\nabla^{2} v \right>
+# + \frac{\beta}{h_E} [\!\![ \nabla u ]\!\!] [\!\![ \nabla v ]\!\!]
+# \right)~{\rm d}s\\
+# &+\sum_{E \in \mathcal{E}_h^{\rm ext}}\int_{E}\left(
+# - \Delta u  \nabla v \cdot n - \Delta v \nabla u \cdot n
+# + \frac{\beta}{h_E} \nabla u \cdot n \nabla v \cdot n
+# \right)~{\rm d}s
+# \end{aligned}
 # $$
 #
 # and the linear form is
 #
 # $$
-# L(v) = \int_{\Omega} fv \, {\rm d}x.
+# L(v) = \int_{\Omega} fv ~{\rm d}x
+# +\sum_{E \in \mathcal{E}_h^{\rm ext}}\int_{E}\left(
+# -g_N \Delta v + \frac{\beta}{h_E} g_N \nabla v \cdot n
+# \right) ~{\rm d}s.
 # $$
 #
 # Furthermore, $\left< u \right> = \frac{1}{2} (u_{+} + u_{-})$,
 # $[\!\![ w ]\!\!]  = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}$,
-# $\alpha \ge 0$ is a penalty parameter and
-# $h_E$ is a measure of the cell size.
+# $\beta \ge 0$ is a penalty parameter and
+# $h_E$ is a measure of the cell size. We use the penalty parameter
+# described in {cite:t}`Bringmann2024penalty`.
 #
-# The input parameters for this demo are defined as follows:
+# where $K$ is an element of the mesh, while $\mathcal{E}_h^{\rm int}$
+# is the collection of all interior facets, while
+# $\mathcal{E}_h^{\rm ext}$ is the set of exterior facets.
 #
-# - $\Omega = [0,1] \times [0,1]$ (a unit square)
-# - $\alpha = 8.0$ (penalty parameter)
-# - $f = 4.0 \pi^4\sin(\pi x)\sin(\pi y)$ (source term)
+# ```{note}
+# Note that the Dirichlet condition for $u$ will be enforced strongly
+# in this example.
+# ```
 #
 # ## Implementation
 #
+# We follow the example of {cite:t}`Georgoulis2009biharmonic` and use the
+# method of manufactured solutions to construct a $f$, $g_D$, $g_N$ that
+# satisfies
+#
+# $$
+# u(x, y) = \sin (2\pi x) \sin (2 \pi y) \text{ in } [0, 1] \times [0, 1].
+# $$
+#
 # We first import the modules and functions that the program uses:
-
 
 # +
 from pathlib import Path
 
 from mpi4py import MPI
-from petsc4py.PETSc import ScalarType  # type: ignore
+
+import numpy as np
 
 import ufl
-from dolfinx import fem, io, mesh, plot
+from dolfinx import default_real_type, default_scalar_type, fem, has_adios2, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
 
+if np.issubdtype(default_real_type, np.float32):  # type: ignore
+    print("float32 not yet supported for this demo.")
+    exit(0)
 # -
+
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
@@ -134,20 +177,27 @@ from dolfinx.mesh import CellType, GhostMode
 # finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # $V$ on the mesh.
 
-msh = mesh.create_rectangle(
-    comm=MPI.COMM_WORLD,
-    points=((0.0, 0.0), (1.0, 1.0)),
-    n=(32, 32),
+N = 32
+msh = mesh.create_unit_square(
+    MPI.COMM_WORLD,
+    N,
+    N,
     cell_type=CellType.triangle,
     ghost_mode=GhostMode.shared_facet,
 )
-V = fem.functionspace(msh, ("Lagrange", 2))
+
+# As noted in {cite:t}`Georgoulis2009biharmonic` second order Lagrange
+# elements yield sub-optimal convergence, and therefore we choose to use
+# third order elements
+
+degree = 3
+V = fem.functionspace(msh, ("Lagrange", degree))
 
 # The second argument to {py:func}`functionspace
 # <dolfinx.fem.functionspace>` is a tuple consisting of `(family,
 # degree)`, where `family` is the finite element family, and `degree`
 # specifies the polynomial degree. in this case `V` consists of
-# second-order, continuous Lagrange finite element functions.
+# third-order, continuous Lagrange finite element functions.
 # For further details of how one can specify
 # finite elements as tuples, see {py:class}`ElementMetaData
 # <dolfinx.fem.ElementMetaData>`.
@@ -173,15 +223,24 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
 # {py:class}`DirichletBC <dolfinx.fem.DirichletBC>`
-# class that represents the boundary condition. In this case, we impose
-# Dirichlet boundary conditions with value $0$ on the entire boundary
-# $\partial\Omega$.
+# class that represents the boundary condition.
 
-bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
+# We define the manufactured solution and interpolate it into the function
+# space of our unknown to apply it as a strong boundary condition
+
+
+# +
+x = ufl.SpatialCoordinate(msh)
+u_ex = ufl.sin(2 * ufl.pi * x[0]) ** 2 * ufl.sin(2 * ufl.pi * x[1]) ** 2
+g_D_expr = fem.Expression(u_ex, V.element.interpolation_points)
+g_D = fem.Function(V)
+g_D.interpolate(g_D_expr)
+bc = fem.dirichletbc(value=g_D, dofs=dofs)
+# -
 
 # Next, we express the variational problem using UFL.
 #
-# First, the penalty parameter $\alpha$ is defined. In addition, we define
+# First, the penalty parameter $\beta$ is defined. In addition, we define
 # a variable `h` for the cell diameter $h_E$, a variable `n`for the
 # outward-facing normal vector $n$ and a variable `h_avg` for the
 # average size of cells sharing a facet
@@ -189,17 +248,21 @@ bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 # `('+')` and `('-')` restricts a function to the `('+')` and `('-')`
 # sides of a facet.
 
-alpha = ScalarType(8.0)
+a = fem.Constant(msh, default_scalar_type(4.0))
+vol = ufl.CellVolume(msh)
 h = ufl.CellDiameter(msh)
+beta = 3.0 * a * degree * (degree - 1) / 8.0 * h("+") ** 2 * ufl.avg(1 / vol)
+beta_boundary = 3.0 * a * degree * (degree - 1) * h**2 / vol
 n = ufl.FacetNormal(msh)
 h_avg = (h("+") + h("-")) / 2.0
 
 # After that, we can define the variational problem consisting of the
-# bilinear form $a$ and the linear form $L$. The source term is prescribed
-# as $f = 4.0 \pi^4\sin(\pi x)\sin(\pi y)$. Note that with `dS`,
-# integration is carried out over all the interior facets
-# $\mathcal{E}_h^{\rm int}$, whereas with `ds` it would be only the facets
-# on the boundary of the domain, i.e. $\partial\Omega$. The jump operator
+# bilinear form $a$ and the linear form $L$. We use {py:mod}`ufl` to derive
+# the manufactured $f$ and $g_N$.
+# Note that with `dS`, integration is carried out over all the interior
+# facets $\mathcal{E}_h^{\rm int}$, whereas with `ds` it would be only
+# the facets on the boundary of the domain, i.e. $\partial\Omega$.
+# The jump operator
 # $[\!\![ w ]\!\!] = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}$ w.r.t. the
 # outward-facing normal vector $n$ is in UFL available as `jump(w, n)`.
 
@@ -207,16 +270,23 @@ h_avg = (h("+") + h("-")) / 2.0
 # Define variational problem
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
-x = ufl.SpatialCoordinate(msh)
-f = 4.0 * ufl.pi**4 * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
+f = ufl.div(ufl.grad(ufl.div(ufl.grad(u_ex))))
+g_N = ufl.dot(ufl.grad(u_ex), n)
 
 a = (
     ufl.inner(ufl.div(ufl.grad(u)), ufl.div(ufl.grad(v))) * ufl.dx
     - ufl.inner(ufl.avg(ufl.div(ufl.grad(u))), ufl.jump(ufl.grad(v), n)) * ufl.dS
     - ufl.inner(ufl.jump(ufl.grad(u), n), ufl.avg(ufl.div(ufl.grad(v)))) * ufl.dS
-    + alpha / h_avg * ufl.inner(ufl.jump(ufl.grad(u), n), ufl.jump(ufl.grad(v), n)) * ufl.dS
+    + beta / h_avg * ufl.inner(ufl.jump(ufl.grad(u), n), ufl.jump(ufl.grad(v), n)) * ufl.dS
+    - ufl.inner(ufl.div(ufl.grad(u)), ufl.dot(ufl.grad(v), n)) * ufl.ds
+    - ufl.inner(ufl.dot(ufl.grad(u), n), ufl.div(ufl.grad(v))) * ufl.ds
+    + beta_boundary / h * ufl.inner(ufl.dot(ufl.grad(u), n), ufl.dot(ufl.grad(v), n)) * ufl.ds
 )
-L = ufl.inner(f, v) * ufl.dx
+L = (
+    ufl.inner(f, v) * ufl.dx
+    - ufl.inner(g_N, ufl.div(ufl.grad(v))) * ufl.ds
+    + beta_boundary / h * ufl.inner(g_N, ufl.dot(ufl.grad(v), n)) * ufl.ds
+)
 # -
 
 # We create a {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
@@ -225,28 +295,43 @@ L = ufl.inner(f, v) * ufl.dx
 # case we use a direct (LU) solver. The {py:func}`solve
 # <dolfinx.fem.petsc.LinearProblem.solve>` will compute a solution.
 
+# +
 problem = LinearProblem(
     a,
     L,
     bcs=[bc],
     petsc_options_prefix="demo_biharmonic_",
-    petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
+    petsc_options={
+        "ksp_type": "preonly",
+        "pc_type": "lu",
+    },
 )
 uh = problem.solve()
+
 assert isinstance(uh, fem.Function)
 assert problem.solver.getConvergedReason() > 0
+# -
 
-# The solution can be written to a  {py:class}`XDMFFile
-# <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt
+# We compute the absolute $L^2$-error between the computed
+# and exact solution:
 
-out_folder = Path("out_biharmonic")
-out_folder.mkdir(parents=True, exist_ok=True)
-with io.XDMFFile(msh.comm, out_folder / "biharmonic.xdmf", "w") as file:
-    V1 = fem.functionspace(msh, ("Lagrange", 1))
-    u1 = fem.Function(V1)
-    u1.interpolate(uh)
-    file.write_mesh(msh)
-    file.write_function(u1)
+error = fem.form(ufl.inner(uh - g_D, ufl.conj(uh - g_D)) * ufl.dx)
+local_error = fem.assemble_scalar(error)
+glob_error = error.mesh.comm.allreduce(local_error, op=MPI.SUM)
+ref_scale = fem.form(ufl.inner(u_ex, ufl.conj(u_ex)) * ufl.dx)
+local_scale = fem.assemble_scalar(ref_scale)
+scale = ref_scale.mesh.comm.allreduce(local_scale, op=MPI.SUM)
+print("||u_h-u_ex||_{L^2}^2/||u_ex||_L^2^2: ", f"{glob_error / scale:.5e}")
+assert default_real_type(glob_error) / default_real_type(scale) < 1e-6
+
+# The solution can be written to a VTX-file using {py:class}`VTXWriter
+# <dolfinx.io.VTXWriter>` which can be opened with ParaView
+
+if has_adios2:
+    out_folder = Path("out_biharmonic")
+    out_folder.mkdir(parents=True, exist_ok=True)
+    with io.VTXWriter(msh.comm, out_folder / "biharmonic.bp", [uh]) as file:
+        file.write(0.0)
 
 # and displayed using [pyvista](https://docs.pyvista.org/).
 
@@ -269,3 +354,8 @@ try:
 except ModuleNotFoundError:
     print("'pyvista' is required to visualise the solution")
     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
+# -
+
+# ## References
+# ```{bibliography}
+# ```

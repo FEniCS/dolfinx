@@ -46,6 +46,7 @@ docs = [
       "sphinx",
       "sphinx_rtd_theme",
       "sphinx_codeautolink[ipython]",
+      "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
 ]
 lint = ["ruff>=0.2.0"]
