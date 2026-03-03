@@ -699,6 +699,23 @@ def derivative_block(
     \\frac{\\partial F}{\\partial u}[\\delta u]`. This is identical to
     calling ``ufl.derivative`` directly.
     """  # noqa: D301
+    
+    if isinstance(F, ufl.Form) and not F.arguments():  # if F is a functional
+        if isinstance(u, Function):
+            if du is None:
+                du = ufl.TestFunction(u.function_space)
+            elif not isinstance(du, ufl.Argument):
+                raise ValueError("When F is a functional of a single function, du must be a ufl.Argument")
+        elif all([isinstance(u_i, Function) for u_i in u]):
+            if du is None:
+                du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
+            elif len(u) != len(du) or not all([isinstance(du_i, ufl.Argument) for du_i in du]):
+                raise ValueError("When F is a functional of N functions, du must be a sequence containing N ufl.Argument")
+        else:
+            raise ValueError("u must be a function or sequence of functions")
+        return ufl.extract_blocks(ufl.derivative(F, u, du))
+
+
     if isinstance(F, ufl.Form):
         if not isinstance(u, Function):
             raise ValueError("Must provide a single function when F is a UFL form")
