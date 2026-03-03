@@ -691,7 +691,7 @@ def derivative_block(
     This is commonly used to derive a block Jacobian from a block
     residual.
 
-    If ``F_i`` is a list of forms, the Jacobian is a list of lists with
+    If ``F`` is a list of rank one forms, the Jacobian is a list of lists with
     :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using
     ``ufl.derivative`` called component-wise.
 
