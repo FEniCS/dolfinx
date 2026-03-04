@@ -686,19 +686,45 @@ def derivative_block(
     u: Function | Sequence[Function],
     du: ufl.Argument | Sequence[ufl.Argument] | None = None,
 ) -> ufl.Form | Sequence[Sequence[ufl.Form]]:
-    """Return the UFL derivative of a (list of) UFL rank one form(s).
+    """Return the UFL derivative of a UFL rank zero form, or the UFL derivative
+    of a (list of) rank one form(s).
 
-    This is commonly used to derive a block Jacobian from a block
-    residual.
+    This is commonly used to derive a block residual from a functional, or to
+    derive a block Jacobian from a block residual.
 
-    If ``F_i`` is a list of forms, the Jacobian is a list of lists with
-    :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using
-    ``ufl.derivative`` called component-wise.
+    If ``F`` is a univariate rank zero form, the residual is computed as
+    :math:`R = \\frac{\\partial F}{\\partial u}[\\delta u]`.
 
-    If ``F`` is a form, the Jacobian is computed as :math:`J =
-    \\frac{\\partial F}{\\partial u}[\\delta u]`. This is identical to
-    calling ``ufl.derivative`` directly.
+    If ``F`` is a multivariate rank zero form, the residual is a list with
+    :math:`R_i = \\frac{\\partial F}{\\partial u_i}[\\delta u_i]`, where 
+    :math:`\\delta u_i` is a test subfunction of the mixed space defined by u.
+
+    If ``F`` is a rank one form, the Jacobian is computed as :math:`J =
+    \\frac{\\partial F}{\\partial u}[\\delta u]`.
+
+    All three operations above are identical to calling ``ufl.derivative`` directly.
+
+    If ``F`` is a list of rank one forms, the Jacobian is a list of lists with
+    :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using ``ufl.derivative``
+    called component-wise.
     """  # noqa: D301
+    
+    if isinstance(F, ufl.Form) and not F.arguments():  # if F is a functional
+        if isinstance(u, Function):
+            if du is None:
+                du = ufl.TestFunction(u.function_space)
+            elif not isinstance(du, ufl.Argument):
+                raise ValueError("When F is a functional of a single function, du must be a ufl.Argument")
+        elif all([isinstance(u_i, Function) for u_i in u]):
+            if du is None:
+                du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
+            elif len(u) != len(du) or not all([isinstance(du_i, ufl.Argument) for du_i in du]):
+                raise ValueError("When F is a functional of N functions, du must be a sequence containing N ufl.Argument")
+        else:
+            raise ValueError("u must be a function or sequence of functions")
+        return ufl.extract_blocks(ufl.derivative(F, u, du))
+
+
     if isinstance(F, ufl.Form):
         if not isinstance(u, Function):
             raise ValueError("Must provide a single function when F is a UFL form")
