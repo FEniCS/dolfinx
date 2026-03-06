@@ -84,7 +84,7 @@ __all__ = [
 
 @singledispatch
 def create_cell_partitioner(
-    part: Callable, mode: GhostMode, max_facet_to_cell_links: int
+    part: Callable, mode: GhostMode, max_facet_to_cell_links: int, num_threads: int = 0
 ) -> Callable:
     """Create a function to partition a mesh.
 
@@ -95,15 +95,17 @@ def create_cell_partitioner(
             facet. Equal to 2 for non-branching manifold meshes.
             ``None`` corresponds to no upper bound on the number of
             possible connections.
+        num_threads: Number of CPU threads to use when creating. If 0,
+            threads are not spawned.
 
     Return:
         Partitioning function.
     """
-    return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links)
+    return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links, num_threads)
 
 
 @create_cell_partitioner.register(GhostMode)
-def _(mode: GhostMode, max_facet_to_cell_links: int) -> Callable:
+def _(mode: GhostMode, max_facet_to_cell_links: int, num_threads: int = 0) -> Callable:
     """Create a function to partition a mesh.
 
     Args:
@@ -112,11 +114,13 @@ def _(mode: GhostMode, max_facet_to_cell_links: int) -> Callable:
             facet. Equal to 2 for non-branching manifold meshes.
             ``None`` corresponds to no upper bound on the number of
             possible connections.
+        num_threads: Number of CPU threads to use when creating. If 0,
+            threads are not spawned.
 
     Return:
         Partitioning function.
     """
-    return _cpp.mesh.create_cell_partitioner(mode, max_facet_to_cell_links)
+    return _cpp.mesh.create_cell_partitioner(mode, max_facet_to_cell_links, num_threads)
 
 
 class Topology:
@@ -763,6 +767,7 @@ def create_mesh(
     x: npt.NDArray[np.floating],
     partitioner: Callable | None = None,
     max_facet_to_cell_links: int = 2,
+    num_threads: int = 0,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -778,6 +783,8 @@ def create_mesh(
             cells across MPI ranks.
         max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
+        num_threads: Number of CPU threads to use when creating the
+            mesh. If 0, threads are not spawned.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -830,7 +837,7 @@ def create_mesh(
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
-        comm, cells, cmap._cpp_object, x, partitioner, max_facet_to_cell_links
+        comm, cells, cmap._cpp_object, x, partitioner, max_facet_to_cell_links, num_threads
     )
 
     return Mesh(msh, domain)  # type: ignore
@@ -1049,7 +1056,7 @@ def create_rectangle(
         A mesh of a rectangle.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = create_cell_partitioner(ghost_mode, 2)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1119,6 +1126,7 @@ def create_box(
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
     partitioner=None,
+    num_threads: int = 0,
 ) -> Mesh:
     """Create a box mesh.
 
@@ -1133,12 +1141,14 @@ def create_box(
         ghost_mode: The ghost mode used in the mesh partitioning.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
+        num_threads: Number of threads to use when creating the mesh. If
+            0, no threads are launched..
 
     Returns:
         A mesh of a box domain.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = create_cell_partitioner(ghost_mode, 2, num_threads)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
