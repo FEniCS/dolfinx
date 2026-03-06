@@ -532,12 +532,14 @@ void declare_objects(nb::module_& m, std::string type)
           [](dolfinx::fem::Function<T, U>& self,
              const dolfinx::fem::Function<T, U>& u,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+             double tol, int maxit,
              const dolfinx::geometry::PointOwnershipData<U>& interpolation_data)
           {
-            self.interpolate(u, std::span(cells.data(), cells.size()),
-                             interpolation_data);
+            self.interpolate(u, std::span(cells.data(), cells.size()), tol,
+                             maxit, interpolation_data);
           },
           nb::arg("u"), nb::arg("cells"), nb::arg("interpolation_data"),
+          nb::arg("tol"), nb::arg("maxit"),
           "Interpolate a finite element Function on non-matching meshes")
       // NOLINTBEGIN(performance-no-int-to-ptr)
       .def(
@@ -621,16 +623,16 @@ void declare_objects(nb::module_& m, std::string type)
           [](const dolfinx::fem::Function<T, U>& self,
              nb::ndarray<const U, nb::ndim<2>, nb::c_contig> x,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
-             nb::ndarray<T, nb::ndim<2>, nb::c_contig> u)
+             nb::ndarray<T, nb::ndim<2>, nb::c_contig> u, double tol, int maxit)
           {
             // TODO: handle 1d case
             self.eval(std::span(x.data(), x.size()), {x.shape(0), x.shape(1)},
                       std::span(cells.data(), cells.size()),
                       std::span<T>(u.data(), u.size()),
-                      {u.shape(0), u.shape(1)});
+                      {u.shape(0), u.shape(1)}, tol, maxit);
           },
-          nb::arg("x"), nb::arg("cells"), nb::arg("values"),
-          "Evaluate Function")
+          nb::arg("x"), nb::arg("cells"), nb::arg("values"), nb::arg("tol"),
+          nb::arg("maxit"), "Evaluate Function")
       .def_prop_ro("function_space",
                    &dolfinx::fem::Function<T, U>::function_space);
 
@@ -1018,7 +1020,8 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
           "pull_back",
           [](const dolfinx::fem::CoordinateElement<T>& self,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> x,
-             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_geometry)
+             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_geometry,
+             double tol, int maxit)
           {
             std::size_t num_points = x.shape(0);
             std::size_t gdim = x.shape(1);
@@ -1060,12 +1063,13 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
               self.pull_back_affine(X, K, x0, _x);
             }
             else
-              self.pull_back_nonaffine(X, _x, g);
+              self.pull_back_nonaffine(X, _x, g, tol, maxit);
 
             return dolfinx_wrappers::as_nbarray(std::move(Xb),
                                                 {num_points, tdim});
           },
-          nb::arg("x"), nb::arg("cell_geometry"));
+          nb::arg("x"), nb::arg("cell_geometry"), nb::arg("tol"),
+          nb::arg("maxit"));
 }
 
 template <typename T>
