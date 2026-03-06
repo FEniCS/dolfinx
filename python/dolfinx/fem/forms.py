@@ -713,13 +713,13 @@ def derivative_block(
         if isinstance(u, Function):
             if du is None:
                 du = ufl.TestFunction(u.function_space)
-            elif not isinstance(du, ufl.Argument):
-                raise ValueError("When F is a functional of a single function, du must be a ufl.Argument")
+            elif not (isinstance(du, ufl.Argument) and du.number() == 0):
+                raise ValueError("When F is a functional of a single function, du must be a test function")
         elif all([isinstance(u_i, Function) for u_i in u]):
             if du is None:
                 du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
-            elif len(u) != len(du) or not all([isinstance(du_i, ufl.Argument) for du_i in du]):
-                raise ValueError("When F is a functional of N functions, du must be a sequence containing N ufl.Argument")
+            elif len(u) != len(du) or not all([isinstance(du_i, ufl.Argument) and du_i.number() == 0 for du_i in du]):
+                raise ValueError("When F is a functional of N functions, du must be a sequence containing N test functions")
         else:
             raise ValueError("u must be a function or sequence of functions")
         return ufl.extract_blocks(ufl.derivative(F, u, du))
