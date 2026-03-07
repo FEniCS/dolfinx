@@ -702,10 +702,10 @@ def derivative_block(
     If ``F`` is a rank one form, the Jacobian is computed as :math:`J =
     \\frac{\\partial F}{\\partial u}[\\delta u]`.
 
-    All three operations above are identical to calling ``ufl.derivative`` directly.
+    All three operations above are identical to calling {py:func}`ufl.derivative` directly.
 
     If ``F`` is a list of rank one forms, the Jacobian is a list of lists with
-    :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using ``ufl.derivative``
+    :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using {py:func}`ufl.derivative`
     called component-wise.
     """  # noqa: D301
     
