@@ -141,6 +141,19 @@ with [various
 versions](https://packages.debian.org/search?keywords=python3-dolfinx&searchon=names&exact=1&suite=all&section=all)
 of Debian. Install with `apt-get install fenicsx`.
 
+#### Nix packages
+
+[Nix](https://nixos.org/) is a tool that takes a unique
+approach to package management and system configuration.
+
+To create a python venv with system-site dolfinxs and 
+pyvista from nixpkgs:
+
+```shell
+nix-shell -p "python3.withPackages (ps: with ps; [ fenics-dolfinx pyvista ])" \
+  --run "python -m venv --system-site-packages .venv"
+```
+
 #### Docker images
 
 To run a Docker image with the latest release of DOLFINx:
