@@ -186,6 +186,28 @@ The Docker images support arm64 and amd64 architectures. For a full list
 of tags, including versioned images, see
 <https://hub.docker.com/u/dolfinx>
 
+#### Nix
+
+[Nix](https://nixos.org/) is a tool that takes a unique
+approach to package management and system configuration.
+It can be installed on most linux distro and macos,
+see https://nixos.org/download/ for installation guide.
+
+To create a python venv with system-site dolfinxs and pyvista:
+
+```shell
+nix-shell -p "python3.withPackages (ps: with ps; [ fenics-dolfinx pyvista ])" \
+  --run "python -m venv --system-site-packages .venv"
+```
+
+To use the `mpiexec` command from nixpkgs:
+```shell
+# nix flake disabled
+nix-env -iA mpi
+# nix flake enabled
+nix profile install mpi
+```
+
 ## Contributing
 
 Information about how to contribute to DOLFINx can be found
