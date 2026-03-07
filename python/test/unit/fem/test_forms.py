@@ -185,7 +185,7 @@ def test_derivative_block():
     R = derivative_block(F, [f0, f1], [v0, v1])
     assert all([isinstance(R_i, ufl_form) and len(R_i.arguments()) == 1 for R_i in R])
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         derivative_block(R, [f0, f1], [u0])  # third argument has wrong length
 
     J = derivative_block(R, [f0, f1])

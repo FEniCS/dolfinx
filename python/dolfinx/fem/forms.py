@@ -732,10 +732,11 @@ def derivative_block(
             du = ufl.TrialFunction(u.function_space)
         return ufl.derivative(F, u, du)
     else:
-        assert all([isinstance(Fi, ufl.Form) for Fi in F]), "F must be a sequence of UFL forms"
-        assert len(F) == len(u), "Number of forms and functions must be equal"
+        if not all([isinstance(Fi, ufl.Form) for Fi in F]):
+            raise ValueError("F must be a sequence of UFL forms")
         if du is not None:
-            assert len(F) == len(du), "Number of forms and du must be equal"
+            if len(F) != len(du)
+                raise ValueError("Number of forms and du must be equal")
         else:
             du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
         return [[ufl.derivative(Fi, u_j, du_j) for u_j, du_j in zip(u, du)] for Fi in F]
