@@ -15,9 +15,11 @@ import basix
 import basix.ufl
 import dolfinx
 from dolfinx.fem import IntegralType, extract_function_spaces, form, functionspace
-from dolfinx.fem.forms import form_cpp_class
+from dolfinx.fem.forms import form_cpp_class, derivative_block
 from dolfinx.mesh import create_unit_square
-from ufl import Measure, SpatialCoordinate, TestFunction, TrialFunction, dx, inner
+from ufl import Measure, SpatialCoordinate, TestFunction, TrialFunction, dx, inner, Form as ufl_form, TrialFunctions, TestFunctions, MixedFunctionSpace
+
+from collections.abc import Sequence
 
 
 def test_extract_forms():
@@ -132,3 +134,62 @@ def test_multiple_measures_one_subdomain_data():
     J_local = dolfinx.fem.assemble_scalar(J)
     J_global = comm.allreduce(J_local, op=MPI.SUM)
     assert np.isclose(J_global, 1 / 3 + 1 / 2)
+
+
+def test_derivative_block():
+    """Test the function derivative_block"""
+    mesh = dolfinx.mesh.create_unit_interval(MPI.COMM_WORLD, 10)
+    V0 = functionspace(mesh, ("Lagrange", 1))
+    V1 = functionspace(mesh, ("Lagrange", 2))
+    V = MixedFunctionSpace(V0, V1)
+
+    f0, f1 = dolfinx.fem.Function(V0), dolfinx.fem.Function(V1)
+    v0, v1 = TestFunctions(V)
+    u0, u1 = TrialFunctions(V)
+
+
+    F = f0**2 * dx  # univariate functional
+
+    with pytest.raises(ValueError):
+        derivative_block(F, f0, u0)  # third argument not a test function
+
+    R = derivative_block(F, f0)
+    assert isinstance(R, ufl_form) and len(R.arguments()) == 1
+
+    R = derivative_block(F, f0, v0)
+    assert isinstance(R, Sequence) and len(R) == 1
+    assert isinstance(R[0], ufl_form) and len(R[0].arguments()) == 1
+
+    v0_no_mixed_space = TestFunction(V0)
+    R = derivative_block(F, f0, v0_no_mixed_space)
+    assert isinstance(R, ufl_form) and len(R.arguments()) == 1
+
+    J = derivative_block(R, f0)
+    assert isinstance(J, ufl_form) and len(J.arguments()) == 2
+
+    J = derivative_block(R, f0, u0)
+    assert isinstance(J, ufl_form) and len(J.arguments()) == 2
+
+
+    F = f0**2 * f1 * dx  # multivariate functional
+
+    with pytest.raises(ValueError):
+        derivative_block(F, [f0, f1], [v0])  # third argument has wrong length
+
+    with pytest.raises(ValueError):
+        derivative_block(F, [f0, f1], [u0, v1])  # third argument contains a non test function
+
+    R = derivative_block(F, [f0, f1])
+    assert all([isinstance(R_i, ufl_form) and len(R_i.arguments()) == 1 for R_i in R])
+
+    R = derivative_block(F, [f0, f1], [v0, v1])
+    assert all([isinstance(R_i, ufl_form) and len(R_i.arguments()) == 1 for R_i in R])
+
+    with pytest.raises(AssertionError):
+        derivative_block(R, [f0, f1], [u0])  # third argument has wrong length
+
+    J = derivative_block(R, [f0, f1])
+    assert all([isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J for J_ij in J_i])
+
+    J = derivative_block(R, [f0, f1], [u0, u1])
+    assert all([isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J for J_ij in J_i])
