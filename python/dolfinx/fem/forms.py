@@ -713,32 +713,54 @@ def derivative_block(
         if isinstance(u, Function):
             if du is None:
                 du = ufl.TestFunction(u.function_space)
-            elif not (isinstance(du, ufl.Argument) and du.number() == 0):
-                raise ValueError("When F is a functional of a single function, du must be a test function")
-        elif all([isinstance(u_i, Function) for u_i in u]):
+            elif not isinstance(du, ufl.Argument) or du.number() != 0:
+                raise ValueError(
+                    "When F is a functional of a single function, du must be a test function"
+                )
+        elif isinstance(u, Sequence):
+            if not all([isinstance(u_i, Function) for u_i in u]):
+                raise ValueError("u contains some non ufl.Function elements")
             if du is None:
                 du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
-            elif len(u) != len(du) or not all([isinstance(du_i, ufl.Argument) and du_i.number() == 0 for du_i in du]):
-                raise ValueError("When F is a functional of N functions, du must be a sequence containing N test functions")
+            elif (not isinstance(du, Sequence) 
+                    or not len(u) == len(du) 
+                    or not all([isinstance(du_i, ufl.Argument) and du_i.number() == 0 for du_i in du])):
+                    raise ValueError(
+                        "When F is a functional of N functions, du must be a sequence "
+                        "containing N test functions"
+                    )
         else:
             raise ValueError("u must be a function or sequence of functions")
         return ufl.extract_blocks(ufl.derivative(F, u, du))
 
-
-    if isinstance(F, ufl.Form):
+    elif isinstance(F, ufl.Form) and len(F.arguments()) == 1:
         if not isinstance(u, Function):
-            raise ValueError("Must provide a single function when F is a UFL form")
+            raise ValueError("When F is a rank-one UFL form, u must be a ufl.Function")
         if du is None:
             du = ufl.TrialFunction(u.function_space)
-        elif not (isinstance(du, ufl.Argument) and du.number() == 1):
+        elif not isinstance(du, ufl.Argument) or du.number() != 1:
             raise ValueError("When F is a rank-one UFL form, du must be a trial function")
         return ufl.derivative(F, u, du)
-    else:
-        if not all([isinstance(Fi, ufl.Form) for Fi in F]):
-            raise ValueError("F must be a sequence of UFL forms")
-        if du is not None:
-            if len(F) != len(du) or not all([isinstance(du_i, ufl.Argument) and du_i.number() == 1 for du_i in du]):
-                raise ValueError("Number of forms and du must be equal, and du must only contain trial functions")
-        else:
+    elif isinstance(F, Sequence):
+        if not all([isinstance(F_i, ufl.Form) and len(F_i.arguments()) == 1  for F_i in F]):
+            raise ValueError("F contains some non rank-one ufl.Form elements")
+        if not isinstance(u, Sequence):
+            raise ValueError("When F is a sequence, u must be a sequence")
+        if not all([isinstance(u_i, Function) for u_i in u]):
+            raise ValueError("u contains some non ufl.Function elements")
+        if du is None:
             du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
+        elif (not isinstance(du, Sequence)
+                or not len(u) == len(du)
+                or not all([isinstance(du_i, ufl.Argument) and du_i.number() == 1 for du_i in du])):
+                raise ValueError(
+                    "When F is a list of N rank-one forms, du must be a sequence "
+                    "containing N trial functions"
+                )
         return [[ufl.derivative(Fi, u_j, du_j) for u_j, du_j in zip(u, du)] for Fi in F]
+    
+    else:
+        raise ValueError(
+            "F must be either a UFL form (with rank zero or one), or a sequence of "
+            "rank-one UFL forms."
+        )

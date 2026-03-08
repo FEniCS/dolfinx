@@ -151,6 +151,9 @@ def test_derivative_block():
     F = f0**2 * dx  # univariate functional
 
     with pytest.raises(ValueError):
+        derivative_block(F, u0, v0)  # second argument not a ufl.Function
+
+    with pytest.raises(ValueError):
         derivative_block(F, f0, u0)  # third argument not a test function
 
     R = derivative_block(F, f0)
@@ -165,7 +168,10 @@ def test_derivative_block():
     assert isinstance(R, ufl_form) and len(R.arguments()) == 1
 
     with pytest.raises(ValueError):
-        J = derivative_block(R, f0, f1) # third argument wrongly isn't a trial function
+        derivative_block(R, u0, u0) # second argument not a ufl.Function
+
+    with pytest.raises(ValueError):
+        derivative_block(R, f0, v0) # third argument not a trial function
 
     J = derivative_block(R, f0)
     assert isinstance(J, ufl_form) and len(J.arguments()) == 2
@@ -182,6 +188,12 @@ def test_derivative_block():
     with pytest.raises(ValueError):
         derivative_block(F, [f0, f1], [u0, v1])  # third argument contains a non test function
 
+    with pytest.raises(ValueError):
+        derivative_block(F, f0, [u0, u1])  # second argument not a sequence
+
+    with pytest.raises(ValueError):
+        derivative_block(F, [f0, f1], u0)  # third argument not a sequence
+
     R = derivative_block(F, [f0, f1])
     assert all([isinstance(R_i, ufl_form) and len(R_i.arguments()) == 1 for R_i in R])
 
@@ -192,7 +204,10 @@ def test_derivative_block():
         derivative_block(R, [f0, f1], [u0])  # third argument has wrong length
 
     with pytest.raises(ValueError):
-        J = derivative_block(R, [f0, f1], [u0, f1])  # third argument contains a non-trial function
+        derivative_block(R, [f0, u1], [u0, u1])  # second argument contains a non ufl.Function
+
+    with pytest.raises(ValueError):
+        derivative_block(R, [f0, f1], u0) # third argument not a sequence
 
     J = derivative_block(R, [f0, f1])
     assert all([isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J for J_ij in J_i])
