@@ -164,6 +164,9 @@ def test_derivative_block():
     R = derivative_block(F, f0, v0_no_mixed_space)
     assert isinstance(R, ufl_form) and len(R.arguments()) == 1
 
+    with pytest.raises(ValueError):
+        J = derivative_block(R, f0, f1) # third argument wrongly isn't a trial function
+
     J = derivative_block(R, f0)
     assert isinstance(J, ufl_form) and len(J.arguments()) == 2
 
@@ -187,6 +190,9 @@ def test_derivative_block():
 
     with pytest.raises(ValueError):
         derivative_block(R, [f0, f1], [u0])  # third argument has wrong length
+
+    with pytest.raises(ValueError):
+        J = derivative_block(R, [f0, f1], [u0, f1])  # third argument contains a non-trial function
 
     J = derivative_block(R, [f0, f1])
     assert all([isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J for J_ij in J_i])

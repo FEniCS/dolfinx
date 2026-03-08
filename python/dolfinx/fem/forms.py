@@ -730,13 +730,15 @@ def derivative_block(
             raise ValueError("Must provide a single function when F is a UFL form")
         if du is None:
             du = ufl.TrialFunction(u.function_space)
+        elif not (isinstance(du, ufl.Argument) and du.number() == 1):
+            raise ValueError("When F is a rank-one UFL form, du must be a trial function")
         return ufl.derivative(F, u, du)
     else:
         if not all([isinstance(Fi, ufl.Form) for Fi in F]):
             raise ValueError("F must be a sequence of UFL forms")
         if du is not None:
-            if len(F) != len(du)
-                raise ValueError("Number of forms and du must be equal")
+            if len(F) != len(du) or not all([isinstance(du_i, ufl.Argument) and du_i.number() == 1 for du_i in du]):
+                raise ValueError("Number of forms and du must be equal, and du must only contain trial functions")
         else:
             du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
         return [[ufl.derivative(Fi, u_j, du_j) for u_j, du_j in zip(u, du)] for Fi in F]
