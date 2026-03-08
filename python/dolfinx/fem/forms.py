@@ -685,7 +685,7 @@ def derivative_block(
     F: ufl.Form | Sequence[ufl.Form],
     u: Function | Sequence[Function],
     du: ufl.Argument | Sequence[ufl.Argument] | None = None,
-) -> ufl.Form | Sequence[Sequence[ufl.Form]]:
+) -> ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]]:
     """Return the UFL derivative of a UFL rank zero form, or the UFL derivative
     of a (list of) rank one form(s).
 
