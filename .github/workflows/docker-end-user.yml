@@ -127,7 +127,7 @@ jobs:
           echo '{ "cffi_extra_compile_args" : ["-O2"] } ' > dolfinx/docker/dolfinx_jit_options.json
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build dolfinx-onbuild
         uses: docker/build-push-action@v6
