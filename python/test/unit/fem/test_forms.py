@@ -160,11 +160,6 @@ def test_derivative_block():
     assert isinstance(R, ufl_form) and len(R.arguments()) == 1
 
     R = derivative_block(F, f0, v0)
-    assert isinstance(R, Sequence) and len(R) == 1
-    assert isinstance(R[0], ufl_form) and len(R[0].arguments()) == 1
-
-    v0_no_mixed_space = TestFunction(V0)
-    R = derivative_block(F, f0, v0_no_mixed_space)
     assert isinstance(R, ufl_form) and len(R.arguments()) == 1
 
     with pytest.raises(ValueError):

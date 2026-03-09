@@ -692,7 +692,7 @@ def _derive_univariate_residual(
         raise ValueError(
             "When F is a functional of a single function, du must be a test function"
         )
-    return ufl.extract_blocks(ufl.derivative(F, u, du))
+    return ufl.derivative(F, u, du)
 
 
 def _derive_multivariate_residual(
