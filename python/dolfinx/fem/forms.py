@@ -700,13 +700,13 @@ def _derive_multivariate_residual(
     u: Sequence[ufl.Form],
     du: Sequence[ufl.Argument] | None = None,
 ) -> Sequence[ufl.Form]:
-    if not all([isinstance(u_i, Function) for u_i in u]):
+    if not all(isinstance(u_i, Function) for u_i in u):
         raise ValueError("u contains some non ufl.Function elements")
     if du is None:
         du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
     elif (not isinstance(du, Sequence) 
             or not len(u) == len(du) 
-            or not all([isinstance(du_i, ufl.Argument) and du_i.number() == 0 for du_i in du])):
+            or not all(isinstance(du_i, ufl.Argument) and du_i.number() == 0 for du_i in du)):
             raise ValueError(
                 "When F is a functional of N functions, du must be a sequence "
                 "containing N test functions"
@@ -733,17 +733,17 @@ def _derive_multivariate_jacobian(
     u: Sequence[ufl.Form],
     du: Sequence[ufl.Argument] | None = None,
 ) -> Sequence[Sequence[ufl.Form]]:
-    if not all([isinstance(F_i, ufl.Form) and len(F_i.arguments()) == 1  for F_i in F]):
+    if not all(isinstance(F_i, ufl.Form) and len(F_i.arguments()) == 1  for F_i in F):
         raise ValueError("F contains some non rank-one ufl.Form elements")
     if not isinstance(u, Sequence):
         raise ValueError("When F is a sequence, u must be a sequence")
-    if not all([isinstance(u_i, Function) for u_i in u]):
+    if not all(isinstance(u_i, Function) for u_i in u):
         raise ValueError("u contains some non ufl.Function elements")
     if du is None:
         du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
     elif (not isinstance(du, Sequence)
             or not len(u) == len(du)
-            or not all([isinstance(du_i, ufl.Argument) and du_i.number() == 1 for du_i in du])):
+            or not all(isinstance(du_i, ufl.Argument) and du_i.number() == 1 for du_i in du)):
             raise ValueError(
                 "When F is a list of N rank-one forms, du must be a sequence "
                 "containing N trial functions"
