@@ -681,6 +681,76 @@ def create_form(
     return Form(f, form.ufcx_form, form.code)
 
 
+def _derive_univariate_residual(
+    F: ufl.Form,
+    u: Function,
+    du: ufl.Argument | None = None,
+) -> ufl.Form:
+    if du is None:
+        du = ufl.TestFunction(u.function_space)
+    elif not isinstance(du, ufl.Argument) or du.number() != 0:
+        raise ValueError(
+            "When F is a functional of a single function, du must be a test function"
+        )
+    return ufl.extract_blocks(ufl.derivative(F, u, du))
+
+
+def _derive_multivariate_residual(
+    F: ufl.Form,
+    u: Sequence[ufl.Form],
+    du: Sequence[ufl.Argument] | None = None,
+) -> Sequence[ufl.Form]:
+    if not all([isinstance(u_i, Function) for u_i in u]):
+        raise ValueError("u contains some non ufl.Function elements")
+    if du is None:
+        du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
+    elif (not isinstance(du, Sequence) 
+            or not len(u) == len(du) 
+            or not all([isinstance(du_i, ufl.Argument) and du_i.number() == 0 for du_i in du])):
+            raise ValueError(
+                "When F is a functional of N functions, du must be a sequence "
+                "containing N test functions"
+            )
+    return ufl.extract_blocks(ufl.derivative(F, u, du))
+
+
+def _derive_univariate_jacobian(
+    F: ufl.Form,
+    u: Function,
+    du: ufl.Argument | None = None,
+) -> ufl.Form:
+    if not isinstance(u, Function):
+        raise ValueError("When F is a rank-one UFL form, u must be a ufl.Function")
+    if du is None:
+        du = ufl.TrialFunction(u.function_space)
+    elif not isinstance(du, ufl.Argument) or du.number() != 1:
+        raise ValueError("When F is a rank-one UFL form, du must be a trial function")
+    return ufl.derivative(F, u, du)
+
+
+def _derive_multivariate_jacobian(
+    F: Sequence[ufl.Form],
+    u: Sequence[ufl.Form],
+    du: Sequence[ufl.Argument] | None = None,
+) -> Sequence[Sequence[ufl.Form]]:
+    if not all([isinstance(F_i, ufl.Form) and len(F_i.arguments()) == 1  for F_i in F]):
+        raise ValueError("F contains some non rank-one ufl.Form elements")
+    if not isinstance(u, Sequence):
+        raise ValueError("When F is a sequence, u must be a sequence")
+    if not all([isinstance(u_i, Function) for u_i in u]):
+        raise ValueError("u contains some non ufl.Function elements")
+    if du is None:
+        du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
+    elif (not isinstance(du, Sequence)
+            or not len(u) == len(du)
+            or not all([isinstance(du_i, ufl.Argument) and du_i.number() == 1 for du_i in du])):
+            raise ValueError(
+                "When F is a list of N rank-one forms, du must be a sequence "
+                "containing N trial functions"
+            )
+    return [[ufl.derivative(Fi, u_j, du_j) for u_j, du_j in zip(u, du)] for Fi in F]
+
+
 def derivative_block(
     F: ufl.Form | Sequence[ufl.Form],
     u: Function | Sequence[Function],
@@ -709,56 +779,17 @@ def derivative_block(
     called component-wise.
     """  # noqa: D301
     
-    if isinstance(F, ufl.Form) and not F.arguments():  # if F is a functional
+    if isinstance(F, ufl.Form) and not F.arguments():
         if isinstance(u, Function):
-            if du is None:
-                du = ufl.TestFunction(u.function_space)
-            elif not isinstance(du, ufl.Argument) or du.number() != 0:
-                raise ValueError(
-                    "When F is a functional of a single function, du must be a test function"
-                )
+            return _derive_univariate_residual(F, u, du)
         elif isinstance(u, Sequence):
-            if not all([isinstance(u_i, Function) for u_i in u]):
-                raise ValueError("u contains some non ufl.Function elements")
-            if du is None:
-                du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
-            elif (not isinstance(du, Sequence) 
-                    or not len(u) == len(du) 
-                    or not all([isinstance(du_i, ufl.Argument) and du_i.number() == 0 for du_i in du])):
-                    raise ValueError(
-                        "When F is a functional of N functions, du must be a sequence "
-                        "containing N test functions"
-                    )
+            return _derive_multivariate_residual(F, u, du)
         else:
-            raise ValueError("u must be a function or sequence of functions")
-        return ufl.extract_blocks(ufl.derivative(F, u, du))
-
+            raise ValueError("u must be either a ufl.Function or a sequence of ufl.Function")
     elif isinstance(F, ufl.Form) and len(F.arguments()) == 1:
-        if not isinstance(u, Function):
-            raise ValueError("When F is a rank-one UFL form, u must be a ufl.Function")
-        if du is None:
-            du = ufl.TrialFunction(u.function_space)
-        elif not isinstance(du, ufl.Argument) or du.number() != 1:
-            raise ValueError("When F is a rank-one UFL form, du must be a trial function")
-        return ufl.derivative(F, u, du)
+        return _derive_univariate_jacobian(F, u, du)
     elif isinstance(F, Sequence):
-        if not all([isinstance(F_i, ufl.Form) and len(F_i.arguments()) == 1  for F_i in F]):
-            raise ValueError("F contains some non rank-one ufl.Form elements")
-        if not isinstance(u, Sequence):
-            raise ValueError("When F is a sequence, u must be a sequence")
-        if not all([isinstance(u_i, Function) for u_i in u]):
-            raise ValueError("u contains some non ufl.Function elements")
-        if du is None:
-            du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
-        elif (not isinstance(du, Sequence)
-                or not len(u) == len(du)
-                or not all([isinstance(du_i, ufl.Argument) and du_i.number() == 1 for du_i in du])):
-                raise ValueError(
-                    "When F is a list of N rank-one forms, du must be a sequence "
-                    "containing N trial functions"
-                )
-        return [[ufl.derivative(Fi, u_j, du_j) for u_j, du_j in zip(u, du)] for Fi in F]
-    
+        return _derive_multivariate_jacobian(F, u, du)
     else:
         raise ValueError(
             "F must be either a UFL form (with rank zero or one), or a sequence of "
