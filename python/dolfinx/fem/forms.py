@@ -695,7 +695,7 @@ def _derive_univariate_residual(
     return ufl.derivative(F, u, du)
 
 
-def _derive_multivariate_residual(
+def _derive_block_residual(
     F: ufl.Form,
     u: Sequence[ufl.Form],
     du: Sequence[ufl.Argument] | None = None,
@@ -728,7 +728,7 @@ def _derive_univariate_jacobian(
     return ufl.derivative(F, u, du)
 
 
-def _derive_multivariate_jacobian(
+def _derive_block_jacobian(
     F: Sequence[ufl.Form],
     u: Sequence[ufl.Form],
     du: Sequence[ufl.Argument] | None = None,
@@ -783,13 +783,13 @@ def derivative_block(
         if isinstance(u, Function):
             return _derive_univariate_residual(F, u, du)
         elif isinstance(u, Sequence):
-            return _derive_multivariate_residual(F, u, du)
+            return _derive_block_residual(F, u, du)
         else:
             raise ValueError("u must be either a ufl.Function or a sequence of ufl.Function")
     elif isinstance(F, ufl.Form) and len(F.arguments()) == 1:
         return _derive_univariate_jacobian(F, u, du)
     elif isinstance(F, Sequence):
-        return _derive_multivariate_jacobian(F, u, du)
+        return _derive_block_jacobian(F, u, du)
     else:
         raise ValueError(
             "F must be either a UFL form (with rank zero or one), or a sequence of "
