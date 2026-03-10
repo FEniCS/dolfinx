@@ -762,19 +762,20 @@ def derivative_block(
     This is commonly used to derive a block residual from a functional, or to
     derive a block Jacobian from a block residual.
 
-    If ``F`` is a univariate rank zero form, the residual is computed as
+    If ``F`` is a univariate rank zero form, returns the residual computed as
     :math:`R = \\frac{\\partial F}{\\partial u}[\\delta u]`.
 
-    If ``F`` is a multivariate rank zero form, the residual is a list with
-    :math:`R_i = \\frac{\\partial F}{\\partial u_i}[\\delta u_i]`, where 
-    :math:`\\delta u_i` is a test subfunction of the mixed space defined by u.
-
-    If ``F`` is a rank one form, the Jacobian is computed as :math:`J =
+    If ``F`` is a rank one form, returns the Jacobian computed as :math:`J =
     \\frac{\\partial F}{\\partial u}[\\delta u]`.
 
-    All three operations above are identical to calling {py:func}`ufl.derivative` directly.
+    The two operations above are identical to calling {py:func}`ufl.derivative` directly.
 
-    If ``F`` is a list of rank one forms, the Jacobian is a list of lists with
+    If ``F`` is a multivariate rank zero form, returns the block residual as a list with
+    :math:`R_i = \\frac{\\partial F}{\\partial u_i}[\\delta u_i]`, where 
+    :math:`\\delta u_i` is a test subfunction of the mixed space defined by u. This is
+    equivalent to calling {py:func}`ufl.extract_blocks` on the result from {py:func}`ufl.derivative`.
+
+    If ``F`` is a list of rank one forms, returns the block Jacobian as a list of lists with
     :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using {py:func}`ufl.derivative`
     called component-wise.
     """  # noqa: D301
