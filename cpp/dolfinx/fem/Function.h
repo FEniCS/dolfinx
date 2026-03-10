@@ -421,14 +421,18 @@ public:
   /// @param[in] u Function to be interpolated.
   /// @param[in] cells Cells in the mesh associated with `this` to
   /// interpolate into.
+  /// @param[in] tol Tolerance for convergence in Newton method for non-affine
+  /// pullbacks. If the mesh geometr is affine this argument is ignored.
+  /// @param[in] maxit Maximum number of Newton iterations in non-affine
+  /// pull-back. If the mesh geometry is affine this argument is ignored.
   /// @param[in] interpolation_data Data required for associating the
   /// interpolation points of `this` with cells in `u`. Can be computed
   /// with `fem::create_interpolation_data`.
   void interpolate(const Function<value_type, geometry_type>& u,
-                   CellRange auto&& cells,
+                   CellRange auto&& cells, double tol, int maxit,
                    const geometry::PointOwnershipData<U>& interpolation_data)
   {
-    fem::interpolate(*this, u, cells, interpolation_data);
+    fem::interpolate(*this, u, cells, tol, maxit, interpolation_data);
   }
 
   /// @brief Evaluate the Function at points.
@@ -443,9 +447,13 @@ public:
   /// points with a negative cell index. This argument must be passed
   /// with the correct size. Storage is row-major.
   /// @param[in] ushape Shape of `u`.
+  /// @param[in] tol Tolerance for convergence in Newton method for non-affine
+  /// pullbacks. If the mesh geometr is affine this argument is ignored.
+  /// @param[in] maxit Maximum number of Newton iterations in non-affine
+  /// pull-back. If the mesh geometry is affine this argument is ignored.
   void eval(std::span<const geometry_type> x, std::array<std::size_t, 2> xshape,
             CellRange auto&& cells, std::span<value_type> u,
-            std::array<std::size_t, 2> ushape) const
+            std::array<std::size_t, 2> ushape, double tol, int maxit) const
   {
     if (cells.empty())
       return;
@@ -604,7 +612,7 @@ public:
       else
       {
         // Pull-back physical point xp to reference coordinate Xp
-        cmap.pull_back_nonaffine(Xp, xp, coord_dofs);
+        cmap.pull_back_nonaffine(Xp, xp, coord_dofs, tol, maxit);
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
         CoordinateElement<geometry_type>::compute_jacobian(dphi, coord_dofs,
                                                            _J);

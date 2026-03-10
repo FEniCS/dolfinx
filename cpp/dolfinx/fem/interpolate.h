@@ -1169,12 +1169,16 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// @param u0 Function to interpolate from.
 /// @param cells Cells indices relative to the mesh associated with `u`
 /// that will be interpolated into.
-/// @param interpolation_data Data required for associating the
-/// interpolation points of `u` with cells in `v`. This is computed by
+/// @param[in] tol Tolerance for convergence in Newton method for non-affine
+/// pullbacks. If the mesh geometr is affine this argument is ignored.
+/// @param[in] maxit Maximum number of Newton iterations in non-affine
+/// pull-back. If the mesh geometry is affine this argument is ignored.
+/// @param interpolation_data Data required for associating the interpolation
+/// points of `u` with cells in `v`. This is computed by
 /// fem::create_interpolation_data.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
-                 CellRange auto&& cells,
+                 CellRange auto&& cells, double tol, int maxit,
                  const geometry::PointOwnershipData<U>& interpolation_data)
 {
   auto mesh1 = u1.function_space()->mesh();
@@ -1209,7 +1213,8 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
   // Evaluate the interpolating function where possible
   std::vector<T> send_values(recv_points.size() / 3 * value_size);
   u0.eval(recv_points, {recv_points.size() / 3, (std::size_t)3},
-          evaluation_cells, send_values, {recv_points.size() / 3, value_size});
+          evaluation_cells, send_values, {recv_points.size() / 3, value_size},
+          tol, maxit);
 
   // Send values back to owning process
   std::vector<T> values_b(dest_ranks.size() * value_size);
