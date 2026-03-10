@@ -148,64 +148,64 @@ def test_derivative_block():
     u0, u1 = TrialFunctions(V)
 
 
-    F = f0**2 * dx  # univariate functional
+    M = f0**2 * dx  # univariate functional
 
     with pytest.raises(ValueError):
-        derivative_block(F, u0, v0)  # second argument not a ufl.Function
+        derivative_block(M, u0, v0)  # second argument not a ufl.Function
 
     with pytest.raises(ValueError):
-        derivative_block(F, f0, u0)  # third argument not a test function
+        derivative_block(M, f0, u0)  # third argument not a test function
 
-    R = derivative_block(F, f0)
-    assert isinstance(R, ufl_form) and len(R.arguments()) == 1
+    F = derivative_block(M, f0)
+    assert isinstance(F, ufl_form) and len(F.arguments()) == 1
 
-    R = derivative_block(F, f0, v0)
-    assert isinstance(R, ufl_form) and len(R.arguments()) == 1
-
-    with pytest.raises(ValueError):
-        derivative_block(R, u0, u0) # second argument not a ufl.Function
+    F = derivative_block(M, f0, v0)
+    assert isinstance(F, ufl_form) and len(F.arguments()) == 1
 
     with pytest.raises(ValueError):
-        derivative_block(R, f0, v0) # third argument not a trial function
+        derivative_block(F, u0, u0) # second argument not a ufl.Function
 
-    J = derivative_block(R, f0)
+    with pytest.raises(ValueError):
+        derivative_block(F, f0, v0) # third argument not a trial function
+
+    J = derivative_block(F, f0)
     assert isinstance(J, ufl_form) and len(J.arguments()) == 2
 
-    J = derivative_block(R, f0, u0)
+    J = derivative_block(F, f0, u0)
     assert isinstance(J, ufl_form) and len(J.arguments()) == 2
 
 
-    F = f0**2 * f1 * dx  # multivariate functional
+    M = f0**2 * f1 * dx  # multivariate functional
 
     with pytest.raises(ValueError):
-        derivative_block(F, [f0, f1], [v0])  # third argument has wrong length
+        derivative_block(M, [f0, f1], [v0])  # third argument has wrong length
 
     with pytest.raises(ValueError):
-        derivative_block(F, [f0, f1], [u0, v1])  # third argument contains a non test function
+        derivative_block(M, [f0, f1], [u0, v1])  # third argument contains a non test function
 
     with pytest.raises(ValueError):
-        derivative_block(F, f0, [u0, u1])  # second argument not a sequence
+        derivative_block(M, f0, [u0, u1])  # second argument not a sequence
 
     with pytest.raises(ValueError):
-        derivative_block(F, [f0, f1], u0)  # third argument not a sequence
+        derivative_block(M, [f0, f1], u0)  # third argument not a sequence
 
-    R = derivative_block(F, [f0, f1])
-    assert all([isinstance(R_i, ufl_form) and len(R_i.arguments()) == 1 for R_i in R])
+    F = derivative_block(M, [f0, f1])
+    assert all([isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F])
 
-    R = derivative_block(F, [f0, f1], [v0, v1])
-    assert all([isinstance(R_i, ufl_form) and len(R_i.arguments()) == 1 for R_i in R])
-
-    with pytest.raises(ValueError):
-        derivative_block(R, [f0, f1], [u0])  # third argument has wrong length
+    F = derivative_block(M, [f0, f1], [v0, v1])
+    assert all([isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F])
 
     with pytest.raises(ValueError):
-        derivative_block(R, [f0, u1], [u0, u1])  # second argument contains a non ufl.Function
+        derivative_block(F, [f0, f1], [u0])  # third argument has wrong length
 
     with pytest.raises(ValueError):
-        derivative_block(R, [f0, f1], u0) # third argument not a sequence
+        derivative_block(F, [f0, u1], [u0, u1])  # second argument contains a non ufl.Function
 
-    J = derivative_block(R, [f0, f1])
+    with pytest.raises(ValueError):
+        derivative_block(F, [f0, f1], u0) # third argument not a sequence
+
+    J = derivative_block(F, [f0, f1])
     assert all([isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J for J_ij in J_i])
 
-    J = derivative_block(R, [f0, f1], [u0, u1])
+    J = derivative_block(F, [f0, f1], [u0, u1])
     assert all([isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J for J_ij in J_i])
