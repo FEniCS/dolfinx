@@ -702,12 +702,11 @@ def _derive_block_residual(
 ) -> Sequence[ufl.Form]:
     if du is None:
         du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
-    elif (not isinstance(du, Sequence) 
-            or not len(u) == len(du) 
+    elif (not isinstance(du, Sequence)
             or not all(isinstance(du_i, ufl.Argument) and du_i.number() == 0 for du_i in du)):
             raise ValueError(
-                "When F is a functional of N functions, du must be a sequence "
-                "containing N test functions"
+                "When F is a functional of multiple functions, du must be a sequence of test "
+                "functions"
             )
     return ufl.extract_blocks(ufl.derivative(F, u, du))
 

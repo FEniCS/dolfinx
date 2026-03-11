@@ -175,9 +175,6 @@ def test_derivative_block():
     M = f0**2 * f1 * dx  # multivariate functional
 
     with pytest.raises(ValueError):
-        derivative_block(M, [f0, f1], [v0])  # third argument has wrong length
-
-    with pytest.raises(ValueError):
         derivative_block(M, [f0, f1], [u0, v1])  # third argument contains a non test function
 
     with pytest.raises(ValueError):
