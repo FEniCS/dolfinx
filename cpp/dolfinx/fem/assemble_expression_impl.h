@@ -93,6 +93,8 @@ void tabulate_expression(
       }
       fn(values_local.data(), &coeffs(e, 0), constants.data(),
          coord_dofs.data(), nullptr, nullptr, nullptr);
+
+      P0(values_local, cell_info, entity, size0);
     }
     else
     {
@@ -105,12 +107,10 @@ void tabulate_expression(
       }
       fn(values_local.data(), &coeffs(e, 0), constants.data(),
          coord_dofs.data(), &entities(e, 1), nullptr, nullptr);
+
+      P0(values_local, cell_info, entity, size0);
     }
 
-    if constexpr (entities.rank() == 1)
-      P0(values_local, cell_info, entities(e), size0);
-    else
-      P0(values_local, cell_info, entities(e, 0), size0);
     for (std::size_t j = 0; j < values_local.size(); ++j)
       values[e * offset + j] = values_local[j];
   }
