@@ -151,9 +151,6 @@ def test_derivative_block():
     M = f0**2 * dx  # univariate functional
 
     with pytest.raises(ValueError):
-        derivative_block(M, u0, v0)  # second argument not a ufl.Function
-
-    with pytest.raises(ValueError):
         derivative_block(M, f0, u0)  # third argument not a test function
 
     F = derivative_block(M, f0)
@@ -197,9 +194,6 @@ def test_derivative_block():
 
     with pytest.raises(ValueError):
         derivative_block(F, [f0, f1], [u0])  # third argument has wrong length
-
-    with pytest.raises(ValueError):
-        derivative_block(F, [f0, u1], [u0, u1])  # second argument contains a non ufl.Function
 
     with pytest.raises(ValueError):
         derivative_block(F, [f0, f1], u0) # third argument not a sequence

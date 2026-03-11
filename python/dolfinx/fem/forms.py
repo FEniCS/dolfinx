@@ -700,8 +700,6 @@ def _derive_block_residual(
     u: Sequence[ufl.Form],
     du: Sequence[ufl.Argument] | None = None,
 ) -> Sequence[ufl.Form]:
-    if not all(isinstance(u_i, Function) for u_i in u):
-        raise ValueError("u contains some non ufl.Function elements")
     if du is None:
         du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
     elif (not isinstance(du, Sequence) 
@@ -737,8 +735,6 @@ def _derive_block_jacobian(
         raise ValueError("F contains some non rank-one ufl.Form elements")
     if not isinstance(u, Sequence):
         raise ValueError("When F is a sequence, u must be a sequence")
-    if not all(isinstance(u_i, Function) for u_i in u):
-        raise ValueError("u contains some non ufl.Function elements")
     if du is None:
         du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
     elif (not isinstance(du, Sequence)
