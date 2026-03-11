@@ -178,10 +178,10 @@ def test_derivative_block():
         derivative_block(M, [f0, f1], [u0, v1])  # third argument contains a non test function
 
     with pytest.raises(ValueError):
-        derivative_block(M, f0, [u0, u1])  # second argument not a sequence
+        derivative_block(M, f0, [v0, v1])  # second argument not a sequence
 
     with pytest.raises(ValueError):
-        derivative_block(M, [f0, f1], u0)  # third argument not a sequence
+        derivative_block(M, [f0, f1], v0)  # third argument not a sequence
 
     F = derivative_block(M, [f0, f1])
     assert all([isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F])
