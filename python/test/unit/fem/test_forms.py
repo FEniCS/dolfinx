@@ -172,31 +172,31 @@ def test_derivative_block():
     assert isinstance(J, ufl_form) and len(J.arguments()) == 2
 
 
-    M = f0**2 * f1 * dx  # multivariate functional
+    M_block = f0**2 * f1 * dx  # multivariate functional
 
     with pytest.raises(ValueError):
-        derivative_block(M, [f0, f1], [u0, v1])  # third argument contains a non test function
+        derivative_block(M_block, [f0, f1], [u0, v1])  # third argument contains a non test function
 
     with pytest.raises(ValueError):
-        derivative_block(M, f0, [v0, v1])  # second argument not a sequence
+        derivative_block(M_block, f0, [v0, v1])  # second argument not a sequence
 
     with pytest.raises(ValueError):
-        derivative_block(M, [f0, f1], v0)  # third argument not a sequence
+        derivative_block(M_block, [f0, f1], v0)  # third argument not a sequence
 
-    F = derivative_block(M, [f0, f1])
-    assert all([isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F])
+    F_block = derivative_block(M_block, [f0, f1])
+    assert all([isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F_block])
 
-    F = derivative_block(M, [f0, f1], [v0, v1])
-    assert all([isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F])
-
-    with pytest.raises(ValueError):
-        derivative_block(F, [f0, f1], [u0])  # third argument has wrong length
+    F_block = derivative_block(M_block, [f0, f1], [v0, v1])
+    assert all([isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F_block])
 
     with pytest.raises(ValueError):
-        derivative_block(F, [f0, f1], u0) # third argument not a sequence
+        derivative_block(F_block, [f0, f1], [u0])  # third argument has wrong length
 
-    J = derivative_block(F, [f0, f1])
-    assert all([isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J for J_ij in J_i])
+    with pytest.raises(ValueError):
+        derivative_block(F_block, [f0, f1], u0) # third argument not a sequence
 
-    J = derivative_block(F, [f0, f1], [u0, u1])
-    assert all([isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J for J_ij in J_i])
+    J_block = derivative_block(F_block, [f0, f1])
+    assert all([isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J_block for J_ij in J_i])
+
+    J_block = derivative_block(F_block, [f0, f1], [u0, u1])
+    assert all([isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J_block for J_ij in J_i])
