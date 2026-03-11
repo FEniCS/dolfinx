@@ -275,13 +275,16 @@ private:
 /// @param[in] boundary_vertices Vertices on the 'exterior' (boundary)
 /// of the local topology. These vertices might appear on other
 /// processes.
+/// @param[in] num_threads Number of threads to use. Use 0 to not launch
+/// threads.
 /// @return A distributed mesh topology.
 Topology
 create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
                 std::vector<std::span<const std::int64_t>> cells,
                 std::vector<std::span<const std::int64_t>> original_cell_index,
                 std::vector<std::span<const int>> ghost_owners,
-                std::span<const std::int64_t> boundary_vertices);
+                std::span<const std::int64_t> boundary_vertices,
+                int num_threads);
 
 /// @brief Create a mesh topology for a single cell type.
 ///
@@ -305,11 +308,14 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
 /// @param[in] boundary_vertices Vertices on the 'exterior' (boundary)
 /// of the local topology. These vertices might appear on other
 /// processes.
+/// @param[in] num_threads Number of threads to use. Use 0 to not launch
+/// threads.
 /// @return A distributed mesh topology.
 Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const std::int64_t> original_cell_index,
                          std::span<const int> ghost_owners, CellType cell_type,
-                         std::span<const std::int64_t> boundary_vertices);
+                         std::span<const std::int64_t> boundary_vertices,
+                         int num_threads);
 
 /// @brief Create a topology for a subset of entities of a given
 /// topological dimension.

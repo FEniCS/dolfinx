@@ -318,7 +318,7 @@ void mesh(nb::module_& m)
          const std::vector<std::vector<std::int64_t>>& cells,
          const std::vector<std::vector<std::int64_t>>& original_cell_index,
          const std::vector<std::vector<int>>& ghost_owners,
-         const std::vector<std::int64_t>& boundary_vertices)
+         const std::vector<std::int64_t>& boundary_vertices, int num_threads)
       {
         std::vector<std::span<const std::int64_t>> cells_span(cells.begin(),
                                                               cells.end());
@@ -328,10 +328,9 @@ void mesh(nb::module_& m)
             ghost_owners.begin(), ghost_owners.end());
         std::span<const std::int64_t> boundary_vertices_span(
             boundary_vertices.begin(), boundary_vertices.end());
-
         return dolfinx::mesh::create_topology(
             comm.get(), cell_type, cells_span, original_cell_index_span,
-            ghost_owners_span, boundary_vertices_span);
+            ghost_owners_span, boundary_vertices_span, num_threads);
       },
       "Create a Topology object.");
 
