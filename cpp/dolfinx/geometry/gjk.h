@@ -382,8 +382,13 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     SPDLOG_DEBUG("new s size={}", 3 * j);
     s.resize(3 * j);
 
+    // 2nd exit condition - strict monotonicity
+    // Floating point can cause the algorithm to stagnate. Then we terminate.
     const U vn = impl_gjk::dot3(v, v);
-    // 2nd exit condition - intersecting or touching
+    if (vn > vnorm2)
+      break;
+
+    // 3nd exit condition - intersecting or touching
     if (vn < eps * eps)
       break;
   }

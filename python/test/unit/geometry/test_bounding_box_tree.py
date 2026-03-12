@@ -90,7 +90,7 @@ def find_colliding_cells(mesh, bbox, dtype, num_threads):
     # Compute distances and check for collision
     distances = compute_distances_gjk(body_1, bounding_box, num_threads)
     norm_dist = np.linalg.norm(distances, axis=1) ** 2
-    tol = 50 * np.finfo(dtype).eps
+    tol = 10 * np.finfo(dtype).eps
     colliding_cells = np.flatnonzero(norm_dist < tol).astype(np.int32)
     return colliding_cells
 
@@ -266,14 +266,12 @@ def test_compute_collisions_tree_3d(point, dtype, num_threads):
     entities = compute_collisions_trees(tree_A, tree_B)
     entities_A = np.sort(np.unique([q[0] for q in entities]))
     entities_B = np.sort(np.unique([q[1] for q in entities]))
-
     cells_A = find_colliding_cells(
         mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1), dtype, num_threads
     )
     cells_B = find_colliding_cells(
         mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1), dtype, num_threads
     )
-
     assert np.allclose(entities_A, cells_A)
     assert np.allclose(entities_B, cells_B)
 
