@@ -317,8 +317,9 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
 
   constexpr int maxk = 15; // Maximum number of iterations of the GJK algorithm
 
-  // Tolerance
-  const U eps = 10 * std::sqrt(std::numeric_limits<U>::epsilon());
+  // Tolerance (to support square root of multi-precision numbers)
+  using std::sqrt;
+  const U eps = 10 * sqrt(std::numeric_limits<U>::epsilon());
 
   // Initialise vector and simplex
   std::array<U, 3> v = {p[0] - q[0], p[1] - q[1], p[2] - q[2]};
@@ -418,24 +419,22 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
   num_threads = std::min(num_threads, total_size);
 
   std::vector<T> results(total_size * 3);
-  auto compute_chunk = [](std::span<T> out_data,
-                          std::span<const std::span<const T>> bodies_chunk,
-                          std::span<const T> q_ref)
+  auto compute_chunk
+      = [&results, &bodies](size_t c0, size_t c1, std::span<const T> q_ref)
   {
-    for (size_t i = 0; i < bodies_chunk.size(); ++i)
+    for (size_t i = c0; i < c1; ++i)
     {
       // Using U explicitly as the internal precision type
-      std::array<T, 3> dist
-          = compute_distance_gjk<T, U>(bodies_chunk[i], q_ref);
-      out_data[3 * i + 0] = dist[0];
-      out_data[3 * i + 1] = dist[1];
-      out_data[3 * i + 2] = dist[2];
+      std::array<T, 3> dist = compute_distance_gjk<T, U>(bodies[i], q_ref);
+      results[3 * i + 0] = dist[0];
+      results[3 * i + 1] = dist[1];
+      results[3 * i + 2] = dist[2];
     }
   };
 
   if (num_threads <= 1)
   {
-    compute_chunk(std::span(results), bodies, q);
+    compute_chunk(0, total_size, q);
   }
   else
   {
@@ -443,9 +442,7 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
     for (size_t i = 0; i < num_threads; ++i)
     {
       auto [c0, c1] = dolfinx::MPI::local_range(i, total_size, num_threads);
-      threads[i] = std::jthread(
-          compute_chunk, std::span(results.data() + 3 * c0, 3 * (c1 - c0)),
-          std::span(bodies.data() + c0, c1 - c0), q);
+      threads[i] = std::jthread(compute_chunk, c0, c1, q);
     }
   }
 
