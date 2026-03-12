@@ -385,7 +385,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     // 2nd exit condition - strict monotonicity
     // Floating point can cause the algorithm to stagnate. Then we terminate.
     const U vn = impl_gjk::dot3(v, v);
-    if (vn > vnorm2)
+    if (vnorm2 <= vn)
       break;
 
     // 3nd exit condition - intersecting or touching
