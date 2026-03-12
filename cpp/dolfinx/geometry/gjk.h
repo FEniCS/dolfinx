@@ -393,5 +393,61 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
 
   return {static_cast<T>(v[0]), static_cast<T>(v[1]), static_cast<T>(v[2])};
 }
+/// @brief Compute the distance between a sequence of convex bodies `p0, ...,
+/// pN` and `q0`, each defined by a set of points.
+///
+/// Uses the Gilbert–Johnson–Keerthi (GJK) distance algorithm.
+///
+/// @param[in] p0 List of the list of points that make up each of  N bodies
+/// considered as body 1. `shape=(num_bodies, (num_points_body_j, 3)`. Row-major
+/// storage.
+/// @param[in] q0 Body 2 list of points, `shape=(num_points, 3)`. Row-major
+/// storage.
+/// @tparam T Floating point type
+/// @tparam U Floating point type used for geometry computations internally,
+/// which should be higher precision than T, to maintain accuracy.
+/// @return For each body in `p_j`, return the shortest distance vector to
+/// body 2. Shape (num_points, 3).
+template <std::floating_point T,
+          typename U = boost::multiprecision::cpp_bin_float_double_extended>
+std::vector<T> compute_distances_gjk(const std::vector<std::span<const T>>& p0,
+                                     std::span<const T> q0, size_t num_threads)
+{
+  size_t total_size = p0.size();
+  num_threads = std::min(num_threads, total_size);
+
+  std::vector<T> results(total_size * 3);
+  auto compute_chunk
+      = [](std::span<T> out_data, std::span<const std::span<const T>> p0_chunk,
+           std::span<const T> q0_ref)
+  {
+    for (size_t i = 0; i < p0_chunk.size(); ++i)
+    {
+      // Using U explicitly as the internal precision type
+      std::array<T, 3> dist = compute_distance_gjk<T, U>(p0_chunk[i], q0_ref);
+      out_data[3 * i + 0] = dist[0];
+      out_data[3 * i + 1] = dist[1];
+      out_data[3 * i + 2] = dist[2];
+    }
+  };
+
+  if (num_threads <= 1)
+  {
+    compute_chunk(std::span(results), p0, q0);
+  }
+  else
+  {
+    std::vector<std::jthread> threads(num_threads);
+    for (size_t i = 0; i < num_threads; ++i)
+    {
+      auto [c0, c1] = dolfinx::MPI::local_range(i, total_size, num_threads);
+      threads[i] = std::jthread(
+          compute_chunk, std::span(results.data() + 3 * c0, 3 * (c1 - c0)),
+          std::span(p0.data() + c0, c1 - c0), q0);
+    }
+  }
+
+  return results;
+}
 
 } // namespace dolfinx::geometry
