@@ -318,7 +318,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
   constexpr int maxk = 15; // Maximum number of iterations of the GJK algorithm
 
   // Tolerance
-  const U eps = 1.0e4 * std::numeric_limits<T>::epsilon();
+  const U eps = 1.0e4 * std::numeric_limits<U>::epsilon();
 
   // Initialise vector and simplex
   std::array<U, 3> v = {p[0] - q[0], p[1] - q[1], p[2] - q[2]};
@@ -390,18 +390,18 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
 
   if (k == maxk)
     throw std::runtime_error("GJK error - max iteration limit reached");
-
   return {static_cast<T>(v[0]), static_cast<T>(v[1]), static_cast<T>(v[2])};
 }
+
 /// @brief Compute the distance between a sequence of convex bodies `p0, ...,
-/// pN` and `q0`, each defined by a set of points.
+/// pN` and `q`, each defined by a set of points.
 ///
 /// Uses the Gilbert–Johnson–Keerthi (GJK) distance algorithm.
 ///
-/// @param[in] p0 List of the list of points that make up each of  N bodies
+/// @param[in] bodies List of the list of points that make up each of  N bodies
 /// considered as body 1. `shape=(num_bodies, (num_points_body_j, 3)`. Row-major
 /// storage.
-/// @param[in] q0 Body 2 list of points, `shape=(num_points, 3)`. Row-major
+/// @param[in] q Body 2 list of points, `shape=(num_points, 3)`. Row-major
 /// storage.
 /// @tparam T Floating point type
 /// @tparam U Floating point type used for geometry computations internally,
@@ -410,21 +410,23 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
 /// body 2. Shape (num_points, 3).
 template <std::floating_point T,
           typename U = boost::multiprecision::cpp_bin_float_double_extended>
-std::vector<T> compute_distances_gjk(const std::vector<std::span<const T>>& p0,
-                                     std::span<const T> q0, size_t num_threads)
+std::vector<T>
+compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
+                      std::span<const T> q, size_t num_threads)
 {
-  size_t total_size = p0.size();
+  size_t total_size = bodies.size();
   num_threads = std::min(num_threads, total_size);
 
   std::vector<T> results(total_size * 3);
-  auto compute_chunk
-      = [](std::span<T> out_data, std::span<const std::span<const T>> p0_chunk,
-           std::span<const T> q0_ref)
+  auto compute_chunk = [](std::span<T> out_data,
+                          std::span<const std::span<const T>> bodies_chunk,
+                          std::span<const T> q_ref)
   {
-    for (size_t i = 0; i < p0_chunk.size(); ++i)
+    for (size_t i = 0; i < bodies_chunk.size(); ++i)
     {
       // Using U explicitly as the internal precision type
-      std::array<T, 3> dist = compute_distance_gjk<T, U>(p0_chunk[i], q0_ref);
+      std::array<T, 3> dist
+          = compute_distance_gjk<T, U>(bodies_chunk[i], q_ref);
       out_data[3 * i + 0] = dist[0];
       out_data[3 * i + 1] = dist[1];
       out_data[3 * i + 2] = dist[2];
@@ -433,7 +435,7 @@ std::vector<T> compute_distances_gjk(const std::vector<std::span<const T>>& p0,
 
   if (num_threads <= 1)
   {
-    compute_chunk(std::span(results), p0, q0);
+    compute_chunk(std::span(results), bodies, q);
   }
   else
   {
@@ -443,7 +445,7 @@ std::vector<T> compute_distances_gjk(const std::vector<std::span<const T>>& p0,
       auto [c0, c1] = dolfinx::MPI::local_range(i, total_size, num_threads);
       threads[i] = std::jthread(
           compute_chunk, std::span(results.data() + 3 * c0, 3 * (c1 - c0)),
-          std::span(p0.data() + c0, c1 - c0), q0);
+          std::span(bodies.data() + c0, c1 - c0), q);
     }
   }
 

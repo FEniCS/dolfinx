@@ -1,4 +1,4 @@
-# Copyright (C) 2013-2025 Anders Logg, Jørgen S. Dokken, Chris Richardson
+# Copyright (C) 2013-2026 Anders Logg, Jørgen S. Dokken, Chris Richardson
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -17,6 +17,7 @@ from dolfinx.geometry import (
     compute_collisions_points,
     compute_collisions_trees,
     compute_distance_gjk,
+    compute_distances_gjk,
     create_midpoint_tree,
     determine_point_ownership,
 )
@@ -50,47 +51,47 @@ def extract_geometricial_data(mesh, dim, entities):
     return mesh_nodes
 
 
-def expand_bbox(bbox, dtype):
-    """Expand min max bbox to convex hull."""
-    return np.array(
-        [
-            [bbox[0][0], bbox[0][1], bbox[0][2]],
-            [bbox[0][0], bbox[0][1], bbox[1][2]],
-            [bbox[0][0], bbox[1][1], bbox[0][2]],
-            [bbox[1][0], bbox[0][1], bbox[0][2]],
-            [bbox[1][0], bbox[0][1], bbox[1][2]],
-            [bbox[1][0], bbox[1][1], bbox[0][2]],
-            [bbox[0][0], bbox[1][1], bbox[1][2]],
-            [bbox[1][0], bbox[1][1], bbox[1][2]],
-        ],
-        dtype=dtype,
-    )
+def expand_bboxes(bboxes, dtype):
+    """Expand an array of min/max bboxes to convex hulls."""
+    if len(bboxes.shape) == 2:
+        bboxes = bboxes.reshape(1, *bboxes.shape)
+    idx_x = [0, 0, 0, 1, 1, 1, 0, 1]
+    idx_y = [0, 0, 1, 0, 0, 1, 1, 1]
+    idx_z = [0, 1, 0, 0, 1, 0, 1, 1]
+
+    x = bboxes[:, idx_x, 0]
+    y = bboxes[:, idx_y, 1]
+    z = bboxes[:, idx_z, 2]
+    return np.stack((x, y, z), axis=-1).astype(dtype)
 
 
-def find_colliding_cells(mesh, bbox, dtype):
+def find_colliding_cells(mesh, bbox, dtype, num_threads):
     """Given a mesh and a bounding box((xmin, ymin, zmin), (xmax, ymax,
     zmax)) find all colliding cells.
     """
     # Find actual cells using known bounding box tree
-    colliding_cells = []
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     x_indices = entities_to_geometry(
         mesh, mesh.topology.dim, np.arange(num_cells, dtype=np.int32), False
     )
     points = mesh.geometry.x
-    bounding_box = expand_bbox(bbox, dtype)
-    for cell in range(num_cells):
-        vertex_coords = points[x_indices[cell]]
-        bbox_cell = np.array([vertex_coords[0], vertex_coords[0]])
-        # Create bounding box for cell
-        for i in range(1, vertex_coords.shape[0]):
-            for j in range(3):
-                bbox_cell[0, j] = min(bbox_cell[0, j], vertex_coords[i, j])
-                bbox_cell[1, j] = max(bbox_cell[1, j], vertex_coords[i, j])
-        distance = compute_distance_gjk(expand_bbox(bbox_cell, dtype), bounding_box)
-        if np.dot(distance, distance) < 1e-16:
-            colliding_cells.append(cell)
+    bounding_box = expand_bboxes(bbox, dtype)[0]
 
+    # Pack the data for each of the cell bounding boxes
+    # First pack min and max values for each cell
+    min_in_cell = np.min(points[x_indices], axis=1)
+    max_in_cell = np.max(points[x_indices], axis=1)
+    bboxes = np.zeros((num_cells, 2, 3))
+    bboxes[:, 0, :] = min_in_cell
+    bboxes[:, 1, :] = max_in_cell
+    # Expand min and max values to bounding box
+    body_1 = list(expand_bboxes(bboxes, dtype))
+
+    # Compute distances and check for collision
+    distances = compute_distances_gjk(body_1, bounding_box, num_threads)
+    norm_dist = np.linalg.norm(distances, axis=1) ** 2
+    tol = 50 * np.finfo(dtype).eps
+    colliding_cells = np.flatnonzero(norm_dist < tol).astype(np.int32)
     return colliding_cells
 
 
@@ -224,9 +225,10 @@ def test_compute_collisions_tree_1d(point, dtype):
 
 
 @pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("num_threads", [1, 2])
 @pytest.mark.parametrize("point", [np.array([0.52, 0.51, 0.0]), np.array([0.9, -0.9, 0.0])])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_compute_collisions_tree_2d(point, dtype):
+def test_compute_collisions_tree_2d(point, dtype, num_threads):
     mesh_A = create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=dtype)
     mesh_B = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     bgeom = mesh_B.geometry.x
@@ -237,18 +239,24 @@ def test_compute_collisions_tree_2d(point, dtype):
 
     entities_A = np.sort(np.unique([q[0] for q in entities]))
     entities_B = np.sort(np.unique([q[1] for q in entities]))
-    cells_A = find_colliding_cells(mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1), dtype)
-    cells_B = find_colliding_cells(mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1), dtype)
+    cells_A = find_colliding_cells(
+        mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1), dtype, num_threads
+    )
+    cells_B = find_colliding_cells(
+        mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1), dtype, num_threads
+    )
     assert np.allclose(entities_A, cells_A)
     assert np.allclose(entities_B, cells_B)
 
 
 @pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("num_threads", [1, 2])
 @pytest.mark.parametrize("point", [np.array([0.52, 0.51, 0.3]), np.array([0.9, -0.9, 0.3])])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_compute_collisions_tree_3d(point, dtype):
-    mesh_A = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=dtype)
-    mesh_B = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=dtype)
+def test_compute_collisions_tree_3d(point, dtype, num_threads):
+    M = 10
+    mesh_A = create_unit_cube(MPI.COMM_WORLD, M, M, M, dtype=dtype)
+    mesh_B = create_unit_cube(MPI.COMM_WORLD, M, M, M, dtype=dtype)
 
     bgeom = mesh_B.geometry.x
     bgeom += point
@@ -258,8 +266,14 @@ def test_compute_collisions_tree_3d(point, dtype):
     entities = compute_collisions_trees(tree_A, tree_B)
     entities_A = np.sort(np.unique([q[0] for q in entities]))
     entities_B = np.sort(np.unique([q[1] for q in entities]))
-    cells_A = find_colliding_cells(mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1), dtype)
-    cells_B = find_colliding_cells(mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1), dtype)
+
+    cells_A = find_colliding_cells(
+        mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1), dtype, num_threads
+    )
+    cells_B = find_colliding_cells(
+        mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1), dtype, num_threads
+    )
+
     assert np.allclose(entities_A, cells_A)
     assert np.allclose(entities_B, cells_B)
 

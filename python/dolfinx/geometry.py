@@ -28,6 +28,7 @@ __all__ = [
     "compute_collisions_points",
     "compute_collisions_trees",
     "compute_distance_gjk",
+    "compute_distances_gjk",
     "create_midpoint_tree",
     "determine_point_ownership",
     "squared_distance",
@@ -288,6 +289,34 @@ def compute_distance_gjk(
     elif np.issubdtype(p.dtype, np.float64):
         return _cpp.geometry.compute_distance_gjk_float64(p, q)
     raise RuntimeError("Invalid dtype in compute_distance_gjk")
+
+
+def compute_distances_gjk(
+    bodies: list[npt.NDArray[np.floating]], q: npt.NDArray[np.floating], num_threads: int
+) -> npt.NDArray[np.floating]:
+    """Compute the distance between a set of convex bodies.
+
+    For each convex body defined in `bodies`;
+    (a set of 3D points for each body) find the shortest distance vector
+    to to the body `q` defined by another set of 3D points.
+    The method uses the
+    Gilbert-Johnson-Keerthi (GJK) distance algorithm.
+
+    Args:
+        bodies: List of bodies, where each body is an array of
+            (``shape=(num_points_i, 3, gdim)``).
+        q: Body 2 list of points (``shape=(num_points_2, 3)``).
+        num_threads: Number of threads to use for GJK computation.
+
+    Returns:
+        Shortest vector between the two bodies.
+    """
+    assert all([p.dtype == q.dtype for p in bodies])
+    if np.issubdtype(q.dtype, np.float32):
+        return _cpp.geometry.compute_distances_gjk_float32(bodies, q, num_threads)
+    elif np.issubdtype(q.dtype, np.float64):
+        return _cpp.geometry.compute_distances_gjk_float64(bodies, q, num_threads)
+    raise RuntimeError("Invalid dtype in compute_distances_gjk")
 
 
 def determine_point_ownership(
