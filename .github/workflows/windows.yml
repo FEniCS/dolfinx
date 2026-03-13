@@ -23,6 +23,12 @@ jobs:
       VCPKG_EXE: C:/vcpkg/vcpkg
       FEED_URL: https://nuget.pkg.github.com/FEniCS/index.json
       VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/FEniCS/index.json,readwrite"
+      CMAKE_GENERATOR: "Ninja Multi-Config"
+      I_MPI_DEBUG: 6
+      I_MPI_PIN: 0
+      I_MPI_FABRICS: "ofi"
+      FI_PROVIDER: "tcp"
+      OMP_NUM_THREADS: 1
 
     steps:
       - name: Add NuGet sources
@@ -38,6 +44,13 @@ jobs:
           .$(${{ env.VCPKG_EXE }} fetch nuget) `
             setapikey "${{ secrets.GITHUB_TOKEN }}" `
             -Source "${{ env.FEED_URL }}"
+
+      - name: Setup MSVC compiler
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Set CL_PATH to compiler path
+        run: |
+          "CL_PATH=$((where.exe cl | Select-Object -First 1).Trim())" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v6
@@ -79,9 +92,9 @@ jobs:
       - name: Install Basix (C++)
         working-directory: basix/cpp
         run: |
-          cmake -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build-dir -S .
+          cmake -DCMAKE_INSTALL_PREFIX="D:/a/dolfinx/basix-install" -DCMAKE_CXX_COMPILER="$env:CL_PATH" -DINSTALL_RUNTIME_DEPENDENCIES=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -B build-dir -S .
           cmake --build build-dir --config Release
-          cmake --install build-dir --config Release --prefix "D:/a/dolfinx/basix-install"
+          cmake --install build-dir --config Release --prefix D:/a/dolfinx/basix-install
           echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Install Basix Python build dependencies
@@ -90,7 +103,7 @@ jobs:
       - name: Install Basix (Python)
         working-directory: basix/python
         run: |
-          python -m pip -v install --check-build-dependencies --no-build-isolation --no-cache-dir .[ci] --config-settings=cmake.args=-DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" --config-settings=cmake.build-type="Release"
+          python -m pip -v install -C cmake.args=-DCMAKE_CXX_COMPILER="$env:CL_PATH" -C cmake.args=-DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" --check-build-dependencies --no-build-isolation --no-cache-dir ".[ci]"
 
       - name: Checkout FFCx
         uses: actions/checkout@v6
@@ -102,7 +115,7 @@ jobs:
       - name: Install UFCx header
         working-directory: ffcx
         run: |
-          cmake -B build-dir -S cmake/
+          cmake -DCMAKE_INSTALL_PREFIX="D:/a/dolfinx/ufcx-install" -B build-dir -S cmake/
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/ufcx-install
 
@@ -124,20 +137,18 @@ jobs:
       - name: Install DOLFINx (C++)
         working-directory: dolfinx-src/cpp
         run: |
-          cmake -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS=".vcpkg-overlay" -B build-dir -S .
-          cmake --build build-dir --config Release
-          cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
+          cmake -DCMAKE_CXX_FLAGS_DEBUG="/fsanitize=address" -DCMAKE_INSTALL_PREFIX="D:/a/dolfinx/dolfinx-install" -DCMAKE_C_COMPILER="$env:CL_PATH" -DCMAKE_CXX_COMPILER="$env:CL_PATH" -DBUILD_TESTING=ON -DINSTALL_RUNTIME_DEPENDENCIES=ON -DDOLFINX_BASIX_PYTHON=OFF -DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_OVERLAY_PORTS=".vcpkg-overlay" -B build-dir -S .
+          cmake --build build-dir --config Debug
+          cmake --install build-dir --config Debug --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Run tests, skip la_matrix (C++, serial)
-        working-directory: dolfinx-src/cpp/build-dir/test/Release
+        working-directory: dolfinx-src/cpp/build-dir/test/Debug
+        run: mpiexec -n 1 ./unittests "~[la_matrix]"
+      - name: Run tests, skip la_matrix (C++, MPI, np=3)
+        working-directory: dolfinx-src/cpp/build-dir/test/Debug
         run: |
-          ls
-          mpiexec -n 1 ./unittests "~[la_matrix]"
-#      - name: Run tests, skip la_matrix, geometry_compat, create_box (C++, MPI, np=3)
-#        working-directory: dolfinx-src/cpp/build-dir/test/Release
-#        run: |
-#          mpiexec -n 3 ./unittests "~[la_matrix]"
+          mpiexec -n 2 ./unittests '~[la_matrix]'
 
       - name: Install DOLFINx Python build dependencies
         working-directory: dolfinx-src/python
@@ -148,7 +159,7 @@ jobs:
       - name: Install DOLFINx (Python)
         working-directory: dolfinx-src/python
         run: |
-          pip -v install --check-build-dependencies --no-build-isolation .[test] --config-settings=cmake.build-type="Release" --config-settings=cmake.args=-DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" --config-settings=cmake.args=-Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" --config-settings=cmake.args=-DDOLFINX_DIR="D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx" --config-settings=cmake.args=-DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" --config-settings=cmake.args=-DVCPKG_OVERLAY_PORTS="../cpp/.vcpkg-overlay"
+          pip -v install --check-build-dependencies --no-build-isolation -C cmake.args=-DCMAKE_C_COMPILER="$env:CL_PATH" -C cmake.args=-DCMAKE_CXX_COMPILER="$env:CL_PATH" -C cmake.args=-DBasix_DIR="D:/a/dolfinx/basix-install/lib/cmake/basix" -C cmake.args=-Dufcx_DIR="D:/a/dolfinx/ufcx-install/share/ufcx/cmake" -C cmake.args=-DDOLFINX_DIR="D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx" -C cmake.args=-DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -C cmake.args=-DVCPKG_OVERLAY_PORTS="../cpp/.vcpkg-overlay" ".[test]"
 
       - name: Run tests, skip test_mixed_topology_partitioning (Python, serial)
         working-directory: dolfinx-src/python/test

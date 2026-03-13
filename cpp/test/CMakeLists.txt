@@ -61,7 +61,7 @@ find_package(Catch2 3 REQUIRED)
 # FFCx compile: expr.py -> expr.c
 add_custom_command(
   OUTPUT expr.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/fem/expr.py
+  COMMAND python -m ffcx ${CMAKE_CURRENT_SOURCE_DIR}/fem/expr.py
   VERBATIM
   DEPENDS fem/expr.py
   COMMENT "Compile expr.py using FFCx"
@@ -70,7 +70,7 @@ add_custom_command(
 # FFCx compile: poisson.py -> poisson.c
 add_custom_command(
   OUTPUT poisson.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py
+  COMMAND python -m ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py
   VERBATIM
   DEPENDS poisson.py
   COMMENT "Compile poisson.py using FFCx"
