@@ -242,11 +242,27 @@ endif()
 # Check for some compiler flags
 include(CheckCXXCompilerFlag)
 
+set(DOLFINX_CXX_DEVELOPER_FLAGS "")
+set(DOLFINX_CXX_DEVELOPER_DEFINITIONS "")
+set(DOLFINX_LINK_DEVELOPER_FLAGS "")
+
 # Add some strict compiler checks
 check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
-
 if(HAVE_PEDANTIC)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
+endif()
+
+# Nicer stack traces
+check_cxx_compiler_flag("-fno-omit-frame-pointer" HAVE_NO_OMIT_FRAME_POINTER)
+if(HAVE_NO_OMIT_FRAME_POINTER)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -fno-omit-frame-pointer)
+endif()
+
+# Add fast memory error detector
+check_cxx_compiler_flag("-fsanitize=address" HAVE_ADDRESS_SANITIZER)
+if(HAVE_ADDRESS_SANITIZER)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -fsanitize=address)
+  list(APPEND DOLFINX_LINK_DEVELOPER_FLAGS -fsanitize=address)
 endif()
 
 # Debug flags
