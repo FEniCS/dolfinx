@@ -238,11 +238,10 @@ public:
   /// @param [in,out] X The reference coordinates to compute
   /// (shape=`(num_points, tdim)`).
   /// @param [in] x Physical coordinates (`shape=(num_points, gdim)`).
-  /// @param [in] cell_geometry Cell nodes coordinates (`shape=(num
-  /// geometry nodes, gdim)`).
+  /// @param [in] cell_geometry Cell nodes coordinates (`shape=(num_xnodes,
+  /// gdim)`).
   /// @param [in] working_array Working memory. Size must be at least
-  /// `tdim * (num_geometry_nodes+2+2*gdim) + gdim +
-  /// (tdim+1)*num_geometry_nodes`.
+  /// `tdim * (2 * gdim + 2 * num_xnodes + 2) + gdim + num_xnodes`.
   /// @param [in] tol Tolerance for termination of Newton method.
   /// @param [in] maxit Maximum number of Newton iterations
   /// @note If convergence is not achieved within `maxit`, the function
