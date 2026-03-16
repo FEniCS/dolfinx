@@ -108,7 +108,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
 
   std::span<T> dX(working_array.data() + (tdim * (num_xnodes + 1)), tdim);
   std::span<T> xk(working_array.data() + (tdim * (num_xnodes + 2)), gdim);
-  std::fill(xk.begin(), xk.end(), 0);
+  std::ranges::fill(xk, 0);
   mdspan2_t<T> J(working_array.data() + ((tdim * (num_xnodes + 2)) + gdim),
                  gdim, tdim);
   mdspan2_t<T> K(working_array.data()
