@@ -559,6 +559,13 @@ public:
     std::vector<geometry_type> detJ(xshape[0]);
     std::vector<geometry_type> det_scratch(2 * gdim * tdim);
 
+    // Scrach space for pull-back of point coordinates for non-affine cells.
+    std::vector<geometry_type> pull_back_scratch;
+    if (!cmap.is_affine())
+    {
+      pull_back_scratch.resize(tdim * (num_dofs_g + 2 + 2 * gdim) + gdim
+                               + (tdim + 1) * num_dofs_g);
+    }
     // Prepare geometry data in each cell
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
@@ -604,7 +611,7 @@ public:
       else
       {
         // Pull-back physical point xp to reference coordinate Xp
-        cmap.pull_back_nonaffine(Xp, xp, coord_dofs);
+        cmap.pull_back_nonaffine(Xp, xp, coord_dofs, pull_back_scratch);
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
         CoordinateElement<geometry_type>::compute_jacobian(dphi, coord_dofs,
                                                            _J);

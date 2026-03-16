@@ -240,13 +240,17 @@ public:
   /// @param [in] x Physical coordinates (`shape=(num_points, gdim)`).
   /// @param [in] cell_geometry Cell nodes coordinates (`shape=(num
   /// geometry nodes, gdim)`).
+  /// @param [in] working_array Working memory. Size must be at least
+  /// `tdim * (num_geometry_nodes+2+2*gdim) + gdim +
+  /// (tdim+1)*num_geometry_nodes`.
   /// @param [in] tol Tolerance for termination of Newton method.
   /// @param [in] maxit Maximum number of Newton iterations
   /// @note If convergence is not achieved within `maxit`, the function
   /// throws a runtime error.
   void pull_back_nonaffine(mdspan2_t<T> X, mdspan2_t<const T> x,
                            mdspan2_t<const T> cell_geometry,
-                           double tol = 1.0e-6, int maxit = 15) const;
+                           std::span<T> working_array, double tol = 1.0e-6,
+                           int maxit = 15) const;
 
   /// @brief Permute a list of DOF numbers on a cell.
   void permute(std::span<std::int32_t> dofs, std::uint32_t cell_perm) const;

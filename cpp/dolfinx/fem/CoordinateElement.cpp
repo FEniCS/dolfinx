@@ -83,6 +83,7 @@ template <std::floating_point T>
 void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
                                                mdspan2_t<const T> x,
                                                mdspan2_t<const T> cell_geometry,
+                                               std::span<T> working_array,
                                                double tol, int maxit) const
 {
   // Number of points
@@ -97,33 +98,36 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   assert(X.extent(0) == num_points);
   assert(X.extent(1) == tdim);
 
-  std::vector<T> dphi_b(tdim * num_xnodes);
-  mdspan2_t<T> dphi(dphi_b.data(), tdim, num_xnodes);
+  // Allocate various components of working array
+  assert(working_array.size() >= tdim * num_xnodes + 2 * tdim + 2 * gdim * tdim
+                                     + gdim + (tdim + 1) * num_xnodes);
 
-  std::vector<T> Xk_b(tdim);
-  mdspan2_t<T> Xk(Xk_b.data(), 1, tdim);
+  mdspan2_t<T> dphi(working_array.data(), tdim, num_xnodes);
+  mdspan2_t<const T> Xk(working_array.data() + tdim * num_xnodes, 1, tdim);
+  std::span<T> Xk_span(working_array.data() + tdim * num_xnodes, tdim);
 
-  std::array<T, 3> xk{0, 0, 0};
-  std::vector<T> dX(tdim);
-  std::vector<T> J_b(gdim * tdim);
-  mdspan2_t<T> J(J_b.data(), gdim, tdim);
-  std::vector<T> K_b(tdim * gdim);
-  mdspan2_t<T> K(K_b.data(), tdim, gdim);
+  std::span<T> dX(working_array.data() + (tdim * (num_xnodes + 1)), tdim);
+  std::span<T> xk(working_array.data() + (tdim * (num_xnodes + 2)), gdim);
+  mdspan2_t<T> J(working_array.data() + ((tdim * (num_xnodes + 2)) + gdim),
+                 gdim, tdim);
+  mdspan2_t<T> K(working_array.data()
+                     + ((tdim * (num_xnodes + 2)) + gdim * (tdim + 1)),
+                 tdim, gdim);
 
   using mdspan4_t = md::mdspan<T, md::dextents<std::size_t, 4>>;
 
   const std::array<std::size_t, 4> bsize = _element->tabulate_shape(1, 1);
-  std::vector<T> basis_b(std::reduce(bsize.begin(), bsize.end(), std::size_t(1),
-                                     std::multiplies{}));
-  mdspan4_t basis(basis_b.data(), bsize);
-  std::vector<T> phi(basis.extent(2));
+  mdspan4_t basis(working_array.data()
+                      + ((tdim * (num_xnodes + 2)) + gdim * (2 * tdim + 1)),
+                  bsize);
   for (std::size_t p = 0; p < num_points; ++p)
   {
-    std::ranges::fill(Xk_b, 0);
+    // Reset Xk
+    std::ranges::fill(Xk_span, 0);
     int k;
     for (k = 0; k < maxit; ++k)
     {
-      _element->tabulate(1, Xk_b, {1, tdim}, basis_b);
+      _element->tabulate(1, Xk, basis);
 
       // x = cell_geometry * phi
       std::ranges::fill(xk, 0);
@@ -132,7 +136,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
           xk[j] += cell_geometry(i, j) * basis(0, 0, i, 0);
 
       // Compute Jacobian, its inverse and determinant
-      std::ranges::fill(J_b, 0);
+      std::ranges::fill(J.data_handle(), J.data_handle() + J.size(), 0);
       for (std::size_t i = 0; i < tdim; ++i)
         for (std::size_t j = 0; j < basis.extent(2); ++j)
           dphi(i, j) = basis(i + 1, 0, j, 0);
@@ -147,12 +151,12 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
           dX[i] += K(i, j) * (x(p, j) - xk[j]);
 
       // Compute Xk += dX
-      std::ranges::transform(dX, Xk_b, Xk_b.begin(),
+      std::ranges::transform(dX, Xk_span, Xk_span.begin(),
                              [](auto a, auto b) { return a + b; });
 
       // Compute norm(dX)
       if (auto dX_squared
-          = std::transform_reduce(dX.cbegin(), dX.cend(), 0.0, std::plus{},
+          = std::transform_reduce(dX.begin(), dX.end(), 0.0, std::plus{},
                                   [](auto v) { return v * v; });
           std::sqrt(dX_squared) < tol)
       {
@@ -160,7 +164,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
       }
     }
 
-    std::copy(Xk_b.cbegin(), std::next(Xk_b.cbegin(), tdim),
+    std::copy(Xk_span.begin(), std::next(Xk_span.end(), tdim),
               X.data_handle() + p * tdim);
     if (k == maxit)
     {

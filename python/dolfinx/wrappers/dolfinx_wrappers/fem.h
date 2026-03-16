@@ -1060,8 +1060,17 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
               self.pull_back_affine(X, K, x0, _x);
             }
             else
-              self.pull_back_nonaffine(X, _x, g);
+            {
 
+              // Scratch space for pull-back of point coordinates for
+              // non-affine cells.
+              std::vector<T> det_scratch(2 * gdim * tdim);
+              std::size_t num_dofs_g = cell_geometry.shape(0);
+              std::vector<T> pull_back_scratch;
+              pull_back_scratch.resize(tdim * (num_dofs_g + 2 + 2 * gdim) + gdim
+                                       + (tdim + 1) * num_dofs_g);
+              self.pull_back_nonaffine(X, _x, g, pull_back_scratch);
+            }
             return dolfinx_wrappers::as_nbarray(std::move(Xb),
                                                 {num_points, tdim});
           },
