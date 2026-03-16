@@ -563,8 +563,8 @@ public:
     std::vector<geometry_type> pull_back_scratch;
     if (!cmap.is_affine())
     {
-      pull_back_scratch.resize(tdim * (num_dofs_g + 2 + 2 * gdim) + gdim
-                               + (tdim + 1) * num_dofs_g);
+      pull_back_scratch.resize(tdim * (2 * gdim + 2 * num_dofs_g + 2) + gdim
+                               + num_dofs_g);
     }
     // Prepare geometry data in each cell
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)

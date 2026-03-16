@@ -99,8 +99,8 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   assert(X.extent(1) == tdim);
 
   // Allocate various components of working array
-  assert(working_array.size() >= tdim * num_xnodes + 2 * tdim + 2 * gdim * tdim
-                                     + gdim + (tdim + 1) * num_xnodes);
+  assert(working_array.size()
+         >= tdim * (2 * gdim + 2 * num_xnodes + 2) + gdim + num_xnodes);
 
   mdspan2_t<T> dphi(working_array.data(), tdim, num_xnodes);
   mdspan2_t<const T> Xk(working_array.data() + tdim * num_xnodes, 1, tdim);
@@ -108,6 +108,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
 
   std::span<T> dX(working_array.data() + (tdim * (num_xnodes + 1)), tdim);
   std::span<T> xk(working_array.data() + (tdim * (num_xnodes + 2)), gdim);
+  std::fill(xk.begin(), xk.end(), 0);
   mdspan2_t<T> J(working_array.data() + ((tdim * (num_xnodes + 2)) + gdim),
                  gdim, tdim);
   mdspan2_t<T> K(working_array.data()
@@ -117,6 +118,10 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   using mdspan4_t = md::mdspan<T, md::dextents<std::size_t, 4>>;
 
   const std::array<std::size_t, 4> bsize = _element->tabulate_shape(1, 1);
+  assert(bsize[0] == tdim + 1); // Tabulating basis and first derivatives
+  assert(bsize[1] == 1);        // Tabulating at one point at a time
+  assert(bsize[2] == num_xnodes);
+  assert(bsize[3] == 1); // Scalar component coordinate element
   mdspan4_t basis(working_array.data()
                       + ((tdim * (num_xnodes + 2)) + gdim * (2 * tdim + 1)),
                   bsize);
@@ -164,8 +169,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
       }
     }
 
-    std::copy(Xk_span.begin(), std::next(Xk_span.end(), tdim),
-              X.data_handle() + p * tdim);
+    std::copy(Xk_span.begin(), Xk_span.end(), X.data_handle() + p * tdim);
     if (k == maxit)
     {
       throw std::runtime_error(
