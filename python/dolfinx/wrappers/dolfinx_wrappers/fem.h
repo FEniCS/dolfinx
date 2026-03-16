@@ -1064,7 +1064,6 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
 
               // Scratch space for pull-back of point coordinates for
               // non-affine cells.
-              std::vector<T> det_scratch(2 * gdim * tdim);
               std::size_t num_dofs_g = cell_geometry.shape(0);
               std::vector<T> pull_back_scratch;
               pull_back_scratch.resize(tdim * (2 * gdim + 2 * num_dofs_g + 2)
