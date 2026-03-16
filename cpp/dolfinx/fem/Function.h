@@ -130,8 +130,8 @@ public:
     std::span<value_type> x_new = x->array();
     for (std::size_t i = 0; i < map.size(); ++i)
     {
-      assert((int)i < x_new.size());
-      assert(map[i] < x_old.size());
+      assert(i < x_new.size());
+      assert(static_cast<std::size_t>(map[i]) < x_old.size());
       x_new[i] = x_old[map[i]];
     }
 
