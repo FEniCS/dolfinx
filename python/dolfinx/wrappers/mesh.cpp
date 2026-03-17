@@ -105,14 +105,16 @@ void mesh(nb::module_& m)
       "build_dual_graph",
       [](const MPICommWrapper comm, dolfinx::mesh::CellType cell_type,
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-         std::optional<std::int32_t> max_facet_to_cell_links)
+         std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
       {
         std::vector<dolfinx::mesh::CellType> c = {cell_type};
         return dolfinx::mesh::build_dual_graph(
-            comm.get(), std::span{c}, {cells.array()}, max_facet_to_cell_links);
+            comm.get(), std::span{c}, {cells.array()}, max_facet_to_cell_links,
+            num_threads);
       },
       nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells"),
-      nb::arg("max_facet_to_cell_links").none(), "Build dual graph for cells");
+      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"),
+      "Build dual graph for cells");
 
   m.def(
       "build_dual_graph",
@@ -120,7 +122,7 @@ void mesh(nb::module_& m)
          std::vector<dolfinx::mesh::CellType>& cell_types,
          const std::vector<
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>& cells,
-         std::optional<std::int32_t> max_facet_to_cell_links)
+         std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
       {
         std::vector<std::span<const std::int64_t>> cell_span(cells.size());
         for (std::size_t i = 0; i < cells.size(); ++i)
@@ -129,10 +131,12 @@ void mesh(nb::module_& m)
               = std::span<const std::int64_t>(cells[i].data(), cells[i].size());
         }
         return dolfinx::mesh::build_dual_graph(
-            comm.get(), cell_types, cell_span, max_facet_to_cell_links);
+            comm.get(), cell_types, cell_span, max_facet_to_cell_links,
+            num_threads);
       },
       nb::arg("comm"), nb::arg("cell_types"), nb::arg("cells"),
-      nb::arg("max_facet_to_cell_links").none(), "Build dual graph for cells");
+      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"),
+      "Build dual graph for cells");
 
   // dolfinx::mesh::GhostMode enums
   nb::enum_<dolfinx::mesh::GhostMode>(m, "GhostMode")
@@ -339,16 +343,16 @@ void mesh(nb::module_& m)
   m.def(
       "create_cell_partitioner",
       [](dolfinx::mesh::GhostMode mode,
-         std::optional<std::int32_t> max_facet_to_cell_links)
-          -> part::impl::PythonCellPartitionFunction
+         std::optional<std::int32_t> max_facet_to_cell_links,
+         int num_threads) -> part::impl::PythonCellPartitionFunction
       {
         return part::impl::create_cell_partitioner_py(
             dolfinx::mesh::create_cell_partitioner(
-                mode, &dolfinx::graph::partition_graph,
-                max_facet_to_cell_links));
+                mode, &dolfinx::graph::partition_graph, max_facet_to_cell_links,
+                num_threads));
       },
       nb::arg("mode"), nb::arg("max_facet_to_cell_links").none(),
-      "Create default cell partitioner.");
+      nb::arg("num_threads"), "Create a default cell partitioner.");
   m.def(
       "create_cell_partitioner",
       [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
@@ -356,16 +360,16 @@ void mesh(nb::module_& m)
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
              bool ghosting)>& part,
          dolfinx::mesh::GhostMode mode,
-         std::optional<std::int32_t> max_facet_to_cell_links)
-          -> part::impl::PythonCellPartitionFunction
+         std::optional<std::int32_t> max_facet_to_cell_links,
+         int num_threads) -> part::impl::PythonCellPartitionFunction
       {
         return part::impl::create_cell_partitioner_py(
             dolfinx::mesh::create_cell_partitioner(
                 mode, part::impl::create_partitioner_cpp(part),
-                max_facet_to_cell_links));
+                max_facet_to_cell_links, num_threads));
       },
       nb::arg("part"), nb::arg("ghost_mode"),
-      nb::arg("max_facet_to_cell_links").none(),
+      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"),
       "Create a cell partitioner from a graph partitioning function.");
 
   m.def(

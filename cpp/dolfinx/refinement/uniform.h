@@ -19,6 +19,6 @@ template <typename T>
 mesh::Mesh<T>
 uniform_refine(const mesh::Mesh<T>& mesh,
                const mesh::CellPartitionFunction& partitioner
-               = mesh::create_cell_partitioner(mesh::GhostMode::none, 2));
+               = mesh::create_cell_partitioner(mesh::GhostMode::none, 2, 0));
 
 } // namespace dolfinx::refinement

@@ -106,7 +106,7 @@ TEST_CASE("Test argsort bitset")
   auto generator = std::bind(distribution, engine);
   std::generate(arr.begin(), arr.end(), generator);
 
-  std::vector<std::int32_t> perm
+  std::vector<std::size_t> perm
       = dolfinx::sort_by_perm<std::int32_t>(arr, shape1);
   REQUIRE((int)perm.size() == shape0);
 
