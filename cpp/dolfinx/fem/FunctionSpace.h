@@ -111,22 +111,27 @@ public:
   FunctionSpace sub(const std::vector<int>& component) const
   {
     assert(_mesh);
-    assert(_elements.front());
-    assert(_dofmaps.front());
+    assert(_elements.size() > 0);
+    assert(_dofmaps.size() > 0);
 
     // Check that component is valid
     if (component.empty())
       throw std::runtime_error("Component must be non-empty");
 
     // Extract sub-element
-    auto element = this->_elements.front()->extract_sub_element(component);
+    std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
+        sub_elements;
+    for (auto e : _elements)
+      sub_elements.push_back(e->extract_sub_element(component));
 
     // Extract sub dofmap
-    auto dofmap = std::make_shared<DofMap>(
-        _dofmaps.front()->extract_sub_dofmap(component));
+    std::vector<std::shared_ptr<const DofMap>> sub_dofmaps;
+    for (auto d : _dofmaps)
+      sub_dofmaps.push_back(
+          std::make_shared<const DofMap>(d->extract_sub_dofmap(component)));
 
     // Create new sub space
-    FunctionSpace sub_space(_mesh, element, dofmap);
+    FunctionSpace sub_space(_mesh, sub_elements, sub_dofmaps);
 
     // Set root space id and component w.r.t. root
     sub_space._root_space_id = _root_space_id;
