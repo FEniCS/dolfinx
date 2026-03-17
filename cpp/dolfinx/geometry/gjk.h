@@ -319,9 +319,9 @@ void nearest_simplex(std::span<const T> s, std::array<T, 4>& coordinates)
 /// @brief 'support' function, finds point p in bd which maximises p.v
 /// @param bd Body described by set of 3D points, flattened
 /// @param v A point in 3D
-/// @returns Point p in `bd` which maximises p.v
+/// @returns Index of point p in `bd` which maximises p.v
 template <typename T>
-std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
+inline int support(std::span<const T> bd, const std::array<T, 3>& v)
 {
   int i = 0;
   T qmax = bd[0] * v[0] + bd[1] * v[1] + bd[2] * v[2];
@@ -335,7 +335,7 @@ std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
     }
   }
 
-  return {bd[3 * i], bd[3 * i + 1], bd[3 * i + 2]};
+  return i;
 }
 } // namespace impl_gjk
 
@@ -376,7 +376,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
   s[1] = v[1];
   s[2] = v[2];
   std::array<U, 4> lmn = {0}; // Scratch memory for barycentric
-                              // coordinates of nearest simplex
+                              // coordinates of closest point in simplex
   std::size_t simplex_size = 1;
 
   // Begin GJK iteration
@@ -384,11 +384,11 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
   for (k = 0; k < maxk; ++k)
   {
     // Support function
-    std::array w1
-        = impl_gjk::support(std::span<const U>(p), {-v[0], -v[1], -v[2]});
-    std::array w0
-        = impl_gjk::support(std::span<const U>(q), {v[0], v[1], v[2]});
-    const std::array<U, 3> w = {w1[0] - w0[0], w1[1] - w0[1], w1[2] - w0[2]};
+    int ip = impl_gjk::support(std::span<const U>(p), {-v[0], -v[1], -v[2]});
+    int iq = impl_gjk::support(std::span<const U>(q), {v[0], v[1], v[2]});
+    const std::array<U, 3> w
+        = {p[ip * 3] - q[iq * 3], p[ip * 3 + 1] - q[iq * 3 + 1],
+           p[ip * 3 + 2] - q[iq * 3 + 2]};
 
     // Break if any existing points are the same as w
     std::size_t m;
