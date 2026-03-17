@@ -47,8 +47,8 @@ inline Vec::value_type dot3(const Vec& a, const Vec& b)
 /// @brief Find the barycentric coordinates in the simplex `s`, of the point in
 /// `s` which is closest to the origin.
 /// @param s Simplex described by a set of points in 3D, row-major, flattened.
-/// @param[in, out] Barycentric coordinates of the point in s closest to the
-/// origin.
+/// @param[in,out] coordinates Barycentric coordinates of the point in s
+/// closest to the origin.
 /// @note `s` may be an interval, a triangle or a tetrahedron.
 template <typename T>
 void nearest_simplex(std::span<const T> s, std::array<T, 4>& coordinates)
