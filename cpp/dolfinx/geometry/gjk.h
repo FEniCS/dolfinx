@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Chris Richardson
+// Copyright (C) 2020-2026 Chris Richardson and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -47,10 +47,11 @@ inline Vec::value_type dot3(const Vec& a, const Vec& b)
 /// @brief Find the barycentric coordinates in the simplex `s`, of the point in
 /// `s` which is closest to the origin.
 /// @param s Simplex described by a set of points in 3D, row-major, flattened.
-/// @return Barycentric coordinates of the point in s closest to the origin.
+/// @param[in, out] Barycentric coordinates of the point in s closest to the
+/// origin.
 /// @note `s` may be an interval, a triangle or a tetrahedron.
 template <typename T>
-std::vector<T> nearest_simplex(std::span<const T> s)
+void nearest_simplex(std::span<const T> s, std::array<T, 4>& coordinates)
 {
   assert(s.size() % 3 == 0);
   const std::size_t s_rows = s.size() / 3;
@@ -70,18 +71,25 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     if (lm < 0.0)
     {
       SPDLOG_DEBUG("GJK: line point A");
-      return {1.0, 0.0};
+
+      coordinates[0] = 1.0;
+      coordinates[1] = 0.0;
+      return;
     }
     T mu = dot3(s1, s1) - dot3(s1, s0);
     if (mu < 0.0)
     {
       SPDLOG_DEBUG("GJK: line point B");
-      return {0.0, 1.0};
+      coordinates[0] = 0.0;
+      coordinates[1] = 1.0;
+      return;
     }
 
     SPDLOG_DEBUG("GJK line: AB");
     T f1 = 1.0 / (lm + mu);
-    return {mu * f1, lm * f1};
+    coordinates[0] = mu * f1;
+    coordinates[1] = lm * f1;
+    return;
   }
   case 3:
   {
@@ -99,7 +107,10 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     if (d1 < 0.0 and d2 < 0.0)
     {
       SPDLOG_DEBUG("GJK: Point A");
-      return {1.0, 0.0, 0.0};
+      coordinates[0] = 1.0;
+      coordinates[1] = 0.0;
+      coordinates[2] = 0.0;
+      return;
     }
 
     T bb = dot3(b, b);
@@ -109,7 +120,10 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     if (d3 < 0.0 and d4 < 0.0)
     {
       SPDLOG_DEBUG("GJK: Point B");
-      return {0.0, 1.0, 0.0};
+      coordinates[0] = 0.0;
+      coordinates[1] = 1.0;
+      coordinates[2] = 0.0;
+      return;
     }
 
     T cc = dot3(c, c);
@@ -118,7 +132,10 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     if (d5 < 0.0 and d6 < 0.0)
     {
       SPDLOG_DEBUG("GJK: Point C");
-      return {0.0, 0.0, 1.0};
+      coordinates[0] = 0.0;
+      coordinates[1] = 0.0;
+      coordinates[2] = 1.0;
+      return;
     }
 
     T vc = d4 * d1 - d1 * d3 + d3 * d2;
@@ -128,7 +145,10 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       T f1 = 1.0 / (d1 + d3);
       T lm = d1 * f1;
       T mu = d3 * f1;
-      return {mu, lm, 0.0};
+      coordinates[0] = mu;
+      coordinates[1] = lm;
+      coordinates[2] = 0.0;
+      return;
     }
     T vb = d1 * d5 - d5 * d2 + d2 * d6;
     if (vb < 0.0 and d2 > 0.0 and d5 > 0.0)
@@ -137,7 +157,10 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       T f1 = 1.0 / (d2 + d5);
       T lm = d2 * f1;
       T mu = d5 * f1;
-      return {mu, 0.0, lm};
+      coordinates[0] = mu;
+      coordinates[1] = 0.0;
+      coordinates[2] = lm;
+      return;
     }
     T va = d3 * d6 - d6 * d4 + d4 * d5;
     if (va < 0.0 and d4 > 0.0 and d6 > 0.0)
@@ -146,18 +169,24 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       T f1 = 1.0 / (d4 + d6);
       T lm = d4 * f1;
       T mu = d6 * f1;
-      return {0.0, mu, lm};
+      coordinates[0] = 0.0;
+      coordinates[1] = mu;
+      coordinates[2] = lm;
+      return;
     }
 
     SPDLOG_DEBUG("GJK: triangle ABC");
     T f1 = 1.0 / (va + vb + vc);
-    return {va * f1, vb * f1, vc * f1};
+    coordinates[0] = va * f1;
+    coordinates[1] = vb * f1;
+    coordinates[2] = vc * f1;
+    return;
   }
   case 4:
   {
     // Most complex case, where simplex is a tetrahedron, with 15 possible
     // outcomes (4 vertices, 6 edges, 4 facets and the interior).
-    std::vector<T> rv{0, 0, 0, 0};
+    std::ranges::fill(coordinates, 0.0);
 
     T d[4][4];
     for (int i = 0; i < 4; ++i)
@@ -178,8 +207,8 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       if (out)
       {
         // Return if a vertex is closest
-        rv[i] = 1.0;
-        return rv;
+        coordinates[i] = 1.0;
+        return;
       }
     }
 
@@ -207,9 +236,9 @@ std::vector<T> nearest_simplex(std::span<const T> s)
       {
         // On an edge
         T f1 = 1.0 / (d[j0][j1] + d[j1][j0]);
-        rv[j0] = f1 * d[j1][j0];
-        rv[j1] = f1 * d[j0][j1];
-        return rv;
+        coordinates[j0] = f1 * d[j1][j0];
+        coordinates[j1] = f1 * d[j0][j1];
+        return;
       }
     }
 
@@ -238,29 +267,49 @@ std::vector<T> nearest_simplex(std::span<const T> s)
     if (w[0] < 0.0 and v[2][0] > 0.0 and v[4][0] > 0.0 and v[5][0] > 0.0)
     {
       T f1 = 1.0 / (v[2][0] + v[4][0] + v[5][0]);
-      return {v[2][0] * f1, v[4][0] * f1, v[5][0] * f1, 0.0};
+      coordinates[0] = v[2][0] * f1;
+      coordinates[1] = v[4][0] * f1;
+      coordinates[2] = v[5][0] * f1;
+      coordinates[3] = 0.0;
+      return;
     }
 
     if (w[1] < 0.0 and v[1][0] > 0.0 and v[3][0] > 0.0 and v[5][1] > 0.0)
     {
       T f1 = 1.0 / (v[1][0] + v[3][0] + v[5][1]);
-      return {v[1][0] * f1, v[3][0] * f1, 0.0, v[5][1] * f1};
+      coordinates[0] = v[1][0] * f1;
+      coordinates[1] = v[3][0] * f1;
+      coordinates[2] = 0.0;
+      coordinates[3] = v[5][1] * f1;
+      return;
     }
 
     if (w[2] < 0.0 and v[0][0] > 0.0 and v[3][1] > 0 and v[4][1] > 0.0)
     {
       T f1 = 1.0 / (v[0][0] + v[3][1] + v[4][1]);
-      return {v[0][0] * f1, 0.0, v[3][1] * f1, v[4][1] * f1};
+      coordinates[0] = v[0][0] * f1;
+      coordinates[1] = 0.0;
+      coordinates[2] = v[3][1] * f1;
+      coordinates[3] = v[4][1] * f1;
+      return;
     }
 
     if (w[3] < 0.0 and v[0][1] > 0.0 and v[1][1] > 0.0 and v[2][1] > 0.0)
     {
       T f1 = 1.0 / (v[0][1] + v[1][1] + v[2][1]);
-      return {0.0, v[0][1] * f1, v[1][1] * f1, v[2][1] * f1};
+      coordinates[0] = 0.0;
+      coordinates[1] = v[0][1] * f1;
+      coordinates[2] = v[1][1] * f1;
+      coordinates[3] = v[2][1] * f1;
+      return;
     }
 
     // Point lies in interior of tetrahedron with these barycentric coordinates
-    return {w[3] / wsum, w[2] / wsum, w[1] / wsum, w[0] / wsum};
+    coordinates[0] = w[3] / wsum;
+    coordinates[1] = w[2] / wsum;
+    coordinates[2] = w[1] / wsum;
+    coordinates[3] = w[0] / wsum;
+    return;
   }
   default:
     throw std::runtime_error("Number of rows defining simplex not supported.");
@@ -322,7 +371,13 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
 
   // Initialise vector and simplex
   std::array<U, 3> v = {p[0] - q[0], p[1] - q[1], p[2] - q[2]};
-  std::vector<U> s = {v[0], v[1], v[2]};
+  std::array<U, 12> s = {0}; // Max simplex is a tetrahedron
+  s[0] = v[0];
+  s[1] = v[1];
+  s[2] = v[2];
+  std::array<U, 4> lmn = {0}; // Scratch memory for barycentric
+                              // coordinates of nearest simplex
+  std::size_t simplex_size = 1;
 
   // Begin GJK iteration
   int k;
@@ -336,16 +391,15 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     const std::array<U, 3> w = {w1[0] - w0[0], w1[1] - w0[1], w1[2] - w0[2]};
 
     // Break if any existing points are the same as w
-    assert(s.size() % 3 == 0);
     std::size_t m;
-    for (m = 0; m < s.size() / 3; ++m)
+    for (m = 0; m < simplex_size; ++m)
     {
       auto it = std::next(s.begin(), 3 * m);
       if (std::equal(it, std::next(it, 3), w.begin(), w.end()))
         break;
     }
 
-    if (m != s.size() / 3)
+    if (m != simplex_size)
       break;
 
     // 1st exit condition (v - w).v = 0
@@ -358,15 +412,16 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
                  static_cast<double>(eps));
 
     // Add new vertex to simplex
-    s.insert(s.end(), w.begin(), w.end());
+    std::copy(w.begin(), w.end(), s.begin() + 3 * simplex_size);
+    ++simplex_size;
 
     // Find nearest subset of simplex
-    std::vector<U> lmn = impl_gjk::nearest_simplex<U>(s);
+    impl_gjk::nearest_simplex<U>(std::span(s.begin(), 3 * simplex_size), lmn);
 
     // Recompute v and keep points with non-zero values in lmn
     std::size_t j = 0;
     v = {0.0, 0.0, 0.0};
-    for (std::size_t i = 0; i < lmn.size(); ++i)
+    for (std::size_t i = 0; i < simplex_size; ++i)
     {
       std::span<const U> sc(std::next(s.begin(), 3 * i), 3);
       if (lmn[i] > 0.0)
@@ -379,8 +434,8 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
         ++j;
       }
     }
-    SPDLOG_DEBUG("new s size={}", 3 * j);
-    s.resize(3 * j);
+    SPDLOG_DEBUG("new simplex size={}", j);
+    simplex_size = j;
 
     // 2nd exit condition - strict monotonicity
     // Floating point can cause the algorithm to stagnate. Then we terminate.
