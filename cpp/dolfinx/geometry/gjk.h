@@ -23,25 +23,34 @@ namespace dolfinx::geometry
 namespace impl_gjk
 {
 
-/// @brief Determinant of a 3x3 matrix formed by extracting
-/// three specific vertices from a flattened array of vertices.
-/// @param s Flattened array of 3D vertices (row-major).
-/// @param r0 Index of the vertex to use as row 0.
-/// @param r1 Index of the vertex to use as row 1.
-/// @param r2 Index of the vertex to use as row 2.
-/// @returns det(A)
+/// @brief Compute the four determinants, of 3x3 matrices given by all the
+/// combinations of four vectors (0, 1, 2), (0, 1, 3), (0, 2, 3) and (1, 2, 3).
+/// Equivalent to the determinant cofactors of an augmented 4x4 matrix of the
+/// same vertices.
+/// @param s Flattened array of four 3D vertices (row-major) 4x3.
+/// @returns Cofactors/determinants for each set of three vertices
 template <typename T>
-inline T det3_rows(const std::array<T, 12>& s, int r0, int r1, int r2)
+inline std::array<T, 4> det4(const std::array<T, 12>& s)
 {
-  int i0 = r0 * 3;
-  int i1 = r1 * 3;
-  int i2 = r2 * 3;
-  assert(i0 + 3 <= s.size() and i1 + 3 <= s.size() and i2 + 3 <= s.size());
-  T w0 = s[i1 + 1] * s[i2 + 2] - s[i1 + 2] * s[i2 + 1];
-  T w1 = s[i1] * s[i2 + 2] - s[i1 + 2] * s[i2];
-  T w2 = s[i1] * s[i2 + 1] - s[i1 + 1] * s[i2];
+  std::span<const T, 3> s0(s.begin(), 3);
+  std::span<const T, 3> s1(s.begin() + 3, 3);
+  std::span<const T, 3> s2(s.begin() + 6, 3);
+  std::span<const T, 3> s3(s.begin() + 9, 3);
 
-  return s[i0] * w0 - s[i0 + 1] * w1 + s[i0 + 2] * w2;
+  std::array<T, 4> w;
+  T c0 = s2[1] * s3[2] - s2[2] * s3[1];
+  T c1 = s2[0] * s3[2] - s2[2] * s3[0];
+  T c2 = s2[0] * s3[1] - s2[1] * s3[0];
+  w[2] = -s0[0] * c0 + s0[1] * c1 - s0[2] * c2;
+  w[3] = s1[0] * c0 - s1[1] * c1 + s1[2] * c2;
+
+  c0 = s0[1] * s1[2] - s0[2] * s1[1];
+  c1 = s0[0] * s1[2] - s0[2] * s1[0];
+  c2 = s0[0] * s1[1] - s0[1] * s1[0];
+  w[0] = -s2[0] * c0 + s2[1] * c1 - s2[2] * c2;
+  w[1] = s3[0] * c0 - s3[1] * c1 + s3[2] * c2;
+
+  return w;
 }
 
 /// @brief Dot product of vectors a and b, both size 3.
@@ -251,11 +260,7 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
     }
 
     // Now check the facets of a tetrahedron
-    std::array<T, 4> w;
-    w[0] = -det3_rows(s, 0, 1, 2);
-    w[1] = det3_rows(s, 0, 1, 3);
-    w[2] = -det3_rows(s, 0, 2, 3);
-    w[3] = det3_rows(s, 1, 2, 3);
+    std::array<T, 4> w = det4(s);
     T wsum = w[0] + w[1] + w[2] + w[3];
     if (wsum < 0.0)
     {
