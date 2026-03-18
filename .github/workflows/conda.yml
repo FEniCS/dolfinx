@@ -42,11 +42,11 @@ jobs:
       - name: Install DOLFINx with MPICH (Unix-like)
         if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
         run: |
-          conda install -c conda-forge fenics-dolfinx mpich petsc=*=${{ matrix.petsc-scalar-type }}*
+          conda install -c conda-forge fenics-dolfinx==0.10.0 mpich petsc=*=${{ matrix.petsc-scalar-type }}*
       - name: Install DOLFINx (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          conda install -c conda-forge fenics-dolfinx
+          conda install -c conda-forge fenics-dolfinx==0.10.0
       
       - name: Test (Unix-like)
         if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
