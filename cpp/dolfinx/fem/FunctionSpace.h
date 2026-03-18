@@ -169,7 +169,8 @@ public:
 
   /// Collapse a subspace and return a new function space and a map from
   /// new to old dofs
-  /// @return The new function space and a map from new to old dofs
+  /// @return The new function space and a map from new to old dofs for each
+  /// cell type
   std::pair<FunctionSpace, std::vector<std::vector<std::int32_t>>>
   collapse() const
   {
