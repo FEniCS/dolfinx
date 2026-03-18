@@ -34,6 +34,7 @@ from scipy.sparse.linalg import spsolve
 import basix
 import dolfinx.cpp as _cpp
 import ufl
+from dolfinx.cpp.fem import locate_dofs_geometrical
 from dolfinx.cpp.mesh import GhostMode, create_mesh
 from dolfinx.fem import (
     FiniteElement,
@@ -42,6 +43,7 @@ from dolfinx.fem import (
     assemble_vector,
     coordinate_element,
     create_dofmaps,
+    dirichletbc,
     mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
@@ -136,6 +138,17 @@ dofmaps = create_dofmaps(
 V_cpp = _cpp.fem.FunctionSpace_float64(
     mesh, [e._cpp_object for e in dolfinx_elements], [dofmap._cpp_object for dofmap in dofmaps]
 )
+
+
+# Select some BCs
+def marker(x):
+    """BC Selector."""
+    return np.logical_or(np.isclose(x[2], 0.0), np.isclose(x[2], 1.0))
+
+
+bcdofs = locate_dofs_geometrical(V_cpp, marker)
+bc = dirichletbc(value=0.0, dofs=bcdofs, V=V_cpp)
+
 # -
 
 # ## Creating and compiling a variational formulation
@@ -178,6 +191,12 @@ b = assemble_vector(L_form)
 
 A_scipy = A.to_scipy()
 b_scipy = b.array
+
+# Clear rows and set diagonal manually for BCs
+A_scipy[bcdofs, :] = 0.0
+for i in bcdofs:
+    A_scipy[i, i] = 1.0
+    b_scipy[i] = 0.0
 x = spsolve(A_scipy, b_scipy)
 
 print(f"Solution vector norm {np.linalg.norm(x)}")
