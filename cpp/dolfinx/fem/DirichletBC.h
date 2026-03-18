@@ -35,7 +35,7 @@ namespace dolfinx::fem
 /// facet/edge/vertex.
 ///
 /// @param[in] topology Mesh topology.
-/// @param[in] dofmap Dofmap that associated DOFs with cells.
+/// @param[in] dofmap Dofmap that associates DOFs with cells.
 /// @param[in] dim Topological dimension of mesh entities on which
 /// degrees-of-freedom will be located
 /// @param[in] entities Indices of mesh entities. All DOFs associated

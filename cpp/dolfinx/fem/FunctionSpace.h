@@ -254,91 +254,95 @@ public:
         = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
           / dofmap_bs;
 
-    // Get the dof coordinates on the reference element
-    if (!_elements.front()->interpolation_ident())
-    {
-      throw std::runtime_error("Cannot evaluate dof coordinates - this element "
-                               "does not have pointwise evaluation.");
-    }
-    const auto [X, Xshape] = _elements.front()->interpolation_points();
-
-    // Get coordinate map
-    const CoordinateElement<geometry_type>& cmap = _mesh->geometry().cmap();
-
-    // Prepare cell geometry
-    auto x_dofmap = _mesh->geometry().dofmap();
-    const std::size_t num_dofs_g = cmap.dim();
-    std::span<const geometry_type> x_g = _mesh->geometry().x();
+    std::size_t num_cell_types = _elements.size();
 
     // Array to hold coordinates to return
     const std::size_t shape_c0 = transpose ? 3 : num_dofs;
     const std::size_t shape_c1 = transpose ? num_dofs : 3;
     std::vector<geometry_type> coords(shape_c0 * shape_c1, 0);
-
     using mdspan2_t = md::mdspan<geometry_type, md::dextents<std::size_t, 2>>;
     using cmdspan4_t
         = md::mdspan<const geometry_type, md::dextents<std::size_t, 4>>;
-
-    // Loop over cells and tabulate dofs
+    std::span<const geometry_type> x_g = _mesh->geometry().x();
     std::vector<geometry_type> x_b(scalar_dofs * gdim);
     mdspan2_t x(x_b.data(), scalar_dofs, gdim);
 
-    std::vector<geometry_type> coordinate_dofs_b(num_dofs_g * gdim);
-    mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
-
-    auto map = _mesh->topology()->index_map(tdim);
-    assert(map);
-    const int num_cells = map->size_local() + map->num_ghosts();
-
-    std::span<const std::uint32_t> cell_info;
-    if (_elements.front()->needs_dof_transformations())
+    for (std::size_t i = 0; i < num_cell_types; ++i)
     {
-      _mesh->topology_mutable()->create_entity_permutations();
-      cell_info = std::span(_mesh->topology()->get_cell_permutation_info());
-    }
-
-    const std::array<std::size_t, 4> phi_shape
-        = cmap.tabulate_shape(0, Xshape[0]);
-    std::vector<geometry_type> phi_b(
-        std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-    cmdspan4_t phi_full(phi_b.data(), phi_shape);
-    cmap.tabulate(0, X, Xshape, phi_b);
-    auto phi = md::submdspan(phi_full, 0, md::full_extent, md::full_extent, 0);
-
-    // TODO: Check transform
-    // Basis function reference-to-conforming transformation function
-    auto apply_dof_transformation
-        = _elements.front()->template dof_transformation_fn<geometry_type>(
-            doftransform::standard);
-
-    for (int c = 0; c < num_cells; ++c)
-    {
-      // Extract cell geometry 'dofs'
-      auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
-      for (std::size_t i = 0; i < x_dofs.size(); ++i)
-        for (std::size_t j = 0; j < gdim; ++j)
-          coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];
-
-      // Tabulate dof coordinates on cell
-      cmap.push_forward(x, coordinate_dofs, phi);
-      apply_dof_transformation(
-          x_b, std::span(cell_info.data(), cell_info.size()), c, x.extent(1));
-
-      // Get cell dofmap
-      auto dofs = _dofmaps.front()->cell_dofs(c);
-
-      // Copy dof coordinates into vector
-      if (!transpose)
+      // Get the dof coordinates on the reference element
+      if (!_elements[i]->interpolation_ident())
       {
-        for (std::size_t i = 0; i < dofs.size(); ++i)
-          for (std::size_t j = 0; j < gdim; ++j)
-            coords[dofs[i] * 3 + j] = x(i, j);
+        throw std::runtime_error(
+            "Cannot evaluate dof coordinates - this element "
+            "does not have pointwise evaluation.");
       }
-      else
+      const auto [X, Xshape] = _elements[i]->interpolation_points();
+
+      // Get coordinate map
+      const CoordinateElement<geometry_type>& cmap
+          = _mesh->geometry().cmaps()[i];
+
+      // Prepare cell geometry
+      auto x_dofmap = _mesh->geometry().dofmap(i);
+      const std::size_t num_dofs_g = cmap.dim();
+      std::vector<geometry_type> coordinate_dofs_b(num_dofs_g * gdim);
+      mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
+
+      auto map = _mesh->topology()->index_maps(tdim)[i];
+      assert(map);
+      const int num_cells = map->size_local() + map->num_ghosts();
+
+      std::span<const std::uint32_t> cell_info;
+      if (_elements[i]->needs_dof_transformations())
       {
-        for (std::size_t i = 0; i < dofs.size(); ++i)
+        _mesh->topology_mutable()->create_entity_permutations();
+        cell_info = std::span(_mesh->topology()->get_cell_permutation_info());
+      }
+
+      const std::array<std::size_t, 4> phi_shape
+          = cmap.tabulate_shape(0, Xshape[0]);
+      std::vector<geometry_type> phi_b(std::reduce(
+          phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+      cmdspan4_t phi_full(phi_b.data(), phi_shape);
+      cmap.tabulate(0, X, Xshape, phi_b);
+      auto phi
+          = md::submdspan(phi_full, 0, md::full_extent, md::full_extent, 0);
+
+      // TODO: Check transform
+      // Basis function reference-to-conforming transformation function
+      auto apply_dof_transformation
+          = _elements[i]->template dof_transformation_fn<geometry_type>(
+              doftransform::standard);
+
+      for (int c = 0; c < num_cells; ++c)
+      {
+        // Extract cell geometry 'dofs'
+        auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
+        for (std::size_t i = 0; i < x_dofs.size(); ++i)
           for (std::size_t j = 0; j < gdim; ++j)
-            coords[j * num_dofs + dofs[i]] = x(i, j);
+            coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];
+
+        // Tabulate dof coordinates on cell
+        cmap.push_forward(x, coordinate_dofs, phi);
+        apply_dof_transformation(
+            x_b, std::span(cell_info.data(), cell_info.size()), c, x.extent(1));
+
+        // Get cell dofmap
+        auto dofs = _dofmaps[i]->cell_dofs(c);
+
+        // Copy dof coordinates into vector
+        if (!transpose)
+        {
+          for (std::size_t i = 0; i < dofs.size(); ++i)
+            for (std::size_t j = 0; j < gdim; ++j)
+              coords[dofs[i] * 3 + j] = x(i, j);
+        }
+        else
+        {
+          for (std::size_t i = 0; i < dofs.size(); ++i)
+            for (std::size_t j = 0; j < gdim; ++j)
+              coords[j * num_dofs + dofs[i]] = x(i, j);
+        }
       }
     }
 
