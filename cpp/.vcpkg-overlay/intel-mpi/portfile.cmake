@@ -55,14 +55,25 @@ file(INSTALL "${SOURCE_DEBUG_LIB_PATH}/impi.lib"
 # 'libfabric.dll' is not needed for the compilation but it is needed for the
 # runtime and should be in the PATH for 'mpiexec' to work
 file(INSTALL "${SOURCE_LIBFABRIC_PATH}/libfabric.dll"
-     "${SOURCE_BIN_PATH}/impi.dll" "${SOURCE_BIN_PATH}/impi.pdb"
+     "${SOURCE_BIN_PATH}/impi.dll"
      DESTINATION "${CURRENT_PACKAGES_DIR}/bin"
 )
 
 file(INSTALL "${SOURCE_LIBFABRIC_PATH}/libfabric.dll"
-     "${SOURCE_DEBUG_BIN_PATH}/impi.dll" "${SOURCE_DEBUG_BIN_PATH}/impi.pdb"
+     "${SOURCE_BIN_PATH}/impi.dll"
      DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin"
 )
+
+set(_PDB_FILE "${SOURCE_BIN_PATH}/impi.pdb")
+
+if(EXISTS "${_PDB_FILE}")
+     file(INSTALL "${_PDB_FILE}"
+          DESTINATION "${CURRENT_PACKAGES_DIR}/bin"
+     )
+     file(INSTALL "${_PDB_FILE}"
+          DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin"
+     )
+endif()
 
 file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/mpi-wrapper.cmake"
      DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"
