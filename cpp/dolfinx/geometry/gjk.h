@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <boost/multiprecision/cpp_bin_float.hpp>
+#include <cmath>
 #include <concepts>
 #include <limits>
 #include <numeric>
@@ -22,16 +23,25 @@ namespace dolfinx::geometry
 namespace impl_gjk
 {
 
-/// @brief Determinant of 3x3 matrix A
-/// @param A 3x3 matrix
+/// @brief Determinant of a 3x3 matrix formed by extracting
+/// three specific vertices from a flattened array of vertices.
+/// @param s Flattened array of 3D vertices (row-major).
+/// @param r0 Index of the vertex to use as row 0.
+/// @param r1 Index of the vertex to use as row 1.
+/// @param r2 Index of the vertex to use as row 2.
 /// @returns det(A)
 template <typename T>
-inline T det3(std::span<const T, 9> A)
+inline T det3_rows(const std::array<T, 12>& s, int r0, int r1, int r2)
 {
-  T w0 = A[3 + 1] * A[2 * 3 + 2] - A[3 + 2] * A[3 * 2 + 1];
-  T w1 = A[3] * A[3 * 2 + 2] - A[3 + 2] * A[3 * 2];
-  T w2 = A[3] * A[3 * 2 + 1] - A[3 + 1] * A[3 * 2];
-  return A[0] * w0 - A[1] * w1 + A[2] * w2;
+  int i0 = r0 * 3;
+  int i1 = r1 * 3;
+  int i2 = r2 * 3;
+  assert(i0 + 3 <= s.size() and i1 + 3 <= s.size() and i2 + 3 <= s.size());
+  T w0 = s[i1 + 1] * s[i2 + 2] - s[i1 + 2] * s[i2 + 1];
+  T w1 = s[i1] * s[i2 + 2] - s[i1 + 2] * s[i2];
+  T w2 = s[i1] * s[i2 + 1] - s[i1 + 1] * s[i2];
+
+  return s[i0] * w0 - s[i0 + 1] * w1 + s[i0 + 2] * w2;
 }
 
 /// @brief Dot product of vectors a and b, both size 3.
@@ -62,8 +72,8 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
   {
     // Simplex is an interval. Point may lie on the interval, or on either end.
     // Compute lm = dot(s0, ds / |ds|)
-    std::span<const T, 3> s0 = std::span<const T, 3>(s.data(), 3);
-    std::span<const T, 3> s1 = std::span<const T, 3>(s.data() + 3, 3);
+    std::span<const T, 3> s0(s.data(), 3);
+    std::span<const T, 3> s1(s.data() + 3, 3);
 
     T lm = dot3(s0, s0) - dot3(s0, s1);
     if (lm < 0.0)
@@ -242,16 +252,10 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
 
     // Now check the facets of a tetrahedron
     std::array<T, 4> w;
-    std::array<T, 9> M;
-    std::span<const T, 9> Mspan(M.begin(), M.size());
-    std::copy(s.begin(), s.begin() + 9, M.begin());
-    w[0] = -det3(Mspan);
-    std::copy(s.begin() + 9, s.begin() + 12, M.begin() + 6);
-    w[1] = det3(Mspan);
-    std::copy(s.begin() + 6, s.begin() + 9, M.begin() + 3);
-    w[2] = -det3(Mspan);
-    std::copy(s.begin() + 3, s.begin() + 6, M.begin() + 0);
-    w[3] = det3(Mspan);
+    w[0] = -det3_rows(s, 0, 1, 2);
+    w[1] = det3_rows(s, 0, 1, 3);
+    w[2] = -det3_rows(s, 0, 2, 3);
+    w[3] = det3_rows(s, 1, 2, 3);
     T wsum = w[0] + w[1] + w[2] + w[3];
     if (wsum < 0.0)
     {
@@ -361,59 +365,79 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
   assert(p0.size() % 3 == 0);
   assert(q0.size() % 3 == 0);
 
-  // Copy from T to type U
-  std::vector<U> p(p0.begin(), p0.end());
-  std::vector<U> q(q0.begin(), q0.end());
-
   constexpr int maxk = 15; // Maximum number of iterations of the GJK algorithm
-
-  // Tolerance
   const U eps = 1000 * std::numeric_limits<U>::epsilon();
 
-  // Initialise vector and simplex
-  std::array<U, 3> v = {p[0] - q[0], p[1] - q[1], p[2] - q[2]};
+  // Initialize distance vector x_k
+  std::array<U, 3> x_k = {static_cast<U>(p0[0]) - static_cast<U>(q0[0]),
+                          static_cast<U>(p0[1]) - static_cast<U>(q0[1]),
+                          static_cast<U>(p0[2]) - static_cast<U>(q0[2])};
+  // Initialize simplex
   std::array<U, 12> s = {0}; // Max simplex is a tetrahedron
-  s[0] = v[0];
-  s[1] = v[1];
-  s[2] = v[2];
+  s[0] = x_k[0];
+  s[1] = x_k[1];
+  s[2] = x_k[2];
   std::array<U, 4> lmn = {0}; // Scratch memory for barycentric
                               // coordinates of closest point in simplex
   std::size_t simplex_size = 1;
-
   // Begin GJK iteration
   int k;
   for (k = 0; k < maxk; ++k)
   {
-    // Support function
-    int ip = impl_gjk::support(std::span<const U>(p), {-v[0], -v[1], -v[2]});
-    int iq = impl_gjk::support(std::span<const U>(q), {v[0], v[1], v[2]});
-    const std::array<U, 3> w
-        = {p[ip * 3] - q[iq * 3], p[ip * 3 + 1] - q[iq * 3 + 1],
-           p[ip * 3 + 2] - q[iq * 3 + 2]};
 
-    // Break if any existing points are the same as w
+    // Compute the squared norm of current iterate to normalize support search
+    // in original precision
+    const U x_norm2 = impl_gjk::dot3(x_k, x_k);
+    std::array<U, 3> x_k_normalized = x_k;
+    if (x_norm2 > eps * eps)
+    {
+      // ADL lookup:
+      // Will use std::sqrt for double/float, and
+      // boost::multiprecision::sqrt for U
+      using std::sqrt;
+      U inv_norm = U(1.0) / sqrt(x_norm2);
+      x_k_normalized[0] *= inv_norm;
+      x_k_normalized[1] *= inv_norm;
+      x_k_normalized[2] *= inv_norm;
+    }
+    // Compute support point in original precision
+    std::array<T, 3> dir_p = {static_cast<T>(-x_k_normalized[0]),
+                              static_cast<T>(-x_k_normalized[1]),
+                              static_cast<T>(-x_k_normalized[2])};
+    std::array<T, 3> dir_q
+        = {static_cast<T>(x_k_normalized[0]), static_cast<T>(x_k_normalized[1]),
+           static_cast<T>(x_k_normalized[2])};
+    int ip = impl_gjk::support(p0, dir_p);
+    int iq = impl_gjk::support(q0, dir_q);
+
+    // Only cast the winning support points to U
+    std::array<U, 3> s_k
+        = {static_cast<U>(p0[ip * 3]) - static_cast<U>(q0[iq * 3]),
+           static_cast<U>(p0[ip * 3 + 1]) - static_cast<U>(q0[iq * 3 + 1]),
+           static_cast<U>(p0[ip * 3 + 2]) - static_cast<U>(q0[iq * 3 + 2])};
+
+    // Break if the newly found support point s_k is already in the simplex
     std::size_t m;
     for (m = 0; m < simplex_size; ++m)
     {
       auto it = std::next(s.begin(), 3 * m);
-      if (std::equal(it, std::next(it, 3), w.begin(), w.end()))
+      if (std::equal(it, std::next(it, 3), s_k.begin(), s_k.end()))
         break;
     }
 
     if (m != simplex_size)
       break;
 
-    // 1st exit condition (v - w).v = 0
-    const U vnorm2 = impl_gjk::dot3(v, v);
-    const U vw = vnorm2 - impl_gjk::dot3(v, w);
-    if (vw < (eps * vnorm2) or vw < eps)
+    // 1st exit condition: (x_k - s_k).x_k = 0
+    const U xs_diff = x_norm2 - impl_gjk::dot3(x_k, s_k);
+    if (xs_diff < (eps * x_norm2) or xs_diff < eps)
       break;
 
-    SPDLOG_DEBUG("GJK: vw={}/{}", static_cast<double>(vw),
+    SPDLOG_DEBUG("GJK: vw={}/{}", static_cast<double>(xs_diff),
                  static_cast<double>(eps));
 
     // Add new vertex to simplex
-    std::ranges::copy(w.begin(), w.end(), s.begin() + 3 * simplex_size);
+    std::ranges::copy(s_k, s.begin() + 3 * simplex_size);
     ++simplex_size;
 
     // Find nearest subset of simplex
@@ -432,39 +456,38 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
       throw std::runtime_error("Invalid simplex size");
     }
 
-    // Recompute v and keep points with non-zero values in lmn
+    // Recompute x_k and keep points with non-zero values in lmn
     std::size_t j = 0;
-    v = {0.0, 0.0, 0.0};
+    x_k = {0.0, 0.0, 0.0};
     for (std::size_t i = 0; i < simplex_size; ++i)
     {
       std::span<const U> sc(std::next(s.begin(), 3 * i), 3);
       if (lmn[i] > 0.0)
       {
-        v[0] += lmn[i] * sc[0];
-        v[1] += lmn[i] * sc[1];
-        v[2] += lmn[i] * sc[2];
+        x_k[0] += lmn[i] * sc[0];
+        x_k[1] += lmn[i] * sc[1];
+        x_k[2] += lmn[i] * sc[2];
         if (i > j)
-          std::copy(sc.begin(), sc.end(), std::next(s.begin(), 3 * j));
+          std::ranges::copy(sc, std::next(s.begin(), 3 * j));
         ++j;
       }
     }
-    SPDLOG_DEBUG("new simplex size={}", j);
     simplex_size = j;
 
     // 2nd exit condition - strict monotonicity
-    // Floating point can cause the algorithm to stagnate. Then we terminate.
-    const U vn = impl_gjk::dot3(v, v);
-    if (vnorm2 <= vn)
+    const U x_next_norm2 = impl_gjk::dot3(x_k, x_k);
+    if (x_norm2 <= x_next_norm2)
       break;
 
-    // 3nd exit condition - intersecting or touching
-    if (vn < eps * eps)
+    // 3rd exit condition - intersecting or touching
+    if (x_next_norm2 < eps * eps)
       break;
   }
 
   if (k == maxk)
     throw std::runtime_error("GJK error - max iteration limit reached");
-  return {static_cast<T>(v[0]), static_cast<T>(v[1]), static_cast<T>(v[2])};
+  return {static_cast<T>(x_k[0]), static_cast<T>(x_k[1]),
+          static_cast<T>(x_k[2])};
 }
 
 /// @brief Compute the distance between a sequence of convex bodies `p0, ...,
