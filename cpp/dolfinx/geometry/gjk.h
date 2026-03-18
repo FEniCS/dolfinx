@@ -397,8 +397,8 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     if (x_norm2 > eps * eps)
     {
       // ADL lookup:
-      // Will use std::sqrt for double/float, and
-      // boost::multiprecision::sqrt for U
+      // If U is double/float use std::sqrt
+      // If U is a boost::multiprecision member use boost::multiprecision::sqrt
       using std::sqrt;
       U inv_norm = U(1.0) / sqrt(x_norm2);
       x_k_normalized[0] *= inv_norm;
@@ -438,7 +438,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
     if (xs_diff < (eps * x_norm2) or xs_diff < eps)
       break;
 
-    SPDLOG_DEBUG("GJK: vw={}/{}", static_cast<double>(xs_diff),
+    SPDLOG_DEBUG("GJK: xs_diff={}/{}", static_cast<double>(xs_diff),
                  static_cast<double>(eps));
 
     // Add new vertex to simplex
