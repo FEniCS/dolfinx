@@ -46,26 +46,24 @@ inline Vec::value_type dot3(const Vec& a, const Vec& b)
 
 /// @brief Find the barycentric coordinates in the simplex `s`, of the point in
 /// `s` which is closest to the origin.
+/// @tparam T The scalar type of the coordinates.
+/// @tparam simplex_size The number of points in the simplex (2,3 or 4)
 /// @param s Simplex described by a set of points in 3D, row-major, flattened.
 /// @param[in,out] coordinates Barycentric coordinates of the point in s
 /// closest to the origin.
 /// @note `s` may be an interval, a triangle or a tetrahedron.
-template <typename T>
-void nearest_simplex(std::span<const T> s, std::array<T, 4>& coordinates)
+template <typename T, std::size_t simplex_size>
+void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
 {
-  assert(s.size() % 3 == 0);
-  const std::size_t s_rows = s.size() / 3;
 
-  SPDLOG_DEBUG("GJK: nearest_simplex({})", s_rows);
+  SPDLOG_DEBUG("GJK: nearest_simplex({})", simplex_size);
 
-  switch (s_rows)
-  {
-  case 2:
+  if constexpr (simplex_size == 2)
   {
     // Simplex is an interval. Point may lie on the interval, or on either end.
     // Compute lm = dot(s0, ds / |ds|)
-    std::span<const T, 3> s0 = s.template subspan<0, 3>();
-    std::span<const T, 3> s1 = s.template subspan<3, 3>();
+    std::span<const T, 3> s0 = std::span<const T, 3>(s.data(), 3);
+    std::span<const T, 3> s1 = std::span<const T, 3>(s.data() + 3, 3);
 
     T lm = dot3(s0, s0) - dot3(s0, s1);
     if (lm < 0.0)
@@ -91,13 +89,13 @@ void nearest_simplex(std::span<const T> s, std::array<T, 4>& coordinates)
     coordinates[1] = lm * f1;
     return;
   }
-  case 3:
+  else if constexpr (simplex_size == 3)
   {
     // Simplex is a triangle. Point may lie in one of 7 regions (outside near a
     // vertex, outside near an edge, or on the interior)
-    auto a = s.template subspan<0, 3>();
-    auto b = s.template subspan<3, 3>();
-    auto c = s.template subspan<6, 3>();
+    std::span<const T, 3> a(s.data(), 3);
+    std::span<const T, 3> b(s.data() + 3, 3);
+    std::span<const T, 3> c(s.data() + 6, 3);
 
     T aa = dot3(a, a);
     T ab = dot3(a, b);
@@ -182,7 +180,7 @@ void nearest_simplex(std::span<const T> s, std::array<T, 4>& coordinates)
     coordinates[2] = vc * f1;
     return;
   }
-  case 4:
+  else if constexpr (simplex_size == 4)
   {
     // Most complex case, where simplex is a tetrahedron, with 15 possible
     // outcomes (4 vertices, 6 edges, 4 facets and the interior).
@@ -311,8 +309,11 @@ void nearest_simplex(std::span<const T> s, std::array<T, 4>& coordinates)
     coordinates[3] = w[0] / wsum;
     return;
   }
-  default:
-    throw std::runtime_error("Number of rows defining simplex not supported.");
+  else
+  {
+    // Evaluated at compile-time instead of runtime!
+    static_assert(simplex_size >= 2 && simplex_size <= 4,
+                  "Number of rows defining simplex not supported.");
   }
 }
 
@@ -412,11 +413,24 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
                  static_cast<double>(eps));
 
     // Add new vertex to simplex
-    std::copy(w.begin(), w.end(), s.begin() + 3 * simplex_size);
+    std::ranges::copy(w.begin(), w.end(), s.begin() + 3 * simplex_size);
     ++simplex_size;
 
     // Find nearest subset of simplex
-    impl_gjk::nearest_simplex<U>(std::span(s.begin(), 3 * simplex_size), lmn);
+    switch (simplex_size)
+    {
+    case 2:
+      impl_gjk::nearest_simplex<U, 2>(s, lmn);
+      break;
+    case 3:
+      impl_gjk::nearest_simplex<U, 3>(s, lmn);
+      break;
+    case 4:
+      impl_gjk::nearest_simplex<U, 4>(s, lmn);
+      break;
+    default:
+      throw std::runtime_error("Invalid simplex size");
+    }
 
     // Recompute v and keep points with non-zero values in lmn
     std::size_t j = 0;
@@ -458,9 +472,9 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
 ///
 /// Uses the Gilbert–Johnson–Keerthi (GJK) distance algorithm.
 ///
-/// @param[in] bodies List of the list of points that make up each of  N bodies
-/// considered as body 1. `shape=(num_bodies, (num_points_body_j, 3)`. Row-major
-/// storage.
+/// @param[in] bodies List of the list of points that make up each of  N
+/// bodies considered as body 1. `shape=(num_bodies, (num_points_body_j, 3)`.
+/// Row-major storage.
 /// @param[in] q Body 2 list of points, `shape=(num_points, 3)`. Row-major
 /// storage.
 /// @tparam T Floating point type
