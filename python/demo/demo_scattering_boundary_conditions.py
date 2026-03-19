@@ -15,7 +15,8 @@
 
 # # Electromagnetic scattering from a wire with scattering BCs
 #
-# Copyright (C) 2022 Michele Castriotta, Igor Baratta, Jørgen S. Dokken
+# Copyright (C) 2022-2025 Michele Castriotta, Igor Baratta
+# and Jørgen S. Dokken
 #
 # ```{admonition} Download sources
 # :class: download
@@ -103,6 +104,7 @@ def generate_mesh_wire(
     bkg_tag: int,
     boundary_tag: int,
 ):
+    """Generate mesh for scattering from a wire."""
     gmsh.model.add("wire")
 
     # A dummy boundary is added for setting a finer mesh
@@ -194,12 +196,13 @@ def generate_mesh_wire(
 # $$
 
 
-# The functions that we import from `scipy.special` correspond to:
+# The functions that we import from {py:mod}`scipy.special` correspond to:
 #
-# - `jv(nu, x)` ⟷ $J_\nu(x)$,
-# - `jvp(nu, x, 1)` ⟷ $J_\nu^{\prime}(x)$,
-# - `hankel2(nu, x)` ⟷ $H_\nu^{(2)}(x)$,
-# - `h2vp(nu, x, 1)` ⟷ $H_\nu^{(2){\prime}}(x)$.
+# - {py:obj}`jv(nu, x)<scipy.special.jv>` ⟷ $J_\nu(x)$,
+# - {py:func}`jvp(nu, x, 1)<scipy.special.jvp>` ⟷ $J_\nu^{\prime}(x)$,
+# - {py:obj}`hankel2(nu, x)<scipy.special.hankel2>` ⟷ $H_\nu^{(2)}(x)$,
+# - {py:func}`h2vp(nu, x, 1)<scipy.special.h2vp>`
+#   ⟷ $H_\nu^{(2){\prime}}(x)$.
 #
 # Next, we define a function for calculating the analytical efficiencies
 # in Python. The inputs of the function are:
@@ -212,8 +215,11 @@ def generate_mesh_wire(
 # We also define a nested function for the calculation of $a_l$. For the
 # final calculation of the efficiencies, the summation over the different
 # orders of the Bessel functions is truncated at $\nu=50$.
+
+
 # +
 def compute_a(nu: int, m: complex, alpha: float) -> float:
+    """Compute the a_nu coefficient."""
     J_nu_alpha = jv(nu, alpha)
     J_nu_malpha = jv(nu, m * alpha)
     J_nu_alpha_p = jvp(nu, alpha, 1)
@@ -230,6 +236,7 @@ def compute_a(nu: int, m: complex, alpha: float) -> float:
 def calculate_analytical_efficiencies(
     eps: complex, n_bkg: float, wl0: float, radius_wire: float, num_n: int = 50
 ) -> tuple[float, float, float]:
+    """Analytical absorption, scattering and extinction efficiencies."""
     m = np.sqrt(np.conj(eps)) / n_bkg
     alpha = 2 * np.pi * radius_wire / wl0 * n_bkg
     c = 2 / alpha
@@ -248,7 +255,7 @@ def calculate_analytical_efficiencies(
 # with complex numbers.
 
 if not np.issubdtype(default_scalar_type, np.complexfloating):
-    print("Demo should only be executed with DOLFINx complex mode")
+    print("Demo should only be executed with DOLFINx complex mode.")
     exit(0)
 
 
@@ -294,7 +301,10 @@ if not np.issubdtype(default_scalar_type, np.complexfloating):
 
 
 class BackgroundElectricField:
+    """Background electric field expression."""
+
     def __init__(self, theta: float, n_bkg: float, k0: complex):
+        """Initialize background electric field expression."""
         self.theta = theta  # incident angle
         self.k0 = k0  # vacuum wavevector
         self.n_bkg = n_bkg  # background refractive index
@@ -302,6 +312,7 @@ class BackgroundElectricField:
     def eval(
         self, x: np.typing.NDArray[np.float64]
     ) -> tuple[np.typing.NDArray[np.complex128], np.typing.NDArray[np.complex128]]:
+        """Evaluate the background electric field at points x."""
         kx = self.n_bkg * self.k0 * np.cos(self.theta)
         ky = self.n_bkg * self.k0 * np.sin(self.theta)
         phi = kx * x[0] + ky * x[1]
@@ -366,12 +377,12 @@ class BackgroundElectricField:
 
 # +
 def radial_distance(x: ufl.SpatialCoordinate):
-    """Returns the radial distance from the origin"""
+    """Returns the radial distance from the origin."""
     return ufl.sqrt(x[0] ** 2 + x[1] ** 2)
 
 
 def curl_2d(f: fem.Function):
-    """Returns the curl of two 2D vectors as a 3D vector"""
+    """Returns the curl of two 2D vectors as a 3D vector."""
     return ufl.as_vector((0, 0, f[1].dx(0) - f[0].dx(1)))
 
 
@@ -691,8 +702,7 @@ with io.VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
 # scattering and extinction efficiencies, which are quantities that
 # define how much light is absorbed and scattered by the wire. First of
 # all, we calculate the analytical efficiencies with the
-# `calculate_analytical_efficiencies` function defined in a separate
-# file:
+# `calculate_analytical_efficiencies` function defined above.
 
 # Calculation of analytical efficiencies
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
@@ -707,10 +717,10 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # \begin{align}
 # & Q_{abs} = \operatorname{Re}\left(\int_{\Omega_{m}} \frac{1}{2}
 #   \frac{\operatorname{Im}(\varepsilon_m)k_0}{Z_0n_b}
-#   \mathbf{E}\cdot\hat{\mathbf{E}}dx\right) \\
+#   \mathbf{E}\cdot\hat{\mathbf{E}}~\mathrm{d}x\right) \\
 # & Q_{sca} = \operatorname{Re}\left(\int_{\partial\Omega} \frac{1}{2}
 #   \left(\mathbf{E}_s\times\bar{\mathbf{H}}_s\right)
-#   \cdot\mathbf{n}ds\right)\\ \\
+#   \cdot\mathbf{n}~\mathrm{d}s\right)\\ \\
 # & Q_{ext} = Q_{abs} + Q_{sca},
 # \end{align}
 # $$

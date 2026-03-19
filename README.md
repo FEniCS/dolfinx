@@ -20,14 +20,14 @@ link to sign up to the Slack channel).
 
 ## Documentation
 
-Documentation can be viewed at <https://docs.fenicsproject.org>.
+Documentation can be viewed [here](https://docs.fenicsproject.org).
 
 ## Installation
 
 ### From source
 
 For detailed instructions and a list of dependencies, see
-<https://docs.fenicsproject.org/dolfinx/main/python/installation>.
+[here](https://docs.fenicsproject.org/dolfinx/main/python/installation).
 
 #### C++ core
 
@@ -67,6 +67,16 @@ spack install --add py-fenics-dolfinx+petsc4py+slepc4py
 
 Spack is the recommended approach for HPC systems.
 
+Although Spack already contains FEniCS Project packages, we also maintain a
+separate [overlay package repository](https://github.com/FEniCS/spack-fenics)
+which may contain bug fixes and package specs for newer releases of the FEniCS
+Project components, particularly after a recent release.
+
+```shell
+spack repo add https://github.com/fenics/spack-fenics
+spack repo ls # shows fenics above builtin
+```
+
 ### Binary packages
 
 **Recommendations**
@@ -93,9 +103,10 @@ conda install -c conda-forge fenics-dolfinx mpich pyvista # Linux and macOS
 conda install -c conda-forge fenics-dolfinx pyvista pyamg # Windows
 ```
 
-*Windows only*: Windows conda packages are currently in beta testing.
-PETSc and petsc4py are not available on Windows. Because FEniCS uses
-just-in-time compilation it necessary to install [Microsoft Visual
+*Windows only*: Windows conda packages are currently in beta testing and as of
+12/01/26 are only available for `v0.9.0`. PETSc and petsc4py are not available
+on Windows. Because FEniCS uses just-in-time compilation it necessary to
+install [Microsoft Visual
 Studio](https://visualstudio.microsoft.com/downloads/).
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and

@@ -25,7 +25,8 @@ namespace dolfinx::io::VTKHDF
 /// @param filename Name of file to write to.
 /// @param mesh Mesh to write to file.
 template <std::floating_point U>
-void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
+void write_mesh(const std::filesystem::path& filename,
+                const mesh::Mesh<U>& mesh)
 {
   hid_t h5file = hdf5::open_file(mesh.comm(), filename, "w", true);
 
@@ -171,7 +172,8 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 /// @note Limited support for floating point types at present (no
 /// complex number support).
 template <std::floating_point U>
-void write_data(std::string point_or_cell, std::string filename,
+void write_data(std::string point_or_cell,
+                const std::filesystem::path& filename,
                 const mesh::Mesh<U>& mesh, const std::vector<U>& data,
                 double time)
 {
@@ -257,7 +259,7 @@ void write_data(std::string point_or_cell, std::string filename,
   hdf5::add_group(h5file, group_name);
 
   // Add point/cell data into dataset, extending each time by
-  // size_global with each process writing its own part.
+  // global_size with each process writing its own part.
   std::int64_t range0 = std::accumulate(index_maps.begin(), index_maps.end(), 0,
                                         [](int a, auto im)
                                         { return a + im->local_range()[0]; });
@@ -310,7 +312,7 @@ void write_data(std::string point_or_cell, std::string filename,
 /// facet can be connected to.
 /// @return The mesh read from file.
 template <std::floating_point U>
-mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
+mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                         std::size_t gdim = 3,
                         std::optional<std::int32_t> max_facet_to_cell_links = 2)
 {

@@ -40,7 +40,7 @@ def sink(*args):
 
 @numba.njit(fastmath=True)
 def area(x0, x1, x2) -> float:
-    """Compute the area of a triangle embedded in 2D from the three vertices"""
+    """Compute the area of a triangle embedded in 2D from the three vertices."""
     a = (x1[0] - x2[0]) ** 2 + (x1[1] - x2[1]) ** 2
     b = (x0[0] - x2[0]) ** 2 + (x0[1] - x2[1]) ** 2
     c = (x0[0] - x1[0]) ** 2 + (x0[1] - x1[1]) ** 2
@@ -49,7 +49,7 @@ def area(x0, x1, x2) -> float:
 
 @numba.njit(fastmath=True)
 def assemble_vector(b, mesh, dofmap, num_cells):
-    """Assemble simple linear form over a mesh into the array b"""
+    """Assemble simple linear form over a mesh into the array b."""
     v, x = mesh
     q0, q1 = 1 / 3.0, 1 / 3.0
     for cell in range(num_cells):
@@ -62,7 +62,7 @@ def assemble_vector(b, mesh, dofmap, num_cells):
 
 @numba.njit(parallel=True, fastmath=True)
 def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells):
-    """Assemble simple linear form over a mesh into the array b using a parallel loop"""
+    """Assemble simple linear form over a mesh into the array b using a parallel loop."""
     q0 = 1 / 3.0
     q1 = 1 / 3.0
     b_unassembled = np.empty((num_cells, 3), dtype=b.dtype)
@@ -82,7 +82,7 @@ def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells
 
 @numba.njit(fastmath=True)
 def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
-    """Assemble provided FFCx/UFC kernel over a mesh into the array b"""
+    """Assemble provided FFCx/UFC kernel over a mesh into the array b."""
     v, x = mesh
     entity_local_index = np.array([0], dtype=np.intc)
     perm = np.array([0], dtype=np.uint8)

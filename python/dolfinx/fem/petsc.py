@@ -28,6 +28,7 @@ import ctypes as _ctypes
 import functools
 import os
 import pathlib
+import warnings
 from collections.abc import Sequence
 
 from petsc4py import PETSc
@@ -37,7 +38,6 @@ import dolfinx
 
 assert dolfinx.has_petsc4py
 
-import warnings
 from functools import partial
 
 import numpy as np
@@ -91,8 +91,8 @@ def create_vector(
     /,
     kind: str | None = None,
 ) -> PETSc.Vec:  # type: ignore[name-defined]
-    """Create a PETSc vector that is compatible with a linear form(s)
-    or functionspace(s).
+    """Create a vector compatible with linear form(s) or function space(s).
+
     Three cases are supported:
 
     1. For a single space ``V``, if ``kind`` is ``None`` or is
@@ -153,8 +153,7 @@ def create_matrix(
     a: Form | Sequence[Sequence[Form]],
     kind: str | Sequence[Sequence[str]] | None = None,
 ) -> PETSc.Mat:  # type: ignore[name-defined]
-    """Create a PETSc matrix that is compatible with the (sequence) of
-    bilinear form(s).
+    """Create a matrix compatible with a sequence of bilinear forms.
 
     Three cases are supported:
 
@@ -386,16 +385,17 @@ def assemble_matrix(
 
     Args:
         a: Bilinear form(s) to assembled into a matrix.
-        bc: Dirichlet boundary conditions applied to the system.
+        bcs: Dirichlet boundary conditions applied to the system.
         diag: Value to set on the matrix diagonal for Dirichlet
             boundary condition constrained degrees-of-freedom belonging
             to the same trial and test space.
         constants: Constants appearing the in the form.
         coeffs: Coefficients appearing the in the form.
+        kind: PETSc matrix type (``MatType``).
 
     Returns:
         Matrix representing the bilinear form.
-    """
+    """  # noqa: D301
     A = create_matrix(a, kind)
     assemble_matrix(A, a, bcs, diag, constants, coeffs)  # type: ignore[arg-type]
     return A
@@ -528,8 +528,7 @@ def apply_lifting(
         | None
     ) = None,
 ) -> None:
-    r"""Modify the right-hand side PETSc vector ``b`` to account for
-    constraints (Dirichlet boundary conitions).
+    """Modify a vector to account for Dirichlet boundary conditions.
 
     See :func:`dolfinx.fem.apply_lifting` for a mathematical
     descriptions of the lifting operation.
@@ -638,7 +637,7 @@ def set_bc(
     x0: PETSc.Vec | None = None,  # type: ignore[name-defined]
     alpha: float = 1,
 ) -> None:
-    r"""Set constraint (Dirchlet boundary condition) values in an vector.
+    """Set constraint (Dirchlet boundary condition) values in an vector.
 
     For degrees-of-freedoms that are constrained by a Dirichlet boundary
     condition, this function sets that degrees-of-freedom to ``alpha *
@@ -652,7 +651,7 @@ def set_bc(
         bcs: Boundary conditions to apply. If ``b`` is nested or
             blocked, ``bcs`` is a 2D array and ``bcs[i]`` are the
             boundary conditions to apply to block/nest ``i``. Otherwise
-            ``bcs`` should be a sequence of ``DirichletBC``\s. For
+            ``bcs`` should be a sequence of ``DirichletBC``. For
             block/nest problems, :func:`dolfinx.fem.bcs_by_block` can be
             used to prepare the 2D array of ``DirichletBC`` objects.
         x0: Vector used in the value that constrained entries are set
@@ -686,8 +685,7 @@ def set_bc(
 
 
 class LinearProblem:
-    """High-level class for solving a linear variational problem using
-    a PETSc KSP.
+    """High-level class for solving linears problem using a PETSc KSP.
 
     Solves problems of the form
     :math:`a_{ij}(u, v) = f_i(v), i,j=0,\\ldots,N\\
@@ -699,7 +697,7 @@ class LinearProblem:
         This high-level class automatically handles PETSc memory
         management. The user does not need to manually call
         ``.destroy()`` on returned PETSc objects.
-    """
+    """  # noqa: D301
 
     def __init__(
         self,
@@ -879,6 +877,7 @@ class LinearProblem:
             self.solver.getPC().setFieldSplitIS(*fieldsplit_IS)
 
     def __del__(self):
+        """Destroy internally held PETSc objects."""
         for obj in filter(
             lambda obj: obj is not None, (self._solver, self._A, self._b, self._x, self._P_mat)
         ):
@@ -899,7 +898,6 @@ class LinearProblem:
         Returns:
             The solution function(s).
         """
-
         # Assemble lhs
         self.A.zeroEntries()
         assemble_matrix(self.A, self.a, bcs=self.bcs)  # type: ignore[arg-type, misc]
@@ -1011,7 +1009,6 @@ def _assign_block_data(forms: Sequence[Form], vec: PETSc.Vec):  # type: ignore[n
         forms: List of forms to extract block data from.
         vec: PETSc vector to assign block data to.
     """
-
     maps = (
         (
             form.function_spaces[0].dofmaps(0).index_map,  # type: ignore[attr-defined]
@@ -1097,11 +1094,11 @@ def assemble_jacobian(
     J: PETSc.Mat,  # type: ignore[name-defined]
     P_mat: PETSc.Mat,  # type: ignore[name-defined]
 ):
-    """Assemble the Jacobian and preconditioner matrices at ``x``
-    into ``J`` and ``P_mat``.
+    """Assemble the Jacobian and preconditioner matrices.
 
-    A function conforming to the interface expected by ``SNES.setJacobian``
-    can be created by fixing the first four arguments e.g.:
+    A function conforming to the interface expected by
+    ``SNES.setJacobian`` can be created by fixing the first four
+    arguments e.g.:
 
     Example::
 
@@ -1113,13 +1110,13 @@ def assemble_jacobian(
 
     Args:
         u: Function tied to the solution vector within the residual and
-            jacobian.
+            Jacobian.
         jacobian: Compiled form of the Jacobian.
         preconditioner: Compiled form of the preconditioner.
         bcs: List of Dirichlet boundary conditions to apply to the Jacobian
              and preconditioner matrices.
         _snes: The solver instance.
-        x: The vector containing the point to evaluate at.
+        x: Vector containing the point to evaluate at.
         J: Matrix to assemble the Jacobian into.
         P_mat: Matrix to assemble the preconditioner into.
     """
@@ -1139,8 +1136,7 @@ def assemble_jacobian(
 
 
 class NonlinearProblem:
-    """High-level class for solving nonlinear variational problems
-    with PETSc SNES.
+    """High-level class for solving nonlinear problems with PETSc SNES.
 
     Solves problems of the form
     :math:`F_i(u, v) = 0, i=0,\\ldots,N\\ \\forall v \\in V` where
@@ -1156,7 +1152,7 @@ class NonlinearProblem:
         This high-level class automatically handles PETSc memory
         management. The user does not need to manually call
         ``.destroy()`` on returned PETSc objects.
-    """
+    """  # noqa: D301
 
     def __init__(
         self,
@@ -1173,8 +1169,7 @@ class NonlinearProblem:
         jit_options: dict | None = None,
         entity_maps: Sequence[_EntityMap] | None = None,
     ):
-        """
-        Initialize solver for a nonlinear variational problem.
+        """Initialize solver for a nonlinear variational problem.
 
         By default, the underlying SNES solver uses PETSc's default
         options. To use the robust combination of LU via MUMPS with
@@ -1357,6 +1352,7 @@ class NonlinearProblem:
         return self.u
 
     def __del__(self):
+        """Destroy PETSc objects created internally."""
         for obj in filter(
             lambda obj: obj is not None, (self._snes, self._A, self._b, self._x, self._P_mat)
         ):
@@ -1422,8 +1418,9 @@ class NonlinearProblem:
 
 
 class NewtonSolverNonlinearProblem:
-    """(Deprecated) Nonlinear problem class for solving nonlinear
-    problems using :class:`dolfinx.nls.petsc.NewtonSolver`.
+    """Nonlinear problem solver.
+
+    Uses :class:`dolfinx.nls.petsc.NewtonSolver`.
 
     Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V`
     using PETSc as the linear algebra backend.
@@ -1436,7 +1433,7 @@ class NewtonSolverNonlinearProblem:
     Note:
         This class was previously called
         ``dolfinx.fem.petsc.NonlinearProblem``.
-    """
+    """  # noqa: D301
 
     def __init__(
         self,
@@ -1447,8 +1444,7 @@ class NewtonSolverNonlinearProblem:
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
     ):
-        """Initialize solver for solving a non-linear problem using
-        Newton's method`.
+        """Initialize solver for a Newton solver.
 
         Args:
             F: The PDE residual F(u, v).
@@ -1502,11 +1498,12 @@ class NewtonSolverNonlinearProblem:
         return self._a
 
     def form(self, x: PETSc.Vec) -> None:  # type: ignore[name-defined]
-        """This function is called before the residual or Jacobian is
-        computed. This is usually used to update ghost values.
+        """Function called before the residual or Jacobian is computed.
+
+        This is usually used to update ghost values.
 
         Args:
-           x: The vector containing the latest solution
+           x: The vector containing the latest solution.
         """
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore[attr-defined]
 
@@ -1533,7 +1530,8 @@ class NewtonSolverNonlinearProblem:
         """Assemble the Jacobian matrix.
 
         Args:
-            x: The vector containing the latest solution
+            x: Vector containing the latest solution
+            A: Matrix to assembler into.
         """
         A.zeroEntries()
         assemble_matrix(A, self._a, self.bcs)  # type: ignore[arg-type]
@@ -1575,28 +1573,27 @@ def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.M
 
 
 def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:  # type: ignore[name-defined]
-    r"""Assemble an interpolation operator matrix for discreye
-    interpolation between finite element spaces.
+    """Create an interpolation operator between finite element spaces.
 
     Consider is the vector of degrees-of-freedom  :math:`u_{i}`
     associated with a function in :math:`V_{i}`. This function returns
-    the matrix :math:`\Pi` sucht that
+    the matrix :math:`\\Pi` sucht that
 
     .. math::
 
-        u_{1} = \Pi u_{0}.
+        u_{1} = \\Pi u_{0}.
 
     Args:
         V0: Space to interpolate from.
         V1: Space to interpolate into.
 
     Returns:
-        The interpolation matrix :math:`\Pi`.
+        The interpolation matrix :math:`\\Pi`.
 
     Note:
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
-    """
+    """  # noqa: D301
     return _interpolation_matrix(V0._cpp_object, V1._cpp_object)
 
 

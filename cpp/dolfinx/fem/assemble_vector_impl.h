@@ -566,7 +566,7 @@ void _lift_bc_interior_facets(
     if (cells0[1] >= 0)
     {
       std::span sub_Ae0(Ae.data() + bs0 * num_dofs0 * num_cols,
-                        bs0 * num_dofs1 * num_cols);
+                        bs0 * num_dofs0 * num_cols);
       P0(sub_Ae0, cell_info0, cells0[1], num_cols);
     }
     if (cells1[0] >= 0)

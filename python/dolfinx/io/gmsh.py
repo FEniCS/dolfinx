@@ -39,8 +39,7 @@ __all__ = [
 
 
 class TopologyDict(typing.TypedDict):
-    """TopologyDict is a TypedDict for storing the topology of the marked
-    cell.
+    """TypedDict for storing the topology of the marked cell.
 
     Args:
         topology: 2D array containing the topology of the marked cell.
@@ -116,14 +115,14 @@ class MeshData(typing.NamedTuple):
 
 
 def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
-    """Create a UFL mesh from a Gmsh cell identifier and geometric
-    dimension.
+    """Create UFL mesh from Gmsh cell identifier and geometric dimension.
 
     See https://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
 
     Args:
         gmsh_cell: Gmsh cell identifier.
         gdim: Geometric dimension of the mesh.
+        dtype: Data-type used for the mesh coordinates.
 
     Returns:
         UFL Mesh using Lagrange elements (equispaced) of the
@@ -148,8 +147,7 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
 
 
 def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
-    """The permutation array for permuting Gmsh ordering to DOLFINx
-    ordering.
+    """Array for permuting Gmsh ordering to DOLFINx ordering.
 
     Args:
         cell_type: DOLFINx cell type.
@@ -165,8 +163,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
 def extract_topology_and_markers(
     model, name: str | None = None
 ) -> tuple[dict[int, TopologyDict], dict[str, PhysicalGroup]]:
-    """Extract all entities tagged with a physical marker in the gmsh
-    model.
+    """Extract entities with a physical marker in the Gmsh model.
 
     Returns a nested dictionary where the first key is the gmsh MSH
     element type integer. Each element type present in the model
@@ -297,6 +294,7 @@ def model_to_mesh(
     partitioner: Callable[[_MPI.Comm, int, int, _AdjacencyList_int32], _AdjacencyList_int32]
     | None = None,
     dtype=default_real_type,
+    max_facet_to_cell_links: int = 2,
 ) -> MeshData:
     """Create a Mesh from a Gmsh model.
 
@@ -312,6 +310,9 @@ def model_to_mesh(
         gdim: Geometrical dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
+        dtype: Data-type used for the mesh coordinates
+        max_facet_to_cell_links: Maximum number of cells a facet can
+                    be connected to.
 
     Returns:
         MeshData with mesh and tags of corresponding entities by
@@ -420,7 +421,12 @@ def model_to_mesh(
     if comm.rank != rank:
         x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
     mesh = create_mesh(
-        comm, cell_connectivity, ufl_domain, x[:, :gdim].astype(dtype, copy=False), partitioner
+        comm,
+        cell_connectivity,
+        ufl_domain,
+        x[:, :gdim].astype(dtype, copy=False),
+        partitioner,
+        max_facet_to_cell_links=max_facet_to_cell_links,
     )
     assert tdim == mesh.topology.dim, (
         f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}"
@@ -474,8 +480,7 @@ def read_from_msh(
     gdim: int = 3,
     partitioner: Callable[[_MPI.Comm, int, int, AdjacencyList], _AdjacencyList_int32] | None = None,
 ) -> MeshData:
-    """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and
-    cell facet markers.
+    """Read a Gmsh .msh file and return a mesh and cell facet markers.
 
     Note:
         This function requires the Gmsh Python module.
@@ -486,6 +491,8 @@ def read_from_msh(
         rank: Rank of ``comm`` responsible for reading the ``.msh``
             file.
         gdim: Geometric dimension of the mesh
+        partitioner: Function that computes the parallel
+            distribution of cells across MPI ranks.
 
     Returns:
         Meshdata with mesh, cell tags, facet tags, edge tags,

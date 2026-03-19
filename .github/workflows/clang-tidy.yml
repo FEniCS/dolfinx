@@ -27,7 +27,7 @@ jobs:
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |

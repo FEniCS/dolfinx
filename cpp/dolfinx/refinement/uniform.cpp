@@ -242,14 +242,15 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 
     auto c_to_v = topology->connectivity({tdim, k}, {0, 0});
     auto c_to_e = topology->connectivity({tdim, k}, {1, 0});
-
     for (int c = 0; c < topology->index_maps(tdim)[k]->size_local(); ++c)
     {
       // Cell topology defined through its globally numbered vertices
       std::vector<std::int64_t> entities;
+
       // Extract new global vertex number for existing vertices
       for (std::int32_t i : c_to_v->links(c))
         entities.push_back(new_v[0][i]);
+
       // Indices for vertices inserted on edges
       for (std::int32_t i : c_to_e->links(c))
         entities.push_back(new_v[1][i]);
@@ -263,7 +264,9 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
           {
             for (std::int32_t i :
                  topology->connectivity({3, k}, {2, e_index[2]})->links(c))
+            {
               entities.push_back(new_v[2][i]);
+            }
           }
         }
         // Add vertices for quadrilateral cells (2D mesh)
@@ -274,7 +277,9 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
       // Add vertices for hex cell centres
       if (e_index.size() > 3
           and cell_entity_types[k] == mesh::CellType::hexahedron)
+      {
         entities.push_back(new_v[3][c]);
+      }
 
       for (int i : refined_cell_list)
         mixed_topology[k].push_back(entities[i]);

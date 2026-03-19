@@ -93,7 +93,7 @@ UFL still runs on the year-based release scheme.
 
 5. Update the version number macros in `ffcx/codegeneration/ufcx.h`. Typically
    this should match the Python version number. Remember to change the
-   `UFCX_VERSION_RELEASE` to `1`.
+   `UFCX_VERSION_IS_RELEASE` to `true`.
 
 6. Commit and push.
 

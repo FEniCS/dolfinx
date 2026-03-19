@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for MatrixCSR"""
+"""Unit tests for MatrixCSR."""
 
 from mpi4py import MPI
 
@@ -17,7 +17,7 @@ from dolfinx.mesh import create_unit_square
 
 
 def test_create_matrix_csr():
-    """Test creation of CSR matrix with specified types"""
+    """Test creation of CSR matrix with specified types."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 11)
     V = functionspace(mesh, ("Lagrange", 1))
     map = V.dofmap.index_map
@@ -89,7 +89,7 @@ def test_matvec(dtype):
     ],
 )
 def test_create_vector(dtype):
-    """Test creation of a distributed vector"""
+    """Test creation of a distributed vector."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     im = mesh.topology.index_map(0)
 

@@ -184,6 +184,7 @@ b.scatter_forward()
 
 
 def action_A(x, y):
+    """Compute the action of the matrix A on vector x, result in y."""
     # Set coefficient vector of the linear form M and ensure it is
     # updated across processes
     ui.x.array[:] = x.array
@@ -207,6 +208,7 @@ def action_A(x, y):
 
 
 def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int = 200, rtol: float = 1e-6):
+    """Conjugate gradient solver for the linear system A x = b."""
     rtol2 = rtol**2
 
     nr = b.index_map.size_local
@@ -263,6 +265,7 @@ bc.set(u.x.array, alpha=1.0)
 
 # +
 def L2Norm(u):
+    """Compute the L2 norm of a finite element function."""
     val = fem.assemble_scalar(fem.form(ufl.inner(u, u) * ufl.dx, dtype=dtype))
     return np.sqrt(comm.allreduce(val, op=MPI.SUM))
 

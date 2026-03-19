@@ -57,7 +57,7 @@ class CoordinateElement:
         return self._cpp_object.hash()
 
     def create_dof_layout(self) -> _cpp.fem.ElementDofLayout:
-        """Compute and return the dof layout"""
+        """Compute and return the dof layout."""
         return self._cpp_object.create_dof_layout()
 
     def push_forward(
@@ -165,6 +165,8 @@ def _(e: basix.finite_element.FiniteElement):
 
 
 class FiniteElement:
+    """A finite element."""
+
     _cpp_object: _cpp.fem.FiniteElement_float32 | _cpp.fem.FiniteElement_float64
 
     def __init__(
@@ -178,17 +180,17 @@ class FiniteElement:
             :func:`finiteelement`.
 
         Args:
-            The underlying cpp instance that this object will wrap.
+            cpp_object: Underlying cpp instance that this object will wrap.
         """
         self._cpp_object = cpp_object
 
     def __eq__(self, other):
+        """Check equality with another finite element."""
         return self._cpp_object == other._cpp_object
 
     @property
     def dtype(self) -> np.dtype:
-        """Geometry type of the Mesh that the FunctionSpace is defined
-        on."""
+        """Geometry type of the mesh that the space is defined on."""
         return self._cpp_object.dtype
 
     @property
@@ -217,9 +219,7 @@ class FiniteElement:
 
     @property
     def interpolation_points(self) -> npt.NDArray[np.floating]:
-        """Points on the reference cell at which an expression needs to be
-        evaluated in order to interpolate the expression in the finite
-        element space.
+        """Points at which to evaluate the function to be interpolated.
 
         Interpolation point coordinates on the reference cell, returning
         the coordinates data (row-major) storage with shape
@@ -234,20 +234,23 @@ class FiniteElement:
 
     @property
     def interpolation_ident(self) -> bool:
-        """Check if interpolation into the finite element space is an
+        """Check if interpolation into space is the identity.
+
+        True if interpolation into the finite element space is an
         identity operation given the evaluation on an expression at
         specific points, i.e. the degree-of-freedom are equal to point
         evaluations. The function will return `true` for Lagrange
-        elements."""
+        elements.
+        """
         return self._cpp_object.interpolation_ident
 
     @property
     def space_dimension(self) -> int:
-        """Dimension of the finite element function space (the number of
-        degrees-of-freedom for the element).
+        """Dimension of the finite element function space.
 
-        For 'blocked' elements, this function returns the dimension of the
-        full element rather than the dimension of the base element.
+        This is the the number of degrees-of-freedom for the element.
+        For 'blocked' elements, this function returns the dimension of
+        the full element rather than the dimension of the base element.
         """
         return self._cpp_object.space_dimension
 
@@ -275,7 +278,9 @@ class FiniteElement:
     def T_apply(
         self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
-        """Transform basis functions from the reference element ordering
+        """Transform basis from reference to physical ordering/orientation.
+
+        Transform basis functions from the reference element ordering
         and orientation to the globally consistent physical element
         ordering and orientation.
 
@@ -310,8 +315,7 @@ class FiniteElement:
     def Tt_inv_apply(
         self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
-        """Apply the inverse transpose of the operator applied by
-        T_apply().
+        """Apply the inverse transpose of T_apply().
 
         Args:
             x: Data to transform (in place). The shape is

@@ -16,9 +16,16 @@ namespace dolfinx
 /// @private This concept is used to constrain the a template type to floating
 /// point real or complex types. Note that this concept is different to
 /// std::floating_point which does not include std::complex.
+
+template <class T>
+struct is_custom_scalar : std::false_type
+{
+};
+
 template <class T>
 concept scalar = std::floating_point<T>
-                 || std::is_same_v<T, std::complex<typename T::value_type>>;
+                 || std::is_same_v<T, std::complex<typename T::value_type>>
+                 || is_custom_scalar<T>::value;
 
 /// @private These structs are used to get the float/value type from a
 /// template argument, including support for complex types.
@@ -28,12 +35,14 @@ struct scalar_value
   /// @internal
   typedef T type;
 };
+
 /// @private
 template <scalar T>
 struct scalar_value<T, std::void_t<typename T::value_type>>
 {
   typedef typename T::value_type type;
 };
+
 /// @private Convenience typedef
 template <scalar T>
 using scalar_value_t = typename scalar_value<T>::type;

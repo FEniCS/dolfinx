@@ -24,6 +24,7 @@
 #include <filesystem>
 #include <memory>
 #include <mpi.h>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <variant>
@@ -172,27 +173,39 @@ std::tuple<std::vector<std::string>, std::vector<std::string>>
 extract_function_names(const typename adios2_writer::U<T>& u)
 {
   std::vector<std::string> names, dg0_names;
-  for (auto& v : u)
+  std::ranges::for_each(
+      u,
+      [&names, &dg0_names](auto&& v)
+      {
+        std::visit(
+            [&names, &dg0_names](auto&& v)
+            {
+              using U = std::decay_t<decltype(v)>;
+              using X = typename U::element_type;
+
+              if (impl::is_cellwise(*(v->function_space()->element())))
+                names = dg0_names;
+
+              if constexpr (std::is_floating_point_v<typename X::value_type>)
+                names.push_back(v->name);
+              else
+              {
+                names.push_back(v->name + impl_adios2::field_ext[0]);
+                names.push_back(v->name + impl_adios2::field_ext[1]);
+              }
+            },
+            v);
+      });
+
   {
-    std::visit(
-        [&names, &dg0_names](auto&& u)
-        {
-          using U = std::decay_t<decltype(u)>;
-          using X = typename U::element_type;
-          std::vector<std::string>* fnames = &names;
-          if (impl::is_cellwise(*(u->function_space()->element())))
-          {
-            fnames = &dg0_names;
-          }
-          if constexpr (std::is_floating_point_v<typename X::value_type>)
-            fnames->push_back(u->name);
-          else
-          {
-            fnames->push_back(u->name + impl_adios2::field_ext[0]);
-            fnames->push_back(u->name + impl_adios2::field_ext[1]);
-          }
-        },
-        v);
+    // Check names are unique
+    auto sorted = names;
+    std::ranges::sort(sorted);
+    if (std::ranges::unique(sorted).begin() != sorted.end())
+    {
+      throw std::runtime_error(
+          "Function names in VTX output need to be unique.");
+    }
   }
 
   return {names, dg0_names};

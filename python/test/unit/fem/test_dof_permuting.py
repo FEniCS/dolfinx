@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for dofmap construction"""
+"""Unit tests for dofmap construction."""
 
 import random
 
@@ -143,7 +143,7 @@ def randomly_ordered_mesh(cell_type):
 @pytest.mark.parametrize("space_type", [("P", 1), ("P", 2), ("P", 3), ("P", 4)])
 @pytest.mark.parametrize("cell_type", ["triangle", "tetrahedron", "quadrilateral", "hexahedron"])
 def test_dof_positions(cell_type, space_type):
-    """Checks that dofs on shared triangle edges match up"""
+    """Checks that dofs on shared triangle edges match up."""
     mesh = randomly_ordered_mesh(cell_type)
 
     if cell_type == "triangle":

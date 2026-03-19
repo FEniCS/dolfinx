@@ -43,7 +43,7 @@ def test_create(cell_type):
 
 
 def test_ufl_id():
-    """Test that UFL can process MeshTags (tests ufl_id attribute)"""
+    """Test that UFL can process MeshTags (tests ufl_id attribute)."""
     comm = MPI.COMM_WORLD
     msh = create_unit_cube(comm, 6, 6, 6)
     tdim = msh.topology.dim

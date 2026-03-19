@@ -141,9 +141,9 @@ public:
   {
     auto cell_dofs = _V->dofmap()->map();
     std::vector<std::int32_t> marked_cells;
-    for (int i = 0; i < cell_dofs.extent(0); ++i)
+    for (std::size_t i = 0; i < cell_dofs.extent(0); ++i)
     {
-      for (int j = 0; j < cell_dofs.extent(1); ++j)
+      for (std::size_t j = 0; j < cell_dofs.extent(1); ++j)
       {
         int index = cell_dofs(i, j);
         if (dof_to_ref[index] != dof_to_ref[index + 1])
