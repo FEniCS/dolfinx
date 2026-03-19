@@ -35,6 +35,7 @@ from petsc4py import PETSc
 
 # ruff: noqa: E402
 import dolfinx
+from dolfinx.log import LogLevel, log
 
 assert dolfinx.has_petsc4py
 
@@ -1668,7 +1669,7 @@ def get_petsc_lib() -> pathlib.Path:
     import petsc4py as _petsc4py
 
     petsc_dir = _petsc4py.get_config()["PETSC_DIR"]
-    petsc_arch = _petsc4py.lib.getPathArchPETSc()[1]
+    petsc_arch = _petsc4py.lib.getPathArchPETSc()[1]  # type: ignore
     candidate_paths = [
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"),
@@ -1853,8 +1854,6 @@ class cffi_utils:
     except KeyError:
         pass
     except ImportError:
-        from dolfinx.log import LogLevel, log
-
         log(
             LogLevel.DEBUG,
             "Could not import numba, so cffi/numba complex types were not registered.",
@@ -1900,8 +1899,6 @@ class cffi_utils:
     except KeyError:
         pass
     except ImportError:
-        from dolfinx.log import LogLevel, log
-
         log(
             LogLevel.DEBUG,
             "Could not import petsc4py, so cffi/PETSc ABI mode interface was not created.",
