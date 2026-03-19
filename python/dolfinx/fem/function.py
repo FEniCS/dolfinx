@@ -11,6 +11,7 @@ from __future__ import annotations
 import typing
 from collections.abc import Callable, Sequence
 from functools import cached_property, singledispatch
+from typing import Generic, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -28,8 +29,10 @@ if typing.TYPE_CHECKING:
 
     from dolfinx.mesh import Mesh
 
+_S = TypeVar("_S", np.float32, np.float64, np.complex64, np.complex128)  # scalar
 
-class Constant(ufl.Constant):
+
+class Constant(ufl.Constant, Generic[_S]):
     """A constant with respect to a domain."""
 
     _cpp_object: (
@@ -72,27 +75,27 @@ class Constant(ufl.Constant):
         return self._cpp_object.value
 
     @value.setter
-    def value(self, v):
+    def value(self, v: npt.NDArray[_S]) -> None:
         np.copyto(self._cpp_object.value, np.asarray(v))
 
     @property
-    def dtype(self) -> np.dtype:
+    def dtype(self) -> npt.DTypeLike:
         """Value dtype of the constant."""
         return np.dtype(self._cpp_object.dtype)
 
-    def __float__(self):
+    def __float__(self) -> float:
         """Real representation of the constant."""
         if self.ufl_shape or self.ufl_free_indices:
             raise TypeError("Cannot evaluate a nonscalar expression to a scalar value.")
-        else:
-            return float(self.value)
 
-    def __complex__(self):
+        return float(self.value)
+
+    def __complex__(self) -> complex:
         """Complex representation of the constant."""
         if self.ufl_shape or self.ufl_free_indices:
             raise TypeError("Cannot evaluate a nonscalar expression to a scalar value.")
-        else:
-            return complex(self.value)
+
+        return complex(self.value)
 
 
 class Expression:
