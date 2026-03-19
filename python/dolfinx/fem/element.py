@@ -169,7 +169,7 @@ def _(e: basix.finite_element.FiniteElement) -> CoordinateElement:
         return CoordinateElement(_cpp.fem.CoordinateElement_float64(e._e))
 
 
-class FiniteElement:
+class FiniteElement(Generic[_T]):
     """A finite element."""
 
     _cpp_object: _cpp.fem.FiniteElement_float32 | _cpp.fem.FiniteElement_float64
@@ -223,7 +223,7 @@ class FiniteElement:
         return self._cpp_object.value_shape
 
     @property
-    def interpolation_points(self) -> npt.NDArray[np.floating]:
+    def interpolation_points(self) -> npt.NDArray[_T]:
         """Points at which to evaluate the function to be interpolated.
 
         Interpolation point coordinates on the reference cell, returning
@@ -281,7 +281,7 @@ class FiniteElement:
         return self._cpp_object.signature
 
     def T_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self, x: npt.NDArray[_T], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
         """Transform basis from reference to physical ordering/orientation.
 
@@ -304,7 +304,7 @@ class FiniteElement:
         self._cpp_object.T_apply(x, cell_permutations, dim)
 
     def Tt_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self, x: npt.NDArray[_T], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
         """Apply the transpose of the operator applied by T_apply().
 
@@ -318,7 +318,7 @@ class FiniteElement:
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
     def Tt_inv_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self, x: npt.NDArray[_T], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
         """Apply the inverse transpose of T_apply().
 
@@ -335,7 +335,7 @@ class FiniteElement:
 def finiteelement(
     cell_type: _cpp.mesh.CellType,
     ufl_e: basix.ufl._ElementBase,
-    FiniteElement_dtype: np.dtype,
+    FiniteElement_dtype: npt.DTypeLike,
 ) -> FiniteElement:
     """Create a DOLFINx element from a basix.ufl element.
 
