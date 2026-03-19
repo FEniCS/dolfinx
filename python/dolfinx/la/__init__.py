@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Linear algebra functionality."""
 
+from typing import Generic, TypeVar
+
 import numpy as np
 import numpy.typing as npt
 
@@ -26,7 +28,10 @@ __all__ = [
 ]
 
 
-class Vector:
+_T = TypeVar("_T", np.float32, np.float64, np.complex64, np.complex128, np.int8, np.int32, np.int64)
+
+
+class Vector(Generic[_T]):
     """Distributed vector object."""
 
     _cpp_object: (
@@ -79,7 +84,7 @@ class Vector:
         return self._cpp_object.bs
 
     @property
-    def array(self) -> np.ndarray:
+    def array(self) -> npt.NDArray[_T]:
         """Local representation of the vector."""
         return self._cpp_object.array
 
@@ -335,17 +340,17 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     return Vector(vtype(map, bs))
 
 
-def orthonormalize(basis: list[Vector]):
+def orthonormalize(basis: list[Vector[_T]]) -> None:
     """Orthogonalise set of vectors in-place."""
     _cpp.la.orthonormalize([x._cpp_object for x in basis])
 
 
-def is_orthonormal(basis: list[Vector], eps: float = 1.0e-12) -> bool:
+def is_orthonormal(basis: list[Vector[_T]], eps: float = 1.0e-12) -> bool:
     """Check that list of vectors are orthonormal."""
     return _cpp.la.is_orthonormal([x._cpp_object for x in basis], eps)
 
 
-def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
+def norm(x: Vector[_T], type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
     """Compute a norm of the vector.
 
     Args:
