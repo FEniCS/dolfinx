@@ -13,6 +13,7 @@ modification of linear systems.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
+from typing import Generic, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -90,7 +91,10 @@ def locate_dofs_topological(
     return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
 
-class DirichletBC:
+_T = TypeVar("_T", np.float32, np.float64, np.complex64, np.complex128)
+
+
+class DirichletBC(Generic[_T]):
     """Representation of Dirichlet boundary conditions.
 
     The conditions are imposed on a linear system.
@@ -119,8 +123,9 @@ class DirichletBC:
         self._cpp_object = bc
 
     @property
-    def g(self) -> Function | Constant | np.ndarray:
+    def g(self) -> Function | Constant:
         """The boundary condition value(s)."""
+        # TODO: needs to be wrapped into Function or Constant
         return self._cpp_object.value
 
     @property
@@ -128,9 +133,7 @@ class DirichletBC:
         """Function space on which the boundary condition is defined."""
         return self._cpp_object.function_space
 
-    def set(
-        self, x: npt.NDArray, x0: npt.NDArray[np.int32] | None = None, alpha: float = 1
-    ) -> None:
+    def set(self, x: npt.NDArray[_T], x0: npt.NDArray[_T] | None = None, alpha: float = 1) -> None:
         """Set array entries that are constrained by a Dirichlet condition.
 
         Entries in ``x`` that are constrained by a Dirichlet boundary
@@ -171,10 +174,10 @@ class DirichletBC:
 
 
 def dirichletbc(
-    value: Function | Constant | np.ndarray | float | complex,
+    value: Function | Constant | npt.NDArray[_T] | float | complex,
     dofs: npt.NDArray[np.int32],
     V: dolfinx.fem.FunctionSpace | None = None,
-) -> DirichletBC:
+) -> DirichletBC[_T]:
     """Representation of Dirichlet boundary condition.
 
     Args:
@@ -231,8 +234,8 @@ def dirichletbc(
 
 
 def bcs_by_block(
-    spaces: Iterable[FunctionSpace | None], bcs: Iterable[DirichletBC]
-) -> list[list[DirichletBC]]:
+    spaces: Iterable[FunctionSpace | None], bcs: Iterable[DirichletBC[_T]]
+) -> list[list[DirichletBC[_T]]]:
     """Arrange boundary conditions by the space that they constrain.
 
     Given a sequence of function spaces ``spaces`` and a sequence of
