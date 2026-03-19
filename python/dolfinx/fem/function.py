@@ -311,7 +311,7 @@ class Expression(Generic[_S]):
         return np.dtype(self._cpp_object.dtype)
 
 
-class Function(ufl.Coefficient):
+class Function(ufl.Coefficient, Generic[_S]):
     """A finite element function.
 
     A finite element function is represented by a function space
@@ -327,10 +327,12 @@ class Function(ufl.Coefficient):
         | _cpp.fem.Function_float64
     )
 
+    _x: la.Vector[_S]
+
     def __init__(
         self,
         V: FunctionSpace,
-        x: la.Vector | None = None,
+        x: la.Vector[_S] | None = None,
         name: str | None = None,
         dtype: npt.DTypeLike | None = None,
     ):
@@ -398,11 +400,11 @@ class Function(ufl.Coefficient):
     def eval(
         self,
         x: npt.ArrayLike,
-        cells: npt.ArrayLike,
-        u: None | npt.NDArray[np.float32 | np.float64 | np.complex128 | np.complex64] = None,
+        cells: npt.NDArray[np.int32],
+        u: None | npt.NDArray[_S] = None,
         tol: float = 1.0e-6,
         maxit: int = 15,
-    ) -> np.ndarray:
+    ) -> npt.NDArray[_S]:
         """Evaluate Function at points x.
 
         Args:
@@ -446,7 +448,7 @@ class Function(ufl.Coefficient):
 
     def interpolate_nonmatching(
         self,
-        u0: Function,
+        u0: Function[_S],
         cells: npt.NDArray[np.int32],
         interpolation_data: PointOwnershipData,
         tol: float = 1e-6,
@@ -472,9 +474,9 @@ class Function(ufl.Coefficient):
 
     def interpolate(
         self,
-        u0: Callable | Expression | Function,
-        cells0: np.ndarray | None = None,
-        cells1: np.ndarray | None = None,
+        u0: Callable | Expression[_S] | Function[_S],
+        cells0: npt.NDArray[np.int32] | None = None,
+        cells1: npt.NDArray[np.int32] | None = None,
     ) -> None:
         """Interpolate an expression.
 
@@ -520,7 +522,7 @@ class Function(ufl.Coefficient):
             )
             self._cpp_object.interpolate_f(np.asarray(u0(x), dtype=self.dtype), cells0)
 
-    def copy(self) -> Function:
+    def copy(self) -> Function[_S]:
         """Create a copy of the Function.
 
         The function space is shared and the degree-of-freedom vector is
@@ -536,12 +538,12 @@ class Function(ufl.Coefficient):
         )
 
     @property
-    def x(self) -> la.Vector:
+    def x(self) -> la.Vector[_S]:
         """Vector holding the degrees-of-freedom."""
         return self._x
 
     @property
-    def dtype(self) -> np.dtype:
+    def dtype(self) -> npt.DTypeLike:
         """Function value dtype."""
         return np.dtype(self._cpp_object.x.array.dtype)
 
@@ -554,11 +556,11 @@ class Function(ufl.Coefficient):
     def name(self, name):
         self._cpp_object.name = name
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Pretty print representation."""
         return self.name
 
-    def sub(self, i: int) -> Function:
+    def sub(self, i: int) -> Function[_S]:
         """Return a sub-function (a view into the ``Function``).
 
         Sub-functions are indexed ``i = 0, ..., N-1``, where ``N`` is
@@ -577,7 +579,7 @@ class Function(ufl.Coefficient):
         """
         return Function(self._V.sub(i), self.x, name=f"{self!s}_{i}")
 
-    def split(self) -> tuple[Function, ...]:
+    def split(self) -> tuple[Function[_S], ...]:
         """Extract (any) sub-functions.
 
         A sub-function can be extracted from a discrete function that is
@@ -592,7 +594,7 @@ class Function(ufl.Coefficient):
             raise RuntimeError("No subfunctions to extract")
         return tuple(self.sub(i) for i in range(num_sub_spaces))
 
-    def collapse(self) -> Function:
+    def collapse(self) -> Function[_S]:
         """Create a collapsed version of this Function."""
         u_collapsed = self._cpp_object.collapse()  # type: ignore
         V_collapsed = FunctionSpace(
