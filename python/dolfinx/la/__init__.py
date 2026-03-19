@@ -122,7 +122,10 @@ class Vector(Generic[_T]):
         self._cpp_object.scatter_reverse(mode)
 
 
-class MatrixCSR:
+_MT = TypeVar("_MT", np.float32, np.float64, np.complex64, np.complex128)
+
+
+class MatrixCSR(Generic[_MT]):
     """Distributed compressed sparse row matrix."""
 
     _cpp_object: (
@@ -160,7 +163,7 @@ class MatrixCSR:
         """
         return self._cpp_object.index_map(i)
 
-    def mult(self, x: Vector, y: Vector, transpose: bool = False) -> None:
+    def mult(self, x: Vector[_MT], y: Vector[_MT], transpose: bool = False) -> None:
         """Compute ``y += Ax`` or ``y += A^T x``.
 
         Args:
@@ -205,7 +208,7 @@ class MatrixCSR:
 
     def add(
         self,
-        x: npt.NDArray[np.floating],
+        x: npt.NDArray[_MT],
         rows: npt.NDArray[np.int32],
         cols: npt.NDArray[np.int32],
         bs: int = 1,
@@ -215,7 +218,7 @@ class MatrixCSR:
 
     def set(
         self,
-        x: npt.NDArray[np.floating],
+        x: npt.NDArray[_MT],
         rows: npt.NDArray[np.int32],
         cols: npt.NDArray[np.int32],
         bs: int = 1,
@@ -223,7 +226,7 @@ class MatrixCSR:
         """Set a block of values in the matrix."""
         self._cpp_object.set(x, rows, cols, bs)
 
-    def set_value(self, x: np.floating) -> None:
+    def set_value(self, x: _MT) -> None:
         """Set all non-zero entries to a value.
 
         Args:
@@ -244,7 +247,7 @@ class MatrixCSR:
         return self._cpp_object.squared_norm()
 
     @property
-    def data(self) -> npt.NDArray[np.floating]:
+    def data(self) -> npt.NDArray[_MT]:
         """Underlying matrix entry data."""
         return self._cpp_object.data
 
@@ -258,7 +261,7 @@ class MatrixCSR:
         """Local row pointers."""
         return self._cpp_object.indptr
 
-    def to_dense(self) -> npt.NDArray[np.floating]:
+    def to_dense(self) -> npt.NDArray[_MT]:
         """Copy to a dense 2D array.
 
         Note:
