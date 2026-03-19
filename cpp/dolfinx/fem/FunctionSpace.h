@@ -318,9 +318,9 @@ public:
       {
         // Extract cell geometry 'dofs'
         auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
-        for (std::size_t i = 0; i < x_dofs.size(); ++i)
-          for (std::size_t j = 0; j < gdim; ++j)
-            coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];
+        for (std::size_t j = 0; j < x_dofs.size(); ++j)
+          for (std::size_t k = 0; k < gdim; ++k)
+            coordinate_dofs(j, k) = x_g[3 * x_dofs[j] + k];
 
         // Tabulate dof coordinates on cell
         cmap.push_forward(x, coordinate_dofs, phi);
@@ -333,15 +333,15 @@ public:
         // Copy dof coordinates into vector
         if (!transpose)
         {
-          for (std::size_t i = 0; i < dofs.size(); ++i)
-            for (std::size_t j = 0; j < gdim; ++j)
-              coords[dofs[i] * 3 + j] = x(i, j);
+          for (std::size_t j = 0; j < dofs.size(); ++j)
+            for (std::size_t k = 0; k < gdim; ++k)
+              coords[dofs[j] * 3 + k] = x(j, k);
         }
         else
         {
-          for (std::size_t i = 0; i < dofs.size(); ++i)
-            for (std::size_t j = 0; j < gdim; ++j)
-              coords[j * num_dofs + dofs[i]] = x(i, j);
+          for (std::size_t j = 0; j < dofs.size(); ++j)
+            for (std::size_t k = 0; k < gdim; ++k)
+              coords[k * num_dofs + dofs[j]] = x(j, k);
         }
       }
     }
