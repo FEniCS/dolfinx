@@ -6,6 +6,7 @@
 """Finite elements."""
 
 from functools import singledispatch
+from typing import Generic, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -14,8 +15,10 @@ import basix
 import basix.ufl
 from dolfinx import cpp as _cpp
 
+_T = TypeVar("_T", np.float32, np.float64)
 
-class CoordinateElement:
+
+class CoordinateElement(Generic[_T]):
     """Coordinate element describing the geometry map for mesh cells."""
 
     _cpp_object: _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
@@ -60,11 +63,7 @@ class CoordinateElement:
         """Compute and return the dof layout."""
         return self._cpp_object.create_dof_layout()
 
-    def push_forward(
-        self,
-        X: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+    def push_forward(self, X: npt.NDArray[_T], cell_geometry: npt.NDArray[_T]) -> npt.NDArray[_T]:
         """Push points on the reference cell forward to the physical cell.
 
         Args:
@@ -82,11 +81,11 @@ class CoordinateElement:
 
     def pull_back(
         self,
-        x: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
+        x: npt.NDArray[_T],
+        cell_geometry: npt.NDArray[_T],
         tol: float = 1.0e-6,
         maxit: int = 15,
-    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+    ) -> npt.NDArray[_T]:
         """Pull points on the physical cell back to the reference cell.
 
         For non-affine cells, the pull-back is a nonlinear operation.
@@ -130,7 +129,7 @@ def coordinate_element(
     degree: int,
     variant=int(basix.LagrangeVariant.unset),
     dtype: npt.DTypeLike = np.float64,
-):
+) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from element metadata.
 
     Coordinate elements are typically used to create meshes.
@@ -153,7 +152,7 @@ def coordinate_element(
 
 
 @coordinate_element.register(basix.finite_element.FiniteElement)
-def _(e: basix.finite_element.FiniteElement):
+def _(e: basix.finite_element.FiniteElement) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from a Basix finite element.
 
     Coordinate elements are typically used when creating meshes.
