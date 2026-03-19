@@ -84,12 +84,12 @@ def test_set(dtype):
     mat1 = matrix_csr(sp, dtype=dtype)
 
     # Set a block with bs=1
-    mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
+    mat1.set(np.array([2.0, 3.0, 4.0, 5.0], dtype=dtype), np.array([2, 3]), np.array([4, 5]), 1)
     n1 = mat1.squared_norm()
     assert n1 == 54.0 * mpi_size  # /NOSONAR
 
     # Set same block with bs=2
-    mat1.set([2.0, 3.0, 4.0, 5.0], [1], [2], 2)
+    mat1.set(np.array([2.0, 3.0, 4.0, 5.0], dtype=dtype), np.array([1]), np.array([2]), 2)
     n2 = mat1.squared_norm()
     assert n1 == n2
 
@@ -102,7 +102,7 @@ def test_set_blocked(dtype):
     mat1 = matrix_csr(sp, dtype=dtype)
 
     # Set a block with bs=1
-    mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
+    mat1.set(np.array([2.0, 3.0, 4.0, 5.0], dtype=dtype), np.array([2, 3]), np.array([4, 5]), 1)
     n1 = mat1.squared_norm()
     assert n1 == 54.0 * mpi_size  # /NOSONAR
 
@@ -256,7 +256,7 @@ def test_bad_entry(dtype):
 
     # Set block in bs=1 matrix (tests insert_blocked_csr)
     with pytest.raises(RuntimeError):
-        mat1.set([1.0, 2.0, 3.0, 4.0], [0], [0], 2)
+        mat1.set(np.array([1.0, 2.0, 3.0, 4.0], dtype=dtype), np.array([0]), np.array([0]), 2)
 
     # Set an single entry in bs=1 matrix (tests insert_csr)
     with pytest.raises(RuntimeError):

@@ -117,16 +117,21 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
              }
            })
       .def("set",
-           [](dolfinx::la::MatrixCSR<T>& self, const std::vector<T>& x,
-              const std::vector<std::int32_t>& rows,
-              const std::vector<std::int32_t>& cols, int bs = 1)
+           [](dolfinx::la::MatrixCSR<T>& self,
+              nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x,
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
+              int bs = 1)
            {
+             std::span x_span = std::span(x.data(), x.size());
+             std::span rows_span = std::span(rows.data(), rows.size());
+             std::span cols_span = std::span(cols.data(), cols.size());
              if (bs == 1)
-               self.template set<1, 1>(x, rows, cols);
+               self.template set<1, 1>(x_span, rows_span, cols_span);
              else if (bs == 2)
-               self.template set<2, 2>(x, rows, cols);
+               self.template set<2, 2>(x_span, rows_span, cols_span);
              else if (bs == 3)
-               self.template set<3, 3>(x, rows, cols);
+               self.template set<3, 3>(x_span, rows_span, cols_span);
              else
              {
                throw std::runtime_error(
