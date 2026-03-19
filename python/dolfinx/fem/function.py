@@ -98,7 +98,7 @@ class Constant(ufl.Constant, Generic[_S]):
         return complex(self.value)
 
 
-class Expression:
+class Expression(Generic[_S]):
     """An object for evaluating functions of finite element functions.
 
     Represents a mathematical expression evaluated at a pre-defined set
@@ -213,9 +213,9 @@ class Expression:
     def eval(
         self,
         mesh: Mesh,
-        entities: np.ndarray,
-        values: np.ndarray | None = None,
-    ) -> np.ndarray:
+        entities: npt.NDArray[np.int32],
+        values: npt.NDArray[_S] | None = None,
+    ) -> npt.NDArray[_S]:
         """Evaluate Expression on entities.
 
         Args:
@@ -271,12 +271,12 @@ class Expression:
         )
         return values
 
-    def X(self) -> np.ndarray:
+    def X(self) -> npt.NDArray:
         """Evaluation points on the reference cell."""
         return self._cpp_object.X()
 
     @property
-    def ufl_expression(self):
+    def ufl_expression(self) -> ufl.core.expr.Expr:
         """Original UFL Expression."""
         return self._ufl_expression
 
@@ -306,7 +306,7 @@ class Expression:
         return self._code
 
     @property
-    def dtype(self) -> np.dtype:
+    def dtype(self) -> npt.DTypeLike:
         """Expression value dtype."""
         return np.dtype(self._cpp_object.dtype)
 
