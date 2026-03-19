@@ -186,6 +186,7 @@ L_form = mixed_topology_form(L, dtype=np.float64)
 print(V_cpp.dofmaps(0).index_map.size_local)
 A = assemble_matrix(a_form, bcs=[bc])
 b = assemble_vector(L_form)
+bc.set(b.array, alpha=0.0)
 
 # We use {py:func}`scipy.sparse.linalg.spsolve` to solve the
 # resulting linear system
@@ -193,9 +194,6 @@ b = assemble_vector(L_form)
 A_scipy = A.to_scipy()
 b_scipy = b.array
 
-# Clear rows and set diagonal manually for BCs
-for i in bcdofs:
-    b_scipy[i] = 0.0
 x = spsolve(A_scipy, b_scipy)
 
 print(f"Solution vector norm {np.linalg.norm(x)}")
