@@ -133,7 +133,7 @@ jobs:
         working-directory: dolfinx-src/cpp/build-dir/test/Release
         run: |
           ls
-          mpiexec -n 1 ./unittests "~[la_matrix, geometry_compat]"
+          mpiexec -n 1 ./unittests "~[la_matrix:geometry_compat]"
 #      - name: Run tests, skip la_matrix, geometry_compat, create_box (C++, MPI, np=3)
 #        working-directory: dolfinx-src/cpp/build-dir/test/Release
 #        run: |
