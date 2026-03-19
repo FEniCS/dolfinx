@@ -183,7 +183,8 @@ L_form = mixed_topology_form(L, dtype=np.float64)
 # {py:class}`vector<dolfinx.la.Vector>` format in DOLFINx to assemble
 # the left and right hand side of the linear system.
 
-A = assemble_matrix(a_form)
+print(V_cpp.dofmaps(0).index_map.size_local)
+A = assemble_matrix(a_form, bcs=[bc])
 b = assemble_vector(L_form)
 
 # We use {py:func}`scipy.sparse.linalg.spsolve` to solve the
@@ -193,9 +194,7 @@ A_scipy = A.to_scipy()
 b_scipy = b.array
 
 # Clear rows and set diagonal manually for BCs
-A_scipy[bcdofs, :] = 0.0
 for i in bcdofs:
-    A_scipy[i, i] = 1.0
     b_scipy[i] = 0.0
 x = spsolve(A_scipy, b_scipy)
 

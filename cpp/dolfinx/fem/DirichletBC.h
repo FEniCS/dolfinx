@@ -354,14 +354,7 @@ public:
     if (const int bs = V->dofmaps(0)->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
 
-    _owned_indices0 = 0;
-    for (std::size_t i = 0;
-         i < _function_space->mesh()
-                 ->topology()
-                 ->entity_types(_function_space->mesh()->topology()->dim())
-                 .size();
-         ++i)
-      _owned_indices0 += num_owned(*_function_space->dofmaps(i), _dofs0);
+    _owned_indices0 = num_owned(*_function_space->dofmaps(0), _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -389,14 +382,7 @@ public:
     if (const int bs = _function_space->dofmaps(0)->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
 
-    _owned_indices0 = 0;
-    for (std::size_t i = 0;
-         i < _function_space->mesh()
-                 ->topology()
-                 ->entity_types(_function_space->mesh()->topology()->dim())
-                 .size();
-         ++i)
-      _owned_indices0 += num_owned(*_function_space->dofmaps(i), _dofs0);
+    _owned_indices0 = num_owned(*_function_space->dofmaps(0), _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
