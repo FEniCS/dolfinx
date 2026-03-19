@@ -25,21 +25,18 @@ namespace
 //-----------------------------------------------------------------------------
 // Build a collapsed DofMap from a dofmap view. Extracts dofs and
 // doesn't build a new re-ordered dofmap.
-fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
-                                   const mesh::Topology& topology)
+fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view)
 {
+  spdlog::info("Build collapsed DofMap");
+
   if (dofmap_view.element_dof_layout().block_size() > 1)
   {
-    throw std::runtime_error(
-        "Cannot collapse a dofmap view with block size greater "
-        "than 1 when the parent has a block size of 1. Create new dofmap "
-        "first.");
+    throw std::runtime_error("Cannot collapse a dofmap view with "
+                             "block size greater "
+                             "than 1 when the parent has a block "
+                             "size of 1. Create new dofmap "
+                             "first.");
   }
-
-  // Get topological dimension
-  const int tdim = topology.dim();
-  auto cells = topology.connectivity(tdim, 0);
-  assert(cells);
 
   // Build set of dofs that are in the new dofmap (un-blocked)
   auto dofs_view_md = dofmap_view.map();
@@ -58,6 +55,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   // Map from indices in the sub-index map to indices in the original
   // index map
   std::vector<std::int32_t> sub_imap_to_imap;
+  spdlog::debug("bs_view={}", bs_view);
   if (bs_view == 1)
   {
     auto [_index_map, _sub_imap_to_imap] = common::create_sub_index_map(
@@ -77,6 +75,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
     sub_imap_to_imap = std::move(_sub_imap_to_imap);
   }
 
+  spdlog::debug("Map old to new dofs");
   // Create a map from old dofs to new dofs
   std::size_t array_size = dofs_view.empty() ? 0 : dofs_view.back() + bs_view;
   std::vector<std::int32_t> old_to_new(array_size, -1);
@@ -90,6 +89,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
     }
   }
 
+  spdlog::debug("Map to new collapsed indices");
   // Map dofs to new collapsed indices for new dofmap
   auto dof_array_view = dofmap_view.map();
   std::vector<std::int32_t> dofmap;
@@ -99,12 +99,14 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                  std::back_inserter(dofmap),
                  [&old_to_new](auto idx_old) { return old_to_new[idx_old]; });
 
-  // Dimension sanity checks
-  assert((int)dofmap.size()
-         == (cells->num_nodes() * dofmap_view.element_dof_layout().num_dofs()));
+  // Sanity check
+  assert(dofmap.size()
+         == dofmap_view.map().extent(0)
+                * dofmap_view.element_dof_layout().num_dofs());
   assert(dofmap.size() % dofmap_view.element_dof_layout().num_dofs() == 0);
 
   // Copy dof layout, discarding parent data
+  spdlog::debug("Copy element layout");
   ElementDofLayout element_dof_layout = dofmap_view.element_dof_layout().copy();
 
   // Create new dofmap and return
@@ -206,6 +208,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>&&
         reorder_fn) const
 {
+  spdlog::debug("DofMap::collapse");
   if (!reorder_fn)
   {
     reorder_fn = [](const graph::AdjacencyList<std::int32_t>& g)
@@ -231,7 +234,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     else
     {
       // Collapse dof map, without building and re-ordering from scratch
-      return build_collapsed_dofmap(dmap, topology);
+      return build_collapsed_dofmap(dmap);
     }
   };
 
@@ -239,6 +242,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
       comm, index_map_bs(), _element_dof_layout, topology, reorder_fn, *this);
 
   // Build map from collapsed dof index to original dof index
+  spdlog::debug("New IndexMap");
   auto index_map_new = dofmap_new.index_map;
   const std::int32_t size
       = (index_map_new->size_local() + index_map_new->num_ghosts())
@@ -246,10 +250,13 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
   std::vector<std::int32_t> collapsed_map(size);
 
   const int tdim = topology.dim();
-  auto cells = topology.connectivity(tdim, 0);
-  assert(cells);
+  const int num_cell_types = topology.entity_types(tdim).size();
+  spdlog::debug("Cell types = {}", num_cell_types);
+
   const int bs = dofmap_new.bs();
-  for (std::int32_t c = 0; c < cells->num_nodes(); ++c)
+
+  std::size_t num_cells = _dofmap.size() / _shape1;
+  for (std::size_t c = 0; c < num_cells; ++c)
   {
     std::span<const std::int32_t> cell_dofs_view = this->cell_dofs(c);
     std::span<const std::int32_t> cell_dofs = dofmap_new.cell_dofs(c);

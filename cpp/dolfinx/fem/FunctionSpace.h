@@ -169,11 +169,11 @@ public:
 
   /// Collapse a subspace and return a new function space and a map from
   /// new to old dofs
-  /// @return The new function space and a map from new to old dofs for each
-  /// cell type
+  /// @return The new function space and a map from new to old dofs
   std::pair<FunctionSpace, std::vector<std::vector<std::int32_t>>>
   collapse() const
   {
+    spdlog::debug("FunctionSpace::collapse");
     if (_component.empty())
       throw std::runtime_error("Function space is not a subspace");
 
@@ -182,8 +182,10 @@ public:
     std::vector<std::vector<std::int32_t>> collapsed_dofs;
     for (auto d : _dofmaps)
     {
+      spdlog::debug("Call DofMap::collapse");
       auto [_collapsed_dofmap, _collapsed_dofs]
           = d->collapse(_mesh->comm(), *_mesh->topology());
+      spdlog::debug("Got collapsed dofmap");
       collapsed_dofmaps.push_back(
           std::make_shared<DofMap>(std::move(_collapsed_dofmap)));
       collapsed_dofs.push_back(_collapsed_dofs);
