@@ -992,6 +992,35 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
   auto mesh1 = a.function_spaces().at(1)->mesh();
   assert(mesh1);
 
+  auto plugin_fn
+      = [&b, &x0, &bc_markers1, &bc_values1](std::span<const std::int32_t> rows,
+                                             std::span<const std::int32_t> cols,
+                                             std::span<const T> Ae)
+  {
+    spdlog::debug("{} {} {}", rows.size(), cols.size(), Ae.size());
+    int nc = cols.size();
+    for (std::size_t i = 0; i < rows.size(); ++i)
+    {
+      const std::int32_t ii = rows[i];
+      if (bc_markers1[ii])
+      {
+        const T x_bc = bc_values1[ii];
+        for (std::size_t j = 0; j < cols.size(); ++j)
+        {
+          const std::int32_t jj = cols[j];
+          spdlog::debug("ii={}, jj={}", ii, jj, b.size(), x0.size());
+          if (x0.size() == 0)
+            b[jj] -= Ae[i * nc + j] * x_bc;
+          else
+            b[jj] -= Ae[i * nc + j] * (x_bc - x0[ii]);
+        }
+      }
+    }
+  };
+
+  assemble_matrix(plugin_fn, a, constants, coefficients, {}, {});
+  return;
+
   // Get dofmap for columns and rows of a
   assert(a.function_spaces().at(0));
   assert(a.function_spaces().at(1));

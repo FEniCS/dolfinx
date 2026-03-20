@@ -30,6 +30,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @brief Execute kernel over cells and accumulate result in a matrix.
 ///
 /// @tparam T Matrix/form scalar type.
+/// @tparam AssMode Assembly mode (including BCs)
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Degree-of-freedom map for the mesh geometry.
@@ -60,7 +61,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// function mesh.
 /// @param cell_info1 Cell permutation information for the trial
 /// function mesh.
-template <dolfinx::scalar T>
+template <dolfinx::scalar T, bool AssMode = true>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
@@ -119,34 +120,37 @@ void assemble_cells_matrix(
     std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
     std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
 
-    if (!bc0.empty())
+    if constexpr (AssMode)
     {
-      for (int i = 0; i < num_dofs0; ++i)
+      if (!bc0.empty())
       {
-        for (int k = 0; k < bs0; ++k)
+        for (int i = 0; i < num_dofs0; ++i)
         {
-          if (bc0[bs0 * dofs0[i] + k])
+          for (int k = 0; k < bs0; ++k)
           {
-            // Zero row bs0 * i + k
-            const int row = bs0 * i + k;
-            std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
+            if (bc0[bs0 * dofs0[i] + k])
+            {
+              // Zero row bs0 * i + k
+              const int row = bs0 * i + k;
+              std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
+            }
           }
         }
       }
-    }
 
-    if (!bc1.empty())
-    {
-      for (int j = 0; j < num_dofs1; ++j)
+      if (!bc1.empty())
       {
-        for (int k = 0; k < bs1; ++k)
+        for (int j = 0; j < num_dofs1; ++j)
         {
-          if (bc1[bs1 * dofs1[j] + k])
+          for (int k = 0; k < bs1; ++k)
           {
-            // Zero column bs1 * j + k
-            const int col = bs1 * j + k;
-            for (int row = 0; row < ndim0; ++row)
-              Ae[row * ndim1 + col] = 0;
+            if (bc1[bs1 * dofs1[j] + k])
+            {
+              // Zero column bs1 * j + k
+              const int col = bs1 * j + k;
+              for (int row = 0; row < ndim0; ++row)
+                Ae[row * ndim1 + col] = 0;
+            }
           }
         }
       }
