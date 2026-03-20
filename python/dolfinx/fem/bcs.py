@@ -12,7 +12,6 @@ modification of linear systems.
 
 from __future__ import annotations
 
-import numbers
 from collections.abc import Callable, Iterable
 
 import numpy as np
@@ -172,7 +171,7 @@ class DirichletBC:
 
 
 def dirichletbc(
-    value: Function | Constant | np.ndarray,
+    value: Function | Constant | np.ndarray | float | complex,
     dofs: npt.NDArray[np.int32],
     V: dolfinx.fem.FunctionSpace | None = None,
 ) -> DirichletBC:
@@ -193,7 +192,7 @@ def dirichletbc(
         A representation of the boundary condition for modifying linear
         systems.
     """
-    if isinstance(value, numbers.Number):
+    if isinstance(value, float | complex):
         value = np.asarray(value)
 
     try:
