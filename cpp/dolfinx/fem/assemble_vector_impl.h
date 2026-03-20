@@ -1008,7 +1008,7 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
         for (std::size_t j = 0; j < cols.size(); ++j)
         {
           const std::int32_t jj = cols[j];
-          spdlog::debug("ii={}, jj={}", ii, jj, b.size(), x0.size());
+          spdlog::debug("ii={}/{}, jj={}/{}", ii, x0.size(), jj, b.size());
           if (x0.size() == 0)
             b[jj] -= Ae[i * nc + j] * x_bc;
           else
