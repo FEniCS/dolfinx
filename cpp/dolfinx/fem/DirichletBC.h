@@ -107,11 +107,14 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
   // especially when we usually want the boundary dofs only. Add
   // interface that computes dofs coordinates only for specified cell.
 
-  assert(V.elements(0));
-  if (V.elements(0)->is_mixed())
+  for (std::size_t i = 0; i < V.mesh()->topology()->cell_types().size(); ++i)
   {
-    throw std::runtime_error(
-        "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+    assert(V.elements(i));
+    if (V.elements(i)->is_mixed())
+    {
+      throw std::runtime_error(
+          "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+    }
   }
 
   // Compute dof coordinates
@@ -546,7 +549,7 @@ public:
     {
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       const std::vector<T>& value = g->value;
-      std::int32_t bs = _function_space->dofmap()->bs();
+      std::int32_t bs = _function_space->dofmaps(0)->bs();
       if (x0)
       {
         assert(x.size() <= x0->size());

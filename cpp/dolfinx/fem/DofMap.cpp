@@ -249,10 +249,6 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
         * dofmap_new.index_map_bs();
   std::vector<std::int32_t> collapsed_map(size);
 
-  const int tdim = topology.dim();
-  const int num_cell_types = topology.entity_types(tdim).size();
-  spdlog::debug("Cell types = {}", num_cell_types);
-
   const int bs = dofmap_new.bs();
 
   std::size_t num_cells = _dofmap.size() / _shape1;
