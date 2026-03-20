@@ -997,22 +997,24 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
                                              std::span<const std::int32_t> cols,
                                              std::span<const T> Ae)
   {
-    spdlog::debug("{} {} {}", rows.size(), cols.size(), Ae.size());
+    spdlog::debug("{} {} {} {}", rows.size(), cols.size(), Ae.size(),
+                  bc_values1.size());
     int nc = cols.size();
-    for (std::size_t i = 0; i < rows.size(); ++i)
+    int nr = rows.size();
+    for (int i = 0; i < nc; ++i)
     {
-      const std::int32_t ii = rows[i];
+      const std::int32_t ii = cols[i];
       if (bc_markers1[ii])
       {
         const T x_bc = bc_values1[ii];
-        for (std::size_t j = 0; j < cols.size(); ++j)
+        for (int j = 0; j < nr; ++j)
         {
-          const std::int32_t jj = cols[j];
+          const std::int32_t jj = rows[j];
           spdlog::debug("ii={}/{}, jj={}/{}", ii, x0.size(), jj, b.size());
           if (x0.size() == 0)
-            b[jj] -= Ae[i * nc + j] * x_bc;
+            b[jj] -= Ae[j * nc + i] * x_bc;
           else
-            b[jj] -= Ae[i * nc + j] * (x_bc - x0[ii]);
+            b[jj] -= Ae[j * nc + i] * (x_bc - x0[ii]);
         }
       }
     }
