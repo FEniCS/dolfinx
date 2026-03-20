@@ -63,7 +63,7 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
         solver_type: pyamg solver type, either "ruge_stuben" or
             "smoothed_aggregation"
     """
-    real_type = np.real(dtype(0)).dtype
+    real_type = np.real(dtype(0)).dtype  # type: ignore
     mesh = create_box(
         comm=MPI.COMM_WORLD,
         points=[(0.0, 0.0, 0.0), (3.0, 2.0, 1.0)],
@@ -84,7 +84,7 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
 
     dofs = locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
-    bc = dirichletbc(value=dtype(0), dofs=dofs, V=V)
+    bc = dirichletbc(value=0.0, dofs=dofs, V=V)
 
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     x = ufl.SpatialCoordinate(mesh)
@@ -110,14 +110,14 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
     print(ml)
 
     # Solve linear systems
-    print(f"\nSolve Poisson equation: {dtype.__name__}")
+    print(f"\nSolve Poisson equation: {dtype!s}")
     res: list[float] = []
     tol = 1e-10 if real_type == np.float64 else 1e-6
     uh.x.array[:] = ml.solve(b.array, tol=tol, residuals=res, accel="cg")
     for i, q in enumerate(res):
         print(f"Convergence history: iteration {i}, residual= {q}")
 
-    with io.XDMFFile(mesh.comm, f"out_pyamg/poisson_{dtype.__name__}.xdmf", "w") as file:
+    with io.XDMFFile(mesh.comm, f"out_pyamg/poisson_{dtype!s}.xdmf", "w") as file:
         file.write_mesh(mesh)
         file.write_function(uh)
 
@@ -126,7 +126,7 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
 
 
 # +
-def nullspace_elasticty(Q: fem.FunctionSpace) -> list[np.ndarray]:
+def nullspace_elasticty(Q: fem.FunctionSpace) -> npt.NDArray:
     """Create the elasticity (near)nulspace.
 
     Args:
