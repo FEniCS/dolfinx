@@ -122,13 +122,18 @@ public:
     std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
         sub_elements;
     for (auto e : _elements)
+    {
+      assert(e);
       sub_elements.push_back(e->extract_sub_element(component));
-
+    }
     // Extract sub dofmap
     std::vector<std::shared_ptr<const DofMap>> sub_dofmaps;
     for (auto d : _dofmaps)
+    {
+      assert(d);
       sub_dofmaps.push_back(
           std::make_shared<const DofMap>(d->extract_sub_dofmap(component)));
+    }
 
     // Create new sub space
     FunctionSpace sub_space(_mesh, sub_elements, sub_dofmaps);
@@ -182,6 +187,7 @@ public:
     std::vector<std::vector<std::int32_t>> collapsed_dofs;
     for (auto d : _dofmaps)
     {
+      assert(d);
       spdlog::debug("Call DofMap::collapse");
       auto [_collapsed_dofmap, _collapsed_dofs]
           = d->collapse(_mesh->comm(), *_mesh->topology());
