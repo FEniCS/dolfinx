@@ -105,12 +105,18 @@ void declare_function_space(nb::module_& m, std::string type)
         .def("collapse",
              [](const dolfinx::fem::FunctionSpace<T>& self)
                  -> std::pair<dolfinx::fem::FunctionSpace<T>,
-                              nanobind::ndarray<std::int32_t, nanobind::numpy>>
+                              std::vector<nanobind::ndarray<std::int32_t,
+                                                            nanobind::numpy>>>
              {
                auto&& [collapsed_fs, dofs] = self.collapse();
-               return {std::move(collapsed_fs),
-                       dolfinx_wrappers::as_nbarray(std::move(dofs),
-                                                    {dofs.size()})};
+               std::vector<nanobind::ndarray<std::int32_t, nanobind::numpy>>
+                   collapsed_map;
+               for (auto d : dofs)
+               {
+                 collapsed_map.push_back(
+                     dolfinx_wrappers::as_nbarray(std::move(d), {d.size()}));
+               }
+               return {std::move(collapsed_fs), std::move(collapsed_map)};
              })
         .def("component", &dolfinx::fem::FunctionSpace<T>::component)
         .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,
