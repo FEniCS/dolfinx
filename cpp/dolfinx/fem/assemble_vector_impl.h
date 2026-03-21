@@ -1238,17 +1238,12 @@ void apply_lifting(
         bc.get().set(bc_values1, std::nullopt, 1);
       }
 
+      std::span<const T> _x0;
       if (!x0.empty())
-      {
-        lift_bc(b, a[j]->get(), x_dofmap, x, constants[j], coeffs[j],
-                std::span<const T>(bc_values1), bc_markers1, x0[j], alpha);
-      }
-      else
-      {
-        lift_bc(b, a[j]->get(), x_dofmap, x, constants[j], coeffs[j],
-                std::span<const T>(bc_values1), bc_markers1,
-                std::span<const T>(), alpha);
-      }
+        _x0 = x0[j];
+
+      lift_bc(b, a[j]->get(), x_dofmap, x, constants[j], coeffs[j],
+              std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
     }
   }
 }
