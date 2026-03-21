@@ -992,38 +992,6 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
   auto mesh1 = a.function_spaces().at(1)->mesh();
   assert(mesh1);
 
-  // const int bs0 = a.function_spaces()[0]->dofmap()->bs();
-  // const int bs1 = a.function_spaces()[1]->dofmap()->bs();
-
-  auto plugin_fn
-      = [&b, &x0, &bc_markers1, &bc_values1,
-         &alpha](std::span<const std::int32_t> rows,
-                 std::span<const std::int32_t> cols, std::span<const T> Ae)
-  {
-    spdlog::debug("{}x{}={} {}", rows.size(), cols.size(), Ae.size(),
-                  bc_values1.size());
-    int nc = cols.size();
-    int nr = rows.size();
-    for (int i = 0; i < nc; ++i)
-    {
-      const std::int32_t ii = cols[i];
-      if (bc_markers1[ii])
-      {
-        const T x_bc = bc_values1[ii];
-        for (int j = 0; j < nr; ++j)
-        {
-          const std::int32_t jj = rows[j];
-          spdlog::debug("ii={}/{}, jj={}/{}", ii, x0.size(), jj, b.size());
-          const T _x0 = x0.empty() ? 0 : x0[ii];
-          b[jj] -= Ae[j * nc + i] * alpha * (x_bc - _x0);
-        }
-      }
-    }
-  };
-
-  assemble_matrix(plugin_fn, a, constants, coefficients, {}, {});
-  return;
-
   // Get dofmap for columns and rows of a
   assert(a.function_spaces().at(0));
   assert(a.function_spaces().at(1));
@@ -1034,6 +1002,43 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
   const int bs1 = a.function_spaces()[1]->dofmap()->bs();
   auto element1 = a.function_spaces()[1]->element();
   assert(element0);
+
+  spdlog::debug("bs0={}, bs1={}", bs0, bs1);
+
+  auto plugin_fn
+      = [&b, &x0, &bs0, &bs1, &bc_markers1, &bc_values1,
+         &alpha](std::span<const std::int32_t> rows,
+                 std::span<const std::int32_t> cols, std::span<const T> Ae)
+  {
+    int nr = rows.size() * bs0;
+    int nc = cols.size() * bs1;
+    spdlog::debug("{}x{}={} {}", nr, nc, Ae.size(), bc_values1.size());
+    for (std::size_t i = 0; i < cols.size(); ++i)
+    {
+      for (int k = 0; k < bs1; ++k)
+      {
+        const std::int32_t ii = cols[i] * bs1 + k;
+        if (bc_markers1[ii])
+        {
+          const T x_bc = bc_values1[ii];
+          const T _x0 = x0.empty() ? 0 : x0[ii];
+          for (std::size_t j = 0; j < rows.size(); ++j)
+          {
+            for (int m = 0; m < bs0; ++m)
+            {
+              const std::int32_t jj = rows[j] * bs0 + m;
+              spdlog::debug("ii={}/{}, jj={}/{}", ii, x0.size(), jj, b.size());
+              b[jj] -= Ae[(j * bs0 + m) * nc + (i * bs1 + k)] * alpha
+                       * (x_bc - _x0);
+            }
+          }
+        }
+      }
+    }
+  };
+
+  assemble_matrix(plugin_fn, a, constants, coefficients, {}, {});
+  return;
 
   std::span<const std::uint32_t> cell_info0;
   std::span<const std::uint32_t> cell_info1;
