@@ -448,6 +448,7 @@ void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
 
     assemble_matrix(plugin_fn, a, constants, coefficients, {}, {});
   }
+}
 
 /// Modify b such that:
 ///

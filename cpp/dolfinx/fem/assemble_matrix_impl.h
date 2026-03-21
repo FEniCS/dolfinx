@@ -89,6 +89,7 @@ void assemble_cells_matrix(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
+  std::vector<std::int32_t> bce0(ndim0), bce1(ndim1);
 
   // Iterate over active cells
   assert(cells0.size() == cells.size());
@@ -100,6 +101,44 @@ void assemble_cells_matrix(
     std::int32_t cell = cells[c];
     std::int32_t cell0 = cells0[c];
     std::int32_t cell1 = cells1[c];
+
+    // Collect element rows/columns for essential bcs
+    std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
+    std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
+
+    bce0.clear();
+    if (!bc0.empty())
+    {
+      for (int i = 0; i < num_dofs0; ++i)
+      {
+        for (int k = 0; k < bs0; ++k)
+        {
+          if (bc0[bs0 * dofs0[i] + k])
+          {
+            // Zero row bs0 * i + k
+            const int row = bs0 * i + k;
+            bce0.push_back(row);
+          }
+        }
+      }
+    }
+
+    bce1.clear();
+    if (!bc1.empty())
+    {
+      for (int j = 0; j < num_dofs1; ++j)
+      {
+        for (int k = 0; k < bs1; ++k)
+        {
+          if (bc1[bs1 * dofs1[j] + k])
+          {
+            // Zero column bs1 * j + k
+            const int col = bs1 * j + k;
+            bce1.push_back(col);
+          }
+        }
+      }
+    }
 
     // Get cell coordinates/geometry
     auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
@@ -115,41 +154,13 @@ void assemble_cells_matrix(
     P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
     P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
-    // Zero rows/columns for essential bcs
-    std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
-    std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
+    for (std::int32_t row : bce0)
+      std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
 
-    if (!bc0.empty())
+    for (std::int32_t col : bce1)
     {
-      for (int i = 0; i < num_dofs0; ++i)
-      {
-        for (int k = 0; k < bs0; ++k)
-        {
-          if (bc0[bs0 * dofs0[i] + k])
-          {
-            // Zero row bs0 * i + k
-            const int row = bs0 * i + k;
-            std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
-          }
-        }
-      }
-    }
-
-    if (!bc1.empty())
-    {
-      for (int j = 0; j < num_dofs1; ++j)
-      {
-        for (int k = 0; k < bs1; ++k)
-        {
-          if (bc1[bs1 * dofs1[j] + k])
-          {
-            // Zero column bs1 * j + k
-            const int col = bs1 * j + k;
-            for (int row = 0; row < ndim0; ++row)
-              Ae[row * ndim1 + col] = 0;
-          }
-        }
-      }
+      for (int row = 0; row < ndim0; ++row)
+        Ae[row * ndim1 + col] = 0;
     }
 
     mat_set(dofs0, dofs1, Ae);
