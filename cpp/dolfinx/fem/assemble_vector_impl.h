@@ -371,17 +371,12 @@ void assemble_interior_facets(
 template <typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
-void lift_bc(
-    V&& b, const Form<T, U>& a,
-    // mdspan2_t x_dofmap,
-    //             md::mdspan<const scalar_value_t<T>,
-    //                      md::extents<std::size_t, md::dynamic_extent, 3>>
-    //             x,
-    std::span<const T> constants,
-    const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients,
-    std::span<const T> bc_values1, std::span<const std::int8_t> bc_markers1,
-    std::span<const T> x0, T alpha)
+void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
+             const std::map<std::pair<IntegralType, int>,
+                            std::pair<std::span<const T>, int>>& coefficients,
+             std::span<const T> bc_values1,
+             std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
+             T alpha)
 {
 
   // Get dofmap for columns and rows of a
