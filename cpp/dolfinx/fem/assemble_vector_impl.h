@@ -992,12 +992,15 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
   auto mesh1 = a.function_spaces().at(1)->mesh();
   assert(mesh1);
 
+  // const int bs0 = a.function_spaces()[0]->dofmap()->bs();
+  // const int bs1 = a.function_spaces()[1]->dofmap()->bs();
+
   auto plugin_fn
-      = [&b, &x0, &bc_markers1, &bc_values1](std::span<const std::int32_t> rows,
-                                             std::span<const std::int32_t> cols,
-                                             std::span<const T> Ae)
+      = [&b, &x0, &bc_markers1, &bc_values1,
+         &alpha](std::span<const std::int32_t> rows,
+                 std::span<const std::int32_t> cols, std::span<const T> Ae)
   {
-    spdlog::debug("{} {} {} {}", rows.size(), cols.size(), Ae.size(),
+    spdlog::debug("{}x{}={} {}", rows.size(), cols.size(), Ae.size(),
                   bc_values1.size());
     int nc = cols.size();
     int nr = rows.size();
@@ -1011,10 +1014,8 @@ void lift_bc(V&& b, const Form<T, U>& a, mdspan2_t x_dofmap,
         {
           const std::int32_t jj = rows[j];
           spdlog::debug("ii={}/{}, jj={}/{}", ii, x0.size(), jj, b.size());
-          if (x0.size() == 0)
-            b[jj] -= Ae[j * nc + i] * x_bc;
-          else
-            b[jj] -= Ae[j * nc + i] * (x_bc - x0[ii]);
+          const T _x0 = x0.empty() ? 0 : x0[ii];
+          b[jj] -= Ae[j * nc + i] * alpha * (x_bc - _x0);
         }
       }
     }

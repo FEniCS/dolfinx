@@ -494,6 +494,10 @@ class TestPETScAssemblers:
         """
         from petsc4py import PETSc
 
+        from dolfinx.log import set_log_level
+
+        set_log_level(0)
+
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
         from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
