@@ -63,7 +63,7 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
         solver_type: pyamg solver type, either "ruge_stuben" or
             "smoothed_aggregation"
     """
-    real_type = np.real(dtype(0)).dtype  # type: ignore
+    real_type = np.real(np.zeros(0, dtype=dtype)).dtype
     mesh = create_box(
         comm=MPI.COMM_WORLD,
         points=[(0.0, 0.0, 0.0), (3.0, 2.0, 1.0)],
@@ -84,7 +84,7 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
 
     dofs = locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
-    bc = dirichletbc(value=0.0, dofs=dofs, V=V)
+    bc = dirichletbc(value=dtype(0.0), dofs=dofs, V=V)  # type: ignore
 
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     x = ufl.SpatialCoordinate(mesh)
