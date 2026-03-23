@@ -425,7 +425,7 @@ void apply_lifting(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U, bool BCMode = false>
 void assemble_matrix(
     la::MatSet<T> auto mat_add, const Form<T, U>& a,
     std::span<const T> constants,
@@ -444,14 +444,16 @@ void assemble_matrix(
   std::span x = mesh->geometry().x();
   if constexpr (std::is_same_v<U, scalar_value_t<T>>)
   {
-    impl::assemble_matrix(mat_add, a, mdspanx3_t(x.data(), x.size() / 3, 3),
-                          constants, coefficients, dof_marker0, dof_marker1);
+    impl::assemble_matrix<T, U, BCMode>(
+        mat_add, a, mdspanx3_t(x.data(), x.size() / 3, 3), constants,
+        coefficients, dof_marker0, dof_marker1);
   }
   else
   {
     std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
-    impl::assemble_matrix(mat_add, a, mdspanx3_t(_x.data(), _x.size() / 3, 3),
-                          constants, coefficients, dof_marker0, dof_marker1);
+    impl::assemble_matrix<T, U, BCMode>(
+        mat_add, a, mdspanx3_t(_x.data(), _x.size() / 3, 3), constants,
+        coefficients, dof_marker0, dof_marker1);
   }
 }
 

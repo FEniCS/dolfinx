@@ -60,7 +60,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// function mesh.
 /// @param cell_info1 Cell permutation information for the trial
 /// function mesh.
-template <dolfinx::scalar T>
+template <dolfinx::scalar T, bool BCMode = false>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
@@ -106,23 +106,6 @@ void assemble_cells_matrix(
     std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
     std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
 
-    bce0.clear();
-    if (!bc0.empty())
-    {
-      for (int i = 0; i < num_dofs0; ++i)
-      {
-        for (int k = 0; k < bs0; ++k)
-        {
-          if (bc0[bs0 * dofs0[i] + k])
-          {
-            // Zero row bs0 * i + k
-            const int row = bs0 * i + k;
-            bce0.push_back(row);
-          }
-        }
-      }
-    }
-
     bce1.clear();
     if (!bc1.empty())
     {
@@ -135,6 +118,28 @@ void assemble_cells_matrix(
             // Zero column bs1 * j + k
             const int col = bs1 * j + k;
             bce1.push_back(col);
+          }
+        }
+      }
+    }
+
+    // In "BCMode" only execute kernel if there are BCs on column space
+    if constexpr (BCMode)
+      if (bce1.empty())
+        continue;
+
+    bce0.clear();
+    if (!bc0.empty())
+    {
+      for (int i = 0; i < num_dofs0; ++i)
+      {
+        for (int k = 0; k < bs0; ++k)
+        {
+          if (bc0[bs0 * dofs0[i] + k])
+          {
+            // Zero row bs0 * i + k
+            const int row = bs0 * i + k;
+            bce0.push_back(row);
           }
         }
       }
@@ -154,13 +159,17 @@ void assemble_cells_matrix(
     P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
     P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
-    // Clear rows and columns for BCs
-    for (std::int32_t row : bce0)
-      std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
-    for (std::int32_t col : bce1)
+    // Do not clear BC rows/cols in "BCMode"
+    if constexpr (!BCMode)
     {
-      for (int row = 0; row < ndim0; ++row)
-        Ae[row * ndim1 + col] = 0;
+      // Clear rows and columns for BCs
+      for (std::int32_t row : bce0)
+        std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
+      for (std::int32_t col : bce1)
+      {
+        for (int row = 0; row < ndim0; ++row)
+          Ae[row * ndim1 + col] = 0;
+      }
     }
 
     mat_set(dofs0, dofs1, Ae);
@@ -539,7 +548,7 @@ void assemble_interior_facets(
 /// applied.
 /// @param bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U, bool BCMode = false>
 void assemble_matrix(
     la::MatSet<T> auto mat_set, const Form<T, U>& a,
     md::mdspan<const scalar_value_t<T>,
@@ -617,7 +626,7 @@ void assemble_matrix(
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
-      impl::assemble_cells_matrix(
+      impl::assemble_cells_matrix<T, BCMode>(
           mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
           {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
           md::mdspan(coeffs.data(), cells.size(), cstride), constants,

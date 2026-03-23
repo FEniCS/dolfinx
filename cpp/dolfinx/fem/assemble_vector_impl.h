@@ -420,7 +420,8 @@ void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
       }
     };
 
-    assemble_matrix(plugin_fn, a, constants, coefficients, {}, {});
+    assemble_matrix<T, U, true>(plugin_fn, a, constants, coefficients, {},
+                                bc_markers1);
   }
   else
   {
@@ -444,7 +445,8 @@ void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
       }
     };
 
-    assemble_matrix(plugin_fn, a, constants, coefficients, {}, {});
+    assemble_matrix<T, U, true>(plugin_fn, a, constants, coefficients, {},
+                                bc_markers1);
   }
 }
 
