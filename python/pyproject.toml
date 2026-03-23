@@ -46,6 +46,7 @@ docs = [
       "sphinx",
       "sphinx_rtd_theme",
       "sphinx_codeautolink[ipython]",
+      "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
 ]
 lint = ["ruff>=0.2.0"]
@@ -83,9 +84,6 @@ markers = [
       "petsc4py: tests that require PETSc/petsc4py (deselect with '-m \"not petsc4py\"').",
       "adios2: tests that require Adios2 (deselect with '-m \"not adios2\"').",
       "xfail_win32_complex: expected failures for complex numbers in Win32.",
-]
-addopts = [
-  "-k", "not test_symmetry_interior_facet_assembly[mesh1]"
 ]
 
 [tool.mypy]

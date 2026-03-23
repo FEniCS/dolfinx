@@ -173,12 +173,13 @@ class Topology:
         """
         self._cpp_object.create_connectivity(d0, d1)
 
-    def create_entities(self, dim: int, num_threads: int = 1) -> bool:
+    def create_entities(self, dim: int, num_threads: int = 0) -> bool:
         """Create entities of given topological dimension.
 
         Args:
             dim: Topological dimension of entities to create.
-            num_threads: Number of CPU threads to use when creating.
+            num_threads: Number of CPU threads to use when creating. If
+                0, threads are not spawned.
 
         Returns:
             ``True` is entities are created, ``False`` is if entities

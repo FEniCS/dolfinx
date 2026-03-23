@@ -16,7 +16,6 @@
 
 namespace dolfinx::mesh
 {
-
 /// Cell type identifier
 enum class CellType : std::int8_t
 {
@@ -120,8 +119,8 @@ inline CellType cell_entity_type(CellType type, int d, int index)
     return CellType::point;
 }
 
-/// Return list of entities, where entities(e, k) is the local vertex
-/// index for the kth vertex of entity e of dimension dim
+/// @brief List of entities, where entity `(e, k)` is the local vertex
+/// index for the `k`th vertex of entity `e` of dimension `dim`.
 graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
 
 /// Get entities of dimension dim1 and that make up entities of dimension

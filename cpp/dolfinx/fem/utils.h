@@ -925,8 +925,7 @@ FunctionSpace<T> create_functionspace(
     std::shared_ptr<mesh::Mesh<T>> mesh,
     std::shared_ptr<const fem::FiniteElement<T>> e,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn
-    = nullptr)
+        reorder_fn = nullptr)
 {
   // TODO: check cell type of e (need to add method to fem::FiniteElement)
   assert(e);

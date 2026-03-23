@@ -128,11 +128,14 @@ public:
     // Copy values into new vector
     std::span<const value_type> x_old = _x->array();
     std::span<value_type> x_new = x->array();
-    for (std::size_t i = 0; i < map.size(); ++i)
+    for (auto mapj : map)
     {
-      assert((int)i < x_new.size());
-      assert(map[i] < x_old.size());
-      x_new[i] = x_old[map[i]];
+      for (std::size_t i = 0; i < mapj.size(); ++i)
+      {
+        assert(i < x_new.size());
+        assert(static_cast<std::size_t>(mapj[i]) < x_old.size());
+        x_new[i] = x_old[mapj[i]];
+      }
     }
 
     return Function(

@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Graph representations and operations on graphs."""
 
+from typing import Generic, TypeVar
+
 import numpy as np
 import numpy.typing as npt
 
@@ -37,7 +39,10 @@ __all__ = [
 ]
 
 
-class AdjacencyList:
+_T = TypeVar("_T", np.int32, np.int64)
+
+
+class AdjacencyList(Generic[_T]):
     """Adjacency list representation of a graph."""
 
     _cpp_object: (
@@ -69,7 +74,7 @@ class AdjacencyList:
         """String representation of the adjacency list."""
         return self._cpp_object.__repr__()
 
-    def links(self, node: np.int32 | np.int64) -> npt.NDArray[np.int32 | np.int64]:
+    def links(self, node: int) -> npt.NDArray[_T]:
         """Retrieve the links of a node.
 
         Note:
@@ -85,7 +90,7 @@ class AdjacencyList:
         return self._cpp_object.links(node)
 
     @property
-    def array(self) -> npt.NDArray[np.int32 | np.int64]:
+    def array(self) -> npt.NDArray[_T]:
         """Array representation of the adjacency list.
 
         Note:
@@ -117,8 +122,8 @@ class AdjacencyList:
 
 
 def adjacencylist(
-    data: npt.NDArray[np.int32 | np.int64], offsets: npt.NDArray[np.int32] | None = None
-) -> AdjacencyList:
+    data: npt.NDArray[_T], offsets: npt.NDArray[np.int32] | None = None
+) -> AdjacencyList[_T]:
     """Create an :class:`AdjacencyList` for `int32` or `int64` datasets.
 
     Args:

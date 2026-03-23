@@ -651,8 +651,7 @@ fem::build_dofmap_data(
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
   const auto [node_graphs, local_to_global0, dof_entity0, topo_index_maps,
-              offset]
-      = build_basic_dofmaps(topology, element_dof_layouts);
+              offset] = build_basic_dofmaps(topology, element_dof_layouts);
 
   spdlog::info("Got {} index_maps", topo_index_maps.size());
 

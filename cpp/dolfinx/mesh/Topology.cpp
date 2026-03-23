@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2024 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2025 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -56,7 +56,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
   // Build {dest, pos} list, and sort
   std::vector<std::array<int, 2>> dest_to_index;
   {
-    const int size = dolfinx::MPI::size(comm);
+    int size = dolfinx::MPI::size(comm);
     dest_to_index.reserve(indices.size());
     for (auto idx : indices)
     {
@@ -143,7 +143,6 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
   // Find which ranks have each index
   std::vector<std::int32_t> num_items_per_dest1(recv_disp0.size() - 1, 0);
   std::vector<std::int32_t> num_items_per_pos1(recv_disp0.back(), 0);
-
   std::vector<int> owner;
   std::vector<int> disp1{0};
   {
@@ -207,8 +206,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
       auto indices_it1 = std::next(indices_it0, num_sharing_ranks);
       for (std::int32_t j = disp1[i]; j < disp1[i + 1]; ++j)
       {
-        auto& data1 = indices_list[j];
-        std::size_t pos = data1[1];
+        std::size_t pos = indices_list[j][1];
         std::int32_t bufferpos = bdisp1[pos];
         send_buffer1[bufferpos] = num_sharing_ranks;
 
@@ -258,7 +256,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
     auto it = recv_buffer1.begin();
     while (it != recv_buffer1.end())
     {
-      const std::size_t d = std::distance(recv_buffer1.begin(), it);
+      std::size_t d = std::distance(recv_buffer1.begin(), it);
       std::int64_t num_ranks = *it;
 
       std::span ranks(recv_buffer1.data() + d + 1, num_ranks);
@@ -691,19 +689,38 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 /// @param[in] global_to_local Sorted array of (global, local) indices.
 std::vector<std::int32_t> convert_to_local_indexing(
     std::span<const std::int64_t> g,
-    std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local)
+    std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local,
+    int num_threads)
 {
+  auto transform =
+      [](std::span<std::int32_t> data, std::span<const std::int64_t> g,
+         std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local)
+  {
+    std::transform(g.begin(), g.end(), data.begin(),
+                   [&global_to_local](auto i)
+                   {
+                     auto it = std::ranges::lower_bound(
+                         global_to_local, i, std::ranges::less(),
+                         [](auto& e) { return e.first; });
+                     assert(it != global_to_local.end());
+                     assert(it->first == i);
+                     return it->second;
+                   });
+  };
+
   std::vector<std::int32_t> data(g.size());
-  std::transform(g.begin(), std::next(g.begin(), data.size()), data.begin(),
-                 [&global_to_local](auto i)
-                 {
-                   auto it = std::ranges::lower_bound(
-                       global_to_local, i, std::ranges::less(),
-                       [](auto& e) { return e.first; });
-                   assert(it != global_to_local.end());
-                   assert(it->first == i);
-                   return it->second;
-                 });
+  if (num_threads > 0)
+  {
+    std::vector<std::jthread> threads(num_threads);
+    for (int i = 0; i < num_threads; ++i)
+    {
+      auto [c0, c1] = dolfinx::MPI::local_range(i, g.size(), num_threads);
+      threads[i] = std::jthread(transform, std::span(data.data() + c0, c1 - c0),
+                                g.subspan(c0, c1 - c0), global_to_local);
+    }
+  }
+  else
+    transform(data, g, global_to_local);
 
   return data;
 }
@@ -729,13 +746,12 @@ build_entity_types(const std::vector<CellType>& cell_types)
     //  Find all facet types
     std::set<mesh::CellType> e_types;
     for (auto c : entity_types[tdim])
-      for (int i = 0; i < cell_num_entities(c, 2); ++i)
-        e_types.insert(cell_facet_type(c, i));
+      for (int i = 0; i < mesh::cell_num_entities(c, 2); ++i)
+        e_types.insert(mesh::cell_facet_type(c, i));
     entity_types[2] = std::vector(e_types.begin(), e_types.end());
   }
   return entity_types;
 }
-
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -778,7 +794,7 @@ Topology::Topology(
   if (tdim == 1)
   {
     auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(*this, 0, CellType::point, num_threads);
+        = mesh::compute_entities(*this, 0, CellType::point, num_threads);
     std::ranges::sort(interprocess_entities);
     _interprocess_facets.push_back(std::move(interprocess_entities));
   }
@@ -796,11 +812,13 @@ const std::vector<CellType>& Topology::entity_types(int dim) const
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const
 {
-  std::vector<CellType> cell_types = entity_types(dim());
+  std::vector<CellType> cell_types = entity_types(this->dim());
   if (cell_types.size() > 1)
+  {
     throw std::runtime_error(
         "Multiple cell types of this dimension. Call cell_types "
         "instead.");
+  }
   return cell_types.front();
 }
 //-----------------------------------------------------------------------------
@@ -825,15 +843,21 @@ Topology::index_maps(int dim) const
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   if (_entity_types[dim].size() > 1)
+  {
     throw std::runtime_error(
         "Multiple index maps of this dimension. Call index_maps instead.");
-  auto im = index_maps(dim);
+  }
+
+  std::vector<std::shared_ptr<const common::IndexMap>> im
+      = this->index_maps(dim);
   if (im.empty())
   {
-    throw std::runtime_error(std::format(
-        "Missing IndexMap in Topology. Maybe you need to create_entities({}).",
-        dim));
+    throw std::runtime_error(
+        std::format("Missing IndexMap in Topology. Maybe you need to "
+                    "create_entities({}).",
+                    dim));
   }
+
   return im.at(0);
 }
 //-----------------------------------------------------------------------------
@@ -878,7 +902,7 @@ const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
   if (auto i_map = this->index_map(this->dim() - 1);
       !i_map
       or (_facet_permutations.empty()
-          and i_map->size_local() + i_map->num_ghosts() > 0))
+          and (i_map->size_local() + i_map->num_ghosts() > 0)))
   {
     throw std::runtime_error(
         "create_entity_permutations must be called before using this data.");
@@ -910,7 +934,7 @@ bool Topology::create_entities(int dim, int num_threads)
   for (int ent_type_idx = 0, num_ent_types = this->entity_types(dim).size();
        ent_type_idx < num_ent_types; ++ent_type_idx)
   {
-    if (!connectivity({dim, ent_type_idx}, {0, 0}))
+    if (!this->connectivity({dim, ent_type_idx}, {0, 0}))
     {
       entities_created = false;
       break;
@@ -928,7 +952,7 @@ bool Topology::create_entities(int dim, int num_threads)
 
     // Create local entities
     auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-        = compute_entities(*this, dim, *entity, num_threads);
+        = mesh::compute_entities(*this, dim, *entity, num_threads);
     for (std::size_t k = 0; k < cell_entity.size(); ++k)
     {
       if (cell_entity[k])
@@ -959,8 +983,8 @@ bool Topology::create_entities(int dim, int num_threads)
 void Topology::create_connectivity(int d0, int d1)
 {
   // Make sure entities exist
-  create_entities(d0);
-  create_entities(d1);
+  this->create_entities(d0);
+  this->create_entities(d1);
 
   // Get the number of different entity types in each dimension
   int num_d0 = this->entity_types(d0).size();
@@ -972,15 +996,16 @@ void Topology::create_connectivity(int d0, int d1)
     for (int i1 = 0; i1 < num_d1; ++i1)
     {
       // Compute connectivity
-      auto [c_d0_d1, c_d1_d0] = compute_connectivity(*this, {d0, i0}, {d1, i1});
+      auto [c_d0_d1, c_d1_d0]
+          = mesh::compute_connectivity(*this, {d0, i0}, {d1, i1});
 
       // NOTE: that to compute the (d0, d1) connections is it sometimes
-      // necessary to compute the (d1, d0) connections. We store the (d1,
-      // d0) for possible later use, but there is a memory overhead if they
-      // are not required. It may be better to not automatically store
-      // connectivity that was not requested, but advise in a docstring the
-      // most efficient order in which to call this function if several
-      // connectivities are needed.
+      // necessary to compute the (d1, d0) connections. We store the
+      // (d1, d0) for possible later use, but there is a memory overhead
+      // if they are not required. It may be better to not automatically
+      // store connectivity that was not requested, but advise in a
+      // docstring the most efficient order in which to call this
+      // function if several connectivities are needed.
 
       // TODO: Caching policy/strategy.
       // Concerning the note above: Provide an overload
@@ -1011,7 +1036,7 @@ void Topology::create_entity_permutations()
     create_entities(d);
 
   auto [facet_permutations, cell_permutations]
-      = compute_entity_permutations(*this);
+      = mesh::compute_entity_permutations(*this);
   _facet_permutations = std::move(facet_permutations);
   _cell_permutations = std::move(cell_permutations);
 }
@@ -1028,7 +1053,7 @@ Topology mesh::create_topology(
     std::vector<std::span<const std::int64_t>> cells,
     std::vector<std::span<const std::int64_t>> original_cell_index,
     std::vector<std::span<const int>> ghost_owners,
-    std::span<const std::int64_t> boundary_vertices)
+    std::span<const std::int64_t> boundary_vertices, int num_threads)
 {
   common::Timer timer("Topology: create");
 
@@ -1038,13 +1063,14 @@ Topology mesh::create_topology(
 
   // Check cell data consistency and compile spans of owned and ghost
   // cells
+  common::Timer timer0("Topology: 0");
   spdlog::info("Create topology (generalised)");
   std::vector<std::int32_t> num_local_cells(cell_types.size());
   std::vector<std::span<const std::int64_t>> owned_cells;
   std::vector<std::span<const std::int64_t>> ghost_cells;
   for (std::size_t i = 0; i < cell_types.size(); i++)
   {
-    int num_vertices = num_cell_vertices(cell_types[i]);
+    int num_vertices = mesh::num_cell_vertices(cell_types[i]);
     if (cells[i].size() % num_vertices != 0)
     {
       throw std::runtime_error("Inconsistent number of cell vertices. Got "
@@ -1058,6 +1084,11 @@ Topology mesh::create_topology(
     ghost_cells.push_back(cells[i].last(ghost_owners[i].size() * num_vertices));
   }
 
+  timer0.stop();
+  timer0.flush();
+
+  common::Timer timer1("Topology: 1");
+
   // Create sets of owned and unowned vertices from the cell ownership
   // and the list of boundary vertices
   auto [owned_vertices, unowned_vertices]
@@ -1069,10 +1100,15 @@ Topology mesh::create_topology(
   const graph::AdjacencyList<int> global_vertex_to_ranks
       = determine_sharing_ranks(comm, boundary_vertices);
 
+  timer1.stop();
+  timer1.flush();
+
   // Iterate over vertices that have 'unknown' ownership, and if flagged
   // as owned by determine_sharing_ranks update ownership status
   {
-    const int mpi_rank = dolfinx::MPI::rank(comm);
+    common::Timer timer2("Topology: 2");
+
+    int mpi_rank = dolfinx::MPI::rank(comm);
     std::vector<std::int64_t> owned_shared_vertices;
     for (std::size_t i = 0; i < boundary_vertices.size(); ++i)
     {
@@ -1096,13 +1132,15 @@ Topology mesh::create_topology(
     dolfinx::radix_sort(owned_vertices);
   }
 
+  // NOTE: This block is relatively expensive
   // Number all owned vertices, iterating over vertices cell-wise
   std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
   {
+    common::Timer timer3("Topology: 3 ");
     std::int32_t v = 0;
-    for (std::size_t i = 0; i < cell_types.size(); ++i)
+    for (std::span<const std::int64_t> cells_t : cells)
     {
-      for (auto vtx : cells[i])
+      for (auto vtx : cells_t)
       {
         if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
             it != owned_vertices.end() and *it == vtx)
@@ -1115,10 +1153,12 @@ Topology mesh::create_topology(
     }
   }
 
+  common::Timer timer4("Topology: 4");
+
   // Compute the global offset for owned (local) vertex indices
   std::int64_t global_offset_v = 0;
   {
-    const std::int64_t nlocal = owned_vertices.size();
+    std::int64_t nlocal = owned_vertices.size();
     MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
   }
 
@@ -1130,7 +1170,7 @@ Topology mesh::create_topology(
     std::span cell_idx(original_cell_index[i]);
     cell_ghost_indices.push_back(graph::build::compute_ghost_indices(
         comm, cell_idx.first(num_local_cells[i]),
-        cell_idx.last(ghost_owners[i].size()), ghost_owners[i]));
+        cell_idx.last(ghost_owners[i].size()), ghost_owners[i], num_threads));
 
     // Create index maps for each cell type
     index_map_c.push_back(std::make_shared<common::IndexMap>(
@@ -1138,13 +1178,21 @@ Topology mesh::create_topology(
         static_cast<int>(dolfinx::MPI::tag::consensus_nbx) + i));
   }
 
+  timer4.stop();
+  timer4.flush();
+
   // Send and receive  ((input vertex index) -> (new global index, owner
   // rank)) data with neighbours (for vertices on 'true domain
   // boundary')
+  common::Timer timer5("Topology: 5");
+
   const std::vector<std::int64_t> unowned_vertex_data = exchange_indexing(
       comm, boundary_vertices, global_vertex_to_ranks, global_offset_v,
       owned_vertices, local_vertex_indices);
   assert(unowned_vertex_data.size() % 3 == 0);
+
+  timer5.stop();
+  timer5.flush();
 
   // Unpack received data and build array of ghost vertices and owners
   // of the ghost vertices
@@ -1153,10 +1201,12 @@ Topology mesh::create_topology(
   std::vector<std::int32_t> local_vertex_indices_unowned(
       unowned_vertices.size(), -1);
   {
+    common::Timer timer6("Topology: 6");
+
     std::int32_t v = owned_vertices.size();
     for (std::size_t i = 0; i < unowned_vertex_data.size(); i += 3)
     {
-      const std::int64_t idx_global = unowned_vertex_data[i];
+      std::int64_t idx_global = unowned_vertex_data[i];
       auto it = std::ranges::lower_bound(unowned_vertices, idx_global);
       assert(it != unowned_vertices.end() and *it == idx_global);
       std::size_t pos = std::distance(unowned_vertices.begin(), it);
@@ -1238,13 +1288,17 @@ Topology mesh::create_topology(
       { return {idx0, idx1}; });
   std::ranges::sort(global_to_local_vertices);
 
+  common::Timer timer7("Topology: 7");
   std::vector<std::vector<std::int32_t>> _cells_local_idx;
   _cells_local_idx.reserve(cells.size());
   for (std::span<const std::int64_t> c : cells)
   {
     _cells_local_idx.push_back(
-        convert_to_local_indexing(c, global_to_local_vertices));
+        convert_to_local_indexing(c, global_to_local_vertices, num_threads));
   }
+
+  timer7.stop();
+  timer7.flush();
 
   // -- Create Topology object
 
@@ -1303,11 +1357,12 @@ Topology
 mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                       std::span<const std::int64_t> original_cell_index,
                       std::span<const int> ghost_owners, CellType cell_type,
-                      std::span<const std::int64_t> boundary_vertices)
+                      std::span<const std::int64_t> boundary_vertices,
+                      int num_threads)
 {
   spdlog::info("Create topology (single cell type)");
   return create_topology(comm, {cell_type}, {cells}, {original_cell_index},
-                         {ghost_owners}, boundary_vertices);
+                         {ghost_owners}, boundary_vertices, num_threads);
 }
 //-----------------------------------------------------------------------------
 std::tuple<Topology, std::vector<int32_t>, std::vector<int32_t>>
@@ -1335,16 +1390,15 @@ mesh::create_subtopology(const Topology& topology, int dim,
     subentities = std::move(_subentities);
   }
 
-  // Get the vertices in the sub-topology. Use subentities
-  // (instead of entities) to ensure vertices for ghost entities are
-  // included.
+  // Get the vertices in the sub-topology. Use subentities (instead of
+  // entities) to ensure vertices for ghost entities are included.
 
   // Get the vertices in the sub-topology owned by this process
   auto map0 = topology.index_map(0);
   assert(map0);
 
-  // Create map from the vertices in the sub-topology to the vertices in the
-  // parent topology, and an index map
+  // Create map from the vertices in the sub-topology to the vertices in
+  // the parent topology, and an index map
   std::shared_ptr<common::IndexMap> submap0;
   std::vector<int32_t> subvertices0;
   {
@@ -1357,7 +1411,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   }
 
   // Sub-topology entity to vertex connectivity
-  const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
+  CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
   int num_vertices_per_entity = cell_num_entities(entity_type, 0);
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
@@ -1368,8 +1422,8 @@ mesh::create_subtopology(const Topology& topology, int dim,
 
   // Create vertex-to-subvertex vertex map (i.e. the inverse of
   // subvertex_to_vertex)
-  // NOTE: Depending on the sub-topology, this may be densely or sparsely
-  // populated. Is a different data structure more appropriate?
+  // NOTE: Depending on the sub-topology, this may be densely or
+  // sparsely populated. Is a different data structure more appropriate?
   std::vector<std::int32_t> vertex_to_subvertex(
       map0->size_local() + map0->num_ghosts(), -1);
   for (std::size_t i = 0; i < subvertices0.size(); ++i)
@@ -1417,8 +1471,7 @@ mesh::entities_to_index(const Topology& topology, int dim,
   // (value)
   std::map<std::vector<std::int32_t>, std::int32_t> entity_key_to_index;
   std::vector<std::int32_t> key(num_vertices_per_entity);
-  const int num_entities_mesh = map_e->size_local() + map_e->num_ghosts();
-  for (int e = 0; e < num_entities_mesh; ++e)
+  for (std::int32_t e = 0; e < map_e->size_local() + map_e->num_ghosts(); ++e)
   {
     auto vertices = e_to_v->links(e);
     std::ranges::copy(vertices, key.begin());
@@ -1537,3 +1590,4 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
 
   return facet_pair_lists;
 }
+//-----------------------------------------------------------------------------

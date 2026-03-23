@@ -56,8 +56,8 @@ enum class CellType : std::int8_t;
 /// @note Facet (2) and cell (4) data will contain multiple entries for
 /// the same facet for branching meshes with `max_facet_to_cell_links>2`
 /// to account for all facet cell connectivies.
-std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
-           std::size_t, std::vector<std::int32_t>>
+std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>, int,
+           std::vector<std::int32_t>>
 build_local_dual_graph(std::span<const CellType> celltypes,
                        const std::vector<std::span<const std::int64_t>>& cells,
                        std::optional<std::int32_t> max_facet_to_cell_links);

@@ -110,7 +110,7 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
 
     // Count number of ghosts per dest
     std::ranges::transform(send_data, std::back_inserter(send_sizes),
-                           [](auto& d) { return d.size(); });
+                           [](auto& d) -> std::int32_t { return d.size(); });
 
     // Send how many indices I ghost to each owner, and receive how many
     // of my indices other ranks ghost
@@ -421,7 +421,7 @@ compute_submap_indices(const IndexMap& imap,
     std::vector<std::pair<std::int32_t, std::int32_t>> pos;
     pos.reserve(submap_ghost.size());
     for (std::int32_t idx : submap_ghost)
-      pos.emplace_back(idx, pos.size());
+      pos.emplace_back(idx, static_cast<std::int32_t>(pos.size()));
     std::ranges::sort(pos);
 
     // Order ghosts in the sub-map by their position in the parent map
@@ -629,7 +629,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   owned.reserve(num_ghost_indices + recv_buffer.size());
   std::copy(indices.begin(), it_owned_end, std::back_inserter(owned));
   std::ranges::transform(recv_buffer, std::back_inserter(owned),
-                         [range = map.local_range()](auto idx)
+                         [range = map.local_range()](auto idx) -> std::int32_t
                          {
                            assert(idx >= range[0]);
                            assert(idx < range[1]);
@@ -726,7 +726,7 @@ common::stack_index_maps(
 
       // Count number of ghosts per dest
       std::ranges::transform(ghost_by_rank, std::back_inserter(send_sizes),
-                             [](auto& g) { return g.size(); });
+                             [](auto& g) -> std::int32_t { return g.size(); });
 
       // Send buffer and ghost position to send buffer position
       for (auto& g : ghost_by_rank)
@@ -968,7 +968,10 @@ void IndexMap::global_to_local(std::span<const std::int64_t> global,
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local(
       _ghosts.size());
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    global_to_local[i] = {_ghosts[i], i + local_size};
+  {
+    global_to_local[i]
+        = {_ghosts[i], static_cast<std::int32_t>(i + local_size)};
+  }
 
   std::ranges::sort(global_to_local);
   std::ranges::transform(
@@ -1083,8 +1086,14 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
 
     // Build array of (local index, ghosting local rank), and sort
     for (std::size_t r = 0; r < recv_disp.size() - 1; ++r)
+    {
       for (int j = recv_disp[r]; j < recv_disp[r + 1]; ++j)
-        idx_to_rank.push_back({recv_buffer[j] - offset, r});
+      {
+        idx_to_rank.push_back(
+            {static_cast<std::int32_t>(recv_buffer[j] - offset),
+             static_cast<int>(r)});
+      }
+    }
     std::ranges::sort(idx_to_rank);
 
     // -- Send to ranks that ghost my indices all the sharing ranks
@@ -1142,7 +1151,7 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
 
       // Count number of ghosts per destination and build send buffer
       std::ranges::transform(dest_idx_to_rank, std::back_inserter(send_sizes),
-                             [](auto& x) { return x.size(); });
+                             [](auto& x) -> int { return x.size(); });
       for (auto& d : dest_idx_to_rank)
         send_buffer.insert(send_buffer.end(), d.begin(), d.end());
 
@@ -1184,7 +1193,10 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
       std::vector<std::pair<std::int64_t, std::int32_t>> idx_to_pos;
       idx_to_pos.reserve(2 * _ghosts.size());
       for (auto idx : _ghosts)
-        idx_to_pos.push_back({idx, idx_to_pos.size()});
+      {
+        idx_to_pos.push_back(
+            {idx, static_cast<std::int32_t>(idx_to_pos.size())});
+      }
       std::ranges::sort(idx_to_pos);
 
       // Build list of (local ghost position, sharing rank) pairs from
@@ -1282,7 +1294,7 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
   std::vector<std::int32_t> shared;
   shared.reserve(recv_buffer.size());
   std::ranges::transform(recv_buffer, std::back_inserter(shared),
-                         [range = _local_range](auto idx)
+                         [range = _local_range](auto idx) -> std::int32_t
                          {
                            assert(idx >= range[0]);
                            assert(idx < range[1]);

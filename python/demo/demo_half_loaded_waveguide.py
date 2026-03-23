@@ -499,7 +499,7 @@ for i, kz in vals:
             V_lagr, lagr_dofs = V.sub(1).collapse()
             V_cells, V_types, V_x = plot.vtk_mesh(V_lagr)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
-            V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs]
+            V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs[0]]
             plotter = pyvista.Plotter()
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()
