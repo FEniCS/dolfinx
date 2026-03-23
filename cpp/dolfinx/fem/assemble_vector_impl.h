@@ -358,8 +358,6 @@ void assemble_interior_facets(
 ///
 /// @param[in,out] b The vector to be modified
 /// @param[in] a The bilinear form that generates A
-/// @param[in] x_dofmap Mesh geometry dofmap
-/// @param[in] x Mesh coordinates
 /// @param[in] constants Constants that appear in `a`
 /// @param[in] coefficients Coefficients that appear in `a`
 /// @param[in] bc_values1 The boundary condition 'values'

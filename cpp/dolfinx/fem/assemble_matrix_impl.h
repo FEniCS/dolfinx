@@ -154,9 +154,9 @@ void assemble_cells_matrix(
     P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
     P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
+    // Clear rows and columns for BCs
     for (std::int32_t row : bce0)
       std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
-
     for (std::int32_t col : bce1)
     {
       for (int row = 0; row < ndim0; ++row)
