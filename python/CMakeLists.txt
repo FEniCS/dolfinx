@@ -186,3 +186,42 @@ endif()
 set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 install(TARGETS cpp DESTINATION dolfinx)
+
+
+if (WIN32)
+  message("Windows..." STATUS FATAL_ERROR)
+else()
+  nanobind_add_stub(
+    cpp_stub
+    MODULE cpp
+    PYTHON_PATH $<TARGET_FILE_DIR:cpp>
+    DEPENDS cpp
+    MARKER_FILE cpp/py.typed
+    VERBOSE
+    RECURSIVE
+    # INSTALL_TIME
+    # OUTPUT_PATH dolfinx
+    OUTPUT
+      cpp/fem/__init__.pyi
+      cpp/fem/petsc.pyi
+      cpp/la/__init__.pyi
+      cpp/la/petsc.pyi
+      cpp/nls/__init__.pyi
+      cpp/nls/petsc.pyi
+      cpp/__init__.pyi
+      cpp/common.pyi
+      cpp/geometry.pyi
+      cpp/graph.pyi
+      cpp/io.pyi
+      cpp/log.pyi
+      cpp/mesh.pyi
+      cpp/refinement.pyi
+  )
+
+  install(TARGETS cpp LIBRARY DESTINATION dolfinx)
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cpp
+        DESTINATION dolfinx
+        FILES_MATCHING
+        PATTERN "*.pyi"
+        PATTERN "*.typed")
+endif()
