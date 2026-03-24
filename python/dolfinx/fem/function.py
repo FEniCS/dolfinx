@@ -29,6 +29,7 @@ if typing.TYPE_CHECKING:
 
     from dolfinx.mesh import Mesh
 
+_T = TypeVar("_T", np.float32, np.float64)
 _S = TypeVar("_S", np.float32, np.float64, np.complex64, np.complex128)  # scalar
 
 
@@ -685,11 +686,11 @@ def functionspace(
     return FunctionSpace(mesh, ufl_e, cppV)
 
 
-class FunctionSpace(ufl.FunctionSpace):
+class FunctionSpace(ufl.FunctionSpace, Generic[_T]):
     """A space on which Functions (fields) can be defined."""
 
     _cpp_object: _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
-    _mesh: Mesh
+    _mesh: Mesh[_T]
 
     def __init__(
         self,
@@ -716,7 +717,7 @@ class FunctionSpace(ufl.FunctionSpace):
         self._mesh = mesh
         super().__init__(ufl_domain, element)
 
-    def clone(self) -> FunctionSpace:
+    def clone(self) -> FunctionSpace[_T]:
         """Create a FunctionSpace which shares data with this space.
 
         The new space has a different unique integer ID.
@@ -751,7 +752,7 @@ class FunctionSpace(ufl.FunctionSpace):
         """Number of sub spaces."""
         return self.element.num_sub_elements
 
-    def sub(self, i: int) -> FunctionSpace:
+    def sub(self, i: int) -> FunctionSpace[_T]:
         """Return the i-th sub space.
 
         Args:
@@ -799,7 +800,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return self
 
     @cached_property
-    def element(self) -> FiniteElement:
+    def element(self) -> FiniteElement[_T]:
         """Function space finite element."""
         return FiniteElement(self._cpp_object.element)
 
@@ -813,22 +814,22 @@ class FunctionSpace(ufl.FunctionSpace):
         return DofMap(self._cpp_object.dofmaps(idx))
 
     @property
-    def mesh(self) -> Mesh:
+    def mesh(self) -> Mesh[_T]:
         """Mesh on which the function space is defined."""
         return self._mesh
 
-    def collapse(self) -> tuple[FunctionSpace, np.ndarray]:
+    def collapse(self) -> tuple[FunctionSpace[_T], list[npt.NDArray[np.int32]]]:
         """Create a new function space by collapsing a subspace.
 
         Returns:
             A new function space and the map from new to old
             degrees-of-freedom.
         """
-        cpp_space, dofs = self._cpp_object.collapse()  # type: ignore
+        cpp_space, dofs = self._cpp_object.collapse()
         V = FunctionSpace(self._mesh, self.ufl_element(), cpp_space)
         return V, dofs
 
-    def tabulate_dof_coordinates(self) -> npt.NDArray[np.float64]:
+    def tabulate_dof_coordinates(self) -> npt.NDArray[_T]:
         """Tabulate coordinates of function space degrees-of-freedom.
 
         Returns:
@@ -838,4 +839,4 @@ class FunctionSpace(ufl.FunctionSpace):
             This method is only for elements with point evaluation
             degrees-of-freedom.
         """
-        return self._cpp_object.tabulate_dof_coordinates()  # type: ignore
+        return self._cpp_object.tabulate_dof_coordinates()
