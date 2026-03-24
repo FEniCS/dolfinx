@@ -82,6 +82,9 @@ __all__ = [
 ]
 
 
+_T = typing.TypeVar("_T", np.float32, np.float64)
+
+
 @singledispatch
 def create_cell_partitioner(
     part: Callable, mode: GhostMode, max_facet_to_cell_links: int
@@ -267,7 +270,7 @@ class Topology:
         return self._cpp_object.cell_type
 
 
-class Geometry:
+class Geometry(typing.Generic[_T]):
     """The geometry of a :class:`dolfinx.mesh.Mesh`."""
 
     _cpp_object: _cpp.mesh.Geometry_float32 | _cpp.mesh.Geometry_float64
@@ -314,7 +317,7 @@ class Geometry:
         return self._cpp_object.input_global_indices
 
     @property
-    def x(self) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+    def x(self) -> npt.NDArray[_T]:
         """Geometry coordinate points.
 
         Shape is ``shape=(num_points, 3)``.
