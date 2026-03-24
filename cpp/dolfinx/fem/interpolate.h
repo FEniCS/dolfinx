@@ -331,7 +331,7 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
   else
   {
     assert(data.extent(0) == Pi.extent(1));
-    assert(data.extent(1) == bs);
+    assert(static_cast<int>(data.extent(1)) == bs);
     std::size_t cols = Pi.extent(1);
     for (int k = 0; k < bs; ++k)
     {
@@ -843,7 +843,7 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const auto [_Pi, pi_shape] = element.interpolation_operator();
   md::mdspan<const U, std::dextents<std::size_t, 2>> Pi(_Pi.data(), pi_shape);
   const std::size_t num_interp_points = Pi.extent(1);
-  assert(Pi.extent(0) == num_scalar_dofs);
+  assert(static_cast<int>(Pi.extent(0)) == num_scalar_dofs);
 
   auto apply_inv_transpose_dof_transformation
       = element.template dof_transformation_fn<T>(
@@ -1040,7 +1040,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       apply_inv_trans_dof_transformation(coeffs_b, cell_info, *cell_it, 1);
 
       // Copy interpolation dofs into coefficient vector
-      assert(coeffs_b.size() == num_scalar_dofs);
+      assert(coeffs_b.size() == static_cast<std::size_t>(num_scalar_dofs));
       for (int i = 0; i < num_scalar_dofs; ++i)
       {
         const int dof = i * element_bs + k;
