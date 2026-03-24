@@ -67,7 +67,7 @@ class PointOwnershipData(typing.Generic[_T]):
         return self._cpp_object.dest_cells
 
 
-class BoundingBoxTree:
+class BoundingBoxTree(typing.Generic[_T]):
     """Bounding box trees used in collision detection."""
 
     _cpp_object: _cpp.geometry.BoundingBoxTree_float32 | _cpp.geometry.BoundingBoxTree_float64
@@ -88,7 +88,7 @@ class BoundingBoxTree:
         return self._cpp_object.num_bboxes
 
     @property
-    def bbox_coordinates(self) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+    def bbox_coordinates(self) -> npt.NDArray[_T]:
         """Coordinates of lower and upper corners of bounding boxes.
 
         Note:
@@ -97,7 +97,7 @@ class BoundingBoxTree:
         """
         return self._cpp_object.bbox_coordinates
 
-    def get_bbox(self, i) -> npt.NDArray[np.floating]:
+    def get_bbox(self, i) -> npt.NDArray[_T]:
         """Get lower and upper corners of the ith bounding box.
 
         Args:
@@ -110,18 +110,18 @@ class BoundingBoxTree:
         """
         return self._cpp_object.get_bbox(i)
 
-    def create_global_tree(self, comm) -> BoundingBoxTree:
+    def create_global_tree(self, comm) -> BoundingBoxTree[_T]:
         """Create a global bounding box tree."""
         return BoundingBoxTree(self._cpp_object.create_global_tree(comm))
 
 
 def bb_tree(
-    mesh: Mesh,
+    mesh: Mesh[_T],
     dim: int,
     *,
     padding: float = 0.0,
     entities: npt.NDArray[np.int32] | None = None,
-) -> BoundingBoxTree:
+) -> BoundingBoxTree[_T]:
     """Create a bounding box tree for use in collision detection.
 
     Args:
@@ -153,7 +153,7 @@ def bb_tree(
 
 
 def compute_collisions_trees(
-    tree0: BoundingBoxTree, tree1: BoundingBoxTree
+    tree0: BoundingBoxTree[_T], tree1: BoundingBoxTree[_T]
 ) -> npt.NDArray[np.int32]:
     """Compute all collisions between two bounding box trees.
 
@@ -169,7 +169,7 @@ def compute_collisions_trees(
     return _cpp.geometry.compute_collisions_trees(tree0._cpp_object, tree1._cpp_object)
 
 
-def compute_collisions_points(tree: BoundingBoxTree, x: npt.NDArray[np.floating]) -> AdjacencyList:
+def compute_collisions_points(tree: BoundingBoxTree[_T], x: npt.NDArray[_T]) -> AdjacencyList:
     """Compute collisions between points and leaf bounding boxes.
 
     Bounding boxes can overlap, therefore points can collide with more
@@ -188,10 +188,10 @@ def compute_collisions_points(tree: BoundingBoxTree, x: npt.NDArray[np.floating]
 
 
 def compute_closest_entity(
-    tree: BoundingBoxTree,
-    midpoint_tree: BoundingBoxTree,
-    mesh: Mesh,
-    points: npt.NDArray[np.floating],
+    tree: BoundingBoxTree[_T],
+    midpoint_tree: BoundingBoxTree[_T],
+    mesh: Mesh[_T],
+    points: npt.NDArray[_T],
 ) -> npt.NDArray[np.int32]:
     """Compute closest mesh entity to a point.
 
@@ -213,7 +213,9 @@ def compute_closest_entity(
     )
 
 
-def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) -> BoundingBoxTree:
+def create_midpoint_tree(
+    mesh: Mesh[_T], dim: int, entities: npt.NDArray[np.int32]
+) -> BoundingBoxTree[_T]:
     """Create bounding box tree for the midpoints of a subset of entities.
 
     Args:
@@ -228,7 +230,7 @@ def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) 
 
 
 def compute_colliding_cells(
-    msh: Mesh, candidates: AdjacencyList, x: npt.NDArray[np.floating]
+    msh: Mesh[_T], candidates: AdjacencyList, x: npt.NDArray[_T]
 ) -> AdjacencyList:
     """From a mesh, find which cells collide with a set of points.
 
@@ -249,8 +251,8 @@ def compute_colliding_cells(
 
 
 def squared_distance(
-    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], points: npt.NDArray[np.floating]
-) -> npt.NDArray[np.floating]:
+    mesh: Mesh[_T], dim: int, entities: npt.NDArray[np.int32], points: npt.NDArray[_T]
+) -> npt.NDArray[_T]:
     """Compute the squared distance between a point and a mesh entity.
 
     The distance is computed between the ith input points and the ith
@@ -270,9 +272,7 @@ def squared_distance(
     return _cpp.geometry.squared_distance(mesh._cpp_object, dim, entities, points)
 
 
-def compute_distance_gjk(
-    p: npt.NDArray[np.floating], q: npt.NDArray[np.floating]
-) -> npt.NDArray[np.floating]:
+def compute_distance_gjk(p: npt.NDArray[_T], q: npt.NDArray[_T]) -> npt.NDArray[_T]:
     """Compute the distance between two convex bodies.
 
     Each body is defined by a set of points. Uses the
@@ -294,8 +294,8 @@ def compute_distance_gjk(
 
 
 def compute_distances_gjk(
-    bodies: list[npt.NDArray[np.floating]], q: npt.NDArray[np.floating], num_threads: int
-) -> npt.NDArray[np.floating]:
+    bodies: list[npt.NDArray[_T]], q: npt.NDArray[_T], num_threads: int
+) -> npt.NDArray[_T]:
     """Compute the distance between a set of convex bodies.
 
     For each convex body defined in `bodies`;
