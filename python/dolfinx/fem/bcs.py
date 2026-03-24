@@ -4,13 +4,15 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Support for representing Dirichlet boundary conditions that are enforced
-via modification of linear systems."""
+"""Dirichlet boundary conditions.
+
+Representations of Dirichlet boundary conditions that are enforced via
+modification of linear systems.
+"""
 
 from __future__ import annotations
 
 import numbers
-import typing
 from collections.abc import Callable, Iterable
 
 import numpy as np
@@ -22,7 +24,7 @@ from dolfinx.fem.function import Constant, Function, FunctionSpace
 
 
 def locate_dofs_geometrical(
-    V: typing.Union[dolfinx.fem.FunctionSpace, Iterable[dolfinx.fem.FunctionSpace]],
+    V: dolfinx.fem.FunctionSpace | Iterable[dolfinx.fem.FunctionSpace],
     marker: Callable,
 ) -> np.ndarray:
     """Locate degrees-of-freedom geometrically using a marker function.
@@ -54,7 +56,7 @@ def locate_dofs_geometrical(
 
 
 def locate_dofs_topological(
-    V: typing.Union[dolfinx.fem.FunctionSpace, Iterable[dolfinx.fem.FunctionSpace]],
+    V: dolfinx.fem.FunctionSpace | Iterable[dolfinx.fem.FunctionSpace],
     entity_dim: int,
     entities: npt.NDArray[np.int32],
     remote: bool = True,
@@ -90,16 +92,20 @@ def locate_dofs_topological(
 
 
 class DirichletBC:
-    _cpp_object: typing.Union[
-        _cpp.fem.DirichletBC_complex64,
-        _cpp.fem.DirichletBC_complex128,
-        _cpp.fem.DirichletBC_float32,
-        _cpp.fem.DirichletBC_float64,
-    ]
+    """Representation of Dirichlet boundary conditions.
+
+    The conditions are imposed on a linear system.
+    """
+
+    _cpp_object: (
+        _cpp.fem.DirichletBC_complex64
+        | _cpp.fem.DirichletBC_complex128
+        | _cpp.fem.DirichletBC_float32
+        | _cpp.fem.DirichletBC_float64
+    )
 
     def __init__(self, bc):
-        """Representation of Dirichlet boundary condition which is imposed
-        on a linear system.
+        """Initialise a Dirichlet boundary condition.
 
         Note:
             Dirichlet boundary conditions  should normally be
@@ -109,33 +115,24 @@ class DirichletBC:
             condition.
 
         Args:
-            value: Lifted boundary values function.
-            dofs: Local indices of degrees of freedom in function space
-                to which boundary condition applies. Expects array of
-                size (number of dofs, 2) if function space of the
-                problem, ``V`` is passed. Otherwise assumes function
-                space of the problem is the same of function space of
-                boundary values function.
-            V: Function space of a problem to which boundary conditions
-                are applied.
+            bc: C++ wrapped Dirichlet condition.
         """
         self._cpp_object = bc
 
     @property
-    def g(self) -> typing.Union[Function, Constant, np.ndarray]:
-        """The boundary condition value(s)"""
+    def g(self) -> Function | Constant | np.ndarray:
+        """The boundary condition value(s)."""
         return self._cpp_object.value
 
     @property
     def function_space(self) -> dolfinx.fem.FunctionSpace:
-        """The function space on which the boundary condition is defined"""
+        """Function space on which the boundary condition is defined."""
         return self._cpp_object.function_space
 
     def set(
-        self, x: npt.NDArray, x0: typing.Optional[npt.NDArray[np.int32]] = None, alpha: float = 1
+        self, x: npt.NDArray, x0: npt.NDArray[np.int32] | None = None, alpha: float = 1
     ) -> None:
-        """Set entries in an array that are constrained by Dirichlet
-        boundary conditions.
+        """Set array entries that are constrained by a Dirichlet condition.
 
         Entries in ``x`` that are constrained by a Dirichlet boundary
         conditions are set to ``alpha * (x_bc - x0)``, where ``x_bc`` is
@@ -160,28 +157,26 @@ class DirichletBC:
         self._cpp_object.set(x, x0, alpha)
 
     def dof_indices(self) -> tuple[npt.NDArray[np.int32], int]:
-        """Access dof indices `(local indices, unrolled)`, including
-        ghosts, to which a Dirichlet condition is applied, and the index to
-        the first non-owned (ghost) index. The array of indices is sorted.
+        """Dof indices to  which a Dirichlet condition is applied.
 
         Note:
-            The returned array is read-only.
+            Returned array is read-only.
 
         Returns:
-            Sorted array of dof indices (unrolled) and index to the
-            first entry in the dof index array that is not owned. Entries
-            `dofs[:pos]` are owned and entries `dofs[pos:]` are ghosts.
+            (i) Sorted array of dof indices (unrolled) and (ii) index to
+            the first entry in the dof index array that is not owned.
+            Entries `dofs[:pos]` are owned and entries `dofs[pos:]` are
+            ghosts.
         """
         return self._cpp_object.dof_indices()
 
 
 def dirichletbc(
-    value: typing.Union[Function, Constant, np.ndarray],
+    value: Function | Constant | np.ndarray,
     dofs: npt.NDArray[np.int32],
-    V: typing.Optional[dolfinx.fem.FunctionSpace] = None,
+    V: dolfinx.fem.FunctionSpace | None = None,
 ) -> DirichletBC:
-    """Create a representation of Dirichlet boundary condition which
-    is imposed on a linear system.
+    """Representation of Dirichlet boundary condition.
 
     Args:
         value: Lifted boundary values function. It must have a ``dtype``
@@ -237,10 +232,9 @@ def dirichletbc(
 
 
 def bcs_by_block(
-    spaces: Iterable[typing.Union[FunctionSpace, None]], bcs: Iterable[DirichletBC]
+    spaces: Iterable[FunctionSpace | None], bcs: Iterable[DirichletBC]
 ) -> list[list[DirichletBC]]:
-    """Arrange Dirichlet boundary conditions by the function space that
-    they constrain.
+    """Arrange boundary conditions by the space that they constrain.
 
     Given a sequence of function spaces ``spaces`` and a sequence of
     DirichletBC objects ``bcs``, return a list where the ith entry is
@@ -249,7 +243,7 @@ def bcs_by_block(
     """
 
     def _bc_space(V, bcs):
-        """Return list of bcs that have the same space as V"""
+        """Return list of bcs that have the same space as V."""
         return [bc for bc in bcs if V.contains(bc.function_space)]
 
     return [_bc_space(V, bcs) if V is not None else [] for V in spaces]

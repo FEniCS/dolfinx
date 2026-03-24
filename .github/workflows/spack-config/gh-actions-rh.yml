@@ -12,7 +12,7 @@ spack:
 
   mirrors:
     local-buildcache:
-      url: oci://ghcr.io/fenics/spack-rocky-buildcache
+      url: oci://ghcr.io/fenics/spack-rh-buildcache
       binary: true
       signed: false
       access_pair:

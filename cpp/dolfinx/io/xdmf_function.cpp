@@ -17,6 +17,7 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <format>
 #include <pugixml.hpp>
 #include <string>
 
@@ -109,7 +110,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   else
   {
     // Get number of geometry nodes per cell
-    const auto& geometry = mesh->geometry();
+    auto& geometry = mesh->geometry();
     auto& cmap = geometry.cmap();
     int cmap_dim = cmap.dim();
     int cell_dim = element->space_dimension() / element->block_size();

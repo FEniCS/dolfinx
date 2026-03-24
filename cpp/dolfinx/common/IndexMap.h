@@ -29,13 +29,14 @@ enum class IndexMapOrder : bool
   any = false      ///< Allow arbitrary ordering of ghost indices in sub-maps
 };
 
-/// @brief Given a sorted vector of indices (local numbering, owned or
+/// @brief Given a sorted list of indices (local indexing, owned or
 /// ghost) and an index map, this function returns the indices owned by
 /// this process, including indices that might have been in the list of
 /// indices on another processes.
-/// @param[in] indices List of indices
-/// @param[in] map The index map
-/// @return Indices owned by the calling process
+///
+/// @param[in] indices List of indices.
+/// @param[in] map The index map.
+/// @return Indices owned by the calling process.
 std::vector<int32_t>
 compute_owned_indices(std::span<const std::int32_t> indices,
                       const IndexMap& map);
@@ -110,7 +111,7 @@ public:
   /// This constructor uses a 'consensus' algorithm to determine the
   /// ranks that ghost indices that are owned by the caller. This
   /// requires non-trivial MPI communication. If the ranks that ghost
-  /// indices owned by the caller are known, it more efficient to use
+  /// indices owned by the caller are known, it is more efficient to use
   /// the constructor that takes these ranks as an argument.
   ///
   /// @note Collective

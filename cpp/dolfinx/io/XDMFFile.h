@@ -103,11 +103,14 @@ public:
   /// distributed in parallel
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid is located
+  /// @param[in] max_facet_to_cell_links Maximum number of cells that can
+  /// be linked to a facet.
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
-  mesh::Mesh<double> read_mesh(const fem::CoordinateElement<double>& element,
-                               mesh::GhostMode mode, const std::string& name,
-                               const std::string& xpath = "/Xdmf/Domain") const;
+  mesh::Mesh<double>
+  read_mesh(const fem::CoordinateElement<double>& element, mesh::GhostMode mode,
+            const std::string& name, const std::string& xpath = "/Xdmf/Domain",
+            std::optional<std::int32_t> max_facet_to_cell_links = 2) const;
 
   /// Read Topology data for Mesh
   /// @param[in] name Name of the mesh (Grid)
@@ -190,6 +193,10 @@ public:
   /// @param[in] xpath XPath where Information is stored in file
   std::string read_information(const std::string& name,
                                const std::string& xpath = "/Xdmf/Domain/");
+
+  /// Flush the output to disk. Output is not guaranteed to be written fully to
+  /// disk with a 'write' call.
+  void flush();
 
   /// Get the MPI communicator
   /// @return The MPI communicator for the file object

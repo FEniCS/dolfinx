@@ -73,8 +73,8 @@ TEMPLATE_TEST_CASE("Interval mesh", "[mesh][interval]", float, double)
     CHECK(std::abs(expected_x[mesh.geometry().input_global_indices()[i]]
                    - mesh.geometry().x()[3 * i])
           <= EPS<T>);
-    CHECK(std::abs(mesh.geometry().x()[3 * i + 1] - 0.0) <= EPS<T>);
-    CHECK(std::abs(mesh.geometry().x()[3 * i + 2] - 0.0) <= EPS<T>);
+    CHECK(std::abs(mesh.geometry().x()[3 * i + 1]) <= EPS<T>);
+    CHECK(std::abs(mesh.geometry().x()[3 * i + 2]) <= EPS<T>);
   }
 
   // cell layout
@@ -253,8 +253,8 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
     CHECK(std::abs(expected_x[mesh.geometry().input_global_indices()[i]]
                    - mesh.geometry().x()[3 * i])
           <= EPS<T>);
-    CHECK(std::abs(mesh.geometry().x()[3 * i + 1] - 0.0) <= EPS<T>);
-    CHECK(std::abs(mesh.geometry().x()[3 * i + 2] - 0.0) <= EPS<T>);
+    CHECK(std::abs(mesh.geometry().x()[3 * i + 1]) <= EPS<T>);
+    CHECK(std::abs(mesh.geometry().x()[3 * i + 2]) <= EPS<T>);
   }
 }
 

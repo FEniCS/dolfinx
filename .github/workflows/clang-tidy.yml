@@ -27,13 +27,18 @@ jobs:
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
           apt-get update
           apt-get install -y clang-tidy catch2
-          pip install -r python/build-requirements.txt
+        
+      - name: Install Python build dependencies
+        working-directory: python
+        run: |
+          pip install scikit-build-core
+          python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV

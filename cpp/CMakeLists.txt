@@ -11,7 +11,7 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.10.0.0")
+project(DOLFINX VERSION "0.11.0.0")
 
 set(DOXYGEN_DOLFINX_VERSION
     ${DOLFINX_VERSION}
@@ -206,6 +206,21 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
+if(DOLFINX_ENABLE_SUPERLU_DIST)
+  set(_REQUIRE_SUPERLU_DIST TRUE CACHE BOOL "Is SuperLU_DIST REQUIRED?")
+else()
+  set(_REQUIRE_SUPERLU_DIST FALSE CACHE BOOL "Is SuperLU_DIST REQUIRED?")
+endif()
+
+option(DOLFINX_ENABLE_SUPERLU_DIST "Compile with support for SuperLU_DIST." ON)
+set_package_properties(
+  SuperLU_DIST PROPERTIES
+  TYPE OPTIONAL
+  DESCRIPTION "Distributed direct LU Solver"
+  URL "https://portal.nersc.gov/project/sparse/superlu/"
+  PURPOSE "Linear Algebra Solver"
+)
+
 # ------------------------------------------------------------------------------
 # Check for MPI
 find_package(MPI 3 REQUIRED)
@@ -236,16 +251,28 @@ endif()
 
 # Debug flags
 check_cxx_compiler_flag(-g HAVE_DEBUG)
-
 if(HAVE_DEBUG)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -g)
 endif()
 
 # Optimisation
 check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
-
 if(HAVE_O2_OPTIMISATION)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
+endif()
+
+# Enable C++ standard library debugging
+include(CheckCXXSymbolExists)
+
+check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
+check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
+
+if(LIBCPP)
+  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG)
+endif()
+
+if(GLIBCXX)
+  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS _GLIBCXX_ASSERTIONS)
 endif()
 
 # Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
@@ -255,8 +282,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
 )
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS
-       -Wno-array-bounds;-Wno-stringop-overflow
-  )
+         -Wno-array-bounds;-Wno-stringop-overflow)
 endif()
 
 # ------------------------------------------------------------------------------
@@ -317,7 +343,7 @@ if(DOLFINX_BASIX_PYTHON)
   endif()
 endif()
 
-find_package(Basix 0.10 REQUIRED CONFIG)
+find_package(Basix 0.11 REQUIRED CONFIG)
 set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
@@ -329,7 +355,8 @@ set_package_properties(
 set(HDF5_PREFER_PARALLEL TRUE)
 set(HDF5_FIND_DEBUG TRUE)
 find_package(HDF5 REQUIRED COMPONENTS C)
-if(NOT HDF5_IS_PARALLEL)
+# HDF5_IS_PARALLEL -> HDF5_PROVIDES_PARALLEL in HDF5@2.0.0
+if (NOT (HDF5_IS_PARALLEL OR HDF5_PROVIDES_PARALLEL))
   message(
     FATAL_ERROR
       "Found serial HDF5, MPI HDF5 build required. Try setting HDF5_DIR or HDF5_ROOT."
@@ -348,12 +375,12 @@ set_package_properties(
 # method UFCx was found.
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.10 REQUIRED CONFIG)
+  find_package(ufcx 0.11 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake) using Python
   # interpreter
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  find_package(UFCx 0.10 REQUIRED MODULE)
+  find_package(UFCx 0.11 REQUIRED MODULE)
 endif()
 
 set_package_properties(
@@ -366,26 +393,22 @@ set_package_properties(
 # ------------------------------------------------------------------------------
 # Find optional packages
 if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
-  find_package(ADIOS2 2.8.1 REQUIRED COMPONENTS CXX)
+  find_package(ADIOS2 2.8.1 REQUIRED COMPONENTS CXX MPI)
 elseif(DOLFINX_ENABLE_ADIOS2)
-  find_package(ADIOS2 2.8.1 COMPONENTS CXX)
-endif()
-if(ADIOS2_FOUND AND NOT ADIOS2_HAVE_MPI)
-  message(
-    FATAL_ERROR
-      "Found serial ADIOS2, MPI ADIOS2 build required. Try setting ADIOS2_DIR or ADIOS2_ROOT."
-  )
+  find_package(ADIOS2 2.8.1 COMPONENTS CXX MPI)
 endif()
 
 if(DOLFINX_ENABLE_PETSC)
   find_package(PkgConfig REQUIRED)
+
   if (DEFINED ENV{PKG_CONFIG_PATH})
     set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
   else()
-    set(ENV_PKG_CONFIG_PATH})
+    set(ENV_PKG_CONFIG_PATH "")
   endif()
+
   if(DEFINED ENV{PETSC_DIR})
-    set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/lib/pkgconfig:ENV_PKG_CONFIG_PATH")
+    set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/lib/pkgconfig:${ENV_PKG_CONFIG_PATH}")
     if(DEFINED ENV{PETSC_ARCH})
       set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
     endif()
@@ -409,8 +432,15 @@ endif()
 
 if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   find_package(PkgConfig REQUIRED)
+
+  if (DEFINED ENV{PKG_CONFIG_PATH})
+    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
+  else()
+    set(ENV_PKG_CONFIG_PATH "")
+  endif()
+
   if(DEFINED ENV{SLEPC_DIR})
-    set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+    set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/lib/pkgconfig:${ENV_PKG_CONFIG_PATH}")
     if(DEFINED ENV{PETSC_ARCH})
       set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
     endif()
@@ -419,7 +449,7 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   if(_REQUIRE_SLEPC)
     pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
   else()
-    pkg_search_module(SLEPC IMPORTED_TARGET slepc>=3.15)
+    pkg_search_module(SLEPC OPTIONAL IMPORTED_TARGET slepc>=3.15)
   endif()
 
   # Setting for FeatureSummary
@@ -430,13 +460,14 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
   endif()
 elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
-  message(FATAL_ERROR "SLEPc requested, but no configured because PETSc was not found.")
+  message(FATAL_ERROR "SLEPc required, but not configured because PETSc was not found.")
 endif()
 
+# SCOTCH 7.0.1 was first version with ScotchConfig.cmake
 if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)
-  find_package(SCOTCH REQUIRED CONFIG)
+  find_package(SCOTCH 7.0.1 REQUIRED CONFIG)
 elseif(DOLFINX_ENABLE_SCOTCH)
-  find_package(SCOTCH CONFIG)
+  find_package(SCOTCH 7.0.1 CONFIG)
 endif()
 
 if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
@@ -466,6 +497,37 @@ elseif(DOLFINX_ENABLE_KAHIP)
   find_package(KaHIP)
 endif()
 
+if(DOLFINX_ENABLE_SUPERLU_DIST)
+  find_package(PkgConfig REQUIRED)
+
+  if (DEFINED ENV{PKG_CONFIG_PATH})
+    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
+  else()
+    set(ENV_PKG_CONFIG_PATH})
+  endif()
+
+  # If PETSc was built with SuperLU_DIST then pickup install there
+  if(DEFINED ENV{PETSC_DIR})
+    set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/lib/pkgconfig:${ENV_PKG_CONFIG_PATH}")
+    if(DEFINED ENV{PETSC_ARCH})
+      set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+    endif()
+  endif()
+
+  if(_REQUIRE_SUPERLU_DIST)
+    pkg_search_module(SUPERLU_DIST REQUIRED IMPORTED_TARGET superlu_dist)
+  else()
+    pkg_search_module(SUPERLU_DIST OPTIONAL IMPORTED_TARGET superlu_dist)
+  endif()
+
+  if(SUPERLU_DIST_FOUND)
+    message(STATUS "Found SuperLU_DIST version ${SUPERLU_DIST_VERSION}, prefix: ${SUPERLU_DIST_PREFIX}")
+    set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND SuperLU_DIST)
+  else()
+    set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SuperLU_DIST)
+  endif()
+endif()
+
 # ------------------------------------------------------------------------------
 # Print summary of found and not found optional packages
 feature_summary(WHAT ALL)
@@ -478,6 +540,14 @@ endif()
 # ------------------------------------------------------------------------------
 # Installation of DOLFINx library
 add_subdirectory(dolfinx)
+
+# ------------------------------------------------------------------------------
+# Unit testing
+option(BUILD_TESTING "Build DOLFINx unit tests and create test target." OFF)
+include(CTest)
+if (BUILD_TESTING)
+  add_subdirectory(test)
+endif()
 
 # ------------------------------------------------------------------------------
 # Generate and install helper file dolfinx.conf

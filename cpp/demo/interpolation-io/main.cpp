@@ -68,7 +68,7 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
   // ParaView
   io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"), {u},
                            "BP4");
-  outfile.write(0.0);
+  outfile.write(0);
   outfile.close();
 #endif
 }
@@ -137,7 +137,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   u->interpolate(
       [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
       {
-        std::vector<T> f(2 * x.extent(1), 0.0);
+        std::vector<T> f(2 * x.extent(1), 0);
         std::copy_n(x.data_handle(), f.size(), f.begin());
         return {f, {2, x.extent(1)}};
       },
@@ -145,7 +145,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   u->interpolate(
       [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
       {
-        std::vector<T> f(2 * x.extent(1), 0.0);
+        std::vector<T> f(2 * x.extent(1), 0);
         std::copy_n(x.data_handle(), f.size(), f.begin());
         std::ranges::transform(f, f.begin(), [](auto x) { return x + T(1); });
         return {f, {2, x.extent(1)}};
@@ -185,7 +185,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
 #ifdef HAS_ADIOS2
   io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
                            {u_l}, "BP4");
-  outfile.write(0.0);
+  outfile.write(0);
   outfile.close();
 #endif
 }

@@ -1,3 +1,5 @@
+"""Hyperelasticity variational forms."""
+
 # The first step is to define the variational problem at hand.
 #
 # We are interested in solving for a discrete vector field in three

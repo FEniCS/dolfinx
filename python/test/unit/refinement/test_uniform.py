@@ -14,7 +14,7 @@ def test_uniform_refinement_3d(ctype):
     mesh.topology.create_entities(1)
     mesh.topology.create_entities(2)
 
-    m2 = Mesh(dolfinx.cpp.refinement.uniform_refine(mesh._cpp_object), None)
+    m2 = dolfinx.mesh.uniform_refine(mesh)
     ncells1 = m2.topology.index_map(3).size_local
 
     assert mesh.comm.allreduce(ncells0) * 8 == mesh.comm.allreduce(ncells1)
@@ -27,7 +27,7 @@ def test_uniform_refinement_2d(ctype):
     ncells0 = mesh.topology.index_map(2).size_local
     mesh.topology.create_entities(1)
 
-    m2 = Mesh(dolfinx.cpp.refinement.uniform_refine(mesh._cpp_object), None)
+    m2 = dolfinx.mesh.uniform_refine(mesh)
     ncells1 = m2.topology.index_map(2).size_local
 
     assert mesh.comm.allreduce(ncells0) * 4 == mesh.comm.allreduce(ncells1)
@@ -42,7 +42,7 @@ def test_uniform_refine_mixed_mesh(mixed_topology_mesh):
     mesh.topology.create_entities(1)
     mesh.topology.create_entities(2)
 
-    m2 = Mesh(dolfinx.cpp.refinement.uniform_refine(mesh._cpp_object), None)
+    m2 = Mesh(dolfinx.cpp.refinement.uniform_refine(mesh._cpp_object, None), None)
     ncells1 = {ct[j]: m2.topology.index_maps(3)[j].size_local for j in range(4)}
 
     comm = mesh.comm

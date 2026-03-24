@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for MatrixCSR"""
+"""Unit tests for MatrixCSR."""
 
 from mpi4py import MPI
 
@@ -39,10 +39,10 @@ def test_add(dtype):
     mat1 = matrix_csr(sp, dtype=dtype)
 
     # Insert a block using plain indices
-    mat1.add([1.0, 2.0, 3.0, 4.0], [2, 3], [4, 5], 1)
+    mat1.add(np.array([1.0, 2.0, 3.0, 4.0], dtype=dtype), np.array([2, 3]), np.array([4, 5]), 1)
 
     # Insert to same block using bs=2 data
-    mat1.add([10.0, 20.0, 30.0, 40.0], [1], [2], 2)
+    mat1.add(np.array([10.0, 20.0, 30.0, 40.0], dtype=dtype), np.array([1]), np.array([2]), 2)
 
     A1 = mat1.to_dense()
 
@@ -51,10 +51,10 @@ def test_add(dtype):
     mat2 = matrix_csr(sp, dtype=dtype)
 
     # Insert a block using bs=1 data
-    mat2.add([10.0, 20.0, 30.0, 40.0], [2, 3], [4, 5], 1)
+    mat2.add(np.array([10.0, 20.0, 30.0, 40.0], dtype=dtype), np.array([2, 3]), np.array([4, 5]), 1)
 
     # Insert a block using bs=2 data
-    mat2.add([1.0, 2.0, 3.0, 4.0], [1], [2], 2)
+    mat2.add(np.array([1.0, 2.0, 3.0, 4.0], dtype=dtype), np.array([1]), np.array([2]), 2)
 
     A2 = mat2.to_dense()
 
@@ -64,15 +64,15 @@ def test_add(dtype):
     mat3 = matrix_csr(sp, BlockMode.expanded, dtype=dtype)
 
     # Insert a block using bs=1 data
-    mat3.add([10.0, 2.0, 30.0, 4.0], [2, 3], [4, 5], 1)
+    mat3.add(np.array([10.0, 2.0, 30.0, 4.0]), np.array([2, 3]), np.array([4, 5]), 1)
 
     # Insert a block using bs=2 data
-    mat3.add([1.0, 20.0, 3.0, 40.0], [1], [2], 2)
+    mat3.add(np.array([1.0, 20.0, 3.0, 40.0]), np.array([1]), np.array([2]), 2)
 
     A3 = mat3.to_dense()
     assert np.allclose(A1, A3)
 
-    mat3.set_value(0.0)
+    mat3.set_value(0)
     assert mat3.squared_norm() == 0.0  # /NOSONAR
 
 
@@ -84,12 +84,12 @@ def test_set(dtype):
     mat1 = matrix_csr(sp, dtype=dtype)
 
     # Set a block with bs=1
-    mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
+    mat1.set(np.array([2.0, 3.0, 4.0, 5.0], dtype=dtype), np.array([2, 3]), np.array([4, 5]), 1)
     n1 = mat1.squared_norm()
     assert n1 == 54.0 * mpi_size  # /NOSONAR
 
     # Set same block with bs=2
-    mat1.set([2.0, 3.0, 4.0, 5.0], [1], [2], 2)
+    mat1.set(np.array([2.0, 3.0, 4.0, 5.0], dtype=dtype), np.array([1]), np.array([2]), 2)
     n2 = mat1.squared_norm()
     assert n1 == n2
 
@@ -102,7 +102,7 @@ def test_set_blocked(dtype):
     mat1 = matrix_csr(sp, dtype=dtype)
 
     # Set a block with bs=1
-    mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
+    mat1.set(np.array([2.0, 3.0, 4.0, 5.0], dtype=dtype), np.array([2, 3]), np.array([4, 5]), 1)
     n1 = mat1.squared_norm()
     assert n1 == 54.0 * mpi_size  # /NOSONAR
 
@@ -256,14 +256,14 @@ def test_bad_entry(dtype):
 
     # Set block in bs=1 matrix (tests insert_blocked_csr)
     with pytest.raises(RuntimeError):
-        mat1.set([1.0, 2.0, 3.0, 4.0], [0], [0], 2)
+        mat1.set(np.array([1.0, 2.0, 3.0, 4.0], dtype=dtype), np.array([0]), np.array([0]), 2)
 
     # Set an single entry in bs=1 matrix (tests insert_csr)
     with pytest.raises(RuntimeError):
-        mat1.add([1.0], [0], [0], 1)
+        mat1.add(np.array([1.0], dtype=dtype), np.array([0]), np.array([0]), 1)
 
     sp = create_test_sparsity(3, 2)
     mat2 = matrix_csr(sp, BlockMode.compact, dtype=dtype)
     # set unblocked in bs=2 matrix (tests insert_nonblocked_csr)
     with pytest.raises(RuntimeError):
-        mat2.add([2.0, 3.0, 4.0, 5.0], [0, 1], [0, 1], 1)
+        mat2.add(np.array([2.0, 3.0, 4.0, 5.0], dtype=dtype), np.array([0, 1]), np.array([0, 1]), 1)

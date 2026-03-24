@@ -10,9 +10,25 @@
 
 # # Stokes equations using Taylor-Hood elements
 #
-# This demo is implemented in {download}`demo_stokes.py`. It shows how
-# to solve the Stokes problem using Taylor-Hood elements using different
-# linear solvers.
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_stokes.py>`
+# * {download}`Jupyter notebook <./demo_stokes.ipynb>`
+# ```
+# It shows how to solve the Stokes problem using Taylor-Hood elements
+# using different linear solvers:
+#
+# 1. [Block preconditioner using PETSc Nest data structures using
+#    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
+#    ](#high-level-nested-matrix-solver)
+# 1. [Block preconditioner using PETSc Nest data structures using
+#    PETSc directly](#low-level-nested-matrix-solver)
+# 1. [Block preconditioner with the `u` and `p` fields stored block-wise
+#    in a single matrix](#monolithic-block-iterative-solver)
+# 1. [Direct solver with the `u` and `p` fields stored block-wise in a
+#    single matrix](#monolithic-block-direct-solver)
+# 1. [Direct solver with the `u` and `p` fields stored in a mixed fashion a
+#    single matrix](#non-blocked-direct-solver)
 #
 # ## Equation and problem definition
 #
@@ -73,19 +89,6 @@
 #
 # ## Implementation
 #
-# The Stokes problem using Taylor-Hood elements is solved using:
-# 1. [Block preconditioner using PETSc Nest data structures using
-#    {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
-#    ](#high-level-nested-matrix-solver)
-# 1. [Block preconditioner using PETSc Nest data structures using
-#    PETSc directly](#low-level-nested-matrix-solver)
-# 1. [Block preconditioner with the `u` and `p` fields stored block-wise
-#    in a single matrix](#monolithic-block-iterative-solver)
-# 1. [Direct solver with the `u` and `p` fields stored block-wise in a
-#    single matrix](#monolithic-block-direct-solver)
-# 1. [Direct solver with the `u` and `p` fields stored in a mixed fashion a
-#    single matrix](#non-blocked-direct-solver)
-#
 # The required modules are first imported:
 
 # +
@@ -134,16 +137,19 @@ msh = create_rectangle(
 
 # Function to mark x = 0, x = 1 and y = 0
 def noslip_boundary(x):
+    """Mark no-slip boundaries where x = 0, x = 1, and y = 0."""
     return np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0) | np.isclose(x[1], 0.0)
 
 
 # Function to mark the lid (y = 1)
 def lid(x):
+    """Mark lid boundary where y = 1."""
     return np.isclose(x[1], 1.0)
 
 
 # Lid velocity
 def lid_velocity_expression(x):
+    """Expression for lid velocity."""
     return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
 
 
@@ -154,10 +160,8 @@ def lid_velocity_expression(x):
 # continuous piecewise quadratic basis (vector) and `P1` to a continuous
 # piecewise linear basis (scalar).
 
-
-P2 = element(
-    "Lagrange", msh.basix_cell(), degree=2, shape=(msh.geometry.dim,), dtype=default_real_type
-)
+gdim = msh.geometry.dim
+P2 = element("Lagrange", msh.basix_cell(), degree=2, shape=(gdim,), dtype=default_real_type)
 P1 = element("Lagrange", msh.basix_cell(), degree=1, dtype=default_real_type)
 V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
@@ -165,7 +169,7 @@ V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # +
 # No-slip condition on boundaries where x = 0, x = 1, and y = 0
-noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)  # type: ignore
+noslip = np.zeros(gdim, dtype=PETSc.ScalarType)  # type: ignore
 facets = locate_entities_boundary(msh, 1, noslip_boundary)
 bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
@@ -213,8 +217,10 @@ a_p = [[a[0][0], None], [None, a_p11]]
 
 
 def nested_iterative_solver_high_level():
-    """Solve the Stokes problem using nest matrices and an iterative solver
-    using high-level functionality."""
+    """Solve Stokes problem using nest matrices and an iterative solver.
+
+    Uses high-level DOLFINx functionality.
+    """
     problem = LinearProblem(
         a_ufl,
         L_ufl,
@@ -238,7 +244,7 @@ def nested_iterative_solver_high_level():
     # a vector that spans the nullspace to the solver, and any component
     # of the solution in this direction will be eliminated during the
     # solution process.
-    null_vec = create_vector(L, "nest")
+    null_vec = create_vector(extract_function_spaces(L), "nest")
 
     # Set velocity part to zero and the pressure part to a non-zero
     # constant
@@ -284,8 +290,10 @@ def nested_iterative_solver_high_level():
 
 
 def nested_iterative_solver_low_level():
-    """Solve the Stokes problem using nest matrices and an iterative
-    solver using low-level routines."""
+    """Solve Stokes problem using nest matrices and an iterative solver.
+
+    Used low-level DOLFINx routines.
+    """
     # Assemble nested matrix operators
     A = assemble_matrix(a, bcs=bcs, kind="nest")
     A.assemble()
@@ -322,7 +330,7 @@ def nested_iterative_solver_low_level():
 
     # Set the nullspace for pressure (since pressure is determined only
     # up to a constant)
-    null_vec = create_vector(L, "nest")
+    null_vec = create_vector(extract_function_spaces(L), "nest")
     null_vecs = null_vec.getNestSubVecs()
     null_vecs[0].set(0.0), null_vecs[1].set(1.0)
     null_vec.normalize()
@@ -367,9 +375,7 @@ def nested_iterative_solver_low_level():
     # `scatter_forward`.
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/velocity.xdmf", "w") as ufile_xdmf:
         u.x.scatter_forward()
-        P1 = element(
-            "Lagrange", msh.basix_cell(), 1, shape=(msh.geometry.dim,), dtype=default_real_type
-        )
+        P1 = element("Lagrange", msh.basix_cell(), 1, shape=(gdim,), dtype=default_real_type)
         u1 = Function(functionspace(msh, P1))
         u1.interpolate(u)
         ufile_xdmf.write_mesh(msh)
@@ -398,9 +404,7 @@ def nested_iterative_solver_low_level():
 
 
 def block_operators():
-    """Return block operators and block RHS vector for the Stokes
-    problem."""
-
+    """Block operators and block RHS vector for the Stokes problem."""
     # Assembler matrix operator, preconditioner and RHS vector into
     # single objects but preserving block structure
     A = assemble_matrix(a, bcs=bcs)
@@ -433,9 +437,7 @@ def block_operators():
 
 
 def block_iterative_solver():
-    """Solve the Stokes problem using blocked matrices and an iterative
-    solver."""
-
+    """Solve Stokes problem using blocked matrices and iterative solver."""
     # Assembler the operators and RHS vector
     A, P, b = block_operators()
 
@@ -503,9 +505,7 @@ def block_iterative_solver():
 
 
 def block_direct_solver():
-    """Solve the Stokes problem using blocked matrices and a direct
-    solver."""
-
+    """Solve Stokes problem using blocked matrices and a direct solver."""
     # Assembler the block operator and RHS vector
     A, _, b = block_operators()
 
@@ -555,6 +555,7 @@ def block_direct_solver():
 
 
 def mixed_direct():
+    """Solve Stokes problem using mixed matrix and a direct solver."""
     # Create the Taylot-Hood function space
     TH = mixed_element([P2, P1])
     W = functionspace(msh, TH)
@@ -649,13 +650,13 @@ norm_u_0, norm_p_0 = nested_iterative_solver_high_level()
 
 norm_u_1, norm_p_1 = nested_iterative_solver_low_level()
 np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
-np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_p_1, norm_p_0, rtol=1e-4)
 
 # Solve using PETSc block matrices and an iterative solver
 
 norm_u_2, norm_p_2 = block_iterative_solver()
 np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
-np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_p_2, norm_p_0, rtol=1e-4)
 
 # Solve using PETSc block matrices and an LU solver
 

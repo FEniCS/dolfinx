@@ -1,4 +1,4 @@
-name: Spack build
+name: Test Spack builds
 
 on:
   # Uncomment the below 'push' to trigger on push
@@ -40,7 +40,7 @@ jobs:
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
           apt-get install -y g++ gfortran  # compilers
       - name: Get DOLFINx code (to access Spack config and test files)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Spack
         uses: spack/setup-spack@main
         with:
@@ -60,7 +60,7 @@ jobs:
         shell: spack-bash {0}
         run: |
           spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yml
-          spack -e dolfinx install --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc
+          spack -e dolfinx install -j4 -p2 --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc
           spack repo list
           spack config get repos
       - name: Run a C++ test
@@ -68,8 +68,9 @@ jobs:
         run: |
           cat .github/workflows/spack-config/gh-actions-env.yml
           spack env create dolfinx-test .github/workflows/spack-config/gh-actions-env.yml
-          spack -e dolfinx-test install --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc cmake py-fenics-ffcx@main
+          spack -e dolfinx-test install -j4 -p2 --use-buildcache=package:never,dependencies:auto --add fenics-dolfinx@main+petsc py-fenics-ffcx@main
           spack env activate dolfinx-test
+          spack load cmake
           cd cpp/demo/poisson
           cmake .
           make
@@ -79,7 +80,7 @@ jobs:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          spack -e dolfinx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
+          spack -e dolfinx buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
         if: ${{ !cancelled() }}
 
   python-main:
@@ -93,7 +94,7 @@ jobs:
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
           apt-get install -y g++ gfortran  # compilers
       - name: Get DOLFINx code (to access Spack config and test files)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Spack
         uses: spack/setup-spack@main
         with:
@@ -114,7 +115,7 @@ jobs:
         run: |
           cat .github/workflows/spack-config/gh-actions-env.yml
           spack env create dolfinx .github/workflows/spack-config/gh-actions-env.yml
-          spack -e dolfinx install --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main %fenics-dolfinx+petsc~adios2
+          spack -e dolfinx install -j4 -p2 --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main %fenics-dolfinx+petsc~adios2
           spack repo list
           spack config get repos
       - name: Run a Python test
@@ -122,7 +123,7 @@ jobs:
         run: |
           cat .github/workflows/spack-config/gh-actions-env.yml
           spack env create dolfinx-test .github/workflows/spack-config/gh-actions-env.yml
-          spack -e dolfinx-test install --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main %fenics-dolfinx+petsc~adios2 py-setuptools
+          spack -e dolfinx-test install -j4 -p2 --use-buildcache=package:never,dependencies:auto --add py-fenics-dolfinx@main +petsc4py +slepc4py %fenics-dolfinx~adios2 py-setuptools
           spack env activate dolfinx-test
           spack compiler find
           spack load gcc
@@ -132,5 +133,5 @@ jobs:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          spack -e dolfinx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
+          spack -e dolfinx buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
         if: ${{ !cancelled() }}
