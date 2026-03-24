@@ -327,12 +327,12 @@ class Geometry(typing.Generic[_T]):
         return self._cpp_object.x
 
 
-class Mesh:
+class Mesh(typing.Generic[_T]):
     """A mesh."""
 
     _mesh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     _topology: Topology
-    _geometry: Geometry
+    _geometry: Geometry[_T]
     _ufl_domain: ufl.Mesh | None
 
     def __init__(
@@ -416,7 +416,7 @@ class Mesh:
         return self._topology
 
     @property
-    def geometry(self) -> Geometry:
+    def geometry(self) -> Geometry[_T]:
         """Mesh geometry."""
         return self._geometry
 
