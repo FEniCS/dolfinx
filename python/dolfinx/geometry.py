@@ -34,8 +34,10 @@ __all__ = [
     "squared_distance",
 ]
 
+_T = typing.TypeVar("_T", np.float32, np.float64)
 
-class PointOwnershipData:
+
+class PointOwnershipData(typing.Generic[_T]):
     """Class for storing data related to the ownership of points."""
 
     _cpp_object: _cpp.geometry.PointOwnershipData_float32 | _cpp.geometry.PointOwnershipData_float64
@@ -55,7 +57,7 @@ class PointOwnershipData:
         return self._cpp_object.dest_owners
 
     @property
-    def dest_points(self) -> npt.NDArray[np.floating]:
+    def dest_points(self) -> npt.NDArray[_T]:
         """Points owned by current rank."""
         return self._cpp_object.dest_points
 
@@ -321,10 +323,10 @@ def compute_distances_gjk(
 
 def determine_point_ownership(
     mesh: Mesh,
-    points: npt.NDArray[np.floating],
+    points: npt.NDArray[_T],
     padding: float,
     cells: npt.NDArray[np.int32] | None = None,
-) -> PointOwnershipData:
+) -> PointOwnershipData[_T]:
     """Build point ownership data for a mesh-points pair.
 
     First, potential collisions are found by computing intersections
