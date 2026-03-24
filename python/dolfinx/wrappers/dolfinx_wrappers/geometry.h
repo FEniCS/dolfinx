@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -18,6 +18,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/optional.h>
+#include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
 #include <string>
@@ -195,6 +196,40 @@ void declare_bbtree(nb::module_& m, const std::string& type)
         return nb::ndarray<T, nb::numpy>(d.data(), {d.size()}).cast();
       },
       nb::arg("p"), nb::arg("q"));
+
+  std::string gjks_name = "compute_distances_gjk_" + type;
+  m.def(
+      gjks_name.c_str(),
+      [](const std::vector<nb::ndarray<const T, nb::c_contig>>& bodies,
+         nb::ndarray<const T, nb::c_contig> q, size_t num_threads)
+      {
+        // If array is 1D assume single point
+        std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
+        std::span<const T> _q(q.data(), 3 * q_s0);
+
+        std::vector<std::span<const T>> _bodies;
+        _bodies.reserve(bodies.size());
+
+        std::ranges::transform(
+            bodies, std::back_inserter(_bodies),
+            [](auto& body)
+            {
+              // If sub-array in 1D assume single point
+              std::size_t body_s0 = body.ndim() == 1 ? 1 : body.shape(0);
+              return std::span<const T>(body.data(), 3 * body_s0);
+            });
+
+        using U = typename std::conditional<
+            std::is_same_v<T, float>, double,
+            boost::multiprecision::cpp_bin_float_double_extended>::type;
+
+        std::vector<T> distances
+            = dolfinx::geometry::compute_distances_gjk<T, U>(_bodies, _q,
+                                                             num_threads);
+        return dolfinx_wrappers::as_nbarray(std::move(distances),
+                                            {distances.size() / 3, 3});
+      },
+      nb::arg("bodies"), nb::arg("q"), nb::arg("num_threads"));
 
   m.def(
       "squared_distance",
