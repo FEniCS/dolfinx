@@ -239,13 +239,13 @@ public:
   /// pass by reference to each call of pull_back_nonaffine.
   struct PullBackScratch
   {
-    std::vector<T> dphi;  ///< shape `(tdim, num_xnodes)`
-    std::vector<T> Xk;   ///< size `tdim`
-    std::vector<T> dX;   ///< size `tdim`
-    std::vector<T> xk;   ///< size `gdim`
-    std::vector<T> J;    ///< shape `(gdim, tdim)`
-    std::vector<T> K;    ///< shape `(tdim, gdim)`
-    std::vector<T> basis; ///< shape from `tabulate_shape(1, 1)`
+    std::vector<T> dphi;
+    std::vector<T> Xk;
+    std::vector<T> dX;
+    std::vector<T> xk;
+    std::vector<T> J;
+    std::vector<T> K;
+    std::vector<T> basis;
   };
 
   /// @brief Create scratch memory for pull_back_nonaffine.
