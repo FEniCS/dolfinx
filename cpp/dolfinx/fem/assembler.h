@@ -337,6 +337,7 @@ void apply_lifting(
   if (std::ranges::all_of(a, [](auto ai) { return !ai; }))
     return;
 
+  common::Timer t("Apply lifting");
   impl::apply_lifting(b, a, constants, coeffs, bcs1, x0, alpha);
 }
 

@@ -386,12 +386,11 @@ void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
   spdlog::debug("bs0={}, bs1={}", bs0, bs1);
 
   // Iterate over Form with plugin kernel
-  // TODO: only iterate over cells with BCs (efficiency)
-  // TODO: templating over block size?
 
   if (bs0 > 1 or bs1 > 1)
   {
-    auto plugin_fn
+    // Lifting function for non-unit block size
+    auto lifting_fn
         = [&b, &x0, &bs0, &bs1, &bc_markers1, &bc_values1,
            &alpha](std::span<const std::int32_t> rows,
                    std::span<const std::int32_t> cols, std::span<const T> Ae)
@@ -420,12 +419,15 @@ void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
       }
     };
 
-    assemble_matrix<T, U, true>(plugin_fn, a, constants, coefficients, {},
+    // Call matrix assembler in BCMode, only executing kernel on cells with BCs
+    // in bc_markers1.
+    assemble_matrix<T, U, true>(lifting_fn, a, constants, coefficients, {},
                                 bc_markers1);
   }
   else
   {
-    auto plugin_fn
+    // Specialised lifting function for scalar values (bs0=0, bs1=0)
+    auto lifting_fn
         = [&b, &x0, &bc_markers1, &bc_values1,
            &alpha](std::span<const std::int32_t> rows,
                    std::span<const std::int32_t> cols, std::span<const T> Ae)
@@ -445,7 +447,8 @@ void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
       }
     };
 
-    assemble_matrix<T, U, true>(plugin_fn, a, constants, coefficients, {},
+    // Use matrix assembler in BCMode to lift RHS.
+    assemble_matrix<T, U, true>(lifting_fn, a, constants, coefficients, {},
                                 bc_markers1);
   }
 }

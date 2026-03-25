@@ -30,6 +30,8 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @brief Execute kernel over cells and accumulate result in a matrix.
 ///
 /// @tparam T Matrix/form scalar type.
+/// @tparam BCMode If set true, only execute mat_set on cells with BCs in column
+/// space.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Degree-of-freedom map for the mesh geometry.
@@ -188,6 +190,8 @@ void assemble_cells_matrix(
 /// from cell used to define the entity.
 ///
 /// @tparam T Matrix/form scalar type.
+/// @tparam BCMode If set true, only execute mat_set on cells with BCs in column
+/// space.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
@@ -349,6 +353,8 @@ void assemble_entities(
 /// a matrix.
 ///
 /// @tparam T Matrix/form scalar type.
+/// @tparam BCMode If set true, only execute mat_set on cells with BCs in column
+/// space.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
