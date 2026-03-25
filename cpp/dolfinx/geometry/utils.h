@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Garth N. Wells and Jørgen S. Dokken
+// Copyright (C) 2019-2026 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,9 +10,11 @@
 #include "gjk.h"
 #include <algorithm>
 #include <array>
+#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
 #include <deque>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <map>
@@ -507,6 +509,16 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 /// to collide with the point is returned. If no collision is detected,
 /// -1 is returned.
 ///
+/// For affine cells, the GJK algorithm is used to compute the distance
+/// between the point and the convex hull of the cell in physical space.
+/// For non-affine cells, the point is first pulled back to the reference
+/// element and and the GJK algorithm is used to compute the distance between
+/// the point and the
+//// convex hull of the cell in reference space.
+/// This is because for non-affine cells, the convex hull in physical space can
+/// be a poor approximation of the cell geometry, and can lead to false
+/// positives when checking for collisions.
+///
 /// @note `cells` can for instance be found by using
 /// geometry::compute_collisions between a bounding box tree for the
 /// cells of the mesh and the point.
@@ -524,13 +536,19 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
 {
   if (cells.empty())
     return -1;
-  else
+
+  const mesh::Geometry<T>& geometry = mesh.geometry();
+  const fem::CoordinateElement<T>& cmap = geometry.cmap();
+  auto x_dofmap = geometry.dofmap();
+  const std::size_t num_nodes = x_dofmap.extent(1);
+  std::vector<T> coordinate_dofs(num_nodes * 3);
+  std::span<const T> geom_dofs = geometry.x();
+
+  bool is_affine = mesh.geometry().cmap().is_affine();
+  if (is_affine)
   {
-    const mesh::Geometry<T>& geometry = mesh.geometry();
-    std::span<const T> geom_dofs = geometry.x();
-    auto x_dofmap = geometry.dofmap();
-    const std::size_t num_nodes = x_dofmap.extent(1);
-    std::vector<T> coordinate_dofs(num_nodes * 3);
+    // Affine collision detection can be quickly done with GJK in physical
+    // space.
     for (auto cell : cells)
     {
       auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
@@ -547,7 +565,80 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
       if (d2 < tol)
         return cell;
     }
+  }
+  else
+  {
+    // For non-affine cells, we first check if the point is within the
+    // convex hull of the cell in physical space with GJK. If it is, we
+    // pull back the point to the reference element and check if it is
+    // within the convex hull of the cell in reference space.
 
+    const std::size_t gdim = geometry.dim();
+    const std::size_t tdim = mesh.topology()->dim();
+    std::array<T, 3> Xb{0}; // Default initialize as 0
+    md::mdspan<T, md::extents<std::size_t, 1, md::dynamic_extent>> X(Xb.data(),
+                                                                     1, tdim);
+    md::mdspan<T, md::extents<std::size_t, 1, md::dynamic_extent>> x(
+        point.data(), 1, gdim);
+
+    // reference data for non-affine pullback
+    basix::cell::type basix_cell
+        = mesh::cell_type_to_basix_type(mesh.topology()->cell_type());
+
+    // Create buffer for non-affine pullback
+    std::vector<T> pull_back_scratch(tdim * (2 * gdim + 2 * num_nodes + 2)
+                                     + gdim + num_nodes);
+
+    // Pad data from basix to have 3 components so we can use GJK on it.
+    const auto [_gdata, _gshape] = basix::cell::geometry<T>(basix_cell);
+    std::size_t num_vertices_per_cell
+        = mesh::cell_num_entities(mesh.topology()->cell_type(), 0);
+    std::vector<T> gdata(3 * num_vertices_per_cell, 0);
+    assert(_gshape[0] == num_vertices_per_cell);
+    for (std::size_t i = 0; i < num_vertices_per_cell; ++i)
+    {
+      std::copy_n(std::next(_gdata.begin(), _gshape[1] * i), _gshape[1],
+                  std::next(gdata.begin(), 3 * i));
+    }
+    std::vector<T> coordinate_dofs_pullback(num_nodes * gdim);
+    md::mdspan<T, md::dextents<std::size_t, 2>> cd_pb(
+        coordinate_dofs_pullback.data(), num_nodes, gdim);
+    for (auto cell : cells)
+    {
+      for (std::size_t i = 0; i < num_nodes; ++i)
+      {
+        auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
+        std::copy_n(std::next(geom_dofs.begin(), 3 * dofs[i]), 3,
+                    std::next(coordinate_dofs.begin(), 3 * i));
+      }
+
+      std::array<T, 3> shortest_vector
+          = compute_distance_gjk<T>(coordinate_dofs, point);
+      T d2 = std::reduce(shortest_vector.begin(), shortest_vector.end(), T(0),
+                         [](auto d, auto e) { return d + e * e; });
+      if (d2 < tol)
+      {
+
+        // Pull back to reference element and check if the point is actually
+        // inside the cell or only inside convex hull
+        for (std::size_t i = 0; i < num_nodes; ++i)
+        {
+          // coordinate dofs from (n, 3) to (n, gdim) buffer.
+          // NOTE: with C++23 this can be done with md layout views
+          std::copy_n(std::next(coordinate_dofs.begin(), 3 * i), gdim,
+                      std::next(coordinate_dofs_pullback.begin(), gdim * i));
+        }
+
+        cmap.pull_back_nonaffine(X, x, cd_pb, pull_back_scratch, 1e-6, 15);
+        std::array<T, 3> shortest_vector_pullback
+            = compute_distance_gjk<T>(gdata, Xb);
+        T d2_pullback = std::reduce(shortest_vector_pullback.begin(),
+                                    shortest_vector_pullback.end(), T(0),
+                                    [](auto d, auto e) { return d + e * e; });
+        if (d2_pullback < tol)
+          return cell;
+      }
+    }
     return -1;
   }
 }
@@ -664,10 +755,10 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// @param[in] points Points to check for collision (`shape=(num_points,
 /// 3)`). Storage is row-major.
 /// @param[in] cells Cells to check for ownership
-/// @param[in] padding Amount of absolute padding of bounding boxes of the mesh.
-/// Each bounding box of the mesh is padded with this amount, to increase
-/// the number of candidates, avoiding rounding errors in determining the owner
-/// of a point if the point is on the surface of a cell in the mesh.
+/// @param[in] padding Amount of absolute padding of bounding boxes of the
+/// mesh. Each bounding box of the mesh is padded with this amount, to
+/// increase the number of candidates, avoiding rounding errors in determining
+/// the owner of a point if the point is on the surface of a cell in the mesh.
 /// @return Point ownership data.
 ///
 /// @note `dest_owner` is sorted
@@ -798,11 +889,11 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
     const int colliding_cell = geometry::compute_first_colliding_cell(
         mesh, candidate_collisions.links(p / 3), point,
         10 * std::numeric_limits<T>::epsilon());
-    // If a collding cell is found, store the rank of the current process
+    // If a colliding cell is found, store the rank of the current process
     // which will be sent back to the owner of the point
     cell_indicator[p / 3] = (colliding_cell >= 0) ? rank : -1;
-    // Store the cell index for lookup once the owning processes has determined
-    // the ownership of the point
+    // Store the cell index for lookup once the owning processes has
+    // determined the ownership of the point
     closest_cells[p / 3] = colliding_cell;
   }
 
@@ -902,7 +993,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   std::swap(recv_sizes, send_sizes);
   std::swap(recv_offsets, send_offsets);
 
-  // Get distances from closest entity of points that were on the other process
+  // Get distances from closest entity of points that were on the other
+  // process
   std::vector<T> recv_distances(recv_offsets.back());
   MPI_Neighbor_alltoallv(
       squared_distances.data(), send_sizes.data(), send_offsets.data(),
