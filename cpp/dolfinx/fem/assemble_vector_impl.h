@@ -426,7 +426,7 @@ void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
   }
   else
   {
-    // Specialised lifting function for scalar values (bs0=0, bs1=0)
+    // Specialised lifting function for scalar values (bs0=1, bs1=1)
     auto lifting_fn
         = [&b, &x0, &bc_markers1, &bc_values1,
            &alpha](std::span<const std::int32_t> rows,
