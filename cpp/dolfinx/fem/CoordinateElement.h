@@ -233,6 +233,38 @@ public:
   template <typename X>
   using mdspan2_t = md::mdspan<X, md::dextents<std::size_t, 2>>;
 
+  /// @brief Scratch memory for pull_back_nonaffine.
+  ///
+  /// Allocate once outside the hot loop with create_pull_back_scratch and
+  /// pass by reference to each call of pull_back_nonaffine.
+  struct PullBackScratch
+  {
+    std::vector<T> dphi;  ///< shape `(tdim, num_xnodes)`
+    std::vector<T> Xk;   ///< size `tdim`
+    std::vector<T> dX;   ///< size `tdim`
+    std::vector<T> xk;   ///< size `gdim`
+    std::vector<T> J;    ///< shape `(gdim, tdim)`
+    std::vector<T> K;    ///< shape `(tdim, gdim)`
+    std::vector<T> basis; ///< shape from `tabulate_shape(1, 1)`
+  };
+
+  /// @brief Create scratch memory for pull_back_nonaffine.
+  /// @param gdim Geometric dimension.
+  /// @return Scratch object sized for this element and geometry dimension.
+  PullBackScratch create_pull_back_scratch(std::size_t gdim) const
+  {
+    const std::size_t tdim = mesh::cell_dim(this->cell_shape());
+    const std::size_t num_xnodes = _element->dim();
+    const auto bsize = _element->tabulate_shape(1, 1);
+    return {std::vector<T>(tdim * num_xnodes),
+            std::vector<T>(tdim),
+            std::vector<T>(tdim),
+            std::vector<T>(gdim),
+            std::vector<T>(gdim * tdim),
+            std::vector<T>(tdim * gdim),
+            std::vector<T>(bsize[0] * bsize[1] * bsize[2] * bsize[3])};
+  }
+
   /// @brief Compute reference coordinates `X` for physical coordinates
   /// `x` for a non-affine map.
   /// @param [in,out] X The reference coordinates to compute
@@ -240,15 +272,15 @@ public:
   /// @param [in] x Physical coordinates (`shape=(num_points, gdim)`).
   /// @param [in] cell_geometry Cell nodes coordinates (`shape=(num_xnodes,
   /// gdim)`).
-  /// @param [in] working_array Working memory. Size must be at least
-  /// `tdim * (2 * gdim + 2 * num_xnodes + 2) + gdim + num_xnodes`.
+  /// @param [in,out] scratch Working memory. Create once with
+  /// CoordinateElement::create_pull_back_scratch and reuse across calls.
   /// @param [in] tol Tolerance for termination of Newton method.
-  /// @param [in] maxit Maximum number of Newton iterations
+  /// @param [in] maxit Maximum number of Newton iterations.
   /// @note If convergence is not achieved within `maxit`, the function
   /// throws a runtime error.
   void pull_back_nonaffine(mdspan2_t<T> X, mdspan2_t<const T> x,
                            mdspan2_t<const T> cell_geometry,
-                           std::span<T> working_array, double tol = 1.0e-6,
+                           PullBackScratch& scratch, double tol = 1.0e-6,
                            int maxit = 15) const;
 
   /// @brief Permute a list of DOF numbers on a cell.

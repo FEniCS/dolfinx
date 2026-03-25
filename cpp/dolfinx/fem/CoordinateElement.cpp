@@ -83,10 +83,9 @@ template <std::floating_point T>
 void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
                                                mdspan2_t<const T> x,
                                                mdspan2_t<const T> cell_geometry,
-                                               std::span<T> working_array,
+                                               PullBackScratch& scratch,
                                                double tol, int maxit) const
 {
-  // Number of points
   std::size_t num_points = x.extent(0);
   if (num_points == 0)
     return;
@@ -98,41 +97,23 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   assert(X.extent(0) == num_points);
   assert(X.extent(1) == tdim);
 
-  // Allocate various components of working array
-  assert(working_array.size()
-         >= tdim * (2 * gdim + 2 * num_xnodes + 2) + gdim + num_xnodes);
-
-  mdspan2_t<T> dphi(working_array.data(), tdim, num_xnodes);
-  mdspan2_t<const T> Xk(working_array.data() + tdim * num_xnodes, 1, tdim);
-  std::span<T> Xk_span(working_array.data() + tdim * num_xnodes, tdim);
-
-  std::span<T> dX(working_array.data() + (tdim * (num_xnodes + 1)), tdim);
-  std::span<T> xk(working_array.data() + (tdim * (num_xnodes + 2)), gdim);
-  std::ranges::fill(xk, 0);
-  mdspan2_t<T> J(working_array.data() + ((tdim * (num_xnodes + 2)) + gdim),
-                 gdim, tdim);
-  mdspan2_t<T> K(working_array.data()
-                     + ((tdim * (num_xnodes + 2)) + gdim * (tdim + 1)),
-                 tdim, gdim);
-
+  mdspan2_t<T> dphi(scratch.dphi.data(), tdim, num_xnodes);
+  std::span<T> Xk(scratch.Xk);
+  std::span<T> dX(scratch.dX);
+  std::span<T> xk(scratch.xk);
+  mdspan2_t<T> J(scratch.J.data(), gdim, tdim);
+  mdspan2_t<T> K(scratch.K.data(), tdim, gdim);
   using mdspan4_t = md::mdspan<T, md::dextents<std::size_t, 4>>;
+  mdspan4_t basis(scratch.basis.data(), _element->tabulate_shape(1, 1));
 
-  const std::array<std::size_t, 4> bsize = _element->tabulate_shape(1, 1);
-  assert(bsize[0] == tdim + 1); // Tabulating basis and first derivatives
-  assert(bsize[1] == 1);        // Tabulating at one point at a time
-  assert(bsize[2] == num_xnodes);
-  assert(bsize[3] == 1); // Scalar component coordinate element
-  mdspan4_t basis(working_array.data()
-                      + ((tdim * (num_xnodes + 2)) + gdim * (2 * tdim + 1)),
-                  bsize);
   for (std::size_t p = 0; p < num_points; ++p)
   {
-    // Reset Xk
-    std::ranges::fill(Xk_span, 0);
+    std::ranges::fill(Xk, 0);
     int k;
     for (k = 0; k < maxit; ++k)
     {
-      _element->tabulate(1, Xk, basis);
+      mdspan2_t<const T> Xk_md(Xk.data(), 1, tdim);
+      _element->tabulate(1, Xk_md, basis);
 
       // x = cell_geometry * phi
       std::ranges::fill(xk, 0);
@@ -156,7 +137,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
           dX[i] += K(i, j) * (x(p, j) - xk[j]);
 
       // Compute Xk += dX
-      std::ranges::transform(dX, Xk_span, Xk_span.begin(),
+      std::ranges::transform(dX, Xk, Xk.begin(),
                              [](auto a, auto b) { return a + b; });
 
       // Compute norm(dX)
@@ -169,7 +150,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
       }
     }
 
-    std::copy(Xk_span.begin(), Xk_span.end(), X.data_handle() + p * tdim);
+    std::copy(Xk.begin(), Xk.end(), X.data_handle() + p * tdim);
     if (k == maxit)
     {
       throw std::runtime_error(

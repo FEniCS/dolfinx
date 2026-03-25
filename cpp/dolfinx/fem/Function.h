@@ -562,13 +562,11 @@ public:
     std::vector<geometry_type> detJ(xshape[0]);
     std::vector<geometry_type> det_scratch(2 * gdim * tdim);
 
-    // Scrach space for pull-back of point coordinates for non-affine cells.
-    std::vector<geometry_type> pull_back_scratch;
-    if (!cmap.is_affine())
-    {
-      pull_back_scratch.resize(tdim * (2 * gdim + 2 * num_dofs_g + 2) + gdim
-                               + num_dofs_g);
-    }
+    // Scratch space for pull-back of point coordinates for non-affine cells.
+    auto pull_back_scratch = cmap.is_affine()
+                                 ? typename CoordinateElement<
+                                       geometry_type>::PullBackScratch{}
+                                 : cmap.create_pull_back_scratch(gdim);
     // Prepare geometry data in each cell
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
