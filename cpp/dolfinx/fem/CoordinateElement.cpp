@@ -142,7 +142,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
 
       // Compute norm(dX)
       if (auto dX_squared
-          = std::transform_reduce(dX.cbegin(), dX.cend(), 0.0, std::plus{},
+          = std::transform_reduce(dX.begin(), dX.end(), 0.0, std::plus{},
                                   [](auto v) { return v * v; });
           std::sqrt(dX_squared) < tol)
       {
@@ -150,7 +150,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
       }
     }
 
-    std::copy(Xk.cbegin(), Xk.cend(), X.data_handle() + p * tdim);
+    std::copy(Xk.begin(), Xk.end(), X.data_handle() + p * tdim);
     if (k == maxit)
     {
       throw std::runtime_error(
