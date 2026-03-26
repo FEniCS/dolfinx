@@ -383,7 +383,7 @@ void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
   const int bs0 = a.function_spaces()[0]->dofmap()->bs();
   const int bs1 = a.function_spaces()[1]->dofmap()->bs();
 
-  spdlog::debug("bs0={}, bs1={}", bs0, bs1);
+  spdlog::debug("lifting: bs0={}, bs1={}", bs0, bs1);
 
   // Iterate over Form with plugin kernel
 

@@ -91,7 +91,10 @@ void assemble_cells_matrix(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
-  std::vector<std::int32_t> bce0(ndim0), bce1(ndim1);
+  std::vector<std::int32_t> bce0;
+  bce0.reserve(ndim0);
+  std::vector<std::int32_t> bce1;
+  bce1.reserve(ndim1);
 
   // Iterate over active cells
   assert(cells0.size() == cells.size());
@@ -127,8 +130,10 @@ void assemble_cells_matrix(
 
     // In "BCMode" only execute kernel if there are BCs on column space
     if constexpr (BCMode)
+    {
       if (bce1.empty())
         continue;
+    }
 
     bce0.clear();
     if (!bc0.empty())
@@ -261,7 +266,9 @@ void assemble_entities(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   std::vector<std::int32_t> bce0;
+  bce0.reserve(ndim0);
   std::vector<std::int32_t> bce1;
+  bce1.reserve(ndim1);
 
   assert(entities0.size() == entities.size());
   assert(entities1.size() == entities.size());
@@ -387,7 +394,7 @@ void assemble_entities(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
-template <dolfinx::scalar T, bool BCMode>
+template <dolfinx::scalar T, bool BCMode = false>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
@@ -431,11 +438,13 @@ void assemble_interior_facets(
   const std::size_t dmap1_size = dmap1.map().extent(1);
   const int num_rows = bs0 * 2 * dmap0_size;
   const int num_cols = bs1 * 2 * dmap1_size;
-  std::vector<std::int32_t> bce0(num_rows);
+  std::vector<std::int32_t> bce0;
+  bce0.reserve(num_rows);
   std::vector<std::int32_t> bce1(num_cols);
+  bce1.reserve(num_cols);
 
   // Temporaries for joint dofmaps
-  std::vector<T> Ae(num_rows * num_cols), be(num_rows);
+  std::vector<T> Ae(num_rows * num_cols);
   std::vector<std::int32_t> dmapjoint0(2 * dmap0_size);
   std::vector<std::int32_t> dmapjoint1(2 * dmap1_size);
   assert(facets0.size() == facets.size());
