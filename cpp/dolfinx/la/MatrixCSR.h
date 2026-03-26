@@ -19,6 +19,26 @@
 #include <utility>
 #include <vector>
 
+// Define requirements on sparsity pattern required for MatrixCSR constructor
+// allowing alternative implentations that can provide these essentials.
+template <typename T>
+concept SparsityImplementation = requires(T sp, int i) {
+  { sp.graph() };
+  requires std::forward_iterator<typename decltype(sp.graph().first)::iterator>;
+  requires std::convertible_to<std::int32_t,
+                               typename decltype(sp.graph().first)::value_type>;
+  requires std::forward_iterator<
+      typename decltype(sp.graph().second)::iterator>;
+  requires std::convertible_to<
+      std::int64_t, typename decltype(sp.graph().second)::value_type>;
+
+  { sp.block_size(i) } -> std::same_as<int>;
+  {
+    sp.index_map(i)
+  } -> std::same_as<std::shared_ptr<const dolfinx::common::IndexMap>>;
+  { sp.column_index_map() } -> std::same_as<dolfinx::common::IndexMap>;
+};
+
 namespace dolfinx::la
 {
 /// @brief Modes for representing block structured matrices.
@@ -176,7 +196,8 @@ public:
   /// matrix entry is individual. In the "expanded" case, the sparsity
   /// is expanded for every entry in the block, and the block size of
   /// the matrix is set to `(1, 1)`.
-  MatrixCSR(const SparsityPattern& p, BlockMode mode = BlockMode::compact);
+  template <SparsityImplementation T>
+  MatrixCSR(const T& p, BlockMode mode = BlockMode::compact);
 
   /// Move constructor
   /// @todo Check handling of MPI_Request
@@ -565,12 +586,15 @@ private:
   container_type _ghost_value_data_in;
 };
 //-----------------------------------------------------------------------------
-template <class U, class V, class W, class X>
-MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
+
+/** @copydoc MatrixCSR::MatrixCSR */
+template <typename U, typename V, typename W, typename X>
+template <SparsityImplementation SparsityType>
+MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityType& p, BlockMode mode)
     : _index_maps({p.index_map(0),
                    std::make_shared<common::IndexMap>(p.column_index_map())}),
       _block_mode(mode), _bs({p.block_size(0), p.block_size(1)}),
-      _data(p.num_nonzeros() * _bs[0] * _bs[1], 0),
+      _data(p.graph().first.size() * _bs[0] * _bs[1], 0),
       _cols(p.graph().first.begin(), p.graph().first.end()),
       _row_ptr(p.graph().second.begin(), p.graph().second.end()),
       _comm(MPI_COMM_NULL)

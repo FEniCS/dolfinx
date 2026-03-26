@@ -38,10 +38,18 @@ fem::DofMap fem::create_dofmap(
 {
   // Create required mesh entities
   const int D = topology.dim();
-  for (int d = 0; d < D; ++d)
+
+  const auto& entity_dofs = layout.entity_dofs_all();
+  for (int dim = 1; dim < topology.dim(); ++dim)
   {
-    if (layout.num_entity_dofs(d) > 0)
-      topology.create_entities(d);
+    // Accumulate count of all dofs on this dimension
+    int dim_sum
+        = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
+                          [](int c, auto v) { return c + v.size(); });
+
+    spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
+    if (dim_sum > 0)
+      topology.create_entities(dim);
   }
 
   auto [_index_map, bs, dofmaps]
@@ -79,10 +87,20 @@ std::vector<fem::DofMap> fem::create_dofmaps(
   assert(layouts.size() == topology.entity_types(D).size());
 
   // Create required mesh entities
-  for (std::int32_t d = 0; d < D; ++d)
+  for (std::size_t i = 0; i < layouts.size(); ++i)
   {
-    if (layouts.front().num_entity_dofs(d) > 0)
-      topology.create_entities(d);
+    const auto& entity_dofs = layouts[i].entity_dofs_all();
+    for (int dim = 1; dim < topology.dim(); ++dim)
+    {
+      // Accumulate count of all dofs on this dimension
+      int dim_sum
+          = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
+                            [](int c, auto v) { return c + v.size(); });
+
+      spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
+      if (dim_sum > 0)
+        topology.create_entities(dim);
+    }
   }
 
   auto [_index_map, bs, dofmaps]
@@ -154,6 +172,9 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   case IntegralType::vertex:
     dim = 0;
     break;
+  case IntegralType::ridge:
+    dim = tdim - 2;
+    break;
   default:
     throw std::runtime_error(
         "Cannot compute integration domains. Integral type not supported.");
@@ -199,22 +220,6 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     entity_data.insert(entity_data.begin(), entities.begin(), entities.end());
     break;
   }
-  case IntegralType::exterior_facet:
-  {
-    auto [f_to_c, c_to_f] = get_connectivities(tdim - 1);
-    // Create list of tagged boundary facets
-    const std::vector bfacets = mesh::exterior_facet_indices(topology);
-    std::vector<std::int32_t> facets;
-    std::ranges::set_intersection(entities, bfacets,
-                                  std::back_inserter(facets));
-    for (auto f : facets)
-    {
-      // Get the facet as a pair of (cell, local facet)
-      auto facet = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
-      entity_data.insert(entity_data.end(), facet.begin(), facet.end());
-    }
-    break;
-  }
   case IntegralType::interior_facet:
   {
     auto [f_to_c, c_to_f] = get_connectivities(tdim - 1);
@@ -248,17 +253,22 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     }
     break;
   }
+  case IntegralType::exterior_facet:
   case IntegralType::vertex:
+  case IntegralType::ridge:
   {
-    auto [v_to_c, c_to_v] = get_connectivities(0);
-    for (auto vertex : entities)
+    auto [e_to_c, c_to_e] = get_connectivities(dim);
+    for (auto entity : entities)
     {
-      std::array<std::int32_t, 2> pair = impl::get_cell_vertex_pairs<1>(
-          vertex, v_to_c->links(vertex), *c_to_v);
-
+      std::array<std::int32_t, 2> pair = impl::get_cell_entity_pairs<1>(
+          entity, e_to_c->links(entity), *c_to_e);
       entity_data.insert(entity_data.end(), pair.begin(), pair.end());
     }
+    break;
   }
+  default:
+    throw std::runtime_error(
+        "Cannot compute integration domains. Integral type not supported.");
   }
 
   return entity_data;

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(dolfinx_nanobind LANGUAGES CXX)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(WIN32)
   # Windows requires all symbols to be manually exported. This flag exports all
@@ -10,7 +11,7 @@ endif(WIN32)
 
 find_package(
   Python
-  COMPONENTS Interpreter Development ${SKBUILD_SABI_COMPONENT}
+  COMPONENTS Interpreter Development.Module ${SKBUILD_SABI_COMPONENT}
   REQUIRED
 )
 
@@ -37,10 +38,14 @@ find_package(nanobind CONFIG REQUIRED)
 enable_language(C)
 
 find_package(DOLFINX REQUIRED CONFIG)
+set_target_properties(dolfinx PROPERTIES SYSTEM OFF)
 
 if(DOLFINX_FOUND)
   message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 endif()
+
+# SuperLU_DIST Python interface requires the superlu_defs.h header for int_t.
+pkg_search_module(SUPERLU_DIST OPTIONAL IMPORTED_TARGET superlu_dist)
 
 # Create the binding library nanobind handles its own calls to
 # target_link_libraries
@@ -67,20 +72,54 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
+target_include_directories(cpp PRIVATE ${SUPERLU_DIST_INCLUDE_DIRS})
 
 if(NANOBIND_SABI)
   # mpi4py and petsc4py use generated Cython headers so tell
   # them that the limited API is in use.
   target_compile_definitions(cpp PRIVATE MPI4PY_LIMITED_API=1)
-  # Needing to set CYTHON_COMPILING_IN_LIMITED_API is a bug in 
+  # Needing to set CYTHON_COMPILING_IN_LIMITED_API is a bug in
   # Cython-generated API headers, should become unnecessary with
   # mpi4py/petsc4py releases published using Cython >= 3.1.4
   # https://github.com/cython/cython/issues/7108
   target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
 endif()
 
-# Add strict compiler flags for Developer build type
-set(DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
+# Check for some compiler flags
+include(CheckCXXCompilerFlag)
+
+# Add some strict compiler checks
+check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
+
+if(HAVE_PEDANTIC)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
+endif()
+
+# Debug flags
+check_cxx_compiler_flag(-g HAVE_DEBUG)
+if(HAVE_DEBUG)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -g)
+endif()
+
+# Optimisation
+check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
+if(HAVE_O2_OPTIMISATION)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -O2)
+endif()
+
+# Enable C++ standard library debugging
+include(CheckCXXSymbolExists)
+
+check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
+check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
+
+if(LIBCPP)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG)
+endif()
+
+if(GLIBCXX)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS _GLIBCXX_ASSERTIONS)
+endif()
 
 # Turn off some checks in gcc12 and gcc13 due to false positives with
 # the fmt library
@@ -91,12 +130,12 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
   list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
 endif()
 
-# Set 'Developer' build type flags
 target_compile_options(
   cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_FLAGS}>
 )
-
-set(CMAKE_CXX_EXTENSIONS OFF)
+target_compile_definitions(
+  cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS}>
+)
 target_compile_definitions(cpp PRIVATE cxx_std_20)
 
 if(ENABLE_CLANG_TIDY)

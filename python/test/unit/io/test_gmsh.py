@@ -21,7 +21,8 @@ import pytest
 )
 def test_physical_tags(marker_mode):
     """Test that we catch partially tagged meshes and not tagged
-    meshes as errors."""
+    meshes as errors.
+    """
     gmsh = pytest.importorskip("gmsh")
 
     from dolfinx.io import gmsh as gmshio

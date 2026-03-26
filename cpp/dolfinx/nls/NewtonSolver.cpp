@@ -23,7 +23,7 @@ namespace
 /// @param solver The Newton solver
 /// @param r The residual vector
 /// @return The pair `(residual norm, converged)`, where `converged` is
-/// and true` if convergence achieved
+/// and `true` if convergence achieved
 std::pair<double, bool> converged(const nls::petsc::NewtonSolver& solver,
                                   const Vec r)
 {

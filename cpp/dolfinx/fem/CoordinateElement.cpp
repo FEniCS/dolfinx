@@ -113,8 +113,8 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   using mdspan4_t = md::mdspan<T, md::dextents<std::size_t, 4>>;
 
   const std::array<std::size_t, 4> bsize = _element->tabulate_shape(1, 1);
-  std::vector<T> basis_b(
-      std::reduce(bsize.begin(), bsize.end(), 1, std::multiplies{}));
+  std::vector<T> basis_b(std::reduce(bsize.begin(), bsize.end(), std::size_t(1),
+                                     std::multiplies{}));
   mdspan4_t basis(basis_b.data(), bsize);
   std::vector<T> phi(basis.extent(2));
   for (std::size_t p = 0; p < num_points; ++p)

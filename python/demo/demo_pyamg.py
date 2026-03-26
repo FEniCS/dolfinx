@@ -10,11 +10,14 @@
 
 # # Solve the Poisson and linearised elasticity equations using pyamg
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_pyamg.py>`
+# * {download}`Jupyter notebook <./demo_pyamg.ipynb>`
+# ```
 # The demo illustrates solving the Poisson and linearised elasticity
 # equations with using algebraic multigrid from
-# [pyamg](https://github.com/pyamg/pyamg). It is implemented in
-# {download}`demo_pyamg.py`.
-#
+# [pyamg](https://github.com/pyamg/pyamg).
 # pyamg is not MPI-parallel, therefore this demo runs in serial only.
 
 # +
@@ -24,7 +27,6 @@ from mpi4py import MPI
 
 import numpy as np
 import numpy.typing as npt
-import pyamg
 
 import ufl
 from dolfinx import fem, io
@@ -38,6 +40,13 @@ from dolfinx.fem import (
     locate_dofs_topological,
 )
 from dolfinx.mesh import CellType, create_box, locate_entities_boundary
+
+try:
+    import pyamg
+except ImportError:
+    print("This demo requires pyamg.")
+    exit(0)
+
 
 if MPI.COMM_WORLD.size > 1:
     print("This demo works only in serial.")
@@ -54,7 +63,6 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
         solver_type: pyamg solver type, either "ruge_stuben" or
             "smoothed_aggregation"
     """
-
     real_type = np.real(dtype(0)).dtype
     mesh = create_box(
         comm=MPI.COMM_WORLD,
@@ -66,14 +74,15 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
 
     V = functionspace(mesh, ("Lagrange", 1))
 
+    tdim = mesh.topology.dim
+    fdim = tdim - 1
     facets = locate_entities_boundary(
         mesh,
-        dim=(mesh.topology.dim - 1),
+        dim=fdim,
         marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 3.0),
     )
 
-    tdim = mesh.topology.dim
-    dofs = locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
+    dofs = locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
     bc = dirichletbc(value=dtype(0), dofs=dofs, V=V)
 
@@ -153,8 +162,9 @@ def nullspace_elasticty(Q: fem.FunctionSpace) -> list[np.ndarray]:
 
 # +
 def elasticity_problem(dtype) -> None:
-    """Solve a 3D linearised elasticity problem using a smoothed
-    aggregation algebraic multigrid method.
+    """Solve a 3D linearised elasticity problem using AMG.
+
+    Uses a smoothed aggregation algebraic multigrid method.
 
     Args:
         dtype: Scalar type to use.
@@ -167,9 +177,11 @@ def elasticity_problem(dtype) -> None:
         dtype=dtype,
     )
 
+    tdim = mesh.topology.dim
+    fdim = tdim - 1
     facets = locate_entities_boundary(
         mesh,
-        dim=(mesh.topology.dim - 1),
+        dim=fdim,
         marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 3.0),
     )
 
@@ -185,8 +197,7 @@ def elasticity_problem(dtype) -> None:
     λ = E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
 
     def σ(v):
-        """Return an expression for the stress σ given a displacement
-        field"""
+        """Expression for the stress σ given a displacement field."""
         return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(
             len(v)
         )
@@ -196,8 +207,7 @@ def elasticity_problem(dtype) -> None:
     a = form(ufl.inner(σ(u), ufl.grad(v)) * ufl.dx, dtype=dtype)
     L = form(ufl.inner(f, v) * ufl.dx, dtype=dtype)
 
-    tdim = mesh.topology.dim
-    dofs = locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
+    dofs = locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
     bc = dirichletbc(np.zeros(3, dtype=dtype), dofs, V=V)
 
     A = assemble_matrix(a, bcs=[bc]).to_scipy()
@@ -226,15 +236,17 @@ def elasticity_problem(dtype) -> None:
 
 
 # Solve Poission problem with different scalar types
+
 poisson_problem(np.float32, "ruge_stuben")
 poisson_problem(np.float64, "ruge_stuben")
 
 # For complex, pyamg requires smoothed aggregation multigrid
+
 if not sys.platform.startswith("win32"):
     poisson_problem(np.complex64, "smoothed_aggregation")
     poisson_problem(np.complex128, "smoothed_aggregation")
 
 # Solve elasticity problem with different scalar types
+
 elasticity_problem(np.float32)
 elasticity_problem(np.float64)
-# -

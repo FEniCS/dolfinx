@@ -10,12 +10,16 @@
 
 # # Poisson equation
 #
-# This demo is implemented in {download}`demo_poisson.py`. It
-# illustrates how to:
+# This demo illustrates how to:
 #
 # - Create a {py:class}`function space <dolfinx.fem.FunctionSpace>`
 # - Solve a linear partial differential equation
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_poisson.py>`
+# * {download}`Jupyter notebook <./demo_poisson.ipynb>`
+# ```
 # ## Equation and problem definition
 #
 # For a domain $\Omega \subset \mathbb{R}^n$ with boundary $\partial
@@ -66,6 +70,8 @@
 # The modules that will be used are imported:
 
 # +
+from pathlib import Path
+
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType  # type: ignore
 
@@ -99,7 +105,9 @@ V = fem.functionspace(msh, ("Lagrange", 1))
 # <dolfinx.fem.functionspace>` is a tuple `(family, degree)`, where
 # `family` is the finite element family, and `degree` specifies the
 # polynomial degree. In this case `V` is a space of continuous Lagrange
-# finite elements of degree 1.
+# finite elements of degree 1. For further details of how one can specify
+# finite elements as tuples, see {py:class}`ElementMetaData
+# <dolfinx.fem.ElementMetaData>`.
 #
 # To apply the Dirichlet boundary conditions, we find the mesh facets
 # (entities of topological co-dimension 1) that lie on the boundary
@@ -108,9 +116,11 @@ V = fem.functionspace(msh, ("Lagrange", 1))
 # with a 'marker' function that returns `True` for points `x` on the
 # boundary and `False` otherwise.
 
+tdim = msh.topology.dim
+fdim = tdim - 1
 facets = mesh.locate_entities_boundary(
     msh,
-    dim=(msh.topology.dim - 1),
+    dim=fdim,
     marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0),
 )
 
@@ -118,7 +128,7 @@ facets = mesh.locate_entities_boundary(
 # boundary facets using {py:func}`locate_dofs_topological
 # <dolfinx.fem.locate_dofs_topological>`:
 
-dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
 # {py:class}`DirichletBC <dolfinx.fem.DirichletBC>` class that
@@ -144,6 +154,7 @@ L = ufl.inner(f, v) * ufl.dx + ufl.inner(g, v) * ufl.ds
 # case an LU solver is used, and we ask that PETSc throws an error
 # if the solver does not converge. The {py:func}`solve
 # <dolfinx.fem.petsc.LinearProblem.solve>` computes the solution.
+
 # +
 problem = LinearProblem(
     a,
@@ -157,10 +168,13 @@ assert isinstance(uh, fem.Function)
 # -
 
 # The solution can be written to a {py:class}`XDMFFile
-# <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt:
+# <dolfinx.io.XDMFFile>` file visualization with [ParaView](https://www.paraview.org/)
+# or [VisIt](https://visit-dav.github.io/visit-website/):
 
 # +
-with io.XDMFFile(msh.comm, "out_poisson/poisson.xdmf", "w") as file:
+out_folder = Path("out_poisson")
+out_folder.mkdir(parents=True, exist_ok=True)
+with io.XDMFFile(msh.comm, out_folder / "poisson.xdmf", "w") as file:
     file.write_mesh(msh)
     file.write_function(uh)
 # -
@@ -180,8 +194,7 @@ try:
     warped = grid.warp_by_scalar()
     plotter.add_mesh(warped)
     if pyvista.OFF_SCREEN:
-        pyvista.start_xvfb(wait=0.1)
-        plotter.screenshot("uh_poisson.png")
+        plotter.screenshot(out_folder / "uh_poisson.png")
     else:
         plotter.show()
 except ModuleNotFoundError:

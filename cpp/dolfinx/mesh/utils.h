@@ -227,20 +227,23 @@ using CellReorderFunction = std::function<std::vector<std::int32_t>(
 /// TODO: offload to cpp?
 inline auto
 create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
-                            std::optional<std::int32_t> max_facet_to_cell_links
-                            = 2)
+                            std::optional<std::int32_t> max_facet_to_cell_links)
 {
-  /// brief Function that computes the process boundary vertices of a mesh
-  /// during creation.
-  /// param[in] celltypes List of celltypes in mesh.
-  /// param[in] doflayouts List of DOF layouts in mesh.
-  /// param[in] ghost_owners List of ghost owner per cell per celltype.
-  /// param[out] cells List of cells per celltpye. Reorderd during call.
-  /// param[out] cells_v List of vertices (no higher order nodes) of cell per
-  /// celltype. Reordered during call.
-  /// param[out] original_idx Contains the permutation applied to the cells per
-  /// celltype.
-  /// return Boundary vertices (for all cell types).
+  /// @cond
+  /// @brief Function that computes the process boundary vertices of a
+  /// mesh during creation.
+  ///
+  /// @param[in] celltypes List of celltypes in mesh.
+  /// @param[in] doflayouts List of DOF layouts in mesh.
+  /// @param[in] ghost_owners List of ghost owner per cell per celltype.
+  /// @param[out] cells List of cells per celltpye. Reorderd during
+  /// call.
+  /// @param[out] cells_v List of vertices (no higher order nodes) of
+  /// cell per celltype. Reordered during call.
+  /// @param[out] original_idx Contains the permutation applied to the
+  /// cells per celltype.
+  /// @return Boundary vertices (for all cell types).
+  /// @endcond
   return [&, max_facet_to_cell_links](
              const std::vector<CellType>& celltypes,
              const std::vector<fem::ElementDofLayout>& doflayouts,
@@ -860,10 +863,11 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto topology = mesh.topology();
   assert(topology);
   CellType cell_type = topology->cell_type();
-  if (cell_type == CellType::prism and dim == 2)
+  if ((cell_type == CellType::prism or cell_type == CellType::pyramid)
+      and dim == 2)
   {
-    throw std::runtime_error(
-        "mesh::entities_to_geometry for prism cells not yet supported.");
+    throw std::runtime_error("mesh::entities_to_geometry for prism/pyramid "
+                             "cell facets not yet supported.");
   }
 
   const int tdim = topology->dim();
@@ -873,7 +877,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   // Get the DOF layout and the number of DOFs per entity
   const fem::CoordinateElement<T>& coord_ele = geometry.cmap();
   const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
-  const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
+  const std::size_t num_entity_dofs = layout.entity_closure_dofs(dim, 0).size();
   std::vector<std::int32_t> entity_xdofs;
   entity_xdofs.reserve(entities.size() * num_entity_dofs);
   std::array<std::size_t, 2> eshape{entities.size(), num_entity_dofs};
@@ -954,17 +958,32 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// @brief Create a function that computes destination rank for mesh
 /// cells on this rank by applying the default graph partitioner to the
 /// dual graph of the mesh.
+///
 /// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
 /// @param[in] partfn Partitioning function for distributing cells
 /// across MPI ranks.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet needs to be connected to to be considered *matched* (not on boundary
-/// for non-branching meshes).
+/// facet needs to be connected to to be considered *matched* (not on
+/// boundary for non-branching meshes).
 /// @return Function that computes the destination ranks for each cell.
-CellPartitionFunction create_cell_partitioner(
-    mesh::GhostMode ghost_mode = mesh::GhostMode::none,
-    const graph::partition_fn& partfn = &graph::partition_graph,
-    std::optional<std::int32_t> max_facet_to_cell_links = 2);
+CellPartitionFunction
+create_cell_partitioner(mesh::GhostMode ghost_mode,
+                        const graph::partition_fn& partfn,
+                        std::optional<std::int32_t> max_facet_to_cell_links);
+
+/// @brief Create a function that computes destination rank for mesh
+/// cells on this rank by applying the default graph partitioner to the
+/// dual graph of the mesh.
+///
+/// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
+/// @param[in] max_facet_to_cell_links Bound on the number of cells a
+/// facet needs to be connected to to be considered *matched* (not on
+/// boundary for non-branching meshes).
+/// @return Function that computes the destination ranks for each cell.
+CellPartitionFunction
+create_cell_partitioner(mesh::GhostMode ghost_mode,
+                        std::optional<std::int32_t> max_facet_to_cell_links
+                        = 2);
 
 /// @brief Compute incident entities.
 /// @param[in] topology The topology.
@@ -1153,16 +1172,23 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                          [](auto& c) { return std::span(c); });
   Topology topology
       = create_topology(comm, celltypes, cells1_v_span, original_idx1_span,
-                        ghost_owners_span, boundary_v);
+                        ghost_owners_span, boundary_v, 0);
 
   // Create connectivities required higher-order geometries for creating
   // a Geometry object
   for (int i = 0; i < num_cell_types; ++i)
   {
-    for (int e = 1; e < topology.dim(); ++e)
+    const auto& entity_dofs = doflayouts[i].entity_dofs_all();
+    for (int dim = 1; dim < topology.dim(); ++dim)
     {
-      if (doflayouts[i].num_entity_dofs(e) > 0)
-        topology.create_entities(e);
+      // Accumulate count of all dofs on this dimension
+      int dim_sum
+          = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
+                            [](int c, auto v) { return c + v.size(); });
+
+      spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
+      if (dim_sum > 0)
+        topology.create_entities(dim);
     }
 
     if (elements[i].needs_dof_permutations())
@@ -1236,7 +1262,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::optional<std::int32_t> max_facet_to_cell_links = 2,
+    std::optional<std::int32_t> max_facet_to_cell_links,
     const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
@@ -1279,9 +1305,10 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
   }
   else
   {
-    return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
-                       comm, x, xshape, create_cell_partitioner(ghost_mode),
-                       max_facet_to_cell_links);
+    return create_mesh(
+        comm, comm, std::vector{cells}, std::vector{elements}, comm, x, xshape,
+        create_cell_partitioner(ghost_mode, max_facet_to_cell_links),
+        max_facet_to_cell_links);
   }
 }
 

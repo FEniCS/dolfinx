@@ -194,6 +194,10 @@ public:
   std::string read_information(const std::string& name,
                                const std::string& xpath = "/Xdmf/Domain/");
 
+  /// Flush the output to disk. Output is not guaranteed to be written fully to
+  /// disk with a 'write' call.
+  void flush();
+
   /// Get the MPI communicator
   /// @return The MPI communicator for the file object
   MPI_Comm comm() const;

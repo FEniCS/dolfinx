@@ -33,8 +33,10 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // FIXME
   mesh::CellType cell_type = topology.cell_type();
 
-  if (tdim == 2 and cell_type == mesh::CellType::prism)
-    throw std::runtime_error("More work needed for prism cell");
+  if (tdim == 2
+      and (cell_type == mesh::CellType::prism
+           or cell_type == mesh::CellType::pyramid))
+    throw std::runtime_error("Prism/pyramid cell facet topology not supported");
 
   // Get entity 'cell' type
   const mesh::CellType entity_cell_type
@@ -44,7 +46,8 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
       = geometry.cmap().create_dof_layout();
 
   // Get number of nodes per entity
-  const int num_nodes_per_entity = cmap_dof_layout.num_entity_closure_dofs(dim);
+  const int num_nodes_per_entity
+      = cmap_dof_layout.entity_closure_dofs(dim, 0).size();
 
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type

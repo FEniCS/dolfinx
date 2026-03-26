@@ -10,10 +10,15 @@
 
 # # Parallel communication pattern analysis
 #
-# This demo is implemented in {download}`demo_comm-pattern.py`. It
-# illustrates how build a graph that represents a parallel communication
-# pattern and how to analyse the parallel communication pattern using
-# [NetworkX](https://networkx.org/).
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_comm-pattern.py>`
+# * {download}`Jupyter notebook <./demo_comm-pattern.ipynb>`
+# ```
+# This demo illustrates how to:
+# - Build a graph that represents a parallel communication pattern
+# - Analyse the parallel communication pattern using
+#   [NetworkX](https://networkx.org/).
 #
 # The layout of a distributed array across processes (MPI ranks) is
 # described in DOLFINx by an {py:class}`IndexMap
@@ -87,10 +92,11 @@ def plot_graph(G: nx.MultiGraph, egde_labels=False):
 
 # +
 def plot_bar(G: nx.MultiGraph):
-    """Plot bars charts with the degree (number of 'out-edges') and the
-    outward data volume for each rank.
-    """
+    """Plot bars charts with the degree and weights.
 
+    Degree is the number of 'out-edges' and the weights are the outward
+    data volume for each rank.
+    """
     ranks = range(G.order())
     num_edges = [len(nbrs) for _, nbrs in G.adj.items()]
     weights = [sum(data["weight"] for nbr, data in nbrs.items()) for _, nbrs in G.adj.items()]
@@ -145,6 +151,7 @@ comm_graph = graph.comm_graph(V.dofmap.index_map)
 
 # +
 def print_stats(G):
+    """Print communication graph statistics."""
     print("Communication graph data:")
     print(f"  Num edges: {G.size()}")
     print(f"  Num local: {G.size('local')}")

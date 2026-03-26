@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for the function library"""
+"""Unit tests for the function library."""
 
 from mpi4py import MPI
 
@@ -43,7 +43,8 @@ def test_facet_area1D():
 )
 def test_facet_area(mesh_factory):
     """Compute facet area of cell. UFL currently only supports affine
-    cells for this computation"""
+    cells for this computation.
+    """
     # NOTE: UFL only supports facet area calculations of affine cells
     func, args, exact_area = mesh_factory
     mesh = func(*args)

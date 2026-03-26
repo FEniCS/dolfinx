@@ -30,7 +30,7 @@ from ufl import derivative, dx, inner
 
 
 def nest_matrix_norm(A):
-    """Return norm of a MatNest matrix"""
+    """Return norm of a MatNest matrix."""
     assert A.getType() == "nest"
     norm = 0.0
     nrows, ncols = A.getNestSize()
@@ -45,10 +45,14 @@ def nest_matrix_norm(A):
 
 @pytest.mark.petsc4py
 class TestNLSPETSc:
+    """Test nonlinear solver functionality with PETSc."""
+
     def test_matrix_assembly_block_nl(self):
-        """Test assembly of block matrices and vectors into (a) monolithic
-        blocked structures, PETSc Nest structures, and monolithic structures
-        in the nonlinear setting."""
+        """Test assembly of block matrices and vectors.
+
+        Tests monolithic blocked structures, PETSc Nest structures, and
+        monolithic structures in the nonlinear setting.
+        """
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import (
@@ -109,7 +113,7 @@ class TestNLSPETSc:
         L_block = form([F0, F1])
 
         def blocked():
-            """Monolithic blocked"""
+            """Monolithic blocked."""
             x = create_vector([V0, V1], kind="mpi")
 
             assign((u, p), x)
@@ -135,7 +139,7 @@ class TestNLSPETSc:
 
         # Nested (MatNest)
         def nested():
-            """Nested (MatNest)"""
+            """Nested (MatNest)."""
             x = create_vector([V0, V1], kind=PETSc.Vec.Type.NEST)
 
             assign((u, p), x)
@@ -159,7 +163,7 @@ class TestNLSPETSc:
             return Anorm, bnorm
 
         def monolithic():
-            """Monolithic version"""
+            """Monolithic version."""
             E = mixed_element([P0, P1])
             W = functionspace(mesh, E)
             dU = ufl.TrialFunction(W)
@@ -207,7 +211,8 @@ class TestNLSPETSc:
 
     def test_assembly_solve_block_nl(self):
         """Solve a two-field nonlinear diffusion like problem with block
-        matrix approaches and test that solution is the same."""
+        matrix approaches and test that solution is the same.
+        """
         from petsc4py import PETSc
 
         import dolfinx.fem.petsc
@@ -261,7 +266,7 @@ class TestNLSPETSc:
         F, J = form(F), form(J)
 
         def blocked_solve():
-            """Blocked version
+            """Blocked version.
 
             Illustrates how to use high-level class and then drop down to SNES
             for options and solve.
@@ -305,7 +310,7 @@ class TestNLSPETSc:
             return xnorm
 
         def nested_solve():
-            """Nested version
+            """Nested version.
 
             Illustrates how to work directly with the SNES object (no NonlinearProblem).
             """
@@ -340,7 +345,7 @@ class TestNLSPETSc:
             return xnorm
 
         def monolithic_solve():
-            """Monolithic version
+            """Monolithic version.
 
             Uses high level NonlinearProblem class only.
             """
@@ -420,11 +425,11 @@ class TestNLSPETSc:
         P1 = functionspace(mesh, ("Lagrange", 1))
 
         def boundary0(x):
-            """Define boundary x = 0"""
+            """Define boundary x = 0."""
             return np.isclose(x[0], 0.0)
 
         def boundary1(x):
-            """Define boundary x = 1"""
+            """Define boundary x = 1."""
             return np.isclose(x[0], 1.0)
 
         def initial_guess_u(x):
@@ -466,7 +471,7 @@ class TestNLSPETSc:
         P = [[J[0][0], None], [None, inner(dp, q) * dx]]
 
         def blocked():
-            """Blocked and monolithic"""
+            """Blocked and monolithic."""
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
             petsc_options = {
@@ -492,7 +497,7 @@ class TestNLSPETSc:
             return Jnorm, Fnorm, xnorm
 
         def nested():
-            """Blocked and nested
+            """Blocked and nested.
 
             Shows how to setup some SNES options programatically.
             """
@@ -525,7 +530,7 @@ class TestNLSPETSc:
             return Jnorm, Fnorm, xnorm
 
         def monolithic():
-            """Monolithic"""
+            """Monolithic."""
             P2_el = element(
                 "Lagrange",
                 mesh.basix_cell(),

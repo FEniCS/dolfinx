@@ -392,7 +392,7 @@ def test_expression_comm(dtype):
 
 
 def compute_exterior_facet_entities(mesh, facets):
-    """Helper function to compute (cell, local_facet_index) pairs for exterior facets"""
+    """Helper function to compute (cell, local_facet_index) pairs for exterior facets."""
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim - 1, tdim)
     mesh.topology.create_connectivity(tdim, tdim - 1)
@@ -491,7 +491,8 @@ def test_facet_expression(dtype):
 def test_rank1_blocked():
     """Check that a test function with tensor shape is unrolled as
     (num_cells, num_points, num_dofs, bs) when evaluated as an
-    expression."""
+    expression.
+    """
     mesh = dolfinx.mesh.create_unit_square(
         MPI.COMM_SELF, 3, 4, cell_type=dolfinx.mesh.CellType.quadrilateral
     )
