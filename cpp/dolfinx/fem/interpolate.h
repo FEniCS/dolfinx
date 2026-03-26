@@ -1170,7 +1170,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// @param cells Cells indices relative to the mesh associated with `u`
 /// that will be interpolated into.
 /// @param[in] tol Tolerance for convergence in Newton method for non-affine
-/// pullbacks. If the mesh geometr is affine this argument is ignored.
+/// pullbacks. If the mesh geometry is affine this argument is ignored.
 /// @param[in] maxit Maximum number of Newton iterations in non-affine
 /// pull-back. If the mesh geometry is affine this argument is ignored.
 /// @param interpolation_data Data required for associating the interpolation

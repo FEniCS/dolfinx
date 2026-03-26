@@ -425,7 +425,7 @@ public:
   /// @param[in] cells Cells in the mesh associated with `this` to
   /// interpolate into.
   /// @param[in] tol Tolerance for convergence in Newton method for non-affine
-  /// pullbacks. If the mesh geometr is affine this argument is ignored.
+  /// pullbacks. If the mesh geometry is affine this argument is ignored.
   /// @param[in] maxit Maximum number of Newton iterations in non-affine
   /// pull-back. If the mesh geometry is affine this argument is ignored.
   /// @param[in] interpolation_data Data required for associating the
@@ -451,7 +451,7 @@ public:
   /// with the correct size. Storage is row-major.
   /// @param[in] ushape Shape of `u`.
   /// @param[in] tol Tolerance for convergence in Newton method for non-affine
-  /// pullbacks. If the mesh geometr is affine this argument is ignored.
+  /// pullbacks. If the mesh geometry is affine this argument is ignored.
   /// @param[in] maxit Maximum number of Newton iterations in non-affine
   /// pull-back. If the mesh geometry is affine this argument is ignored.
   void eval(std::span<const geometry_type> x, std::array<std::size_t, 2> xshape,
