@@ -352,6 +352,72 @@ void assemble_interior_facets(
   }
 }
 
+/// @brief Apply boundary condition lifting using the matrix assembler.
+///
+/// @tparam T Scalar type.
+/// @tparam U Geometry scalar type.
+/// @tparam BS0 Compile-time block size for test function dofmap. Use -1
+/// for runtime block size.
+/// @tparam BS1 Compile-time block size for trial function dofmap. Use -1
+/// for runtime block size.
+/// @param[in,out] b Vector to modify.
+/// @param[in] a The bilinear form.
+/// @param[in] constants Constants that appear in `a`.
+/// @param[in] coefficients Coefficients that appear in `a`.
+/// @param[in] bc_values1 The boundary condition values.
+/// @param[in] bc_markers1 Marker to identify which DOFs have boundary
+/// conditions applied.
+/// @param[in] x0 Vector used in the lifting.
+/// @param[in] alpha Scaling to apply.
+template <dolfinx::scalar T, std::floating_point U, int BS0 = -1, int BS1 = -1,
+          typename V>
+  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
+void lift_bc_impl(
+    V&& b, const Form<T, U>& a, std::span<const T> constants,
+    const std::map<std::pair<IntegralType, int>,
+                   std::pair<std::span<const T>, int>>& coefficients,
+    std::span<const T> bc_values1, std::span<const std::int8_t> bc_markers1,
+    std::span<const T> x0, T alpha)
+{
+  // Deduce runtime block sizes as fallback when compile-time sizes not given
+  const int bs0 = BS0 > 0 ? BS0 : a.function_spaces()[0]->dofmap()->bs();
+  const int bs1 = BS1 > 0 ? BS1 : a.function_spaces()[1]->dofmap()->bs();
+
+  auto lifting_fn
+      = [&b, &bc_values1, &bc_markers1, &x0, bs0, bs1,
+         alpha](std::span<const std::int32_t> rows,
+                std::span<const std::int32_t> cols, std::span<const T> Ae)
+  {
+    const std::size_t nc = cols.size() * bs1;
+    for (std::size_t i = 0; i < cols.size(); ++i)
+    {
+      for (int k = 0; k < bs1; ++k)
+      {
+        const std::int32_t ii = cols[i] * bs1 + k;
+        if (bc_markers1[ii])
+        {
+          const T x_bc = bc_values1[ii];
+          const T _x0 = x0.empty() ? 0 : x0[ii];
+          for (std::size_t j = 0; j < rows.size(); ++j)
+          {
+            for (int m = 0; m < bs0; ++m)
+            {
+              const std::int32_t jj = rows[j] * bs0 + m;
+              b[jj] -= Ae[(j * bs0 + m) * nc + (i * bs1 + k)] * alpha
+                       * (x_bc - _x0);
+            }
+          }
+        }
+      }
+    }
+  };
+
+  // Use BCMode=true so the kernel is only called on cells that have
+  // BC-constrained DOFs in the column space
+  assemble_matrix<T, U, true>(lifting_fn, a, constants, coefficients, {},
+                              bc_markers1);
+}
+
 /// Modify RHS vector to account for boundary condition such that:
 ///
 /// b <- b - alpha * A.(x_bc - x0)
@@ -385,71 +451,20 @@ void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
 
   spdlog::debug("lifting: bs0={}, bs1={}", bs0, bs1);
 
-  // Iterate over Form with plugin kernel
-
-  if (bs0 > 1 or bs1 > 1)
+  if (bs0 == 1 && bs1 == 1)
   {
-    // Lifting function for non-unit block size
-    auto lifting_fn
-        = [&b, &x0, &bs0, &bs1, &bc_markers1, &bc_values1,
-           &alpha](std::span<const std::int32_t> rows,
-                   std::span<const std::int32_t> cols, std::span<const T> Ae)
-    {
-      std::size_t nc = cols.size() * bs1;
-      for (std::size_t i = 0; i < cols.size(); ++i)
-      {
-        for (int k = 0; k < bs1; ++k)
-        {
-          const std::int32_t ii = cols[i] * bs1 + k;
-          if (bc_markers1[ii])
-          {
-            const T x_bc = bc_values1[ii];
-            const T _x0 = x0.empty() ? 0 : x0[ii];
-            for (std::size_t j = 0; j < rows.size(); ++j)
-            {
-              for (int m = 0; m < bs0; ++m)
-              {
-                const std::int32_t jj = rows[j] * bs0 + m;
-                b[jj] -= Ae[(j * bs0 + m) * nc + (i * bs1 + k)] * alpha
-                         * (x_bc - _x0);
-              }
-            }
-          }
-        }
-      }
-    };
-
-    // Call matrix assembler in BCMode, only executing kernel on cells with BCs
-    // in bc_markers1.
-    assemble_matrix<T, U, true>(lifting_fn, a, constants, coefficients, {},
-                                bc_markers1);
+    lift_bc_impl<T, U, 1, 1>(std::forward<V>(b), a, constants, coefficients,
+                             bc_values1, bc_markers1, x0, alpha);
+  }
+  else if (bs0 == 3 && bs1 == 3)
+  {
+    lift_bc_impl<T, U, 3, 3>(std::forward<V>(b), a, constants, coefficients,
+                             bc_values1, bc_markers1, x0, alpha);
   }
   else
   {
-    // Specialised lifting function for scalar values (bs0=1, bs1=1)
-    auto lifting_fn
-        = [&b, &x0, &bc_markers1, &bc_values1,
-           &alpha](std::span<const std::int32_t> rows,
-                   std::span<const std::int32_t> cols, std::span<const T> Ae)
-    {
-      std::size_t nr = rows.size();
-      std::size_t nc = cols.size();
-      for (std::size_t i = 0; i < nc; ++i)
-      {
-        const std::int32_t ii = cols[i];
-        if (bc_markers1[ii])
-        {
-          const T x_bc = bc_values1[ii];
-          const T _x0 = x0.empty() ? 0 : x0[ii];
-          for (std::size_t j = 0; j < nr; ++j)
-            b[rows[j]] -= Ae[j * nc + i] * alpha * (x_bc - _x0);
-        }
-      }
-    };
-
-    // Use matrix assembler in BCMode to lift RHS.
-    assemble_matrix<T, U, true>(lifting_fn, a, constants, coefficients, {},
-                                bc_markers1);
+    lift_bc_impl<T, U>(std::forward<V>(b), a, constants, coefficients,
+                       bc_values1, bc_markers1, x0, alpha);
   }
 }
 
