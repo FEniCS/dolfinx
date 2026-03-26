@@ -271,7 +271,7 @@ public:
   /// (shape=`(num_points, tdim)`).
   /// @param [in] x Physical coordinates (`shape=(num_points, gdim)`).
   /// @param [in] cell_geometry Cell nodes coordinates
-  /// (`shape=(num_geomtry_nodes, gdim)`).
+  /// (`shape=(num_geometry_nodes, gdim)`).
   /// @param [in,out] scratch Working memory. Create once with
   /// CoordinateElement::create_pull_back_scratch and reuse across calls.
   /// @param [in] tol Tolerance for termination of Newton method.
