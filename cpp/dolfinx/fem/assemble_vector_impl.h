@@ -383,10 +383,11 @@ void lift_bc_impl(
   const int bs0 = BS0 > 0 ? BS0 : a.function_spaces()[0]->dofmap()->bs();
   const int bs1 = BS1 > 0 ? BS1 : a.function_spaces()[1]->dofmap()->bs();
 
+  // Use default [=] capture for bs0, bs1 which may be compile-time
   auto lifting_fn
-      = [&b, &bc_values1, &bc_markers1, &x0, bs0, bs1,
-         alpha](std::span<const std::int32_t> rows,
-                std::span<const std::int32_t> cols, std::span<const T> Ae)
+      = [=, &b, &bc_values1, &bc_markers1,
+         &x0](std::span<const std::int32_t> rows,
+              std::span<const std::int32_t> cols, std::span<const T> Ae)
   {
     const std::size_t nc = cols.size() * bs1;
     for (std::size_t i = 0; i < cols.size(); ++i)
