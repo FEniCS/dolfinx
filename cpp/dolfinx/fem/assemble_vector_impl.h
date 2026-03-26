@@ -504,16 +504,6 @@ void apply_lifting(
     std::vector<T> bc_values1;
     if (a[j] and !bcs1[j].empty())
     {
-      // Extract data from mesh
-      std::shared_ptr<const mesh::Mesh<U>> mesh = a[j]->get().mesh();
-      if (!mesh)
-        throw std::runtime_error("Unable to extract a mesh.");
-      mdspan2_t x_dofmap = mesh->geometry().dofmap();
-      std::span _x = mesh->geometry().x();
-      md::mdspan<const scalar_value_t<T>,
-                 md::extents<std::size_t, md::dynamic_extent, 3>>
-          x(_x.data(), _x.size() / 3, 3);
-
       assert(a[j]->get().function_spaces().at(0));
       auto V1 = a[j]->get().function_spaces()[1];
       assert(V1);
