@@ -235,8 +235,8 @@ public:
 
   /// @brief Scratch memory for pull_back_nonaffine.
   ///
-  /// Allocate once outside the hot loop with create_pull_back_scratch and
-  /// pass by reference to each call of pull_back_nonaffine.
+  /// Allocate once using create_pull_back_scratch and pass by reference to
+  /// each call.
   struct PullBackScratch
   {
     std::vector<T> dphi;
@@ -250,13 +250,13 @@ public:
 
   /// @brief Create scratch memory for pull_back_nonaffine.
   /// @param gdim Geometric dimension.
-  /// @return Scratch object sized for this element and geometry dimension.
+  /// @return Pull-back scratch memory.
   PullBackScratch create_pull_back_scratch(std::size_t gdim) const
   {
     const std::size_t tdim = mesh::cell_dim(this->cell_shape());
-    const std::size_t num_xnodes = _element->dim();
+    const std::size_t num_geometry_nodes = _element->dim();
     const auto bsize = _element->tabulate_shape(1, 1);
-    return {std::vector<T>(tdim * num_xnodes),
+    return {std::vector<T>(tdim * num_geometry_nodes),
             std::vector<T>(tdim),
             std::vector<T>(tdim),
             std::vector<T>(gdim),
@@ -270,8 +270,8 @@ public:
   /// @param [in,out] X The reference coordinates to compute
   /// (shape=`(num_points, tdim)`).
   /// @param [in] x Physical coordinates (`shape=(num_points, gdim)`).
-  /// @param [in] cell_geometry Cell nodes coordinates (`shape=(num_xnodes,
-  /// gdim)`).
+  /// @param [in] cell_geometry Cell nodes coordinates
+  /// (`shape=(num_geomtry_nodes, gdim)`).
   /// @param [in,out] scratch Working memory. Create once with
   /// CoordinateElement::create_pull_back_scratch and reuse across calls.
   /// @param [in] tol Tolerance for termination of Newton method.

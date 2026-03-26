@@ -105,6 +105,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   mdspan2_t<T> K(scratch.K.data(), tdim, gdim);
   using mdspan4_t = md::mdspan<T, md::dextents<std::size_t, 4>>;
   mdspan4_t basis(scratch.basis.data(), _element->tabulate_shape(1, 1));
+  mdspan2_t<const T> Xk_md(Xk.data(), 1, tdim);
 
   for (std::size_t p = 0; p < num_points; ++p)
   {
@@ -112,7 +113,6 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
     int k;
     for (k = 0; k < maxit; ++k)
     {
-      mdspan2_t<const T> Xk_md(Xk.data(), 1, tdim);
       _element->tabulate(1, Xk_md, basis);
 
       // x = cell_geometry * phi
@@ -142,7 +142,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
 
       // Compute norm(dX)
       if (auto dX_squared
-          = std::transform_reduce(dX.begin(), dX.end(), 0.0, std::plus{},
+          = std::transform_reduce(dX.cbegin(), dX.cend(), 0.0, std::plus{},
                                   [](auto v) { return v * v; });
           std::sqrt(dX_squared) < tol)
       {
@@ -150,7 +150,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
       }
     }
 
-    std::copy(Xk.begin(), Xk.end(), X.data_handle() + p * tdim);
+    std::copy(Xk.cbegin(), Xk.cend(), X.data_handle() + p * tdim);
     if (k == maxit)
     {
       throw std::runtime_error(
