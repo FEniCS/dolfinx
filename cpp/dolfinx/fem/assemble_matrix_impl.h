@@ -91,8 +91,6 @@ void assemble_cells_matrix(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
-  std::vector<std::int32_t> bce0;
-  bce0.reserve(ndim0);
   std::vector<std::int32_t> bce1;
   bce1.reserve(ndim1);
 
@@ -107,10 +105,10 @@ void assemble_cells_matrix(
     std::int32_t cell0 = cells0[c];
     std::int32_t cell1 = cells1[c];
 
-    // Collect element rows/columns for essential bcs
     std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
     std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
 
+    // Collect columns for essential bcs
     bce1.clear();
     if (!bc1.empty())
     {
@@ -135,23 +133,6 @@ void assemble_cells_matrix(
         continue;
     }
 
-    bce0.clear();
-    if (!bc0.empty())
-    {
-      for (int i = 0; i < num_dofs0; ++i)
-      {
-        for (int k = 0; k < bs0; ++k)
-        {
-          if (bc0[bs0 * dofs0[i] + k])
-          {
-            // Zero row bs0 * i + k
-            const int row = bs0 * i + k;
-            bce0.push_back(row);
-          }
-        }
-      }
-    }
-
     // Get cell coordinates/geometry
     auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
@@ -169,9 +150,23 @@ void assemble_cells_matrix(
     // Do not clear BC rows/cols in "BCMode"
     if constexpr (!BCMode)
     {
+      // Zero rows and columns for BCs
+      if (!bc0.empty())
+      {
+        for (int i = 0; i < num_dofs0; ++i)
+        {
+          for (int k = 0; k < bs0; ++k)
+          {
+            if (bc0[bs0 * dofs0[i] + k])
+            {
+              // Zero row bs0 * i + k
+              const int row = bs0 * i + k;
+              std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
+            }
+          }
+        }
+      }
       // Clear rows and columns for BCs
-      for (std::int32_t row : bce0)
-        std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
       for (std::int32_t col : bce1)
       {
         for (int row = 0; row < ndim0; ++row)
@@ -265,8 +260,6 @@ void assemble_entities(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
-  std::vector<std::int32_t> bce0;
-  bce0.reserve(ndim0);
   std::vector<std::int32_t> bce1;
   bce1.reserve(ndim1);
 
@@ -282,10 +275,10 @@ void assemble_entities(
     std::int32_t cell0 = entities0(f, 0);
     std::int32_t cell1 = entities1(f, 0);
 
-    // Zero rows/columns for essential bcs
     std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
     std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
 
+    // Collect columns for essential bcs
     bce1.clear();
     if (!bc1.empty())
     {
@@ -309,23 +302,6 @@ void assemble_entities(
         continue;
     }
 
-    bce0.clear();
-    if (!bc0.empty())
-    {
-      for (int i = 0; i < num_dofs0; ++i)
-      {
-        for (int k = 0; k < bs0; ++k)
-        {
-          if (bc0[bs0 * dofs0[i] + k])
-          {
-            // Zero row bs0 * i + k
-            const int row = bs0 * i + k;
-            bce0.push_back(row);
-          }
-        }
-      }
-    }
-
     // Get cell coordinates/geometry
     auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
@@ -343,8 +319,22 @@ void assemble_entities(
 
     if constexpr (!BCMode)
     {
-      for (std::int32_t row : bce0)
-        std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
+      // Zero rows and columns for BCs
+      if (!bc0.empty())
+      {
+        for (int i = 0; i < num_dofs0; ++i)
+        {
+          for (int k = 0; k < bs0; ++k)
+          {
+            if (bc0[bs0 * dofs0[i] + k])
+            {
+              // Zero row bs0 * i + k
+              const int row = bs0 * i + k;
+              std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
+            }
+          }
+        }
+      }
       for (std::int32_t col : bce1)
       {
         for (int row = 0; row < ndim0; ++row)
@@ -438,8 +428,6 @@ void assemble_interior_facets(
   const std::size_t dmap1_size = dmap1.map().extent(1);
   const int num_rows = bs0 * 2 * dmap0_size;
   const int num_cols = bs1 * 2 * dmap1_size;
-  std::vector<std::int32_t> bce0;
-  bce0.reserve(num_rows);
   std::vector<std::int32_t> bce1(num_cols);
   bce1.reserve(num_cols);
 
@@ -493,7 +481,7 @@ void assemble_interior_facets(
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
     std::ranges::copy(dmap1_cell1, std::next(dmapjoint1.begin(), dmap1_size));
 
-    // Zero rows/columns for essential bcs
+    // Collect columns for essential bcs
     bce1.clear();
     if (!bc1.empty())
     {
@@ -514,22 +502,6 @@ void assemble_interior_facets(
     {
       if (bce1.empty())
         continue;
-    }
-
-    bce0.clear();
-    if (!bc0.empty())
-    {
-      for (std::size_t i = 0; i < dmapjoint0.size(); ++i)
-      {
-        for (int k = 0; k < bs0; ++k)
-        {
-          if (bc0[bs0 * dmapjoint0[i] + k])
-          {
-            // Zero row bs0 * i + k
-            bce0.push_back(bs0 * i + k);
-          }
-        }
-      }
     }
 
     // Tabulate tensor
@@ -575,8 +547,22 @@ void assemble_interior_facets(
 
     if constexpr (!BCMode)
     {
-      for (std::int32_t row : bce0)
-        std::fill_n(std::next(Ae.begin(), num_cols * row), num_cols, 0);
+      // Zero rows and columns for BCs
+      if (!bc0.empty())
+      {
+        for (std::size_t i = 0; i < dmapjoint0.size(); ++i)
+        {
+          for (int k = 0; k < bs0; ++k)
+          {
+            if (bc0[bs0 * dmapjoint0[i] + k])
+            {
+              // Zero row bs0 * i + k
+              int row = bs0 * i + k;
+              std::fill_n(std::next(Ae.begin(), num_cols * row), num_cols, 0);
+            }
+          }
+        }
+      }
       for (std::int32_t col : bce1)
       {
         for (int m = 0; m < num_rows; ++m)
