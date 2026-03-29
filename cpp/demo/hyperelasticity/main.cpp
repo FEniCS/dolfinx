@@ -98,10 +98,8 @@ public:
                    iteration, residual, atol, relative_residual, rtol);
 
       // Return true if convergence criterion is met
-      if (relative_residual < rtol or residual < atol)
-        return {residual, true};
-      else
-        return {residual, false};
+      bool converged = relative_residual < rtol or residual < atol;
+      return {residual, converged};
     };
 
     assert(_b);
@@ -145,14 +143,12 @@ public:
       std::tie(residual, newton_converged) = converged(_b);
     }
 
-    if (newton_converged)
-    {
-      spdlog::info("Newton solver finished in {} iterations and {} linear "
-                   "solver iterations.",
-                   iteration, krylov_iterations);
-    }
-    else
+    if (not newton_converged)
       throw std::runtime_error("Newton solver did not converge.");
+    
+    spdlog::info("Newton solver finished in {} iterations and {} linear "
+                   "solver iterations.",
+                   iteration, krylov_iterations);  
 
     VecDestroy(&dx);
 
