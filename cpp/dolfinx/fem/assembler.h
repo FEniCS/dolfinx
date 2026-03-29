@@ -337,7 +337,7 @@ void apply_lifting(
   if (std::ranges::all_of(a, [](auto ai) { return !ai; }))
     return;
 
-  common::Timer t("Apply lifting");
+  common::Timer t("[Apply lifting]");
   impl::apply_lifting(b, a, constants, coeffs, bcs1, x0, alpha);
 }
 
@@ -436,6 +436,7 @@ void assemble_matrix(
     std::span<const std::int8_t> dof_marker1)
 
 {
+  common::Timer t_assm("[Assemble Matrix]");
   using mdspanx3_t
       = md::mdspan<const scalar_value_t<T>,
                    md::extents<std::size_t, md::dynamic_extent, 3>>;
