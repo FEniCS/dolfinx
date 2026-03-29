@@ -1172,7 +1172,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                          [](auto& c) { return std::span(c); });
   Topology topology
       = create_topology(comm, celltypes, cells1_v_span, original_idx1_span,
-                        ghost_owners_span, boundary_v);
+                        ghost_owners_span, boundary_v, 0);
 
   // Create connectivities required higher-order geometries for creating
   // a Geometry object

@@ -65,7 +65,7 @@ def test_matvec(dtype):
     # Identity
     A = la.matrix_csr(sp, dtype=dtype)
     for i in range(imap.size_local):
-        A.add([2.0], [i], [i])
+        A.add(np.array([2.0], dtype=dtype), np.array([i]), np.array([i]))
     A.scatter_reverse()
 
     b = la.vector(imap, dtype=dtype)

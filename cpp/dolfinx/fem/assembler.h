@@ -597,6 +597,7 @@ void set_diagonal(
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs,
     T diagonal = 1.0)
 {
+  spdlog::debug("Set diagonal");
   for (auto& bc : bcs)
   {
     if (V.contains(*bc.get().function_space()))
