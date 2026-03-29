@@ -413,7 +413,7 @@ void lift_bc_impl(
     }
   };
 
-  // Use BCMode=true so the kernel is only called on cells that have
+  // Use LiftingMode=true so the kernel is only called on cells that have
   // BC-constrained DOFs in the column space
   assemble_matrix<T, U, true>(lifting_fn, a, constants, coefficients, {},
                               bc_markers1);

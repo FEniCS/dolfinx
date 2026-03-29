@@ -30,8 +30,8 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @brief Execute kernel over cells and accumulate result in a matrix.
 ///
 /// @tparam T Matrix/form scalar type.
-/// @tparam BCMode If set true, only execute mat_set on cells with BCs in column
-/// space.
+/// @tparam LiftingMode If set true, only execute mat_set on cells with BCs in
+/// column space.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Degree-of-freedom map for the mesh geometry.
@@ -62,7 +62,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// function mesh.
 /// @param cell_info1 Cell permutation information for the trial
 /// function mesh.
-template <dolfinx::scalar T, bool BCMode = false>
+template <dolfinx::scalar T, bool LiftingMode = false>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
@@ -91,8 +91,6 @@ void assemble_cells_matrix(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
-  std::vector<std::int32_t> bce1;
-  bce1.reserve(ndim1);
 
   // Iterate over active cells
   assert(cells0.size() == cells.size());
@@ -108,28 +106,23 @@ void assemble_cells_matrix(
     std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
     std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
 
-    // Collect columns for essential bcs
-    bce1.clear();
-    if (!bc1.empty())
+    // In "LiftingMode" only execute kernel if there are BCs on column space
+    if constexpr (LiftingMode)
     {
-      for (int j = 0; j < num_dofs1; ++j)
+      auto has_bc = [&]() -> bool
       {
-        for (int k = 0; k < bs1; ++k)
+        for (int j = 0; j < num_dofs1; ++j)
         {
-          if (bc1[bs1 * dofs1[j] + k])
+          for (int k = 0; k < bs1; ++k)
           {
-            // Zero column bs1 * j + k
-            const int col = bs1 * j + k;
-            bce1.push_back(col);
+            if (bc1[bs1 * dofs1[j] + k])
+              return true;
           }
         }
-      }
-    }
+        return false;
+      };
 
-    // In "BCMode" only execute kernel if there are BCs on column space
-    if constexpr (BCMode)
-    {
-      if (bce1.empty())
+      if (!has_bc())
         continue;
     }
 
@@ -147,8 +140,8 @@ void assemble_cells_matrix(
     P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
     P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
-    // Do not clear BC rows/cols in "BCMode"
-    if constexpr (!BCMode)
+    // Do not clear BC rows/cols in "LiftingMode"
+    if constexpr (!LiftingMode)
     {
       // Zero rows and columns for BCs
       if (!bc0.empty())
@@ -166,11 +159,21 @@ void assemble_cells_matrix(
           }
         }
       }
-      // Clear rows and columns for BCs
-      for (std::int32_t col : bce1)
+      if (!bc1.empty())
       {
-        for (int row = 0; row < ndim0; ++row)
-          Ae[row * ndim1 + col] = 0;
+        for (int j = 0; j < num_dofs1; ++j)
+        {
+          for (int k = 0; k < bs1; ++k)
+          {
+            if (bc1[bs1 * dofs1[j] + k])
+            {
+              // Zero col bs1 * j + k
+              const int col = bs1 * j + k;
+              for (int row = 0; row < ndim0; ++row)
+                Ae[row * ndim1 + col] = 0;
+            }
+          }
+        }
       }
     }
 
@@ -190,8 +193,8 @@ void assemble_cells_matrix(
 /// from cell used to define the entity.
 ///
 /// @tparam T Matrix/form scalar type.
-/// @tparam BCMode If set true, only execute mat_set on cells with BCs in column
-/// space.
+/// @tparam LiftingMode If set true, only execute mat_set on cells with BCs in
+/// column space.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
@@ -222,7 +225,7 @@ void assemble_cells_matrix(
 /// function mesh.
 /// @param[in] perms Entity permutation integer. Empty if entity
 /// permutations are not required.
-template <dolfinx::scalar T, bool BCMode = false>
+template <dolfinx::scalar T, bool LiftingMode = false>
 void assemble_entities(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
@@ -260,8 +263,6 @@ void assemble_entities(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
-  std::vector<std::int32_t> bce1;
-  bce1.reserve(ndim1);
 
   assert(entities0.size() == entities.size());
   assert(entities1.size() == entities.size());
@@ -278,27 +279,22 @@ void assemble_entities(
     std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
     std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
 
-    // Collect columns for essential bcs
-    bce1.clear();
-    if (!bc1.empty())
+    // Check for BCs on column space
+    if constexpr (LiftingMode)
     {
-      for (int j = 0; j < num_dofs1; ++j)
+      auto has_bc = [&]() -> bool
       {
-        for (int k = 0; k < bs1; ++k)
+        for (int j = 0; j < num_dofs1; ++j)
         {
-          if (bc1[bs1 * dofs1[j] + k])
+          for (int k = 0; k < bs1; ++k)
           {
-            // Zero column bs1 * j + k
-            const int col = bs1 * j + k;
-            bce1.push_back(col);
+            if (bc1[bs1 * dofs1[j] + k])
+              return true;
           }
         }
-      }
-    }
-
-    if constexpr (BCMode)
-    {
-      if (bce1.empty())
+        return false;
+      };
+      if (!has_bc())
         continue;
     }
 
@@ -317,7 +313,8 @@ void assemble_entities(
     P0(Ae, cell_info0, cell0, ndim1);
     P1T(Ae, cell_info1, cell1, ndim0);
 
-    if constexpr (!BCMode)
+    // Don't clear rows/cols in LiftingMode
+    if constexpr (!LiftingMode)
     {
       // Zero rows and columns for BCs
       if (!bc0.empty())
@@ -335,10 +332,21 @@ void assemble_entities(
           }
         }
       }
-      for (std::int32_t col : bce1)
+      if (!bc1.empty())
       {
-        for (int row = 0; row < ndim0; ++row)
-          Ae[row * ndim1 + col] = 0;
+        for (int j = 0; j < num_dofs1; ++j)
+        {
+          for (int k = 0; k < bs1; ++k)
+          {
+            if (bc1[bs1 * dofs1[j] + k])
+            {
+              // Zero column bs1 * j + k
+              const int col = bs1 * j + k;
+              for (int row = 0; row < ndim0; ++row)
+                Ae[row * ndim1 + col] = 0;
+            }
+          }
+        }
       }
     }
 
@@ -350,8 +358,8 @@ void assemble_entities(
 /// a matrix.
 ///
 /// @tparam T Matrix/form scalar type.
-/// @tparam BCMode If set true, only execute mat_set on cells with BCs in column
-/// space.
+/// @tparam LiftingMode If set true, only execute mat_set on cells with BCs in
+/// column space.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
@@ -384,7 +392,7 @@ void assemble_entities(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
-template <dolfinx::scalar T, bool BCMode = false>
+template <dolfinx::scalar T, bool LiftingMode = false>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const scalar_value_t<T>,
@@ -428,8 +436,6 @@ void assemble_interior_facets(
   const std::size_t dmap1_size = dmap1.map().extent(1);
   const int num_rows = bs0 * 2 * dmap0_size;
   const int num_cols = bs1 * 2 * dmap1_size;
-  std::vector<std::int32_t> bce1(num_cols);
-  bce1.reserve(num_cols);
 
   // Temporaries for joint dofmaps
   std::vector<T> Ae(num_rows * num_cols);
@@ -481,26 +487,23 @@ void assemble_interior_facets(
     std::ranges::copy(dmap1_cell0, dmapjoint1.begin());
     std::ranges::copy(dmap1_cell1, std::next(dmapjoint1.begin(), dmap1_size));
 
-    // Collect columns for essential bcs
-    bce1.clear();
-    if (!bc1.empty())
+    // Check for BCs on column space
+    if constexpr (LiftingMode)
     {
-      for (std::size_t j = 0; j < dmapjoint1.size(); ++j)
+      auto has_bc = [&]() -> bool
       {
-        for (int k = 0; k < bs1; ++k)
+        for (std::size_t j = 0; j < dmapjoint1.size(); ++j)
         {
-          if (bc1[bs1 * dmapjoint1[j] + k])
+          for (int k = 0; k < bs1; ++k)
           {
-            // Zero column bs1 * j + k
-            bce1.push_back(bs1 * j + k);
+            if (bc1[bs1 * dmapjoint1[j] + k])
+              return true;
           }
         }
-      }
-    }
+        return false;
+      };
 
-    if constexpr (BCMode)
-    {
-      if (bce1.empty())
+      if (!has_bc())
         continue;
     }
 
@@ -545,7 +548,8 @@ void assemble_interior_facets(
       }
     }
 
-    if constexpr (!BCMode)
+    // Don't clear rows/cols in LiftingMode
+    if constexpr (!LiftingMode)
     {
       // Zero rows and columns for BCs
       if (!bc0.empty())
@@ -563,10 +567,20 @@ void assemble_interior_facets(
           }
         }
       }
-      for (std::int32_t col : bce1)
+      if (!bc1.empty())
       {
-        for (int m = 0; m < num_rows; ++m)
-          Ae[m * num_cols + col] = 0;
+        for (std::size_t j = 0; j < dmapjoint1.size(); ++j)
+        {
+          for (int k = 0; k < bs1; ++k)
+          {
+            if (bc1[bs1 * dmapjoint1[j] + k])
+            {
+              // Zero column bs1 * j + k
+              for (int m = 0; m < num_rows; ++m)
+                Ae[m * num_cols + bs1 * j + k] = 0;
+            }
+          }
+        }
       }
     }
 
@@ -582,8 +596,8 @@ void assemble_interior_facets(
 ///
 /// @tparam T Scalar type.
 /// @tparam U Geometry type.
-/// @tparam BCMode Boundary Condition mode. Set to true to call the kernel only
-/// on cells with BCs in bc1.
+/// @tparam LiftingMode. Set to true to call the kernel only on cells with BCs
+/// in bc1.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] a Bilinear form to assemble.
@@ -594,7 +608,7 @@ void assemble_interior_facets(
 /// applied.
 /// @param bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
-template <dolfinx::scalar T, std::floating_point U, bool BCMode = false>
+template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
 void assemble_matrix(
     la::MatSet<T> auto mat_set, const Form<T, U>& a,
     md::mdspan<const scalar_value_t<T>,
@@ -672,7 +686,7 @@ void assemble_matrix(
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
-      impl::assemble_cells_matrix<T, BCMode>(
+      impl::assemble_cells_matrix<T, LiftingMode>(
           mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
           {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
           md::mdspan(coeffs.data(), cells.size(), cstride), constants,
@@ -717,7 +731,7 @@ void assemble_matrix(
       std::span facets0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
       std::span facets1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
-      impl::assemble_interior_facets<T, BCMode>(
+      impl::assemble_interior_facets<T, LiftingMode>(
           mat_set, x_dofmap, x,
           mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
           {*dofmap0, bs0,
@@ -762,7 +776,7 @@ void assemble_matrix(
         std::span e1 = a.domain_arg(itg_type, 1, i, 0);
         mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
         assert((entities.size() / 2) * cstride == coeffs.size());
-        impl::assemble_entities<T, BCMode>(
+        impl::assemble_entities<T, LiftingMode>(
             mat_set, x_dofmap, x, entities, {dofs0, bs0, entities0}, P0,
             {dofs1, bs1, entities1}, P1T, bc0, bc1, fn,
             md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
