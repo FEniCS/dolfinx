@@ -33,12 +33,15 @@ namespace nls::petsc
 /// with default update \f$x \leftarrow x - \Delta x\f$.
 ///
 /// It relies on PETSc for linear algebra backends.
+/// @deprecated The generic `NewtonSolver` will be removed in a future release.
+/// It is recommended to build your own Newton Solver, or use SNES from PETSc.
 class NewtonSolver
 {
 public:
   /// @brief Create nonlinear solver
   /// @param[in] comm MPI communicator for the solver
-  explicit NewtonSolver(MPI_Comm comm);
+  [[deprecated("NewtonSolver will be removed in a future "
+               "release.")]] explicit NewtonSolver(MPI_Comm comm);
 
   /// Move constructor
   NewtonSolver(NewtonSolver&& solver) = default;
