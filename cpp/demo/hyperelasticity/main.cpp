@@ -145,10 +145,10 @@ public:
 
     if (not newton_converged)
       throw std::runtime_error("Newton solver did not converge.");
-    
+
     spdlog::info("Newton solver finished in {} iterations and {} linear "
-                   "solver iterations.",
-                   iteration, krylov_iterations);  
+                 "solver iterations.",
+                 iteration, krylov_iterations);
 
     VecDestroy(&dx);
 
