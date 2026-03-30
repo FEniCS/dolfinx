@@ -10,6 +10,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/la/petsc.h>
+#include <iostream>
 #include <string>
 #include <utility>
 
@@ -72,6 +73,8 @@ nls::petsc::NewtonSolver::NewtonSolver(MPI_Comm comm)
       _krylov_iterations(0), _iteration(0), _residual(0), _residual0(0),
       _solver(comm), _dx(nullptr), _comm(comm)
 {
+  std::cout << "Deprecation warning: NewtonSolver is deprecated and will be "
+               "removed in a future release.\n";
   // Create linear solver if not already created. Default to LU.
   _solver.set_options_prefix("nls_solve_");
   la::petsc::options::set("nls_solve_ksp_type", "preonly");

@@ -40,8 +40,7 @@ class NewtonSolver
 public:
   /// @brief Create nonlinear solver
   /// @param[in] comm MPI communicator for the solver
-  [[deprecated("NewtonSolver will be removed in a future "
-               "release.")]] explicit NewtonSolver(MPI_Comm comm);
+  explicit NewtonSolver(MPI_Comm comm);
 
   /// Move constructor
   NewtonSolver(NewtonSolver&& solver) = default;
