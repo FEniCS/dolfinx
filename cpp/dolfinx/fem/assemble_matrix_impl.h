@@ -109,13 +109,13 @@ void assemble_cells_matrix(
     // In "LiftingMode" only execute kernel if there are BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [&]() -> bool
+      auto has_bc = [&]()
       {
-        for (int j = 0; j < num_dofs1; ++j)
+        for (std::int32_t dof : dofs1)
         {
           for (int k = 0; k < bs1; ++k)
           {
-            if (bc1[bs1 * dofs1[j] + k])
+            if (bc1[bs1 * dof + k])
               return true;
           }
         }
@@ -282,13 +282,13 @@ void assemble_entities(
     // Check for BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [&]() -> bool
+      auto has_bc = [&]()
       {
-        for (int j = 0; j < num_dofs1; ++j)
+        for (std::int32_t dof : dofs1)
         {
           for (int k = 0; k < bs1; ++k)
           {
-            if (bc1[bs1 * dofs1[j] + k])
+            if (bc1[bs1 * dof + k])
               return true;
           }
         }
@@ -490,13 +490,13 @@ void assemble_interior_facets(
     // Check for BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [&]() -> bool
+      auto has_bc = [&]()
       {
-        for (std::size_t j = 0; j < dmapjoint1.size(); ++j)
+        for (std::int32_t dof : dmapjoint1)
         {
           for (int k = 0; k < bs1; ++k)
           {
-            if (bc1[bs1 * dmapjoint1[j] + k])
+            if (bc1[bs1 * dof + k])
               return true;
           }
         }

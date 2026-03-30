@@ -383,7 +383,7 @@ void lift_bc_impl(
   const int bs0 = BS0 > 0 ? BS0 : a.function_spaces()[0]->dofmap()->bs();
   const int bs1 = BS1 > 0 ? BS1 : a.function_spaces()[1]->dofmap()->bs();
 
-  // Use default [=] capture for bs0, bs1 which may be compile-time
+  // Use default [=] capture for bs0, bs1 which may be compile-time constants
   auto lifting_fn
       = [=, &b, &bc_values1, &bc_markers1,
          &x0](std::span<const std::int32_t> rows,
@@ -413,8 +413,9 @@ void lift_bc_impl(
     }
   };
 
+  // Repurpose the assemble_matrix assembler to work on the vector b instead.
   // Use LiftingMode=true so the kernel is only called on cells that have
-  // BC-constrained DOFs in the column space
+  // BC-constrained DOFs in the column space.
   assemble_matrix<T, U, true>(lifting_fn, a, constants, coefficients, {},
                               bc_markers1);
 }
