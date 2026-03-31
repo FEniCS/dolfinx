@@ -1019,7 +1019,8 @@ def assemble_residual(
     Example::
 
         snes = PETSc.SNES().create(mesh.comm)
-        cntx = {"u": u, "residual": residual, "jacobian": jacobian, "bcs": bcs}
+        cntx = {"u": u, "residual": residual, "jacobian": jacobian,
+            "bcs": bcs}
         snes.setFunction(assemble_residual, b, kargs=cntx)
 
     Args:
@@ -1032,8 +1033,10 @@ def assemble_residual(
         jacobian: Form of the Jacobian. It can be a nested sequence of
             forms.
         bcs: List of Dirichlet boundary conditions to lift the residual.
-        _blocks: If block assembly is requested this should contain the ownership layout for each block.
-            See :func:`dolfinx.la.create_vector` for more details on the format of this argument.
+        _blocks: If block assembly is requested this should contain the
+            ownership layout for each block.
+            See :func:`dolfinx.la.create_vector` for more details on the
+            format of this argument.
     """
     # Update input vector before assigning
     dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[attr-defined]
@@ -1086,7 +1089,8 @@ def assemble_jacobian(
     Example::
 
         snes = PETSc.SNES().create(mesh.comm)
-        cntx = {"u": u, "jacobian": jacobian, "preconditioner": preconditioner, "bcs": bcs}
+        cntx = {"u": u, "jacobian": jacobian,
+            "preconditioner": preconditioner, "bcs": bcs}
         snes.setJacobian(assemble_jacobian, A, P_mat, kargs=cntx)
 
     Args:
@@ -1263,8 +1267,8 @@ class NonlinearProblem:
         self._snes = PETSc.SNES().create(self.A.comm)  # type: ignore[attr-defined]
         cntx = {"u": self.u, "jacobian": self.J, "preconditioner": self.preconditioner, "bcs": bcs}
         self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=cntx)
-        # Get potential attributes from the residual to pass to the residual assembly function,
-        # e.g. block layout for block assembly.
+        # Get potential attributes from the residual to pass to the
+        # residual assembly function, e.g. block layout for block assembly.
         context = self.b.getDict().copy()
         context["u"] = u
         context["residual"] = self.F
