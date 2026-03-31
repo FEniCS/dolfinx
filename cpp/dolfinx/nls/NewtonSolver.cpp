@@ -73,7 +73,7 @@ nls::petsc::NewtonSolver::NewtonSolver(MPI_Comm comm)
       _krylov_iterations(0), _iteration(0), _residual(0), _residual0(0),
       _solver(comm), _dx(nullptr), _comm(comm)
 {
-  std::cout << "Deprecation warning: NewtonSolver is deprecated and will be "
+  std::cerr << "Deprecation warning: NewtonSolver is deprecated and will be "
                "removed in a future release.\n";
   // Create linear solver if not already created. Default to LU.
   _solver.set_options_prefix("nls_solve_");

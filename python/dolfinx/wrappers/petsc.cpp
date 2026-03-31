@@ -282,7 +282,7 @@ void petsc_nls_module(nb::module_& m)
              const dolfinx_wrappers::MPICommWrapper comm)
           {
             new (ns) dolfinx::nls::petsc::NewtonSolver(comm.get());
-            std::cout << "NewtonSolver is deprecated, and will be removed in a "
+            std::cerr << "NewtonSolver is deprecated, and will be removed in a "
                          "future release.\n";
           },
           nb::arg("comm"))
