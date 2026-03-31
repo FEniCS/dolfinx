@@ -38,7 +38,6 @@ import dolfinx
 
 assert dolfinx.has_petsc4py
 
-from functools import partial
 
 import numpy as np
 from numpy import typing as npt
@@ -1002,32 +1001,15 @@ class LinearProblem:
 # -- High-level interface for SNES ---------------------------------------
 
 
-def _assign_block_data(forms: Sequence[Form], vec: PETSc.Vec):  # type: ignore[name-defined]
-    """Assign block data to a PETSc vector.
-
-    Args:
-        forms: List of forms to extract block data from.
-        vec: PETSc vector to assign block data to.
-    """
-    maps = (
-        (
-            form.function_spaces[0].dofmaps(0).index_map,  # type: ignore[attr-defined]
-            form.function_spaces[0].dofmaps(0).index_map_bs,  # type: ignore[attr-defined]
-        )
-        for form in forms
-    )
-
-    return dolfinx.la.petsc._assign_block_data(maps, vec)
-
-
 def assemble_residual(
+    _snes: PETSc.SNES,  # type: ignore[name-defined]
+    x: PETSc.Vec,  # type: ignore[name-defined]
+    b: PETSc.Vec,  # type: ignore[name-defined]
     u: _Function | Sequence[_Function],
     residual: Form | Sequence[Form],
     jacobian: Form | Sequence[Sequence[Form]],
     bcs: Sequence[DirichletBC],
-    _snes: PETSc.SNES,  # type: ignore[name-defined]
-    x: PETSc.Vec,  # type: ignore[name-defined]
-    b: PETSc.Vec,  # type: ignore[name-defined]
+    _blocks: tuple[tuple[int, int, int], ...] | None = None,
 ):
     """Assemble the residual at ``x`` into the vector ``b``.
 
@@ -1037,21 +1019,21 @@ def assemble_residual(
     Example::
 
         snes = PETSc.SNES().create(mesh.comm)
-        assemble_residual = functools.partial(
-            dolfinx.fem.petsc.assemble_residual,
-            u, residual, jacobian, bcs)
-        snes.setFunction(assemble_residual, b)
+        cntx = {"u": u, "residual": residual, "jacobian": jacobian, "bcs": bcs}
+        snes.setFunction(assemble_residual, b, kargs=cntx)
 
     Args:
+        _snes: The solver instance.
+        x: The vector containing the point to evaluate the residual at.
+        b: Vector to assemble the residual into.
         u: Function(s) tied to the solution vector within the residual and
            Jacobian.
         residual: Form of the residual. It can be a sequence of forms.
         jacobian: Form of the Jacobian. It can be a nested sequence of
             forms.
         bcs: List of Dirichlet boundary conditions to lift the residual.
-        _snes: The solver instance.
-        x: The vector containing the point to evaluate the residual at.
-        b: Vector to assemble the residual into.
+        _blocks: If block assembly is requested this should contain the ownership layout for each block.
+            See :func:`dolfinx.la.create_vector` for more details on the format of this argument.
     """
     # Update input vector before assigning
     dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[attr-defined]
@@ -1061,8 +1043,9 @@ def assemble_residual(
 
     # Assign block data if block assembly is requested
     if isinstance(residual, Sequence) and b.getType() != PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
-        _assign_block_data(residual, b)
-        _assign_block_data(residual, x)
+        assert _blocks is not None, "Block data must be provided for block assembly."
+        b.setAttr("_blocks", _blocks)  # type: ignore[attr-defined]
+        x.setAttr("_blocks", _blocks)  # type: ignore[attr-defined]
 
     # Assemble the residual
     dolfinx.la.petsc._zero_vector(b)
@@ -1085,14 +1068,14 @@ def assemble_residual(
 
 
 def assemble_jacobian(
-    u: Sequence[_Function] | _Function,
-    jacobian: Form | Sequence[Sequence[Form]],
-    preconditioner: Form | Sequence[Sequence[Form]] | None,
-    bcs: Sequence[DirichletBC],
     _snes: PETSc.SNES,  # type: ignore[name-defined]
     x: PETSc.Vec,  # type: ignore[name-defined]
     J: PETSc.Mat,  # type: ignore[name-defined]
     P_mat: PETSc.Mat,  # type: ignore[name-defined]
+    u: Sequence[_Function] | _Function,
+    jacobian: Form | Sequence[Sequence[Form]],
+    preconditioner: Form | Sequence[Sequence[Form]] | None,
+    bcs: Sequence[DirichletBC],
 ):
     """Assemble the Jacobian and preconditioner matrices.
 
@@ -1103,22 +1086,20 @@ def assemble_jacobian(
     Example::
 
         snes = PETSc.SNES().create(mesh.comm)
-        assemble_jacobian = functools.partial(
-            dolfinx.fem.petsc.assemble_jacobian,
-            u, jacobian, preconditioner, bcs)
-        snes.setJacobian(assemble_jacobian, A, P_mat)
+        cntx = {"u": u, "jacobian": jacobian, "preconditioner": preconditioner, "bcs": bcs}
+        snes.setJacobian(assemble_jacobian, A, P_mat, kargs=cntx)
 
     Args:
+        _snes: The solver instance.
+        x: Vector containing the point to evaluate at.
+        J: Matrix to assemble the Jacobian into.
+        P_mat: Matrix to assemble the preconditioner into.
         u: Function tied to the solution vector within the residual and
             Jacobian.
         jacobian: Compiled form of the Jacobian.
         preconditioner: Compiled form of the preconditioner.
         bcs: List of Dirichlet boundary conditions to apply to the Jacobian
              and preconditioner matrices.
-        _snes: The solver instance.
-        x: Vector containing the point to evaluate at.
-        J: Matrix to assemble the Jacobian into.
-        P_mat: Matrix to assemble the preconditioner into.
     """
     # Copy existing soultion into the function used in the residual and
     # Jacobian
@@ -1280,10 +1261,16 @@ class NonlinearProblem:
         # Create the SNES solver and attach the corresponding Jacobian and
         # residual computation functions
         self._snes = PETSc.SNES().create(self.A.comm)  # type: ignore[attr-defined]
-        self.solver.setJacobian(
-            partial(assemble_jacobian, u, self.J, self.preconditioner, bcs), self.A, self.P_mat
-        )
-        self.solver.setFunction(partial(assemble_residual, u, self.F, self.J, bcs), self.b)
+        cntx = {"u": self.u, "jacobian": self.J, "preconditioner": self.preconditioner, "bcs": bcs}
+        self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=cntx)
+        # Get potential attributes from the residual to pass to the residual assembly function,
+        # e.g. block layout for block assembly.
+        context = self.b.getDict().copy()
+        context["u"] = u
+        context["residual"] = self.F
+        context["jacobian"] = self.J
+        context["bcs"] = bcs
+        self.solver.setFunction(assemble_residual, self.b, kargs=context)
 
         if petsc_options_prefix == "":
             raise ValueError("PETSc options prefix cannot be empty.")
