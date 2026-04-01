@@ -269,8 +269,7 @@ class Expression:
                 raise TypeError("Passed values array does not have correct dtype.")
 
         constants = _cpp.fem.pack_constants(self._cpp_object)
-        breakpoint()
-        coeffs = _cpp.fem.pack_coefficients(self._cpp_object, mesh,_entities)
+        coeffs = _cpp.fem.pack_coefficients(self._cpp_object, mesh._cpp_object, _entities)
         _cpp.fem.tabulate_expression(
             values, self._cpp_object, constants, coeffs, mesh._cpp_object, _entities
         )

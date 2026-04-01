@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2024 Michal Habera and Jørgen S. Dokken
+# Copyright (C) 2019-2026 Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -526,3 +526,50 @@ def test_rank1_blocked():
                 mask = np.ones(point_values.shape[2], dtype=bool)
                 mask[offset::vs] = False
                 np.testing.assert_allclose(point_values[i, j, mask], 0)
+
+
+@pytest.mark.parametrize("qdegree", [1, 3, 5])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_submesh_expression(dtype, qdegree):
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=xtype)
+
+    V = dolfinx.fem.functionspace(mesh, ("Lagrange", 1))
+    u = dolfinx.fem.Function(V, dtype=dtype)
+    u.interpolate(lambda x: x[0] + 2.0 * x[1])
+
+    def mark_left_cells(x):
+        return x[0] <= 0.5 + 100 * np.finfo(xtype).resolution
+
+
+    left_cells = dolfinx.mesh.locate_entities(mesh, mesh.topology.dim, mark_left_cells)
+    submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(mesh, mesh.topology.dim, left_cells)
+    u_sub = dolfinx.fem.Function(dolfinx.fem.functionspace(submesh, ("Lagrange", 2)), dtype=dtype)
+    u_sub.interpolate(lambda x: x[1]**2 + x[0]**2)
+
+    quadrature_points, _ = basix.make_quadrature(basix.CellType.triangle, qdegree)
+    quadrature_points = quadrature_points.astype(xtype)
+
+    expr = dolfinx.fem.Expression(u*u_sub, quadrature_points, dtype=dtype, entity_maps=[entity_map])
+    values = expr.eval(mesh, left_cells)
+
+    num_sub_cells = submesh.topology.index_map(submesh.topology.dim).size_local
+    values_sub = expr.eval(submesh, np.arange(num_sub_cells, dtype=np.int32))
+
+    tol = 50 * np.finfo(dtype).eps
+    np.testing.assert_allclose(values, values_sub, atol=tol)
+
+    x = ufl.SpatialCoordinate(mesh)
+    u_exact = (x[0] + 2.0 * x[1]) * (x[1]**2 + x[0]**2)
+    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    expr_exact = dolfinx.fem.Expression(u_exact, quadrature_points, dtype=dtype)
+    values_exact = expr_exact.eval(mesh, np.arange(num_cells, dtype=np.int32))
+    np.testing.assert_allclose(values, values_exact[left_cells], atol=tol)
