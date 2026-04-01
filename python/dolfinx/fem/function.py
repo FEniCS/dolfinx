@@ -26,7 +26,7 @@ from dolfinx.geometry import PointOwnershipData
 if typing.TYPE_CHECKING:
     from mpi4py import MPI as _MPI
 
-    from dolfinx.mesh import Mesh, EntityMap
+    from dolfinx.mesh import EntityMap, Mesh
 
 
 class Constant(ufl.Constant):
