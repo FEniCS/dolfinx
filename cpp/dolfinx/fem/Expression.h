@@ -65,6 +65,8 @@ public:
   /// @param[in] value_shape Shape of Expression evaluated at single
   /// point.
   /// @param[in] entity_maps Maps between entities of different meshes.
+  /// @param[in] coordinate_element_hash Hash for coordinate element used
+  /// to create the expression.
   /// @param[in] argument_space Function space for Argument. Used to
   /// computed a 1-form expression, e.g. can be used to create a matrix
   /// that when applied to a degree-of-freedom vector gives the
