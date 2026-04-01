@@ -1269,7 +1269,9 @@ class NonlinearProblem:
         self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=cntx)
         # Get potential attributes from the residual to pass to the
         # residual assembly function, e.g. block layout for block assembly.
-        context = self.b.getDict().copy()
+        context = {}
+        if (_blocks=:self.b.getAttr("_blocks")) is not None:
+            context["_blocks"] = _blocks
         context["u"] = u
         context["residual"] = self.F
         context["jacobian"] = self.J
