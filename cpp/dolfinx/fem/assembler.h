@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2025 Garth N. Wells
+// Copyright (C) 2018-2026 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -19,6 +19,7 @@
 #include <basix/mdspan.hpp>
 #include <cstdint>
 #include <dolfinx/common/types.h>
+#include <dolfinx/mesh/EntityMap.h>
 #include <memory>
 #include <optional>
 #include <span>
@@ -115,7 +116,8 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
     std::vector<std::reference_wrapper<const Function<T, U>>> c;
     std::ranges::transform(coefficients, std::back_inserter(c),
                            [](auto c) -> const Function<T, U>& { return *c; });
-    fem::pack_coefficients(c, coffsets, entities, std::span(coeffs));
+    fem::pack_coefficients(c, mesh, entities, e.entity_maps(), coffsets,
+                           std::span(coeffs));
   }
   std::vector<T> constants = fem::pack_constants(e);
 
