@@ -334,7 +334,7 @@ int main(int argc, char* argv[])
     // Compute Cauchy stress. Construct appropriate Basix element for
     // stress.
     fem::Expression sigma_expression = fem::create_expression<T, U>(
-        *expression_hyperelasticity_sigma, {{"u", u}}, {});
+        *expression_hyperelasticity_sigma, {{"u", u}}, {}, {});
 
     constexpr auto family = basix::element::family::P;
     auto cell_type

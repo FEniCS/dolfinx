@@ -82,14 +82,17 @@ public:
       const std::vector<std::size_t>& value_shape,
       const std::vector<std::reference_wrapper<const dolfinx::mesh::EntityMap>>&
           entity_maps,
+
+      std::uint64_t coordinate_element_hash,
       std::shared_ptr<const FunctionSpace<geometry_type>> argument_space
       = nullptr)
       : _argument_space(argument_space), _coefficients(coefficients),
         _constants(constants), _fn(fn), _value_shape(value_shape),
         _x_ref(std::vector<geometry_type>(X.begin(), X.end()), Xshape),
-        _entity_maps(entity_maps) {};
+        _entity_maps(entity_maps),
+        _coordinate_element_hash(coordinate_element_hash) {};
 
-  /// Move constructorcreate_expression
+  /// Move constructor
   Expression(Expression&& e) = default;
 
   /// Destructor
@@ -169,7 +172,16 @@ public:
     return _entity_maps;
   }
 
+  /// @brief Hash for coordinate element used to create the expression.
+  std::uint64_t coordinate_element_hash() const
+  {
+    return _coordinate_element_hash;
+  }
+
 private:
+  // Hash for coordinate element used to create the expression
+  std::uint64_t _coordinate_element_hash;
+
   // Function space for Argument
   std::shared_ptr<const FunctionSpace<geometry_type>> _argument_space;
 

@@ -957,19 +957,6 @@ Expression<T, U> create_expression(
         entity_maps,
     std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
 {
-  if (!coefficients.empty())
-  {
-    assert(coefficients.front());
-    assert(coefficients.front()->function_space());
-    std::shared_ptr<const mesh::Mesh<U>> mesh
-        = coefficients.front()->function_space()->mesh();
-    if (mesh->geometry().cmap().hash() != e.coordinate_element_hash)
-    {
-      throw std::runtime_error(
-          "Expression and mesh geometric maps do not match.");
-    }
-  }
-
   if (e.rank > 0 and !argument_space)
   {
     throw std::runtime_error("Expression has Argument but no Argument "
@@ -1010,7 +997,8 @@ Expression<T, U> create_expression(
 
   assert(tabulate_tensor);
   return Expression(coefficients, constants, std::span<const U>(X), Xshape,
-                    tabulate_tensor, value_shape, entity_maps, argument_space);
+                    tabulate_tensor, value_shape, entity_maps,
+                    e.coordinate_element_hash, argument_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and

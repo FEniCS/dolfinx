@@ -684,6 +684,7 @@ void declare_objects(nb::module_& m, std::string type)
              std::uintptr_t fn_addr,
              const std::vector<std::size_t>& value_shape,
              const std::vector<const dolfinx::mesh::EntityMap*>& entity_maps,
+             std::uint64_t coordinate_element_hash,
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
                  argument_space)
           {
@@ -694,11 +695,12 @@ void declare_objects(nb::module_& m, std::string type)
             new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
                 {X.shape(0), X.shape(1)}, tabulate_expression_ptr, value_shape,
-                ptr_to_ref_wrapper_vec(entity_maps), argument_space);
+                ptr_to_ref_wrapper_vec(entity_maps), coordinate_element_hash,
+                argument_space);
           },
           nb::arg("coefficients"), nb::arg("constants"), nb::arg("X"),
           nb::arg("fn"), nb::arg("value_shape"), nb::arg("entity_maps"),
-          nb::arg("argument_space"))
+          nb::arg("coordinate_element_hash"), nb::arg("argument_space"))
       .def("X",
            [](const dolfinx::fem::Expression<T, U>& self)
            {
