@@ -1270,7 +1270,7 @@ class NonlinearProblem:
         # Get potential attributes from the residual to pass to the
         # residual assembly function, e.g. block layout for block assembly.
         context = {}
-        if (_blocks=:self.b.getAttr("_blocks")) is not None:
+        if (_blocks:=self.b.getAttr("_blocks")) is not None:
             context["_blocks"] = _blocks
         context["u"] = u
         context["residual"] = self.F
