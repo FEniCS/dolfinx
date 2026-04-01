@@ -426,11 +426,11 @@ void pack_coefficients(
         {
           // If codim is zero we extract the cells and map them
           auto cells = md::submdspan(entities, md::full_extent, 0);
-          assert(cells.stride(0) == 1
-                 && "Slice is not contiguous; cannot convert to std::span "
-                    "safely!");
-          e_b = emap.sub_topology_to_topology(
-              std::span(cells.data_handle(), cells.size()), inverse);
+          std::vector<std::int32_t> contiguous_cells(cells.extent(0));
+          for (std::size_t i = 0; i < cells.extent(0); ++i)
+            contiguous_cells[i] = cells(i);
+          e_b = emap.sub_topology_to_topology(std::span(contiguous_cells),
+                                              inverse);
           md::mdspan e(e_b.data(), e_b.size());
           impl::pack_coefficient_entity(std::span(c), cstride,
                                         coeffs[coeff].get(), cell_info, e,
