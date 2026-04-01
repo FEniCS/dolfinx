@@ -538,7 +538,7 @@ def test_rank1_blocked():
         pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
     ],
 )
-def test_submesh_expression(dtype, qdegree):
+def test_submesh_codim_zero(dtype, qdegree):
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=xtype)
 
@@ -562,7 +562,8 @@ def test_submesh_expression(dtype, qdegree):
     )
     values = expr.eval(mesh, left_cells)
 
-    num_sub_cells = submesh.topology.index_map(submesh.topology.dim).size_local
+    sub_cellmap = submesh.topology.index_map(submesh.topology.dim)
+    num_sub_cells = sub_cellmap.size_local + sub_cellmap.num_ghosts
     values_sub = expr.eval(submesh, np.arange(num_sub_cells, dtype=np.int32))
 
     tol = 50 * np.finfo(dtype).eps
@@ -570,7 +571,8 @@ def test_submesh_expression(dtype, qdegree):
 
     x = ufl.SpatialCoordinate(mesh)
     u_exact = (x[0] + 2.0 * x[1]) * (x[1] ** 2 + x[0] ** 2)
-    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    cell_map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = cell_map.size_local + cell_map.num_ghosts
     expr_exact = dolfinx.fem.Expression(u_exact, quadrature_points, dtype=dtype)
     values_exact = expr_exact.eval(mesh, np.arange(num_cells, dtype=np.int32))
     np.testing.assert_allclose(values, values_exact[left_cells], atol=tol)
