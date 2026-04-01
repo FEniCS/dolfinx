@@ -15,7 +15,7 @@ import ufl
 from basix.ufl import quadrature_element
 from dolfinx import fem, la
 from dolfinx.fem import Constant, Expression, Function, form, functionspace
-from dolfinx.mesh import create_unit_square
+from dolfinx.mesh import create_rectangle, create_unit_square
 
 
 @pytest.mark.parametrize(
@@ -549,16 +549,17 @@ def test_submesh_expression(dtype, qdegree):
     def mark_left_cells(x):
         return x[0] <= 0.5 + 100 * np.finfo(xtype).resolution
 
-
     left_cells = dolfinx.mesh.locate_entities(mesh, mesh.topology.dim, mark_left_cells)
     submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(mesh, mesh.topology.dim, left_cells)
     u_sub = dolfinx.fem.Function(dolfinx.fem.functionspace(submesh, ("Lagrange", 2)), dtype=dtype)
-    u_sub.interpolate(lambda x: x[1]**2 + x[0]**2)
+    u_sub.interpolate(lambda x: x[1] ** 2 + x[0] ** 2)
 
     quadrature_points, _ = basix.make_quadrature(basix.CellType.triangle, qdegree)
     quadrature_points = quadrature_points.astype(xtype)
 
-    expr = dolfinx.fem.Expression(u*u_sub, quadrature_points, dtype=dtype, entity_maps=[entity_map])
+    expr = dolfinx.fem.Expression(
+        u * u_sub, quadrature_points, dtype=dtype, entity_maps=[entity_map]
+    )
     values = expr.eval(mesh, left_cells)
 
     num_sub_cells = submesh.topology.index_map(submesh.topology.dim).size_local
@@ -568,8 +569,63 @@ def test_submesh_expression(dtype, qdegree):
     np.testing.assert_allclose(values, values_sub, atol=tol)
 
     x = ufl.SpatialCoordinate(mesh)
-    u_exact = (x[0] + 2.0 * x[1]) * (x[1]**2 + x[0]**2)
+    u_exact = (x[0] + 2.0 * x[1]) * (x[1] ** 2 + x[0] ** 2)
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     expr_exact = dolfinx.fem.Expression(u_exact, quadrature_points, dtype=dtype)
     values_exact = expr_exact.eval(mesh, np.arange(num_cells, dtype=np.int32))
     np.testing.assert_allclose(values, values_exact[left_cells], atol=tol)
+
+
+@pytest.mark.parametrize("qdegree", [1, 3, 5])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_submesh_codim_one(dtype, qdegree):
+    xtype = dtype(0).real.dtype
+    mesh = create_rectangle(
+        MPI.COMM_WORLD, np.array([[0, 0], [2.1, 2.0]], dtype=xtype), [5, 3], dtype=xtype
+    )
+    el = basix.ufl.element("Lagrange", mesh.basix_cell(), 1, shape=(), dtype=xtype)
+    V = dolfinx.fem.functionspace(mesh, el)
+    u = dolfinx.fem.Function(V, dtype=dtype)
+    u.interpolate(lambda x: x[0] + 2.0 * x[1])
+
+    tol = 50 * np.finfo(xtype).resolution
+
+    def mark_left_facets(x):
+        return np.isclose(x[0], 1.0, atol=tol)
+
+    left_facets = dolfinx.mesh.locate_entities(mesh, mesh.topology.dim - 1, mark_left_facets)
+    submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(mesh, mesh.topology.dim, left_facets)
+    sub_el = basix.ufl.element(
+        "Lagrange", submesh.basix_cell(), 2, shape=(submesh.geometry.dim,), dtype=xtype
+    )
+    u_sub = dolfinx.fem.Function(dolfinx.fem.functionspace(submesh, sub_el), dtype=dtype)
+    u_sub.interpolate(lambda x: (x[1] ** 2, -(x[0] ** 2)))
+
+    quadrature_points, _ = basix.make_quadrature(basix.CellType.interval, qdegree)
+    quadrature_points = quadrature_points.astype(xtype)
+
+    n_h = ufl.FacetNormal(mesh)
+    expr = u * (ufl.dot(u_sub, n_h) + n_h[0] * u_sub[1])
+
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    expr = dolfinx.fem.Expression(expr, quadrature_points, dtype=dtype, entity_maps=[entity_map])
+
+    entities = dolfinx.fem.compute_integration_domains(
+        dolfinx.fem.IntegralType.exterior_facet, mesh.topology, left_facets
+    )
+
+    values = expr.eval(mesh, entities.reshape(-1, 2))
+
+    x = ufl.SpatialCoordinate(mesh)
+    expr_exact = (x[0] + 2.0 * x[1]) * (x[1] ** 2 - x[0] ** 2)
+    expr_exact = dolfinx.fem.Expression(expr_exact, quadrature_points, dtype=dtype)
+    values_exact = expr_exact.eval(mesh, entities.reshape(-1, 2))
+    np.testing.assert_allclose(values, values_exact, atol=tol)

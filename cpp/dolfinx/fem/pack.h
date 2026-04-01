@@ -421,10 +421,10 @@ void pack_coefficients(
       {
         const mesh::Topology topology = *mesh.topology();
         int tdim = topology.dim();
-        // If codim is zero we extract the cells
-        int codim = tdim - mesh.topology()->dim();
+        int codim = tdim - mesh_c->topology()->dim();
         if (codim == 0)
         {
+          // If codim is zero we extract the cells and map them
           auto cells = md::submdspan(entities, md::full_extent, 0);
           assert(cells.stride(0) == 1
                  && "Slice is not contiguous; cannot convert to std::span "
