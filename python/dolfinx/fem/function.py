@@ -26,7 +26,7 @@ from dolfinx.geometry import PointOwnershipData
 if typing.TYPE_CHECKING:
     from mpi4py import MPI as _MPI
 
-    from dolfinx.mesh import Mesh
+    from dolfinx.mesh import Mesh, EntityMap
 
 
 class Constant(ufl.Constant):
@@ -117,7 +117,7 @@ class Expression:
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
         dtype: npt.DTypeLike | None = None,
-        entity_maps: list[dolfinx.mesh.EntityMap] | None = None,
+        entity_maps: list[EntityMap] | None = None,
     ):
         """Create an Expression.
 
