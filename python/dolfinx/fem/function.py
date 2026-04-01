@@ -204,7 +204,11 @@ class Expression:
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
-        _entity_maps = [entity_map._cpp_object for entity_map in entity_maps] if entity_maps is not None else []
+        _entity_maps = (
+            [entity_map._cpp_object for entity_map in entity_maps]
+            if entity_maps is not None
+            else []
+        )
         ffi = module.ffi
         self._cpp_object = _create_expression(dtype)(
             ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
