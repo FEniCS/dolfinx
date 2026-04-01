@@ -996,9 +996,10 @@ Expression<T, U> create_expression(
     throw std::runtime_error("Type not supported.");
 
   assert(tabulate_tensor);
+  std::uint64_t e_hash = e.coordinate_element_hash;
   return Expression(coefficients, constants, std::span<const U>(X), Xshape,
-                    tabulate_tensor, value_shape, entity_maps,
-                    e.coordinate_element_hash, argument_space);
+                    tabulate_tensor, value_shape, entity_maps, e_hash,
+                    argument_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and
