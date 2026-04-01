@@ -557,13 +557,17 @@ def test_submesh_codim_zero(dtype, qdegree):
     quadrature_points, _ = basix.make_quadrature(basix.CellType.triangle, qdegree)
     quadrature_points = quadrature_points.astype(xtype)
 
+    sub_cellmap = submesh.topology.index_map(submesh.topology.dim)
+    num_sub_cells = sub_cellmap.size_local + sub_cellmap.num_ghosts
+    parent_cells = entity_map.sub_topology_to_topology(
+        np.arange(num_sub_cells, dtype=np.int32), inverse=False
+    )
+
     expr = dolfinx.fem.Expression(
         u * u_sub, quadrature_points, dtype=dtype, entity_maps=[entity_map]
     )
-    values = expr.eval(mesh, left_cells)
+    values = expr.eval(mesh, parent_cells)
 
-    sub_cellmap = submesh.topology.index_map(submesh.topology.dim)
-    num_sub_cells = sub_cellmap.size_local + sub_cellmap.num_ghosts
     values_sub = expr.eval(submesh, np.arange(num_sub_cells, dtype=np.int32))
 
     tol = 50 * np.finfo(dtype).eps
@@ -575,7 +579,7 @@ def test_submesh_codim_zero(dtype, qdegree):
     num_cells = cell_map.size_local + cell_map.num_ghosts
     expr_exact = dolfinx.fem.Expression(u_exact, quadrature_points, dtype=dtype)
     values_exact = expr_exact.eval(mesh, np.arange(num_cells, dtype=np.int32))
-    np.testing.assert_allclose(values, values_exact[left_cells], atol=tol)
+    np.testing.assert_allclose(values, values_exact[parent_cells], atol=tol)
 
 
 @pytest.mark.parametrize("qdegree", [1, 3, 5])
