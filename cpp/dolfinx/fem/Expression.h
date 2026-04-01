@@ -179,9 +179,6 @@ public:
   }
 
 private:
-  // Hash for coordinate element used to create the expression
-  std::uint64_t _coordinate_element_hash;
-
   // Function space for Argument
   std::shared_ptr<const FunctionSpace<geometry_type>> _argument_space;
 
@@ -203,7 +200,11 @@ private:
   // Evaluation points on reference cell
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> _x_ref;
 
+  // Map between different mesh topologies
   std::vector<std::reference_wrapper<const dolfinx::mesh::EntityMap>>
       _entity_maps;
+
+  // Hash for coordinate element used to create the expression
+  std::uint64_t _coordinate_element_hash;
 };
 } // namespace dolfinx::fem
