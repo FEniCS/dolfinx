@@ -19,8 +19,6 @@ from dolfinx.fem.forms import form_cpp_class, derivative_block
 from dolfinx.mesh import create_unit_square
 from ufl import Measure, SpatialCoordinate, TestFunction, TrialFunction, dx, inner, Form as ufl_form, TrialFunctions, TestFunctions, MixedFunctionSpace
 
-from collections.abc import Sequence
-
 
 def test_extract_forms():
     """Test extraction on unique function spaces for rows and columns of
@@ -170,6 +168,9 @@ def test_derivative_block():
 
     F_block = derivative_block(M_block, [f0, f1], [v0, v1])
     assert all([isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F_block])
+
+    with pytest.raises(ValueError):
+        derivative_block(F_block, f0)  # second argument not a sequence
 
     with pytest.raises(ValueError):
         derivative_block(F_block, [f0, f1], [u0])  # third argument has wrong length
