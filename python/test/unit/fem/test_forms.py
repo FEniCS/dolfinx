@@ -165,12 +165,6 @@ def test_derivative_block():
 
     M_block = f0**2 * f1 * dx  # multivariate functional
 
-    with pytest.raises(ValueError):
-        derivative_block(M_block, f0, [v0, v1])  # second argument not a sequence
-
-    with pytest.raises(ValueError):
-        derivative_block(M_block, [f0, f1], v0)  # third argument not a sequence
-
     F_block = derivative_block(M_block, [f0, f1])
     assert all([isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F_block])
 

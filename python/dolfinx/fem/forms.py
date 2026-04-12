@@ -725,7 +725,7 @@ def _derive_block_jacobian(
             "When F is a list of N forms, du must be a sequence "
             "containing N functions"
         )
-    return [[ufl.derivative(Fi, u_j, du_j) for u_j, du_j in zip(u, du)] for Fi in F]
+    return [[ufl.derivative(F_i, u_j, du_j) for u_j, du_j in zip(u, du)] for F_i in F]
 
 
 def derivative_block(
