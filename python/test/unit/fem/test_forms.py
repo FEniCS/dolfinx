@@ -156,9 +156,6 @@ def test_derivative_block():
     F = derivative_block(M, f0, v0)
     assert isinstance(F, ufl_form) and len(F.arguments()) == 1
 
-    with pytest.raises(ValueError):
-        derivative_block(F, u0, u0) # second argument not a ufl.Function
-
     J = derivative_block(F, f0)
     assert isinstance(J, ufl_form) and len(J.arguments()) == 2
 

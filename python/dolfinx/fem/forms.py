@@ -706,8 +706,6 @@ def _derive_univariate_jacobian(
     u: Function,
     du: ufl.Argument | None = None,
 ) -> ufl.Form:
-    if not isinstance(u, Function):
-        raise ValueError("When F is a rank-one UFL form, u must be a ufl.Function")
     if du is None:
         du = ufl.TrialFunction(u.function_space)
     return ufl.derivative(F, u, du)
