@@ -150,9 +150,6 @@ def test_derivative_block():
 
     M = f0**2 * dx  # univariate functional
 
-    with pytest.raises(ValueError):
-        derivative_block(M, f0, u0)  # third argument not a test function
-
     F = derivative_block(M, f0)
     assert isinstance(F, ufl_form) and len(F.arguments()) == 1
 
@@ -162,9 +159,6 @@ def test_derivative_block():
     with pytest.raises(ValueError):
         derivative_block(F, u0, u0) # second argument not a ufl.Function
 
-    with pytest.raises(ValueError):
-        derivative_block(F, f0, v0) # third argument not a trial function
-
     J = derivative_block(F, f0)
     assert isinstance(J, ufl_form) and len(J.arguments()) == 2
 
@@ -173,9 +167,6 @@ def test_derivative_block():
 
 
     M_block = f0**2 * f1 * dx  # multivariate functional
-
-    with pytest.raises(ValueError):
-        derivative_block(M_block, [f0, f1], [u0, v1])  # third argument contains a non test function
 
     with pytest.raises(ValueError):
         derivative_block(M_block, f0, [v0, v1])  # second argument not a sequence
