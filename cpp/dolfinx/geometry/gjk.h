@@ -505,6 +505,8 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
 /// Row-major storage.
 /// @param[in] q Body 2 list of points, `shape=(num_points, 3)`. Row-major
 /// storage.
+/// @param[in] num_threads Thread count.
+///
 /// @tparam T Floating point type
 /// @tparam U Floating point type used for geometry computations internally,
 /// which should be higher precision than T, to maintain accuracy.
