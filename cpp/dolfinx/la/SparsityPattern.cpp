@@ -228,17 +228,6 @@ std::vector<std::int64_t> SparsityPattern::column_indices() const
   return global;
 }
 //-----------------------------------------------------------------------------
-// common::IndexMap SparsityPattern::column_index_map() const
-// {
-//   if (_offsets.empty())
-//     throw std::runtime_error("Sparsity pattern has not been finalised.");
-
-//   std::array range = _index_maps[1]->local_range();
-//   const std::int32_t local_size = range[1] - range[0];
-//   return common::IndexMap(_comm.comm(), local_size, _col_ghosts,
-//                           _col_ghost_owners);
-// }
-//-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
 void SparsityPattern::finalize()

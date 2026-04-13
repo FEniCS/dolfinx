@@ -36,7 +36,6 @@ concept SparsityImplementation = requires(T sp, int i) {
   {
     sp.index_map(i)
   } -> std::same_as<std::shared_ptr<const dolfinx::common::IndexMap>>;
-  //  { sp.column_index_map() } -> std::same_as<dolfinx::common::IndexMap>;
 };
 
 namespace dolfinx::la
