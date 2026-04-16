@@ -92,7 +92,6 @@ def test_matvec(dtype):
     u = la.vector(imap, dtype=dtype)
     b.array[:] = 1.0
     A.mult(b, u)
-    u.scatter_forward()
 
     bs = np.ones(A.index_map(0).size_global)
     us = Ascipy @ bs
@@ -124,10 +123,7 @@ def test_matvec_transpose():
     b = la.vector(imap, dtype=dtype)
     u = la.vector(imap, dtype=dtype)
     b.array[:] = 1.0
-    A._cpp_object.multT(b._cpp_object, u._cpp_object)
-    u.scatter_forward()
-    print(u.array[: imap.size_local])
-    # assert np.allclose(u.array[: imap.size_local], 2.0)
+    A.mult(b, u, True)
 
     bs = np.ones(A.index_map(0).size_global)
     us = Ascipy.T @ bs

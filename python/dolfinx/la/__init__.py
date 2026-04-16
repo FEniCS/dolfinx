@@ -155,14 +155,18 @@ class MatrixCSR:
         """
         return self._cpp_object.index_map(i)
 
-    def mult(self, x: Vector, y: Vector) -> None:
-        """Compute ``y += Ax``.
+    def mult(self, x: Vector, y: Vector, transpose: bool = False) -> None:
+        """Compute ``y += Ax`` or ``y += A^T x``.
 
         Args:
             x: Input Vector
             y: Output Vector
+            transpose: if True, compute y += A^T x
         """
-        self._cpp_object.mult(x._cpp_object, y._cpp_object)
+        if transpose:
+            self._cpp_object.multT(x._cpp_object, y._cpp_object)
+        else:
+            self._cpp_object.mult(x._cpp_object, y._cpp_object)
 
     @property
     def block_size(self) -> list:

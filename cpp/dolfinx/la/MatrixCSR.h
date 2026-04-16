@@ -889,6 +889,9 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
   }
 }
 
+/// @brief Compute transpose y += A^T x
+/// @param x
+/// @param y
 template <typename Scalar, typename V, typename W, typename X>
 void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
                                       la::Vector<Scalar>& y) const
@@ -909,9 +912,17 @@ void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
   // Compute ghost region contribution and scatter back
   int ncolslocal = index_map(1)->size_local();
   std::fill(std::next(_y.begin(), ncolslocal), _y.end(), 0.0);
-  impl::spmvT<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y, _bs[0], _bs[1]);
+  if (_bs[1] == 1)
+    impl::spmvT<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y, _bs[0], _bs[1]);
+  else
+    impl::spmvT<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y, _bs[0], _bs[1]);
+
   y.scatter_rev(std::plus<Scalar>());
-  impl::spmvT<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y, _bs[0], _bs[1]);
+
+  if (_bs[1] == 1)
+    impl::spmvT<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y, _bs[0], _bs[1]);
+  else
+    impl::spmvT<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y, _bs[0], _bs[1]);
 
 }
 
