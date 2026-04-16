@@ -491,6 +491,9 @@ public:
   /// @param[in,out] y Vector to accumulate the result into.
   void mult(Vector<value_type>& x, Vector<value_type>& y) const;
 
+   void multT(Vector<value_type>& x, Vector<value_type>& y) const;
+
+
   /// @brief Get MPI communicator that matrix is defined on.
   MPI_Comm comm() const { return _comm.comm(); }
 
@@ -884,6 +887,32 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
     impl::spmv<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
                            _bs[0], _bs[1]);
   }
+}
+
+template <typename Scalar, typename V, typename W, typename X>
+void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
+                                      la::Vector<Scalar>& y) const
+{
+  std::int32_t nrowslocal = num_owned_rows();
+  std::span<const std::int64_t> Arow_ptr(row_ptr().data(), nrowslocal + 1);
+  std::span<const std::int32_t> Acols(cols().data(), Arow_ptr[nrowslocal]);
+  std::span<const std::int64_t> Aoff_diag_offset(off_diag_offset().data(),
+                                                  nrowslocal);
+  std::span<const Scalar> Avalues(values().data(), Arow_ptr[nrowslocal]);
+
+  std::span<const Scalar> _x = x.array();
+  std::span<Scalar> _y = y.array();
+
+  std::span<const std::int64_t> Arow_begin(Arow_ptr.data(), nrowslocal);
+  std::span<const std::int64_t> Arow_end(Arow_ptr.data() + 1, nrowslocal);
+
+  // Compute ghost region contribution and scatter back
+  int ncolslocal = index_map(1)->size_local();
+  std::fill(std::next(_y.begin(), ncolslocal), _y.end(), 0.0);
+  impl::spmvT<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y, _bs[0], _bs[1]);
+  y.scatter_rev(std::plus<Scalar>());
+  impl::spmvT<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y, _bs[0], _bs[1]);
+
 }
 
 } // namespace dolfinx::la
