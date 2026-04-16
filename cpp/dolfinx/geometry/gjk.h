@@ -10,6 +10,7 @@
 #include <array>
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <cmath>
+#include <thread>
 #include <concepts>
 #include <limits>
 #include <numeric>

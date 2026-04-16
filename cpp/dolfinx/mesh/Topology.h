@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <thread>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
