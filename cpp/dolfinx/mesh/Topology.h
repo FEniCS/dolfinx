@@ -14,6 +14,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>

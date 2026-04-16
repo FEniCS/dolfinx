@@ -14,6 +14,7 @@
 #include <limits>
 #include <numeric>
 #include <span>
+#include <thread>
 #include <utility>
 #include <vector>
 
