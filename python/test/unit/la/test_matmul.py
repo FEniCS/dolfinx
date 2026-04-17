@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Chris Richardson
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
