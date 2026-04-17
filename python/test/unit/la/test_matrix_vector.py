@@ -90,10 +90,11 @@ def test_matvec(dtype):
 
     b = la.vector(imap, dtype=dtype)
     u = la.vector(imap, dtype=dtype)
-    b.array[:] = 1.0
+    b.array[:] = np.arange(len(b.array))
     A.mult(b, u)
 
-    bs = np.ones(A.index_map(0).size_global)
+    bs = np.concatenate(mesh.comm.allgather(b.array[:nr]))
+    print(Ascipy.shape, bs.shape)
     us = Ascipy @ bs
     assert np.allclose(u.array[:nr], us[lr0:lr1])
 
@@ -122,12 +123,11 @@ def test_matvec_transpose():
 
     b = la.vector(imap, dtype=dtype)
     u = la.vector(imap, dtype=dtype)
-    b.array[:] = 1.0
+    b.array[:] = np.arange(len(b.array))
     A.mult(b, u, True)
 
-    bs = np.ones(A.index_map(0).size_global)
+    bs = np.concatenate(mesh.comm.allgather(b.array[:nr]))
     us = Ascipy.T @ bs
-    print(us)
     assert np.allclose(u.array[:nr], us[lr0:lr1])
 
 
