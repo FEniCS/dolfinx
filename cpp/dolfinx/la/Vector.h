@@ -354,6 +354,33 @@ public:
            _x.begin());
   }
 
+  /// @brief End scatter (send) of local data values
+  /// to the owning process and assign/accumulate into the owned data entries
+  /// (simplified CPU version).
+  ///
+  /// Suitable for scatter operations on a CPU with `std::vector`
+  /// storage. The receive buffer is unpacked internally by a function
+  /// that is suitable for use on a CPU.
+  ///
+  /// @note Collective MPI operation.
+  template <class BinaryOperation>
+  void scatter_rev_end(BinaryOperation op)
+    requires requires(Container c) {
+      { c.data() } -> std::same_as<T*>;
+    }
+  {
+    // Inline the kernel overload directly to avoid ambiguity: the lambda
+    // produced by get_unpack_op satisfies both VectorPackKernel and the
+    // unconstrained BinaryOperation parameter, making a delegating call to
+    // scatter_rev_end(get_unpack_op(op)) ambiguous.
+    auto unpack = get_unpack_op(op);
+    _scatterer->scatter_end(_request);
+    unpack(_scatterer->local_indices().begin(),
+           _scatterer->local_indices().end(), _buffer_local.begin(),
+           _x.begin());
+  }
+
+
   /// @brief Scatter (send) of ghost data values to the owning process
   /// and assign/accumulate into the owned data entries (simplified CPU
   /// version).
@@ -372,7 +399,7 @@ public:
   void scatter_rev(BinaryOperation op)
   {
     this->scatter_rev_begin();
-    this->scatter_rev_end(get_unpack_op(op));
+    this->scatter_rev_end(op);
   }
 
   /// Get IndexMap
