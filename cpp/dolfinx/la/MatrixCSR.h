@@ -489,7 +489,7 @@ public:
   ///
   /// @param[in] x Vector to apply `A` to.
   /// @param[in,out] y Vector to accumulate the result into.
-  void mult(Vector<value_type>& x, Vector<value_type>& y);
+  void mult(Vector<value_type>& x, Vector<value_type>& y) const;
 
   /// @brief Get MPI communicator that matrix is defined on.
   MPI_Comm comm() const { return _comm.comm(); }
@@ -838,7 +838,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityType& p, BlockMode mode)
 /// x,y
 template <typename Scalar, typename V, typename W, typename X>
 void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
-                                      la::Vector<Scalar>& y)
+                                      la::Vector<Scalar>& y) const
 {
   // start communication (update ghosts)
   x.scatter_fwd_begin();
