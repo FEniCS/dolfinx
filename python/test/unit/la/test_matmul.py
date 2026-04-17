@@ -9,24 +9,10 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
-from scipy.sparse import csr_matrix
 
 from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.mesh import create_unit_square
-
-
-def mat_gather(A):
-    # Gather full matrix on all processes for scipy
-    nr = A.index_map(0).size_local
-    gatheredvals = np.concatenate(MPI.COMM_WORLD.allgather(A.data[: A.indptr[nr]]))
-    gatheredptrs = MPI.COMM_WORLD.allgather(A.indptr[: nr + 1])
-    cols = A.index_map(1).local_to_global(A.indices[: A.indptr[nr]])
-    gatheredcols = np.concatenate(MPI.COMM_WORLD.allgather(cols))
-    indptr = gatheredptrs[0]
-    for i in range(1, len(gatheredptrs)):
-        indptr = np.concatenate((indptr, (gatheredptrs[i][1:] + indptr[-1])))
-    return csr_matrix((gatheredvals, gatheredcols, indptr))
 
 
 @pytest.mark.parametrize(
@@ -38,7 +24,7 @@ def mat_gather(A):
         np.complex128,
     ],
 )
-def test_matmul(dtype):
+def test_matmul(dtype, mat_gather):
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
     imap = mesh.topology.index_map(0)
     sp = _cpp.la.SparsityPattern(mesh.comm, [imap, imap], [1, 1])
