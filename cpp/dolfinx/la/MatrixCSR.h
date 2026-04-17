@@ -491,7 +491,6 @@ public:
   /// @param[in,out] y Vector to accumulate the result into.
   void mult(Vector<value_type>& x, Vector<value_type>& y) const;
 
-
   /// @brief Compute the product `y += A^T x`.
   ///
   /// The vectors `x` and `y` must have parallel layouts that are
@@ -503,7 +502,6 @@ public:
   /// @param[in] x Vector to apply `A^T` to.
   /// @param[in,out] y Vector to accumulate the result into.
   void multT(Vector<value_type>& x, Vector<value_type>& y) const;
-
 
   /// @brief Get MPI communicator that matrix is defined on.
   MPI_Comm comm() const { return _comm.comm(); }
