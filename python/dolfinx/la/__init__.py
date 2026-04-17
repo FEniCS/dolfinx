@@ -177,7 +177,7 @@ class MatrixCSR:
         """
         if self.index_map(1).size_local != B.index_map(0).size_local:
             raise RuntimeError("Invalid matrix sizes for matmult.")
-        return self._cpp_object.mult(B._cpp_object)
+        return MatrixCSR(self._cpp_object.mult(B._cpp_object))
 
     @property
     def block_size(self) -> list:

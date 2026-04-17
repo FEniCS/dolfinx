@@ -53,7 +53,7 @@ def test_matmul(dtype, mat_gather):
     # Check gathered matrix
     assert np.allclose(B.to_dense()[:nrB, :], Bscipy.todense()[lrB0:lrB1])
 
-    C = la.MatrixCSR(A.matmul(B))
+    C = A.matmul(B)
     lrC0, lrC1 = C.index_map(0).local_range
     nrC = C.index_map(0).size_local
     Cscipy = Ascipy @ Bscipy
