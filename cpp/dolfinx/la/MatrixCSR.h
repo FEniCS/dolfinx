@@ -917,14 +917,12 @@ void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
   else
     impl::spmvT<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y, _bs[0], _bs[1]);
 
-  y.scatter_rev_begin();
+  y.scatter_rev();
 
   if (_bs[1] == 1)
     impl::spmvT<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y, _bs[0], 1);
   else
     impl::spmvT<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y, _bs[0], _bs[1]);
-
-  y.scatter_rev_end(std::plus<Scalar>());
 
 }
 

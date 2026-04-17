@@ -90,6 +90,7 @@ def test_matvec(dtype):
 
     b = la.vector(imap, dtype=dtype)
     u = la.vector(imap, dtype=dtype)
+    u.array[:] = 0.0
     b.array[:] = np.arange(len(b.array))
     A.mult(b, u)
 
@@ -99,8 +100,16 @@ def test_matvec(dtype):
     assert np.allclose(u.array[:nr], us[lr0:lr1])
 
 
-def test_matvec_transpose():
-    dtype = np.float64
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        np.complex64,
+        np.complex128,
+    ],
+)
+def test_matvec_transpose(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
     imap = mesh.topology.index_map(0)
     sp = _cpp.la.SparsityPattern(mesh.comm, [imap, imap], [1, 1])
@@ -123,6 +132,7 @@ def test_matvec_transpose():
 
     b = la.vector(imap, dtype=dtype)
     u = la.vector(imap, dtype=dtype)
+    u.array[:] = 0.0
     b.array[:] = np.arange(len(b.array))
     A.mult(b, u, True)
 
