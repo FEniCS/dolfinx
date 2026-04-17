@@ -458,7 +458,7 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
   }
   else
   {
-    throw std::runtime_error("Unsupported option name");
+    std::runtime_error("Unsupported option name");
   }
 }
 //----------------------------------------------------------------------------
