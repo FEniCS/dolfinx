@@ -168,6 +168,17 @@ class MatrixCSR:
         else:
             self._cpp_object.mult(x._cpp_object, y._cpp_object)
 
+    def matmul(self, B):
+        """Compute ``C = A * B``, where `A` is this matrix.
+
+        Args:
+            B: Input Matrix
+            C: Output Matrix
+        """
+        if self.index_map(1).size_local != B.index_map(0).size_local:
+            raise RuntimeError("Invalid matrix sizes for matmult.")
+        return self._cpp_object.mult(B._cpp_object)
+
     @property
     def block_size(self) -> list:
         """Block sizes for the matrix."""
