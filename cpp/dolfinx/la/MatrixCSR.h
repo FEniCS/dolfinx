@@ -903,13 +903,13 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
 /// @param y
 template <typename Scalar, typename V, typename W, typename X>
 void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
-                                      la::Vector<Scalar>& y) const
+                                       la::Vector<Scalar>& y) const
 {
   std::int32_t nrowslocal = num_owned_rows();
   std::span<const std::int64_t> Arow_ptr(row_ptr().data(), nrowslocal + 1);
   std::span<const std::int32_t> Acols(cols().data(), Arow_ptr[nrowslocal]);
   std::span<const std::int64_t> Aoff_diag_offset(off_diag_offset().data(),
-                                                  nrowslocal);
+                                                 nrowslocal);
   std::span<const Scalar> Avalues(values().data(), Arow_ptr[nrowslocal]);
 
   std::span<const Scalar> _x = x.array();
@@ -922,19 +922,20 @@ void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
   int ncolslocal = index_map(1)->size_local();
   std::fill(std::next(_y.begin(), ncolslocal), _y.end(), 0.0);
   if (_bs[1] == 1)
-    impl::spmvT<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y, _bs[0], 1);
+    impl::spmvT<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                           _bs[0], 1);
   else
-    impl::spmvT<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y, _bs[0], _bs[1]);
+    impl::spmvT<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                            _bs[0], _bs[1]);
 
   y.scatter_rev(std::plus<Scalar>{});
 
   if (_bs[1] == 1)
-    impl::spmvT<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y, _bs[0], 1);
+    impl::spmvT<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                           _bs[0], 1);
   else
-    impl::spmvT<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y, _bs[0], _bs[1]);
-
+    impl::spmvT<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x,
+                            _y, _bs[0], _bs[1]);
 }
-
-
 
 } // namespace dolfinx::la

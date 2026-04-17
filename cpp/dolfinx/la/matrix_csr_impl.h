@@ -259,7 +259,6 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
   }
 }
 
-
 /// @brief Sparse matrix-vector transpose product implementation.
 ///
 /// Computes `y += A^T x` where A is given in CSR format.  The transpose
@@ -295,9 +294,9 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
 ///                       `BS1 == -1`).
 template <typename T, int BS1>
 void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
-          std::span<const std::int64_t> row_end,
-          std::span<const std::int32_t> indices, std::span<const T> x,
-          std::span<T> y, int bs0, int bs1)
+           std::span<const std::int64_t> row_end,
+           std::span<const std::int32_t> indices, std::span<const T> x,
+           std::span<T> y, int bs0, int bs1)
 {
   assert(row_begin.size() == row_end.size());
 
@@ -308,27 +307,26 @@ void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
       const T xval = x[i * bs0 + k0];
       for (std::int32_t j = row_begin[i]; j < row_end[i]; j++)
       {
-        if constexpr(BS1 == -1)
+        if constexpr (BS1 == -1)
         {
           for (int k1 = 0; k1 < bs1; ++k1)
           {
-            y[indices[j] * bs1 + k1] += values[j * bs1 * bs0 + k1 * bs0 + k0]
-                  * xval;
+            y[indices[j] * bs1 + k1]
+                += values[j * bs1 * bs0 + k1 * bs0 + k0] * xval;
           }
         }
         else
         {
           for (int k1 = 0; k1 < BS1; ++k1)
           {
-            y[indices[j] * BS1 + k1] += values[j * BS1 * bs0 + k1 * bs0 + k0]
-                  * xval;
+            y[indices[j] * BS1 + k1]
+                += values[j * BS1 * bs0 + k1 * bs0 + k0] * xval;
           }
         }
       }
     }
   }
 }
-
 
 } // namespace impl
 } // namespace dolfinx::la
