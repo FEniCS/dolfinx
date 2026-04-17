@@ -260,17 +260,39 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
 }
 
 
-/// @brief  Sparse matrix-vector transpose product implementation.
-/// @tparam T
-/// @tparam BS1
-/// @param values
-/// @param row_begin
-/// @param row_end
-/// @param indices
-/// @param x
-/// @param y
-/// @param bs0
-/// @param bs1
+/// @brief Sparse matrix-vector transpose product implementation.
+///
+/// Computes `y += A^T x` where A is given in CSR format.  The transpose
+/// is applied implicitly: for each nonzero A(i, indices[j]) the
+/// contribution `A(i,j) * x[i]` is scattered into `y[indices[j]]`.
+///
+/// @note `y` is accumulated into (not overwritten).  Callers should
+/// zero `y` before the first call if a fresh result is required.
+///
+/// @note The value block layout is column-major within each block: for
+/// block entry `j` the element at row-offset `k0` and column-offset `k1`
+/// is stored at `values[j * bs1 * bs0 + k1 * bs0 + k0]`.
+///
+/// @tparam T   Scalar type of the matrix and vector entries.
+/// @tparam BS1 Compile-time column block size.  Pass `-1` to use the
+///             runtime value `bs1` instead.
+///
+/// @param[in]  values    Nonzero values of A, stored block-column-major.
+///                       Length: `nnz * bs0 * bs1`.
+/// @param[in]  row_begin Start positions in `values`/`indices` for each
+///                       row of A.  Length: number of rows of A.
+/// @param[in]  row_end   End positions in `values`/`indices` for each
+///                       row of A.  Length: number of rows of A.
+/// @param[in]  indices   Column indices of each nonzero block entry of A.
+///                       Length: `nnz`.
+/// @param[in]  x         Input vector, indexed by the *rows* of A.
+///                       Length: `num_rows * bs0`.
+/// @param[in,out] y      Output vector, indexed by the *columns* of A,
+///                       accumulated into.
+///                       Length: `num_cols * bs1`.
+/// @param[in]  bs0       Row block size (runtime value).
+/// @param[in]  bs1       Column block size (runtime value, used when
+///                       `BS1 == -1`).
 template <typename T, int BS1>
 void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
           std::span<const std::int64_t> row_end,
