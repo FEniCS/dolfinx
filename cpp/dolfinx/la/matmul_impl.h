@@ -72,29 +72,13 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   auto col_map_A = A.index_map(1); // column IndexMap of A
   auto row_map_B = B.index_map(0); // row IndexMap of B
 
-  // Serial fast-path: with a single rank there are no ghost columns and
-  // no MPI communication to perform.  We must NOT apply this check per-rank
-  // in a parallel run: some ranks may have no ghost columns while others do,
-  // and the neighbourhood collectives below must be reached by every rank.
-  {
-    int comm_size = 1;
-    MPI_Comm_size(col_map_A->comm(), &comm_size);
-    if (comm_size == 1)
-    {
-      auto col_map_B = B.index_map(1);
-      auto new_col_map = std::make_shared<dolfinx::common::IndexMap>(
-          col_map_B->comm(), col_map_B->size_local(), col_map_B->ghosts(),
-          col_map_B->owners());
-      return {new_col_map, std::vector<std::int32_t>{0},
-              std::vector<std::int32_t>{}, std::vector<T>{}};
-    }
-  }
-
   // Create neighborhood comms for col_map_A
   std::span<const int> src = col_map_A->src();
   std::span<const int> dest = col_map_A->dest();
   MPI_Comm comm = col_map_A->comm();
 
+  // Serial fast-path: with a single rank there are no ghost columns and
+  // no MPI communication to perform.
   // No-neighbour parallel fast-path: A has no ghost columns (src empty) and
   // no rank ghosts our A-owned columns (dest empty), so no remote rows of B
   // are needed and no rank is waiting for us to participate in a collective.
@@ -102,7 +86,9 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   // synchronisation (same argument as for transpose()).
   // Use col_map_B — not col_map_A — for new_col_map so that any existing
   // ghost columns in B are preserved in the product's column map.
-  if (src.empty() && dest.empty())
+
+  int comm_size = dolfinx::MPI::size(col_map_A->comm());
+  if (comm_size == 1 or (src.empty() && dest.empty()))
   {
     auto col_map_B = B.index_map(1);
     auto new_col_map = std::make_shared<dolfinx::common::IndexMap>(
@@ -481,6 +467,8 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
 /// @param B Right matrix.
 /// @return The product C = A*B as a MatrixCSR with row distribution
 ///         matching A and column distribution determined by B.
+///         The row IndexMap of C has no ghosts, and the column IndexMap of C
+///         will generally be a larger superset of the column IndexMap of B.
 template <typename T>
 dolfinx::la::MatrixCSR<T> matmul(const dolfinx::la::MatrixCSR<T>& A,
                                  const dolfinx::la::MatrixCSR<T>& B)

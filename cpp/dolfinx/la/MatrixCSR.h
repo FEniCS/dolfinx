@@ -491,7 +491,18 @@ public:
   /// @param[in,out] y Vector to accumulate the result into.
   void mult(Vector<value_type>& x, Vector<value_type>& y) const;
 
-   void multT(Vector<value_type>& x, Vector<value_type>& y) const;
+
+  /// @brief Compute the product `y += A^T x`.
+  ///
+  /// The vectors `x` and `y` must have parallel layouts that are
+  /// compatible with `A`. In detail, `x` must have the same `IndexMap` as
+  /// the matrix rows, `A.index_map(0)` and `y` must have the same owned
+  /// indices as the matrix columns in `A.index_map(1)`. Ghost entries will
+  /// be overwritten, and owned entries of `y` will be updated.
+  ///
+  /// @param[in] x Vector to apply `A^T` to.
+  /// @param[in,out] y Vector to accumulate the result into.
+  void multT(Vector<value_type>& x, Vector<value_type>& y) const;
 
 
   /// @brief Get MPI communicator that matrix is defined on.
