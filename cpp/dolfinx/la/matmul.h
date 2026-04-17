@@ -100,7 +100,8 @@ struct Sparsity
 /// columns of Matrix A.
 /// @param A MatrixCSR
 /// @param B MatrixCSR
-/// @returns Tuple containing [new index map, rowptr, cols, values] for the received rows
+/// @returns Tuple containing [new index map, rowptr, cols, values] for the
+/// received rows
 template <typename T>
 std::tuple<std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>,
            std::vector<std::int32_t>, std::vector<T>>
