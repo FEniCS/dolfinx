@@ -493,14 +493,36 @@ public:
 
   /// @brief Compute the product `y += A^T x`.
   ///
-  /// The vectors `x` and `y` must have parallel layouts that are
-  /// compatible with `A`. In detail, `x` must have the same `IndexMap` as
-  /// the matrix rows, `A.index_map(0)` and `y` must have the same owned
-  /// indices as the matrix columns in `A.index_map(1)`. Ghost entries will
-  /// be overwritten, and owned entries of `y` will be updated.
+  /// Performs the distributed sparse matrix–vector product with the
+  /// *transpose* of the matrix.  The computation is split into two phases:
   ///
-  /// @param[in] x Vector to apply `A^T` to.
-  /// @param[in,out] y Vector to accumulate the result into.
+  /// 1. **Off-diagonal phase** — contributions from the off-diagonal block
+  ///    (ghost columns of A, i.e. columns owned by remote ranks) are
+  ///    accumulated into the ghost region of `y`.  The ghost entries of
+  ///    `y` are zeroed before this phase so that stale values do not
+  ///    pollute the result.  A reverse scatter (`scatter_rev`) then
+  ///    reduces those ghost contributions back to the owning ranks.
+  ///
+  /// 2. **Diagonal phase** — contributions from the diagonal block
+  ///    (locally owned columns of A) are accumulated into the owned
+  ///    entries of `y`.
+  ///
+  /// **Layout requirements:**
+  /// - `x` must share the same `IndexMap` as the matrix *rows*,
+  ///   `A.index_map(0)`.  All ghost entries of `x` must be up-to-date
+  ///   before calling (the implementation reads `x.array()` directly
+  ///   without a forward scatter).
+  /// - `y` must share the same *owned* indices as the matrix *columns*,
+  ///   `A.index_map(1)`.  Only owned entries of `y` are meaningful after
+  ///   the call; ghost entries are used as scratch and left in an
+  ///   unspecified state.
+  ///
+  /// @note `y` is accumulated *into* (not overwritten) on the owned
+  ///       entries.  Zero `y` before the first call if a fresh result is
+  ///       required.
+  ///
+  /// @param[in]     x Vector to apply `A^T` to; must cover the row space of A.
+  /// @param[in,out] y Vector accumulated into; covers the column space of A.
   void multT(Vector<value_type>& x, Vector<value_type>& y) const;
 
   /// @brief Get MPI communicator that matrix is defined on.
@@ -898,9 +920,8 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
   }
 }
 
-/// @brief Compute transpose y += A^T x
-/// @param x
-/// @param y
+/// @brief Out-of-line implementation of MatrixCSR::multT.
+/// @see MatrixCSR::multT for the full specification.
 template <typename Scalar, typename V, typename W, typename X>
 void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
                                        la::Vector<Scalar>& y) const

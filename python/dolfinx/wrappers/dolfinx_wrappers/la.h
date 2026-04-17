@@ -12,7 +12,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
-#include <dolfinx/la/matmul_impl.h>
+#include <dolfinx/la/matmul.h>
 #include <dolfinx/la/utils.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>

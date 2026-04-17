@@ -35,42 +35,78 @@ namespace dolfinx::la
 namespace impl
 {
 
-// Lightweight struct satisfying SparsityImplementation for MatrixCSR
-// constructor.
+/// @brief Lightweight sparsity descriptor satisfying the
+///        `SparsityImplementation` concept required by the `MatrixCSR`
+///        constructor.
+///
+/// Holds non-owning views into externally managed CSR arrays together with
+/// the row and column `IndexMap`s that describe the parallel distribution.
+/// It is intended as a short-lived helper: to be constructed it from the
+/// output of `impl::matmul` and passed to the
+/// `MatrixCSR` constructor.
+///
+/// @note All spans must remain valid for the lifetime of this object.
 struct Sparsity
 {
+  /// @brief Row `IndexMap` — describes the parallel distribution of rows.
   std::shared_ptr<const common::IndexMap> _row_map;
+
+  /// @brief Column `IndexMap` — describes the parallel distribution of
+  ///        columns, including any ghost columns needed for the
+  ///        off-diagonal block.
   std::shared_ptr<const common::IndexMap> _col_map;
+
+  /// @brief CSR column indices, length `nnz`.  Values in
+  ///        `[0, size_local(col) + num_ghosts(col))`, sorted within each row.
   std::span<const std::int32_t> _cols;
+
+  /// @brief CSR row pointers, length `num_rows + 1`.  `_offsets[i]` is the
+  ///        start of row `i` in `_cols`; `_offsets[num_rows]` equals `nnz`.
   std::span<const std::int64_t> _offsets;
+
+  /// @brief Per-row diagonal block size, length `num_rows`.
+  ///        `_off_diag[i]` is the number of entries in row `i` whose column
+  ///        index is strictly less than `_col_map->size_local()`, i.e. the
+  ///        count of entries in the diagonal (owned-column) block.  Entries
+  ///        at positions `[_off_diag[i], row_end)` belong to the
+  ///        off-diagonal block.
   std::span<const std::int32_t> _off_diag;
 
+  /// @brief Return the row (`dim == 0`) or column (`dim == 1`) `IndexMap`.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const
   {
     return dim == 0 ? _row_map : _col_map;
   }
 
+  /// @brief Return the block size. Always 1 — this struct does not yet support
+  ///        block-structured sparsity patterns.
   int block_size(int) const { return 1; }
 
+  /// @brief Return the CSR graph as `(column_indices, row_pointers)`.
   std::pair<std::span<const std::int32_t>, std::span<const std::int64_t>>
   graph() const
   {
     return {_cols, _offsets};
   }
 
+  /// @brief Return the per-row diagonal block sizes (see `_off_diag`).
   std::span<const std::int32_t> off_diagonal_offsets() const
   {
     return _off_diag;
   }
 };
 
+/// @brief Fetch the rows of Matrix B which are referenced by the ghost
+/// columns of Matrix A.
+/// @param A MatrixCSR
+/// @param B MatrixCSR
+/// @returns Tuple containing [new index map, rowptr, cols, values] for the received rows
 template <typename T>
 std::tuple<std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>,
            std::vector<std::int32_t>, std::vector<T>>
 fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
                  const dolfinx::la::MatrixCSR<T>& B)
 {
-  dolfinx::common::Timer tsp1("{*}fetch");
   // The ghost columns of A are global row indices into B.
   auto col_map_A = A.index_map(1); // column IndexMap of A
   auto row_map_B = B.index_map(0); // row IndexMap of B
@@ -101,9 +137,14 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
             std::vector<std::int32_t>{}, std::vector<T>{}};
   }
 
-  std::map<int, int> src_rank_to_nbr;
-  for (std::size_t i = 0; i < src.size(); ++i)
-    src_rank_to_nbr.insert({src[i], i});
+  // src is guaranteed sorted (Scatterer asserts this), so use binary search
+  // rather than a heap-allocated map.
+  auto rank_to_nbr = [&src](int r) -> int
+  {
+    auto it = std::lower_bound(src.begin(), src.end(), r);
+    assert(it != src.end() && *it == r);
+    return static_cast<int>(std::distance(src.begin(), it));
+  };
   MPI_Comm neigh_comm_fwd;
   MPI_Comm neigh_comm_rev;
   MPI_Dist_graph_create_adjacent(comm, dest.size(), dest.data(), MPI_UNWEIGHTED,
@@ -123,7 +164,7 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   std::vector<int> recv_count(dest.size(), 0);
 
   for (int gh : ghost_owners)
-    ++send_count[src_rank_to_nbr[gh]];
+    ++send_count[rank_to_nbr(gh)];
   MPI_Neighbor_alltoall(send_count.data(), 1, MPI_INT, recv_count.data(), 1,
                         MPI_INT, neigh_comm_fwd);
 
@@ -141,7 +182,7 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   std::vector<std::int64_t> required_globals(required_globals_map.size());
   for (std::size_t i = 0; i < ghost_owners.size(); ++i)
   {
-    int pos = src_rank_to_nbr[ghost_owners[i]];
+    int pos = rank_to_nbr(ghost_owners[i]);
     perm[i] = send_disp[pos]; // position before increment
     required_globals[send_disp[pos]++] = required_globals_map[i];
   }
@@ -358,19 +399,22 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
 /// @param ghost_cols    Local column indices (w.r.t. new_col_map) for ghost
 /// rows.
 /// @param ghost_vals    Values for the ghost rows of B.
-/// @return (row_ptr, cols, vals) — the CSR structure and values of C.
+/// @return Tuple (row_ptr, off_diag_offsets, cols, vals). off_diag_offsets[i]
+///         is the number of diagonal-block entries in row i, computed during
+///         the same sort step that establishes column order.
 template <typename T>
-std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>>
+std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>,
+           std::vector<std::int32_t>, std::vector<T>>
 matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
        std::shared_ptr<const common::IndexMap> new_col_map,
        std::span<const std::int32_t> ghost_row_ptr,
        std::span<const std::int32_t> ghost_cols, std::span<const T> ghost_vals)
 {
-  dolfinx::common::Timer tsp("{*}sparsity_and_mult");
   auto col_map_B = B.index_map(1);
   const std::int32_t num_local_rows_A = A.index_map(0)->size_local();
   const std::int32_t num_local_rows_B = B.index_map(0)->size_local();
   const std::int32_t num_owned_cols_B = col_map_B->size_local();
+  const std::int32_t num_owned_cols_C = new_col_map->size_local();
 
   auto row_ptr_A = A.row_ptr();
   auto offdiag_ptr_A = A.off_diag_offset();
@@ -390,10 +434,12 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
       = new_col_map->size_local()
         + static_cast<std::int32_t>(new_col_map->ghosts().size());
 
-  std::vector<std::int32_t> C_row_ptr = {0};
-  C_row_ptr.reserve(num_local_rows_A + 1);
-  std::vector<std::int32_t> C_cols;
-  std::vector<T> C_vals;
+  std::vector<std::int64_t> row_ptr_C = {0};
+  row_ptr_C.reserve(num_local_rows_A + 1);
+  std::vector<std::int32_t> off_diag_offsets_C;
+  off_diag_offsets_C.reserve(num_local_rows_A);
+  std::vector<std::int32_t> cols_C;
+  std::vector<T> vals_C;
 
   // Dense accumulator: acc[k] holds the running sum for column k.
   // in_row[k] marks whether column k was touched in the current row.
@@ -448,18 +494,25 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
     // required by off_diag_offset and MatrixCSR.
     std::sort(row_cols.begin(), row_cols.end());
 
+    // Diagonal block boundary: count entries in the owned column range.
+    // row_cols is sorted, so a single lower_bound suffices.
+    off_diag_offsets_C.push_back(static_cast<std::int32_t>(
+        std::lower_bound(row_cols.begin(), row_cols.end(), num_owned_cols_C)
+        - row_cols.begin()));
+
     // Flush accumulator to output and reset both acc and in_row.
     for (const std::int32_t c : row_cols)
     {
-      C_cols.push_back(c);
-      C_vals.push_back(acc[c]);
+      cols_C.push_back(c);
+      vals_C.push_back(acc[c]);
       acc[c] = T(0);
       in_row[c] = false;
     }
-    C_row_ptr.push_back(static_cast<std::int32_t>(C_cols.size()));
+    row_ptr_C.push_back(static_cast<std::int64_t>(cols_C.size()));
   }
 
-  return {std::move(C_row_ptr), std::move(C_cols), std::move(C_vals)};
+  return {std::move(row_ptr_C), std::move(off_diag_offsets_C),
+          std::move(cols_C), std::move(vals_C)};
 }
 
 } // namespace impl
@@ -468,6 +521,7 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
 ///
 /// @param A Left matrix.
 /// @param B Right matrix.
+/// @note Currently only supports block-size 1 matrices.
 /// @return The product C = A*B as a MatrixCSR with row distribution
 ///         matching A and column distribution determined by B.
 ///         The row IndexMap of C has no ghosts, and the column IndexMap of C
@@ -479,37 +533,21 @@ dolfinx::la::MatrixCSR<T> matmul(const dolfinx::la::MatrixCSR<T>& A,
   dolfinx::common::Timer t_spgemm("MatrixCSR SpGEMM");
 
   // Fetch ghost rows of B needed to multiply against A's ghost columns.
-  spdlog::info("Fetch remote rows of B in C=A*B");
+  spdlog::debug("Fetch remote rows of B in C=A*B");
   auto [new_col_map, ghost_row_ptr, ghost_cols, ghost_vals]
       = impl::fetch_ghost_rows(A, B);
 
-  // Single pass: compute sparsity and values simultaneously.
-  spdlog::info("Compute sparsity and values of C=A*B");
-  auto [C_row_ptr_32, C_cols_32, C_vals_vec] = impl::matmul(
+  // Single pass: compute sparsity, off-diagonal boundaries, and values.
+  spdlog::debug("Compute sparsity and values of C=A*B");
+  auto [C_row_ptr, C_off_diag_offsets, C_cols, C_vals_vec] = impl::matmul(
       A, B, new_col_map, std::span<const std::int32_t>(ghost_row_ptr),
       std::span<const std::int32_t>(ghost_cols),
       std::span<const T>(ghost_vals));
 
-  const std::int32_t num_local_rows = A.index_map(0)->size_local();
-  const std::int32_t num_owned_cols = new_col_map->size_local();
-
-  // Per-row diagonal block boundary, needed by MatrixCSR constructor.
-  std::vector<std::int32_t> off_diag_offsets(num_local_rows);
-  for (std::int32_t i = 0; i < num_local_rows; ++i)
-  {
-    const auto begin = C_cols_32.cbegin() + C_row_ptr_32[i];
-    const auto end = C_cols_32.cbegin() + C_row_ptr_32[i + 1];
-    off_diag_offsets[i] = static_cast<std::int32_t>(
-        std::lower_bound(begin, end, num_owned_cols) - begin);
-  }
-
-  auto C_row_map = std::make_shared<common::IndexMap>(A.index_map(0)->comm(),
-                                                      num_local_rows);
-  std::vector<std::int64_t> C_row_ptr_64(C_row_ptr_32.begin(),
-                                         C_row_ptr_32.end());
-
-  impl::Sparsity sp{C_row_map, new_col_map, C_cols_32, C_row_ptr_64,
-                    off_diag_offsets};
+  auto C_row_map = std::make_shared<common::IndexMap>(
+      A.index_map(0)->comm(), A.index_map(0)->size_local());
+  impl::Sparsity sp{C_row_map, new_col_map, C_cols, C_row_ptr,
+                    C_off_diag_offsets};
   dolfinx::la::MatrixCSR<T> C(sp);
   std::copy(C_vals_vec.begin(), C_vals_vec.end(), C.values().begin());
 
