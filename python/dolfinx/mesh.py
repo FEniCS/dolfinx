@@ -35,6 +35,7 @@ from dolfinx.cpp.mesh import (
 from dolfinx.cpp.refinement import (
     IdentityPartitionerPlaceholder,
     RefinementOption,
+    mark_maximum,
 )
 from dolfinx.cpp.refinement import (
     uniform_refine as _uniform_refine,
@@ -72,6 +73,7 @@ __all__ = [
     "exterior_facet_indices",
     "locate_entities",
     "locate_entities_boundary",
+    "mark_maximum",
     "meshtags",
     "meshtags_from_entities",
     "refine",
