@@ -36,7 +36,6 @@ concept SparsityImplementation = requires(T sp, int i) {
   {
     sp.index_map(i)
   } -> std::same_as<std::shared_ptr<const dolfinx::common::IndexMap>>;
-  { sp.column_index_map() } -> std::same_as<dolfinx::common::IndexMap>;
 };
 
 namespace dolfinx::la
@@ -490,7 +489,7 @@ public:
   ///
   /// @param[in] x Vector to apply `A` to.
   /// @param[in,out] y Vector to accumulate the result into.
-  void mult(Vector<value_type>& x, Vector<value_type>& y);
+  void mult(Vector<value_type>& x, Vector<value_type>& y) const;
 
   /// @brief Get MPI communicator that matrix is defined on.
   MPI_Comm comm() const { return _comm.comm(); }
@@ -591,9 +590,8 @@ private:
 template <typename U, typename V, typename W, typename X>
 template <SparsityImplementation SparsityType>
 MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityType& p, BlockMode mode)
-    : _index_maps({p.index_map(0),
-                   std::make_shared<common::IndexMap>(p.column_index_map())}),
-      _block_mode(mode), _bs({p.block_size(0), p.block_size(1)}),
+    : _index_maps({p.index_map(0), p.index_map(1)}), _block_mode(mode),
+      _bs({p.block_size(0), p.block_size(1)}),
       _data(p.graph().first.size() * _bs[0] * _bs[1], 0),
       _cols(p.graph().first.begin(), p.graph().first.end()),
       _row_ptr(p.graph().second.begin(), p.graph().second.end()),
@@ -840,7 +838,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityType& p, BlockMode mode)
 /// x,y
 template <typename Scalar, typename V, typename W, typename X>
 void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
-                                      la::Vector<Scalar>& y)
+                                      la::Vector<Scalar>& y) const
 {
   // start communication (update ghosts)
   x.scatter_fwd_begin();

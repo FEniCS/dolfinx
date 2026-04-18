@@ -331,7 +331,7 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
   else
   {
     assert(data.extent(0) == Pi.extent(1));
-    assert(data.extent(1) == bs);
+    assert(static_cast<int>(data.extent(1)) == bs);
     std::size_t cols = Pi.extent(1);
     for (int k = 0; k < bs; ++k)
     {
@@ -843,7 +843,7 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const auto [_Pi, pi_shape] = element.interpolation_operator();
   md::mdspan<const U, std::dextents<std::size_t, 2>> Pi(_Pi.data(), pi_shape);
   const std::size_t num_interp_points = Pi.extent(1);
-  assert(Pi.extent(0) == num_scalar_dofs);
+  assert(static_cast<int>(Pi.extent(0)) == num_scalar_dofs);
 
   auto apply_inv_transpose_dof_transformation
       = element.template dof_transformation_fn<T>(
@@ -1040,7 +1040,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       apply_inv_trans_dof_transformation(coeffs_b, cell_info, *cell_it, 1);
 
       // Copy interpolation dofs into coefficient vector
-      assert(coeffs_b.size() == num_scalar_dofs);
+      assert(coeffs_b.size() == static_cast<std::size_t>(num_scalar_dofs));
       for (int i = 0; i < num_scalar_dofs; ++i)
       {
         const int dof = i * element_bs + k;
@@ -1169,12 +1169,16 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// @param u0 Function to interpolate from.
 /// @param cells Cells indices relative to the mesh associated with `u`
 /// that will be interpolated into.
-/// @param interpolation_data Data required for associating the
-/// interpolation points of `u` with cells in `v`. This is computed by
+/// @param[in] tol Tolerance for convergence in Newton method for non-affine
+/// pullbacks. If the mesh geometry is affine this argument is ignored.
+/// @param[in] maxit Maximum number of Newton iterations in non-affine
+/// pull-back. If the mesh geometry is affine this argument is ignored.
+/// @param interpolation_data Data required for associating the interpolation
+/// points of `u` with cells in `v`. This is computed by
 /// fem::create_interpolation_data.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
-                 CellRange auto&& cells,
+                 CellRange auto&& cells, double tol, int maxit,
                  const geometry::PointOwnershipData<U>& interpolation_data)
 {
   auto mesh1 = u1.function_space()->mesh();
@@ -1209,7 +1213,8 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
   // Evaluate the interpolating function where possible
   std::vector<T> send_values(recv_points.size() / 3 * value_size);
   u0.eval(recv_points, {recv_points.size() / 3, (std::size_t)3},
-          evaluation_cells, send_values, {recv_points.size() / 3, value_size});
+          evaluation_cells, send_values, {recv_points.size() / 3, value_size},
+          tol, maxit);
 
   // Send values back to owning process
   std::vector<T> values_b(dest_ranks.size() * value_size);

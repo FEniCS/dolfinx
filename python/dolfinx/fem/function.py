@@ -392,12 +392,26 @@ class Function(ufl.Coefficient):
         """FunctionSpace that the Function is defined on."""
         return self._V
 
-    def eval(self, x: npt.ArrayLike, cells: npt.ArrayLike, u=None) -> np.ndarray:
+    def eval(
+        self,
+        x: npt.ArrayLike,
+        cells: npt.ArrayLike,
+        u: None | npt.NDArray[np.float32 | np.float64 | np.complex128 | np.complex64] = None,
+        tol: float = 1.0e-6,
+        maxit: int = 15,
+    ) -> np.ndarray:
         """Evaluate Function at points x.
 
-        Points where x has shape (num_points, 3), and cells has shape
-        (num_points,) and cell[i] is the index of the cell containing
-        point x[i]. If the cell index is negative the point is ignored.
+        Args:
+            x: Points with shape (num_points, 3)
+            cells: Array with cell indices, with shape (num_points,), where
+              cell[i] is the index of the cell containing point x[i].
+              If the cell index is negative the point is ignored.
+            u: Array to put evaluated data in.
+            tol: Tolerance for convergence in Newton method for
+                nonaffine pullbacks.
+            maxit: Maximum number of Newton iterations for
+                nonaffine pullbacks.
         """
         # Make sure input coordinates are a NumPy array
         _x = np.asarray(x, dtype=self._V.mesh.geometry.x.dtype)
@@ -422,13 +436,18 @@ class Function(ufl.Coefficient):
             value_size = self._V.value_size
             u = np.empty((num_points, value_size), self.dtype)
 
-        self._cpp_object.eval(_x, _cells, u)  # type: ignore
+        self._cpp_object.eval(_x, _cells, u, tol, maxit)  # type: ignore
         if num_points == 1:
             u = np.reshape(u, (-1,))
         return u
 
     def interpolate_nonmatching(
-        self, u0: Function, cells: npt.NDArray[np.int32], interpolation_data: PointOwnershipData
+        self,
+        u0: Function,
+        cells: npt.NDArray[np.int32],
+        interpolation_data: PointOwnershipData,
+        tol: float = 1e-6,
+        maxit: int = 15,
     ) -> None:
         """Interpolate a Function on a non-matching mesh.
 
@@ -439,8 +458,14 @@ class Function(ufl.Coefficient):
             interpolation_data: Data needed to interpolate functions
                 defined on other meshes. Created by
                 :func:`dolfinx.fem.create_interpolation_data`.
+            tol: Tolerance for convergence in Newton method for nonaffine
+                pullbacks. Ignored if mesh geometry is affine.
+            maxit: Maximum number of iterations for nonaffine pullback.
+                Ignored if mesh geometry is affine.
         """
-        self._cpp_object.interpolate(u0._cpp_object, cells, interpolation_data._cpp_object)  # type: ignore
+        self._cpp_object.interpolate(
+            u0._cpp_object, cells, tol, maxit, interpolation_data._cpp_object
+        )  # type: ignore
 
     def interpolate(
         self,
