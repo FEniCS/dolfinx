@@ -59,18 +59,17 @@ import ufl
 # -
 
 # ## Matrix-free operator
-# Many interative methods, such as the conjugate gradient method,
-# only requires the action of the system matrix on a vector.
-# Thus, one can assemble a form of rank 1 with a given function replacing
-# the trial function and obtain this vector.
+# Many interative methods, such as the conjugate gradient method, only
+# requires the action of the system matrix on a vector. Thus, one can
+# assemble a form of rank 1 with a given function replacing the trial
+# function and obtain this vector.
 
-# We do this using `ufl.action` to create a rank 1 form.
-# Additionally, some preconditioners, such as the Jacobi preconditioner,
-# need access to the diagonal of the matrix.
-# This can be obtained by assembling the form with a special option to only
-# compute the diagonal, i.e.
-# the `form_compiler_options={"part":"diagonal"}`, which is passed to FFCx
-# when calling `dolfinx.fem.form`.
+# We do this using `ufl.action` to create a rank 1 form. Additionally, some
+# preconditioners, such as the Jacobi preconditioner, need access to the
+# diagonal of the matrix. This can be obtained by assembling the form with
+# a special option to only compute the diagonal, i.e. the
+# `form_compiler_options={"part":"diagonal"}`, which is passed to FFCx when
+# calling `dolfinx.fem.form`.
 
 # For the assembly itself, we require an operator that can compute the
 # action of the matrix on a vector, as well as provide the diagonal.
@@ -78,6 +77,13 @@ import ufl
 
 
 class MatrixFreeOperator:
+    """Matrix-free operator for a bilinear form.
+
+    This class provides an operator that takes a bilinear form and provides
+    the action of the bilinear form on a vector, without explicitly
+    assembling the matrix.
+    """
+
     # Data allocation for the operator
     _w: dolfinx.fem.Function | list[dolfinx.fem.Function]  # Store working solution
     _diagonal: PETSc.Vec  # Temporary storage of diagonal
@@ -93,12 +99,13 @@ class MatrixFreeOperator:
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
     ):
-        """A matrix-free operator for a bilinear form with
-        boundary conditions.
+        """A matrix-free operator for a bilinear form.
 
         Args:
             bilinear_form: The bilinear form.
             bcs: A list of Dirichlet boundary conditions.
+            form_compiler_options: Options to pass to the form compiler.
+            jit_options: Options to pass to the JIT compiler.
         """
         jit_options = {} if jit_options is None else jit_options
         form_compiler_options = {} if form_compiler_options is None else form_compiler_options
@@ -218,6 +225,9 @@ class MatrixFreeOperator:
     def getDiagonal(self, mat, vec):
         """Compute the diagonal of the bilinear form.
 
+        Note:
+            This is required for Jacobi preconditioning.
+
         Args:
             mat: The PETSc matrix (not used).
             vec: The output vector to store the diagonal.
@@ -248,7 +258,7 @@ class MatrixFreeOperator:
         vec.setArray(self._diagonal)
 
 
-# ## Setting up a krylov subspace solver with the matrix-free operator
+# ## Setting up a Krylov subspace solver with the matrix-free operator
 # As we will solve the problem below with different representations of the
 # bilinear form,
 # we provide a convenience function for attaching the matrix-free operator
@@ -320,11 +330,12 @@ def extract_system(
 # solver and attaching the matrix free operator.
 
 
-def define_matrix_free_ksp(
+def create_matrix_free_ksp(
     a: ufl.Form,
     bcs: list[dolfinx.fem.DirichletBC],
     prefix: str,
 ) -> PETSc.KSP:
+    """Create a KSP solver and attach a matrix-free operator."""
     comm = a.ufl_domain().ufl_cargo().comm
     ksp = PETSc.KSP().create(comm)
     attach_matrix_free_operator(ksp, a, bcs=bcs)
@@ -350,6 +361,7 @@ def define_matrix_free_ksp(
 def mixed_element(
     mesh: dolfinx.mesh.Mesh, f: ufl.core.expr.Expr, g: ufl.core.expr.Expr
 ) -> tuple[dolfinx.fem.Function, dolfinx.fem.Function]:
+    """Blocked problem using a {py:class}`basix.ufl.mixed_element`."""
     # Define function space for mixed element and extract subspaces
     W = dolfinx.fem.functionspace(mesh, basix.ufl.mixed_element([el_0, el_1]))
     V, _ = W.sub(0).collapse()
@@ -381,7 +393,7 @@ def mixed_element(
     dolfinx.fem.petsc.set_bc(b, bcs)
 
     # Setup matrix free KSP
-    ksp = define_matrix_free_ksp(a, bcs, "MixedElement")
+    ksp = create_matrix_free_ksp(a, bcs, "MixedElement")
 
     # Solve the system
     wh = dolfinx.fem.Function(W)
@@ -405,6 +417,7 @@ def mixed_element(
 def mixed_function_space(
     mesh: dolfinx.mesh.Mesh, f: ufl.core.expr.Expr, g: ufl.core.expr.Expr
 ) -> tuple[dolfinx.fem.Function, dolfinx.fem.Function]:
+    """Blocked problem using a {py:class}`ufl.MixedFunctionSpace`."""
     # Create mixed function space from two function spaces
     V = dolfinx.fem.functionspace(mesh, el_0)
     Q = dolfinx.fem.functionspace(mesh, el_1)
@@ -444,7 +457,7 @@ def mixed_function_space(
     b.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
 
     # We define the matrix free KSP and solve the linear system
-    ksp = define_matrix_free_ksp(a, bcs, "MixedFunctionSpace")
+    ksp = create_matrix_free_ksp(a, bcs, "MixedFunctionSpace")
     wh = b.duplicate()
     ksp.solve(b, wh)
     wh.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
@@ -468,9 +481,8 @@ u_me, p_me = mixed_element(mesh, f, g)
 u_mfs, p_mfs = mixed_function_space(mesh, f, g)
 
 
-def compute_L2_error(uh, u_ex) -> float:
-    """Compute the L2-error between an approximate solution and
-    an exact solution.
+def compute_L2_error(uh: ufl.core.expr.Expr, u_ex: ufl.core.expr.Expr) -> float:
+    """Compute the L2-error between two expressions.
 
     Args:
         uh: The approximate solution.
