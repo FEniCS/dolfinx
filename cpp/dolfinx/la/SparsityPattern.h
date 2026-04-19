@@ -93,6 +93,8 @@ public:
 
   /// @brief Index map for given dimension dimension. Returns the index
   /// map for rows and columns that will be set by the current MPI rank.
+  /// @note After finalization, the column index map is updated to account for
+  /// additional column entries from other processes.
   /// @param[in] dim Requested map, row (0) or column (1).
   /// @return The index map.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
@@ -104,14 +106,6 @@ public:
   /// @return Global index non-zero columns on this process, including
   /// ghosts.
   std::vector<std::int64_t> column_indices() const;
-
-  /// @brief Builds the index map for columns after assembly of the
-  /// sparsity pattern
-  /// @return Map for all non-zero columns on this process, including
-  /// ghosts
-  /// @todo Should this be compted and stored when finalising the
-  /// SparsityPattern?
-  common::IndexMap column_index_map() const;
 
   /// @brief Return index map block size for dimension dim
   int block_size(int dim) const;
