@@ -86,7 +86,6 @@ void la(nb::module_& m)
           nb::arg("comm"), nb::arg("patterns"), nb::arg("maps"), nb::arg("bs"))
       .def("index_map", &dolfinx::la::SparsityPattern::index_map,
            nb::arg("dim"))
-      .def("column_index_map", &dolfinx::la::SparsityPattern::column_index_map)
       .def("finalize", &dolfinx::la::SparsityPattern::finalize)
       .def_prop_ro("num_nonzeros", &dolfinx::la::SparsityPattern::num_nonzeros)
       .def(

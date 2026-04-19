@@ -33,6 +33,8 @@ namespace nls::petsc
 /// with default update \f$x \leftarrow x - \Delta x\f$.
 ///
 /// It relies on PETSc for linear algebra backends.
+/// @deprecated The generic `NewtonSolver` will be removed in a future release.
+/// It is recommended to build your own Newton Solver, or use SNES from PETSc.
 class NewtonSolver
 {
 public:
