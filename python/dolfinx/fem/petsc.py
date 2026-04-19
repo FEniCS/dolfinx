@@ -1265,18 +1265,19 @@ class NonlinearProblem:
         # Create the SNES solver and attach the corresponding Jacobian and
         # residual computation functions
         self._snes = PETSc.SNES().create(self.A.comm)  # type: ignore[attr-defined]
-        cntx = {"u": self.u, "jacobian": self.J, "preconditioner": self.preconditioner, "bcs": bcs}
-        self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=cntx)
+        jacobian_ctx = {
+            "u": self.u,
+            "jacobian": self.J,
+            "preconditioner": self.preconditioner,
+            "bcs": bcs,
+        }
+        self.solver.setJacobian(assemble_jacobian, self.A, self.P_mat, kargs=jacobian_ctx)
         # Get potential attributes from the residual to pass to the
         # residual assembly function, e.g. block layout for block assembly.
-        context = {}
+        function_ctx = {"u": self.u, "residual": self.F, "jacobian": self.J, "bcs": bcs}
         if (_blocks := self.b.getAttr("_blocks")) is not None:
-            context["_blocks"] = _blocks
-        context["u"] = u
-        context["residual"] = self.F
-        context["jacobian"] = self.J
-        context["bcs"] = bcs
-        self.solver.setFunction(assemble_residual, self.b, kargs=context)
+            function_ctx["_blocks"] = _blocks
+        self.solver.setFunction(assemble_residual, self.b, kargs=function_ctx)
 
         if petsc_options_prefix == "":
             raise ValueError("PETSc options prefix cannot be empty.")
