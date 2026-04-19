@@ -234,7 +234,7 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
     for (std::size_t i = 0; i < row_begin.size(); i++)
     {
       T vi{0};
-      for (std::int32_t j = row_begin[i]; j < row_end[i]; j++)
+      for (std::int64_t j = row_begin[i]; j < row_end[i]; j++)
       {
         if constexpr (BS1 == -1)
         {
@@ -305,7 +305,7 @@ void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
     for (std::size_t i = 0; i < row_begin.size(); i++)
     {
       const T xval = x[i * bs0 + k0];
-      for (std::int32_t j = row_begin[i]; j < row_end[i]; j++)
+      for (std::int64_t j = row_begin[i]; j < row_end[i]; j++)
       {
         if constexpr (BS1 == -1)
         {
