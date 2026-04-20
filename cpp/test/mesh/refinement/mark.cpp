@@ -8,6 +8,7 @@
 #include <catch2/catch_template_test_macros.hpp>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/refinement/mark.h>
+#include <iostream>
 #include <mpi.h>
 #include <vector>
 
@@ -28,7 +29,7 @@ TEMPLATE_TEST_CASE("Mark maximum", "[refinement][mark][maximum]", double, float)
 
   std::vector<TestType> marker;
   marker.reserve(10);
-  for (std::size_t i = 0; i < marker.size(); i++)
+  for (std::size_t i = 0; i < 10; i++)
     marker.push_back(10 * dolfinx::MPI::rank(comm) + i);
 
   TestType theta = 0.5;
