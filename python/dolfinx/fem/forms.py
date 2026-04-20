@@ -369,20 +369,47 @@ def form(
         """Compile a single UFL form."""
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
-        (domain,) = list(sd.keys())  # Assuming single domain
+        try:
+            (domain,) = list(sd.keys())  # Assuming single domain
+            # Check that subdomain data for each integral type is the same
+            for data in sd.get(domain).values():
+                assert all([d is data[0] for d in data if d is not None])
+            msh = domain.ufl_cargo()
 
-        # Check that subdomain data for each integral type is the same
-        for data in sd.get(domain).values():
-            assert all([d is data[0] for d in data if d is not None])
+        except ValueError:
+            # use ufl_extract blocks to get the forms for each cell type
+            arity = len(np.unique([arg.number() for arg in form.arguments()]))
+            if arity == 0:
+                raise RuntimeError("Zero-arity forms not supported for mixed-topology meshes.")
+            elif arity == 1:
+                forms = ufl.extract_blocks(form)
+            elif arity == 2:
+                _forms = ufl.extract_blocks(form)
+                forms = [_forms[i][i] for i in range(len(_forms))]
+            domains = list(sd.keys())
+            cargo = domains[0].ufl_cargo()
+            for domain in domains:
+                assert domain.ufl_cargo() == cargo
+            msh = cargo
+            return mixed_topology_form(
+                forms,
+                dtype=dtype,
+                form_compiler_options=form_compiler_options,
+                jit_options=jit_options,
+                jit_comm=jit_comm,
+                entity_maps=entity_maps,
+            )
 
-        msh = domain.ufl_cargo()
         if msh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
         comm = msh.comm if jit_comm is None else jit_comm
 
-        ufcx_form, module, code = jit.ffcx_jit(
-            comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
-        )
+        try:
+            ufcx_form, module, code = jit.ffcx_jit(
+                comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
+            )
+        except TypeError:
+            uf
 
         # For each argument in form extract its function space
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
@@ -419,7 +446,7 @@ def form(
             _entity_maps = []
         else:
             _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
-
+        breakpoint()
         f = ftype(
             [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
             V,
