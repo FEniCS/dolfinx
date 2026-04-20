@@ -50,9 +50,15 @@ public:
   MeshTags(std::shared_ptr<const Topology> topology, int dim, U&& indices,
            V&& values)
       : _topology(std::move(topology)), _dim(dim),
-        _indices(std::forward<U>(indices)), _values(std::forward<V>(values))
+        _indices({std::forward<U>(indices)}), _values({std::forward<V>(values)})
   {
-    if (_indices.size() != _values.size())
+    if (_topology->entity_types(dim).size() > 1)
+    {
+      throw std::runtime_error("Multiple entity types in mesh.");
+    }
+
+
+    if (_indices[0].size() != _values[0].size())
     {
       throw std::runtime_error(
           "Indices and values arrays must have same size.");
@@ -91,17 +97,17 @@ public:
     for (std::size_t i = 0; i < _values.size(); ++i)
     {
       if (_values[i] == value)
-        indices.push_back(_indices[i]);
+        indices.push_back(_indices[0][i]);
     }
     return indices;
   }
 
   /// Indices of tagged topology entities (local-to-process). The
   /// indices are sorted.
-  std::span<const std::int32_t> indices() const { return _indices; }
+  std::span<const std::int32_t> indices() const { return _indices[0]; }
 
   /// Values attached to topology entities
-  std::span<const T> values() const { return _values; }
+  std::span<const T> values() const { return _values[0]; }
 
   /// Return topological dimension of tagged entities
   int dim() const { return _dim; }
@@ -120,10 +126,10 @@ private:
   int _dim;
 
   // Local-to-process indices of tagged entities
-  std::vector<std::int32_t> _indices;
+  std::vector<std::vector<std::int32_t>> _indices;
 
   // Values attached to entities
-  std::vector<T> _values;
+  std::vector<std::vector<T>> _values;
 };
 
 /// @brief Create MeshTags from arrays
