@@ -54,8 +54,7 @@ Vec fem::petsc::create_vector_block(
       = VecCreateGhost(maps[0].first.get().comm(), local_size, PETSC_DETERMINE,
                        _ghosts.size(), _ghosts.data(), &x);
   if (ierr != 0)
-    throw std::runtime_error("Call to PETSc VecCreateGhost failed.");
-
+    petsc::error(ierr, __FILE__, "VecCreateGhost");
   return x;
 }
 //-----------------------------------------------------------------------------
@@ -76,8 +75,12 @@ Vec fem::petsc::create_vector_nest(
 
   // Create nested (VecNest) vector
   Vec y;
-  VecCreateNest(vecs.front()->comm(), petsc_vecs.size(), nullptr,
-                petsc_vecs.data(), &y);
+  PetscErrorCode ierr
+      = VecCreateNest(vecs.front()->comm(), petsc_vecs.size(), nullptr,
+                      petsc_vecs.data(), &y);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "VecCreateNest");
+
   return y;
 }
 //-----------------------------------------------------------------------------
