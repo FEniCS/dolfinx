@@ -41,7 +41,7 @@ jobs:
 
       - name: Install Homebrew dependencies
         run: |
-          brew install adios2 boost catch2 hdf5-mpi make ninja open-mpi pkgconf pugixml spdlog # FEniCS
+          brew install adios2 boost catch2 hdf5-mpi make ninja open-mpi pkgconf pugixml spdlog kahip # FEniCS
           brew install bison flex gfortran scalapack scotch # PETSc
 
       - name: Install Python dependencies (petsc4py)
@@ -102,9 +102,13 @@ jobs:
         working-directory: cpp
         run: >
           cmake -B build -S . -Werror=dev --warn-uninitialized -G Ninja \
-            -DCMAKE_BUILD_TYPE=Developer -DBUILD_TESTING=true \
-            -DDOLFINX_ENABLE_SCOTCH=true -DDOLFINX_ENABLE_PARMETIS=true \
-            -DDOLFINX_ENABLE_PETSC=true -DDOLFINX_ENABLE_SUPERLU_DIST=true
+            -DCMAKE_BUILD_TYPE=Developer \
+            -DBUILD_TESTING=true \
+            -DDOLFINX_ENABLE_SCOTCH=true \
+            -DDOLFINX_ENABLE_PARMETIS=true \
+            -DDOLFINX_ENABLE_KAHIP=true \
+            -DDOLFINX_ENABLE_PETSC=true \
+            -DDOLFINX_ENABLE_SUPERLU_DIST=true
 
       - name: Build and install (C++)
         working-directory: cpp/build
