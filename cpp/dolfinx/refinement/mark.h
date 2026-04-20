@@ -36,7 +36,7 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> marker, T theta,
   if ((theta < 0) || (theta > 1))
     throw std::invalid_argument("Theta needs to fullfill 0 ≤ θ ≤ 1.");
 
-  T max = marker.empty() ? std::numeric_limits<T>::min()
+  T max = marker.empty() ? std::numeric_limits<T>::lowest()
                          : std::ranges::max(marker);
   MPI_Allreduce(MPI_IN_PLACE, &max, 1, dolfinx::MPI::mpi_t<T>, MPI_MAX, comm);
 
