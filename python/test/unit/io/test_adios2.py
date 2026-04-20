@@ -293,4 +293,4 @@ class TestVTX:
             assert "v" in point_arrays or ("v_imag" in point_arrays and "v_real" in point_arrays)
 
             cell_arrays = get_data_array_names(xml_cell_data)
-            assert "q" in cell_arrays or ("q_imag" in point_arrays and "q_real" in point_arrays)
+            assert "q" in cell_arrays or ("q_imag" in cell_arrays and "q_real" in cell_arrays)
