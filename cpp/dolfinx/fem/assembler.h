@@ -337,6 +337,7 @@ void apply_lifting(
   if (std::ranges::all_of(a, [](auto ai) { return !ai; }))
     return;
 
+  common::Timer t("[Apply lifting]");
   impl::apply_lifting(b, a, constants, coeffs, bcs1, x0, alpha);
 }
 
@@ -415,6 +416,11 @@ void apply_lifting(
 
 /// @brief Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
+/// @note This function can be used to insert kernels into different objects by
+/// replacing the mat_add function appropriately.
+/// @tparam T scalar type
+/// @tparam U geometry scalar type
+/// @tparam LiftingMode Set to true if applying a lifting kernel in mat_add.
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear form to assemble.
 /// @param[in] constants Constants that appear in `a`.
@@ -425,7 +431,7 @@ void apply_lifting(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
 void assemble_matrix(
     la::MatSet<T> auto mat_add, const Form<T, U>& a,
     std::span<const T> constants,
@@ -435,6 +441,7 @@ void assemble_matrix(
     std::span<const std::int8_t> dof_marker1)
 
 {
+  common::Timer t_assm("[Assemble Matrix]");
   using mdspanx3_t
       = md::mdspan<const scalar_value_t<T>,
                    md::extents<std::size_t, md::dynamic_extent, 3>>;
@@ -444,14 +451,16 @@ void assemble_matrix(
   std::span x = mesh->geometry().x();
   if constexpr (std::is_same_v<U, scalar_value_t<T>>)
   {
-    impl::assemble_matrix(mat_add, a, mdspanx3_t(x.data(), x.size() / 3, 3),
-                          constants, coefficients, dof_marker0, dof_marker1);
+    impl::assemble_matrix<T, U, LiftingMode>(
+        mat_add, a, mdspanx3_t(x.data(), x.size() / 3, 3), constants,
+        coefficients, dof_marker0, dof_marker1);
   }
   else
   {
     std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
-    impl::assemble_matrix(mat_add, a, mdspanx3_t(_x.data(), _x.size() / 3, 3),
-                          constants, coefficients, dof_marker0, dof_marker1);
+    impl::assemble_matrix<T, U, LiftingMode>(
+        mat_add, a, mdspanx3_t(_x.data(), _x.size() / 3, 3), constants,
+        coefficients, dof_marker0, dof_marker1);
   }
 }
 
