@@ -72,15 +72,17 @@ struct Sparsity
   ///        off-diagonal block.
   std::span<const std::int32_t> _off_diag;
 
+  /// @brief block size in each direction.
+  int _bs[2];
+
   /// @brief Return the row (`dim == 0`) or column (`dim == 1`) `IndexMap`.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const
   {
     return dim == 0 ? _row_map : _col_map;
   }
 
-  /// @brief Return the block size. Always 1 — this struct does not yet support
-  ///        block-structured sparsity patterns.
-  int block_size(int) const { return 1; }
+  /// @brief Return the block size.
+  int block_size(int i) const { return _bs[i]; }
 
   /// @brief Return the CSR graph as `(column_indices, row_pointers)`.
   std::pair<std::span<const std::int32_t>, std::span<const std::int64_t>>
@@ -548,7 +550,7 @@ dolfinx::la::MatrixCSR<T> matmul(const dolfinx::la::MatrixCSR<T>& A,
   auto C_row_map = std::make_shared<common::IndexMap>(
       A.index_map(0)->comm(), A.index_map(0)->size_local());
   impl::Sparsity sp{C_row_map, new_col_map, C_cols, C_row_ptr,
-                    C_off_diag_offsets};
+                    C_off_diag_offsets, {1, 1}};
   dolfinx::la::MatrixCSR<T> C(sp);
   std::copy(C_vals_vec.begin(), C_vals_vec.end(), C.values().begin());
 
