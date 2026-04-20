@@ -31,7 +31,7 @@ def test_distance_triangle():
     domain = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree)
     x = np.array([[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]], dtype=np.float64)
     cells = [[0, 1, 2]]
-    mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x)
     d = np.array([-1.0, -1.0, 0.0])
     assert squared_distance(mesh, mesh.topology.dim, np.array([0]), d) == pytest.approx(2.0)
     d = np.array([-1.0, 0.5, 0.0])
@@ -47,7 +47,7 @@ def test_distance_tetrahedron():
     domain = ufl.Mesh(element("Lagrange", shape, degree, shape=(3,), dtype=np.float64))
     x = np.array([[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 1.0, 1.0], [1, 1.0, 1]], dtype=np.float64)
     cells = [[0, 1, 2, 3]]
-    mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x)
     d = np.array([-1.0, -1.0, -1.0])
     assert squared_distance(mesh, mesh.topology.dim, np.array([0]), d) == pytest.approx(3.0)
     d = np.array([-1.0, 0.5, 0.5])
@@ -86,7 +86,7 @@ def test_distance_tetrahedron():
 # def test_volume_quadrilateralR3(x):
 #     cells = [[0, 1, 2, 3]]
 #     domain = ufl.Mesh(element("Lagrange", "quadrilateral", 1, shape=(2,)))
-#     mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
+#     mesh = create_mesh(MPI.COMM_SELF, cells, domain, x)
 #     assert _cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
 
 
@@ -104,7 +104,7 @@ def test_distance_tetrahedron():
 #              [0.0, scaling, scaling]]
 #         cells = [[0, 1, 2, 3]]
 #         domain = ufl.Mesh(element("Lagrange", "quadrilateral", 1, shape=(2,)))
-#         mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
+#         mesh = create_mesh(MPI.COMM_SELF, cells, domain, x)
 #         _cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
 
 #     assert "Not coplanar" in str(error.value)
@@ -123,7 +123,7 @@ def test_distance_tetrahedron():
 #              [0.0, 0.0, scaling], [0.0, 1.0, 1.0]]
 #         cells = [[0, 1, 2, 3]]
 #         domain = ufl.Mesh(element("Lagrange", "quadrilateral", 1, shape=(2,)))
-#         mesh = create_mesh(MPI.COMM_SELF, cells, x, domain)
+#         mesh = create_mesh(MPI.COMM_SELF, cells, domain, x)
 #         _cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
 
 #     assert "Not coplanar" in str(error.value)

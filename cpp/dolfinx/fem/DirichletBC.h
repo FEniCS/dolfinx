@@ -35,7 +35,7 @@ namespace dolfinx::fem
 /// facet/edge/vertex.
 ///
 /// @param[in] topology Mesh topology.
-/// @param[in] dofmap Dofmap that associated DOFs with cells.
+/// @param[in] dofmap Dofmap that associates DOFs with cells.
 /// @param[in] dim Topological dimension of mesh entities on which
 /// degrees-of-freedom will be located
 /// @param[in] entities Indices of mesh entities. All DOFs associated
@@ -108,11 +108,14 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
   // especially when we usually want the boundary dofs only. Add
   // interface that computes dofs coordinates only for specified cell.
 
-  assert(V.element());
-  if (V.element()->is_mixed())
+  for (std::size_t i = 0; i < V.mesh()->topology()->cell_types().size(); ++i)
   {
-    throw std::runtime_error(
-        "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+    assert(V.elements(i));
+    if (V.elements(i)->is_mixed())
+    {
+      throw std::runtime_error(
+          "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+    }
   }
 
   // Compute dof coordinates
@@ -151,7 +154,7 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 template <std::floating_point T, typename U>
 std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
-    const std::array<std::reference_wrapper<const FunctionSpace<T>>, 2>& V,
+    std::array<std::reference_wrapper<const FunctionSpace<T>>, 2> V,
     U marker_fn)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
@@ -256,7 +259,7 @@ class DirichletBC
 {
 private:
   /// Compute number of owned dofs indices. Will contain 'gaps' for
-  /// sub-spaces.
+  /// sub-spaces. The dofs must be unrolled.
   std::size_t num_owned(const DofMap& dofmap,
                         std::span<const std::int32_t> dofs)
   {
@@ -326,11 +329,11 @@ public:
                                    std::vector<std::int32_t>>
   DirichletBC(std::shared_ptr<const Constant<T>> g, X&& dofs,
               std::shared_ptr<const FunctionSpace<U>> V)
-      : _function_space(V), _g(g), _dofs0(std::forward<X>(dofs)),
-        _owned_indices0(num_owned(*V->dofmaps(0), _dofs0))
+      : _function_space(V), _g(g), _dofs0(std::forward<X>(dofs))
   {
     assert(g);
     assert(V);
+    assert(V->elements(0));
     if (g->shape.size() != V->elements(0)->value_shape().size())
     {
       throw std::runtime_error(
@@ -353,10 +356,9 @@ public:
 
     // Unroll _dofs0 if dofmap block size > 1
     if (const int bs = V->dofmaps(0)->bs(); bs > 1)
-    {
-      _owned_indices0 *= bs;
       _dofs0 = unroll_dofs(_dofs0, bs);
-    }
+
+    _owned_indices0 = num_owned(*_function_space->dofmaps(0), _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -376,17 +378,15 @@ public:
                                    std::vector<std::int32_t>>
   DirichletBC(std::shared_ptr<const Function<T, U>> g, X&& dofs)
       : _function_space(g->function_space()), _g(g),
-        _dofs0(std::forward<X>(dofs)),
-        _owned_indices0(num_owned(*_function_space->dofmap(), _dofs0))
+        _dofs0(std::forward<X>(dofs))
   {
     assert(_function_space);
 
     // Unroll _dofs0 if dofmap block size > 1
-    if (const int bs = _function_space->dofmap()->bs(); bs > 1)
-    {
-      _owned_indices0 *= bs;
+    if (const int bs = _function_space->dofmaps(0)->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
-    }
+
+    _owned_indices0 = num_owned(*_function_space->dofmaps(0), _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -550,7 +550,7 @@ public:
     {
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       const std::vector<T>& value = g->value;
-      std::int32_t bs = _function_space->dofmap()->bs();
+      std::int32_t bs = _function_space->dofmaps(0)->bs();
       if (x0)
       {
         assert(x.size() <= x0->size());

@@ -34,7 +34,7 @@ class FunctionSpace;
 
 namespace mesh
 {
-enum class CellType;
+enum class CellType : std::int8_t;
 template <std::floating_point T>
 class Geometry;
 } // namespace mesh
@@ -163,6 +163,14 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   std::fill(std::next(id_ghost.begin(), size_local), id_ghost.end(), 1);
 
   return {std::move(coords), cshape, std::move(x_id), std::move(id_ghost)};
+}
+
+/// Return true if element is a cell-wise constant, otherwise false
+/// This could return a constexpr
+template <std::floating_point T>
+bool is_cellwise(const fem::FiniteElement<T>& e)
+{
+  return e.space_dimension() / e.block_size() == 1;
 }
 
 } // namespace impl

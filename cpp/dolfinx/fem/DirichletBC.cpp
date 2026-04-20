@@ -23,13 +23,13 @@ using namespace dolfinx::fem;
 
 namespace
 {
-
 /// @brief Find the cell (local to process) and index of an entity
 /// (local to cell) for a list of entities.
+///
 /// @param[in] mesh The mesh
 /// @param[in] entities The list of entities
 /// @param[in] dim The dimension of the entities
-/// @returns A list of (cell_index, entity_index) pairs for each input
+/// @returns A list of `(cell_index, entity_index)` pairs for each input
 /// entity.
 std::vector<std::tuple<std::int32_t, int, int>>
 find_local_entity_index(const mesh::Topology& topology, int entity_type_index,
@@ -38,21 +38,12 @@ find_local_entity_index(const mesh::Topology& topology, int entity_type_index,
   // Initialise entity-cell connectivity
   const int tdim = topology.dim();
 
-  // FIXME TODO ADD CHECK
-  // if (!e_to_c)
-  // {
-  //   throw std::runtime_error(
-  //       "Entity-to-cell connectivity has not been computed. Missing dims "
-  //       + std::to_string(dim) + "->" + std::to_string(tdim));
-  // }
-
   std::vector<mesh::CellType> cell_types = topology.cell_types();
   const int num_cell_types = cell_types.size();
   std::vector<std::tuple<std::int32_t, int, int>> entity_indices;
   entity_indices.reserve(entities.size());
   for (std::int32_t e : entities)
   {
-    // Get first attached cell
     for (int i = 0; i < num_cell_types; ++i)
     {
       // FIXME Check that one of the connectivities exists
@@ -85,7 +76,7 @@ find_local_entity_index(const mesh::Topology& topology, int entity_type_index,
 //-----------------------------------------------------------------------------
 
 /// Find all DOFs on this process that have been detected on another
-/// process
+/// process.
 /// @param[in] comm A symmetric communicator
 /// @param[in] map The index map with the dof layout
 /// @param[in] bs_map The block size of the index map, i.e. the dof
@@ -165,9 +156,13 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
   // NOTE: Should we use map here or just one vector with ghosts and
   // std::distance?
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
+  global_local_ghosts.reserve(ghosts.size());
   const std::int32_t local_size = range[1] - range[0];
   for (std::size_t i = 0; i < ghosts.size(); ++i)
-    global_local_ghosts.emplace_back(ghosts[i], i + local_size);
+  {
+    global_local_ghosts.emplace_back(ghosts[i],
+                                     static_cast<std::int32_t>(i + local_size));
+  }
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
 
@@ -203,13 +198,11 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
   std::cout << "hello!\n";
   std::vector<mesh::CellType> cell_types = topology.cell_types();
 
-  // // TODO Don't use list of shared pointer
-  // auto& dofmap = *dofmaps.at(0);
-
   // // Prepare an element - local dof layout for dofs on entities of the
   // // entity_dim
   // const int num_cell_entities = mesh::cell_num_entities(cell_type, dim);
   // std::vector<std::vector<int>> entity_dofs;
+  // entity_dofs.reserve(num_cell_entities);
   // for (int i = 0; i < num_cell_entities; ++i)
   // {
   //   entity_dofs.push_back(
@@ -221,8 +214,9 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       = find_local_entity_index(topology, entity_type_index, entities, dim);
 
   std::vector<std::int32_t> dofs;
-  // dofs.reserve(entities.size()
-  //              * dofmap.element_dof_layout().num_entity_closure_dofs(dim));
+  // dofs.reserve(
+  //     entities.size()
+  //     * dofmap.element_dof_layout().entity_closure_dofs(dim, 0).size());
 
   // V is a sub space we need to take the block size of the dofmap and
   // the index map into account as they can differ
@@ -334,6 +328,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological_sub(
   // Build vector of local dofs for each cell entity
   const int num_cell_entities = mesh::cell_num_entities(cell_type, dim);
   std::vector<std::vector<int>> entity_dofs;
+  entity_dofs.reserve(num_cell_entities);
   for (int i = 0; i < num_cell_entities; ++i)
   {
     entity_dofs.push_back(
@@ -349,12 +344,14 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological_sub(
   // Iterate over marked facets
   const int element_bs = dofmap0.element_dof_layout().block_size();
   std::array<std::vector<std::int32_t>, 2> bc_dofs;
-  bc_dofs[0].reserve(entities.size()
-                     * dofmap0.element_dof_layout().num_entity_closure_dofs(dim)
-                     * element_bs);
-  bc_dofs[1].reserve(entities.size()
-                     * dofmap0.element_dof_layout().num_entity_closure_dofs(dim)
-                     * element_bs);
+  bc_dofs[0].reserve(
+      entities.size()
+      * dofmap0.element_dof_layout().entity_closure_dofs(dim, 0).size()
+      * element_bs);
+  bc_dofs[1].reserve(
+      entities.size()
+      * dofmap0.element_dof_layout().entity_closure_dofs(dim, 0).size()
+      * element_bs);
   for (auto [cell, entity_local_index] : entity_indices)
   {
     // Get cell dofmap

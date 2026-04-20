@@ -352,9 +352,9 @@ compute_refinement(MPI_Comm neighbor_comm,
       if (marked_edges[edges[ei]])
       {
         no_edge_marked = false;
-        auto it = new_vertex_map.find(edges[ei]);
-        assert(it != new_vertex_map.end());
-        indices[num_cell_vertices + ei] = it->second;
+        auto nv = new_vertex_map.links(edges[ei]);
+        assert(nv.size() == 1);
+        indices[num_cell_vertices + ei] = nv[0];
       }
       else
         indices[num_cell_vertices + ei] = -1;

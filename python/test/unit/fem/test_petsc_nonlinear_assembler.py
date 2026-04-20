@@ -30,7 +30,7 @@ from ufl import derivative, dx, inner
 
 
 def nest_matrix_norm(A):
-    """Return norm of a MatNest matrix"""
+    """Return norm of a MatNest matrix."""
     assert A.getType() == "nest"
     norm = 0.0
     nrows, ncols = A.getNestSize()
@@ -45,10 +45,14 @@ def nest_matrix_norm(A):
 
 @pytest.mark.petsc4py
 class TestNLSPETSc:
+    """Test nonlinear solver functionality with PETSc."""
+
     def test_matrix_assembly_block_nl(self):
-        """Test assembly of block matrices and vectors into (a) monolithic
-        blocked structures, PETSc Nest structures, and monolithic structures
-        in the nonlinear setting."""
+        """Test assembly of block matrices and vectors.
+
+        Tests monolithic blocked structures, PETSc Nest structures, and
+        monolithic structures in the nonlinear setting.
+        """
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import (
@@ -109,8 +113,8 @@ class TestNLSPETSc:
         L_block = form([F0, F1])
 
         def blocked():
-            """Monolithic blocked"""
-            x = create_vector(L_block, kind="mpi")
+            """Monolithic blocked."""
+            x = create_vector([V0, V1], kind="mpi")
 
             assign((u, p), x)
 
@@ -135,8 +139,8 @@ class TestNLSPETSc:
 
         # Nested (MatNest)
         def nested():
-            """Nested (MatNest)"""
-            x = create_vector(L_block, kind=PETSc.Vec.Type.NEST)
+            """Nested (MatNest)."""
+            x = create_vector([V0, V1], kind=PETSc.Vec.Type.NEST)
 
             assign((u, p), x)
 
@@ -159,7 +163,7 @@ class TestNLSPETSc:
             return Anorm, bnorm
 
         def monolithic():
-            """Monolithic version"""
+            """Monolithic version."""
             E = mixed_element([P0, P1])
             W = functionspace(mesh, E)
             dU = ufl.TrialFunction(W)
@@ -207,7 +211,8 @@ class TestNLSPETSc:
 
     def test_assembly_solve_block_nl(self):
         """Solve a two-field nonlinear diffusion like problem with block
-        matrix approaches and test that solution is the same."""
+        matrix approaches and test that solution is the same.
+        """
         from petsc4py import PETSc
 
         import dolfinx.fem.petsc
@@ -261,7 +266,7 @@ class TestNLSPETSc:
         F, J = form(F), form(J)
 
         def blocked_solve():
-            """Blocked version
+            """Blocked version.
 
             Illustrates how to use high-level class and then drop down to SNES
             for options and solve.
@@ -269,7 +274,14 @@ class TestNLSPETSc:
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            problem = dolfinx.fem.petsc.NonlinearProblem(F, [u, p], J=J, bcs=bcs, kind="mpi")
+            problem = dolfinx.fem.petsc.NonlinearProblem(
+                F,
+                [u, p],
+                J=J,
+                bcs=bcs,
+                kind="mpi",
+                petsc_options_prefix="test_assembly_solve_block_nl__blocked_solve_",
+            )
 
             petsc_options = {"snes_rtol": 1.0e-15, "snes_max_it": 10, "snes_monitor": None}
 
@@ -298,7 +310,7 @@ class TestNLSPETSc:
             return xnorm
 
         def nested_solve():
-            """Nested version
+            """Nested version.
 
             Illustrates how to work directly with the SNES object (no NonlinearProblem).
             """
@@ -308,8 +320,8 @@ class TestNLSPETSc:
             residual = dolfinx.fem.form(F)
             jacobian = dolfinx.fem.form(J)
             A = dolfinx.fem.petsc.create_matrix(jacobian, "nest")
-            b = dolfinx.fem.petsc.create_vector(residual, "nest")
-            x = dolfinx.fem.petsc.create_vector(residual, "nest")
+            b = dolfinx.fem.petsc.create_vector([V0, V1], "nest")
+            x = dolfinx.fem.petsc.create_vector([V0, V1], "nest")
             snes.setFunction(
                 partial(dolfinx.fem.petsc.assemble_residual, [u, p], residual, jacobian, bcs), b
             )
@@ -333,7 +345,7 @@ class TestNLSPETSc:
             return xnorm
 
         def monolithic_solve():
-            """Monolithic version
+            """Monolithic version.
 
             Uses high level NonlinearProblem class only.
             """
@@ -373,12 +385,13 @@ class TestNLSPETSc:
                 U,
                 J=J,
                 bcs=bcs,
+                petsc_options_prefix="test_assembly_solve_block_nl__monolithic_solve_",
                 petsc_options=petsc_options,
             )
 
-            x, converged_reason, _ = problem.solve()
-            assert converged_reason > 0
-            xnorm = x.norm()
+            problem.solve()
+            assert problem.solver.getConvergedReason() > 0
+            xnorm = problem.x.norm()
             return xnorm
 
         norm0 = blocked_solve()
@@ -412,11 +425,11 @@ class TestNLSPETSc:
         P1 = functionspace(mesh, ("Lagrange", 1))
 
         def boundary0(x):
-            """Define boundary x = 0"""
+            """Define boundary x = 0."""
             return np.isclose(x[0], 0.0)
 
         def boundary1(x):
-            """Define boundary x = 1"""
+            """Define boundary x = 1."""
             return np.isclose(x[0], 1.0)
 
         def initial_guess_u(x):
@@ -458,7 +471,7 @@ class TestNLSPETSc:
         P = [[J[0][0], None], [None, inner(dp, q) * dx]]
 
         def blocked():
-            """Blocked and monolithic"""
+            """Blocked and monolithic."""
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
             petsc_options = {
@@ -472,25 +485,34 @@ class TestNLSPETSc:
                 [u, p],
                 bcs=bcs,
                 P=P,
+                petsc_options_prefix="test_assembly_solve_block_nl__monolithic_solve_",
                 petsc_options=petsc_options,
                 kind="mpi",
             )
-            x, converged_reason, _ = problem.solve()
-            assert converged_reason > 0
+            problem.solve()
+            assert problem.solver.getConvergedReason() > 0
             Jnorm = problem.solver.getJacobian()[0].norm()
             Fnorm = problem.solver.getFunction()[0].norm()
-            xnorm = x.norm()
+            xnorm = problem.x.norm()
             return Jnorm, Fnorm, xnorm
 
         def nested():
-            """Blocked and nested
+            """Blocked and nested.
 
             Shows how to setup some SNES options programatically.
             """
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
 
-            problem = dolfinx.fem.petsc.NonlinearProblem(F, [u, p], J=J, bcs=bcs, kind="nest", P=P)
+            problem = dolfinx.fem.petsc.NonlinearProblem(
+                F,
+                [u, p],
+                J=J,
+                bcs=bcs,
+                kind="nest",
+                P=P,
+                petsc_options_prefix="test_assemble_solve_nest_nl__nested_solve",
+            )
             nested_IS = problem.solver.getJacobian()[0].getNestISs()
             problem.solver.setTolerances(rtol=1.0e-15, max_it=20)
             problem.solver.getKSP().setType("minres")
@@ -500,15 +522,15 @@ class TestNLSPETSc:
                 ["u", nested_IS[0][0]], ["p", nested_IS[1][1]]
             )
 
-            x, converged_reason, _ = problem.solve()
-            assert converged_reason > 0
-            xnorm = x.norm()
+            problem.solve()
+            assert problem.solver.getConvergedReason() > 0
+            xnorm = problem.x.norm()
             Jnorm = nest_matrix_norm(problem.solver.getJacobian()[0])
             Fnorm = problem.solver.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm
 
         def monolithic():
-            """Monolithic"""
+            """Monolithic."""
             P2_el = element(
                 "Lagrange",
                 mesh.basix_cell(),
@@ -555,11 +577,12 @@ class TestNLSPETSc:
                 J=J,
                 bcs=bcs,
                 P=P,
+                petsc_options_prefix="test_assembly_solve_taylor_hood_nl__monolithic_",
                 petsc_options=petsc_options,
             )
-            x, converged_reason, _ = problem.solve()
-            assert converged_reason > 0
-            xnorm = x.norm()
+            problem.solve()
+            assert problem.solver.getConvergedReason() > 0
+            xnorm = problem.x.norm()
             Jnorm = problem.solver.getJacobian()[0].norm()
             Fnorm = problem.solver.getFunction()[0].norm()
             return Jnorm, Fnorm, xnorm

@@ -25,6 +25,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 
   // Collect up entity types on each dimension
   std::vector<std::vector<mesh::CellType>> entity_types;
+  entity_types.reserve(tdim + 1);
   for (int i = 0; i < tdim + 1; ++i)
     entity_types.push_back(topology->entity_types(i));
   const std::vector<mesh::CellType>& cell_entity_types = entity_types.back();
@@ -36,7 +37,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   std::vector<std::shared_ptr<const common::IndexMap>> index_maps;
 
   // Indices for vertices and edges on dim 0 and dim 1.
-  std::vector<int> e_index = {0, 0};
+  std::vector<int> e_index{0, 0};
 
   // Check for quadrilateral faces and get index, if any.
   if (auto it = std::find(entity_types[2].begin(), entity_types[2].end(),
@@ -83,7 +84,8 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
       entity_dofs[k] = dof_layout.entity_dofs(0, k).front();
 
     // Iterate over cells of this type
-    const auto im = topology->index_maps(tdim)[j];
+    auto im = topology->index_maps(tdim)[j];
+    assert(im);
     for (std::int32_t c = 0; c < im->size_local() + im->num_ghosts(); ++c)
     {
       auto vertices = c_to_v->links(c);
@@ -99,7 +101,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 
   // Copy existing vertices
   std::vector<T> new_x(nlocal * 3);
-  auto x_g = mesh.geometry().x();
+  std::span x_g = mesh.geometry().x();
   for (int i = 0; i < index_maps[0]->size_local(); ++i)
     for (int j = 0; j < 3; ++j)
       new_x[i * 3 + j] = x_g[vertex_to_x[i] * 3 + j];
@@ -116,7 +118,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     {
       auto vt = e_to_v->links(w);
       std::size_t nv_ent = vt.size();
-      std::array<T, 3> v = {0, 0, 0};
+      std::array<T, 3> v{0, 0, 0};
       for (std::size_t i = 0; i < nv_ent; ++i)
       {
         for (int k = 0; k < 3; ++k)
@@ -143,9 +145,23 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
               local_range[0] + entity_offsets[j]);
 
     common::Scatterer sc(*index_maps[j], 1);
-    sc.scatter_fwd(std::span<const std::int64_t>(new_v[j]),
-                   std::span(std::next(new_v[j].begin(), num_entities),
-                             index_maps[j]->num_ghosts()));
+    std::vector<std::int64_t> send_buffer(sc.local_indices().size());
+    {
+      auto& idx = sc.local_indices();
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        send_buffer[i] = new_v[j][idx[i]];
+    }
+    std::vector<std::int64_t> recv_buffer(sc.remote_indices().size());
+    MPI_Request request = MPI_REQUEST_NULL;
+    sc.scatter_fwd_begin(send_buffer.data(), recv_buffer.data(), request);
+    sc.scatter_end(request);
+    {
+      std::span ghosts(std::next(new_v[j].begin(), num_entities),
+                       new_v[j].end());
+      auto& idx = sc.remote_indices();
+      for (std::size_t i = 0; i < idx.size(); ++i)
+        ghosts[idx[i]] = recv_buffer[i];
+    }
   }
 
   // Create new topology
@@ -226,14 +242,15 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 
     auto c_to_v = topology->connectivity({tdim, k}, {0, 0});
     auto c_to_e = topology->connectivity({tdim, k}, {1, 0});
-
     for (int c = 0; c < topology->index_maps(tdim)[k]->size_local(); ++c)
     {
       // Cell topology defined through its globally numbered vertices
       std::vector<std::int64_t> entities;
+
       // Extract new global vertex number for existing vertices
       for (std::int32_t i : c_to_v->links(c))
         entities.push_back(new_v[0][i]);
+
       // Indices for vertices inserted on edges
       for (std::int32_t i : c_to_e->links(c))
         entities.push_back(new_v[1][i]);
@@ -247,7 +264,9 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
           {
             for (std::int32_t i :
                  topology->connectivity({3, k}, {2, e_index[2]})->links(c))
+            {
               entities.push_back(new_v[2][i]);
+            }
           }
         }
         // Add vertices for quadrilateral cells (2D mesh)
@@ -258,7 +277,9 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
       // Add vertices for hex cell centres
       if (e_index.size() > 3
           and cell_entity_types[k] == mesh::CellType::hexahedron)
+      {
         entities.push_back(new_v[3][c]);
+      }
 
       for (int i : refined_cell_list)
         mixed_topology[k].push_back(entities[i]);
@@ -276,7 +297,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
                                                        mixed_topology.end());
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, mesh.geometry().cmaps(), mesh.comm(),
-      new_x, {new_x.size() / 3, 3}, partitioner);
+      new_x, {new_x.size() / 3, 3}, partitioner, 2);
 
   return new_mesh;
 }

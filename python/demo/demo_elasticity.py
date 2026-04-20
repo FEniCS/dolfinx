@@ -12,31 +12,25 @@
 #
 # Copyright © 2020-2022 Garth N. Wells and Michal Habera
 #
-# This demo ({download}`demo_elasticity.py`) solves the equations of
-# static linear elasticity using a smoothed aggregation algebraic
-# multigrid solver. It illustrates how to:
-#
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_elasticity.py>`
+# * {download}`Jupyter notebook <./demo_elasticity.ipynb>`
+# ```
+# This demo solves the equations of static linear elasticity using
+# a smoothed aggregation algebraic multigrid solver.
+# It illustrates how to:
 # - Use a smoothed aggregation algebraic multigrid solver
 # - Use {py:class}`Expression <dolfinx.fem.Expression>` to compute
 #   derived quantities of a solution
 #
 # The required modules are first imported:
 
-from mpi4py import MPI
-
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
 
 # +
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 
 import ufl
@@ -68,8 +62,7 @@ dtype = PETSc.ScalarType
 
 
 def build_nullspace(V: FunctionSpace):
-    """Build PETSc nullspace for 3D elasticity"""
-
+    """Build PETSc nullspace for 3D elasticity."""
     # Create vectors that will span the nullspace
     bs = V.dofmap.index_map_bs
     length0 = V.dofmap.index_map.size_local
@@ -104,13 +97,13 @@ def build_nullspace(V: FunctionSpace):
 
 # ## Problem definition
 
-# Create a box Mesh:
+# Create a {py:func}`box mesh<dolfinx.mesh.create_box>`:
 
 
 msh = create_box(
     MPI.COMM_WORLD,
     [np.array([0.0, 0.0, 0.0]), np.array([2.0, 1.0, 1.0])],
-    [16, 16, 16],
+    (16, 16, 16),
     CellType.tetrahedron,
     ghost_mode=GhostMode.shared_facet,
 )
@@ -132,7 +125,7 @@ E = 1.0e9
 
 
 def σ(v):
-    """Return an expression for the stress σ given a displacement field"""
+    """Return an expression for the stress σ given a displacement field."""
     return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(len(v))
 
 
@@ -141,8 +134,8 @@ def σ(v):
 # A function space space is created and the elasticity variational
 # problem defined:
 
-
-V = functionspace(msh, ("Lagrange", 1, (msh.geometry.dim,)))
+gdim = msh.geometry.dim
+V = functionspace(msh, ("Lagrange", 1, (gdim,)))
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 a = form(ufl.inner(σ(u), ufl.grad(v)) * ufl.dx)
 L = form(ufl.inner(f, v) * ufl.dx)
@@ -150,12 +143,13 @@ L = form(ufl.inner(f, v) * ufl.dx)
 # A homogeneous (zero) boundary condition is created on $x_0 = 0$ and
 # $x_1 = 1$ by finding all facets on these boundaries, and then creating
 # a Dirichlet boundary condition object.
-
+tdim = msh.topology.dim
+fdim = tdim - 1
 facets = locate_entities_boundary(
-    msh, dim=2, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
+    msh, dim=fdim, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
 )
 bc = dirichletbc(
-    np.zeros(3, dtype=dtype), locate_dofs_topological(V, entity_dim=2, entities=facets), V=V
+    np.zeros(gdim, dtype=dtype), locate_dofs_topological(V, entity_dim=fdim, entities=facets), V=V
 )
 
 # ## Assemble and solve
@@ -179,7 +173,7 @@ A.assemble()
 
 # +
 b = assemble_vector(L)
-apply_lifting(b, [a], bcs=[bc])
+apply_lifting(b, [a], bcs=[[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bc.set(b.array_w)
 # -
@@ -268,8 +262,9 @@ with XDMFFile(msh.comm, "out_elasticity/von_mises_stress.xdmf", "w") as file:
 # -
 
 # Finally, we compute the $L^2$ norm of the displacement solution
-# vector. This is a collective operation (i.e., the method `norm` must
-# be called from all MPI ranks), but we print the norm only on rank 0.
+# vector. This is a collective operation (i.e., the method
+# {py:func}`norm<dolfinx.la.norm>` must be called from all MPI ranks),
+# but we print the norm only on rank 0.
 
 # +
 unorm = la.norm(uh.x)

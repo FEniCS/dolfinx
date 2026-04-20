@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstdint>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <mpi.h>
 #include <tuple>
@@ -20,12 +21,6 @@ class IndexMap;
 namespace dolfinx::mesh
 {
 class Topology;
-}
-
-namespace dolfinx::graph
-{
-template <typename T>
-class AdjacencyList;
 }
 
 namespace dolfinx::fem

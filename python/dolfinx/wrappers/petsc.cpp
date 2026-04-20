@@ -6,26 +6,21 @@
 
 #if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
 
+#include "dolfinx_wrappers/petsc.h"
 #include "dolfinx_wrappers/array.h"
-#include "dolfinx_wrappers/caster_mpi.h"
-#include "dolfinx_wrappers/caster_petsc.h"
 #include "dolfinx_wrappers/pycoeff.h"
-#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
-#include <dolfinx/fem/discreteoperators.h>
 #include <dolfinx/fem/petsc.h>
-#include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/nls/NewtonSolver.h>
+#include <iostream>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
@@ -38,135 +33,10 @@
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <petsc4py/petsc4py.h>
-#include <petscis.h>
 
 namespace
 {
-// Declare assembler function that have multiple scalar types
-template <typename T, std::floating_point U>
-void declare_petsc_discrete_operators(nb::module_& m)
-{
-  m.def(
-      "discrete_curl",
-      [](const dolfinx::fem::FunctionSpace<U>& V0,
-         const dolfinx::fem::FunctionSpace<U>& V1)
-      {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
-
-        auto dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        auto dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        MPI_Comm comm = mesh->comm();
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        std::vector<std::int32_t> c(map->size_local(), 0);
-        std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
-        sp.finalize();
-
-        // Build operator
-        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::discrete_curl<U, T>(
-            V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
-        return A;
-      },
-      nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));
-
-  m.def(
-      "discrete_gradient",
-      [](const dolfinx::fem::FunctionSpace<U>& V0,
-         const dolfinx::fem::FunctionSpace<U>& V1)
-      {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
-
-        auto dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        auto dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        MPI_Comm comm = mesh->comm();
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        std::vector<std::int32_t> c(map->size_local(), 0);
-        std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
-        sp.finalize();
-
-        // Build operator
-        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::discrete_gradient<T, U>(
-            *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
-            {*V1.element(), *V1.dofmap()},
-            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
-        return A;
-      },
-      nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));
-  m.def(
-      "interpolation_matrix",
-      [](const dolfinx::fem::FunctionSpace<U>& V0,
-         const dolfinx::fem::FunctionSpace<U>& V1)
-      {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
-
-        auto dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        auto dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        MPI_Comm comm = mesh->comm();
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        std::vector<std::int32_t> c(map->size_local(), 0);
-        std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
-        sp.finalize();
-
-        // Build operator
-        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::interpolation_matrix<T, U>(
-            V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, INSERT_VALUES));
-        return A;
-      },
-      nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));
-}
+namespace nb = nanobind;
 
 void petsc_la_module(nb::module_& m)
 {
@@ -219,14 +89,14 @@ void petsc_la_module(nb::module_& m)
              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
         std::vector<std::span<const PetscScalar>> _x_b;
-        std::ranges::transform(x_b, std::back_inserter(_x_b), [](auto x)
+        std::ranges::transform(x_b, std::back_inserter(_x_b), [](auto& x)
                                { return std::span(x.data(), x.size()); });
 
         using X = std::vector<std::pair<
             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
-                               [](auto q) -> typename X::value_type
+                               [](auto& q) -> typename X::value_type
                                { return {*q.first, q.second}; });
         dolfinx::la::petsc::scatter_local_vectors(x, _x_b, _maps);
       },
@@ -261,6 +131,8 @@ void petsc_la_module(nb::module_& m)
 
 void petsc_fem_module(nb::module_& m)
 {
+  dolfinx_wrappers::declare_petsc_discrete_operators<PetscScalar, PetscReal>(m);
+
   // Create PETSc vectors and matrices
   m.def(
       "create_vector_block",
@@ -271,7 +143,7 @@ void petsc_fem_module(nb::module_& m)
             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
-                               [](auto q) -> typename X::value_type
+                               [](auto& q) -> typename X::value_type
                                { return {*q.first, q.second}; });
         return dolfinx::fem::petsc::create_vector_block(_maps);
       },
@@ -286,7 +158,7 @@ void petsc_fem_module(nb::module_& m)
             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
         X _maps;
         std::ranges::transform(maps, std::back_inserter(_maps),
-                               [](auto m) -> typename X::value_type
+                               [](auto& m) -> typename X::value_type
                                { return {*m.first, m.second}; });
         return dolfinx::fem::petsc::create_vector_nest(_maps);
       },
@@ -312,8 +184,8 @@ void petsc_fem_module(nb::module_& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const PetscScalar, nb::ndim<2>,
                                     nb::c_contig>>& coefficients,
-         std::vector<const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>
-             bcs,
+         const std::vector<
+             const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>& bcs,
          bool unrolled)
       {
         std::vector<std::reference_wrapper<
@@ -380,8 +252,8 @@ void petsc_fem_module(nb::module_& m)
   m.def(
       "insert_diagonal",
       [](Mat A, const dolfinx::fem::FunctionSpace<PetscReal>& V,
-         std::vector<const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>
-             bcs,
+         const std::vector<
+             const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>& bcs,
          PetscScalar diagonal)
       {
         std::vector<std::reference_wrapper<
@@ -398,8 +270,6 @@ void petsc_fem_module(nb::module_& m)
             diagonal);
       },
       nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"));
-
-  declare_petsc_discrete_operators<PetscScalar, PetscReal>(m);
 }
 
 void petsc_nls_module(nb::module_& m)
@@ -410,7 +280,11 @@ void petsc_nls_module(nb::module_& m)
           "__init__",
           [](dolfinx::nls::petsc::NewtonSolver* ns,
              const dolfinx_wrappers::MPICommWrapper comm)
-          { new (ns) dolfinx::nls::petsc::NewtonSolver(comm.get()); },
+          {
+            new (ns) dolfinx::nls::petsc::NewtonSolver(comm.get());
+            std::cerr << "NewtonSolver is deprecated, and will be removed in a "
+                         "future release.\n";
+          },
           nb::arg("comm"))
       .def_prop_ro("krylov_solver",
                    [](const dolfinx::nls::petsc::NewtonSolver& self)
@@ -428,8 +302,9 @@ void petsc_nls_module(nb::module_& m)
       .def(
           "set_update",
           [](dolfinx::nls::petsc::NewtonSolver& self,
-             std::function<void(const dolfinx::nls::petsc::NewtonSolver* solver,
-                                const Vec, Vec)>
+             const std::function<void(
+                 const dolfinx::nls::petsc::NewtonSolver* solver, const Vec,
+                 Vec)>&
                  update) // See
                          // https://github.com/wjakob/nanobind/discussions/361
                          // on why we pass NewtonSolver* rather than
@@ -443,8 +318,8 @@ void petsc_nls_module(nb::module_& m)
       .def(
           "set_convergence_check",
           [](dolfinx::nls::petsc::NewtonSolver& self,
-             std::function<std::pair<double, bool>(
-                 const dolfinx::nls::petsc::NewtonSolver* solver, const Vec)>
+             const std::function<std::pair<double, bool>(
+                 const dolfinx::nls::petsc::NewtonSolver* solver, const Vec)>&
                  convergence_check) // See
                                     // https://github.com/wjakob/nanobind/discussions/361
                                     // on why we pass NewtonSolver* rather than

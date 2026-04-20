@@ -22,7 +22,7 @@
 namespace dolfinx::fem
 {
 /// DOF transformation type
-enum class doftransform
+enum class doftransform : std::uint8_t
 {
   standard = 0,          ///< Standard
   transpose = 1,         ///< Transpose
@@ -68,7 +68,7 @@ public:
   /// @param[in] symmetric Is the element a symmetric tensor? Should
   /// only set for 2nd-order tensor blocked elements.
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                std::optional<std::vector<std::size_t>> value_shape
+                const std::optional<std::vector<std::size_t>>& value_shape
                 = std::nullopt,
                 bool symmetric = false);
 
@@ -87,7 +87,7 @@ public:
   ///
   /// This constructs a mixed element \f$E_0 \times E_1 \times \ldots
   /// \times E_{n-1}\f$. The *i*th sub-element \f$E_i\f$ can be accessed
-  /// by ::extract_sub_element. Functions defined on mixed element
+  /// by ::extract_sub_element. Function%s defined on mixed element
   /// spaces cannot be interpolated into directly. It is necessary to
   /// first extract a sub-Function (view), which can then be
   /// interpolated into.

@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for the fem interface"""
+"""Unit tests for the fem interface."""
 
 import random
 from itertools import combinations, product
@@ -104,7 +104,7 @@ def unit_cell(cell_type, dtype, random_order=True):
     domain = ufl.Mesh(
         element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],), dtype=dtype)
     )
-    mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, ordered_points)
     return mesh
 
 
@@ -188,7 +188,7 @@ def two_unit_cells(cell_type, dtype, agree=False, random_order=True, return_orde
     domain = ufl.Mesh(
         element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],), dtype=dtype)
     )
-    mesh = create_mesh(MPI.COMM_WORLD, ordered_cells, ordered_points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, ordered_cells, domain, ordered_points)
     if return_order:
         return mesh, order
     return mesh
@@ -198,7 +198,7 @@ def two_unit_cells(cell_type, dtype, agree=False, random_order=True, return_orde
 @parametrize_cell_types
 @parametrize_dtypes
 def test_facet_integral(cell_type, dtype):
-    """Test that the integral of a function over a facet is correct"""
+    """Test that the integral of a function over a facet is correct."""
     xtype = np.real(dtype(0)).dtype
     for count in range(5):
         mesh = unit_cell(cell_type, xtype)
@@ -223,9 +223,11 @@ def test_facet_integral(cell_type, dtype):
         elif cell_type == CellType.tetrahedron:
             s = 2**0.5 * 3 ** (1 / 3)  # side length
             v.interpolate(
-                lambda x: (x[0] - s / 2) ** 2
-                + (x[1] - s / 2 / np.sqrt(3)) ** 2
-                + (x[2] - s * np.sqrt(2 / 3) / 4) ** 2
+                lambda x: (
+                    (x[0] - s / 2) ** 2
+                    + (x[1] - s / 2 / np.sqrt(3)) ** 2
+                    + (x[2] - s * np.sqrt(2 / 3) / 4) ** 2
+                )
             )
         elif cell_type == CellType.hexahedron:
             v.interpolate(lambda x: x[0] * (1 - x[0]) + x[1] * (1 - x[1]) + x[2] * (1 - x[2]))
@@ -246,7 +248,7 @@ def test_facet_integral(cell_type, dtype):
 @parametrize_cell_types
 @parametrize_dtypes
 def test_facet_normals(cell_type, dtype):
-    """Test that FacetNormal is outward facing"""
+    """Test that FacetNormal is outward facing."""
     xtype = np.real(dtype(0)).dtype
     for count in range(5):
         mesh = unit_cell(cell_type, xtype)
@@ -322,7 +324,7 @@ def test_facet_normals(cell_type, dtype):
 @parametrize_cell_types
 @parametrize_dtypes
 def test_plus_minus(cell_type, space_type, dtype):
-    """Test that ('+') and ('-') give the same value for continuous functions"""
+    """Test that ('+') and ('-') give the same value for continuous functions."""
     xtype = np.real(dtype(0)).dtype
     results = []
     for count in range(3):
@@ -344,7 +346,7 @@ def test_plus_minus(cell_type, space_type, dtype):
 @parametrize_cell_types
 @parametrize_dtypes
 def test_plus_minus_simple_vector(cell_type, pm, dtype):
-    """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
+    """Test that ('+') and ('-') match up with the correct DOFs for DG functions."""
     xtype = np.real(dtype(0)).dtype
     results = []
     orders = []
@@ -397,7 +399,7 @@ def test_plus_minus_simple_vector(cell_type, pm, dtype):
 @parametrize_cell_types
 @parametrize_dtypes
 def test_plus_minus_vector(cell_type, pm1, pm2, dtype):
-    """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
+    """Test that ('+') and ('-') match up with the correct DOFs for DG functions."""
     xtype = np.real(dtype(0)).dtype
     results = []
     orders = []
@@ -452,7 +454,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2, dtype):
 @parametrize_cell_types
 @parametrize_dtypes
 def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
-    """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
+    """Test that ('+') and ('-') match up with the correct DOFs for DG functions."""
     xtype = np.real(dtype(0)).dtype
     results = []
     spaces = []
@@ -525,7 +527,7 @@ def test_curl(space_type, order, dtype):
     for i in range(5):
         random.shuffle(cell)
         domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, shape=(3,), dtype=dtype))
-        mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
+        mesh = create_mesh(MPI.COMM_WORLD, [cell], domain, points)
         V = functionspace(mesh, (space_type, order))
         v = ufl.TestFunction(V)
         f = ufl.as_vector(tuple(1 if i == 0 else 0 for i in range(tdim)))
@@ -572,11 +574,12 @@ def test_curl(space_type, order, dtype):
 
 def create_quad_mesh(offset, dtype):
     """Creates a mesh of a single square element if offset = 0, or a
-    trapezium element if |offset| > 0."""
+    trapezium element if |offset| > 0.
+    """
     x = np.array([[0, 0], [1, 0], [0, 0.5 + offset], [1, 0.5 - offset]], dtype=dtype)
     cells = np.array([[0, 1, 2, 3]])
     ufl_mesh = ufl.Mesh(element("Lagrange", "quadrilateral", 1, shape=(2,), dtype=dtype))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, ufl_mesh, x)
     return mesh
 
 
@@ -587,7 +590,8 @@ def test_div_general_quads_mat(k, dtype):
     """Tests that assembling inner(u, div(w)) * dx, where u is from a
     "DQ" space and w is from an "RTCF" space, gives the same matrix for
     square and trapezoidal elements. This should be the case due to the
-    properties of the Piola transform."""
+    properties of the Piola transform.
+    """
     # Assemble matrix on a mesh of square elements and on a mesh of
     # trapezium elements
     xtype = np.real(dtype(0)).dtype
@@ -616,7 +620,8 @@ def test_div_general_quads_vec(k, dtype):
     """Tests that assembling inner(1, div(w)) * dx, where w is from an
     "RTCF" space, gives the same matrix for square and trapezoidal
     elements. This should be the case due to the properties of the Piola
-    transform."""
+    transform.
+    """
     # Assemble vector on a mesh of square elements and on a mesh of
     # trapezium elements
     xtype = np.real(dtype(0)).dtype

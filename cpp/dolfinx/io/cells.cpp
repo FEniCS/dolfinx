@@ -347,6 +347,8 @@ std::vector<std::uint16_t> vtk_wedge(int num_nodes)
     return {0, 1, 2, 3, 4, 5};
   case 15:
     return {0, 1, 2, 3, 4, 5, 6, 9, 7, 12, 14, 13, 8, 10, 11};
+  case 18:
+    return {0, 1, 2, 3, 4, 5, 6, 9, 7, 12, 14, 13, 8, 10, 11, 15, 17, 16};
   default:
     throw std::runtime_error("Unknown wedge layout");
   }

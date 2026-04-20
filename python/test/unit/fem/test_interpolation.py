@@ -1,9 +1,9 @@
-# Copyright (C) 2009-2020 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
+# Copyright (C) 2009-2026 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Test that interpolation is done correctly"""
+"""Test that interpolation is done correctly."""
 
 import random
 
@@ -27,6 +27,7 @@ from dolfinx.fem import (
 from dolfinx.geometry import bb_tree, compute_collisions_points
 from dolfinx.mesh import (
     CellType,
+    GhostMode,
     create_mesh,
     create_rectangle,
     create_submesh,
@@ -142,7 +143,7 @@ def one_cell_mesh(cell_type):
             "Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],), dtype=default_real_type
         )
     )
-    return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
+    return create_mesh(MPI.COMM_WORLD, cells, domain, ordered_points)
 
 
 def two_cell_mesh(cell_type):
@@ -202,7 +203,7 @@ def two_cell_mesh(cell_type):
     domain = ufl.Mesh(
         element("Lagrange", cell_type.name, 1, shape=(points.shape[1],), dtype=default_real_type)
     )
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     return mesh
 
 
@@ -270,7 +271,7 @@ def run_vector_test(V, poly_order):
 @parametrize_cell_types
 @pytest.mark.parametrize("order", range(1, 5))
 def test_Lagrange_interpolation(cell_type, order):
-    """Test that interpolation is correct in a function space"""
+    """Test that interpolation is correct in a function space."""
     mesh = one_cell_mesh(cell_type)
     V = functionspace(mesh, ("Lagrange", order))
     run_scalar_test(V, order)
@@ -282,7 +283,7 @@ def test_Lagrange_interpolation(cell_type, order):
 )
 @pytest.mark.parametrize("order", range(1, 5))
 def test_serendipity_interpolation(cell_type, order):
-    """Test that interpolation is correct in a function space"""
+    """Test that interpolation is correct in a function space."""
     mesh = one_cell_mesh(cell_type)
     V = functionspace(mesh, ("S", order))
     run_scalar_test(V, order)
@@ -339,7 +340,7 @@ def test_NCE_interpolation(cell_type, order):
 
 
 def test_mixed_sub_interpolation():
-    """Test interpolation of sub-functions"""
+    """Test interpolation of sub-functions."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
 
     def f(x):
@@ -548,7 +549,7 @@ def test_interpolation_non_affine():
     )
     cells = np.array([range(len(points))], dtype=np.int32)
     domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,), dtype=default_real_type))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     W = functionspace(mesh, ("NCE", 1))
     V = functionspace(mesh, ("NCE", 2))
     w, v = Function(W), Function(V)
@@ -593,7 +594,7 @@ def test_interpolation_non_affine_nonmatching_maps():
     )
     cells = np.array([range(len(points))], dtype=np.int32)
     domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,), dtype=default_real_type))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     gdim = mesh.geometry.dim
     W = functionspace(mesh, ("DG", 1, (gdim,)))
     V = functionspace(mesh, ("NCE", 4))
@@ -732,7 +733,7 @@ def test_interpolate_subset(order, dim, affine, callable_):
 
 
 def test_interpolate_callable():
-    """Test interpolation with callables"""
+    """Test interpolation with callables."""
     numba = pytest.importorskip("numba")
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 1)
     V = functionspace(mesh, ("Lagrange", 2))
@@ -751,7 +752,7 @@ def test_interpolate_callable():
 
 @pytest.mark.parametrize("bound", [1.5, 0.5])
 def test_interpolate_callable_subset(bound):
-    """Test interpolation on subsets with callables"""
+    """Test interpolation on subsets with callables."""
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 4)
     cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[1] <= bound + 1e-10)
     num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
@@ -795,7 +796,7 @@ def test_interpolate_callable_subset(bound):
 def test_vector_element_interpolation(scalar_element):
     """Test interpolation into a range of vector elements."""
     mesh = create_unit_square(
-        MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell.cellname())
+        MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell.cellname)
     )
     V = functionspace(mesh, blocked_element(scalar_element, shape=(2,)))
     u = Function(V)
@@ -1025,7 +1026,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     u1_exact.x.scatter_forward()
 
     # Find the single cell in mesh1 which is overlapped by mesh2
-    tree1 = bb_tree(mesh1, mesh1.topology.dim)
+    tree1 = bb_tree(mesh1, mesh1.topology.dim, padding=0.0)
     cells_overlapped1 = compute_collisions_points(
         tree1, np.array([p0_mesh2, p0_mesh2, 0.0]) / 2
     ).array
@@ -1054,7 +1055,7 @@ def test_submesh_interpolation():
 
     tdim = mesh.topology.dim
     cells = locate_entities(mesh, tdim, left_locator)
-    submesh, parent_cells, _, _ = create_submesh(mesh, tdim, cells)
+    submesh, entity_map, _, _ = create_submesh(mesh, tdim, cells)
 
     u0 = Function(functionspace(mesh, ("Lagrange", 2)))
     u0.interpolate(ref_func)
@@ -1062,9 +1063,13 @@ def test_submesh_interpolation():
     V1 = functionspace(submesh, ("DG", 3))
     u1 = Function(V1)
 
+    smsh_cell_imap = submesh.topology.index_map(tdim)
+    smsh_cells = np.arange(smsh_cell_imap.size_local + smsh_cell_imap.num_ghosts)
+    parent_cells = entity_map.sub_topology_to_topology(smsh_cells, inverse=False)
+
     # Interpolate u0 (defined on 'full' mesh) into u0 (defined on
     # 'sub'0mesh)
-    u1.interpolate(u0, cells0=parent_cells, cells1=np.arange(len(parent_cells)))
+    u1.interpolate(u0, cells0=parent_cells, cells1=smsh_cells)
 
     u1_exact = Function(V1)
     u1_exact.interpolate(ref_func)
@@ -1084,7 +1089,7 @@ def test_submesh_interpolation():
 
 
 def xtest_submesh_expression_interpolation():
-    """Test interpolation of an expression between a submesh and its parent"""
+    """Test interpolation of an expression between a submesh and its parent."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 8, cell_type=CellType.quadrilateral)
 
     def left_locator(x):
@@ -1145,3 +1150,50 @@ def xtest_submesh_expression_interpolation():
     w_exact.interpolate(modified_grad, cells=cells)
     w_exact.x.scatter_forward()
     np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=atol)
+
+
+@pytest.mark.parametrize("ghost_mode", [GhostMode.shared_facet, GhostMode.none])
+def test_submesh_interpolation_mapped(ghost_mode):
+    """Test interpolation of Piola mapped cells with submeshes."""
+    comm = MPI.COMM_WORLD
+
+    N = 8
+    domain = create_unit_cube(comm, N, N, N, ghost_mode=ghost_mode, dtype=default_real_type)
+    tdim = domain.topology.dim
+
+    eps = 50 * np.finfo(domain.geometry.x.dtype).eps
+    sub_cells = locate_entities(domain, tdim, lambda x: x[0] <= 0.5 + eps)
+
+    submesh, sub_to_parent = create_submesh(domain, tdim, sub_cells)[:2]
+    submesh.topology.create_entity_permutations()
+    domain.topology.create_entity_permutations()
+
+    smsh_cell_imap = submesh.topology.index_map(tdim)
+    smsh_cells = np.arange(smsh_cell_imap.size_local + smsh_cell_imap.num_ghosts)
+    parent_cells = sub_to_parent.sub_topology_to_topology(smsh_cells, inverse=False)
+
+    degree = 1
+    el = element("N1curl", domain.basix_cell(), degree, dtype=default_real_type)
+
+    V = functionspace(domain, el)
+    V_sub = functionspace(submesh, el)
+
+    u_parent = Function(V)
+    u_sub = Function(V_sub)
+
+    def f(x):
+        vals = np.zeros((domain.geometry.dim, x.shape[1]), dtype=default_scalar_type)
+        vals[0, :] = x[0, :] * np.cos(np.pi * x[1, :])
+        return vals
+
+    u_parent.interpolate(f, cells0=parent_cells)
+    u_sub.interpolate(u_parent, cells0=parent_cells, cells1=smsh_cells)
+    u_sub.x.scatter_forward()
+
+    diff = u_parent - u_sub
+    L2_symbolic = ufl.inner(diff, diff) * ufl.dx(domain=submesh)
+    L2_compiled = form(L2_symbolic, entity_maps=[sub_to_parent])
+
+    L2_local = assemble_scalar(L2_compiled)
+    L2_global = np.sqrt(L2_compiled.mesh.comm.allreduce(L2_local, op=MPI.SUM))
+    assert np.isclose(L2_global, 0.0, atol=eps, rtol=eps)

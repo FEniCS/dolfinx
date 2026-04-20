@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools for assembling and manipulating finite element forms."""
 
+import typing
+
 import numpy as np
 import numpy.typing as npt
 
@@ -18,7 +20,6 @@ from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
 from dolfinx.cpp.fem import transpose_dofmap
 from dolfinx.cpp.la import SparsityPattern
-from dolfinx.cpp.mesh import Topology
 from dolfinx.fem.assemble import (
     apply_lifting,
     assemble_matrix,
@@ -37,7 +38,7 @@ from dolfinx.fem.bcs import (
     locate_dofs_geometrical,
     locate_dofs_topological,
 )
-from dolfinx.fem.dofmap import DofMap
+from dolfinx.fem.dofmap import DofMap, create_dofmaps
 from dolfinx.fem.element import CoordinateElement, FiniteElement, coordinate_element, finiteelement
 from dolfinx.fem.forms import (
     Form,
@@ -58,6 +59,9 @@ from dolfinx.fem.function import (
 )
 from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
 from dolfinx.la import MatrixCSR as _MatrixCSR
+
+if typing.TYPE_CHECKING:
+    import dolfinx.mesh
 
 
 def create_sparsity_pattern(a: Form):
@@ -99,16 +103,15 @@ def create_interpolation_data(
     cells: npt.NDArray[np.int32],
     padding: float = 1e-14,
 ) -> _PointOwnershipData:
-    """Generate data needed to interpolate discrete functions across
-    different meshes.
+    """Generate data for interpolating functions on different meshes.
 
     Args:
-        V_to: Function space to interpolate into
-        V_from: Function space to interpolate from
+        V_to: Function space to interpolate into.
+        V_from: Function space to interpolate from.
         cells: Indices of the cells associated with `V_to` on which to
             interpolate into.
         padding: Absolute padding of bounding boxes of all entities on
-            mesh_to
+            mesh_to.
 
     Returns:
         Data needed to interpolation functions defined on function
@@ -160,24 +163,26 @@ def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCS
 
 
 def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
-    """Assemble an interpolation matrix for two function spaces on the same
-    mesh.
+    """Create interpolation matrix between spaces on the same mesh.
 
     Args:
-        space0: space to interpolate from
-        space1: space to interpolate into
+        space0: space to interpolate from.
+        space1: space to interpolate into.
 
     Returns:
-        Interpolation matrix
+        Interpolation matrix.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
     """
     return _MatrixCSR(_interpolation_matrix(space0._cpp_object, space1._cpp_object))
 
 
 def compute_integration_domains(
-    integral_type: IntegralType, topology: Topology, entities: np.ndarray
+    integral_type: IntegralType, topology: "dolfinx.mesh.Topology", entities: np.ndarray
 ):
-    """Given an integral type and a set of entities compute integration
-    entities.
+    """Determine compute integration entities.
 
     This function returns a list ``[(id, entities)]``. For cell
     integrals ``entities`` are the cell indices. For exterior facet
@@ -231,12 +236,14 @@ __all__ = [
     "compile_form",
     "compute_integration_domains",
     "coordinate_element",
+    "create_dofmaps",
     "create_form",
     "create_interpolation_data",
     "create_matrix",
     "create_sparsity_pattern",
     "create_vector",
     "dirichletbc",
+    "discrete_curl",
     "discrete_gradient",
     "extract_function_spaces",
     "finiteelement",

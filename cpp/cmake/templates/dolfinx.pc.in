@@ -5,7 +5,6 @@ libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
 includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 compiler=@CMAKE_CXX_COMPILER@
 definitions=@PKG_DEFINITIONS@
-extlibs=@DOLFINX_EXT_LIBS@
 
 Name: DOLFINx
 Description: Dynamic Object-oriented Library for FINite element computation

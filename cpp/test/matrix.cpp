@@ -11,6 +11,7 @@
 #include <basix/mdspan.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <concepts>
 #include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
@@ -26,47 +27,46 @@ namespace
 /// @brief Create a matrix operator
 /// @param comm The communicator to builf the matrix on
 /// @return The assembled matrix
-la::MatrixCSR<double> create_operator(MPI_Comm comm)
+template <std::floating_point T>
+la::MatrixCSR<T> create_operator(MPI_Comm comm)
 {
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
-  auto mesh = std::make_shared<mesh::Mesh<double>>(
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none, 2);
+  auto mesh = std::make_shared<mesh::Mesh<T>>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
-  auto element = basix::create_element<double>(
+  auto element = basix::create_element<T>(
       basix::element::family::P, basix::cell::type::tetrahedron, 2,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
 
-  auto V = std::make_shared<fem::FunctionSpace<double>>(
-      fem::create_functionspace<double>(
-          mesh, std::make_shared<fem::FiniteElement<double>>(element)));
+  auto V = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
+      mesh, std::make_shared<fem::FiniteElement<T>>(element)));
 
   // Prepare and set Constants for the bilinear form
-  auto kappa = std::make_shared<fem::Constant<double>>(2.0);
-  auto a = std::make_shared<fem::Form<double, double>>(
-      fem::create_form<double, double>(*form_poisson_a, {V, V}, {},
-                                       {{"kappa", kappa}}, {}, {}));
+  auto kappa = std::make_shared<fem::Constant<T>>(2.0);
+  auto a = std::make_shared<fem::Form<T, T>>(fem::create_form<T, T>(
+      *form_poisson_a, {V, V}, {}, {{"kappa", kappa}}, {}, {}));
 
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
   sp.finalize();
-  la::MatrixCSR<double> A(sp);
+  la::MatrixCSR<T> A(sp);
   fem::assemble_matrix(A.mat_add_values(), *a, {});
   A.scatter_rev();
 
   return A;
 }
 
-[[maybe_unused]] void test_matrix_norm()
+void test_matrix_norm()
 {
-  la::MatrixCSR A0 = create_operator(MPI_COMM_SELF);
-  la::MatrixCSR A1 = create_operator(MPI_COMM_WORLD);
+  la::MatrixCSR A0 = create_operator<double>(MPI_COMM_SELF);
+  la::MatrixCSR A1 = create_operator<double>(MPI_COMM_WORLD);
   CHECK(A1.squared_norm() == Catch::Approx(A0.squared_norm()).epsilon(1e-8));
 }
 
-[[maybe_unused]] void test_matrix_apply()
+void test_matrix_apply()
 {
   MPI_Comm comm = MPI_COMM_WORLD;
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none, 2);
   auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
@@ -109,7 +109,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   CHECK(x.array().size() == col_size);
 
   // Fill x vector with 1 (Constant)
-  std::ranges::fill(x.mutable_array(), 1);
+  std::ranges::fill(x.array(), 1);
 
   // Matrix A represents the action of the Laplace operator, so when
   // applied to a constant vector the result should be zero
@@ -117,6 +117,13 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 
   std::ranges::for_each(y.array(),
                         [](auto a) { REQUIRE(std::abs(a) < 1e-13); });
+}
+
+void test_matrix_cast()
+{
+  la::MatrixCSR A0 = create_operator<double>(MPI_COMM_WORLD);
+  la::MatrixCSR<float> A1(A0);
+  la::MatrixCSR<std::complex<double>> A2(A1);
 }
 
 void test_matrix()
@@ -171,4 +178,5 @@ TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
   CHECK_NOTHROW(test_matrix());
   CHECK_NOTHROW(test_matrix_apply());
   CHECK_NOTHROW(test_matrix_norm());
+  CHECK_NOTHROW(test_matrix_cast());
 }

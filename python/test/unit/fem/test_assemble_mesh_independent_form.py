@@ -24,9 +24,7 @@ import ufl
     ],
 )
 def test_compiled_form(dtype):
-    """
-    Compile a form without an associated mesh and assemble a form over a sequence of meshes
-    """
+    """Compile a form without an associated mesh and assemble a form over a sequence of meshes."""
     real_type = dtype(0).real.dtype
     c_el = basix.ufl.element("Lagrange", "triangle", 1, shape=(2,), dtype=real_type)
     domain = ufl.Mesh(c_el)
@@ -72,9 +70,7 @@ def test_compiled_form(dtype):
     ],
 )
 def test_submesh_assembly(dtype):
-    """
-    Compile a form without an associated mesh and assemble a form over a sequence of meshes
-    """
+    """Compile a form without an associated mesh and assemble a form over a sequence of meshes."""
     real_type = dtype(0).real.dtype
     c_el = basix.ufl.element("Lagrange", "triangle", 1, shape=(2,), dtype=real_type)
     domain = ufl.Mesh(c_el)
@@ -110,13 +106,7 @@ def test_submesh_assembly(dtype):
         facets = dolfinx.mesh.locate_entities_boundary(
             mesh, mesh.topology.dim - 1, lambda x: np.isclose(x[1], 2)
         )
-        submesh, sub_to_parent, _, _ = dolfinx.mesh.create_submesh(
-            mesh, mesh.topology.dim - 1, facets
-        )
-        imap = mesh.topology.index_map(mesh.topology.dim - 1)
-        num_facets = imap.size_local + imap.num_ghosts
-        parent_to_sub = np.full(num_facets, -1, dtype=np.int32)
-        parent_to_sub[sub_to_parent] = np.arange(sub_to_parent.size, dtype=np.int32)
+        submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(mesh, mesh.topology.dim - 1, facets)
 
         def g(x):
             return -3 * x[1] ** 3 + x[0]
@@ -128,11 +118,12 @@ def test_submesh_assembly(dtype):
         wh.interpolate(g)
 
         facet_entities = dolfinx.fem.compute_integration_domains(
-            dolfinx.fem.IntegralType.exterior_facet, mesh.topology, sub_to_parent
+            dolfinx.fem.IntegralType.exterior_facet, mesh.topology, facets
         )
         subdomains = {dolfinx.fem.IntegralType.exterior_facet: [(subdomain_id, facet_entities)]}
+
         form = dolfinx.fem.create_form(
-            compiled_form, [Vh], mesh, subdomains, {w: wh}, {}, {submesh: parent_to_sub}
+            compiled_form, [Vh], mesh, subdomains, {w: wh}, {}, [entity_map]
         )
 
         # Compute exact solution
@@ -170,11 +161,9 @@ def test_submesh_assembly(dtype):
     ],
 )
 def test_eliminated_data(dtype):
+    """Test that mesh independent compilation handles the re-ordering of coefficients and constants
+    when removed through differentiation.
     """
-    Test that mesh independent compilation handles the re-ordering of coefficients and constants
-    when removed through differentiation
-    """
-
     cell_name = "triangle"
     real_type = dtype(0).real.dtype
     c_el = basix.ufl.element("Lagrange", cell_name, 1, shape=(2,), dtype=real_type)

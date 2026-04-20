@@ -212,7 +212,7 @@ public:
   /// 0, 0)`.
   /// @param[in] x Physical coordinates (shape=(num_points, gdim)).
   template <typename U, typename V, typename W>
-  static void pull_back_affine(U&& X, const V& K, const std::array<T, 3>& x0,
+  static void pull_back_affine(U&& X, const V& K, std::array<T, 3> x0,
                                const W& x)
   {
     assert(X.extent(0) == x.extent(0));
@@ -245,8 +245,8 @@ public:
   /// @note If convergence is not achieved within `maxit`, the function
   /// throws a runtime error.
   void pull_back_nonaffine(mdspan2_t<T> X, mdspan2_t<const T> x,
-                           mdspan2_t<const T> cell_geometry,
-                           double tol = 1.0e-6, int maxit = 15) const;
+                           mdspan2_t<const T> cell_geometry, double tol,
+                           int maxit) const;
 
   /// @brief Permute a list of DOF numbers on a cell.
   void permute(std::span<std::int32_t> dofs, std::uint32_t cell_perm) const;

@@ -25,9 +25,9 @@ body:
       description: Add (optionally) a minimal script that reproduces the bug
       render: Python
       placeholder: |
-          import dolfinx
-          from mpi4py import MPI
-          domain = dolfinx.mesh.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+        import dolfinx
+        from mpi4py import MPI
+        domain = dolfinx.mesh.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
     validations:
       required: false
 
@@ -38,10 +38,10 @@ body:
       description: If you get an error message or any output, please add it here
       render: bash
       placeholder: |
-          Traceback (most recent call last):
-          File "/root/shared/dolfinx/python/test/mwe.py", line 3, in <module>
-          domain = dolfinx.mesh.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
-          AttributeError: module 'dolfinx.mesh' has no attribute 'UnitSquareMesh'
+        Traceback (most recent call last):
+        File "/root/shared/dolfinx/python/test/mwe.py", line 3, in <module>
+        domain = dolfinx.mesh.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
+        AttributeError: module 'dolfinx.mesh' has no attribute 'UnitSquareMesh'
     validations:
       required: false
 
@@ -52,6 +52,7 @@ body:
       description: What version of DOLFINx are you running?
       options:
         - main branch
+        - 0.10.0
         - 0.9.0
         - 0.8.0
         - 0.7.3

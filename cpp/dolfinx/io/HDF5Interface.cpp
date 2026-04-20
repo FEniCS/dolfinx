@@ -159,6 +159,95 @@ bool io::hdf5::has_dataset(hid_t handle, const std::string& dataset_path)
   return link_status;
 }
 //-----------------------------------------------------------------------------
+void io::hdf5::set_attribute(hid_t handle, const std::string& attr_name,
+                             const std::string& value)
+{
+  if (htri_t attr_exists = H5Aexists(handle, attr_name.c_str());
+      attr_exists < 0)
+  {
+    throw std::runtime_error("Error checking attribute");
+  }
+  else if (attr_exists == 0)
+  {
+    // create attribute
+    hid_t space_id = H5Screate(H5S_SCALAR);
+    hid_t atype = H5Tcopy(H5T_C_S1);
+    H5Tset_size(atype, value.size());
+    H5Tset_strpad(atype, H5T_STR_NULLTERM);
+    hid_t attr_id = H5Acreate(handle, attr_name.c_str(), atype, space_id,
+                              H5P_DEFAULT, H5P_DEFAULT);
+    H5Awrite(attr_id, atype, value.c_str());
+    H5Aclose(attr_id);
+    H5Sclose(space_id);
+  }
+  else
+  {
+    // update attribute
+    hid_t attr_id = H5Aopen(handle, attr_name.c_str(), H5P_DEFAULT);
+    hid_t atype = H5Aget_type(attr_id);
+    H5Tset_size(atype, value.size());
+    H5Tset_strpad(atype, H5T_STR_NULLTERM);
+    H5Awrite(attr_id, atype, value.c_str());
+    H5Aclose(attr_id);
+  }
+}
+//-----------------------------------------------------------------------------
+void io::hdf5::set_attribute(hid_t handle, const std::string& attr_name,
+                             std::int32_t value)
+{
+  if (htri_t attr_exists = H5Aexists(handle, attr_name.c_str());
+      attr_exists < 0)
+  {
+    throw std::runtime_error("Error checking attribute");
+  }
+  else if (attr_exists == 0)
+  {
+    // create attribute
+    hsize_t dims = 1;
+    hid_t space_id = H5Screate_simple(1, &dims, NULL);
+    hid_t attr_id = H5Acreate(handle, attr_name.c_str(), H5T_NATIVE_INT32,
+                              space_id, H5P_DEFAULT, H5P_DEFAULT);
+    H5Awrite(attr_id, H5T_NATIVE_INT32, &value);
+    H5Aclose(attr_id);
+    H5Sclose(space_id);
+  }
+  else
+  {
+    // update attribute
+    hid_t attr_id = H5Aopen(handle, attr_name.c_str(), H5P_DEFAULT);
+    H5Awrite(attr_id, H5T_NATIVE_INT32, &value);
+    H5Aclose(attr_id);
+  }
+}
+//-----------------------------------------------------------------------------
+void io::hdf5::set_attribute(hid_t handle, const std::string& attr_name,
+                             const std::vector<std::int32_t>& value)
+{
+  if (htri_t attr_exists = H5Aexists(handle, attr_name.c_str());
+      attr_exists < 0)
+  {
+    throw std::runtime_error("Error checking attribute");
+  }
+  else if (attr_exists == 0)
+  {
+    // create attribute
+    hsize_t dims = value.size();
+    hid_t space_id = H5Screate_simple(1, &dims, NULL);
+    hid_t attr_id = H5Acreate(handle, attr_name.c_str(), H5T_NATIVE_INT32,
+                              space_id, H5P_DEFAULT, H5P_DEFAULT);
+    H5Awrite(attr_id, H5T_NATIVE_INT32, value.data());
+    H5Aclose(attr_id);
+    H5Sclose(space_id);
+  }
+  else
+  {
+    // update attribute
+    hid_t attr_id = H5Aopen(handle, attr_name.c_str(), H5P_DEFAULT);
+    H5Awrite(attr_id, H5T_NATIVE_INT32, value.data());
+    H5Aclose(attr_id);
+  }
+}
+//-----------------------------------------------------------------------------
 hid_t io::hdf5::open_dataset(hid_t handle, const std::string& path)
 {
   return H5Dopen2(handle, path.c_str(), H5P_DEFAULT);

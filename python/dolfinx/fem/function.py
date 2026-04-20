@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2024 Chris N. Richardson, Garth N. Wells,
+# Copyright (C) 2009-2026 Chris N. Richardson, Garth N. Wells,
 # Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Callable, Sequence
 from functools import cached_property, singledispatch
 
 import numpy as np
@@ -18,7 +19,7 @@ import basix
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
-from dolfinx.fem import dofmap
+from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.element import FiniteElement, finiteelement
 from dolfinx.geometry import PointOwnershipData
 
@@ -29,17 +30,21 @@ if typing.TYPE_CHECKING:
 
 
 class Constant(ufl.Constant):
-    _cpp_object: typing.Union[
-        _cpp.fem.Constant_complex64,
-        _cpp.fem.Constant_complex128,
-        _cpp.fem.Constant_float32,
-        _cpp.fem.Constant_float64,
-    ]
+    """A constant with respect to a domain."""
+
+    _cpp_object: (
+        _cpp.fem.Constant_complex64
+        | _cpp.fem.Constant_complex128
+        | _cpp.fem.Constant_float32
+        | _cpp.fem.Constant_float64
+    )
 
     def __init__(
-        self, domain, c: typing.Union[np.ndarray, typing.Sequence, np.floating, np.complexfloating]
+        self,
+        domain,
+        c: float | np.floating | complex | np.complexfloating | Sequence | np.ndarray,
     ):
-        """A constant with respect to a domain.
+        """Create a Constant.
 
         Args:
             domain: DOLFINx or UFL mesh
@@ -63,7 +68,7 @@ class Constant(ufl.Constant):
 
     @property
     def value(self):
-        """The value of the constant"""
+        """The value of the constant."""
         return self._cpp_object.value
 
     @value.setter
@@ -72,15 +77,18 @@ class Constant(ufl.Constant):
 
     @property
     def dtype(self) -> np.dtype:
+        """Value dtype of the constant."""
         return np.dtype(self._cpp_object.dtype)
 
     def __float__(self):
+        """Real representation of the constant."""
         if self.ufl_shape or self.ufl_free_indices:
             raise TypeError("Cannot evaluate a nonscalar expression to a scalar value.")
         else:
             return float(self.value)
 
     def __complex__(self):
+        """Complex representation of the constant."""
         if self.ufl_shape or self.ufl_free_indices:
             raise TypeError("Cannot evaluate a nonscalar expression to a scalar value.")
         else:
@@ -88,25 +96,29 @@ class Constant(ufl.Constant):
 
 
 class Expression:
+    """An object for evaluating functions of finite element functions.
+
+    Represents a mathematical expression evaluated at a pre-defined set
+    of points on the reference cell. This class closely follows the
+    concept of a UFC Expression.
+
+    This functionality can be used to evaluate a gradient of a Function
+    at the quadrature points in all cells. This evaluated gradient can
+    then be used as input to a non-FEniCS function that calculates a
+    material constitutive model.
+
+    """
+
     def __init__(
         self,
         e: ufl.core.expr.Expr,
         X: np.ndarray,
-        comm: typing.Optional[_MPI.Comm] = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
-        dtype: typing.Optional[npt.DTypeLike] = None,
+        comm: _MPI.Comm | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        dtype: npt.DTypeLike | None = None,
     ):
-        """Create a DOLFINx Expression.
-
-        Represents a mathematical expression evaluated at a pre-defined
-        set of points on the reference cell. This class closely follows
-        the concept of a UFC Expression.
-
-        This functionality can be used to evaluate a gradient of a
-        Function at the quadrature points in all cells. This evaluated
-        gradient can then be used as input to a non-FEniCS function that
-        calculates a material constitutive model.
+        """Create an Expression.
 
         Args:
             e: UFL expression.
@@ -117,6 +129,8 @@ class Expression:
                 this Expression. Run ``ffcx --help`` in the commandline
                 to see all available options.
             jit_options: Options controlling JIT compilation of C code.
+            dtype: Type of the Expression values. If ``None``,
+                the dtype is deduced from the UFL expression.
 
         Note:
             This wrapper is responsible for the FFCx compilation of the
@@ -130,7 +144,9 @@ class Expression:
         # Get MPI communicator
         if comm is None:
             try:
-                mesh = ufl.domain.extract_unique_domain(e).ufl_cargo()
+                domain = ufl.domain.extract_unique_domain(e)
+                assert isinstance(domain, ufl.Mesh)
+                mesh = domain.ufl_cargo()
                 comm = mesh.comm
             except AttributeError:
                 print(
@@ -141,10 +157,7 @@ class Expression:
 
         # Attempt to deduce dtype
         if dtype is None:
-            try:
-                dtype = e.dtype  # type: ignore
-            except AttributeError:
-                dtype = default_scalar_type
+            dtype = getattr(e, "dtype", default_scalar_type)
 
         # Compile UFL expression with JIT
         if form_compiler_options is None:
@@ -198,7 +211,7 @@ class Expression:
         self,
         mesh: Mesh,
         entities: np.ndarray,
-        values: typing.Optional[np.ndarray] = None,
+        values: np.ndarray | None = None,
     ) -> np.ndarray:
         """Evaluate Expression on entities.
 
@@ -256,7 +269,7 @@ class Expression:
         return values
 
     def X(self) -> np.ndarray:
-        """Evaluation points on the reference cell"""
+        """Evaluation points on the reference cell."""
         return self._cpp_object.X()
 
     @property
@@ -275,7 +288,7 @@ class Expression:
         return self._cpp_object.value_size
 
     @property
-    def argument_space(self) -> typing.Optional[FunctionSpace]:
+    def argument_space(self) -> FunctionSpace | None:
         """Argument function space if Expression has argument."""
         return self._argument_space
 
@@ -291,27 +304,32 @@ class Expression:
 
     @property
     def dtype(self) -> np.dtype:
+        """Expression value dtype."""
         return np.dtype(self._cpp_object.dtype)
 
 
 class Function(ufl.Coefficient):
-    """A finite element function that is represented by a function space
-    (domain, element and dofmap) and a vector holding the
-    degrees-of-freedom."""
+    """A finite element function.
 
-    _cpp_object: typing.Union[
-        _cpp.fem.Function_complex64,
-        _cpp.fem.Function_complex128,
-        _cpp.fem.Function_float32,
-        _cpp.fem.Function_float64,
-    ]
+    A finite element function is represented by a function space
+    (domain, element and dofmap) and a vector holding the
+    degrees-of-freedom.
+
+    """
+
+    _cpp_object: (
+        _cpp.fem.Function_complex64
+        | _cpp.fem.Function_complex128
+        | _cpp.fem.Function_float32
+        | _cpp.fem.Function_float64
+    )
 
     def __init__(
         self,
         V: FunctionSpace,
-        x: typing.Optional[la.Vector] = None,
-        name: typing.Optional[str] = None,
-        dtype: typing.Optional[npt.DTypeLike] = None,
+        x: la.Vector | None = None,
+        name: str | None = None,
+        dtype: npt.DTypeLike | None = None,
     ):
         """Initialize a finite element Function.
 
@@ -371,17 +389,30 @@ class Function(ufl.Coefficient):
 
     @property
     def function_space(self) -> FunctionSpace:
-        """The FunctionSpace that the Function is defined on."""
+        """FunctionSpace that the Function is defined on."""
         return self._V
 
-    def eval(self, x: npt.ArrayLike, cells: npt.ArrayLike, u=None) -> np.ndarray:
+    def eval(
+        self,
+        x: npt.ArrayLike,
+        cells: npt.ArrayLike,
+        u: None | npt.NDArray[np.float32 | np.float64 | np.complex128 | np.complex64] = None,
+        tol: float = 1.0e-6,
+        maxit: int = 15,
+    ) -> np.ndarray:
         """Evaluate Function at points x.
 
-        Points where x has shape (num_points, 3), and cells has shape
-        (num_points,) and cell[i] is the index of the cell containing
-        point x[i]. If the cell index is negative the point is ignored.
+        Args:
+            x: Points with shape (num_points, 3)
+            cells: Array with cell indices, with shape (num_points,), where
+              cell[i] is the index of the cell containing point x[i].
+              If the cell index is negative the point is ignored.
+            u: Array to put evaluated data in.
+            tol: Tolerance for convergence in Newton method for
+                nonaffine pullbacks.
+            maxit: Maximum number of Newton iterations for
+                nonaffine pullbacks.
         """
-
         # Make sure input coordinates are a NumPy array
         _x = np.asarray(x, dtype=self._V.mesh.geometry.x.dtype)
         assert _x.ndim < 3
@@ -405,32 +436,42 @@ class Function(ufl.Coefficient):
             value_size = self._V.value_size
             u = np.empty((num_points, value_size), self.dtype)
 
-        self._cpp_object.eval(_x, _cells, u)  # type: ignore
+        self._cpp_object.eval(_x, _cells, u, tol, maxit)  # type: ignore
         if num_points == 1:
             u = np.reshape(u, (-1,))
         return u
 
     def interpolate_nonmatching(
-        self, u0: Function, cells: npt.NDArray[np.int32], interpolation_data: PointOwnershipData
+        self,
+        u0: Function,
+        cells: npt.NDArray[np.int32],
+        interpolation_data: PointOwnershipData,
+        tol: float = 1e-6,
+        maxit: int = 15,
     ) -> None:
-        """Interpolate a Function defined on one mesh to a function
-        defined on a different mesh.
+        """Interpolate a Function on a non-matching mesh.
 
         Args:
-            u0: The Function to interpolate.
+            u0: Function to interpolate.
             cells: The cells to interpolate over. If ``None`` then all
                 cells are interpolated over.
             interpolation_data: Data needed to interpolate functions
                 defined on other meshes. Created by
                 :func:`dolfinx.fem.create_interpolation_data`.
+            tol: Tolerance for convergence in Newton method for nonaffine
+                pullbacks. Ignored if mesh geometry is affine.
+            maxit: Maximum number of iterations for nonaffine pullback.
+                Ignored if mesh geometry is affine.
         """
-        self._cpp_object.interpolate(u0._cpp_object, cells, interpolation_data._cpp_object)  # type: ignore
+        self._cpp_object.interpolate(
+            u0._cpp_object, cells, tol, maxit, interpolation_data._cpp_object
+        )  # type: ignore
 
     def interpolate(
         self,
-        u0: typing.Union[typing.Callable, Expression, Function],
-        cells0: typing.Optional[np.ndarray] = None,
-        cells1: typing.Optional[np.ndarray] = None,
+        u0: Callable | Expression | Function,
+        cells0: np.ndarray | None = None,
+        cells1: np.ndarray | None = None,
     ) -> None:
         """Interpolate an expression.
 
@@ -441,36 +482,29 @@ class Function(ufl.Coefficient):
                 over. If ``None`` then all cells are interpolated over.
             cells1: Cells in the mesh associated with ``self`` to
                 interpolate over. If ``None``, then taken to be the same
-                cells as ``cells0``. If ``cells1`` is not ``None``, then
-                it must have the same length as ``cells0``.
+                cells as ``cells0``. If ``cells1`` is not ``None`` it
+                must have the same length as ``cells0``.
         """
-        if cells0 is None:
-            mesh = self.function_space.mesh
-            map = mesh.topology.index_map(mesh.topology.dim)
-            cells0 = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
-
-        if cells1 is None:
-            cells1 = np.arange(0, dtype=np.int32)
 
         @singledispatch
         def _interpolate(u0):
             """Interpolate a cpp.fem.Function."""
-            self._cpp_object.interpolate(u0, cells0, cells1)  # type: ignore
+            self._cpp_object.interpolate(u0, cells0, cells1)
 
         @_interpolate.register(Function)
         def _(u0: Function):
             """Interpolate a fem.Function."""
-            self._cpp_object.interpolate(u0._cpp_object, cells0, cells1)  # type: ignore
+            self._cpp_object.interpolate(u0._cpp_object, cells0, cells1)
 
         @_interpolate.register(int)
         def _(u0_ptr: int):
             """Interpolate using a pointer to a function f(x)."""
-            self._cpp_object.interpolate_ptr(u0_ptr, cells0)  # type: ignore
+            self._cpp_object.interpolate_ptr(u0_ptr, cells0)
 
         @_interpolate.register(Expression)
         def _(e0: Expression):
             """Interpolate a fem.Expression."""
-            self._cpp_object.interpolate(e0._cpp_object, cells0, cells1)  # type: ignore
+            self._cpp_object.interpolate_expr(e0._cpp_object, cells0, cells1)
 
         try:
             # u is a Function or Expression (or pointer to one)
@@ -481,7 +515,7 @@ class Function(ufl.Coefficient):
             x = _cpp.fem.interpolation_coords(
                 self._V.element._cpp_object, self._V.mesh.geometry._cpp_object, cells0
             )
-            self._cpp_object.interpolate(np.asarray(u0(x), dtype=self.dtype), cells0)  # type: ignore
+            self._cpp_object.interpolate_f(np.asarray(u0(x), dtype=self.dtype), cells0)
 
     def copy(self) -> Function:
         """Create a copy of the Function.
@@ -493,7 +527,9 @@ class Function(ufl.Coefficient):
             A new Function with a copy of the degree-of-freedom vector.
         """
         return Function(
-            self.function_space, la.Vector(type(self.x._cpp_object)(self.x._cpp_object))
+            self.function_space,
+            la.Vector(type(self.x._cpp_object)(self.x._cpp_object)),
+            name=self.name,
         )
 
     @property
@@ -503,6 +539,7 @@ class Function(ufl.Coefficient):
 
     @property
     def dtype(self) -> np.dtype:
+        """Function value dtype."""
         return np.dtype(self._cpp_object.x.array.dtype)
 
     @property
@@ -553,6 +590,7 @@ class Function(ufl.Coefficient):
         return tuple(self.sub(i) for i in range(num_sub_spaces))
 
     def collapse(self) -> Function:
+        """Create a collapsed version of this Function."""
         u_collapsed = self._cpp_object.collapse()  # type: ignore
         V_collapsed = FunctionSpace(
             self.function_space._mesh,
@@ -563,7 +601,7 @@ class Function(ufl.Coefficient):
 
 
 class ElementMetaData(typing.NamedTuple):
-    """Data for representing a finite element
+    """Data for representing a finite element.
 
     :param family: Element type.
     :param degree: Polynomial degree of the element.
@@ -574,19 +612,19 @@ class ElementMetaData(typing.NamedTuple):
 
     family: str
     degree: int
-    shape: typing.Optional[tuple[int, ...]] = None
-    symmetry: typing.Optional[bool] = None
+    shape: tuple[int, ...] | None = None
+    symmetry: bool | None = None
 
 
 def functionspace(
     mesh: Mesh,
-    element: typing.Union[
-        ufl.finiteelement.AbstractFiniteElement,
-        ElementMetaData,
-        tuple[str, int],
-        tuple[str, int, tuple],
-        tuple[str, int, tuple, bool],
-    ],
+    element: (
+        ufl.finiteelement.AbstractFiniteElement
+        | ElementMetaData
+        | tuple[str, int]
+        | tuple[str, int, tuple]
+        | tuple[str, int, tuple, bool]
+    ),
 ) -> FunctionSpace:
     """Create a finite element function space.
 
@@ -615,11 +653,9 @@ def functionspace(
     # Check that element and mesh cell types match
     if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
-
     # Create DOLFINx objects
     element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)  # type: ignore
     cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, mesh.topology._cpp_object, element._cpp_object)  # type: ignore
-
     assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (  # type: ignore
         "Mesh and element dtype are not compatible."
     )
@@ -636,14 +672,14 @@ def functionspace(
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
-    _cpp_object: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64]
+    _cpp_object: _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
     _mesh: Mesh
 
     def __init__(
         self,
         mesh: Mesh,
         element: ufl.finiteelement.AbstractFiniteElement,
-        cppV: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64],
+        cppV: (_cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64),
     ):
         """Create a finite element function space.
 
@@ -665,7 +701,11 @@ class FunctionSpace(ufl.FunctionSpace):
         super().__init__(ufl_domain, element)
 
     def clone(self) -> FunctionSpace:
-        """Create a new FunctionSpace :math:`W` which shares data with this
+        """Create a FunctionSpace which shares data with this space.
+
+        The new space has a different unique integer ID.
+
+        Create a new FunctionSpace :math:`W` which shares data with this
         FunctionSpace :math:`V`, but with a different unique integer ID.
 
         This function is helpful for defining mixed problems and using
@@ -679,7 +719,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         Returns:
             A new function space that shares data
-        """
+        """  # noqa: D301
         try:
             Vcpp = _cpp.fem.FunctionSpace_float64(
                 self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
@@ -719,8 +759,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.component()  # type: ignore
 
     def contains(self, V) -> bool:
-        """Check if a space is contained in, or is the same as
-        (identity), this space.
+        """Check if a space is contained in, or is the same as, this space.
 
         Args:
             V: The space to check to for inclusion.
@@ -749,9 +788,13 @@ class FunctionSpace(ufl.FunctionSpace):
         return FiniteElement(self._cpp_object.element)
 
     @property
-    def dofmap(self) -> dofmap.DofMap:
+    def dofmap(self) -> DofMap:
         """Degree-of-freedom map associated with the function space."""
-        return dofmap.DofMap(self._cpp_object.dofmap)  # type: ignore
+        return DofMap(self._cpp_object.dofmap)
+
+    def dofmaps(self, idx: int) -> DofMap:
+        """Dof maps."""
+        return DofMap(self._cpp_object.dofmaps(idx))
 
     @property
     def mesh(self) -> Mesh:
@@ -759,8 +802,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._mesh
 
     def collapse(self) -> tuple[FunctionSpace, np.ndarray]:
-        """Collapse a subspace and return a new function space and a map
-        from new to old dofs.
+        """Create a new function space by collapsing a subspace.
 
         Returns:
             A new function space and the map from new to old
@@ -771,8 +813,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return V, dofs
 
     def tabulate_dof_coordinates(self) -> npt.NDArray[np.float64]:
-        """Tabulate the coordinates of the degrees-of-freedom in the
-        function space.
+        """Tabulate coordinates of function space degrees-of-freedom.
 
         Returns:
             Coordinates of the degrees-of-freedom.

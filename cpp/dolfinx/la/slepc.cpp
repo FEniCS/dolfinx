@@ -34,7 +34,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(EPS eps, bool inc_ref_count) : _eps(eps)
   }
 }
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(SLEPcEigenSolver&& solver)
+SLEPcEigenSolver::SLEPcEigenSolver(SLEPcEigenSolver&& solver) noexcept
     : _eps(std::exchange(solver._eps, nullptr))
 {
   // Do nothing
@@ -46,7 +46,8 @@ SLEPcEigenSolver::~SLEPcEigenSolver()
     EPSDestroy(&_eps);
 }
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver& SLEPcEigenSolver::operator=(SLEPcEigenSolver&& solver)
+SLEPcEigenSolver&
+SLEPcEigenSolver::operator=(SLEPcEigenSolver&& solver) noexcept
 {
   std::swap(_eps, solver._eps);
   return *this;
@@ -140,7 +141,7 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
                                      Vec c, int i) const
 {
   assert(_eps);
-  const auto ii = static_cast<PetscInt>(i);
+  PetscInt ii = static_cast<PetscInt>(i);
 
   // Get number of computed eigenvectors/values
   PetscInt num_computed_eigenvalues;
@@ -162,7 +163,7 @@ std::int64_t SLEPcEigenSolver::get_number_converged() const
   return num_conv;
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
+void SLEPcEigenSolver::set_options_prefix(const std::string& options_prefix)
 {
   assert(_eps);
   PetscErrorCode ierr = EPSSetOptionsPrefix(_eps, options_prefix.c_str());
