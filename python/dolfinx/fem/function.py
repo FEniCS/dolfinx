@@ -350,10 +350,6 @@ class Function(ufl.Coefficient):
             if dtype is None:
                 dtype = default_scalar_type
 
-        assert np.issubdtype(V.element.dtype, np.dtype(dtype).type(0).real.dtype), (
-            "Incompatible FunctionSpace dtype and requested dtype."
-        )
-
         # Create cpp Function
         def functiontype(dtype):
             if np.issubdtype(dtype, np.float32):
@@ -366,6 +362,34 @@ class Function(ufl.Coefficient):
                 return _cpp.fem.Function_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
+
+        if isinstance(V, ufl.MixedFunctionSpace):
+            try:
+                V.ufl_domain()  # Try fetching single domain
+                raise RuntimeError("Mixed function space should not have a single domain.")
+            except ValueError:
+                # Fetch dofmap and index map from first space
+                V0 = V.ufl_sub_space(0)
+                im = V0.dofmaps(0).index_map
+                bs = V0.dofmaps(0).index_map_bs
+                x = la.vector(im, bs, dtype=dtype)
+                self._cpp_object = functiontype(dtype)(V0._cpp_object, x._cpp_object)  # type: ignore
+                super().__init__(V0.ufl_function_space())
+
+                self._V = V
+
+                # Set name
+                if name is None:
+                    self.name = "f"
+                else:
+                    self.name = name
+
+                # Store Python wrapper around the underlying Vector
+                self._x = la.Vector(self._cpp_object.x)
+                return
+        assert np.issubdtype(V.element.dtype, np.dtype(dtype).type(0).real.dtype), (
+            "Incompatible FunctionSpace dtype and requested dtype."
+        )
 
         if x is not None:
             self._cpp_object = functiontype(dtype)(V._cpp_object, x._cpp_object)  # type: ignore
@@ -647,6 +671,41 @@ def functionspace(
             symmetry=e.symmetry,
             dtype=dtype,
         )
+    except RuntimeError:
+        # Multiple cell types, i.e. mesh sequence
+        cts = mesh.topology._cpp_object.cell_types
+        dolfinx_elements = [
+            FiniteElement(
+                _cpp.fem.FiniteElement_float64(e.basix_element._e, e.block_shape, e.is_symmetric)
+            )
+            for e in element
+        ]
+        for ct, el in zip(cts, dolfinx_elements):
+            assert el.basix_element.cell_type.name == ct.name, (
+                "Cell type of element does not match cell type of mesh."
+            )
+        # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
+        from dolfinx.fem import create_dofmaps
+
+        dofmaps = create_dofmaps(
+            mesh.comm,
+            mesh.topology,
+            dolfinx_elements,
+        )
+
+        # Create C++ function space
+        cppV = _cpp.fem.FunctionSpace_float64(
+            mesh._cpp_object,
+            [e._cpp_object for e in dolfinx_elements],
+            [dofmap._cpp_object for dofmap in dofmaps],
+        )
+
+        Vs = []
+
+        for i, el in enumerate(element):
+            Vs.append(FunctionSpace((mesh, i), el, cppV))
+        return ufl.MixedFunctionSpace(*Vs)  # type: ignore
+
     except TypeError:
         ufl_e = element  # type: ignore
 
@@ -693,11 +752,17 @@ class FunctionSpace(ufl.FunctionSpace):
             element: UFL finite element.
             cppV: Compiled C++ function space.
         """
-        if mesh._cpp_object is not cppV.mesh:
-            raise RuntimeError("Meshes do not match in function space initialisation.")
-        ufl_domain = mesh.ufl_domain()
+        try:
+            if mesh._cpp_object is not cppV.mesh:
+                raise RuntimeError("Meshes do not match in function space initialisation.")
+            ufl_domain = mesh.ufl_domain()
+        except AttributeError:
+            mesh, idx = mesh
+            ufl_domain = mesh.ufl_domain().meshes[idx]
+
         self._cpp_object = cppV
         self._mesh = mesh
+
         super().__init__(ufl_domain, element)
 
     def clone(self) -> FunctionSpace:
