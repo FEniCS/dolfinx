@@ -140,7 +140,8 @@ void assemble_cells_matrix(
     P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
     P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
-    // In lifting mode only BC dofs are assembled, while in standard mode these row/column dofs are zeroed.
+    // In lifting mode only BC dofs are assembled, while in standard mode these
+    // row/column dofs are zeroed.
     if constexpr (!LiftingMode)
     {
       // Zero rows and columns for BCs

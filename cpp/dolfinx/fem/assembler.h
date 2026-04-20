@@ -420,7 +420,7 @@ void apply_lifting(
 /// replacing the mat_add function appropriately.
 /// @tparam T scalar type
 /// @tparam U geometry scalar type
-/// @tparam LiftingMode Set to true, if applying a lifting kernel in mat_add.
+/// @tparam LiftingMode Set to true if applying a lifting kernel in mat_add.
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear form to assemble.
 /// @param[in] constants Constants that appear in `a`.
