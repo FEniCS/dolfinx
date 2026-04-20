@@ -446,7 +446,6 @@ def form(
             _entity_maps = []
         else:
             _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
-        breakpoint()
         f = ftype(
             [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
             V,

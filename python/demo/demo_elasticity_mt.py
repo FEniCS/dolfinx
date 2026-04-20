@@ -7,18 +7,14 @@ import ufl
 from dolfinx.cpp.fem import locate_dofs_geometrical
 from dolfinx.cpp.mesh import GhostMode, create_mesh
 from dolfinx.fem import (
-    FiniteElement,
-    FunctionSpace,
     assemble_matrix,
     assemble_vector,
     apply_lifting,
     coordinate_element,
-    create_dofmaps,
     dirichletbc,
-    mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
-from dolfinx.mesh import CellType, Mesh, Topology, create_cell_partitioner
+from dolfinx.mesh import CellType, create_cell_partitioner
 from scipy.sparse.linalg import spsolve
 # -
 
@@ -30,9 +26,9 @@ if MPI.COMM_WORLD.size > 1:
 # ## Create a mixed-topology mesh
 
 # +
-nx = 16
-ny = 16
-nz = 16
+nx = 10
+ny = 11
+nz = 12
 n_cells = nx * ny * nz
 
 cells: list = [[], []]
@@ -141,7 +137,7 @@ def marker2(x):
 
 bcdofs2 = locate_dofs_geometrical(V_cpp, marker2)
 u_bc2 = dolfinx.fem.Function(W)
-u_bc2.x.array[:] = 0.1
+u_bc2.x.array[:] = 0.00
 bc2 = dirichletbc(value=u_bc2, dofs=bcdofs2)
 
 # -
@@ -158,12 +154,11 @@ u_hex, u_prism = ufl.TrialFunctions(W)
 v_hex, v_prism = ufl.TestFunctions(W)
 hex_domain, prism_domain = py_mesh.ufl_domain().meshes
 
-k = 12.0
 dx_hex = ufl.Measure("dx", domain=hex_domain)
 dx_prism = ufl.Measure("dx", domain=prism_domain)
 
-lambda_ = 1.0e9
-mu = 0.3
+lambda_ = 1.0e8
+mu = 0.4
 
 
 def epsilon(u):
@@ -174,10 +169,11 @@ def sigma(u):
     return lambda_ * ufl.nabla_div(u) * ufl.Identity(len(u)) + 2 * mu * epsilon(u)
 
 
+scale = 0.01
 a = ufl.inner(sigma(u_hex), epsilon(v_hex)) * dx_hex
 a += ufl.inner(sigma(u_prism), epsilon(v_prism)) * dx_prism
-L = ufl.inner(ufl.as_vector((0.0, 0.0, -9.81 * 1000.0)), v_hex) * dx_hex
-L += ufl.inner(ufl.as_vector((0.0, 0.0, -9.81 * 1000.0)), v_prism) * dx_prism
+L = ufl.inner(ufl.as_vector((0.0, 0.0, scale * -9.81)), v_hex) * dx_hex
+L += ufl.inner(ufl.as_vector((0.0, 0.0, scale * -9.81)), v_prism) * dx_prism
 
 a_form = dolfinx.fem.form(a, dtype=np.float64)
 L_form = dolfinx.fem.form(L, dtype=np.float64)
@@ -191,9 +187,8 @@ bcs = [bc, bc2]
 A = assemble_matrix(a_form, bcs=bcs)
 b = assemble_vector(L_form)
 apply_lifting(b.array, [a_form], bcs=[bcs])
-bc.set(b.array)
-bc2.set(b.array)
-
+for bc in bcs:
+    bc.set(b.array)
 # We use {py:func}`scipy.sparse.linalg.spsolve` to solve the
 # resulting linear system
 
@@ -227,6 +222,10 @@ for j in range(2):
     for c in geom_dm:
         vtk_topology += list(c[perm[j]])
     topology_type = topologies[j]
+    # num_vertices = dolfinx.cpp.mesh.cell_num_vertices(mesh.topology.cell_types[j])
+    # dl = W.ufl_sub_space(j).dofmaps(j).dof_layout
+    # vertex_pos = np.array([dl.entity_dofs(0, i) for i in range(num_vertices)]).flatten()
+    # dofs = W.ufl_sub_space(j).dofmaps(j).list[:, vertex_pos]
 
     xdmf += f"""
       <Grid Name="{topology_type}" GridType="Uniform">
@@ -242,7 +241,7 @@ for j in range(2):
           </DataItem>
         </Geometry>
         <Attribute Name="u" Center="Node" NumberType="float" Precision="8">
-          <DataItem Dimensions="{len(x)} 3" Format="XML">
+          <DataItem Dimensions="{len(x) / 3} 3" Format="XML">
             {" ".join(str(val) for val in x)}
           </DataItem>
        </Attribute>
@@ -254,7 +253,7 @@ xdmf += """
 </Xdmf>
 """
 
-fd = open("mixed-mesh.xdmf", "w")
+fd = open("mixed-mesh2.xdmf", "w")
 fd.write(xdmf)
 fd.close()
 # -
