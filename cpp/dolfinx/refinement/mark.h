@@ -33,7 +33,8 @@ template <std::floating_point T>
 std::vector<std::int32_t> mark_maximum(std::span<const T> marker, T theta,
                                        MPI_Comm comm)
 {
-  assert((0 <= theta) && (theta <= 1));
+  if ((theta < 0) || (theta > 1))
+    throw std::invalid_argument("Theta needs to fullfill 0 ≤ θ ≤ 1.");
 
   T max = marker.empty() ? std::numeric_limits<T>::min()
                          : std::ranges::max(marker);
