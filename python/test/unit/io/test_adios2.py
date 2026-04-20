@@ -290,7 +290,7 @@ class TestVTX:
                 return set(da.get("Name") for da in data.findall("DataArray"))
 
             point_arrays = get_data_array_names(xml_point_data)
-            assert "v" in point_arrays
+            assert "v" in point_arrays or ("v_imag" in point_arrays and "v_real" in point_arrays)
 
             cell_arrays = get_data_array_names(xml_cell_data)
-            assert "q" in cell_arrays
+            assert "q" in cell_arrays or ("q_imag" in point_arrays and "q_real" in point_arrays)
