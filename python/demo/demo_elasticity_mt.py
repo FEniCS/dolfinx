@@ -11,6 +11,7 @@ from dolfinx.fem import (
     FunctionSpace,
     assemble_matrix,
     assemble_vector,
+    apply_lifting,
     coordinate_element,
     create_dofmaps,
     dirichletbc,
@@ -18,7 +19,7 @@ from dolfinx.fem import (
 )
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.mesh import CellType, Mesh, Topology, create_cell_partitioner
-
+from scipy.sparse.linalg import spsolve
 # -
 
 if MPI.COMM_WORLD.size > 1:
@@ -86,17 +87,31 @@ mesh = create_mesh(
 )
 import dolfinx
 
-ud0 = ufl.Mesh(basix.ufl.element("Lagrange", "hexahedron", 1, shape=(3,)))
-ud1 = ufl.Mesh(basix.ufl.element("Lagrange", "prism", 1, shape=(3,)))
+ud0 = ufl.Mesh(
+    basix.ufl.element(
+        "Lagrange",
+        "hexahedron",
+        1,
+        shape=(3,),
+    )
+)
+ud1 = ufl.Mesh(
+    basix.ufl.element(
+        "Lagrange",
+        "prism",
+        1,
+        shape=(3,),
+    )
+)
+ud0._ufl_cargo = mesh
+ud1._ufl_cargo = mesh
 ms = ufl.MeshSequence([ud0, ud1])
-
 py_mesh = dolfinx.mesh.Mesh(mesh, ms)
 
 elements = [
     basix.ufl.element("Lagrange", "hexahedron", 1, shape=(3,)),
     basix.ufl.element("Lagrange", "prism", 1, shape=(3,)),
 ]
-
 W = dolfinx.fem.functionspace(py_mesh, elements)
 u = dolfinx.fem.Function(W)
 # -
@@ -110,13 +125,24 @@ u = dolfinx.fem.Function(W)
 # Select some BCs
 def marker(x):
     """BC Selector."""
-    return np.logical_or(np.isclose(x[2], 0.0), np.isclose(x[2], 1.0))
+    return np.isclose(x[0], 0.0)
 
 
 V_cpp = W.ufl_sub_space(0)._cpp_object
 bcdofs = locate_dofs_geometrical(V_cpp, marker)
 u_bc = dolfinx.fem.Function(W)
 bc = dirichletbc(value=u_bc, dofs=bcdofs)
+
+
+def marker2(x):
+    """BC Selector."""
+    return np.isclose(x[0], 1.0)
+
+
+bcdofs2 = locate_dofs_geometrical(V_cpp, marker2)
+u_bc2 = dolfinx.fem.Function(W)
+u_bc2.x.array[:] = 0.1
+bc2 = dirichletbc(value=u_bc2, dofs=bcdofs2)
 
 # -
 
@@ -130,40 +156,43 @@ L = []
 
 u_hex, u_prism = ufl.TrialFunctions(W)
 v_hex, v_prism = ufl.TestFunctions(W)
-prism_domain, hex_domain = py_mesh.ufl_domain().meshes
+hex_domain, prism_domain = py_mesh.ufl_domain().meshes
+
 k = 12.0
 dx_hex = ufl.Measure("dx", domain=hex_domain)
 dx_prism = ufl.Measure("dx", domain=prism_domain)
-a = ufl.inner(ufl.grad(u_hex), ufl.grad(v_hex)) * dx_hex - k**2 * ufl.inner(u_hex, v_hex) * dx_hex
-a += (
-    ufl.inner(ufl.grad(u_prism), ufl.grad(v_prism)) * dx_prism
-    - k**2 * ufl.inner(u_prism, v_prism) * dx_prism
-)
 
-x_hex = ufl.SpatialCoordinate(hex_domain)
-f_hex = ufl.as_vector([ufl.sin(ufl.pi * x_hex[0]) * ufl.sin(ufl.pi * x_hex[1]), 0.0, 0.0])
-x_prism = ufl.SpatialCoordinate(prism_domain)
-f_prism = ufl.as_vector([ufl.sin(ufl.pi * x_prism[0]) * ufl.sin(ufl.pi * x_prism[1]), 0.0, 0.0])
-L = ufl.inner(f_hex, v_hex) * dx_hex
-L += ufl.inner(f_prism, v_prism) * dx_prism
+lambda_ = 1.0e9
+mu = 0.3
 
 
-# Compile the form
-# FIXME: For the time being, since UFL doesn't understand mixed topology
-# meshes, we have to call {py:meth}`mixed_topology_form
-# <dolfinx.fem.mixed_topology_form>` instead of form.
+def epsilon(u):
+    return ufl.sym(ufl.grad(u))  # Equivalent to 0.5*(ufl.nabla_grad(u) + ufl.nabla_grad(u).T)
 
-a_form = mixed_topology_form(a, dtype=np.float64)
-L_form = mixed_topology_form(L, dtype=np.float64)
+
+def sigma(u):
+    return lambda_ * ufl.nabla_div(u) * ufl.Identity(len(u)) + 2 * mu * epsilon(u)
+
+
+a = ufl.inner(sigma(u_hex), epsilon(v_hex)) * dx_hex
+a += ufl.inner(sigma(u_prism), epsilon(v_prism)) * dx_prism
+L = ufl.inner(ufl.as_vector((0.0, 0.0, -9.81 * 1000.0)), v_hex) * dx_hex
+L += ufl.inner(ufl.as_vector((0.0, 0.0, -9.81 * 1000.0)), v_prism) * dx_prism
+
+a_form = dolfinx.fem.form(a, dtype=np.float64)
+L_form = dolfinx.fem.form(L, dtype=np.float64)
 
 # ## Assembling and solving the linear system
 # We use the native {py:class}`matrix<dolfinx.la.MatrixCSR>` and
 # {py:class}`vector<dolfinx.la.Vector>` format in DOLFINx to assemble
 # the left and right hand side of the linear system.
 
-A = assemble_matrix(a_form, bcs=[bc])
+bcs = [bc, bc2]
+A = assemble_matrix(a_form, bcs=bcs)
 b = assemble_vector(L_form)
+apply_lifting(b.array, [a_form], bcs=[bcs])
 bc.set(b.array)
+bc2.set(b.array)
 
 # We use {py:func}`scipy.sparse.linalg.spsolve` to solve the
 # resulting linear system
@@ -213,7 +242,7 @@ for j in range(2):
           </DataItem>
         </Geometry>
         <Attribute Name="u" Center="Node" NumberType="float" Precision="8">
-          <DataItem Dimensions="{len(x)}" Format="XML">
+          <DataItem Dimensions="{len(x)} 3" Format="XML">
             {" ".join(str(val) for val in x)}
           </DataItem>
        </Attribute>
