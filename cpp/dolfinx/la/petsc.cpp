@@ -45,7 +45,7 @@ void la::petsc::error(int error_code, const std::string& filename,
   spdlog::info("PETSc error code '{}' '{}'", error_code, desc);
   throw std::runtime_error("Failed to successfully call PETSc function '"
                            + petsc_function + "'. PETSc error code is: "
-                           + std ::to_string(error_code) + ", "
+                           + std::to_string(error_code) + ", "
                            + std::string(desc));
 }
 //-----------------------------------------------------------------------------
@@ -56,11 +56,19 @@ la::petsc::create_vectors(MPI_Comm comm,
   std::vector<Vec> v(x.size());
   for (std::size_t i = 0; i < v.size(); ++i)
   {
-    VecCreateMPI(comm, x[i].size(), PETSC_DETERMINE, &v[i]);
+    PetscErrorCode ierr;
+
+    ierr = VecCreateMPI(comm, x[i].size(), PETSC_DETERMINE, &v[i]);
+    CHECK_ERROR("VecCreateMPI");
+
     PetscScalar* data;
-    VecGetArray(v[i], &data);
+    ierr = VecGetArray(v[i], &data);
+    CHECK_ERROR("VecGetArray");
+
     std::ranges::copy(x[i], data);
-    VecRestoreArray(v[i], &data);
+
+    ierr = VecRestoreArray(v[i], &data);
+    CHECK_ERROR("VecRestoreArray");
   }
 
   return v;
@@ -135,17 +143,20 @@ std::vector<IS> la::petsc::create_index_sets(
   std::int64_t offset = 0;
   for (auto& map : maps)
   {
+    PetscErrorCode ierr;
     int bs = map.second;
     std::int32_t size
         = map.first.get().size_local() + map.first.get().num_ghosts();
     IS _is;
-    ISCreateStride(PETSC_COMM_SELF, bs * size, offset, 1, &_is);
+    ierr = ISCreateStride(PETSC_COMM_SELF, bs * size, offset, 1, &_is);
+    CHECK_ERROR("ISCreateStride");
     is.push_back(_is);
     offset += bs * size;
   }
 
   return is;
 }
+
 //-----------------------------------------------------------------------------
 std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
     const Vec x,
@@ -157,13 +168,21 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
   for (auto& map : maps)
     offset_owned += map.first.get().size_local() * map.second;
 
+  PetscErrorCode ierr;
+
   // Unwrap PETSc vector
   Vec x_local;
-  VecGhostGetLocalForm(x, &x_local);
+  ierr = VecGhostGetLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostGetLocalForm");
+
   PetscInt n = 0;
-  VecGetSize(x_local, &n);
+  ierr = VecGetSize(x_local, &n);
+  CHECK_ERROR("VecGetSize");
+
   const PetscScalar* array = nullptr;
-  VecGetArrayRead(x_local, &array);
+  ierr = VecGetArrayRead(x_local, &array);
+  CHECK_ERROR("VecGetArrayRead");
+
   std::span _x(array, n);
 
   // Copy PETSc Vec data in to local vectors
@@ -184,11 +203,15 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
     offset_ghost += size_ghost;
   }
 
-  VecRestoreArrayRead(x_local, &array);
-  VecGhostRestoreLocalForm(x, &x_local);
+  ierr = VecRestoreArrayRead(x_local, &array);
+  CHECK_ERROR("VecRestoreArrayRead");
+
+  ierr = VecGhostRestoreLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
 
   return x_b;
 }
+
 //-----------------------------------------------------------------------------
 void la::petsc::scatter_local_vectors(
     Vec x, const std::vector<std::span<const PetscScalar>>& x_b,
@@ -203,12 +226,20 @@ void la::petsc::scatter_local_vectors(
   for (auto& map : maps)
     offset_owned += map.first.get().size_local() * map.second;
 
+  PetscErrorCode ierr;
+
   Vec x_local;
-  VecGhostGetLocalForm(x, &x_local);
+  ierr = VecGhostGetLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostGetLocalForm");
+
   PetscInt n = 0;
-  VecGetSize(x_local, &n);
+  ierr = VecGetSize(x_local, &n);
+  CHECK_ERROR("VecGetSize");
+
   PetscScalar* array = nullptr;
-  VecGetArray(x_local, &array);
+  ierr = VecGetArray(x_local, &array);
+  CHECK_ERROR("VecGetArray");
+
   std::span _x(array, n);
 
   // Copy local vectors into PETSc Vec
@@ -227,8 +258,11 @@ void la::petsc::scatter_local_vectors(
     offset_ghost += size_ghost;
   }
 
-  VecRestoreArray(x_local, &array);
-  VecGhostRestoreLocalForm(x, &x_local);
+  ierr = VecRestoreArray(x_local, &array);
+  CHECK_ERROR("VecRestoreArray");
+
+  ierr = VecGhostRestoreLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
 }
 //-----------------------------------------------------------------------------
 Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,

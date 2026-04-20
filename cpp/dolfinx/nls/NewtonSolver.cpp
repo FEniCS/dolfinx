@@ -28,7 +28,9 @@ std::pair<double, bool> converged(const nls::petsc::NewtonSolver& solver,
                                   const Vec r)
 {
   PetscReal residual = 0;
-  VecNorm(r, NORM_2, &residual);
+  PetscErrorCode ierr = VecNorm(r, NORM_2, &residual);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "VecNorm");
 
   // Relative residual
   const double relative_residual = residual / solver.residual0();
@@ -61,7 +63,9 @@ std::pair<double, bool> converged(const nls::petsc::NewtonSolver& solver,
 void update_solution(const nls::petsc::NewtonSolver& solver, const Vec dx,
                      Vec x)
 {
-  VecAXPY(x, -solver.relaxation_parameter, dx);
+  PetscErrorCode ierr = VecAXPY(x, -solver.relaxation_parameter, dx);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "VecAXPY");
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -192,8 +196,11 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
     _solver.set_operators(_matJ, _matJ);
 
   if (!_dx)
-    MatCreateVecs(_matJ, &_dx, nullptr);
-
+  {
+    PetscErrorCode ierr = MatCreateVecs(_matJ, &_dx, nullptr);
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "MatCreateVecs");
+  }
   // Start iterations
   while (!newton_converged and _iteration < max_it)
   {
@@ -221,7 +228,9 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
     if (_iteration == 1)
     {
       PetscReal _r = 0;
-      VecNorm(_dx, NORM_2, &_r);
+      PetscErrorCode ierr = VecNorm(_dx, NORM_2, &_r);
+      if (ierr != 0)
+        petsc::error(ierr, __FILE__, "VecNorm");
       _residual0 = _r;
     }
 
