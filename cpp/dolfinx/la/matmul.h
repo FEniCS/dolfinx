@@ -549,8 +549,8 @@ dolfinx::la::MatrixCSR<T> matmul(const dolfinx::la::MatrixCSR<T>& A,
 
   auto C_row_map = std::make_shared<common::IndexMap>(
       A.index_map(0)->comm(), A.index_map(0)->size_local());
-  impl::Sparsity sp{C_row_map, new_col_map, C_cols, C_row_ptr,
-                    C_off_diag_offsets, {1, 1}};
+  impl::Sparsity sp{C_row_map, new_col_map,        C_cols,
+                    C_row_ptr, C_off_diag_offsets, {1, 1}};
   dolfinx::la::MatrixCSR<T> C(sp);
   std::copy(C_vals_vec.begin(), C_vals_vec.end(), C.values().begin());
 
