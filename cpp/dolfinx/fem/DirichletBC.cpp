@@ -45,6 +45,7 @@ find_local_entity_index(const mesh::Topology& topology,
   const int num_cell_types = cell_types.size();
 
   // Get connectivities for each cell type.
+  std::int32_t num_entities_local = 0;
   bool any_connectivity = false;
   std::vector<std::shared_ptr<const dolfinx::graph::AdjacencyList<int32_t>>>
       e_to_c_connectivities(num_cell_types);
@@ -71,6 +72,7 @@ find_local_entity_index(const mesh::Topology& topology,
                                  + std::to_string(dim) + " doesn't exist");
       }
 
+      num_entities_local = e_to_c_connectivities[i]->num_nodes();
       any_connectivity = true;
     }
   }
@@ -86,12 +88,20 @@ find_local_entity_index(const mesh::Topology& topology,
   entity_indices.reserve(entities.size());
   for (std::int32_t e : entities)
   {
+    if (e >= num_entities_local)
+    {
+      throw std::out_of_range(
+          "Input entity " + std::to_string(e)
+          + " is larger than the number of entities on this process ("
+          + std::to_string(num_entities_local) + ").");
+    }
+
     bool entity_found = false;
     for (int i = 0; i < num_cell_types; ++i)
     {
       auto e_to_c = e_to_c_connectivities[i];
 
-      if (e_to_c and e < e_to_c->num_nodes() and e_to_c->num_links(e) > 0)
+      if (e_to_c and e_to_c->num_links(e) > 0)
       {
         auto c_to_e = c_to_e_connectivities[i];
 
