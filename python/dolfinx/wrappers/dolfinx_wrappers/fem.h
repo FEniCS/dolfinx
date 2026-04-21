@@ -1130,7 +1130,7 @@ void declare_real_functions(nb::module_& m)
       "FiniteElements.");
 
   m.def(
-      "locate_dofs_topological_sub",
+      "locate_dofs_topological",
       [](const std::vector<
              std::shared_ptr<const dolfinx::fem::FunctionSpace<T>>>& V,
          int dim,
