@@ -60,7 +60,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
   // Find CoordinateElement appropriate to element
   auto cmap_index = [&geometry](mesh::CellType cell_type)
   {
-    for (int i = 0; i < geometry.num_maps(); ++i)
+    for (std::size_t i = 0; i < geometry.num_maps(); ++i)
     {
       if (geometry.cmap(i).cell_shape() == cell_type)
         return i;
