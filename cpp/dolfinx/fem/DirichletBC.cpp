@@ -368,6 +368,14 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps, const int dim,
     std::span<const std::int32_t> entities, bool remote)
 {
+  std::vector<mesh::CellType> cell_types = topology.cell_types();
+  const std::size_t num_cell_types = cell_types.size();
+
+  if (num_cell_types != 1)
+    throw std::runtime_error(
+        "locate_dofs_topological with multiple dofmaps only supports "
+        "topologies with one cell type.");
+
   // Get dofmaps
   const DofMap& dofmap0 = dofmaps.at(0).get();
   const DofMap& dofmap1 = dofmaps.at(1).get();
@@ -390,8 +398,8 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   const std::array bs = {dofmap0.bs(), dofmap1.bs()};
 
   // Get cell index and local entity index
-  std::vector<std::pair<std::int32_t, int>> entity_indices;
-  // = find_local_entity_index(topology, entities, dim);
+  std::vector<std::tuple<std::int32_t, int, int>> entity_indices
+      = find_local_entity_index(topology, 0, entities, dim);
 
   // Iterate over marked facets
   const int element_bs = dofmap0.element_dof_layout().block_size();
@@ -404,7 +412,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
       entities.size()
       * dofmap0.element_dof_layout().entity_closure_dofs(dim, 0).size()
       * element_bs);
-  for (auto [cell, entity_local_index] : entity_indices)
+  for (auto [cell, entity_local_index, cell_type_idx] : entity_indices)
   {
     // Get cell dofmap
     std::span<const std::int32_t> cell_dofs0 = dofmap0.cell_dofs(cell);
