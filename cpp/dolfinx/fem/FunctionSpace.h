@@ -287,8 +287,7 @@ public:
       const auto [X, Xshape] = _elements[i]->interpolation_points();
 
       // Get coordinate map
-      const CoordinateElement<geometry_type>& cmap
-          = _mesh->geometry().cmap(i);
+      const CoordinateElement<geometry_type>& cmap = _mesh->geometry().cmap(i);
 
       // Prepare cell geometry
       auto x_dofmap = _mesh->geometry().dofmap(i);
