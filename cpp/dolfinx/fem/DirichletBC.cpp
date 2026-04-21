@@ -247,6 +247,8 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
         "with dofmaps for each cell type.");
   }
 
+  // FIXME: This isn't actually correct. A mesh of prisms will have one cell
+  // type but multiple facet types.
   return locate_dofs_topological(topology, {std::cref(dofmap)}, dim, entities,
                                  0, remote);
 }
