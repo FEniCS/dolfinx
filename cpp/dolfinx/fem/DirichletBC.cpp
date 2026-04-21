@@ -382,7 +382,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     }
 
     std::vector<std::int32_t> dofs_remote;
-    if (int map_bs = dofmaps[0].get().index_map_bs(); map_bs == bs)
+    if (int map_bs = dofmaps.front().get().index_map_bs(); map_bs == bs)
       dofs_remote = get_remote_dofs(comm, *map, 1, dofs);
     else
       dofs_remote = get_remote_dofs(comm, *map, map_bs, dofs);
