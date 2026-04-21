@@ -26,9 +26,9 @@ if MPI.COMM_WORLD.size > 1:
 # ## Create a mixed-topology mesh
 
 # +
-nx = 10
-ny = 11
-nz = 12
+nx = 24
+ny = 22
+nz = 21
 n_cells = nx * ny * nz
 
 cells: list = [[], []]
@@ -147,15 +147,6 @@ bc2 = dirichletbc(value=u_bc2, dofs=bcdofs2)
 # FIXME: This hack is required at the moment because UFL does not yet know
 # about mixed topology meshes.
 
-a = []
-L = []
-
-u_hex, u_prism = ufl.TrialFunctions(W)
-v_hex, v_prism = ufl.TestFunctions(W)
-hex_domain, prism_domain = py_mesh.ufl_domain().meshes
-
-dx_hex = ufl.Measure("dx", domain=hex_domain)
-dx_prism = ufl.Measure("dx", domain=prism_domain)
 
 lambda_ = 1.0e4
 mu = 1.0e4
@@ -170,10 +161,11 @@ def sigma(u):
 
 
 scale = 0.01
-a = ufl.inner(sigma(u_hex), epsilon(v_hex)) * dx_hex
-a += ufl.inner(sigma(u_prism), epsilon(v_prism)) * dx_prism
-L = ufl.inner(ufl.as_vector((0.0, 0.0, scale * -9.81)), v_hex) * dx_hex
-L += ufl.inner(ufl.as_vector((0.0, 0.0, scale * -9.81)), v_prism) * dx_prism
+u = ufl.TrialFunction(W)
+v = ufl.TestFunction(W)
+
+a = ufl.inner(sigma(u), epsilon(v)) * ufl.dx
+L = ufl.inner(ufl.as_vector((0.0, 0.0, scale * -9.81)), v) * ufl.dx
 
 a_form = dolfinx.fem.form(a, dtype=np.float64)
 L_form = dolfinx.fem.form(L, dtype=np.float64)
