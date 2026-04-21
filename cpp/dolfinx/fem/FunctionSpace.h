@@ -288,7 +288,7 @@ public:
 
       // Get coordinate map
       const CoordinateElement<geometry_type>& cmap
-          = _mesh->geometry().cmaps()[i];
+          = _mesh->geometry().cmap(i);
 
       // Prepare cell geometry
       auto x_dofmap = _mesh->geometry().dofmap(i);

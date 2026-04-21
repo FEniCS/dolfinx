@@ -78,7 +78,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     // Get geometry for each cell type
     auto x_dofmap = mesh.geometry().dofmap(j);
     auto c_to_v = topology->connectivity({tdim, j}, {0, 0});
-    auto dof_layout = mesh.geometry().cmaps().at(j).create_dof_layout();
+    auto dof_layout = mesh.geometry().cmap(j).create_dof_layout();
     std::vector<int> entity_dofs(dof_layout.num_dofs());
     for (int k = 0; k < dof_layout.num_dofs(); ++k)
       entity_dofs[k] = dof_layout.entity_dofs(0, k).front();
@@ -295,9 +295,13 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   spdlog::debug("Create new mesh");
   std::vector<std::span<const std::int64_t>> topo_span(mixed_topology.begin(),
                                                        mixed_topology.end());
+
+  std::vector<fem::CoordinateElement<T>> geometry_cmaps;
+  for (std::size_t i = 0; i < mesh.geometry().num_maps(); ++i)
+    geometry_cmaps.push_back(mesh.geometry().cmap(i));
   mesh::Mesh new_mesh = mesh::create_mesh(
-      mesh.comm(), mesh.comm(), topo_span, mesh.geometry().cmaps(), mesh.comm(),
-      new_x, {new_x.size() / 3, 3}, partitioner, 2);
+      mesh.comm(), mesh.comm(), topo_span, geometry_cmaps, mesh.comm(), new_x,
+      {new_x.size() / 3, 3}, partitioner, 2);
 
   return new_mesh;
 }
