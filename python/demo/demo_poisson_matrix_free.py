@@ -14,6 +14,11 @@
 
 # # Matrix-free conjugate gradient solver for the Poisson equation
 #
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_poisson_matrix_free.py>`
+# * {download}`Jupyter notebook <./demo_poisson_matrix_free.ipynb>`
+# ```
 # This demo illustrates how to solve the Poisson equation using a
 # matrix-free conjugate gradient (CG) solver. In particular, it
 # illustrates how to:
@@ -22,9 +27,6 @@
 #   conjugate gradient (CG) solver.
 # - Create and apply Dirichlet boundary conditions.
 # - Compute approximation error as compared with a known exact solution.
-#
-# {download}`Python script <./demo_poisson_matrix_free.py>`\
-# {download}`Jupyter notebook <./demo_poisson_matrix_free.ipynb>`
 #
 # ```{note}
 # This demo illustrates the use of a matrix-free conjugate gradient
@@ -76,6 +78,7 @@
 #
 # The modules that will be used are imported:
 
+# +
 from mpi4py import MPI
 
 import numpy as np
@@ -83,6 +86,8 @@ import numpy as np
 import dolfinx
 import ufl
 from dolfinx import fem, la
+
+# -
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
@@ -93,9 +98,7 @@ from dolfinx import fem, la
 dtype = dolfinx.default_scalar_type
 real_type = np.real(dtype(0.0)).dtype
 comm = MPI.COMM_WORLD
-mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], dtype=real_type)
-
-# Create function space
+mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], (10, 10), dtype=real_type)
 degree = 2
 V = fem.functionspace(mesh, ("Lagrange", degree))
 
@@ -107,9 +110,10 @@ V = fem.functionspace(mesh, ("Lagrange", degree))
 #
 # Next, we locate the mesh facets that lie on the domain boundary
 # $\partial\Omega$. We do this by first calling
-# {py:func}`create_connectivity <dolfinx.mesh.topology.create_connectivity>`
-# and then retrieving all facets on the boundary using
-# {py:func}`exterior_facet_indices <dolfinx.mesh.exterior_facet_indices>`.
+# {py:func}`create_connectivity
+# <dolfinx.mesh.topology.create_connectivity>`  and then retrieving all
+# facets on the boundary using {py:func}`exterior_facet_indices
+# <dolfinx.mesh.exterior_facet_indices>`.
 
 tdim = mesh.topology.dim
 mesh.topology.create_connectivity(tdim - 1, tdim)
@@ -156,10 +160,11 @@ M_fem = fem.form(M, dtype=dtype)
 
 # ### Matrix-free conjugate gradient solver
 #
-# The right hand side vector $b - A x_{\rm bc}$ is the assembly of the linear
-# form $L$ where the essential Dirichlet boundary conditions are implemented
-# using lifting. Since we want to avoid assembling the matrix `A`, we compute
-# the necessary matrix-vector product using the linear form `M` explicitly.
+# The right hand side vector $b - A x_{\rm bc}$ is the assembly of the
+# linear form $L$ where the essential Dirichlet boundary conditions are
+# implemented using lifting. Since we want to avoid assembling the matrix
+# `A`, we compute the necessary matrix-vector product using the linear form
+# `M` explicitly.
 
 # Apply lifting: b <- b - A * x_bc
 b = fem.assemble_vector(L_fem)
@@ -169,6 +174,7 @@ fem.assemble_vector(b.array, M_fem)
 b.scatter_reverse(la.InsertMode.add)
 
 # Set BC dofs to zero on right hand side
+
 bc.set(b.array, alpha=0.0)
 b.scatter_forward()
 
@@ -178,6 +184,7 @@ b.scatter_forward()
 
 
 def action_A(x, y):
+    """Compute the action of the matrix A on vector x, result in y."""
     # Set coefficient vector of the linear form M and ensure it is
     # updated across processes
     ui.x.array[:] = x.array
@@ -201,6 +208,7 @@ def action_A(x, y):
 
 
 def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int = 200, rtol: float = 1e-6):
+    """Conjugate gradient solver for the linear system A x = b."""
     rtol2 = rtol**2
 
     nr = b.index_map.size_local
@@ -249,17 +257,22 @@ u = fem.Function(V, dtype=dtype)
 iter_cg1 = cg(mesh.comm, action_A, u.x, b, max_iter=200, rtol=rtol)
 
 # Set BC values in the solution vector
+
 bc.set(u.x.array, alpha=1.0)
 
+# Print CG iteration number and error
 
+
+# +
 def L2Norm(u):
+    """Compute the L2 norm of a finite element function."""
     val = fem.assemble_scalar(fem.form(ufl.inner(u, u) * ufl.dx, dtype=dtype))
     return np.sqrt(comm.allreduce(val, op=MPI.SUM))
 
 
-# Print CG iteration number and error
 error_L2_cg1 = L2Norm(u - uD)
 if mesh.comm.rank == 0:
     print("Matrix-free CG solver using DOLFINx vectors:")
     print(f"CG iterations until convergence: {iter_cg1}")
     print(f"L2 approximation error: {error_L2_cg1:.4e}")
+# -

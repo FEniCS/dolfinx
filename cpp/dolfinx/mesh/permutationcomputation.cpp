@@ -123,11 +123,11 @@ std::vector<std::bitset<BITSETSIZE>>
 compute_triangle_quad_face_permutations(const mesh::Topology& topology,
                                         int cell_index)
 {
-  std::vector<mesh::CellType> cell_types = topology.entity_types(3);
+  const std::vector<mesh::CellType>& cell_types = topology.entity_types(3);
   mesh::CellType cell_type = cell_types.at(cell_index);
 
   // Get face types of the cell and mesh
-  std::vector<mesh::CellType> mesh_face_types = topology.entity_types(2);
+  const std::vector<mesh::CellType>& mesh_face_types = topology.entity_types(2);
   std::vector<mesh::CellType> cell_face_types(
       mesh::cell_num_entities(cell_type, 2));
   for (std::size_t i = 0; i < cell_face_types.size(); ++i)
@@ -291,7 +291,9 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   const int tdim = topology.dim();
   CellType cell_type = topology.cell_type();
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
-  const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
+  // Point meshes have no facets per cell and cell_num_entities(vertex, -1) is
+  // undefined
+  int facets_per_cell = (tdim > 0) ? cell_num_entities(cell_type, tdim - 1) : 0;
 
   std::vector<std::uint32_t> cell_permutation_info(num_cells, 0);
   std::vector<std::uint8_t> facet_permutations(num_cells * facets_per_cell);

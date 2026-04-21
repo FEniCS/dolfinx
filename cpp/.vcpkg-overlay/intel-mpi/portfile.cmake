@@ -1,4 +1,4 @@
-set(INTELMPI_VERSION "2021.12")
+set(INTELMPI_VERSION "latest")
 set(SOURCE_PATH "${CURRENT_BUILDTREES_DIR}/src/intel-mpi-${INTELMPI_VERSION}")
 
 cmake_path(SET SDK_SOURCE_DIR "C:/Program Files (x86)/Intel/oneAPI")
@@ -55,24 +55,35 @@ file(INSTALL "${SOURCE_DEBUG_LIB_PATH}/impi.lib"
 # 'libfabric.dll' is not needed for the compilation but it is needed for the
 # runtime and should be in the PATH for 'mpiexec' to work
 file(INSTALL "${SOURCE_LIBFABRIC_PATH}/libfabric.dll"
-     "${SOURCE_BIN_PATH}/impi.dll" "${SOURCE_BIN_PATH}/impi.pdb"
+     "${SOURCE_BIN_PATH}/impi.dll"
      DESTINATION "${CURRENT_PACKAGES_DIR}/bin"
 )
 
 file(INSTALL "${SOURCE_LIBFABRIC_PATH}/libfabric.dll"
-     "${SOURCE_DEBUG_BIN_PATH}/impi.dll" "${SOURCE_DEBUG_BIN_PATH}/impi.pdb"
+     "${SOURCE_BIN_PATH}/impi.dll"
      DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin"
 )
+
+set(_PDB_FILE "${SOURCE_BIN_PATH}/impi.pdb")
+
+if(EXISTS "${_PDB_FILE}")
+     file(INSTALL "${_PDB_FILE}"
+          DESTINATION "${CURRENT_PACKAGES_DIR}/bin"
+     )
+     file(INSTALL "${_PDB_FILE}"
+          DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin"
+     )
+endif()
 
 file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/mpi-wrapper.cmake"
      DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"
 )
 
 # Handle copyright
-file(
-  COPY "${SDK_SOURCE_DIR}/licensing/2024.1/licensing/2024.1/license.htm"
-  DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"
-)
-file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright"
-     "See the licence.htm file in this directory."
-)
+#file(
+#  COPY "${SDK_SOURCE_DIR}/licensing/latest/licensing/latest/license.htm"
+#  DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"
+#)
+#file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright"
+#     "See the licence.htm file in this directory."
+#)

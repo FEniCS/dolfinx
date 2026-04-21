@@ -4,10 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "MPICommWrapper.h"
-#include "array.h"
-#include "caster_mpi.h"
-#include <complex>
+#include "dolfinx_wrappers/common.h"
+#include "dolfinx_wrappers/MPICommWrapper.h"
+#include "dolfinx_wrappers/array.h"
+#include "dolfinx_wrappers/caster_mpi.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/Table.h>
@@ -15,21 +15,20 @@
 #include <dolfinx/common/defines.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
-#include <dolfinx/common/utils.h>
-#include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/chrono.h>
-#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
-#include <nanobind/stl/tuple.h>
+#include <nanobind/stl/string_view.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
 #include <string>
+#include <thread>
+#include <utility>
 #include <vector>
 
 namespace nb = nanobind;
@@ -60,6 +59,7 @@ void common(nb::module_& m)
   m.attr("has_petsc") = dolfinx::has_petsc();
   m.attr("has_petsc4py") = has_petsc4py();
   m.attr("has_ptscotch") = dolfinx::has_ptscotch();
+  m.attr("has_superlu_dist") = dolfinx::has_superlu_dist();
   m.attr("has_slepc") = dolfinx::has_slepc();
   m.attr("ufcx_signature") = dolfinx::ufcx_signature();
   m.attr("version") = dolfinx::version();
@@ -68,6 +68,13 @@ void common(nb::module_& m)
       .value("max", dolfinx::Table::Reduction::max)
       .value("min", dolfinx::Table::Reduction::min)
       .value("average", dolfinx::Table::Reduction::average);
+
+  auto sc = nb::class_<dolfinx::common::Scatterer<>>(m, "Scatterer")
+                .def(nb::init<dolfinx::common::IndexMap&, int>(),
+                     nb::arg("index_map"), nb::arg("block_size"));
+  declare_scatter_functions<std::int64_t>(sc);
+  declare_scatter_functions<double>(sc);
+  declare_scatter_functions<float>(sc);
 
   // dolfinx::common::IndexMap
   nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")
@@ -122,8 +129,6 @@ void common(nb::module_& m)
                    "Range of indices owned by this map")
       .def("index_to_dest_ranks",
            &dolfinx::common::IndexMap::index_to_dest_ranks)
-      .def("imbalance", &dolfinx::common::IndexMap::imbalance,
-           "Imbalance of the current IndexMap.")
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
@@ -187,6 +192,9 @@ void common(nb::module_& m)
 
   m.def("timing", &dolfinx::timing);
   m.def("timings", &dolfinx::timings);
+
+  m.def("hardware_concurrency",
+        []() { return std::max<int>(1, std::thread::hardware_concurrency()); });
 
   m.def(
       "list_timings",

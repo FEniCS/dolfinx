@@ -59,8 +59,8 @@ set_source_files_properties(
 )
 
 # Test targets (used by DOLFINx testing system)
-set(TEST_PARAMETERS2 -np 2 ${MPIEXEC_PARAMS} "./${PROJECT_NAME}")
-set(TEST_PARAMETERS3 -np 3 ${MPIEXEC_PARAMS} "./${PROJECT_NAME}")
+set(TEST_PARAMETERS2 -np 2 "./${PROJECT_NAME}")
+set(TEST_PARAMETERS3 -np 3 "./${PROJECT_NAME}")
 add_test(NAME ${PROJECT_NAME}_mpi_2 COMMAND "mpirun" ${TEST_PARAMETERS2})
 add_test(NAME ${PROJECT_NAME}_mpi_3 COMMAND "mpirun" ${TEST_PARAMETERS3})
 add_test(NAME ${PROJECT_NAME}_serial COMMAND ${PROJECT_NAME})

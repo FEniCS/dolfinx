@@ -22,7 +22,7 @@
 namespace dolfinx::fem
 {
 /// DOF transformation type
-enum class doftransform
+enum class doftransform : std::uint8_t
 {
   standard = 0,          ///< Standard
   transpose = 1,         ///< Transpose
@@ -68,7 +68,7 @@ public:
   /// @param[in] symmetric Is the element a symmetric tensor? Should
   /// only set for 2nd-order tensor blocked elements.
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                std::optional<std::vector<std::size_t>> value_shape
+                const std::optional<std::vector<std::size_t>>& value_shape
                 = std::nullopt,
                 bool symmetric = false);
 
@@ -87,7 +87,7 @@ public:
   ///
   /// This constructs a mixed element \f$E_0 \times E_1 \times \ldots
   /// \times E_{n-1}\f$. The *i*th sub-element \f$E_i\f$ can be accessed
-  /// by ::extract_sub_element. Functions defined on mixed element
+  /// by ::extract_sub_element. Function%s defined on mixed element
   /// spaces cannot be interpolated into directly. It is necessary to
   /// first extract a sub-Function (view), which can then be
   /// interpolated into.
@@ -477,7 +477,8 @@ public:
         // Blocked element
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
-            sub_fn = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
+            sub_fn
+            = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
         const int ebs = _bs;
         return [ebs, sub_fn](std::span<U> data,
                              std::span<const std::uint32_t> cell_info,
@@ -581,7 +582,8 @@ public:
         // transformation from the left to data using xxxyyyzzz ordering
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
-            sub_fn = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
+            sub_fn
+            = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
         return [this, sub_fn](std::span<U> data,
                               std::span<const std::uint32_t> cell_info,
                               std::int32_t cell, int data_block_size)

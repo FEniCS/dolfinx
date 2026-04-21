@@ -49,8 +49,8 @@ public:
                                            std::vector<T>>
   MeshTags(std::shared_ptr<const Topology> topology, int dim, U&& indices,
            V&& values)
-      : _topology(topology), _dim(dim), _indices(std::forward<U>(indices)),
-        _values(std::forward<V>(values))
+      : _topology(std::move(topology)), _dim(dim),
+        _indices(std::forward<U>(indices)), _values(std::forward<V>(values))
   {
     if (_indices.size() != _values.size())
     {
@@ -88,7 +88,7 @@ public:
     std::size_t n = std::count(_values.begin(), _values.end(), value);
     std::vector<std::int32_t> indices;
     indices.reserve(n);
-    for (std::int32_t i = 0; i < _values.size(); ++i)
+    for (std::size_t i = 0; i < _values.size(); ++i)
     {
       if (_values[i] == value)
         indices.push_back(_indices[i]);

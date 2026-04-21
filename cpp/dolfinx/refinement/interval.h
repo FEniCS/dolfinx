@@ -82,16 +82,17 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   std::vector<std::vector<std::int32_t>> marked_for_update(ranks.size());
   if (cells)
   {
-    std::ranges::for_each(cells.value(),
-                          [&](auto cell)
-                          {
-                            if (!refinement_marker[cell])
-                            {
-                              refinement_marker[cell] = true;
-                              for (int rank : cell_ranks.links(cell))
-                                marked_for_update[rank].push_back(cell);
-                            }
-                          });
+    std::ranges::for_each(
+        cells.value(),
+        [&refinement_marker, &cell_ranks, &marked_for_update](auto cell)
+        {
+          if (!refinement_marker[cell])
+          {
+            refinement_marker[cell] = true;
+            for (int rank : cell_ranks.links(cell))
+              marked_for_update[rank].push_back(cell);
+          }
+        });
   }
 
   // Create neighborhood communicator for vertex creation
@@ -129,7 +130,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
       = adjust_indices(*mesh.topology()->index_map(0), number_of_refined_cells);
 
   // Build the topology on the new vertices
-  const std::int32_t refined_cell_count
+  std::size_t refined_cell_count
       = mesh.topology()->index_map(1)->size_local() + number_of_refined_cells;
 
   std::vector<std::int64_t> cell_topology;
@@ -144,7 +145,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
 
   for (std::int32_t cell = 0; cell < map_c->size_local(); ++cell)
   {
-    const auto& vertices = c_to_v->links(cell);
+    std::span vertices = c_to_v->links(cell);
     assert(vertices.size() == 2);
 
     // We consider a cell (defined by global vertices)
@@ -155,9 +156,9 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
     {
       // Find (global) index of new midpoint vertex:
       // a --- c --- b
-      auto it = new_vertex_map.find(cell);
-      assert(it != new_vertex_map.end());
-      const std::int64_t c = it->second;
+      std::span nv = new_vertex_map.links(cell);
+      assert(nv.size() == 1);
+      const std::int64_t c = nv[0];
 
       // Add new cells/edges to refined topology
       cell_topology.insert(cell_topology.end(), {a, c, c, b});

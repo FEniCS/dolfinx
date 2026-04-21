@@ -78,14 +78,19 @@ def mixed_topology_mesh():
                     orig_idx[2] += [idx]
                     idx += 1
                 else:
-                    cells[3] += [v0, v1, v2, v3, v7]
+                    # Pyramids x 2 + tets x 2 (quads on top/bottom of cube,
+                    # triangles on the 4 side faces).
+                    cells[3] += [v0, v1, v2, v3, v7]  # base z=0, apex V7
                     orig_idx[3] += [idx]
                     idx += 1
-                    cells[3] += [v0, v1, v4, v5, v7]
+                    cells[3] += [v4, v5, v6, v7, v0]  # base z=1, apex V0
                     orig_idx[3] += [idx]
                     idx += 1
-                    cells[3] += [v0, v2, v4, v6, v7]
-                    orig_idx[3] += [idx]
+                    cells[2] += [v0, v2, v6, v7]
+                    orig_idx[2] += [idx]
+                    idx += 1
+                    cells[2] += [v0, v1, v5, v7]
+                    orig_idx[2] += [idx]
                     idx += 1
 
         n_points = (nx + 1) * (ny + 1) * (nz + 1)
@@ -97,7 +102,7 @@ def mixed_topology_mesh():
             ix = p % (nx + 1)
             geom += [[ix / nx, iy / ny, iz / nz]]
 
-    cells_np = [np.array(c) for c in cells]
+    cells_np = [np.array(c, dtype=np.int64) for c in cells]
     geomx = np.array(geom, dtype=np.float64)
     if len(geom) == 0:
         geomx = np.empty((0, 3), dtype=np.float64)
@@ -106,7 +111,13 @@ def mixed_topology_mesh():
 
     cell_types = [CellType.hexahedron, CellType.prism, CellType.tetrahedron, CellType.pyramid]
     coordinate_elements = [coordinate_element(cell, 1) for cell in cell_types]
-    part = create_cell_partitioner(GhostMode.none)
+    part = create_cell_partitioner(GhostMode.none, 2)
+    max_cells_per_facet = 2
     return create_mesh(
-        MPI.COMM_WORLD, cells_np, [e._cpp_object for e in coordinate_elements], geomx, part
+        MPI.COMM_WORLD,
+        cells_np,
+        [e._cpp_object for e in coordinate_elements],
+        geomx,
+        part,
+        max_cells_per_facet,
     )

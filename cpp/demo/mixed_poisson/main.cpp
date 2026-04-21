@@ -8,9 +8,10 @@
 // * Apply boundary conditions to different fields in a mixed problem.
 // * Create integration domain data to execute finite element kernels.
 //   over subsets of the boundary.
+// * Use a submesh to represent boundary data
 //
 // The full implementation is in
-// {download}`demo_hyperelasticity/main.cpp`.
+// {download}`demo_mixed_poisson/main.cpp`.
 //
 //
 // # Mixed formulation for the Poisson equation
@@ -83,14 +84,15 @@
 // ## UFL form file
 //
 // The UFL file is implemented in
-// {download}`demo_mixed_poisson/poisson.py`.
+// {download}`demo_mixed_poisson/mixed_poisson.py`.
 // ````{admonition} UFL form implemented in python
 // :class: dropdown
 // ![ufl-code]
 // ````
 //
 
-#include "poisson.h"
+#include "mixed_poisson.h"
+#include <basix/cell.h>
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
 #include <cmath>
@@ -110,7 +112,7 @@
 
 using namespace dolfinx;
 using T = PetscScalar;
-using U = typename dolfinx::scalar_value_type_t<T>;
+using U = typename dolfinx::scalar_value_t<T>;
 
 int main(int argc, char* argv[])
 {
@@ -118,20 +120,23 @@ int main(int argc, char* argv[])
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   {
+    mesh::CellType cell_type = mesh::CellType::triangle;
+
     // Create mesh
-    auto mesh = std::make_shared<mesh::Mesh<U>>(
-        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
-                                  {32, 32}, mesh::CellType::triangle));
+    auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
+        MPI_COMM_WORLD, {{{0, 0}, {1, 1}}}, {32, 32}, cell_type));
 
     // Create Basix elements
-    auto RT = basix::create_element<U>(
-        basix::element::family::RT, basix::cell::type::triangle, 1,
-        basix::element::lagrange_variant::unset,
-        basix::element::dpc_variant::unset, false);
-    auto P0 = basix::create_element<U>(
-        basix::element::family::P, basix::cell::type::triangle, 0,
-        basix::element::lagrange_variant::unset,
-        basix::element::dpc_variant::unset, true);
+    basix::cell::type basix_cell_type
+        = dolfinx::mesh::cell_type_to_basix_type(cell_type);
+    auto RT
+        = basix::create_element<U>(basix::element::family::RT, basix_cell_type,
+                                   1, basix::element::lagrange_variant::unset,
+                                   basix::element::dpc_variant::unset, false);
+    auto P0
+        = basix::create_element<U>(basix::element::family::P, basix_cell_type,
+                                   0, basix::element::lagrange_variant::unset,
+                                   basix::element::dpc_variant::unset, true);
 
     // Create DOLFINx mixed element
     auto ME = std::make_shared<fem::FiniteElement<U>>(
@@ -149,7 +154,7 @@ int main(int argc, char* argv[])
     auto W0 = std::make_shared<fem::FunctionSpace<U>>(V0->collapse().first);
     auto W1 = std::make_shared<fem::FunctionSpace<U>>(V1->collapse().first);
 
-    // Create source function and interpolate sin(5x) + 1
+    // Create source function and interpolate $\sin(5x) + 1$
     auto f = std::make_shared<fem::Function<T>>(W1);
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -163,27 +168,14 @@ int main(int argc, char* argv[])
           return {f, {f.size()}};
         });
 
-    // Boundary condition value for u and interpolate 20y + 1
-    auto u0 = std::make_shared<fem::Function<T>>(W1);
-    u0->interpolate(
-        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
-        {
-          std::vector<T> f;
-          for (std::size_t p = 0; p < x.extent(1); ++p)
-            f.push_back(20 * x(1, p) + 1);
-          return {f, {f.size()}};
-        });
-
-    // Create boundary condition for \sigma and interpolate such that
+    // Create boundary condition for $\sigma$ and interpolate such that
     // flux = 10 (for top and bottom boundaries)
     auto g = std::make_shared<fem::Function<T>>(W0);
     g->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          using mspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-                     std::size_t, 2,
-                     MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
+          using mspan_t
+              = md::mdspan<T, md::extents<std::size_t, 2, md::dynamic_extent>>;
 
           std::vector<T> fdata(2 * x.extent(1), 0);
           mspan_t f(fdata.data(), 2, x.extent(1));
@@ -202,7 +194,7 @@ int main(int argc, char* argv[])
         [](auto x)
         {
           using U = typename decltype(x)::value_type;
-          constexpr U eps = 1.0e-8;
+          constexpr U eps = 1e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -213,8 +205,54 @@ int main(int argc, char* argv[])
           return marker;
         });
 
-    // Compute facets with \sigma (flux) boundary condition facets, which is
-    // {all boundary facet} - {u0 boundary facets }
+    // We'd like to represent `u_0` using a function space defined only
+    // on the facets in `dfacets`. To do so, we begin by calling
+    // `create_submesh` to get a `submesh` of those facets.  It also returns an
+    // `EntityMap` object, which relates entities in the submesh to entities in
+    // the original mesh. We will need this to assemble our mixed-domain form.
+    int tdim = mesh->topology()->dim();
+    int fdim = tdim - 1;
+
+    auto submesh_data = [](auto& mesh, int tdim, auto&& dfacets)
+    {
+      auto [submesh, e_map, v_map, g_map]
+          = mesh::create_submesh(mesh, tdim, dfacets);
+      return std::pair(std::make_shared<mesh::Mesh<U>>(std::move(submesh)),
+                       std::move(e_map));
+    };
+    auto [submesh, entity_map] = submesh_data(*mesh, fdim, dfacets);
+
+    // Create an element for `u_0`
+    basix::cell::type submesh_cell_type
+        = dolfinx::mesh::cell_type_to_basix_type(
+            submesh->topology()->cell_type());
+
+    auto Qe = std::make_shared<fem::FiniteElement<U>>(
+        basix::create_element<U>(basix::element::family::P, submesh_cell_type,
+                                 1, basix::element::lagrange_variant::unset,
+                                 basix::element::dpc_variant::unset, false));
+
+    // Create a function space for `u_0` on the submesh
+    auto Q = std::make_shared<fem::FunctionSpace<U>>(
+        fem::create_functionspace<U>(submesh, Qe));
+
+    // Boundary condition value for u and interpolate $20 y + 1$
+    auto u0 = std::make_shared<fem::Function<T>>(Q);
+    u0->interpolate(
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+        {
+          std::vector<T> f;
+          for (std::size_t p = 0; p < x.extent(1); ++p)
+            f.push_back(20 * x(1, p) + 1);
+          return {f, {f.size()}};
+        });
+
+    // Write u0 to file to visualise
+    io::VTKFile u0_file(MPI_COMM_WORLD, "u0.pvd", "w");
+    u0_file.write<T>({*u0}, 0);
+
+    // Compute facets with $\sigma$ (flux) boundary condition facets,
+    // which is `{all boundary facet} - {u0 boundary facets}`
     std::vector<std::int32_t> nfacets;
     std::ranges::set_difference(bfacets, dfacets, std::back_inserter(nfacets));
 
@@ -223,33 +261,48 @@ int main(int argc, char* argv[])
         = fem::locate_dofs_topological(
             *mesh->topology(), {*V0->dofmap(), *W0->dofmap()}, 1, nfacets);
 
-    // Create boundary condition for \sigma. \sigma \cdot n will be
-    // constrained to to be equal to the normal component of g. The
+    // Create boundary condition for $\sigma. $\sigma \cdot n$ will be
+    // constrained to to be equal to the normal component of $g$. The
     // boundary conditions are applied to degrees-of-freedom ndofs, and
-    // V0 is the subspace that is constrained.
+    // `V0` is the subspace that is constrained.
     fem::DirichletBC<T> bc(g, ndofs, V0);
 
-    // Create integration domain data for u0 boundary condition (applied
-    // on the ds(1) in the UFL file). First we get facet data
+    // Create integration domain data for `u0` boundary condition
+    // (applied on the `ds(1)` in the UFL file). First we get facet data
     // integration data for facets in dfacets.
     std::vector<std::int32_t> domains = fem::compute_integration_domains(
         fem::IntegralType::exterior_facet, *mesh->topology(), dfacets);
 
-    // Create data structure for the ds(1) integration domain in form
+    // Create data structure for the `ds(1)` integration domain in form
     // (see the UFL file). It is for en exterior facet integral (the key
     // in the map), and exterior facet domain marked as '1' in the UFL
-    // file, and 'domains' holds the necessary data to perform
+    // file, and `domains` holds the necessary data to perform
     // integration of selected facets.
     std::map<
         fem::IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
         subdomain_data{{fem::IntegralType::exterior_facet, {{1, domains}}}};
 
+    // Since we are doing a `ds(1)` integral on mesh and `u0` is defined
+    // on the `submesh`, our form involves more than one mesh. The mesh
+    // used to define the measure and passed to `create_form` is called
+    // the integration domain mesh (here, `mesh`). To assemble our
+    // mixed-domain form, we must provide an `EntityMap` for each
+    // additional mesh in the form. In this case, the only other mesh is
+    // `submesh`. Hence, we supply the entity map returned from
+    // `create_submesh`, which relates entities in `mesh` and `submesh`.
+
     // Define variational forms and attach he required data
-    fem::Form<T> a = fem::create_form<T>(*form_poisson_a, {V, V}, {}, {},
+    fem::Form<T> a = fem::create_form<T>(*form_mixed_poisson_a, {V, V}, {}, {},
                                          subdomain_data, {});
+
+    // Since this form involves multiple domains (i.e. both `mesh` and
+    // `submesh` for the boundary condition), we must pass the entity
+    // maps just created. We must also tell the form which domain to
+    // integrate with respect to (in this case `mesh`)
     fem::Form<T> L = fem::create_form<T>(
-        *form_poisson_L, {V}, {{"f", f}, {"u0", u0}}, {}, subdomain_data, {});
+        *form_mixed_poisson_L, {V}, {{"f", f}, {"u0", u0}}, {}, subdomain_data,
+        {entity_map}, V->mesh());
 
     // Create solution finite element Function
     auto u = std::make_shared<fem::Function<T>>(V);
@@ -273,17 +326,17 @@ int main(int argc, char* argv[])
     MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 
-    // Assemble the linear form L into RHS vector
-    b.set(0);
-    fem::assemble_vector(b.mutable_array(), L);
+    // Assemble the linear form `L` into RHS vector
+    std::ranges::fill(b.array(), 0);
+    fem::assemble_vector(b.array(), L);
 
     // Modify unconstrained dofs on RHS to account for Dirichlet BC dofs
     // (constrained dofs), and perform parallel update on the vector.
-    fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
+    fem::apply_lifting(b.array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
 
     // Set value for constrained dofs
-    bc.set(b.mutable_array(), std::nullopt);
+    bc.set(b.array(), std::nullopt);
 
     // Create PETSc linear solver
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
@@ -311,8 +364,11 @@ int main(int argc, char* argv[])
 
 #ifdef HAS_ADIOS2
     // Save solution in VTX format
-    io::VTXWriter<U> vtx(MPI_COMM_WORLD, "u.bp", {u_soln}, "bp4");
-    vtx.write(0);
+    io::VTXWriter<U> vtx_u(MPI_COMM_WORLD, "u.bp", {u_soln}, "bp4");
+    vtx_u.write(0);
+    // Save interpolated boundary condition
+    io::VTXWriter<U> vtx_u0(MPI_COMM_WORLD, "u0.bp", {u0}, "bp4");
+    vtx_u0.write(0);
 #endif
   }
 

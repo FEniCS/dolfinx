@@ -32,7 +32,7 @@ void list_timings(MPI_Comm comm,
 /// @param[in] task Name of a task
 /// @return The (count, total wall time) for the task.
 std::pair<int, std::chrono::duration<double, std::ratio<1>>>
-timing(std::string task);
+timing(const std::string& task);
 
 /// @brief Logged elapsed times.
 /// @return Elapsed [task id: (count, total wall time)].

@@ -86,8 +86,6 @@ template <std::floating_point T, dolfinx::scalar U = T>
 void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
                    la::MatSet<U> auto&& mat_set)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   // Get mesh
   auto mesh = V0.mesh();
   assert(mesh);
@@ -311,8 +309,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
 /// @param[in] V1 Nédélec (first kind) element and dofmap for
 /// corresponding space to interpolate into.
 /// @param[in] mat_set A functor that sets values in a matrix
-template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_t<T>>
 void discrete_gradient(mesh::Topology& topology,
                        std::pair<std::reference_wrapper<const FiniteElement<U>>,
                                  std::reference_wrapper<const DofMap>>
@@ -322,15 +319,12 @@ void discrete_gradient(mesh::Topology& topology,
                            V1,
                        auto&& mat_set)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   auto& e0 = V0.first.get();
   const DofMap& dofmap0 = V0.second.get();
   auto& e1 = V1.first.get();
   const DofMap& dofmap1 = V1.second.get();
 
   using cmdspan2_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  using mdspan2_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
   using cmdspan4_t = md::mdspan<const U, md::dextents<std::size_t, 4>>;
 
   // Check elements
@@ -411,13 +405,11 @@ void discrete_gradient(mesh::Topology& topology,
 ///
 /// @param[in] V0 Space to interpolate from.
 /// @param[in] V1 Space to interpolate to.
-/// @param[in] mat_set Functor that sets values in a matrix.
+/// @param[in] mat_add Functor that adds values to a matrix.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolation_matrix(const FunctionSpace<U>& V0,
-                          const FunctionSpace<U>& V1, auto&& mat_set)
+                          const FunctionSpace<U>& V1, auto&& mat_add)
 {
-  namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
-
   // Get mesh
   auto mesh = V0.mesh();
   assert(mesh);
@@ -459,7 +451,6 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const std::size_t dim0 = space_dim0 / bs0;
   const std::size_t value_size_ref0 = e0->reference_value_size();
   const std::size_t value_size0 = V0.element()->reference_value_size();
-  const std::size_t value_size1 = V1.element()->reference_value_size();
 
   // Get geometry data
   const CoordinateElement<U>& cmap = mesh->geometry().cmap();
@@ -469,7 +460,6 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 
   using mdspan2_t = md::mdspan<U, md::dextents<std::size_t, 2>>;
   using cmdspan2_t = md::mdspan<const U, md::dextents<std::size_t, 2>>;
-  using cmdspan3_t = md::mdspan<const U, md::dextents<std::size_t, 3>>;
   using cmdspan4_t = md::mdspan<const U, md::dextents<std::size_t, 4>>;
   using mdspan3_t = md::mdspan<U, md::dextents<std::size_t, 3>>;
 
@@ -546,13 +536,20 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   auto cell_map = mesh->topology()->index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
+  int row_bs = dofmap1->bs();
+  std::int32_t num_owned_rows
+      = dofmap1->index_map->size_local() * dofmap1->index_map_bs() / row_bs;
+  std::int32_t num_ghosted_rows
+      = dofmap1->index_map->num_ghosts() * dofmap1->index_map_bs() / row_bs;
+  std::vector<std::int8_t> row_added(num_owned_rows + num_ghosted_rows, 0);
+
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get cell geometry (coordinate dofs)
     auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
-      for (std::size_t j = 0; j < gdim; ++j)
+      for (int j = 0; j < gdim; ++j)
         coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
     }
 
@@ -637,7 +634,26 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     }
 
     apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
-    mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
+
+    // Zero out all rows that have already been added on this process
+    // and only add owned rows
+    {
+      md::mdspan<T, md::dextents<std::size_t, 2>> A(Ab.data(), space_dim1,
+                                                    space_dim0);
+      auto row_dofs = dofmap1->cell_dofs(c);
+      for (std::size_t i = 0; i < row_dofs.size(); ++i)
+      {
+        std::int32_t r = row_dofs[i];
+        if (r >= num_owned_rows || row_added[r])
+        {
+          for (std::size_t j = 0; j < space_dim0; ++j)
+            for (int k = 0; k < row_bs; ++k)
+              A(i * row_bs + k, j) = 0.0;
+        }
+        row_added[r] = 1;
+      }
+    }
+    mat_add(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
   }
 }
 

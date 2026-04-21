@@ -35,7 +35,7 @@ std::array<T, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
   // FIXME: return of small dynamic array is expensive
   std::span<const std::int32_t> entity(&index, 1);
   const std::vector<std::int32_t> vertex_indices
-      = mesh::entities_to_geometry(mesh, dim, entity, false);
+      = mesh::entities_to_geometry(mesh, dim, entity, false).first;
 
   std::array<T, 6> b;
   std::span<T, 3> b0(b.data(), 3);
@@ -226,15 +226,14 @@ public:
   /// @param[in] mesh Mesh for building the bounding box tree.
   /// @param[in] tdim Topological dimension of the mesh entities to
   /// build the bounding box tree for.
+  /// @param[in] padding Value to pad (extend) the the bounding box of
+  /// each entity by.
   /// @param[in] entities List of entity indices (local to process) to
   /// compute the bounding box for. If `std::nullopt`, the bounding box tree is
   /// computed for all local entities (including ghosts) of the given `tdim`.
-  /// @param[in] padding Value to pad (extend) the the bounding box of
-  /// each entity by.
-  BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim,
+  BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim, double padding,
                   std::optional<std::span<const std::int32_t>> entities
-                  = std::nullopt,
-                  double padding = 0)
+                  = std::nullopt)
       : _tdim(tdim)
   {
     // Initialize entities of given dimension if they don't exist
@@ -284,7 +283,8 @@ public:
                  num_bboxes(), entities_span.size());
   }
 
-  /// Constructor @param[in] points Cloud of points, with associated
+  /// Constructor
+  /// @param[in] points Cloud of points, with associated
   /// point identifier index, to build the bounding box tree around
   BoundingBoxTree(std::vector<std::pair<std::array<T, 3>, std::int32_t>> points)
       : _tdim(0)
@@ -369,6 +369,20 @@ public:
 
   /// Return number of bounding boxes
   std::int32_t num_bboxes() const { return _bboxes.size() / 2; }
+
+  /// @brief Access coordinates of lower and upper corners of bounding boxes
+  /// (const version).
+  ///
+  /// @return The flattened row-major coordinate vector, where the shape is
+  /// `(2*num_bboxes, 3)`.
+  std::span<const T> bbox_coordinates() const { return _bbox_coordinates; }
+
+  /// @brief Access coordinates of lower and upper corners of bounding boxes
+  /// (non-const version)
+  ///
+  /// @return The flattened row-major coordinate vector, where the shape is
+  /// `(2*num_bboxes, 3)`.
+  std::span<T> bbox_coordinates() { return _bbox_coordinates; }
 
   /// Topological dimension of leaf entities
   int tdim() const { return _tdim; }

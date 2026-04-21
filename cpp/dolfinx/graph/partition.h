@@ -114,12 +114,13 @@ distribute(MPI_Comm comm, std::span<const std::int64_t> list,
 /// @param[in] ghost_indices List of ghost global indices.
 /// @param[in] ghost_owners The owning rank for each entry in
 /// `ghost_indices`.
+/// @param[in] num_threads Number of threads to use.
 /// @return New global indices for the ghost indices.
 std::vector<std::int64_t>
 compute_ghost_indices(MPI_Comm comm,
                       std::span<const std::int64_t> owned_indices,
                       std::span<const std::int64_t> ghost_indices,
-                      std::span<const int> ghost_owners);
+                      std::span<const int> ghost_owners, int num_threads);
 
 /// Given an adjacency list with global, possibly non-contiguous, link
 /// indices and a local adjacency list with contiguous link indices

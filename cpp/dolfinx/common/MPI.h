@@ -14,7 +14,6 @@
 #include <cassert>
 #include <complex>
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <numeric>
 #include <set>
 #include <span>
@@ -29,9 +28,8 @@
 /// @brief MPI support functionality
 namespace dolfinx::MPI
 {
-
 /// MPI communication tags
-enum class tag : int
+enum class tag : std::uint16_t
 {
   consensus_pcx = 1200,
   consensus_pex = 1201,
@@ -391,7 +389,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   dolfinx::MPI::check_error(comm, err);
 
   // Compute send displacements
-  std::vector<std::int32_t> send_disp = {0};
+  std::vector<std::int32_t> send_disp{0};
   std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
                    std::back_inserter(send_disp));
 
@@ -543,7 +541,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   dolfinx::MPI::check_error(comm, err);
 
   // Prepare send/receive displacements
-  std::vector<std::int32_t> send_disp = {0};
+  std::vector<std::int32_t> send_disp{0};
   std::partial_sum(num_items_per_src.begin(), num_items_per_src.end(),
                    std::back_inserter(send_disp));
   std::vector<std::int32_t> recv_disp = {0};

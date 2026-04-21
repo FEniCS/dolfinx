@@ -10,12 +10,22 @@
 
 # # Poisson equation
 #
-# This demo illustrates how to solve a simple Helmholtz problem on a
-# mixed-topology mesh.
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_mixed-topology.py>`
+# * {download}`Jupyter notebook <./demo_mixed-topology.ipynb>`
+# ```
+# This demo illustrates how to:
+# - Solve a simple Helmholtz problem on a mixed-topology mesh.
+# - Create a mesh from numpy arrays using {py:func}`
+# dolfinx.mesh.create_mesh`
 #
-# NOTE: Mixed-topology meshes are a work in progress and are not yet fully
+# ```{admonition} In development
+# Mixed-topology meshes are a work in progress and are not yet fully
 # supported in DOLFINx.
+# ```
 
+# +
 from mpi4py import MPI
 
 import numpy as np
@@ -24,23 +34,31 @@ from scipy.sparse.linalg import spsolve
 import basix
 import dolfinx.cpp as _cpp
 import ufl
-from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
+from dolfinx.cpp.fem import locate_dofs_geometrical
+from dolfinx.cpp.mesh import GhostMode, create_mesh
 from dolfinx.fem import (
+    FiniteElement,
     FunctionSpace,
     assemble_matrix,
     assemble_vector,
     coordinate_element,
+    create_dofmaps,
+    dirichletbc,
     mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
-from dolfinx.mesh import CellType, Mesh
+from dolfinx.mesh import CellType, Mesh, Topology, create_cell_partitioner
+
+# -
 
 if MPI.COMM_WORLD.size > 1:
     print("Not yet running in parallel")
     exit(0)
 
 
-# Create a mixed-topology mesh
+# ## Create a mixed-topology mesh
+
+# +
 nx = 16
 ny = 16
 nz = 16
@@ -92,26 +110,52 @@ geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
 
-part = create_cell_partitioner(GhostMode.none)
+part = create_cell_partitioner(GhostMode.none, 2)  # type: ignore
 mesh = create_mesh(
-    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part
+    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part, 2
 )
+# -
 
+# ## Create a mixed-topology dofmap and function space
 # Create elements and dofmaps for each cell type
+
+# +
 elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
-elements_cpp = [_cpp.fem.FiniteElement_float64(e._e, None, True) for e in elements]
+dolfinx_elements = [
+    FiniteElement(_cpp.fem.FiniteElement_float64(e._e, None, False)) for e in elements
+]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
-dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, elements_cpp)
+dofmaps = create_dofmaps(
+    mesh.comm,
+    Topology(mesh.topology),
+    dolfinx_elements,
+)
 
 # Create C++ function space
-V_cpp = _cpp.fem.FunctionSpace_float64(mesh, elements_cpp, dofmaps)
+V_cpp = _cpp.fem.FunctionSpace_float64(
+    mesh, [e._cpp_object for e in dolfinx_elements], [dofmap._cpp_object for dofmap in dofmaps]
+)
 
-# Create forms for each cell type.
-# FIXME This hack is required at the moment because UFL does not yet know about
-# mixed topology meshes.
+
+# Select some BCs
+def marker(x):
+    """BC Selector."""
+    return np.logical_or(np.isclose(x[2], 0.0), np.isclose(x[2], 1.0))
+
+
+bcdofs = locate_dofs_geometrical(V_cpp, marker)
+bc = dirichletbc(value=0.0, dofs=bcdofs, V=V_cpp)
+
+# -
+
+# ## Creating and compiling a variational formulation
+# We create the variational forms for each cell type.
+# FIXME: This hack is required at the moment because UFL does not yet know
+# about mixed topology meshes.
+
 a = []
 L = []
 for i, cell_name in enumerate(["hexahedron", "prism"]):
@@ -127,16 +171,25 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     L += [f * v * ufl.dx]
 
 # Compile the form
-# FIXME: For the time being, since UFL doesn't understand mixed topology meshes,
-# we have to call mixed_topology_form instead of form.
+# FIXME: For the time being, since UFL doesn't understand mixed topology
+# meshes, we have to call {py:meth}`mixed_topology_form
+# <dolfinx.fem.mixed_topology_form>` instead of form.
+
 a_form = mixed_topology_form(a, dtype=np.float64)
 L_form = mixed_topology_form(L, dtype=np.float64)
 
-# Assemble the matrix
-A = assemble_matrix(a_form)
-b = assemble_vector(L_form)
+# ## Assembling and solving the linear system
+# We use the native {py:class}`matrix<dolfinx.la.MatrixCSR>` and
+# {py:class}`vector<dolfinx.la.Vector>` format in DOLFINx to assemble
+# the left and right hand side of the linear system.
 
-# Solve
+A = assemble_matrix(a_form, bcs=[bc])
+b = assemble_vector(L_form)
+bc.set(b.array)
+
+# We use {py:func}`scipy.sparse.linalg.spsolve` to solve the
+# resulting linear system
+
 A_scipy = A.to_scipy()
 b_scipy = b.array
 
@@ -144,8 +197,12 @@ x = spsolve(A_scipy, b_scipy)
 
 print(f"Solution vector norm {np.linalg.norm(x)}")
 
-# I/O
-# Save to XDMF
+# Mixed-topology I/O
+# We manually build a ASCII XDMF file to store the mesh
+# and solution
+# NOTE: this should be replaced with VTKHDF
+
+# +
 xdmf = """<?xml version="1.0"?>
 <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
 <Xdmf Version="3.0" xmlns:xi="https://www.w3.org/2001/XInclude">
@@ -193,3 +250,4 @@ xdmf += """
 fd = open("mixed-mesh.xdmf", "w")
 fd.write(xdmf)
 fd.close()
+# -

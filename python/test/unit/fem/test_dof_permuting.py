@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for dofmap construction"""
+"""Unit tests for dofmap construction."""
 
 import random
 
@@ -108,42 +108,42 @@ def randomly_ordered_mesh(cell_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        return create_mesh(MPI.COMM_WORLD, cells, points, domain)
+        return create_mesh(MPI.COMM_WORLD, cells, domain, points)
     else:
         if cell_type == "triangle":
             return create_mesh(
                 MPI.COMM_WORLD,
                 np.ndarray((0, 3)),
-                np.ndarray((0, 2), dtype=default_real_type),
                 domain,
+                np.ndarray((0, 2), dtype=default_real_type),
             )
         elif cell_type == "quadrilateral":
             return create_mesh(
                 MPI.COMM_WORLD,
                 np.ndarray((0, 4)),
-                np.ndarray((0, 2), dtype=default_real_type),
                 domain,
+                np.ndarray((0, 2), dtype=default_real_type),
             )
         elif cell_type == "tetrahedron":
             return create_mesh(
                 MPI.COMM_WORLD,
                 np.ndarray((0, 4)),
-                np.ndarray((0, 3), dtype=default_real_type),
                 domain,
+                np.ndarray((0, 3), dtype=default_real_type),
             )
         elif cell_type == "hexahedron":
             return create_mesh(
                 MPI.COMM_WORLD,
                 np.ndarray((0, 8)),
-                np.ndarray((0, 3), dtype=default_real_type),
                 domain,
+                np.ndarray((0, 3), dtype=default_real_type),
             )
 
 
 @pytest.mark.parametrize("space_type", [("P", 1), ("P", 2), ("P", 3), ("P", 4)])
 @pytest.mark.parametrize("cell_type", ["triangle", "tetrahedron", "quadrilateral", "hexahedron"])
 def test_dof_positions(cell_type, space_type):
-    """Checks that dofs on shared triangle edges match up"""
+    """Checks that dofs on shared triangle edges match up."""
     mesh = randomly_ordered_mesh(cell_type)
 
     if cell_type == "triangle":
@@ -276,7 +276,7 @@ def random_evaluation_mesh(cell_type):
                 cell_order += [c + diff for c in cell_order]
 
         cells.append([order[cell[i]] for i in cell_order])
-    return create_mesh(MPI.COMM_WORLD, np.array(cells), points, domain)
+    return create_mesh(MPI.COMM_WORLD, np.array(cells), domain, points)
 
 
 @pytest.mark.skip_in_parallel
@@ -316,8 +316,8 @@ def test_evaluation(cell_type, space_type, space_order):
         for d in dofs:
             v = Function(V)
             v.x.array[:] = [1 if i == d else 0 for i in range(v.x.index_map.size_local)]
-            values0 = v.eval(eval_points, [0 for i in eval_points])
-            values1 = v.eval(eval_points, [1 for i in eval_points])
+            values0 = v.eval(eval_points, np.full(eval_points.shape[0], 0, dtype=np.int32))
+            values1 = v.eval(eval_points, np.full(eval_points.shape[0], 1, dtype=np.int32))
             if len(eval_points) == 1:
                 values0 = [values0]
                 values1 = [values1]

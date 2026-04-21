@@ -24,6 +24,7 @@
 #include <filesystem>
 #include <memory>
 #include <mpi.h>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <variant>
@@ -168,29 +169,46 @@ std::stringstream create_vtk_schema(const std::vector<std::string>& point_data,
 
 /// Extract name of functions and split into real and imaginary component
 template <std::floating_point T>
-std::vector<std::string>
+std::tuple<std::vector<std::string>, std::vector<std::string>>
 extract_function_names(const typename adios2_writer::U<T>& u)
 {
-  std::vector<std::string> names;
-  for (auto& v : u)
+  std::vector<std::string> names, dg0_names;
+  std::ranges::for_each(
+      u,
+      [&names, &dg0_names](auto&& v)
+      {
+        std::visit(
+            [&names, &dg0_names](auto&& v)
+            {
+              using U = std::decay_t<decltype(v)>;
+              using X = typename U::element_type;
+
+              if (impl::is_cellwise(*(v->function_space()->element())))
+                names = dg0_names;
+
+              if constexpr (std::is_floating_point_v<typename X::value_type>)
+                names.push_back(v->name);
+              else
+              {
+                names.push_back(v->name + impl_adios2::field_ext[0]);
+                names.push_back(v->name + impl_adios2::field_ext[1]);
+              }
+            },
+            v);
+      });
+
   {
-    std::visit(
-        [&names](auto&& u)
-        {
-          using U = std::decay_t<decltype(u)>;
-          using X = typename U::element_type;
-          if constexpr (std::is_floating_point_v<typename X::value_type>)
-            names.push_back(u->name);
-          else
-          {
-            names.push_back(u->name + impl_adios2::field_ext[0]);
-            names.push_back(u->name + impl_adios2::field_ext[1]);
-          }
-        },
-        v);
+    // Check names are unique
+    auto sorted = names;
+    std::ranges::sort(sorted);
+    if (std::ranges::unique(sorted).begin() != sorted.end())
+    {
+      throw std::runtime_error(
+          "Function names in VTX output need to be unique.");
+    }
   }
 
-  return names;
+  return {names, dg0_names};
 }
 
 /// Given a Function, write the coefficient to file using ADIOS2.
@@ -214,9 +232,9 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   // 3**rank to ensure that we can visualize them correctly in Paraview
   std::span<const std::size_t> value_shape
       = u.function_space()->element()->value_shape();
-  int rank = value_shape.size();
-  int num_comp = std::reduce(value_shape.begin(), value_shape.end(), 1,
-                             std::multiplies{});
+  std::size_t rank = value_shape.size();
+  std::size_t num_comp = std::reduce(value_shape.begin(), value_shape.end(), 1,
+                                     std::multiplies{});
   if (num_comp < std::pow(3, rank))
     num_comp = std::pow(3, rank);
 
@@ -239,6 +257,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
 
     adios2::Variable output = impl_adios2::define_variable<T>(
         io, u.name, {}, {}, {num_dofs, num_comp});
+    spdlog::debug("Output data size={}", data.size());
     engine.Put(output, data.data(), adios2::Mode::Sync);
   }
   else
@@ -282,6 +301,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
   adios2::Variable local_geometry = impl_adios2::define_variable<T>(
       io, "geometry", {}, {}, {num_vertices, 3});
+  spdlog::debug("Put local_geometry: {}x3", num_vertices);
   engine.Put(local_geometry, geometry.x().data());
 
   // Put number of nodes. The mesh data is written with local indices,
@@ -298,6 +318,8 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable cell_var = impl_adios2::define_variable<std::uint32_t>(
       io, "NumberOfCells", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(cell_var, shape[0]);
+  spdlog::debug("Put local_cells: {}", shape[0]);
+
   adios2::Variable celltype_var
       = impl_adios2::define_variable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(
@@ -317,6 +339,8 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   // Put topology (nodes)
   adios2::Variable local_topology = impl_adios2::define_variable<std::int64_t>(
       io, "connectivity", {}, {}, {shape[0], shape[1] + 1});
+  spdlog::debug("Put local_topology: {}x{}", shape[0], shape[1] + 1);
+
   engine.Put(local_topology, cells.data());
 
   // Vertex global ids and ghost markers
@@ -353,11 +377,16 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   // Get a VTK mesh with points at the 'nodes'
   auto [x, xshape, x_id, x_ghost, vtk, vtkshape] = io::vtk_mesh_from_space(V);
 
+  spdlog::debug("x={}, xshape={}x{}, x_id={}, x_ghost={}", x.size(), xshape[0],
+                xshape[1], x_id.size(), x_ghost.size());
+
   std::uint32_t num_dofs = xshape[0];
 
   // -- Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
   // etc, is the node index.
+
+  spdlog::debug("Create cells: [{}x{}]", vtkshape[0], vtkshape[1]);
 
   // Create vector, setting all entries to nodes per cell (vtk.shape(1))
   std::vector<std::int64_t> cells(vtkshape[0] * (vtkshape[1] + 1), vtkshape[1]);
@@ -384,6 +413,8 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
       io, "NumberOfEntities", {adios2::LocalValueDim});
 
   // Write mesh information to file
+  spdlog::debug("vertices={}, elements={}, local_geom={}, local_cells={}",
+                num_dofs, vtkshape[0], x.size(), cells.size());
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
@@ -393,10 +424,10 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 
   // Node global ids
   adios2::Variable orig_id = impl_adios2::define_variable<std::int64_t>(
-      io, "vtkOriginalPointIds", {}, {}, {x_id.size()});
+      io, "vtkOriginalPointIds", {}, {}, {x_id.size(), 1});
   engine.Put(orig_id, x_id.data());
   adios2::Variable ghost = impl_adios2::define_variable<std::uint8_t>(
-      io, "vtkGhostType", {}, {}, {x_ghost.size()});
+      io, "vtkGhostType", {}, {}, {x_ghost.size(), 1});
   engine.Put(ghost, x_ghost.data());
 
   engine.PerformPuts();
@@ -405,7 +436,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 } // namespace impl_vtx
 
 /// Mesh reuse policy
-enum class VTXMeshPolicy
+enum class VTXMeshPolicy : std::int8_t
 {
   update, ///< Re-write the mesh to file upon every write of a fem::Function
   reuse   ///< Write the mesh to file only the first time a fem::Function is
@@ -436,7 +467,8 @@ public:
             std::shared_ptr<const mesh::Mesh<T>> mesh,
             std::string engine = "BPFile")
       : ADIOS2Writer(comm, filename, "VTX mesh writer", engine), _mesh(mesh),
-        _mesh_reuse_policy(VTXMeshPolicy::update), _is_piecewise_constant(false)
+        _mesh_reuse_policy(VTXMeshPolicy::update),
+        _has_piecewise_constant(false)
   {
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {}).str();
@@ -462,8 +494,8 @@ public:
             const typename adios2_writer::U<T>& u, std::string engine,
             VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
       : ADIOS2Writer(comm, filename, "VTX function writer", engine),
-        _mesh(impl_adios2::extract_common_mesh<T>(u)),
-        _mesh_reuse_policy(mesh_policy), _u(u), _is_piecewise_constant(false)
+        _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u),
+        _mesh_reuse_policy(mesh_policy), _has_piecewise_constant(false)
   {
     if (u.empty())
       throw std::runtime_error("VTXWriter fem::Function list is empty.");
@@ -472,6 +504,26 @@ public:
     auto V0 = std::visit([](auto& u) { return u->function_space().get(); },
                          u.front());
     assert(V0);
+
+    // Replace first function space if it is a space for piecewise constants
+    bool has_V0_changed = false;
+    for (auto& v : u)
+    {
+      std::visit(
+          [&V0, &has_V0_changed](auto& u)
+          {
+            auto V = u->function_space().get();
+            assert(V);
+            if (!impl::is_cellwise(*V->element()))
+            {
+              V0 = V;
+              has_V0_changed = true;
+            }
+          },
+          v);
+      if (has_V0_changed)
+        break;
+    }
     auto element0 = V0->element().get();
     assert(element0);
 
@@ -492,19 +544,18 @@ public:
           "supported. Interpolate Functions before output.");
     }
 
-    // Check if function is DG 0
-    if (element0->space_dimension() / element0->block_size() == 1)
-      _is_piecewise_constant = true;
-
     // Check that all functions come from same element type
     for (auto& v : _u)
     {
       std::visit(
-          [V0](auto& u)
+          [V0, this](auto& u)
           {
             auto element = u->function_space()->element();
             assert(element);
-            if (*element != *V0->element().get())
+            bool is_piecewise_constant = impl::is_cellwise(*element);
+            _has_piecewise_constant
+                = _has_piecewise_constant || is_piecewise_constant;
+            if (*element != *V0->element().get() and !is_piecewise_constant)
             {
               throw std::runtime_error("All functions in VTXWriter must have "
                                        "the same element type.");
@@ -512,10 +563,11 @@ public:
 #ifndef NDEBUG
             auto dmap0 = V0->dofmap()->map();
             auto dmap = u->function_space()->dofmap()->map();
-            if (dmap0.size() != dmap.size()
-                or !std::equal(dmap0.data_handle(),
-                               dmap0.data_handle() + dmap0.size(),
-                               dmap.data_handle()))
+            if ((dmap0.size() != dmap.size()
+                 or !std::equal(dmap0.data_handle(),
+                                dmap0.data_handle() + dmap0.size(),
+                                dmap.data_handle()))
+                and !is_piecewise_constant)
             {
               throw std::runtime_error(
                   "All functions must have the same dofmap for VTXWriter.");
@@ -526,12 +578,9 @@ public:
     }
 
     // Define VTK scheme attribute for set of functions
-    std::vector<std::string> names = impl_vtx::extract_function_names<T>(u);
+    auto [names, dg0_names] = impl_vtx::extract_function_names<T>(u);
     std::string vtk_scheme;
-    if (_is_piecewise_constant)
-      vtk_scheme = impl_vtx::create_vtk_schema({}, names).str();
-    else
-      vtk_scheme = impl_vtx::create_vtk_schema(names, {}).str();
+    vtk_scheme = impl_vtx::create_vtk_schema(names, dg0_names).str();
 
     impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
@@ -580,22 +629,17 @@ public:
     adios2::Variable var_step
         = impl_adios2::define_variable<double>(*_io, "step");
 
+    spdlog::debug("ADIOS2: step");
     assert(_engine);
     _engine->BeginStep();
     _engine->template Put<double>(var_step, t);
 
-    // If we have no functions or DG functions write the mesh to file
-    if (_is_piecewise_constant or _u.empty())
+    // If we have no non-constant functions write the mesh to file
+    auto [names, dg0_names] = impl_vtx::extract_function_names<T>(_u);
+    if ((names.size() == 0) or _u.empty())
     {
+      spdlog::debug("ADIOS2: write_mesh");
       impl_vtx::vtx_write_mesh(*_io, *_engine, *_mesh);
-      if (_is_piecewise_constant)
-      {
-        for (auto& v : _u)
-        {
-          std::visit([&](auto& u)
-                     { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
-        }
-      }
     }
     else
     {
@@ -607,6 +651,7 @@ public:
         std::tie(_x_id, _x_ghost) = std::visit(
             [&](auto& u)
             {
+              spdlog::debug("ADIOS2: write_mesh_from_space");
               return impl_vtx::vtx_write_mesh_from_space(*_io, *_engine,
                                                          *u->function_space());
             },
@@ -623,13 +668,14 @@ public:
         _engine->Put(ghost, _x_ghost.data());
         _engine->PerformPuts();
       }
+    }
 
-      // Write function data for each function to file
-      for (auto& v : _u)
-      {
-        std::visit([&](auto& u)
-                   { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
-      }
+    spdlog::debug("Write function data");
+    // Write function data for each function to file
+    for (auto& v : _u)
+    {
+      std::visit([&](auto& u) { impl_vtx::vtx_write_data(*_io, *_engine, *u); },
+                 v);
     }
 
     _engine->EndStep();
@@ -646,7 +692,7 @@ private:
   std::vector<std::uint8_t> _x_ghost;
 
   // Special handling of piecewise constant functions
-  bool _is_piecewise_constant;
+  bool _has_piecewise_constant;
 };
 
 /// Type deduction

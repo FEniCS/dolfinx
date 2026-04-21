@@ -71,8 +71,9 @@ public:
       const std::vector<fem::CoordinateElement<
           typename std::remove_reference_t<typename V::value_type>>>& elements,
       V&& x, int dim, W&& input_global_indices)
-      : _dim(dim), _dofmaps(std::forward<U>(dofmaps)), _index_map(index_map),
-        _cmaps(elements), _x(std::forward<V>(x)),
+      : _dim(dim), _dofmaps(std::forward<U>(dofmaps)),
+        _index_map(std::move(index_map)), _cmaps(elements),
+        _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
   {
     assert(_x.size() % 3 == 0);
@@ -108,10 +109,7 @@ public:
 
   /// @brief DofMap for the geometry.
   /// @return A 2D array with shape `(num_cells, dofs_per_cell)`.
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const std::int32_t,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-  dofmap() const
+  md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> dofmap() const
   {
     if (_dofmaps.size() != 1)
       throw std::runtime_error("Multiple dofmaps");
@@ -124,15 +122,11 @@ public:
   /// degree-of-freedom map corresponds to the geometry element
   /// `cmaps()[i]`.
   /// @return A dofmap array, with shape `(num_cells, dofs_per_cell)`.
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const std::int32_t,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+  md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>
   dofmap(std::size_t i) const
   {
     std::size_t ndofs = _cmaps.at(i).dim();
-    return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
+    return md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>(
         _dofmaps.at(i).data(), _dofmaps.at(i).size() / ndofs, ndofs);
   }
 
@@ -240,15 +234,14 @@ Geometry(std::shared_ptr<const common::IndexMap>, U&&,
 /// @return A mesh geometry.
 template <typename U>
 Geometry<typename std::remove_reference_t<typename U::value_type>>
-create_geometry(
-    const Topology& topology,
-    const std::vector<fem::CoordinateElement<
-        std::remove_reference_t<typename U::value_type>>>& elements,
-    std::span<const std::int64_t> nodes, std::span<const std::int64_t> xdofs,
-    const U& x, int dim,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn
-    = nullptr)
+create_geometry(const Topology& topology,
+                const std::vector<fem::CoordinateElement<
+                    std::remove_reference_t<typename U::value_type>>>& elements,
+                std::span<const std::int64_t> nodes,
+                std::span<const std::int64_t> xdofs, const U& x, int dim,
+                const std::function<std::vector<int>(
+                    const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                = nullptr)
 {
   spdlog::info("Create Geometry (multiple)");
 
@@ -262,7 +255,8 @@ create_geometry(
     throw std::runtime_error("Mismatch between topology and geometry.");
 
   std::vector<fem::ElementDofLayout> dof_layouts;
-  for (const auto& el : elements)
+  dof_layouts.reserve(elements.size());
+  for (auto& el : elements)
     dof_layouts.push_back(el.create_dof_layout());
 
   spdlog::info("Got {} dof layouts", dof_layouts.size());

@@ -1,0 +1,5 @@
+[tool.ruff]
+extend = "../pyproject.toml"
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 75

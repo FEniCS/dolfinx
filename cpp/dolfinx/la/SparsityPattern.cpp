@@ -17,9 +17,8 @@ using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
-    MPI_Comm comm,
-    const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
-    const std::array<int, 2>& bs)
+    MPI_Comm comm, std::array<std::shared_ptr<const common::IndexMap>, 2> maps,
+    std::array<int, 2> bs)
     : _comm(comm), _index_maps(maps), _bs(bs),
       _row_cache(maps[0]->size_local() + maps[0]->num_ghosts())
 {
@@ -229,17 +228,6 @@ std::vector<std::int64_t> SparsityPattern::column_indices() const
   return global;
 }
 //-----------------------------------------------------------------------------
-common::IndexMap SparsityPattern::column_index_map() const
-{
-  if (_offsets.empty())
-    throw std::runtime_error("Sparsity pattern has not been finalised.");
-
-  std::array range = _index_maps[1]->local_range();
-  const std::int32_t local_size = range[1] - range[0];
-  return common::IndexMap(_comm.comm(), local_size, _col_ghosts,
-                          _col_ghost_owners);
-}
-//-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
 void SparsityPattern::finalize()
@@ -329,7 +317,7 @@ void SparsityPattern::finalize()
                           MPI_INT, comm);
 
     // Build recv displacements
-    std::vector<int> recv_disp = {0};
+    std::vector<int> recv_disp{0};
     std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                      std::back_inserter(recv_disp));
 
@@ -403,6 +391,11 @@ void SparsityPattern::finalize()
   // Column count increased due to received rows from other processes
   spdlog::info("Column ghost size increased from {} to {}",
                _index_maps[1]->ghosts().size(), _col_ghosts.size());
+
+  // Update to new column index map
+  _index_maps[1] = std::make_shared<common::IndexMap>(
+      _comm.comm(), _index_maps[1]->size_local(), _col_ghosts,
+      _col_ghost_owners);
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const

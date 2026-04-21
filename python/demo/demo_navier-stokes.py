@@ -8,18 +8,27 @@
 #       jupytext_version: 1.13.6
 # ---
 
-# # Divergence conforming discontinuous Galerkin method for the Navier--Stokes equations
+# # Divergence conforming discontinuous Galerkin method for the Navier--Stokes equations # noqa
 #
-# This demo ({download}`demo_navier-stokes.py`) illustrates how to
-# implement a divergence conforming discontinuous Galerkin method for
-# the Navier-Stokes equations in FEniCSx. The method conserves mass
-# exactly and uses upwinding. The formulation is based on a combination
-# of "A fully divergence-free finite element method for
-# magnetohydrodynamic equations" by Hiptmair et al., "A Note on
-# Discontinuous Galerkin Divergence-free Solutions of the Navier-Stokes
-# Equations" by Cockburn et al, and "On the Divergence Constraint in
-# Mixed Finite Element Methods for Incompressible Flows" by John et al.
-#
+# ```{admonition} Download sources
+# :class: download
+# * {download}`Python script <./demo_navier-stokes.py>`
+# * {download}`Jupyter notebook <./demo_navier-stokes.ipynb>`
+# ```
+# This demo illustrates how to:
+# - Implement a divergence conforming discontinuous Galerkin method
+#   for the Navier-Stokes equations.
+# - Tune MUMPS to support singular systems.
+# discontinuous Galerkin method for the Navier-Stokes equations.
+# The method conserves mass exactly and uses upwinding.
+# The formulation is based on a combination of [A fully divergence-free
+# finite element method for magnetohydrodynamic equations](
+# https://doi.org/10.1142/S0218202518500173) by Hiptmair et al.,
+# [A Note on Discontinuous Galerkin Divergence-free Solutions of the
+# Navier-Stokes Equations](https://doi.org/10.1007/s10915-006-9107-7)
+# by Cockburn et al, and [On the Divergence Constraint in Mixed Finite
+# Element Methods for Incompressible Flows](https://doi.org/10.1137/15M1047696)
+# by John et al.
 #
 # ## Governing equations
 #
@@ -29,7 +38,8 @@
 #
 # $$
 # \begin{align}
-# \partial_t u - \nu \Delta u + (u \cdot \nabla)u + \nabla p &= f \text{ in } \Omega_t, \\
+# \partial_t u - \nu \Delta u + (u \cdot \nabla)u + \nabla p &= f
+# \text{ in } \Omega_t, \\
 # \nabla \cdot u &= 0 \text{ in } \Omega_t,
 # \end{align}
 # $$
@@ -124,7 +134,8 @@
 #     \end{cases}
 # $$
 #
-# where $\Gamma^\psi = \left\{x \in \Gamma; \; \psi(x) \cdot n(x) < 0\right\}$.
+# where $\Gamma^\psi = \left\{x \in \Gamma; \; \psi(x) \cdot n(x) < 0
+# \right\}$.
 #
 # The semi-discrete version problem (in dimensionless form) is: find
 # $(u_h, p_h) \in V_h^{u_D} \times Q_h$ such that
@@ -132,8 +143,8 @@
 # $$
 # \begin{align}
 #   \int_\Omega \partial_t u_h \cdot v + a_h(u_h, v_h) + c_h(u_h; u_h, v_h)
-#   + b_h(v_h, p_h) &= \int_\Omega f \cdot v_h + L_{a_h}(v_h) + L_{c_h}(v_h)
-#   \quad \forall v_h \in V_h^0, \\
+#   + b_h(v_h, p_h) &= \int_\Omega f \cdot v_h + L_{a_h}(v_h) +
+#   L_{c_h}(v_h) \quad \forall v_h \in V_h^0, \\
 #   b_h(u_h, q_h) &= 0 \quad \forall q_h \in Q_h,
 # \end{align}
 # $$
@@ -151,8 +162,10 @@
 #   c_h(w; u, v) &= - \sumK \int_K u \cdot \nabla \cdot (v \otimes w)
 #   + \sumK \int_{\partial_K} w \cdot n \hat{u}^{w} \cdot v, \\
 #   L_{a_h}(v_h) &= Re^{-1} \left(- \int_{\partial \Omega} u_D \otimes n :
-#   \nabla_h v_h + \frac{\alpha}{h} u_D \otimes n : v_h \otimes n \right), \\
-#   L_{c_h}(v_h) &= - \int_{\partial \Omega} u_D \cdot n \hat{u}_D \cdot v_h, \\
+#   \nabla_h v_h + \frac{\alpha}{h} u_D \otimes n : v_h \otimes n \right),
+#   \\
+#   L_{c_h}(v_h) &= - \int_{\partial \Omega} u_D \cdot n \hat{u}_D \cdot
+#   v_h, \\
 #   b_h(v, q) &= - \int_K \nabla \cdot v q.
 # \end{align}
 # $$
@@ -162,43 +175,22 @@
 #
 # We begin by importing the required modules and functions
 
-import importlib.util
-
-if importlib.util.find_spec("petsc4py") is not None:
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
-
-from mpi4py import MPI
 
 # +
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 
 import ufl
-from dolfinx import default_real_type, fem, io, mesh
-from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
+from dolfinx import default_real_type, fem, has_adios2, io, mesh
+from dolfinx.fem.petsc import LinearProblem
 
-try:
-    from petsc4py import PETSc
-
-    import dolfinx
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
-
-
-if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
+if np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
     exit(0)
+
+
 # -
 
 # We also define some helper functions that will be used later
@@ -206,14 +198,14 @@ if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
 
 # +
 def norm_L2(comm, v):
-    """Compute the L2(Ω)-norm of v"""
+    """Compute the L2(Ω)-norm of v."""
     return np.sqrt(
         comm.allreduce(fem.assemble_scalar(fem.form(ufl.inner(v, v) * ufl.dx)), op=MPI.SUM)
     )
 
 
 def domain_average(msh, v):
-    """Compute the average of a function over the domain"""
+    """Compute the average of a function over the domain."""
     vol = msh.comm.allreduce(
         fem.assemble_scalar(fem.form(fem.Constant(msh, default_real_type(1.0)) * ufl.dx)),
         op=MPI.SUM,
@@ -222,7 +214,7 @@ def domain_average(msh, v):
 
 
 def u_e_expr(x):
-    """Expression for the exact velocity solution to Kovasznay flow"""
+    """Expression for the exact velocity solution to Kovasznay flow."""
     return np.vstack(
         (
             1
@@ -237,12 +229,12 @@ def u_e_expr(x):
 
 
 def p_e_expr(x):
-    """Expression for the exact pressure solution to Kovasznay flow"""
+    """Expression for the exact pressure solution to Kovasznay flow."""
     return (1 / 2) * (1 - np.exp(2 * (Re / 2 - np.sqrt(Re**2 / 4 + 4 * np.pi**2)) * x[0]))
 
 
 def f_expr(x):
-    """Expression for the applied force"""
+    """Expression for the applied force."""
     return np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0])))
 
 
@@ -286,13 +278,14 @@ n = ufl.FacetNormal(msh)
 
 
 def jump(phi, n):
+    """Compute the jump of a vector valued function phi across facets."""
     return ufl.outer(phi("+"), n("+")) + ufl.outer(phi("-"), n("-"))
 
 
 # -
 
-# We solve the Stokes problem for the initial condition, omitting the
-# convective term:
+# We set up the variational formulation of the Stokes problem for
+# the initial condition, omitting the convective term:
 
 # +
 a = (1.0 / Re) * (
@@ -307,7 +300,6 @@ a = (1.0 / Re) * (
 a -= ufl.inner(p, ufl.div(v)) * ufl.dx
 a -= ufl.inner(ufl.div(u), q) * ufl.dx
 
-a_blocked = fem.form(ufl.extract_blocks(a))
 
 f = fem.Function(W)
 u_D = fem.Function(V)
@@ -317,36 +309,44 @@ L = ufl.inner(f, v) * ufl.dx + (1 / Re) * (
     + (alpha / h) * ufl.inner(ufl.outer(u_D, n), ufl.outer(v, n)) * ufl.ds
 )
 L += ufl.inner(fem.Constant(msh, default_real_type(0.0)), q) * ufl.dx
-L_blocked = fem.form(ufl.extract_blocks(L))
+# -
 
-# Boundary conditions
+# We create the {py:class}`Dirichlet boundary condition
+# <dolfinx.fem.DirichletBC>`
+
+msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
 boundary_facets = mesh.exterior_facet_indices(msh.topology)
 boundary_vel_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, boundary_facets)
 bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 bcs = [bc_u]
 
-# Assemble Stokes problem
-A = assemble_matrix_block(a_blocked, bcs=bcs)
-A.assemble()
-b = assemble_vector_block(L_blocked, a_blocked, bcs=bcs)
+# and solve the problem for the initial condition
 
-# Create and configure solver
-ksp = PETSc.KSP().create(msh.comm)  # type: ignore
-ksp.setOperators(A)
-ksp.setType("preonly")
-ksp.getPC().setType("lu")
-ksp.getPC().setFactorSolverType("mumps")
-opts = PETSc.Options()  # type: ignore
-opts["mat_mumps_icntl_14"] = 80  # Increase MUMPS working memory
-opts["mat_mumps_icntl_24"] = 1  # Option to support solving a singular matrix (pressure nullspace)
-opts["mat_mumps_icntl_25"] = 0  # Option to support solving a singular matrix (pressure nullspace)
-opts["ksp_error_if_not_converged"] = 1
-ksp.setFromOptions()
+# +
+solver_options = {
+    "ksp_type": "preonly",
+    "pc_type": "lu",
+    "pc_factor_mat_solver_type": "mumps",
+    "mat_mumps_icntl_14": 80,  # Increase MUMPS working memory
+    "mat_mumps_icntl_24": 1,  # Support solving a singular matrix (pressure nullspace)
+    "mat_mumps_icntl_25": 0,  # Support solving a singular matrix (pressure nullspace)
+    "ksp_error_if_not_converged": 1,
+}
+u_h = fem.Function(V)
+p_h = fem.Function(Q)
+p_h.name = "p"
+stokes_problem = LinearProblem(
+    ufl.extract_blocks(a),
+    ufl.extract_blocks(L),
+    u=[u_h, p_h],
+    bcs=bcs,
+    kind="mpi",
+    petsc_options_prefix="demo_stokes__stokes_problem_",
+    petsc_options=solver_options,
+)
 
-# Solve Stokes for initial condition
-x = A.createVecRight()
 try:
-    ksp.solve(b, x)
+    stokes_problem.solve()
 except PETSc.Error as e:  # type: ignore
     if e.ierr == 92:
         print("The required PETSc solver/preconditioner is not available. Exiting.")
@@ -354,40 +354,34 @@ except PETSc.Error as e:  # type: ignore
         exit(0)
     else:
         raise e
+# -
 
-# Split the solution
-u_h = fem.Function(V)
-p_h = fem.Function(Q)
-p_h.name = "p"
-offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
-u_h.x.array[:offset] = x.array_r[:offset]
-u_h.x.scatter_forward()
-p_h.x.array[: (len(x.array_r) - offset)] = x.array_r[offset:]
-p_h.x.scatter_forward()
 # Subtract the average of the pressure since it is only determined up to
 # a constant
+
 p_h.x.array[:] -= domain_average(msh, p_h)
 
-u_vis = fem.Function(W)
-u_vis.name = "u"
-u_vis.interpolate(u_h)
-
 # Write initial condition to file
+
 t = 0.0
-try:
+if has_adios2:
+    u_vis = fem.Function(W, name="u_init")
+    u_vis.interpolate(u_h)
     u_file = io.VTXWriter(msh.comm, "u.bp", u_vis)
     p_file = io.VTXWriter(msh.comm, "p.bp", p_h)
     u_file.write(t)
     p_file.write(t)
-except AttributeError:
+else:
     print("File output requires ADIOS2.")
 
 # Create function to store solution and previous time step
-u_n = fem.Function(V)
-u_n.x.array[:] = u_h.x.array
-# -
 
-# Now we add the time stepping and convective terms
+u_n = fem.Function(V, name="u_prev")
+u_n.x.array[:] = u_h.x.array
+
+# Now we add the time stepping and convective terms and
+# set up the {py:class}`LinearProblem
+# <dolfinx.fem.petsc.LinearProblem>`
 
 # +
 lmbda = ufl.conditional(ufl.gt(ufl.dot(u_n, n), 0), 1, 0)
@@ -399,43 +393,37 @@ a += (
     + ufl.inner((ufl.dot(u_n, n))("-") * u_uw, v("-")) * ufl.dS
     + ufl.inner(ufl.dot(u_n, n) * lmbda * u, v) * ufl.ds
 )
-a_blocked = fem.form(ufl.extract_blocks(a))
 
 L += (
     ufl.inner(u_n / delta_t, v) * ufl.dx
     - ufl.inner(ufl.dot(u_n, n) * (1 - lmbda) * u_D, v) * ufl.ds
 )
-L_blocked = fem.form(ufl.extract_blocks(L))
 
-# Time stepping loop
+navier_stokes_problem = LinearProblem(
+    ufl.extract_blocks(a),
+    ufl.extract_blocks(L),
+    u=[u_h, p_h],
+    bcs=bcs,
+    kind="mpi",
+    petsc_options_prefix="demo_stokes__navier_stokes_problem_",
+    petsc_options=solver_options,
+)
+# -
+
+# We perform the time-stepping as a for-loop
+
+# +
 for n in range(num_time_steps):
     t += delta_t.value
 
-    A.zeroEntries()
-    fem.petsc.assemble_matrix_block(A, a_blocked, bcs=bcs)  # type: ignore
-    A.assemble()
-
-    with b.localForm() as b_loc:
-        b_loc.set(0)
-    fem.petsc.assemble_vector_block(b, L_blocked, a_blocked, bcs=bcs)  # type: ignore
-
-    # Compute solution
-    ksp.solve(b, x)
-
-    u_h.x.array[:offset] = x.array_r[:offset]
-    u_h.x.scatter_forward()
-    p_h.x.array[: (len(x.array_r) - offset)] = x.array_r[offset:]
-    p_h.x.scatter_forward()
+    navier_stokes_problem.solve()
     p_h.x.array[:] -= domain_average(msh, p_h)
 
-    u_vis.interpolate(u_h)
-
     # Write to file
-    try:
+    if has_adios2:
+        u_vis.interpolate(u_h)
         u_file.write(t)
         p_file.write(t)
-    except NameError:
-        pass
 
     # Update u_n
     u_n.x.array[:] = u_h.x.array
@@ -463,14 +451,16 @@ p_e.interpolate(p_e_expr)
 # Compute errors
 e_u = norm_L2(msh.comm, u_h - u_e)
 e_div_u = norm_L2(msh.comm, ufl.div(u_h))
+# -
 
-# This scheme conserves mass exactly, so check this
+# This scheme conserves mass exactly, so we check this
+
+# +
 assert np.isclose(e_div_u, 0.0, atol=float(1.0e5 * np.finfo(default_real_type).eps))
 p_e_avg = domain_average(msh, p_e)
 e_p = norm_L2(msh.comm, p_h - (p_e - p_e_avg))
 
-if msh.comm.rank == 0:
-    print(f"e_u = {e_u}")
-    print(f"e_div_u = {e_div_u}")
-    print(f"e_p = {e_p}")
+PETSc.Sys.Print(f"e_u = {e_u:.5e}")
+PETSc.Sys.Print(f"e_div_u = {e_div_u:.5e}")
+PETSc.Sys.Print(f"e_p = {e_p:.5e}")
 # -

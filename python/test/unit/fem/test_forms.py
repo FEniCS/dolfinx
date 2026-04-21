@@ -1,4 +1,4 @@
-"""Tests for DOLFINx integration of various form operations"""
+"""Tests for DOLFINx integration of various form operations."""
 
 # Copyright (C) 2021 Garth N. Wells
 #
@@ -14,7 +14,7 @@ import pytest
 import basix
 import basix.ufl
 import dolfinx
-from dolfinx.fem import extract_function_spaces, form, functionspace
+from dolfinx.fem import IntegralType, extract_function_spaces, form, functionspace
 from dolfinx.fem.forms import form_cpp_class
 from dolfinx.mesh import create_unit_square
 from ufl import Measure, SpatialCoordinate, TestFunction, TrialFunction, dx, inner
@@ -22,7 +22,8 @@ from ufl import Measure, SpatialCoordinate, TestFunction, TrialFunction, dx, inn
 
 def test_extract_forms():
     """Test extraction on unique function spaces for rows and columns of
-    a block system"""
+    a block system.
+    """
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31)
     V0 = functionspace(mesh, ("Lagrange", 1))
     V1 = functionspace(mesh, ("Lagrange", 2))
@@ -93,8 +94,8 @@ def test_incorrect_element():
         [space._cpp_object, space._cpp_object],
         [],
         [],
-        {dolfinx.cpp.fem.IntegralType.cell: []},
-        {},
+        {IntegralType.cell: []},
+        [],
         mesh._cpp_object,
     )
     dolfinx.fem.Form(f, ufcx_form, code)
@@ -105,8 +106,8 @@ def test_incorrect_element():
             [incorrect_space._cpp_object, incorrect_space._cpp_object],
             [],
             [],
-            {dolfinx.cpp.fem.IntegralType.cell: []},
-            {},
+            {IntegralType.cell: []},
+            [],
             mesh._cpp_object,
         )
         dolfinx.fem.Form(f, ufcx_form, code)

@@ -58,7 +58,7 @@ except ImportError:
 @pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron, CellType.prism])
 def test_partition_box_mesh(gpart, Nx, cell_type):
-    part = create_cell_partitioner(gpart)
+    part = create_cell_partitioner(gpart, GhostMode.none, 2)
     mesh = create_box(
         MPI.COMM_WORLD,
         [np.array([0, 0, 0]), np.array([1, 1, 1])],
@@ -115,7 +115,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
         dest = np.floor(midpoints[:, 0] % mpi_comm.size).astype(np.int32)
         return dolfinx.cpp.graph.AdjacencyList_int32(dest)
 
-    new_mesh = create_mesh(mpi_comm, topo, x, domain, partitioner)
+    new_mesh = create_mesh(mpi_comm, topo, domain, x, partitioner)
 
     tdim = new_mesh.topology.dim
     assert (
@@ -166,7 +166,7 @@ def test_asymmetric_partitioner():
         offsets = np.array(offsets, dtype=np.int32)
         return dolfinx.cpp.graph.AdjacencyList_int32(dests, offsets)
 
-    new_mesh = create_mesh(mpi_comm, topo, x, domain, partitioner)
+    new_mesh = create_mesh(mpi_comm, topo, domain, x, partitioner)
     if r == 0 and n > 1:
         assert new_mesh.topology.index_map(2).num_ghosts == 20
     else:
@@ -228,7 +228,7 @@ def test_mixed_topology_partitioning():
         cells_np = [np.zeros(0) for c in cells]
 
     nparts = 4
-    part = create_cell_partitioner(GhostMode.none)
+    part = create_cell_partitioner(GhostMode.none, 2)
     p = part(
         MPI.COMM_WORLD,
         nparts,

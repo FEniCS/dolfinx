@@ -75,10 +75,10 @@ void refinement::update_logical_edgefunction(
                           MPI_INT, comm);
 
     // Build displacements
-    std::vector<int> send_disp = {0};
+    std::vector<int> send_disp{0};
     std::partial_sum(send_sizes.begin(), send_sizes.end(),
                      std::back_inserter(send_disp));
-    std::vector<int> recv_disp = {0};
+    std::vector<int> recv_disp{0};
     std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                      std::back_inserter(recv_disp));
 

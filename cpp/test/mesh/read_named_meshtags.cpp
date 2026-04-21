@@ -29,7 +29,7 @@ void test_read_named_meshtags()
   constexpr std::int32_t material_value = 2;
 
   // Create mesh
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none, 2);
   auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {3, 3},
                              mesh::CellType::triangle, part));
@@ -39,17 +39,17 @@ void test_read_named_meshtags()
   std::iota(std::begin(indices), std::end(indices), 0);
 
   std::vector<std::int32_t> domain_values(n_cells, domain_value);
-  std::vector<std::int32_t> material_values(n_cells, material_value);
-
   mesh::MeshTags<std::int32_t> mt_domains(mesh->topology(), 2, indices,
                                           domain_values);
   mt_domains.name = "domain";
 
+  std::vector<std::int32_t> material_values(n_cells, material_value);
   mesh::MeshTags<std::int32_t> mt_materials(mesh->topology(), 2, indices,
                                             material_values);
   mt_materials.name = "material";
 
-  io::XDMFFile file(mesh->comm(), mesh_file_name, "w", io::XDMFFile::Encoding::HDF5);
+  io::XDMFFile file(mesh->comm(), mesh_file_name, "w",
+                    io::XDMFFile::Encoding::HDF5);
   file.write_mesh(*mesh);
   file.write_meshtags(mt_domains, mesh->geometry(),
                       "/Xdmf/Domain/mesh/Geometry");
@@ -58,7 +58,7 @@ void test_read_named_meshtags()
   file.close();
 
   io::XDMFFile mesh_file(MPI_COMM_WORLD, mesh_file_name, "r",
-                        io::XDMFFile::Encoding::HDF5);
+                         io::XDMFFile::Encoding::HDF5);
   mesh = std::make_shared<mesh::Mesh<double>>(mesh_file.read_mesh(
       fem::CoordinateElement<double>(mesh::CellType::triangle, 1),
       mesh::GhostMode::none, "mesh"));

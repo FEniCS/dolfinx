@@ -142,7 +142,8 @@ def run_vector_test(mesh, V, degree, cg_solver, maxit=500, rtol=None):
 
 def run_dg_test(mesh, V, degree, cg_solver):
     """Manufactured Poisson problem, solving u = x[component]**n, where
-    n is the degree of the Lagrange function space."""
+    n is the degree of the Lagrange function space.
+    """
     u, v = TrialFunction(V), TestFunction(V)
 
     # Exact solution
@@ -261,7 +262,7 @@ def test_petsc_curl_curl_eigenvalue(family, order):
     a, b = form(a), form(b)
     A = petsc_assemble_matrix(a, bcs=bcs)
     A.assemble()
-    B = petsc_assemble_matrix(b, bcs=bcs, diagonal=0.01)
+    B = petsc_assemble_matrix(b, bcs=bcs, diag=0.01)
     B.assemble()
 
     eps = SLEPc.EPS().create()

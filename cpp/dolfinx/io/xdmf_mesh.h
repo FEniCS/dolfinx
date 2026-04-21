@@ -7,11 +7,8 @@
 #pragma once
 
 #include "xdmf_utils.h"
-#include <algorithm>
 #include <array>
-#include <concepts>
 #include <cstdint>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <hdf5.h>
 #include <mpi.h>
@@ -63,14 +60,15 @@ void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 /// whose topology will be saved. This is used to save subsets of Mesh.
 template <std::floating_point U>
 void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                       std::string path_prefix, const mesh::Topology& topology,
+                       const std::string& path_prefix,
+                       const mesh::Topology& topology,
                        const mesh::Geometry<U>& geometry, int cell_dim,
                        std::span<const std::int32_t> entities);
 
 /// Add Geometry xml node
 template <std::floating_point U>
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                       std::string path_prefix,
+                       const std::string& path_prefix,
                        const mesh::Geometry<U>& geometry);
 
 /// @brief Read geometry (coordinate) data.

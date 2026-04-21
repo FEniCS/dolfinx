@@ -73,6 +73,11 @@ public:
   /// @brief Variant of the element
   basix::element::lagrange_variant variant() const;
 
+  /// @brief Element hash.
+  ///
+  /// This is the Basix element hash.
+  std::uint64_t hash() const;
+
   /// @brief Shape of array to fill when calling `tabulate`.
   /// @param[in] nd The order of derivatives, up to and including, to
   /// compute. Use 0 for the basis functions only
@@ -160,8 +165,7 @@ public:
     {
       assert(w.size() >= 2 * J.extent(0) * J.extent(1));
       using X = typename U::element_type;
-      using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-          X, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+      using mdspan2_t = md::mdspan<X, md::dextents<std::size_t, 2>>;
       mdspan2_t B(w.data(), J.extent(1), J.extent(0));
       mdspan2_t BA(w.data() + J.extent(0) * J.extent(1), B.extent(0),
                    J.extent(1));
@@ -208,7 +212,7 @@ public:
   /// 0, 0)`.
   /// @param[in] x Physical coordinates (shape=(num_points, gdim)).
   template <typename U, typename V, typename W>
-  static void pull_back_affine(U&& X, const V& K, const std::array<T, 3>& x0,
+  static void pull_back_affine(U&& X, const V& K, std::array<T, 3> x0,
                                const W& x)
   {
     assert(X.extent(0) == x.extent(0));
@@ -227,8 +231,7 @@ public:
 
   /// mdspan typedef
   template <typename X>
-  using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      X, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using mdspan2_t = md::mdspan<X, md::dextents<std::size_t, 2>>;
 
   /// @brief Compute reference coordinates `X` for physical coordinates
   /// `x` for a non-affine map.
@@ -242,8 +245,8 @@ public:
   /// @note If convergence is not achieved within `maxit`, the function
   /// throws a runtime error.
   void pull_back_nonaffine(mdspan2_t<T> X, mdspan2_t<const T> x,
-                           mdspan2_t<const T> cell_geometry,
-                           double tol = 1.0e-6, int maxit = 15) const;
+                           mdspan2_t<const T> cell_geometry, double tol,
+                           int maxit) const;
 
   /// @brief Permute a list of DOF numbers on a cell.
   void permute(std::span<std::int32_t> dofs, std::uint32_t cell_perm) const;
