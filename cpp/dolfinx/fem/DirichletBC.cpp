@@ -44,7 +44,7 @@ find_local_entity_index(const mesh::Topology& topology,
   // Initialise entity-cell connectivity
   const int tdim = topology.dim();
   std::vector<mesh::CellType> cell_types = topology.cell_types();
-  std::size_t num_cell_types = cell_types.size();
+  const int num_cell_types = cell_types.size();
 
   // Get connectivities for each cell type.
   std::int32_t num_entities_local = 0;
