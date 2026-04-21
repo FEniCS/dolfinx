@@ -289,32 +289,37 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       }
     }
   }
-  // else if (bs == 1)
-  // {
-  //   // Space is not blocked, unroll dofs
-  //   for (auto [cell, entity_local_index] : entity_indices)
-  //   {
-  //     // Get cell dofmap and loop over facet dofs and 'unpack' blocked
-  //     // dofs
-  //     std::span<const std::int32_t> cell_dofs = dofmap.cell_dofs(cell);
-  //     for (int index : entity_dofs[entity_local_index])
-  //     {
-  //       for (int k = 0; k < element_bs; ++k)
-  //       {
-  //         const std::div_t pos = std::div(element_bs * index + k, bs);
-  //         dofs.push_back(bs * cell_dofs[pos.quot] + pos.rem);
-  //       }
-  //     }
-  //   }
-  // }
-  // else
-  //   throw std::runtime_error("Block size combination not supported");
+  else if (bs == 1)
+  {
+    // Space is not blocked, unroll dofs
+    for (auto [cell, entity_local_index, cell_type_idx] : entity_indices)
+    {
+      // Get cell dofmap and loop over facet dofs and 'unpack' blocked
+      // dofs
+      std::span<const std::int32_t> cell_dofs
+          = dofmaps[cell_type_idx]->cell_dofs(cell);
 
-  // // TODO: is removing duplicates at this point worth the effort?
-  // // Remove duplicates
-  // std::ranges::sort(dofs);
-  // auto [unique_end, range_end] = std::ranges::unique(dofs);
-  // dofs.erase(unique_end, range_end);
+      const std::vector<int>& closure_dofs
+          = dofmaps[cell_type_idx]->element_dof_layout().entity_closure_dofs(
+              dim, entity_local_index);
+      for (int index : closure_dofs)
+      {
+        for (int k = 0; k < element_bs; ++k)
+        {
+          const std::div_t pos = std::div(element_bs * index + k, bs);
+          dofs.push_back(bs * cell_dofs[pos.quot] + pos.rem);
+        }
+      }
+    }
+  }
+  else
+    throw std::runtime_error("Block size combination not supported");
+
+  // TODO: is removing duplicates at this point worth the effort?
+  // Remove duplicates
+  std::ranges::sort(dofs);
+  auto [unique_end, range_end] = std::ranges::unique(dofs);
+  dofs.erase(unique_end, range_end);
 
   if (remote)
   {

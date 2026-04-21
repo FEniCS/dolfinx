@@ -112,7 +112,8 @@ prism = coordinate_element(CellType.prism, 1)
 
 part = create_cell_partitioner(GhostMode.none, 2)  # type: ignore
 mesh = create_mesh(
-    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part, 2
+    MPI.COMM_WORLD, cells_np, [
+        hexahedron._cpp_object, prism._cpp_object], geomx, part, 2
 )
 # -
 
@@ -136,7 +137,8 @@ dofmaps = create_dofmaps(
 
 # Create C++ function space
 V_cpp = _cpp.fem.FunctionSpace_float64(
-    mesh, [e._cpp_object for e in dolfinx_elements], [dofmap._cpp_object for dofmap in dofmaps]
+    mesh, [e._cpp_object for e in dolfinx_elements], [
+        dofmap._cpp_object for dofmap in dofmaps]
 )
 
 
@@ -179,8 +181,9 @@ fdim = tdim - 1
 dofs = np.array([], dtype=np.int32)
 mesh.topology.create_connectivity(fdim, tdim)
 for facet_type_idx in range(2):
-  facets = locate_entities(mesh, fdim, marker, facet_type_idx)
-  dofs = np.hstack((dofs, locate_dofs_topological(V_cpp, fdim, facet_type_idx, facets)))
+    facets = locate_entities(mesh, fdim, marker, facet_type_idx)
+    dofs = np.hstack((dofs, locate_dofs_topological(
+        V_cpp, fdim, facet_type_idx, facets)))
 
 bc = dirichletbc(0.0, dofs, V_cpp)
 
@@ -217,7 +220,8 @@ xdmf = """<?xml version="1.0"?>
 
 """
 
-perm = [cell_perm_vtk(CellType.hexahedron, 8), cell_perm_vtk(CellType.prism, 6)]
+perm = [cell_perm_vtk(CellType.hexahedron, 8),
+        cell_perm_vtk(CellType.prism, 6)]
 topologies = ["Hexahedron", "Wedge"]
 
 for j in range(2):
