@@ -1157,13 +1157,11 @@ void declare_real_functions(nb::module_& m)
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
          bool remote)
       {
-        // FIXME
         std::vector<std::shared_ptr<const dolfinx::fem::DofMap>> dofmaps;
-        const int num_cell_types = V.mesh()->topology()->cell_types().size();
-        for (int i = 0; i < num_cell_types; ++i)
-        {
+        const std::size_t num_cell_types
+            = V.mesh()->topology()->cell_types().size();
+        for (std::size_t i = 0; i < num_cell_types; ++i)
           dofmaps.push_back(V.dofmaps(i));
-        }
 
         return dolfinx_wrappers::as_nbarray(
             dolfinx::fem::locate_dofs_topological(
