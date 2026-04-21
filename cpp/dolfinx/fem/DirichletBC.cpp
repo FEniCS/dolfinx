@@ -29,9 +29,11 @@ namespace
 /// @param[in] topology The mesh topology
 /// @param[in] entities The list of entities
 /// @param[in] dim The dimension of the entities
-/// @param[in] entity_type_index The index of the entity type
+/// @param[in] entity_type_index The index of the entity type in
+/// `topology.entity_types(dim)`
 /// @returns A list of `(cell_index, entity_index, cell_type_index)` tuples
-/// for each input entity.
+/// for each input entity. `cell_type_index` is the index of the cell type in
+/// `topology.cell_types()`.
 /// @note When an entity is connected to multiple cells, the first cell in the
 /// connectivity is used
 std::vector<std::tuple<std::int32_t, int, int>>
@@ -362,8 +364,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     // Get bc dof indices (local) in V spaces on this process that were
     // found by other processes, e.g. a vertex dof on this process that
     // has no connected facets on the boundary.
-    // TODO USE FRONT
-    auto map = dofmaps[0].get().index_map;
+    auto map = dofmaps.front().get().index_map;
     assert(map);
 
     // Create 'symmetric' neighbourhood communicator

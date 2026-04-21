@@ -41,8 +41,8 @@ namespace dolfinx::fem
 /// degrees-of-freedom will be located
 /// @param[in] entities Indices of mesh entities. All DOFs associated
 /// with the closure of these indices will be returned
-/// @param[in] entity_type_index The index of the entity type in the
-/// topology
+/// @param[in] entity_type_index The index of the entity type in
+/// `topology.entity_types(dim)`
 /// @param[in] remote True to return also "remotely located"
 /// degree-of-freedom indices. Remotely located degree-of-freedom
 /// indices are local/owned by the current process, but which the
