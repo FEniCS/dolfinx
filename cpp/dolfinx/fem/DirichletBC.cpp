@@ -236,15 +236,30 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 } // namespace
 
 //-----------------------------------------------------------------------------
+// std::vector<std::int32_t> fem::locate_dofs_topological(
+//     const mesh::Topology& topology, const DofMap& dofmap, int dim,
+//     std::span<const std::int32_t> entities, bool remote)
+// {
+//   std::vector<mesh::CellType> cell_types = topology.cell_types();
+//   const int num_cell_types = cell_types.size();
+
+//   if (num_cell_types > 1)
+//     throw std::runtime_error(
+//         "Multiple cell types in topology. Call locate_dofs_topological "
+//         "with dofmaps for each cell type.");
+
+// }
+
+//-----------------------------------------------------------------------------
 std::vector<std::int32_t> fem::locate_dofs_topological(
     const mesh::Topology& topology,
-    const std::vector<std::shared_ptr<const DofMap>>& dofmaps, int dim,
+    const std::vector<std::reference_wrapper<const DofMap>>& dofmaps, int dim,
     std::span<const std::int32_t> entities, int entity_type_index, bool remote)
 {
   std::vector<mesh::CellType> cell_types = topology.cell_types();
   const int num_cell_types = cell_types.size();
 
-  if (dofmaps.empty() || !dofmaps.front())
+  if (dofmaps.empty())
     throw std::runtime_error("Dofmaps empty.");
 
   // Get cell index and local entity index
@@ -260,7 +275,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     {
       max_closure_dofs = std::max(
           max_closure_dofs,
-          dofmaps[i]->element_dof_layout().entity_closure_dofs(dim, j).size());
+          dofmaps[i].get().element_dof_layout().entity_closure_dofs(dim, j).size());
     }
   }
 
@@ -269,8 +284,8 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
 
   // V is a sub space we need to take the block size of the dofmap and
   // the index map into account as they can differ
-  const int bs = dofmaps.front()->bs();
-  const int element_bs = dofmaps.front()->element_dof_layout().block_size();
+  const int bs = dofmaps.front().get().bs();
+  const int element_bs = dofmaps.front().get().element_dof_layout().block_size();
 
   // Iterate over marked facets
   if (element_bs == bs)
@@ -279,10 +294,10 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     for (auto [cell, entity_local_index, cell_type_idx] : entity_indices)
     {
       // Get cell dofmap and loop over entity dofs
-      auto cell_dofs = dofmaps[cell_type_idx]->cell_dofs(cell);
+      auto cell_dofs = dofmaps[cell_type_idx].get().cell_dofs(cell);
 
       const std::vector<int>& closure_dofs
-          = dofmaps[cell_type_idx]->element_dof_layout().entity_closure_dofs(
+          = dofmaps[cell_type_idx].get().element_dof_layout().entity_closure_dofs(
               dim, entity_local_index);
       for (int index : closure_dofs)
       {
@@ -298,10 +313,10 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       // Get cell dofmap and loop over facet dofs and 'unpack' blocked
       // dofs
       std::span<const std::int32_t> cell_dofs
-          = dofmaps[cell_type_idx]->cell_dofs(cell);
+          = dofmaps[cell_type_idx].get().cell_dofs(cell);
 
       const std::vector<int>& closure_dofs
-          = dofmaps[cell_type_idx]->element_dof_layout().entity_closure_dofs(
+          = dofmaps[cell_type_idx].get().element_dof_layout().entity_closure_dofs(
               dim, entity_local_index);
       for (int index : closure_dofs)
       {
@@ -328,7 +343,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     // found by other processes, e.g. a vertex dof on this process that
     // has no connected facets on the boundary.
     // TODO USE FRONT
-    auto map = dofmaps[0]->index_map;
+    auto map = dofmaps[0].get().index_map;
     assert(map);
 
     // Create 'symmetric' neighbourhood communicator
@@ -346,7 +361,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     }
 
     std::vector<std::int32_t> dofs_remote;
-    if (int map_bs = dofmaps[0]->index_map_bs(); map_bs == bs)
+    if (int map_bs = dofmaps[0].get().index_map_bs(); map_bs == bs)
       dofs_remote = get_remote_dofs(comm, *map, 1, dofs);
     else
       dofs_remote = get_remote_dofs(comm, *map, map_bs, dofs);

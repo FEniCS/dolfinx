@@ -183,7 +183,7 @@ mesh.topology.create_connectivity(fdim, tdim)
 for facet_type_idx in range(2):
     facets = locate_entities(mesh, fdim, marker, facet_type_idx)
     dofs = np.hstack((dofs, locate_dofs_topological(
-        V_cpp, fdim, facet_type_idx, facets)))
+        V_cpp, fdim, facets, facet_type_idx)))
 
 bc = dirichletbc(0.0, dofs, V_cpp)
 
