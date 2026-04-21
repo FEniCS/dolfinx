@@ -44,7 +44,7 @@ find_local_entity_index(const mesh::Topology& topology,
   // Initialise entity-cell connectivity
   const int tdim = topology.dim();
   std::vector<mesh::CellType> cell_types = topology.cell_types();
-  const int num_cell_types = cell_types.size();
+  std::size_t num_cell_types = cell_types.size();
 
   // Get connectivities for each cell type.
   std::int32_t num_entities_local = 0;
@@ -111,7 +111,7 @@ find_local_entity_index(const mesh::Topology& topology,
 
         // Get local index of facet with respect to the cell
         auto entities_d = c_to_e->links(cell);
-        auto it = std::find(entities_d.begin(), entities_d.end(), e);
+        auto it = std::ranges::find(entities_d.begin(), entities_d.end(), e);
         assert(it != entities_d.end());
         std::size_t entity_local_index = std::distance(entities_d.begin(), it);
         entity_indices.emplace_back(cell, entity_local_index, i);
@@ -252,13 +252,21 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     const mesh::Topology& topology, const DofMap& dofmap, int dim,
     std::span<const std::int32_t> entities, bool remote)
 {
-  const std::vector<mesh::CellType>& entity_types = topology.entity_types(dim);
-  if (entity_types.size() > 1)
+  const std::size_t num_cell_types = topology.cell_types().size();
+  if (num_cell_types != 1)
   {
-    throw std::runtime_error(
-        "Multiple " + std::to_string(dim)
-        + "-dimensional entity types in topology. Call locate_dofs_topological "
-          "specifying which entity type.");
+    throw std::runtime_error("Multiple cell types in topology. Call "
+                             "locate_dofs_topological with dofmaps"
+                             " for each cell type");
+  }
+
+  const std::size_t num_entity_types = topology.entity_types(dim).size();
+  if (num_entity_types != 1)
+  {
+    throw std::runtime_error("Multiple " + std::to_string(dim)
+                             + "-dimensional entity types in topology. Call "
+                               "locate_dofs_topological "
+                               "specifying which entity type.");
   }
 
   return locate_dofs_topological(topology, {std::cref(dofmap)}, dim, entities,
@@ -405,13 +413,21 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps, const int dim,
     std::span<const std::int32_t> entities, bool remote)
 {
-  std::vector<mesh::CellType> cell_types = topology.cell_types();
-  const std::size_t num_cell_types = cell_types.size();
-
+  const std::size_t num_cell_types = topology.cell_types().size();
   if (num_cell_types != 1)
+  {
     throw std::runtime_error(
-        "locate_dofs_topological with multiple dofmaps only supports "
+        "locate_dofs_topological with multiple dofmaps currently only supports "
         "topologies with one cell type.");
+  }
+
+  const std::size_t num_entity_types = topology.entity_types(dim).size();
+  if (num_entity_types != 1)
+  {
+    throw std::runtime_error(
+        "locate_dofs_topological with multiple dofmaps currently only supports "
+        "topologies with one entity type per dimension.");
+  }
 
   // Get dofmaps
   const DofMap& dofmap0 = dofmaps.at(0).get();

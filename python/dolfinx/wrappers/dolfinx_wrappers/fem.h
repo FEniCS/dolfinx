@@ -1181,8 +1181,8 @@ void declare_real_functions(nb::module_& m)
                 std::span(entities.data(), entities.size()), entity_type_index,
                 remote));
       },
-      nb::arg("V"), nb::arg("dim"), nb::arg("entity_type_index"),
-      nb::arg("entities"), nb::arg("remote") = true);
+      nb::arg("V"), nb::arg("dim"), nb::arg("entities"),
+      nb::arg("entity_type_index"), nb::arg("remote") = true);
   m.def(
       "locate_dofs_geometrical",
       [](const std::vector<
