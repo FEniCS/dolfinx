@@ -236,20 +236,20 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 } // namespace
 
 //-----------------------------------------------------------------------------
-// std::vector<std::int32_t> fem::locate_dofs_topological(
-//     const mesh::Topology& topology, const DofMap& dofmap, int dim,
-//     std::span<const std::int32_t> entities, bool remote)
-// {
-//   std::vector<mesh::CellType> cell_types = topology.cell_types();
-//   const int num_cell_types = cell_types.size();
+std::vector<std::int32_t> fem::locate_dofs_topological(
+    const mesh::Topology& topology, const DofMap& dofmap, int dim,
+    std::span<const std::int32_t> entities, bool remote)
+{
+  if (topology.cell_types().size() > 1)
+  {
+    throw std::runtime_error(
+        "Multiple cell types in topology. Call locate_dofs_topological "
+        "with dofmaps for each cell type.");
+  }
 
-//   if (num_cell_types > 1)
-//     throw std::runtime_error(
-//         "Multiple cell types in topology. Call locate_dofs_topological "
-//         "with dofmaps for each cell type.");
-
-// }
-
+  return locate_dofs_topological(topology, {std::cref(dofmap)}, dim, entities,
+                                 0, remote);
+}
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> fem::locate_dofs_topological(
     const mesh::Topology& topology,
@@ -273,9 +273,12 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     const int num_cell_entities = mesh::cell_num_entities(cell_types[i], dim);
     for (int j = 0; j < num_cell_entities; ++j)
     {
-      max_closure_dofs = std::max(
-          max_closure_dofs,
-          dofmaps[i].get().element_dof_layout().entity_closure_dofs(dim, j).size());
+      max_closure_dofs
+          = std::max(max_closure_dofs, dofmaps[i]
+                                           .get()
+                                           .element_dof_layout()
+                                           .entity_closure_dofs(dim, j)
+                                           .size());
     }
   }
 
@@ -285,7 +288,8 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
   // V is a sub space we need to take the block size of the dofmap and
   // the index map into account as they can differ
   const int bs = dofmaps.front().get().bs();
-  const int element_bs = dofmaps.front().get().element_dof_layout().block_size();
+  const int element_bs
+      = dofmaps.front().get().element_dof_layout().block_size();
 
   // Iterate over marked facets
   if (element_bs == bs)
@@ -297,8 +301,10 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
       auto cell_dofs = dofmaps[cell_type_idx].get().cell_dofs(cell);
 
       const std::vector<int>& closure_dofs
-          = dofmaps[cell_type_idx].get().element_dof_layout().entity_closure_dofs(
-              dim, entity_local_index);
+          = dofmaps[cell_type_idx]
+                .get()
+                .element_dof_layout()
+                .entity_closure_dofs(dim, entity_local_index);
       for (int index : closure_dofs)
       {
         dofs.push_back(cell_dofs[index]);
@@ -316,8 +322,10 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
           = dofmaps[cell_type_idx].get().cell_dofs(cell);
 
       const std::vector<int>& closure_dofs
-          = dofmaps[cell_type_idx].get().element_dof_layout().entity_closure_dofs(
-              dim, entity_local_index);
+          = dofmaps[cell_type_idx]
+                .get()
+                .element_dof_layout()
+                .entity_closure_dofs(dim, entity_local_index);
       for (int index : closure_dofs)
       {
         for (int k = 0; k < element_bs; ++k)

@@ -61,35 +61,35 @@ std::vector<std::int32_t> locate_dofs_topological(
     std::span<const std::int32_t> entities, int entity_type_index,
     bool remote = true);
 
-// /// @brief Find degrees-of-freedom which belong to the provided mesh
-// /// entities (topological).
-// ///
-// /// @note Degrees-of-freedom for discontinuous elements are associated
-// /// with the cell even if they may appear to be associated with a
-// /// facet/edge/vertex.
-// ///
-// /// @param[in] topology Mesh topology.
-// /// @param[in] dofmap Dofmap that associates DOFs with cells.
-// /// @param[in] dim Topological dimension of mesh entities on which
-// /// degrees-of-freedom will be located
-// /// @param[in] entities Indices of mesh entities. All DOFs associated
-// /// with the closure of these indices will be returned
-// /// @param[in] remote True to return also "remotely located"
-// /// degree-of-freedom indices. Remotely located degree-of-freedom
-// /// indices are local/owned by the current process, but which the
-// /// current process cannot identify because it does not recognize mesh
-// /// entity as a marked. For example, a boundary condition dof at a
-// /// vertex where this process does not have the associated boundary
-// /// facet. This commonly occurs with partitioned meshes.
-// /// @return Array of DOF index blocks (local to the MPI rank) in the
-// /// space V. The array uses the block size of the dofmap associated
-// /// with V.
-// /// @pre The topology cell->entity and entity->cell connectivity must
-// /// have been computed before calling this function.
-// std::vector<std::int32_t>
-// locate_dofs_topological(const mesh::Topology& topology, const DofMap& dofmap,
-//                         int dim, std::span<const std::int32_t> entities,
-//                         bool remote = true);
+/// @brief Find degrees-of-freedom which belong to the provided mesh
+/// entities (topological).
+///
+/// @note Degrees-of-freedom for discontinuous elements are associated
+/// with the cell even if they may appear to be associated with a
+/// facet/edge/vertex.
+///
+/// @param[in] topology Mesh topology.
+/// @param[in] dofmap Dofmap that associates DOFs with cells.
+/// @param[in] dim Topological dimension of mesh entities on which
+/// degrees-of-freedom will be located
+/// @param[in] entities Indices of mesh entities. All DOFs associated
+/// with the closure of these indices will be returned
+/// @param[in] remote True to return also "remotely located"
+/// degree-of-freedom indices. Remotely located degree-of-freedom
+/// indices are local/owned by the current process, but which the
+/// current process cannot identify because it does not recognize mesh
+/// entity as a marked. For example, a boundary condition dof at a
+/// vertex where this process does not have the associated boundary
+/// facet. This commonly occurs with partitioned meshes.
+/// @return Array of DOF index blocks (local to the MPI rank) in the
+/// space V. The array uses the block size of the dofmap associated
+/// with V.
+/// @pre The topology cell->entity and entity->cell connectivity must
+/// have been computed before calling this function.
+std::vector<std::int32_t>
+locate_dofs_topological(const mesh::Topology& topology, const DofMap& dofmap,
+                        int dim, std::span<const std::int32_t> entities,
+                        bool remote = true);
 
 /// @brief Find degrees-of-freedom which belong to the provided mesh
 /// entities (topological).
