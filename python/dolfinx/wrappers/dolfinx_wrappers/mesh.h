@@ -213,8 +213,9 @@ void declare_mesh(nb::module_& m, std::string type)
           "cmap", [](dolfinx::mesh::Geometry<T>& self) { return self.cmap(); },
           "The coordinate map")
       .def(
-          "cmap", [](dolfinx::mesh::Geometry<T>& self, int i)
-          { return self.cmap(i); }, "The ith coordinate map")
+          "cmap", [](dolfinx::mesh::Geometry<T>& self, std::optional<int> i)
+          { return self.cmap(i); }, "The ith coordinate map",
+        nb::arg("i").none())
       .def_prop_ro(
           "input_global_indices",
           [](const dolfinx::mesh::Geometry<T>& self)
