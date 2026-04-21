@@ -380,8 +380,8 @@ void lift_bc_impl(
     std::span<const T> x0, T alpha)
 {
   // Deduce runtime block sizes as fallback when compile-time sizes not given.
-  // The block size of the dofmap and indexmap is 
-  // the same on all sub-topologies.
+  // The block size of the dofmap and indexmap is the same on all
+  // sub-topologies.
   const int bs0 = BS0 > 0 ? BS0 : a.function_spaces()[0]->dofmaps(0)->bs();
   const int bs1 = BS1 > 0 ? BS1 : a.function_spaces()[1]->dofmaps(0)->bs();
 
