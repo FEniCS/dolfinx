@@ -55,7 +55,7 @@ namespace dolfinx::fem
 std::vector<std::int32_t> locate_dofs_topological(
     const mesh::Topology& topology,
     const std::vector<std::shared_ptr<const DofMap>>& dofmap, int dim,
-    int entity_type_index, std::span<const std::int32_t> entities,
+    std::span<const std::int32_t> entities, int entity_type_index,
     bool remote = true);
 
 /// @brief Find degrees-of-freedom which belong to the provided mesh

@@ -27,16 +27,17 @@ namespace
 /// (local to cell) for a list of entities.
 ///
 /// @param[in] topology The mesh topology
-/// @param[in] entity_type_index The index of the entity type
 /// @param[in] entities The list of entities
 /// @param[in] dim The dimension of the entities
+/// @param[in] entity_type_index The index of the entity type
 /// @returns A list of `(cell_index, entity_index, cell_type_index)` tuples
 /// for each input entity.
 /// @note When an entity is connected to multiple cells, the first cell in the
 /// connectivity is used
 std::vector<std::tuple<std::int32_t, int, int>>
-find_local_entity_index(const mesh::Topology& topology, int entity_type_index,
-                        std::span<const std::int32_t> entities, int dim)
+find_local_entity_index(const mesh::Topology& topology,
+                        std::span<const std::int32_t> entities, int dim,
+                        int entity_type_index)
 {
   // Initialise entity-cell connectivity
   const int tdim = topology.dim();
@@ -238,7 +239,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 std::vector<std::int32_t> fem::locate_dofs_topological(
     const mesh::Topology& topology,
     const std::vector<std::shared_ptr<const DofMap>>& dofmaps, int dim,
-    int entity_type_index, std::span<const std::int32_t> entities, bool remote)
+    std::span<const std::int32_t> entities, int entity_type_index, bool remote)
 {
   std::vector<mesh::CellType> cell_types = topology.cell_types();
   const int num_cell_types = cell_types.size();
@@ -248,7 +249,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
 
   // Get cell index and local entity index
   std::vector<std::tuple<std::int32_t, int, int>> entity_indices
-      = find_local_entity_index(topology, entity_type_index, entities, dim);
+      = find_local_entity_index(topology, entities, dim, entity_type_index);
 
   // Find max number of closure dofs to reserve memory
   std::size_t max_closure_dofs = 0;
@@ -399,7 +400,7 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
 
   // Get cell index and local entity index
   std::vector<std::tuple<std::int32_t, int, int>> entity_indices
-      = find_local_entity_index(topology, 0, entities, dim);
+      = find_local_entity_index(topology, entities, dim, 0);
 
   // Iterate over marked facets
   const int element_bs = dofmap0.element_dof_layout().block_size();
