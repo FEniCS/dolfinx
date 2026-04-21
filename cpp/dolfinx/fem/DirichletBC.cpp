@@ -250,15 +250,15 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     const mesh::Topology& topology, const DofMap& dofmap, int dim,
     std::span<const std::int32_t> entities, bool remote)
 {
-  if (topology.cell_types().size() > 1)
+  const std::vector<mesh::CellType>& entity_types = topology.entity_types(dim);
+  if (entity_types.size() > 1)
   {
     throw std::runtime_error(
-        "Multiple cell types in topology. Call locate_dofs_topological "
-        "with dofmaps for each cell type.");
+        "Multiple " + std::to_string(dim)
+        + "-dimensional entity types in topology. Call locate_dofs_topological "
+          "specifying which entity type.");
   }
 
-  // FIXME: This isn't actually correct. A mesh of prisms will have one cell
-  // type but multiple facet types.
   return locate_dofs_topological(topology, {std::cref(dofmap)}, dim, entities,
                                  0, remote);
 }
