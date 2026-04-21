@@ -1,6 +1,6 @@
 """Tests for DOLFINx integration of various form operations."""
 
-# Copyright (C) 2021 Garth N. Wells
+# Copyright (C) 2021-2026 Garth N. Wells and Jose Fernandez
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
