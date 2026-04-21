@@ -48,7 +48,7 @@ build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
 /// @param[in] topology The mesh topology.
 /// @param[in] entity_dofs The dofs for each mesh entity.
 /// @param[in] entity_closure_dofs The closure dofs for each mesh entity.
-/// @param[in] value_shape The shape of the function space values.
+/// @param[in] value_size The number of components for the real element.
 /// @return The dofmap for the real element.
 fem::DofMap build_real_element_dofmap(
     const mesh::Topology& topology,
