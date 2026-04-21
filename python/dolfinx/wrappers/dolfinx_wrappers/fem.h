@@ -1140,7 +1140,7 @@ void declare_real_functions(nb::module_& m)
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
-            = dolfinx::fem::locate_dofs_topological_sub(
+            = dolfinx::fem::locate_dofs_topological(
                 *V[0].get()->mesh()->topology_mutable(),
                 {*V[0].get()->dofmap(), *V[1].get()->dofmap()}, dim,
                 std::span(entities.data(), entities.size()), remote);

@@ -84,7 +84,7 @@ std::vector<std::int32_t> locate_dofs_topological(
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 /// @pre The topology cell->entity and entity->cell connectivity must
 /// have been computed before calling this function.
-std::array<std::vector<std::int32_t>, 2> locate_dofs_topological_sub(
+std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     const mesh::Topology& topology,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps, int dim,
     std::span<const std::int32_t> entities, bool remote = true);

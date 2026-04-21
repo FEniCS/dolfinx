@@ -363,7 +363,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
   return dofs;
 }
 //-----------------------------------------------------------------------------
-std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological_sub(
+std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     const mesh::Topology& topology,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps, const int dim,
     std::span<const std::int32_t> entities, bool remote)
