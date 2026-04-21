@@ -22,6 +22,7 @@
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/nls/NewtonSolver.h>
+#include <iostream>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
@@ -302,7 +303,11 @@ void petsc_nls_module(nb::module_& m)
           "__init__",
           [](dolfinx::nls::petsc::NewtonSolver* ns,
              const dolfinx_wrappers::MPICommWrapper comm)
-          { new (ns) dolfinx::nls::petsc::NewtonSolver(comm.get()); },
+          {
+            new (ns) dolfinx::nls::petsc::NewtonSolver(comm.get());
+            std::cerr << "NewtonSolver is deprecated, and will be removed in a "
+                         "future release.\n";
+          },
           nb::arg("comm"))
       .def_prop_ro("krylov_solver",
                    [](const dolfinx::nls::petsc::NewtonSolver& self)
