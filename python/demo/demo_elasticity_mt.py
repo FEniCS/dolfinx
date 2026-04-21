@@ -137,7 +137,7 @@ def marker2(x):
 
 bcdofs2 = locate_dofs_geometrical(V_cpp, marker2)
 u_bc2 = dolfinx.fem.Function(W)
-u_bc2.x.array[:] = 0.00
+u_bc2.x.array[:] = 0.0
 bc2 = dirichletbc(value=u_bc2, dofs=bcdofs2)
 
 # -
@@ -157,8 +157,8 @@ hex_domain, prism_domain = py_mesh.ufl_domain().meshes
 dx_hex = ufl.Measure("dx", domain=hex_domain)
 dx_prism = ufl.Measure("dx", domain=prism_domain)
 
-lambda_ = 1.0e8
-mu = 0.4
+lambda_ = 1.0e4
+mu = 1.0e4
 
 
 def epsilon(u):
