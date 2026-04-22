@@ -379,9 +379,11 @@ void lift_bc_impl(
     std::span<const T> bc_values1, std::span<const std::int8_t> bc_markers1,
     std::span<const T> x0, T alpha)
 {
-  // Deduce runtime block sizes as fallback when compile-time sizes not given
-  const int bs0 = BS0 > 0 ? BS0 : a.function_spaces()[0]->dofmap()->bs();
-  const int bs1 = BS1 > 0 ? BS1 : a.function_spaces()[1]->dofmap()->bs();
+  // Deduce runtime block sizes as fallback when compile-time sizes not given.
+  // The block size of the dofmap and indexmap is the same on all
+  // sub-topologies.
+  const int bs0 = BS0 > 0 ? BS0 : a.function_spaces()[0]->dofmaps(0)->bs();
+  const int bs1 = BS1 > 0 ? BS1 : a.function_spaces()[1]->dofmaps(0)->bs();
 
   // Use default [=] capture for bs0, bs1 which may be compile-time constants
   auto lifting_fn
@@ -448,8 +450,8 @@ void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
   // Get dofmap for columns and rows of a
   assert(a.function_spaces().at(0));
   assert(a.function_spaces().at(1));
-  const int bs0 = a.function_spaces()[0]->dofmap()->bs();
-  const int bs1 = a.function_spaces()[1]->dofmap()->bs();
+  const int bs0 = a.function_spaces()[0]->dofmaps(0)->bs();
+  const int bs1 = a.function_spaces()[1]->dofmaps(0)->bs();
 
   spdlog::debug("lifting: bs0={}, bs1={}", bs0, bs1);
 
@@ -523,9 +525,15 @@ void apply_lifting(
     {
       assert(a[j]->get().function_spaces().at(0));
       auto V1 = a[j]->get().function_spaces()[1];
+
+      std::span<const T> _x0;
+      if (!x0.empty())
+        _x0 = x0[j];
+
       assert(V1);
-      auto map1 = V1->dofmap()->index_map;
-      const int bs1 = V1->dofmap()->index_map_bs();
+      const auto& dofmap = V1->dofmaps(0);
+      auto map1 = dofmap->index_map;
+      const int bs1 = dofmap->index_map_bs();
       assert(map1);
       const int crange = bs1 * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
@@ -535,10 +543,6 @@ void apply_lifting(
         bc.get().mark_dofs(bc_markers1);
         bc.get().set(bc_values1, std::nullopt, 1);
       }
-
-      std::span<const T> _x0;
-      if (!x0.empty())
-        _x0 = x0[j];
 
       lift_bc(b, a[j]->get(), constants[j], coeffs[j],
               std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
