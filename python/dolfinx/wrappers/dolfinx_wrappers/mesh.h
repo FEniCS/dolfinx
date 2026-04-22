@@ -140,8 +140,7 @@ void declare_meshtags(nb::module_& m, const std::string& type)
          const dolfinx::mesh::EntityMap& cell_map)
       {
         return dolfinx::mesh::transfer_meshtags_to_submesh<T>(
-            tags, submesh_topology,
-            vertex_map, cell_map);
+            tags, submesh_topology, vertex_map, cell_map);
       },
       nanobind::arg("tags"), nanobind::arg("submesh_topology"),
       nanobind::arg("vertex_map"), nanobind::arg("cell_map"));
