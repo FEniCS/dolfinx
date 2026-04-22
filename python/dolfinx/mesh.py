@@ -63,6 +63,7 @@ __all__ = [
     "create_geometry",
     "create_interval",
     "create_mesh",
+    "create_point_mesh",
     "create_rectangle",
     "create_submesh",
     "create_unit_cube",
@@ -1269,3 +1270,44 @@ def create_geometry(
     if (dtype := np.dtype(element.dtype)) != x.dtype:
         raise ValueError(f"Mismatch in x dtype ({x.dtype}) and coordinate element ({dtype})")
     return Geometry(ftype(index_map, dofmap, element._cpp_object, x, input_global_indices))
+
+
+def create_point_mesh(comm: _MPI.Intracomm, points: npt.NDArray[np.float32 | np.float64]) -> Mesh:
+    """Create a mesh consisting of points only.
+
+    Note:
+        No nodes are shared between processes.
+
+    Args:
+        comm: MPI communicator to create the mesh on.
+        points: Points local to the process in the mesh.
+    """
+    # Create mesh topology
+    cells = np.arange(points.shape[0], dtype=np.int32).reshape(-1, 1)
+    num_nodes_local = cells.shape[0]
+    imap = _cpp.common.IndexMap(comm, num_nodes_local)
+    local_range = imap.local_range[0]
+    igi = np.arange(num_nodes_local, dtype=np.int64) + local_range
+    topology = _cpp.mesh.Topology(
+        cell_type=_cpp.mesh.CellType.point,
+        vertex_map=imap,
+        cell_map=imap,
+        cells=_cpp.graph.AdjacencyList_int32(cells),
+        original_index=igi,
+    )
+
+    # Create mesh geometry
+    e = basix.ufl.element("Lagrange", "point", 0, shape=(points.shape[1],), dtype=points.dtype)
+    c_el = _coordinate_element(e.basix_element)
+    geometry = create_geometry(imap, cells, c_el, points, igi)
+
+    # Create DOLFINx mesh
+    if points.dtype == np.float64:
+        cpp_mesh = _cpp.mesh.Mesh_float64(comm, topology, geometry._cpp_object)
+    elif points.dtype == np.float32:
+        cpp_mesh = _cpp.mesh.Mesh_float32(comm, topology, geometry._cpp_object)
+    else:
+        raise RuntimeError(f"Unsupported dtype for mesh {points.dtype}")
+
+    # Wrap as Python object
+    return Mesh(cpp_mesh, domain=ufl.Mesh(e))
