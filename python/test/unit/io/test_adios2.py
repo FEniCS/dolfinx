@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 from mpi4py import MPI
 
@@ -275,8 +276,6 @@ class TestVTX:
         # Check that q and v were written as point and cell data respectively
         with adios2.FileReader(str(filename), mesh.comm) as bpFile:
             vtk_data = bpFile.read_attribute_string("vtk.xml")
-
-            from xml.etree import ElementTree as ET
 
             vtk_data = ET.fromstring(vtk_data).find("UnstructuredGrid/Piece")
             assert vtk_data is not None
