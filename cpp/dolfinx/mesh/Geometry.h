@@ -110,7 +110,8 @@ public:
   /// @brief DofMap for the geometry.
   /// @param i Index for the dofmap associated with the ith cell type.
   /// @return A 2D array with shape `(num_cells, dofs_per_cell)`.
-  md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> dofmap(std::optional<int> i=std::nullopt) const
+  md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>
+  dofmap(std::optional<int> i = std::nullopt) const
   {
     if (i.has_value())
     {

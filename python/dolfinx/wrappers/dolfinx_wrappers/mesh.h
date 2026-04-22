@@ -185,8 +185,7 @@ void declare_mesh(nb::module_& m, std::string type)
             return nb::ndarray<const std::int32_t, nb::numpy>(
                 dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
           },
-          nb::rv_policy::reference_internal,
-          "Get the geometry dofmap.")
+          nb::rv_policy::reference_internal, "Get the geometry dofmap.")
       .def(
           "dofmap",
           [](dolfinx::mesh::Geometry<T>& self, int i)
@@ -211,8 +210,8 @@ void declare_mesh(nb::module_& m, std::string type)
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
       .def(
-          "cmap", [](dolfinx::mesh::Geometry<T>& self)
-          { return self.cmap(); }, "The coordinate map")
+          "cmap", [](dolfinx::mesh::Geometry<T>& self) { return self.cmap(); },
+          "The coordinate map")
       .def(
           "cmap", [](dolfinx::mesh::Geometry<T>& self, std::optional<int> i)
           { return self.cmap(i); }, "The ith coordinate map",
