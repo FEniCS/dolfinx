@@ -36,8 +36,6 @@ concept MDSpan = requires(T x, std::size_t idx) {
   { x.extent(1) } -> std::integral;
 };
 
-
-
 /// @brief Compute the evaluation points in the physical space at which
 /// an expression should be computed to interpolate it in a finite
 /// element space.
@@ -135,7 +133,8 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 /// calling `interpolation_coords`.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
-                 std::array<std::size_t, 2> fshape, mesh::CellRange auto&& cells);
+                 std::array<std::size_t, 2> fshape,
+                 mesh::CellRange auto&& cells);
 
 namespace impl
 {
@@ -365,7 +364,8 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 /// by the function.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
-                          const Function<T, U>& u0, mesh::CellRange auto&& cells0)
+                          const Function<T, U>& u0,
+                          mesh::CellRange auto&& cells0)
 {
   auto V0 = u0.function_space();
   assert(V0);
@@ -465,7 +465,8 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
 /// @pre Function%s `u1` and `u0` must share the same mesh. This is not
 /// checked by the function.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate_nonmatching_maps(Function<T, U>& u1, mesh::CellRange auto&& cells1,
+void interpolate_nonmatching_maps(Function<T, U>& u1,
+                                  mesh::CellRange auto&& cells1,
                                   const Function<T, U>& u0,
                                   mesh::CellRange auto&& cells0)
 {
@@ -817,7 +818,8 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
 /// @param [out] coeffs Output Function coefficients.
 template <dolfinx::scalar T, std::floating_point U>
 void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
-                                const DofMap& dofmap, mesh::CellRange auto&& cells,
+                                const DofMap& dofmap,
+                                mesh::CellRange auto&& cells,
                                 std::span<const std::uint32_t> cell_info,
                                 std::span<const T> f,
                                 std::array<std::size_t, 2> fshape,
@@ -1093,7 +1095,8 @@ geometry::PointOwnershipData<T> create_interpolation_data(
 
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
-                 std::array<std::size_t, 2> fshape, mesh::CellRange auto&& cells)
+                 std::array<std::size_t, 2> fshape,
+                 mesh::CellRange auto&& cells)
 {
   // TODO: Index for mixed-topology, zero for now
   const int index = 0;

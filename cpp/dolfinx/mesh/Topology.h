@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -18,7 +19,6 @@
 #include <tuple>
 #include <utility>
 #include <vector>
-#include<concepts>
 
 namespace dolfinx::common
 {
@@ -27,7 +27,7 @@ class IndexMap;
 
 namespace dolfinx::mesh
 {
-  /// Requirement on range of cell indices.
+/// Requirement on range of cell indices.
 template <typename R>
 concept CellRange = std::ranges::input_range<R> and std::ranges::sized_range<R>
                     and std::is_integral_v<
