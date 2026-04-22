@@ -110,7 +110,7 @@ public:
       // for each index in `entities`, we get the corresponding index in
       // `_topology` using `_sub_topology_to_topology`
       auto mapped
-          = entities
+          = std::forward<decltype(entities)>(entities)
             | std::views::transform([this](std::int32_t i)
                                     { return _sub_topology_to_topology[i]; });
       return std::vector<std::int32_t>(mapped.begin(), mapped.end());
@@ -135,7 +135,7 @@ public:
       // `_sub_topology`. If this is the case, mark those entities with
       // -1.
 
-      auto mapped = entities
+      auto mapped = std::forward<decltype(entities)>(entities)
                     | std::views::transform(
                         [&topology_to_sub_topology](std::int32_t i)
                         {

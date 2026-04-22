@@ -147,7 +147,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     // Get first cell and find position
     const std::int32_t c = v_to_c->links(v).front();
     auto cell_vertices = c_to_v->links(c);
-    auto it = std::find(cell_vertices.begin(), cell_vertices.end(), v);
+    auto it = std::ranges::find(cell_vertices, v);
     assert(it != cell_vertices.end());
     const std::size_t local_pos = std::distance(cell_vertices.begin(), it);
 
@@ -1567,43 +1567,45 @@ MeshTags<T> transfer_meshtags_to_submesh(
   // entity
   for (std::size_t i = 0; i < tagged_entities.size(); ++i)
   {
-    auto entity = tagged_entities[i];
-
     auto find_and_map_sub_entity
         = [tag_dim, submesh_tdim, &e_to_v, &parent_entity_to_sub_cell,
            &sub_to_parent_vertex, &sub_e_to_v, &sub_c_to_e,
-           &e_to_sub_cell](std::size_t i, std::int32_t entity)
+           &e_to_sub_cell](std::int32_t entity)
     {
       // Fast exit if the tag dimension is the same as the submesh dimension,
       // as we can directly map the parent entity to the submesh cell
       if (tag_dim == submesh_tdim)
         return parent_entity_to_sub_cell[entity];
 
+      // Given an entity in the parent meshtag, find all submesh-cells that are
+      // entities in parent mesh that contain this entity.
       auto entity_vertices = e_to_v->links(entity);
       auto parent_sub_cells = e_to_sub_cell->links(entity);
-      // Check if any of the sub cells are in the submesh, and if so check if
-      // any of the entities in the submesh connected to the same cell share all
-      // vertices with the parent entity.
-      for (auto parent_cell : parent_sub_cells)
+      auto submesh_cells
+          = parent_sub_cells
+            | std::views::transform([&parent_entity_to_sub_cell](auto c)
+                                    { return parent_entity_to_sub_cell[c]; })
+            | std::views::filter([](auto sub_cell) { return sub_cell != -1; });
+      for (auto sub_cell : submesh_cells)
       {
-        std::int32_t sub_cell = parent_entity_to_sub_cell[parent_cell];
-        if (sub_cell == -1)
-          continue;
-
         for (auto sub_entity : sub_c_to_e->links(sub_cell))
         {
-          auto sub_vertices = sub_e_to_v->links(sub_entity);
+          // Convert submesh entity vertices to parent vertices
+          auto parent_vertices
+              = sub_e_to_v->links(sub_entity)
+                | std::views::transform([&](auto v)
+                                        { return sub_to_parent_vertex[v]; });
 
-          // Replace the innermost loop with std::all_of
-          bool entity_matches
-              = std::all_of(sub_vertices.begin(), sub_vertices.end(),
-                            [&](auto sub_vertex)
-                            {
-                              auto parent_v = sub_to_parent_vertex[sub_vertex];
-                              return std::find(entity_vertices.begin(),
-                                               entity_vertices.end(), parent_v)
-                                     != entity_vertices.end();
-                            });
+          // Check if all parent vertices of the submesh entity are in the
+          // parent entity
+          bool entity_matches = std::ranges::all_of(
+              parent_vertices,
+              [&](auto p_v)
+              {
+                // With C++23 this can use std::ranges::contains
+                return std::ranges::find(entity_vertices, p_v)
+                       != std::ranges::end(entity_vertices);
+              });
 
           // If a match is found, apply values and exit the lambda immediately
           if (entity_matches)
@@ -1614,7 +1616,7 @@ MeshTags<T> transfer_meshtags_to_submesh(
     };
 
     // Execute the search for the current entity
-    std::int32_t sub_entity = find_and_map_sub_entity(i, entity);
+    std::int32_t sub_entity = find_and_map_sub_entity(tagged_entities[i]);
     if (sub_entity != -1)
       submesh_values[sub_entity] = tagged_values[i];
   }
