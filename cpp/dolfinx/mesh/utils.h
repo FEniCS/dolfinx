@@ -1450,23 +1450,18 @@ create_submesh(const Mesh<T>& mesh, int dim,
 
 /// @brief Transfer a meshtags object from a parent to a submesh.
 ///
-/// @note All entities not tagged in the parent mesh is tagged with the
-/// default value in the submesh, which is `std::numeric_limits<T>::max()`.
-///
 /// @param[in] tags The meshtags object on the parent mesh.
 /// @param[in] submesh_topology The topology of the submesh.
 /// @param[in] vertex_map Map from submesh vertex to parent mesh vertex.
 /// @param[in] cell_map Map from submesh cell to parent mesh entity of the same
 /// dimension as the meshtags.
-/// @return A meshtags object on the submesh, and the bi-directional entity map
-/// between the tagged entities in the submesh and the parent mesh.
+/// @return A meshtags object on the submesh.
 template <typename T>
-std::tuple<MeshTags<T>, EntityMap> transfer_meshtags_to_submesh(
+MeshTags<T> transfer_meshtags_to_submesh(
     const MeshTags<T>& tags,
     std::shared_ptr<const dolfinx::mesh::Topology> submesh_topology,
     const EntityMap& vertex_map, const EntityMap& cell_map)
 {
-
   int tag_dim = tags.dim();
   int submesh_tdim = submesh_topology->dim();
   auto topology = tags.topology();
@@ -1475,7 +1470,6 @@ std::tuple<MeshTags<T>, EntityMap> transfer_meshtags_to_submesh(
     throw std::runtime_error("Tag dimension must be less than or equal to "
                              "submesh dimension");
   }
-
   std::shared_ptr<const dolfinx::common::IndexMap> sub_cell_imap
       = submesh_topology->index_map(submesh_tdim);
   if (!sub_cell_imap)
@@ -1494,14 +1488,16 @@ std::tuple<MeshTags<T>, EntityMap> transfer_meshtags_to_submesh(
 
   // Create a full lookup for all cells on the parent mesh, as the tag can have
   // entities that are not in the submesh
-  auto e_to_v = topology->connectivity(tag_dim, 0);
-  if (!e_to_v)
+  auto parent_entity_imap = topology->index_map(submesh_tdim);
+  if (!parent_entity_imap)
   {
-    throw std::runtime_error("Missing connectivity between "
-                             + std::to_string(tag_dim) + " and 0");
+    throw std::runtime_error(std::format(
+        "Entities of dimension {} does not exist in parent mesh topology.",
+        submesh_tdim));
   }
-
-  std::vector<std::int32_t> parent_entity_to_sub_cell(e_to_v->num_nodes(), -1);
+  std::size_t num_parent_entities
+      = parent_entity_imap->size_local() + parent_entity_imap->num_ghosts();
+  std::vector<std::int32_t> parent_entity_to_sub_cell(num_parent_entities, -1);
   for (std::size_t i = 0; i < sub_cell_to_parent_entity.size(); ++i)
     parent_entity_to_sub_cell[sub_cell_to_parent_entity[i]] = i;
 
@@ -1519,23 +1515,50 @@ std::tuple<MeshTags<T>, EntityMap> transfer_meshtags_to_submesh(
   // Access various connectivity maps
   auto sub_e_to_v = submesh_topology->connectivity(tag_dim, 0);
   auto sub_c_to_e = submesh_topology->connectivity(submesh_tdim, tag_dim);
-  auto e_to_sub_cell = topology->connectivity(tag_dim, submesh_tdim);
-  if (!e_to_sub_cell)
+  auto sub_entity_imap = submesh_topology->index_map(tag_dim);
+  auto e_to_v = topology->connectivity(tag_dim, 0);
+  std::shared_ptr<const dolfinx::graph::AdjacencyList<std::int32_t>>
+      e_to_sub_cell = nullptr;
+  if (tag_dim != submesh_tdim)
   {
-    throw std::runtime_error("Missing connectivity between "
-                             + std::to_string(tag_dim) + " and "
-                             + std::to_string(submesh_tdim));
+    e_to_sub_cell = topology->connectivity(tag_dim, submesh_tdim);
+    if (!e_to_sub_cell)
+    {
+      throw std::runtime_error(
+          std::format("Missing connectivity between {} and {} in parent mesh",
+                      tag_dim, submesh_tdim));
+    }
   }
 
-  auto sub_entity_imap = submesh_topology->index_map(tag_dim);
+  if (!sub_e_to_v)
+  {
+    throw std::runtime_error(std::format(
+        "Missing connectivity between {} and {} in submesh", tag_dim, 0));
+  }
+  if (!sub_c_to_e)
+  {
+    throw std::runtime_error(
+        std::format("Missing connectivity between {} and {} in submesh",
+                    submesh_tdim, tag_dim));
+  }
+  if (!sub_entity_imap)
+  {
+    throw std::runtime_error(std::format(
+        "Entities of dimension {} does not exist in submesh topology.",
+        tag_dim));
+  }
+  if (!e_to_v)
+  {
+    throw std::runtime_error(
+        std::format("Missing connectivity between {} and 0", tag_dim));
+  }
 
   // Prepare sub entity to parent map
-  std::size_t num_sum_entities
+  std::size_t num_sub_entities
       = sub_entity_imap->size_local() + sub_entity_imap->num_ghosts();
-  std::vector<std::int32_t> sub_entity_to_parent(num_sum_entities, -1);
-  std::vector<T> submesh_values(num_sum_entities,
-                                std::numeric_limits<T>::max());
-  std::vector<std::int32_t> submesh_indices(num_sum_entities);
+  constexpr T max_val = std::numeric_limits<T>::max();
+  std::vector<T> submesh_values(num_sub_entities, max_val);
+  std::vector<std::int32_t> submesh_indices(num_sub_entities);
   std::iota(submesh_indices.begin(), submesh_indices.end(), 0);
 
   std::span<const std::int32_t> tagged_entities = tags.indices();
@@ -1545,52 +1568,76 @@ std::tuple<MeshTags<T>, EntityMap> transfer_meshtags_to_submesh(
   for (std::size_t i = 0; i < tagged_entities.size(); ++i)
   {
     auto entity = tagged_entities[i];
-    auto entity_vertices = e_to_v->links(entity);
-    bool entity_found = false;
-    for (auto parent_cell : e_to_sub_cell->links(entity))
+
+    auto find_and_map_sub_entity
+        = [tag_dim, submesh_tdim, &e_to_v, &parent_entity_to_sub_cell,
+           &sub_to_parent_vertex, &sub_e_to_v, &sub_c_to_e,
+           &e_to_sub_cell](std::size_t i, std::int32_t entity)
     {
-      if (entity_found)
-        break;
-      std::int32_t sub_cell = parent_entity_to_sub_cell[parent_cell];
-      if (sub_cell != -1)
+      // Fast exit if the tag dimension is the same as the submesh dimension,
+      // as we can directly map the parent entity to the submesh cell
+      if (tag_dim == submesh_tdim)
+        return parent_entity_to_sub_cell[entity];
+
+      auto entity_vertices = e_to_v->links(entity);
+      auto parent_sub_cells = e_to_sub_cell->links(entity);
+      // Check if any of the sub cells are in the submesh, and if so check if
+      // any of the entities in the submesh connected to the same cell share all
+      // vertices with the parent entity.
+      for (auto parent_cell : parent_sub_cells)
       {
-        // For a cell in the sub mesh find all attached entities, and
-        // define them by their vertices in the sub mesh
+        std::int32_t sub_cell = parent_entity_to_sub_cell[parent_cell];
+        if (sub_cell == -1)
+          continue;
+
         for (auto sub_entity : sub_c_to_e->links(sub_cell))
         {
-          if (entity_found)
-            break;
           auto sub_vertices = sub_e_to_v->links(sub_entity);
-          bool entity_matches = true;
-          for (auto sub_vertex : sub_vertices)
-          {
-            if (std::find(entity_vertices.begin(), entity_vertices.end(),
-                          sub_to_parent_vertex[sub_vertex])
-                == entity_vertices.end())
-            {
-              entity_matches = false;
-              break;
-            }
-          }
+
+          // Replace the innermost loop with std::all_of
+          bool entity_matches
+              = std::all_of(sub_vertices.begin(), sub_vertices.end(),
+                            [&](auto sub_vertex)
+                            {
+                              auto parent_v = sub_to_parent_vertex[sub_vertex];
+                              return std::find(entity_vertices.begin(),
+                                               entity_vertices.end(), parent_v)
+                                     != entity_vertices.end();
+                            });
+
+          // If a match is found, apply values and exit the lambda immediately
           if (entity_matches)
-          {
-            // Found entity in submesh with the same vertices as in the parent
-            // mesh
-            submesh_values[sub_entity] = tagged_values[i];
-            entity_found = true;
-            sub_entity_to_parent[sub_entity] = entity;
-          }
+            return sub_entity;
         }
       }
-    }
+      return -1;
+    };
+
+    // Execute the search for the current entity
+    std::int32_t sub_entity = find_and_map_sub_entity(i, entity);
+    if (sub_entity != -1)
+      submesh_values[sub_entity] = tagged_values[i];
   }
 
-  MeshTags<T> new_meshtag(submesh_topology, tag_dim, submesh_indices,
-                          submesh_values);
+  // Filter out the entities that were never mapped (values still equal max)
+  std::vector<std::int32_t> filtered_indices;
+  std::vector<T> filtered_values;
+  filtered_indices.reserve(num_sub_entities);
+  filtered_values.reserve(num_sub_entities);
+  for (std::size_t i = 0; i < submesh_values.size(); ++i)
+  {
+    if (submesh_values[i] != max_val)
+    {
+      filtered_indices.push_back(submesh_indices[i]);
+      filtered_values.push_back(submesh_values[i]);
+    }
+  }
+  filtered_indices.shrink_to_fit();
+  filtered_values.shrink_to_fit();
+  MeshTags<T> new_meshtag(submesh_topology, tag_dim, filtered_indices,
+                          filtered_values);
   new_meshtag.name = tags.name;
-  EntityMap sub_entity_map(tags.topology(), submesh_topology, tag_dim,
-                           submesh_indices);
-  return std::make_tuple(new_meshtag, sub_entity_map);
+  return new_meshtag;
 }
 
 } // namespace dolfinx::mesh

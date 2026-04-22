@@ -78,7 +78,7 @@ __all__ = [
     "to_string",
     "to_type",
     "transfer_meshtag",
-    "transfer_meshtags_to_submesh"
+    "transfer_meshtags_to_submesh",
     "uniform_refine",
 ]
 
@@ -1276,23 +1276,17 @@ def transfer_meshtags_to_submesh(
     submesh: Mesh,
     vertex_to_parent: EntityMap,
     cell_to_parent: EntityMap,
-) -> tuple[MeshTags, EntityMap]:
-    """
-    Transfer a ``entity_tag`` from a parent mesh to a ``submesh``.
-
-    Note:
-        All entities not tagged in the parent mesh will be tagged with the numerical
-        maximum of the data type of ``entity_tag`` in the submesh.
+) -> MeshTags:
+    """Transfer a ``entity_tag`` from a parent mesh to a ``submesh``.
 
     Args:
         entity_tag: Tag to transfer
         submesh: Submesh to transfer tag to
-        vertex_to_parent: Mapping from submesh vertices to parent mesh vertices
+        vertex_to_parent: Mapping from submesh vertices to parent
+            mesh vertices
         cell_to_parent: Mapping from submesh cells to parent entities
     Returns:
-        A tuple (submesh_tag, sub_to_parent_entity_map) where: ``submesh_tag`` is the tag on the
-        submesh and ``sub_to_parent_entity_map`` is a mapping from submesh entities in the tag to
-        the corresponding entities in the parent.
+        The transferred meshtags object on the submesh.
     """
     dim = entity_tag.dim
     sub_tdim = submesh.topology.dim
@@ -1306,7 +1300,7 @@ def transfer_meshtags_to_submesh(
     submesh.topology.create_connectivity(sub_tdim, entity_tag.dim)
     entity_tag.topology.create_connectivity(dim, 0)
     entity_tag.topology.create_connectivity(dim, sub_tdim)
-    dtype = entity_tag.values.dtype 
+    dtype = entity_tag.values.dtype
     if dtype == np.int32:
         ftype = _cpp.mesh.transfer_meshtags_to_submesh_int32
     elif dtype == np.int64:
@@ -1314,8 +1308,13 @@ def transfer_meshtags_to_submesh(
     elif dtype == np.float64:
         ftype = _cpp.mesh.transfer_meshtags_to_submesh_float64
     else:
-        raise NotImplementedError(f"MeshTags with dtype {dtype} not supported for transfer to submesh.")
-    cpp_tag, sub_to_parent_entity_map = ftype(
-        entity_tag._cpp_object, submesh.topology._cpp_object, vertex_to_parent._cpp_object, cell_to_parent._cpp_object
+        raise NotImplementedError(
+            f"MeshTags with dtype {dtype} not supported for transfer to submesh."
+        )
+    cpp_tag = ftype(
+        entity_tag._cpp_object,
+        submesh.topology._cpp_object,
+        vertex_to_parent._cpp_object,
+        cell_to_parent._cpp_object,
     )
-    return MeshTags(cpp_tag), EntityMap(sub_to_parent_entity_map)
+    return MeshTags(cpp_tag)
