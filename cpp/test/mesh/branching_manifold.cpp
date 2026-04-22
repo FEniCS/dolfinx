@@ -48,7 +48,7 @@ TEST_CASE("dual_graph_branching")
   {
     // default
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
-        = mesh::build_local_dual_graph(celltypes, {cells});
+        = mesh::build_local_dual_graph(celltypes, {cells}, 2);
 
     CHECK(dual_graph.num_nodes() == 4);
 
@@ -81,7 +81,7 @@ TEST_CASE("dual_graph_branching")
 
   {
     // max_facet_to_cell_links = 3
-    // Note: additioanlly facet (2) is now considered unmatched
+    // Note: additionally facet (2) is now considered unmatched
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
         = mesh::build_local_dual_graph(celltypes, {cells}, 3);
 
@@ -222,18 +222,18 @@ TEST_CASE("dual_graph_self_dual")
 //
 // its local dual graphs
 //
-//          [2]
+//          [1]
 //         /
 //        /
-//      [0]     ⟷  [1] --- [3]
+//      [0]     ⟷  [0] --- [1]
 //
 //
 // its (global) dual G'
 //
-//          [2]
+//          [1]
 //         /   ＼
 //        /     ＼
-//      [0] --- [1] --- [3]
+//      [0] --- [2] --- [3]
 //
 TEST_CASE("dual_graph_branching_parallel")
 {
@@ -282,11 +282,29 @@ TEST_CASE("dual_graph_branching_parallel")
     }
   }
 
-  // To be implemented -> see https://github.com/FEniCS/dolfinx/issues/3733
-  //
-  // Throws, but only on one process so not testable.
-  //
-  // CHECK_THROWS_AS(mesh::build_dual_graph(
-  //     comm, celltypes, std::vector<std::span<const std::int64_t>>{cells}, 3),
-  //     std::runtime_error);
+  auto dual_graph = mesh::build_dual_graph(
+      comm, celltypes, std::vector<std::span<const std::int64_t>>{cells}, 3);
+
+  if (dolfinx::MPI::rank(comm) == 0)
+  {
+    CHECK(dual_graph.num_nodes() == 2);
+
+    CHECK(dual_graph.num_links(0) == 2);
+    CHECK_THAT(dual_graph.links(0),
+               Catch::Matchers::RangeEquals(std::array{1, 2}));
+    CHECK(dual_graph.num_links(1) == 2);
+    CHECK_THAT(dual_graph.links(1),
+               Catch::Matchers::RangeEquals(std::array{0, 2}));
+  }
+  else
+  {
+    CHECK(dual_graph.num_nodes() == 2);
+
+    CHECK(dual_graph.num_links(0) == 3);
+    CHECK_THAT(dual_graph.links(0),
+               Catch::Matchers::RangeEquals(std::array{0, 1, 3}));
+    CHECK(dual_graph.num_links(1) == 1);
+    CHECK_THAT(dual_graph.links(1),
+               Catch::Matchers::RangeEquals(std::array{2}));
+  }
 }

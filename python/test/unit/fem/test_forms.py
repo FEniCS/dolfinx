@@ -1,4 +1,4 @@
-"""Tests for DOLFINx integration of various form operations"""
+"""Tests for DOLFINx integration of various form operations."""
 
 # Copyright (C) 2021 Garth N. Wells
 #
@@ -22,7 +22,8 @@ from ufl import Measure, SpatialCoordinate, TestFunction, TrialFunction, dx, inn
 
 def test_extract_forms():
     """Test extraction on unique function spaces for rows and columns of
-    a block system"""
+    a block system.
+    """
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31)
     V0 = functionspace(mesh, ("Lagrange", 1))
     V1 = functionspace(mesh, ("Lagrange", 2))

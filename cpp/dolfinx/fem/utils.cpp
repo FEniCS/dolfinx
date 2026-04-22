@@ -22,6 +22,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/topologycomputation.h>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <ufcx.h>
 
@@ -37,10 +38,18 @@ fem::DofMap fem::create_dofmap(
 {
   // Create required mesh entities
   const int D = topology.dim();
-  for (int d = 0; d < D; ++d)
+
+  const auto& entity_dofs = layout.entity_dofs_all();
+  for (int dim = 1; dim < topology.dim(); ++dim)
   {
-    if (layout.num_entity_dofs(d) > 0)
-      topology.create_entities(d);
+    // Accumulate count of all dofs on this dimension
+    int dim_sum
+        = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
+                          [](int c, auto v) { return c + v.size(); });
+
+    spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
+    if (dim_sum > 0)
+      topology.create_entities(dim);
   }
 
   auto [_index_map, bs, dofmaps]
@@ -78,10 +87,20 @@ std::vector<fem::DofMap> fem::create_dofmaps(
   assert(layouts.size() == topology.entity_types(D).size());
 
   // Create required mesh entities
-  for (std::int32_t d = 0; d < D; ++d)
+  for (std::size_t i = 0; i < layouts.size(); ++i)
   {
-    if (layouts.front().num_entity_dofs(d) > 0)
-      topology.create_entities(d);
+    const auto& entity_dofs = layouts[i].entity_dofs_all();
+    for (int dim = 1; dim < topology.dim(); ++dim)
+    {
+      // Accumulate count of all dofs on this dimension
+      int dim_sum
+          = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
+                            [](int c, auto v) { return c + v.size(); });
+
+      spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
+      if (dim_sum > 0)
+        topology.create_entities(dim);
+    }
   }
 
   auto [_index_map, bs, dofmaps]
@@ -137,7 +156,29 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
                                  std::span<const std::int32_t> entities)
 {
   const int tdim = topology.dim();
-  const int dim = integral_type == IntegralType::cell ? tdim : tdim - 1;
+
+  int dim = -1;
+  switch (integral_type)
+  {
+  case IntegralType::cell:
+    dim = tdim;
+    break;
+  case IntegralType::exterior_facet:
+    dim = tdim - 1;
+    break;
+  case IntegralType::interior_facet:
+    dim = tdim - 1;
+    break;
+  case IntegralType::vertex:
+    dim = 0;
+    break;
+  case IntegralType::ridge:
+    dim = tdim - 2;
+    break;
+  default:
+    throw std::runtime_error(
+        "Cannot compute integration domains. Integral type not supported.");
+  }
 
   {
     // Create span of the owned entities (leaves off any ghosts)
@@ -147,6 +188,30 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     entities = entities.first(std::distance(entities.begin(), it1));
   }
 
+  auto get_connectivities = [tdim, &topology](int entity_dim)
+      -> std::pair<std::shared_ptr<const graph::AdjacencyList<int>>,
+                   std::shared_ptr<const graph::AdjacencyList<int>>>
+  {
+    auto e_to_c = topology.connectivity(entity_dim, tdim);
+    if (!e_to_c)
+    {
+      throw std::runtime_error(
+          std::format("Topology entity-to-cell connectivity has not been "
+                      "computed for entity dim {}.",
+                      entity_dim));
+    }
+
+    auto e_to_f = topology.connectivity(tdim, entity_dim);
+    if (!e_to_f)
+    {
+      throw std::runtime_error(
+          std::format("Topology cell-to-entity connectivity has not been "
+                      "computed for entity dim {}.",
+                      entity_dim));
+    }
+    return {e_to_c, e_to_f};
+  };
+
   std::vector<std::int32_t> entity_data;
   switch (integral_type)
   {
@@ -155,76 +220,55 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     entity_data.insert(entity_data.begin(), entities.begin(), entities.end());
     break;
   }
-  default:
+  case IntegralType::interior_facet:
   {
-    auto f_to_c = topology.connectivity(tdim - 1, tdim);
-    if (!f_to_c)
-    {
-      throw std::runtime_error(
-          "Topology facet-to-cell connectivity has not been computed.");
-    }
+    auto [f_to_c, c_to_f] = get_connectivities(tdim - 1);
 
-    auto c_to_f = topology.connectivity(tdim, tdim - 1);
-    if (!c_to_f)
+    // Create indicator for interprocess facets
+    assert(topology.index_map(tdim - 1));
+    const std::vector<std::int32_t>& interprocess_facets
+        = topology.interprocess_facets();
+    std::vector<std::int8_t> interprocess_marker(
+        topology.index_map(tdim - 1)->size_local()
+            + topology.index_map(tdim - 1)->num_ghosts(),
+        0);
+    std::ranges::for_each(interprocess_facets, [&interprocess_marker](auto f)
+                          { interprocess_marker[f] = 1; });
+    for (auto f : entities)
     {
-      throw std::runtime_error(
-          "Topology cell-to-facet connectivity has not been computed.");
-    }
-
-    switch (integral_type)
-    {
-    case IntegralType::exterior_facet:
-    {
-      // Create list of tagged boundary facets
-      const std::vector bfacets = mesh::exterior_facet_indices(topology);
-      std::vector<std::int32_t> facets;
-      std::ranges::set_intersection(entities, bfacets,
-                                    std::back_inserter(facets));
-      for (auto f : facets)
+      if (f_to_c->num_links(f) == 2)
       {
-        // Get the facet as a pair of (cell, local facet)
-        auto facet
-            = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
-        entity_data.insert(entity_data.end(), facet.begin(), facet.end());
+        // Get the facet as a pair of (cell, local facet) pairs, one
+        // for each cell
+        auto facets
+            = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
+        entity_data.insert(entity_data.end(), facets.begin(), facets.end());
+      }
+      else if (interprocess_marker[f])
+      {
+        throw std::runtime_error(
+            "Cannot compute interior facet integral over interprocess facet. "
+            "Use \"shared facet\"  ghost mode when creating the mesh.");
       }
     }
     break;
-    case IntegralType::interior_facet:
-    {
-      // Create indicator for interprocess facets
-      assert(topology.index_map(tdim - 1));
-      const std::vector<std::int32_t>& interprocess_facets
-          = topology.interprocess_facets();
-      std::vector<std::int8_t> interprocess_marker(
-          topology.index_map(tdim - 1)->size_local()
-              + topology.index_map(tdim - 1)->num_ghosts(),
-          0);
-      std::ranges::for_each(interprocess_facets, [&interprocess_marker](auto f)
-                            { interprocess_marker[f] = 1; });
-      for (auto f : entities)
-      {
-        if (f_to_c->num_links(f) == 2)
-        {
-          // Get the facet as a pair of (cell, local facet) pairs, one
-          // for each cell
-          auto facets
-              = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-          entity_data.insert(entity_data.end(), facets.begin(), facets.end());
-        }
-        else if (interprocess_marker[f])
-        {
-          throw std::runtime_error(
-              "Cannot compute interior facet integral over interprocess facet. "
-              "Use \"shared facet\"  ghost mode when creating the mesh.");
-        }
-      }
-    }
-    break;
-    default:
-      throw std::runtime_error(
-          "Cannot compute integration domains. Integral type not supported.");
-    }
   }
+  case IntegralType::exterior_facet:
+  case IntegralType::vertex:
+  case IntegralType::ridge:
+  {
+    auto [e_to_c, c_to_e] = get_connectivities(dim);
+    for (auto entity : entities)
+    {
+      std::array<std::int32_t, 2> pair = impl::get_cell_entity_pairs<1>(
+          entity, e_to_c->links(entity), *c_to_e);
+      entity_data.insert(entity_data.end(), pair.begin(), pair.end());
+    }
+    break;
+  }
+  default:
+    throw std::runtime_error(
+        "Cannot compute integration domains. Integral type not supported.");
   }
 
   return entity_data;

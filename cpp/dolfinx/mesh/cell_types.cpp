@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -61,53 +61,9 @@ mesh::CellType mesh::to_type(const std::string& cell)
     throw std::runtime_error("Unknown cell type (" + cell + ")");
 }
 //-----------------------------------------------------------------------------
-mesh::CellType mesh::cell_entity_type(CellType type, int d, int index)
-{
-  const int dim = cell_dim(type);
-  if (d == dim)
-    return type;
-  else if (d == 1)
-    return CellType::interval;
-  else if (d == (dim - 1))
-    return cell_facet_type(type, index);
-  else
-    return CellType::point;
-}
-//-----------------------------------------------------------------------------
-mesh::CellType mesh::cell_facet_type(CellType type, int index)
-{
-  switch (type)
-  {
-  case CellType::point:
-    return CellType::point;
-  case CellType::interval:
-    return CellType::point;
-  case CellType::triangle:
-    return CellType::interval;
-  case CellType::tetrahedron:
-    return CellType::triangle;
-  case CellType::quadrilateral:
-    return CellType::interval;
-  case CellType::pyramid:
-    if (index == 0)
-      return CellType::quadrilateral;
-    else
-      return CellType::triangle;
-  case CellType::prism:
-    if (index == 0 or index == 4)
-      return CellType::triangle;
-    else
-      return CellType::quadrilateral;
-  case CellType::hexahedron:
-    return CellType::quadrilateral;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-}
-//-----------------------------------------------------------------------------
 graph::AdjacencyList<int> mesh::get_entity_vertices(CellType type, int dim)
 {
-  const std::vector<std::vector<int>> topology
+  std::vector<std::vector<int>> topology
       = basix::cell::topology(cell_type_to_basix_type(type))[dim];
   return graph::AdjacencyList<int>(topology);
 }
@@ -121,7 +77,7 @@ graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
   else if (type == CellType::point)
     return graph::AdjacencyList<int>(0);
 
-  const std::vector<std::vector<std::vector<int>>> connectivity
+  std::vector<std::vector<std::vector<int>>> connectivity
       = basix::cell::sub_entity_connectivity(
           cell_type_to_basix_type(type))[dim0];
   std::vector<std::vector<int>> subset;
@@ -129,11 +85,6 @@ graph::AdjacencyList<int> mesh::get_sub_entities(CellType type, int dim0,
   for (auto& row : connectivity)
     subset.emplace_back(row[dim1]);
   return graph::AdjacencyList<int>(subset);
-}
-//-----------------------------------------------------------------------------
-int mesh::cell_dim(CellType type)
-{
-  return basix::cell::topological_dimension(cell_type_to_basix_type(type));
 }
 //-----------------------------------------------------------------------------
 int mesh::cell_num_entities(CellType type, int dim)

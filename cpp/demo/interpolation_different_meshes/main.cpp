@@ -11,6 +11,7 @@
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/mesh/generation.h>
 #include <memory>
+#include <ranges>
 
 using namespace dolfinx;
 using T = double;
@@ -72,15 +73,17 @@ int main(int argc, char* argv[])
     auto cell_map
         = mesh_hex->topology()->index_map(mesh_hex->topology()->dim());
     assert(cell_map);
-    std::vector<std::int32_t> cells(
-        cell_map->size_local() + cell_map->num_ghosts(), 0);
-    std::iota(cells.begin(), cells.end(), 0);
+    auto cells = std::ranges::views::iota(0, cell_map->size_local()
+                                                 + cell_map->num_ghosts());
     geometry::PointOwnershipData<T> interpolation_data
         = fem::create_interpolation_data(
             u_hex->function_space()->mesh()->geometry(),
             *u_hex->function_space()->element(),
-            *u_tet->function_space()->mesh(), std::span(cells), 1e-8);
-    u_hex->interpolate(*u_tet, cells, interpolation_data);
+            *u_tet->function_space()->mesh(), cells, 1e-8);
+    // Tolerance and maximum number of iterations for nonaffine pullbacks
+    const double eps = 1.0e4 * std::numeric_limits<T>::epsilon();
+    int max_iter = 15;
+    u_hex->interpolate(*u_tet, cells, eps, max_iter, interpolation_data);
 
 #ifdef HAS_ADIOS2
     io::VTXWriter<double> write_tet(mesh_tet->comm(), "u_tet.bp", {u_tet});

@@ -18,12 +18,12 @@ from dolfinx.mesh import create_mesh
 
 
 def distance_point_to_line_3D(P1, P2, point):
-    """Distance from point to line"""
+    """Distance from point to line."""
     return np.linalg.norm(np.cross(P2 - P1, P1 - point)) / np.linalg.norm(P2 - P1)
 
 
 def distance_point_to_plane_3D(P1, P2, P3, point):
-    """Distance from point to plane"""
+    """Distance from point to plane."""
     return np.abs(
         np.dot(np.cross(P2 - P1, P3 - P1) / np.linalg.norm(np.cross(P2 - P1, P3 - P1)), point - P2)
     )
@@ -197,7 +197,7 @@ def test_collision_2nd_order_triangle(dtype):
     sample_points = np.array([[0.1, 0.3, 0.0], [0.2, 0.5, 0.0], [0.6, 0.6, 0.0]])
 
     # Create boundingboxtree
-    tree = geometry.bb_tree(mesh, mesh.geometry.dim)
+    tree = geometry.bb_tree(mesh, mesh.geometry.dim, padding=0.0)
     cell_candidates = geometry.compute_collisions_points(tree, sample_points)
     colliding_cells = geometry.compute_colliding_cells(mesh, cell_candidates, sample_points)
     # Check for collision

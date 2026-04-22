@@ -5,14 +5,28 @@ spack:
       root: /opt/spack
       padded_length: 128
 
+  concretizer:
+      unify: true
+      reuse: false
+
   packages:
     all:
       require:
       - target=x86_64_v3
+    llvm:
+      externals:
+      - spec: llvm@15.0.7
+        prefix: /usr/lib/llvm-15/
+      buildable: False
+    # vtk:
+    #   externals:
+    #   - spec: vtk@9.1.0
+    #     prefix: /usr
+    #   buildable: False
 
   mirrors:
     local-buildcache:
-      url: oci://ghcr.io/fenics/spack-buildcache
+      url: oci://ghcr.io/fenics/dolfinx-spack-buildcache
       binary: true
       signed: false
       access_pair:

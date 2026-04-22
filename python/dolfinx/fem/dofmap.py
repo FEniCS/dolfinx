@@ -3,15 +3,16 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Degree-of-freedom maps."""
 
 import typing
 from collections.abc import Sequence
 
 from mpi4py.MPI import Comm
 
-from basix.finite_element import FiniteElement
 from dolfinx.cpp.fem import DofMap as _DofMap
 from dolfinx.cpp.fem import create_dofmaps as _create_dofmaps
+from dolfinx.fem.element import FiniteElement
 
 if typing.TYPE_CHECKING:
     import dolfinx.mesh
@@ -27,13 +28,14 @@ class DofMap:
     _cpp_object: _DofMap
 
     def __init__(self, dofmap: _DofMap):
+        """Initialise a degree-of-freedom map."""
         self._cpp_object = dofmap
 
     def cell_dofs(self, cell_index: int):
-        """Cell local-global dof map
+        """Cell local-global dof map.
 
         Args:
-            cell: The cell index.
+            cell_index: The cell index.
 
         Returns:
             Local-global dof map for the cell (using process-local
@@ -53,8 +55,7 @@ class DofMap:
 
     @property
     def index_map(self):
-        """Index map that described the parallel distribution of the
-        dofmap."""
+        """Index map describing parallel distribution of the dofmap."""
         return self._cpp_object.index_map
 
     @property

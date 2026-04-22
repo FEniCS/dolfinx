@@ -142,7 +142,8 @@ def run_vector_test(mesh, V, degree, cg_solver, maxit=500, rtol=None):
 
 def run_dg_test(mesh, V, degree, cg_solver):
     """Manufactured Poisson problem, solving u = x[component]**n, where
-    n is the degree of the Lagrange function space."""
+    n is the degree of the Lagrange function space.
+    """
     u, v = TrialFunction(V), TestFunction(V)
 
     # Exact solution

@@ -367,7 +367,9 @@ def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange):
         el1 = v_el
 
     V, W = functionspace(mesh, el0), functionspace(mesh, el1)
-    G = interpolation_matrix(V, W).to_scipy()
+    G = interpolation_matrix(V, W)
+    G.scatter_reverse()
+    G_sp = G.to_scipy()
 
     def f(x):
         if mesh.geometry.dim == 2:
@@ -382,10 +384,53 @@ def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange):
 
     # Compute global matrix vector product
     w = Function(W, dtype=dtype)
-    ux = np.zeros(G.shape[1])
+    ux = np.zeros(G_sp.shape[1])
     ux[: len(u.x.array)] = u.x.array[:]
-    w.x.array[: G.shape[0]] = G @ ux
+    w.x.array[: G_sp.shape[0]] = G_sp @ ux
     w.x.scatter_forward()
 
     atol = 100 * np.finfo(dtype).resolution
     assert np.allclose(w_vec.x.array, w.x.array, atol=atol)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "cell_type",
+    [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
+)
+def test_discrete_interpolation(cell_type, dtype):
+    tdim = dolfinx.cpp.mesh.cell_dim(cell_type)
+    if tdim == 2:
+        mesh = dolfinx.mesh.create_unit_square(
+            MPI.COMM_WORLD, 4, 4, cell_type=cell_type, dtype=dtype
+        )
+    elif tdim == 3:
+        mesh = dolfinx.mesh.create_unit_cube(
+            MPI.COMM_WORLD, 3, 2, 4, cell_type=cell_type, dtype=dtype
+        )
+    else:
+        raise ValueError(f"Unsupported {cell_type=}")
+
+    V = dolfinx.fem.functionspace(mesh, ("DG", 3))
+    Q = dolfinx.fem.functionspace(mesh, ("Lagrange", 3))
+
+    u = dolfinx.fem.Function(V, dtype=dtype)
+    u.interpolate(lambda x: x[0] ** 3 - x[1] ** 3)
+
+    int_matrix = dolfinx.fem.interpolation_matrix(V, Q)
+    int_matrix.scatter_reverse()
+
+    _u = dolfinx.la.vector(int_matrix.index_map(1), int_matrix.block_size[1], dtype=dtype)
+    num_owned_dofs = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
+    _u.array[:num_owned_dofs] = u.x.array[:num_owned_dofs]
+    _u.scatter_forward()
+
+    q = dolfinx.fem.Function(Q, dtype=dtype)
+    int_matrix.mult(_u, q.x)
+    q.x.scatter_forward()
+
+    q_ref = dolfinx.fem.Function(Q, dtype=dtype)
+    q_ref.interpolate(u)
+
+    atol = 100 * np.finfo(dtype).resolution
+    np.testing.assert_allclose(q.x.array, q_ref.x.array, atol=atol)

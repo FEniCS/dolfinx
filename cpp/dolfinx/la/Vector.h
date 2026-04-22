@@ -50,6 +50,9 @@ class Vector
 {
   static_assert(std::is_same_v<typename Container::value_type, T>);
 
+  template <typename, typename, typename>
+  friend class Vector;
+
 private:
   /// @brief Return a 'pack' function for packing a send buffer.
   ///
@@ -139,6 +142,46 @@ public:
 
   /// Move constructor
   Vector(Vector&& x) = default;
+
+private:
+  /// @brief Return a shared pointer to a Scatter, which points (1) to
+  /// the input Scatterer or (2) to a copy of input Scatterer.
+  ///
+  /// If the new and old Vectors share the same Scatterer type, the
+  /// Scatter can be shared. If the new Vector uses a different
+  /// Scatterer storage type, then the Scatterer needs to be copied.
+  ///
+  /// @param sc Scatter of the Vector being copied.
+  /// @return Scatter for use with the new Vector.
+  std::shared_ptr<const common::Scatterer<ScatterContainer>>
+  scatter_ptr(auto sc) const
+  {
+    using SC = typename std::remove_cv<
+        typename decltype(sc)::element_type>::type::container_type;
+    if constexpr (std::is_same_v<ScatterContainer, SC>)
+      return sc; // Scatters use same container
+    else         // Scatters use different containers, so copy
+      return std::make_shared<common::Scatterer<ScatterContainer>>(*sc);
+  }
+
+public:
+  /// @brief Copy-convert vector, possibly using to different container
+  /// types.
+  ///
+  /// Examples of use include copying a Vector to a different value
+  /// type, e.g. double to float, or copying a Vector from a CPU to a
+  /// GPU.
+  ///
+  /// @tparam Vec Type of the Vector being copied.
+  /// @param x Vector to copy.
+  template <typename T0, typename Container0, typename ScatterContainer0>
+  explicit Vector(const Vector<T0, Container0, ScatterContainer0>& x)
+      : _map(x.index_map()), _bs(x.bs()), _x(x._x.begin(), x._x.end()),
+        _scatterer(scatter_ptr(x._scatterer)), _request(MPI_REQUEST_NULL),
+        _buffer_local(_scatterer->local_indices().size()),
+        _buffer_remote(_scatterer->remote_indices().size())
+  {
+  }
 
   // Assignment operator (disabled)
   Vector& operator=(const Vector& x) = delete;

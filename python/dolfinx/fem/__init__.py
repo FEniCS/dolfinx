@@ -103,16 +103,15 @@ def create_interpolation_data(
     cells: npt.NDArray[np.int32],
     padding: float = 1e-14,
 ) -> _PointOwnershipData:
-    """Generate data needed to interpolate discrete functions across
-    different meshes.
+    """Generate data for interpolating functions on different meshes.
 
     Args:
-        V_to: Function space to interpolate into
-        V_from: Function space to interpolate from
+        V_to: Function space to interpolate into.
+        V_from: Function space to interpolate from.
         cells: Indices of the cells associated with `V_to` on which to
             interpolate into.
         padding: Absolute padding of bounding boxes of all entities on
-            mesh_to
+            mesh_to.
 
     Returns:
         Data needed to interpolation functions defined on function
@@ -164,15 +163,18 @@ def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCS
 
 
 def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
-    """Assemble an interpolation matrix for two function spaces on the same
-    mesh.
+    """Create interpolation matrix between spaces on the same mesh.
 
     Args:
-        space0: space to interpolate from
-        space1: space to interpolate into
+        space0: space to interpolate from.
+        space1: space to interpolate into.
 
     Returns:
-        Interpolation matrix
+        Interpolation matrix.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
     """
     return _MatrixCSR(_interpolation_matrix(space0._cpp_object, space1._cpp_object))
 
@@ -180,8 +182,7 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
 def compute_integration_domains(
     integral_type: IntegralType, topology: "dolfinx.mesh.Topology", entities: np.ndarray
 ):
-    """Given an integral type and a set of entities compute integration
-    entities.
+    """Determine compute integration entities.
 
     This function returns a list ``[(id, entities)]``. For cell
     integrals ``entities`` are the cell indices. For exterior facet
@@ -242,6 +243,7 @@ __all__ = [
     "create_sparsity_pattern",
     "create_vector",
     "dirichletbc",
+    "discrete_curl",
     "discrete_gradient",
     "extract_function_spaces",
     "finiteelement",

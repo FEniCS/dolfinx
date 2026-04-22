@@ -1,4 +1,4 @@
-# UFL input for the Matrix-free Poisson Demo
+"""UFL input for the Matrix-free Poisson demo."""
 
 from basix.ufl import element
 from ufl import (

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Garth N. Wells
+// Copyright (C) 2020-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,6 +8,7 @@
 #include "AdjacencyList.h"
 #include "partitioners.h"
 #include <algorithm>
+#include <boost/sort/sort.hpp>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -390,12 +391,12 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
           std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-graph::build::compute_ghost_indices(MPI_Comm comm,
-                                    std::span<const std::int64_t> owned_indices,
-                                    std::span<const std::int64_t> ghost_indices,
-                                    std::span<const int> ghost_owners)
+std::vector<std::int64_t> graph::build::compute_ghost_indices(
+    MPI_Comm comm, std::span<const std::int64_t> owned_indices,
+    std::span<const std::int64_t> ghost_indices,
+    std::span<const int> ghost_owners, int num_threads)
 {
+  common::Timer timer("Compute ghost indices");
   spdlog::info("Compute ghost indices");
 
   // Get number of local cells determine global offset
@@ -424,7 +425,8 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
 
   MPI_Comm neighbor_comm_fwd, neighbor_comm_rev;
 
-  std::vector<int> in_edges = MPI::compute_graph_edges_pcx(comm, neighbors);
+  std::vector<int> in_edges
+      = dolfinx::MPI::compute_graph_edges_pcx(comm, neighbors);
   MPI_Dist_graph_create_adjacent(comm, in_edges.size(), in_edges.data(),
                                  MPI_UNWEIGHTED, neighbors.size(),
                                  neighbors.data(), MPI_UNWEIGHTED,
@@ -487,7 +489,13 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
     old_to_new.push_back(
         {idx, static_cast<std::int64_t>(offset_local + old_to_new.size())});
   }
-  std::ranges::sort(old_to_new);
+  if (num_threads > 0)
+  {
+    boost::sort::block_indirect_sort(old_to_new.begin(), old_to_new.end(),
+                                     num_threads);
+  }
+  else
+    std::ranges::sort(old_to_new);
 
   // Replace values in recv_data with new_index and send back
   std::ranges::transform(recv_data, recv_data.begin(),

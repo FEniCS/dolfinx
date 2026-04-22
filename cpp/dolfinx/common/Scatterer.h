@@ -21,6 +21,7 @@
 
 namespace dolfinx::common
 {
+
 /// @brief A Scatterer supports the scattering and gathering of
 /// distributed data that is associated with a common::IndexMap, using
 /// MPI.
@@ -32,32 +33,41 @@ namespace dolfinx::common
 /// The implementation is designed for sparse communication
 /// patterns, as is typical of patterns based on an IndexMap.
 ///
+/// A Scatterer is stateless, i.e. it provides the required information
+/// and static data for a given parallel communication pattern but does
+/// not provide any communication caches or track the status of MPI
+/// requests. Callers of the a Scatterer's members are responsible for
+/// managing buffer and MPI request handles.
+///
 /// @tparam Container Container type for storing the 'local' and
 /// 'remote' indices. On CPUs this is normally
 /// `std::vector<std::int32_t>`. For GPUs the container should store the
 /// indices on the device, e.g. using
 /// `thrust::device_vector<std::int32_t>`.
 template <class Container = std::vector<std::int32_t>>
-  requires std::is_integral_v<typename Container::value_type>
 class Scatterer
 {
+  static_assert(std::is_integral_v<typename Container::value_type>);
+
+  template <class>
+  friend class Scatterer;
+
 public:
   /// Container type used to store local and remote indices.
   using container_type = Container;
 
   /// @brief Create a scatterer for data with a layout described by an
-  /// IndexMap, and with a block size.
+  /// IndexMap and a block size.
   ///
   /// @param[in] map Index map that describes the parallel layout of
   /// data.
   /// @param[in] bs Number of values associated with each `map` index
-  /// (block size).
+  /// (the block size).
   Scatterer(const IndexMap& map, int bs)
       : _src(map.src().begin(), map.src().end()),
         _dest(map.dest().begin(), map.dest().end()),
         _sizes_remote(_src.size(), 0), _displs_remote(_src.size() + 1),
         _sizes_local(_dest.size()), _displs_local(_dest.size() + 1)
-
   {
     if (dolfinx::MPI::size(map.comm()) == 1)
       return;
@@ -138,8 +148,8 @@ public:
     std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
                      std::next(_displs_local.begin()));
 
-    assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
-    assert((std::int32_t)ghosts_sorted.size() == _displs_remote.back());
+    assert((int)ghosts_sorted.size() == _displs_remote.back());
+    assert((int)ghosts_sorted.size() == _displs_remote.back());
 
     // Send ghost global indices to owning rank, and receive owned
     // indices that are ghosts on other ranks
@@ -187,6 +197,32 @@ public:
           idx[i * bs + j] = perm[i] * bs + j;
       _remote_inds = std::move(idx);
     }
+  }
+
+  /// @brief Copy constructor
+  Scatterer(const Scatterer& scatterer) = default;
+
+  /// @brief Cast-copy constructor.
+  ///
+  /// Create a copy of a Scatterer, were the copy uses a different
+  /// storage container for indices that are used in MPI communication.
+  /// Example usage includes creating from a CPU-suitable Scatterer a
+  /// GPU-suitable Scatterer that can be used with GPU-aware MPI to move
+  /// data between devices. This would be typical when copying a
+  /// la::Vector or la::MatrixCSR to/from a GPU. When copying a vector
+  /// or matrix to/from a GPU, the underlying Scatter that manages
+  /// parallel communication will usually be copied too with a different
+  /// storage container.
+  ///
+  /// @param s Scatterer to copy
+  template <class U>
+  Scatterer(const Scatterer<U>& s)
+      : _comm0(s._comm0), _comm1(s._comm1), _src(s._src), _dest(s._dest),
+        _remote_inds(s._remote_inds.begin(), s._remote_inds.end()),
+        _sizes_remote(s._sizes_remote), _displs_remote(s._displs_remote),
+        _local_inds(s._local_inds.begin(), s._local_inds.end()),
+        _sizes_local(s._sizes_local), _displs_local(s._displs_local)
+  {
   }
 
   /// @brief Start a non-blocking send of owned data to ranks that ghost

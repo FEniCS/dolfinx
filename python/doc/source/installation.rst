@@ -31,11 +31,11 @@ C++
 - `Boost <https://www.boost.org>`_
 - `CMake <https://cmake.org>`_ [build dependency]
 - HDF5 (with MPI support enabled)
-- MPI (MPI-3 or later).
-- `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
+- MPI (MPI-3 or later)
+- `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ [build dependency via CMake]
 - `pugixml <https://pugixml.org/>`_
 - `spdlog <https://github.com/gabime/spdlog/>`_
-- UFCx [``ufcx.h``, provided by FFCx package or FFCx UFCx CMake install
+- UFCx [``ufcx.h``, provided by FFCx Python package or FFCx UFCx CMake install
   at ``ffcx/cmake/*``]
 - At least one of ParMETIS [2]_, KaHIP or PT-SCOTCH [2]_
 
@@ -45,8 +45,9 @@ From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
 
 - `ADIOS2 <https://github.com/ornladios/ADIOS2/>`_ (additional parallel
   IO support)
-- `PETSc <https://petsc.org/>`_ [1]_
-- `SLEPc <https://slepc.upv.es/>`_ (eigenvalue computations)
+- `PETSc <https://petsc.org/>`_ [1]_ (linear and non-linear problems)
+- `SLEPc <https://slepc.upv.es/>`_ (eigenvalue problems)
+- `SuperLU_DIST <https://github.com/xiaoyeli/superlu_dist/>`_ [2]_ (linear problems with ``dolfinx::la::MatrixCSR``).
 
 .. rubric:: Optional for demos
 
@@ -57,28 +58,42 @@ PETSc and FFCx are optional but recommended.
 Python interface
 ****************
 
-Requirements for the Python interface, in addition to the C++
-requirements.
+Requirements for the Python interface. Please see ``python/pyproject.toml`` for
+precise specification. Below we use the `pypi <https://pypi.org>`_ package names.
 
-.. rubric:: Required
+.. rubric:: Build system requirements
 
 - Python
-- Python CFFI (https://cffi.readthedocs.io/)
-- FFCx, UFL and Basix Python interface.
-- mpi4py (https://mpi4py.readthedocs.io/)
-- nanobind (https://github.com/wjakob/nanobind)
-- NumPy (https://www.numpy.org)
-- scikit-build-core[pyproject] (https://scikit-build-core.readthedocs.io)
+- DOLFINx C++ interface and all requirements
+- `scikit-build-core[pyproject] <https://scikit-build-core.readthedocs.io>`_
+- `mpi4py <https://mpi4py.readthedocs.io/>`_
+- `nanobind <https://github.com/wjakob/nanobind>`_ (static linking)
+- petsc4py (recommended, optional)
 
-.. rubric:: Optional
+.. rubric:: Required runtime dependencies
 
-- petsc4py (recommended)
+- Python
+- fenics-basix, fenics-ffcx and fenics-ufl
+- `cffi <https://cffi.readthedocs.io/>`_
+- `mpi4py <https://mpi4py.readthedocs.io/>`_
+- `numpy <https://www.numpy.org>`_
+
+.. rubric:: Optional runtime dependencies
+
+- petsc4py (linear and non-linear problems, recommended)
+- numba (custom kernels and assemblers)
+- `pyamg <https://github.com/pyamg/pyamg>`_ + scipy (serial linear problems)
 
 .. rubric:: Optional for demos
 
-- Numba
+- gmsh
+- networkx 
+- numba
+- matplotlib
+- petsc4py
 - pyamg
-- pyvista (for plotting)
+- pyvista
+- scipy
 - slepc4py
 
 Building and installing
@@ -105,7 +120,7 @@ Python
 After installation of the C++ interface, from the ``python/`` directory
 the Python interface can be installed using::
 
-    pip install -r build-requirements.txt
+    python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
     pip install --check-build-dependencies --no-build-isolation .
 
 
@@ -118,4 +133,4 @@ the Python interface can be installed using::
        additionally configure MUMPS via PETSc with
        ``--download-mumps-avoid-mpi-in-place``.
 
-.. [2] PETSc can download and configure and build these libraries.
+.. [2] PETSc can also download, configure and build these libraries.

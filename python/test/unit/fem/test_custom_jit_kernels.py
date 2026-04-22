@@ -15,7 +15,6 @@ import numpy as np
 import pytest
 
 import dolfinx
-import dolfinx.utils
 import ffcx.codegeneration.utils
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la

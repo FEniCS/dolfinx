@@ -6,15 +6,13 @@
 
 #pragma once
 
+#include "DofMap.h"
 #include <array>
 #include <cstdint>
+#include <dolfinx/la/SparsityPattern.h>
 #include <functional>
+#include <ranges>
 #include <span>
-
-namespace dolfinx::la
-{
-class SparsityPattern;
-}
 
 namespace dolfinx::fem
 {
@@ -35,9 +33,20 @@ namespace sparsitybuild
 /// `cells[1]` must have the same size.
 /// @param dofmaps Dofmaps to used in building the sparsity pattern.
 /// @note The sparsity pattern is not finalised.
-void cells(la::SparsityPattern& pattern,
-           std::array<std::span<const std::int32_t>, 2> cells,
-           std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
+template <std::ranges::input_range R0, std::ranges::input_range R1>
+void cells(la::SparsityPattern& pattern, const std::pair<R0, R1>& cells,
+           std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
+{
+  assert(cells.first.size() == cells.second.size());
+  const DofMap& map0 = dofmaps[0].get();
+  const DofMap& map1 = dofmaps[1].get();
+  for (auto cell0 = cells.first.begin(), cell1 = cells.second.begin();
+       cell0 != cells.first.end() and cell1 != cells.second.end();
+       ++cell0, ++cell1)
+  {
+    pattern.insert(map0.cell_dofs(*cell0), map1.cell_dofs(*cell1));
+  }
+}
 
 /// @brief Iterate over interior facets and insert entries into sparsity
 /// pattern.

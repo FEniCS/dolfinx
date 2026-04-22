@@ -113,7 +113,10 @@ void test_scatter_rev()
       = create_index_map(MPI_COMM_WORLD, size_local, (mpi_size - 1) * 3);
   std::int32_t num_ghosts = idx_map.num_ghosts();
 
-  common::Scatterer sct(idx_map, n);
+  common::Scatterer<std::vector<std::int32_t>> sct(idx_map, n);
+  {
+    common::Scatterer<std::vector<std::int64_t>> sct2(sct);
+  }
 
   auto pack_fn = [](auto&& in, auto&& idx, auto&& out)
   {
