@@ -5,7 +5,6 @@ import pytest
 
 import basix.ufl
 import dolfinx
-import dolfinx.fem.petsc
 import ufl
 
 
