@@ -183,6 +183,7 @@ extract_function_names(const typename adios2_writer::U<T>& u)
               using U = std::decay_t<decltype(v)>;
               using X = typename U::element_type;
 
+              // append function names either to dg0_names or names
               auto& fnames
                   = impl::is_cellwise(*(v->function_space()->element()))
                         ? dg0_names
