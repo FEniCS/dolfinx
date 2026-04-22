@@ -27,7 +27,7 @@ constexpr int N = 8;
 [[maybe_unused]] void create_mesh_file(MPI_Comm comm)
 {
   // Create mesh using all processes and save xdmf
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet, 2);
   auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_rectangle(comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
                              mesh::CellType::triangle, part));
