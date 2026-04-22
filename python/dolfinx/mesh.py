@@ -1318,4 +1318,4 @@ def transfer_meshtags_to_submesh(
     cpp_tag, sub_to_parent_entity_map = ftype(
         entity_tag._cpp_object, submesh.topology._cpp_object, vertex_to_parent._cpp_object, cell_to_parent._cpp_object
     )
-    return MeshTags(cpp_tag), sub_to_parent_entity_map
+    return MeshTags(cpp_tag), EntityMap(sub_to_parent_entity_map)
