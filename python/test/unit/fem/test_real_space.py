@@ -81,7 +81,13 @@ def test_real_function_space_vector(cell_type, dtype):
         assert num_local_rows == 0
 
 
-@pytest.mark.parametrize("ftype, stype", [(np.float32, np.complex64), (np.float64, np.complex128)])
+@pytest.mark.parametrize(
+    "ftype, stype",
+    [
+        pytest.param(np.float32, np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.float64, np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_complex_real_space(ftype, stype):
     mesh = dolfinx.mesh.create_unit_interval(MPI.COMM_WORLD, 13, dtype=ftype)
 
