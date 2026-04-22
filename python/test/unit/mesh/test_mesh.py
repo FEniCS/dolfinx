@@ -97,7 +97,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
         mesh.topology.create_entity_permutations()
         e_to_g = entities_to_geometry(mesh, entity_dim, np.array(submesh_to_mesh), True)
         for submesh_entity in range(len(submesh_to_mesh)):
-            submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
+            submesh_x_dofs = submesh.geometry.dofmap()[submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
             # correspond to the x_dofs of cell i in the submesh
             mesh_x_dofs = e_to_g[submesh_entity]
