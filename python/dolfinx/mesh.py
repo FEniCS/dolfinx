@@ -1298,7 +1298,7 @@ def create_point_mesh(comm: _MPI.Intracomm, points: npt.NDArray[np.float32 | np.
 
     # Create mesh geometry
     e = basix.ufl.element("Lagrange", "point", 0, shape=(points.shape[1],), dtype=points.dtype)
-    c_el = _coordinate_element(e.basix_element)
+    c_el = _coordinate_element(e.basix_element)  # type: ignore[call-arg]
     geometry = create_geometry(imap, cells, c_el, points, igi)
 
     # Create DOLFINx mesh
