@@ -27,6 +27,7 @@ from dolfinx.mesh import (
     GhostMode,
     create_box,
     create_interval,
+    create_point_mesh,
     create_rectangle,
     create_submesh,
     create_unit_cube,
@@ -782,3 +783,17 @@ def test_mesh_single_process_distribution(partitioner):
         adj = mesh.topology.connectivity(*conn)
         for i in range(adj.num_nodes):
             assert adj.links(i).size == 2
+
+
+@pytest.mark.parametrize("gdim", [1, 2, 3])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_point_mesh(gdim, dtype):
+    rng = np.random.default_rng(12)
+    num_points = 10
+    x = rng.random((num_points, gdim), dtype=dtype)
+    mesh = create_point_mesh(MPI.COMM_WORLD, x)
+    assert mesh.comm.size == MPI.COMM_WORLD.size
+    assert mesh.topology.dim == 0
+    assert mesh.geometry.dim == gdim
+    assert mesh.topology.index_map(0).size_global == MPI.COMM_WORLD.size * num_points
+    assert mesh.topology.index_map(0).size_local == num_points
