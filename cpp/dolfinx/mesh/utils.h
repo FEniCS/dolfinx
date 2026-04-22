@@ -1502,7 +1502,7 @@ std::tuple<MeshTags<T>, EntityMap> transfer_meshtags_to_submesh(
   }
 
   std::vector<std::int32_t> parent_entity_to_sub_cell(e_to_v->num_nodes(), -1);
-  for (std::int32_t i = 0; i < sub_cell_to_parent_entity.size(); ++i)
+  for (std::size_t i = 0; i < sub_cell_to_parent_entity.size(); ++i)
     parent_entity_to_sub_cell[sub_cell_to_parent_entity[i]] = i;
 
   // Get map from submesh vertex to parent vertex
