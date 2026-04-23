@@ -73,7 +73,7 @@ struct Sparsity
   std::span<const std::int32_t> _off_diag;
 
   /// @brief block size in each direction.
-  int _bs[2];
+  std::array<int, 2> _bs;
 
   /// @brief Return the row (`dim == 0`) or column (`dim == 1`) `IndexMap`.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const
@@ -535,6 +535,12 @@ dolfinx::la::MatrixCSR<T> matmul(const dolfinx::la::MatrixCSR<T>& A,
 {
   dolfinx::common::Timer t_spgemm("MatrixCSR SpGEMM");
 
+  std::array<int, 2> bs{1, 1};
+  if (A.block_size() != B.block_size() or A.block_size() != bs)
+  {
+    throw std::runtime_error("Currently matmul only supports block size=1");
+  }
+
   // Fetch ghost rows of B needed to multiply against A's ghost columns.
   spdlog::debug("Fetch remote rows of B in C=A*B");
   auto [new_col_map, ghost_row_ptr, ghost_cols, ghost_vals]
@@ -550,7 +556,7 @@ dolfinx::la::MatrixCSR<T> matmul(const dolfinx::la::MatrixCSR<T>& A,
   auto C_row_map = std::make_shared<common::IndexMap>(
       A.index_map(0)->comm(), A.index_map(0)->size_local());
   impl::Sparsity sp{C_row_map, new_col_map,        C_cols,
-                    C_row_ptr, C_off_diag_offsets, {1, 1}};
+                    C_row_ptr, C_off_diag_offsets, bs};
   dolfinx::la::MatrixCSR<T> C(sp);
   std::copy(C_vals_vec.begin(), C_vals_vec.end(), C.values().begin());
 
