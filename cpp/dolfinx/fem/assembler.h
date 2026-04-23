@@ -72,7 +72,7 @@ void tabulate_expression(
         element)
 {
   // Check that domain is the same as mesh of the expression
-  if (e.coordinate_element_hash() != mesh.geometry().cmaps()[0].hash())
+  if (e.coordinate_element_hash() != mesh.geometry().cmap(0).hash())
   {
     throw std::runtime_error(
         "Expression was created on a different mesh. Cannot tabulate.");
@@ -103,7 +103,7 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
 {
   // Check that domain is the same as mesh of the expression
-  if (e.coordinate_element_hash() != mesh.geometry().cmaps()[0].hash())
+  if (e.coordinate_element_hash() != mesh.geometry().cmap(0).hash())
   {
     throw std::runtime_error(
         "Expression was created on a different mesh. Cannot tabulate.");
