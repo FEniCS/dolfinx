@@ -1592,7 +1592,7 @@ MeshTags<T> transfer_meshtags_to_submesh(
           // Convert submesh entity vertices to parent vertices
           auto parent_vertices
               = sub_e_to_v->links(sub_entity)
-                | std::views::transform([&](auto v)
+                | std::views::transform([&sub_to_parent_vertex](auto v)
                                         { return sub_to_parent_vertex[v]; });
 
           // Check if all parent vertices of the submesh entity are in the
