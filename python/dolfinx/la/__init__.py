@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Linear algebra functionality."""
 
+from typing import Generic, TypeVar
+
 import numpy as np
 import numpy.typing as npt
 
@@ -26,7 +28,10 @@ __all__ = [
 ]
 
 
-class Vector:
+_T = TypeVar("_T", np.float32, np.float64, np.complex64, np.complex128, np.int8, np.int32, np.int64)
+
+
+class Vector(Generic[_T]):
     """Distributed vector object."""
 
     _cpp_object: (
@@ -79,7 +84,7 @@ class Vector:
         return self._cpp_object.bs
 
     @property
-    def array(self) -> np.ndarray:
+    def array(self) -> npt.NDArray[_T]:
         """Local representation of the vector."""
         return self._cpp_object.array
 
@@ -117,7 +122,10 @@ class Vector:
         self._cpp_object.scatter_reverse(mode)
 
 
-class MatrixCSR:
+_MT = TypeVar("_MT", np.float32, np.float64, np.complex64, np.complex128)
+
+
+class MatrixCSR(Generic[_MT]):
     """Distributed compressed sparse row matrix."""
 
     _cpp_object: (
@@ -155,7 +163,7 @@ class MatrixCSR:
         """
         return self._cpp_object.index_map(i)
 
-    def mult(self, x: Vector, y: Vector) -> None:
+    def mult(self, x: Vector[_MT], y: Vector[_MT]) -> None:
         """Compute ``y += Ax``.
 
         Args:
@@ -171,7 +179,7 @@ class MatrixCSR:
 
     def add(
         self,
-        x: npt.NDArray[np.floating],
+        x: npt.NDArray[_MT],
         rows: npt.NDArray[np.int32],
         cols: npt.NDArray[np.int32],
         bs: int = 1,
@@ -181,7 +189,7 @@ class MatrixCSR:
 
     def set(
         self,
-        x: npt.NDArray[np.floating],
+        x: npt.NDArray[_MT],
         rows: npt.NDArray[np.int32],
         cols: npt.NDArray[np.int32],
         bs: int = 1,
@@ -189,7 +197,7 @@ class MatrixCSR:
         """Set a block of values in the matrix."""
         self._cpp_object.set(x, rows, cols, bs)
 
-    def set_value(self, x: np.floating) -> None:
+    def set_value(self, x: _MT) -> None:
         """Set all non-zero entries to a value.
 
         Args:
@@ -210,7 +218,7 @@ class MatrixCSR:
         return self._cpp_object.squared_norm()
 
     @property
-    def data(self) -> npt.NDArray[np.floating]:
+    def data(self) -> npt.NDArray[_MT]:
         """Underlying matrix entry data."""
         return self._cpp_object.data
 
@@ -224,7 +232,7 @@ class MatrixCSR:
         """Local row pointers."""
         return self._cpp_object.indptr
 
-    def to_dense(self) -> npt.NDArray[np.floating]:
+    def to_dense(self) -> npt.NDArray[_MT]:
         """Copy to a dense 2D array.
 
         Note:
@@ -335,17 +343,17 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     return Vector(vtype(map, bs))
 
 
-def orthonormalize(basis: list[Vector]):
+def orthonormalize(basis: list[Vector[_T]]) -> None:
     """Orthogonalise set of vectors in-place."""
     _cpp.la.orthonormalize([x._cpp_object for x in basis])
 
 
-def is_orthonormal(basis: list[Vector], eps: float = 1.0e-12) -> bool:
+def is_orthonormal(basis: list[Vector[_T]], eps: float = 1.0e-12) -> bool:
     """Check that list of vectors are orthonormal."""
     return _cpp.la.is_orthonormal([x._cpp_object for x in basis], eps)
 
 
-def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
+def norm(x: Vector[_T], type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
     """Compute a norm of the vector.
 
     Args:

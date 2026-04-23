@@ -32,8 +32,10 @@ if typing.TYPE_CHECKING:
     from dolfinx.mesh import EntityMap as _EntityMap
     from dolfinx.mesh import Mesh, MeshTags
 
+_S = typing.TypeVar("_S", np.float32, np.float64, np.complex64, np.complex128)  # scalar
 
-class Form:
+
+class Form(typing.Generic[_S]):
     """A finite element form."""
 
     _cpp_object: (

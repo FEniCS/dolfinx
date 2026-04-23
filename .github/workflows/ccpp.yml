@@ -7,8 +7,8 @@ on:
     tags:
       - "v*"
   pull_request:
-    branches:
-      - main
+    # branches:
+    #   - main
   merge_group:
     branches:
       - main
@@ -132,15 +132,9 @@ jobs:
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
-      - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
+      - name: Run mypy
         working-directory: python
-        run: |
-          python -m venv mypy-env
-          . ./mypy-env/bin/activate
-          pip install mypy types-cffi scipy-stubs
-          mypy -p dolfinx
-        # mypy test
-        # mypy demo
+        run: make lint-mypy
 
       - name: Install gmsh and pyvista (and dependencies)
         run: |
