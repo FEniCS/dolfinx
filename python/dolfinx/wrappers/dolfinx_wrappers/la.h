@@ -146,9 +146,9 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
            })
       .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
       .def("mult", &dolfinx::la::MatrixCSR<T>::mult)
-      .def("mult", [](const dolfinx::la::MatrixCSR<T>& A,
+      .def("mult", [](const dolfinx::la::MatrixCSR<T>& self,
                       const dolfinx::la::MatrixCSR<T>& B)
-           { return dolfinx::la::matmul(A, B); })
+           { return dolfinx::la::matmul(self, B); })
       .def("multT", &dolfinx::la::MatrixCSR<T>::multT)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
