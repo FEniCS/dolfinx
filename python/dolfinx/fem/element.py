@@ -368,10 +368,6 @@ def finiteelement(
                 ufl_e.is_symmetric,
             )
         )
-    elif ufl_e.is_real:
-        basix_e = ufl_e.basix_element._e
-        value_shape = ufl_e.reference_value_shape if ufl_e.block_size > 1 else None
-        return FiniteElement(CppElement(basix_e, value_shape, ufl_e.is_symmetric))
     else:
         basix_e = ufl_e.basix_element._e
         value_shape = ufl_e.reference_value_shape if ufl_e.block_size > 1 else None

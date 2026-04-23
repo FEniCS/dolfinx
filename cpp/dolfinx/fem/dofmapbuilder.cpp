@@ -704,10 +704,10 @@ fem::DofMap fem::build_real_element_dofmap(
   std::shared_ptr<const dolfinx::common::IndexMap> cell_map
       = topology.index_map(topology.dim());
   const int is_owner
-      = (cell_map->local_range()[0] == 0) and cell_map->size_local() > 0;
+      = (cell_map->local_range()[0] == 0) && cell_map->size_local() > 0;
 
-  std::int32_t num_dofs = (is_owner) ? 1 : 0;
-  std::int32_t num_ghosts = (is_owner) ? 0 : 1;
+  std::int32_t num_dofs = is_owner ? 1 : 0;
+  std::int32_t num_ghosts = is_owner ? 0 : 1;
   std::vector<std::int64_t> ghosts(num_ghosts, 0);
   ghosts.reserve(1);
 
