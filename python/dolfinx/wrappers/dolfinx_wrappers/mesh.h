@@ -188,13 +188,13 @@ void declare_mesh(nb::module_& m, std::string type)
           nb::rv_policy::reference_internal, "Get the geometry dofmap.")
       .def(
           "dofmap",
-          [](dolfinx::mesh::Geometry<T>& self, int i)
+          [](dolfinx::mesh::Geometry<T>& self, std::optional<int> i)
           {
             auto dofs = self.dofmap(i);
             return nb::ndarray<const std::int32_t, nb::numpy>(
                 dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
           },
-          nb::rv_policy::reference_internal, nb::arg("i"),
+          nb::rv_policy::reference_internal, nb::arg("i").none(),
           "Get the geometry dofmap associated with coordinate element i (mixed "
           "topology)")
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
