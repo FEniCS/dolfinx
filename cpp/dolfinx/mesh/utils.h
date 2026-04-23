@@ -1453,8 +1453,7 @@ create_submesh(const Mesh<T>& mesh, int dim,
 /// @param[in] tags The meshtags object on the parent mesh.
 /// @param[in] submesh_topology The topology of the submesh.
 /// @param[in] vertex_map Map from submesh vertex to parent mesh vertex.
-/// @param[in] cell_map Map from submesh cell to parent mesh entity of the same
-/// dimension as the meshtags.
+/// @param[in] cell_map Map from submesh cell to parent mesh entity.
 /// @return A meshtags object on the submesh.
 template <typename T>
 MeshTags<T> transfer_meshtags_to_submesh(
