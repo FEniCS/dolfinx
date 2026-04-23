@@ -531,12 +531,12 @@ Form<T, U> create_form_factory(
       = [&geo = mesh->geometry()](const ufcx_integral& integral,
                                   std::size_t cell_idx)
   {
-    if (integral.coordinate_element_hash != geo.cmaps().at(cell_idx).hash())
+    if (integral.coordinate_element_hash != geo.cmap(cell_idx).hash())
     {
       throw std::runtime_error(
           "Generated integral geometry element does not match mesh geometry: "
           + std::to_string(integral.coordinate_element_hash) + ", "
-          + std::to_string(geo.cmaps().at(cell_idx).hash()));
+          + std::to_string(geo.cmap(cell_idx).hash()));
     }
   };
 
