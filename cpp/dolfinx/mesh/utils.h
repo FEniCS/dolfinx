@@ -1498,7 +1498,7 @@ MeshTags<T> transfer_meshtags_to_submesh(
       = parent_entity_imap->size_local() + parent_entity_imap->num_ghosts();
   std::vector<std::int32_t> parent_entity_to_sub_cell(num_parent_entities, -1);
   for (std::size_t i = 0; i < sub_cell_to_parent_entity.size(); ++i)
-    parent_entity_to_sub_cell[sub_cell_to_parent_entity[i]] = i;
+    parent_entity_to_sub_cell[sub_cell_to_parent_entity[i]] = (std::int32_t)i;
 
   // Get map from submesh vertex to parent vertex
   std::vector<std::int32_t> sub_to_parent_vertex;
