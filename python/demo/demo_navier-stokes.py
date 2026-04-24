@@ -367,8 +367,8 @@ t = 0.0
 if has_adios2:
     u_vis = fem.Function(W, name="u_init")
     u_vis.interpolate(u_h)
-    u_file = io.VTXWriter(msh.comm, "u.bp", u_vis)
-    p_file = io.VTXWriter(msh.comm, "p.bp", p_h)
+    u_file = io.VTXWriter(msh.comm, "u.bp", "w", u_vis)
+    p_file = io.VTXWriter(msh.comm, "p.bp", "w", p_h)
     u_file.write(t)
     p_file.write(t)
 else:
