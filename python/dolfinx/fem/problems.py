@@ -53,9 +53,10 @@ class LinearProblem:
                 as the integration domain, a corresponding :class:
                 `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
         """
+        # TODO: Handle dtype properly
         self._a = _create_form(
             a,
-            dtype=PETSc.ScalarType,  # type: ignore[attr-defined]
+            dtype=np.float64,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
             entity_maps=entity_maps,
@@ -69,6 +70,8 @@ class LinearProblem:
         )
         self._A = create_matrix(self._a)
 
+        # TODO: Assembly best done here?
+
         self._u: _Function
         if u is None:
             self._u = _Function(L.arguments()[0].ufl_function_space())
@@ -76,9 +79,6 @@ class LinearProblem:
             self._u = u
 
         self.bcs = [] if bcs is None else bcs
-
-        # TODO: Create solver.
-        self._solver
 
 
     def solve(self) -> _Function:
@@ -95,6 +95,9 @@ class LinearProblem:
         self.A.assemble()
 
         # TODO: Create SuperLU_DIST matrix from MatrixCSR
+        
+        # TODO: Create solver.
+        self._solver = superlu_dist_solver(A_superlu_dist)
 
         # Assemble rhs into Vector
         # TODO: Zero b vector
@@ -127,22 +130,17 @@ class LinearProblem:
         return self._a
 
     @property
-    def preconditioner(self) -> Form:
-        """The compiled bilinear form representing the preconditioner."""
-        return self._preconditioner
-
-    @property
-    def A(self) -> MatrixCSR:  # type: ignore[name-defined]
+    def A(self) -> MatrixCSR:
         """Left-hand side matrix."""
         return self._A
 
     @property
-    def b(self) -> Vector:  # type: ignore[name-defined]
+    def b(self) -> Vector:
         """Right-hand side vector."""
         return self._b
 
     @property
-    def x(self) -> Vector:  # type: ignore[name-defined]
+    def x(self) -> Vector:
         """Solution vector.
 
         Note:
