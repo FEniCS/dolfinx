@@ -23,6 +23,14 @@ TEMPLATE_TEST_CASE("Mark maximum empty", "[refinement][mark][maximum]", double,
   CHECK(indices.size() == 0);
 }
 
+TEMPLATE_TEST_CASE("Mark maximum ones", "[refinement][mark][maximum]", double,
+                   float)
+{
+  std::vector<TestType> marker(10, 1.0);
+  auto indices = mark_maximum<TestType>(marker, 1.0, MPI_COMM_WORLD);
+  CHECK(indices.size() == 10);
+}
+
 TEMPLATE_TEST_CASE("Mark maximum", "[refinement][mark][maximum]", double, float)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
