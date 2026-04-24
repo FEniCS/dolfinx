@@ -4,6 +4,17 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import dolfinx
+import ufl
+
+from typing import Sequence
+from dolfinx.fem import Function as _Function
+from dolfinx.fem import create_form as _create_form
+from dolfinx.fem import DirichletBC, Form 
+from dolfinx.mesh import EntityMap as _EntityMap
+from dolfinx.la.superlu_dist import superlu_dist_solver, superlu_dist_matrix
+from dolfinx.la import create_matrix
+
 class LinearProblem:
     """High-level class for solving linear problems using SuperLU_DIST.
 
@@ -51,12 +62,12 @@ class LinearProblem:
         )
         self._L = _create_form(
             L,
-            dtype=PETSc.ScalarType,  # type: ignore[attr-defined]
+            dtype=PETSc.ScalarType,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
             entity_maps=entity_maps,
         )
-        self._A = create_matrix(self._a, kind=kind)
+        self._A = create_matrix(self._a)
 
         self._u: _Function
         if u is None:
@@ -67,6 +78,7 @@ class LinearProblem:
         self.bcs = [] if bcs is None else bcs
 
         # TODO: Create solver.
+        self._solver
 
 
     def solve(self) -> _Function:
@@ -82,8 +94,10 @@ class LinearProblem:
         assemble_matrix(self.A, self.a, bcs=self.bcs)
         self.A.assemble()
 
+        # TODO: Create SuperLU_DIST matrix from MatrixCSR
+
         # Assemble rhs into Vector
-        dolfinx.la.petsc._zero_vector(self.b)
+        # TODO: Zero b vector
         assemble_vector(self.b, self.L)
 
         # Apply boundary conditions to the rhs
@@ -94,6 +108,7 @@ class LinearProblem:
                 bc.set(self.b.array_w)
         else:
             # TODO: Scatter forward
+            pass
 
         # Solve linear system and update ghost values in the solution
         self.solver.solve(self.b, self.x)
