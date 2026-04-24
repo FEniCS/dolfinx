@@ -10,6 +10,7 @@
 
 #include "vtk_utils.h"
 #include <adios2.h>
+#include <adios2/common/ADIOSTypes.h>
 #include <algorithm>
 #include <basix/mdspan.hpp>
 #include <cassert>
@@ -59,11 +60,12 @@ protected:
   /// @brief Create an ADIOS2-based writer
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
+  /// @param[in] mode Mode to open file with
   /// @param[in] tag The ADIOS2 object name
   /// @param[in] engine ADIOS2 engine type. See
   /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               std::string tag, std::string engine);
+               adios2::Mode mode, std::string tag, std::string engine);
 
   /// @brief Move constructor
   ADIOS2Writer(ADIOS2Writer&& writer) = default;
@@ -156,6 +158,11 @@ extract_common_mesh(const typename adios2_writer::U<T>& u)
 
   return mesh;
 }
+
+/// Convert string to corresponding adios2 mode.
+/// @param[in] mode Mode in string representation, either "w" or "a".
+/// @returns Adios2 mode.
+adios2::Mode mode(const std::string& mode);
 
 } // namespace impl_adios2
 
@@ -461,16 +468,18 @@ public:
   ///
   /// @param[in] comm MPI communicator to open the file on.
   /// @param[in] filename Name of output file.
+  /// @param[in] mode Mode to open file with
   /// @param[in] mesh Mesh to write.
   /// @param[in] engine ADIOS2 engine type.
   /// @note This format supports arbitrary degree meshes.
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-            std::shared_ptr<const mesh::Mesh<T>> mesh,
+            const std::string& mode, std::shared_ptr<const mesh::Mesh<T>> mesh,
             std::string engine = "BPFile")
-      : ADIOS2Writer(comm, filename, "VTX mesh writer", engine), _mesh(mesh),
-        _mesh_reuse_policy(VTXMeshPolicy::update),
+      : ADIOS2Writer(comm, filename, impl_adios2::mode(mode), "VTX mesh writer",
+                     engine),
+        _mesh(mesh), _mesh_reuse_policy(VTXMeshPolicy::update),
         _has_piecewise_constant(false)
   {
     // Define VTK scheme attribute for mesh
@@ -484,6 +493,7 @@ public:
   ///
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
+  /// @param[in] mode Mode to open file with
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
   /// element family and degree, and degree-of-freedom map (up to the
@@ -494,9 +504,11 @@ public:
   /// step.
   /// @note This format supports arbitrary degree meshes.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-            const typename adios2_writer::U<T>& u, std::string engine,
+            const std::string& mode, const typename adios2_writer::U<T>& u,
+            std::string engine,
             VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
-      : ADIOS2Writer(comm, filename, "VTX function writer", engine),
+      : ADIOS2Writer(comm, filename, impl_adios2::mode(mode),
+                     "VTX function writer", engine),
         _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u),
         _mesh_reuse_policy(mesh_policy), _has_piecewise_constant(false)
   {
@@ -595,6 +607,7 @@ public:
   ///
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
+  /// @param[in] mode Mode to open file with
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
   /// element family and degree must be the same for all functions.
@@ -603,9 +616,9 @@ public:
   /// step.
   /// @note This format supports arbitrary degree meshes.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-            const typename adios2_writer::U<T>& u,
+            const std::string& mode, const typename adios2_writer::U<T>& u,
             VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
-      : VTXWriter(comm, filename, u, "BPFile", mesh_policy)
+      : VTXWriter(comm, filename, mode, u, "BPFile", mesh_policy)
   {
   }
 
