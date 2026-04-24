@@ -482,14 +482,14 @@ void set_bc(
     VecGetArrayRead(x0_local, &array);
     std::span<const PetscScalar> _x0(array, n);
     for (auto& bc : bcs)
-      bc.set(_b, _x0, alpha);
+      bc.get().set(_b, _x0, alpha);
     VecRestoreArrayRead(x0_local, &array);
     VecGhostRestoreLocalForm(x0, &x0_local);
   }
   else
   {
     for (auto& bc : bcs)
-      bc->set(_b, std::nullopt, alpha);
+      bc.get().set(_b, std::nullopt, alpha);
   }
   VecRestoreArray(b, &array);
 }
