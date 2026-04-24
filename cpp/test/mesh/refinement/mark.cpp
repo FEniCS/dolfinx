@@ -8,7 +8,6 @@
 #include <catch2/catch_template_test_macros.hpp>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/refinement/mark.h>
-#include <iostream>
 #include <mpi.h>
 #include <vector>
 
@@ -41,7 +40,7 @@ TEMPLATE_TEST_CASE("Mark maximum", "[refinement][mark][maximum]", double, float)
     marker.push_back(10 * dolfinx::MPI::rank(comm) + i);
 
   TestType theta = 0.5;
-  auto indices = mark_maximum<TestType>(marker, theta, MPI_COMM_WORLD);
+  auto indices = mark_maximum<TestType>(marker, theta, comm);
 
   CHECK(std::ranges::all_of(
       indices, [&](auto e)
