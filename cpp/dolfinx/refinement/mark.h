@@ -40,7 +40,8 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> marker, T theta,
                          : std::ranges::max(marker);
   MPI_Allreduce(MPI_IN_PLACE, &max, 1, dolfinx::MPI::mpi_t<T>, MPI_MAX, comm);
 
-  auto mark = [=](T e) { return e >= theta * max; };
+  auto mark = [=](T e)
+  { return e + std::numeric_limits<T>::epsilon() * 1e2 > theta * max; };
 
   std::vector<std::int32_t> indices;
   indices.reserve(std::ranges::count_if(marker, mark));
