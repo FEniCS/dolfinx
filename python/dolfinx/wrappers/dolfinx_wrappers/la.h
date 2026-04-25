@@ -151,8 +151,14 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
                       const dolfinx::la::MatrixCSR<T>& B)
            { return dolfinx::la::matmul(self, B); })
       .def("multT", &dolfinx::la::MatrixCSR<T>::multT)
-      .def("transpose", [](const dolfinx::la::MatrixCSR<T>& self)
-           { return dolfinx::la::transpose(self); })
+      .def("transpose",
+           [](const dolfinx::la::MatrixCSR<T>& self)
+           {
+             std::array<int, 2> bs = self.block_size();
+             if (bs[0] == 1 and bs[1] == 1)
+               return dolfinx::la::transpose<T, 1, 1>(self);
+             return dolfinx::la::transpose(self);
+           })
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {

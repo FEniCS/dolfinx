@@ -89,7 +89,7 @@ local_transpose(const dolfinx::la::MatrixCSR<T>& A)
 
   return {std::move(colsT), std::move(row_offsetT), std::move(valsT)};
 }
-}
+} // namespace impl
 
 /// @brief Compute the distributed transpose of a MatrixCSR.
 ///
