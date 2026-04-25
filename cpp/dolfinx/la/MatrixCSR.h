@@ -359,7 +359,7 @@ public:
             std::array<std::int32_t, 1> local_col{_cols[j]};
             std::array<std::int64_t, 1> global_col{0};
             _index_maps[1]->local_to_global(local_col, global_col);
-            A[(r * _bs[1] + i0) * ncols * _bs[0] + global_col[0] * _bs[1] + i1]
+            A[(r * _bs[0] + i0) * ncols * _bs[1] + global_col[0] * _bs[1] + i1]
                 = _data[j * _bs[0] * _bs[1] + i0 * _bs[1] + i1];
           }
         }
@@ -509,9 +509,7 @@ public:
   ///
   /// **Layout requirements:**
   /// - `x` must share the same `IndexMap` as the matrix *rows*,
-  ///   `A.index_map(0)`.  All ghost entries of `x` must be up-to-date
-  ///   before calling (the implementation reads `x.array()` directly
-  ///   without a forward scatter).
+  ///   `A.index_map(0)`.
   /// - `y` must share the same *owned* indices as the matrix *columns*,
   ///   `A.index_map(1)`.  Only owned entries of `y` are meaningful after
   ///   the call; ghost entries are used as scratch and left in an
@@ -941,7 +939,7 @@ void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
 
   // Compute ghost region contribution and scatter back
   int ncolslocal = index_map(1)->size_local();
-  std::fill(std::next(_y.begin(), ncolslocal), _y.end(), 0.0);
+  std::fill(std::next(_y.begin(), ncolslocal), _y.end(), Scalar(0));
   if (_bs[1] == 1)
     impl::spmvT<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
                            _bs[0], 1);

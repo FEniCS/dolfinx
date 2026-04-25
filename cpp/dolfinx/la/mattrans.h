@@ -77,19 +77,21 @@ local_transpose(const dolfinx::la::MatrixCSR<T>& A)
       const std::int32_t col = A_cols[k];
       const std::int32_t pos = cursor[col]++;
       colsT[pos] = i;
+      // A block (BS0 x BS1) stored row-major: A_vals[k*BS0*BS1 + k0*BS1 + k1]
+      // AT block (BS1 x BS0) stored row-major: valsT[pos*BS0*BS1 + k1*BS0 + k0]
       if constexpr (BS0 < 0 or BS1 < 0)
       {
         for (int k0 = 0; k0 < bs[0]; ++k0)
           for (int k1 = 0; k1 < bs[1]; ++k1)
-            valsT[pos * bs[0] * bs[1] + k0 * bs[1] + k1]
-                = A_vals[k * bs[0] * bs[1] + k1 * bs[0] + k0];
+            valsT[pos * bs[0] * bs[1] + k1 * bs[0] + k0]
+                = A_vals[k * bs[0] * bs[1] + k0 * bs[1] + k1];
       }
       else
       {
         for (int k0 = 0; k0 < BS0; ++k0)
           for (int k1 = 0; k1 < BS1; ++k1)
-            valsT[pos * BS0 * BS1 + k0 * BS1 + k1]
-                = A_vals[k * BS0 * BS1 + k1 * BS0 + k0];
+            valsT[pos * BS0 * BS1 + k1 * BS0 + k0]
+                = A_vals[k * BS0 * BS1 + k0 * BS1 + k1];
       }
     }
   }
@@ -140,10 +142,6 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   const std::int32_t n_row = row_map_A->size_local();
   const std::int32_t n_col = col_map_A->size_local();
 
-  // Serial fast-path: no ghost columns, no communication needed.
-  // (Same reasoning as in fetch_ghost_rows — must not be applied per-rank
-  // in a parallel run, only when the communicator has a single process.)
-
   // col_map_A communication topology:
   //   src  = ranks that own our ghost columns → we SEND to them
   //   dest = ranks that ghost our owned columns → we RECEIVE from them
@@ -151,17 +149,13 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   std::span<const int> dest = col_map_A->dest();
 
   // No-neighbour fast-path (parallel, but A's column map has no cross-process
-  // topology — i.e. A has no ghost columns).
+  // topology — i.e. A has no ghost columns). Also true for serial case.
   //
   // When src AND dest are both empty this rank does not appear in any other
   // rank's neighbourhood communicator, so returning early without calling
   // neighbourhood collectives is safe: no other rank is blocked waiting for
   // us.
   //
-  // We must NOT generalise this check to "dest is empty" alone: if src is
-  // non-empty we have ghost columns to report to remote owners, meaning those
-  // owners ARE expecting our participation in the alltoall calls.
-
   MPI_Comm comm = row_map_A->comm();
   int comm_size = dolfinx::MPI::size(comm);
   if (comm_size == 1 or (src.empty() && dest.empty()))
@@ -314,10 +308,10 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   // -----------------------------------------------------------------------
   auto [col_start, col_end] = col_map_A->local_range();
 
-  // Count number of entries on each row of Aᵀ and build offset
+  // Count number of entries on each row of Aᵀ and build offset.
   std::vector<std::int64_t> new_row_count(n_col);
-  for (std::int32_t i = 0; i < n_col; ++i)
-    new_row_count[i] = static_cast<int>(at0_rp[i + 1] - at0_rp[i]);
+  std::adjacent_difference(std::next(at0_rp.begin()), at0_rp.end(),
+                           new_row_count.begin());
   for (std::int64_t c : recv_col_gidx)
   {
     const std::int32_t local_col = static_cast<std::int32_t>(c - col_start);
@@ -402,19 +396,20 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
       assert(local_col >= 0 && local_col < n_col);
       const int pos = cursor[local_col]++;
       at_cols[pos] = new_col_local[k];
+      // recv block (BS0 x BS1) row-major; at_vals block (BS1 x BS0) row-major.
       if constexpr (BS0 < 0 or BS1 < 0)
       {
         for (int k0 = 0; k0 < bs[0]; ++k0)
           for (int k1 = 0; k1 < bs[1]; ++k1)
-            at_vals[pos * bs[0] * bs[1] + k0 * bs[1] + k1]
-                = recv_vals[k * bs[0] * bs[1] + bs[0] * k1 + k0];
+            at_vals[pos * bs[0] * bs[1] + k1 * bs[0] + k0]
+                = recv_vals[k * bs[0] * bs[1] + k0 * bs[1] + k1];
       }
       else
       {
         for (int k0 = 0; k0 < BS0; ++k0)
           for (int k1 = 0; k1 < BS1; ++k1)
-            at_vals[pos * BS0 * BS1 + k0 * BS1 + k1]
-                = recv_vals[k * BS0 * BS1 + BS0 * k1 + k0];
+            at_vals[pos * BS0 * BS1 + k1 * BS0 + k0]
+                = recv_vals[k * BS0 * BS1 + k0 * BS1 + k1];
       }
     }
   }

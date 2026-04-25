@@ -47,7 +47,7 @@ def mat_random():
     """Return a function that creates a random (dense) MatrixCSR for testing."""
 
     def _mat_random(dim0, dim1, seed, dtype, bs=[1, 1]):
-        mesh = create_unit_square(MPI.COMM_WORLD, 1, 1)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 4)
         mesh.topology.create_entities(1)
         imap0 = mesh.topology.index_map(dim0)
         imap1 = mesh.topology.index_map(dim1)
@@ -60,6 +60,7 @@ def mat_random():
         A = dolfinx.la.matrix_csr(sp, dtype=dtype)
         rng = np.random.default_rng(seed)
         A.data[:] = rng.random(len(A.data))
+
         return A
 
     return _mat_random
