@@ -53,24 +53,12 @@ def test_create_matrix_csr():
         np.complex128,
     ],
 )
-def test_matvec(dtype, mat_gather):
-    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
-    imap = mesh.topology.index_map(0)
-    sp = _cpp.la.SparsityPattern(mesh.comm, [imap, imap], [1, 1])
-    rows = np.arange(0, imap.size_local)
-    cols = np.arange(0, imap.size_local + imap.num_ghosts)
-    sp.insert(rows, cols)
-    sp.finalize()
-
-    # Identity
-    A = la.matrix_csr(sp, dtype=dtype)
-    rng = np.random.default_rng(12345)
-    A.data[:] = rng.random(len(A.data))
-    A.scatter_reverse()
-
+def test_matvec(dtype, mat_random, mat_gather):
+    A = mat_random(0, 0, 12345, dtype)
     Ascipy = mat_gather(A)
-    lr0, lr1 = A.index_map(0).local_range
-    nr = A.index_map(0).size_local
+    imap = A.index_map(0)
+    lr0, lr1 = imap.local_range
+    nr = imap.size_local
     # Check gathered matrix
     assert np.allclose(A.to_dense()[:nr, :], Ascipy.todense()[lr0:lr1])
 
@@ -80,7 +68,7 @@ def test_matvec(dtype, mat_gather):
     b.array[:] = np.arange(len(b.array))
     A.mult(b, u)
 
-    bs = np.concatenate(mesh.comm.allgather(b.array[:nr]))
+    bs = np.concatenate(imap.comm.allgather(b.array[:nr]))
     print(Ascipy.shape, bs.shape)
     us = Ascipy @ bs
     assert np.allclose(u.array[:nr], us[lr0:lr1])

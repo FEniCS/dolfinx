@@ -12,6 +12,10 @@ import numpy as np
 import pytest
 from scipy.sparse import csr_matrix
 
+import dolfinx
+import dolfinx.cpp as _cpp
+from dolfinx.mesh import create_unit_square
+
 
 @pytest.fixture
 def mat_gather():
@@ -31,3 +35,26 @@ def mat_gather():
         return csr_matrix((gatheredvals, gatheredcols, indptr))
 
     return _mat_gather
+
+
+@pytest.fixture
+def mat_random():
+    """Return a function that creates a random (dense) MatrixCSR for testing."""
+
+    def _mat_random(dim0, dim1, seed, dtype):
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 4)
+        mesh.topology.create_entities(1)
+        imap0 = mesh.topology.index_map(dim0)
+        imap1 = mesh.topology.index_map(dim1)
+        sp = _cpp.la.SparsityPattern(mesh.comm, [imap0, imap1], [1, 1])
+        rows = np.arange(0, imap0.size_local)
+        cols = np.arange(0, imap1.size_local + imap1.num_ghosts)
+        sp.insert(rows, cols)
+        sp.finalize()
+
+        A = dolfinx.la.matrix_csr(sp, dtype=dtype)
+        rng = np.random.default_rng(seed)
+        A.data[:] = rng.random(len(A.data))
+        return A
+
+    return _mat_random

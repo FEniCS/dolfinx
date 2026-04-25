@@ -169,14 +169,17 @@ class MatrixCSR:
             self._cpp_object.mult(x._cpp_object, y._cpp_object)
 
     def matmul(self, B):
-        """Compute ``C = A * B``, where `A` is this matrix.
+        """Compute matrix product ``A * B``, where `A` is this matrix.
 
         Args:
-            B: Input Matrix
-            C: Output Matrix
+            B: Input Matrix to multiply by
         """
-        if self.index_map(1).size_local != B.index_map(0).size_local:
+        if (
+            self.index_map(1).size_local != B.index_map(0).size_local
+            or self.index_map(1).size_global != B.index_map(0).size_global
+        ):
             raise RuntimeError("Invalid matrix sizes for matmult.")
+
         return MatrixCSR(self._cpp_object.mult(B._cpp_object))
 
     @property
