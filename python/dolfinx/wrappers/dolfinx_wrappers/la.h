@@ -157,6 +157,10 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
              std::array<int, 2> bs = self.block_size();
              if (bs[0] == 1 and bs[1] == 1)
                return dolfinx::la::transpose<T, 1, 1>(self);
+             else if (bs[0] == 2 and bs[1] == 2)
+               return dolfinx::la::transpose<T, 2, 2>(self);
+             else if (bs[0] == 3 and bs[1] == 3)
+               return dolfinx::la::transpose<T, 3, 3>(self);
              return dolfinx::la::transpose(self);
            })
       .def("to_dense",

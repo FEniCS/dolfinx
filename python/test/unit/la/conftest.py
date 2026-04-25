@@ -60,7 +60,6 @@ def mat_random():
         A = dolfinx.la.matrix_csr(sp, dtype=dtype)
         rng = np.random.default_rng(seed)
         A.data[:] = rng.random(len(A.data))
-
         return A
 
     return _mat_random
