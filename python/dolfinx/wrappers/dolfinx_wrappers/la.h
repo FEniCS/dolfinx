@@ -13,6 +13,7 @@
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <dolfinx/la/matmul.h>
+#include <dolfinx/la/mattrans.h>
 #include <dolfinx/la/utils.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -150,6 +151,8 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
                       const dolfinx::la::MatrixCSR<T>& B)
            { return dolfinx::la::matmul(self, B); })
       .def("multT", &dolfinx::la::MatrixCSR<T>::multT)
+      .def("transpose", [](const dolfinx::la::MatrixCSR<T>& self)
+           { return dolfinx::la::transpose(self); })
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {

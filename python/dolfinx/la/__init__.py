@@ -182,6 +182,10 @@ class MatrixCSR:
 
         return MatrixCSR(self._cpp_object.mult(B._cpp_object))
 
+    def transpose(self):
+        """Compute transpose matrix."""
+        return MatrixCSR(self._cpp_object.transpose())
+
     @property
     def block_size(self) -> list:
         """Block sizes for the matrix."""
