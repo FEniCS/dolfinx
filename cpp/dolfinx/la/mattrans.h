@@ -1,5 +1,8 @@
 // Copyright (C) 2026 Chris Richardson
-// SPDX-License-Identifier: MIT
+//
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
@@ -11,7 +14,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <map>
 #include <numeric>
 #include <span>
 #include <utility>
@@ -30,6 +32,11 @@ namespace impl
 /// already in ascending order.
 ///
 /// @param A MatrixCSR
+/// @tparam T Scalar type
+/// @tparam BS0 row block size, must match row block size of A, or use -1 for
+/// non-optimized
+/// @tparam BS1 col block size, must match col block size of A, or use -1 for
+/// non-optimized
 /// @return Tuple (cols, row_ptr, values) for the transposed diagonal block.
 template <typename T, int BS0 = -1, int BS1 = -1>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>, std::vector<T>>
@@ -59,7 +66,7 @@ local_transpose(const dolfinx::la::MatrixCSR<T>& A)
                    std::next(row_offsetT.begin()));
 
   // Fill: column index in A^T is the original row index i.
-  const std::int32_t total_nnz = row_offsetT.back();
+  const std::int64_t total_nnz = row_offsetT.back();
   std::vector<std::int32_t> colsT(total_nnz);
   std::vector<T> valsT(total_nnz * bs[0] * bs[1]);
   std::vector<std::int64_t> cursor = row_offsetT;
@@ -111,6 +118,9 @@ local_transpose(const dolfinx::la::MatrixCSR<T>& A)
 ///      construct the MatrixCSR.
 ///
 /// @param A  Input matrix.
+/// @tparam T Scalar type
+/// @tparam BS0 Row block size of A, or -1 for unoptimized.
+/// @tparam BS1 Col block size of A, or -1 for unoptimized.
 /// @return   Aᵀ as a distributed MatrixCSR.
 template <typename T, int BS0 = -1, int BS1 = -1>
 dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
@@ -153,8 +163,7 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   // owners ARE expecting our participation in the alltoall calls.
 
   MPI_Comm comm = row_map_A->comm();
-  int comm_size = 1;
-  MPI_Comm_size(comm, &comm_size);
+  int comm_size = dolfinx::MPI::size(comm);
   if (comm_size == 1 or (src.empty() && dest.empty()))
   {
     // Pure local transpose: all columns are owned, so Aᵀ has no ghost columns.
@@ -183,15 +192,16 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   std::span<const std::int64_t> ghost_col_globals = col_map_A->ghosts();
 
   // Index into src[] giving the neighbor owning rank of a ghost column.
-  std::vector<int> ghost_col_owners(col_map_A->owners().size());
+  // src is guaranteed sorted (Scatterer asserts this).
+  auto rank_to_nbr = [&src](int r) -> int
   {
-    std::map<int, int> owner_to_src_idx;
-    for (std::size_t k = 0; k < src.size(); ++k)
-      owner_to_src_idx[src[k]] = static_cast<int>(k);
-    std::transform(col_map_A->owners().begin(), col_map_A->owners().end(),
-                   ghost_col_owners.begin(), [&owner_to_src_idx](int i)
-                   { return owner_to_src_idx.at(i); });
-  }
+    auto it = std::lower_bound(src.begin(), src.end(), r);
+    assert(it != src.end() && *it == r);
+    return static_cast<int>(std::distance(src.begin(), it));
+  };
+  std::vector<int> ghost_col_owners(col_map_A->owners().size());
+  std::transform(col_map_A->owners().begin(), col_map_A->owners().end(),
+                 ghost_col_owners.begin(), rank_to_nbr);
 
   // Neighbourhood communicator: this rank sends to src[], receives from
   // dest[].
@@ -214,7 +224,6 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
     }
   }
 
-  spdlog::debug("Send data MPI");
   std::vector<int> recv_count(dest.size(), 0);
   MPI_Neighbor_alltoall(send_count.data(), 1, MPI_INT, recv_count.data(), 1,
                         MPI_INT, neigh_comm);
@@ -242,6 +251,7 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   std::vector<std::int64_t> send_col_gidx(total_send);
   std::vector<T> send_vals(total_send * bs[0] * bs[1]);
   {
+    int nbs = bs[0] * bs[1];
     std::vector<int> pos = send_disp; // per-rank write cursor
     for (std::int32_t i = 0; i < n_row; ++i)
     {
@@ -253,20 +263,8 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
         const int p = pos[sidx]++;
         send_row_gidx[p] = global_i;
         send_col_gidx[p] = ghost_col_globals[j];
-        if constexpr (BS0 < 0 or BS1 < 0)
-        {
-          for (int k0 = 0; k0 < bs[0]; ++k0)
-            for (int k1 = 0; k1 < bs[1]; ++k1)
-              send_vals[p * bs[0] * bs[1] + k0 * bs[1] + k1]
-                  = vals_A[k * bs[0] * bs[1] + k0 * bs[1] + k1];
-        }
-        else
-        {
-          for (int k0 = 0; k0 < BS0; ++k0)
-            for (int k1 = 0; k1 < BS1; ++k1)
-              send_vals[p * BS0 * BS1 + k0 * BS1 + k1]
-                  = vals_A[k * BS0 * BS1 + k0 * BS1 + k1];
-        }
+        std::copy_n(std::next(vals_A.begin(), k * nbs), nbs,
+                    std::next(send_vals.begin(), p * nbs));
       }
     }
   }
@@ -280,8 +278,13 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
 
   MPI_Request data_reqs[3];
   MPI_Datatype mpi_T;
-  MPI_Type_contiguous(bs[0] * bs[1], dolfinx::MPI::mpi_t<T>, &mpi_T);
-  MPI_Type_commit(&mpi_T);
+  if (bs[0] * bs[1] == 1)
+    mpi_T = dolfinx::MPI::mpi_t<T>;
+  else
+  {
+    MPI_Type_contiguous(bs[0] * bs[1], dolfinx::MPI::mpi_t<T>, &mpi_T);
+    MPI_Type_commit(&mpi_T);
+  }
 
   MPI_Ineighbor_alltoallv(send_row_gidx.data(), send_count.data(),
                           send_disp.data(), MPI_INT64_T, recv_row_gidx.data(),
@@ -302,9 +305,9 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   // Wait for all data exchanges to complete.
   // -----------------------------------------------------------------------
   MPI_Waitall(3, data_reqs, MPI_STATUSES_IGNORE);
-  MPI_Type_free(&mpi_T);
+  if (bs[0] * bs[1] != 1)
+    MPI_Type_free(&mpi_T);
   MPI_Comm_free(&neigh_comm);
-  spdlog::debug("got values MPI");
 
   // -----------------------------------------------------------------------
   // Merge received entries into local_cols and collect ghost row info.
@@ -313,7 +316,7 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
 
   // Count number of entries on each row of Aᵀ and build offset
   std::vector<std::int64_t> new_row_count(n_col);
-  for (std::size_t i = 0; i < n_col; ++i)
+  for (std::int32_t i = 0; i < n_col; ++i)
     new_row_count[i] = static_cast<int>(at0_rp[i + 1] - at0_rp[i]);
   for (std::int64_t c : recv_col_gidx)
   {
@@ -369,7 +372,7 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   // Copy over local rows into new data structure
   std::vector<std::int32_t> at_cols(at_row_ptr.back());
   std::vector<T> at_vals(at_row_ptr.back() * bs[0] * bs[1]);
-  for (std::size_t i = 0; i < n_col; ++i)
+  for (std::int32_t i = 0; i < n_col; ++i)
   {
     std::copy(std::next(at0_cols.begin(), at0_rp[i]),
               std::next(at0_cols.begin(), at0_rp[i + 1]),
@@ -428,10 +431,13 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   dolfinx::la::MatrixCSR<T> At(sp);
   std::ranges::copy(at_vals, At.values().begin());
 
-  spdlog::info("Transpose: ({} x {}) -> ({} x {}), nnz {}",
-               row_map_A->size_global(), col_map_A->size_global(),
-               col_map_A->size_global(), row_map_A->size_global(),
-               at_row_ptr.back());
+  if (dolfinx::MPI::rank(comm) == 0)
+  {
+    spdlog::info("Transpose: ({} x {}) -> ({} x {}), nnz {}",
+                 row_map_A->size_global(), col_map_A->size_global(),
+                 col_map_A->size_global(), row_map_A->size_global(),
+                 at_row_ptr.back());
+  }
 
   return At;
 }
