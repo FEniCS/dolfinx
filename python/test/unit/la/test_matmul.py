@@ -71,3 +71,18 @@ def test_matmul_rect(dtype, mat_random, mat_gather):
     nrC = C.index_map(0).size_local
     Cscipy = Ascipy @ Bscipy
     assert np.allclose(C.to_dense()[:nrC, :], Cscipy.todense()[lrC0:lrC1])
+
+
+def test_bad_shape(mat_random):
+    # Test matmul of incompatible matrices (should raise an error)
+    A = mat_random(0, 1, 12345, np.float64)
+    B = mat_random(0, 2, 54321, np.float64)
+
+    with pytest.raises(RuntimeError):
+        A.matmul(B)
+
+    A = mat_random(0, 2, 12345, np.float64)
+    B = mat_random(1, 0, 54321, np.float64)
+
+    with pytest.raises(RuntimeError):
+        A.matmul(B)
