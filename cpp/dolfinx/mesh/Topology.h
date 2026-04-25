@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -26,6 +27,12 @@ class IndexMap;
 
 namespace dolfinx::mesh
 {
+/// Requirement on range of cell indices.
+template <typename R>
+concept CellRange = std::ranges::input_range<R> and std::ranges::sized_range<R>
+                    and std::is_integral_v<
+                        std::remove_const_t<std::ranges::range_value_t<R>>>;
+
 enum class CellType : std::int8_t;
 
 /// @brief Topology stores the topology of a mesh, consisting of mesh
