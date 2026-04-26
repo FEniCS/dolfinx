@@ -330,9 +330,9 @@ def test_locate_entities(dtype):
         cells = [np.array([], dtype=np.int64), np.array([], dtype=np.int64)]
         geom = np.array([], dtype=dtype)
 
-    part = create_cell_partitioner(GhostMode.none, 2, dtype=dtype)
+    part = create_cell_partitioner(GhostMode.none, 2)
     hexahedron = coordinate_element(CellType.hexahedron, 1, dtype=dtype)
-    prism = coordinate_element(CellType.prism, 1)
+    prism = coordinate_element(CellType.prism, 1, dtype=dtype)
     comm = MPI.COMM_WORLD
     max_cells_per_facet = 2
     mesh = create_mesh(
