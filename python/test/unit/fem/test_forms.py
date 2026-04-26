@@ -15,9 +15,20 @@ import basix
 import basix.ufl
 import dolfinx
 from dolfinx.fem import IntegralType, extract_function_spaces, form, functionspace
-from dolfinx.fem.forms import form_cpp_class, derivative_block
+from dolfinx.fem.forms import derivative_block, form_cpp_class
 from dolfinx.mesh import create_unit_square
-from ufl import Measure, SpatialCoordinate, TestFunction, TrialFunction, dx, inner, Form as ufl_form, TrialFunctions, TestFunctions, MixedFunctionSpace
+from ufl import Form as ufl_form
+from ufl import (
+    Measure,
+    MixedFunctionSpace,
+    SpatialCoordinate,
+    TestFunction,
+    TestFunctions,
+    TrialFunction,
+    TrialFunctions,
+    dx,
+    inner,
+)
 
 
 def test_extract_forms():
@@ -135,7 +146,7 @@ def test_multiple_measures_one_subdomain_data():
 
 
 def test_derivative_block():
-    """Test the function derivative_block"""
+    """Test the function derivative_block."""
     mesh = dolfinx.mesh.create_unit_interval(MPI.COMM_WORLD, 10)
     V0 = functionspace(mesh, ("Lagrange", 1))
     V1 = functionspace(mesh, ("Lagrange", 2))
@@ -164,10 +175,16 @@ def test_derivative_block():
     M_block = f0**2 * f1 * dx  # multivariate functional
 
     F_block = derivative_block(M_block, [f0, f1])
-    assert all([isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F_block])
+    assert all(
+        isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1
+        for F_i in F_block
+    )
 
     F_block = derivative_block(M_block, [f0, f1], [v0, v1])
-    assert all([isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F_block])
+    assert all(
+        isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1
+        for F_i in F_block
+    )
 
     with pytest.raises(ValueError):
         derivative_block(F_block, f0)  # second argument not a sequence
@@ -179,7 +196,13 @@ def test_derivative_block():
         derivative_block(F_block, [f0, f1], u0) # third argument not a sequence
 
     J_block = derivative_block(F_block, [f0, f1])
-    assert all([isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J_block for J_ij in J_i])
+    assert all(
+        isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2
+        for J_i in J_block for J_ij in J_i
+    )
 
     J_block = derivative_block(F_block, [f0, f1], [u0, u1])
-    assert all([isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J_block for J_ij in J_i])
+    assert all(
+        isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2
+        for J_i in J_block for J_ij in J_i
+    )

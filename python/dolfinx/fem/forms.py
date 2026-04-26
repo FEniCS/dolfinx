@@ -733,42 +733,59 @@ def derivative_block(
     u: Function | Sequence[Function],
     du: ufl.Argument | Sequence[ufl.Argument] | None = None,
 ) -> ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]]:
-    """Return the UFL derivative of a UFL rank zero form, or the UFL derivative
-    of a (list of) rank one form(s).
+    """Return the UFL derivative of a form or list of forms.
 
-    This is commonly used to derive a block residual from a functional, or to
-    derive a block Jacobian from a block residual.
+    This is commonly used to derive a block residual from a functional, or
+    to derive a block Jacobian from a block residual.
 
     Four cases are supported:
 
     1. ``F`` is a rank-zero ``ufl.Form``, and ``u`` is a ``ufl.Function``.
-        Returns a ``ufl.Form`` representing the residual :math:`R =
-        \\frac{\\partial F}{\\partial u}[\\delta u]`. This is equivalent to
-        calling {py:func}`ufl.derivative` directly.
+       Returns a ``ufl.Form`` representing the residual
 
-    2. ``F`` is a rank-zero `ufl.Form``, and ``u`` is a list of ``ufl.Function``.
-        Returns a list of ``ufl.Form`` representing the block residual :math:`R`,
-        with :math:`R_i = \\frac{\\partial F}{\\partial u_i}[\\delta u_i]`, where
-        :math:`\\delta u_i` is a test subfunction of the mixed space defined by
-        ``u``. This is equivalent to calling {py:func}`ufl.extract_blocks` on the
-        result from {py:func}`ufl.derivative`.
+       .. math::
 
-    3. ``F`` is a rank-one `ufl.Form``, and ``u`` is a ``ufl.Function``.
-       Returns a ``ufl.Form`` representing the Jacobian :math:`J =
-       \\frac{\\partial F}{\\partial u}[\\delta u]`. This is equivalent to
-       calling {py:func}`ufl.derivative` directly.
+           R = \\frac{\\partial F}{\\partial u}[\\delta u].
 
-    4. ``F`` is a list of rank-one `ufl.Form``, and ``u`` is a list of
-       ``ufl.Function``. Returns a list of lists representing the block Jacobian
-       :math:`J`, with :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]`
-       using {py:func}`ufl.derivative` called component-wise.
+       This is equivalent to calling :func:`ufl.derivative` directly.
+
+    2. ``F`` is a rank-zero ``ufl.Form``, and ``u`` is a list of
+       ``ufl.Function``. Returns a list of ``ufl.Form`` representing the
+       block residual :math:`R`, with
+
+       .. math::
+
+           R_i = \\frac{\\partial F}{\\partial u_i}[\\delta u_i],
+
+       where :math:`\\delta u_i` is a test subfunction of the mixed
+       space defined by ``u``. This is equivalent to calling
+       :func:`ufl.extract_blocks` on the result from
+       :func:`ufl.derivative`.
+
+    3. ``F`` is a rank-one ``ufl.Form``, and ``u`` is a ``ufl.Function``.
+       Returns a ``ufl.Form`` representing the Jacobian
+
+       .. math::
+
+           J = \\frac{\\partial F}{\\partial u}[\\delta u].
+
+       This is equivalent to calling :func:`ufl.derivative` directly.
+
+    4. ``F`` is a list of rank-one ``ufl.Form``, and ``u`` is a list of
+       ``ufl.Function``. Returns a list of lists representing the block
+       Jacobian :math:`J`, with
+
+       .. math::
+
+           J_{ij} = \\frac{\\partial F_i}{\\partial u_j}[\\delta u_j]
+
+       using :func:`ufl.derivative` called component-wise.
 
     Args:
         F: UFL form(s) to be derived.
         u: Function(s) with respect to the derivative is computed.
         du: UFL argument(s) representing the direction of the derivative.
     """  # noqa: D301
-    
     if isinstance(F, ufl.Form) and not F.arguments():
         if isinstance(u, Function):
             return _derive_univariate_residual(F, u, du)
