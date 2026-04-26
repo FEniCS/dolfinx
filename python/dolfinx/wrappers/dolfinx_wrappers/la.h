@@ -12,6 +12,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/la/matmul.h>
 #include <dolfinx/la/utils.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -145,6 +146,10 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
            })
       .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
       .def("mult", &dolfinx::la::MatrixCSR<T>::mult)
+      .def("mult", [](const dolfinx::la::MatrixCSR<T>& self,
+                      const dolfinx::la::MatrixCSR<T>& B)
+           { return dolfinx::la::matmul(self, B); })
+      .def("multT", &dolfinx::la::MatrixCSR<T>::multT)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
