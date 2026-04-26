@@ -301,6 +301,7 @@ def test_create_entities():
     # Triangle and quad to prism (facet->cell)
     mesh.topology.create_connectivity(2, 3)
 
+
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_locate_entities(dtype):
