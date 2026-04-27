@@ -562,11 +562,8 @@ def compile_form(
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
     """
-    form_compiler_options = (
-        {"scalar_type": default_scalar_type}
-        if form_compiler_options is None
-        else form_compiler_options
-    )
+    if form_compiler_options is None:
+        form_compiler_options = {"scalar_type": default_scalar_type}
     p_ffcx = ffcx.get_options(form_compiler_options)
     p_jit = jit.get_options(jit_options)
     ufcx_form, module, code = jit.ffcx_jit(comm, form, p_ffcx, p_jit)
