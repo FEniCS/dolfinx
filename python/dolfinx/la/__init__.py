@@ -178,9 +178,20 @@ class MatrixCSR:
             self.index_map(1).size_local != B.index_map(0).size_local
             or self.index_map(1).size_global != B.index_map(0).size_global
         ):
-            raise RuntimeError("Invalid matrix sizes for matmult.")
+            raise RuntimeError("Invalid matrix sizes for matmul.")
+        if (
+            self.block_size[0] != 1
+            or self.block_size[1] != 1
+            or B.block_size[0] != 1
+            or B.block_size[1] != 1
+        ):
+            raise RuntimeError("Block size not supported in matmul.")
 
         return MatrixCSR(self._cpp_object.mult(B._cpp_object))
+
+    def transpose(self):
+        """Compute transpose matrix."""
+        return MatrixCSR(self._cpp_object.transpose())
 
     @property
     def block_size(self) -> list:
