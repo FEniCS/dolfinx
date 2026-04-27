@@ -401,7 +401,7 @@ def form(
 
         # Extract subdomain ids from ufcx_form
         subdomain_ids = {type: [] for type in sd.get(domain).keys()}
-        integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(6)]
+        integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(len(IntegralType))]
         for i in range(len(integral_offsets) - 1):
             integral_type = IntegralType(i)
             for j in range(integral_offsets[i], integral_offsets[i + 1]):
@@ -549,7 +549,7 @@ class CompiledForm:
 def compile_form(
     comm: MPI.Intracomm,
     form: ufl.Form,
-    form_compiler_options: dict | None = {"scalar_type": default_scalar_type},
+    form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
 ) -> CompiledForm:
     """Compile UFL form without associated DOLFINx data.
@@ -560,6 +560,11 @@ def compile_form(
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
     """
+    form_compiler_options = (
+        {"scalar_type": default_scalar_type}
+        if form_compiler_options is None
+        else form_compiler_options
+    )
     p_ffcx = ffcx.get_options(form_compiler_options)
     p_jit = jit.get_options(jit_options)
     ufcx_form, module, code = jit.ffcx_jit(comm, form, p_ffcx, p_jit)
