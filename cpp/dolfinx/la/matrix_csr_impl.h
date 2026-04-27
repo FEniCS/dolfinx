@@ -234,7 +234,7 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
     for (std::size_t i = 0; i < row_begin.size(); i++)
     {
       T vi{0};
-      for (std::int32_t j = row_begin[i]; j < row_end[i]; j++)
+      for (std::int64_t j = row_begin[i]; j < row_end[i]; j++)
       {
         if constexpr (BS1 == -1)
         {
@@ -255,6 +255,75 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
       }
 
       y[i * bs0 + k0] += vi;
+    }
+  }
+}
+
+/// @brief Sparse matrix-vector transpose product implementation.
+///
+/// Computes `y += A^T x` where A is given in CSR format.  The transpose
+/// is applied implicitly: for each nonzero A(i, indices[j]) the
+/// contribution `A(i,j) * x[i]` is scattered into `y[indices[j]]`.
+///
+/// @note `y` is accumulated into (not overwritten).  Callers should
+/// zero `y` before the first call if a fresh result is required.
+///
+/// @note The value block layout is column-major within each block: for
+/// block entry `j` the element at row-offset `k0` and column-offset `k1`
+/// is stored at `values[j * bs1 * bs0 + k1 * bs0 + k0]`.
+///
+/// @tparam T   Scalar type of the matrix and vector entries.
+/// @tparam BS1 Compile-time column block size.  Pass `-1` to use the
+///             runtime value `bs1` instead.
+///
+/// @param[in]  values    Nonzero values of A, stored block-column-major.
+///                       Length: `nnz * bs0 * bs1`.
+/// @param[in]  row_begin Start positions in `values`/`indices` for each
+///                       row of A.  Length: number of rows of A.
+/// @param[in]  row_end   End positions in `values`/`indices` for each
+///                       row of A.  Length: number of rows of A.
+/// @param[in]  indices   Column indices of each nonzero block entry of A.
+///                       Length: `nnz`.
+/// @param[in]  x         Input vector, indexed by the *rows* of A.
+///                       Length: `num_rows * bs0`.
+/// @param[in,out] y      Output vector, indexed by the *columns* of A,
+///                       accumulated into.
+///                       Length: `num_cols * bs1`.
+/// @param[in]  bs0       Row block size (runtime value).
+/// @param[in]  bs1       Column block size (runtime value, used when
+///                       `BS1 == -1`).
+template <typename T, int BS1>
+void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
+           std::span<const std::int64_t> row_end,
+           std::span<const std::int32_t> indices, std::span<const T> x,
+           std::span<T> y, int bs0, int bs1)
+{
+  assert(row_begin.size() == row_end.size());
+
+  for (int k0 = 0; k0 < bs0; ++k0)
+  {
+    for (std::size_t i = 0; i < row_begin.size(); i++)
+    {
+      const T xval = x[i * bs0 + k0];
+      for (std::int64_t j = row_begin[i]; j < row_end[i]; j++)
+      {
+        if constexpr (BS1 == -1)
+        {
+          for (int k1 = 0; k1 < bs1; ++k1)
+          {
+            y[indices[j] * bs1 + k1]
+                += values[j * bs1 * bs0 + k1 * bs0 + k0] * xval;
+          }
+        }
+        else
+        {
+          for (int k1 = 0; k1 < BS1; ++k1)
+          {
+            y[indices[j] * BS1 + k1]
+                += values[j * BS1 * bs0 + k1 * bs0 + k0] * xval;
+          }
+        }
+      }
     }
   }
 }
