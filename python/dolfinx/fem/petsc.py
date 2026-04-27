@@ -1014,9 +1014,9 @@ def assemble_residual(
     """Assemble the residual at ``x`` into the vector ``b``.
 
     A function conforming to the interface expected by ``SNES.setFunction``
-   A function conforming to the interface expected by ``SNES.setFunction``
-   by setting all arguments except `snes`, `x` and `b` through the `kargs`
-   keyword argument.
+    A function conforming to the interface expected by ``SNES.setFunction``
+    by setting all arguments except `snes`, `x` and `b` through the `kargs`
+    keyword argument.
 
     Example::
 
@@ -1086,10 +1086,10 @@ def assemble_jacobian(
 
     A function conforming to the interface expected by
     ``SNES.setJacobian`` can be created by fixing the first four
-   A function conforming to the interface expected by
-   ``SNES.setJacobian`` can be created by setting all
-   arguments except `_snes`, `x`, `J` and `P_mat`
-   through the `kargs` argument e.g.:
+    A function conforming to the interface expected by
+    ``SNES.setJacobian`` can be created by setting all
+    arguments except `_snes`, `x`, `J` and `P_mat`
+    through the `kargs` argument e.g.:
 
     Example::
 
@@ -1108,7 +1108,7 @@ def assemble_jacobian(
         jacobian: Compiled form of the Jacobian.
         preconditioner: Compiled form of the preconditioner.
         bcs: List of Dirichlet boundary conditions to apply to the Jacobian
-             and preconditioner matrices.
+            and preconditioner matrices.
     """
     # Copy existing soultion into the function used in the residual and
     # Jacobian
