@@ -53,27 +53,56 @@ def test_create_matrix_csr():
         np.complex128,
     ],
 )
-def test_matvec(dtype):
-    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
-    imap = mesh.topology.index_map(0)
-    sp = _cpp.la.SparsityPattern(mesh.comm, [imap, imap], [1, 1])
-    rows = np.arange(0, imap.size_local)
-    cols = np.arange(0, imap.size_local)
-    sp.insert(rows, cols)
-    sp.finalize()
-
-    # Identity
-    A = la.matrix_csr(sp, dtype=dtype)
-    for i in range(imap.size_local):
-        A.add(np.array([2.0], dtype=dtype), np.array([i]), np.array([i]))
-    A.scatter_reverse()
+def test_matvec(dtype, mat_random, mat_gather):
+    A = mat_random(0, 0, 12345, dtype)
+    Ascipy = mat_gather(A)
+    imap = A.index_map(0)
+    lr0, lr1 = imap.local_range
+    nr = imap.size_local
+    # Check gathered matrix
+    assert np.allclose(A.to_dense()[:nr, :], Ascipy.todense()[lr0:lr1])
 
     b = la.vector(imap, dtype=dtype)
     u = la.vector(imap, dtype=dtype)
-    b.array[:] = 1.0
+    u.array[:] = 0.0
+    b.array[:] = np.arange(len(b.array))
     A.mult(b, u)
-    u.scatter_forward()
-    assert np.allclose(u.array[: imap.size_local], 2.0)
+
+    bs = np.concatenate(imap.comm.allgather(b.array[:nr]))
+    print(Ascipy.shape, bs.shape)
+    us = Ascipy @ bs
+    assert np.allclose(u.array[:nr], us[lr0:lr1])
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        np.complex64,
+        np.complex128,
+    ],
+)
+def test_matvec_transpose(dtype, mat_random, mat_gather):
+    # Create a random square MatrixCSR
+    A = mat_random(0, 0, 54321, dtype)
+
+    Ascipy = mat_gather(A)
+    imap = A.index_map(0)
+    lr0, lr1 = imap.local_range
+    nr = imap.size_local
+    # Check gathered matrix
+    assert np.allclose(A.to_dense()[:nr, :], Ascipy.todense()[lr0:lr1])
+
+    b = la.vector(imap, dtype=dtype)
+    u = la.vector(imap, dtype=dtype)
+    u.array[:] = 0.0
+    b.array[:] = np.arange(len(b.array))
+    A.mult(b, u, True)
+
+    bs = np.concatenate(imap.comm.allgather(b.array[:nr]))
+    us = Ascipy.T @ bs
+    assert np.allclose(u.array[:nr], us[lr0:lr1])
 
 
 @pytest.mark.parametrize(

@@ -33,7 +33,7 @@ jobs:
         shell: bash -el {0}
 
     steps:
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: conda-incubator/setup-miniconda@v4
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
