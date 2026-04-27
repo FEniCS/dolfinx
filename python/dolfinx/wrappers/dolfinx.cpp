@@ -23,6 +23,8 @@ void io(nb::module_& m);
 void la(nb::module_& m);
 void mesh(nb::module_& m);
 void refinement(nb::module_& m);
+void multigrid(nb::module_& m);
+
 } // namespace dolfinx_wrappers
 
 NB_MODULE(cpp, m)
@@ -71,6 +73,10 @@ NB_MODULE(cpp, m)
   // Create refinement submodule
   nb::module_ refinement = m.def_submodule("refinement", "Refinement module");
   dolfinx_wrappers::refinement(refinement);
+
+  // Create multigrid submodule
+  nb::module_ multigrid = m.def_submodule("multigrid", "Multigrid module");
+  dolfinx_wrappers::multigrid(multigrid);
 
 #if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
   // PETSc-specific wrappers
