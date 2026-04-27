@@ -156,7 +156,6 @@ def test_derivative_block():
     v0, v1 = TestFunctions(V)
     u0, u1 = TrialFunctions(V)
 
-
     M = f0**2 * dx  # univariate functional
 
     F = derivative_block(M, f0)
@@ -171,20 +170,13 @@ def test_derivative_block():
     J = derivative_block(F, f0, u0)
     assert isinstance(J, ufl_form) and len(J.arguments()) == 2
 
-
     M_block = f0**2 * f1 * dx  # multivariate functional
 
     F_block = derivative_block(M_block, [f0, f1])
-    assert all(
-        isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1
-        for F_i in F_block
-    )
+    assert all(isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F_block)
 
     F_block = derivative_block(M_block, [f0, f1], [v0, v1])
-    assert all(
-        isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1
-        for F_i in F_block
-    )
+    assert all(isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F_block)
 
     with pytest.raises(ValueError):
         derivative_block(F_block, f0)  # second argument not a sequence
@@ -193,16 +185,14 @@ def test_derivative_block():
         derivative_block(F_block, [f0, f1], [u0])  # third argument has wrong length
 
     with pytest.raises(ValueError):
-        derivative_block(F_block, [f0, f1], u0) # third argument not a sequence
+        derivative_block(F_block, [f0, f1], u0)  # third argument not a sequence
 
     J_block = derivative_block(F_block, [f0, f1])
     assert all(
-        isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2
-        for J_i in J_block for J_ij in J_i
+        isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J_block for J_ij in J_i
     )
 
     J_block = derivative_block(F_block, [f0, f1], [u0, u1])
     assert all(
-        isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2
-        for J_i in J_block for J_ij in J_i
+        isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J_block for J_ij in J_i
     )

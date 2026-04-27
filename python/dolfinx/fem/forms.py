@@ -720,10 +720,9 @@ def _derive_block_jacobian(
         raise ValueError("When F is a sequence, u must be a sequence")
     if du is None:
         du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
-    elif (not isinstance(du, Sequence) or not len(u) == len(du)):
+    elif not isinstance(du, Sequence) or not len(u) == len(du):
         raise ValueError(
-            "When F is a list of N forms, du must be a sequence "
-            "containing N functions"
+            "When F is a list of N forms, du must be a sequence containing N functions"
         )
     return [[ufl.derivative(F_i, u_j, du_j) for u_j, du_j in zip(u, du)] for F_i in F]
 
