@@ -229,6 +229,9 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
           std::span<T> y, int bs0, int bs1)
 {
   assert(row_begin.size() == row_end.size());
+  // Block layout: row-major within each block. The element at row-offset
+  // k0 (∈ [0, bs0)) and column-offset k1 (∈ [0, bs1)) of block entry j
+  // is stored at values[j * bs0 * bs1 + k0 * bs1 + k1].
   for (int k0 = 0; k0 < bs0; ++k0)
   {
     for (std::size_t i = 0; i < row_begin.size(); i++)
@@ -240,7 +243,7 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
         {
           for (int k1 = 0; k1 < bs1; ++k1)
           {
-            vi += values[j * bs1 * bs0 + k1 * bs0 + k0]
+            vi += values[j * bs0 * bs1 + k0 * bs1 + k1]
                   * x[indices[j] * bs1 + k1];
           }
         }
@@ -248,7 +251,7 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
         {
           for (int k1 = 0; k1 < BS1; ++k1)
           {
-            vi += values[j * BS1 * bs0 + k1 * bs0 + k0]
+            vi += values[j * bs0 * BS1 + k0 * BS1 + k1]
                   * x[indices[j] * BS1 + k1];
           }
         }
@@ -268,15 +271,15 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
 /// @note `y` is accumulated into (not overwritten).  Callers should
 /// zero `y` before the first call if a fresh result is required.
 ///
-/// @note The value block layout is column-major within each block: for
+/// @note The value block layout is row-major within each block: for
 /// block entry `j` the element at row-offset `k0` and column-offset `k1`
-/// is stored at `values[j * bs1 * bs0 + k1 * bs0 + k0]`.
+/// is stored at `values[j * bs0 * bs1 + k0 * bs1 + k1]`.
 ///
 /// @tparam T   Scalar type of the matrix and vector entries.
 /// @tparam BS1 Compile-time column block size.  Pass `-1` to use the
 ///             runtime value `bs1` instead.
 ///
-/// @param[in]  values    Nonzero values of A, stored block-column-major.
+/// @param[in]  values    Nonzero values of A, stored block-row-major.
 ///                       Length: `nnz * bs0 * bs1`.
 /// @param[in]  row_begin Start positions in `values`/`indices` for each
 ///                       row of A.  Length: number of rows of A.
@@ -300,6 +303,7 @@ void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
 {
   assert(row_begin.size() == row_end.size());
 
+  // Block layout: row-major within each block.
   for (int k0 = 0; k0 < bs0; ++k0)
   {
     for (std::size_t i = 0; i < row_begin.size(); i++)
@@ -312,7 +316,7 @@ void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
           for (int k1 = 0; k1 < bs1; ++k1)
           {
             y[indices[j] * bs1 + k1]
-                += values[j * bs1 * bs0 + k1 * bs0 + k0] * xval;
+                += values[j * bs0 * bs1 + k0 * bs1 + k1] * xval;
           }
         }
         else
@@ -320,7 +324,7 @@ void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
           for (int k1 = 0; k1 < BS1; ++k1)
           {
             y[indices[j] * BS1 + k1]
-                += values[j * BS1 * bs0 + k1 * bs0 + k0] * xval;
+                += values[j * bs0 * BS1 + k0 * BS1 + k1] * xval;
           }
         }
       }
