@@ -303,7 +303,8 @@ def test_create_entities():
 
 
 @pytest.mark.skip_in_parallel
-def test_locate_entities():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_locate_entities(dtype):
     # Create a unit cube mesh with one hex and two wedges
     if MPI.COMM_WORLD.rank == 0:
         hexes = np.array([0, 1, 3, 4, 6, 7, 9, 10], dtype=np.int64)
@@ -324,15 +325,15 @@ def test_locate_entities():
                 [0.5, 1.0, 1.0],
                 [1.0, 1.0, 1.0],
             ],
-            dtype=np.float64,
+            dtype=dtype,
         )
     else:
         cells = [np.array([], dtype=np.int64), np.array([], dtype=np.int64)]
-        geom = np.array([], dtype=np.float64)
+        geom = np.array([], dtype=dtype)
 
     part = create_cell_partitioner(GhostMode.none, 2)
-    hexahedron = coordinate_element(CellType.hexahedron, 1)
-    prism = coordinate_element(CellType.prism, 1)
+    hexahedron = coordinate_element(CellType.hexahedron, 1, dtype=dtype)
+    prism = coordinate_element(CellType.prism, 1, dtype=dtype)
     comm = MPI.COMM_WORLD
     max_cells_per_facet = 2
     mesh = create_mesh(
