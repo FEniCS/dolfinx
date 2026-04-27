@@ -49,7 +49,7 @@ docs = [
       "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
 ]
-lint = ["ruff>=0.2.0"]
+lint = ["ruff"]
 optional = ["numba"]
 petsc4py = ["petsc4py"]
 test = [
