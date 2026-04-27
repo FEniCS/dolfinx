@@ -697,7 +697,7 @@ fem::DofMap fem::build_real_element_dofmap(
     const mesh::Topology& topology,
     const std::vector<std::vector<std::vector<int>>>& entity_dofs,
     const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
-    std::size_t value_size)
+    int value_size)
 {
   // We select the process that owns cell 0 to have all dofs and all other
   // processes ghost them
@@ -721,7 +721,7 @@ fem::DofMap fem::build_real_element_dofmap(
   owners.reserve(1);
 
   // Create index map
-  std::shared_ptr<const dolfinx::common::IndexMap> imap
+  auto imap
       = std::make_shared<const dolfinx::common::IndexMap>(
           topology.comm(), num_dofs, ghosts, owners);
 
@@ -730,7 +730,7 @@ fem::DofMap fem::build_real_element_dofmap(
                                             entity_closure_dofs, {}, {});
 
   // Create dofmap array
-  std::size_t num_cells_on_process
+  std::int32_t num_cells_on_process
       = topology.index_map(topology.dim())->size_local()
         + topology.index_map(topology.dim())->num_ghosts();
 
