@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 from mpi4py import MPI
 
@@ -17,6 +18,13 @@ from dolfinx import default_real_type
 from dolfinx.fem import Function, functionspace
 from dolfinx.graph import adjacencylist
 from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_square
+
+
+def import_adios2():
+    adios2 = pytest.importorskip("adios2", minversion="2.10.0")
+    if not adios2.is_built_with_mpi:
+        pytest.skip("Require adios2 built with MPI support")
+    return adios2
 
 
 def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
@@ -208,9 +216,7 @@ class TestVTX:
         """Test reusage of mesh by VTXWriter."""
         from dolfinx.io import VTXMeshPolicy, VTXWriter
 
-        adios2 = pytest.importorskip("adios2", minversion="2.10.0")
-        if not adios2.is_built_with_mpi:
-            pytest.skip("Require adios2 built with MPI support")
+        adios2 = import_adios2()
 
         mesh = generate_mesh(dim, simplex)
         v = Function(functionspace(mesh, ("Lagrange", 1)))
@@ -247,18 +253,12 @@ class TestVTX:
         """Test that we can mix DG-0 and other Lagrange functions."""
         from dolfinx.io import VTXWriter
 
-        adios2 = pytest.importorskip("adios2", minversion="2.10.0")
-        if not adios2.is_built_with_mpi:
-            pytest.skip("Require adios2 built with MPI support")
-
+        adios2 = import_adios2()
         mesh = generate_mesh(2, False)
         v = Function(functionspace(mesh, ("Lagrange", 2, (2,))))
         filename = Path(tempdir, "v.bp")
         v.name = "v"
         v.interpolate(lambda x: (x[0], -x[1]))
-        z = Function(v.function_space)
-        z.name = "z"
-        z.interpolate(lambda x: (np.sin(x[0]), x[1]))
 
         q = Function(functionspace(mesh, ("DG", 0, (2,))))
         q.name = "q"
@@ -272,3 +272,24 @@ class TestVTX:
         q.interpolate(lambda x: (x[1], x[0]))
         writer.write(2)
         writer.close()
+
+        # Check that q and v were written as point and cell data respectively
+        with adios2.FileReader(str(filename), mesh.comm) as bpFile:
+            vtk_data = bpFile.read_attribute_string("vtk.xml")
+
+            vtk_data = ET.fromstring(vtk_data).find("UnstructuredGrid/Piece")
+            assert vtk_data is not None
+
+            xml_point_data = vtk_data.find("PointData")
+            xml_cell_data = vtk_data.find("CellData")
+            assert xml_point_data is not None
+            assert xml_cell_data is not None
+
+            def get_data_array_names(data):
+                return set(da.get("Name") for da in data.findall("DataArray"))
+
+            point_arrays = get_data_array_names(xml_point_data)
+            assert "v" in point_arrays or ("v_imag" in point_arrays and "v_real" in point_arrays)
+
+            cell_arrays = get_data_array_names(xml_cell_data)
+            assert "q" in cell_arrays or ("q_imag" in cell_arrays and "q_real" in cell_arrays)
