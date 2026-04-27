@@ -134,6 +134,17 @@ void declare_refinement(nanobind::module_& m)
             std::span(marker.data(), marker.size()), theta, comm.get()));
       },
       nb::arg("marker"), nb::arg("theta"), nb::arg("comm"));
+
+  m.def(
+      "mark_equidistribution",
+      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> marker, T theta,
+         MPICommWrapper comm)
+      {
+        return dolfinx_wrappers::as_nbarray(
+            dolfinx::refinement::mark_equidistribution(
+                std::span(marker.data(), marker.size()), theta, comm.get()));
+      },
+      nb::arg("marker"), nb::arg("theta"), nb::arg("comm"));
 }
 
 } // namespace dolfinx_wrappers
