@@ -22,7 +22,7 @@
 
 namespace dolfinx
 {
-struct __unsigned_projection
+struct _unsigned_projection
 {
   // Transforms the projected value to an unsigned int (if signed),
   // while maintaining relative order by
@@ -47,7 +47,7 @@ struct __unsigned_projection
 };
 
 /// Projection from signed to signed int
-inline constexpr __unsigned_projection unsigned_projection{};
+inline constexpr _unsigned_projection unsigned_projection{};
 
 /// @brief Sort a range with radix sorting algorithm. The bucket size is
 /// determined by the number of bits to sort at a time (2^BITS).
