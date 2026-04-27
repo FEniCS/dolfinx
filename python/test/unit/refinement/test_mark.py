@@ -12,7 +12,7 @@ import pytest
 from dolfinx import mesh
 
 
-@pytest.mark.parametrize("theta", np.linspace(0, 1, num=5, endpoint=True))
+@pytest.mark.parametrize("theta", [0.2, 0.4, 0.6, 0.8])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_mark_maximum(theta: float, dtype: np.dtype) -> None:
     msh = mesh.create_unit_square(comm := MPI.COMM_WORLD, n := 10, n, dtype=dtype)

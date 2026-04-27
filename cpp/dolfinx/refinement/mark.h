@@ -10,7 +10,6 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
-#include <iterator>
 #include <limits>
 #include <mpi.h>
 #include <spdlog/spdlog.h>
@@ -25,7 +24,7 @@ namespace dolfinx::refinement
 ///
 /// @param[in] marker Input marker (local) - usually an error indicator per
 /// entity
-/// @param[in] theta Cut off parameter, 0 ≤ θ ≤ 1
+/// @param[in] theta Cut off parameter, 0 < θ < 1
 /// @param[in] comm Communicator over which the maximum is computed.
 /// @return Indices (local) of marker elements, which satisfy: marker_i ≥ θ
 /// max(marker).
@@ -33,15 +32,14 @@ template <std::floating_point T>
 std::vector<std::int32_t> mark_maximum(std::span<const T> marker, T theta,
                                        MPI_Comm comm)
 {
-  if ((theta < 0) || (theta > 1))
-    throw std::invalid_argument("Theta needs to fullfill 0 ≤ θ ≤ 1.");
+  if ((theta <= 0) || (theta >= 1))
+    throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
 
   T max = marker.empty() ? std::numeric_limits<T>::lowest()
                          : std::ranges::max(marker);
   MPI_Allreduce(MPI_IN_PLACE, &max, 1, dolfinx::MPI::mpi_t<T>, MPI_MAX, comm);
 
-  auto mark = [=](T e)
-  { return e + std::numeric_limits<T>::epsilon() * 1e2 > theta * max; };
+  auto mark = [=](T e) { return e > theta * max; };
 
   std::vector<std::int32_t> indices;
   indices.reserve(std::ranges::count_if(marker, mark));
