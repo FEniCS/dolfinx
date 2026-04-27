@@ -1014,7 +1014,9 @@ def assemble_residual(
     """Assemble the residual at ``x`` into the vector ``b``.
 
     A function conforming to the interface expected by ``SNES.setFunction``
-    can be created by fixing the first four arguments, e.g.:
+   A function conforming to the interface expected by ``SNES.setFunction``
+   by setting all arguments except `snes`, `x` and `b` through the `kargs`
+   keyword argument.
 
     Example::
 
@@ -1084,7 +1086,10 @@ def assemble_jacobian(
 
     A function conforming to the interface expected by
     ``SNES.setJacobian`` can be created by fixing the first four
-    arguments e.g.:
+   A function conforming to the interface expected by
+   ``SNES.setJacobian`` can be created by setting all
+   arguments except `_snes`, `x`, `J` and `P_mat`
+   through the `kargs` argument e.g.:
 
     Example::
 
