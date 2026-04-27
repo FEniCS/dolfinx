@@ -38,6 +38,7 @@ PDEs (advanced)
    demos/demo_pyamg.md
    demos/demo_hdg.md
    demos/demo_mixed-topology.md
+   demos/demo_smoothed_tv_inpainting.md
 
 
 Nonlinear problems
