@@ -54,6 +54,6 @@ fem::DofMap build_real_element_dofmap(
     const mesh::Topology& topology,
     const std::vector<std::vector<std::vector<int>>>& entity_dofs,
     const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
-    std::size_t value_size);
+    int value_size);
 
 } // namespace dolfinx::fem
