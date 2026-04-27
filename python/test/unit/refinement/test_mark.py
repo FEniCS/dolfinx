@@ -25,7 +25,7 @@ def test_mark_maximum(theta: float, dtype: np.dtype) -> None:
 
     assert np.allclose(
         marked_cells,
-        np.argwhere(marker >= theta * comm.allreduce(np.max(marker), MPI.MAX)).flatten(),
+        np.argwhere(marker > theta * comm.allreduce(np.max(marker), MPI.MAX)).flatten(),
     )
 
     msh.topology.create_entities(1)
