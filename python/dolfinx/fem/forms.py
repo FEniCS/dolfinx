@@ -401,7 +401,9 @@ def form(
 
         # Extract subdomain ids from ufcx_form
         subdomain_ids = {type: [] for type in sd.get(domain).keys()}
-        integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(len(IntegralType))]
+        integral_offsets = [
+            ufcx_form.form_integral_offsets[i] for i in range(len(IntegralType) + 1)
+        ]
         for i in range(len(integral_offsets) - 1):
             integral_type = IntegralType(i)
             for j in range(integral_offsets[i], integral_offsets[i + 1]):
