@@ -19,7 +19,7 @@ authors = [
       { name = "FEniCS Steering Council" },
 ]
 dependencies = [
-      "numpy>=1.21",
+      "numpy>=2",
       "cffi",
       "mpi4py",
       "fenics-basix>=0.11.0.dev0",
