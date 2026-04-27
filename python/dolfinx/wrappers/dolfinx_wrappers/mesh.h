@@ -131,6 +131,19 @@ void declare_meshtags(nb::module_& m, const std::string& type)
           return dolfinx::mesh::create_meshtags(
               topology, dim, entities, std::span(values.data(), values.size()));
         });
+  std::string pyfunc_name = "transfer_meshtags_to_submesh_" + type;
+  m.def(
+      pyfunc_name.c_str(),
+      [](const dolfinx::mesh::MeshTags<T>& tags,
+         std::shared_ptr<const dolfinx::mesh::Topology> submesh_topology,
+         const dolfinx::mesh::EntityMap& vertex_map,
+         const dolfinx::mesh::EntityMap& cell_map)
+      {
+        return dolfinx::mesh::transfer_meshtags_to_submesh<T>(
+            tags, submesh_topology, vertex_map, cell_map);
+      },
+      nanobind::arg("tags"), nanobind::arg("submesh_topology"),
+      nanobind::arg("vertex_map"), nanobind::arg("cell_map"));
 }
 
 template <typename T>
@@ -209,12 +222,13 @@ void declare_mesh(nb::module_& m, std::string type)
           nb::rv_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      .def_prop_ro(
+      .def(
           "cmap", [](dolfinx::mesh::Geometry<T>& self) { return self.cmap(); },
           "The coordinate map")
       .def(
-          "cmaps", [](dolfinx::mesh::Geometry<T>& self, int i)
-          { return self.cmaps()[i]; }, "The ith coordinate map")
+          "cmap", [](dolfinx::mesh::Geometry<T>& self, std::optional<int> i)
+          { return self.cmap(i); }, "The ith coordinate map",
+          nb::arg("i").none())
       .def_prop_ro(
           "input_global_indices",
           [](const dolfinx::mesh::Geometry<T>& self)

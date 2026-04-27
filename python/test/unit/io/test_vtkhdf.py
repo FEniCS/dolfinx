@@ -102,8 +102,8 @@ def test_read_write_higher_order():
         mesh_in = read_mesh(MPI.COMM_WORLD, "mixed_mesh_second_order.vtkhdf", gdim=gdim)
         assert mesh_in.geometry.dim == gdim
         assert mesh_in.geometry.index_map().size_global == 12
-        cmap_0 = mesh_in.geometry._cpp_object.cmaps(0)
-        cmap_1 = mesh_in.geometry._cpp_object.cmaps(1)
+        cmap_0 = mesh_in.geometry.cmap(0)
+        cmap_1 = mesh_in.geometry.cmap(1)
         assert cmap_0.degree == 2
         assert cmap_1.degree == 2
 
