@@ -60,8 +60,8 @@ TEMPLATE_TEST_CASE("Mark equidistribution empty",
   CHECK(indices.size() == 0);
 }
 
-TEMPLATE_TEST_CASE("Mark equidistribution", "[refinement][mark][equidistribution]",
-                   double, float)
+TEMPLATE_TEST_CASE("Mark equidistribution",
+                   "[refinement][mark][equidistribution]", double, float)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
 
