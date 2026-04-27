@@ -721,9 +721,8 @@ fem::DofMap fem::build_real_element_dofmap(
   owners.reserve(1);
 
   // Create index map
-  auto imap
-      = std::make_shared<const dolfinx::common::IndexMap>(
-          topology.comm(), num_dofs, ghosts, owners);
+  auto imap = std::make_shared<const dolfinx::common::IndexMap>(
+      topology.comm(), num_dofs, ghosts, owners);
 
   // Create element dof layout
   dolfinx::fem::ElementDofLayout dof_layout(value_size, entity_dofs,
