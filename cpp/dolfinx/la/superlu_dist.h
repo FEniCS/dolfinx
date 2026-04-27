@@ -42,7 +42,6 @@ public:
 // the solver class to select the typed set based on T.
 namespace impl
 {
-/// \cond
 template <typename...>
 constexpr bool always_false_v = false;
 
@@ -56,29 +55,34 @@ struct map
 template <>
 struct map<double>
 {
+  /// \cond
   using ScalePermstruct_t = SuperLUDistStructs::dScalePermstruct_t;
   using LUstruct_t = SuperLUDistStructs::dLUstruct_t;
   using SOLVEstruct_t = SuperLUDistStructs::dSOLVEstruct_t;
+  /// \endcond
 };
 
 /// Map float type to float 'typed' structs
 template <>
 struct map<float>
 {
+  /// \cond
   using ScalePermstruct_t = SuperLUDistStructs::sScalePermstruct_t;
   using LUstruct_t = SuperLUDistStructs::sLUstruct_t;
   using SOLVEstruct_t = SuperLUDistStructs::sSOLVEstruct_t;
+  /// \endcond
 };
 
 /// Map std::complex type to doublecomplex 'typed' structs
 template <>
 struct map<std::complex<double>>
 {
+  /// \cond
   using ScalePermstruct_t = SuperLUDistStructs::zScalePermstruct_t;
   using LUstruct_t = SuperLUDistStructs::zLUstruct_t;
   using SOLVEstruct_t = SuperLUDistStructs::zSOLVEstruct_t;
+  /// \endcond
 };
-/// \endcond
 
 } // namespace impl
 

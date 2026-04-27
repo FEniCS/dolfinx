@@ -18,7 +18,6 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
-#include <format>
 #include <functional>
 #include <mpi.h>
 #include <numeric>

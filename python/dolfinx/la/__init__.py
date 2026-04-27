@@ -155,43 +155,14 @@ class MatrixCSR:
         """
         return self._cpp_object.index_map(i)
 
-    def mult(self, x: Vector, y: Vector, transpose: bool = False) -> None:
-        """Compute ``y += Ax`` or ``y += A^T x``.
+    def mult(self, x: Vector, y: Vector) -> None:
+        """Compute ``y += Ax``.
 
         Args:
             x: Input Vector
             y: Output Vector
-            transpose: if True, compute y += A^T x
         """
-        if transpose:
-            self._cpp_object.multT(x._cpp_object, y._cpp_object)
-        else:
-            self._cpp_object.mult(x._cpp_object, y._cpp_object)
-
-    def matmul(self, B):
-        """Compute matrix product ``A * B``, where `A` is this matrix.
-
-        Args:
-            B: Input Matrix to multiply by
-        """
-        if (
-            self.index_map(1).size_local != B.index_map(0).size_local
-            or self.index_map(1).size_global != B.index_map(0).size_global
-        ):
-            raise RuntimeError("Invalid matrix sizes for matmul.")
-        if (
-            self.block_size[0] != 1
-            or self.block_size[1] != 1
-            or B.block_size[0] != 1
-            or B.block_size[1] != 1
-        ):
-            raise RuntimeError("Block size not supported in matmul.")
-
-        return MatrixCSR(self._cpp_object.mult(B._cpp_object))
-
-    def transpose(self):
-        """Compute transpose matrix."""
-        return MatrixCSR(self._cpp_object.transpose())
+        self._cpp_object.mult(x._cpp_object, y._cpp_object)
 
     @property
     def block_size(self) -> list:
