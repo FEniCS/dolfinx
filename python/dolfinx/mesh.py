@@ -296,13 +296,12 @@ class Geometry:
         """Dimension of the Euclidean coordinate system."""
         return self._cpp_object.dim
 
-    @property
-    def dofmap(self) -> npt.NDArray[np.int32]:
-        """Dofmap for the geometry.
+    def dofmap(self, i=None) -> npt.NDArray[np.int32]:
+        """Dofmap for the geometry on the ith cell type.
 
         Shape is ``(num_cells, dofs_per_cell)``.
         """
-        return self._cpp_object.dofmap
+        return self._cpp_object.dofmap(i)
 
     def index_map(self) -> _IndexMap:
         """Index map for the geometry points (nodes) distribution."""
