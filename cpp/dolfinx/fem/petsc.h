@@ -454,28 +454,34 @@ void apply_lifting(
 
 // FIXME: Move these function elsewhere?
 
-// FIXME: clarify x0
-// FIXME: clarify what happens with ghosts
-
-/// Set bc values in owned (local) part of the PETSc vector, multiplied
-/// by 'alpha'. The vectors b and x0 must have the same local size. The
-/// bcs should be on (sub-)spaces of the form L that b represents.
+/// Entries in `b` that are constrained by a Dirichlet boundary
+/// conditions are set to `alpha * (x_bc - x0)`, where `x_bc` is the
+/// (interpolated) boundary condition value.
+///
+/// @param[in] b The vector to apply the boundary condition to. The local
+/// (owned) part of this vector is modified. The user is reponsible of
+/// scattering the changes to the ghost part of the vector if necessary.
+/// @param[in] bcs The boundary conditions to apply.
+/// @param[in] x0 Optional vector used in computing the value to set. If
+/// not provided it is treated as zero. The local (owned) part of this vector is
+/// used.
+/// @param[in] alpha Scaling to apply.
 template <std::floating_point T>
 void set_bc(
     Vec b,
     const std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>>
         bcs,
-    const Vec x0, PetscScalar alpha = 1)
+    std::optional<const Vec> x0, PetscScalar alpha = 1)
 {
   PetscInt n = 0;
   VecGetLocalSize(b, &n);
   PetscScalar* array = nullptr;
   VecGetArray(b, &array);
   std::span<PetscScalar> _b(array, n);
-  if (x0)
+  if (x0.has_value())
   {
     Vec x0_local;
-    VecGhostGetLocalForm(x0, &x0_local);
+    VecGhostGetLocalForm(x0.value(), &x0_local);
     PetscInt n = 0;
     VecGetSize(x0_local, &n);
     const PetscScalar* array = nullptr;
@@ -484,7 +490,7 @@ void set_bc(
     for (auto& bc : bcs)
       bc.get().set(_b, _x0, alpha);
     VecRestoreArrayRead(x0_local, &array);
-    VecGhostRestoreLocalForm(x0, &x0_local);
+    VecGhostRestoreLocalForm(x0.value(), &x0_local);
   }
   else
   {
