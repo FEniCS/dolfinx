@@ -47,6 +47,7 @@ if _cpp.common.has_adios2:
             self,
             comm: _MPI.Comm,
             filename: str | Path,
+            mode: str,
             output: Mesh | Function | list[Function] | tuple[Function],
             engine: str = "BPFile",
             mesh_policy: VTXMeshPolicy = VTXMeshPolicy.update,
@@ -56,6 +57,8 @@ if _cpp.common.has_adios2:
             Args:
                 comm: The MPI communicator
                 filename: The output filename
+                mode: The filemode to open the file in, one of 'a' (append)
+                    or 'w' (write).
                 output: The data to output. Either a mesh, a single
                     (discontinuous) Lagrange Function or list of
                     (discontinuous) Lagrange Functions.
@@ -87,14 +90,16 @@ if _cpp.common.has_adios2:
                 raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
             if isinstance(output, Mesh):
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
+                self._cpp_object = _vtxwriter(comm, filename, mode, output._cpp_object, engine)  # type: ignore[union-attr]
             else:
                 cpp_objects = (
                     [output._cpp_object]
                     if isinstance(output, Function)
                     else [o._cpp_object for o in output]
                 )
-                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)
+                self._cpp_object = _vtxwriter(
+                    comm, filename, mode, cpp_objects, engine, mesh_policy
+                )
 
         def __enter__(self):
             """Enter context manager."""

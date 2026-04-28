@@ -125,19 +125,19 @@ void declare_vtx_writer(nanobind::module_& m, const std::string& type)
       .def(
           "__init__",
           [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
-             std::filesystem::path filename,
+             std::filesystem::path filename, const std::string& mode,
              std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
              std::string engine)
           {
-            new (self)
-                dolfinx::io::VTXWriter<T>(comm.get(), filename, mesh, engine);
+            new (self) dolfinx::io::VTXWriter<T>(comm.get(), filename, mode,
+                                                 mesh, engine);
           },
-          nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"),
-          nb::arg("engine"))
+          nb::arg("comm"), nb::arg("filename"), nb::arg("mode"),
+          nb::arg("mesh"), nb::arg("engine"))
       .def(
           "__init__",
           [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
-             std::filesystem::path filename,
+             std::filesystem::path filename, const std::string& mode,
              const std::vector<std::variant<
                  std::shared_ptr<const dolfinx::fem::Function<float, T>>,
                  std::shared_ptr<const dolfinx::fem::Function<double, T>>,
@@ -147,10 +147,10 @@ void declare_vtx_writer(nanobind::module_& m, const std::string& type)
                      std::complex<double>, T>>>>& u,
              const std::string& engine, dolfinx::io::VTXMeshPolicy policy)
           {
-            new (self) dolfinx::io::VTXWriter<T>(comm.get(), filename, u,
+            new (self) dolfinx::io::VTXWriter<T>(comm.get(), filename, mode, u,
                                                  engine, policy);
           },
-          nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
+          nb::arg("comm"), nb::arg("filename"), nb::arg("mode"), nb::arg("u"),
           nb::arg("engine") = "BPFile",
           nb::arg("policy") = dolfinx::io::VTXMeshPolicy::update)
       .def("close", [](dolfinx::io::VTXWriter<T>& self) { self.close(); })
