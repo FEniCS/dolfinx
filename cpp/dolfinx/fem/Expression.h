@@ -1,4 +1,5 @@
-// Copyright (C) 2020-2025 Jack S. Hale, Michal Habera and Garth N. Wells
+// Copyright (C) 2020-2026 Jack S. Hale, Michal Habera, Garth N. Wells and
+// Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -12,6 +13,7 @@
 #include <array>
 #include <concepts>
 #include <dolfinx/common/types.h>
+#include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <memory>
@@ -62,38 +64,35 @@ public:
   /// @param[in] fn Function for tabulating the Expression.
   /// @param[in] value_shape Shape of Expression evaluated at single
   /// point.
+  /// @param[in] entity_maps Maps between entities of different meshes.
+  /// @param[in] coordinate_element_hash Hash for coordinate element used
+  /// to create the expression.
   /// @param[in] argument_space Function space for Argument. Used to
   /// computed a 1-form expression, e.g. can be used to create a matrix
   /// that when applied to a degree-of-freedom vector gives the
   /// expression values at the evaluation points.
-  Expression(const std::vector<std::shared_ptr<
-                 const Function<scalar_type, geometry_type>>>& coefficients,
-             const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
-                 constants,
-             std::span<const geometry_type> X,
-             std::array<std::size_t, 2> Xshape,
-             std::function<void(scalar_type*, const scalar_type*,
-                                const scalar_type*, const geometry_type*,
-                                const int*, const uint8_t*, void*)>
-                 fn,
-             const std::vector<std::size_t>& value_shape,
-             std::shared_ptr<const FunctionSpace<geometry_type>> argument_space
-             = nullptr)
+  Expression(
+      const std::vector<std::shared_ptr<
+          const Function<scalar_type, geometry_type>>>& coefficients,
+      const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
+          constants,
+      std::span<const geometry_type> X, std::array<std::size_t, 2> Xshape,
+      std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
+                         const geometry_type*, const int*, const uint8_t*,
+                         void*)>
+          fn,
+      const std::vector<std::size_t>& value_shape,
+      const std::vector<std::reference_wrapper<const dolfinx::mesh::EntityMap>>&
+          entity_maps,
+
+      std::uint64_t coordinate_element_hash,
+      std::shared_ptr<const FunctionSpace<geometry_type>> argument_space
+      = nullptr)
       : _argument_space(argument_space), _coefficients(coefficients),
         _constants(constants), _fn(fn), _value_shape(value_shape),
-        _x_ref(std::vector<geometry_type>(X.begin(), X.end()), Xshape)
-
-  {
-    for (auto& c : _coefficients)
-    {
-      assert(c);
-      if (c->function_space()->mesh()
-          != _coefficients.front()->function_space()->mesh())
-      {
-        throw std::runtime_error("Coefficients not all defined on same mesh.");
-      }
-    }
-  }
+        _x_ref(std::vector<geometry_type>(X.begin(), X.end()), Xshape),
+        _entity_maps(entity_maps),
+        _coordinate_element_hash(coordinate_element_hash) {};
 
   /// Move constructor
   Expression(Expression&& e) = default;
@@ -168,6 +167,19 @@ public:
     return _x_ref;
   }
 
+  /// @brief Maps between entities of different meshes.
+  const std::vector<std::reference_wrapper<const dolfinx::mesh::EntityMap>>&
+  entity_maps() const
+  {
+    return _entity_maps;
+  }
+
+  /// @brief Hash for coordinate element used to create the expression.
+  std::uint64_t coordinate_element_hash() const
+  {
+    return _coordinate_element_hash;
+  }
+
 private:
   // Function space for Argument
   std::shared_ptr<const FunctionSpace<geometry_type>> _argument_space;
@@ -189,5 +201,12 @@ private:
 
   // Evaluation points on reference cell
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> _x_ref;
+
+  // Map between different mesh topologies
+  std::vector<std::reference_wrapper<const dolfinx::mesh::EntityMap>>
+      _entity_maps;
+
+  // Hash for coordinate element used to create the expression
+  std::uint64_t _coordinate_element_hash;
 };
 } // namespace dolfinx::fem

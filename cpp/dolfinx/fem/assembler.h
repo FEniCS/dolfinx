@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2025 Garth N. Wells
+// Copyright (C) 2018-2026 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -19,6 +19,7 @@
 #include <basix/mdspan.hpp>
 #include <cstdint>
 #include <dolfinx/common/types.h>
+#include <dolfinx/mesh/EntityMap.h>
 #include <memory>
 #include <optional>
 #include <span>
@@ -70,6 +71,12 @@ void tabulate_expression(
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
+  // Check that domain is the same as mesh of the expression
+  if (e.coordinate_element_hash() != mesh.geometry().cmap(0).hash())
+  {
+    throw std::runtime_error(
+        "Expression was created on a different mesh. Cannot tabulate.");
+  }
   auto [X, Xshape] = e.X();
   impl::tabulate_expression(values, e.kernel(), Xshape, e.value_size(), coeffs,
                             constants, mesh, entities, element);
@@ -95,6 +102,13 @@ template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
 {
+  // Check that domain is the same as mesh of the expression
+  if (e.coordinate_element_hash() != mesh.geometry().cmap(0).hash())
+  {
+    throw std::runtime_error(
+        "Expression was created on a different mesh. Cannot tabulate.");
+  }
+
   std::optional<
       std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
       element = std::nullopt;
@@ -115,7 +129,8 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
     std::vector<std::reference_wrapper<const Function<T, U>>> c;
     std::ranges::transform(coefficients, std::back_inserter(c),
                            [](auto c) -> const Function<T, U>& { return *c; });
-    fem::pack_coefficients(c, coffsets, entities, std::span(coeffs));
+    fem::pack_coefficients(c, mesh, entities, e.entity_maps(), coffsets,
+                           std::span(coeffs));
   }
   std::vector<T> constants = fem::pack_constants(e);
 

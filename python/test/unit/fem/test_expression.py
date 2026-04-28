@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2024 Michal Habera and Jørgen S. Dokken
+# Copyright (C) 2019-2026 Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -15,7 +15,7 @@ import ufl
 from basix.ufl import quadrature_element
 from dolfinx import fem, la
 from dolfinx.fem import Constant, Expression, Function, form, functionspace
-from dolfinx.mesh import create_unit_square
+from dolfinx.mesh import create_rectangle, create_unit_square
 
 
 @pytest.mark.parametrize(
@@ -526,3 +526,112 @@ def test_rank1_blocked():
                 mask = np.ones(point_values.shape[2], dtype=bool)
                 mask[offset::vs] = False
                 np.testing.assert_allclose(point_values[i, j, mask], 0)
+
+
+@pytest.mark.parametrize("qdegree", [1, 3, 5])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_submesh_codim_zero(dtype, qdegree):
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=xtype)
+
+    V = dolfinx.fem.functionspace(mesh, ("Lagrange", 1))
+    u = dolfinx.fem.Function(V, dtype=dtype)
+    u.interpolate(lambda x: x[0] + 2.0 * x[1])
+
+    def mark_left_cells(x):
+        return x[0] <= 0.5 + 100 * np.finfo(xtype).resolution
+
+    left_cells = dolfinx.mesh.locate_entities(mesh, mesh.topology.dim, mark_left_cells)
+    submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(mesh, mesh.topology.dim, left_cells)
+    u_sub = dolfinx.fem.Function(dolfinx.fem.functionspace(submesh, ("Lagrange", 2)), dtype=dtype)
+    u_sub.interpolate(lambda x: x[1] ** 2 + x[0] ** 2)
+
+    quadrature_points, _ = basix.make_quadrature(basix.CellType.triangle, qdegree)
+    quadrature_points = quadrature_points.astype(xtype)
+
+    sub_cellmap = submesh.topology.index_map(submesh.topology.dim)
+    num_sub_cells = sub_cellmap.size_local + sub_cellmap.num_ghosts
+    parent_cells = entity_map.sub_topology_to_topology(
+        np.arange(num_sub_cells, dtype=np.int32), inverse=False
+    )
+
+    expr = dolfinx.fem.Expression(
+        u * u_sub, quadrature_points, dtype=dtype, entity_maps=[entity_map]
+    )
+    values = expr.eval(mesh, parent_cells)
+
+    values_sub = expr.eval(submesh, np.arange(num_sub_cells, dtype=np.int32))
+
+    tol = 50 * np.finfo(dtype).eps
+    np.testing.assert_allclose(values, values_sub, atol=tol)
+
+    x = ufl.SpatialCoordinate(mesh)
+    u_exact = (x[0] + 2.0 * x[1]) * (x[1] ** 2 + x[0] ** 2)
+    cell_map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = cell_map.size_local + cell_map.num_ghosts
+    expr_exact = dolfinx.fem.Expression(u_exact, quadrature_points, dtype=dtype)
+    values_exact = expr_exact.eval(mesh, np.arange(num_cells, dtype=np.int32))
+    np.testing.assert_allclose(values, values_exact[parent_cells], atol=tol)
+
+
+@pytest.mark.parametrize("qdegree", [1, 3, 5])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_submesh_codim_one(dtype, qdegree):
+    xtype = dtype(0).real.dtype
+    mesh = create_rectangle(
+        MPI.COMM_WORLD, np.array([[0, 0], [2.1, 2.0]], dtype=xtype), [5, 3], dtype=xtype
+    )
+    el = basix.ufl.element("Lagrange", mesh.basix_cell(), 1, shape=(), dtype=xtype)
+    V = dolfinx.fem.functionspace(mesh, el)
+    u = dolfinx.fem.Function(V, dtype=dtype)
+    u.interpolate(lambda x: x[0] + 2.0 * x[1])
+
+    tol = 50 * np.finfo(xtype).resolution
+
+    def mark_left_facets(x):
+        return np.isclose(x[0], 1.0, atol=tol)
+
+    left_facets = dolfinx.mesh.locate_entities(mesh, mesh.topology.dim - 1, mark_left_facets)
+    submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(mesh, mesh.topology.dim, left_facets)
+    sub_el = basix.ufl.element(
+        "Lagrange", submesh.basix_cell(), 2, shape=(submesh.geometry.dim,), dtype=xtype
+    )
+    u_sub = dolfinx.fem.Function(dolfinx.fem.functionspace(submesh, sub_el), dtype=dtype)
+    u_sub.interpolate(lambda x: (x[1] ** 2, -(x[0] ** 2)))
+
+    quadrature_points, _ = basix.make_quadrature(basix.CellType.interval, qdegree)
+    quadrature_points = quadrature_points.astype(xtype)
+
+    n_h = ufl.FacetNormal(mesh)
+    expr = u * (ufl.dot(u_sub, n_h) + n_h[0] * u_sub[1])
+
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    expr = dolfinx.fem.Expression(expr, quadrature_points, dtype=dtype, entity_maps=[entity_map])
+
+    entities = dolfinx.fem.compute_integration_domains(
+        dolfinx.fem.IntegralType.exterior_facet, mesh.topology, left_facets
+    )
+
+    values = expr.eval(mesh, entities.reshape(-1, 2))
+
+    x = ufl.SpatialCoordinate(mesh)
+    expr_exact = (x[0] + 2.0 * x[1]) * (x[1] ** 2 - x[0] ** 2)
+    expr_exact = dolfinx.fem.Expression(expr_exact, quadrature_points, dtype=dtype)
+    values_exact = expr_exact.eval(mesh, entities.reshape(-1, 2))
+    np.testing.assert_allclose(values, values_exact, atol=tol)

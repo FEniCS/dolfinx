@@ -953,21 +953,10 @@ Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+    const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+        entity_maps,
     std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
 {
-  if (!coefficients.empty())
-  {
-    assert(coefficients.front());
-    assert(coefficients.front()->function_space());
-    std::shared_ptr<const mesh::Mesh<U>> mesh
-        = coefficients.front()->function_space()->mesh();
-    if (mesh->geometry().cmap().hash() != e.coordinate_element_hash)
-    {
-      throw std::runtime_error(
-          "Expression and mesh geometric maps do not match.");
-    }
-  }
-
   if (e.rank > 0 and !argument_space)
   {
     throw std::runtime_error("Expression has Argument but no Argument "
@@ -1007,8 +996,10 @@ Expression<T, U> create_expression(
     throw std::runtime_error("Type not supported.");
 
   assert(tabulate_tensor);
+  std::uint64_t e_hash = e.coordinate_element_hash;
   return Expression(coefficients, constants, std::span<const U>(X), Xshape,
-                    tabulate_tensor, value_shape, argument_space);
+                    tabulate_tensor, value_shape, entity_maps, e_hash,
+                    argument_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and
@@ -1019,6 +1010,8 @@ Expression<T, U> create_expression(
     const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
+    const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+        entity_maps,
     std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
 {
   // Place coefficients in appropriate order
@@ -1057,7 +1050,8 @@ Expression<T, U> create_expression(
     }
   }
 
-  return create_expression(e, coeff_map, const_map, argument_space);
+  return create_expression(e, coeff_map, const_map, entity_maps,
+                           argument_space);
 }
 
 } // namespace dolfinx::fem

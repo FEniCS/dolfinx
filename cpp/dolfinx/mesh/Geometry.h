@@ -120,7 +120,7 @@ public:
   /// map element in the geometry.
   /// @param[in] i Index of the requested degree-of-freedom map. The
   /// degree-of-freedom map corresponds to the geometry element
-  /// `cmaps()[i]`.
+  /// `cmap(i)`.
   /// @return A dofmap array, with shape `(num_cells, dofs_per_cell)`.
   md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>
   dofmap(std::size_t i) const
@@ -152,7 +152,7 @@ public:
 
   /// @brief The elements that describes the geometry map.
   ///
-  /// The coordinate element `cmaps()[i]` corresponds to the
+  /// The coordinate element `cmap(i)` corresponds to the
   /// degree-of-freedom map `dofmap(i)`.
   /// @param i The coordinate map to fetch
   /// @return The coordinate/geometry elements.
