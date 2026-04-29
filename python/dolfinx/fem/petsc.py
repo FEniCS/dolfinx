@@ -1239,9 +1239,7 @@ class NonlinearProblem:
         )
 
         if J is None:
-            result = derivative_block(F, u)
-            assert isinstance(result, type(J))
-            J = result
+            J = derivative_block(F, u)
 
         self._J = _create_form(
             J,
