@@ -32,6 +32,8 @@ if typing.TYPE_CHECKING:
     from dolfinx.mesh import EntityMap as _EntityMap
     from dolfinx.mesh import Mesh, MeshTags
 
+from typing import cast
+
 
 class Form:
     """A finite element form."""
@@ -787,14 +789,20 @@ def derivative_block(
     """  # noqa: D301
     if isinstance(F, ufl.Form) and not F.arguments():
         if isinstance(u, Function):
+            du = cast(ufl.Argument | None, du)
             return _derive_univariate_residual(F, u, du)
         elif isinstance(u, Sequence):
+            du = cast(Sequence[ufl.Argument] | None, du)
             return _derive_block_residual(F, u, du)
         else:
             raise ValueError("u must be either a ufl.Function or a sequence of ufl.Function")
     elif isinstance(F, ufl.Form) and len(F.arguments()) == 1:
+        u = cast(Function, u)
+        du = cast(ufl.Argument | None, du)
         return _derive_univariate_jacobian(F, u, du)
     elif isinstance(F, Sequence):
+        u = cast(Sequence[Function], u)
+        du = cast(Sequence[ufl.Argument] | None, du)
         return _derive_block_jacobian(F, u, du)
     else:
         raise ValueError(
