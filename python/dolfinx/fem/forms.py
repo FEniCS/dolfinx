@@ -693,7 +693,7 @@ def _derive_univariate_residual(
 
 def _derive_block_residual(
     F: ufl.Form,
-    u: Sequence[ufl.Form],
+    u: Sequence[Function],
     du: Sequence[ufl.Argument] | None = None,
 ) -> Sequence[ufl.Form]:
     if du is None:
@@ -713,7 +713,7 @@ def _derive_univariate_jacobian(
 
 def _derive_block_jacobian(
     F: Sequence[ufl.Form],
-    u: Sequence[ufl.Form],
+    u: Sequence[Function],
     du: Sequence[ufl.Argument] | None = None,
 ) -> Sequence[Sequence[ufl.Form]]:
     if not isinstance(u, Sequence):
