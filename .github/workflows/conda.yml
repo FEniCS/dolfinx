@@ -36,17 +36,19 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v4
         with:
           auto-update-conda: true
+          channels: conda-forge
+          mamba-version: "*"
           python-version: ${{ matrix.python-version }}
       
       # TODO: These could probably be merged into one cross-platform step.
       - name: Install DOLFINx with MPICH (Unix-like)
         if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
         run: |
-          conda install -c conda-forge fenics-dolfinx mpich petsc=*=${{ matrix.petsc-scalar-type }}*
+          mamba install fenics-dolfinx mpich petsc=*=${{ matrix.petsc-scalar-type }}*
       - name: Install DOLFINx (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          conda install -c conda-forge fenics-dolfinx
+          mamba install fenics-dolfinx
       
       - name: Test (Unix-like)
         if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
