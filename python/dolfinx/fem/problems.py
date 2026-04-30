@@ -3,23 +3,37 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""High-level solver classes using native linear algebra objects.
 
-import dolfinx
+Users with advanced requirements should use PETSc.
+"""
+
+from collections.abc import Sequence
+
+import numpy.typing as npt
+
 import ufl
+from dolfinx.fem import (
+    DirichletBC,
+    Form,
+    Function,
+    apply_lifting,
+    assemble_matrix,
+    assemble_vector,
+    create_form,
+)
+from dolfinx.la import MatrixCSR, Vector, create_matrix, create_vector
+from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
+from dolfinx.mesh import EntityMap as EntityMap
 
-from typing import Sequence
-from dolfinx.fem import Function as _Function
-from dolfinx.fem import create_form as _create_form
-from dolfinx.fem import DirichletBC, Form 
-from dolfinx.mesh import EntityMap as _EntityMap
-from dolfinx.la.superlu_dist import superlu_dist_solver, superlu_dist_matrix
-from dolfinx.la import create_matrix
+__all__ = ["LinearProblem"]
+
 
 class LinearProblem:
-    """High-level class for solving linear problems using SuperLU_DIST.
+    r"""High-level class for solving linear problems using SuperLU_DIST.
 
-    Solves problems of the form :math:`a(u, v) = f(v) \\forall v \\in V` using
-    SuperLU_DIST as the linear solver.
+    Solves problems of the form :math:`a(u, v) = f(v) \\forall v \\in V`
+    using SuperLU_DIST as the linear solver.
     """
 
     def __init__(
@@ -27,20 +41,24 @@ class LinearProblem:
         a: ufl.Form,
         L: ufl.Form,
         bcs: Sequence[DirichletBC] | None = None,
-        u: _Function | None = None,
+        u: Function | None = None,
         form_compiler_options: dict | None = None,
+        dtype: npt.DTypeLike = None,
         jit_options: dict | None = None,
-        entity_maps: Sequence[_EntityMap] | None = None,
+        entity_maps: Sequence[EntityMap] | None = None,
     ) -> None:
         """Initialize SuperLU_DIST solver for a linear variational problem.
 
         Args:
             a: Bilinear UFL form, the left-hand side of the variational
-                problem.
-            L: Linear UFL form, the right-hand side of the variational problem.
+               problem.
+            L: Linear UFL form, the right-hand side of the variational
+               problem.
             bcs: Sequence of Dirichlet boundary conditions to apply to
                  the variational problem.
             u: Solution function. It is created if not provided.
+            dtype: dtype passed to FFCx for form compilation. Must match
+               dtype of ``u``, if passed.
             form_compiler_options: Options used in FFCx compilation of
                 all forms. Run ``ffcx --help`` at the commandline to see
                 all available options.
@@ -53,35 +71,32 @@ class LinearProblem:
                 as the integration domain, a corresponding :class:
                 `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
         """
-        # TODO: Handle dtype properly
-        self._a = _create_form(
+        self._a = create_form(
             a,
-            dtype=np.float64,
+            dtype=dtype,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
             entity_maps=entity_maps,
         )
-        self._L = _create_form(
+        self._L = create_form(
             L,
-            dtype=PETSc.ScalarType,
+            dtype=dtype,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
             entity_maps=entity_maps,
         )
         self._A = create_matrix(self._a)
+        self._x = create_vector(self._L)
 
-        # TODO: Assembly best done here?
-
-        self._u: _Function
+        self._u: Function
         if u is None:
-            self._u = _Function(L.arguments()[0].ufl_function_space())
+            self._u = Function(L.arguments()[0].ufl_function_space())
         else:
             self._u = u
 
         self.bcs = [] if bcs is None else bcs
 
-
-    def solve(self) -> _Function:
+    def solve(self) -> Function:
         """Solve the problem.
 
         This method updates the solution ``u`` function(s) stored in the
@@ -90,33 +105,33 @@ class LinearProblem:
         Returns:
             The solution function(s).
         """
-        # Assemble lhs into MatrixCSR
+        # Assemble lhs
+        self.A.set_value(0.0)
         assemble_matrix(self.A, self.a, bcs=self.bcs)
-        self.A.assemble()
+        self.A.scatter_reverse()
 
-        # TODO: Create SuperLU_DIST matrix from MatrixCSR
-        
-        # TODO: Create solver.
-        self._solver = superlu_dist_solver(A_superlu_dist)
+        # Recall that using SuperLU_DIST requires a deep copy of data in A,
+        # and solving overwrites that deep copy data in-place.
+        A_superlu_dist = superlu_dist_matrix(self.A)
+        solver = superlu_dist_solver(A_superlu_dist)
 
-        # Assemble rhs into Vector
-        # TODO: Zero b vector
+        # Assemble rhs
+        self.b.array[:] = 0.0
         assemble_vector(self.b, self.L)
 
         # Apply boundary conditions to the rhs
         if self.bcs is not None:
-            apply_lifting(self.b, [self.a], bcs=[self.bcs])
-            # TODO: Scatter forward
+            apply_lifting(self.b.array, [self.a], bcs=[self.bcs])
+            self.b.scatter_forward()
             for bc in self.bcs:
-                bc.set(self.b.array_w)
+                bc.set(self.b.array)
         else:
-            # TODO: Scatter forward
-            pass
+            self.b.scatter_forward()
 
         # Solve linear system and update ghost values in the solution
-        self.solver.solve(self.b, self.x)
-        # TODO: Scatter forward
-        # TODO: Assign x into u
+        solver.solve(self.b, self.x)
+        self.x.scatter_forward()
+        self.u.array[:] = self.x.array
         return self.u
 
     @property
@@ -145,21 +160,16 @@ class LinearProblem:
 
         Note:
             The vector does not share memory with the solution
-            function(s) ``u``.
+            function ``u``.
         """
         return self._x
 
     @property
-    def solver(self) -> SuperLUDistSolver:  # type: ignore[name-defined]
-        """The SuperLU_DIST solver."""
-        return self._solver
-
-    @property
-    def u(self) -> _Function:
+    def u(self) -> Function:
         """Solution function(s).
 
         Note:
-            The function(s) do not share memory with the solution
+            The function do not share memory with the solution
             vector ``x``.
         """
         return self._u
