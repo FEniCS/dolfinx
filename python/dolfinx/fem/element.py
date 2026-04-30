@@ -6,7 +6,7 @@
 """Finite elements."""
 
 from functools import singledispatch
-from typing import Generic, TypeVar
+from typing import Generic
 
 import numpy as np
 import numpy.typing as npt
@@ -14,11 +14,10 @@ import numpy.typing as npt
 import basix
 import basix.ufl
 from dolfinx import cpp as _cpp
+from dolfinx.typing import Real
 
-_T = TypeVar("_T", np.float32, np.float64)
 
-
-class CoordinateElement(Generic[_T]):
+class CoordinateElement(Generic[Real]):
     """Coordinate element describing the geometry map for mesh cells."""
 
     _cpp_object: _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
@@ -63,7 +62,9 @@ class CoordinateElement(Generic[_T]):
         """Compute and return the dof layout."""
         return self._cpp_object.create_dof_layout()
 
-    def push_forward(self, X: npt.NDArray[_T], cell_geometry: npt.NDArray[_T]) -> npt.NDArray[_T]:
+    def push_forward(
+        self, X: npt.NDArray[Real], cell_geometry: npt.NDArray[Real]
+    ) -> npt.NDArray[Real]:
         """Push points on the reference cell forward to the physical cell.
 
         Args:
@@ -81,11 +82,11 @@ class CoordinateElement(Generic[_T]):
 
     def pull_back(
         self,
-        x: npt.NDArray[_T],
-        cell_geometry: npt.NDArray[_T],
+        x: npt.NDArray[Real],
+        cell_geometry: npt.NDArray[Real],
         tol: float = 1.0e-6,
         maxit: int = 15,
-    ) -> npt.NDArray[_T]:
+    ) -> npt.NDArray[Real]:
         """Pull points on the physical cell back to the reference cell.
 
         For non-affine cells, the pull-back is a nonlinear operation.
@@ -169,7 +170,7 @@ def _(e: basix.finite_element.FiniteElement) -> CoordinateElement:
         return CoordinateElement(_cpp.fem.CoordinateElement_float64(e._e))
 
 
-class FiniteElement(Generic[_T]):
+class FiniteElement(Generic[Real]):
     """A finite element."""
 
     _cpp_object: _cpp.fem.FiniteElement_float32 | _cpp.fem.FiniteElement_float64
@@ -223,7 +224,7 @@ class FiniteElement(Generic[_T]):
         return self._cpp_object.value_shape
 
     @property
-    def interpolation_points(self) -> npt.NDArray[_T]:
+    def interpolation_points(self) -> npt.NDArray[Real]:
         """Points at which to evaluate the function to be interpolated.
 
         Interpolation point coordinates on the reference cell, returning
@@ -281,7 +282,7 @@ class FiniteElement(Generic[_T]):
         return self._cpp_object.signature
 
     def T_apply(
-        self, x: npt.NDArray[_T], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
         """Transform basis from reference to physical ordering/orientation.
 
@@ -304,7 +305,7 @@ class FiniteElement(Generic[_T]):
         self._cpp_object.T_apply(x, cell_permutations, dim)
 
     def Tt_apply(
-        self, x: npt.NDArray[_T], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
         """Apply the transpose of the operator applied by T_apply().
 
@@ -318,7 +319,7 @@ class FiniteElement(Generic[_T]):
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
     def Tt_inv_apply(
-        self, x: npt.NDArray[_T], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
         """Apply the inverse transpose of T_apply().
 

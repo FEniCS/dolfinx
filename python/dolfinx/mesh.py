@@ -43,6 +43,7 @@ from dolfinx.cpp.refinement import (
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
 from dolfinx.graph import AdjacencyList
+from dolfinx.typing import Real
 
 __all__ = [
     "CellType",
@@ -83,9 +84,6 @@ __all__ = [
     "transfer_meshtags_to_submesh",
     "uniform_refine",
 ]
-
-
-_T = typing.TypeVar("_T", np.float32, np.float64)
 
 
 @singledispatch
@@ -273,7 +271,7 @@ class Topology:
         return self._cpp_object.cell_type
 
 
-class Geometry(typing.Generic[_T]):
+class Geometry(typing.Generic[Real]):
     """The geometry of a :class:`dolfinx.mesh.Mesh`."""
 
     _cpp_object: _cpp.mesh.Geometry_float32 | _cpp.mesh.Geometry_float64
@@ -319,7 +317,7 @@ class Geometry(typing.Generic[_T]):
         return self._cpp_object.input_global_indices
 
     @property
-    def x(self) -> npt.NDArray[_T]:
+    def x(self) -> npt.NDArray[Real]:
         """Geometry coordinate points.
 
         Shape is ``shape=(num_points, 3)``.
@@ -327,12 +325,12 @@ class Geometry(typing.Generic[_T]):
         return self._cpp_object.x
 
 
-class Mesh(typing.Generic[_T]):
+class Mesh(typing.Generic[Real]):
     """A mesh."""
 
     _mesh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     _topology: Topology
-    _geometry: Geometry[_T]
+    _geometry: Geometry[Real]
     _ufl_domain: ufl.Mesh | None
 
     def __init__(
@@ -416,7 +414,7 @@ class Mesh(typing.Generic[_T]):
         return self._topology
 
     @property
-    def geometry(self) -> Geometry[_T]:
+    def geometry(self) -> Geometry[Real]:
         """Mesh geometry."""
         return self._geometry
 

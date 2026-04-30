@@ -14,6 +14,7 @@ import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
+from dolfinx.typing import Scalar
 
 __all__ = [
     "InsertMode",
@@ -122,10 +123,7 @@ class Vector(Generic[_T]):
         self._cpp_object.scatter_reverse(mode)
 
 
-_MT = TypeVar("_MT", np.float32, np.float64, np.complex64, np.complex128)
-
-
-class MatrixCSR(Generic[_MT]):
+class MatrixCSR(Generic[Scalar]):
     """Distributed compressed sparse row matrix."""
 
     _cpp_object: (
@@ -163,7 +161,7 @@ class MatrixCSR(Generic[_MT]):
         """
         return self._cpp_object.index_map(i)
 
-    def mult(self, x: Vector[_MT], y: Vector[_MT], transpose: bool = False) -> None:
+    def mult(self, x: Vector[Scalar], y: Vector[Scalar], transpose: bool = False) -> None:
         """Compute ``y += Ax`` or ``y += A^T x``.
 
         Args:
@@ -208,7 +206,7 @@ class MatrixCSR(Generic[_MT]):
 
     def add(
         self,
-        x: npt.NDArray[_MT],
+        x: npt.NDArray[Scalar],
         rows: npt.NDArray[np.int32],
         cols: npt.NDArray[np.int32],
         bs: int = 1,
@@ -218,7 +216,7 @@ class MatrixCSR(Generic[_MT]):
 
     def set(
         self,
-        x: npt.NDArray[_MT],
+        x: npt.NDArray[Scalar],
         rows: npt.NDArray[np.int32],
         cols: npt.NDArray[np.int32],
         bs: int = 1,
@@ -226,7 +224,7 @@ class MatrixCSR(Generic[_MT]):
         """Set a block of values in the matrix."""
         self._cpp_object.set(x, rows, cols, bs)
 
-    def set_value(self, x: _MT) -> None:
+    def set_value(self, x: Scalar) -> None:
         """Set all non-zero entries to a value.
 
         Args:
@@ -247,7 +245,7 @@ class MatrixCSR(Generic[_MT]):
         return self._cpp_object.squared_norm()
 
     @property
-    def data(self) -> npt.NDArray[_MT]:
+    def data(self) -> npt.NDArray[Scalar]:
         """Underlying matrix entry data."""
         return self._cpp_object.data
 
@@ -261,7 +259,7 @@ class MatrixCSR(Generic[_MT]):
         """Local row pointers."""
         return self._cpp_object.indptr
 
-    def to_dense(self) -> npt.NDArray[_MT]:
+    def to_dense(self) -> npt.NDArray[Scalar]:
         """Copy to a dense 2D array.
 
         Note:

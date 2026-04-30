@@ -13,7 +13,7 @@ modification of linear systems.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from typing import Generic, TypeVar
+from typing import Generic
 
 import numpy as np
 import numpy.typing as npt
@@ -21,6 +21,7 @@ import numpy.typing as npt
 import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.fem.function import Constant, Function, FunctionSpace
+from dolfinx.typing import Scalar
 
 
 def locate_dofs_geometrical(
@@ -91,10 +92,7 @@ def locate_dofs_topological(
     return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
 
-_T = TypeVar("_T", np.float32, np.float64, np.complex64, np.complex128)
-
-
-class DirichletBC(Generic[_T]):
+class DirichletBC(Generic[Scalar]):
     """Representation of Dirichlet boundary conditions.
 
     The conditions are imposed on a linear system.
@@ -133,7 +131,9 @@ class DirichletBC(Generic[_T]):
         """Function space on which the boundary condition is defined."""
         return self._cpp_object.function_space
 
-    def set(self, x: npt.NDArray[_T], x0: npt.NDArray[_T] | None = None, alpha: float = 1) -> None:
+    def set(
+        self, x: npt.NDArray[Scalar], x0: npt.NDArray[Scalar] | None = None, alpha: float = 1
+    ) -> None:
         """Set array entries that are constrained by a Dirichlet condition.
 
         Entries in ``x`` that are constrained by a Dirichlet boundary
@@ -174,10 +174,10 @@ class DirichletBC(Generic[_T]):
 
 
 def dirichletbc(
-    value: Function | Constant | npt.NDArray[_T] | float | complex,
+    value: Function | Constant | npt.NDArray[Scalar] | float | complex,
     dofs: npt.NDArray[np.int32],
     V: dolfinx.fem.FunctionSpace | None = None,
-) -> DirichletBC[_T]:
+) -> DirichletBC[Scalar]:
     """Representation of Dirichlet boundary condition.
 
     Args:
@@ -234,8 +234,8 @@ def dirichletbc(
 
 
 def bcs_by_block(
-    spaces: Iterable[FunctionSpace | None], bcs: Iterable[DirichletBC[_T]]
-) -> list[list[DirichletBC[_T]]]:
+    spaces: Iterable[FunctionSpace | None], bcs: Iterable[DirichletBC[Scalar]]
+) -> list[list[DirichletBC[Scalar]]]:
     """Arrange boundary conditions by the space that they constrain.
 
     Given a sequence of function spaces ``spaces`` and a sequence of
