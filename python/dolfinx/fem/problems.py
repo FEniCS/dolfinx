@@ -95,6 +95,7 @@ class LinearProblem:
         if u is None:
             self._u = Function(L.arguments()[0].ufl_function_space(), dtype=dtype)
         else:
+            assert u.dtype == dtype
             self._u = u
 
         self.bcs = [] if bcs is None else bcs
