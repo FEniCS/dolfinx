@@ -1,10 +1,16 @@
 name: Conda install
 
 on:
+  # build on push/pr to this file
+  push:
+    paths:
+      - .github/workflows/conda.yml
   # Uncomment the below 'push' to trigger on push
-  #push:
   #  branches:
   #     - "**"
+  pull_request:
+    paths:
+      - .github/workflows/conda.yml
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 2 * * WED"
