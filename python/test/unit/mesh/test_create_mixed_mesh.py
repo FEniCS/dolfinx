@@ -75,7 +75,7 @@ def test_create_mixed_mesh(dtype):
         cells_np = [np.array(c, dtype=np.int64) for c in cells]
         geomx = np.array(geom, dtype=dtype)
     else:
-        cells_np = [np.zeros(0) for c in cells]
+        cells_np = [np.zeros(0, dtype=np.int64) for c in cells]
         geomx = np.zeros((0, 3), dtype=dtype)
 
     hexahedron = coordinate_element(CellType.hexahedron, 1, dtype=dtype)
