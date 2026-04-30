@@ -36,14 +36,13 @@ jobs:
     steps:
       - uses: conda-incubator/setup-miniconda@v4
         with:
-          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
       
       # TODO: These could probably be merged into one cross-platform step.
       - name: Install DOLFINx with OpenMPI (Unix-like)
         if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
         run: |
-          conda install -c conda-forge fenics-dolfinx openmpi petsc=*=${{ matrix.petsc-scalar-type }}* gcc_linux-64
+          conda install -c conda-forge fenics-dolfinx openmpi petsc=*=${{ matrix.petsc-scalar-type }}*
       - name: Install DOLFINx (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
