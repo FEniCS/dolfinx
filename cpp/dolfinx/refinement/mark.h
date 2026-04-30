@@ -81,7 +81,7 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> marker, T theta,
 /// entity
 /// @param[in] theta Parameter, 0 < θ < 1
 /// @param[in] comm Communicator over which the total marker is computed.
-/// @return Indices (local) of marker elements, which satisfy: marker_i ≥ θ
+/// @return Local indices of marked entities, which satisfy: marker_i ≥ θ
 /// (sum_i marker_i^2)^1/2 / N^1/2.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_equidistribution(std::span<const T> marker,
