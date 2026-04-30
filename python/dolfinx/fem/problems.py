@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""High-level solver classes using native linear algebra objects.
+"""High-level problem classes using native linear algebra objects.
 
 Users with advanced requirements should use PETSc.
 """
@@ -20,9 +20,11 @@ from dolfinx.fem import (
     apply_lifting,
     assemble_matrix,
     assemble_vector,
-    create_form,
+    form,
+    create_matrix,
+    create_vector
 )
-from dolfinx.la import MatrixCSR, Vector, create_matrix, create_vector
+from dolfinx.la import MatrixCSR, Vector
 from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 from dolfinx.mesh import EntityMap as EntityMap
 
@@ -71,26 +73,27 @@ class LinearProblem:
                 as the integration domain, a corresponding :class:
                 `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
         """
-        self._a = create_form(
+        self._a = form(
             a,
-            dtype=dtype,
+            dtype,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
             entity_maps=entity_maps,
         )
-        self._L = create_form(
+        self._L = form(
             L,
-            dtype=dtype,
+            dtype,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
             entity_maps=entity_maps,
         )
         self._A = create_matrix(self._a)
-        self._x = create_vector(self._L)
+        self._x = create_vector(L.arguments()[0].ufl_function_space(), dtype=dtype)
+        self._b = create_vector(L.arguments()[0].ufl_function_space(), dtype=dtype)
 
         self._u: Function
         if u is None:
-            self._u = Function(L.arguments()[0].ufl_function_space())
+            self._u = Function(L.arguments()[0].ufl_function_space(), dtype=dtype)
         else:
             self._u = u
 
@@ -117,7 +120,7 @@ class LinearProblem:
 
         # Assemble rhs
         self.b.array[:] = 0.0
-        assemble_vector(self.b, self.L)
+        assemble_vector(self.b.array, self.L)
 
         # Apply boundary conditions to the rhs
         if self.bcs is not None:
@@ -131,7 +134,7 @@ class LinearProblem:
         # Solve linear system and update ghost values in the solution
         solver.solve(self.b, self.x)
         self.x.scatter_forward()
-        self.u.array[:] = self.x.array
+        self.u.x.array[:] = self.x.array
         return self.u
 
     @property
