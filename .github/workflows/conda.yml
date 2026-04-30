@@ -40,10 +40,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
       
       # TODO: These could probably be merged into one cross-platform step.
-      - name: Install DOLFINx with MPICH (Unix-like)
+      - name: Install DOLFINx with OpenMPI (Unix-like)
         if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
         run: |
-          conda install -c conda-forge fenics-dolfinx mpich petsc=*=${{ matrix.petsc-scalar-type }}*
+          conda install -c conda-forge fenics-dolfinx openmpi petsc=*=${{ matrix.petsc-scalar-type }}*
       - name: Install DOLFINx (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
