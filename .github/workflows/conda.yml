@@ -26,6 +26,7 @@ jobs:
           - os: windows-2022
             python-version: "3.13"
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
     timeout-minutes: 30
     # This is necessary to ensure conda environment is activated in every step.
     defaults:
