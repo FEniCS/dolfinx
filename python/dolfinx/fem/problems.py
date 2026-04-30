@@ -24,7 +24,7 @@ from dolfinx.fem import (
     create_vector,
     form,
 )
-from dolfinx.la import MatrixCSR, Vector
+from dolfinx.la import InsertMode, MatrixCSR, Vector
 from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 from dolfinx.mesh import EntityMap as EntityMap
 
@@ -126,7 +126,7 @@ class LinearProblem:
         # Apply boundary conditions to the rhs
         if self.bcs is not None:
             apply_lifting(self.b.array, [self.a], bcs=[self.bcs])
-            self.b.scatter_forward()
+            self.b.scatter_reverse(InsertMode.add)
             for bc in self.bcs:
                 bc.set(self.b.array)
         else:

@@ -65,3 +65,7 @@ def test_superlu_solver(dtype):
     uh = problem.solve()
 
     check_error(u_ex, uh)
+    
+    # Second solve
+    uh = problem.solve()
+    check_error(u_ex, uh)
