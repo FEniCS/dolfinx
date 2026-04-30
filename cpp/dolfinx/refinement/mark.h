@@ -28,7 +28,7 @@ namespace impl
 /// @param[in] marker Input marker
 /// @param[in] threshold Lower bound for values to mark
 ///
-/// @returns indices i which satisfy e_i > threshold.
+/// @returns indices i which satisfy \f$ e_i > \text{threshold} \f$.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_threshold(std::span<const T> marker, T threshold)
 {
@@ -52,10 +52,10 @@ std::vector<std::int32_t> mark_threshold(std::span<const T> marker, T threshold)
 ///
 /// @param[in] marker Input marker (local) - usually an error indicator per
 /// entity
-/// @param[in] theta Cut off parameter, 0 < θ < 1
+/// @param[in] theta Cut off parameter, \f$ 0 < \theta < 1 \f$
 /// @param[in] comm Communicator over which the maximum is computed.
-/// @return Indices (local) of marker elements, which satisfy: marker_i ≥ θ
-/// max(marker).
+/// @return Indices (local) of marker elements, which satisfy: \f$
+/// \text{marker}_i \geq \theta \max \text{marker} \f$.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_maximum(std::span<const T> marker, T theta,
                                        MPI_Comm comm)
@@ -79,10 +79,10 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> marker, T theta,
 ///
 /// @param[in] marker Input marker (local) - usually an error indicator per
 /// entity
-/// @param[in] theta Parameter, 0 < θ < 1
+/// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$
 /// @param[in] comm Communicator over which the total marker is computed.
-/// @return Local indices of marked entities, which satisfy: marker_i ≥ θ
-/// (sum_i marker_i^2)^1/2 / N^1/2.
+/// @return Local indices of marked entities, which satisfy: \f$
+/// \text{marker}_i \geq \theta \frac{|\text{marker}_i|}{\sqrt{N}} \f$.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_equidistribution(std::span<const T> marker,
                                                 T theta, MPI_Comm comm)
