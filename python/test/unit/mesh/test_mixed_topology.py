@@ -27,7 +27,8 @@ from dolfinx.log import LogLevel, set_log_level
 from dolfinx.mesh import CellType, GhostMode, Mesh, Topology, create_unit_cube
 
 
-def test_mixed_topology_mesh():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_mixed_topology_mesh(dtype):
     set_log_level(LogLevel.INFO)
 
     cells = [[0, 1, 2, 1, 2, 3], [2, 3, 4, 5]]
@@ -79,14 +80,12 @@ def test_mixed_topology_mesh():
     assert topology.connectivity((2, 1), (0, 0)).num_nodes == 1
 
     # Create dofmaps for Geometry
-    tri = coordinate_element(CellType.triangle, 1)
-    quad = coordinate_element(CellType.quadrilateral, 1)
+    tri = coordinate_element(CellType.triangle, 1, dtype=dtype)
+    quad = coordinate_element(CellType.quadrilateral, 1, dtype=dtype)
     nodes = np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)
     xdofs = np.array([0, 1, 2, 1, 2, 3, 2, 3, 4, 5], dtype=np.int64)
-    x = np.array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 0.0], dtype=np.float64)
-    geom = create_geometry(
-        topology._cpp_object, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x, 2
-    )
+    x = np.array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 0.0], dtype=dtype)
+    geom = create_geometry(topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x, 2)
     print(geom.x)
     print(geom.index_map().size_local)
     print(geom.dofmaps(0))

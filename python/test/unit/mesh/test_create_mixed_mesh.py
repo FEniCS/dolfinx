@@ -1,6 +1,7 @@
 from mpi4py import MPI
 
 import numpy as np
+import pytest
 
 from dolfinx.cpp.mesh import (
     GhostMode,
@@ -10,7 +11,8 @@ from dolfinx.fem import coordinate_element
 from dolfinx.mesh import CellType, create_cell_partitioner
 
 
-def test_create_mixed_mesh():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_create_mixed_mesh(dtype):
     nx = 7
     ny = 11
     nz = 8
@@ -70,15 +72,15 @@ def test_create_mixed_mesh():
         geom += [[ix / nx, iy / ny, iz / nz]]
 
     if MPI.COMM_WORLD.rank == 0:
-        cells_np = [np.array(c, dtype=np.int64) for c in cells]
-        geomx = np.array(geom, dtype=np.float64)
+        cells_np = [np.array(c) for c in cells]
+        geomx = np.array(geom, dtype=dtype)
     else:
-        cells_np = [np.zeros(0, dtype=np.int64) for c in cells]
-        geomx = np.zeros((0, 3), dtype=np.float64)
+        cells_np = [np.zeros(0) for c in cells]
+        geomx = np.zeros((0, 3), dtype=dtype)
 
-    hexahedron = coordinate_element(CellType.hexahedron, 1)
-    pyramid = coordinate_element(CellType.pyramid, 1, variant=1)
-    tetrahedron = coordinate_element(CellType.tetrahedron, 1)
+    hexahedron = coordinate_element(CellType.hexahedron, 1, dtype=dtype)
+    pyramid = coordinate_element(CellType.pyramid, 1, variant=1, dtype=dtype)
+    tetrahedron = coordinate_element(CellType.tetrahedron, 1, dtype=dtype)
 
     part = create_cell_partitioner(GhostMode.none, 2)
     max_cells_per_facet = 2
