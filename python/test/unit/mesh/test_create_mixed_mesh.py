@@ -72,7 +72,7 @@ def test_create_mixed_mesh(dtype):
         geom += [[ix / nx, iy / ny, iz / nz]]
 
     if MPI.COMM_WORLD.rank == 0:
-        cells_np = [np.array(c) for c in cells]
+        cells_np = [np.array(c, dtype=np.int64) for c in cells]
         geomx = np.array(geom, dtype=dtype)
     else:
         cells_np = [np.zeros(0) for c in cells]
