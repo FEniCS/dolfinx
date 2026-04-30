@@ -3,6 +3,7 @@ name: CI (Windows)
 on:
   push:
     branches:
+      - main
       - release
     tags:
       - "v*"
