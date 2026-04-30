@@ -37,7 +37,8 @@ jobs:
         with:
           auto-update-conda: true
           channels: conda-forge
-          mamba-version: "*"
+          mamba-version: ">=2.6"
+          miniforge-version: latest
           python-version: ${{ matrix.python-version }}
       
       # TODO: These could probably be merged into one cross-platform step.
