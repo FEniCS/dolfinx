@@ -20,9 +20,9 @@ from dolfinx.fem import (
     apply_lifting,
     assemble_matrix,
     assemble_vector,
-    form,
     create_matrix,
-    create_vector
+    create_vector,
+    form,
 )
 from dolfinx.la import MatrixCSR, Vector
 from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
