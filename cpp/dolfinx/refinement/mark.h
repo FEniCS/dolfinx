@@ -90,9 +90,8 @@ std::vector<std::int32_t> mark_equidistribution(std::span<const T> marker,
   if ((theta <= 0) || (theta >= 1))
     throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
 
-  T norm{0};
-  for (T e : marker)
-    norm += std::pow(e, 2);
+  auto norm
+      = std::inner_product(marker.begin(), marker.end(), marker.begin(), T{0});
 
   MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM, comm);
 
