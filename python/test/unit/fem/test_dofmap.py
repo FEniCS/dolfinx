@@ -330,7 +330,7 @@ def test_higher_order_coordinate_map(points, celltype, order):
 
     V = functionspace(mesh, ("Lagrange", 2))
     X = V.element.interpolation_points
-    coord_dofs = mesh.geometry.dofmap
+    coord_dofs = mesh.geometry.dofmap()
     x_g = mesh.geometry.x
     cmap = mesh.geometry.cmap()
 
@@ -405,7 +405,7 @@ def test_higher_order_tetra_coordinate_map(order):
     mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     V = functionspace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points
-    x_dofs = mesh.geometry.dofmap
+    x_dofs = mesh.geometry.dofmap()
     x_g = mesh.geometry.x
 
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])

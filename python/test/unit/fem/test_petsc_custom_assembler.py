@@ -141,7 +141,7 @@ def test_custom_mesh_loop_petsc_rank2(set_vals, backend):
 
     # Unpack mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    x_dofs = mesh.geometry.dofmap
+    x_dofs = mesh.geometry.dofmap()
     x = mesh.geometry.x
     dofmap = V.dofmap.list.astype(np.dtype(PETSc.IntType))
 

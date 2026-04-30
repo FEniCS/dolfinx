@@ -216,7 +216,7 @@ topologies = ["Hexahedron", "Wedge"]
 
 for j in range(2):
     vtk_topology = []
-    geom_dm = mesh.geometry.dofmaps(j)
+    geom_dm = mesh.geometry.dofmap(j)
     for c in geom_dm:
         vtk_topology += list(c[perm[j]])
     topology_type = topologies[j]

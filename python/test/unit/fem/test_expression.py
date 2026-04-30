@@ -314,7 +314,7 @@ def test_assembly_into_quadrature_function(dtype):
     # # FIXME: Below is only for testing purposes,
     # # never to be used in user code!
     # # TODO: Replace when interpolation into Quadrature element works.
-    coord_dofs = mesh.geometry.dofmap
+    coord_dofs = mesh.geometry.dofmap()
     x_g = mesh.geometry.x
     tdim = mesh.topology.dim
     Q_dofs = Q.dofmap.list
