@@ -25,10 +25,10 @@ namespace impl
 
 /// @brief Threshold marking helper
 ///
-/// @param[in] marker Input marker
+/// @param[in] marker Input marker \f$ \eta \f$
 /// @param[in] threshold Lower bound for values to mark
 ///
-/// @returns indices i which satisfy \f$ e_i > \text{threshold} \f$.
+/// @returns indices \f$ i \f$ which satisfy \f$ \eta_i > \text{threshold} \f$.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_threshold(std::span<const T> marker, T threshold)
 {
@@ -50,12 +50,12 @@ std::vector<std::int32_t> mark_threshold(std::span<const T> marker, T threshold)
 
 /// @brief Maximum marking of a marker.
 ///
-/// @param[in] marker Input marker (local) - usually an error indicator per
-/// entity
+/// @param[in] marker Input marker (local) \f$ \eta \f$ - usually an error
+/// indicator per entity
 /// @param[in] theta Cut off parameter, \f$ 0 < \theta < 1 \f$
 /// @param[in] comm Communicator over which the maximum is computed.
 /// @return Indices (local) of marker elements, which satisfy: \f$
-/// \text{marker}_i \geq \theta \max \text{marker} \f$.
+/// \eta_i \geq \theta \max_j \eta_j \f$.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_maximum(std::span<const T> marker, T theta,
                                        MPI_Comm comm)
@@ -77,12 +77,12 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> marker, T theta,
 
 /// @brief Equidistribution marking of a marker.
 ///
-/// @param[in] marker Input marker (local) - usually an error indicator per
-/// entity
+/// @param[in] marker Input marker (local) \f$ \eta \f$ - usually an error
+/// indicator per entity
 /// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$
 /// @param[in] comm Communicator over which the total marker is computed.
 /// @return Local indices of marked entities, which satisfy: \f$
-/// \text{marker}_i \geq \theta \frac{|\text{marker}_i|}{\sqrt{N}} \f$.
+/// \eta_i \geq \theta \frac{|\eta|_2}{\sqrt{N}} \f$.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_equidistribution(std::span<const T> marker,
                                                 T theta, MPI_Comm comm)
