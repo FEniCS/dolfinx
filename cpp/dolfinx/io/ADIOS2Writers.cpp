@@ -38,7 +38,7 @@ void ADIOS2Writer::close()
     _engine->Close();
 }
 //-----------------------------------------------------------------------------
-adios2::Mode impl_adios2::mode(const std::string& mode)
+adios2::Mode impl_adios2::mode(std::string_view mode)
 {
   if (mode == "a")
     return adios2::Mode::Append;

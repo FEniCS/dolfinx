@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <string_view>
 #ifdef HAS_ADIOS2
 
 #include "vtk_utils.h"
@@ -162,7 +163,7 @@ extract_common_mesh(const typename adios2_writer::U<T>& u)
 /// Convert string to corresponding adios2 mode.
 /// @param[in] mode Mode in string representation, either "w" or "a".
 /// @returns Adios2 mode.
-adios2::Mode mode(const std::string& mode);
+adios2::Mode mode(std::string_view mode);
 
 } // namespace impl_adios2
 
