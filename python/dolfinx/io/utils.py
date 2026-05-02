@@ -57,8 +57,8 @@ if _cpp.common.has_adios2:
             Args:
                 comm: The MPI communicator
                 filename: The output filename
-                mode: The filemode to open the file in, one of 'a' (append)
-                    or 'w' (write).
+                mode: The filemode to open the file in, 'a' (append) or 'w'
+                    (write).
                 output: The data to output. Either a mesh, a single
                     (discontinuous) Lagrange Function or list of
                     (discontinuous) Lagrange Functions.
