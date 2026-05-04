@@ -66,11 +66,11 @@ class LinearProblem:
             bcs: Dirichlet boundary conditions to apply to the variational
                problem.
             u: Solution function. Created if not provided.
-            dtype: Scalar type for form compilation and all numeric objects.
-                Must match ``u.dtype`` if ``u`` is provided.
-            superlu_dist_options: Options passed to the SuperLU_DIST solver.
-                See the SuperLU_DIST User's Guide for available options and
-                values.
+            dtype: Scalar type for form compilation. Must match
+               ``u.dtype`` if ``u`` is provided.
+            superlu_dist_options: Options passed to the SuperLU_DIST
+                solver. See the SuperLU_DIST User's Guide for
+                available options and values.
             form_compiler_options: Options used in FFCx compilation of
                 all forms. Run ``ffcx --help`` at the command line to see
                 all available options.
