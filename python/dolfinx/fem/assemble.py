@@ -315,7 +315,7 @@ def assemble_matrix(
     return A
 
 
-@assemble_matrix.register
+@assemble_matrix.register  # type: ignore[attr-defined]
 def _assemble_matrix_csr(
     A: la.MatrixCSR,
     a: Form,
