@@ -50,8 +50,8 @@ class LinearProblem:
         L: ufl.Form,
         bcs: Sequence[DirichletBC] | None = None,
         u: Function | None = None,
-        superlu_dist_options: dict | None = None,
         dtype: npt.DTypeLike = None,
+        superlu_dist_options: dict | None = None,
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
         entity_maps: Sequence[EntityMap] | None = None,
@@ -66,10 +66,10 @@ class LinearProblem:
             bcs: Dirichlet boundary conditions to apply to the variational
                problem.
             u: Solution function. It is created if not provided.
-            superlu_dist_options: Options for SuperLU_DIST solver, see
-               upstream manual for description.
             dtype: dtype passed to FFCx for form compilation. Must match
                dtype of ``u``, if passed.
+            superlu_dist_options: Options for SuperLU_DIST solver, see
+               upstream manual for description.
             form_compiler_options: Options used in FFCx compilation of
                 all forms. Run ``ffcx --help`` at the commandline to see
                 all available options.
