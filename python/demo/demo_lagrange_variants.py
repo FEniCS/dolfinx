@@ -26,6 +26,7 @@
 from mpi4py import MPI
 
 import matplotlib.pylab as plt
+import numpy as np
 
 import basix
 import basix.ufl
@@ -142,11 +143,11 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     uh.interpolate(lambda x: saw_tooth(x[0]))
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
         pts: list[list[float]] = []
-        cells: list[int] = []
+        cells = np.empty((0,), dtype=np.int32)
         for cell in range(N):
             for i in range(51):
                 pts.append([cell / N + i / 50 / N, 0, 0])
-                cells.append(cell)
+                cells = np.append(cells, [cell])
         values = uh.eval(pts, cells)
         plt.plot(pts, [saw_tooth(i[0]) for i in pts], "k--")
         plt.plot(pts, values, "r-")
