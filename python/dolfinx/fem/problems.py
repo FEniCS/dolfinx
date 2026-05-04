@@ -81,8 +81,8 @@ class LinearProblem:
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
                 as the integration domain, a corresponding
-                :class:`EntityMap <dolfinx.mesh.EntityMap>`
-                must be provided.
+                :class:`EntityMap <dolfinx.mesh.EntityMap>` must be
+                provided.
 
         Example::
 
@@ -142,8 +142,7 @@ class LinearProblem:
         assemble_matrix(self.A, self.a, bcs=self.bcs)
         self.A.scatter_reverse()
 
-        # Recall that using SuperLU_DIST requires a deep copy of data in A,
-        # and solving overwrites that deep copy data in-place.
+        # SuperLU_DIST solves in-place, so a deep copy of A is required.
         A_superlu_dist = superlu_dist_matrix(self.A)
         solver = superlu_dist_solver(A_superlu_dist)
         if self._superlu_dist_options is not None:

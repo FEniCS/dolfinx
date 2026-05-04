@@ -108,7 +108,8 @@ class SuperLUDistSolver(Generic[_T]):
 
         See SuperLU_DIST User's Guide for option names and values.
 
-        Examples:
+        Example::
+
             solver.set_option("SymmetricMode", "YES")
             solver.set_option("Trans", "NOTRANS")
 
