@@ -24,6 +24,7 @@ assert dolfinx.has_superlu_dist
 
 __all__ = ["SuperLUDistMatrix", "SuperLUDistSolver", "superlu_dist_matrix", "superlu_dist_solver"]
 
+# As of 2026, SuperLU_DIST only supports these types, so the general Scalar type cannot be used.
 _T = TypeVar("_T", np.float32, np.float64, np.complex128)
 
 
