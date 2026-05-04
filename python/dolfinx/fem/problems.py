@@ -90,11 +90,12 @@ class LinearProblem:
                 superlu_dist_options={"SymmetricMode": "YES"})
             u_h = problem.solve()
         """
+        _dtype = np.dtype(dtype)
         self._a = typing.cast(
             Form,
             form(
                 a,
-                dtype,
+                _dtype,
                 form_compiler_options=form_compiler_options,
                 jit_options=jit_options,
                 entity_maps=entity_maps,
@@ -104,22 +105,22 @@ class LinearProblem:
             Form,
             form(
                 L,
-                dtype,
+                _dtype,
                 form_compiler_options=form_compiler_options,
                 jit_options=jit_options,
                 entity_maps=entity_maps,
             ),
         )
         self._A = create_matrix(self._a)
-        self._x = create_vector(L.arguments()[0].ufl_function_space(), dtype=dtype)
-        self._b = create_vector(L.arguments()[0].ufl_function_space(), dtype=dtype)
+        self._x = create_vector(L.arguments()[0].ufl_function_space(), dtype=_dtype)
+        self._b = create_vector(L.arguments()[0].ufl_function_space(), dtype=_dtype)
 
         self._u: Function
         if u is None:
-            self._u = Function(L.arguments()[0].ufl_function_space(), dtype=dtype)
+            self._u = Function(L.arguments()[0].ufl_function_space(), dtype=_dtype)
         else:
-            if u.dtype != np.dtype(dtype):
-                raise ValueError(f"u.dtype ({u.dtype}) does not match dtype ({np.dtype(dtype)}).")
+            if u.dtype != _dtype:
+                raise ValueError(f"u.dtype ({u.dtype}) does not match dtype ({_dtype}).")
             self._u = u
 
         self.bcs = [] if bcs is None else bcs
@@ -138,7 +139,7 @@ class LinearProblem:
         from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 
         # Assemble lhs
-        self.A.set_value(self.u.dtype.type(0.0))
+        self.A.set_value(np.dtype(self.u.dtype).type(0.0))
         assemble_matrix(self.A, self.a, bcs=self.bcs)
         self.A.scatter_reverse()
 
