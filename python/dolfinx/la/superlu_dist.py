@@ -38,7 +38,6 @@ class SuperLUDistMatrix(Generic[_T]):
         | _cpp.la.SuperLUDistMatrix_float64
         | _cpp.la.SuperLUDistMatrix_complex128
     )
-    _dtype: npt.DTypeLike
 
     def __init__(self, matrix):
         """Create a SuperLU_DIST matrix.

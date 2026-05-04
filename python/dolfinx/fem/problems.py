@@ -12,6 +12,7 @@ Users with advanced requirements should use
 import typing
 from collections.abc import Sequence
 
+import numpy as np
 import numpy.typing as npt
 
 import ufl
@@ -116,7 +117,8 @@ class LinearProblem:
         if u is None:
             self._u = Function(L.arguments()[0].ufl_function_space(), dtype=dtype)
         else:
-            assert u.dtype == dtype
+            if u.dtype != np.dtype(dtype):
+                raise ValueError(f"u.dtype ({u.dtype}) does not match dtype ({np.dtype(dtype)}).")
             self._u = u
 
         self.bcs = [] if bcs is None else bcs
@@ -132,6 +134,8 @@ class LinearProblem:
         Returns:
             The solution function.
         """
+        from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
+
         # Assemble lhs
         self.A.set_value(self.u.dtype.type(0.0))
         assemble_matrix(self.A, self.a, bcs=self.bcs)
@@ -139,8 +143,6 @@ class LinearProblem:
 
         # Recall that using SuperLU_DIST requires a deep copy of data in A,
         # and solving overwrites that deep copy data in-place.
-        from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
-
         A_superlu_dist = superlu_dist_matrix(self.A)
         solver = superlu_dist_solver(A_superlu_dist)
         if self._superlu_dist_options is not None:
