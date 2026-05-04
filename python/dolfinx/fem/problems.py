@@ -44,6 +44,7 @@ class LinearProblem:
         L: ufl.Form,
         bcs: Sequence[DirichletBC] | None = None,
         u: Function | None = None,
+        superlu_dist_options: dict | None = None,
         dtype: npt.DTypeLike = None,
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
@@ -59,6 +60,8 @@ class LinearProblem:
             bcs: Sequence of Dirichlet boundary conditions to apply to
                  the variational problem.
             u: Solution function. It is created if not provided.
+            superlu_dist_options: Options for SuperLU_DIST solver, see
+               upstream manual for description.
             dtype: dtype passed to FFCx for form compilation. Must match
                dtype of ``u``, if passed.
             form_compiler_options: Options used in FFCx compilation of
@@ -72,6 +75,12 @@ class LinearProblem:
                 coefficients in the form are not defined over the same mesh
                 as the integration domain, a corresponding :class:
                 `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
+
+        Example::
+
+            problem = LinearProblem(a, L, bcs=bc,
+              superlu_dist_options={"SymmetricMode": "YES"})
+            u_h = problem.solve()
         """
         self._a = form(
             a,
@@ -100,17 +109,19 @@ class LinearProblem:
 
         self.bcs = [] if bcs is None else bcs
 
+        self._superlu_dist_options = superlu_dist_options
+
     def solve(self) -> Function:
         """Solve the problem.
 
-        This method updates the solution ``u`` function(s) stored in the
+        This method updates the solution function ``u`` stored in the
         problem instance.
 
         Returns:
-            The solution function(s).
+            The solution function.
         """
         # Assemble lhs
-        self.A.set_value(0.0)
+        self.A.set_value(self.u.dtype.type(0.0))
         assemble_matrix(self.A, self.a, bcs=self.bcs)
         self.A.scatter_reverse()
 
@@ -118,6 +129,9 @@ class LinearProblem:
         # and solving overwrites that deep copy data in-place.
         A_superlu_dist = superlu_dist_matrix(self.A)
         solver = superlu_dist_solver(A_superlu_dist)
+        if self._superlu_dist_options is not None:
+            for option, value in self._superlu_dist_options.items():
+                solver.set_option(option, value)
 
         # Assemble rhs
         self.b.array[:] = 0.0
