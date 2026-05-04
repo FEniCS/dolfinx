@@ -133,7 +133,9 @@ class LinearProblem:
             self.b.scatter_forward()
 
         # Solve linear system and update ghost values in the solution
-        solver.solve(self.b, self.x)
+        error = solver.solve(self.b, self.x)
+        if error > 0:
+            raise RuntimeError(f"SuperLU_DIST returned non-zero error code: {error}")
         self.x.scatter_forward()
         self.u.x.array[:] = self.x.array
         return self.u
