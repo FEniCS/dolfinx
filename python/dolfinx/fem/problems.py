@@ -35,8 +35,9 @@ __all__ = ["LinearProblem"]
 class LinearProblem:
     r"""High-level class for solving linear problems using SuperLU_DIST.
 
-    Solves problems of the form :math:`a(u, v) = f(v) \\forall v \\in V`
-    using SuperLU_DIST as the linear solver.
+    Solves problems of the form :math:`a(u, v) = f(v) \; \forall v \in V`
+    using :class:`dolfinx.la.superlu_dist.SuperLUDistSolver` as the
+    linear solver.
     """
 
     def __init__(
@@ -74,8 +75,9 @@ class LinearProblem:
                 option values.
             entity_maps: If any trial functions, test functions, or
                 coefficients in the form are not defined over the same mesh
-                as the integration domain, a corresponding :class:
-                `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
+                as the integration domain, a corresponding
+                :class:`EntityMap <dolfinx.mesh.EntityMap>`
+                must be provided.
 
         Example::
 
