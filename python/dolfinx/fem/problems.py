@@ -5,7 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """High-level problem classes using native linear algebra objects.
 
-Users with advanced requirements should use PETSc.
+Users with advanced requirements should use
+:mod:`dolfinx.fem.petsc`.
 """
 
 import typing
@@ -38,6 +39,9 @@ class LinearProblem:
     Solves problems of the form :math:`a(u, v) = f(v) \; \forall v \in V`
     using :class:`dolfinx.la.superlu_dist.SuperLUDistSolver` as the
     linear solver.
+
+    Note:
+        DOLFINx must be built with SuperLU_DIST to use this class.
     """
 
     def __init__(
