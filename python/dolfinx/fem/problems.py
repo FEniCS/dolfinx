@@ -160,7 +160,7 @@ class LinearProblem:
             for bc in self.bcs:
                 bc.set(self.b.array)
         else:
-            self.b.scatter_forward()
+            self.b.scatter_reverse(InsertMode.add)
 
         # Solve linear system and update ghost values in the solution
         error = solver.solve(self.b, self.x)
