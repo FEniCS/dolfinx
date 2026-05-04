@@ -8,6 +8,7 @@
 Users with advanced requirements should use PETSc.
 """
 
+import typing
 from collections.abc import Sequence
 
 import numpy.typing as npt
@@ -82,19 +83,25 @@ class LinearProblem:
               superlu_dist_options={"SymmetricMode": "YES"})
             u_h = problem.solve()
         """
-        self._a = form(
-            a,
-            dtype,
-            form_compiler_options=form_compiler_options,
-            jit_options=jit_options,
-            entity_maps=entity_maps,
+        self._a = typing.cast(
+            Form,
+            form(
+                a,
+                dtype,
+                form_compiler_options=form_compiler_options,
+                jit_options=jit_options,
+                entity_maps=entity_maps,
+            ),
         )
-        self._L = form(
-            L,
-            dtype,
-            form_compiler_options=form_compiler_options,
-            jit_options=jit_options,
-            entity_maps=entity_maps,
+        self._L = typing.cast(
+            Form,
+            form(
+                L,
+                dtype,
+                form_compiler_options=form_compiler_options,
+                jit_options=jit_options,
+                entity_maps=entity_maps,
+            ),
         )
         self._A = create_matrix(self._a)
         self._x = create_vector(L.arguments()[0].ufl_function_space(), dtype=dtype)
