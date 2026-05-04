@@ -25,6 +25,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
 from dolfinx.fem.function import Constant, Function, FunctionSpace
+from dolfinx.typing import Scalar
 
 if typing.TYPE_CHECKING:
     # import dolfinx.mesh just when doing type checking to avoid
@@ -33,7 +34,7 @@ if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh, MeshTags
 
 
-class Form:
+class Form(typing.Generic[Scalar]):
     """A finite element form."""
 
     _cpp_object: (

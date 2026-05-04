@@ -12,6 +12,8 @@ Note:
   Users with advanced linear solver requirements should use PETSc/petsc4py.
 """
 
+from typing import Generic, TypeVar
+
 import numpy as np
 import numpy.typing as npt
 
@@ -22,8 +24,12 @@ assert dolfinx.has_superlu_dist
 
 __all__ = ["SuperLUDistMatrix", "SuperLUDistSolver", "superlu_dist_matrix", "superlu_dist_solver"]
 
+# As of 2026, SuperLU_DIST only supports these types, so the general Scalar
+# type including np.complex64 cannot be used.
+_T = TypeVar("_T", np.float32, np.float64, np.complex128)
 
-class SuperLUDistMatrix:
+
+class SuperLUDistMatrix(Generic[_T]):
     """SuperLU_DIST matrix."""
 
     _cpp_object: (
@@ -52,7 +58,7 @@ class SuperLUDistMatrix:
         return self._cpp_object.dtype
 
 
-def superlu_dist_matrix(A: dolfinx.la.MatrixCSR) -> SuperLUDistMatrix:
+def superlu_dist_matrix(A: dolfinx.la.MatrixCSR[_T]) -> SuperLUDistMatrix[_T]:
     """Create a SuperLU_DIST matrix.
 
     Deep copies all required data from ``A``.
@@ -75,7 +81,7 @@ def superlu_dist_matrix(A: dolfinx.la.MatrixCSR) -> SuperLUDistMatrix:
     return SuperLUDistMatrix(stype(A._cpp_object))
 
 
-class SuperLUDistSolver:
+class SuperLUDistSolver(Generic[_T]):
     """SuperLU_DIST solver."""
 
     _cpp_object: (
@@ -112,7 +118,7 @@ class SuperLUDistSolver:
         """
         self._cpp_object.set_option(name, value)
 
-    def set_A(self, A: SuperLUDistMatrix):
+    def set_A(self, A: SuperLUDistMatrix[_T]):
         """Set assembled left-hand side matrix.
 
         For advanced use with SuperLU_DIST option `Factor` allowing use of
@@ -123,7 +129,7 @@ class SuperLUDistSolver:
         """
         self._cpp_object.set_A(A._cpp_object)
 
-    def solve(self, b: dolfinx.la.Vector, u: dolfinx.la.Vector) -> int:
+    def solve(self, b: dolfinx.la.Vector[_T], u: dolfinx.la.Vector[_T]) -> int:
         """Solve linear system :math:`Au = b`.
 
         Note:
@@ -155,7 +161,7 @@ class SuperLUDistSolver:
         return self._cpp_object.solve(b._cpp_object, u._cpp_object)
 
 
-def superlu_dist_solver(A: SuperLUDistMatrix) -> SuperLUDistSolver:
+def superlu_dist_solver(A: SuperLUDistMatrix[_T]) -> SuperLUDistSolver[_T]:
     """Create a SuperLU_DIST linear solver.
 
     Solve linear system :math:`Au = b` via LU decomposition.
