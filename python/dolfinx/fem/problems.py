@@ -57,8 +57,8 @@ class LinearProblem:
                problem.
             L: Linear UFL form, the right-hand side of the variational
                problem.
-            bcs: Sequence of Dirichlet boundary conditions to apply to
-                 the variational problem.
+            bcs: Dirichlet boundary conditions to apply to the variational
+               problem.
             u: Solution function. It is created if not provided.
             superlu_dist_options: Options for SuperLU_DIST solver, see
                upstream manual for description.
