@@ -44,8 +44,8 @@ class LinearProblem:
         L: ufl.Form,
         bcs: Sequence[DirichletBC] | None = None,
         u: Function | None = None,
-        form_compiler_options: dict | None = None,
         dtype: npt.DTypeLike = None,
+        form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
         entity_maps: Sequence[EntityMap] | None = None,
     ) -> None:
@@ -172,10 +172,10 @@ class LinearProblem:
 
     @property
     def u(self) -> Function:
-        """Solution function(s).
+        """Solution function.
 
         Note:
-            The function do not share memory with the solution
+            The function does not share memory with the solution
             vector ``x``.
         """
         return self._u
