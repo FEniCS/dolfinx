@@ -86,9 +86,9 @@ int main(int argc, char* argv[])
     u_hex->interpolate(*u_tet, cells, eps, max_iter, interpolation_data);
 
 #ifdef HAS_ADIOS2
-    io::VTXWriter<double> write_tet(mesh_tet->comm(), "u_tet.bp", {u_tet});
+    io::VTXWriter<double> write_tet(mesh_tet->comm(), "u_tet.bp", "w", {u_tet});
     write_tet.write(0);
-    io::VTXWriter<double> write_hex(mesh_hex->comm(), "u_hex.bp", {u_hex});
+    io::VTXWriter<double> write_hex(mesh_hex->comm(), "u_hex.bp", "w", {u_hex});
     write_hex.write(0);
 #endif
   }

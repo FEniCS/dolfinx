@@ -18,13 +18,13 @@ using namespace dolfinx::io;
 
 //-----------------------------------------------------------------------------
 ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-                           std::string tag, std::string engine)
+                           adios2::Mode mode, std::string tag,
+                           std::string engine)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(_adios->DeclareIO(std::move(tag))))
 {
   _io->SetEngine(std::move(engine));
-  _engine = std::make_unique<adios2::Engine>(
-      _io->Open(filename, adios2::Mode::Write));
+  _engine = std::make_unique<adios2::Engine>(_io->Open(filename, mode));
 }
 //-----------------------------------------------------------------------------
 ADIOS2Writer::~ADIOS2Writer() { close(); }
@@ -36,6 +36,24 @@ void ADIOS2Writer::close()
   // to test if the engine is open
   if (*_engine)
     _engine->Close();
+}
+//-----------------------------------------------------------------------------
+adios2::Mode impl_adios2::mode(std::string_view mode)
+{
+  if (mode == "a")
+    return adios2::Mode::Append;
+
+  if (mode == "w")
+    return adios2::Mode::Write;
+
+  // unsupported adios2 modes:
+  // - Undefined
+  // - Read
+  // - ReadRandomAccess
+  // - Sync
+  // - Deferred
+
+  throw std::runtime_error("Invalid adios2 mode.");
 }
 //-----------------------------------------------------------------------------
 std::stringstream

@@ -82,7 +82,7 @@ out_folder.mkdir(parents=True, exist_ok=True)
 if has_adios2:
     from dolfinx.io import VTXWriter
 
-    with VTXWriter(msh.comm, out_folder / "output_nedelec.bp", u0) as f:
+    with VTXWriter(msh.comm, out_folder / "output_nedelec.bp", "w", u0) as f:
         f.write(0.0)
 else:
     print("ADIOS2 required for VTX output")

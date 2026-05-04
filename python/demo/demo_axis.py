@@ -794,6 +794,6 @@ if has_vtx:
     Es_dg = fem.Function(W)
     Es_expr = fem.Expression(Esh, W.element.interpolation_points)
     Es_dg.interpolate(Es_expr)
-    with VTXWriter(mesh_data.mesh.comm, out_folder / "Es.bp", Es_dg) as f:
+    with VTXWriter(mesh_data.mesh.comm, out_folder / "Es.bp", "w", Es_dg) as f:
         f.write(0.0)
 # -
