@@ -61,7 +61,7 @@ def test_superlu_solver(dtype):
         eps = np.sqrt(np.finfo(dtype).eps)
         assert np.isclose(error, 0.0, atol=eps)
 
-    problem = LinearProblem(a, L, [bc], dtype=dtype)
+    problem = LinearProblem(a, L, [bc], dtype=dtype, superlu_dist_options={"SymmetricMode": "YES"})
     uh = problem.solve()
 
     check_error(u_ex, uh)
