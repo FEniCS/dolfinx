@@ -253,6 +253,28 @@ def _assemble_vector_array(
 # -- Matrix assembly ------------------------------------------------------
 
 
+@typing.overload
+def assemble_matrix(
+    a: Form,
+    bcs: Sequence[DirichletBC] | None = None,
+    diag: float = 1.0,
+    constants: npt.NDArray | None = None,
+    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
+    block_mode: la.BlockMode | None = None,
+) -> la.MatrixCSR: ...
+
+
+@typing.overload
+def assemble_matrix(
+    A: la.MatrixCSR,
+    a: Form,
+    bcs: Sequence[DirichletBC] | None = None,
+    diag: float = 1.0,
+    constants: npt.NDArray | None = None,
+    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
+) -> la.MatrixCSR: ...
+
+
 @functools.singledispatch
 def assemble_matrix(
     a: typing.Any,
