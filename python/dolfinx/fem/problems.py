@@ -27,7 +27,6 @@ from dolfinx.fem import (
     form,
 )
 from dolfinx.la import InsertMode, MatrixCSR, Vector
-from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 from dolfinx.mesh import EntityMap as EntityMap
 
 __all__ = ["LinearProblem"]
@@ -140,6 +139,8 @@ class LinearProblem:
 
         # Recall that using SuperLU_DIST requires a deep copy of data in A,
         # and solving overwrites that deep copy data in-place.
+        from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
+
         A_superlu_dist = superlu_dist_matrix(self.A)
         solver = superlu_dist_solver(A_superlu_dist)
         if self._superlu_dist_options is not None:
@@ -151,7 +152,7 @@ class LinearProblem:
         assemble_vector(self.b.array, self.L)
 
         # Apply boundary conditions to the rhs
-        if self.bcs is not None:
+        if self.bcs:
             apply_lifting(self.b.array, [self.a], bcs=[self.bcs])
             self.b.scatter_reverse(InsertMode.add)
             for bc in self.bcs:
@@ -169,12 +170,12 @@ class LinearProblem:
 
     @property
     def L(self) -> Form:
-        """The compiled linear form representing the left-hand side."""
+        """The compiled linear form representing the right-hand side."""
         return self._L
 
     @property
     def a(self) -> Form:
-        """The compiled bilinear form representing the right-hand side."""
+        """The compiled bilinear form representing the left-hand side."""
         return self._a
 
     @property

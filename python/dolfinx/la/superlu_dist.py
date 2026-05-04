@@ -20,7 +20,8 @@ import numpy.typing as npt
 import dolfinx
 import dolfinx.cpp as _cpp
 
-assert dolfinx.has_superlu_dist
+if not dolfinx.has_superlu_dist:
+    raise RuntimeError("DOLFINx was not built with SuperLU_DIST support.")
 
 __all__ = ["SuperLUDistMatrix", "SuperLUDistSolver", "superlu_dist_matrix", "superlu_dist_solver"]
 
