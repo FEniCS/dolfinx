@@ -143,7 +143,7 @@ class LinearProblem:
         """
         # Assemble lhs
         self.A.set_value(self.A.data.dtype.type(0.0))
-        assemble_matrix(self.A, self.a, bcs=self.bcs)  # type: ignore[arg-type]
+        assemble_matrix(self.A, self.a, bcs=self.bcs)  # type: ignore[arg-type, misc]
         self.A.scatter_reverse()
 
         # SuperLU_DIST solves in-place, so a deep copy of A is required.
