@@ -28,6 +28,7 @@ from dolfinx.typing import Real, Scalar
 if typing.TYPE_CHECKING:
     from mpi4py import MPI as _MPI
 
+    from dolfinx.mesh import EntityMap as _EntityMap
     from dolfinx.mesh import Mesh
 
 
@@ -111,6 +112,16 @@ class Expression(Generic[Scalar]):
 
     """
 
+    _ufl_expression: ufl.core.expr.Expr
+    _argument_space: FunctionSpace | None
+    _cpp_object: (
+        _cpp.fem.Expression_complex64
+        | _cpp.fem.Expression_complex128
+        | _cpp.fem.Expression_float32
+        | _cpp.fem.Expression_float64
+    )
+    _code: str
+
     def __init__(
         self,
         e: ufl.core.expr.Expr,
@@ -119,6 +130,7 @@ class Expression(Generic[Scalar]):
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
         dtype: npt.DTypeLike | None = None,
+        entity_maps: list[_EntityMap] | None = None,
     ):
         """Create an Expression.
 
@@ -133,6 +145,7 @@ class Expression(Generic[Scalar]):
             jit_options: Options controlling JIT compilation of C code.
             dtype: Type of the Expression values. If ``None``,
                 the dtype is deduced from the UFL expression.
+            entity_maps: Maps between different meshes.
 
         Note:
             This wrapper is responsible for the FFCx compilation of the
@@ -146,7 +159,10 @@ class Expression(Generic[Scalar]):
         # Get MPI communicator
         if comm is None:
             try:
-                domain = ufl.domain.extract_unique_domain(e)
+                domains = ufl.domain.extract_domains(e)
+                if len(domains) == 0:
+                    raise RuntimeError("Could not extract MPI communicator for Expression.")
+                domain = domains[0]
                 assert isinstance(domain, ufl.Mesh)
                 mesh = domain.ufl_cargo()
                 comm = mesh.comm
@@ -201,11 +217,17 @@ class Expression(Generic[Scalar]):
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
+        _entity_maps = (
+            [entity_map._cpp_object for entity_map in entity_maps]
+            if entity_maps is not None
+            else []
+        )
         ffi = module.ffi
         self._cpp_object = _create_expression(dtype)(
             ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
             coeffs,
             constants,
+            _entity_maps,
             self.argument_space,
         )
 
@@ -264,7 +286,7 @@ class Expression(Generic[Scalar]):
                 raise TypeError("Passed values array does not have correct dtype.")
 
         constants = _cpp.fem.pack_constants(self._cpp_object)
-        coeffs = _cpp.fem.pack_coefficients(self._cpp_object, _entities)
+        coeffs = _cpp.fem.pack_coefficients(self._cpp_object, mesh._cpp_object, _entities)
         _cpp.fem.tabulate_expression(
             values, self._cpp_object, constants, coeffs, mesh._cpp_object, _entities
         )

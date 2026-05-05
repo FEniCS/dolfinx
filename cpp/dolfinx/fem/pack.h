@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2025 Garth N. Wells
+// Copyright (C) 2013-2026 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -17,6 +17,7 @@
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <dolfinx/mesh/Topology.h>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <type_traits>
@@ -332,17 +333,23 @@ void pack_coefficients(const Form<T, U>& form,
 /// @brief Pack coefficient data over a list of cells or facets.
 ///
 /// Typically used to prepare coefficient data for an ::Expression.
-/// @tparam T
-/// @tparam U
+/// @tparam T data type of coefficients
+/// @tparam U floating point type of mesh geometry
 /// @param coeffs Coefficients to pack
-/// @param offsets Offsets
+/// @param mesh Mesh which the entities belong to
 /// @param entities Entities to pack over
-/// @param[out] c Packed coefficients.
+/// @param entity_maps Entity maps for the coefficient meshes
+/// @param offsets Offsets
+/// @param[in,out] c Packed coefficients.
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(
     std::vector<std::reference_wrapper<const Function<T, U>>> coeffs,
-    std::span<const int> offsets, fem::MDSpan2 auto entities, std::span<T> c)
+    const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities,
+    const std::vector<std::reference_wrapper<const dolfinx::mesh::EntityMap>>&
+        entity_maps,
+    std::span<const int> offsets, std::span<T> c)
 {
+
   assert(!offsets.empty());
   const int cstride = offsets.back();
 
@@ -354,17 +361,105 @@ void pack_coefficients(
   {
     std::span<const std::uint32_t> cell_info
         = impl::get_cell_orientation_info(coeffs[coeff].get());
-
-    if constexpr (entities.rank() == 1)
+    // Get mesh of coefficient and check if entity map is required
+    auto mesh_c = coeffs[coeff].get().function_space()->mesh();
+    if (mesh_c->topology() == mesh.topology())
     {
-      impl::pack_coefficient_entity(std::span(c), cstride, coeffs[coeff].get(),
-                                    cell_info, entities, offsets[coeff]);
+      // If same mesh no mapping is needed
+      if constexpr (entities.rank() == 1)
+      {
+        impl::pack_coefficient_entity(std::span(c), cstride,
+                                      coeffs[coeff].get(), cell_info, entities,
+                                      offsets[coeff]);
+      }
+      else
+      {
+        auto cells = md::submdspan(entities, md::full_extent, 0);
+        impl::pack_coefficient_entity(std::span(c), cstride,
+                                      coeffs[coeff].get(), cell_info, cells,
+                                      offsets[coeff]);
+      }
     }
     else
     {
-      auto cells = md::submdspan(entities, md::full_extent, 0);
-      impl::pack_coefficient_entity(std::span(c), cstride, coeffs[coeff].get(),
-                                    cell_info, cells, offsets[coeff]);
+      // Helper function to get correct entity map
+      auto get_entity_map
+          = [mesh, &entity_maps](auto& mesh0) -> const mesh::EntityMap&
+      {
+        auto it = std::ranges::find_if(
+            entity_maps,
+            [mesh, mesh0](const mesh::EntityMap& em)
+            {
+              return ((em.topology() == mesh0->topology()
+                       and em.sub_topology() == mesh.topology()))
+                     or ((em.sub_topology() == mesh0->topology()
+                          and em.topology() == mesh.topology()));
+            });
+
+        if (it == entity_maps.end())
+        {
+          throw std::runtime_error(
+              "Incompatible mesh. argument entity_maps must be provided.");
+        }
+        return *it;
+      };
+      // Find correct entity map and determine direction of the map
+      const mesh::EntityMap& emap = get_entity_map(mesh_c);
+      bool inverse = emap.sub_topology() == mesh_c->topology();
+
+      std::vector<std::int32_t> e_b;
+      if constexpr (entities.rank() == 1)
+      {
+        e_b = emap.sub_topology_to_topology(
+            std::span(entities.data_handle(), entities.size()), inverse);
+        md::mdspan e(e_b.data(), e_b.size());
+        impl::pack_coefficient_entity(std::span(c), cstride,
+                                      coeffs[coeff].get(), cell_info, e,
+                                      offsets[coeff]);
+      }
+      else if (entities.rank() == 2)
+      {
+        const mesh::Topology topology = *mesh.topology();
+        int tdim = topology.dim();
+        int codim = tdim - mesh_c->topology()->dim();
+        if (codim == 0)
+        {
+          // If codim is zero we extract the cells and map them
+          auto cells = md::submdspan(entities, md::full_extent, 0);
+          std::vector<std::int32_t> contiguous_cells(cells.extent(0));
+          for (std::size_t i = 0; i < cells.extent(0); ++i)
+            contiguous_cells[i] = cells(i);
+          e_b = emap.sub_topology_to_topology(std::span(contiguous_cells),
+                                              inverse);
+          md::mdspan e(e_b.data(), e_b.size());
+          impl::pack_coefficient_entity(std::span(c), cstride,
+                                        coeffs[coeff].get(), cell_info, e,
+                                        offsets[coeff]);
+        }
+        else if (codim == 1)
+        {
+          // Codim 1 mesh, need to map (cell, local index) to facets and then
+          // to cells of the submesh
+          auto c_to_f = topology.connectivity(tdim, tdim - 1);
+          assert(c_to_f);
+          std::vector<std::int32_t> parent_entities;
+          parent_entities.reserve(entities.extent(0));
+          for (std::size_t e = 0; e < entities.extent(0); ++e)
+          {
+            auto pair = md::submdspan(entities, e, md::full_extent);
+            parent_entities.push_back(c_to_f->links(pair[0])[pair[1]]);
+          }
+          e_b = emap.sub_topology_to_topology(parent_entities, inverse);
+          md::mdspan e(e_b.data(), e_b.size());
+          impl::pack_coefficient_entity(std::span(c), cstride,
+                                        coeffs[coeff].get(), cell_info, e,
+                                        offsets[coeff]);
+        }
+      }
+      else
+      {
+        throw std::runtime_error("Entities span has unsupported rank.");
+      }
     }
   }
 }
