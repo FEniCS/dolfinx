@@ -3,7 +3,12 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Tools for assembling and manipulating finite element forms."""
+"""Tools for assembling and manipulating finite element forms.
+
+Note:
+    ``dolfinx.fem.petsc`` and ``dolfinx.fem.problems`` require optional
+    dependencies and must be explicitly imported.
+"""
 
 import typing
 
