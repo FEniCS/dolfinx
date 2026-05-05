@@ -28,6 +28,7 @@ from dolfinx.fem import (
     form,
 )
 from dolfinx.la import InsertMode, MatrixCSR, Vector
+from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 from dolfinx.mesh import EntityMap as EntityMap
 
 __all__ = ["LinearProblem"]
@@ -137,8 +138,6 @@ class LinearProblem:
         Returns:
             The solution function.
         """
-        from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
-
         # Assemble lhs
         self.A.set_value(self.A.data.dtype.type(0.0))
         assemble_matrix(self.A, self.a, bcs=self.bcs)
