@@ -12,10 +12,10 @@ Users with advanced requirements should use
 import typing
 from collections.abc import Sequence
 
-import numpy as np
 import numpy.typing as npt
 
 import ufl
+from dolfinx import default_scalar_type
 from dolfinx.fem import (
     DirichletBC,
     Form,
@@ -50,7 +50,7 @@ class LinearProblem:
         L: ufl.Form,
         bcs: Sequence[DirichletBC] | None = None,
         u: Function | None = None,
-        dtype: npt.DTypeLike = None,
+        dtype: npt.DTypeLike | None = None,
         superlu_dist_options: dict | None = None,
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
@@ -90,7 +90,8 @@ class LinearProblem:
                 superlu_dist_options={"SymmetricMode": "YES"})
             u_h = problem.solve()
         """
-        _dtype = np.dtype(dtype)
+        _dtype = default_scalar_type() if dtype is None else dtype
+
         self._a = typing.cast(
             Form,
             form(
@@ -139,7 +140,7 @@ class LinearProblem:
         from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 
         # Assemble lhs
-        self.A.set_value(np.dtype(self.u.dtype).type(0.0))
+        self.A.set_value(self.A.data.dtype.type(0.0))
         assemble_matrix(self.A, self.a, bcs=self.bcs)
         self.A.scatter_reverse()
 

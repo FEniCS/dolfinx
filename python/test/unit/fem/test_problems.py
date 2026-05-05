@@ -25,7 +25,7 @@ from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, i
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
 @pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
-def test_superlu_solver(dtype):
+def test_superlu_problem(dtype):
     """Manufactured Poisson and screened problem with exact solution u = x[1]**3."""
     from dolfinx.fem.problems import LinearProblem
 
@@ -69,3 +69,17 @@ def test_superlu_solver(dtype):
     # Second solve
     uh = problem.solve()
     check_error(u_ex, uh)
+
+
+def test_superlu_problem_default_args():
+    from dolfinx.fem.problems import LinearProblem
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
+    V = functionspace(mesh, ("Lagrange", 4))
+    u, v = TrialFunction(V), TestFunction(V)
+
+    a = inner(grad(u), grad(v)) * dx + inner(u, v) * dx
+    L = inner(1.0, v) * dx
+
+    problem = LinearProblem(a, L)
+    _ = problem.solve()
