@@ -82,5 +82,6 @@ def test_superlu_problem_default_args():
     a = inner(grad(u), grad(v)) * dx + inner(u, v) * dx
     L = inner(1.0, v) * dx
 
+    # Check that no optional arguments leads to successful solve
     problem = LinearProblem(a, L)
     _ = problem.solve()
