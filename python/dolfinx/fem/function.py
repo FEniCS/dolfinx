@@ -112,6 +112,16 @@ class Expression(Generic[Scalar]):
 
     """
 
+    _ufl_expression: ufl.core.expr.Expr
+    _argument_space: FunctionSpace | None
+    _cpp_object: (
+        _cpp.fem.Expression_complex64
+        | _cpp.fem.Expression_complex128
+        | _cpp.fem.Expression_float32
+        | _cpp.fem.Expression_float64
+    )
+    _code: str
+
     def __init__(
         self,
         e: ufl.core.expr.Expr,
