@@ -93,7 +93,7 @@ class LinearProblem:
         """
         if u is not None:
             _dtype = u.dtype
-            if dtype != u.dtype:
+            if dtype is not u.dtype:
                 raise ValueError(f"dtype ({dtype}) does not match u.dtype ({u.dtype}).")
 
         self._a = typing.cast(
