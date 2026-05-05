@@ -37,6 +37,7 @@ from dolfinx.mesh import (
     exterior_facet_indices,
     locate_entities,
     locate_entities_boundary,
+    transfer_meshtags_to_submesh,
 )
 
 
@@ -783,6 +784,42 @@ def test_mesh_single_process_distribution(partitioner):
         adj = mesh.topology.connectivity(*conn)
         for i in range(adj.num_nodes):
             assert adj.links(i).size == 2
+
+
+@pytest.mark.parametrize("codim", [0, 1, 2, 3])
+def test_transfer_to_submesh(codim):
+    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 4, 5)
+    tdim = mesh.topology.dim
+    assert tdim - codim >= 0
+    entities = locate_entities(mesh, tdim - codim, lambda x: x[0] >= 0.5)
+    submesh, entity_map, vertex_map, _node_map = create_submesh(mesh, tdim - codim, entities)
+
+    def marker1(x):
+        return x[1] <= 0.5
+
+    def marker2(x):
+        return x[2] < 0.5
+
+    for i in range(submesh.topology.dim + 1):
+        mesh.topology.create_entities(i)
+        pe_map = mesh.topology.index_map(i)
+        num_parent_entities = pe_map.size_local + pe_map.num_ghosts
+        values = np.zeros(num_parent_entities, dtype=np.int32)
+        values[locate_entities(mesh, i, marker1)] = 1
+        values[locate_entities(mesh, i, marker2)] = 2
+        et_indices = np.flatnonzero(values)
+        et_values = values[et_indices]
+        et = dolfinx.mesh.meshtags(mesh, i, et_indices, et_values)
+
+        sub_et = transfer_meshtags_to_submesh(et, submesh, vertex_map, entity_map)
+        ref_one = locate_entities(submesh, i, marker1)
+        ref_two = np.sort(locate_entities(submesh, i, marker2))
+        ref_one = np.setdiff1d(ref_one, ref_two, assume_unique=True)
+
+        marked1 = sub_et.find(1)
+        marked2 = sub_et.find(2)
+        np.testing.assert_allclose(marked1, ref_one)
+        np.testing.assert_allclose(marked2, ref_two)
 
 
 @pytest.mark.parametrize("gdim", [1, 2, 3])

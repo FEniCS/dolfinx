@@ -161,7 +161,7 @@ def assemble_scalar(
         of this function is typically summed across all MPI ranks.
     """
     constants = pack_constants(M) if constants is None else constants  # type: ignore[assignment]
-    coeffs = pack_coefficients(M) if coeffs is None else constants  # type: ignore[assignment]
+    coeffs = pack_coefficients(M) if coeffs is None else coeffs  # type: ignore[assignment]
     return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)
 
 

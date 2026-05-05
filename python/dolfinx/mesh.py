@@ -35,6 +35,7 @@ from dolfinx.cpp.mesh import (
 from dolfinx.cpp.refinement import (
     IdentityPartitionerPlaceholder,
     RefinementOption,
+    mark_maximum,
 )
 from dolfinx.cpp.refinement import (
     uniform_refine as _uniform_refine,
@@ -42,6 +43,7 @@ from dolfinx.cpp.refinement import (
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
 from dolfinx.graph import AdjacencyList
+from dolfinx.typing import Real
 
 __all__ = [
     "CellType",
@@ -73,12 +75,14 @@ __all__ = [
     "exterior_facet_indices",
     "locate_entities",
     "locate_entities_boundary",
+    "mark_maximum",
     "meshtags",
     "meshtags_from_entities",
     "refine",
     "to_string",
     "to_type",
     "transfer_meshtag",
+    "transfer_meshtags_to_submesh",
     "uniform_refine",
 ]
 
@@ -268,7 +272,7 @@ class Topology:
         return self._cpp_object.cell_type
 
 
-class Geometry:
+class Geometry(typing.Generic[Real]):
     """The geometry of a :class:`dolfinx.mesh.Mesh`."""
 
     _cpp_object: _cpp.mesh.Geometry_float32 | _cpp.mesh.Geometry_float64
@@ -314,7 +318,7 @@ class Geometry:
         return self._cpp_object.input_global_indices
 
     @property
-    def x(self) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+    def x(self) -> npt.NDArray[Real]:
         """Geometry coordinate points.
 
         Shape is ``shape=(num_points, 3)``.
@@ -322,12 +326,12 @@ class Geometry:
         return self._cpp_object.x
 
 
-class Mesh:
+class Mesh(typing.Generic[Real]):
     """A mesh."""
 
     _mesh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     _topology: Topology
-    _geometry: Geometry
+    _geometry: Geometry[Real]
     _ufl_domain: ufl.Mesh | None
 
     def __init__(
@@ -411,7 +415,7 @@ class Mesh:
         return self._topology
 
     @property
-    def geometry(self) -> Geometry:
+    def geometry(self) -> Geometry[Real]:
         """Mesh geometry."""
         return self._geometry
 
@@ -850,7 +854,7 @@ def create_submesh(
 
     Returns:
         The (1) sub mesh, (2) entity map, (3) vertex map, and (4) node
-        map (geometry). Each of the maps a local index of the sub mesh
+        map (geometry). Each of the maps maps a local index of the sub mesh
         to a local index of ``msh``.
     """
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(
@@ -1271,17 +1275,66 @@ def create_geometry(
     return Geometry(ftype(index_map, dofmap, element._cpp_object, x, input_global_indices))
 
 
+def transfer_meshtags_to_submesh(
+    entity_tag: MeshTags,
+    submesh: Mesh,
+    vertex_to_parent: EntityMap,
+    cell_to_parent: EntityMap,
+) -> MeshTags:
+    """Transfer a ``entity_tag`` from a parent mesh to a ``submesh``.
+
+    Args:
+        entity_tag: Tag to transfer
+        submesh: Submesh to transfer tag to
+        vertex_to_parent: Mapping from submesh vertices to parent
+            mesh vertices
+        cell_to_parent: Mapping from submesh cells to parent entities
+    Returns:
+        The transferred meshtags object on the submesh.
+    """
+    dim = entity_tag.dim
+    sub_tdim = submesh.topology.dim
+    if dim > sub_tdim:
+        raise RuntimeError(
+            f"Cannot transfer meshtags of dimension {dim} to submesh with topological dimension"
+        )
+
+    submesh.topology.create_connectivity(sub_tdim, sub_tdim)
+    submesh.topology.create_connectivity(entity_tag.dim, 0)
+    submesh.topology.create_connectivity(sub_tdim, entity_tag.dim)
+    entity_tag.topology.create_connectivity(dim, 0)
+    entity_tag.topology.create_connectivity(dim, sub_tdim)
+    dtype = entity_tag.values.dtype
+    if dtype == np.int32:
+        ftype = _cpp.mesh.transfer_meshtags_to_submesh_int32
+    elif dtype == np.int64:
+        ftype = _cpp.mesh.transfer_meshtags_to_submesh_int64
+    elif dtype == np.float64:
+        ftype = _cpp.mesh.transfer_meshtags_to_submesh_float64
+    else:
+        raise NotImplementedError(
+            f"MeshTags with dtype {dtype} not supported for transfer to submesh."
+        )
+    cpp_tag = ftype(
+        entity_tag._cpp_object,
+        submesh.topology._cpp_object,
+        vertex_to_parent._cpp_object,
+        cell_to_parent._cpp_object,
+    )
+    return MeshTags(cpp_tag)
+
+
 def create_point_mesh(comm: _MPI.Intracomm, points: npt.NDArray[np.float32 | np.float64]) -> Mesh:
     """Create a mesh consisting of points only.
 
     Note:
-        No nodes are shared between processes.
+        No points are shared between processes.
 
     Args:
         comm: MPI communicator to create the mesh on.
         points: Points local to the process in the mesh.
     """
-    # Create mesh topology
+    # Create topology which only has a 0->0 connectivity and dim 0 entities
     cells = np.arange(points.shape[0], dtype=np.int32).reshape(-1, 1)
     num_nodes_local = cells.shape[0]
     imap = _cpp.common.IndexMap(comm, num_nodes_local)
@@ -1295,12 +1348,10 @@ def create_point_mesh(comm: _MPI.Intracomm, points: npt.NDArray[np.float32 | np.
         original_index=igi,
     )
 
-    # Create mesh geometry
     e = basix.ufl.element("Lagrange", "point", 0, shape=(points.shape[1],), dtype=points.dtype)
     c_el = _coordinate_element(e.basix_element)  # type: ignore[call-arg]
     geometry = create_geometry(imap, cells, c_el, points, igi)
 
-    # Create DOLFINx mesh
     if points.dtype == np.float64:
         cpp_mesh = _cpp.mesh.Mesh_float64(comm, topology, geometry._cpp_object)
     elif points.dtype == np.float32:
@@ -1308,5 +1359,4 @@ def create_point_mesh(comm: _MPI.Intracomm, points: npt.NDArray[np.float32 | np.
     else:
         raise RuntimeError(f"Unsupported dtype for mesh {points.dtype}")
 
-    # Wrap as Python object
     return Mesh(cpp_mesh, domain=ufl.Mesh(e))

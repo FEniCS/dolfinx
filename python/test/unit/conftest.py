@@ -78,14 +78,19 @@ def mixed_topology_mesh():
                     orig_idx[2] += [idx]
                     idx += 1
                 else:
-                    cells[3] += [v0, v1, v2, v3, v7]
+                    # Pyramids x 2 + tets x 2 (quads on top/bottom of cube,
+                    # triangles on the 4 side faces).
+                    cells[3] += [v0, v1, v2, v3, v7]  # base z=0, apex V7
                     orig_idx[3] += [idx]
                     idx += 1
-                    cells[3] += [v0, v1, v4, v5, v7]
+                    cells[3] += [v4, v5, v6, v7, v0]  # base z=1, apex V0
                     orig_idx[3] += [idx]
                     idx += 1
-                    cells[3] += [v0, v2, v4, v6, v7]
-                    orig_idx[3] += [idx]
+                    cells[2] += [v0, v2, v6, v7]
+                    orig_idx[2] += [idx]
+                    idx += 1
+                    cells[2] += [v0, v1, v5, v7]
+                    orig_idx[2] += [idx]
                     idx += 1
 
         n_points = (nx + 1) * (ny + 1) * (nz + 1)
