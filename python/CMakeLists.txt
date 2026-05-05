@@ -38,6 +38,7 @@ find_package(nanobind CONFIG REQUIRED)
 enable_language(C)
 
 find_package(DOLFINX REQUIRED CONFIG)
+set_target_properties(dolfinx PROPERTIES SYSTEM OFF)
 
 if(DOLFINX_FOUND)
   message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
@@ -77,7 +78,7 @@ if(NANOBIND_SABI)
   # mpi4py and petsc4py use generated Cython headers so tell
   # them that the limited API is in use.
   target_compile_definitions(cpp PRIVATE MPI4PY_LIMITED_API=1)
-  # Needing to set CYTHON_COMPILING_IN_LIMITED_API is a bug in 
+  # Needing to set CYTHON_COMPILING_IN_LIMITED_API is a bug in
   # Cython-generated API headers, should become unnecessary with
   # mpi4py/petsc4py releases published using Cython >= 3.1.4
   # https://github.com/cython/cython/issues/7108
@@ -88,10 +89,10 @@ endif()
 include(CheckCXXCompilerFlag)
 
 # Add some strict compiler checks
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic -Wno-sign-compare" HAVE_PEDANTIC)
+check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
 
 if(HAVE_PEDANTIC)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic;-Wno-sign-compare)
+  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
 endif()
 
 # Debug flags
@@ -135,7 +136,6 @@ target_compile_options(
 target_compile_definitions(
   cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS}>
 )
-
 target_compile_definitions(cpp PRIVATE cxx_std_20)
 
 if(ENABLE_CLANG_TIDY)

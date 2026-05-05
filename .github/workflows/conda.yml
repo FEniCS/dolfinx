@@ -1,10 +1,16 @@
 name: Conda install
 
 on:
+  # build on push/pr to this file
+  push:
+    paths:
+      - .github/workflows/conda.yml
   # Uncomment the below 'push' to trigger on push
-  #push:
   #  branches:
   #     - "**"
+  pull_request:
+    paths:
+      - .github/workflows/conda.yml
   schedule:
     # '*' is a special character in YAML, so string must be quoted
     - cron: "0 2 * * WED"
@@ -33,20 +39,23 @@ jobs:
         shell: bash -el {0}
 
     steps:
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: conda-incubator/setup-miniconda@v4
         with:
           auto-update-conda: true
+          channels: conda-forge
+          mamba-version: ">=2.6"
+          miniforge-version: latest
           python-version: ${{ matrix.python-version }}
       
       # TODO: These could probably be merged into one cross-platform step.
       - name: Install DOLFINx with MPICH (Unix-like)
         if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
         run: |
-          conda install -c conda-forge fenics-dolfinx mpich petsc=*=${{ matrix.petsc-scalar-type }}*
+          mamba install fenics-dolfinx mpich petsc=*=${{ matrix.petsc-scalar-type }}*
       - name: Install DOLFINx (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          conda install -c conda-forge fenics-dolfinx
+          mamba install fenics-dolfinx
       
       - name: Test (Unix-like)
         if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}

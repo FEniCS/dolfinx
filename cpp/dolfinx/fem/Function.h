@@ -128,11 +128,14 @@ public:
     // Copy values into new vector
     std::span<const value_type> x_old = _x->array();
     std::span<value_type> x_new = x->array();
-    for (std::size_t i = 0; i < map.size(); ++i)
+    for (auto mapj : map)
     {
-      assert((int)i < x_new.size());
-      assert(map[i] < x_old.size());
-      x_new[i] = x_old[map[i]];
+      for (std::size_t i = 0; i < mapj.size(); ++i)
+      {
+        assert(i < x_new.size());
+        assert(static_cast<std::size_t>(mapj[i]) < x_old.size());
+        x_new[i] = x_old[mapj[i]];
+      }
     }
 
     return Function(
@@ -161,7 +164,7 @@ public:
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
               md::mdspan<const geometry_type,
                          md::extents<std::size_t, 3, md::dynamic_extent>>)>& f,
-      CellRange auto&& cells)
+      mesh::CellRange auto&& cells)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -246,7 +249,7 @@ public:
   ///
   /// @pre `cells0` and `cells1` must have the same length.
   void interpolate(const Function<value_type, geometry_type>& u0,
-                   CellRange auto&& cells0, CellRange auto&& cells1)
+                   mesh::CellRange auto&& cells0, mesh::CellRange auto&& cells1)
   {
     fem::interpolate(*this, cells1, u0, cells0);
   }
@@ -258,7 +261,7 @@ public:
   /// @param[in] u Function to be interpolated.
   /// @param[in] cells Cells to interpolate from.
   void interpolate(const Function<value_type, geometry_type>& u,
-                   CellRange auto&& cells)
+                   mesh::CellRange auto&& cells)
   {
     fem::interpolate(*this, u, cells);
   }
@@ -294,7 +297,7 @@ public:
   ///
   /// @pre `cells0` `cells1` must have the same length.
   void interpolate(const Expression<value_type, geometry_type>& e0,
-                   CellRange auto&& cells0, CellRange auto&& cells1)
+                   mesh::CellRange auto&& cells0, mesh::CellRange auto&& cells1)
   {
     // Extract mesh
     const mesh::Mesh<geometry_type>* mesh0 = nullptr;
@@ -395,7 +398,7 @@ public:
   /// interpolate from if `e0` has Function coefficients. If no mesh can
   /// be associated with `e0` then the mesh associated with `this` is used.
   void interpolate(const Expression<value_type, geometry_type>& e0,
-                   CellRange auto&& cells)
+                   mesh::CellRange auto&& cells)
   {
     interpolate(e0, cells, cells);
   }
@@ -421,14 +424,18 @@ public:
   /// @param[in] u Function to be interpolated.
   /// @param[in] cells Cells in the mesh associated with `this` to
   /// interpolate into.
+  /// @param[in] tol Tolerance for convergence in Newton method for non-affine
+  /// pullbacks. If the mesh geometry is affine this argument is ignored.
+  /// @param[in] maxit Maximum number of Newton iterations in non-affine
+  /// pull-back. If the mesh geometry is affine this argument is ignored.
   /// @param[in] interpolation_data Data required for associating the
   /// interpolation points of `this` with cells in `u`. Can be computed
   /// with `fem::create_interpolation_data`.
   void interpolate(const Function<value_type, geometry_type>& u,
-                   CellRange auto&& cells,
+                   mesh::CellRange auto&& cells, double tol, int maxit,
                    const geometry::PointOwnershipData<U>& interpolation_data)
   {
-    fem::interpolate(*this, u, cells, interpolation_data);
+    fem::interpolate(*this, u, cells, tol, maxit, interpolation_data);
   }
 
   /// @brief Evaluate the Function at points.
@@ -443,9 +450,13 @@ public:
   /// points with a negative cell index. This argument must be passed
   /// with the correct size. Storage is row-major.
   /// @param[in] ushape Shape of `u`.
+  /// @param[in] tol Tolerance for convergence in Newton method for non-affine
+  /// pullbacks. If the mesh geometry is affine this argument is ignored.
+  /// @param[in] maxit Maximum number of Newton iterations in non-affine
+  /// pull-back. If the mesh geometry is affine this argument is ignored.
   void eval(std::span<const geometry_type> x, std::array<std::size_t, 2> xshape,
-            CellRange auto&& cells, std::span<value_type> u,
-            std::array<std::size_t, 2> ushape) const
+            mesh::CellRange auto&& cells, std::span<value_type> u,
+            std::array<std::size_t, 2> ushape, double tol, int maxit) const
   {
     if (cells.empty())
       return;
@@ -604,7 +615,7 @@ public:
       else
       {
         // Pull-back physical point xp to reference coordinate Xp
-        cmap.pull_back_nonaffine(Xp, xp, coord_dofs);
+        cmap.pull_back_nonaffine(Xp, xp, coord_dofs, tol, maxit);
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
         CoordinateElement<geometry_type>::compute_jacobian(dphi, coord_dofs,
                                                            _J);

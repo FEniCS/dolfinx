@@ -55,7 +55,7 @@ def test_physical_tags(marker_mode):
 
     msh, cell_tags = gmsh_tet_model(1)
     gdim = msh.geometry.dim
-    assert msh.geometry.cmap.degree == 1
+    assert msh.geometry.cmap().degree == 1
     assert msh.geometry.dim == gdim
     local_values = np.unique(cell_tags.values)
     all_values = np.unique(np.hstack(msh.comm.allgather(local_values)))
