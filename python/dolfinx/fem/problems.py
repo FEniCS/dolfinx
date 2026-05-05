@@ -91,7 +91,12 @@ class LinearProblem:
                 superlu_dist_options={"SymmetricMode": "YES"})
             u_h = problem.solve()
         """
-        _dtype = default_scalar_type() if dtype is None else dtype
+        if u is not None:
+            _dtype = u.dtype
+            if dtype is not None and dtype != u.dtype:
+                raise ValueError(f"dtype ({dtype}) does not match u.dtype ({u.dtype}).")
+        else:
+            _dtype = default_scalar_type() if dtype is None else dtype
 
         self._a = typing.cast(
             Form,
@@ -121,8 +126,6 @@ class LinearProblem:
         if u is None:
             self._u = Function(L.arguments()[0].ufl_function_space(), dtype=_dtype)
         else:
-            if u.dtype != _dtype:
-                raise ValueError(f"u.dtype ({u.dtype}) does not match dtype ({_dtype}).")
             self._u = u
 
         self.bcs = [] if bcs is None else bcs
