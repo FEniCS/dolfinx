@@ -168,23 +168,6 @@ def assemble_scalar(
 # -- Vector assembly ------------------------------------------------------
 
 
-@typing.overload
-def assemble_vector(
-    L: Form,
-    constants: npt.NDArray | None = None,
-    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
-) -> la.Vector: ...
-
-
-@typing.overload
-def assemble_vector(
-    b: npt.NDArray,
-    L: Form,
-    constants: npt.NDArray | None = None,
-    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
-) -> npt.NDArray: ...
-
-
 @functools.singledispatch
 def assemble_vector(
     L: typing.Any,
@@ -195,7 +178,7 @@ def assemble_vector(
     return _assemble_vector_form(L, constants, coeffs)
 
 
-@assemble_vector.register  # type: ignore[attr-defined]
+@assemble_vector.register
 def _assemble_vector_form(
     L: Form,
     constants: npt.NDArray | None = None,
@@ -232,7 +215,7 @@ def _assemble_vector_form(
     return b
 
 
-@assemble_vector.register(np.ndarray)  # type: ignore[attr-defined]
+@assemble_vector.register(np.ndarray)
 def _assemble_vector_array(
     b: npt.NDArray,
     L: Form,
@@ -268,28 +251,6 @@ def _assemble_vector_array(
 
 
 # -- Matrix assembly ------------------------------------------------------
-
-
-@typing.overload
-def assemble_matrix(
-    a: Form,
-    bcs: Sequence[DirichletBC] | None = None,
-    diag: float = 1.0,
-    constants: npt.NDArray | None = None,
-    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
-    block_mode: la.BlockMode | None = None,
-) -> la.MatrixCSR: ...
-
-
-@typing.overload
-def assemble_matrix(
-    A: la.MatrixCSR,
-    a: Form,
-    bcs: Sequence[DirichletBC] | None = None,
-    diag: float = 1.0,
-    constants: npt.NDArray | None = None,
-    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
-) -> la.MatrixCSR: ...
 
 
 @functools.singledispatch
@@ -332,7 +293,7 @@ def assemble_matrix(
     return A
 
 
-@assemble_matrix.register  # type: ignore[attr-defined]
+@assemble_matrix.register
 def _assemble_matrix_csr(
     A: la.MatrixCSR,
     a: Form,

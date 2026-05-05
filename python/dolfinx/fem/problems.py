@@ -143,7 +143,7 @@ class LinearProblem:
         """
         # Assemble lhs
         self.A.set_value(self.A.data.dtype.type(0.0))
-        assemble_matrix(self.A, self.a, bcs=self.bcs)
+        assemble_matrix(self.A, self.a, bcs=self.bcs)  # type: ignore[arg-type]
         self.A.scatter_reverse()
 
         # SuperLU_DIST solves in-place, so a deep copy of A is required.
@@ -155,7 +155,7 @@ class LinearProblem:
 
         # Assemble rhs
         self.b.array[:] = 0.0
-        assemble_vector(self.b.array, self.L)
+        assemble_vector(self.b.array, self.L)  # type: ignore[arg-type]
 
         # Apply boundary conditions to the rhs
         if self.bcs:
