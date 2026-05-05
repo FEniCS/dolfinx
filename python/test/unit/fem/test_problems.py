@@ -71,6 +71,7 @@ def test_superlu_problem(dtype):
     check_error(u_ex, uh)
 
 
+@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
 def test_superlu_problem_default_args():
     from dolfinx.fem.problems import LinearProblem
 
