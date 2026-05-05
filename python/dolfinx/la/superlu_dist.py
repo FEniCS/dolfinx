@@ -20,7 +20,8 @@ import numpy.typing as npt
 import dolfinx
 import dolfinx.cpp as _cpp
 
-assert dolfinx.has_superlu_dist
+if not dolfinx.has_superlu_dist:
+    raise RuntimeError("DOLFINx was not built with SuperLU_DIST support.")
 
 __all__ = ["SuperLUDistMatrix", "SuperLUDistSolver", "superlu_dist_matrix", "superlu_dist_solver"]
 
@@ -37,7 +38,6 @@ class SuperLUDistMatrix(Generic[_T]):
         | _cpp.la.SuperLUDistMatrix_float64
         | _cpp.la.SuperLUDistMatrix_complex128
     )
-    _dtype: npt.DTypeLike
 
     def __init__(self, matrix):
         """Create a SuperLU_DIST matrix.
@@ -108,7 +108,8 @@ class SuperLUDistSolver(Generic[_T]):
 
         See SuperLU_DIST User's Guide for option names and values.
 
-        Examples:
+        Example::
+
             solver.set_option("SymmetricMode", "YES")
             solver.set_option("Trans", "NOTRANS")
 
