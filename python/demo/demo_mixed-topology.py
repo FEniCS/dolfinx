@@ -34,8 +34,8 @@ from scipy.sparse.linalg import spsolve
 import basix
 import dolfinx.cpp as _cpp
 import ufl
-from dolfinx.cpp.fem import locate_dofs_geometrical
-from dolfinx.cpp.mesh import GhostMode, create_mesh
+from dolfinx.cpp.fem import locate_dofs_topological
+from dolfinx.cpp.mesh import GhostMode, create_mesh, locate_entities
 from dolfinx.fem import (
     FiniteElement,
     FunctionSpace,
@@ -146,11 +146,6 @@ def marker(x):
     return np.logical_or(np.isclose(x[2], 0.0), np.isclose(x[2], 1.0))
 
 
-bcdofs = locate_dofs_geometrical(V_cpp, marker)
-bc = dirichletbc(value=0.0, dofs=bcdofs, V=V_cpp)
-
-# -
-
 # ## Creating and compiling a variational formulation
 # We create the variational forms for each cell type.
 # FIXME: This hack is required at the moment because UFL does not yet know
@@ -166,7 +161,7 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     k = 12.0
     x = ufl.SpatialCoordinate(domain)
-    a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
+    a += [(ufl.inner(ufl.grad(u), ufl.grad(v))) * ufl.dx]
     f = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
     L += [f * v * ufl.dx]
 
@@ -177,6 +172,17 @@ for i, cell_name in enumerate(["hexahedron", "prism"]):
 
 a_form = mixed_topology_form(a, dtype=np.float64)
 L_form = mixed_topology_form(L, dtype=np.float64)
+
+tdim = mesh.topology.dim
+fdim = tdim - 1
+
+dofs = np.array([], dtype=np.int32)
+mesh.topology.create_connectivity(fdim, tdim)
+for facet_type_idx in range(2):
+    facets = locate_entities(mesh, fdim, marker, facet_type_idx)
+    dofs = np.hstack((dofs, locate_dofs_topological(V_cpp, fdim, facets, facet_type_idx)))
+
+bc = dirichletbc(0.0, dofs, V_cpp)
 
 # ## Assembling and solving the linear system
 # We use the native {py:class}`matrix<dolfinx.la.MatrixCSR>` and
