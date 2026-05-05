@@ -169,15 +169,7 @@ public:
     VecGhostUpdateEnd(_b, ADD_VALUES, SCATTER_REVERSE);
 
     // Set bcs
-    Vec x_local;
-    VecGhostGetLocalForm(x, &x_local);
-    PetscInt n = 0;
-    VecGetSize(x_local, &n);
-    const T* _x = nullptr;
-    VecGetArrayRead(x_local, &_x);
-    std::ranges::for_each(_bcs, [b, x = std::span(_x, n)](auto& bc)
-                          { bc.get().set(b, x, -1); });
-    VecRestoreArrayRead(x_local, &_x);
+    fem::petsc::set_bc(_b, _bcs, x, -1);
   }
 
   /// Compute J = F' at current point x

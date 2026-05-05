@@ -59,6 +59,21 @@ void fem(nb::module_& m)
       },
       nb::arg("comm"), nb::arg("topology"), nb::arg("layout"),
       "Build a dofmap on a mesh.");
+
+  m.def(
+      "build_real_element_dofmap",
+      [](const dolfinx::mesh::Topology& topology,
+         const std::vector<std::vector<std::vector<int>>>& entity_dofs,
+         const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
+         std::size_t value_size)
+      {
+        return dolfinx::fem::build_real_element_dofmap(
+            topology, entity_dofs, entity_closure_dofs, value_size);
+      },
+      nb::arg("topology"), nb::arg("entity_dofs"),
+      nb::arg("entity_closure_dofs"), nb::arg("value_size"),
+      "Build a dofmap on a real element, i.e. a single constant dof shared by "
+      "all cells.");
   m.def(
       "transpose_dofmap",
       [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,

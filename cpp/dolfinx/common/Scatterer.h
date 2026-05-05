@@ -148,8 +148,7 @@ public:
     std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
                      std::next(_displs_local.begin()));
 
-    assert((int)ghosts_sorted.size() == _displs_remote.back());
-    assert((int)ghosts_sorted.size() == _displs_remote.back());
+    assert(static_cast<int>(ghosts_sorted.size()) == _displs_remote.back());
 
     // Send ghost global indices to owning rank, and receive owned
     // indices that are ghosts on other ranks
@@ -173,7 +172,7 @@ public:
                       std::ref(_sizes_remote), std::ref(_displs_remote)})
       {
         std::ranges::transform(x.get(), x.get().begin(),
-                               [bs](auto e) { return e *= bs; });
+                               [bs](auto e) { return e * bs; });
       }
     }
 
