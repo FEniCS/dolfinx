@@ -104,6 +104,12 @@ add_executable(
 target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx)
 target_compile_features(unittests PRIVATE cxx_std_20 c_std_17)
 
+# NOTE: Fixes when using Catch2 <= 3.13 with Clang 22.
+# https://github.com/catchorg/Catch2/blob/devel/docs/release-notes.md#3140
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_options(unittests PRIVATE -Wno-c2y-extensions)
+endif()
+
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
 if(WIN32)
