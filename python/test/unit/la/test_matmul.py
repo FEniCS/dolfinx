@@ -73,6 +73,28 @@ def test_matmul_rect(dtype, mat_random, mat_gather):
     assert np.allclose(C.to_dense()[:nrC, :], Cscipy.todense()[lrC0:lrC1])
 
 
+def test_matmul_zeros(mat_random, mat_gather):
+    A = mat_random(0, 0, 123, np.float64)
+    B = mat_random(0, 0, 321, np.float64)
+
+    # Create structural zeros in B
+    pos = 0
+    for i in range(B.index_map(0).size_local):
+        for j in range(B.indptr[i], B.indptr[i + 1]):
+            if i != B.indices[j]:
+                B.data[pos] = 0.0
+            pos += 1
+    As = mat_gather(A)
+    Bs = mat_gather(B)
+
+    Cs = As @ Bs
+    C0 = A.matmul(B)
+
+    C = mat_gather(C0)
+    assert C.nnz == Cs.nnz
+    assert np.allclose(Cs.todense(), C.todense())
+
+
 def test_bad_shape(mat_random):
     # Test matmul of incompatible matrices (should raise an error)
     A = mat_random(0, 1, 12345, np.float64)
