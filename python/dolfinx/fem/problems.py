@@ -95,6 +95,8 @@ class LinearProblem:
             _dtype = u.dtype
             if dtype is not u.dtype:
                 raise ValueError(f"dtype ({dtype}) does not match u.dtype ({u.dtype}).")
+        else:
+            _dtype = dtype
 
         self._a = typing.cast(
             Form,
