@@ -42,7 +42,7 @@ if (PROJECT_IS_TOP_LEVEL)
   endif()
 
   if(GLIBCXX)
-	  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS _GLIBCXX_ASSERTIONS)
+    list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS _GLIBCXX_ASSERTIONS)
   endif()
 
   # Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
@@ -103,6 +103,12 @@ add_executable(
 )
 target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx)
 target_compile_features(unittests PRIVATE cxx_std_20 c_std_17)
+
+# NOTE: Fixes when using Catch2 <= 3.13 with Clang 22 and derivatives.
+# https://github.com/catchorg/Catch2/blob/devel/docs/release-notes.md#3140
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+  target_compile_options(unittests PRIVATE -Wno-c2y-extensions)
+endif()
 
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
