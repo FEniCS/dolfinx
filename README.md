@@ -103,11 +103,10 @@ conda install -c conda-forge fenics-dolfinx mpich pyvista # Linux and macOS
 conda install -c conda-forge fenics-dolfinx pyvista pyamg # Windows
 ```
 
-*Windows only*: Windows conda packages are currently in beta testing and as of
-12/01/26 are only available for `v0.9.0`. PETSc and petsc4py are not available
-on Windows. Because FEniCS uses just-in-time compilation it necessary to
-install [Microsoft Visual
-Studio](https://visualstudio.microsoft.com/downloads/).
+*Windows only*: Windows conda packages are currently in beta testing. PETSc
+and petsc4py are not available on Windows. Because FEniCS uses just-in-time
+compilation it necessary to install
+[Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/).
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html). The recipe
