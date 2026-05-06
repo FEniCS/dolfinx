@@ -73,7 +73,15 @@ def test_matmul_rect(dtype, mat_random, mat_gather):
     assert np.allclose(C.to_dense()[:nrC, :], Cscipy.todense()[lrC0:lrC1])
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        np.complex64,
+        np.complex128,
+    ],
+)
 def test_matmul_zeros(dtype, mat_random, mat_gather):
     A = mat_random(0, 0, 123, dtype)
     B = mat_random(0, 0, 321, dtype)
