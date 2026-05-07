@@ -127,24 +127,25 @@ void declare_refinement(nanobind::module_& m)
 
   m.def(
       "mark_maximum",
-      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> marker, T theta,
+      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> indicator, T theta,
          MPICommWrapper comm)
       {
         return dolfinx_wrappers::as_nbarray(dolfinx::refinement::mark_maximum(
-            std::span(marker.data(), marker.size()), theta, comm.get()));
+            std::span(indicator.data(), indicator.size()), theta, comm.get()));
       },
-      nb::arg("marker"), nb::arg("theta"), nb::arg("comm"));
+      nb::arg("indicator"), nb::arg("theta"), nb::arg("comm"));
 
   m.def(
       "mark_equidistribution",
-      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> marker, T theta,
+      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> indicator, T theta,
          MPICommWrapper comm)
       {
         return dolfinx_wrappers::as_nbarray(
             dolfinx::refinement::mark_equidistribution(
-                std::span(marker.data(), marker.size()), theta, comm.get()));
+                std::span(indicator.data(), indicator.size()), theta,
+                comm.get()));
       },
-      nb::arg("marker"), nb::arg("theta"), nb::arg("comm"));
+      nb::arg("indicator"), nb::arg("theta"), nb::arg("comm"));
 
   m.def(
       "mark_equidistribution_squared",
