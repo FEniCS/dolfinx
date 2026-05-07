@@ -188,8 +188,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          = graph::reorder_gps)
 {
   if (gdim < 2)
-    throw std::runtime_error(
-        "gdim must be >= 2 for rectangle mesh.");
+    throw std::runtime_error("gdim must be >= 2 for rectangle mesh.");
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell per dimension is required.");
 
