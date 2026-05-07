@@ -1410,6 +1410,28 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
           std::move(subx_to_x_dofmap)};
 }
 
+/// @brief Make a copy of `mesh` whose geometry is interpolated onto a
+/// new coordinate element.
+///
+/// The topology is shared with the input mesh; the geometry is
+/// reconstructed by tabulating the existing geometry at the reference
+/// interpolation points of `new_cmap`. The new coordinate element must
+/// have the same cell shape as the input mesh's coordinate element.
+///
+/// @param[in] mesh Input mesh.
+/// @param[in] new_cmap Target coordinate element for the new geometry.
+/// @param[in] reorder_fn Optional graph reordering function applied to
+/// the new geometry dofmap.
+/// @return A new mesh sharing the topology of `mesh` and with a
+/// geometry described by `new_cmap`.
+template <std::floating_point T>
+Mesh<T>
+interpolate_geometry(std::shared_ptr<Mesh<T>> mesh,
+                     const fem::CoordinateElement<T>& new_cmap,
+                     const std::function<std::vector<int>(
+                         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                     = nullptr);
+
 /// @brief Create a new mesh consisting of a subset of entities in a
 /// mesh.
 /// @param[in] mesh The mesh.
