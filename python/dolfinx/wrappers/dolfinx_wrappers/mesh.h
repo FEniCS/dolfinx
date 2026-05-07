@@ -269,8 +269,7 @@ void declare_mesh(nb::module_& m, std::string type)
       create_interval.c_str(),
       [](MPICommWrapper comm, std::int64_t n, std::array<T, 2> p,
          dolfinx::mesh::GhostMode mode,
-         const part::impl::PythonCellPartitionFunction& part,
-         std::size_t gdim)
+         const part::impl::PythonCellPartitionFunction& part, std::size_t gdim)
       {
         return dolfinx::mesh::create_interval<T>(
             comm.get(), n, p, mode,
@@ -292,8 +291,7 @@ void declare_mesh(nb::module_& m, std::string type)
             part::impl::create_cell_partitioner_cpp(part), diagonal, gdim);
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
-      nb::arg("partitioner").none(), nb::arg("diagonal"),
-      nb::arg("gdim") = 2);
+      nb::arg("partitioner").none(), nb::arg("diagonal"), nb::arg("gdim") = 2);
 
   std::string create_box("create_box_" + type);
   m.def(
