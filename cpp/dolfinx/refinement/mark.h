@@ -25,7 +25,7 @@ namespace impl
 
 /// @brief Threshold marking helper
 ///
-/// @param[in] marker Indicator \f$ \eta \f$
+/// @param[in] indicator Indicator \f$ \eta \f$
 /// @param[in] threshold Lower bound for values to mark
 ///
 /// @returns indices \f$ i \f$ which satisfy \f$ \eta_i > \text{threshold} \f$.
@@ -51,7 +51,7 @@ std::vector<std::int32_t> mark_threshold(std::span<const T> indicator,
 
 /// @brief Maximum marking of a marker.
 ///
-/// @param[in] marker Indicator (local) \f$ \eta \f$ - usually an error
+/// @param[in] indicator Indicator (local) \f$ \eta \f$ - usually an error
 /// indicator per entity
 /// @param[in] theta Cut off parameter, \f$ 0 < \theta < 1 \f$
 /// @param[in] comm Communicator over which the maximum is computed.
@@ -78,7 +78,7 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> indicator, T theta,
 
 /// @brief Equidistribution marking of a marker.
 ///
-/// @param[in] marker Indicator (local) \f$ \eta \f$ - usually an error
+/// @param[in] indicator Indicator (local) \f$ \eta \f$ - usually an error
 /// indicator per entity
 /// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$
 /// @param[in] comm Communicator over which the total marker is computed.
