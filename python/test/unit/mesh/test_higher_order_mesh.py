@@ -806,7 +806,7 @@ def test_gmsh_input_3d(order, cell_type, dtype):
     gmsh.initialize()
     if cell_type == CellType.hexahedron:
         gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 2)
-        gmsh.option.setNumber("Mesh.RecombineAll", 2)
+        gmsh.option.setNumber("Mesh.RecombineAll", 1)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
 
