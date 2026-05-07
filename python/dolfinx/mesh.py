@@ -958,6 +958,7 @@ def create_interval(
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
     partitioner=None,
+    gdim: int = 1,
 ) -> Mesh:
     """Create an interval mesh.
 
@@ -971,6 +972,8 @@ def create_interval(
             are ``GhostMode.none`` and ``GhostMode.shared_facet``.
         partitioner: Partitioning function to use for determining the
             parallel distribution of cells across MPI ranks.
+        gdim: Geometric dimension. The interval lies along the first
+            coordinate axis; remaining components are zero.
 
     Returns:
         An interval mesh.
@@ -983,14 +986,14 @@ def create_interval(
             "interval",
             1,
             lagrange_variant=basix.LagrangeVariant.unset,
-            shape=(1,),
+            shape=(gdim,),
             dtype=dtype,
         )
     )  # type: ignore
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner)
+        msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner, gdim)
     elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner)
+        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner, gdim)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
 
@@ -1003,24 +1006,26 @@ def create_unit_interval(
     dtype: npt.DTypeLike = default_real_type,
     ghost_mode=GhostMode.shared_facet,
     partitioner=None,
+    gdim: int = 1,
 ) -> Mesh:
     """Create a mesh on the unit interval.
 
     Args:
         comm: MPI communicator.
         nx: Number of cells.
-        points: Coordinates of the end points.
         dtype: Float type for the mesh geometry(``numpy.float32``
             or ``numpy.float64``).
         ghost_mode: Ghost mode used in the mesh partitioning. Options
             are ``GhostMode.none`` and ``GhostMode.shared_facet``.
         partitioner: Partitioning function to use for determining the
             parallel distribution of cells across MPI ranks.
+        gdim: Geometric dimension. The interval lies along the first
+            coordinate axis; remaining components are zero.
 
     Returns:
         A unit interval mesh with end points at 0 and 1.
     """
-    return create_interval(comm, nx, [0.0, 1.0], dtype, ghost_mode, partitioner)
+    return create_interval(comm, nx, [0.0, 1.0], dtype, ghost_mode, partitioner, gdim)
 
 
 def create_rectangle(
@@ -1032,6 +1037,7 @@ def create_rectangle(
     ghost_mode=GhostMode.shared_facet,
     partitioner=None,
     diagonal: DiagonalType = DiagonalType.right,
+    gdim: int = 2,
 ) -> Mesh:
     """Create a rectangle mesh.
 
@@ -1048,6 +1054,8 @@ def create_rectangle(
             cells across MPI ranks.
         diagonal: Direction of diagonal of triangular meshes.
             See :class:`DiagonalType` for available options.
+        gdim: Geometric dimension. The rectangle lies in the first 2
+            coordinate axes; remaining components are zero.
 
     Returns:
         A mesh of a rectangle.
@@ -1060,14 +1068,18 @@ def create_rectangle(
             cell_type.name,
             1,
             lagrange_variant=basix.LagrangeVariant.unset,
-            shape=(2,),
+            shape=(gdim,),
             dtype=dtype,
         )
     )  # type: ignore
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
+        msh = _cpp.mesh.create_rectangle_float32(
+            comm, points, n, cell_type, partitioner, diagonal, gdim
+        )
     elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, partitioner, diagonal)
+        msh = _cpp.mesh.create_rectangle_float64(
+            comm, points, n, cell_type, partitioner, diagonal, gdim
+        )
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
 
@@ -1083,6 +1095,7 @@ def create_unit_square(
     ghost_mode=GhostMode.shared_facet,
     partitioner=None,
     diagonal: DiagonalType = DiagonalType.right,
+    gdim: int = 2,
 ) -> Mesh:
     """Create a mesh of a unit square.
 
@@ -1099,6 +1112,8 @@ def create_unit_square(
         diagonal:
             Direction of diagonal. See :class:`DiagonalType` for
             available options.
+        gdim: Geometric dimension. The square lies in the first 2
+            coordinate axes; remaining components are zero.
 
     Returns:
         A mesh of a square with corners at ``(0, 0)`` and ``(1, 1)``.
@@ -1112,6 +1127,7 @@ def create_unit_square(
         ghost_mode,
         partitioner,
         diagonal,
+        gdim,
     )
 
 

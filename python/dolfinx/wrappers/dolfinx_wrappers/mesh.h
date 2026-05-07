@@ -269,14 +269,16 @@ void declare_mesh(nb::module_& m, std::string type)
       create_interval.c_str(),
       [](MPICommWrapper comm, std::int64_t n, std::array<T, 2> p,
          dolfinx::mesh::GhostMode mode,
-         const part::impl::PythonCellPartitionFunction& part)
+         const part::impl::PythonCellPartitionFunction& part,
+         std::size_t gdim)
       {
         return dolfinx::mesh::create_interval<T>(
             comm.get(), n, p, mode,
-            part::impl::create_cell_partitioner_cpp(part));
+            part::impl::create_cell_partitioner_cpp(part),
+            dolfinx::graph::reorder_gps, gdim);
       },
       nb::arg("comm"), nb::arg("n"), nb::arg("p"), nb::arg("ghost_mode"),
-      nb::arg("partitioner").none());
+      nb::arg("partitioner").none(), nb::arg("gdim") = 1);
 
   std::string create_rectangle("create_rectangle_" + type);
   m.def(
@@ -284,14 +286,16 @@ void declare_mesh(nb::module_& m, std::string type)
       [](MPICommWrapper comm, std::array<std::array<T, 2>, 2> p,
          std::array<std::int64_t, 2> n, dolfinx::mesh::CellType celltype,
          const part::impl::PythonCellPartitionFunction& part,
-         dolfinx::mesh::DiagonalType diagonal)
+         dolfinx::mesh::DiagonalType diagonal, std::size_t gdim)
       {
         return dolfinx::mesh::create_rectangle<T>(
             comm.get(), p, n, celltype,
-            part::impl::create_cell_partitioner_cpp(part), diagonal);
+            part::impl::create_cell_partitioner_cpp(part), diagonal,
+            dolfinx::graph::reorder_gps, gdim);
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
-      nb::arg("partitioner").none(), nb::arg("diagonal"));
+      nb::arg("partitioner").none(), nb::arg("diagonal"),
+      nb::arg("gdim") = 2);
 
   std::string create_box("create_box_" + type);
   m.def(
