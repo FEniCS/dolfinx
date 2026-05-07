@@ -327,7 +327,9 @@ def test_create_interval_gdim(gdim):
     mesh = create_interval(MPI.COMM_WORLD, 6, [0.0, 1.0], gdim=gdim)
     assert mesh.topology.dim == 1
     assert mesh.geometry.dim == gdim
-    assert mesh.ufl_domain().ufl_coordinate_element().reference_value_shape == (gdim,)
+    domain = mesh.ufl_domain()
+    assert domain is not None
+    assert domain.ufl_coordinate_element().reference_value_shape == (gdim,)
 
 
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
@@ -337,7 +339,9 @@ def test_create_rectangle_gdim(gdim, cell_type):
     mesh = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [4, 4], cell_type, gdim=gdim)
     assert mesh.topology.dim == 2
     assert mesh.geometry.dim == gdim
-    assert mesh.ufl_domain().ufl_coordinate_element().reference_value_shape == (gdim,)
+    domain = mesh.ufl_domain()
+    assert domain is not None
+    assert domain.ufl_coordinate_element().reference_value_shape == (gdim,)
 
 
 @pytest.mark.skip_in_parallel

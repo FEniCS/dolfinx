@@ -1025,7 +1025,9 @@ def create_unit_interval(
     Returns:
         A unit interval mesh with end points at 0 and 1.
     """
-    return create_interval(comm, nx, [0.0, 1.0], dtype, ghost_mode, partitioner, gdim)
+    return create_interval(
+        comm, nx, [0.0, 1.0], dtype=dtype, ghost_mode=ghost_mode, partitioner=partitioner, gdim=gdim
+    )
 
 
 def create_rectangle(
@@ -1123,11 +1125,11 @@ def create_unit_square(
         [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
         (nx, ny),
         cell_type,
-        dtype,
-        ghost_mode,
-        partitioner,
-        diagonal,
-        gdim,
+        dtype=dtype,
+        ghost_mode=ghost_mode,
+        partitioner=partitioner,
+        diagonal=diagonal,
+        gdim=gdim,
     )
 
 

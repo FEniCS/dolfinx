@@ -174,18 +174,18 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
 /// @param[in] diagonal Direction of diagonals
-/// @param[in] reorder_fn Function for (locally) reordering cells
 /// @param[in] gdim Geometric dimension. Must be >= 2. Coordinates are
 /// embedded in the first 2 components; remaining components are zero.
+/// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          std::array<std::int64_t, 2> n, CellType celltype,
                          CellPartitionFunction partitioner,
                          DiagonalType diagonal = DiagonalType::right,
+                         std::size_t gdim = 2,
                          const CellReorderFunction& reorder_fn
-                         = graph::reorder_gps,
-                         std::size_t gdim = 2)
+                         = graph::reorder_gps)
 {
   if (gdim < 2)
     throw std::runtime_error(
@@ -236,8 +236,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          DiagonalType diagonal = DiagonalType::right,
                          std::size_t gdim = 2)
 {
-  return create_rectangle<T>(comm, p, n, celltype, nullptr, diagonal,
-                             graph::reorder_gps, gdim);
+  return create_rectangle<T>(comm, p, n, celltype, nullptr, diagonal, gdim);
 }
 
 /// @brief Interval mesh of the 1D line `[a, b]`.
@@ -252,17 +251,17 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
-/// @param[in] reorder_fn Function for (locally) reordering cells
 /// @param[in] gdim Geometric dimension. Must be >= 1. The interval lies
 /// along the first coordinate axis; remaining components are zero.
+/// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return A mesh.
 template <std::floating_point T = double>
 Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
                         mesh::GhostMode ghost_mode = mesh::GhostMode::none,
                         CellPartitionFunction partitioner = nullptr,
+                        std::size_t gdim = 1,
                         const CellReorderFunction& reorder_fn
-                        = graph::reorder_gps,
-                        std::size_t gdim = 1)
+                        = graph::reorder_gps)
 {
   if (gdim < 1)
     throw std::runtime_error("gdim must be >= 1 for interval mesh.");
