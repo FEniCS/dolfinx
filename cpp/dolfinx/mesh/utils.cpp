@@ -205,12 +205,10 @@ mesh::Mesh<T> mesh::interpolate_geometry(
   fem::FunctionSpace<T> V
       = fem::create_functionspace(mesh, element, reorder_fn);
 
-  // Tabulate physical coordinates of the new geometry dofs. Shape is
-  // (num_nodes, 3), row-major; this matches the storage required by
-  // the Geometry constructor.
+  // Tabulate physical coordinates of the new geometry dofs.
   std::vector<T> x_new = V.tabulate_dof_coordinates(false);
 
-  // Pull the geometry dofmap and index map from the temporary space.
+  // Pull the geometry dofmap and index map from V.
   std::shared_ptr<const fem::DofMap> dm = V.dofmap();
   assert(dm);
   std::shared_ptr<const common::IndexMap> new_imap = dm->index_map;
@@ -220,8 +218,8 @@ mesh::Mesh<T> mesh::interpolate_geometry(
   std::vector<std::int32_t> dofmap_flat(
       map_view.data_handle(), map_view.data_handle() + map_view.size());
 
-  // Build input_global_indices as the local-to-global of the new
-  // geometry dofs.
+  // Build input_global_indices as the local-to-global of the new geometry
+  // dofs.
   const std::int32_t num_nodes
       = new_imap->size_local() + new_imap->num_ghosts();
   std::vector<std::int32_t> local(num_nodes);
