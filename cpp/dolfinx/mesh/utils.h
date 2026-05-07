@@ -1410,13 +1410,10 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
           std::move(subx_to_x_dofmap)};
 }
 
-/// @brief Make a copy of `mesh` whose geometry is interpolated onto a
+/// @brief Make a copy of `mesh` whose geometry is interpolated into a
 /// new coordinate element.
 ///
-/// The topology is shared with the input mesh; the geometry is
-/// reconstructed by tabulating the existing geometry at the reference
-/// interpolation points of `new_cmap`. The new coordinate element must
-/// have the same cell shape as the input mesh's coordinate element.
+/// The topology is shared (pointer-level) between the new and old mesh.
 ///
 /// @param[in] mesh Input mesh.
 /// @param[in] new_cmap Target coordinate element for the new geometry.

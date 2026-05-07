@@ -188,15 +188,13 @@ mesh::Mesh<T> mesh::interpolate_geometry(
   const fem::CoordinateElement<T>& old_cmap = mesh->geometry().cmap();
   if (new_cmap.cell_shape() != old_cmap.cell_shape())
   {
-    throw std::runtime_error("interpolate_geometry: cell shape of new "
-                             "coordinate element must match input mesh.");
+    throw std::runtime_error(
+        "Cell shape of new coordinate element must match input mesh.");
   }
 
   const int gdim = mesh->geometry().dim();
 
-  // Build a vector-valued Lagrange FiniteElement matching the new
-  // coordinate element. Used to drive a temporary FunctionSpace whose
-  // dof layout and tabulation produce the new geometry data.
+  // Build a vector-valued Lagrange FiniteElement from the coordinate element.
   basix::FiniteElement<T> b_element = basix::create_element<T>(
       basix::element::family::P,
       mesh::cell_type_to_basix_type(new_cmap.cell_shape()), new_cmap.degree(),
