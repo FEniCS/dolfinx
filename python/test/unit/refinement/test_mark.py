@@ -54,3 +54,27 @@ def test_mark_equidistribution(theta: float, dtype: np.dtype) -> None:
     msh.topology.create_entities(1)
     marked_edges = mesh.compute_incident_entities(msh.topology, marked_cells, tdim, 1)
     mesh.refine(msh, marked_edges)
+
+
+@pytest.mark.parametrize("theta", [0.2, 0.4, 0.6, 0.8])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_mark_equidistribution_squared(theta: float, dtype: np.dtype) -> None:
+    msh = mesh.create_unit_square(comm := MPI.COMM_WORLD, n := 10, n, dtype=dtype)
+
+    tdim = msh.topology.dim
+    cell_count = (cell_im := msh.topology.index_map(tdim)).size_local + cell_im.num_ghosts
+    marker = np.random.default_rng(0).random(cell_count)
+
+    marker_sq = np.square(marker)
+    marked_cells = mesh.mark_equidistribution_squared(marker_sq, theta, comm)
+
+    norm = np.sqrt(comm.allreduce(marker_sq.sum(), MPI.SUM))
+    count = comm.allreduce(marker.size)
+    assert np.allclose(
+        marked_cells,
+        np.argwhere(marker > theta * norm / np.sqrt(count)).flatten(),
+    )
+
+    msh.topology.create_entities(1)
+    marked_edges = mesh.compute_incident_entities(msh.topology, marked_cells, tdim, 1)
+    mesh.refine(msh, marked_edges)

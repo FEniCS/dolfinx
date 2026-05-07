@@ -104,10 +104,12 @@ TEMPLATE_TEST_CASE("Mark equidistribution squared",
     marker.push_back(10 * dolfinx::MPI::rank(comm) + i);
 
   // square input
-  std::ranges::for_each(marker, [](auto& e) { e = std::pow(e, 2); });
+  auto marker_sq = marker;
+  std::ranges::for_each(marker_sq, [](auto& e) { e = std::pow(e, 2); });
 
   TestType theta = 0.5;
-  auto indices = mark_equidistribution_squared<TestType>(marker, theta, comm);
+  auto indices
+      = mark_equidistribution_squared<TestType>(marker_sq, theta, comm);
 
   CHECK(std::ranges::all_of(
       indices, [&](auto e)
