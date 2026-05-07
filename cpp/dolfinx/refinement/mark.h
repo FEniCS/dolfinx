@@ -127,7 +127,8 @@ mark_equidistribution_squared(std::span<const T> marker, T theta, MPI_Comm comm)
 
   auto norm_sq = std::accumulate(marker.begin(), marker.end(), T{0});
 
-  MPI_Allreduce(MPI_IN_PLACE, &norm_sq, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM, comm);
+  MPI_Allreduce(MPI_IN_PLACE, &norm_sq, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM,
+                comm);
 
   std::int32_t count = marker.size();
   MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int32_t>,
