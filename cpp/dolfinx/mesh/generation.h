@@ -189,7 +189,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 {
   if (gdim < 2)
     throw std::runtime_error(
-        "Geometric dimension must be >= 2 for rectangle mesh.");
+        "gdim must be >= 2 for rectangle mesh.");
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell per dimension is required");
 
@@ -265,7 +265,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
                         std::size_t gdim = 1)
 {
   if (gdim < 1)
-    throw std::runtime_error("Geometric dimension must be >= 1.");
+    throw std::runtime_error("gdim must be >= 1 for interval mesh.");
   if (n < 1)
     throw std::runtime_error("At least one cell is required.");
 
