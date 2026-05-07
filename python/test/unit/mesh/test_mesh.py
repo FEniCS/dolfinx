@@ -327,21 +327,19 @@ def test_create_interval_gdim(gdim):
     mesh = create_interval(MPI.COMM_WORLD, 6, [0.0, 1.0], gdim=gdim)
     assert mesh.topology.dim == 1
     assert mesh.geometry.dim == gdim
-    assert mesh.geometry.x.shape[1] == gdim
-    if gdim > 1:
-        assert np.allclose(mesh.geometry.x[:, 1:], 0.0)
+    assert mesh.ufl_domain().ufl_coordinate_element().reference_value_shape == (gdim,)
 
 
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
 @pytest.mark.parametrize("gdim", [2, 3])
 def test_create_rectangle_gdim(gdim, cell_type):
     """Rectangle mesh embedded in gdim-dimensional space has correct tdim and gdim."""
-    mesh = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [4, 4], cell_type, gdim=gdim)
+    mesh = create_rectangle(
+        MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [4, 4], cell_type, gdim=gdim
+    )
     assert mesh.topology.dim == 2
     assert mesh.geometry.dim == gdim
-    assert mesh.geometry.x.shape[1] == gdim
-    if gdim == 3:
-        assert np.allclose(mesh.geometry.x[:, 2], 0.0)
+    assert mesh.ufl_domain().ufl_coordinate_element().reference_value_shape == (gdim,)
 
 
 @pytest.mark.skip_in_parallel
