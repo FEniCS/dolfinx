@@ -109,7 +109,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
-    throw std::runtime_error("At least one cell per dimension is required");
+    throw std::runtime_error("At least one cell is required.");
 
   for (int32_t i = 0; i < 3; i++)
   {
@@ -191,7 +191,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     throw std::runtime_error(
         "gdim must be >= 2 for rectangle mesh.");
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
-    throw std::runtime_error("At least one cell per dimension is required");
+    throw std::runtime_error("At least one cell per dimension is required.");
 
   for (int32_t i = 0; i < 2; i++)
   {
@@ -210,7 +210,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
   case CellType::quadrilateral:
     return impl::build_quad<T>(comm, p, n, partitioner, reorder_fn, gdim);
   default:
-    throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
+    throw std::runtime_error("Generate rectangle mesh. Wrong cell type.");
   }
 }
 
@@ -266,7 +266,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
   if (gdim < 1)
     throw std::runtime_error("gdim must be >= 1 for interval mesh.");
   if (n < 1)
-    throw std::runtime_error("At least one cell is required.");
+    throw std::runtime_error("At least one cell per dimension is required.");
 
   const auto [a, b] = p;
   if (a >= b)
