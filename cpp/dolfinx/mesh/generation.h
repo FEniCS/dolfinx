@@ -526,6 +526,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   DiagonalType diagonal, const CellReorderFunction& reorder_fn,
                   std::size_t gdim)
 {
+  assert(gdim >= 2);
   fem::CoordinateElement<T> element(CellType::triangle, 1);
   if (dolfinx::MPI::rank(comm) == 0)
   {
@@ -694,6 +695,7 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    const CellPartitionFunction& partitioner,
                    const CellReorderFunction& reorder_fn, std::size_t gdim)
 {
+  assert(gdim >= 2);
   fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
   if (dolfinx::MPI::rank(comm) == 0)
   {
