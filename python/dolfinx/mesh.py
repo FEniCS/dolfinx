@@ -875,18 +875,22 @@ def create_submesh(
 
 
 def interpolate_geometry(msh: Mesh, cmap: _CoordinateElement) -> Mesh:
-    """Make a copy of a mesh whose geometry is interpolated onto a new coordinate element.
+    """Create a copy of a mesh with geometry interpolated into cmap.
 
-    The topology is shared with the input mesh; the geometry is reconstructed by
-    tabulating the existing geometry at the reference interpolation points of ``cmap``.
+    Useful for lifting first-order meshes from built-in mesh generation
+    functions to higher-order geometry.
+
+    Note:
+        The new topology is shared (no copy) with the input mesh. The new
+        geometry is created by interpolating the existing geometry at the
+        reference interpolation points of ``cmap``.
 
     Args:
         msh: Input mesh.
-        cmap: Target coordinate element for the new geometry. Its cell shape must
-            match the input mesh's coordinate element.
+        cmap: Target coordinate element for the new geometry.
 
     Returns:
-        A new mesh sharing the topology of ``msh`` and with a geometry described by
+        A new mesh sharing the topology of ``msh`` and with geometry in
         ``cmap``.
     """
     new_msh = _cpp.mesh.interpolate_geometry(msh._cpp_object, cmap._cpp_object)
