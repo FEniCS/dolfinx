@@ -334,9 +334,7 @@ def test_create_interval_gdim(gdim):
 @pytest.mark.parametrize("gdim", [2, 3])
 def test_create_rectangle_gdim(gdim, cell_type):
     """Rectangle mesh embedded in gdim-dimensional space has correct tdim and gdim."""
-    mesh = create_rectangle(
-        MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [4, 4], cell_type, gdim=gdim
-    )
+    mesh = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [4, 4], cell_type, gdim=gdim)
     assert mesh.topology.dim == 2
     assert mesh.geometry.dim == gdim
     assert mesh.ufl_domain().ufl_coordinate_element().reference_value_shape == (gdim,)
