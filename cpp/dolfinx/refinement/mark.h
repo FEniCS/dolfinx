@@ -110,4 +110,38 @@ std::vector<std::int32_t> mark_equidistribution(std::span<const T> marker,
   return indices;
 }
 
+/// @brief Equidistribution marking of a marker with squared input.
+///
+/// @param[in] marker Input marker (local) \f$ \eta^2 \f$ - usually an error
+/// indicator per entity
+/// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$
+/// @param[in] comm Communicator over which the total marker is computed.
+/// @return Local indices of marked entities, which satisfy: \f$
+/// \eta_i \geq \theta \frac{|\eta|_2}{\sqrt{N}} \f$.
+template <std::floating_point T>
+std::vector<std::int32_t>
+mark_equidistribution_squared(std::span<const T> marker, T theta, MPI_Comm comm)
+{
+  if ((theta <= 0) || (theta >= 1))
+    throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
+
+  auto norm = std::accumulate(marker.begin(), marker.end(), T{0});
+
+  MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM, comm);
+
+  norm = std::sqrt(norm);
+
+  std::int32_t count = marker.size();
+  MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int32_t>,
+                MPI_SUM, comm);
+
+  auto indices
+      = impl::mark_threshold<T>(marker, theta * norm / std::sqrt(count));
+
+  spdlog::info("Marking (equi) {} / {} (local) entities.", indices.size(),
+               marker.size());
+
+  return indices;
+}
+
 } // namespace dolfinx::refinement

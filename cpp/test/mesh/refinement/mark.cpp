@@ -92,3 +92,39 @@ TEMPLATE_TEST_CASE("Mark equidistribution",
     CHECK(expect_marked == marked);
   }
 }
+
+TEMPLATE_TEST_CASE("Mark equidistribution squared",
+                   "[refinement][mark][equidistributionsq]", double, float)
+{
+  MPI_Comm comm = MPI_COMM_WORLD;
+
+  std::vector<TestType> marker;
+  marker.reserve(10);
+  for (std::size_t i = 0; i < 10; i++)
+    marker.push_back(10 * dolfinx::MPI::rank(comm) + i);
+
+  // square input
+  std::ranges::for_each(marker, [](auto& e) { e = std::pow(e, 2); });
+
+  TestType theta = 0.5;
+  auto indices = mark_equidistribution_squared<TestType>(marker, theta, comm);
+
+  CHECK(std::ranges::all_of(
+      indices, [&](auto e)
+      { return (0 <= e) && (e <= static_cast<std::int32_t>(marker.size())); }));
+
+  std::int32_t n = dolfinx::MPI::size(comm) * 10 - 1;
+  TestType norm = std::sqrt(n * (n + 1) * (2 * n + 1) / 6);
+
+  auto mark = [=](auto e) { return e > theta * norm / std::sqrt(n); };
+
+  CHECK(std::ranges::count_if(marker, mark)
+        == static_cast<std::int32_t>(indices.size()));
+
+  for (std::int32_t i = 0; i < static_cast<std::int32_t>(marker.size()); ++i)
+  {
+    bool expect_marked = mark(marker[i]);
+    bool marked = std::ranges::find(indices, i) != indices.end();
+    CHECK(expect_marked == marked);
+  }
+}
