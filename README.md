@@ -115,7 +115,7 @@ is hosted on
 
 | Name | Downloads | Version | Platforms |
 | --- | --- | --- | --- |
-| [![Conda Recipe](https://img.shields.io/badge/recipe-fenics--dolfinx-green.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) |
+| [![Conda Recipe](https://img.shields.io/badge/recipe-fenics--dolfinx-green.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Downloads](https://anaconda.org/conda-forge/fenics-dolfinx/badges/downloads.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Version](https://anaconda.org/conda-forge/fenics-dolfinx/badges/version.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Platforms](https://anaconda.org/conda-forge/fenics-dolfinx/badges/platforms.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) |
 
 #### Ubuntu packages
 
