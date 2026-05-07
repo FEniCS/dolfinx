@@ -30,7 +30,8 @@ namespace impl
 ///
 /// @returns indices \f$ i \f$ which satisfy \f$ \eta_i > \text{threshold} \f$.
 template <std::floating_point T>
-std::vector<std::int32_t> mark_threshold(std::span<const T> indicator, T threshold)
+std::vector<std::int32_t> mark_threshold(std::span<const T> indicator,
+                                         T threshold)
 {
   auto mark = [=](T e) { return e > threshold; };
 
@@ -64,7 +65,7 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> indicator, T theta,
     throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
 
   T max = indicator.empty() ? std::numeric_limits<T>::lowest()
-                         : std::ranges::max(indicator);
+                            : std::ranges::max(indicator);
   MPI_Allreduce(MPI_IN_PLACE, &max, 1, dolfinx::MPI::mpi_t<T>, MPI_MAX, comm);
 
   auto indices = impl::mark_threshold<T>(indicator, theta * max);
@@ -90,8 +91,8 @@ std::vector<std::int32_t> mark_equidistribution(std::span<const T> indicator,
   if ((theta <= 0) || (theta >= 1))
     throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
 
-  auto norm
-      = std::inner_product(indicator.begin(), indicator.end(), indicator.begin(), T{0});
+  auto norm = std::inner_product(indicator.begin(), indicator.end(),
+                                 indicator.begin(), T{0});
 
   MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM, comm);
 
@@ -127,8 +128,7 @@ mark_equidistribution_squared(std::span<const T> marker, T theta, MPI_Comm comm)
 
   auto norm = std::accumulate(marker.begin(), marker.end(), T{0});
 
-  MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM,
-                comm);
+  MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM, comm);
 
   std::int32_t count = marker.size();
   MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int32_t>,
