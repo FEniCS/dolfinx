@@ -291,12 +291,14 @@ create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
     for (std::size_t i = 0; i < npts; i++)
       x[i * gdim] = x1d[i];
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {npts, gdim}, partitioner, 2, reorder_fn);
+                       {npts, static_cast<std::size_t>(gdim)}, partitioner, 2,
+                       reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, gdim}, partitioner, 2, reorder_fn);
+                       std::vector<T>{}, {0, static_cast<std::size_t>(gdim)},
+                       partitioner, 2, reorder_fn);
   }
 }
 
@@ -679,12 +681,14 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
       xg[i * gdim + 1] = x[2 * i + 1];
     }
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, xg,
-                       {npts, gdim}, partitioner, 2, reorder_fn);
+                       {npts, static_cast<std::size_t>(gdim)}, partitioner, 2,
+                       reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, gdim}, partitioner, 2, reorder_fn);
+                       std::vector<T>{}, {0, static_cast<std::size_t>(gdim)},
+                       partitioner, 2, reorder_fn);
   }
 }
 
@@ -743,12 +747,14 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
       xg[i * gdim + 1] = x[2 * i + 1];
     }
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, xg,
-                       {npts, gdim}, partitioner, 2, reorder_fn);
+                       {npts, static_cast<std::size_t>(gdim)}, partitioner, 2,
+                       reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, gdim}, partitioner, 2, reorder_fn);
+                       std::vector<T>{}, {0, static_cast<std::size_t>(gdim)},
+                       partitioner, 2, reorder_fn);
   }
 }
 } // namespace impl
