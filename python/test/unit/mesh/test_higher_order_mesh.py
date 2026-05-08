@@ -767,9 +767,11 @@ def test_gmsh_input_2d(order, cell_type, dtype):
         gmsh_cell_id = gmsh.model.mesh.getElementType("triangle", order)
     elif cell_type == CellType.quadrilateral:
         gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
+    # This checks that recombination was successful - i.e. only one element type in mesh.
     if list(element_types) != [gmsh_cell_id]:
-        raise RuntimeError(
-            f"Expected a single Gmsh element type {gmsh_cell_id}, got {list(element_types)}."
+        pytest.xfail(
+            f"Expected a single Gmsh element type {gmsh_cell_id}, "
+            f"got {list(element_types)} - gmsh recombination failed."
         )
     (
         _name,
@@ -842,9 +844,11 @@ def test_gmsh_input_3d(order, cell_type, dtype):
         gmsh_cell_id = MPI.COMM_WORLD.bcast(
             gmsh.model.mesh.getElementType("hexahedron", order), root=0
         )
+    # This checks that recombination was successful - i.e. only one element type in mesh.
     if list(element_types) != [gmsh_cell_id]:
-        raise RuntimeError(
-            f"Expected a single Gmsh element type {gmsh_cell_id}, got {list(element_types)}."
+        pytest.xfail(
+            f"Expected a single Gmsh element type {gmsh_cell_id}, "
+            f"got {list(element_types)} - gmsh recombination failed."
         )
     (
         _name,
