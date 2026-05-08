@@ -84,15 +84,28 @@ def test_matmul_rect(dtype, mat_random, mat_gather):
 )
 def test_matmul_zeros(dtype, mat_random, mat_gather):
     A = mat_random(0, 0, 123, dtype)
+    # Make first two entries in row zero of A (+1, +1).
+    A.data[0] = 1.0
+    A.data[1] = 1.0
     B = mat_random(0, 0, 321, dtype)
 
-    # Create structural zeros in B
+    rank = A.index_map(0).comm.rank
+
+    # Create structural zeros in B and new structural zero in product
+    # by making the first two entries in column zero of B (+1, -1).
     pos = 0
+    global_zero = B.index_map(1).global_to_local(np.zeros(1))
     for i in range(B.index_map(0).size_local):
         for j in range(B.indptr[i], B.indptr[i + 1]):
-            if i != B.indices[j]:
-                B.data[pos] = 0.0
+            if B.indices[j] == global_zero:
+                if rank == 0 and i == 0:
+                    B.data[pos] = 1.0
+                elif rank == 0 and i == 1:
+                    B.data[pos] = -1.0
+                else:
+                    B.data[pos] = 0.0
             pos += 1
+
     As = mat_gather(A)
     Bs = mat_gather(B)
 
