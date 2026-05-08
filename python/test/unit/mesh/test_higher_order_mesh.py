@@ -769,10 +769,12 @@ def test_gmsh_input_2d(order, cell_type, dtype):
         gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
     # This checks that recombination was successful - i.e. only one element type in mesh.
     if list(element_types) != [gmsh_cell_id]:
-        pytest.xfail(
+        msg = (
             f"Expected a single Gmsh element type {gmsh_cell_id}, "
             f"got {list(element_types)} - gmsh recombination failed."
         )
+        gmsh.finalize()
+        pytest.xfail(msg)
     (
         _name,
         _dim,
@@ -846,10 +848,12 @@ def test_gmsh_input_3d(order, cell_type, dtype):
         )
     # This checks that recombination was successful - i.e. only one element type in mesh.
     if list(element_types) != [gmsh_cell_id]:
-        pytest.xfail(
+        msg = (
             f"Expected a single Gmsh element type {gmsh_cell_id}, "
             f"got {list(element_types)} - gmsh recombination failed."
         )
+        gmsh.finalize()
+        pytest.xfail(msg)
     (
         _name,
         _dim,
