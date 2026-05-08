@@ -46,13 +46,13 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal, const CellReorderFunction& reorder_fn,
-                  std::size_t gdim);
+                  int gdim);
 
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
                    const CellPartitionFunction& partitioner,
-                   const CellReorderFunction& reorder_fn, std::size_t gdim);
+                   const CellReorderFunction& reorder_fn, int gdim);
 
 template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
@@ -183,7 +183,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          std::array<std::int64_t, 2> n, CellType celltype,
                          CellPartitionFunction partitioner,
                          DiagonalType diagonal = DiagonalType::right,
-                         std::size_t gdim = 2,
+                         int gdim = 2,
                          const CellReorderFunction& reorder_fn
                          = graph::reorder_gps)
 {
@@ -233,7 +233,7 @@ template <std::floating_point T = double>
 Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          std::array<std::int64_t, 2> n, CellType celltype,
                          DiagonalType diagonal = DiagonalType::right,
-                         std::size_t gdim = 2)
+                         int gdim = 2)
 {
   return create_rectangle<T>(comm, p, n, celltype, nullptr, diagonal, gdim);
 }
@@ -258,7 +258,7 @@ template <std::floating_point T = double>
 Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
                         mesh::GhostMode ghost_mode = mesh::GhostMode::none,
                         CellPartitionFunction partitioner = nullptr,
-                        std::size_t gdim = 1,
+                        int gdim = 1,
                         const CellReorderFunction& reorder_fn
                         = graph::reorder_gps)
 {
@@ -523,7 +523,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal, const CellReorderFunction& reorder_fn,
-                  std::size_t gdim)
+                  int gdim)
 {
   assert(gdim >= 2);
   fem::CoordinateElement<T> element(CellType::triangle, 1);
@@ -692,7 +692,7 @@ template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
                    const CellPartitionFunction& partitioner,
-                   const CellReorderFunction& reorder_fn, std::size_t gdim)
+                   const CellReorderFunction& reorder_fn, int gdim)
 {
   assert(gdim >= 2);
   fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
