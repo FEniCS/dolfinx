@@ -779,7 +779,7 @@ def test_gmsh_input_2d(order, cell_type, dtype):
         gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
     gmsh.finalize()
 
-    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
+    cells = cells[:, cell_perm_array(cell_type, num_nodes)].copy()
     x = x.astype(dtype)
     mesh = create_mesh(MPI.COMM_WORLD, cells, ufl_mesh(gmsh_cell_id, x.shape[1], dtype=dtype), x)
     surface = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
@@ -852,7 +852,7 @@ def test_gmsh_input_3d(order, cell_type, dtype):
 
     # Permute the mesh topology from Gmsh ordering to DOLFINx ordering
     domain = ufl_mesh(gmsh_cell_id, 3, dtype=dtype)
-    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
+    cells = cells[:, cell_perm_array(cell_type, num_nodes)].copy()
 
     x = x.astype(dtype)
     mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x)
