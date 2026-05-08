@@ -179,13 +179,12 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
-                         std::array<std::int64_t, 2> n, CellType celltype,
-                         CellPartitionFunction partitioner,
-                         DiagonalType diagonal = DiagonalType::right,
-                         int gdim = 2,
-                         const CellReorderFunction& reorder_fn
-                         = graph::reorder_gps)
+Mesh<T>
+create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
+                 std::array<std::int64_t, 2> n, CellType celltype,
+                 CellPartitionFunction partitioner,
+                 DiagonalType diagonal = DiagonalType::right, int gdim = 2,
+                 const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   if (gdim < 2 || gdim > 3)
     throw std::runtime_error("2 <= gdim <= 3 for rectangle mesh.");
@@ -255,12 +254,11 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return A mesh.
 template <std::floating_point T = double>
-Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
-                        mesh::GhostMode ghost_mode = mesh::GhostMode::none,
-                        CellPartitionFunction partitioner = nullptr,
-                        int gdim = 1,
-                        const CellReorderFunction& reorder_fn
-                        = graph::reorder_gps)
+Mesh<T>
+create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
+                mesh::GhostMode ghost_mode = mesh::GhostMode::none,
+                CellPartitionFunction partitioner = nullptr, int gdim = 1,
+                const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
   if (gdim < 1 || gdim > 3)
     throw std::runtime_error("1 <= gdim <= 3 for interval mesh.");
@@ -526,9 +524,9 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   int gdim)
 {
   fem::CoordinateElement<T> element(CellType::triangle, 1);
-  if (gdim < 2 || gdim > 3) {
-    throw std::runtime_error("2 <= gdim <= 3 for tri mesh.")
-  }
+  if (gdim < 2 || gdim > 3)
+    throw std::runtime_error("2 <= gdim <= 3 for tri mesh.");
+
   if (dolfinx::MPI::rank(comm) == 0)
   {
     const auto [p0, p1] = p;
@@ -696,9 +694,9 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    const CellPartitionFunction& partitioner,
                    const CellReorderFunction& reorder_fn, int gdim)
 {
-  if (gdim < 2 || gdim > 3) {
-    throw std::runtime_error("2 <= gdim <= 3 for quad mesh.")
-  }
+  if (gdim < 2 || gdim > 3)
+    throw std::runtime_error("2 <= gdim <= 3 for quad mesh.");
+
   fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
   if (dolfinx::MPI::rank(comm) == 0)
   {
