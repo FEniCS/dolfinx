@@ -187,8 +187,8 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          const CellReorderFunction& reorder_fn
                          = graph::reorder_gps)
 {
-  if (gdim < 2)
-    throw std::runtime_error("gdim must be >= 2 for rectangle mesh.");
+  if (gdim < 2 || gdim > 3)
+    throw std::runtime_error("2 <= gdim <= 3 for rectangle mesh.");
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell per dimension is required.");
 
@@ -262,8 +262,8 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
                         const CellReorderFunction& reorder_fn
                         = graph::reorder_gps)
 {
-  if (gdim < 1)
-    throw std::runtime_error("gdim must be >= 1 for interval mesh.");
+  if (gdim < 1 || gdim > 3)
+    throw std::runtime_error("1 <= gdim <= 3 for interval mesh.");
   if (n < 1)
     throw std::runtime_error("At least one cell per dimension is required.");
 
@@ -525,8 +525,10 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   DiagonalType diagonal, const CellReorderFunction& reorder_fn,
                   int gdim)
 {
-  assert(gdim >= 2);
   fem::CoordinateElement<T> element(CellType::triangle, 1);
+  if (gdim < 2 || gdim > 3) {
+    throw std::runtime_error("2 <= gdim <= 3 for tri mesh.")
+  }
   if (dolfinx::MPI::rank(comm) == 0)
   {
     const auto [p0, p1] = p;
@@ -694,7 +696,9 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    const CellPartitionFunction& partitioner,
                    const CellReorderFunction& reorder_fn, int gdim)
 {
-  assert(gdim >= 2);
+  if (gdim < 2 || gdim > 3) {
+    throw std::runtime_error("2 <= gdim <= 3 for quad mesh.")
+  }
   fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
   if (dolfinx::MPI::rank(comm) == 0)
   {
