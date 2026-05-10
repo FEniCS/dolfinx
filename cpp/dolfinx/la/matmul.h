@@ -378,11 +378,12 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
     std::int32_t src_start = ghost_row_ptr[perm[i]];
     std::int32_t src_end = ghost_row_ptr[perm[i] + 1];
     std::int32_t dst_start = orig_ghost_row_ptr[i];
-    std::copy(recv_col_local.begin() + src_start,
-              recv_col_local.begin() + src_end,
-              orig_recv_col_local.begin() + dst_start);
-    std::copy(recv_vals.begin() + src_start, recv_vals.begin() + src_end,
-              orig_recv_vals.begin() + dst_start);
+    std::copy(std::next(recv_col_local.begin(), src_start),
+              std::next(recv_col_local.begin(), src_end),
+              std::next(orig_recv_col_local.begin(), dst_start));
+    std::copy(std::next(recv_vals.begin(), src_start),
+              std::next(recv_vals.begin(), src_end),
+              std::next(orig_recv_vals.begin(), dst_start));
   }
 
   return {new_col_map, orig_ghost_row_ptr, orig_recv_col_local, orig_recv_vals};
@@ -466,12 +467,13 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
         const std::int32_t c = cols_B[kb];
         const std::int32_t k
             = c < num_owned_cols_B ? c : b_ghost_remap[c - num_owned_cols_B];
-        if (!in_row[k])
+        T acc_val = a * vals_B[kb];
+        if (!in_row[k] and acc_val != T(0))
         {
           in_row[k] = true;
           row_cols.push_back(k);
         }
-        acc[k] += a * vals_B[kb];
+        acc[k] += acc_val;
       }
     }
 
@@ -484,13 +486,27 @@ matmul(const dolfinx::la::MatrixCSR<T>& A, const dolfinx::la::MatrixCSR<T>& B,
       for (std::int32_t kb = ghost_row_ptr[g]; kb < ghost_row_ptr[g + 1]; ++kb)
       {
         const std::int32_t k = ghost_cols[kb];
-        if (!in_row[k])
+        T acc_val = a * ghost_vals[kb];
+        if (!in_row[k] and acc_val != T(0))
         {
           in_row[k] = true;
           row_cols.push_back(k);
         }
-        acc[k] += a * ghost_vals[kb];
+        acc[k] += acc_val;
       }
+    }
+
+    // Remove zeros produced by exact cancellation in the SpGEMM.
+    auto pos = row_cols.begin();
+    while (pos != row_cols.end())
+    {
+      if (acc[*pos] == T(0))
+      {
+        in_row[*pos] = false;
+        pos = row_cols.erase(pos);
+      }
+      else
+        ++pos;
     }
 
     // Sort touched indices to satisfy the CSR sorted-column invariant
