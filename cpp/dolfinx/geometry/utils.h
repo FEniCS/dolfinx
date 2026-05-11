@@ -872,7 +872,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       std::array<T, 3> point;
       std::copy_n(std::next(received_points.begin(), 3 * i), 3, point.begin());
 
-      // Find shortest distance among cells with colldiing bounding box
+      // Find shortest distance among cells with colliding bounding box
       T shortest_distance = std::numeric_limits<T>::max();
       std::int32_t closest_cell = -1;
       for (auto cell : candidate_collisions.links(i))

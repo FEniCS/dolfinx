@@ -414,11 +414,13 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
     {
       spdlog::info("Set {} to YES", name);
       it->second.get() = YES;
+      return;
     }
     else if (value == "NO")
     {
       spdlog::info("Set {} to NO", name);
       it->second.get() = NO;
+      return;
     }
     else
     {
@@ -458,7 +460,7 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
   }
   else
   {
-    std::runtime_error("Unsupported option name");
+    throw std::runtime_error("Unsupported option name");
   }
 }
 //----------------------------------------------------------------------------
