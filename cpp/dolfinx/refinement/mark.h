@@ -33,7 +33,7 @@ template <std::floating_point T>
 std::vector<std::int32_t> mark_threshold(std::span<const T> indicator,
                                          T threshold)
 {
-  auto mark = [=](T e) { return e > threshold; };
+  auto mark = [threshold](T e) { return e > threshold; };
 
   std::vector<std::int32_t> indices;
   indices.reserve(std::ranges::count_if(indicator, mark));
