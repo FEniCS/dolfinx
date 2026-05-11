@@ -20,12 +20,12 @@ from ufl import (
 
 e = element("Lagrange", "triangle", 1)
 
-# The first argument to :py:class:`FiniteElement` is the finite element
-# family, the second argument specifies the domain, while the third
-# argument specifies the polynomial degree. Thus, in this case, our
-# element `element` consists of first-order, continuous Lagrange basis
-# functions on triangles (or in order words, continuous piecewise linear
-# polynomials on triangles).
+# The first argument to {py:func}`element<basix.ufl.element>`
+# is the finite element family, the second argument specifies
+# the domain, while the third argument specifies the polynomial degree.
+# Thus, in this case, our element `e` consists of first-order,
+# continuous Lagrange basis functions on triangles (or in order words,
+# continuous piecewise linear polynomials on triangles).
 #
 # Next, we use this element to initialize the trial and test functions
 # ($u$ and $v$) and the coefficient functions ($f$ and $g$):

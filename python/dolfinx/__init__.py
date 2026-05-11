@@ -29,10 +29,11 @@ except ImportError:
 
 from dolfinx import common
 from dolfinx import cpp as _cpp
-from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot
+from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, typing
 
 from dolfinx.common import (
     git_commit_hash,
+    hardware_concurrency,
     has_adios2,
     has_complex_ufcx_kernels,
     has_debug,
@@ -78,7 +79,9 @@ __all__ = [
     "mesh",
     "nls",
     "plot",
+    "typing",
     "git_commit_hash",
+    "hardware_concurrency",
     "has_adios2",
     "has_complex_ufcx_kernels",
     "has_debug",

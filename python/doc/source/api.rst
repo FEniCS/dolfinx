@@ -14,6 +14,7 @@ Public user interface
    dolfinx.common
    dolfinx.fem
    dolfinx.fem.petsc
+   dolfinx.fem.problems
    dolfinx.geometry
    dolfinx.graph
    dolfinx.io
@@ -25,7 +26,6 @@ Public user interface
    dolfinx.la.superlu_dist
    dolfinx.mesh
    dolfinx.nls.petsc
-   dolfinx.pkgconfig
    dolfinx.plot
 
 

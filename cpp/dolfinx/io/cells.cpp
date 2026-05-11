@@ -362,6 +362,8 @@ std::vector<std::uint16_t> vtk_pyramid(int num_nodes)
     return {0, 1, 3, 2, 4};
   case 13:
     return {0, 1, 3, 2, 4, 5, 8, 10, 6, 7, 9, 12, 11};
+  case 14:
+    return {0, 1, 3, 2, 4, 5, 8, 10, 6, 7, 9, 12, 11, 13};
   default:
     throw std::runtime_error("Unknown pyramid layout");
   }

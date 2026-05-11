@@ -32,7 +32,7 @@ C++
 - `CMake <https://cmake.org>`_ [build dependency]
 - HDF5 (with MPI support enabled)
 - MPI (MPI-3 or later)
-- `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ [build dependency]
+- `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ [build dependency via CMake]
 - `pugixml <https://pugixml.org/>`_
 - `spdlog <https://github.com/gabime/spdlog/>`_
 - UFCx [``ufcx.h``, provided by FFCx Python package or FFCx UFCx CMake install
@@ -77,7 +77,6 @@ precise specification. Below we use the `pypi <https://pypi.org>`_ package names
 - `cffi <https://cffi.readthedocs.io/>`_
 - `mpi4py <https://mpi4py.readthedocs.io/>`_
 - `numpy <https://www.numpy.org>`_
-- `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
 
 .. rubric:: Optional runtime dependencies
 

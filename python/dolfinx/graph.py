@@ -5,11 +5,14 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Graph representations and operations on graphs."""
 
+from typing import Generic
+
 import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import partitioner
+from dolfinx.typing import Index
 
 # Import graph partitioners, which may or may not be available
 # (dependent on build configuration)
@@ -37,7 +40,7 @@ __all__ = [
 ]
 
 
-class AdjacencyList:
+class AdjacencyList(Generic[Index]):
     """Adjacency list representation of a graph."""
 
     _cpp_object: (
@@ -69,7 +72,7 @@ class AdjacencyList:
         """String representation of the adjacency list."""
         return self._cpp_object.__repr__()
 
-    def links(self, node: np.int32 | np.int64) -> npt.NDArray[np.int32 | np.int64]:
+    def links(self, node: int) -> npt.NDArray[Index]:
         """Retrieve the links of a node.
 
         Note:
@@ -85,7 +88,7 @@ class AdjacencyList:
         return self._cpp_object.links(node)
 
     @property
-    def array(self) -> npt.NDArray[np.int32 | np.int64]:
+    def array(self) -> npt.NDArray[Index]:
         """Array representation of the adjacency list.
 
         Note:
@@ -117,8 +120,8 @@ class AdjacencyList:
 
 
 def adjacencylist(
-    data: npt.NDArray[np.int32 | np.int64], offsets: npt.NDArray[np.int32] | None = None
-) -> AdjacencyList:
+    data: npt.NDArray[Index], offsets: npt.NDArray[np.int32] | None = None
+) -> AdjacencyList[Index]:
     """Create an :class:`AdjacencyList` for `int32` or `int64` datasets.
 
     Args:

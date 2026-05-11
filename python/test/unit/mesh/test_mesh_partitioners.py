@@ -58,7 +58,7 @@ except ImportError:
 @pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron, CellType.prism])
 def test_partition_box_mesh(gpart, Nx, cell_type):
-    part = create_cell_partitioner(gpart)
+    part = create_cell_partitioner(gpart, GhostMode.none, 2)
     mesh = create_box(
         MPI.COMM_WORLD,
         [np.array([0, 0, 0]), np.array([1, 1, 1])],
@@ -228,7 +228,7 @@ def test_mixed_topology_partitioning():
         cells_np = [np.zeros(0) for c in cells]
 
     nparts = 4
-    part = create_cell_partitioner(GhostMode.none)
+    part = create_cell_partitioner(GhostMode.none, 2)
     p = part(
         MPI.COMM_WORLD,
         nparts,

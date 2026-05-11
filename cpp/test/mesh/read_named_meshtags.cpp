@@ -29,7 +29,7 @@ void test_read_named_meshtags()
   constexpr std::int32_t material_value = 2;
 
   // Create mesh
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none, 2);
   auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {3, 3},
                              mesh::CellType::triangle, part));

@@ -10,8 +10,14 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
+import datetime
 import os
 import sys
+
+import basix
+import dolfinx
+import ffcx
+import ufl
 
 sys.path.insert(0, os.path.abspath("."))
 
@@ -25,12 +31,14 @@ jupytext_process.process()
 # -- Project information -----------------------------------------------------
 
 project = "DOLFINx"
-copyright = "2022, FEniCS Project"
+now = datetime.datetime.now()
+date = now.date()
+copyright = f"{date.year}, FEniCS Project"
 author = "FEniCS Project"
 
 # TODO: automate version tagging?
 # The full version, including alpha/beta/rc tags
-release = "0.3.1"
+release = dolfinx.cpp.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -40,6 +48,10 @@ release = "0.3.1"
 # ones.
 extensions = [
     "sphinx.ext.mathjax",
+    "sphinx_codeautolink",
+    "sphinx.ext.viewcode",
+    "sphinx_codeautolink",
+    "sphinx.ext.intersphinx",
     "myst_parser",
     "breathe",
 ]
@@ -77,9 +89,38 @@ myst_enable_extensions = [
 breathe_projects = {"DOLFINx": "../xml/"}
 breathe_default_project = "DOLFINx"
 breathe_implementation_filename_extensions = [".c", ".cc", ".cpp"]
+breathe_domain_by_extension = {
+    "h": "cpp",
+}
 
 # Tell sphinx what the primary language being documented is.
 primary_domain = "cpp"
 
 # Tell sphinx what the pygments highlight language should be.
 highlight_language = "cpp"
+
+intersphinx_resolve_self = "dolfinx"
+codeautolink_concat_default = True
+
+# Could be reimplemented using packaging.version
+basix_version = "main" if "dev0" in basix.__version__ else "v" + basix.__version__
+ffcx_version = "main" if "dev0" in ffcx.__version__ else "v" + ffcx.__version__
+ufl_version = "main" if "dev0" in ufl.__version__ else ufl.__version__
+
+
+# Note that as of late 2025 pyvista and petsc4py only have docs for the latest
+# releases.
+intersphinx_mapping = {
+    "basix": (
+        f"https://docs.fenicsproject.org/basix/{basix_version}/python",
+        None,
+    ),
+    "ffcx": (
+        f"https://docs.fenicsproject.org/ffcx/{ffcx_version}",
+        None,
+    ),
+    "ufl": (
+        f"https://docs.fenicsproject.org/ufl/{ufl_version}",
+        None,
+    ),
+}

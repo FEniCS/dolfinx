@@ -223,9 +223,11 @@ def test_facet_integral(cell_type, dtype):
         elif cell_type == CellType.tetrahedron:
             s = 2**0.5 * 3 ** (1 / 3)  # side length
             v.interpolate(
-                lambda x: (x[0] - s / 2) ** 2
-                + (x[1] - s / 2 / np.sqrt(3)) ** 2
-                + (x[2] - s * np.sqrt(2 / 3) / 4) ** 2
+                lambda x: (
+                    (x[0] - s / 2) ** 2
+                    + (x[1] - s / 2 / np.sqrt(3)) ** 2
+                    + (x[2] - s * np.sqrt(2 / 3) / 4) ** 2
+                )
             )
         elif cell_type == CellType.hexahedron:
             v.interpolate(lambda x: x[0] * (1 - x[0]) + x[1] * (1 - x[1]) + x[2] * (1 - x[2]))

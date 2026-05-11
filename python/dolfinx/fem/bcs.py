@@ -12,8 +12,8 @@ modification of linear systems.
 
 from __future__ import annotations
 
-import numbers
 from collections.abc import Callable, Iterable
+from typing import Generic
 
 import numpy as np
 import numpy.typing as npt
@@ -21,6 +21,7 @@ import numpy.typing as npt
 import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.fem.function import Constant, Function, FunctionSpace
+from dolfinx.typing import Scalar
 
 
 def locate_dofs_geometrical(
@@ -91,7 +92,7 @@ def locate_dofs_topological(
     return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
 
-class DirichletBC:
+class DirichletBC(Generic[Scalar]):
     """Representation of Dirichlet boundary conditions.
 
     The conditions are imposed on a linear system.
@@ -120,8 +121,9 @@ class DirichletBC:
         self._cpp_object = bc
 
     @property
-    def g(self) -> Function | Constant | np.ndarray:
+    def g(self) -> Function | Constant:
         """The boundary condition value(s)."""
+        # TODO: needs to be wrapped into Function or Constant
         return self._cpp_object.value
 
     @property
@@ -130,7 +132,7 @@ class DirichletBC:
         return self._cpp_object.function_space
 
     def set(
-        self, x: npt.NDArray, x0: npt.NDArray[np.int32] | None = None, alpha: float = 1
+        self, x: npt.NDArray[Scalar], x0: npt.NDArray[Scalar] | None = None, alpha: float = 1
     ) -> None:
         """Set array entries that are constrained by a Dirichlet condition.
 
@@ -172,10 +174,10 @@ class DirichletBC:
 
 
 def dirichletbc(
-    value: Function | Constant | np.ndarray,
+    value: Function | Constant | npt.NDArray[Scalar] | float | complex,
     dofs: npt.NDArray[np.int32],
     V: dolfinx.fem.FunctionSpace | None = None,
-) -> DirichletBC:
+) -> DirichletBC[Scalar]:
     """Representation of Dirichlet boundary condition.
 
     Args:
@@ -193,7 +195,7 @@ def dirichletbc(
         A representation of the boundary condition for modifying linear
         systems.
     """
-    if isinstance(value, numbers.Number):
+    if isinstance(value, float | complex):
         value = np.asarray(value)
 
     try:
@@ -232,8 +234,8 @@ def dirichletbc(
 
 
 def bcs_by_block(
-    spaces: Iterable[FunctionSpace | None], bcs: Iterable[DirichletBC]
-) -> list[list[DirichletBC]]:
+    spaces: Iterable[FunctionSpace | None], bcs: Iterable[DirichletBC[Scalar]]
+) -> list[list[DirichletBC[Scalar]]]:
     """Arrange boundary conditions by the space that they constrain.
 
     Given a sequence of function spaces ``spaces`` and a sequence of

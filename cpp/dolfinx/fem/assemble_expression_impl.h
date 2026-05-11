@@ -17,6 +17,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -58,6 +59,8 @@ namespace dolfinx::fem::impl
 /// @param[in] P0 Degree-of-freedom transformation function. Applied when
 /// expressions includes an argument function that requires a
 /// transformation.
+/// @param[in] custom_data Optional pointer to user-supplied data passed
+/// to the kernel.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, fem::FEkernel<T> auto fn,
@@ -68,7 +71,8 @@ void tabulate_expression(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, fem::MDSpan2 auto entities,
     std::span<const std::uint32_t> cell_info,
-    fem::DofTransformKernel<T> auto P0)
+    fem::DofTransformKernel<T> auto P0,
+    std::optional<void*> custom_data = std::nullopt)
 {
   static_assert(entities.rank() == 1 or entities.rank() == 2);
 
@@ -92,7 +96,9 @@ void tabulate_expression(
                     std::next(coord_dofs.begin(), 3 * i));
       }
       fn(values_local.data(), &coeffs(e, 0), constants.data(),
-         coord_dofs.data(), nullptr, nullptr, nullptr);
+         coord_dofs.data(), nullptr, nullptr, custom_data.value_or(nullptr));
+
+      P0(values_local, cell_info, entity, size0);
     }
     else
     {
@@ -104,10 +110,12 @@ void tabulate_expression(
                     std::next(coord_dofs.begin(), 3 * i));
       }
       fn(values_local.data(), &coeffs(e, 0), constants.data(),
-         coord_dofs.data(), &entities(e, 1), nullptr, nullptr);
+         coord_dofs.data(), &entities(e, 1), nullptr,
+         custom_data.value_or(nullptr));
+
+      P0(values_local, cell_info, entity, size0);
     }
 
-    P0(values_local, cell_info, e, size0);
     for (std::size_t j = 0; j < values_local.size(); ++j)
       values[e * offset + j] = values_local[j];
   }
@@ -145,6 +153,8 @@ void tabulate_expression(
 /// Used to computed a 1-form expression, e.g. can be used to create a
 /// matrix that when applied to a degree-of-freedom vector gives the
 /// expression values at the evaluation points.
+/// @param[in] custom_data Optional pointer to user-supplied data passed
+/// to the kernel.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, fem::FEkernel<T> auto fn,
@@ -154,7 +164,8 @@ void tabulate_expression(
     fem::MDSpan2 auto entities,
     std::optional<
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
-        element)
+        element,
+    std::optional<void*> custom_data = std::nullopt)
 {
   std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
@@ -184,6 +195,6 @@ void tabulate_expression(
   tabulate_expression<T, U>(values, fn, Xshape, value_size, num_argument_dofs,
                             mesh.geometry().dofmap(), mesh.geometry().x(),
                             coeffs, constants, entities, cell_info,
-                            post_dof_transform);
+                            post_dof_transform, custom_data);
 }
 } // namespace dolfinx::fem::impl

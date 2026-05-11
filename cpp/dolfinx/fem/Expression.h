@@ -15,6 +15,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <span>
 #include <utility>
 #include <vector>
@@ -66,6 +67,8 @@ public:
   /// computed a 1-form expression, e.g. can be used to create a matrix
   /// that when applied to a degree-of-freedom vector gives the
   /// expression values at the evaluation points.
+  /// @param[in] custom_data Optional custom user data pointer passed to
+  /// the kernel function.
   Expression(const std::vector<std::shared_ptr<
                  const Function<scalar_type, geometry_type>>>& coefficients,
              const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
@@ -78,11 +81,12 @@ public:
                  fn,
              const std::vector<std::size_t>& value_shape,
              std::shared_ptr<const FunctionSpace<geometry_type>> argument_space
-             = nullptr)
+             = nullptr,
+             std::optional<void*> custom_data = std::nullopt)
       : _argument_space(argument_space), _coefficients(coefficients),
         _constants(constants), _fn(fn), _value_shape(value_shape),
-        _x_ref(std::vector<geometry_type>(X.begin(), X.end()), Xshape)
-
+        _x_ref(std::vector<geometry_type>(X.begin(), X.end()), Xshape),
+        _custom_data(custom_data)
   {
     for (auto& c : _coefficients)
     {
@@ -152,6 +156,13 @@ public:
     return _fn;
   }
 
+  /// @brief Get the custom data pointer for the Expression.
+  ///
+  /// The custom data pointer is passed to the kernel function during
+  /// expression tabulation.
+  /// @return Custom data pointer, or std::nullopt if not set.
+  std::optional<void*> custom_data() const { return _custom_data; }
+
   /// @brief Value size of the Expression result.
   int value_size() const
   {
@@ -189,5 +200,8 @@ private:
 
   // Evaluation points on reference cell
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> _x_ref;
+
+  // Custom user data pointer passed to the kernel function
+  std::optional<void*> _custom_data = std::nullopt;
 };
 } // namespace dolfinx::fem

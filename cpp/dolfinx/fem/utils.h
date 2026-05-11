@@ -531,12 +531,12 @@ Form<T, U> create_form_factory(
       = [&geo = mesh->geometry()](const ufcx_integral& integral,
                                   std::size_t cell_idx)
   {
-    if (integral.coordinate_element_hash != geo.cmaps().at(cell_idx).hash())
+    if (integral.coordinate_element_hash != geo.cmap(cell_idx).hash())
     {
       throw std::runtime_error(
           "Generated integral geometry element does not match mesh geometry: "
           + std::to_string(integral.coordinate_element_hash) + ", "
-          + std::to_string(geo.cmaps().at(cell_idx).hash()));
+          + std::to_string(geo.cmap(cell_idx).hash()));
     }
   };
 
@@ -925,8 +925,7 @@ FunctionSpace<T> create_functionspace(
     std::shared_ptr<mesh::Mesh<T>> mesh,
     std::shared_ptr<const fem::FiniteElement<T>> e,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn
-    = nullptr)
+        reorder_fn = nullptr)
 {
   // TODO: check cell type of e (need to add method to fem::FiniteElement)
   assert(e);
@@ -954,7 +953,8 @@ Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
+    std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr,
+    std::optional<void*> custom_data = std::nullopt)
 {
   if (!coefficients.empty())
   {
@@ -1009,7 +1009,7 @@ Expression<T, U> create_expression(
 
   assert(tabulate_tensor);
   return Expression(coefficients, constants, std::span<const U>(X), Xshape,
-                    tabulate_tensor, value_shape, argument_space);
+                    tabulate_tensor, value_shape, argument_space, custom_data);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and
@@ -1020,7 +1020,8 @@ Expression<T, U> create_expression(
     const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
+    std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr,
+    std::optional<void*> custom_data = std::nullopt)
 {
   // Place coefficients in appropriate order
   std::vector<std::shared_ptr<const Function<T, U>>> coeff_map;
@@ -1058,7 +1059,7 @@ Expression<T, U> create_expression(
     }
   }
 
-  return create_expression(e, coeff_map, const_map, argument_space);
+  return create_expression(e, coeff_map, const_map, argument_space, custom_data);
 }
 
 } // namespace dolfinx::fem

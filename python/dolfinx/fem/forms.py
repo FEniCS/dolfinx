@@ -1,5 +1,5 @@
-# Copyright (C) 2017-2024 Chris N. Richardson, Garth N. Wells,
-# Michal Habera and Jørgen S. Dokken
+# Copyright (C) 2017-2026 Chris N. Richardson, Garth N. Wells,
+# Michal Habera, Jørgen S. Dokken, Jack S. Hale and Jose Fernandez
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -25,6 +25,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
 from dolfinx.fem.function import Constant, Function, FunctionSpace
+from dolfinx.typing import Scalar
 
 if typing.TYPE_CHECKING:
     # import dolfinx.mesh just when doing type checking to avoid
@@ -33,7 +34,7 @@ if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh, MeshTags
 
 
-class Form:
+class Form(typing.Generic[Scalar]):
     """A finite element form."""
 
     _cpp_object: (
@@ -176,14 +177,24 @@ def get_integration_domains(
                 subdomain._cpp_object.topology.create_connectivity(tdim - 2, tdim)
                 subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 2)
 
+            # Special handling for exterior facets, compared to other
+            # one-sided entity integrals
+            if integral_type is IntegralType.exterior_facet:
+                exterior_facets = _cpp.mesh.exterior_facet_indices(subdomain.topology)
+
             # Compute integration domains only for each subdomain id in
             # the integrals. If a process has no integral entities,
             # insert an empty array.
             for id in subdomain_ids:
+                entities = subdomain.find(id)
+                if integral_type is IntegralType.exterior_facet:
+                    # Compute intersection of tag an exterior facets
+                    entities = np.intersect1d(entities, exterior_facets)
+
                 integration_entities = _cpp.fem.compute_integration_domains(
                     integral_type,
                     subdomain._cpp_object.topology,
-                    subdomain.find(id),
+                    entities,
                 )
                 domains.append((id, integration_entities))
             return [(s[0], np.array(s[1])) for s in domains]
@@ -237,6 +248,7 @@ def mixed_topology_form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
+    jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
 ):
     """Create a mixed-topology from from an array of Forms.
@@ -252,6 +264,8 @@ def mixed_topology_form(
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
+        jit_comm: MPI communicator used when compiling the form. If
+          ``None``, then ``form.mesh.comm``.
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
             as the integration domain (the domain associated with the
@@ -277,13 +291,16 @@ def mixed_topology_form(
         assert all([d is data[0] for d in data if d is not None])
 
     mesh = domain.ufl_cargo()
+    if mesh is None:
+        raise RuntimeError("Expecting to find a Mesh in the form.")
+    comm = mesh.comm if jit_comm is None else jit_comm
 
     ufcx_forms = []
     modules = []
     codes = []
     for form in forms:
         ufcx_form, module, code = jit.ffcx_jit(
-            mesh.comm,
+            comm,
             form,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
@@ -314,6 +331,7 @@ def form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
+    jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
 ):
     """Create a Form or list of Forms.
@@ -323,6 +341,8 @@ def form(
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
+        jit_comm: MPI communicator used when compiling the form. If
+          `None`, then `form.mesh.comm`.
         entity_maps: If any trial functions, test functions, or
             coefficients in the form are not defined over the same mesh
             as the integration domain (the domain associated with the
@@ -359,8 +379,10 @@ def form(
         msh = domain.ufl_cargo()
         if msh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
+        comm = msh.comm if jit_comm is None else jit_comm
+
         ufcx_form, module, code = jit.ffcx_jit(
-            msh.comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
+            comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
         )
 
         # For each argument in form extract its function space
@@ -380,7 +402,9 @@ def form(
 
         # Extract subdomain ids from ufcx_form
         subdomain_ids = {type: [] for type in sd.get(domain).keys()}
-        integral_offsets = [ufcx_form.form_integral_offsets[i] for i in range(6)]
+        integral_offsets = [
+            ufcx_form.form_integral_offsets[i] for i in range(len(IntegralType) + 1)
+        ]
         for i in range(len(integral_offsets) - 1):
             integral_type = IntegralType(i)
             for j in range(integral_offsets[i], integral_offsets[i + 1]):
@@ -528,7 +552,7 @@ class CompiledForm:
 def compile_form(
     comm: MPI.Intracomm,
     form: ufl.Form,
-    form_compiler_options: dict | None = {"scalar_type": default_scalar_type},
+    form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
 ) -> CompiledForm:
     """Compile UFL form without associated DOLFINx data.
@@ -539,6 +563,8 @@ def compile_form(
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
     """
+    if form_compiler_options is None:
+        form_compiler_options = {"scalar_type": default_scalar_type}
     p_ffcx = ffcx.get_options(form_compiler_options)
     p_jit = jit.get_options(jit_options)
     ufcx_form, module, code = jit.ffcx_jit(comm, form, p_ffcx, p_jit)
@@ -660,35 +686,123 @@ def create_form(
     return Form(f, form.ufcx_form, form.code)
 
 
+def _derive_univariate_residual(
+    F: ufl.Form,
+    u: Function,
+    du: ufl.Argument | None = None,
+) -> ufl.Form:
+    if du is None:
+        du = ufl.TestFunction(u.function_space)
+    return ufl.derivative(F, u, du)
+
+
+def _derive_block_residual(
+    F: ufl.Form,
+    u: Sequence[Function],
+    du: Sequence[ufl.Argument] | None = None,
+) -> Sequence[ufl.Form]:
+    if du is None:
+        du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
+    return ufl.extract_blocks(ufl.derivative(F, u, du))
+
+
+def _derive_univariate_jacobian(
+    F: ufl.Form,
+    u: Function,
+    du: ufl.Argument | None = None,
+) -> ufl.Form:
+    if du is None:
+        du = ufl.TrialFunction(u.function_space)
+    return ufl.derivative(F, u, du)
+
+
+def _derive_block_jacobian(
+    F: Sequence[ufl.Form],
+    u: Sequence[Function],
+    du: Sequence[ufl.Argument] | None = None,
+) -> Sequence[Sequence[ufl.Form]]:
+    if not isinstance(u, Sequence):
+        raise ValueError("When F is a sequence, u must be a sequence")
+    if du is None:
+        du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
+    elif not isinstance(du, Sequence) or not len(u) == len(du):
+        raise ValueError(
+            "When F is a list of N forms, du must be a sequence containing N functions"
+        )
+    return [[ufl.derivative(F_i, u_j, du_j) for u_j, du_j in zip(u, du)] for F_i in F]
+
+
 def derivative_block(
     F: ufl.Form | Sequence[ufl.Form],
     u: Function | Sequence[Function],
     du: ufl.Argument | Sequence[ufl.Argument] | None = None,
-) -> ufl.Form | Sequence[Sequence[ufl.Form]]:
-    """Return the UFL derivative of a (list of) UFL rank one form(s).
+) -> ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]]:
+    """Return the UFL derivative of a form or list of forms.
 
-    This is commonly used to derive a block Jacobian from a block
-    residual.
+    This is commonly used to derive a block residual from a functional, or
+    to derive a block Jacobian from a block residual.
 
-    If ``F_i`` is a list of forms, the Jacobian is a list of lists with
-    :math:`J_{ij} = \\frac{\\partial F_i}{u_j}[\\delta u_j]` using
-    ``ufl.derivative`` called component-wise.
+    Four cases are supported:
 
-    If ``F`` is a form, the Jacobian is computed as :math:`J =
-    \\frac{\\partial F}{\\partial u}[\\delta u]`. This is identical to
-    calling ``ufl.derivative`` directly.
+    1. ``F`` is a rank-zero ``ufl.Form``, and ``u`` is a ``ufl.Function``.
+       Returns a ``ufl.Form`` representing the residual
+
+       .. math::
+
+           R = \\frac{\\partial F}{\\partial u}[\\delta u].
+
+       This is equivalent to calling :func:`ufl.derivative` directly.
+
+    2. ``F`` is a rank-zero ``ufl.Form``, and ``u`` is a list of
+       ``ufl.Function``. Returns a list of ``ufl.Form`` representing the
+       block residual :math:`R`, with
+
+       .. math::
+
+           R_i = \\frac{\\partial F}{\\partial u_i}[\\delta u_i],
+
+       where :math:`\\delta u_i` is a test subfunction of the mixed
+       space defined by ``u``. This is equivalent to calling
+       :func:`ufl.extract_blocks` on the result from
+       :func:`ufl.derivative`.
+
+    3. ``F`` is a rank-one ``ufl.Form``, and ``u`` is a ``ufl.Function``.
+       Returns a ``ufl.Form`` representing the Jacobian
+
+       .. math::
+
+           J = \\frac{\\partial F}{\\partial u}[\\delta u].
+
+       This is equivalent to calling :func:`ufl.derivative` directly.
+
+    4. ``F`` is a list of rank-one ``ufl.Form``, and ``u`` is a list of
+       ``ufl.Function``. Returns a list of lists representing the block
+       Jacobian :math:`J`, with
+
+       .. math::
+
+           J_{ij} = \\frac{\\partial F_i}{\\partial u_j}[\\delta u_j]
+
+       using :func:`ufl.derivative` called component-wise.
+
+    Args:
+        F: UFL form(s) to be derived.
+        u: Function(s) with respect to the derivative is computed.
+        du: UFL argument(s) representing the direction of the derivative.
     """  # noqa: D301
-    if isinstance(F, ufl.Form):
-        if not isinstance(u, Function):
-            raise ValueError("Must provide a single function when F is a UFL form")
-        if du is None:
-            du = ufl.TrialFunction(u.function_space)
-        return ufl.derivative(F, u, du)
-    else:
-        assert all([isinstance(Fi, ufl.Form) for Fi in F]), "F must be a sequence of UFL forms"
-        assert len(F) == len(u), "Number of forms and functions must be equal"
-        if du is not None:
-            assert len(F) == len(du), "Number of forms and du must be equal"
+    if isinstance(F, ufl.Form) and not F.arguments():
+        if isinstance(u, Function):
+            return _derive_univariate_residual(F, u, du)
+        elif isinstance(u, Sequence):
+            return _derive_block_residual(F, u, du)
         else:
-            du = [ufl.TrialFunction(u_i.function_space) for u_i in u]
-        return [[ufl.derivative(Fi, u_j, du_j) for u_j, du_j in zip(u, du)] for Fi in F]
+            raise ValueError("u must be either a ufl.Function or a sequence of ufl.Function")
+    elif isinstance(F, ufl.Form) and len(F.arguments()) == 1:
+        return _derive_univariate_jacobian(F, u, du)  # type: ignore[arg-type]
+    elif isinstance(F, Sequence):
+        return _derive_block_jacobian(F, u, du)
+    else:
+        raise ValueError(
+            "F must be either a UFL form (with rank zero or one), or a sequence of "
+            "rank-one UFL forms."
+        )

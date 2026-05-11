@@ -12,16 +12,24 @@ import numpy as np
 import pytest
 
 import dolfinx
+import ffcx.codegeneration.utils as codegen_utils
 from dolfinx import la
 from dolfinx.fem import Form, IntegralType, form_cpp_class, functionspace
 from dolfinx.mesh import create_unit_square
-from ffcx.codegeneration.utils import (
-    numba_ufcx_kernel_signature,
-    voidptr_to_float64_ptr,
-)
 
 numba = pytest.importorskip("numba")
-ufcx_signature = numba_ufcx_kernel_signature
+ufcx_signature = codegen_utils.numba_ufcx_kernel_signature
+
+
+def voidptr_to_dtype_ptr(dtype):
+    """Return a Numba void pointer caster for the scalar dtype."""
+    if np.dtype(dtype) == np.float32:
+        numba_dtype = numba.types.float32
+    elif np.dtype(dtype) == np.float64:
+        numba_dtype = numba.types.float64
+    else:
+        raise NotImplementedError(f"Unsupported dtype: {dtype}")
+    return codegen_utils._create_voidptr_to_dtype_ptr_caster(numba_dtype)
 
 
 def tabulate_rank1_with_custom_data(dtype, xdtype):
@@ -30,13 +38,15 @@ def tabulate_rank1_with_custom_data(dtype, xdtype):
     Note: custom_data must be set to a valid pointer before assembly.
     """
 
+    voidptr_to_scalar_ptr = voidptr_to_dtype_ptr(dtype)
+
     @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
     def tabulate(b_, w_, c_, coords_, local_index, orientation, custom_data):
         b = numba.carray(b_, (3), dtype=dtype)
         coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
 
-        # Cast void* to float64* and read the scale value
-        typed_ptr = voidptr_to_float64_ptr(custom_data)
+        # Cast void* to the scalar pointer type and read the scale value
+        typed_ptr = voidptr_to_scalar_ptr(custom_data)
         scale = typed_ptr[0]
 
         x0, y0 = coordinate_dofs[0, :2]
@@ -56,13 +66,15 @@ def tabulate_rank2_with_custom_data(dtype, xdtype):
     Note: custom_data must be set to a valid pointer before assembly.
     """
 
+    voidptr_to_scalar_ptr = voidptr_to_dtype_ptr(dtype)
+
     @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
     def tabulate(A_, w_, c_, coords_, entity_local_index, cell_orientation, custom_data):
         A = numba.carray(A_, (3, 3), dtype=dtype)
         coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
 
-        # Cast void* to float64* and read the scale value
-        typed_ptr = voidptr_to_float64_ptr(custom_data)
+        # Cast void* to the scalar pointer type and read the scale value
+        typed_ptr = voidptr_to_scalar_ptr(custom_data)
         scale = typed_ptr[0]
 
         x0, y0 = coordinate_dofs[0, :2]
@@ -79,7 +91,7 @@ def tabulate_rank2_with_custom_data(dtype, xdtype):
     return tabulate
 
 
-@pytest.mark.parametrize("dtype", [np.float64])
+@pytest.mark.parametrize("dtype", [np.float64, np.float32])
 def test_custom_data_vector_assembly(dtype):
     """Test that custom_data is correctly passed to kernels during vector assembly."""
     xdtype = np.real(dtype(0)).dtype
@@ -128,7 +140,7 @@ def test_custom_data_vector_assembly(dtype):
     assert np.isclose(norm3, 3.0 * norm1)
 
 
-@pytest.mark.parametrize("dtype", [np.float64])
+@pytest.mark.parametrize("dtype", [np.float64, np.float32])
 def test_custom_data_matrix_assembly(dtype):
     """Test that custom_data is correctly passed to kernels during matrix assembly."""
     xdtype = np.real(dtype(0)).dtype
@@ -175,7 +187,7 @@ def test_custom_data_matrix_assembly(dtype):
     assert np.isclose(norm2, 2.0 * norm1)
 
 
-@pytest.mark.parametrize("dtype", [np.float64])
+@pytest.mark.parametrize("dtype", [np.float64, np.float32])
 def test_custom_data_default_nullptr(dtype):
     """Test that custom_data defaults to nullptr (None) when not provided."""
     xdtype = np.real(dtype(0)).dtype
@@ -210,19 +222,21 @@ def test_custom_data_default_nullptr(dtype):
     assert L._cpp_object.custom_data(IntegralType.cell, 0, 0) is None
 
 
-@pytest.mark.parametrize("dtype", [np.float64])
+@pytest.mark.parametrize("dtype", [np.float64, np.float32])
 def test_custom_data_struct(dtype):
     """Test passing a struct with multiple values through custom_data."""
     xdtype = np.real(dtype(0)).dtype
 
     # Define a kernel that reads two values from custom_data
+    voidptr_to_scalar_ptr = voidptr_to_dtype_ptr(dtype)
+
     @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
     def tabulate_with_struct(b_, w_, c_, coords_, local_index, orientation, custom_data):
         b = numba.carray(b_, (3), dtype=dtype)
         coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
 
-        # Cast void* to float64* and read two values: [scale, offset]
-        typed_ptr = voidptr_to_float64_ptr(custom_data)
+        # Cast void* to the scalar pointer type and read two values: [scale, offset]
+        typed_ptr = voidptr_to_scalar_ptr(custom_data)
         scale = typed_ptr[0]
         offset = typed_ptr[1]
 
@@ -282,7 +296,7 @@ def test_custom_data_struct(dtype):
     assert np.isclose(total_contribution, 3.0 * total_cells)
 
 
-@pytest.mark.parametrize("dtype", [np.float64])
+@pytest.mark.parametrize("dtype", [np.float64, np.float32])
 def test_custom_data_multiple_parameters(dtype):
     """Test custom_data with multiple parameters demonstrating complex data passing.
 
@@ -294,13 +308,15 @@ def test_custom_data_multiple_parameters(dtype):
 
     # Kernel that uses three parameters: coefficient, exponent base, and additive term
     # Computes: coeff * base^area + additive
+    voidptr_to_scalar_ptr = voidptr_to_dtype_ptr(dtype)
+
     @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
     def tabulate_with_params(b_, w_, c_, coords_, local_index, orientation, custom_data):
         b = numba.carray(b_, (3), dtype=dtype)
         coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
 
         # Read three parameters from custom_data
-        typed_ptr = voidptr_to_float64_ptr(custom_data)
+        typed_ptr = voidptr_to_scalar_ptr(custom_data)
         coeff = typed_ptr[0]
         power = typed_ptr[1]
         additive = typed_ptr[2]
@@ -348,7 +364,7 @@ def test_custom_data_multiple_parameters(dtype):
     assert np.isclose(norm1, norm2)
 
 
-@pytest.mark.parametrize("dtype", [np.float64])
+@pytest.mark.parametrize("dtype", [np.float64, np.float32])
 def test_custom_data_global_parameter_update(dtype):
     """Test updating custom_data between assemblies for parameter studies.
 
@@ -359,13 +375,15 @@ def test_custom_data_global_parameter_update(dtype):
     xdtype = np.real(dtype(0)).dtype
 
     # Kernel that reads a diffusion coefficient from custom_data
+    voidptr_to_scalar_ptr = voidptr_to_dtype_ptr(dtype)
+
     @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
     def tabulate_diffusion(b_, w_, c_, coords_, local_index, orientation, custom_data):
         b = numba.carray(b_, (3), dtype=dtype)
         coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
 
         # Read diffusion coefficient from custom_data
-        typed_ptr = voidptr_to_float64_ptr(custom_data)
+        typed_ptr = voidptr_to_scalar_ptr(custom_data)
         kappa = typed_ptr[0]  # Diffusion coefficient
 
         x0, y0 = coordinate_dofs[0, :2]
@@ -409,7 +427,8 @@ def test_custom_data_global_parameter_update(dtype):
     # Verify linear scaling: norm should scale linearly with kappa
     # norm(kappa=k) / norm(kappa=1) should equal k
     base_norm = results[1]  # kappa=1.0
+    rtol = np.sqrt(np.finfo(dtype).eps)
     for i, k in enumerate(kappa_values):
         expected_ratio = k / 1.0
         actual_ratio = results[i] / base_norm
-        assert np.isclose(actual_ratio, expected_ratio, rtol=1e-10)
+        assert np.isclose(actual_ratio, expected_ratio, rtol=rtol)

@@ -35,7 +35,7 @@ namespace dolfinx::fem
 /// facet/edge/vertex.
 ///
 /// @param[in] topology Mesh topology.
-/// @param[in] dofmap Dofmap that associated DOFs with cells.
+/// @param[in] dofmap Dofmap that associates DOFs with cells.
 /// @param[in] dim Topological dimension of mesh entities on which
 /// degrees-of-freedom will be located
 /// @param[in] entities Indices of mesh entities. All DOFs associated
@@ -107,11 +107,14 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
   // especially when we usually want the boundary dofs only. Add
   // interface that computes dofs coordinates only for specified cell.
 
-  assert(V.element());
-  if (V.element()->is_mixed())
+  for (std::size_t i = 0; i < V.mesh()->topology()->cell_types().size(); ++i)
   {
-    throw std::runtime_error(
-        "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+    assert(V.elements(i));
+    if (V.elements(i)->is_mixed())
+    {
+      throw std::runtime_error(
+          "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+    }
   }
 
   // Compute dof coordinates
@@ -329,13 +332,14 @@ public:
   {
     assert(g);
     assert(V);
-    if (g->shape.size() != V->element()->value_shape().size())
+    assert(V->elements(0));
+    if (g->shape.size() != V->elements(0)->value_shape().size())
     {
       throw std::runtime_error(
           "Rank mismatch between Constant and function space in DirichletBC");
     }
 
-    if (g->value.size() != (std::size_t)_function_space->dofmap()->bs())
+    if (g->value.size() != (std::size_t)_function_space->dofmaps(0)->bs())
     {
       throw std::runtime_error(
           "Creating a DirichletBC using a Constant is not supported when the "
@@ -343,17 +347,17 @@ public:
           "(sub-)space. Use a fem::Function to create the fem::DirichletBC.");
     }
 
-    if (!V->element()->interpolation_ident())
+    if (!V->elements(0)->interpolation_ident())
     {
       throw std::runtime_error(
           "Constant can be used only with point-evaluation elements");
     }
 
     // Unroll _dofs0 if dofmap block size > 1
-    if (const int bs = V->dofmap()->bs(); bs > 1)
+    if (const int bs = V->dofmaps(0)->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
 
-    _owned_indices0 = num_owned(*_function_space->dofmap(), _dofs0);
+    _owned_indices0 = num_owned(*_function_space->dofmaps(0), _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -378,10 +382,10 @@ public:
     assert(_function_space);
 
     // Unroll _dofs0 if dofmap block size > 1
-    if (const int bs = _function_space->dofmap()->bs(); bs > 1)
+    if (const int bs = _function_space->dofmaps(0)->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
 
-    _owned_indices0 = num_owned(*_function_space->dofmap(), _dofs0);
+    _owned_indices0 = num_owned(*_function_space->dofmaps(0), _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -545,7 +549,7 @@ public:
     {
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       const std::vector<T>& value = g->value;
-      std::int32_t bs = _function_space->dofmap()->bs();
+      std::int32_t bs = _function_space->dofmaps(0)->bs();
       if (x0)
       {
         assert(x.size() <= x0->size());

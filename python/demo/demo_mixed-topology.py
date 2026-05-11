@@ -34,7 +34,8 @@ from scipy.sparse.linalg import spsolve
 import basix
 import dolfinx.cpp as _cpp
 import ufl
-from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
+from dolfinx.cpp.fem import locate_dofs_geometrical
+from dolfinx.cpp.mesh import GhostMode, create_mesh
 from dolfinx.fem import (
     FiniteElement,
     FunctionSpace,
@@ -42,10 +43,11 @@ from dolfinx.fem import (
     assemble_vector,
     coordinate_element,
     create_dofmaps,
+    dirichletbc,
     mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
-from dolfinx.mesh import CellType, Mesh, Topology
+from dolfinx.mesh import CellType, Mesh, Topology, create_cell_partitioner
 
 # -
 
@@ -108,7 +110,7 @@ geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
 
-part = create_cell_partitioner(GhostMode.none)
+part = create_cell_partitioner(GhostMode.none, 2)  # type: ignore
 mesh = create_mesh(
     MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part, 2
 )
@@ -123,7 +125,7 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 dolfinx_elements = [
-    FiniteElement(_cpp.fem.FiniteElement_float64(e._e, None, True)) for e in elements
+    FiniteElement(_cpp.fem.FiniteElement_float64(e._e, None, False)) for e in elements
 ]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
 dofmaps = create_dofmaps(
@@ -136,6 +138,17 @@ dofmaps = create_dofmaps(
 V_cpp = _cpp.fem.FunctionSpace_float64(
     mesh, [e._cpp_object for e in dolfinx_elements], [dofmap._cpp_object for dofmap in dofmaps]
 )
+
+
+# Select some BCs
+def marker(x):
+    """BC Selector."""
+    return np.logical_or(np.isclose(x[2], 0.0), np.isclose(x[2], 1.0))
+
+
+bcdofs = locate_dofs_geometrical(V_cpp, marker)
+bc = dirichletbc(value=0.0, dofs=bcdofs, V=V_cpp)
+
 # -
 
 # ## Creating and compiling a variational formulation
@@ -170,14 +183,16 @@ L_form = mixed_topology_form(L, dtype=np.float64)
 # {py:class}`vector<dolfinx.la.Vector>` format in DOLFINx to assemble
 # the left and right hand side of the linear system.
 
-A = assemble_matrix(a_form)
+A = assemble_matrix(a_form, bcs=[bc])
 b = assemble_vector(L_form)
+bc.set(b.array)
 
 # We use {py:func}`scipy.sparse.linalg.spsolve` to solve the
 # resulting linear system
 
 A_scipy = A.to_scipy()
 b_scipy = b.array
+
 x = spsolve(A_scipy, b_scipy)
 
 print(f"Solution vector norm {np.linalg.norm(x)}")
