@@ -11,10 +11,16 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-import dolfinx
 import ffcx.codegeneration.utils as codegen_utils
 from dolfinx import la
-from dolfinx.fem import Form, IntegralType, form_cpp_class, functionspace
+from dolfinx.fem import (
+    Form,
+    IntegralType,
+    assemble_matrix,
+    assemble_vector,
+    form_cpp_class,
+    functionspace,
+)
 from dolfinx.mesh import create_unit_square
 
 numba = pytest.importorskip("numba")
@@ -113,7 +119,7 @@ def test_custom_data_vector_assembly(dtype):
     L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
 
     # Assemble with scale=1.0
-    b1 = dolfinx.fem.assemble_vector(L)
+    b1 = assemble_vector(L)
     b1.scatter_reverse(la.InsertMode.add)
     norm1 = la.norm(b1)
 
@@ -122,7 +128,7 @@ def test_custom_data_vector_assembly(dtype):
 
     # Update custom_data to scale=2.0 (by modifying the underlying array)
     scale_value[0] = 2.0
-    b2 = dolfinx.fem.assemble_vector(L)
+    b2 = assemble_vector(L)
     b2.scatter_reverse(la.InsertMode.add)
     norm2 = la.norm(b2)
 
@@ -131,7 +137,7 @@ def test_custom_data_vector_assembly(dtype):
 
     # Test with scale=3.0
     scale_value[0] = 3.0
-    b3 = dolfinx.fem.assemble_vector(L)
+    b3 = assemble_vector(L)
     b3.scatter_reverse(la.InsertMode.add)
     norm3 = la.norm(b3)
 
@@ -171,13 +177,13 @@ def test_custom_data_matrix_assembly(dtype):
     )
 
     # Assemble with scale=1.0
-    A1 = dolfinx.fem.assemble_matrix(a)
+    A1 = assemble_matrix(a)
     A1.scatter_reverse()
     norm1 = np.sqrt(A1.squared_norm())
 
     # Update custom_data to scale=2.0 (by modifying the underlying array)
     scale_value[0] = 2.0
-    A2 = dolfinx.fem.assemble_matrix(a)
+    A2 = assemble_matrix(a)
     A2.scatter_reverse()
     norm2 = np.sqrt(A2.squared_norm())
 
@@ -267,14 +273,14 @@ def test_custom_data_struct(dtype):
     formtype = form_cpp_class(dtype)
     L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
 
-    b_baseline = dolfinx.fem.assemble_vector(L)
+    b_baseline = assemble_vector(L)
     b_baseline.scatter_reverse(la.InsertMode.add)
     norm_baseline = la.norm(b_baseline)
 
     # Test 2: scale=2.0, offset=0.0 - should double the norm
     struct_data[0] = 2.0
     struct_data[1] = 0.0
-    b_scaled = dolfinx.fem.assemble_vector(L)
+    b_scaled = assemble_vector(L)
     b_scaled.scatter_reverse(la.InsertMode.add)
     norm_scaled = la.norm(b_scaled)
     assert np.isclose(norm_scaled, 2.0 * norm_baseline)
@@ -282,7 +288,7 @@ def test_custom_data_struct(dtype):
     # Test 3: scale=0.0, offset=1.0 - pure offset contribution
     struct_data[0] = 0.0
     struct_data[1] = 1.0
-    b_offset = dolfinx.fem.assemble_vector(L)
+    b_offset = assemble_vector(L)
     b_offset.scatter_reverse(la.InsertMode.add)
     # With offset=1.0, each DOF gets contribution from each cell it touches
     # Interior nodes touch 6 cells, edge nodes touch 3-4, corner nodes touch 1-2
@@ -348,14 +354,14 @@ def test_custom_data_multiple_parameters(dtype):
     formtype = form_cpp_class(dtype)
     L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
 
-    b1 = dolfinx.fem.assemble_vector(L)
+    b1 = assemble_vector(L)
     b1.scatter_reverse(la.InsertMode.add)
     norm1 = la.norm(b1)
 
     # Change parameters: coeff=1, power=6, additive=0 (should give same result: 1*6 = 2*3)
     params[0] = 1.0
     params[1] = 6.0
-    b2 = dolfinx.fem.assemble_vector(L)
+    b2 = assemble_vector(L)
     b2.scatter_reverse(la.InsertMode.add)
     norm2 = la.norm(b2)
 
@@ -418,7 +424,7 @@ def test_custom_data_global_parameter_update(dtype):
 
     for k in kappa_values:
         kappa[0] = k
-        b = dolfinx.fem.assemble_vector(L)
+        b = assemble_vector(L)
         b.scatter_reverse(la.InsertMode.add)
         results.append(la.norm(b))
 
