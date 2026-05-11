@@ -681,7 +681,8 @@ void declare_objects(nb::module_& m, std::string type)
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::Constant<T>>>& constants,
              nb::ndarray<const U, nb::ndim<2>, nb::c_contig> X,
-             std::uintptr_t fn_addr, const std::vector<std::size_t>& value_shape,
+             std::uintptr_t fn_addr,
+             const std::vector<std::size_t>& value_shape,
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
                  argument_space,
              std::optional<std::uintptr_t> custom_data)
@@ -701,16 +702,15 @@ void declare_objects(nb::module_& m, std::string type)
           nb::arg("coefficients"), nb::arg("constants"), nb::arg("X"),
           nb::arg("fn"), nb::arg("value_shape"), nb::arg("argument_space"),
           nb::arg("custom_data").none() = nb::none())
-      .def(
-          "custom_data",
-          [](const dolfinx::fem::Expression<T, U>& self)
-              -> std::optional<std::uintptr_t>
-          {
-            std::optional<void*> data = self.custom_data();
-            if (!data)
-              return std::nullopt;
-            return reinterpret_cast<std::uintptr_t>(*data);
-          })
+      .def("custom_data",
+           [](const dolfinx::fem::Expression<T, U>& self)
+               -> std::optional<std::uintptr_t>
+           {
+             std::optional<void*> data = self.custom_data();
+             if (!data)
+               return std::nullopt;
+             return reinterpret_cast<std::uintptr_t>(*data);
+           })
       .def("X",
            [](const dolfinx::fem::Expression<T, U>& self)
            {
@@ -872,8 +872,8 @@ void declare_form(nb::module_& m, std::string type)
       .def(
           "custom_data",
           [](const dolfinx::fem::Form<T, U>& self,
-             dolfinx::fem::IntegralType type, int idx, int kernel_idx)
-              -> std::optional<std::uintptr_t>
+             dolfinx::fem::IntegralType type, int idx,
+             int kernel_idx) -> std::optional<std::uintptr_t>
           {
             std::optional<void*> data = self.custom_data(type, idx, kernel_idx);
             if (!data)
