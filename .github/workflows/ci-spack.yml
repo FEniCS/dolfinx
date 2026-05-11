@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: spack/spack
-          ref: develop
+          ref: v1.1.1
           path: spack-src
 
       - name: Get upstream Spack packages
@@ -92,7 +92,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           . ./spack-src/share/spack/setup-env.sh
-          spack -e py buildcache push --base-image ghcr.io/almalinux/almalinux:10 --update-index local-buildcache
+          spack debug report
+          spack -d -e py buildcache push --base-image ghcr.io/almalinux/almalinux:10 --update-index local-buildcache
         if: ${{ !cancelled() }}
 
       - name: Load FEniCS testing environment variables

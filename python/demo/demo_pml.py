@@ -214,8 +214,8 @@ def generate_mesh_wire(
 
 def compute_a(nu: int, m: complex, alpha: float) -> float:
     """Compute the Mie coefficient a_nu for a cylinder."""
-    J_nu_alpha = jv(nu, alpha)
-    J_nu_malpha = jv(nu, m * alpha)
+    J_nu_alpha = jv(nu, alpha)  # type: ignore
+    J_nu_malpha = jv(nu, m * alpha)  # type: ignore
     J_nu_alpha_p = jvp(nu, alpha, 1)
     J_nu_malpha_p = jvp(nu, m * alpha, 1)
 

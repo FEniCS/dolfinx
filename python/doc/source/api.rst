@@ -14,6 +14,7 @@ Public user interface
    dolfinx.common
    dolfinx.fem
    dolfinx.fem.petsc
+   dolfinx.fem.problems
    dolfinx.geometry
    dolfinx.graph
    dolfinx.io

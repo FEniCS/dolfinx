@@ -59,8 +59,8 @@ def read_mesh(
         # FIXME: not yet defined for mixed topology
         domain = None
     else:
-        cell_degree = mesh_cpp.geometry.cmap.degree
-        variant = mesh_cpp.geometry.cmap.variant
+        cell_degree = mesh_cpp.geometry.cmap().degree
+        variant = mesh_cpp.geometry.cmap().variant
         domain = ufl.Mesh(
             basix.ufl.element(
                 "Lagrange", cell_types[0].name, cell_degree, variant, shape=(mesh_cpp.geometry.dim,)

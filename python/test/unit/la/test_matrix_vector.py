@@ -44,6 +44,7 @@ def test_create_matrix_csr():
     assert np.allclose(dense, np.zeros(dense.shape, dtype=np.complex128))
 
 
+@pytest.mark.parametrize("bs", [[1, 1], [2, 2], [1, 2], [2, 1], [2, 3], [3, 3]])
 @pytest.mark.parametrize(
     "dtype",
     [
@@ -53,27 +54,56 @@ def test_create_matrix_csr():
         np.complex128,
     ],
 )
-def test_matvec(dtype):
-    mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
-    imap = mesh.topology.index_map(0)
-    sp = _cpp.la.SparsityPattern(mesh.comm, [imap, imap], [1, 1])
-    rows = np.arange(0, imap.size_local)
-    cols = np.arange(0, imap.size_local)
-    sp.insert(rows, cols)
-    sp.finalize()
+def test_matvec(bs, dtype, mat_random, mat_gather):
+    A = mat_random(0, 0, 12345, dtype, bs)
+    Ascipy = mat_gather(A)
+    imap = A.index_map(0)
+    lr0, lr1 = imap.local_range
+    nr = imap.size_local
+    # Check gathered matrix
+    assert np.allclose(A.to_dense()[: nr * bs[0], :], Ascipy.todense()[lr0 * bs[0] : lr1 * bs[0]])
 
-    # Identity
-    A = la.matrix_csr(sp, dtype=dtype)
-    for i in range(imap.size_local):
-        A.add([2.0], [i], [i])
-    A.scatter_reverse()
+    b = la.vector(imap, bs=bs[1], dtype=dtype)
+    u = la.vector(imap, bs=bs[0], dtype=dtype)
+    u.array[:] = 0.0
+    b.array[:] = np.arange(len(b.array))
 
-    b = la.vector(imap, dtype=dtype)
-    u = la.vector(imap, dtype=dtype)
-    b.array[:] = 1.0
     A.mult(b, u)
-    u.scatter_forward()
-    assert np.allclose(u.array[: imap.size_local], 2.0)
+    bscipy = np.concatenate(imap.comm.allgather(b.array[: nr * bs[1]]))
+    us = Ascipy @ bscipy
+    assert np.allclose(u.array[: nr * bs[0]], us[lr0 * bs[0] : lr1 * bs[0]])
+
+
+@pytest.mark.parametrize("bs", [[1, 1], [2, 2], [1, 2], [2, 1], [2, 3], [3, 3]])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        np.complex64,
+        np.complex128,
+    ],
+)
+def test_matvec_transpose(bs, dtype, mat_random, mat_gather):
+    # Create a random square MatrixCSR
+    A = mat_random(0, 0, 54321, dtype, bs)
+
+    Ascipy = mat_gather(A)
+    imap = A.index_map(0)
+    lr0, lr1 = imap.local_range
+    nr = imap.size_local
+    # Check gathered matrix
+    assert np.allclose(A.to_dense()[: nr * bs[0], :], Ascipy.todense()[lr0 * bs[0] : lr1 * bs[0]])
+
+    b = la.vector(imap, dtype=dtype, bs=bs[0])
+    u = la.vector(imap, dtype=dtype, bs=bs[1])
+    u.array[:] = 0.0
+    b.array[:] = np.arange(len(b.array))
+
+    A.mult(b, u, True)
+    bscipy = np.concatenate(imap.comm.allgather(b.array[: nr * bs[0]]))
+    us = Ascipy.T @ bscipy
+    assert np.allclose(u.array[: nr * bs[1]], us[lr0 * bs[1] : lr1 * bs[1]])
 
 
 @pytest.mark.parametrize(
