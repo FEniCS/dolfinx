@@ -321,6 +321,29 @@ def test_create_box_prism():
     assert mesh.topology.index_map(3).size_global == 48
 
 
+@pytest.mark.parametrize("gdim", [1, 2, 3])
+def test_create_interval_gdim(gdim):
+    """Interval mesh embedded in gdim-dimensional space has correct tdim and gdim."""
+    mesh = create_interval(MPI.COMM_WORLD, 6, [0.0, 1.0], gdim=gdim)
+    assert mesh.topology.dim == 1
+    assert mesh.geometry.dim == gdim
+    domain = mesh.ufl_domain()
+    assert domain is not None
+    assert domain.ufl_coordinate_element().reference_value_shape == (gdim,)
+
+
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+@pytest.mark.parametrize("gdim", [2, 3])
+def test_create_rectangle_gdim(gdim, cell_type):
+    """Rectangle mesh embedded in gdim-dimensional space has correct tdim and gdim."""
+    mesh = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [4, 4], cell_type, gdim=gdim)
+    assert mesh.topology.dim == 2
+    assert mesh.geometry.dim == gdim
+    domain = mesh.ufl_domain()
+    assert domain is not None
+    assert domain.ufl_coordinate_element().reference_value_shape == (gdim,)
+
+
 @pytest.mark.skip_in_parallel
 def test_get_coordinates():
     """Get coordinates of vertices."""
