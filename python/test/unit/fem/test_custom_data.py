@@ -37,7 +37,6 @@ def tabulate_rank1_with_custom_data(dtype, xdtype):
 
     Note: custom_data must be set to a valid pointer before assembly.
     """
-
     voidptr_to_scalar_ptr = voidptr_to_dtype_ptr(dtype)
 
     @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
@@ -65,7 +64,6 @@ def tabulate_rank2_with_custom_data(dtype, xdtype):
 
     Note: custom_data must be set to a valid pointer before assembly.
     """
-
     voidptr_to_scalar_ptr = voidptr_to_dtype_ptr(dtype)
 
     @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
