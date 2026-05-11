@@ -189,7 +189,7 @@ dofs_bottom = fem.locate_dofs_topological(V, fdim, facets_bottom)
 # -
 
 # Now, we create Dirichlet boundary objects for the condition $\sigma
-# \cdot n = \sin(5 x_(0)$ on the top and bottom boundaries:
+# \cdot n = \sin(5 x_0)$ on the top and bottom boundaries:
 
 # +
 cells_top_ = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
