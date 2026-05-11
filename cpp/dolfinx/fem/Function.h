@@ -164,7 +164,7 @@ public:
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
               md::mdspan<const geometry_type,
                          md::extents<std::size_t, 3, md::dynamic_extent>>)>& f,
-      CellRange auto&& cells)
+      mesh::CellRange auto&& cells)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -249,7 +249,7 @@ public:
   ///
   /// @pre `cells0` and `cells1` must have the same length.
   void interpolate(const Function<value_type, geometry_type>& u0,
-                   CellRange auto&& cells0, CellRange auto&& cells1)
+                   mesh::CellRange auto&& cells0, mesh::CellRange auto&& cells1)
   {
     fem::interpolate(*this, cells1, u0, cells0);
   }
@@ -261,7 +261,7 @@ public:
   /// @param[in] u Function to be interpolated.
   /// @param[in] cells Cells to interpolate from.
   void interpolate(const Function<value_type, geometry_type>& u,
-                   CellRange auto&& cells)
+                   mesh::CellRange auto&& cells)
   {
     fem::interpolate(*this, u, cells);
   }
@@ -297,7 +297,7 @@ public:
   ///
   /// @pre `cells0` `cells1` must have the same length.
   void interpolate(const Expression<value_type, geometry_type>& e0,
-                   CellRange auto&& cells0, CellRange auto&& cells1)
+                   mesh::CellRange auto&& cells0, mesh::CellRange auto&& cells1)
   {
     // Extract mesh
     const mesh::Mesh<geometry_type>* mesh0 = nullptr;
@@ -398,7 +398,7 @@ public:
   /// interpolate from if `e0` has Function coefficients. If no mesh can
   /// be associated with `e0` then the mesh associated with `this` is used.
   void interpolate(const Expression<value_type, geometry_type>& e0,
-                   CellRange auto&& cells)
+                   mesh::CellRange auto&& cells)
   {
     interpolate(e0, cells, cells);
   }
@@ -432,7 +432,7 @@ public:
   /// interpolation points of `this` with cells in `u`. Can be computed
   /// with `fem::create_interpolation_data`.
   void interpolate(const Function<value_type, geometry_type>& u,
-                   CellRange auto&& cells, double tol, int maxit,
+                   mesh::CellRange auto&& cells, double tol, int maxit,
                    const geometry::PointOwnershipData<U>& interpolation_data)
   {
     fem::interpolate(*this, u, cells, tol, maxit, interpolation_data);
@@ -455,7 +455,7 @@ public:
   /// @param[in] maxit Maximum number of Newton iterations in non-affine
   /// pull-back. If the mesh geometry is affine this argument is ignored.
   void eval(std::span<const geometry_type> x, std::array<std::size_t, 2> xshape,
-            CellRange auto&& cells, std::span<value_type> u,
+            mesh::CellRange auto&& cells, std::span<value_type> u,
             std::array<std::size_t, 2> ushape, double tol, int maxit) const
   {
     if (cells.empty())
