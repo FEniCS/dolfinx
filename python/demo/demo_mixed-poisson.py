@@ -276,7 +276,7 @@ ksp.setMonitor(
 # (AMS) algebraic multigrid preconditioner. We can use
 # AMS for this $H({\rm div})$-type problem in two-dimensions because
 # $H({\rm div})$ and $H({\rm curl})$ spaces are effectively the same in
-# two-dimensions, just rotated by $\pi/2.
+# two-dimensions, just rotated by $\pi/2$.
 
 # +
 ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()
