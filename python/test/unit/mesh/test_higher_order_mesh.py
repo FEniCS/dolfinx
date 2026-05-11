@@ -763,6 +763,18 @@ def test_gmsh_input_2d(order, cell_type, dtype):
     x = points[srt]
 
     element_types, _element_tags, node_tags = gmsh.model.mesh.getElements(dim=2)
+    if cell_type == CellType.triangle:
+        gmsh_cell_id = gmsh.model.mesh.getElementType("triangle", order)
+    elif cell_type == CellType.quadrilateral:
+        gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
+    # This checks that recombination was successful - i.e. only one element type in mesh.
+    if list(element_types) != [gmsh_cell_id]:
+        msg = (
+            f"Expected a single Gmsh element type {gmsh_cell_id}, "
+            f"got {list(element_types)} - gmsh recombination failed."
+        )
+        gmsh.finalize()
+        pytest.xfail(msg)
     (
         _name,
         _dim,
@@ -773,13 +785,9 @@ def test_gmsh_input_2d(order, cell_type, dtype):
     ) = gmsh.model.mesh.getElementProperties(element_types[0])
 
     cells = node_tags[0].reshape(-1, num_nodes) - 1
-    if cell_type == CellType.triangle:
-        gmsh_cell_id = gmsh.model.mesh.getElementType("triangle", order)
-    elif cell_type == CellType.quadrilateral:
-        gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
     gmsh.finalize()
 
-    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
+    cells = cells[:, cell_perm_array(cell_type, num_nodes)].copy()
     x = x.astype(dtype)
     mesh = create_mesh(MPI.COMM_WORLD, cells, ufl_mesh(gmsh_cell_id, x.shape[1], dtype=dtype), x)
     surface = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
@@ -830,6 +838,22 @@ def test_gmsh_input_3d(order, cell_type, dtype):
     x = points[srt]
 
     element_types, _element_tags, node_tags = gmsh.model.mesh.getElements(dim=3)
+    if cell_type == CellType.tetrahedron:
+        gmsh_cell_id = MPI.COMM_WORLD.bcast(
+            gmsh.model.mesh.getElementType("tetrahedron", order), root=0
+        )
+    elif cell_type == CellType.hexahedron:
+        gmsh_cell_id = MPI.COMM_WORLD.bcast(
+            gmsh.model.mesh.getElementType("hexahedron", order), root=0
+        )
+    # This checks that recombination was successful - i.e. only one element type in mesh.
+    if list(element_types) != [gmsh_cell_id]:
+        msg = (
+            f"Expected a single Gmsh element type {gmsh_cell_id}, "
+            f"got {list(element_types)} - gmsh recombination failed."
+        )
+        gmsh.finalize()
+        pytest.xfail(msg)
     (
         _name,
         _dim,
@@ -840,19 +864,11 @@ def test_gmsh_input_3d(order, cell_type, dtype):
     ) = gmsh.model.mesh.getElementProperties(element_types[0])
 
     cells = node_tags[0].reshape(-1, num_nodes) - 1
-    if cell_type == CellType.tetrahedron:
-        gmsh_cell_id = MPI.COMM_WORLD.bcast(
-            gmsh.model.mesh.getElementType("tetrahedron", order), root=0
-        )
-    elif cell_type == CellType.hexahedron:
-        gmsh_cell_id = MPI.COMM_WORLD.bcast(
-            gmsh.model.mesh.getElementType("hexahedron", order), root=0
-        )
     gmsh.finalize()
 
     # Permute the mesh topology from Gmsh ordering to DOLFINx ordering
     domain = ufl_mesh(gmsh_cell_id, 3, dtype=dtype)
-    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
+    cells = cells[:, cell_perm_array(cell_type, num_nodes)].copy()
 
     x = x.astype(dtype)
     mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x)

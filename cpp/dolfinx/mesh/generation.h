@@ -46,13 +46,13 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal, const CellReorderFunction& reorder_fn,
-                  std::size_t gdim);
+                  int gdim);
 
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
                    const CellPartitionFunction& partitioner,
-                   const CellReorderFunction& reorder_fn, std::size_t gdim);
+                   const CellReorderFunction& reorder_fn, int gdim);
 
 template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
@@ -179,16 +179,15 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
-                         std::array<std::int64_t, 2> n, CellType celltype,
-                         CellPartitionFunction partitioner,
-                         DiagonalType diagonal = DiagonalType::right,
-                         std::size_t gdim = 2,
-                         const CellReorderFunction& reorder_fn
-                         = graph::reorder_gps)
+Mesh<T>
+create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
+                 std::array<std::int64_t, 2> n, CellType celltype,
+                 CellPartitionFunction partitioner,
+                 DiagonalType diagonal = DiagonalType::right, int gdim = 2,
+                 const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
-  if (gdim < 2)
-    throw std::runtime_error("gdim must be >= 2 for rectangle mesh.");
+  if (gdim < 2 || gdim > 3)
+    throw std::runtime_error("2 <= gdim <= 3 for rectangle mesh.");
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell per dimension is required.");
 
@@ -233,7 +232,7 @@ template <std::floating_point T = double>
 Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          std::array<std::int64_t, 2> n, CellType celltype,
                          DiagonalType diagonal = DiagonalType::right,
-                         std::size_t gdim = 2)
+                         int gdim = 2)
 {
   return create_rectangle<T>(comm, p, n, celltype, nullptr, diagonal, gdim);
 }
@@ -255,15 +254,14 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return A mesh.
 template <std::floating_point T = double>
-Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
-                        mesh::GhostMode ghost_mode = mesh::GhostMode::none,
-                        CellPartitionFunction partitioner = nullptr,
-                        std::size_t gdim = 1,
-                        const CellReorderFunction& reorder_fn
-                        = graph::reorder_gps)
+Mesh<T>
+create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
+                mesh::GhostMode ghost_mode = mesh::GhostMode::none,
+                CellPartitionFunction partitioner = nullptr, int gdim = 1,
+                const CellReorderFunction& reorder_fn = graph::reorder_gps)
 {
-  if (gdim < 1)
-    throw std::runtime_error("gdim must be >= 1 for interval mesh.");
+  if (gdim < 1 || gdim > 3)
+    throw std::runtime_error("1 <= gdim <= 3 for interval mesh.");
   if (n < 1)
     throw std::runtime_error("At least one cell per dimension is required.");
 
@@ -293,12 +291,14 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
     for (std::size_t i = 0; i < npts; i++)
       x[i * gdim] = x1d[i];
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                       {npts, gdim}, partitioner, 2, reorder_fn);
+                       {npts, static_cast<std::size_t>(gdim)}, partitioner, 2,
+                       reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, gdim}, partitioner, 2, reorder_fn);
+                       std::vector<T>{}, {0, static_cast<std::size_t>(gdim)},
+                       partitioner, 2, reorder_fn);
   }
 }
 
@@ -523,10 +523,12 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal, const CellReorderFunction& reorder_fn,
-                  std::size_t gdim)
+                  int gdim)
 {
-  assert(gdim >= 2);
   fem::CoordinateElement<T> element(CellType::triangle, 1);
+  if (gdim < 2 || gdim > 3)
+    throw std::runtime_error("2 <= gdim <= 3 for tri mesh.");
+
   if (dolfinx::MPI::rank(comm) == 0)
   {
     const auto [p0, p1] = p;
@@ -679,12 +681,14 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
       xg[i * gdim + 1] = x[2 * i + 1];
     }
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, xg,
-                       {npts, gdim}, partitioner, 2, reorder_fn);
+                       {npts, static_cast<std::size_t>(gdim)}, partitioner, 2,
+                       reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, gdim}, partitioner, 2, reorder_fn);
+                       std::vector<T>{}, {0, static_cast<std::size_t>(gdim)},
+                       partitioner, 2, reorder_fn);
   }
 }
 
@@ -692,9 +696,11 @@ template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
                    const CellPartitionFunction& partitioner,
-                   const CellReorderFunction& reorder_fn, std::size_t gdim)
+                   const CellReorderFunction& reorder_fn, int gdim)
 {
-  assert(gdim >= 2);
+  if (gdim < 2 || gdim > 3)
+    throw std::runtime_error("2 <= gdim <= 3 for quad mesh.");
+
   fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
   if (dolfinx::MPI::rank(comm) == 0)
   {
@@ -741,12 +747,14 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
       xg[i * gdim + 1] = x[2 * i + 1];
     }
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, xg,
-                       {npts, gdim}, partitioner, 2, reorder_fn);
+                       {npts, static_cast<std::size_t>(gdim)}, partitioner, 2,
+                       reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
-                       std::vector<T>{}, {0, gdim}, partitioner, 2, reorder_fn);
+                       std::vector<T>{}, {0, static_cast<std::size_t>(gdim)},
+                       partitioner, 2, reorder_fn);
   }
 }
 } // namespace impl
