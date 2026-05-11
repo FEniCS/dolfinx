@@ -1059,7 +1059,8 @@ Expression<T, U> create_expression(
     }
   }
 
-  return create_expression(e, coeff_map, const_map, argument_space, custom_data);
+  return create_expression(e, coeff_map, const_map, argument_space,
+                           custom_data);
 }
 
 } // namespace dolfinx::fem
