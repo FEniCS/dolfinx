@@ -23,12 +23,15 @@ namespace dolfinx::refinement
 namespace impl
 {
 
-/// @brief Threshold marking helper
+/// @brief Computes a local marking based on thresholding - helper for other
+/// marking routines.
 ///
-/// @param[in] indicator Indicator \f$ \eta \f$
+/// @param[in] indicator Entity wise indicator \f$ \eta \f$ to compute threshold
+/// marking of.
 /// @param[in] threshold Lower bound for values to mark
 ///
-/// @returns indices \f$ i \f$ which satisfy \f$ \eta_i > \text{threshold} \f$.
+/// @returns list of indices \f$ i \f$ of indicator entries which satisfy
+/// \f$ \eta_i > \text{threshold} \f$.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_threshold(std::span<const T> indicator,
                                          T threshold)
@@ -49,11 +52,12 @@ std::vector<std::int32_t> mark_threshold(std::span<const T> indicator,
 
 } // namespace impl
 
-/// @brief Maximum marking of a marker.
+/// @brief Compute maximum marking of a marker, i.e. all elements which are
+/// greater equal the markers maximum times a cut off parameter.
 ///
-/// @param[in] indicator Indicator (local) \f$ \eta \f$ - usually an error
-/// indicator per entity
-/// @param[in] theta Cut off parameter, \f$ 0 < \theta < 1 \f$
+/// @param[in] indicator Indicator (local) \f$ \eta \f$ - usually an entity wise
+/// error indicator.
+/// @param[in] theta Cut off parameter, \f$ 0 < \theta < 1 \f$.
 /// @param[in] comm Communicator over which the maximum is computed.
 /// @return Indices (local) of marker elements, which satisfy: \f$
 /// \eta_i \geq \theta \max_j \eta_j \f$.
