@@ -18,7 +18,7 @@ TEMPLATE_TEST_CASE("Mark maximum empty", "[refinement][mark][maximum]", double,
                    float)
 {
   std::vector<TestType> marker;
-  auto indices = mark_maximum<TestType>(marker, .5, MPI_COMM_WORLD);
+  auto indices = mark_maximum<TestType>(MPI_COMM_WORLD, marker, .5);
   CHECK(indices.size() == 0);
 }
 
@@ -32,7 +32,7 @@ TEMPLATE_TEST_CASE("Mark maximum", "[refinement][mark][maximum]", double, float)
     marker.push_back(10 * dolfinx::MPI::rank(comm) + i);
 
   TestType theta = 0.5;
-  auto indices = mark_maximum<TestType>(marker, theta, comm);
+  auto indices = mark_maximum<TestType>(comm, marker, theta);
 
   CHECK(std::ranges::all_of(
       indices, [&](auto e)
@@ -56,7 +56,7 @@ TEMPLATE_TEST_CASE("Mark equidistribution empty",
                    "[refinement][mark][equidistribution]", double, float)
 {
   std::vector<TestType> marker;
-  auto indices = mark_equidistribution<TestType>(marker, .5, MPI_COMM_WORLD);
+  auto indices = mark_equidistribution<TestType>(MPI_COMM_WORLD, marker, .5);
   CHECK(indices.size() == 0);
 }
 
@@ -71,7 +71,7 @@ TEMPLATE_TEST_CASE("Mark equidistribution",
     marker.push_back(10 * dolfinx::MPI::rank(comm) + i);
 
   TestType theta = 0.5;
-  auto indices = mark_equidistribution<TestType>(marker, theta, comm);
+  auto indices = mark_equidistribution<TestType>(comm, marker, theta);
 
   CHECK(std::ranges::all_of(
       indices, [&](auto e)
@@ -97,5 +97,5 @@ TEMPLATE_TEST_CASE("Mark equidistribution",
   std::ranges::for_each(marker_sq, [](auto& e) { e = std::pow(e, 2); });
 
   CHECK(std::ranges::equal(indices, mark_equidistribution_squared<TestType>(
-                                        marker_sq, theta, comm)));
+                                        comm, marker_sq, theta)));
 }

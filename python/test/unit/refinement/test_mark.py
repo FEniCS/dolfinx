@@ -23,7 +23,7 @@ def test_mark_maximum(theta: float, dtype: np.dtype) -> None:
     cell_count = (cell_im := msh.topology.index_map(tdim)).size_local + cell_im.num_ghosts
     marker = np.random.default_rng(0).random(cell_count, dtype=dtype)
 
-    marked_cells = mesh.mark_maximum(marker, theta, comm)
+    marked_cells = mesh.mark_maximum(comm, marker, theta)
 
     assert np.allclose(
         marked_cells,
@@ -46,7 +46,7 @@ def test_mark_equidistribution(theta: float, dtype: np.dtype) -> None:
     cell_count = (cell_im := msh.topology.index_map(tdim)).size_local + cell_im.num_ghosts
     marker = np.random.default_rng(0).random(cell_count, dtype=dtype)
 
-    marked_cells = mesh.mark_equidistribution(marker, theta, comm)
+    marked_cells = mesh.mark_equidistribution(comm, marker, theta)
 
     norm = np.sqrt(comm.allreduce(np.sum(marker**2), MPI.SUM))
     count = comm.allreduce(marker.size)
@@ -59,4 +59,4 @@ def test_mark_equidistribution(theta: float, dtype: np.dtype) -> None:
     marked_edges = mesh.compute_incident_entities(msh.topology, marked_cells, tdim, 1)
     mesh.refine(msh, marked_edges)
 
-    assert np.all(marked_cells == mesh.mark_equidistribution_squared(marker**2, theta, comm))
+    assert np.all(marked_cells == mesh.mark_equidistribution_squared(comm, marker**2, theta))

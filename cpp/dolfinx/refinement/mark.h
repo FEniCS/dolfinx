@@ -65,8 +65,8 @@ std::vector<std::int32_t> mark_threshold(std::span<const T> indicator,
 /// @return Indices (local) of marker elements, that satisfy: \f$
 /// \eta_i \geq \theta \max_j \eta_j \f$.
 template <std::floating_point T>
-std::vector<std::int32_t> mark_maximum(std::span<const T> indicator, T theta,
-                                       MPI_Comm comm)
+std::vector<std::int32_t> mark_maximum(MPI_Comm comm,
+                                       std::span<const T> indicator, T theta)
 {
   if ((theta <= 0) || (theta >= 1))
     throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
@@ -93,8 +93,8 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> indicator, T theta,
 /// @return Local indices of marked entities, that satisfy: \f$
 /// \eta_i \geq \theta \frac{||\eta||}{\sqrt{N}} \f$.
 template <std::floating_point T>
-std::vector<std::int32_t> mark_equidistribution(std::span<const T> indicator,
-                                                T theta, MPI_Comm comm)
+std::vector<std::int32_t>
+mark_equidistribution(MPI_Comm comm, std::span<const T> indicator, T theta)
 {
   if ((theta <= 0) || (theta >= 1))
     throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
@@ -130,7 +130,7 @@ std::vector<std::int32_t> mark_equidistribution(std::span<const T> indicator,
 /// \eta_i^2 \geq \theta^2 \frac{||\eta||^2}{N} \f$.
 template <std::floating_point T>
 std::vector<std::int32_t>
-mark_equidistribution_squared(std::span<const T> marker, T theta, MPI_Comm comm)
+mark_equidistribution_squared(MPI_Comm comm, std::span<const T> marker, T theta)
 {
   if ((theta <= 0) || (theta >= 1))
     throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
