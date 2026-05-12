@@ -15,7 +15,9 @@ from dolfinx import mesh
 @pytest.mark.parametrize("theta", [0.2, 0.4, 0.6, 0.8])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_mark_maximum(theta: float, dtype: np.dtype) -> None:
-    msh = mesh.create_unit_square(comm := MPI.COMM_WORLD, n := 10, n, dtype=dtype)
+    comm = MPI.COMM_WORLD
+    n = 10
+    msh = mesh.create_unit_square(comm, n, n, dtype=dtype)
 
     tdim = msh.topology.dim
     cell_count = (cell_im := msh.topology.index_map(tdim)).size_local + cell_im.num_ghosts
@@ -36,7 +38,9 @@ def test_mark_maximum(theta: float, dtype: np.dtype) -> None:
 @pytest.mark.parametrize("theta", [0.2, 0.4, 0.6, 0.8])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_mark_equidistribution(theta: float, dtype: np.dtype) -> None:
-    msh = mesh.create_unit_square(comm := MPI.COMM_WORLD, n := 10, n, dtype=dtype)
+    comm = MPI.COMM_WORLD
+    n = 10
+    msh = mesh.create_unit_square(comm, n, n, dtype=dtype)
 
     tdim = msh.topology.dim
     cell_count = (cell_im := msh.topology.index_map(tdim)).size_local + cell_im.num_ghosts
