@@ -13,6 +13,7 @@
 #include "traits.h"
 #include "utils.h"
 #include <algorithm>
+#include <array>
 #include <basix/mdspan.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -102,8 +103,9 @@ void assemble_cells(
 
     // Tabulate vector for cell
     std::ranges::fill(be, 0);
-    kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs.data(), &c,
-           nullptr, custom_data.value_or(nullptr));
+    std::int32_t entity_local_index = static_cast<std::int32_t>(index);
+    kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs.data(),
+           &entity_local_index, nullptr, custom_data.value_or(nullptr));
     P0(be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
@@ -208,8 +210,10 @@ void assemble_entities(
 
     // Tabulate element vector
     std::ranges::fill(be, 0);
+    std::array<std::int32_t, 2> entity_local_index{
+        local_entity, static_cast<std::int32_t>(f)};
     kernel(be.data(), &coeffs(f, 0), constants.data(), cdofs.data(),
-           &local_entity, &perm, custom_data.value_or(nullptr));
+           entity_local_index.data(), &perm, custom_data.value_or(nullptr));
     P0(be, cell_info0, cell0, 1);
 
     // Add element vector to global vector
@@ -328,8 +332,10 @@ void assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
+    std::array<std::int32_t, 3> entity_local_index{
+        local_facet[0], local_facet[1], static_cast<std::int32_t>(f)};
     kernel(be.data(), &coeffs(f, 0, 0), constants.data(), cdofs.data(),
-           local_facet.data(), perm.data(), custom_data.value_or(nullptr));
+           entity_local_index.data(), perm.data(), custom_data.value_or(nullptr));
 
     if (cells0[0] >= 0)
       P0(be, cell_info0, cells0[0], 1);

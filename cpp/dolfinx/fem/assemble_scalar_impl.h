@@ -11,6 +11,7 @@
 #include "FunctionSpace.h"
 #include "utils.h"
 #include <algorithm>
+#include <array>
 #include <basix/mdspan.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -50,8 +51,9 @@ T assemble_cells(mdspan2_t x_dofmap,
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
-    fn(&value, &coeffs(index, 0), constants.data(), cdofs_b.data(), nullptr,
-       nullptr, custom_data.value_or(nullptr));
+    std::int32_t entity_local_index = static_cast<std::int32_t>(index);
+    fn(&value, &coeffs(index, 0), constants.data(), cdofs_b.data(),
+       &entity_local_index, nullptr, custom_data.value_or(nullptr));
   }
 
   return value;
@@ -101,8 +103,10 @@ T assemble_entities(
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
-    fn(&value, &coeffs(f, 0), constants.data(), cdofs_b.data(), &local_entity,
-       &perm, custom_data.value_or(nullptr));
+    std::array<std::int32_t, 2> entity_local_index{
+        local_entity, static_cast<std::int32_t>(f)};
+    fn(&value, &coeffs(f, 0), constants.data(), cdofs_b.data(),
+       entity_local_index.data(), &perm, custom_data.value_or(nullptr));
   }
 
   return value;
@@ -153,8 +157,10 @@ T assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
+    std::array<std::int32_t, 3> entity_local_index{
+        local_facet[0], local_facet[1], static_cast<std::int32_t>(f)};
     fn(&value, &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
-       local_facet.data(), perm.data(), custom_data.value_or(nullptr));
+       entity_local_index.data(), perm.data(), custom_data.value_or(nullptr));
   }
 
   return value;

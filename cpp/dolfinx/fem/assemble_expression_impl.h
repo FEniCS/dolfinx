@@ -11,6 +11,7 @@
 #include "traits.h"
 #include "utils.h"
 #include <algorithm>
+#include <array>
 #include <basix/mdspan.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -95,8 +96,10 @@ void tabulate_expression(
         std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                     std::next(coord_dofs.begin(), 3 * i));
       }
+      std::int32_t entity_local_index = static_cast<std::int32_t>(e);
       fn(values_local.data(), &coeffs(e, 0), constants.data(),
-         coord_dofs.data(), nullptr, nullptr, custom_data.value_or(nullptr));
+         coord_dofs.data(), &entity_local_index, nullptr,
+         custom_data.value_or(nullptr));
 
       P0(values_local, cell_info, entity, size0);
     }
@@ -109,8 +112,10 @@ void tabulate_expression(
         std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                     std::next(coord_dofs.begin(), 3 * i));
       }
+      std::array<std::int32_t, 2> entity_local_index{
+          entities(e, 1), static_cast<std::int32_t>(e)};
       fn(values_local.data(), &coeffs(e, 0), constants.data(),
-         coord_dofs.data(), &entities(e, 1), nullptr,
+         coord_dofs.data(), entity_local_index.data(), nullptr,
          custom_data.value_or(nullptr));
 
       P0(values_local, cell_info, entity, size0);

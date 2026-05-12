@@ -17,11 +17,13 @@ from dolfinx.fem import (
     Form,
     IntegralType,
     assemble_matrix,
+    assemble_scalar,
     assemble_vector,
+    compute_integration_domains,
     form_cpp_class,
     functionspace,
 )
-from dolfinx.mesh import create_unit_square
+from dolfinx.mesh import create_unit_square, exterior_facet_indices
 
 numba = pytest.importorskip("numba")
 ufcx_signature = codegen_utils.numba_ufcx_kernel_signature
@@ -93,6 +95,140 @@ def tabulate_rank2_with_custom_data(dtype, xdtype):
         A[:, :] = scale * np.dot(B.T, B) / (2 * Ae)
 
     return tabulate
+
+
+def tabulate_scalar_with_loop_index(dtype, xdtype, integral_type):
+    """Kernel that accumulates a custom-data value selected by loop index."""
+    voidptr_to_scalar_ptr = voidptr_to_dtype_ptr(dtype)
+
+    @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
+    def tabulate(A_, w_, c_, coords_, entity_local_index, orientation, custom_data):
+        A = numba.carray(A_, (1,), dtype=dtype)
+        data = voidptr_to_scalar_ptr(custom_data)
+
+        if integral_type == 0:
+            entity = numba.carray(entity_local_index, (1,), dtype=np.int32)
+            A[0] += data[entity[0]]
+        elif integral_type == 1:
+            entity = numba.carray(entity_local_index, (2,), dtype=np.int32)
+            A[0] += data[entity[1]] + 10 * entity[0]
+        else:
+            entity = numba.carray(entity_local_index, (3,), dtype=np.int32)
+            A[0] += data[entity[2]] + 10 * entity[0] + 100 * entity[1]
+
+    return tabulate
+
+
+def tabulate_vector_with_loop_index(dtype, xdtype, integral_type):
+    """Kernel that writes a custom-data value selected by loop index."""
+    voidptr_to_scalar_ptr = voidptr_to_dtype_ptr(dtype)
+
+    @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
+    def tabulate(b_, w_, c_, coords_, entity_local_index, orientation, custom_data):
+        b = numba.carray(b_, (3,), dtype=dtype)
+        data = voidptr_to_scalar_ptr(custom_data)
+        b[:] = 0
+
+        if integral_type == 0:
+            entity = numba.carray(entity_local_index, (1,), dtype=np.int32)
+            b[0] = data[entity[0]]
+        elif integral_type == 1:
+            entity = numba.carray(entity_local_index, (2,), dtype=np.int32)
+            b[0] = data[entity[1]] + 10 * entity[0]
+        else:
+            entity = numba.carray(entity_local_index, (3,), dtype=np.int32)
+            b[0] = data[entity[2]] + 10 * entity[0] + 100 * entity[1]
+
+    return tabulate
+
+
+def tabulate_matrix_with_loop_index(dtype, xdtype, integral_type):
+    """Kernel that writes a custom-data value selected by loop index."""
+    voidptr_to_scalar_ptr = voidptr_to_dtype_ptr(dtype)
+
+    @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
+    def tabulate(A_, w_, c_, coords_, entity_local_index, orientation, custom_data):
+        A = numba.carray(A_, (3, 3), dtype=dtype)
+        data = voidptr_to_scalar_ptr(custom_data)
+        A[:, :] = 0
+
+        if integral_type == 0:
+            entity = numba.carray(entity_local_index, (1,), dtype=np.int32)
+            A[0, 0] = data[entity[0]]
+        elif integral_type == 1:
+            entity = numba.carray(entity_local_index, (2,), dtype=np.int32)
+            A[0, 0] = data[entity[1]] + 10 * entity[0]
+        else:
+            entity = numba.carray(entity_local_index, (3,), dtype=np.int32)
+            A[0, 0] = data[entity[2]] + 10 * entity[0] + 100 * entity[1]
+
+    return tabulate
+
+
+def loop_index_entities(mesh, integral_type):
+    """Return local integration entities for a loop-index test."""
+    tdim = mesh.topology.dim
+    if integral_type == IntegralType.cell:
+        num_cells = mesh.topology.index_map(tdim).size_local
+        return np.arange(num_cells, dtype=np.int32)
+
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    exterior_facets = exterior_facet_indices(mesh.topology)
+    if integral_type == IntegralType.exterior_facet:
+        return compute_integration_domains(integral_type, mesh.topology, exterior_facets)
+
+    num_facets = mesh.topology.index_map(tdim - 1).size_local
+    facets = np.arange(num_facets, dtype=np.int32)
+    interior_facets = np.setdiff1d(facets, exterior_facets).astype(np.int32)
+    return compute_integration_domains(integral_type, mesh.topology, interior_facets)
+
+
+def expected_loop_index_sum(mesh, integral_type, entities, data):
+    """Return the expected global sum for the loop-index test kernels."""
+    if integral_type == IntegralType.cell:
+        local_value = np.sum(data)
+    elif integral_type == IntegralType.exterior_facet:
+        entity = entities.reshape(-1, 2)
+        local_value = np.sum(data) + 10 * np.sum(entity[:, 1])
+    else:
+        entity = entities.reshape(-1, 4)
+        local_value = np.sum(data) + 10 * np.sum(entity[:, 1]) + 100 * np.sum(entity[:, 3])
+
+    return mesh.comm.allreduce(local_value, op=MPI.SUM)
+
+
+def assemble_loop_index_sum(mesh, V, dtype, integral_type, kernel, entities, data, rank):
+    """Assemble a custom kernel and return the global sum of assembled entries."""
+    active_coeffs = np.array([], dtype=np.int8)
+    integrals = {integral_type: [(0, kernel.address, entities, active_coeffs, data.ctypes.data)]}
+    formtype = form_cpp_class(dtype)
+
+    if rank == 0:
+        F = Form(formtype([], integrals, [], [], False, [], mesh=mesh._cpp_object))
+        local_value = assemble_scalar(F)
+    elif rank == 1:
+        F = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
+        b = assemble_vector(F)
+        b.scatter_reverse(la.InsertMode.add)
+        num_owned = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
+        local_value = np.sum(b.array[:num_owned])
+    else:
+        F = Form(
+            formtype(
+                [V._cpp_object, V._cpp_object],
+                integrals,
+                [],
+                [],
+                False,
+                [],
+                mesh=mesh._cpp_object,
+            )
+        )
+        A = assemble_matrix(F)
+        A.scatter_reverse()
+        local_value = A.to_scipy().sum()
+
+    return mesh.comm.allreduce(local_value, op=MPI.SUM)
 
 
 @pytest.mark.parametrize("dtype", [np.float64, np.float32])
@@ -189,6 +325,45 @@ def test_custom_data_matrix_assembly(dtype):
 
     # The norm with scale=2 should be 2x the norm with scale=1
     assert np.isclose(norm2, 2.0 * norm1)
+
+
+@pytest.mark.parametrize("dtype", [np.float64, np.float32])
+@pytest.mark.parametrize(
+    "integral_type, integral_code",
+    [
+        (IntegralType.cell, 0),
+        (IntegralType.exterior_facet, 1),
+        (IntegralType.interior_facet, 2),
+    ],
+)
+@pytest.mark.parametrize("rank", [0, 1, 2])
+def test_custom_data_loop_index_all_assemblers(dtype, integral_type, integral_code, rank):
+    """Test that entity_local_index carries loop indices in all assemblers.
+
+    The test kernels use the loop index to select per-entity custom data. For
+    facet kernels they also check that the existing local facet/entity entries
+    remain available before the appended loop index.
+    """
+    xdtype = np.real(dtype(0)).dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=xdtype)
+    V = functionspace(mesh, ("Lagrange", 1))
+    entities = loop_index_entities(mesh, integral_type)
+    num_entities = entities.size if integral_type == IntegralType.cell else entities.size // 2
+    if integral_type == IntegralType.interior_facet:
+        num_entities = entities.size // 4
+
+    data = np.arange(1, num_entities + 1, dtype=dtype)
+    expected = expected_loop_index_sum(mesh, integral_type, entities, data)
+
+    if rank == 0:
+        kernel = tabulate_scalar_with_loop_index(dtype, xdtype, integral_code)
+    elif rank == 1:
+        kernel = tabulate_vector_with_loop_index(dtype, xdtype, integral_code)
+    else:
+        kernel = tabulate_matrix_with_loop_index(dtype, xdtype, integral_code)
+
+    actual = assemble_loop_index_sum(mesh, V, dtype, integral_type, kernel, entities, data, rank)
+    assert np.isclose(actual, expected)
 
 
 @pytest.mark.parametrize("dtype", [np.float64, np.float32])

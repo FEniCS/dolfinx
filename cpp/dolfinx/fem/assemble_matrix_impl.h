@@ -12,6 +12,7 @@
 #include "traits.h"
 #include "utils.h"
 #include <algorithm>
+#include <array>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -136,8 +137,9 @@ void assemble_cells_matrix(
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), &coeffs(c, 0), constants.data(), cdofs.data(), nullptr,
-           nullptr, custom_data.value_or(nullptr));
+    std::int32_t entity_local_index = static_cast<std::int32_t>(c);
+    kernel(Ae.data(), &coeffs(c, 0), constants.data(), cdofs.data(),
+           &entity_local_index, nullptr, custom_data.value_or(nullptr));
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
     P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
@@ -314,8 +316,10 @@ void assemble_entities(
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
+    std::array<std::int32_t, 2> entity_local_index{
+        local_entity, static_cast<std::int32_t>(f)};
     kernel(Ae.data(), &coeffs(f, 0), constants.data(), cdofs.data(),
-           &local_entity, &perm, custom_data.value_or(nullptr));
+           entity_local_index.data(), &perm, custom_data.value_or(nullptr));
     P0(Ae, cell_info0, cell0, ndim1);
     P1T(Ae, cell_info1, cell1, ndim0);
 
@@ -522,8 +526,10 @@ void assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
+    std::array<std::int32_t, 3> entity_local_index{
+        local_facet[0], local_facet[1], static_cast<std::int32_t>(f)};
     kernel(Ae.data(), &coeffs(f, 0, 0), constants.data(), cdofs.data(),
-           local_facet.data(), perm.data(), custom_data.value_or(nullptr));
+           entity_local_index.data(), perm.data(), custom_data.value_or(nullptr));
 
     // Local element layout is a 2x2 block matrix with structure
     //
