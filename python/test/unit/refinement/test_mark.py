@@ -21,7 +21,7 @@ def test_mark_maximum(theta: float, dtype: np.dtype) -> None:
 
     tdim = msh.topology.dim
     cell_count = (cell_im := msh.topology.index_map(tdim)).size_local + cell_im.num_ghosts
-    marker = np.random.default_rng(0).random(cell_count)
+    marker = np.random.default_rng(0).random(cell_count, dtype=dtype)
 
     marked_cells = mesh.mark_maximum(marker, theta, comm)
 
@@ -44,7 +44,7 @@ def test_mark_equidistribution(theta: float, dtype: np.dtype) -> None:
 
     tdim = msh.topology.dim
     cell_count = (cell_im := msh.topology.index_map(tdim)).size_local + cell_im.num_ghosts
-    marker = np.random.default_rng(0).random(cell_count)
+    marker = np.random.default_rng(0).random(cell_count, dtype=dtype)
 
     marked_cells = mesh.mark_equidistribution(marker, theta, comm)
 
