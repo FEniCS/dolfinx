@@ -23,14 +23,15 @@ namespace dolfinx::refinement
 namespace impl
 {
 
-/// @brief Computes a local marking based on thresholding - helper for other
-/// marking routines.
+/// @brief Computes local threshold-based marking.
 ///
-/// @param[in] indicator Entity wise indicator \f$ \eta \f$ to compute threshold
-/// marking of.
-/// @param[in] threshold Lower bound for values to mark
+/// Helper for other marking routines.
 ///
-/// @returns list of indices \f$ i \f$ of indicator entries which satisfy
+/// @param[in] indicator Entity-wise indicator \f$ \eta \f$ used for marking.
+/// @param[in] threshold Threshold value; indicators greater than this are
+/// marked.
+///
+/// @returns list of indices \f$ i \f$ of indicator entries that satisfy
 /// \f$ \eta_i > \text{threshold} \f$.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_threshold(std::span<const T> indicator,
@@ -52,14 +53,16 @@ std::vector<std::int32_t> mark_threshold(std::span<const T> indicator,
 
 } // namespace impl
 
-/// @brief Compute maximum marking of a marker, i.e. all elements which are
-/// greater equal the markers maximum times a cut off parameter.
+/// @brief Computes maximum-based marking of an indicator.
+///
+/// Marks all local entries whose indicators are greater than or equal to
+/// \f$ \theta \f$ times the maximum indicator value across the communicator.
 ///
 /// @param[in] indicator Indicator (local) \f$ \eta \f$ - usually an entity wise
 /// error indicator.
 /// @param[in] theta Cut off parameter, \f$ 0 < \theta < 1 \f$.
-/// @param[in] comm Communicator over which the maximum is computed.
-/// @return Indices (local) of marker elements, which satisfy: \f$
+/// @param[in] comm Communicator to compute the maximum over.
+/// @return Indices (local) of marker elements, that satisfy: \f$
 /// \eta_i \geq \theta \max_j \eta_j \f$.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_maximum(std::span<const T> indicator, T theta,
@@ -74,20 +77,21 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> indicator, T theta,
 
   auto indices = impl::mark_threshold<T>(indicator, theta * max);
 
-  spdlog::info("Marking (max) {} / {} (local) entities.", indices.size(),
+  spdlog::info("Marking (maximum) {} / {} (local) entities.", indices.size(),
                indicator.size());
 
   return indices;
 }
 
-/// @brief Equidistribution marking of a marker.
+/// @brief Computes equidistribution threshold marking of an indicator.
 ///
 /// @param[in] indicator Indicator (local) \f$ \eta \f$ - usually an error
-/// indicator per entity
-/// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$
-/// @param[in] comm Communicator over which the total marker is computed.
-/// @return Local indices of marked entities, which satisfy: \f$
-/// \eta_i \geq \theta \frac{|\eta|_2}{\sqrt{N}} \f$.
+/// indicator per entity.
+/// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$.
+/// @param[in] comm Communicator over which the equidistribution threshold is
+/// computed.
+/// @return Local indices of marked entities, that satisfy: \f$
+/// \eta_i \geq \theta \frac{||\eta||}{\sqrt{N}} \f$.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_equidistribution(std::span<const T> indicator,
                                                 T theta, MPI_Comm comm)
@@ -109,20 +113,21 @@ std::vector<std::int32_t> mark_equidistribution(std::span<const T> indicator,
   auto indices
       = impl::mark_threshold<T>(indicator, theta * norm / std::sqrt(count));
 
-  spdlog::info("Marking (equi) {} / {} (local) entities.", indices.size(),
-               indicator.size());
+  spdlog::info("Marking (equidistribution) {} / {} (local) entities.",
+               indices.size(), indicator.size());
 
   return indices;
 }
 
-/// @brief Equidistribution marking of a marker with squared input.
+/// @brief Computes equidistribution threshold marking of a squared indicator.
 ///
-/// @param[in] marker Input marker (local) \f$ \eta^2 \f$ - usually an error
-/// indicator per entity
-/// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$
-/// @param[in] comm Communicator over which the total marker is computed.
-/// @return Local indices of marked entities, which satisfy: \f$
-/// \eta_i^2 \geq \theta^2 \frac{|\eta|_2^2}{N} \f$.
+/// @param[in] marker Input marker (local) \f$ \eta^2 \f$ - usually a squared
+/// error indicator per entity.
+/// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$.
+/// @param[in] comm Communicator over which the equidistribution threshold is
+/// computed.
+/// @return Local indices of marked entities, that satisfy: \f$
+/// \eta_i^2 \geq \theta^2 \frac{||\eta||^2}{N} \f$.
 template <std::floating_point T>
 std::vector<std::int32_t>
 mark_equidistribution_squared(std::span<const T> marker, T theta, MPI_Comm comm)
@@ -141,8 +146,8 @@ mark_equidistribution_squared(std::span<const T> marker, T theta, MPI_Comm comm)
   auto indices
       = impl::mark_threshold<T>(marker, std::pow(theta, 2) * norm / count);
 
-  spdlog::info("Marking (equi) {} / {} (local) entities.", indices.size(),
-               marker.size());
+  spdlog::info("Marking (equidistribution) {} / {} (local) entities.",
+               indices.size(), marker.size());
 
   return indices;
 }
