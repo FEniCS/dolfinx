@@ -51,7 +51,7 @@ class LinearProblem:
         L: ufl.Form,
         bcs: Sequence[DirichletBC] | None = None,
         u: Function | None = None,
-        dtype: npt.DTypeLike | None = None,
+        dtype: npt.DTypeLike = default_scalar_type,
         superlu_dist_options: dict | None = None,
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
@@ -93,10 +93,10 @@ class LinearProblem:
         """
         if u is not None:
             _dtype = u.dtype
-            if dtype is not None and dtype != u.dtype:
+            if dtype is not u.dtype:
                 raise ValueError(f"dtype ({dtype}) does not match u.dtype ({u.dtype}).")
         else:
-            _dtype = default_scalar_type() if dtype is None else dtype
+            _dtype = dtype
 
         self._a = typing.cast(
             Form,
