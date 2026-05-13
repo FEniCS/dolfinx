@@ -323,7 +323,7 @@ def distribute_entity_data(
         mesh.topology._cpp_object,
         mesh.geometry.input_global_indices,
         mesh.geometry.index_map().size_global,
-        mesh.geometry.cmap.create_dof_layout(),
+        mesh.geometry.cmap().create_dof_layout(),
         mesh.geometry.dofmap,
         entity_dim,
         entities,

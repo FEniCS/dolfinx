@@ -27,7 +27,8 @@ from dolfinx.log import LogLevel, set_log_level
 from dolfinx.mesh import CellType, GhostMode, Mesh, Topology, create_unit_cube
 
 
-def test_mixed_topology_mesh():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_mixed_topology_mesh(dtype):
     set_log_level(LogLevel.INFO)
 
     cells = [[0, 1, 2, 1, 2, 3], [2, 3, 4, 5]]
@@ -79,11 +80,11 @@ def test_mixed_topology_mesh():
     assert topology.connectivity((2, 1), (0, 0)).num_nodes == 1
 
     # Create dofmaps for Geometry
-    tri = coordinate_element(CellType.triangle, 1)
-    quad = coordinate_element(CellType.quadrilateral, 1)
+    tri = coordinate_element(CellType.triangle, 1, dtype=dtype)
+    quad = coordinate_element(CellType.quadrilateral, 1, dtype=dtype)
     nodes = np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)
     xdofs = np.array([0, 1, 2, 1, 2, 3, 2, 3, 4, 5], dtype=np.int64)
-    x = np.array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 0.0], dtype=np.float64)
+    x = np.array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 0.0], dtype=dtype)
     geom = create_geometry(
         topology._cpp_object, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x, 2
     )
@@ -303,7 +304,8 @@ def test_create_entities():
 
 
 @pytest.mark.skip_in_parallel
-def test_locate_entities():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_locate_entities(dtype):
     # Create a unit cube mesh with one hex and two wedges
     if MPI.COMM_WORLD.rank == 0:
         hexes = np.array([0, 1, 3, 4, 6, 7, 9, 10], dtype=np.int64)
@@ -324,15 +326,15 @@ def test_locate_entities():
                 [0.5, 1.0, 1.0],
                 [1.0, 1.0, 1.0],
             ],
-            dtype=np.float64,
+            dtype=dtype,
         )
     else:
         cells = [np.array([], dtype=np.int64), np.array([], dtype=np.int64)]
-        geom = np.array([], dtype=np.float64)
+        geom = np.array([], dtype=dtype)
 
     part = create_cell_partitioner(GhostMode.none, 2)
-    hexahedron = coordinate_element(CellType.hexahedron, 1)
-    prism = coordinate_element(CellType.prism, 1)
+    hexahedron = coordinate_element(CellType.hexahedron, 1, dtype=dtype)
+    prism = coordinate_element(CellType.prism, 1, dtype=dtype)
     comm = MPI.COMM_WORLD
     max_cells_per_facet = 2
     mesh = create_mesh(

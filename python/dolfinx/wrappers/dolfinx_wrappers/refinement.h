@@ -7,10 +7,13 @@
 
 #pragma once
 
+#include "MPICommWrapper.h"
 #include "array.h"
+#include "caster_mpi.h"
 #include "mesh.h"
 #include <concepts>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/refinement/mark.h>
 #include <dolfinx/refinement/option.h>
 #include <dolfinx/refinement/refine.h>
 #include <dolfinx/refinement/uniform.h>
@@ -121,6 +124,16 @@ void declare_refinement(nanobind::module_& m)
       },
       nb::arg("mesh"), nb::arg("edges").none(), nb::arg("partitioner").none(),
       nb::arg("option"));
+
+  m.def(
+      "mark_maximum",
+      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> marker, T theta,
+         MPICommWrapper comm)
+      {
+        return dolfinx_wrappers::as_nbarray(dolfinx::refinement::mark_maximum(
+            std::span(marker.data(), marker.size()), theta, comm.get()));
+      },
+      nb::arg("marker"), nb::arg("theta"), nb::arg("comm"));
 }
 
 } // namespace dolfinx_wrappers

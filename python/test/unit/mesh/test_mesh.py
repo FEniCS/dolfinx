@@ -27,6 +27,7 @@ from dolfinx.mesh import (
     GhostMode,
     create_box,
     create_interval,
+    create_point_mesh,
     create_rectangle,
     create_submesh,
     create_unit_cube,
@@ -36,6 +37,7 @@ from dolfinx.mesh import (
     exterior_facet_indices,
     locate_entities,
     locate_entities_boundary,
+    transfer_meshtags_to_submesh,
 )
 
 
@@ -317,6 +319,29 @@ def test_create_box_prism():
     )
     assert mesh.topology.index_map(0).size_global == 60
     assert mesh.topology.index_map(3).size_global == 48
+
+
+@pytest.mark.parametrize("gdim", [1, 2, 3])
+def test_create_interval_gdim(gdim):
+    """Interval mesh embedded in gdim-dimensional space has correct tdim and gdim."""
+    mesh = create_interval(MPI.COMM_WORLD, 6, [0.0, 1.0], gdim=gdim)
+    assert mesh.topology.dim == 1
+    assert mesh.geometry.dim == gdim
+    domain = mesh.ufl_domain()
+    assert domain is not None
+    assert domain.ufl_coordinate_element().reference_value_shape == (gdim,)
+
+
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+@pytest.mark.parametrize("gdim", [2, 3])
+def test_create_rectangle_gdim(gdim, cell_type):
+    """Rectangle mesh embedded in gdim-dimensional space has correct tdim and gdim."""
+    mesh = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [4, 4], cell_type, gdim=gdim)
+    assert mesh.topology.dim == 2
+    assert mesh.geometry.dim == gdim
+    domain = mesh.ufl_domain()
+    assert domain is not None
+    assert domain.ufl_coordinate_element().reference_value_shape == (gdim,)
 
 
 @pytest.mark.skip_in_parallel
@@ -717,26 +742,26 @@ def test_mesh_create_cmap(dtype):
     # ufl.Mesh case
     domain = ufl.Mesh(element("Lagrange", shape, degree, shape=(2,), dtype=dtype))
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
-    assert msh.geometry.cmap.dim == 3
+    assert msh.geometry.cmap().dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.ufl.element
     domain = element("Lagrange", shape, degree, shape=(2,), dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
-    assert msh.geometry.cmap.dim == 3
+    assert msh.geometry.cmap().dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.finite_element
     domain = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree, dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
-    assert msh.geometry.cmap.dim == 3
+    assert msh.geometry.cmap().dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # cpp.fem.CoordinateElement
     e = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree, dtype=dtype)
     domain = coordinate_element(e)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
-    assert msh.geometry.cmap.dim == 3
+    assert msh.geometry.cmap().dim == 3
     assert msh.ufl_domain() is None
 
 
@@ -782,3 +807,53 @@ def test_mesh_single_process_distribution(partitioner):
         adj = mesh.topology.connectivity(*conn)
         for i in range(adj.num_nodes):
             assert adj.links(i).size == 2
+
+
+@pytest.mark.parametrize("codim", [0, 1, 2, 3])
+def test_transfer_to_submesh(codim):
+    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 4, 5)
+    tdim = mesh.topology.dim
+    assert tdim - codim >= 0
+    entities = locate_entities(mesh, tdim - codim, lambda x: x[0] >= 0.5)
+    submesh, entity_map, vertex_map, _node_map = create_submesh(mesh, tdim - codim, entities)
+
+    def marker1(x):
+        return x[1] <= 0.5
+
+    def marker2(x):
+        return x[2] < 0.5
+
+    for i in range(submesh.topology.dim + 1):
+        mesh.topology.create_entities(i)
+        pe_map = mesh.topology.index_map(i)
+        num_parent_entities = pe_map.size_local + pe_map.num_ghosts
+        values = np.zeros(num_parent_entities, dtype=np.int32)
+        values[locate_entities(mesh, i, marker1)] = 1
+        values[locate_entities(mesh, i, marker2)] = 2
+        et_indices = np.flatnonzero(values)
+        et_values = values[et_indices]
+        et = dolfinx.mesh.meshtags(mesh, i, et_indices, et_values)
+
+        sub_et = transfer_meshtags_to_submesh(et, submesh, vertex_map, entity_map)
+        ref_one = locate_entities(submesh, i, marker1)
+        ref_two = np.sort(locate_entities(submesh, i, marker2))
+        ref_one = np.setdiff1d(ref_one, ref_two, assume_unique=True)
+
+        marked1 = sub_et.find(1)
+        marked2 = sub_et.find(2)
+        np.testing.assert_allclose(marked1, ref_one)
+        np.testing.assert_allclose(marked2, ref_two)
+
+
+@pytest.mark.parametrize("gdim", [1, 2, 3])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_point_mesh(gdim, dtype):
+    rng = np.random.default_rng(12)
+    num_points = 10
+    x = rng.random((num_points, gdim), dtype=dtype)
+    mesh = create_point_mesh(MPI.COMM_WORLD, x)
+    assert mesh.comm.size == MPI.COMM_WORLD.size
+    assert mesh.topology.dim == 0
+    assert mesh.geometry.dim == gdim
+    assert mesh.topology.index_map(0).size_global == MPI.COMM_WORLD.size * num_points
+    assert mesh.topology.index_map(0).size_local == num_points

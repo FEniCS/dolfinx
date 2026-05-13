@@ -38,6 +38,8 @@ PDEs (advanced)
    demos/demo_pyamg.md
    demos/demo_hdg.md
    demos/demo_mixed-topology.md
+   demos/demo_matrix_free_petsc.md
+
 
 
 Nonlinear problems

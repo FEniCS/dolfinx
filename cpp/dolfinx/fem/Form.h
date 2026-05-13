@@ -529,14 +529,9 @@ public:
     auto it = _edata.at(rank).find({type, idx, kernel_idx});
     if (it == _edata.at(rank).end())
       throw std::runtime_error("Requested domain for argument not found.");
-    try
-    {
-      return std::get<std::span<const std::int32_t>>(it->second);
-    }
-    catch (std::bad_variant_access& e)
-    {
-      return std::get<std::vector<std::int32_t>>(it->second);
-    }
+
+    return std::visit([](const auto& v) -> std::span<const std::int32_t>
+                      { return v; }, it->second);
   }
 
   /// @brief Coefficient function mesh integration entity indices.
@@ -559,14 +554,8 @@ public:
     auto it = _cdata.find({type, idx, c});
     if (it == _cdata.end())
       throw std::runtime_error("No domain for requested integral.");
-    try
-    {
-      return std::get<std::span<const std::int32_t>>(it->second);
-    }
-    catch (std::bad_variant_access& e)
-    {
-      return std::get<std::vector<std::int32_t>>(it->second);
-    }
+    return std::visit([](const auto& v) -> std::span<const std::int32_t>
+                      { return v; }, it->second);
   }
 
   /// @brief Access coefficients.
