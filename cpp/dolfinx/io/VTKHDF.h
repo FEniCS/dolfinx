@@ -330,19 +330,6 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
       = hdf5::read_dataset<std::uint8_t>(dset_id, local_cell_range, true);
   H5Dclose(dset_id);
 
-  // Create reverse map (VTK -> DOLFINx cell type)
-  std::map<std::uint8_t, mesh::CellType> vtk_to_dolfinx;
-  {
-    for (auto type : {mesh::CellType::point, mesh::CellType::interval,
-                      mesh::CellType::triangle, mesh::CellType::quadrilateral,
-                      mesh::CellType::tetrahedron, mesh::CellType::prism,
-                      mesh::CellType::pyramid, mesh::CellType::hexahedron})
-    {
-      vtk_to_dolfinx.insert(
-          {cells::get_vtk_cell_type(type, mesh::cell_dim(type)), type});
-    }
-  }
-
   // Read in offsets to determine the different cell-types in the mesh
   dset_id = hdf5::open_dataset(h5file, "/VTKHDF/Offsets");
   std::vector<std::int64_t> offsets = hdf5::read_dataset<std::int64_t>(
@@ -355,8 +342,13 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   for (std::size_t i = 0; i < types.size(); ++i)
   {
     std::int64_t num_nodes = offsets[i + 1] - offsets[i];
+    auto [cell_type, degree] = io::cells::vtk_to_dolfinx(types[i]);
+    // If arbitrary order Lagrange VTK cell, determine degree from number of
+    // nodes
+
     std::uint8_t cell_degree
-        = cells::cell_degree(vtk_to_dolfinx.at(types[i]), num_nodes);
+        = degree != -1 ? (std::uint8_t)degree
+                       : io::cells::cell_degree(cell_type, num_nodes);
     types_unique.push_back({types[i], cell_degree});
     cell_degrees.push_back(cell_degree);
   }
@@ -403,7 +395,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   std::vector<std::uint8_t> dolfinx_cell_degree;
   for (std::array<std::uint8_t, 2> ct : recv_types)
   {
-    mesh::CellType cell_type = vtk_to_dolfinx.at(ct[0]);
+    mesh::CellType cell_type = std::get<0>(io::cells::vtk_to_dolfinx(ct[0]));
     type_to_index.insert({ct, dolfinx_cell_degree.size()});
     dolfinx_cell_degree.push_back(ct[1]);
     dolfinx_cell_type.push_back(cell_type);

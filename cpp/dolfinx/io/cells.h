@@ -177,4 +177,71 @@ std::vector<std::int64_t> apply_permutation(std::span<const std::int64_t> cells,
 /// @return VTK cell identifier.
 std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim);
 
+/// @brief Get DOLFINx cell type and degree from VTK cell type.
+///
+/// @param[in] vtk_cell_type VTK cell type identifier.
+/// @return Return the cell type and degree. If arbitrary order Lagragian cell
+/// from VTK is supplied, return -1 for the degree.
+inline std::tuple<mesh::CellType, std::int8_t>
+vtk_to_dolfinx(std::int8_t vtk_cell_type)
+{
+  {
+    // For a complete overview of VTK cell types, see
+    // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
+    switch (vtk_cell_type)
+    {
+    case 1:
+      return {mesh::CellType::point, -1};
+    case 3:
+      return {mesh::CellType::interval, 1};
+    case 5:
+      return {mesh::CellType::triangle, 1};
+    case 9:
+      return {mesh::CellType::quadrilateral, 1};
+    case 10:
+      return {mesh::CellType::tetrahedron, 1};
+    case 12:
+      return {mesh::CellType::hexahedron, 1};
+    case 13:
+      return {mesh::CellType::prism, 1};
+    case 14:
+      return {mesh::CellType::pyramid, 1};
+    case 21:
+      return {mesh::CellType::interval, 2};
+    case 22:
+      return {mesh::CellType::triangle, 2};
+    case 23:
+      return {mesh::CellType::quadrilateral, 2};
+    case 24:
+      return {mesh::CellType::tetrahedron, 2};
+    case 25:
+      return {mesh::CellType::hexahedron, 2};
+    case 26:
+      return {mesh::CellType::prism, 2};
+    case 27:
+      return {mesh::CellType::pyramid, 2};
+    case 35:
+      return {mesh::CellType::interval, 3};
+    case 68:
+      return {mesh::CellType::interval, -1};
+    case 69:
+      return {mesh::CellType::triangle, -1};
+    case 70:
+      return {mesh::CellType::quadrilateral, -1};
+    case 71:
+      return {mesh::CellType::tetrahedron, -1};
+    case 72:
+      return {mesh::CellType::hexahedron, -1};
+    case 73:
+      return {mesh::CellType::prism, -1};
+    case 74:
+      return {mesh::CellType::pyramid,
+              -1}; // Not implemented in VTK yet, but added as placeholder.
+    default:
+      break;
+    }
+    throw std::runtime_error("Unknown VTK cell type");
+  }
+}
+
 } // namespace dolfinx::io::cells
