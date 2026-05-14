@@ -468,7 +468,7 @@ def model_to_mesh(
     for codim in [0, 1, 2, 3]:
         key = f"{codim_to_name[codim]}_tags"
         meshtag_data = meshtags.get(codim, None)
-        if meshtag_data is None or len(meshtag_data) > 0:
+        if meshtag_data is None or len(meshtag_data) > 1:
             # Skip if entity is not tagged
             # Skip on mixed topology for now, as we don't have a public API
             dolfinx_meshtags[key] = None
