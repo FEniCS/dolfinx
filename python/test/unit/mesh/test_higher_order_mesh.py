@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2021 Jørgen Schartum Dokken and Matthew Scroggs
+# Copyright (C) 2019-2026 Jørgen Schartum Dokken and Matthew Scroggs
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -18,10 +18,10 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
 from dolfinx.cpp.io import perm_vtk
-from dolfinx.fem import assemble_scalar, form
+from dolfinx.fem import assemble_scalar, form, mixed_topology_form
 from dolfinx.io import XDMFFile
-from dolfinx.io.gmsh import cell_perm_array, ufl_mesh
-from dolfinx.mesh import CellType, create_mesh, create_submesh
+from dolfinx.io.gmsh import cell_perm_array, model_to_mesh, ufl_mesh
+from dolfinx.mesh import CellType, Mesh, create_mesh, create_submesh
 from ufl import dx
 
 
@@ -744,9 +744,7 @@ def test_gmsh_input_2d(order, cell_type, dtype):
 
     if cell_type == CellType.quadrilateral:
         gmsh.option.setNumber("Mesh.Algorithm", 2)
-        # Force mesh to have no triangles
-        gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 3)
-
+        gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 2)
     tag = gmsh.model.occ.addSphere(0, 0, 0, 1)
     gmsh.model.occ.synchronize()
     gmsh.model.addPhysicalGroup(2, [tag], tag=1)
@@ -755,42 +753,29 @@ def test_gmsh_input_2d(order, cell_type, dtype):
     if cell_type == CellType.quadrilateral:
         gmsh.model.mesh.recombine()
     gmsh.model.mesh.setOrder(order)
-    idx, points, _ = gmsh.model.mesh.getNodes()
-    points = points.reshape(-1, 3)
-    idx -= 1
-    srt = np.argsort(idx)
-    assert np.all(idx[srt] == np.arange(len(idx)))
-    x = points[srt]
 
-    element_types, _element_tags, node_tags = gmsh.model.mesh.getElements(dim=2)
-    if cell_type == CellType.triangle:
-        gmsh_cell_id = gmsh.model.mesh.getElementType("triangle", order)
-    elif cell_type == CellType.quadrilateral:
-        gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
-    # This checks that recombination was successful - i.e. only one element type in mesh.
-    if list(element_types) != [gmsh_cell_id]:
-        msg = (
-            f"Expected a single Gmsh element type {gmsh_cell_id}, "
-            f"got {list(element_types)} - gmsh recombination failed."
-        )
-        gmsh.finalize()
-        pytest.xfail(msg)
-    (
-        _name,
-        _dim,
-        order,
-        num_nodes,
-        _local_coords,
-        _num_first_order_nodes,
-    ) = gmsh.model.mesh.getElementProperties(element_types[0])
-
-    cells = node_tags[0].reshape(-1, num_nodes) - 1
-    gmsh.finalize()
-
-    cells = cells[:, cell_perm_array(cell_type, num_nodes)].copy()
-    x = x.astype(dtype)
-    mesh = create_mesh(MPI.COMM_WORLD, cells, ufl_mesh(gmsh_cell_id, x.shape[1], dtype=dtype), x)
-    surface = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
+    mesh_data = model_to_mesh(gmsh.model, MPI.COMM_WORLD, 0, gdim=3)
+    mesh = mesh_data.mesh
+    if len(mesh.topology._cpp_object.cell_types) == 1:
+        surface = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
+    else:
+        Js = []
+        for i, cell_type in enumerate(mesh._cpp_object.topology.cell_types):
+            cell_name = cell_type.name
+            cmap = mesh._cpp_object.geometry.cmap(i)
+            domain = ufl.Mesh(
+                basix.ufl.element(
+                    "Lagrange",
+                    cell_name,
+                    cmap.degree,
+                    lagrange_variant=cmap.variant,
+                    shape=(mesh.geometry.dim,),
+                    dtype=dtype,
+                )
+            )
+            mesh_i = Mesh(mesh._cpp_object, domain)
+            Js += [1 * ufl.dx(mesh_i)]
+        surface = assemble_scalar(mixed_topology_form(Js))
 
     assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(
         4 * np.pi, rel=10 ** (-1 - order)
