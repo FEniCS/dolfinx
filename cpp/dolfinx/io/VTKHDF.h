@@ -343,12 +343,11 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   {
     std::int64_t num_nodes = offsets[i + 1] - offsets[i];
     auto [cell_type, degree] = io::cells::vtk_to_dolfinx(types[i]);
-    // If arbitrary order Lagrange VTK cell, determine degree from number of
+    // If arbitrary order Lagrange VTK cell (indicated by -1), determine degree from number of
     // nodes
 
     std::uint8_t cell_degree
-        = degree != -1 ? (std::uint8_t)degree
-                       : io::cells::cell_degree(cell_type, num_nodes);
+        = degree == -1 ? io::cells::cell_degree(cell_type, num_nodes) : (std::uint8_t)degree;
     types_unique.push_back({types[i], cell_degree});
     cell_degrees.push_back(cell_degree);
   }
