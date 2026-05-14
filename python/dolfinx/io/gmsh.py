@@ -216,8 +216,8 @@ def extract_topology_and_markers(
 
                 # Array of shape (num_elements,num_nodes_per_element)
                 # containing the topology of the elements on this entity.
-                # NOTE: Gmsh indexing starts with one, we therefore subtract
-                # 1 from each node to use zero-based numbering
+                # NOTE: Gmsh indexing starts with one, we therefore
+                # subtract 1 from each node to use zero-based numbering
                 topology = entity_topology.reshape(-1, num_nodes) - 1
 
                 # Create marker array of length of number of tagged cells
@@ -358,8 +358,6 @@ def model_to_mesh(
     # Extract position of the highest topological entity and its
     # topological dimension
     tdim = int(entity_tdim[perm_sort[0]])
-    cell_positions = np.flatnonzero(entity_tdim == tdim)
-
     # Check that all cells are tagged once
     error_msg = ""
     if comm.rank == rank:
@@ -367,7 +365,7 @@ def model_to_mesh(
 
         for eTypes, eTags in zip(_elementTypes, _elementTags, strict=True):
             if eTypes not in topologies.keys():
-                error_msg += f"All cells are expected to be tagged once; none found for element type {eTypes}"
+                error_msg += f"All cells are expected to be tagged once; none found for {eTypes}"
 
             num_cells_tagged = len(topologies[eTypes]["entity_tags"])
             if (num_cells := len(eTags)) != num_cells_tagged:
@@ -465,7 +463,7 @@ def model_to_mesh(
         meshtag_data = meshtags.get(codim, None)
         if meshtag_data is None or len(meshtag_data) > 0:
             # Skip if entity is not tagged
-            # Skip on mixed topology for now, as it is unclear how this should be done
+            # Skip on mixed topology for now, as we don't have a public API
             dolfinx_meshtags[key] = None
             continue
 
