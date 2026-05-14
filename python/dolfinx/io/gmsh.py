@@ -434,8 +434,6 @@ def model_to_mesh(
                 )._cpp_object
             )
         # The mixed topology constructor is not great at the moment
-        # import dolfinx
-        # dolfinx.log.set_log_level(dolfinx.log.LogLevel.DEBUG)
         cpp_mesh = _cpp.mesh.create_mesh(
             comm,
             cell_connectivities,
