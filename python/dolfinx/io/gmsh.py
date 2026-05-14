@@ -355,8 +355,7 @@ def model_to_mesh(
     # Sort elements by descending dimension
     perm_sort = np.argsort(entity_tdim)[::-1]
 
-    # Extract position of the highest topological entity and its
-    # topological dimension
+    # Extract topological dimension of the highest topological entity
     tdim = int(entity_tdim[perm_sort[0]])
     # Check that all cells are tagged once
     error_msg = ""
