@@ -391,8 +391,8 @@ def model_to_mesh(
         codim = tdim - entity_tdim[position]
         if codim not in meshtags.keys():
             meshtags[codim] = []
+        gmsh_entity_id = element_ids[position]
         if comm.rank == rank:
-            gmsh_entity_id = element_ids[position]
             marked_entities = np.asarray(topologies[gmsh_entity_id]["topology"], dtype=np.int64)
             entity_values = np.asarray(topologies[gmsh_entity_id]["cell_data"], dtype=np.int32)
             meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
