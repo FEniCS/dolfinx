@@ -165,7 +165,8 @@ T assemble_scalar(
         x,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients, std::size_t cell_type_idx)
+                   std::pair<std::span<const T>, int>>& coefficients,
+    std::size_t cell_type_idx)
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
@@ -178,7 +179,8 @@ T assemble_scalar(
     auto fn = M.kernel(IntegralType::cell, i, cell_type_idx);
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i, cell_type_idx);
+    std::span<const std::int32_t> cells
+        = M.domain(IntegralType::cell, i, cell_type_idx);
     assert(cells.size() * cstride == coeffs.size());
     value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
@@ -199,7 +201,8 @@ T assemble_scalar(
                              num_facets_per_cell);
   }
 
-  for (int i = 0; i < M.num_integrals(IntegralType::interior_facet, cell_type_idx); ++i)
+  for (int i = 0;
+       i < M.num_integrals(IntegralType::interior_facet, cell_type_idx); ++i)
   {
     auto fn = M.kernel(IntegralType::interior_facet, i, cell_type_idx);
     assert(fn);

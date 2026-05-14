@@ -173,7 +173,7 @@ T assemble_scalar(
   T val = 0;
   for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
-      // Geometry dofmap and data
+    // Geometry dofmap and data
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> x_dofmap
         = mesh->geometry().dofmap(cell_type_idx);
     if constexpr (std::is_same_v<U, scalar_value_t<T>>)
