@@ -67,11 +67,15 @@ _gmsh_to_cells = {
     3: ("quadrilateral", 1),
     4: ("tetrahedron", 1),
     5: ("hexahedron", 1),
+    6: ("prism", 1),
+    7: ("pyramid", 1),
     8: ("interval", 2),
     9: ("triangle", 2),
     10: ("quadrilateral", 2),
     11: ("tetrahedron", 2),
     12: ("hexahedron", 2),
+    13: ("prism", 2),
+    14: ("pyramid", 2),
     15: ("point", 0),
     21: ("triangle", 3),
     26: ("interval", 3),
@@ -423,16 +427,20 @@ def model_to_mesh(
             dolfinx_ct = _cpp.mesh.to_type(basix_ct.name)
             cmaps.append(
                 coordinate_element(
-                    dolfinx_ct, ufl_domain.ufl_coordinate_element().degree
+                    dolfinx_ct,
+                    ufl_domain.ufl_coordinate_element().degree,
+                    variant=basix.LagrangeVariant.equispaced,
+                    dtype=dtype,
                 )._cpp_object
             )
-
         # The mixed topology constructor is not great at the moment
+        # import dolfinx
+        # dolfinx.log.set_log_level(dolfinx.log.LogLevel.DEBUG)
         cpp_mesh = _cpp.mesh.create_mesh(
             comm,
             cell_connectivities,
             cmaps,
-            x[:, :gdim].astype(dtype),
+            x[:, :gdim].astype(dtype).copy(),
             partitioner,
             max_facet_to_cell_links,
         )
