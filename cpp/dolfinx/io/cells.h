@@ -190,52 +190,53 @@ vtk_to_dolfinx(std::int8_t vtk_cell_type)
     // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
     switch (vtk_cell_type)
     {
+      using enum mesh::CellType;
     case 1:
-      return {mesh::CellType::point, -1};
+      return {point, -1};
     case 3:
-      return {mesh::CellType::interval, 1};
+      return {interval, 1};
     case 5:
-      return {mesh::CellType::triangle, 1};
+      return {triangle, 1};
     case 9:
-      return {mesh::CellType::quadrilateral, 1};
+      return {quadrilateral, 1};
     case 10:
-      return {mesh::CellType::tetrahedron, 1};
+      return {tetrahedron, 1};
     case 12:
-      return {mesh::CellType::hexahedron, 1};
+      return {hexahedron, 1};
     case 13:
-      return {mesh::CellType::prism, 1};
+      return {prism, 1};
     case 14:
-      return {mesh::CellType::pyramid, 1};
+      return {pyramid, 1};
     case 21:
-      return {mesh::CellType::interval, 2};
+      return {interval, 2};
     case 22:
-      return {mesh::CellType::triangle, 2};
+      return {triangle, 2};
     case 23:
-      return {mesh::CellType::quadrilateral, 2};
+      return {quadrilateral, 2};
     case 24:
-      return {mesh::CellType::tetrahedron, 2};
+      return {tetrahedron, 2};
     case 25:
-      return {mesh::CellType::hexahedron, 2};
+      return {hexahedron, 2};
     case 26:
-      return {mesh::CellType::prism, 2};
+      return {prism, 2};
     case 27:
-      return {mesh::CellType::pyramid, 2};
+      return {pyramid, 2};
     case 35:
-      return {mesh::CellType::interval, 3};
+      return {interval, 3};
     case 68:
-      return {mesh::CellType::interval, -1};
+      return {interval, -1};
     case 69:
-      return {mesh::CellType::triangle, -1};
+      return {triangle, -1};
     case 70:
-      return {mesh::CellType::quadrilateral, -1};
+      return {quadrilateral, -1};
     case 71:
-      return {mesh::CellType::tetrahedron, -1};
+      return {tetrahedron, -1};
     case 72:
-      return {mesh::CellType::hexahedron, -1};
+      return {hexahedron, -1};
     case 73:
-      return {mesh::CellType::prism, -1};
+      return {prism, -1};
     case 74:
-      return {mesh::CellType::pyramid,
+      return {pyramid,
               -1}; // Not implemented in VTK yet, but added as placeholder.
     default:
       break;
