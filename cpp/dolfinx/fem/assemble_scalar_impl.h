@@ -165,7 +165,7 @@ T assemble_scalar(
         x,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients)
+                   std::pair<std::span<const T>, int>>& coefficients, std::size_t cell_type_idx)
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
@@ -173,24 +173,25 @@ T assemble_scalar(
   std::vector<scalar_value_t<T>> cdofs_b(2 * 3 * x_dofmap.extent(1));
 
   T value = 0;
-  for (int i = 0; i < M.num_integrals(IntegralType::cell, 0); ++i)
+  for (int i = 0; i < M.num_integrals(IntegralType::cell, cell_type_idx); ++i)
   {
-    auto fn = M.kernel(IntegralType::cell, i, 0);
+    auto fn = M.kernel(IntegralType::cell, i, cell_type_idx);
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i, 0);
+    std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i, cell_type_idx);
     assert(cells.size() * cstride == coeffs.size());
     value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
         md::mdspan(coeffs.data(), cells.size(), cstride), cdofs_b);
   }
 
-  mesh::CellType cell_type = mesh->topology()->cell_type();
-  int num_facets_per_cell
-      = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
   if (M.needs_facet_permutations())
   {
+    mesh::CellType cell_type = mesh->topology()->cell_types()[cell_type_idx];
+    int num_facets_per_cell
+        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
+
     mesh->topology_mutable()->create_entity_permutations();
     const std::vector<std::uint8_t>& p
         = mesh->topology()->get_facet_permutations();
@@ -198,13 +199,13 @@ T assemble_scalar(
                              num_facets_per_cell);
   }
 
-  for (int i = 0; i < M.num_integrals(IntegralType::interior_facet, 0); ++i)
+  for (int i = 0; i < M.num_integrals(IntegralType::interior_facet, cell_type_idx); ++i)
   {
-    auto fn = M.kernel(IntegralType::interior_facet, i, 0);
+    auto fn = M.kernel(IntegralType::interior_facet, i, cell_type_idx);
     assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::interior_facet, i});
-    std::span facets = M.domain(IntegralType::interior_facet, i, 0);
+    std::span facets = M.domain(IntegralType::interior_facet, i, cell_type_idx);
 
     constexpr std::size_t num_adjacent_cells = 2;
     // Two values per each adj. cell (cell index and local facet index).
@@ -231,13 +232,13 @@ T assemble_scalar(
               ? facet_perms
               : md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>{};
 
-    for (int i = 0; i < M.num_integrals(itg_type, 0); ++i)
+    for (int i = 0; i < M.num_integrals(itg_type, cell_type_idx); ++i)
     {
-      auto fn = M.kernel(itg_type, i, 0);
+      auto fn = M.kernel(itg_type, i, cell_type_idx);
       assert(fn);
       auto& [coeffs, cstride] = coefficients.at({itg_type, i});
 
-      std::span entities = M.domain(itg_type, i, 0);
+      std::span entities = M.domain(itg_type, i, cell_type_idx);
 
       // Two values per each adj. cell (cell index and local entity index).
       assert((entities.size() / 2) * cstride == coeffs.size());
