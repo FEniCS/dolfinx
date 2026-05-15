@@ -684,19 +684,33 @@ void declare_objects(nb::module_& m, std::string type)
              std::uintptr_t fn_addr,
              const std::vector<std::size_t>& value_shape,
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
-                 argument_space)
+                 argument_space,
+             std::optional<std::uintptr_t> custom_data)
           {
             auto tabulate_expression_ptr
                 = (void (*)(T*, const T*, const T*,
                             const typename geom_type<T>::value_type*,
                             const int*, const std::uint8_t*, void*))fn_addr;
+            std::optional<void*> data = std::nullopt;
+            if (custom_data)
+              data = reinterpret_cast<void*>(*custom_data);
             new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
                 {X.shape(0), X.shape(1)}, tabulate_expression_ptr, value_shape,
-                argument_space);
+                argument_space, data);
           },
           nb::arg("coefficients"), nb::arg("constants"), nb::arg("X"),
-          nb::arg("fn"), nb::arg("value_shape"), nb::arg("argument_space"))
+          nb::arg("fn"), nb::arg("value_shape"), nb::arg("argument_space"),
+          nb::arg("custom_data").none() = nb::none())
+      .def("custom_data",
+           [](const dolfinx::fem::Expression<T, U>& self)
+               -> std::optional<std::uintptr_t>
+           {
+             std::optional<void*> data = self.custom_data();
+             if (!data)
+               return std::nullopt;
+             return reinterpret_cast<std::uintptr_t>(*data);
+           })
       .def("X",
            [](const dolfinx::fem::Expression<T, U>& self)
            {
@@ -725,15 +739,20 @@ void declare_objects(nb::module_& m, std::string type)
              coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
-         std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> argument_space)
+         std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> argument_space,
+         std::optional<std::uintptr_t> custom_data)
       {
         const ufcx_expression* p
             = reinterpret_cast<const ufcx_expression*>(expression);
-        return dolfinx::fem::create_expression<T, U>(*p, coefficients,
-                                                     constants, argument_space);
+        std::optional<void*> data = std::nullopt;
+        if (custom_data)
+          data = reinterpret_cast<void*>(*custom_data);
+        return dolfinx::fem::create_expression<T, U>(
+            *p, coefficients, constants, argument_space, data);
       },
       nb::arg("expression"), nb::arg("coefficients"), nb::arg("constants"),
       nb::arg("argument_space").none(),
+      nb::arg("custom_data").none() = nb::none(),
       "Create Expression from a pointer to ufc_form.");
 }
 
@@ -756,8 +775,8 @@ void declare_form(nb::module_& m, std::string type)
                  std::vector<std::tuple<
                      int, std::uintptr_t,
                      nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>,
-                     nb::ndarray<const std::int8_t, nb::ndim<1>,
-                                 nb::c_contig>>>>& integrals,
+                     nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig>,
+                     std::optional<std::uintptr_t>>>>& integrals,
              const std::vector<std::shared_ptr<
                  const dolfinx::fem::Function<T, U>>>& coefficients,
              const std::vector<
@@ -773,17 +792,20 @@ void declare_form(nb::module_& m, std::string type)
             // Loop over kernel for each entity type
             for (auto& [type, kernels] : integrals)
             {
-              for (auto& [id, ptr, e, c] : kernels)
+              for (auto& [id, ptr, e, c, custom_data] : kernels)
               {
                 auto kn_ptr
                     = (void (*)(T*, const T*, const T*,
                                 const typename geom_type<T>::value_type*,
                                 const int*, const std::uint8_t*, void*))ptr;
+                std::optional<void*> data = std::nullopt;
+                if (custom_data)
+                  data = reinterpret_cast<void*>(*custom_data);
                 _integrals.insert(
                     {{type, id, 0},
                      {kn_ptr,
                       std::vector<std::int32_t>(e.data(), e.data() + e.size()),
-                      std::vector<int>(c.data(), c.data() + c.size())}});
+                      std::vector<int>(c.data(), c.data() + c.size()), data}});
               }
             }
 
@@ -847,6 +869,18 @@ void declare_form(nb::module_& m, std::string type)
       .def_prop_ro("function_spaces",
                    &dolfinx::fem::Form<T, U>::function_spaces)
       .def("num_integrals", &dolfinx::fem::Form<T, U>::num_integrals)
+      .def(
+          "custom_data",
+          [](const dolfinx::fem::Form<T, U>& self,
+             dolfinx::fem::IntegralType type, int idx,
+             int kernel_idx) -> std::optional<std::uintptr_t>
+          {
+            std::optional<void*> data = self.custom_data(type, idx, kernel_idx);
+            if (!data)
+              return std::nullopt;
+            return reinterpret_cast<std::uintptr_t>(*data);
+          },
+          nb::arg("type"), nb::arg("idx"), nb::arg("kernel_idx"))
       .def_prop_ro("integral_types", &dolfinx::fem::Form<T, U>::integral_types)
       .def_prop_ro("needs_facet_permutations",
                    &dolfinx::fem::Form<T, U>::needs_facet_permutations)
