@@ -269,8 +269,11 @@ def test_parallel_mixed_mesh(dtype):
     set_log_level(LogLevel.WARNING)
 
 
-def test_create_entities():
-    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, CellType.prism, ghost_mode=GhostMode.none)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_create_entities(dtype):
+    mesh = create_unit_cube(
+        MPI.COMM_WORLD, 2, 2, 2, CellType.prism, ghost_mode=GhostMode.none, dtype=dtype
+    )
 
     # Make triangle and quadrilateral facets
     mesh.topology.create_entities(2, dolfinx.hardware_concurrency())
