@@ -694,7 +694,7 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
 
     def __init__(
         self,
-        mesh: Mesh,
+        mesh: Mesh[Real],
         element: ufl.finiteelement.AbstractFiniteElement,
         cppV: (_cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64),
     ):
