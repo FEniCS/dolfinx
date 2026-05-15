@@ -663,14 +663,16 @@ def functionspace(
     if ufl_e.is_real:
         cpp_dofmap = _cpp.fem.build_real_element_dofmap(
             mesh.topology._cpp_object,
-            element.basix_element.entity_dofs,
-            element.basix_element.entity_closure_dofs,
-            int(np.prod(element.value_shape)),
+            element.basix_element.entity_dofs,  # type: ignore
+            element.basix_element.entity_closure_dofs,  # type: ignore
+            int(np.prod(element.value_shape)),  # type: ignore
         )
     else:
         cpp_dofmap = _cpp.fem.create_dofmap(
-            mesh.comm, mesh.topology._cpp_object, element._cpp_object
-        )  # type: ignore
+            mesh.comm,
+            mesh.topology._cpp_object,
+            element._cpp_object,  # type: ignore
+        )
     assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (  # type: ignore
         "Mesh and element dtype are not compatible."
     )
