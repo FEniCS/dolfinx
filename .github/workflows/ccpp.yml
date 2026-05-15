@@ -132,6 +132,12 @@ jobs:
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test]'
           python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
+      - name: Run mypy
+        working-directory: python
+        run: |
+          pip install mypy types-cffi scipy-stubs
+          mypy -p dolfinx
+
       - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
         working-directory: python
         run: |
