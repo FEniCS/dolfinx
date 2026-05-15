@@ -13,8 +13,8 @@ import sys
 
 import numpy as _np
 
-default_scalar_type: _np.dtype
-default_real_type: _np.dtype
+default_scalar_type: type[_np.floating | _np.complexfloating]
+default_real_type: type[_np.floating]
 
 try:
     from petsc4py import PETSc as _PETSc
@@ -24,11 +24,11 @@ try:
 
     assert dolfinx.common.has_petsc4py
 
-    default_scalar_type = _PETSc.ScalarType
-    default_real_type = _PETSc.RealType
+    default_scalar_type = _PETSc.ScalarType  # type: ignore
+    default_real_type = _PETSc.RealType  # type: ignore
 except ImportError:
-    default_scalar_type = _np.float64  # type: ignore
-    default_real_type = _np.float64  # type: ignore
+    default_scalar_type = _np.float64
+    default_real_type = _np.float64
 
 del _np
 
