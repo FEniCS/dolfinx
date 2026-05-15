@@ -913,7 +913,7 @@ def test_gmsh_tetra(order, dtype):
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
 
     circle = gmsh.model.occ.addDisk(0, 0, 0, 1, 1)
-    tag = gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5])
+    gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5])
     gmsh.model.occ.synchronize()
 
     # Tag only 3D volumes, and use unique physical tags
