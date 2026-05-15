@@ -855,13 +855,13 @@ def test_gmsh_mixed_mesh_3d(order, dtype):
             if abs(width - 1.0) < 1e-4:  # Identify the square core by its 1x1 dimension
                 gmsh.model.mesh.setRecombine(2, tag)
 
-    for dim, tag in gmsh.model.occ.getEntities(3):
-        gmsh.model.addPhysicalGroup(dim, [tag], tag)
+    volumes = gmsh.model.getEntities(3)
+    for phys_tag, (_, vol) in enumerate(volumes, start=1):
+        gmsh.model.addPhysicalGroup(3, [vol], tag=phys_tag)
 
     # Generate the 3D mesh
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.setOrder(order)
-    gmsh.write("mesh.msh")
 
     mesh_data = model_to_mesh(gmsh.model, MPI.COMM_WORLD, 0, gdim=3, dtype=dtype)
     gmsh.finalize()
@@ -915,8 +915,11 @@ def test_gmsh_tetra(order, dtype):
     circle = gmsh.model.occ.addDisk(0, 0, 0, 1, 1)
     tag = gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5])
     gmsh.model.occ.synchronize()
-    for dim, idx in tag:
-        gmsh.model.addPhysicalGroup(dim, [idx], tag=idx)
+
+    # Tag only 3D volumes, and use unique physical tags
+    for phys_tag, (_, vol) in enumerate(gmsh.model.getEntities(3), start=1):
+        gmsh.model.addPhysicalGroup(3, [vol], tag=phys_tag)
+
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.setOrder(order)
     mesh_data = model_to_mesh(gmsh.model, MPI.COMM_WORLD, 0, gdim=3, dtype=dtype)
