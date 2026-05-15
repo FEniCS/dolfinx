@@ -72,7 +72,8 @@ void tabulate_expression(
 {
   auto [X, Xshape] = e.X();
   impl::tabulate_expression(values, e.kernel(), Xshape, e.value_size(), coeffs,
-                            constants, mesh, entities, element);
+                            constants, mesh, entities, element,
+                            e.custom_data());
 }
 
 /// @brief Evaluate an Expression on cells or facets.
