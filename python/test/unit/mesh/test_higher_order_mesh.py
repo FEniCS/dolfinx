@@ -738,6 +738,9 @@ def test_gmsh_mixed_mesh_2d(order, dtype):
         pytest.skip()
     res = 0.2
     gmsh.initialize()
+    model_name = f"mixed_2D_{dtype}_{order}"
+    gmsh.model.add(model_name)
+    gmsh.model.setCurrent(model_name)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
 
@@ -790,6 +793,10 @@ def test_gmsh_input_2d(order, dtype):
         pytest.skip()
     res = 0.2
     gmsh.initialize()
+    model_name = f"triangle_2D_{dtype}_{order}"
+    gmsh.model.add(model_name)
+    gmsh.model.setCurrent(model_name)
+
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
 
@@ -818,6 +825,10 @@ def test_gmsh_mixed_mesh_3d(order, dtype):
     except ImportError:
         pytest.skip()
     gmsh.initialize()
+    model_name = f"mixed_3D_{dtype}_{order}"
+    gmsh.model.add(model_name)
+    gmsh.model.setCurrent(model_name)
+
     res = 0.1
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
@@ -909,6 +920,9 @@ def test_gmsh_tetra(order, dtype):
     res = 0.2
 
     gmsh.initialize()
+    model_name = f"tetra_{dtype}_{order}"
+    gmsh.model.add(model_name)
+    gmsh.model.setCurrent(model_name)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
 
