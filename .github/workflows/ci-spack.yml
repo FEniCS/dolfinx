@@ -166,13 +166,6 @@ jobs:
           python -m pytest -n auto -m serial --durations=10 dolfinx-src/python/demo/test.py
           python -m pytest -m mpi --num-proc=2 dolfinx-src/python/demo/test.py
 
-      - name: Run failing test alone
-        run: |
-          . ./spack-src/share/spack/setup-env.sh
-          spack env activate py
-          python -m pytest -vv -s dolfinx-src/python/test/unit/mesh/test_higher_order_mesh.py -k "gmsh_mixed_mesh_2d and float32"
-          python -m pytest -vv -s dolfinx-src/python/test/unit/mesh/test_higher_order_mesh.py
-
       - name: Run Python unit tests (serial and MPI)
         run: |
           . ./spack-src/share/spack/setup-env.sh
