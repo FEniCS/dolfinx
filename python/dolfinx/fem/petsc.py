@@ -1231,10 +1231,10 @@ class NonlinearProblem:
         )
 
         if J is None:
-            J = derivative_block(F, u)
+            J = derivative_block(F, u)  # type: ignore
 
         self._J = _create_form(
-            J,
+            J,  # type: ignore
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
             entity_maps=entity_maps,
