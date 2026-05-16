@@ -138,6 +138,7 @@ jobs:
           pip install mypy types-cffi scipy-stubs
           mypy -p dolfinx
           mypy test
+          mypy demo
 
       - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
         working-directory: python
