@@ -42,7 +42,8 @@ std::vector<std::int32_t> mark_threshold(std::span<const T> indicators,
   std::vector<std::int32_t> indices;
   indices.reserve(std::ranges::count_if(indicators, mark));
 
-  for (std::int32_t i = 0; i < static_cast<std::int32_t>(indicators.size()); ++i)
+  for (std::int32_t i = 0; i < static_cast<std::int32_t>(indicators.size());
+       ++i)
   {
     if (mark(indicators[i]))
       indices.push_back(i);
@@ -63,7 +64,7 @@ std::vector<std::int32_t> mark_threshold(std::span<const T> indicators,
 /// usually an error indicator associated with mesh entity \f$ i \f$.
 /// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$.
 /// @return Indices (local) of marker elements, that satisfy the maximum
-/// threshold: 
+/// threshold:
 template <std::floating_point T>
 std::vector<std::int32_t> mark_maximum(MPI_Comm comm,
                                        std::span<const T> indicators, T theta)
@@ -71,14 +72,14 @@ std::vector<std::int32_t> mark_maximum(MPI_Comm comm,
   if ((theta <= 0) || (theta >= 1))
     throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
 
-  T max = indicator.empty() ? std::numeric_limits<T>::lowest()
-                            : std::ranges::max(indicator);
+  T max = indicators.empty() ? std::numeric_limits<T>::lowest()
+                             : std::ranges::max(indicators);
   MPI_Allreduce(MPI_IN_PLACE, &max, 1, dolfinx::MPI::mpi_t<T>, MPI_MAX, comm);
 
-  auto indices = impl::mark_threshold<T>(indicator, theta * max);
+  auto indices = impl::mark_threshold<T>(indicators, theta * max);
 
   spdlog::info("Marking (maximum) {} / {} (local) entities.", indices.size(),
-               indicator.size());
+               indicators.size());
 
   return indices;
 }
@@ -89,9 +90,9 @@ std::vector<std::int32_t> mark_maximum(MPI_Comm comm,
 /// equidistribution threshold: \f$\eta_i > \theta \frac{||\eta||}{\sqrt{N}} \f$
 /// where \f$ N \f$ is the (global) number of indicators.
 ///
-/// @param[in] comm Communicator over which the global equidistribution 
+/// @param[in] comm Communicator over which the global equidistribution
 /// threshold is computed.
-/// @param[in] indicators Indicators (local) \f$ \eta_i \f$ - usually 
+/// @param[in] indicators Indicators (local) \f$ \eta_i \f$ - usually
 /// associated with mesh entity \f$ i \f$.
 /// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$.
 /// @return Local indices of marked entities.
@@ -124,19 +125,20 @@ mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 
 /// @brief Computes equidistribution threshold marking of a squared indicator.
 ///
-/// Returns the indices \f$i\f$ of the squared indicators $eta_i^2$ that satisfy the
-/// equidistribution threshold: \f$ \eta_i^2 > \theta^2 \frac{||\eta||^2}{N} \f$
-/// where \f$ N \f$ is the (global) number of indicators.
+/// Returns the indices \f$i\f$ of the squared indicators $eta_i^2$ that satisfy
+/// the equidistribution threshold: \f$ \eta_i^2 > \theta^2 \frac{||\eta||^2}{N}
+/// \f$ where \f$ N \f$ is the (global) number of indicators.
 ///
-/// @param[in] comm Communicator over which the global equidistribution threshold is
-/// computed.
+/// @param[in] comm Communicator over which the global equidistribution
+/// threshold is computed.
 /// @param[in] indicators Input indicators (local) \f$ \eta^2_i \f$ -
 /// usually associated with mesh entity \f$ i \f$.
 /// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$.
 /// @return Local indices of marked entities.
 template <std::floating_point T>
 std::vector<std::int32_t>
-mark_equidistribution_squared(MPI_Comm comm, std::span<const T> indicators, T theta)
+mark_equidistribution_squared(MPI_Comm comm, std::span<const T> indicators,
+                              T theta)
 {
   if ((theta <= 0) || (theta >= 1))
     throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
@@ -145,7 +147,7 @@ mark_equidistribution_squared(MPI_Comm comm, std::span<const T> indicators, T th
 
   MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM, comm);
 
-  std::int32_t count = marker.size();
+  std::int32_t count = indicators.size();
   MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int32_t>,
                 MPI_SUM, comm);
 
