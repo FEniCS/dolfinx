@@ -1,4 +1,4 @@
-// Copyright (C) 2026 Paul T. Kühner
+// Copyright (C) 2026 Paul T. Kühner, Jack S. Hale
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -23,16 +23,17 @@ namespace dolfinx::refinement
 namespace impl
 {
 
-/// @brief Computes local threshold-based marking.
+/// @brief Computes local threshold marking of indicators.
 ///
 /// Helper for other marking routines.
 ///
-/// @param[in] indicators Entity-wise indicator \f$ \eta \f$ used for marking.
+/// Returns the indices \f$ i \f$ of the indicators $eta_i$ that satisfy the
+/// threshold: \f$ \eta_i > \text{threshold} \f$.
+///
+/// @param[in] indicators Indicators \f$ \eta_i \f$ used for marking.
 /// @param[in] threshold Threshold value; indicators greater than this are
 /// marked.
-///
-/// @returns list of indices \f$ i \f$ of indicator entries that satisfy
-/// \f$ \eta_i > \text{threshold} \f$.
+/// @return Local indices of marked entities.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_threshold(std::span<const T> indicators,
                                          T threshold)
@@ -54,7 +55,7 @@ std::vector<std::int32_t> mark_threshold(std::span<const T> indicators,
 
 } // namespace impl
 
-/// @brief Computes maximum-based marking of an indicator.
+/// @brief Computes maximum-based marking of indicators.
 ///
 /// Returns the indices \f$ i \f$ of the indicators $eta_i$ that satisfy the
 /// maximum threshold: \f$ \eta_i \geq \theta \max_j \eta_j \f$.
@@ -63,8 +64,7 @@ std::vector<std::int32_t> mark_threshold(std::span<const T> indicators,
 /// @param[in] indicators Indicators (local) \f$ \eta_i \f$ -
 /// usually an error indicator associated with mesh entity \f$ i \f$.
 /// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$.
-/// @return Indices (local) of marker elements, that satisfy the maximum
-/// threshold:
+/// @return Local indices of marked entities.
 template <std::floating_point T>
 std::vector<std::int32_t> mark_maximum(MPI_Comm comm,
                                        std::span<const T> indicators, T theta)
@@ -76,7 +76,8 @@ std::vector<std::int32_t> mark_maximum(MPI_Comm comm,
                              : std::ranges::max(indicators);
   MPI_Allreduce(MPI_IN_PLACE, &max, 1, dolfinx::MPI::mpi_t<T>, MPI_MAX, comm);
 
-  auto indices = impl::mark_threshold<T>(indicators, theta * max);
+  std::vector<std::int32_t> indices
+      = impl::mark_threshold<T>(indicators, theta * max);
 
   spdlog::info("Marking (maximum) {} / {} (local) entities.", indices.size(),
                indicators.size());
@@ -84,38 +85,39 @@ std::vector<std::int32_t> mark_maximum(MPI_Comm comm,
   return indices;
 }
 
-/// @brief Computes equidistribution threshold marking of an indicator.
+/// @brief Computes equidistribution threshold marking of indicators.
 ///
-/// Returns the indices \f$i\f$ of the indicators $eta_i$ that satisfy the
-/// equidistribution threshold: \f$\eta_i > \theta \frac{||\eta||}{\sqrt{N}} \f$
-/// where \f$ N \f$ is the (global) number of indicators.
+/// Returns the indices \f$ i \f$ of the indicators \f$eta_i \f$ that satisfy
+/// the equidistribution threshold: \f$\eta_i > \theta
+/// \frac{||\eta||}{\sqrt{N}} \f$ where \f$ N \f$ is the (global) number of
+/// indicators.
 ///
 /// @param[in] comm Communicator over which the global equidistribution
 /// threshold is computed.
 /// @param[in] indicators Indicators (local) \f$ \eta_i \f$ - usually
 /// associated with mesh entity \f$ i \f$.
 /// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$.
-/// @return Local indices of marked entities.
+/// @return Local indices of indicators that satisfy the threshold.
 template <std::floating_point T>
 std::vector<std::int32_t>
 mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 {
   if ((theta <= 0) || (theta >= 1))
-    throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
+    throw std::invalid_argument("Theta must fullfill 0 < θ < 1.");
 
-  auto norm = std::inner_product(indicators.begin(), indicators.end(),
-                                 indicators.begin(), T{0});
+  T norm = std::inner_product(indicators.begin(), indicators.end(),
+                              indicators.begin(), T{0});
 
   MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM, comm);
 
-  norm = std::sqrt(norm);
+  T sqrt_norm = std::sqrt(norm);
 
   std::int32_t count = indicators.size();
-  MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int32_t>,
+  MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int64_t>,
                 MPI_SUM, comm);
 
-  auto indices
-      = impl::mark_threshold<T>(indicators, theta * norm / std::sqrt(count));
+  std::vector<std::int32_t> indices = impl::mark_threshold<T>(
+      indicators, theta * sqrt_norm / std::sqrt(static_cast<T>(count)));
 
   spdlog::info("Marking (equidistribution) {} / {} (local) entities.",
                indices.size(), indicators.size());
@@ -134,25 +136,25 @@ mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 /// @param[in] indicators Input indicators (local) \f$ \eta^2_i \f$ -
 /// usually associated with mesh entity \f$ i \f$.
 /// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$.
-/// @return Local indices of marked entities.
+/// @return Local indices of indicators that satisfy the threshold.
 template <std::floating_point T>
 std::vector<std::int32_t>
 mark_equidistribution_squared(MPI_Comm comm, std::span<const T> indicators,
                               T theta)
 {
   if ((theta <= 0) || (theta >= 1))
-    throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
+    throw std::invalid_argument("Theta must fullfill 0 < θ < 1.");
 
-  auto norm = std::accumulate(indicators.begin(), indicators.end(), T{0});
+  T norm = std::accumulate(indicators.begin(), indicators.end(), T{0});
 
   MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM, comm);
 
   std::int32_t count = indicators.size();
-  MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int32_t>,
+  MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int64_t>,
                 MPI_SUM, comm);
 
-  auto indices
-      = impl::mark_threshold<T>(indicators, std::pow(theta, 2) * norm / count);
+  std::vector<std::int32_t> indices = impl::mark_threshold<T>(
+      indicators, std::pow(theta, 2) * norm / static_cast<T>(count));
 
   spdlog::info("Marking (equidistribution) {} of {} local entities.",
                indices.size(), indicators.size());
