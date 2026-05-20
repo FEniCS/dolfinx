@@ -112,7 +112,7 @@ mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 
   T sqrt_norm = std::sqrt(norm);
 
-  std::int32_t count = indicators.size();
+  std::size_t count = indicators.size();
   MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int64_t>,
                 MPI_SUM, comm);
 
@@ -149,7 +149,7 @@ mark_equidistribution_squared(MPI_Comm comm, std::span<const T> indicators,
 
   MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM, comm);
 
-  std::int32_t count = indicators.size();
+  std::size_t count = indicators.size();
   MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int64_t>,
                 MPI_SUM, comm);
 
