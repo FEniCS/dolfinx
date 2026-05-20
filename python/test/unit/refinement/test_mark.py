@@ -114,6 +114,7 @@ def test_mark_poisson_residual_estimator(theta: float, cg_solver) -> None:
     indicators_squared = eta_vec.array[: V0.dofmap.index_map.size_local]
     assert np.all(indicators_squared >= 0)
 
+    # This assumes an identity mapping from V0 to cells... True?
     marked_cells = mesh.mark_equidistribution_squared(comm, indicators_squared, theta)
 
     msh.topology.create_entities(1)
