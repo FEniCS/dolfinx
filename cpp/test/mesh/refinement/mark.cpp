@@ -17,8 +17,8 @@ using namespace dolfinx::refinement;
 TEMPLATE_TEST_CASE("Mark maximum empty", "[refinement][mark][maximum]", double,
                    float)
 {
-  std::vector<TestType> marker;
-  auto indices = mark_maximum<TestType>(MPI_COMM_WORLD, marker, .5);
+  std::vector<TestType> indicators;
+  auto indices = mark_maximum<TestType>(MPI_COMM_WORLD, indicators, .5);
   CHECK(indices.size() == 0);
 }
 
@@ -26,27 +26,31 @@ TEMPLATE_TEST_CASE("Mark maximum", "[refinement][mark][maximum]", double, float)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
 
-  std::vector<TestType> marker;
-  marker.reserve(10);
+  std::vector<TestType> indicators;
+  indicators.reserve(10);
   for (std::size_t i = 0; i < 10; i++)
-    marker.push_back(10 * dolfinx::MPI::rank(comm) + i);
+    indicators.push_back(10 * dolfinx::MPI::rank(comm) + i);
 
   TestType theta = 0.5;
-  auto indices = mark_maximum<TestType>(comm, marker, theta);
+  auto indices = mark_maximum<TestType>(comm, indicators, theta);
 
   CHECK(std::ranges::all_of(
-      indices, [&](auto e)
-      { return (0 <= e) && (e <= static_cast<std::int32_t>(marker.size())); }));
+      indices,
+      [&](auto e)
+      {
+        return (0 <= e) && (e <= static_cast<std::int32_t>(indicators.size()));
+      }));
 
   TestType max = dolfinx::MPI::size(comm) * 10 - 1;
   auto mark = [=](auto e) { return e > theta * max; };
 
-  CHECK(std::ranges::count_if(marker, mark)
+  CHECK(std::ranges::count_if(indicators, mark)
         == static_cast<std::int32_t>(indices.size()));
 
-  for (std::int32_t i = 0; i < static_cast<std::int32_t>(marker.size()); ++i)
+  for (std::int32_t i = 0; i < static_cast<std::int32_t>(indicators.size());
+       ++i)
   {
-    bool expect_marked = mark(marker[i]);
+    bool expect_marked = mark(indicators[i]);
     bool marked = std::ranges::find(indices, i) != indices.end();
     CHECK(expect_marked == marked);
   }
@@ -55,8 +59,9 @@ TEMPLATE_TEST_CASE("Mark maximum", "[refinement][mark][maximum]", double, float)
 TEMPLATE_TEST_CASE("Mark equidistribution empty",
                    "[refinement][mark][equidistribution]", double, float)
 {
-  std::vector<TestType> marker;
-  auto indices = mark_equidistribution<TestType>(MPI_COMM_WORLD, marker, .5);
+  std::vector<TestType> indicators;
+  auto indices
+      = mark_equidistribution<TestType>(MPI_COMM_WORLD, indicators, .5);
   CHECK(indices.size() == 0);
 }
 
@@ -65,37 +70,41 @@ TEMPLATE_TEST_CASE("Mark equidistribution",
 {
   MPI_Comm comm = MPI_COMM_WORLD;
 
-  std::vector<TestType> marker;
-  marker.reserve(10);
+  std::vector<TestType> indicators;
+  indicators.reserve(10);
   for (std::size_t i = 0; i < 10; i++)
-    marker.push_back(10 * dolfinx::MPI::rank(comm) + i);
+    indicators.push_back(10 * dolfinx::MPI::rank(comm) + i);
 
   TestType theta = 0.5;
-  auto indices = mark_equidistribution<TestType>(comm, marker, theta);
+  auto indices = mark_equidistribution<TestType>(comm, indicators, theta);
 
   CHECK(std::ranges::all_of(
-      indices, [&](auto e)
-      { return (0 <= e) && (e <= static_cast<std::int32_t>(marker.size())); }));
+      indices,
+      [&](auto e)
+      {
+        return (0 <= e) && (e <= static_cast<std::int32_t>(indicators.size()));
+      }));
 
   std::int32_t n = dolfinx::MPI::size(comm) * 10 - 1;
   TestType norm = std::sqrt(n * (n + 1) * (2 * n + 1) / 6);
 
   auto mark = [=](auto e) { return e > theta * norm / std::sqrt(n); };
 
-  CHECK(std::ranges::count_if(marker, mark)
+  CHECK(std::ranges::count_if(indicators, mark)
         == static_cast<std::int32_t>(indices.size()));
 
-  for (std::int32_t i = 0; i < static_cast<std::int32_t>(marker.size()); ++i)
+  for (std::int32_t i = 0; i < static_cast<std::int32_t>(indicators.size());
+       ++i)
   {
-    bool expect_marked = mark(marker[i]);
+    bool expect_marked = mark(indicators[i]);
     bool marked = std::ranges::find(indices, i) != indices.end();
     CHECK(expect_marked == marked);
   }
 
   // squared input
-  auto marker_sq = marker;
-  std::ranges::for_each(marker_sq, [](auto& e) { e = std::pow(e, 2); });
+  auto indicators_sq = indicators;
+  std::ranges::for_each(indicators_sq, [](auto& e) { e = std::pow(e, 2); });
 
   CHECK(std::ranges::equal(indices, mark_equidistribution_squared<TestType>(
-                                        comm, marker_sq, theta)));
+                                        comm, indicators_sq, theta)));
 }
