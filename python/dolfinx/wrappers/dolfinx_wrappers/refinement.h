@@ -128,35 +128,36 @@ void declare_refinement(nanobind::module_& m)
   m.def(
       "mark_maximum",
       [](MPICommWrapper comm,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> indicator, T theta)
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> indicators, T theta)
       {
         return dolfinx_wrappers::as_nbarray(dolfinx::refinement::mark_maximum(
-            comm.get(), std::span(indicator.data(), indicator.size()), theta));
+            comm.get(), std::span(indicators.data(), indicators.size()), theta));
       },
-      nb::arg("indicator"), nb::arg("theta"), nb::arg("comm"));
+      nb::arg("comm"), nb::arg("indicators"), nb::arg("theta"));
 
   m.def(
       "mark_equidistribution",
       [](MPICommWrapper comm,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> indicator, T theta)
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> indicators, T theta)
       {
         return dolfinx_wrappers::as_nbarray(
             dolfinx::refinement::mark_equidistribution(
-                comm.get(), std::span(indicator.data(), indicator.size()),
+                comm.get(), std::span(indicators.data(), indicators.size()),
                 theta));
       },
-      nb::arg("indicator"), nb::arg("theta"), nb::arg("comm"));
+      nb::arg("comm"), nb::arg("indicators"), nb::arg("theta"));
 
   m.def(
       "mark_equidistribution_squared",
       [](MPICommWrapper comm,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> marker, T theta)
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> indicators, T theta)
       {
         return dolfinx_wrappers::as_nbarray(
             dolfinx::refinement::mark_equidistribution_squared(
-                comm.get(), std::span(marker.data(), marker.size()), theta));
+                comm.get(), std::span(indicators.data(), indicators.size()),
+                theta));
       },
-      nb::arg("marker"), nb::arg("theta"), nb::arg("comm"));
+      nb::arg("comm"), nb::arg("indicators"), nb::arg("theta"));
 }
 
 } // namespace dolfinx_wrappers
