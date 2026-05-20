@@ -38,15 +38,12 @@ template <std::floating_point T>
 std::vector<std::int32_t> mark_threshold(std::span<const T> indicators,
                                          T threshold)
 {
-  auto mark = [threshold](T e) { return e > threshold; };
-
   std::vector<std::int32_t> indices;
-  indices.reserve(std::ranges::count_if(indicators, mark));
-
+  indices.reserve(indicators.size());
   for (std::int32_t i = 0; i < static_cast<std::int32_t>(indicators.size());
        ++i)
   {
-    if (mark(indicators[i]))
+    if (indicators[i] > threshold)
       indices.push_back(i);
   }
 
@@ -70,7 +67,7 @@ std::vector<std::int32_t> mark_maximum(MPI_Comm comm,
                                        std::span<const T> indicators, T theta)
 {
   if ((theta <= 0) || (theta >= 1))
-    throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
+    throw std::invalid_argument("theta must fullfill 0 < theta < 1.");
 
   T max = indicators.empty() ? std::numeric_limits<T>::lowest()
                              : std::ranges::max(indicators);
@@ -103,7 +100,7 @@ std::vector<std::int32_t>
 mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 {
   if ((theta <= 0) || (theta >= 1))
-    throw std::invalid_argument("Theta must fullfill 0 < θ < 1.");
+    throw std::invalid_argument("theta must fullfill 0 < theta < 1.");
 
   T norm = std::inner_product(indicators.begin(), indicators.end(),
                               indicators.begin(), T{0});
@@ -143,7 +140,7 @@ mark_equidistribution_squared(MPI_Comm comm, std::span<const T> indicators,
                               T theta)
 {
   if ((theta <= 0) || (theta >= 1))
-    throw std::invalid_argument("Theta must fullfill 0 < θ < 1.");
+    throw std::invalid_argument("theta must fullfill 0 < theta < 1.");
 
   T norm = std::accumulate(indicators.begin(), indicators.end(), T{0});
 
