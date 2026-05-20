@@ -160,7 +160,7 @@ mark_equidistribution_squared(MPI_Comm comm,
                 MPI_SUM, comm);
 
   std::vector<std::int32_t> indices = impl::mark_threshold<T>(
-      squared_indicators, std::pow(theta, 2) * norm / static_cast<T>(count));
+      squared_indicators, theta * theta * norm / static_cast<T>(count));
 
   spdlog::info("Marking (equidistribution) {} of {} local entities.",
                indices.size(), squared_indicators.size());
