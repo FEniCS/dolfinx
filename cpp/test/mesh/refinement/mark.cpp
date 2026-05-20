@@ -86,9 +86,10 @@ TEMPLATE_TEST_CASE("Mark equidistribution",
       }));
 
   std::int32_t n = dolfinx::MPI::size(comm) * 10 - 1;
+  std::int32_t count = dolfinx::MPI::size(comm) * 10;
   TestType norm = std::sqrt(n * (n + 1) * (2 * n + 1) / 6);
 
-  auto mark = [=](auto e) { return e > theta * norm / std::sqrt(n); };
+  auto mark = [=](auto e) { return e > theta * norm / std::sqrt(count); };
 
   CHECK(std::ranges::count_if(indicators, mark)
         == static_cast<std::int32_t>(indices.size()));
