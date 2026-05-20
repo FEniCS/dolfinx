@@ -833,8 +833,8 @@ def mark_equidistribution_squared(
     Args:
         comm: Communicator over which the global equidistribution
             threshold is computed.
-        squared_indicators: Input squared indicators (local) :math:`\\eta_i^2` - usually
-            associated with mesh entity :math:`i`.
+        squared_indicators: Input squared indicators (local) :math:`\\eta_i^2`
+            - usually associated with mesh entity :math:`i`.
         theta: Parameter, :math:`0 < \\theta < 1`.
 
     Returns:

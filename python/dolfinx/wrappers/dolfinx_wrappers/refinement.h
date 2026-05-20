@@ -157,8 +157,7 @@ void declare_refinement(nanobind::module_& m)
         return dolfinx_wrappers::as_nbarray(
             dolfinx::refinement::mark_equidistribution_squared(
                 comm.get(),
-                std::span(squared_indicators.data(),
-                          squared_indicators.size()),
+                std::span(squared_indicators.data(), squared_indicators.size()),
                 theta));
       },
       nb::arg("comm"), nb::arg("squared_indicators"), nb::arg("theta"));

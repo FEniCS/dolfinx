@@ -137,8 +137,8 @@ mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 ///
 /// @param[in] comm Communicator over which the global equidistribution
 /// threshold is computed.
-/// @param[in] squared_indicators Input squared indicators (local) \f$ \eta^2_i \f$ -
-/// usually associated with mesh entity \f$ i \f$.
+/// @param[in] squared_indicators Input squared indicators (local) \f$ \eta^2_i
+/// \f$ - usually associated with mesh entity \f$ i \f$.
 /// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$.
 /// @return Local indices of squared indicators that satisfy the threshold.
 template <std::floating_point T>
@@ -149,8 +149,8 @@ mark_equidistribution_squared(MPI_Comm comm,
   if ((theta <= 0) || (theta >= 1))
     throw std::invalid_argument("theta must fulfill 0 < theta < 1.");
 
-  T norm = std::accumulate(squared_indicators.begin(),
-                           squared_indicators.end(), T{0});
+  T norm = std::accumulate(squared_indicators.begin(), squared_indicators.end(),
+                           T{0});
 
   MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM, comm);
 
