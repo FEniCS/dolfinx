@@ -94,9 +94,8 @@ std::vector<std::int32_t> mark_maximum(MPI_Comm comm,
 /// \frac{||\eta||}{\sqrt{N}} \f$ where \f$ N \f$ is the (global) number of
 /// indicators.
 ///
-/// @warning `indicators` must contain values for owned entities only (sliced
-/// to `index_map.size_local()`). Ghost values cause double-counting in the
-/// global reductions and an incorrect threshold.
+/// @warning `indicators` must contain owned entities only. Ghost values cause
+/// double-counting in the global sum reductions.
 ///
 /// @param[in] comm Communicator over which the global equidistribution
 /// threshold is computed.
@@ -139,9 +138,8 @@ mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 /// \frac{||\eta||^2}{N} \f$ where \f$ N \f$ is the (global) number of
 /// indicators.
 ///
-/// @warning `squared_indicators` must contain values for owned entities only
-/// (sliced to `index_map.size_local()`). Ghost values cause double-counting in
-/// the global reductions and an incorrect threshold.
+/// @warning `squared_indicators` must contain owned entities only. Ghost
+/// values cause double-counting in the global sum reductions.
 ///
 /// @param[in] comm Communicator over which the global equidistribution
 /// threshold is computed.
