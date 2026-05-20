@@ -772,7 +772,7 @@ def refine(
 
 def mark_maximum(
     comm: _MPI.Comm,
-    indicators: npt.NDArray[np.floating],
+    indicators: npt.NDArray[Real],
     theta: float,
 ) -> npt.NDArray[np.int32]:
     """Compute maximum-based marking of indicators.
@@ -795,7 +795,7 @@ def mark_maximum(
 
 def mark_equidistribution(
     comm: _MPI.Comm,
-    indicators: npt.NDArray[np.floating],
+    indicators: npt.NDArray[Real],
     theta: float,
 ) -> npt.NDArray[np.int32]:
     """Compute equidistribution threshold marking of indicators.
@@ -820,7 +820,7 @@ def mark_equidistribution(
 
 def mark_equidistribution_squared(
     comm: _MPI.Comm,
-    indicators: npt.NDArray[np.floating],
+    indicators: npt.NDArray[Real],
     theta: float,
 ) -> npt.NDArray[np.int32]:
     """Compute equidistribution threshold marking of a squared indicator.
