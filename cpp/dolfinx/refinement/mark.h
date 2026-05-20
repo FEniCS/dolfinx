@@ -94,10 +94,14 @@ std::vector<std::int32_t> mark_maximum(MPI_Comm comm,
 /// \frac{||\eta||}{\sqrt{N}} \f$ where \f$ N \f$ is the (global) number of
 /// indicators.
 ///
+/// @warning `indicators` must contain values for owned entities only (sliced
+/// to `index_map.size_local()`). Ghost values cause double-counting in the
+/// global reductions and an incorrect threshold.
+///
 /// @param[in] comm Communicator over which the global equidistribution
 /// threshold is computed.
-/// @param[in] indicators Indicators (local) \f$ \eta_i \f$ - usually
-/// associated with mesh entity \f$ i \f$.
+/// @param[in] indicators Indicators for owned local entities \f$ \eta_i \f$
+/// - usually associated with mesh entity \f$ i \f$.
 /// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$.
 /// @return Local indices of indicators that satisfy the threshold.
 template <std::floating_point T>
@@ -135,10 +139,14 @@ mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 /// \frac{||\eta||^2}{N} \f$ where \f$ N \f$ is the (global) number of
 /// indicators.
 ///
+/// @warning `squared_indicators` must contain values for owned entities only
+/// (sliced to `index_map.size_local()`). Ghost values cause double-counting in
+/// the global reductions and an incorrect threshold.
+///
 /// @param[in] comm Communicator over which the global equidistribution
 /// threshold is computed.
-/// @param[in] squared_indicators Input squared indicators (local) \f$ \eta^2_i
-/// \f$ - usually associated with mesh entity \f$ i \f$.
+/// @param[in] squared_indicators Input squared indicators for owned local
+/// entities \f$ \eta^2_i \f$ - usually associated with mesh entity \f$ i \f$.
 /// @param[in] theta Parameter, \f$ 0 < \theta < 1 \f$.
 /// @return Local indices of squared indicators that satisfy the threshold.
 template <std::floating_point T>
