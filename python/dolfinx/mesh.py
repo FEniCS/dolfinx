@@ -777,15 +777,15 @@ def mark_maximum(
 ) -> npt.NDArray[np.int32]:
     r"""Compute maximum-based marking of indicators.
 
-    Returns the indices :math:`i` of the indicators :math:`\\eta_i` that
+    Returns the indices :math:`i` of the indicators :math:`\eta_i` that
     satisfy the maximum threshold:
-    :math:`\\eta_i > \\theta \\max_j \\eta_j`.
+    :math:`\eta_i > \theta \max_j \eta_j`.
 
     Args:
         comm: Communicator to compute the maximum over.
-        indicators: Indicators (local) :math:`\\eta_i` - usually an error
+        indicators: Indicators (local) :math:`\eta_i` - usually an error
             indicator associated with mesh entity :math:`i`.
-        theta: Parameter, :math:`0 < \\theta < 1`.
+        theta: Parameter, :math:`0 < \theta < 1`.
 
     Returns:
         Local indices of marked entities.
@@ -800,17 +800,17 @@ def mark_equidistribution(
 ) -> npt.NDArray[np.int32]:
     r"""Compute equidistribution threshold marking of indicators.
 
-    Returns the indices :math:`i` of the indicators :math:`\\eta_i` that
+    Returns the indices :math:`i` of the indicators :math:`\eta_i` that
     satisfy the equidistribution threshold:
-    :math:`\\eta_i > \\theta \\frac{\\|\\eta\\|}{\\sqrt{N}}` where
+    :math:`\eta_i > \theta \frac{\|\eta\|}{\sqrt{N}}` where
     :math:`N` is the (global) number of indicators.
 
     Args:
         comm: Communicator over which the global equidistribution
             threshold is computed.
-        indicators: Indicators (local) :math:`\\eta_i` - usually
+        indicators: Indicators (local) :math:`\eta_i` - usually
             associated with mesh entity :math:`i`.
-        theta: Parameter, :math:`0 < \\theta < 1`.
+        theta: Parameter, :math:`0 < \theta < 1`.
 
     Returns:
         Local indices of indicators that satisfy the threshold.
@@ -826,17 +826,17 @@ def mark_equidistribution_squared(
     r"""Compute equidistribution threshold marking of a squared indicator.
 
     Returns the indices :math:`i` of the squared indicators
-    :math:`\\eta_i^2` that satisfy the equidistribution threshold:
-    :math:`\\eta_i^2 > \\theta^2 \\frac{\\|\\eta\\|^2}{N}` where
+    :math:`\eta_i^2` that satisfy the equidistribution threshold:
+    :math:`\eta_i^2 > \theta^2 \frac{\|\eta\|^2}{N}` where
     :math:`N` is the (global) number of indicators.
 
     Args:
         comm: Communicator over which the global equidistribution
             threshold is computed.
         squared_indicators: Input squared indicators (local)
-            :math:`\\eta_i^2` - usually associated with mesh
+            :math:`\eta_i^2` - usually associated with mesh
             entity :math:`i`.
-        theta: Parameter, :math:`0 < \\theta < 1`.
+        theta: Parameter, :math:`0 < \theta < 1`.
 
     Returns:
         Local indices of squared indicators that satisfy the threshold.
