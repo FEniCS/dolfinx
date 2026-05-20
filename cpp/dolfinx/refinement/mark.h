@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <limits>
 #include <mpi.h>
+#include <numeric>
 #include <span>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
@@ -30,7 +31,7 @@ namespace impl
 ///
 /// Helper for other marking routines.
 ///
-/// Returns the indices \f$ i \f$ of the indicators \f$ eta_i \f$ that satisfy
+/// Returns the indices \f$ i \f$ of the indicators \f$ \eta_i \f$ that satisfy
 /// the threshold: \f$ \eta_i > \text{threshold} \f$.
 ///
 /// @param[in] indicators Indicators \f$ \eta_i \f$ used for marking.
@@ -57,7 +58,7 @@ std::vector<std::int32_t> mark_threshold(std::span<const T> indicators,
 
 /// @brief Computes maximum-based marking of indicators.
 ///
-/// Returns the indices \f$ i \f$ of the indicators \f$ eta_i \f$ that satisfy
+/// Returns the indices \f$ i \f$ of the indicators \f$ \eta_i \f$ that satisfy
 /// the maximum threshold: \f$ \eta_i > \theta \max_j \eta_j \f$.
 ///
 /// @param[in] comm Communicator to compute the maximum over.
@@ -87,7 +88,7 @@ std::vector<std::int32_t> mark_maximum(MPI_Comm comm,
 
 /// @brief Computes equidistribution threshold marking of indicators.
 ///
-/// Returns the indices \f$ i \f$ of the indicators \f$eta_i \f$ that satisfy
+/// Returns the indices \f$ i \f$ of the indicators \f$ \eta_i \f$ that satisfy
 /// the equidistribution threshold: \f$\eta_i > \theta
 /// \frac{||\eta||}{\sqrt{N}} \f$ where \f$ N \f$ is the (global) number of
 /// indicators.
@@ -112,7 +113,7 @@ mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 
   T sqrt_norm = std::sqrt(norm);
 
-  // Caution with headroom of global sum across ranks.
+  // int64_t gives headroom for global sum across ranks.
   std::int64_t count = indicators.size();
   MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int64_t>,
                 MPI_SUM, comm);
@@ -128,7 +129,7 @@ mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 
 /// @brief Computes equidistribution threshold marking of a squared indicator.
 ///
-/// Returns the indices \f$i\f$ of the squared indicators \f$ eta_i^2 \f$ that
+/// Returns the indices \f$i\f$ of the squared indicators \f$ \eta_i^2 \f$ that
 /// satisfy the equidistribution threshold: \f$ \eta_i^2 > \theta^2
 /// \frac{||\eta||^2}{N} \f$ where \f$ N \f$ is the (global) number of
 /// indicators.
@@ -151,7 +152,7 @@ mark_equidistribution_squared(MPI_Comm comm, std::span<const T> indicators,
 
   MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM, comm);
 
-  // Caution with headroom of global sum across ranks.
+  // int64_t gives headroom for global sum across ranks.
   std::int64_t count = indicators.size();
   MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int64_t>,
                 MPI_SUM, comm);
