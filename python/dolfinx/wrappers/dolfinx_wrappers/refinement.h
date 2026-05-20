@@ -151,14 +151,17 @@ void declare_refinement(nanobind::module_& m)
   m.def(
       "mark_equidistribution_squared",
       [](MPICommWrapper comm,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> indicators, T theta)
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> squared_indicators,
+         T theta)
       {
         return dolfinx_wrappers::as_nbarray(
             dolfinx::refinement::mark_equidistribution_squared(
-                comm.get(), std::span(indicators.data(), indicators.size()),
+                comm.get(),
+                std::span(squared_indicators.data(),
+                          squared_indicators.size()),
                 theta));
       },
-      nb::arg("comm"), nb::arg("indicators"), nb::arg("theta"));
+      nb::arg("comm"), nb::arg("squared_indicators"), nb::arg("theta"));
 }
 
 } // namespace dolfinx_wrappers

@@ -820,7 +820,7 @@ def mark_equidistribution(
 
 def mark_equidistribution_squared(
     comm: _MPI.Comm,
-    indicators: npt.NDArray[Real],
+    squared_indicators: npt.NDArray[Real],
     theta: float,
 ) -> npt.NDArray[np.int32]:
     """Compute equidistribution threshold marking of a squared indicator.
@@ -833,14 +833,14 @@ def mark_equidistribution_squared(
     Args:
         comm: Communicator over which the global equidistribution
             threshold is computed.
-        indicators: Input indicators (local) :math:`\\eta_i^2` - usually
+        squared_indicators: Input squared indicators (local) :math:`\\eta_i^2` - usually
             associated with mesh entity :math:`i`.
         theta: Parameter, :math:`0 < \\theta < 1`.
 
     Returns:
-        Local indices of indicators that satisfy the threshold.
+        Local indices of squared indicators that satisfy the threshold.
     """
-    return _mark_equidistribution_squared(comm, indicators, theta)
+    return _mark_equidistribution_squared(comm, squared_indicators, theta)
 
 
 def create_mesh(
