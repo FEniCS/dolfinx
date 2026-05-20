@@ -34,7 +34,8 @@ namespace impl
 /// Returns the indices \f$ i \f$ of the indicators \f$ \eta_i \f$ that satisfy
 /// the threshold: \f$ \eta_i > \text{threshold} \f$.
 ///
-/// @param[in] indicators Indicators \f$ \eta_i \f$ used for marking.
+/// @param[in] indicators Indicators (local) \f$ \eta_i \f$ -
+/// usually an error indicator associated with mesh entity \f$ i \f$.
 /// @param[in] threshold Threshold value; indicators greater than this are
 /// marked.
 /// @return Local indices of marked entities.
