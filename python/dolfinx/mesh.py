@@ -808,8 +808,10 @@ def mark_equidistribution(
     Args:
         comm: Communicator over which the global equidistribution
             threshold is computed.
-        indicators: Indicators (local) :math:`\eta_i` - usually
-            associated with mesh entity :math:`i`.
+        indicators: Indicators for owned local entities :math:`\eta_i` -
+            usually associated with mesh entity :math:`i`. Ghost values
+            cause double-counting in the global reductions and an incorrect
+            threshold.
         theta: Parameter, :math:`0 < \theta < 1`.
 
     Returns:
@@ -833,9 +835,10 @@ def mark_equidistribution_squared(
     Args:
         comm: Communicator over which the global equidistribution
             threshold is computed.
-        squared_indicators: Input squared indicators (local)
-            :math:`\eta_i^2` - usually associated with mesh
-            entity :math:`i`.
+        squared_indicators: Input squared indicators for owned local
+            entities :math:`\eta_i^2` - usually associated with mesh
+            entity :math:`i`. Ghost values cause double-counting in the
+            global reductions and an incorrect threshold.
         theta: Parameter, :math:`0 < \theta < 1`.
 
     Returns:
