@@ -8,11 +8,14 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <concepts>
 #include <cstdint>
 #include <limits>
 #include <mpi.h>
+#include <span>
 #include <spdlog/spdlog.h>
+#include <stdexcept>
 #include <vector>
 
 #include "dolfinx/common/MPI.h"
@@ -27,8 +30,8 @@ namespace impl
 ///
 /// Helper for other marking routines.
 ///
-/// Returns the indices \f$ i \f$ of the indicators $eta_i$ that satisfy the
-/// threshold: \f$ \eta_i > \text{threshold} \f$.
+/// Returns the indices \f$ i \f$ of the indicators \f$ eta_i \f$ that satisfy
+/// the threshold: \f$ \eta_i > \text{threshold} \f$.
 ///
 /// @param[in] indicators Indicators \f$ \eta_i \f$ used for marking.
 /// @param[in] threshold Threshold value; indicators greater than this are
@@ -54,8 +57,8 @@ std::vector<std::int32_t> mark_threshold(std::span<const T> indicators,
 
 /// @brief Computes maximum-based marking of indicators.
 ///
-/// Returns the indices \f$ i \f$ of the indicators $eta_i$ that satisfy the
-/// maximum threshold: \f$ \eta_i \geq \theta \max_j \eta_j \f$.
+/// Returns the indices \f$ i \f$ of the indicators \f$ eta_i \f$ that satisfy
+/// the maximum threshold: \f$ \eta_i > \theta \max_j \eta_j \f$.
 ///
 /// @param[in] comm Communicator to compute the maximum over.
 /// @param[in] indicators Indicators (local) \f$ \eta_i \f$ -
@@ -67,7 +70,7 @@ std::vector<std::int32_t> mark_maximum(MPI_Comm comm,
                                        std::span<const T> indicators, T theta)
 {
   if ((theta <= 0) || (theta >= 1))
-    throw std::invalid_argument("theta must fullfill 0 < theta < 1.");
+    throw std::invalid_argument("theta must fulfill 0 < theta < 1.");
 
   T max = indicators.empty() ? std::numeric_limits<T>::lowest()
                              : std::ranges::max(indicators);
@@ -100,7 +103,7 @@ std::vector<std::int32_t>
 mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 {
   if ((theta <= 0) || (theta >= 1))
-    throw std::invalid_argument("theta must fullfill 0 < theta < 1.");
+    throw std::invalid_argument("theta must fulfill 0 < theta < 1.");
 
   T norm = std::inner_product(indicators.begin(), indicators.end(),
                               indicators.begin(), T{0});
@@ -109,7 +112,8 @@ mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 
   T sqrt_norm = std::sqrt(norm);
 
-  std::size_t count = indicators.size();
+  // Caution with headroom of global sum across ranks.
+  std::int64_t count = indicators.size();
   MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int64_t>,
                 MPI_SUM, comm);
 
@@ -124,9 +128,10 @@ mark_equidistribution(MPI_Comm comm, std::span<const T> indicators, T theta)
 
 /// @brief Computes equidistribution threshold marking of a squared indicator.
 ///
-/// Returns the indices \f$i\f$ of the squared indicators $eta_i^2$ that satisfy
-/// the equidistribution threshold: \f$ \eta_i^2 > \theta^2 \frac{||\eta||^2}{N}
-/// \f$ where \f$ N \f$ is the (global) number of indicators.
+/// Returns the indices \f$i\f$ of the squared indicators \f$ eta_i^2 \f$ that
+/// satisfy the equidistribution threshold: \f$ \eta_i^2 > \theta^2
+/// \frac{||\eta||^2}{N} \f$ where \f$ N \f$ is the (global) number of
+/// indicators.
 ///
 /// @param[in] comm Communicator over which the global equidistribution
 /// threshold is computed.
@@ -140,13 +145,14 @@ mark_equidistribution_squared(MPI_Comm comm, std::span<const T> indicators,
                               T theta)
 {
   if ((theta <= 0) || (theta >= 1))
-    throw std::invalid_argument("theta must fullfill 0 < theta < 1.");
+    throw std::invalid_argument("theta must fulfill 0 < theta < 1.");
 
   T norm = std::accumulate(indicators.begin(), indicators.end(), T{0});
 
   MPI_Allreduce(MPI_IN_PLACE, &norm, 1, dolfinx::MPI::mpi_t<T>, MPI_SUM, comm);
 
-  std::size_t count = indicators.size();
+  // Caution with headroom of global sum across ranks.
+  std::int64_t count = indicators.size();
   MPI_Allreduce(MPI_IN_PLACE, &count, 1, dolfinx::MPI::mpi_t<std::int64_t>,
                 MPI_SUM, comm);
 
