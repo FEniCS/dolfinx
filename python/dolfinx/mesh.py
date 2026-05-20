@@ -775,7 +775,7 @@ def mark_maximum(
     indicators: npt.NDArray[Real],
     theta: float,
 ) -> npt.NDArray[np.int32]:
-    """Compute maximum-based marking of indicators.
+    r"""Compute maximum-based marking of indicators.
 
     Returns the indices :math:`i` of the indicators :math:`\\eta_i` that
     satisfy the maximum threshold:
@@ -798,7 +798,7 @@ def mark_equidistribution(
     indicators: npt.NDArray[Real],
     theta: float,
 ) -> npt.NDArray[np.int32]:
-    """Compute equidistribution threshold marking of indicators.
+    r"""Compute equidistribution threshold marking of indicators.
 
     Returns the indices :math:`i` of the indicators :math:`\\eta_i` that
     satisfy the equidistribution threshold:
@@ -823,7 +823,7 @@ def mark_equidistribution_squared(
     squared_indicators: npt.NDArray[Real],
     theta: float,
 ) -> npt.NDArray[np.int32]:
-    """Compute equidistribution threshold marking of a squared indicator.
+    r"""Compute equidistribution threshold marking of a squared indicator.
 
     Returns the indices :math:`i` of the squared indicators
     :math:`\\eta_i^2` that satisfy the equidistribution threshold:
