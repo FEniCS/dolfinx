@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2021 Jørgen Schartum Dokken and Matthew Scroggs
+# Copyright (C) 2019-2026 Jørgen Schartum Dokken and Matthew Scroggs
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -18,10 +18,10 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
 from dolfinx.cpp.io import perm_vtk
-from dolfinx.fem import assemble_scalar, form
+from dolfinx.fem import assemble_scalar, form, mixed_topology_form
 from dolfinx.io import XDMFFile
-from dolfinx.io.gmsh import cell_perm_array, ufl_mesh
-from dolfinx.mesh import CellType, create_mesh, create_submesh
+from dolfinx.io.gmsh import model_to_mesh
+from dolfinx.mesh import CellType, Mesh, create_mesh, create_submesh
 from ufl import dx
 
 
@@ -729,59 +729,86 @@ def test_xdmf_input_tri(datadir, dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("order", range(1, 4))
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+@pytest.mark.parametrize("order", [1, 2])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_gmsh_input_2d(order, cell_type, dtype):
+def test_gmsh_mixed_mesh_2d(order, dtype):
     try:
         import gmsh
     except ImportError:
         pytest.skip()
     res = 0.2
     gmsh.initialize()
+    model_name = f"mixed_2D_{dtype}_{order}"
+    gmsh.model.add(model_name)
+    gmsh.model.setCurrent(model_name)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
 
-    if cell_type == CellType.quadrilateral:
-        gmsh.option.setNumber("Mesh.Algorithm", 2)
-        # Force mesh to have no triangles
-        gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 3)
+    gmsh.option.setNumber("Mesh.Algorithm", 2)
+    gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 2)
+    tag = gmsh.model.occ.addSphere(0, 0, 0, 1)
+    gmsh.model.occ.synchronize()
+    gmsh.model.addPhysicalGroup(2, [tag], tag=1)
+
+    gmsh.model.mesh.generate(2)
+    gmsh.model.mesh.recombine()
+    gmsh.model.mesh.setOrder(order)
+
+    mesh_data = model_to_mesh(gmsh.model, MPI.COMM_WORLD, 0, gdim=3, dtype=dtype)
+    gmsh.finalize()
+    mesh = mesh_data.mesh
+    if len(mesh.topology._cpp_object.cell_types) == 1:
+        surface = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
+    else:
+        Js = []
+        for i, cell_type in enumerate(mesh._cpp_object.topology.cell_types):
+            cell_name = cell_type.name
+            cmap = mesh._cpp_object.geometry.cmap(i)
+            domain = ufl.Mesh(
+                basix.ufl.element(
+                    "Lagrange",
+                    cell_name,
+                    cmap.degree,
+                    lagrange_variant=cmap.variant,
+                    shape=(mesh.geometry.dim,),
+                    dtype=dtype,
+                )
+            )
+            mesh_i = Mesh(mesh._cpp_object, domain)
+            Js += [1 * ufl.dx(mesh_i)]
+        surface = assemble_scalar(mixed_topology_form(Js, dtype=dtype))
+
+    assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(
+        4 * np.pi, rel=10 ** (-1 - order)
+    )
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("order", [1, 2, 3])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_gmsh_input_2d(order, dtype):
+    try:
+        import gmsh
+    except ImportError:
+        pytest.skip()
+    res = 0.2
+    gmsh.initialize()
+    model_name = f"triangle_2D_{dtype}_{order}"
+    gmsh.model.add(model_name)
+    gmsh.model.setCurrent(model_name)
+
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
 
     tag = gmsh.model.occ.addSphere(0, 0, 0, 1)
     gmsh.model.occ.synchronize()
     gmsh.model.addPhysicalGroup(2, [tag], tag=1)
 
     gmsh.model.mesh.generate(2)
-    if cell_type == CellType.quadrilateral:
-        gmsh.model.mesh.recombine()
     gmsh.model.mesh.setOrder(order)
-    idx, points, _ = gmsh.model.mesh.getNodes()
-    points = points.reshape(-1, 3)
-    idx -= 1
-    srt = np.argsort(idx)
-    assert np.all(idx[srt] == np.arange(len(idx)))
-    x = points[srt]
 
-    element_types, _element_tags, node_tags = gmsh.model.mesh.getElements(dim=2)
-    (
-        _name,
-        _dim,
-        order,
-        num_nodes,
-        _local_coords,
-        _num_first_order_nodes,
-    ) = gmsh.model.mesh.getElementProperties(element_types[0])
-
-    cells = node_tags[0].reshape(-1, num_nodes) - 1
-    if cell_type == CellType.triangle:
-        gmsh_cell_id = gmsh.model.mesh.getElementType("triangle", order)
-    elif cell_type == CellType.quadrilateral:
-        gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
+    mesh = model_to_mesh(gmsh.model, MPI.COMM_WORLD, 0, gdim=3, dtype=dtype).mesh
     gmsh.finalize()
-
-    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
-    x = x.astype(dtype)
-    mesh = create_mesh(MPI.COMM_WORLD, cells, ufl_mesh(gmsh_cell_id, x.shape[1], dtype=dtype), x)
     surface = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
 
     assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(
@@ -790,72 +817,129 @@ def test_gmsh_input_2d(order, cell_type, dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("order", range(1, 4))
-@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+@pytest.mark.parametrize("order", [1, 2])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_gmsh_input_3d(order, cell_type, dtype):
+def test_gmsh_mixed_mesh_3d(order, dtype):
     try:
         import gmsh
     except ImportError:
         pytest.skip()
-    if cell_type == CellType.hexahedron and order > 2:
-        pytest.xfail("Gmsh permutation for order > 2 hexahedra not implemented in DOLFINx.")
+    gmsh.initialize()
+    model_name = f"mixed_3D_{dtype}_{order}"
+    gmsh.model.add(model_name)
+    gmsh.model.setCurrent(model_name)
+
+    res = 0.1
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
+
+    # Inner square core
+    core = gmsh.model.occ.addRectangle(-0.5, -0.5, 0, 1, 1)
+    # Outer disk
+    disk = gmsh.model.occ.addDisk(0, 0, 0, 1, 1)
+
+    # Fragment the disk with the core to create a separate inner square and outer ring
+    out, _ = gmsh.model.occ.fragment([(2, disk)], [(2, core)])
+    base_surfaces = [tag for dim, tag in out]
+
+    # Extrude the base surfaces to create the bottom 3D volumes
+    # (Recombine=True will turn a quad-meshed surface into Hexahedrons,
+    # and a tri-meshed surface into Prisms)
+    gmsh.model.occ.extrude(
+        [(2, s) for s in base_surfaces], 0, 0, 1, numElements=[5], recombine=True
+    )
+
+    # Add a top cylinder for unstructured tetrahedral meshing
+    gmsh.model.occ.addCylinder(0, 0, 1, 0, 0, 1, 1)
+
+    # Fragment all volumes to ensure conformal interfaces (shared nodes at boundaries)
+    vols = gmsh.model.occ.getEntities(3)
+    gmsh.model.occ.fragment(vols, [])
+    gmsh.model.occ.synchronize()
+
+    # Find the square base surface (at z=0) and set it to recombine into quads
+    for dim, tag in gmsh.model.occ.getEntities(2):
+        com = gmsh.model.occ.getCenterOfMass(dim, tag)
+        if abs(com[2]) < 1e-4:  # If it's on the bottom plane
+            bb = gmsh.model.occ.getBoundingBox(dim, tag)
+            width = bb[3] - bb[0]
+            if abs(width - 1.0) < 1e-4:  # Identify the square core by its 1x1 dimension
+                gmsh.model.mesh.setRecombine(2, tag)
+
+    volumes = gmsh.model.getEntities(3)
+    for phys_tag, (_, vol) in enumerate(volumes, start=1):
+        gmsh.model.addPhysicalGroup(3, [vol], tag=phys_tag)
+
+    # Generate the 3D mesh
+    gmsh.model.mesh.generate(3)
+    gmsh.model.mesh.setOrder(order)
+
+    mesh_data = model_to_mesh(gmsh.model, MPI.COMM_WORLD, 0, gdim=3, dtype=dtype)
+    gmsh.finalize()
+
+    mesh = mesh_data.mesh
+
+    # Permute the mesh topology from Gmsh ordering to DOLFINx ordering
+    cell_types = mesh._cpp_object.topology.cell_types
+    if len(cell_types) == 1:
+        volume = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
+
+    else:
+        Js = []
+        for i, cell_type in enumerate(cell_types):
+            cell_name = cell_type.name
+            cmap = mesh._cpp_object.geometry.cmap(i)
+            domain = ufl.Mesh(
+                basix.ufl.element(
+                    "Lagrange",
+                    cell_name,
+                    cmap.degree,
+                    lagrange_variant=cmap.variant,
+                    shape=(mesh.geometry.dim,),
+                    dtype=dtype,
+                )
+            )
+            mesh_i = Mesh(mesh._cpp_object, domain)
+            Js += [1 * ufl.dx(mesh_i)]
+        volume = assemble_scalar(mixed_topology_form(Js, dtype=dtype))
+
+    assert mesh.comm.allreduce(volume, op=MPI.SUM) == pytest.approx(
+        2 * np.pi, rel=10 ** (-1 - order)
+    )
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("order", [1, 2, 3])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_gmsh_tetra(order, dtype):
+    try:
+        import gmsh
+    except ImportError:
+        pytest.skip()
 
     res = 0.2
 
     gmsh.initialize()
-    if cell_type == CellType.hexahedron:
-        gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 2)
-        gmsh.option.setNumber("Mesh.RecombineAll", 2)
+    model_name = f"tetra_{dtype}_{order}"
+    gmsh.model.add(model_name)
+    gmsh.model.setCurrent(model_name)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", res)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
 
     circle = gmsh.model.occ.addDisk(0, 0, 0, 1, 1)
-
-    if cell_type == CellType.hexahedron:
-        tag = gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5], recombine=True)
-    else:
-        tag = gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5])
+    gmsh.model.occ.extrude([(2, circle)], 0, 0, 1, numElements=[5])
     gmsh.model.occ.synchronize()
-    for dim, idx in tag:
-        gmsh.model.addPhysicalGroup(dim, [idx], tag=idx)
+
+    # Tag only 3D volumes, and use unique physical tags
+    for phys_tag, (_, vol) in enumerate(gmsh.model.getEntities(3), start=1):
+        gmsh.model.addPhysicalGroup(3, [vol], tag=phys_tag)
+
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.setOrder(order)
-
-    idx, points, _ = gmsh.model.mesh.getNodes()
-    points = points.reshape(-1, 3)
-    idx -= 1
-    srt = np.argsort(idx)
-    assert np.all(idx[srt] == np.arange(len(idx)))
-    x = points[srt]
-
-    element_types, _element_tags, node_tags = gmsh.model.mesh.getElements(dim=3)
-    (
-        _name,
-        _dim,
-        order,
-        num_nodes,
-        _local_coords,
-        _num_first_order_nodes,
-    ) = gmsh.model.mesh.getElementProperties(element_types[0])
-
-    cells = node_tags[0].reshape(-1, num_nodes) - 1
-    if cell_type == CellType.tetrahedron:
-        gmsh_cell_id = MPI.COMM_WORLD.bcast(
-            gmsh.model.mesh.getElementType("tetrahedron", order), root=0
-        )
-    elif cell_type == CellType.hexahedron:
-        gmsh_cell_id = MPI.COMM_WORLD.bcast(
-            gmsh.model.mesh.getElementType("hexahedron", order), root=0
-        )
+    mesh_data = model_to_mesh(gmsh.model, MPI.COMM_WORLD, 0, gdim=3, dtype=dtype)
+    mesh = mesh_data.mesh
     gmsh.finalize()
 
-    # Permute the mesh topology from Gmsh ordering to DOLFINx ordering
-    domain = ufl_mesh(gmsh_cell_id, 3, dtype=dtype)
-    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
-
-    x = x.astype(dtype)
-    mesh = create_mesh(MPI.COMM_WORLD, cells, domain, x)
     volume = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
     assert mesh.comm.allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
 

@@ -364,7 +364,7 @@ def assemble_matrix(
 
        a. If ``kind`` is a ``PETSc.Mat.Type`` (other than
           ``PETSc.Mat.Type.NEST``) or is ``None``, the matrix type is
-          ``kind`` of the default type (if ``kind`` is ``None``).
+          ``kind`` or the default type (if ``kind`` is ``None``).
        #. If ``kind`` is ``PETSc.Mat.Type.NEST`` or a rectangular array
           of PETSc matrix types, the returned matrix has type
           ``PETSc.Mat.Type.NEST``.
@@ -372,7 +372,7 @@ def assemble_matrix(
     Rows/columns that are constrained by a Dirichlet boundary condition
     are zeroed, with the diagonal to set to ``diag``.
 
-    Constant and coefficient data that appear in the forms(s) can be
+    Constant and coefficient data that appear in the form(s) can be
     packed outside of this function to avoid re-packing by this
     function. The functions :func:`dolfinx.fem.pack_constants` and
     :func:`dolfinx.fem.pack_coefficients` can be used to 'pre-pack' the
@@ -388,8 +388,8 @@ def assemble_matrix(
         diag: Value to set on the matrix diagonal for Dirichlet
             boundary condition constrained degrees-of-freedom belonging
             to the same trial and test space.
-        constants: Constants appearing the in the form.
-        coeffs: Coefficients appearing the in the form.
+        constants: Constants appearing in the form.
+        coeffs: Coefficients appearing in the form.
         kind: PETSc matrix type (``MatType``).
 
     Returns:
@@ -1231,10 +1231,10 @@ class NonlinearProblem:
         )
 
         if J is None:
-            J = derivative_block(F, u)
+            J = derivative_block(F, u)  # type: ignore
 
         self._J = _create_form(
-            J,
+            J,  # type: ignore
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
             entity_maps=entity_maps,
