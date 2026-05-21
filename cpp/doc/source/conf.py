@@ -30,7 +30,7 @@ jupytext_process.process()
 
 # -- Project information -----------------------------------------------------
 
-project = "DOLFINx"
+project = "DOLFINx C++"
 now = datetime.datetime.now()
 date = now.date()
 copyright = f"{date.year}, FEniCS Project"
