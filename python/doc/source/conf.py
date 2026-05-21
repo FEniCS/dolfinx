@@ -63,7 +63,7 @@ source_suffix = {
 master_doc = "index"
 
 # General information about the project.
-project = "DOLFINx"
+project = "DOLFINx Python"
 now = datetime.datetime.now()
 date = now.date()
 copyright = f"{date.year}, FEniCS Project"
