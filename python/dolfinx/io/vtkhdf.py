@@ -18,11 +18,19 @@ from dolfinx.cpp.io import (
     read_vtkhdf_mesh_float32,
     read_vtkhdf_mesh_float64,
     write_vtkhdf_data,
+    write_vtkhdf_function,
     write_vtkhdf_mesh,
 )
+from dolfinx.fem import Function
 from dolfinx.mesh import Mesh
 
-__all__ = ["read_mesh", "write_cell_data", "write_mesh", "write_point_data"]
+__all__ = [
+    "read_mesh",
+    "write_cell_data",
+    "write_function",
+    "write_mesh",
+    "write_point_data",
+]
 
 
 def read_mesh(
@@ -101,3 +109,15 @@ def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: f
         time: Timestamp.
     """
     write_vtkhdf_data("Cell", filename, mesh._cpp_object, data, time)
+
+
+def write_function(filename: str | Path, mesh: Mesh, u: Function, time: float):
+    """Write a function to file. Only CG1 and DG0 functions are supported.
+
+    Args:
+        filename: File to write to.
+        mesh: Mesh.
+        u: Function to write.
+        time: Timestamp.
+    """
+    write_vtkhdf_function(filename, mesh._cpp_object, u._cpp_object, time)
