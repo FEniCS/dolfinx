@@ -338,8 +338,10 @@ void pack_coefficients(const Form<T, U>& form,
 /// @param coeffs Coefficients to pack
 /// @param mesh Mesh which the entities belong to
 /// @param entities Entities to pack over
-/// @param entity_maps Bidirectional maps between the entities of a parent mesh and a submesh in case of coefficients being defined on both.
-/// @param offsets Insertion offset for each of the `coeffs` when packed into `c`.
+/// @param entity_maps Bidirectional maps between the entities of a parent mesh
+/// and a submesh in case of coefficients being defined on both.
+/// @param offsets Insertion offset for each of the `coeffs` when packed into
+/// `c`.
 /// @param[in,out] c Packed coefficients.
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(
@@ -422,7 +424,10 @@ void pack_coefficients(
         const mesh::Topology topology = *mesh.topology();
         int tdim = topology.dim();
         int codim = tdim - mesh_c->topology()->dim();
-        if (codim == 0)
+        switch (codim)
+        {
+        case 0:
+
         {
           // If codim is zero we extract the cells and map them
           auto cells = md::submdspan(entities, md::full_extent, 0);
@@ -435,8 +440,9 @@ void pack_coefficients(
           impl::pack_coefficient_entity(std::span(c), cstride,
                                         coeffs[coeff].get(), cell_info, e,
                                         offsets[coeff]);
+          break;
         }
-        else if (codim == 1)
+        case 1:
         {
           // Codim 1 mesh, need to map (cell, local index) to facets and then
           // to cells of the submesh
@@ -454,16 +460,15 @@ void pack_coefficients(
           impl::pack_coefficient_entity(std::span(c), cstride,
                                         coeffs[coeff].get(), cell_info, e,
                                         offsets[coeff]);
+          break;
         }
-      }
-      else
-      {
-        throw std::runtime_error("Entities span has unsupported rank.");
+        default:
+          throw std::runtime_error("Entities span has unsupported rank.");
+        }
       }
     }
   }
 }
-
 /// @brief Pack constants of an Expression or Form into a single array
 /// ready for assembly.
 /// @param c Constants to pack.
