@@ -44,6 +44,7 @@ application-level use.
    dolfinx.cpp.common
    dolfinx.cpp.fem
    dolfinx.cpp.fem.petsc
+   dolfinx.cpp.fem.superlu_dist
    dolfinx.cpp.geometry
    dolfinx.cpp.graph
    dolfinx.cpp.io
