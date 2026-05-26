@@ -202,7 +202,8 @@ private:
   // Evaluation points on reference cell
   std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> _x_ref;
 
-  // Set of bidirectional maps of mesh entities (cells, facets, ridges or peaks) between meshes and submeshes of any codimension.
+  // Set of bidirectional maps of mesh entities (cells, facets, ridges or peaks)
+  // between meshes and submeshes of any codimension.
   std::vector<std::reference_wrapper<const dolfinx::mesh::EntityMap>>
       _entity_maps;
 
