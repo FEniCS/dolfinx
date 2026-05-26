@@ -21,11 +21,13 @@ Note that our Developer mode is significantly stricter than CMake's default Debu
 
 # Type checking with mypy
 
-1. Install DOLFINx Python with the `[mypy]` optional dependencies set.
+1. Install DOLFINx Python with the `[mypy]` optional dependencies set, e.g.:
+
+    pip install .[mypy]
 
 2. Check with mypy, e.g.:
 
     `mypy -p dolfinx`
 
-   Note that this should be executed in a location where `dolfinx/` is not an
-   importable module.
+   Note that this should be executed at a path where `dolfinx/` is not an
+   importable package.
