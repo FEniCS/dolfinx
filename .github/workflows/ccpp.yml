@@ -134,7 +134,7 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy --config-file python/pyproject.toml -p dolfinx # package mode, must be done without dolfinx/__init__.py visible
+          mypy --config-file python/pyproject.toml -p dolfinx # package mode, type checks installed dolfinx
           cd python/
           mypy test
           #mypy demo # TODO: Enable this in future
