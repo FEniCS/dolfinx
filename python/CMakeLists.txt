@@ -206,20 +206,20 @@ if (ENABLE_NANOBIND_STUBGEN)
       RECURSIVE
       VERBOSE
       OUTPUT
-	dolfinx/cpp/__init__.pyi
-	dolfinx/cpp/common.pyi
-	dolfinx/cpp/fem/__init__.pyi
-	dolfinx/cpp/fem/petsc.pyi
-	dolfinx/cpp/geometry.pyi
-	dolfinx/cpp/graph.pyi
-	dolfinx/cpp/io.pyi
-	dolfinx/cpp/la/__init__.pyi
-	dolfinx/cpp/la/petsc.pyi
-	dolfinx/cpp/log.pyi
-	dolfinx/cpp/mesh.pyi
-	dolfinx/cpp/nls/__init__.pyi
-	dolfinx/cpp/nls/petsc.pyi
-	dolfinx/cpp/refinement.pyi
+				dolfinx/cpp/__init__.pyi
+				dolfinx/cpp/common.pyi
+				dolfinx/cpp/fem/__init__.pyi
+				dolfinx/cpp/fem/petsc.pyi
+				dolfinx/cpp/geometry.pyi
+				dolfinx/cpp/graph.pyi
+				dolfinx/cpp/io.pyi
+				dolfinx/cpp/la/__init__.pyi
+				dolfinx/cpp/la/petsc.pyi
+				dolfinx/cpp/log.pyi
+				dolfinx/cpp/mesh.pyi
+				dolfinx/cpp/nls/__init__.pyi
+				dolfinx/cpp/nls/petsc.pyi
+				dolfinx/cpp/refinement.pyi
     )
   else()
     # On UNIX-like systems we can import the cpp compiled module before
@@ -232,20 +232,20 @@ if (ENABLE_NANOBIND_STUBGEN)
       RECURSIVE
       VERBOSE
       OUTPUT
-	cpp/__init__.pyi
-	cpp/common.pyi
-	cpp/fem/__init__.pyi
-	cpp/fem/petsc.pyi
-	cpp/geometry.pyi
-	cpp/graph.pyi
-	cpp/io.pyi
-	cpp/la/__init__.pyi
-	cpp/la/petsc.pyi
-	cpp/log.pyi
-	cpp/mesh.pyi
-	cpp/nls/__init__.pyi
-	cpp/nls/petsc.pyi
-	cpp/refinement.pyi
+	      cpp/__init__.pyi
+	      cpp/common.pyi
+        cpp/fem/__init__.pyi
+        cpp/fem/petsc.pyi
+        cpp/geometry.pyi
+        cpp/graph.pyi
+        cpp/io.pyi
+        cpp/la/__init__.pyi
+        cpp/la/petsc.pyi
+        cpp/log.pyi
+        cpp/mesh.pyi
+        cpp/nls/__init__.pyi
+        cpp/nls/petsc.pyi
+        cpp/refinement.pyi
     )
 
     install(TARGETS cpp DESTINATION dolfinx)
