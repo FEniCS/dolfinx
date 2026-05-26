@@ -330,6 +330,106 @@ void pack_coefficients(const Form<T, U>& form,
   }
 }
 
+/// @brief Given a Function and a related mesh and its integration entities,
+/// extract the cell indices of the coefficient mesh.
+/// @param[in] coeff The coefficient to extract cell indices for.
+/// @param[in] mesh The mesh which the integration entities belong to.
+/// @param[in] entities The integration entities. Is either a sequence of local
+/// cell indices, or a sequence of (cell, local entity index) tuples.
+/// @param[in] entity_map The map between the mesh and the coefficient mesh in
+/// case they are different.
+template <dolfinx::scalar T, std::floating_point U>
+std::vector<std::int32_t> extract_coefficient_cells_from_entities(
+    const fem::Function<T, U>& coeff, const mesh::Mesh<U>& mesh,
+    fem::MDSpan2 auto entities,
+    std::optional<std::reference_wrapper<const dolfinx::mesh::EntityMap>>
+        entity_map)
+{
+  auto mesh_c = coeff.function_space()->mesh();
+  assert(mesh_c);
+
+  if (mesh_c->topology() == mesh.topology())
+  {
+    // If same mesh no mapping is needed
+    if constexpr (entities.rank() == 1)
+    {
+      return std::vector<std::int32_t>(
+          entities.data_handle(), entities.data_handle() + entities.size());
+    }
+    else
+    {
+      // If (cell, local_index) pairs are given, extract the cells
+      auto cells = md::submdspan(entities, md::full_extent, 0);
+      std::vector<std::int32_t> contiguous_cells(cells.extent(0));
+      for (std::size_t i = 0; i < cells.extent(0); ++i)
+        contiguous_cells[i] = cells(i);
+      return contiguous_cells;
+    }
+  }
+  else
+  {
+    assert(entity_map.has_value());
+    const mesh::Topology topology = *mesh.topology();
+    int tdim = topology.dim();
+    int codim = tdim - mesh_c->topology()->dim();
+    // Map entities to coefficient mesh using entity map
+    std::vector<std::int32_t> e_b;
+    const dolfinx::mesh::EntityMap& emap = entity_map.value().get();
+    bool inverse = emap.sub_topology() == mesh_c->topology();
+    // If cells are supplied on the parent mesh, we can directly map them to
+    // cells on the coefficient mesh.
+    if constexpr (entities.rank() == 1)
+    {
+      assert(codim == 0);
+      e_b = emap.sub_topology_to_topology(
+          std::span(entities.data_handle(), entities.size()), inverse);
+    }
+    else if constexpr (entities.rank() == 2)
+    {
+      if (codim == 0)
+      {
+        // If codim is zero we extract the cells and map them
+        auto cells = md::submdspan(entities, md::full_extent, 0);
+        std::vector<std::int32_t> contiguous_cells(cells.extent(0));
+        for (std::size_t i = 0; i < cells.extent(0); ++i)
+          contiguous_cells[i] = cells(i);
+        e_b = emap.sub_topology_to_topology(std::span(contiguous_cells),
+                                            inverse);
+      }
+      else
+      {
+        // Any other codim needs  to map (cell, local index) to facets and then
+        // to cells of the submesh
+        if (!inverse)
+        {
+          throw std::runtime_error(
+              "Unsupported mapping. Can only map from submesh to parent mesh.");
+        }
+        assert(codim > 0);
+        auto c_to_e = topology.connectivity(tdim, tdim - codim);
+        if (!c_to_e)
+        {
+          throw std::runtime_error(std::format(
+              "Topology connectivity from codim {} to {} not found.", tdim,
+              tdim - codim));
+        }
+        // Map parent (cell, local_index) to parent facet
+        std::vector<std::int32_t> contiguous_cells;
+        contiguous_cells.reserve(entities.extent(0));
+        for (std::size_t e = 0; e < entities.extent(0); ++e)
+        {
+          auto pair = md::submdspan(entities, e, md::full_extent);
+          contiguous_cells.push_back(c_to_e->links(pair[0])[pair[1]]);
+        }
+        // Map parent facet to submesh cell
+        e_b = emap.sub_topology_to_topology(std::span(contiguous_cells),
+                                            inverse);
+      }
+    }
+    return e_b;
+  }
+}
+
 /// @brief Pack coefficient data over a list of cells or facets.
 ///
 /// Typically used to prepare coefficient data for an ::Expression.
@@ -338,10 +438,11 @@ void pack_coefficients(const Form<T, U>& form,
 /// @param coeffs Coefficients to pack
 /// @param mesh Mesh which the entities belong to
 /// @param entities Entities to pack over
-/// @param entity_maps Bidirectional maps between the entities of a parent mesh
-/// and a submesh in case of coefficients being defined on both.
-/// @param offsets Insertion offset for each of the `coeffs` when packed into
-/// `c`.
+/// @param entity_maps Bidirectional maps between the entities of a
+/// parent mesh and a submesh in case of coefficients being defined on
+/// both.
+/// @param offsets Insertion offset for each of the `coeffs` when packed
+/// into `c`.
 /// @param[in,out] c Packed coefficients.
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(
@@ -361,26 +462,14 @@ void pack_coefficients(
   // Iterate over coefficients
   for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
   {
-    std::span<const std::uint32_t> cell_info
-        = impl::get_cell_orientation_info(coeffs[coeff].get());
+
     // Get mesh of coefficient and check if entity map is required
     auto mesh_c = coeffs[coeff].get().function_space()->mesh();
+    std::vector<std::int32_t> coefficient_cells;
     if (mesh_c->topology() == mesh.topology())
     {
-      // If same mesh no mapping is needed
-      if constexpr (entities.rank() == 1)
-      {
-        impl::pack_coefficient_entity(std::span(c), cstride,
-                                      coeffs[coeff].get(), cell_info, entities,
-                                      offsets[coeff]);
-      }
-      else
-      {
-        auto cells = md::submdspan(entities, md::full_extent, 0);
-        impl::pack_coefficient_entity(std::span(c), cstride,
-                                      coeffs[coeff].get(), cell_info, cells,
-                                      offsets[coeff]);
-      }
+      coefficient_cells = extract_coefficient_cells_from_entities(
+          coeffs[coeff].get(), mesh, entities, std::nullopt);
     }
     else
     {
@@ -400,73 +489,23 @@ void pack_coefficients(
 
         if (it == entity_maps.end())
         {
-          throw std::runtime_error(
-              "Incompatible mesh. argument entity_maps must be provided.");
+          throw std::runtime_error("Incompatible mesh. argument "
+                                   "entity_maps must be provided.");
         }
         return *it;
       };
       // Find correct entity map and determine direction of the map
       const mesh::EntityMap& emap = get_entity_map(mesh_c);
-      bool inverse = emap.sub_topology() == mesh_c->topology();
-
-      std::vector<std::int32_t> e_b;
-      if constexpr (entities.rank() == 1)
-      {
-        e_b = emap.sub_topology_to_topology(
-            std::span(entities.data_handle(), entities.size()), inverse);
-        md::mdspan e(e_b.data(), e_b.size());
-        impl::pack_coefficient_entity(std::span(c), cstride,
-                                      coeffs[coeff].get(), cell_info, e,
-                                      offsets[coeff]);
-      }
-      else if constexpr (entities.rank() == 2)
-      {
-        const mesh::Topology topology = *mesh.topology();
-        int tdim = topology.dim();
-        int codim = tdim - mesh_c->topology()->dim();
-        switch (codim)
-        {
-        case 0:
-
-        {
-          // If codim is zero we extract the cells and map them
-          auto cells = md::submdspan(entities, md::full_extent, 0);
-          std::vector<std::int32_t> contiguous_cells(cells.extent(0));
-          for (std::size_t i = 0; i < cells.extent(0); ++i)
-            contiguous_cells[i] = cells(i);
-          e_b = emap.sub_topology_to_topology(std::span(contiguous_cells),
-                                              inverse);
-          md::mdspan e(e_b.data(), e_b.size());
-          impl::pack_coefficient_entity(std::span(c), cstride,
-                                        coeffs[coeff].get(), cell_info, e,
-                                        offsets[coeff]);
-          break;
-        }
-        case 1:
-        {
-          // Codim 1 mesh, need to map (cell, local index) to facets and then
-          // to cells of the submesh
-          auto c_to_f = topology.connectivity(tdim, tdim - 1);
-          assert(c_to_f);
-          std::vector<std::int32_t> parent_entities;
-          parent_entities.reserve(entities.extent(0));
-          for (std::size_t e = 0; e < entities.extent(0); ++e)
-          {
-            auto pair = md::submdspan(entities, e, md::full_extent);
-            parent_entities.push_back(c_to_f->links(pair[0])[pair[1]]);
-          }
-          e_b = emap.sub_topology_to_topology(parent_entities, inverse);
-          md::mdspan e(e_b.data(), e_b.size());
-          impl::pack_coefficient_entity(std::span(c), cstride,
-                                        coeffs[coeff].get(), cell_info, e,
-                                        offsets[coeff]);
-          break;
-        }
-        default:
-          throw std::runtime_error("Entities span has unsupported rank.");
-        }
-      }
+      coefficient_cells = extract_coefficient_cells_from_entities(
+          coeffs[coeff].get(), mesh, entities,
+          std::reference_wrapper<const mesh::EntityMap>(emap));
     }
+
+    std::span<const std::uint32_t> cell_info
+        = impl::get_cell_orientation_info(coeffs[coeff].get());
+    md::mdspan cells(coefficient_cells.data(), coefficient_cells.size());
+    impl::pack_coefficient_entity(std::span(c), cstride, coeffs[coeff].get(),
+                                  cell_info, cells, offsets[coeff]);
   }
 }
 /// @brief Pack constants of an Expression or Form into a single array
