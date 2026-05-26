@@ -524,8 +524,8 @@ class EntityMap:
                 A list of entity indices in the source topology.
             inverse:
                 If False, maps from `self.sub_topology()` to
-                `self.topology()`. If True, maps from `this.topology()`
-                to `this.sub_topology()`.
+                `self.topology()`. If True, maps from `self.topology()`
+                to `self.sub_topology()`.
 
         Returns:
             A list of mapped entity indices. Entities that don't exist
