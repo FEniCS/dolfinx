@@ -338,6 +338,8 @@ void pack_coefficients(const Form<T, U>& form,
 /// cell indices, or a sequence of (cell, local entity index) tuples.
 /// @param[in] entity_map The map between the mesh and the coefficient mesh in
 /// case they are different.
+/// @returns A vector of cell indices on the coefficent mesh corresponding to
+/// the integration entities.
 template <dolfinx::scalar T, std::floating_point U>
 std::vector<std::int32_t> extract_coefficient_cells_from_entities(
     const fem::Function<T, U>& coeff, const mesh::Mesh<U>& mesh,
