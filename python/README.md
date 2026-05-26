@@ -6,12 +6,12 @@ Below is guidance for building the DOLFINx Python interface.
 
 2. Ensure the Python interface build requirements are installed:
 
-     pip install scikit-build-core
-     python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
+       pip install scikit-build-core
+       python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 
 3. Build DOLFINx Python interface:
 
-     pip install --check-build-dependencies --no-build-isolation .
+       pip install --check-build-dependencies --no-build-isolation .
 
 To build in Developer and editable mode for development:
 
@@ -23,11 +23,11 @@ Note that Developer mode is significantly stricter than CMake's default Debug mo
 
 1. Install DOLFINx Python with the `[mypy]` optional dependencies set, e.g.:
 
-    pip install .[mypy]
+       pip install .[mypy]
 
 2. Check with mypy, e.g.:
 
-    mypy --config-file pyproject.toml -p dolfinx
+       mypy --config-file pyproject.toml -p dolfinx
 
    The `--config-file pyproject.toml` is mandatory to run mypy with the correct options.
    options.
