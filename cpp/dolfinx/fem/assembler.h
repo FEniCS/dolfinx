@@ -167,19 +167,30 @@ T assemble_scalar(
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
   std::span x = mesh->geometry().x();
-  if constexpr (std::is_same_v<U, scalar_value_t<T>>)
+
+  // Accumulate contributions from each cell type
+  const int num_cell_types = mesh->topology()->cell_types().size();
+  T val = 0;
+  for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
-    return impl::assemble_scalar(M, mesh->geometry().dofmap(),
-                                 mdspanx3_t(x.data(), x.size() / 3, 3),
-                                 constants, coefficients);
+    // Geometry dofmap and data
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> x_dofmap
+        = mesh->geometry().dofmap(cell_type_idx);
+    if constexpr (std::is_same_v<U, scalar_value_t<T>>)
+    {
+      val += impl::assemble_scalar(M, x_dofmap,
+                                   mdspanx3_t(x.data(), x.size() / 3, 3),
+                                   constants, coefficients, cell_type_idx);
+    }
+    else
+    {
+      std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
+      val += impl::assemble_scalar(M, x_dofmap,
+                                   mdspanx3_t(_x.data(), _x.size() / 3, 3),
+                                   constants, coefficients, cell_type_idx);
+    }
   }
-  else
-  {
-    std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
-    return impl::assemble_scalar(M, mesh->geometry().dofmap(),
-                                 mdspanx3_t(_x.data(), _x.size() / 3, 3),
-                                 constants, coefficients);
-  }
+  return val;
 }
 
 /// @brief Assemble functional into scalar.
