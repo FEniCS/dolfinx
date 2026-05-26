@@ -185,4 +185,73 @@ endif()
 
 set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-install(TARGETS cpp DESTINATION dolfinx)
+
+# and the nanobind typing stubs.
+if (WIN32)
+  # On Windows we cannot import dolfinx.cpp without installing the package
+  # alongside its external dlls.
+
+  # This *must* be called prior to nanobind_add_stub
+  install(TARGETS cpp DESTINATION dolfinx)
+  # nanobind automatically installs into ${CMAKE_INSTALL_PREFIX} in
+  # INSTALL_TIME mode.
+  # DEPENDS is redundant in INSTALL_TIME mode - cpp must be installed.
+  nanobind_add_stub(
+    cpp_stub
+    INSTALL_TIME
+    
+    MODULE dolfinx.cpp
+    DEPENDS cpp
+    
+    RECURSIVE
+    VERBOSE
+    OUTPUT
+      dolfinx/_cpp.pyi
+  )
+else()
+  # On UNIX-like systems we can import the cpp compiled module before
+  # installing and rely on dynamic linking at import time.
+  nanobind_add_stub(
+    cpp_stub
+    MODULE cpp
+
+    PYTHON_PATH $<TARGET_FILE_DIR:cpp>
+    DEPENDS cpp
+    
+    OUTPUT
+      _cpp.pyi
+      assemble/__init__.pyi
+      common/__init__.pyi
+      fem/__init__.pyi
+      fem/petsc/__init__.pyi
+      geometry/__init__.pyi
+      graph/__init__.pyi
+      io/__init__.pyi
+      la/__init__.pyi
+      la/petsc/__init__.pyi
+      log/__init__.pyi
+      mesh/__init__.pyi
+      refinement/__init__.pyi
+    
+    RECURSIVE
+    VERBOSE
+  )
+
+  install(TARGETS cpp DESTINATION dolfinx)
+  install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/_cpp.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/assemble/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/common/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/fem/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/fem/petsc/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/geometry/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/graph/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/io/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/la/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/la/petsc/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/log/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/mesh/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/refinement/__init__.pyi
+    DESTINATION dolfinx
+  )
+endif()
