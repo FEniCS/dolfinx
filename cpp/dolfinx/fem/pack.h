@@ -333,13 +333,13 @@ void pack_coefficients(const Form<T, U>& form,
 /// @brief Pack coefficient data over a list of cells or facets.
 ///
 /// Typically used to prepare coefficient data for an ::Expression.
-/// @tparam T data type of coefficients
-/// @tparam U floating point type of mesh geometry
+/// @tparam T Data type of coefficients
+/// @tparam U Floating point type of mesh geometry
 /// @param coeffs Coefficients to pack
 /// @param mesh Mesh which the entities belong to
 /// @param entities Entities to pack over
-/// @param entity_maps Entity maps for the coefficient meshes
-/// @param offsets Offsets
+/// @param entity_maps Bidirectional maps between the entities of a parent mesh and a submesh in case of coefficients being defined on both.
+/// @param offsets Insertion offset for each of the `coeffs` when packed into `c`.
 /// @param[in,out] c Packed coefficients.
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(
