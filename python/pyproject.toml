@@ -50,6 +50,7 @@ docs = [
       "fenics-dolfinx[demo]",
 ]
 lint = ["ruff>=0.2.0"]
+mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
 optional = ["numba"]
 petsc4py = ["petsc4py"]
 test = [
@@ -61,12 +62,11 @@ test = [
       "fenics-dolfinx[optional]",
 ]
 ci = [
-      "mypy",
       "pytest-xdist",
-      "types-setuptools",
       "fenics-dolfinx[build]",
       "fenics-dolfinx[docs]",
       "fenics-dolfinx[lint]",
+      "fenics-dolfinx[mypy]",
       "fenics-dolfinx[optional]",
       "fenics-dolfinx[test]",
 ]
