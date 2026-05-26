@@ -199,14 +199,24 @@ if (WIN32)
   nanobind_add_stub(
     cpp_stub
     INSTALL_TIME
-    
-    MODULE dolfinx.cpp
-    DEPENDS cpp
-    
+    MODULE cpp
     RECURSIVE
     VERBOSE
     OUTPUT
-      dolfinx/_cpp.pyi
+      dolfinx/cpp/__init__.pyi
+      dolfinx/cpp/common.pyi
+      dolfinx/cpp/fem/__init__.pyi
+      dolfinx/cpp/fem/petsc.pyi
+      dolfinx/cpp/geometry.pyi
+      dolfinx/cpp/graph.pyi
+      dolfinx/cpp/io.pyi
+      dolfinx/cpp/la/__init__.pyi
+      dolfinx/cpp/la/petsc.pyi
+      dolfinx/cpp/log.pyi
+      dolfinx/cpp/mesh.pyi
+      dolfinx/cpp/nls/__init__.pyi
+      dolfinx/cpp/nls/petsc.pyi
+      dolfinx/cpp/refinement.pyi
   )
 else()
   # On UNIX-like systems we can import the cpp compiled module before
@@ -214,44 +224,43 @@ else()
   nanobind_add_stub(
     cpp_stub
     MODULE cpp
-
     PYTHON_PATH $<TARGET_FILE_DIR:cpp>
     DEPENDS cpp
-    
-    OUTPUT
-      _cpp.pyi
-      assemble/__init__.pyi
-      common/__init__.pyi
-      fem/__init__.pyi
-      fem/petsc/__init__.pyi
-      geometry/__init__.pyi
-      graph/__init__.pyi
-      io/__init__.pyi
-      la/__init__.pyi
-      la/petsc/__init__.pyi
-      log/__init__.pyi
-      mesh/__init__.pyi
-      refinement/__init__.pyi
-    
     RECURSIVE
     VERBOSE
+    OUTPUT
+      cpp/__init__.pyi
+      cpp/common.pyi
+      cpp/fem/__init__.pyi
+      cpp/fem/petsc.pyi
+      cpp/geometry.pyi
+      cpp/graph.pyi
+      cpp/io.pyi
+      cpp/la/__init__.pyi
+      cpp/la/petsc.pyi
+      cpp/log.pyi
+      cpp/mesh.pyi
+      cpp/nls/__init__.pyi
+      cpp/nls/petsc.pyi
+      cpp/refinement.pyi
   )
 
   install(TARGETS cpp DESTINATION dolfinx)
   install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/_cpp.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/assemble/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/common/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/fem/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/fem/petsc/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/geometry/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/graph/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/io/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/la/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/la/petsc/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/log/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/mesh/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/refinement/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/common.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/fem/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/fem/petsc.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/geometry.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/graph.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/io.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/la/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/la/petsc.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/log.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/mesh.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/nls/__init__.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/nls/petsc.pyi
+    ${CMAKE_CURRENT_BINARY_DIR}/cpp/refinement.pyi
     DESTINATION dolfinx
   )
 endif()
