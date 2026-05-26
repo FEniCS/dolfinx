@@ -21,6 +21,9 @@ include(FeatureSummary)
 option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
 add_feature_info(ENABLE_CLANG_TIDY ENABLE_CLANG_TIDY "Run clang-tidy while building")
 
+option(ENABLE_NANOBIND_STUBGEN "Run nanobind stub generation" ON)
+add_feature_info(ENABLE_NANOBIND_STUBGEN ENABLE_NANOBIND_STUBGEN "Run nanobind stub generation")
+
 feature_summary(WHAT ALL)
 
 # Detect the installed nanobind package and import it into CMake
@@ -185,82 +188,83 @@ endif()
 
 set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-
 # and the nanobind typing stubs.
-if (WIN32)
-  # On Windows we cannot import dolfinx.cpp without installing the package
-  # alongside its external dlls.
+if (ENABLE_NANOBIND_STUBGEN)
+  if (WIN32)
+    # On Windows we cannot import dolfinx.cpp without installing the package
+    # alongside its external dlls.
 
-  # This *must* be called prior to nanobind_add_stub
-  install(TARGETS cpp DESTINATION dolfinx)
-  # nanobind automatically installs into ${CMAKE_INSTALL_PREFIX} in
-  # INSTALL_TIME mode.
-  # DEPENDS is redundant in INSTALL_TIME mode - cpp must be installed.
-  nanobind_add_stub(
-    cpp_stub
-    INSTALL_TIME
-    MODULE cpp
-    RECURSIVE
-    VERBOSE
-    OUTPUT
-      dolfinx/cpp/__init__.pyi
-      dolfinx/cpp/common.pyi
-      dolfinx/cpp/fem/__init__.pyi
-      dolfinx/cpp/fem/petsc.pyi
-      dolfinx/cpp/geometry.pyi
-      dolfinx/cpp/graph.pyi
-      dolfinx/cpp/io.pyi
-      dolfinx/cpp/la/__init__.pyi
-      dolfinx/cpp/la/petsc.pyi
-      dolfinx/cpp/log.pyi
-      dolfinx/cpp/mesh.pyi
-      dolfinx/cpp/nls/__init__.pyi
-      dolfinx/cpp/nls/petsc.pyi
-      dolfinx/cpp/refinement.pyi
-  )
-else()
-  # On UNIX-like systems we can import the cpp compiled module before
-  # installing and rely on dynamic linking at import time.
-  nanobind_add_stub(
-    cpp_stub
-    MODULE cpp
-    PYTHON_PATH $<TARGET_FILE_DIR:cpp>
-    DEPENDS cpp
-    RECURSIVE
-    VERBOSE
-    OUTPUT
-      cpp/__init__.pyi
-      cpp/common.pyi
-      cpp/fem/__init__.pyi
-      cpp/fem/petsc.pyi
-      cpp/geometry.pyi
-      cpp/graph.pyi
-      cpp/io.pyi
-      cpp/la/__init__.pyi
-      cpp/la/petsc.pyi
-      cpp/log.pyi
-      cpp/mesh.pyi
-      cpp/nls/__init__.pyi
-      cpp/nls/petsc.pyi
-      cpp/refinement.pyi
-  )
+    # This *must* be called prior to nanobind_add_stub
+    install(TARGETS cpp DESTINATION dolfinx)
+    # nanobind automatically installs into ${CMAKE_INSTALL_PREFIX} in
+    # INSTALL_TIME mode.
+    # DEPENDS is redundant in INSTALL_TIME mode - cpp must be installed.
+    nanobind_add_stub(
+      cpp_stub
+      INSTALL_TIME
+      MODULE cpp
+      RECURSIVE
+      VERBOSE
+      OUTPUT
+	dolfinx/cpp/__init__.pyi
+	dolfinx/cpp/common.pyi
+	dolfinx/cpp/fem/__init__.pyi
+	dolfinx/cpp/fem/petsc.pyi
+	dolfinx/cpp/geometry.pyi
+	dolfinx/cpp/graph.pyi
+	dolfinx/cpp/io.pyi
+	dolfinx/cpp/la/__init__.pyi
+	dolfinx/cpp/la/petsc.pyi
+	dolfinx/cpp/log.pyi
+	dolfinx/cpp/mesh.pyi
+	dolfinx/cpp/nls/__init__.pyi
+	dolfinx/cpp/nls/petsc.pyi
+	dolfinx/cpp/refinement.pyi
+    )
+  else()
+    # On UNIX-like systems we can import the cpp compiled module before
+    # installing and rely on dynamic linking at import time.
+    nanobind_add_stub(
+      cpp_stub
+      MODULE cpp
+      PYTHON_PATH $<TARGET_FILE_DIR:cpp>
+      DEPENDS cpp
+      RECURSIVE
+      VERBOSE
+      OUTPUT
+	cpp/__init__.pyi
+	cpp/common.pyi
+	cpp/fem/__init__.pyi
+	cpp/fem/petsc.pyi
+	cpp/geometry.pyi
+	cpp/graph.pyi
+	cpp/io.pyi
+	cpp/la/__init__.pyi
+	cpp/la/petsc.pyi
+	cpp/log.pyi
+	cpp/mesh.pyi
+	cpp/nls/__init__.pyi
+	cpp/nls/petsc.pyi
+	cpp/refinement.pyi
+    )
 
-  install(TARGETS cpp DESTINATION dolfinx)
-  install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/common.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/fem/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/fem/petsc.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/geometry.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/graph.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/io.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/la/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/la/petsc.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/log.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/mesh.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/nls/__init__.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/nls/petsc.pyi
-    ${CMAKE_CURRENT_BINARY_DIR}/cpp/refinement.pyi
-    DESTINATION dolfinx
-  )
+    install(TARGETS cpp DESTINATION dolfinx)
+    install(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/__init__.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/common.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/fem/__init__.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/fem/petsc.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/geometry.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/graph.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/io.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/la/__init__.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/la/petsc.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/log.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/mesh.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/nls/__init__.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/nls/petsc.pyi
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp/refinement.pyi
+      DESTINATION dolfinx
+    )
+  endif()
 endif()
