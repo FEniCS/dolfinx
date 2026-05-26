@@ -417,7 +417,7 @@ void pack_coefficients(
                                       coeffs[coeff].get(), cell_info, e,
                                       offsets[coeff]);
       }
-      else if (entities.rank() == 2)
+      else if constexpr (entities.rank() == 2)
       {
         const mesh::Topology topology = *mesh.topology();
         int tdim = topology.dim();
