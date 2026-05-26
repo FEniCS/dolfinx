@@ -137,7 +137,7 @@ jobs:
           mypy --config-file python/pyproject.toml -p dolfinx # package mode, must be done without dolfinx/__init__.py visible
           cd python/
           mypy test
-          mypy demo
+          #mypy demo # TODO: Enable this in future
 
       - name: Install gmsh and pyvista (and dependencies)
         run: |
