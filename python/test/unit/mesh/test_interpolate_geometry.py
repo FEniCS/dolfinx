@@ -1,8 +1,11 @@
-# Copyright (C) 2026 Jack S. Hale
+# Copyright (C) 2026 Jack S. Hale, Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+#
+# The test test_curve_mesh was taken from io4dolfinx and relicensed to LGPLv3
+# with permission of Jørgen S. Dokken.
 
 from mpi4py import MPI
 
