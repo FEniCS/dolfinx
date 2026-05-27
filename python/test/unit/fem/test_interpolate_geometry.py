@@ -114,7 +114,7 @@ def test_curve_mesh(degree, dtype, R, cell_type):
     computed_circumference = curved_mesh.comm.allreduce(assemble_scalar(circumference), op=MPI.SUM)
 
     tol = 10 * np.finfo(dtype).eps
-    # Linear geometry has O(h²) area error, not near machine epsilon.
+    # Linear geometry has O(h^2) area error, not near machine epsilon.
     if degree > 1:
         assert np.isclose(computed_area, np.pi * R**2, atol=tol)
         assert np.isclose(computed_circumference, 2 * np.pi * R, atol=tol)
