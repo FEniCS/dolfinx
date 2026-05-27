@@ -60,7 +60,7 @@ class TestVTX:
         cells = np.array([[0, 1, 2]], dtype=np.int32)
         domain = ufl.Mesh(element("Lagrange", "interval", 2, shape=(1,), dtype=default_real_type))
         mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
-        with VTXWriter(mesh.comm, filename, mesh) as f:
+        with VTXWriter(mesh.comm, filename, "w", mesh) as f:
             f.write(0.0)
 
     @pytest.mark.parametrize("dim", [2, 3])
@@ -71,7 +71,7 @@ class TestVTX:
 
         filename = Path(tempdir, "mesh_vtx.bp")
         mesh = generate_mesh(dim, simplex)
-        with VTXWriter(mesh.comm, filename, mesh) as f:
+        with VTXWriter(mesh.comm, filename, "w", mesh) as f:
             f.write(0.0)
             mesh.geometry.x[:, 1] += 0.1
             f.write(0.1)
@@ -88,7 +88,7 @@ class TestVTX:
         w = Function(functionspace(mesh, ("Lagrange", 1)))
         filename = Path(tempdir, "v.bp")
         with pytest.raises(RuntimeError):
-            VTXWriter(mesh.comm, filename, [v, w])
+            VTXWriter(mesh.comm, filename, "w", [v, w])
 
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
@@ -102,7 +102,7 @@ class TestVTX:
         w = Function(functionspace(mesh, ("Lagrange", 1)), name="f")
         filename = Path(tempdir, "v.bp")
         with pytest.raises(RuntimeError):
-            VTXWriter(mesh.comm, filename, [v, w])
+            VTXWriter(mesh.comm, filename, "w", [v, w])
 
     @pytest.mark.parametrize("simplex", [True, False])
     def test_vtx_different_meshes_function(self, tempdir, simplex):
@@ -115,7 +115,7 @@ class TestVTX:
         w = Function(functionspace(mesh2, ("Lagrange", 1)))
         filename = Path(tempdir, "v.bp")
         with pytest.raises(RuntimeError):
-            VTXWriter(mesh.comm, filename, [v, w])
+            VTXWriter(mesh.comm, filename, "w", [v, w])
 
     @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
     @pytest.mark.parametrize("dim", [2, 3])
@@ -144,7 +144,7 @@ class TestVTX:
         w.interpolate(lambda x: x[0] + x[1])
 
         filename = Path(tempdir, f"v-{np.dtype(dtype).num}.bp")
-        f = VTXWriter(mesh.comm, filename, [v, w])
+        f = VTXWriter(mesh.comm, filename, "w", [v, w])
 
         # Set two cells to 0
         for c in [0, 1]:
@@ -174,7 +174,7 @@ class TestVTX:
         u.name = "A"
 
         filename = Path(tempdir, "v.bp")
-        f = VTXWriter(mesh.comm, filename, [u])
+        f = VTXWriter(mesh.comm, filename, "w", [u])
         f.write(0)
         f.close()
 
@@ -206,7 +206,7 @@ class TestVTX:
         u = Function(V)
 
         filename = Path(tempdir, "empty_rank_mesh.bp")
-        with VTXWriter(comm, filename, u) as f:
+        with VTXWriter(comm, filename, "w", u) as f:
             f.write(0.0)
 
     @pytest.mark.parametrize("dim", [2, 3])
@@ -225,7 +225,7 @@ class TestVTX:
         policy = VTXMeshPolicy.reuse if reuse else VTXMeshPolicy.update
 
         # Save three steps
-        writer = VTXWriter(mesh.comm, filename, v, "BP4", policy)
+        writer = VTXWriter(mesh.comm, filename, "w", v, "BP4", policy)
         writer.write(0)
         v.interpolate(lambda x: 0.5 * x[0])
         writer.write(1)
@@ -265,7 +265,7 @@ class TestVTX:
         q.x.array[:] = np.arange(q.x.array.size, dtype=q.x.array.dtype)
 
         # Save three steps
-        writer = VTXWriter(mesh.comm, filename, [v, q])
+        writer = VTXWriter(mesh.comm, filename, "w", [v, q])
         writer.write(0)
         v.interpolate(lambda x: (0.5 * x[0], x[1]))
         writer.write(1)

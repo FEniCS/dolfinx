@@ -666,7 +666,7 @@ V_dg = fem.functionspace(mesh_data.mesh, ("DG", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
-with VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
+with VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", "w", Esh_dg) as vtx:
     vtx.write(0.0)
 # -
 
@@ -702,7 +702,7 @@ E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
 
-with VTXWriter(mesh_data.mesh.comm, out_folder / "E.bp", E_dg) as vtx:
+with VTXWriter(mesh_data.mesh.comm, out_folder / "E.bp", "w", E_dg) as vtx:
     vtx.write(0.0)
 # -
 

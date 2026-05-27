@@ -250,7 +250,7 @@ int main(int argc, char* argv[])
 
 #ifdef HAS_ADIOS2
     // Save solution in VTX format
-    io::VTXWriter<U> vtx(MPI_COMM_WORLD, "u.bp", {u}, "bp4");
+    io::VTXWriter<U> vtx(MPI_COMM_WORLD, "u.bp", "w", {u}, "bp4");
     vtx.write(0);
 #endif
   }

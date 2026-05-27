@@ -330,7 +330,7 @@ assert glob_error.real / scale.real < 1e-6
 if has_adios2:
     out_folder = Path("out_biharmonic")
     out_folder.mkdir(parents=True, exist_ok=True)
-    with io.VTXWriter(msh.comm, out_folder / "biharmonic.bp", [uh]) as file:
+    with io.VTXWriter(msh.comm, out_folder / "biharmonic.bp", "w", [uh]) as file:
         file.write(0.0)
 
 # and displayed using [pyvista](https://docs.pyvista.org/).

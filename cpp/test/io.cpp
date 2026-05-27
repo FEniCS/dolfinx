@@ -45,7 +45,7 @@ void test_vtx_reuse_mesh()
 
   std::filesystem::path f
       = "test_vtx_reuse_mesh" + std::to_string(sizeof(T)) + ".bp";
-  io::VTXWriter<T> writer(mesh->comm(), f, {u, v}, "BPFile",
+  io::VTXWriter<T> writer(mesh->comm(), f, "w", {u, v}, "BPFile",
                           io::VTXMeshPolicy::reuse);
   writer.write(0);
 
