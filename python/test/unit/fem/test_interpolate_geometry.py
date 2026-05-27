@@ -16,7 +16,6 @@ from basix import LagrangeVariant
 from dolfinx.fem import assemble_scalar, coordinate_element, form, interpolate_geometry
 from dolfinx.mesh import (
     CellType,
-    DiagonalType,
     create_rectangle,
     create_unit_square,
 )
@@ -82,27 +81,27 @@ def test_interpolate_geometry_p1_roundtrip(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("degree", [2, 3, 4])
+@pytest.mark.parametrize("degree", [1, 2, 3, 4])
 @pytest.mark.parametrize("R", [0.1, 1, 10])
-def test_curve_mesh(degree, dtype, R):
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+def test_curve_mesh(degree, dtype, R, cell_type):
     N = 16
     mesh = create_rectangle(
         MPI.COMM_WORLD,
         [[-1.0, -1.0], [1.0, 1.0]],
         [N, N],
-        diagonal=DiagonalType.crossed,
+        cell_type=cell_type,
         dtype=dtype,
     )
     original_area = form(1 * dx(domain=mesh), dtype=dtype)
+    original_circumference = form(1 * ds(domain=mesh), dtype=dtype)
 
-    cmap = coordinate_element(
-        CellType.triangle, degree, variant=LagrangeVariant.equispaced, dtype=dtype
-    )
+    cmap = coordinate_element(cell_type, degree, variant=LagrangeVariant.equispaced, dtype=dtype)
     curved_mesh = interpolate_geometry(mesh, cmap)
 
     def transform(x):
         u = R * x[:, 0] * np.sqrt(1.0 - (x[:, 1] ** 2 / (2.0)))
-        v = R * x[:, 1] * np.sqrt(1.0 - (x[:, 0] ** 2  / (2.0)))
+        v = R * x[:, 1] * np.sqrt(1.0 - (x[:, 0] ** 2 / (2.0)))
         return np.column_stack([u, v])
 
     curved_mesh.geometry.x[:, : curved_mesh.geometry.dim] = transform(curved_mesh.geometry.x)
@@ -114,16 +113,28 @@ def test_curve_mesh(degree, dtype, R):
     computed_circumference = curved_mesh.comm.allreduce(assemble_scalar(circumference), op=MPI.SUM)
 
     tol = 10 * np.finfo(dtype).eps
-    assert np.isclose(computed_area, np.pi * R**2, atol=tol)
-    assert np.isclose(computed_circumference, 2 * np.pi * R, atol=tol)
+    # Linear geometry has O(h²) area error, not near machine epsilon.
+    if degree > 1:
+        assert np.isclose(computed_area, np.pi * R**2, atol=tol)
+        assert np.isclose(computed_circumference, 2 * np.pi * R, atol=tol)
 
-    cmap_linear = coordinate_element(CellType.triangle, 1, dtype=dtype)
+    cmap_linear = coordinate_element(cell_type, 1, dtype=dtype)
     linear_mesh = interpolate_geometry(curved_mesh, cmap_linear)
     linear_area = form(1 * dx(domain=linear_mesh), dtype=dtype)
+    linear_circumference = form(1 * ds(domain=linear_mesh), dtype=dtype)
 
     recovered_area = linear_mesh.comm.allreduce(assemble_scalar(linear_area), op=MPI.SUM)
+    recovered_circumference = linear_mesh.comm.allreduce(
+        assemble_scalar(linear_circumference), op=MPI.SUM
+    )
 
     # Curve original mesh
     mesh.geometry.x[:, : mesh.geometry.dim] = transform(mesh.geometry.x)
-    ref_area = mesh.comm.allreduce(assemble_scalar(original_area), op=MPI.SUM)
-    assert np.isclose(recovered_area, ref_area, atol=tol)
+
+    reference_area = mesh.comm.allreduce(assemble_scalar(original_area), op=MPI.SUM)
+    assert np.isclose(recovered_area, reference_area, atol=tol)
+
+    reference_circumference = mesh.comm.allreduce(
+        assemble_scalar(original_circumference), op=MPI.SUM
+    )
+    assert np.isclose(recovered_circumference, reference_circumference, atol=tol)
