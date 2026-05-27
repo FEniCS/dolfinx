@@ -1060,4 +1060,26 @@ Expression<T, U> create_expression(
   return create_expression(e, coeff_map, const_map, argument_space);
 }
 
+/// @brief Take an existing mesh and create a new mesh with its geometry
+/// interpolated into a new coordinate element.
+///
+/// The topology is shared between `mesh` and the returned mesh.
+///
+/// Useful for creating a higher-order mesh from a lower-order one for
+/// computation, or vice-versa, for IO.
+///
+/// @param[in] mesh Input mesh.
+/// @param[in] new_cmap Coordinate element for the new geometry.
+/// @param[in] reorder_fn Optional graph reordering function applied to
+/// the new geometry dofmap.
+/// @return A new mesh sharing the topology of `mesh` and with a
+/// geometry described by `new_cmap`.
+template <std::floating_point T>
+mesh::Mesh<T>
+interpolate_geometry(std::shared_ptr<mesh::Mesh<T>> mesh,
+                     const CoordinateElement<T>& new_cmap,
+                     const std::function<std::vector<int>(
+                         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                     = nullptr);
+
 } // namespace dolfinx::fem

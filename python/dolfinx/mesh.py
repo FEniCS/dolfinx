@@ -890,7 +890,7 @@ def interpolate_geometry(msh: Mesh, cmap: _CoordinateElement) -> Mesh:
     Returns:
         A new mesh with geometry in ``cmap``.
     """
-    new_msh = _cpp.mesh.interpolate_geometry(msh._cpp_object, cmap._cpp_object)
+    new_msh = _cpp.fem.interpolate_geometry(msh._cpp_object, cmap._cpp_object)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
