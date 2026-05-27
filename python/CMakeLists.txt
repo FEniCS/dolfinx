@@ -254,40 +254,12 @@ if(ENABLE_NANOBIND_STUBGEN)
         cpp/refinement.pyi
     )
 
-    install(TARGETS cpp DESTINATION dolfinx)
-
-    install(FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/cpp/__init__.pyi
-      ${CMAKE_CURRENT_BINARY_DIR}/cpp/common.pyi
-      ${CMAKE_CURRENT_BINARY_DIR}/cpp/geometry.pyi
-      ${CMAKE_CURRENT_BINARY_DIR}/cpp/graph.pyi
-      ${CMAKE_CURRENT_BINARY_DIR}/cpp/io.pyi
-      ${CMAKE_CURRENT_BINARY_DIR}/cpp/log.pyi
-      ${CMAKE_CURRENT_BINARY_DIR}/cpp/mesh.pyi
-      ${CMAKE_CURRENT_BINARY_DIR}/cpp/refinement.pyi
+    install(TARGETS cpp LIBRARY DESTINATION dolfinx)
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cpp
       DESTINATION dolfinx
+      FILES_MATCHING
+      PATTERN "*.pyi"
+      PATTERN "*.typed"
     )
-
-    # Structure and number of typing files varies based on if petsc4py was
-    # found
-    get_target_property(compile_definitions cpp COMPILE_DEFINITIONS)
-    if("HAS_PETSC4PY" IN_LIST compile_definitions)
-      install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/cpp/fem/__init__.pyi
-        ${CMAKE_CURRENT_BINARY_DIR}/cpp/fem/petsc.pyi
-        ${CMAKE_CURRENT_BINARY_DIR}/cpp/la/__init__.pyi
-        ${CMAKE_CURRENT_BINARY_DIR}/cpp/la/petsc.pyi
-        ${CMAKE_CURRENT_BINARY_DIR}/cpp/nls/__init__.pyi
-        ${CMAKE_CURRENT_BINARY_DIR}/cpp/nls/petsc.pyi
-        DESTINATION dolfinx
-      )
-    else()
-      install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/cpp/fem.pyi
-        ${CMAKE_CURRENT_BINARY_DIR}/cpp/la.pyi
-        ${CMAKE_CURRENT_BINARY_DIR}/cpp/nls.pyi
-        DESTINATION dolfinx
-      )
-    endif()
   endif()
 endif()
