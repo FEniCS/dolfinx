@@ -202,7 +202,7 @@ if(ENABLE_NANOBIND_STUBGEN)
     nanobind_add_stub(
       cpp_stub
       INSTALL_TIME
-      MODULE cpp
+      MODULE dolfinx.cpp
       RECURSIVE
       VERBOSE
       MARKER_FILE dolfinx/cpp/py.typed
