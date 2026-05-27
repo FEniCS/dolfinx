@@ -926,8 +926,7 @@ FunctionSpace<T> create_functionspace(
     std::shared_ptr<mesh::Mesh<T>> mesh,
     std::shared_ptr<const fem::FiniteElement<T>> e,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn
-    = nullptr)
+        reorder_fn = nullptr)
 {
   // TODO: check cell type of e (need to add method to fem::FiniteElement)
   assert(e);
@@ -1077,12 +1076,10 @@ Expression<T, U> create_expression(
 /// @return A new mesh sharing the topology of `mesh` and with a
 /// geometry described by `new_cmap`.
 template <std::floating_point T>
-mesh::Mesh<T>
-interpolate_geometry(std::shared_ptr<mesh::Mesh<T>> mesh,
-                     const CoordinateElement<T>& new_cmap,
-                     const std::function<std::vector<int>(
-                         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-                     = nullptr)
+mesh::Mesh<T> interpolate_geometry(
+    std::shared_ptr<mesh::Mesh<T>> mesh, const CoordinateElement<T>& new_cmap,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn = nullptr)
 {
   assert(mesh);
   const CoordinateElement<T>& old_cmap = mesh->geometry().cmap();
