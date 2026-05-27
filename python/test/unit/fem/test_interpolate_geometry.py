@@ -100,11 +100,12 @@ def test_curve_mesh(degree, dtype, R, cell_type):
     curved_mesh = interpolate_geometry(mesh, cmap)
 
     def transform(x):
-        u = R * x[:, 0] * np.sqrt(1.0 - (x[:, 1] ** 2 / (2.0)))
-        v = R * x[:, 1] * np.sqrt(1.0 - (x[:, 0] ** 2 / (2.0)))
-        return np.column_stack([u, v])
+        x_c = np.zeros_like(x)
+        x_c[:, 0] = R * x[:, 0] * np.sqrt(1.0 - (x[:, 1] ** 2 / (2.0)))
+        x_c[:, 1] = R * x[:, 1] * np.sqrt(1.0 - (x[:, 0] ** 2 / (2.0)))
+        return x_c
 
-    curved_mesh.geometry.x[:, : curved_mesh.geometry.dim] = transform(curved_mesh.geometry.x)
+    curved_mesh.geometry.x[:] = transform(curved_mesh.geometry.x)
 
     area = form(1 * dx(domain=curved_mesh), dtype=dtype)
     circumference = form(1 * ds(domain=curved_mesh), dtype=dtype)
@@ -129,7 +130,7 @@ def test_curve_mesh(degree, dtype, R, cell_type):
     )
 
     # Curve original mesh
-    mesh.geometry.x[:, : mesh.geometry.dim] = transform(mesh.geometry.x)
+    mesh.geometry.x[:] = transform(mesh.geometry.x)
 
     reference_area = mesh.comm.allreduce(assemble_scalar(original_area), op=MPI.SUM)
     assert np.isclose(recovered_area, reference_area, atol=tol)
