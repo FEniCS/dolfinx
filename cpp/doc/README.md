@@ -23,7 +23,7 @@ And then for the nicer-looking Sphinx documentation, Python with:
 
 ```bash
 doxygen Doxyfile
-python -m sphinx -W -b html source/ build/html/
+python -m sphinx -b html source/ build/html/
 ```
 
 Sphinx/Breathe documentation is in `build/html`and the Doxygen generated
