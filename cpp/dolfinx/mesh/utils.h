@@ -1410,13 +1410,16 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
           std::move(subx_to_x_dofmap)};
 }
 
-/// @brief Make a copy of `mesh` whose geometry is interpolated into a
-/// new coordinate element.
+/// @brief Take an existing mesh and create a new mesh with its geometry
+/// interpolated into a new coordinate element.
 ///
-/// The topology is shared (pointer-level) between the new and old mesh.
+/// The topology is shared between `mesh` and the returned mesh.
+///
+/// Useful for creating a higher-order mesh from a lower-order one for
+/// computation, or vice-versa, for IO.
 ///
 /// @param[in] mesh Input mesh.
-/// @param[in] new_cmap Target coordinate element for the new geometry.
+/// @param[in] new_cmap Coordinate element for the new geometry.
 /// @param[in] reorder_fn Optional graph reordering function applied to
 /// the new geometry dofmap.
 /// @return A new mesh sharing the topology of `mesh` and with a

@@ -875,23 +875,20 @@ def create_submesh(
 
 
 def interpolate_geometry(msh: Mesh, cmap: _CoordinateElement) -> Mesh:
-    """Create a copy of a mesh with geometry interpolated into cmap.
+    """From a mesh create a mesh with geometry interpolated into cmap.
 
-    Useful for lifting first-order meshes from built-in mesh generation
-    functions to higher-order geometry.
+    Useful for creating a higher-order mesh from a lower-order one for
+    computation, or vice-versa, for IO.
 
     Note:
-        The new topology is shared (no copy) with the input mesh. The new
-        geometry is created by interpolating the existing geometry at the
-        reference interpolation points of ``cmap``.
+        The topology is shared between ``msh`` and the returned mesh.
 
     Args:
         msh: Input mesh.
-        cmap: Target coordinate element for the new geometry.
+        cmap: Coordinate element for the new geometry.
 
     Returns:
-        A new mesh sharing the topology of ``msh`` and with geometry in
-        ``cmap``.
+        A new mesh with geometry in ``cmap``.
     """
     new_msh = _cpp.mesh.interpolate_geometry(msh._cpp_object, cmap._cpp_object)
     domain = ufl.Mesh(
