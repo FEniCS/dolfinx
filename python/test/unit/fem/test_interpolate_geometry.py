@@ -88,12 +88,12 @@ def test_curve_mesh(degree, dtype, R):
     N = 16
     mesh = create_rectangle(
         MPI.COMM_WORLD,
-        [[-1, -1], [1, 1]],
+        [[-1.0, -1.0], [1.0, 1.0]],
         [N, N],
         diagonal=DiagonalType.crossed,
         dtype=dtype,
     )
-    org_area = form(1 * dx(domain=mesh), dtype=dtype)
+    original_area = form(1 * dx(domain=mesh), dtype=dtype)
 
     cmap = coordinate_element(
         CellType.triangle, degree, variant=LagrangeVariant.equispaced, dtype=dtype
@@ -101,11 +101,11 @@ def test_curve_mesh(degree, dtype, R):
     curved_mesh = interpolate_geometry(mesh, cmap)
 
     def transform(x):
-        u = R * x[0] * np.sqrt(1 - (x[1] ** 2 / (2)))
-        v = R * x[1] * np.sqrt(1 - (x[0] ** 2 / (2)))
-        return np.asarray([u, v])
+        u = R * x[:, 0] * np.sqrt(1.0 - (x[:, 1] ** 2 / (2.0)))
+        v = R * x[:, 1] * np.sqrt(1.0 - (x[:, 0] ** 2  / (2.0)))
+        return np.column_stack([u, v])
 
-    curved_mesh.geometry.x[:, : curved_mesh.geometry.dim] = transform(curved_mesh.geometry.x.T).T
+    curved_mesh.geometry.x[:, : curved_mesh.geometry.dim] = transform(curved_mesh.geometry.x)
 
     area = form(1 * dx(domain=curved_mesh), dtype=dtype)
     circumference = form(1 * ds(domain=curved_mesh), dtype=dtype)
@@ -124,6 +124,6 @@ def test_curve_mesh(degree, dtype, R):
     recovered_area = linear_mesh.comm.allreduce(assemble_scalar(linear_area), op=MPI.SUM)
 
     # Curve original mesh
-    mesh.geometry.x[:, : mesh.geometry.dim] = transform(mesh.geometry.x.T).T
-    ref_area = mesh.comm.allreduce(assemble_scalar(org_area), op=MPI.SUM)
+    mesh.geometry.x[:, : mesh.geometry.dim] = transform(mesh.geometry.x)
+    ref_area = mesh.comm.allreduce(assemble_scalar(original_area), op=MPI.SUM)
     assert np.isclose(recovered_area, ref_area, atol=tol)
