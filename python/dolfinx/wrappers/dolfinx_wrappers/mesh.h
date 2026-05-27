@@ -420,9 +420,7 @@ void declare_mesh(nb::module_& m, std::string type)
       "interpolate_geometry",
       [](std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
          const dolfinx::fem::CoordinateElement<T>& new_cmap)
-      {
-        return dolfinx::mesh::interpolate_geometry(mesh, new_cmap);
-      },
+      { return dolfinx::mesh::interpolate_geometry(mesh, new_cmap); },
       nb::arg("mesh"), nb::arg("new_cmap"));
 
   m.def(
