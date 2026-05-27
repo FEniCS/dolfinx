@@ -30,3 +30,5 @@ Note that Developer mode is significantly stricter than CMake's default Debug mo
        mypy --config-file pyproject.toml -p dolfinx
 
    The `--config-file pyproject.toml` is mandatory to run mypy with the correct options.
+   The `-p` flag checks the built/installed package `dolfinx`, containing the C++
+   bindings and Python interface.
