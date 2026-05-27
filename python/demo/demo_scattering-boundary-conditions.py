@@ -21,9 +21,9 @@
 # ```{admonition} Download sources
 # :class: download
 # * {download}`Python script
-# <./demo_scattering_boundary_conditions.py>`
+# <./demo_scattering-boundary-conditions.py>`
 # * {download}`Jupyter notebook
-# <./demo_scattering_boundary_conditions.ipynb>`
+# <./demo_scattering-boundary-conditions.ipynb>`
 # ```
 #
 # This demo illustrates how to:

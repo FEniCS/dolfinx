@@ -1,5 +1,5 @@
-DOLFINx documentation
-=====================
+DOLFINx Python documentation
+============================
 
 DOLFINx is the next generation problem solving interface of the `FEniCS
 Project <https://fenicsproject.org/>`_. It is developed on `GitHub
