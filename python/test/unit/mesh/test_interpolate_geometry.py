@@ -9,13 +9,20 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx.fem import coordinate_element
-from dolfinx.mesh import CellType, create_unit_square, interpolate_geometry, create_rectangle, DiagonalType
-from dolfinx.fem import form, assemble_scalar
-from ufl import dx, ds
+from basix import LagrangeVariant
+from dolfinx.fem import assemble_scalar, coordinate_element, form
+from dolfinx.mesh import (
+    CellType,
+    DiagonalType,
+    create_rectangle,
+    create_unit_square,
+    interpolate_geometry,
+)
+from ufl import ds, dx
+
 
 def _assert_close_up_to_row_permutation(a, b, atol):
-    """Assert rows of a and b are equal, up to a row permutation"""
+    """Assert rows of a and b are equal, up to a row permutation."""
     a = np.asarray(a)
     b = np.asarray(b)
     assert a.shape == b.shape
@@ -73,20 +80,22 @@ def test_interpolate_geometry_p1_roundtrip(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("degree", [2, 3])
+@pytest.mark.parametrize("degree", [2, 3, 4])
 @pytest.mark.parametrize("R", [0.1, 1, 10])
 def test_curve_mesh(degree, dtype, R):
-    N = 8
+    N = 16
     mesh = create_rectangle(
         MPI.COMM_WORLD,
         [[-1, -1], [1, 1]],
         [N, N],
-        diagonal=dolfinx.mesh.DiagonalType.crossed,
+        diagonal=DiagonalType.crossed,
         dtype=dtype,
     )
     org_area = form(1 * dx(domain=mesh), dtype=dtype)
 
-    cmap = coordinate_element(CellType.triangle, degree, dtype=dtype)
+    cmap = coordinate_element(
+        CellType.triangle, degree, variant=LagrangeVariant.equispaced, dtype=dtype
+    )
     curved_mesh = interpolate_geometry(mesh, cmap)
 
     def transform(x):
@@ -100,9 +109,7 @@ def test_curve_mesh(degree, dtype, R):
     circumference = form(1 * ds(domain=curved_mesh), dtype=dtype)
 
     computed_area = curved_mesh.comm.allreduce(assemble_scalar(area), op=MPI.SUM)
-    computed_circumference = curved_mesh.comm.allreduce(
-        assemble_scalar(circumference), op=MPI.SUM
-    )
+    computed_circumference = curved_mesh.comm.allreduce(assemble_scalar(circumference), op=MPI.SUM)
 
     tol = 10 * np.finfo(dtype).eps
     assert np.isclose(computed_area, np.pi * R**2, atol=tol)
@@ -112,9 +119,7 @@ def test_curve_mesh(degree, dtype, R):
     linear_mesh = interpolate_geometry(curved_mesh, cmap_linear)
     linear_area = form(1 * dx(domain=linear_mesh), dtype=dtype)
 
-    recovered_area = linear_mesh.comm.allreduce(
-        assemble_scalar(linear_area), op=MPI.SUM
-    )
+    recovered_area = linear_mesh.comm.allreduce(assemble_scalar(linear_area), op=MPI.SUM)
 
     # Curve original mesh
     mesh.geometry.x[:, : mesh.geometry.dim] = transform(mesh.geometry.x.T).T

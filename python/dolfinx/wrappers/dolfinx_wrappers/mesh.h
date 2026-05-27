@@ -417,6 +417,15 @@ void declare_mesh(nb::module_& m, std::string type)
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"));
 
   m.def(
+      "interpolate_geometry",
+      [](std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
+         const dolfinx::fem::CoordinateElement<T>& new_cmap)
+      {
+        return dolfinx::mesh::interpolate_geometry(mesh, new_cmap);
+      },
+      nb::arg("mesh"), nb::arg("new_cmap"));
+
+  m.def(
       "cell_normals",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities)
