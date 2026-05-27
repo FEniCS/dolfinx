@@ -14,19 +14,14 @@
 #include "dofmapbuilder.h"
 #include <algorithm>
 #include <array>
-#include <basix/element-families.h>
-#include <basix/finite-element.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/la/SparsityPattern.h>
-#include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/topologycomputation.h>
 #include <memory>
-#include <numeric>
 #include <stdexcept>
 #include <string>
 #include <ufcx.h>
@@ -278,71 +273,4 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
 
   return entity_data;
 }
-//-----------------------------------------------------------------------------
-template <std::floating_point T>
-mesh::Mesh<T> fem::interpolate_geometry(
-    std::shared_ptr<mesh::Mesh<T>> mesh,
-    const fem::CoordinateElement<T>& new_cmap,
-    const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
-{
-  assert(mesh);
-  const fem::CoordinateElement<T>& old_cmap = mesh->geometry().cmap();
-  if (new_cmap.cell_shape() != old_cmap.cell_shape())
-  {
-    throw std::runtime_error(
-        "Cell shape of new coordinate element must match input mesh.");
-  }
-
-  const int gdim = mesh->geometry().dim();
-
-  // Build a vector-valued Lagrange FiniteElement from the coordinate element.
-  basix::FiniteElement<T> b_element = basix::create_element<T>(
-      basix::element::family::P,
-      mesh::cell_type_to_basix_type(new_cmap.cell_shape()), new_cmap.degree(),
-      new_cmap.variant(), basix::element::dpc_variant::unset, false);
-  auto element = std::make_shared<const fem::FiniteElement<T>>(
-      b_element, std::vector<std::size_t>{static_cast<std::size_t>(gdim)});
-
-  fem::FunctionSpace<T> V
-      = fem::create_functionspace(mesh, element, reorder_fn);
-
-  // Tabulate physical coordinates of the new geometry dofs.
-  std::vector<T> x_new = V.tabulate_dof_coordinates(false);
-
-  // Pull the geometry dofmap and index map from V.
-  std::shared_ptr<const fem::DofMap> dm = V.dofmap();
-  assert(dm);
-  std::shared_ptr<const common::IndexMap> new_imap = dm->index_map;
-  assert(new_imap);
-
-  auto map_view = dm->map();
-  std::vector<std::int32_t> dofmap_flat(
-      map_view.data_handle(), map_view.data_handle() + map_view.size());
-
-  // Build input_global_indices as the local-to-global of the new geometry
-  // dofs.
-  const std::int32_t num_nodes
-      = new_imap->size_local() + new_imap->num_ghosts();
-  std::vector<std::int32_t> local(num_nodes);
-  std::iota(local.begin(), local.end(), 0);
-  std::vector<std::int64_t> igi(num_nodes);
-  new_imap->local_to_global(local, igi);
-
-  mesh::Geometry<T> geometry(
-      new_imap, std::vector<std::vector<std::int32_t>>{std::move(dofmap_flat)},
-      std::vector<fem::CoordinateElement<T>>{new_cmap}, std::move(x_new), gdim,
-      std::move(igi));
-
-  return mesh::Mesh<T>(mesh->comm(), mesh->topology(), std::move(geometry));
-}
-//-----------------------------------------------------------------------------
-template mesh::Mesh<float> fem::interpolate_geometry(
-    std::shared_ptr<mesh::Mesh<float>>, const fem::CoordinateElement<float>&,
-    const std::function<
-        std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>&);
-template mesh::Mesh<double> fem::interpolate_geometry(
-    std::shared_ptr<mesh::Mesh<double>>, const fem::CoordinateElement<double>&,
-    const std::function<
-        std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>&);
 //-----------------------------------------------------------------------------
