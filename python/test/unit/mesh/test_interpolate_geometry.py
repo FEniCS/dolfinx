@@ -13,13 +13,12 @@ import numpy as np
 import pytest
 
 from basix import LagrangeVariant
-from dolfinx.fem import assemble_scalar, coordinate_element, form
+from dolfinx.fem import assemble_scalar, coordinate_element, form, interpolate_geometry
 from dolfinx.mesh import (
     CellType,
     DiagonalType,
     create_rectangle,
     create_unit_square,
-    interpolate_geometry,
 )
 from ufl import ds, dx
 

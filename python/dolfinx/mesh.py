@@ -73,7 +73,6 @@ __all__ = [
     "create_unit_square",
     "entities_to_geometry",
     "exterior_facet_indices",
-    "interpolate_geometry",
     "locate_entities",
     "locate_entities_boundary",
     "mark_maximum",
@@ -872,36 +871,6 @@ def create_submesh(
         )
     )
     return (Mesh(submsh, submsh_domain), EntityMap(entity_map), EntityMap(vertex_map), geom_map)
-
-
-def interpolate_geometry(msh: Mesh, cmap: _CoordinateElement) -> Mesh:
-    """From a mesh create a mesh with geometry interpolated into cmap.
-
-    Useful for creating a higher-order mesh from a lower-order one for
-    computation, or vice-versa, for IO.
-
-    Note:
-        The topology is shared between ``msh`` and the returned mesh.
-
-    Args:
-        msh: Input mesh.
-        cmap: Coordinate element for the new geometry.
-
-    Returns:
-        A new mesh with geometry in ``cmap``.
-    """
-    new_msh = _cpp.fem.interpolate_geometry(msh._cpp_object, cmap._cpp_object)
-    domain = ufl.Mesh(
-        basix.ufl.element(
-            "Lagrange",
-            to_string(new_msh.topology.cell_type),
-            new_msh.geometry.cmap().degree,
-            basix.LagrangeVariant(new_msh.geometry.cmap().variant),
-            shape=(new_msh.geometry.dim,),
-            dtype=new_msh.geometry.x.dtype,
-        )
-    )
-    return Mesh(new_msh, domain)
 
 
 def meshtags(
