@@ -13,7 +13,7 @@
 # Author: Jørgen S. Dokken
 #
 # This demo can be downloaded as a single Python file
-# {download}`demo_matrix_free_petsc.py`.
+# {download}`demo_matrix-free-petsc.py`.
 # In this demo, we will demonstrate how to set up a matrix-free
 # solver using PETSc.
 # We will start by defining our variational problem, and then in turn
