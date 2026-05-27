@@ -10,8 +10,9 @@ import numpy as np
 import pytest
 
 from dolfinx.fem import coordinate_element
-from dolfinx.mesh import CellType, create_unit_square, interpolate_geometry
-
+from dolfinx.mesh import CellType, create_unit_square, interpolate_geometry, create_rectangle, DiagonalType
+from dolfinx.fem import form, assemble_scalar
+from ufl import dx, ds
 
 def _assert_close_up_to_row_permutation(a, b, atol):
     """Assert rows of a and b are equal, up to a row permutation"""
@@ -69,3 +70,53 @@ def test_interpolate_geometry_p1_roundtrip(dtype):
     atol = 10 * np.finfo(dtype).eps
     for c in range(dm_old.shape[0]):
         np.testing.assert_allclose(x_new[dm_new[c]], x_old[dm_old[c]], atol=atol, rtol=0.0)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("degree", [2, 3])
+@pytest.mark.parametrize("R", [0.1, 1, 10])
+def test_curve_mesh(degree, dtype, R):
+    N = 8
+    mesh = create_rectangle(
+        MPI.COMM_WORLD,
+        [[-1, -1], [1, 1]],
+        [N, N],
+        diagonal=dolfinx.mesh.DiagonalType.crossed,
+        dtype=dtype,
+    )
+    org_area = form(1 * dx(domain=mesh), dtype=dtype)
+
+    cmap = coordinate_element(CellType.triangle, degree, dtype=dtype)
+    curved_mesh = interpolate_geometry(mesh, cmap)
+
+    def transform(x):
+        u = R * x[0] * np.sqrt(1 - (x[1] ** 2 / (2)))
+        v = R * x[1] * np.sqrt(1 - (x[0] ** 2 / (2)))
+        return np.asarray([u, v])
+
+    curved_mesh.geometry.x[:, : curved_mesh.geometry.dim] = transform(curved_mesh.geometry.x.T).T
+
+    area = form(1 * dx(domain=curved_mesh), dtype=dtype)
+    circumference = form(1 * ds(domain=curved_mesh), dtype=dtype)
+
+    computed_area = curved_mesh.comm.allreduce(assemble_scalar(area), op=MPI.SUM)
+    computed_circumference = curved_mesh.comm.allreduce(
+        assemble_scalar(circumference), op=MPI.SUM
+    )
+
+    tol = 10 * np.finfo(dtype).eps
+    assert np.isclose(computed_area, np.pi * R**2, atol=tol)
+    assert np.isclose(computed_circumference, 2 * np.pi * R, atol=tol)
+
+    cmap_linear = coordinate_element(CellType.triangle, 1, dtype=dtype)
+    linear_mesh = interpolate_geometry(curved_mesh, cmap_linear)
+    linear_area = form(1 * dx(domain=linear_mesh), dtype=dtype)
+
+    recovered_area = linear_mesh.comm.allreduce(
+        assemble_scalar(linear_area), op=MPI.SUM
+    )
+
+    # Curve original mesh
+    mesh.geometry.x[:, : mesh.geometry.dim] = transform(mesh.geometry.x.T).T
+    ref_area = mesh.comm.allreduce(assemble_scalar(org_area), op=MPI.SUM)
+    assert np.isclose(recovered_area, ref_area, atol=tol)
