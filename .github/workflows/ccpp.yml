@@ -134,7 +134,7 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy --config-file python/pyproject.toml -p dolfinx # package mode, type checks installed dolfinx
+          mypy --config-file python/pyproject.toml -p dolfinx # package mode, type checks installed dolfinx (working around name collision in python/ directory)
           cd python/
           mypy test
           #mypy demo # TODO: Enable this in future
