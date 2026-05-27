@@ -321,7 +321,7 @@ jobs:
           echo $DOLFINX_VERSION
           cd cpp/doc
           doxygen Doxyfile
-          make html
+          python -m sphinx -b html source/ build/html
       - name: Upload C++ Doxygen documentation artifact
         uses: actions/upload-artifact@v7
         with:

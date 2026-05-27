@@ -19,8 +19,8 @@
 #
 # ```{admonition} Download sources
 # :class: download
-# * {download}`Python script <./demo_half_loaded_waveguide.py>`
-# * {download}`Jupyter notebook <./demo_half_loaded_waveguide.ipynb>`
+# * {download}`Python script <./demo_half-loaded-waveguide.py>`
+# * {download}`Jupyter notebook <./demo_half-loaded-waveguide.ipynb>`
 # ```
 #
 # The demo shows how to:
