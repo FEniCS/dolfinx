@@ -195,7 +195,7 @@ if(ENABLE_NANOBIND_STUBGEN)
     # alongside its external dlls.
 
     # This *must* be called prior to nanobind_add_stub
-    install(TARGETS cpp DESTINATION dolfinx)
+    install(TARGETS cpp LIBRARY DESTINATION dolfinx)
     # nanobind automatically installs into ${CMAKE_INSTALL_PREFIX} in
     # INSTALL_TIME mode.
     # DEPENDS is redundant in INSTALL_TIME mode - cpp must be installed.
@@ -205,6 +205,7 @@ if(ENABLE_NANOBIND_STUBGEN)
       MODULE cpp
       RECURSIVE
       VERBOSE
+      MARKER_FILE dolfinx/cpp/py.typed
       OUTPUT
         dolfinx/cpp/__init__.pyi
         dolfinx/cpp/common.pyi
@@ -234,6 +235,7 @@ if(ENABLE_NANOBIND_STUBGEN)
       DEPENDS cpp
       RECURSIVE
       VERBOSE
+      MARKER_FILE cpp/py.typed
       OUTPUT
         cpp/__init__.pyi
         cpp/common.pyi
