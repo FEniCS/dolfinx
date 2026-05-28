@@ -122,7 +122,7 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type, lagrange_variant):
     reference_area = mesh.comm.allreduce(assemble_scalar(original_area_form), op=MPI.SUM)
     reference_circ = mesh.comm.allreduce(assemble_scalar(original_circ_form), op=MPI.SUM)
 
-    tol = 20 * np.finfo(dtype).eps
+    tol = 10 * np.finfo(dtype).eps
     assert np.isclose(recovered_area, reference_area, rtol=tol)
     assert np.isclose(recovered_circ, reference_circ, rtol=tol)
 
@@ -133,7 +133,7 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type, lagrange_variant):
 @pytest.mark.parametrize("degree", [1, 2, 3])
 @pytest.mark.parametrize("R", [0.1])
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
-@pytest.mark.parametrize("lagrange_variant", [LagrangeVariant.equispaced, LagrangeVariant.gll])
+@pytest.mark.parametrize("lagrange_variant", [LagrangeVariant.equispaced, LagrangeVariant.gll_isaac])
 def test_curve_mesh(degree, dtype, R, cell_type, lagrange_variant):
     Ns = [4, 8, 16, 32]
     errors = [_curve_mesh_errors(N, degree, dtype, R, cell_type, lagrange_variant) for N in Ns]
