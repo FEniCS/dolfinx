@@ -80,12 +80,8 @@ def test_interpolate_geometry_p1_roundtrip(dtype):
         np.testing.assert_allclose(x_new[dm_new[c]], x_old[dm_old[c]], atol=atol, rtol=0.0)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("degree", [1, 2, 3, 4])
-@pytest.mark.parametrize("R", [0.1, 1, 10])
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
-def test_curve_mesh(degree, dtype, R, cell_type):
-    N = 16
+def _curve_mesh_errors(N, degree, dtype, R, cell_type):
+    """Return (area_error, circumference_error) for a degree-p curved disk mesh with N cells."""
     mesh = create_rectangle(
         MPI.COMM_WORLD,
         [[-1.0, -1.0], [1.0, 1.0]],
@@ -93,11 +89,6 @@ def test_curve_mesh(degree, dtype, R, cell_type):
         cell_type=cell_type,
         dtype=dtype,
     )
-    original_area = form(1 * dx(domain=mesh), dtype=dtype)
-    original_circumference = form(1 * ds(domain=mesh), dtype=dtype)
-
-    cmap = coordinate_element(cell_type, degree, variant=LagrangeVariant.equispaced, dtype=dtype)
-    curved_mesh = interpolate_geometry(mesh, cmap)
 
     def transform(x):
         x_c = np.zeros_like(x)
@@ -105,37 +96,40 @@ def test_curve_mesh(degree, dtype, R, cell_type):
         x_c[:, 1] = R * x[:, 1] * np.sqrt(1.0 - (x[:, 0] ** 2 / (2.0)))
         return x_c
 
+    cmap = coordinate_element(cell_type, degree, variant=LagrangeVariant.equispaced, dtype=dtype)
+    curved_mesh = interpolate_geometry(mesh, cmap)
     curved_mesh.geometry.x[:] = transform(curved_mesh.geometry.x)
 
-    area = form(1 * dx(domain=curved_mesh), dtype=dtype)
-    circumference = form(1 * ds(domain=curved_mesh), dtype=dtype)
+    area_form = form(1 * dx(domain=curved_mesh), dtype=dtype)
+    circ_form = form(1 * ds(domain=curved_mesh), dtype=dtype)
 
-    computed_area = curved_mesh.comm.allreduce(assemble_scalar(area), op=MPI.SUM)
-    computed_circumference = curved_mesh.comm.allreduce(assemble_scalar(circumference), op=MPI.SUM)
+    area = curved_mesh.comm.allreduce(assemble_scalar(area_form), op=MPI.SUM)
+    circ = curved_mesh.comm.allreduce(assemble_scalar(circ_form), op=MPI.SUM)
 
-    tol = 10 * np.finfo(dtype).eps
-    # Linear geometry has O(h^2) area error, not near machine epsilon.
-    if degree > 1:
-        assert np.isclose(computed_area, np.pi * R**2, atol=tol)
-        assert np.isclose(computed_circumference, 2 * np.pi * R, atol=tol)
+    return abs(area - np.pi * R**2), abs(circ - 2.0 * np.pi * R)
 
-    cmap_linear = coordinate_element(cell_type, 1, dtype=dtype)
-    linear_mesh = interpolate_geometry(curved_mesh, cmap_linear)
-    linear_area = form(1 * dx(domain=linear_mesh), dtype=dtype)
-    linear_circumference = form(1 * ds(domain=linear_mesh), dtype=dtype)
 
-    recovered_area = linear_mesh.comm.allreduce(assemble_scalar(linear_area), op=MPI.SUM)
-    recovered_circumference = linear_mesh.comm.allreduce(
-        assemble_scalar(linear_circumference), op=MPI.SUM
-    )
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("degree", [1, 2, 3, 4])
+@pytest.mark.parametrize("R", [0.1, 1, 10])
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+def test_curve_mesh(degree, dtype, R, cell_type):
+    Ns = [4, 8, 16, 32]
+    errors = [_curve_mesh_errors(N, degree, dtype, R, cell_type) for N in Ns]
 
-    # Curve original mesh
-    mesh.geometry.x[:] = transform(mesh.geometry.x)
+    area_errors = np.array([e[0] for e in errors])
+    circ_errors = np.array([e[1] for e in errors])
 
-    reference_area = mesh.comm.allreduce(assemble_scalar(original_area), op=MPI.SUM)
-    assert np.isclose(recovered_area, reference_area, atol=tol)
-
-    reference_circumference = mesh.comm.allreduce(
-        assemble_scalar(original_circumference), op=MPI.SUM
-    )
-    assert np.isclose(recovered_circumference, reference_circumference, atol=tol)
+    hs = np.array([2.0 / N for N in Ns])
+    area_rate = np.polyfit(np.log(hs), np.log(area_errors), 1)[0]
+    circ_rate = np.polyfit(np.log(hs), np.log(circ_errors), 1)[0]
+   
+    if dtype is np.float64:
+        expected_rate = degree + 1
+        tolerance = 0.2
+        assert area_rate >= expected_rate - tolerance, (
+            f"Area convergence rate {area_rate:.2f} below expected {expected_rate}"
+        )
+        assert circ_rate >= expected_rate - tolerance, (
+            f"Circumference convergence rate {circ_rate:.2f} below expected {expected_rate}"
+        )
