@@ -133,7 +133,9 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type, lagrange_variant):
 @pytest.mark.parametrize("degree", [1, 2, 3])
 @pytest.mark.parametrize("R", [0.1])
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
-@pytest.mark.parametrize("lagrange_variant", [LagrangeVariant.equispaced, LagrangeVariant.gll_isaac])
+@pytest.mark.parametrize(
+    "lagrange_variant", [LagrangeVariant.equispaced, LagrangeVariant.gll_isaac]
+)
 def test_curve_mesh(degree, dtype, R, cell_type, lagrange_variant):
     Ns = [4, 8, 16, 32]
     errors = [_curve_mesh_errors(N, degree, dtype, R, cell_type, lagrange_variant) for N in Ns]
