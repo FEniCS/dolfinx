@@ -1242,6 +1242,13 @@ void declare_real_functions(nb::module_& m)
       nb::arg("element"), nb::arg("V"), nb::arg("cells").none());
 
   m.def(
+      "interpolate_geometry",
+      [](std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
+         const dolfinx::fem::CoordinateElement<T>& new_cmap)
+      { return dolfinx::fem::interpolate_geometry(mesh, new_cmap); },
+      nb::arg("mesh"), nb::arg("new_cmap"));
+
+  m.def(
       "create_interpolation_data",
       [](const dolfinx::mesh::Geometry<T>& geometry0,
          const dolfinx::fem::FiniteElement<T>& element0,
