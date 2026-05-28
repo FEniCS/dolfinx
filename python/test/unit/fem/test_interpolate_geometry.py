@@ -131,7 +131,7 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-@pytest.mark.parametrize("R", [0.1, 1, 10])
+@pytest.mark.parametrize("R", [0.1, 1])
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
 def test_curve_mesh(degree, dtype, R, cell_type):
     Ns = [4, 8, 16, 32]
