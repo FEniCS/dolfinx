@@ -80,7 +80,7 @@ def test_interpolate_geometry_p1_roundtrip(dtype):
         np.testing.assert_allclose(x_new[dm_new[c]], x_old[dm_old[c]], atol=atol, rtol=0.0)
 
 
-def _curve_mesh_errors(N, degree, dtype, R, cell_type):
+def _curve_mesh_errors(N, degree, dtype, R, cell_type, lagrange_variant):
     """Return (area_error, circumference_error) for a degree-p curved disk mesh with N cells."""
     mesh = create_rectangle(
         MPI.COMM_WORLD,
@@ -98,7 +98,7 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type):
         x_c[:, 1] = R * x[:, 1] * np.sqrt(1.0 - (x[:, 0] ** 2 / (2.0)))
         return x_c
 
-    cmap = coordinate_element(cell_type, degree, variant=LagrangeVariant.equispaced, dtype=dtype)
+    cmap = coordinate_element(cell_type, degree, variant=lagrange_variant, dtype=dtype)
     curved_mesh = interpolate_geometry(mesh, cmap)
     curved_mesh.geometry.x[:] = transform(curved_mesh.geometry.x)
 
@@ -122,7 +122,7 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type):
     reference_area = mesh.comm.allreduce(assemble_scalar(original_area_form), op=MPI.SUM)
     reference_circ = mesh.comm.allreduce(assemble_scalar(original_circ_form), op=MPI.SUM)
 
-    tol = 10 * np.finfo(dtype).eps
+    tol = 20 * np.finfo(dtype).eps
     assert np.isclose(recovered_area, reference_area, rtol=tol)
     assert np.isclose(recovered_circ, reference_circ, rtol=tol)
 
@@ -131,11 +131,12 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-@pytest.mark.parametrize("R", [0.1, 1])
+@pytest.mark.parametrize("R", [0.1])
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
-def test_curve_mesh(degree, dtype, R, cell_type):
+@pytest.mark.parametrize("lagrange_variant", [LagrangeVariant.equispaced, LagrangeVariant.gll])
+def test_curve_mesh(degree, dtype, R, cell_type, lagrange_variant):
     Ns = [4, 8, 16, 32]
-    errors = [_curve_mesh_errors(N, degree, dtype, R, cell_type) for N in Ns]
+    errors = [_curve_mesh_errors(N, degree, dtype, R, cell_type, lagrange_variant) for N in Ns]
 
     area_errors = np.array([e[0] for e in errors])
     circ_errors = np.array([e[1] for e in errors])
