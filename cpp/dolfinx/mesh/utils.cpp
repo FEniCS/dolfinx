@@ -18,7 +18,6 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
-#include <memory>
 #include <optional>
 #include <span>
 #include <stdexcept>
