@@ -47,7 +47,7 @@ jobs:
 
       - name: Install Python dependencies (petsc4py)
         run: |
-          pip install cython setuptools==80 wheel
+          pip install cython setuptools wheel
           pip install mpi4py numpy
 
       - name: Restore cache PETSc and petsc4py
