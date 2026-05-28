@@ -4,7 +4,9 @@
 # NOTE: petsc4py is an optional build dependency, therefore we don't
 # list it here.
 [build-system]
-requires = ["scikit-build-core[pyproject]>=0.10", "nanobind>=2.5.0", "mpi4py"]
+# scikit-build-core>=0.11 has SPDX license support PEP 639
+# nanobind>=2.9.2 has working recursive stubgen
+requires = ["scikit-build-core[pyproject]>=0.11", "nanobind>=2.9.2", "mpi4py"]
 build-backend = "scikit_build_core.build"
 
 [project]
