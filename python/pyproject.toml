@@ -12,7 +12,7 @@ name = "fenics-dolfinx"
 version = "0.11.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
-requires-python = ">=3.10.0"
+requires-python = ">=3.11"
 license = { file = "../COPYING.LESSER" }
 authors = [
       { email = "fenics-steering-council@googlegroups.com" },
@@ -44,12 +44,13 @@ docs = [
       "packaging",
       "pyyaml",
       "sphinx",
-      "sphinx_rtd_theme",
+      "pydata-sphinx-theme",
       "sphinx_codeautolink[ipython]",
       "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
 ]
 lint = ["ruff"]
+mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
 optional = ["numba"]
 petsc4py = ["petsc4py"]
 test = [
@@ -61,12 +62,11 @@ test = [
       "fenics-dolfinx[optional]",
 ]
 ci = [
-      "mypy",
       "pytest-xdist",
-      "types-setuptools",
       "fenics-dolfinx[build]",
       "fenics-dolfinx[docs]",
       "fenics-dolfinx[lint]",
+      "fenics-dolfinx[mypy]",
       "fenics-dolfinx[optional]",
       "fenics-dolfinx[test]",
 ]
@@ -97,7 +97,6 @@ warn_return_any = false
 warn_unused_ignores = false
 show_error_codes = true
 ignore_missing_imports = true
-
 
 [tool.ruff]
 line-length = 100
