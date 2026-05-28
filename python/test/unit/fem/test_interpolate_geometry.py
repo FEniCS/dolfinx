@@ -89,6 +89,8 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type):
         cell_type=cell_type,
         dtype=dtype,
     )
+    original_area_form = form(1 * dx(domain=mesh), dtype=dtype)
+    original_circ_form = form(1 * ds(domain=mesh), dtype=dtype)
 
     def transform(x):
         x_c = np.zeros_like(x)
@@ -105,6 +107,24 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type):
 
     area = curved_mesh.comm.allreduce(assemble_scalar(area_form), op=MPI.SUM)
     circ = curved_mesh.comm.allreduce(assemble_scalar(circ_form), op=MPI.SUM)
+
+    # Interpolate curved mesh back to P1 and compare against the original P1 mesh
+    # with the same transform applied — should match to near machine precision.
+    cmap_linear = coordinate_element(cell_type, 1, dtype=dtype)
+    linear_mesh = interpolate_geometry(curved_mesh, cmap_linear)
+    linear_area_form = form(1 * dx(domain=linear_mesh), dtype=dtype)
+    linear_circ_form = form(1 * ds(domain=linear_mesh), dtype=dtype)
+
+    recovered_area = linear_mesh.comm.allreduce(assemble_scalar(linear_area_form), op=MPI.SUM)
+    recovered_circ = linear_mesh.comm.allreduce(assemble_scalar(linear_circ_form), op=MPI.SUM)
+
+    mesh.geometry.x[:] = transform(mesh.geometry.x)
+    reference_area = mesh.comm.allreduce(assemble_scalar(original_area_form), op=MPI.SUM)
+    reference_circ = mesh.comm.allreduce(assemble_scalar(original_circ_form), op=MPI.SUM)
+
+    tol = 10 * np.finfo(dtype).eps
+    assert np.isclose(recovered_area, reference_area, atol=tol)
+    assert np.isclose(recovered_circ, reference_circ, atol=tol)
 
     return abs(area - np.pi * R**2), abs(circ - 2.0 * np.pi * R)
 
@@ -123,7 +143,7 @@ def test_curve_mesh(degree, dtype, R, cell_type):
     hs = np.array([2.0 / N for N in Ns])
     area_rate = np.polyfit(np.log(hs), np.log(area_errors), 1)[0]
     circ_rate = np.polyfit(np.log(hs), np.log(circ_errors), 1)[0]
-   
+
     if dtype is np.float64:
         expected_rate = degree + 1
         tolerance = 0.2
