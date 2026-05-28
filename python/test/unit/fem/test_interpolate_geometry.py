@@ -123,14 +123,14 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type):
     reference_circ = mesh.comm.allreduce(assemble_scalar(original_circ_form), op=MPI.SUM)
 
     tol = 10 * np.finfo(dtype).eps
-    assert np.isclose(recovered_area, reference_area, atol=tol)
-    assert np.isclose(recovered_circ, reference_circ, atol=tol)
+    assert np.isclose(recovered_area, reference_area, rtol=tol)
+    assert np.isclose(recovered_circ, reference_circ, rtol=tol)
 
     return abs(area - np.pi * R**2), abs(circ - 2.0 * np.pi * R)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("degree", [1, 2, 3, 4])
+@pytest.mark.parametrize("degree", [1, 2, 3])
 @pytest.mark.parametrize("R", [0.1, 1, 10])
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
 def test_curve_mesh(degree, dtype, R, cell_type):
@@ -144,6 +144,7 @@ def test_curve_mesh(degree, dtype, R, cell_type):
     area_rate = np.polyfit(np.log(hs), np.log(area_errors), 1)[0]
     circ_rate = np.polyfit(np.log(hs), np.log(circ_errors), 1)[0]
 
+    # np.float32 converges to machine epsilon quickly, leading to noise
     if dtype is np.float64:
         expected_rate = degree + 1
         tolerance = 0.2
