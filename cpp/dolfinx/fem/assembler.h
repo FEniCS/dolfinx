@@ -135,7 +135,7 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
   std::vector<T> constants = fem::pack_constants(e);
 
   tabulate_expression<T, U>(
-      values, e, md::mdspan(coeffs.data(), entities.size(), cstride),
+      values, e, md::mdspan(coeffs.data(), entities.extent(0), cstride),
       std::span<const T>(constants), mesh, entities, element);
 }
 
