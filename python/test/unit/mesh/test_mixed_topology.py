@@ -91,8 +91,8 @@ def test_mixed_topology_mesh(dtype):
     )
     print(geom.x)
     print(geom.index_map().size_local)
-    print(geom.dofmaps(0))
-    print(geom.dofmaps(1))
+    print(geom.dofmaps[0])
+    print(geom.dofmaps[1])
     set_log_level(LogLevel.WARNING)
 
 
@@ -252,8 +252,8 @@ def test_parallel_mixed_mesh(dtype):
         topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x.flatten(), 2
     )
 
-    assert len(geom.dofmaps(0)) == 2
-    assert len(geom.dofmaps(1)) == 1
+    assert len(geom.dofmaps[0]) == 2
+    assert len(geom.dofmaps[1]) == 1
 
     mesh_t = Mesh_float64 if dtype == np.float64 else Mesh_float32
     mesh = mesh_t(MPI.COMM_WORLD, topology, geom)
