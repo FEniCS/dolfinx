@@ -108,26 +108,20 @@ public:
   int dim() const { return _dim; }
 
   /// @brief DofMap for the geometry.
+  /// @param i Index for the dofmap associated with the ith cell type.
   /// @return A 2D array with shape `(num_cells, dofs_per_cell)`.
-  md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> dofmap() const
+  md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>
+  dofmap(std::optional<int> i = std::nullopt) const
   {
-    if (_dofmaps.size() != 1)
+    if (i.has_value())
+    {
+      std::size_t ndofs = _cmaps.at(*i).dim();
+      return md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>(
+          _dofmaps.at(*i).data(), _dofmaps.at(*i).size() / ndofs, ndofs);
+    }
+    else if (_dofmaps.size() != 1)
       throw std::runtime_error("Multiple dofmaps");
     return this->dofmap(0);
-  }
-
-  /// @brief Degree-of-freedom map associated with the `i`th coordinate
-  /// map element in the geometry.
-  /// @param[in] i Index of the requested degree-of-freedom map. The
-  /// degree-of-freedom map corresponds to the geometry element
-  /// `cmaps()[i]`.
-  /// @return A dofmap array, with shape `(num_cells, dofs_per_cell)`.
-  md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>
-  dofmap(std::size_t i) const
-  {
-    std::size_t ndofs = _cmaps.at(i).dim();
-    return md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>(
-        _dofmaps.at(i).data(), _dofmaps.at(i).size() / ndofs, ndofs);
   }
 
   /// @brief Index map for the geometry 'degrees-of-freedom'.
