@@ -185,8 +185,8 @@ void tabulate_expression(
   }
 
   tabulate_expression<T, U>(values, fn, Xshape, value_size, num_argument_dofs,
-                            mesh.geometry().dofmaps().front(), mesh.geometry().x(),
-                            coeffs, constants, entities, cell_info,
-                            post_dof_transform);
+                            mesh.geometry().dofmaps().front(),
+                            mesh.geometry().x(), coeffs, constants, entities,
+                            cell_info, post_dof_transform);
 }
 } // namespace dolfinx::fem::impl

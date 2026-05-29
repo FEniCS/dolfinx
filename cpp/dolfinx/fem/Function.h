@@ -489,7 +489,8 @@ public:
     auto map = mesh->topology()->index_map(tdim);
 
     // Get coordinate map
-    const CoordinateElement<geometry_type>& cmap = mesh->geometry().cmaps().front();
+    const CoordinateElement<geometry_type>& cmap
+        = mesh->geometry().cmaps().front();
 
     // Get geometry data
     auto x_dofmap = mesh->geometry().dofmaps().front();

@@ -1336,7 +1336,8 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
 
   // Get the geometry dofs in the sub-geometry based on the entities in
   // sub-geometry
-  const fem::ElementDofLayout layout = geometry.cmaps().front().create_dof_layout();
+  const fem::ElementDofLayout layout
+      = geometry.cmaps().front().create_dof_layout();
 
   const std::vector<std::int32_t> x_indices
       = entities_to_geometry(mesh, dim, subentity_to_entity, true).first;
@@ -1386,11 +1387,13 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
                          });
 
   // Sub-geometry coordinate element
-  CellType sub_xcell = cell_entity_type(geometry.cmaps().front().cell_shape(), dim, 0);
+  CellType sub_xcell
+      = cell_entity_type(geometry.cmaps().front().cell_shape(), dim, 0);
 
   // Special handling of point meshes, as they only support constant
   // basis functions
-  int degree = (sub_xcell == CellType::point) ? 0 : geometry.cmaps().front().degree();
+  int degree
+      = (sub_xcell == CellType::point) ? 0 : geometry.cmaps().front().degree();
   fem::CoordinateElement<T> sub_cmap(sub_xcell, degree,
                                      geometry.cmaps().front().variant());
 
