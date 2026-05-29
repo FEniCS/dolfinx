@@ -371,7 +371,7 @@ std::vector<std::int32_t> extract_coefficient_cells_from_entities(
   else
   {
     assert(entity_map.has_value());
-    const mesh::Topology topology = *mesh.topology();
+    const mesh::Topology& topology = *mesh.topology();
     int tdim = topology.dim();
     int codim = tdim - mesh_c->topology()->dim();
     // Map entities to coefficient mesh using entity map
