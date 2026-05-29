@@ -625,6 +625,7 @@ def test_submesh_codim_one(dtype, qdegree):
     quadrature_points = quadrature_points.astype(xtype)
 
     n_h = ufl.FacetNormal(mesh)
+
     def combined_expr(u, u_sub, n_h):
         return u * (ufl.dot(u_sub, n_h) + n_h[0] * u_sub[1])
 
@@ -632,17 +633,16 @@ def test_submesh_codim_one(dtype, qdegree):
     entities = dolfinx.fem.compute_integration_domains(
         dolfinx.fem.IntegralType.exterior_facet, mesh.topology, exterior_facets
     )
-  
+
     # Evaluate submesh expression
     expr = combined_expr(u, u_sub, n_h)
     mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
     expr = dolfinx.fem.Expression(expr, quadrature_points, dtype=dtype, entity_maps=[entity_map])
     values = expr.eval(mesh, entities.reshape(-1, 2))
- 
+
     # Verify with standard evaluation of exact expression on exterior facets
     x = ufl.SpatialCoordinate(mesh)
-    expr_exact = combined_expr(expr0(x) , ufl.as_vector(expr1(x)), n_h)
+    expr_exact = combined_expr(expr0(x), ufl.as_vector(expr1(x)), n_h)
     expr_exact = dolfinx.fem.Expression(expr_exact, quadrature_points, dtype=dtype)
     values_exact = expr_exact.eval(mesh, entities.reshape(-1, 2))
-
     np.testing.assert_allclose(values, values_exact, atol=tol)
