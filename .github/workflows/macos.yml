@@ -23,7 +23,7 @@ jobs:
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
-      PETSC_VERSION: 3.24.4
+      PETSC_VERSION: 3.25.1
       PYTEST_ADDOPTS: "-W error"
 
     steps:
@@ -47,7 +47,7 @@ jobs:
 
       - name: Install Python dependencies (petsc4py)
         run: |
-          pip install cython setuptools==80 wheel
+          pip install cython setuptools wheel
           pip install mpi4py numpy
 
       - name: Restore cache PETSc and petsc4py
@@ -126,7 +126,7 @@ jobs:
       - name: Build and install DOLFINx Python interface
         working-directory: python
         run: |
-          pip install pyamg pybind11>=2.8.0 setuptools_scm[toml]==8.3.0
+          pip install pyamg
           pip install scikit-build-core
           python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" './[test]'
