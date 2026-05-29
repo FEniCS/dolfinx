@@ -151,26 +151,11 @@ public:
   std::span<value_type> x() { return _x; }
 
   /// @brief The elements that describes the geometry map.
-  ///
-  /// The coordinate element `cmaps()[i]` corresponds to the
-  /// degree-of-freedom map `dofmap(i)`.
-  /// @param i The coordinate map to fetch
   /// @return The coordinate/geometry elements.
-  const fem::CoordinateElement<value_type>& cmap(std::optional<int> i
-                                                 = std::nullopt) const
+  const std::vector<fem::CoordinateElement<value_type>>& cmaps() const
   {
-    if (i.has_value())
-      return _cmaps.at(*i);
-    else if (_cmaps.size() > 1)
-      throw std::runtime_error("Multiple cmaps.");
-    return _cmaps.front();
+    return _cmaps;
   }
-
-  /// @brief Number of coordinate maps and dofmaps
-  /// (which must be the same) in the
-  /// geometry, when consisting of different cells.
-  /// @return Number of dofmaps and coordinate maps.
-  std::size_t num_maps() const { return _cmaps.size(); }
 
   /// @brief Global user indices.
   const std::vector<std::int64_t>& input_global_indices() const
