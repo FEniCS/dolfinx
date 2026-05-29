@@ -618,7 +618,10 @@ def test_submesh_codim_one(dtype, qdegree):
         "Lagrange", submesh.basix_cell(), 2, shape=(submesh.geometry.dim,), dtype=xtype
     )
     u_sub = dolfinx.fem.Function(dolfinx.fem.functionspace(submesh, sub_el), dtype=dtype)
-    expr1 = lambda x: (x[1] ** 2, -(x[0] ** 2))
+
+    def expr1(x):
+        return (x[1] ** 2, -(x[0] ** 2))
+
     u_sub.interpolate(expr1)
 
     quadrature_points, _ = basix.make_quadrature(basix.CellType.interval, qdegree)
