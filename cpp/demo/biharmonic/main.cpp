@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
   PetscInitialize(&argc, &argv, nullptr, nullptr);
   {
     //  Create mesh
-    auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
+    auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet, 2);
     auto mesh = std::make_shared<mesh::Mesh<U>>(
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
                                   {32, 32}, mesh::CellType::triangle, part));
