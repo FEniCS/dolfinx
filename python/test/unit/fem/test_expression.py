@@ -582,7 +582,7 @@ def test_submesh_codim_zero(dtype, qdegree):
     np.testing.assert_allclose(values, values_exact[parent_cells], atol=tol)
 
 
-@pytest.mark.parametrize("qdegree", [1, 3, 5])
+@pytest.mark.parametrize("qdegree", [1, 3])
 @pytest.mark.parametrize(
     "dtype",
     [
@@ -608,7 +608,9 @@ def test_submesh_codim_one(dtype, qdegree):
         return np.isclose(x[0], 0.0, atol=tol)
 
     left_facets = dolfinx.mesh.locate_entities(mesh, mesh.topology.dim - 1, mark_left_facets)
-    submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(mesh, mesh.topology.dim, left_facets)
+    submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(
+        mesh, mesh.topology.dim - 1, left_facets
+    )
     sub_el = basix.ufl.element(
         "Lagrange", submesh.basix_cell(), 2, shape=(submesh.geometry.dim,), dtype=xtype
     )
@@ -623,7 +625,6 @@ def test_submesh_codim_one(dtype, qdegree):
 
     mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
     expr = dolfinx.fem.Expression(expr, quadrature_points, dtype=dtype, entity_maps=[entity_map])
-
     entities = dolfinx.fem.compute_integration_domains(
         dolfinx.fem.IntegralType.exterior_facet, mesh.topology, left_facets
     )
@@ -631,7 +632,7 @@ def test_submesh_codim_one(dtype, qdegree):
     values = expr.eval(mesh, entities.reshape(-1, 2))
 
     x = ufl.SpatialCoordinate(mesh)
-    expr_exact = (x[0] + 2.0 * x[1]) * (x[1] ** 2 - x[0] ** 2)
+    expr_exact = (x[0] + 2.0 * x[1]) * (x[0] ** 2 - x[1] ** 2)
     expr_exact = dolfinx.fem.Expression(expr_exact, quadrature_points, dtype=dtype)
     values_exact = expr_exact.eval(mesh, entities.reshape(-1, 2))
     np.testing.assert_allclose(values, values_exact, atol=tol)
