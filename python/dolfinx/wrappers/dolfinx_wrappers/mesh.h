@@ -222,13 +222,11 @@ void declare_mesh(nb::module_& m, std::string type)
           nb::rv_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      .def(
-          "cmap", [](dolfinx::mesh::Geometry<T>& self) { return self.cmap(); },
-          "The coordinate map")
-      .def(
-          "cmap", [](dolfinx::mesh::Geometry<T>& self, std::optional<int> i)
-          { return self.cmap(i); }, "The ith coordinate map",
-          nb::arg("i").none())
+      .def_prop_ro(
+          "cmaps",
+          [](dolfinx::mesh::Geometry<T>& self)
+          { return self.cmaps(); },
+          "The coordinate maps")
       .def_prop_ro(
           "input_global_indices",
           [](const dolfinx::mesh::Geometry<T>& self)

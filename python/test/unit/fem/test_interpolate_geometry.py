@@ -43,7 +43,7 @@ def test_interpolate_geometry_p1_to_p2(dtype):
     cmap = coordinate_element(CellType.triangle, 2, dtype=dtype)
 
     new_msh = interpolate_geometry(msh, cmap)
-    assert new_msh.geometry.cmap().degree == 2
+    assert new_msh.geometry.cmaps[0].degree == 2
 
     # Topology should be the same cpp object.
     assert new_msh.topology._cpp_object is msh.topology._cpp_object
@@ -68,7 +68,7 @@ def test_interpolate_geometry_p1_roundtrip(dtype):
 
     new_msh = interpolate_geometry(msh, cmap)
 
-    assert new_msh.geometry.cmap().degree == 1
+    assert new_msh.geometry.cmaps[0].degree == 1
     assert new_msh.topology._cpp_object is msh.topology._cpp_object
 
     x_old, x_new = msh.geometry.x, new_msh.geometry.x
