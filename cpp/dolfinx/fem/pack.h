@@ -350,26 +350,26 @@ std::vector<std::int32_t> extract_coefficient_cells_from_entities(
   auto mesh_c = coeff.function_space()->mesh();
   assert(mesh_c);
 
+  auto span_to_vector = [](auto entities)
+  {
+    assert(entities.rank() == 1);
+
+    std::vector<std::int32_t> vec;
+    vec.reserve(entities.extent(0));
+    for (std::size_t i = 0; i < entities.extent(0); ++i)
+      vec.push_back(entities[i]);
+    return vec;
+  };
+
   if (mesh_c->topology() == mesh.topology())
   {
     // If same mesh no mapping is needed
     if constexpr (entities.rank() == 1)
-    {
-      std::vector<std::int32_t> e_b;
-      e_b.reserve(entities.size());
-      for (std::size_t i = 0; i < entities.extent(0); ++i)
-        e_b.push_back(entities[i]);
-      return e_b;
-    }
+      return span_to_vector(entities);
+
     else
-    {
       // If (cell, local_index) pairs are given, extract the cells
-      auto cells = md::submdspan(entities, md::full_extent, 0);
-      std::vector<std::int32_t> contiguous_cells(cells.extent(0));
-      for (std::size_t i = 0; i < cells.extent(0); ++i)
-        contiguous_cells[i] = cells(i);
-      return contiguous_cells;
-    }
+      return span_to_vector(md::submdspan(entities, md::full_extent, 0));
   }
   else
   {
@@ -384,11 +384,8 @@ std::vector<std::int32_t> extract_coefficient_cells_from_entities(
     if constexpr (entities.rank() == 1)
     {
       assert(codim == 0);
-      std::vector<std::int32_t> e_b;
-      e_b.reserve(entities.size());
-      for (std::size_t i = 0; i < entities.extent(0); ++i)
-        e_b.push_back(entities[i]);
-      return emap.sub_topology_to_topology(std::span(e_b), inverse);
+
+      return emap.sub_topology_to_topology(span_to_vector(entities), inverse);
     }
     else if constexpr (entities.rank() == 2)
     {
@@ -396,11 +393,7 @@ std::vector<std::int32_t> extract_coefficient_cells_from_entities(
       {
         // If codim is zero we extract the cells and map them
         auto cells = md::submdspan(entities, md::full_extent, 0);
-        std::vector<std::int32_t> contiguous_cells(cells.extent(0));
-        for (std::size_t i = 0; i < cells.extent(0); ++i)
-          contiguous_cells[i] = cells(i);
-        return emap.sub_topology_to_topology(std::span(contiguous_cells),
-                                             inverse);
+        return emap.sub_topology_to_topology(span_to_vector(cells), inverse);
       }
       else
       {
@@ -428,8 +421,7 @@ std::vector<std::int32_t> extract_coefficient_cells_from_entities(
           contiguous_cells.push_back(c_to_e->links(pair[0])[pair[1]]);
         }
         // Map parent facet to submesh cell
-        return emap.sub_topology_to_topology(std::span(contiguous_cells),
-                                             inverse);
+        return emap.sub_topology_to_topology(contiguous_cells, inverse);
       }
     }
   }
