@@ -261,14 +261,27 @@ integration tests on a proposed set of tags as it is easy to make an error.
 
 Contact Drew Parsons.
 
-### Conda Forge
+### conda-forge
 
-Conda Forge bots typically pickup new releases automatically. Can also contact
+Conda-forge bots typically pickup new releases automatically. Can also contact
 @minrk.
 
 ### Spack
 
-Update the Spack recipe for the FEniCSx components on the fork
-[FEniCS/spack](https://github.com/FEniCS/spack) using a branch e.g.
-`updates/dolfinx-<version>`. Create a pull request to the Spack mainline
-repository.
+Create a branch on
+[FEniCS/fenics-spack](https://github.com/FEniCS/fenics-spack]. Copy across the
+upstream `fenics_*` recipes from
+[spack/spack-packages](https://github.com/spack/spack-packages). Make
+appropriate updates for the latest releases and `main` branch and ensure the CI
+passes.
+
+Once the CI passes, update the Spack upsteam `fenics_*` recipes on the fork
+[FEniCS/spack-packages](https://github.com/FEniCS/spack-packages) using a
+branch per component e.g. `<username>/dolfinx-<version>`. Create a pull request
+to the Spack mainline repository for each FEniCS component, along with any
+required dependencies. If PRs are slow to merge ask in Slack Spack
+`#pull-requests`.
+
+### Easybuild/EESSI
+
+Contact Jack Hale.
