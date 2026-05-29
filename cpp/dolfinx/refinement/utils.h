@@ -55,7 +55,7 @@ create_new_geometry(const mesh::Mesh<T>& mesh,
                     const std::vector<std::int32_t>& marked_edge_list)
 {
   // Build map from vertex -> geometry dof
-  auto x_dofmap = mesh.geometry().dofmap();
+  auto x_dofmap = mesh.geometry().dofmaps().front();
   const int tdim = mesh.topology()->dim();
   auto c_to_v = mesh.topology()->connectivity(tdim, 0);
   assert(c_to_v);

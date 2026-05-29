@@ -313,12 +313,22 @@ class Geometry(typing.Generic[Real]):
         return self._cpp_object.dim
 
     @property
+    def dofmaps(self) -> list[npt.NDArray[np.int32]]:
+        """The geometry dofmaps, one per cell type."""
+        return self._cpp_object.dofmaps
+
+    @property
     def dofmap(self) -> npt.NDArray[np.int32]:
-        """Dofmap for the geometry.
+        """Dofmap for the geometry (deprecated, use ``dofmaps[0]``).
 
         Shape is ``(num_cells, dofs_per_cell)``.
         """
-        return self._cpp_object.dofmap
+        warnings.warn(
+            "dofmap is deprecated. Use dofmaps[0] instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._cpp_object.dofmaps[0]
 
     def index_map(self) -> _IndexMap:
         """Index map for the geometry points (nodes) distribution."""

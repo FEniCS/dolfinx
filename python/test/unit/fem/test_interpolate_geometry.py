@@ -49,7 +49,7 @@ def test_interpolate_geometry_p1_to_p2(dtype):
     assert new_msh.topology._cpp_object is msh.topology._cpp_object
 
     x_old, x_new = msh.geometry.x, new_msh.geometry.x
-    dm_old, dm_new = msh.geometry.dofmap, new_msh.geometry.dofmap
+    dm_old, dm_new = msh.geometry.dofmaps[0], new_msh.geometry.dofmaps[0]
     assert dm_old.shape[0] == dm_new.shape[0]
     assert dm_new.shape[1] == 6
 
@@ -72,7 +72,7 @@ def test_interpolate_geometry_p1_roundtrip(dtype):
     assert new_msh.topology._cpp_object is msh.topology._cpp_object
 
     x_old, x_new = msh.geometry.x, new_msh.geometry.x
-    dm_old, dm_new = msh.geometry.dofmap, new_msh.geometry.dofmap
+    dm_old, dm_new = msh.geometry.dofmaps[0], new_msh.geometry.dofmaps[0]
     assert dm_old.shape == dm_new.shape
 
     atol = 10 * np.finfo(dtype).eps

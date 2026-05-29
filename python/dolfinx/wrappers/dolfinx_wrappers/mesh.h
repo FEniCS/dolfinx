@@ -191,25 +191,18 @@ void declare_mesh(nb::module_& m, std::string type)
       .def_prop_ro("dim", &dolfinx::mesh::Geometry<T>::dim,
                    "Geometric dimension")
       .def_prop_ro(
-          "dofmap",
+          "dofmaps",
           [](dolfinx::mesh::Geometry<T>& self)
           {
-            auto dofs = self.dofmap();
-            return nb::ndarray<const std::int32_t, nb::numpy>(
-                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
+            auto dms = self.dofmaps();
+            nb::list result;
+            for (auto& dm : dms)
+              result.append(nb::ndarray<const std::int32_t, nb::numpy>(
+                  dm.data_handle(), {dm.extent(0), dm.extent(1)}));
+            return result;
           },
-          nb::rv_policy::reference_internal)
-      .def(
-          "dofmaps",
-          [](dolfinx::mesh::Geometry<T>& self, int i)
-          {
-            auto dofs = self.dofmap(i);
-            return nb::ndarray<const std::int32_t, nb::numpy>(
-                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
-          },
-          nb::rv_policy::reference_internal, nb::arg("i"),
-          "Get the geometry dofmap associated with coordinate element i (mixed "
-          "topology)")
+          nb::rv_policy::reference_internal,
+          "The geometry dofmaps")
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_prop_ro(
           "x",

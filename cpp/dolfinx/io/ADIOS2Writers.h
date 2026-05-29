@@ -314,7 +314,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
   auto [vtkcells, shape]
-      = io::extract_vtk_connectivity(geometry.dofmap(), topology->cell_type());
+      = io::extract_vtk_connectivity(geometry.dofmaps().front(), topology->cell_type());
 
   // Add cell metadata
   int tdim = topology->dim();

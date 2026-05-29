@@ -157,7 +157,7 @@ def test_dof_positions(cell_type, space_type):
 
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
-    coord_dofs = mesh.geometry.dofmap
+    coord_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
     cmap = mesh.geometry.cmaps[0]
     tdim = mesh.topology.dim

@@ -70,7 +70,7 @@ void write_mesh(const std::filesystem::path& filename,
   for (std::size_t i = 0; i < cell_index_maps.size(); ++i)
   {
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> g_dofmap
-        = mesh.geometry().dofmap(i);
+        = mesh.geometry().dofmaps().at(i);
 
     std::vector<std::uint16_t> perm
         = cells::perm_vtk(cell_types[i], g_dofmap.extent(1));

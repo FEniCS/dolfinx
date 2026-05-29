@@ -290,7 +290,7 @@ public:
       const CoordinateElement<geometry_type>& cmap = _mesh->geometry().cmaps().at(i);
 
       // Prepare cell geometry
-      auto x_dofmap = _mesh->geometry().dofmap(i);
+      auto x_dofmap = _mesh->geometry().dofmaps().at(i);
       const std::size_t num_dofs_g = cmap.dim();
       std::vector<geometry_type> coordinate_dofs_b(num_dofs_g * gdim);
       mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);

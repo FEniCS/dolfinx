@@ -391,7 +391,7 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, const std::string& name,
           *mesh.topology(), mesh.geometry().input_global_indices(),
           mesh.geometry().index_map()->size_global(),
           mesh.geometry().cmaps().front().create_dof_layout(),
-          mesh.geometry().dofmap(), mesh::cell_dim(cell_type), entities_span,
+          mesh.geometry().dofmaps().front(), mesh::cell_dim(cell_type), entities_span,
           values);
 
   spdlog::info("XDMF create meshtags");

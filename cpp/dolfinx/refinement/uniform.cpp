@@ -76,7 +76,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   for (int j = 0; j < static_cast<int>(cell_entity_types.size()); ++j)
   {
     // Get geometry for each cell type
-    auto x_dofmap = mesh.geometry().dofmap(j);
+    auto x_dofmap = mesh.geometry().dofmaps().at(j);
     auto c_to_v = topology->connectivity({tdim, j}, {0, 0});
     auto dof_layout = mesh.geometry().cmaps().at(j).create_dof_layout();
     std::vector<int> entity_dofs(dof_layout.num_dofs());

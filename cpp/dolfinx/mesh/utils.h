@@ -129,7 +129,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
   }
 
   // Get geometry data
-  auto x_dofmap = mesh.geometry().dofmap();
+  auto x_dofmap = mesh.geometry().dofmaps().front();
   std::span<const T> x_nodes = mesh.geometry().x();
 
   // Get all vertex 'node' indices
@@ -635,7 +635,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
            num_cell_types = topology->entity_types(tdim).size();
        cell_type_idx < num_cell_types; ++cell_type_idx)
   {
-    auto x_dofmap = mesh.geometry().dofmap(cell_type_idx);
+    auto x_dofmap = mesh.geometry().dofmaps().at(cell_type_idx);
     auto c_to_v = topology->connectivity({tdim, cell_type_idx}, {0, 0});
     assert(c_to_v);
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
@@ -875,7 +875,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
   const int tdim = topology->dim();
   const Geometry<T>& geometry = mesh.geometry();
-  auto xdofs = geometry.dofmap();
+  auto xdofs = geometry.dofmaps().front();
 
   // Get the DOF layout and the number of DOFs per entity
   const fem::CoordinateElement<T>& coord_ele = geometry.cmaps().front();

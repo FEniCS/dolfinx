@@ -324,7 +324,7 @@ def distribute_entity_data(
         mesh.geometry.input_global_indices,
         mesh.geometry.index_map().size_global,
         mesh.geometry.cmaps[0].create_dof_layout(),
-        mesh.geometry.dofmap,
+        mesh.geometry.dofmaps[0],
         entity_dim,
         entities,
         values,

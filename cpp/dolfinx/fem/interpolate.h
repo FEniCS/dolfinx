@@ -65,7 +65,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 
   // Get geometry data and the element coordinate map
   const std::size_t gdim = geometry.dim();
-  auto x_dofmap = geometry.dofmap(index);
+  auto x_dofmap = geometry.dofmaps().at(index);
   std::span<const T> x_g = geometry.x();
 
   const CoordinateElement<T>& cmap = geometry.cmaps().at(index);
@@ -521,7 +521,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   const std::size_t value_size0 = V0->element()->reference_value_size();
 
   const CoordinateElement<U>& cmap = mesh0->geometry().cmaps().front();
-  auto x_dofmap = mesh0->geometry().dofmap();
+  auto x_dofmap = mesh0->geometry().dofmaps().front();
   std::span<const U> x_g = mesh0->geometry().x();
 
   // (0) is derivative index, (1) is the point index, (2) is the basis
@@ -930,7 +930,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const CoordinateElement<U>& cmap = mesh.geometry().cmaps().front();
 
   // Get geometry data
-  auto x_dofmap = mesh.geometry().dofmap();
+  auto x_dofmap = mesh.geometry().dofmaps().front();
   const int num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh.geometry().x();
 
