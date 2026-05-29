@@ -106,7 +106,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       // Tabulate geometry dofs for the entity
       auto dofs = md::submdspan(x_dofmap, c, md::full_extent);
       const std::vector<int> entity_dofs
-          = geometry.cmap().create_dof_layout().entity_closure_dofs(
+          = geometry.cmaps().front().create_dof_layout().entity_closure_dofs(
               dim, local_cell_entity);
       std::vector<T> nodes(3 * entity_dofs.size());
       for (std::size_t i = 0; i < entity_dofs.size(); i++)

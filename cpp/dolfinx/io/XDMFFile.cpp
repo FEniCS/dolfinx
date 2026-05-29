@@ -390,8 +390,9 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, const std::string& name,
       entities_values = io::distribute_entity_data<std::int32_t>(
           *mesh.topology(), mesh.geometry().input_global_indices(),
           mesh.geometry().index_map()->size_global(),
-          mesh.geometry().cmap().create_dof_layout(), mesh.geometry().dofmap(),
-          mesh::cell_dim(cell_type), entities_span, values);
+          mesh.geometry().cmaps().front().create_dof_layout(),
+          mesh.geometry().dofmap(), mesh::cell_dim(cell_type), entities_span,
+          values);
 
   spdlog::info("XDMF create meshtags");
   std::size_t num_vertices_per_entity = mesh::cell_num_entities(

@@ -56,7 +56,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
   {
     for (std::size_t i = 0; i < geometry.num_maps(); ++i)
     {
-      if (geometry.cmap(i).cell_shape() == cell_type)
+      if (geometry.cmaps().at(i).cell_shape() == cell_type)
         return i;
     }
     throw std::runtime_error("Cannot find CoordinateElement for FiniteElement");
@@ -68,7 +68,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
   auto x_dofmap = geometry.dofmap(index);
   std::span<const T> x_g = geometry.x();
 
-  const CoordinateElement<T>& cmap = geometry.cmap(index);
+  const CoordinateElement<T>& cmap = geometry.cmaps().at(index);
   const std::size_t num_dofs_g = cmap.dim();
 
   // Get the interpolation points on the reference cells
@@ -520,7 +520,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   const std::size_t value_size_ref0 = element0->reference_value_size();
   const std::size_t value_size0 = V0->element()->reference_value_size();
 
-  const CoordinateElement<U>& cmap = mesh0->geometry().cmap();
+  const CoordinateElement<U>& cmap = mesh0->geometry().cmaps().front();
   auto x_dofmap = mesh0->geometry().dofmap();
   std::span<const U> x_g = mesh0->geometry().x();
 
@@ -927,7 +927,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
     throw std::runtime_error("Interpolation data has the wrong shape.");
 
   // Get coordinate map
-  const CoordinateElement<U>& cmap = mesh.geometry().cmap();
+  const CoordinateElement<U>& cmap = mesh.geometry().cmaps().front();
 
   // Get geometry data
   auto x_dofmap = mesh.geometry().dofmap();

@@ -151,7 +151,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   const auto [X, Xshape] = e1->interpolation_points();
 
   // Get/compute geometry map and evaluate at interpolation points
-  const CoordinateElement<T>& cmap = mesh->geometry().cmap();
+  const CoordinateElement<T>& cmap = mesh->geometry().cmaps().front();
   auto x_dofmap = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const T> x_g = mesh->geometry().x();
@@ -453,7 +453,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const std::size_t value_size0 = V0.element()->reference_value_size();
 
   // Get geometry data
-  const CoordinateElement<U>& cmap = mesh->geometry().cmap();
+  const CoordinateElement<U>& cmap = mesh->geometry().cmaps().front();
   auto x_dofmap = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();

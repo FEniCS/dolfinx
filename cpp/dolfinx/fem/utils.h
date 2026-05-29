@@ -532,12 +532,12 @@ Form<T, U> create_form_factory(
       = [&geo = mesh->geometry()](const ufcx_integral& integral,
                                   std::size_t cell_idx)
   {
-    if (integral.coordinate_element_hash != geo.cmap(cell_idx).hash())
+    if (integral.coordinate_element_hash != geo.cmaps().at(cell_idx).hash())
     {
       throw std::runtime_error(
           "Generated integral geometry element does not match mesh geometry: "
           + std::to_string(integral.coordinate_element_hash) + ", "
-          + std::to_string(geo.cmap(cell_idx).hash()));
+          + std::to_string(geo.cmaps().at(cell_idx).hash()));
     }
   };
 
@@ -962,7 +962,7 @@ Expression<T, U> create_expression(
     assert(coefficients.front()->function_space());
     std::shared_ptr<const mesh::Mesh<U>> mesh
         = coefficients.front()->function_space()->mesh();
-    if (mesh->geometry().cmap().hash() != e.coordinate_element_hash)
+    if (mesh->geometry().cmaps().front().hash() != e.coordinate_element_hash)
     {
       throw std::runtime_error(
           "Expression and mesh geometric maps do not match.");
@@ -1082,7 +1082,7 @@ mesh::Mesh<T> interpolate_geometry(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn = nullptr)
 {
   assert(mesh);
-  const CoordinateElement<T>& old_cmap = mesh->geometry().cmap();
+  const CoordinateElement<T>& old_cmap = mesh->geometry().cmaps().front();
   if (new_cmap.cell_shape() != old_cmap.cell_shape())
   {
     throw std::runtime_error(

@@ -66,7 +66,7 @@ create_new_geometry(const mesh::Mesh<T>& mesh,
   auto map_c = mesh.topology()->index_map(tdim);
 
   assert(map_c);
-  auto dof_layout = mesh.geometry().cmap().create_dof_layout();
+  auto dof_layout = mesh.geometry().cmaps().front().create_dof_layout();
   auto entity_dofs_all = dof_layout.entity_dofs_all();
   for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
   {

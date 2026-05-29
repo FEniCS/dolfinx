@@ -111,7 +111,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   {
     // Get number of geometry nodes per cell
     auto& geometry = mesh->geometry();
-    auto& cmap = geometry.cmap();
+    auto& cmap = geometry.cmaps().front();
     int cmap_dim = cmap.dim();
     int cell_dim = element->space_dimension() / element->block_size();
     if (cmap_dim != cell_dim)
