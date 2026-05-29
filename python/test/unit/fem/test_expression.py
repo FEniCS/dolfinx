@@ -605,7 +605,7 @@ def test_submesh_codim_one(dtype, qdegree):
     tol = 50 * np.finfo(xtype).resolution
 
     def mark_left_facets(x):
-        return np.isclose(x[0], 1.0, atol=tol)
+        return np.isclose(x[0], 0.0, atol=tol)
 
     left_facets = dolfinx.mesh.locate_entities(mesh, mesh.topology.dim - 1, mark_left_facets)
     submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(mesh, mesh.topology.dim, left_facets)
