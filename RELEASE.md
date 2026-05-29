@@ -9,9 +9,6 @@ Check that all CIs on `main` are running green.
 Check that the `main` documentation looks reasonable at
 https://docs.fenicsproject.org.
 
-As of 18/07/2025 the Windows CI is broken and consequently only @minrk
-can test the Windows build via the Condaforge CI.
-
 The release proceeds in a bottom up manner (UFL, Basix, FFCx, DOLFINx). pypa
 packages cannot be deleted and should be made a number of days after the
 creation of git tags so that errors can be fixed. GitHub releases can have their
@@ -21,18 +18,26 @@ The release process consists of the following steps:
 
 1. Update version numbers and dependencies on the `release` branches.
 2. Run integration tests, ensuring that the `release` branches work together.
-3. Make git tags on the tip of `release`.
+3. Make git tags on the tip of `release` (not permanent).
 4. Organise production of release artifacts.
 5. Update version numbers on `main`.
 6. Make GitHub releases (not permanent)
-7. pypa releases (permanent!).
+7. PyPi releases (permanent!).
 
-## Version bumping
+## Version number bumping
 
 At the current phase of development (<1.0) FEniCSx components are typically
 bumped an entire minor version i.e. `0.+1.0`.
 
-UFL still runs on the year-based release scheme.
+UFL uses year-based numbering and releases are made by both FEniCS and
+Firedrake teams. The version number should be bumped as follows:
+
+1. If the calendar year has changed, bump the year. Restart the minor and patch
+   versions at `1` and `0` respectively.
+2. Otherwise, always bump the minor version `0.+1.0`. A minor series belongs
+   to either FEniCS or Firedrake teams.
+3. If making a patch release, bump the patch version `0.0.+1` -- check
+   compatibility through CI runs before releasing.
 
 ### UFL version bump
 
