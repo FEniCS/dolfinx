@@ -77,7 +77,6 @@ ci = [
 wheel.packages = ["dolfinx"]
 sdist.exclude = ["*.cpp"]
 cmake.build-type = "Release"
-wheel.license-files = ["../COPYING*"]
 
 [tool.pytest]
 junit_family = "xunit2"
