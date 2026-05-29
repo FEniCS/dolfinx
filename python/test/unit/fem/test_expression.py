@@ -582,7 +582,7 @@ def test_submesh_codim_zero(dtype, qdegree):
     np.testing.assert_allclose(values, values_exact[parent_cells], atol=tol)
 
 
-@pytest.mark.parametrize("qdegree", [1, 3])
+@pytest.mark.parametrize("qdegree", [1, 3, 5])
 @pytest.mark.parametrize(
     "dtype",
     [
@@ -594,45 +594,55 @@ def test_submesh_codim_zero(dtype, qdegree):
 )
 def test_submesh_codim_one(dtype, qdegree):
     xtype = dtype(0).real.dtype
+    L = 2.1
     mesh = create_rectangle(
-        MPI.COMM_WORLD, np.array([[0, 0], [2.1, 2.0]], dtype=xtype), [5, 3], dtype=xtype
+        MPI.COMM_WORLD, np.array([[0, 0], [L, 2.0]], dtype=xtype), [5, 3], dtype=xtype
     )
     el = basix.ufl.element("Lagrange", mesh.basix_cell(), 1, shape=(), dtype=xtype)
     V = dolfinx.fem.functionspace(mesh, el)
     u = dolfinx.fem.Function(V, dtype=dtype)
-    u.interpolate(lambda x: x[0] + 2.0 * x[1])
+
+    def expr0(x):
+        return x[0] + 2.0 * x[1]
+
+    u.interpolate(expr0)
 
     tol = 50 * np.finfo(xtype).resolution
 
-    def mark_left_facets(x):
-        return np.isclose(x[0], 0.0, atol=tol)
-
-    left_facets = dolfinx.mesh.locate_entities(mesh, mesh.topology.dim - 1, mark_left_facets)
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    exterior_facets = dolfinx.mesh.exterior_facet_indices(mesh.topology)
     submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(
-        mesh, mesh.topology.dim - 1, left_facets
+        mesh, mesh.topology.dim - 1, exterior_facets
     )
     sub_el = basix.ufl.element(
         "Lagrange", submesh.basix_cell(), 2, shape=(submesh.geometry.dim,), dtype=xtype
     )
     u_sub = dolfinx.fem.Function(dolfinx.fem.functionspace(submesh, sub_el), dtype=dtype)
-    u_sub.interpolate(lambda x: (x[1] ** 2, -(x[0] ** 2)))
+    expr1 = lambda x: (x[1] ** 2, -(x[0] ** 2))
+    u_sub.interpolate(expr1)
 
     quadrature_points, _ = basix.make_quadrature(basix.CellType.interval, qdegree)
     quadrature_points = quadrature_points.astype(xtype)
 
     n_h = ufl.FacetNormal(mesh)
-    expr = u * (ufl.dot(u_sub, n_h) + n_h[0] * u_sub[1])
+    def combined_expr(u, u_sub, n_h):
+        return u * (ufl.dot(u_sub, n_h) + n_h[0] * u_sub[1])
 
+    # Get integration entities and evaluate exact expression on exterior facets
+    entities = dolfinx.fem.compute_integration_domains(
+        dolfinx.fem.IntegralType.exterior_facet, mesh.topology, exterior_facets
+    )
+  
+    # Evaluate submesh expression
+    expr = combined_expr(u, u_sub, n_h)
     mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
     expr = dolfinx.fem.Expression(expr, quadrature_points, dtype=dtype, entity_maps=[entity_map])
-    entities = dolfinx.fem.compute_integration_domains(
-        dolfinx.fem.IntegralType.exterior_facet, mesh.topology, left_facets
-    )
-
     values = expr.eval(mesh, entities.reshape(-1, 2))
-
+ 
+    # Verify with standard evaluation of exact expression on exterior facets
     x = ufl.SpatialCoordinate(mesh)
-    expr_exact = (x[0] + 2.0 * x[1]) * (x[0] ** 2 - x[1] ** 2)
+    expr_exact = combined_expr(expr0(x) , ufl.as_vector(expr1(x)), n_h)
     expr_exact = dolfinx.fem.Expression(expr_exact, quadrature_points, dtype=dtype)
     values_exact = expr_exact.eval(mesh, entities.reshape(-1, 2))
+
     np.testing.assert_allclose(values, values_exact, atol=tol)
