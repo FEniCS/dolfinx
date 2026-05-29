@@ -150,8 +150,8 @@ refine(const mesh::Mesh<T>& mesh,
   assert(std::holds_alternative<mesh::CellPartitionFunction>(partitioner));
 
   mesh::Mesh<T> mesh1 = mesh::create_mesh(
-      mesh.comm(), mesh.comm(), cell_adj.array(), mesh.geometry().cmaps().front(),
-      mesh.comm(), new_vertex_coords, xshape,
+      mesh.comm(), mesh.comm(), cell_adj.array(),
+      mesh.geometry().cmaps().front(), mesh.comm(), new_vertex_coords, xshape,
       std::get<mesh::CellPartitionFunction>(partitioner), 2);
 
   // Report the number of refined cells
