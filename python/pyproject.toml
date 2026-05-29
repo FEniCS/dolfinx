@@ -4,6 +4,7 @@
 # NOTE: petsc4py is an optional build dependency, therefore we don't
 # list it here.
 [build-system]
+# scikit-build-core>=0.11 has SPDX license support PEP 639
 requires = ["scikit-build-core[pyproject]>=0.11", "nanobind>=2.5.0", "mpi4py"]
 build-backend = "scikit_build_core.build"
 
@@ -13,7 +14,8 @@ version = "0.11.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
 requires-python = ">=3.11"
-license = { file = "../COPYING.LESSER" }
+license = "LGPL-3.0-or-later"
+license-files = ["../COPYING*"]
 authors = [
       { email = "fenics-steering-council@googlegroups.com" },
       { name = "FEniCS Steering Council" },
@@ -44,7 +46,7 @@ docs = [
       "packaging",
       "pyyaml",
       "sphinx",
-      "pydata-sphinx-theme",
+      "sphinx_rtd_theme",
       "sphinx_codeautolink[ipython]",
       "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
