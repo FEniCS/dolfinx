@@ -46,7 +46,7 @@ docs = [
       "packaging",
       "pyyaml",
       "sphinx",
-      "sphinx_rtd_theme",
+      "pydata-sphinx-theme",
       "sphinx_codeautolink[ipython]",
       "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
