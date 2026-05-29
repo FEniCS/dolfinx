@@ -201,8 +201,7 @@ void declare_mesh(nb::module_& m, std::string type)
                   dm.data_handle(), {dm.extent(0), dm.extent(1)}));
             return result;
           },
-          nb::rv_policy::reference_internal,
-          "The geometry dofmaps")
+          nb::rv_policy::reference_internal, "The geometry dofmaps")
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_prop_ro(
           "x",
@@ -216,10 +215,8 @@ void declare_mesh(nb::module_& m, std::string type)
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
       .def_prop_ro(
-          "cmaps",
-          [](dolfinx::mesh::Geometry<T>& self)
-          { return self.cmaps(); },
-          "The coordinate maps")
+          "cmaps", [](dolfinx::mesh::Geometry<T>& self)
+          { return self.cmaps(); }, "The coordinate maps")
       .def_prop_ro(
           "input_global_indices",
           [](const dolfinx::mesh::Geometry<T>& self)
