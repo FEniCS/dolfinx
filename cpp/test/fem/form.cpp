@@ -35,7 +35,7 @@ void test_expression_cmap_compat(const auto& V)
   // Create Expression that expects P1 geometry
   dolfinx::fem::Expression<double> expr1
       = dolfinx::fem::create_expression<double>(*expression_expr_Q6_P1,
-                                                {{"u1", u}}, {});
+                                                {{"u1", u}}, {}, {});
   auto [Xc, Xshape] = expr1.X();
   std::vector<double> grad_e(3 * Xshape[0] * cells.size());
   fem::tabulate_expression(std::span(grad_e), expr1, *mesh,
@@ -43,8 +43,11 @@ void test_expression_cmap_compat(const auto& V)
 
   // Create Expression that expects P2 geometry. Should throw because
   // mesh is P1.
-  CHECK_THROWS(dolfinx::fem::create_expression<double>(*expression_expr_Q6_P2,
-                                                       {{"u2", u}}, {}));
+  dolfinx::fem::Expression<double> expr2
+      = dolfinx::fem::create_expression<double>(*expression_expr_Q6_P2,
+                                                {{"u2", u}}, {}, {});
+  CHECK_THROWS(fem::tabulate_expression(
+      std::span(grad_e), expr2, *mesh, md::mdspan(cells.data(), cells.size())));
 }
 } // namespace
 
