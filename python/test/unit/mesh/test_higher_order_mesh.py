@@ -763,7 +763,7 @@ def test_gmsh_mixed_mesh_2d(order, dtype):
         Js = []
         for i, cell_type in enumerate(mesh._cpp_object.topology.cell_types):
             cell_name = cell_type.name
-            cmap = mesh._cpp_object.geometry.cmap(i)
+            cmap = mesh._cpp_object.geometry.cmaps[i]
             domain = ufl.Mesh(
                 basix.ufl.element(
                     "Lagrange",
@@ -888,7 +888,7 @@ def test_gmsh_mixed_mesh_3d(order, dtype):
         Js = []
         for i, cell_type in enumerate(cell_types):
             cell_name = cell_type.name
-            cmap = mesh._cpp_object.geometry.cmap(i)
+            cmap = mesh._cpp_object.geometry.cmaps[i]
             domain = ufl.Mesh(
                 basix.ufl.element(
                     "Lagrange",

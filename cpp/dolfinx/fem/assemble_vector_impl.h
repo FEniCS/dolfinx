@@ -581,7 +581,7 @@ void assemble_vector(
   for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
     // Geometry dofmap and data
-    mdspan2_t x_dofmap = mesh->geometry().dofmap(cell_type_idx);
+    mdspan2_t x_dofmap = mesh->geometry().dofmaps().at(cell_type_idx);
 
     // Get dofmap data
     assert(L.function_spaces().at(0));

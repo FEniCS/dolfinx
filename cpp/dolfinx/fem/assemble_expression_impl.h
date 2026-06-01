@@ -200,8 +200,8 @@ void tabulate_expression(
                              num_facets_per_cell);
   }
   tabulate_expression<T, U>(values, fn, Xshape, value_size, num_argument_dofs,
-                            mesh.geometry().dofmap(), mesh.geometry().x(),
-                            coeffs, constants, entities, cell_info,
-                            post_dof_transform, facet_perms);
+                            mesh.geometry().dofmaps().front(),
+                            mesh.geometry().x(), coeffs, constants, entities,
+                            cell_info, post_dof_transform, facet_perms);
 }
 } // namespace dolfinx::fem::impl

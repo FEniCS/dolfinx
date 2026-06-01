@@ -72,7 +72,7 @@ void tabulate_expression(
         element)
 {
   // Check that domain is the same as mesh of the expression
-  if (e.coordinate_element_hash() != mesh.geometry().cmap(0).hash())
+  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
   {
     throw std::runtime_error(
         "Expression was created on a different mesh. Cannot tabulate.");
@@ -103,7 +103,7 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
 {
   // Check that domain is the same as mesh of the expression
-  if (e.coordinate_element_hash() != mesh.geometry().cmap(0).hash())
+  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
   {
     throw std::runtime_error(
         "Expression was created on a different mesh. Cannot tabulate.");
@@ -190,7 +190,7 @@ T assemble_scalar(
   {
     // Geometry dofmap and data
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> x_dofmap
-        = mesh->geometry().dofmap(cell_type_idx);
+        = mesh->geometry().dofmaps().at(cell_type_idx);
     if constexpr (std::is_same_v<U, scalar_value_t<T>>)
     {
       val += impl::assemble_scalar(M, x_dofmap,
