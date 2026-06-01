@@ -1,4 +1,5 @@
-# Copyright (C) 2019-2026 Michal Habera and Jørgen S. Dokken
+# Copyright (C) 2019-2026 Michal Habera, Matthew W. Scroggs
+# and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -10,7 +11,7 @@ import numpy as np
 import pytest
 
 import basix
-import dolfinx.cpp
+import dolfinx
 import ufl
 from basix.ufl import quadrature_element
 from dolfinx import fem, la
@@ -649,3 +650,58 @@ def test_submesh_codim_one(dtype, qdegree):
     expr_exact = dolfinx.fem.Expression(expr_exact, quadrature_points, dtype=dtype)
     values_exact = expr_exact.eval(mesh, entities.reshape(-1, 2))
     np.testing.assert_allclose(values, values_exact, atol=tol)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float64,
+    ],
+)
+def test_skewed_quadrature(dtype):
+    xtype = dtype(0).real.dtype
+    L = 2.1
+    mesh = create_rectangle(
+        MPI.COMM_WORLD, np.array([[0, 0], [L, 2.0]], dtype=xtype), [5, 3], dtype=xtype
+    )
+
+    tol = 50 * np.finfo(xtype).resolution
+
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    exterior_facets = dolfinx.mesh.exterior_facet_indices(mesh.topology)
+
+    submesh, entity_map, _, _ = dolfinx.mesh.create_submesh(
+        mesh, mesh.topology.dim - 1, exterior_facets
+    )
+    sub_el = basix.ufl.element(
+        "Lagrange", submesh.basix_cell(), 2, shape=(submesh.geometry.dim,), dtype=xtype
+    )
+    u_sub = dolfinx.fem.Function(dolfinx.fem.functionspace(submesh, sub_el), dtype=dtype)
+
+    def expr1(x):
+        return (x[0], x[1])
+
+    u_sub.interpolate(expr1)
+
+    quadrature_points = np.array([[0.25], [0.92], [0.99]], dtype=xtype)
+
+    # Get integration entities and evaluate exact expression on exterior facets
+    entities = dolfinx.fem.compute_integration_domains(
+        dolfinx.fem.IntegralType.exterior_facet, mesh.topology, exterior_facets
+    )
+
+    # Evaluate submesh expression
+    expr_codim = u_sub + dolfinx.fem.Constant(mesh, 0.0) * ufl.SpatialCoordinate(mesh)
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    expr = dolfinx.fem.Expression(
+        expr_codim, quadrature_points, dtype=dtype, entity_maps=[entity_map]
+    )
+    values_codim = expr.eval(mesh, entities.reshape(-1, 2))
+
+    # Verify with standard evaluation of exact expression on exterior facets
+    x = ufl.SpatialCoordinate(mesh)
+    expr_parent = ufl.as_vector(expr1(x))
+    expr_parent = dolfinx.fem.Expression(expr_parent, quadrature_points, dtype=dtype)
+    values_parent = expr_parent.eval(mesh, entities.reshape(-1, 2))
+
+    np.testing.assert_allclose(values_codim, values_parent, atol=tol)
