@@ -314,7 +314,7 @@ def test_assembly_into_quadrature_function(dtype):
     # # FIXME: Below is only for testing purposes,
     # # never to be used in user code!
     # # TODO: Replace when interpolation into Quadrature element works.
-    coord_dofs = mesh.geometry.dofmap
+    coord_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
     tdim = mesh.topology.dim
     Q_dofs = Q.dofmap.list
@@ -328,7 +328,7 @@ def test_assembly_into_quadrature_function(dtype):
     e_exact_eval = np.zeros_like(local)
     for cell in range(num_cells):
         xg = x_g[coord_dofs[cell], :tdim]
-        x = mesh.geometry.cmap().push_forward(quadrature_points, xg)
+        x = mesh.geometry.cmaps[0].push_forward(quadrature_points, xg)
         e_exact_eval[Q_dofs_unrolled[cell]] = e_exact(x.T).T.flatten()
     assert np.allclose(local, e_exact_eval)
 

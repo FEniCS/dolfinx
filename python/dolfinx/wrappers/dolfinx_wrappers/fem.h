@@ -1226,7 +1226,7 @@ void declare_real_functions(nb::module_& m)
         }
         else
         {
-          std::int32_t num_cells = geometry.dofmap().extent(0);
+          std::int32_t num_cells = geometry.dofmaps().front().extent(0);
           auto iota = std::ranges::iota_view(0, num_cells);
           x = dolfinx::fem::interpolation_coords(e, geometry, iota);
         }

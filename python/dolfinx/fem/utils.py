@@ -212,8 +212,8 @@ def interpolate_geometry(msh: dolfinx.mesh.Mesh, cmap: CoordinateElement) -> dol
         basix.ufl.element(
             "Lagrange",
             _mesh.to_string(new_msh.topology.cell_type),
-            new_msh.geometry.cmap().degree,
-            basix.LagrangeVariant(new_msh.geometry.cmap().variant),
+            new_msh.geometry.cmaps[0].degree,
+            basix.LagrangeVariant(new_msh.geometry.cmaps[0].variant),
             shape=(new_msh.geometry.dim,),
             dtype=new_msh.geometry.x.dtype,
         )

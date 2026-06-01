@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import typing
+import warnings
 from collections.abc import Callable, Sequence
 from functools import singledispatch
 
@@ -291,9 +292,20 @@ class Geometry(typing.Generic[Real]):
         """
         self._cpp_object = geometry
 
-    def cmap(self, i=None) -> _CoordinateElement:
-        """Element that describes the ith geometry map."""
-        return _CoordinateElement(self._cpp_object.cmap(i))
+    @property
+    def cmaps(self) -> list[_CoordinateElement]:
+        """The coordinate maps."""
+        return [_CoordinateElement(cm) for cm in self._cpp_object.cmaps]
+
+    @property
+    def cmap(self) -> _CoordinateElement:
+        """The coordinate map (deprecated, use ``cmaps[0]``)."""
+        warnings.warn(
+            "cmap is deprecated. Use cmaps[0] instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.cmaps[0]
 
     @property
     def dim(self):
@@ -301,12 +313,22 @@ class Geometry(typing.Generic[Real]):
         return self._cpp_object.dim
 
     @property
+    def dofmaps(self) -> list[npt.NDArray[np.int32]]:
+        """The geometry dofmaps, one per cell type."""
+        return self._cpp_object.dofmaps
+
+    @property
     def dofmap(self) -> npt.NDArray[np.int32]:
-        """Dofmap for the geometry.
+        """Dofmap for the geometry (deprecated, use ``dofmaps[0]``).
 
         Shape is ``(num_cells, dofs_per_cell)``.
         """
-        return self._cpp_object.dofmap
+        warnings.warn(
+            "dofmap is deprecated. Use dofmaps[0] instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._cpp_object.dofmaps[0]
 
     def index_map(self) -> _IndexMap:
         """Index map for the geometry points (nodes) distribution."""
@@ -864,8 +886,8 @@ def create_submesh(
         basix.ufl.element(
             "Lagrange",
             to_string(submsh.topology.cell_type),
-            submsh.geometry.cmap().degree,
-            basix.LagrangeVariant(submsh.geometry.cmap().variant),
+            submsh.geometry.cmaps[0].degree,
+            basix.LagrangeVariant(submsh.geometry.cmaps[0].variant),
             shape=(submsh.geometry.dim,),
             dtype=submsh.geometry.x.dtype,
         )

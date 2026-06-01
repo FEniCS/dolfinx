@@ -129,7 +129,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
   }
 
   // Get geometry data
-  auto x_dofmap = mesh.geometry().dofmap();
+  auto x_dofmap = mesh.geometry().dofmaps().front();
   std::span<const T> x_nodes = mesh.geometry().x();
 
   // Get all vertex 'node' indices
@@ -635,7 +635,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
            num_cell_types = topology->entity_types(tdim).size();
        cell_type_idx < num_cell_types; ++cell_type_idx)
   {
-    auto x_dofmap = mesh.geometry().dofmap(cell_type_idx);
+    auto x_dofmap = mesh.geometry().dofmaps().at(cell_type_idx);
     auto c_to_v = topology->connectivity({tdim, cell_type_idx}, {0, 0});
     assert(c_to_v);
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
@@ -875,10 +875,10 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
   const int tdim = topology->dim();
   const Geometry<T>& geometry = mesh.geometry();
-  auto xdofs = geometry.dofmap();
+  auto xdofs = geometry.dofmaps().front();
 
   // Get the DOF layout and the number of DOFs per entity
-  const fem::CoordinateElement<T>& coord_ele = geometry.cmap();
+  const fem::CoordinateElement<T>& coord_ele = geometry.cmaps().front();
   const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
   const std::size_t num_entity_dofs = layout.entity_closure_dofs(dim, 0).size();
   std::vector<std::int32_t> entity_xdofs;
@@ -1336,7 +1336,8 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
 
   // Get the geometry dofs in the sub-geometry based on the entities in
   // sub-geometry
-  const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
+  const fem::ElementDofLayout layout
+      = geometry.cmaps().front().create_dof_layout();
 
   const std::vector<std::int32_t> x_indices
       = entities_to_geometry(mesh, dim, subentity_to_entity, true).first;
@@ -1386,13 +1387,15 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
                          });
 
   // Sub-geometry coordinate element
-  CellType sub_xcell = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
+  CellType sub_xcell
+      = cell_entity_type(geometry.cmaps().front().cell_shape(), dim, 0);
 
   // Special handling of point meshes, as they only support constant
   // basis functions
-  int degree = (sub_xcell == CellType::point) ? 0 : geometry.cmap().degree();
+  int degree
+      = (sub_xcell == CellType::point) ? 0 : geometry.cmaps().front().degree();
   fem::CoordinateElement<T> sub_cmap(sub_xcell, degree,
-                                     geometry.cmap().variant());
+                                     geometry.cmaps().front().variant());
 
   // Sub-geometry input_global_indices
   const std::vector<std::int64_t>& igi = geometry.input_global_indices();
