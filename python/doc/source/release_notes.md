@@ -1,5 +1,174 @@
 # Release notes
 
+## v0.11.0
+
+Since the 0.10.0, there has been 177 merged pull requests from 27 contributors.
+Below follows a summary of the biggest chnages to the Python-API from these pull requsts.
+Full diff can be found [here](https://github.com/FEniCS/dolfinx/compare/v0.10.0.post5...main)
+
+As always, quite a lot of work has been put into squashing bugs and increasing performance, particularly for
+the mesh creation step and collision detection using GJK.
+
+### SuperLU-DIST interface
+
+**Authors**: [Jack Hale](https://github.com/jhale) and [Chris Richardson](https://github.com/chrisrichardson)
+
+After the support for Windows since v0.9.0, there has been a distict lack of parallel supported solvers natively
+available on the platform. Furthermore, PETSc sometimes can feel complicated for simple problems presented
+in teaching. In this release, we add support for using SuperLU-DIST by interfacing directly with
+{py:class}`dolfinx.la.MatrixCSR`.
+The following constructors and classes have been added:
+- {py:func}`dolfinx.la.superlu_dist.superlu_dist_matrix`: Deep-copy all data from {py:class}`dolfinx.la.MatrixCSR` to
+  SUPERLU_Dist matrix.
+- {py:func}`dolfinx.la.superlu_dist.superlu_dist_solver`: Create a {py:class}`dolfinx.la.superlu_dist.SuperLUDistSolver`
+  which you can use to call {py:meth}`set_option<dolfinx.la.superlu_dist.SuperLUDistSolver.set_option>`,
+  {py:meth}`set_A<dolfinx.la.superlu_dist.SuperLUDistSolver.set_A` or {py:meth}`solve<dolfinx.la.superlu_dist.SuperLUDistSolver.solve>`.
+- {py:class}`dolfinx.fem.problems.LinearProblem`: An interface that is similar to the {py:class}`dolfinx.fem.petsc.LinearProblem`, i.e.
+  it takes in {py:class}`ufl.Form` for the LHS and RHS, along with appropriate {py:class}`Dirichlet boundary conditions<dolfinx.fem.DirichletBC>`,
+  solver option and {py:class}`entity_maps<dolfinx.mesh.EntityMap>`.
+
+## The 'real' element
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd) and [Matthew Scroggs](https://github.com/mscroggs)
+
+The real-element has for a long time not been present in DOLFINx. This has mainly been due to the fact that the implementation
+in legacy FEniCS introduced a ton of special casing within core functionality, which we thought was better to avoid in DOLFINx.
+However, a prototype implementation of the real-element has been around for a few releases, and has now been implemented in the
+core libraries. Users can now call
+
+```python
+import basix.ufl
+import dolfinx.fem
+
+el = basix.ufl.real_element(mesh.basix_cell(), dtype=dtype, shape=(N, ))
+R = dolfinx.fem.functionspace(mesh, el)
+```
+to create a function space consisting of `N` values (of data type `dtype`, which can be a complex type).
+
+Furthermore, to use this space alongside other spaces, for instance for Lagrange multipliers, users are
+recommended to use {py:class}`ufl.MixedFunctionSpace(V, R, ...)<ufl.MixedFunctionSpace` and
+{py:func}`ufl.extract_blocks` to create blocked systems that can be used in {py:class}`dolfinx.fem.petsc.LinearProblem`
+or {py:class}`dolfinx.fem.petsc.NonlinearProblem`.
+
+
+
+### Built-in matrix support
+
+**Authors**: [Chris Richardson](https://github.com/chrisrichardson)
+
+- Adds {py:meth}`A.transpose()<dolfinx.la.MatrixCSR.transpose>`, {py:meth}`A.mult(x, y, transpose=True)<dolfinx.la.MatrixCSR.mult>`
+  and {py:methd}`A.matmult(B)<dolfinx.la.MatrixCSR.matmult>` to the built in matrices
+- Templated matrices in the Python API for block size `[i, i], i=1,2,3`.
+- Improved tests for square and rectangular matrices
+
+### Threading
+
+**Authors**: [Chris Richardson](https://github.com/chrisrichardson), [Jørgen S. Dokken](https://github.com/jorgensd) and [Garth N. Wells](https://github.com/garth-wells)
+
+For a long time, DOLFINx has been exclusively using MPI for distribution of computational load.
+However, with the computational landscape evolving to more and more hetrogenuous systems, the need for additional parallelisation
+methods are required. In this release, we introduce initial threading support using [std::jthread`](https://en.cppreference.com/cpp/thread/jthread)
+in the following methods:
+- {py:func}`dolfinx.mesh.create_entities`
+- {py:func}`dolfinx.geometry.compute_distances_gjk`
+which both takes an optional argument `num_threads` which specifies how many CPU threads should be used.
+If st to 0, threads are not spawned.
+
+### Demos
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd), [Paul T. Kühner](https://github.com/schnellerhase)
+
+A new demo showcasing how to use PETSc and matrix-free solvers can be found in [demo_matrix_free_petsc.py](./demos/demo/demo_matrix_free_petsc)
+
+The [PML demo](./demos/demo_pml) now shows how to use one-sided interior facet
+integrals with manual specfication of integration entities.
+
+The [Biharmonic demo](./demos/demo_biharmonic) has gone through a major revision, using:
+- A more suitable choice of finite elements (as P2 yields sub-optimal convergence)
+- Better choice of penalty parameter
+- Change of boundary conditions from simply supported to clamped and explain the effect of different BCs.
+- Verify solution with the method of manufactured solutions and add relevant references
+
+In general, demos now consistently use `tdim=mesh.topology.dim`, `fdim = tdim -1` and `gdim = mesh.geometry.dim` to
+avoid confusion for new users.
+
+
+### Submesh support
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
+
+A feature that for a long time has existed outside of the FEniCS core is the
+{py:func}`dolfinx.mesh.transfer_meshtags_to_submesh` which makes it possible to transfer a
+meshtag from a parent mesh to a submesh. This function is now part of the core library.
+
+### IO
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
+
+In [v0.10.0](#mesh) `max_facet_to_cell_links` was introduced to make it possible to create meshes with joints, branches etc.
+This is now exposed in {py:func}`dolfinx.io.gmsh.model_to_mesh`.
+
+Furthermore, new cell types are supported for the `vtkhdf` backend, including the VTK biquadratic pyramid,
+
+
+
+### Exposing tolerances for non-affine pull-backs
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
+
+A set of users have had issues with non-affine geometries, in particular higher order grids,
+and the tolerance and maximum number of iterations in the 
+{py:meth}`dolfinx.fem.CoordinateElement.pull_back`, {py:meth}`dolfinx.fem.function.interpolate_nonmatching` 
+and {py:meth}`dolfinx.fem.Function.eval` yielding errors such as:
+```bash
+RuntimeError: Newton method failed to converge for non-affine geometry
+```
+If you see this error message, try to increase the `maxiter` or `tol`.
+
+
+### Mixed topology meshes, prisms and pyramid cells
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd) and [Chris Richardson](https://github.com/chrisrichardson)
+
+For mixed topology meshes, there are many notions that does not align with the original design of DOLFINx.
+Examples are the members `num_entity_dofs` and `num_entity_closure_dofs` of {py:class}`dolfinx.fem.ElementDofMap`,
+as prisms and pyramids do not have the same number of dofs per sub-entity.
+They have been removed, and users should instead call {py:meth}`len(ElementDofLayout.entity_dofs(dim, entity_index))<dolfinx.fem.ElementDofLayout.entity_dofs>`
+
+Furthermore, `dolfinx.fem.apply_lifting` now works for mixed-topology meshes.
+
+## Meshes
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd) and [Jack Hale](https://github.com/jhale) 
+
+New function {py:func}`dolfinx.mesh.create_point_mesh` to create a point cloud mesh with no points shared between
+the different processes. Useful for reading in point measures or outputting data.
+
+
+
+### Interpolation
+
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd) and [Garth N. Wells](https://github.com/garth-wells)
+
+A crucial bug interpolating Piola-mapped elements from parent to a codim-0 submesh has been fixed for this release.
+
+
+### Modernizing UFL
+
+**Authors**: [Paul T. Kühner](https://github.com/schnellerhase)
+
+UFL is a Python project that has been in development for almost 20 years, which means
+that Python has gone through a massive moderization during its development.
+One of the visually pleasing improvments is the use of `@property`-decorators.
+{py:class}`ufl.AbstractCell` now uses properties for
+{py:attr}`topological_dimension<ufl.AbstractCell.topological_dimension>` and
+{py:attr}`geometrical_dimension<ufl.AbstractCell.geometrical_dimension>`,
+{py:attr}`cellname<ufl.AbstractCell.cellname>`, etc.
+See [UFL PR \#385](https://github.com/FEniCS/ufl/pull/385) for more details.
+
+### Expressions
+
+
+
 ## v0.10.0
 
 Since the 0.9.0 release, there has been 311 merged pull requests from 25 contributors.
