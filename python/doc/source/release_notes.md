@@ -108,7 +108,8 @@ meshtag from a parent mesh to a submesh. This function is now part of the core l
 In [v0.10.0](#mesh) `max_facet_to_cell_links` was introduced to make it possible to create meshes with joints, branches etc.
 This is now exposed in {py:func}`dolfinx.io.gmsh.model_to_mesh`.
 
-Furthermore, new cell types are supported for the `vtkhdf` backend, including the VTK biquadratic pyramid,
+Furthermore, new cell types are supported for the `vtkhdf` backend, including all
+linear and quadratic VTK cell types.
 
 
 
@@ -134,15 +135,19 @@ Examples are the members `num_entity_dofs` and `num_entity_closure_dofs` of {py:
 as prisms and pyramids do not have the same number of dofs per sub-entity.
 They have been removed, and users should instead call {py:meth}`len(ElementDofLayout.entity_dofs(dim, entity_index))<dolfinx.fem.ElementDofLayout.entity_dofs>`
 
-Furthermore, `dolfinx.fem.apply_lifting` now works for mixed-topology meshes.
+Furthermore, `dolfinx.fem.apply_lifting` and `dolfinx.fem.assemble_scalar` now works for mixed-topology meshes.
 
 ## Meshes
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd) and [Jack Hale](https://github.com/jhale) 
 
-New function {py:func}`dolfinx.mesh.create_point_mesh` to create a point cloud mesh with no points shared between
-the different processes. Useful for reading in point measures or outputting data.
-
+- New function {py:func}`dolfinx.mesh.create_point_mesh` to create a point cloud mesh with no points shared between
+  the different processes. Useful for reading in point measures or outputting data.
+- Built in mesh-generators such as {py:func}`dolfinx.mesh.create_rectangle` now takes an optional argument `gdim` that embeds in a larger space.
+  This simplifies the testing process for problems on manifolds.
+- New function that allows users to create a new mesh either raising or lowering the polynomial order of the mesh geoemtry.
+  The topology is shared between the old and new grid. It is also possible to switch the Lagrange-variant
+  of the underlying coordinate element. For complete documentation, see {py:func}`dolfinx.fem.interpolate_geometry`.
 
 
 ### Interpolation
