@@ -9,7 +9,6 @@
 from __future__ import annotations
 
 import typing
-import warnings
 from collections.abc import Callable, Sequence
 from functools import cached_property, singledispatch
 from typing import Generic
