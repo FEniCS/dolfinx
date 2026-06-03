@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import typing
+import warnings
 from collections.abc import Callable, Sequence
 from functools import cached_property, singledispatch
 from typing import Generic
@@ -829,11 +830,17 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
     @property
     def dofmap(self) -> DofMap:
         """Degree-of-freedom map associated with the function space."""
-        return DofMap(self._cpp_object.dofmap)
+        warnings.warn(
+            "dofmap is deprecated. Use dofmaps[0] instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.dofmaps[0]
 
-    def dofmaps(self, idx: int) -> DofMap:
-        """Dof maps."""
-        return DofMap(self._cpp_object.dofmaps(idx))
+    @property
+    def dofmaps(self) -> list[DofMap]:
+        """The geometry dofmaps, one per cell type."""
+        return [DofMap(_o) for _o in self._cpp_object.dofmaps]
 
     @property
     def mesh(self) -> Mesh[Real]:
