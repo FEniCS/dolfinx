@@ -382,8 +382,8 @@ void lift_bc_impl(
   // Deduce runtime block sizes as fallback when compile-time sizes not given.
   // The block size of the dofmap and indexmap is the same on all
   // sub-topologies.
-  const int bs0 = BS0 > 0 ? BS0 : a.function_spaces()[0]->dofmaps(0)->bs();
-  const int bs1 = BS1 > 0 ? BS1 : a.function_spaces()[1]->dofmaps(0)->bs();
+  const int bs0 = BS0 > 0 ? BS0 : a.function_spaces()[0]->dofmaps()[0]->bs();
+  const int bs1 = BS1 > 0 ? BS1 : a.function_spaces()[1]->dofmaps()[0]->bs();
 
   // Use default [=] capture for bs0, bs1 which may be compile-time constants
   auto lifting_fn
@@ -450,8 +450,8 @@ void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
   // Get dofmap for columns and rows of a
   assert(a.function_spaces().at(0));
   assert(a.function_spaces().at(1));
-  const int bs0 = a.function_spaces()[0]->dofmaps(0)->bs();
-  const int bs1 = a.function_spaces()[1]->dofmaps(0)->bs();
+  const int bs0 = a.function_spaces()[0]->dofmaps()[0]->bs();
+  const int bs1 = a.function_spaces()[1]->dofmaps()[0]->bs();
 
   spdlog::debug("lifting: bs0={}, bs1={}", bs0, bs1);
 
@@ -531,7 +531,7 @@ void apply_lifting(
         _x0 = x0[j];
 
       assert(V1);
-      const auto& dofmap = V1->dofmaps(0);
+      const auto& dofmap = V1->dofmaps()[0];
       auto map1 = dofmap->index_map;
       const int bs1 = dofmap->index_map_bs();
       assert(map1);
@@ -588,7 +588,7 @@ void assemble_vector(
     auto element = L.function_spaces().at(0)->elements(cell_type_idx);
     assert(element);
     std::shared_ptr<const fem::DofMap> dofmap
-        = L.function_spaces().at(0)->dofmaps(cell_type_idx);
+        = L.function_spaces().at(0)->dofmaps()[cell_type_idx];
     assert(dofmap);
     auto dofs = dofmap->map();
     const int bs = dofmap->bs();
