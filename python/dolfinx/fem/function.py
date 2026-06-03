@@ -830,12 +830,7 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
     @property
     def dofmap(self) -> DofMap:
         """Degree-of-freedom map associated with the function space."""
-        warnings.warn(
-            "dofmap is deprecated. Use dofmaps[0] instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.dofmaps[0]
+        return DofMap(self._cpp_object.dofmap)
 
     @property
     def dofmaps(self) -> list[DofMap]:
