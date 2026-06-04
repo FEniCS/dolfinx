@@ -9,23 +9,34 @@ Full diff can be found [here](https://github.com/FEniCS/dolfinx/compare/v0.10.0.
 As always, quite a lot of work has been put into squashing bugs and increasing performance, particularly for
 the mesh creation step and collision detection using GJK.
 
-### SuperLU-DIST interface
+### SuperLU_DIST interface
 
 **Authors**: [Jack Hale](https://github.com/jhale) and [Chris Richardson](https://github.com/chrisrichardson)
 
-After the support for Windows since v0.9.0, there has been a distict lack of parallel supported solvers natively
-available on the platform. Furthermore, PETSc sometimes can feel complicated for simple problems presented
-in teaching. In this release, we add support for using SuperLU-DIST by interfacing directly with
+After the support for Windows was added v0.9.0, there has been a lack of parallel supported solvers to
+solve the resulting linear problems. Furthermore, PETSc sometimes can feel complicated for simple problems presented
+during teaching. In this release, we add support for using SuperLU_DIST with native sparse matrices
 {py:class}`dolfinx.la.MatrixCSR`.
+
 The following constructors and classes have been added:
+
 - {py:func}`dolfinx.la.superlu_dist.superlu_dist_matrix`: Deep-copy all data from {py:class}`dolfinx.la.MatrixCSR` to
   SUPERLU_Dist matrix.
 - {py:func}`dolfinx.la.superlu_dist.superlu_dist_solver`: Create a {py:class}`dolfinx.la.superlu_dist.SuperLUDistSolver`
   which you can use to call {py:meth}`set_option<dolfinx.la.superlu_dist.SuperLUDistSolver.set_option>`,
   {py:meth}`set_A<dolfinx.la.superlu_dist.SuperLUDistSolver.set_A>` or {py:meth}`solve<dolfinx.la.superlu_dist.SuperLUDistSolver.solve>`.
-- {py:class}`dolfinx.fem.problems.LinearProblem`: An interface that is similar to the {py:class}`dolfinx.fem.petsc.LinearProblem`, i.e.
-  it takes in {py:class}`ufl.Form` for the LHS and RHS, along with appropriate {py:class}`Dirichlet boundary conditions<dolfinx.fem.DirichletBC>`,
-  solver option and {py:class}`entity_maps<dolfinx.mesh.EntityMap>`.
+- {py:class}`dolfinx.fem.problems.LinearProblem`: An interface similar to the {py:class}`dolfinx.fem.petsc.LinearProblem`, i.e.
+  it takes in {py:class}`ufl.Form` for the bilinear and linear forms, along with appropriate {py:class}`Dirichlet boundary conditions<dolfinx.fem.DirichletBC>`,
+  solver options and {py:class}`entity_maps<dolfinx.mesh.EntityMap>`.
+
+### Built-in matrix support
+  
+**Authors**: [Chris Richardson](https://github.com/chrisrichardson)
+
+- Adds {py:meth}`A.transpose()<dolfinx.la.MatrixCSR.transpose>`, {py:meth}`A.mult(x, y, transpose=True)<dolfinx.la.MatrixCSR.mult>`
+  and {py:meth}`A.matmul(B)<dolfinx.la.MatrixCSR.matmul>` to the built in matrices
+- Templated matrices in the Python API for block size `[i, i], i=1,2,3`.
+- Improved tests for square and rectangular matrices
 
 ### The 'real' element
 
@@ -51,21 +62,14 @@ recommended to use {py:class}`ufl.MixedFunctionSpace(V, R, ...)<ufl.MixedFunctio
 {py:func}`ufl.extract_blocks` to create blocked systems that can be used in {py:class}`dolfinx.fem.petsc.LinearProblem`
 or {py:class}`dolfinx.fem.petsc.NonlinearProblem`.
 
-### Built-in matrix support
 
-**Authors**: [Chris Richardson](https://github.com/chrisrichardson)
-
-- Adds {py:meth}`A.transpose()<dolfinx.la.MatrixCSR.transpose>`, {py:meth}`A.mult(x, y, transpose=True)<dolfinx.la.MatrixCSR.mult>`
-  and {py:meth}`A.matmul(B)<dolfinx.la.MatrixCSR.matmul>` to the built in matrices
-- Templated matrices in the Python API for block size `[i, i], i=1,2,3`.
-- Improved tests for square and rectangular matrices
 
 ### Threading
 
 **Authors**: [Chris Richardson](https://github.com/chrisrichardson), [Jørgen S. Dokken](https://github.com/jorgensd) and [Garth N. Wells](https://github.com/garth-wells)
 
-For a long time, DOLFINx has been exclusively using MPI for distribution of computational load.
-However, with the computational landscape evolving to more and more hetrogenuous systems, the need for additional parallelisation
+For a long time, DOLFINx has been exclusively using MPI for the distribution of computational load.
+However, with the computational landscape evolving to more and more heterogenuous systems, the need for additional parallelisation
 methods are required. In this release, we introduce initial threading support using [std::jthread`](https://en.cppreference.com/cpp/thread/jthread)
 in the following methods:
 - {py:meth}`dolfinx.mesh.Topology.create_entities`
@@ -137,7 +141,6 @@ Furthermore, new cell types are supported for the `vtkhdf` backend, including al
 linear and quadratic VTK cell types.
 
 
-
 ### Exposing tolerances for non-affine pull-backs
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
@@ -186,9 +189,9 @@ A crucial bug interpolating Piola-mapped elements from parent to a codim-0 subme
 
 **Authors**: [Paul T. Kühner](https://github.com/schnellerhase)
 
-UFL is a Python project that has been in development for almost 20 years, which means
-that Python has gone through a massive moderization during its development.
-One of the visually pleasing improvments is the use of `@property`-decorators.
+UFL is a Python project that has been in development for almost 20 years, and
+Python has gone through a massive modernization during this time.
+One of the visually pleasing improvements is the use of `@property`-decorators.
 {py:class}`ufl.AbstractCell` now uses properties for
 {py:attr}`topological_dimension<ufl.AbstractCell.topological_dimension>` and
 {py:attr}`cellname<ufl.AbstractCell.cellname>`, etc. while
