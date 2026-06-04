@@ -831,9 +831,10 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
         """Degree-of-freedom map associated with the function space."""
         return DofMap(self._cpp_object.dofmap)
 
-    def dofmaps(self, idx: int) -> DofMap:
-        """Dof maps."""
-        return DofMap(self._cpp_object.dofmaps(idx))
+    @property
+    def dofmaps(self) -> list[DofMap]:
+        """The geometry dofmaps, one per cell type."""
+        return [DofMap(_o) for _o in self._cpp_object.dofmaps]
 
     @property
     def mesh(self) -> Mesh[Real]:

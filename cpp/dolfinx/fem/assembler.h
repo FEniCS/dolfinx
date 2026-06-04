@@ -507,10 +507,10 @@ void assemble_matrix(
   // Index maps for dof ranges
   // NOTE: For mixed-topology meshes, there will be multiple DOF maps,
   // but the index maps are the same.
-  auto map0 = a.function_spaces().at(0)->dofmaps(0)->index_map;
-  auto map1 = a.function_spaces().at(1)->dofmaps(0)->index_map;
-  auto bs0 = a.function_spaces().at(0)->dofmaps(0)->index_map_bs();
-  auto bs1 = a.function_spaces().at(1)->dofmaps(0)->index_map_bs();
+  auto map0 = a.function_spaces().at(0)->dofmaps().front()->index_map;
+  auto map1 = a.function_spaces().at(1)->dofmaps().front()->index_map;
+  auto bs0 = a.function_spaces().at(0)->dofmaps().front()->index_map_bs();
+  auto bs1 = a.function_spaces().at(1)->dofmaps().front()->index_map_bs();
 
   // Build dof markers
   std::vector<std::int8_t> dof_marker0, dof_marker1;
