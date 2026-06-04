@@ -217,7 +217,8 @@ void declare_assembly_functions(nanobind::module_& m)
       {
         std::vector<int> coffsets = e.coefficient_offsets();
         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
-            coefficients = e.coefficients();
+            coefficients
+            = e.coefficients();
         std::vector<T> coeffs(entities.shape(0) * coffsets.back());
         std::size_t cstride = coffsets.back();
         std::vector<std::reference_wrapper<const dolfinx::fem::Function<T, U>>>
@@ -365,8 +366,8 @@ void declare_assembly_functions(nanobind::module_& m)
         // Get index map block size. Note that mixed-topology meshes
         // will have multiple DOF maps, but the block sizes are the same.
         const std::array<int, 2> data_bs
-            = {a.function_spaces().at(0)->dofmaps()[0]->index_map_bs(),
-               a.function_spaces().at(1)->dofmaps()[0]->index_map_bs()};
+            = {a.function_spaces().at(0)->dofmaps().front()->index_map_bs(),
+               a.function_spaces().at(1)->dofmaps().front()->index_map_bs()};
 
         if (data_bs[0] != data_bs[1])
         {

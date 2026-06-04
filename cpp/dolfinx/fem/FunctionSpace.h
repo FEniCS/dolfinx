@@ -391,7 +391,7 @@ public:
           "FunctionSpace has multiple dofmaps, call `dofmaps` instead.");
     }
 
-    return dofmaps()[0];
+    return dofmaps().front();
   }
 
   /// The dofmaps

@@ -204,8 +204,8 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   // mixed-topology meshes, despite there being multiple DOF maps, the
   // index maps and block sizes are the same.
   std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
-      *a.function_spaces().at(0)->dofmaps()[0],
-      *a.function_spaces().at(1)->dofmaps()[0]};
+      *a.function_spaces().at(0)->dofmaps().front(),
+      *a.function_spaces().at(1)->dofmaps().front()};
 
   const std::array index_maps{dofmaps[0].get().index_map,
                               dofmaps[1].get().index_map};
@@ -264,8 +264,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
   for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
-        *a.function_spaces().at(0)->dofmaps()[cell_type_idx],
-        *a.function_spaces().at(1)->dofmaps()[cell_type_idx]};
+        *a.function_spaces().at(0)->dofmaps().at(cell_type_idx),
+        *a.function_spaces().at(1)->dofmaps().at(cell_type_idx)};
 
     // Create and build sparsity pattern
     for (auto type : types)
@@ -926,7 +926,8 @@ FunctionSpace<T> create_functionspace(
     std::shared_ptr<mesh::Mesh<T>> mesh,
     std::shared_ptr<const fem::FiniteElement<T>> e,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn = nullptr)
+        reorder_fn
+    = nullptr)
 {
   // TODO: check cell type of e (need to add method to fem::FiniteElement)
   assert(e);
@@ -1070,10 +1071,12 @@ Expression<T, U> create_expression(
 /// @return A new mesh sharing the topology of `mesh` and with a
 /// geometry described by `new_cmap`.
 template <std::floating_point T>
-mesh::Mesh<T> interpolate_geometry(
-    std::shared_ptr<mesh::Mesh<T>> mesh, const CoordinateElement<T>& new_cmap,
-    const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn = nullptr)
+mesh::Mesh<T>
+interpolate_geometry(std::shared_ptr<mesh::Mesh<T>> mesh,
+                     const CoordinateElement<T>& new_cmap,
+                     const std::function<std::vector<int>(
+                         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+                     = nullptr)
 {
   assert(mesh);
   const CoordinateElement<T>& old_cmap = mesh->geometry().cmaps().front();
