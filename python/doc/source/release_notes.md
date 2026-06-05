@@ -170,10 +170,7 @@ Furthermore, {py:func}`dolfinx.fem.apply_lifting` and {py:func}`dolfinx.fem.asse
   the different processes. Useful for reading in point measures or outputting data.
 - Built in mesh-generators such as {py:func}`dolfinx.mesh.create_rectangle` now takes an optional argument `gdim` that embeds in a larger space.
   This simplifies the testing process for problems on manifolds.
-- New function that allows users to create a new mesh either raising or lowering the polynomial order of the mesh geoemtry.
-  The topology is shared between the old and new grid. It is also possible to switch the Lagrange-variant
-  of the underlying coordinate element. For complete documentation, see {py:func}`dolfinx.fem.interpolate_geometry`.
-
+- New function {py:func}`dolfinx.fem.interpolate_geometry` that allows users to create a new mesh either raising or lowering the polynomial order of the mesh geometry. The topology is shared between the old and new grid. It is also possible to switch the Lagrange-variant of the underlying coordinate element.
 
 ### Interpolation
 
