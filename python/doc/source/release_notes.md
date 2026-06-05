@@ -2,7 +2,7 @@
 
 ## v0.11.0
 
-Since the 0.10.0, there has been 177 merged pull requests from 27 contributors.
+Since the 0.10.0 release, there has been 177 merged pull requests from 27 contributors.
 Below follows a summary of the biggest changes to the Python API.
 A full diff can be found [here](https://github.com/FEniCS/dolfinx/compare/v0.10.0.post5...main).
 
@@ -10,7 +10,7 @@ A full diff can be found [here](https://github.com/FEniCS/dolfinx/compare/v0.10.
 
 **Authors**: [Jack Hale](https://github.com/jhale) and [Chris Richardson](https://github.com/chrisrichardson)
 
-After the support for Windows was added v0.9.0, there has been a lack of parallel supported solvers to
+After the support for Windows was added in v0.9.0, there has been a lack of parallel supported solvers to
 solve the resulting linear problems. Furthermore, PETSc sometimes can feel complicated for simple problems presented
 during teaching. In this release, we add support for using SuperLU_DIST with native sparse matrices
 {py:class}`dolfinx.la.MatrixCSR`.
@@ -23,15 +23,16 @@ The following constructors and classes have been added:
   which you can use to call {py:meth}`set_option<dolfinx.la.superlu_dist.SuperLUDistSolver.set_option>`,
   {py:meth}`set_A<dolfinx.la.superlu_dist.SuperLUDistSolver.set_A>` or {py:meth}`solve<dolfinx.la.superlu_dist.SuperLUDistSolver.solve>`.
 - {py:class}`dolfinx.fem.problems.LinearProblem`: An interface similar to the {py:class}`dolfinx.fem.petsc.LinearProblem`, i.e.
-  it takes in {py:class}`ufl.Form` for the bilinear and linear forms, along with appropriate {py:class}`Dirichlet boundary conditions<dolfinx.fem.DirichletBC>`,
-  solver options and {py:class}`entity_maps<dolfinx.mesh.EntityMap>`.
+  it takes in {py:class}`ufl.Form` for the bilinear and linear forms, along with appropriate
+  {py:class}`Dirichlet boundary conditions<dolfinx.fem.DirichletBC>`,
+  solver options, and {py:class}`entity_maps<dolfinx.mesh.EntityMap>`.
 
 ### Built-in matrix support
   
 **Authors**: [Chris Richardson](https://github.com/chrisrichardson)
 
 - Adds {py:meth}`A.transpose()<dolfinx.la.MatrixCSR.transpose>`, {py:meth}`A.mult(x, y, transpose=True)<dolfinx.la.MatrixCSR.mult>`
-  and {py:meth}`A.matmul(B)<dolfinx.la.MatrixCSR.matmul>` to the built in matrices
+  and {py:meth}`A.matmul(B)<dolfinx.la.MatrixCSR.matmul>` to the built- in matrices
 - Templated matrices in the Python API for block size `[i, i], i=1,2,3`.
 - Improved tests for square and rectangular matrices
 
@@ -63,30 +64,33 @@ or {py:class}`dolfinx.fem.petsc.NonlinearProblem`.
 
 ### Threading
 
-**Authors**: [Chris Richardson](https://github.com/chrisrichardson), [Jørgen S. Dokken](https://github.com/jorgensd) and [Garth N. Wells](https://github.com/garth-wells)
+**Authors**: [Chris Richardson](https://github.com/chrisrichardson), [Jørgen S. Dokken](https://github.com/jorgensd)
+and [Garth N. Wells](https://github.com/garth-wells)
 
 For a long time, DOLFINx has been exclusively using MPI for the distribution of computational load.
-However, with the computational landscape evolving to more and more heterogenuous systems, the need for additional parallelisation
-methods are required. In this release, we introduce initial threading support using [std::jthread`](https://en.cppreference.com/cpp/thread/jthread)
-in the following methods:
+However, with the computational landscape evolving to more and more heterogeneous systems,
+the need for additional parallelisation methods are required. 
+In this release, we introduce initial threading support using
+[std::jthread`](https://en.cppreference.com/cpp/thread/jthread) in the following methods:
 - {py:meth}`dolfinx.mesh.Topology.create_entities`
 - {py:func}`dolfinx.geometry.compute_distances_gjk`
-which both takes an optional argument `num_threads` which specifies how many CPU threads should be used.
-If st to 0, threads are not spawned.
+which both take an optional argument `num_threads` which specifies how many CPU threads should be used.
+If set to 0, threads are not spawned.
 
 ### New and improved demos
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd), [Paul T. Kühner](https://github.com/schnellerhase)
 
-A new demo showcasing how to use PETSc and matrix-free solvers can be found in [demo_matrix-free-petsc](./demos/demo_matrix-free-petsc)
+A new demo showcasing how to use PETSc and matrix-free solvers can be found in
+[demo_matrix-free-petsc](./demos/demo_matrix-free-petsc)
 
 The [PML demo](./demos/demo_pml) now shows how to use one-sided interior facet
-integrals with manual specfication of integration entities.
+integrals with manual specification of integration entities.
 
 The [Biharmonic demo](./demos/demo_biharmonic) has gone through a major revision, using:
 - A more suitable choice of finite elements (as P2 yields sub-optimal convergence)
 - Better choice of penalty parameter
-- Change of boundary conditions from simply supported to clamped and explain the effect of different BCs.
+- Change of boundary conditions from simply supported to clamped and explaining the effect of different BCs.
 - Verify solution with the method of manufactured solutions and add relevant references
 
 In general, demos now consistently use `tdim=mesh.topology.dim`, `fdim = tdim -1` and `gdim = mesh.geometry.dim` to
@@ -98,11 +102,12 @@ avoid confusion for new users.
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
 
 A feature that for a long time has existed outside of the FEniCS core is the
-{py:func}`dolfinx.mesh.transfer_meshtags_to_submesh` which makes it possible to transfer a
+{py:func}`dolfinx.mesh.transfer_meshtags_to_submesh`, which makes it possible to transfer a
 meshtag from a parent mesh to a submesh. This function is now part of the core library.
 
 Another feature introduced in this release is the usage of submesh quantities in {py:class}`dolfinx.fem.Expression`.
-You can now pass {py:class}`Expressions<ufl.core.expr.Expr>` containing coefficients and constants from a submesh, combined with geometric quantities, coefficients and constants of the parent mesh.
+You can now pass {py:class}`Expressions<ufl.core.expr.Expr>` containing coefficients and constants from a submesh,
+combined with geometric quantities, coefficients, and constants of the parent mesh.
 For example
 
 ```python
@@ -131,11 +136,16 @@ compiled_expr = fem.Expression(expr, quadrature_points, dtype=dtype, entity_maps
 
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
 
-With the [changes to mesh](#mesh) in v0.10.0 `max_facet_to_cell_links` was introduced to make it possible to create meshes with joints, branches etc.
+With the [changes to mesh](#mesh) in v0.10.0 `max_facet_to_cell_links` was introduced to make
+it possible to create meshes with joints, branches, etc.
 This is now exposed in {py:func}`dolfinx.io.gmsh.model_to_mesh`.
 
 Furthermore, new cell types are supported for the `vtkhdf` backend, including all
 linear and quadratic VTK cell types.
+
+The GMSH interface can now read in meshes on mixed-topology grids using {py:func}`dolfinx.io.gmsh.model_to_mesh`
+or {py:func}`dolfinx.io.gmsh.read_from_msh`. There is currently no support for
+reading {py:class}`entity tags<dolfinx.mesh.MeshTags>` on mixed-topology grids through this interface yet.
 
 
 ### Exposing tolerances for non-affine pull-backs
@@ -155,12 +165,13 @@ If you see this error message, try to increase the `maxiter` or `tol`.
 ### Mixed topology meshes, prisms and pyramid cells
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd) and [Chris Richardson](https://github.com/chrisrichardson)
 
-For mixed topology meshes, there are many notions that does not align with the original design of DOLFINx.
+For mixed topology meshes, there are many notions that do not align with the original design of DOLFINx.
 Examples are the members `num_entity_dofs` and `num_entity_closure_dofs` of {py:class}`dolfinx.cpp.fem.ElementDofLayout`,
 as prisms and pyramids do not have the same number of dofs per sub-entity.
-They have been removed, and users should instead call {py:meth}`len(ElementDofLayout.entity_dofs(dim, entity_index))<dolfinx.cpp.fem.ElementDofLayout.entity_dofs>`
+They have been removed, and users should instead call
+{py:meth}`len(ElementDofLayout.entity_dofs(dim, entity_index))<dolfinx.cpp.fem.ElementDofLayout.entity_dofs>`
 
-Furthermore, {py:func}`dolfinx.fem.apply_lifting` and {py:func}`dolfinx.fem.assemble_scalar` now works for mixed-topology meshes.
+Furthermore, {py:func}`dolfinx.fem.apply_lifting` and {py:func}`dolfinx.fem.assemble_scalar` now work for mixed-topology meshes.
 
 ### Meshes
 
@@ -168,9 +179,11 @@ Furthermore, {py:func}`dolfinx.fem.apply_lifting` and {py:func}`dolfinx.fem.asse
 
 - New function {py:func}`dolfinx.mesh.create_point_mesh` to create a point cloud mesh with no points shared between
   the different processes. Useful for reading in point measures or outputting data.
-- Built in mesh-generators such as {py:func}`dolfinx.mesh.create_rectangle` now takes an optional argument `gdim` that embeds in a larger space.
-  This simplifies the testing process for problems on manifolds.
-- New function {py:func}`dolfinx.fem.interpolate_geometry` that allows users to create a new mesh either raising or lowering the polynomial order of the mesh geometry. The topology is shared between the old and new grid. It is also possible to switch the Lagrange-variant of the underlying coordinate element.
+- Built in mesh-generators such as {py:func}`dolfinx.mesh.create_rectangle` now takes an optional
+  argument `gdim` that embeds in a larger space. This simplifies the testing process for problems on manifolds.
+- New function {py:func}`dolfinx.fem.interpolate_geometry` that allows users to create a new mesh either raising or lowering the
+  polynomial order of the mesh geometry. The topology is shared between the old and new grid. It is also possible to
+  switch the Lagrange-variant of the underlying coordinate element.
 
 ### Interpolation
 
@@ -192,13 +205,11 @@ One of the visually pleasing improvements is the use of `@property`-decorators.
 {py:class}`ufl.Mesh` now has {py:attr}`geometric_dimension<ufl.Mesh.geometric_dimension>`.
 See [UFL PR \#385](https://github.com/FEniCS/ufl/pull/385) for more details.
 
-### Expressions
-
 
 
 ## v0.10.0
 
-Since the 0.9.0 release, there has been 311 merged pull requests from 25 contributors.
+Since the 0.9.0 release, there have  been 311 merged pull requests from 25 contributors.
 Below follows a summary of the biggest changes to the Python-API from these pull requests.
 In addition to the changes below, the ever-lasting quest of improving performance and squashing bugs continues.
 
@@ -231,7 +242,7 @@ information.
 
 #### Improved {py:class}`dolfinx.fem.petsc.LinearProblem`
 
-- The {py:class}`dolfinx.fem.petsc.LinearProblem` now support blocked problems, either specified manually or by using
+- The {py:class}`dolfinx.fem.petsc.LinearProblem` now supports blocked problems, either specified manually or by using
   {py:func}`ufl.extract_blocks`. By changing the input-argument `kind`, the user can now decide if they want to use
   the DOLFINx blocked PETSc implementation (`kind="mpi"`) or the `kind=`{py:attr}`"nest"<petsc4py.PETSc.Mat.Type.NEST>`.
 - The default behavior for non-blocked systems remains the same as before.
@@ -300,8 +311,9 @@ and [Jørgen S. Dokken](https://github.com/jorgensd)
 
 - Uniform mesh refinement of all {py:class}`CellTypes<dolfinx.mesh.CellType>` is available through
 {py:func}`dolfinx.mesh.uniform_refine`.
-- Branching meshes (a mesh where a single facet is connected to more than two cells), such as T-joints (3 cells connected to a single facet) are now supported as input meshes to DOLFINx. To ensure proper
-  partitioning in parallel, one should change the default option `max_facet_to_cell_links` to how many cells a facet
+- Branching meshes (a mesh where a single facet is connected to more than two cells), such as T-joints (3 cells connected to a single facet)
+  are now supported as input meshes to DOLFINx. To ensure proper partitioning in parallel, one should change the default
+  option `max_facet_to_cell_links` to how many cells a facet
   can be attached to in {py:meth}`dolfinx.io.XDMFFile.read_mesh`, {py:func}`dolfinx.io.vtkhd.read_mesh` and
   {py:func}`dolfinx.mesh.create_mesh`.
 - One can no longer use `set_connectivity` or `set_index_map` to modify {py:class}`dolfinx.mesh.Topology`
