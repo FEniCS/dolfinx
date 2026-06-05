@@ -28,7 +28,6 @@ def square():
 @pytest.mark.skip_in_parallel
 def test_area(cube, square):
     """Iterate over faces and sum area."""
-
     # TODO: update for dim < tdim
     # cube.topology.create_entities(2)
     # area = dolfinx.cpp.mesh.volume_entities(cube, range(cube.num_entities(2)), 2).sum()
@@ -43,7 +42,7 @@ def test_area(cube, square):
 
 
 def test_normals(cube, square):
-    """Test cell normals for a subset of facets"""
+    """Test cell normals for a subset of facets."""
 
     def left_side(x):
         return np.isclose(x[0], 0)

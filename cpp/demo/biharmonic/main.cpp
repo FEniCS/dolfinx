@@ -145,9 +145,10 @@ using U = typename dolfinx::scalar_value_t<T>;
 
 // Inside the `main` function, we begin by defining a mesh of the
 // domain. As the unit square is a very standard domain, we can use a
-// built-in mesh provided by the {cpp:class}`UnitSquareMesh` factory. In
-// order to create a mesh consisting of 32 x 32 squares with each square
-// divided into two triangles, and the finite element space (specified
+// built-in mesh generator provided by the
+// {cpp:func}`dolfinx::mesh::create_rectangle()` function.
+// In order to create a mesh consisting of 32 x 32 squares with each
+// square divided into two triangles, and the finite element space (specified
 // in the form file) defined relative to this mesh, we do as follows
 
 int main(int argc, char* argv[])
@@ -156,7 +157,7 @@ int main(int argc, char* argv[])
   PetscInitialize(&argc, &argv, nullptr, nullptr);
   {
     //  Create mesh
-    auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
+    auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet, 2);
     auto mesh = std::make_shared<mesh::Mesh<U>>(
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
                                   {32, 32}, mesh::CellType::triangle, part));

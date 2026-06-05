@@ -141,8 +141,7 @@ def extract_diagonal(mat):
 @pytest.mark.parametrize("degree", range(1, 4))
 @pytest.mark.parametrize("shape", [(), (1,), (2,), (3,), (4,), (2, 2), (3, 3)])
 def test_vector_element(shape, degree):
-    """
-    Compare assembly into a vector with quadrature elements with the diagonal of
+    """Compare assembly into a vector with quadrature elements with the diagonal of
     an assembled mass matrix with the same quadrature element.
     """
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
@@ -174,9 +173,7 @@ def test_vector_element(shape, degree):
 
 @pytest.mark.parametrize("degree", range(1, 4))
 def test_quadrature_assembly(degree):
-    """
-    Test quadrature element against assembly with spatial coordinate and a fixed quadrature rule
-    """
+    """Test quadrature element against assembly with spatial coord and fixed quadrature rule."""
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 5, 7)
     dx_m = ufl.Measure(
         "dx",

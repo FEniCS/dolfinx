@@ -6,6 +6,7 @@
 """Finite elements."""
 
 from functools import singledispatch
+from typing import Generic
 
 import numpy as np
 import numpy.typing as npt
@@ -13,9 +14,10 @@ import numpy.typing as npt
 import basix
 import basix.ufl
 from dolfinx import cpp as _cpp
+from dolfinx.typing import Real
 
 
-class CoordinateElement:
+class CoordinateElement(Generic[Real]):
     """Coordinate element describing the geometry map for mesh cells."""
 
     _cpp_object: _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
@@ -57,14 +59,12 @@ class CoordinateElement:
         return self._cpp_object.hash()
 
     def create_dof_layout(self) -> _cpp.fem.ElementDofLayout:
-        """Compute and return the dof layout"""
+        """Compute and return the dof layout."""
         return self._cpp_object.create_dof_layout()
 
     def push_forward(
-        self,
-        X: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+        self, X: npt.NDArray[Real], cell_geometry: npt.NDArray[Real]
+    ) -> npt.NDArray[Real]:
         """Push points on the reference cell forward to the physical cell.
 
         Args:
@@ -73,7 +73,7 @@ class CoordinateElement:
             cell_geometry: Coordinate 'degrees-of-freedom' (nodes) of
                 the cell, ``shape=(num_geometry_basis_functions,
                 geometrical_dimension)``. Can be created by accessing
-                ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
+                ``geometry.x[geometry.dofmaps[0].cell_dofs(i)]``,
 
         Returns:
             Physical coordinates of the points reference points ``X``.
@@ -82,9 +82,11 @@ class CoordinateElement:
 
     def pull_back(
         self,
-        x: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+        x: npt.NDArray[Real],
+        cell_geometry: npt.NDArray[Real],
+        tol: float = 1.0e-6,
+        maxit: int = 15,
+    ) -> npt.NDArray[Real]:
         """Pull points on the physical cell back to the reference cell.
 
         For non-affine cells, the pull-back is a nonlinear operation.
@@ -95,12 +97,16 @@ class CoordinateElement:
             cell_geometry: Physical coordinates describing the cell,
                 shape ``(num_of_geometry_basis_functions,
                 geometrical_dimension)``. They can be created by accessing
-                ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
+                ``geometry.x[geometry.dofmaps[0].cell_dofs(i)]``,
+            tol: Tolerance for convergence in Newton method for
+                nonaffine pullbacks.
+            maxit: Maximum number of Newton iterations for
+                nonaffine pullbacks.
 
         Returns:
             Reference coordinates of the physical points ``x``.
         """
-        return self._cpp_object.pull_back(x, cell_geometry)
+        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit)
 
     @property
     def variant(self) -> int:
@@ -124,7 +130,7 @@ def coordinate_element(
     degree: int,
     variant=int(basix.LagrangeVariant.unset),
     dtype: npt.DTypeLike = np.float64,
-):
+) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from element metadata.
 
     Coordinate elements are typically used to create meshes.
@@ -147,7 +153,7 @@ def coordinate_element(
 
 
 @coordinate_element.register(basix.finite_element.FiniteElement)
-def _(e: basix.finite_element.FiniteElement):
+def _(e: basix.finite_element.FiniteElement) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from a Basix finite element.
 
     Coordinate elements are typically used when creating meshes.
@@ -164,7 +170,9 @@ def _(e: basix.finite_element.FiniteElement):
         return CoordinateElement(_cpp.fem.CoordinateElement_float64(e._e))
 
 
-class FiniteElement:
+class FiniteElement(Generic[Real]):
+    """A finite element."""
+
     _cpp_object: _cpp.fem.FiniteElement_float32 | _cpp.fem.FiniteElement_float64
 
     def __init__(
@@ -178,17 +186,17 @@ class FiniteElement:
             :func:`finiteelement`.
 
         Args:
-            The underlying cpp instance that this object will wrap.
+            cpp_object: Underlying cpp instance that this object will wrap.
         """
         self._cpp_object = cpp_object
 
     def __eq__(self, other):
+        """Check equality with another finite element."""
         return self._cpp_object == other._cpp_object
 
     @property
     def dtype(self) -> np.dtype:
-        """Geometry type of the Mesh that the FunctionSpace is defined
-        on."""
+        """Geometry type of the mesh that the space is defined on."""
         return self._cpp_object.dtype
 
     @property
@@ -216,10 +224,8 @@ class FiniteElement:
         return self._cpp_object.value_shape
 
     @property
-    def interpolation_points(self) -> npt.NDArray[np.floating]:
-        """Points on the reference cell at which an expression needs to be
-        evaluated in order to interpolate the expression in the finite
-        element space.
+    def interpolation_points(self) -> npt.NDArray[Real]:
+        """Points at which to evaluate the function to be interpolated.
 
         Interpolation point coordinates on the reference cell, returning
         the coordinates data (row-major) storage with shape
@@ -234,20 +240,23 @@ class FiniteElement:
 
     @property
     def interpolation_ident(self) -> bool:
-        """Check if interpolation into the finite element space is an
+        """Check if interpolation into space is the identity.
+
+        True if interpolation into the finite element space is an
         identity operation given the evaluation on an expression at
         specific points, i.e. the degree-of-freedom are equal to point
         evaluations. The function will return `true` for Lagrange
-        elements."""
+        elements.
+        """
         return self._cpp_object.interpolation_ident
 
     @property
     def space_dimension(self) -> int:
-        """Dimension of the finite element function space (the number of
-        degrees-of-freedom for the element).
+        """Dimension of the finite element function space.
 
-        For 'blocked' elements, this function returns the dimension of the
-        full element rather than the dimension of the base element.
+        This is the the number of degrees-of-freedom for the element.
+        For 'blocked' elements, this function returns the dimension of
+        the full element rather than the dimension of the base element.
         """
         return self._cpp_object.space_dimension
 
@@ -273,9 +282,11 @@ class FiniteElement:
         return self._cpp_object.signature
 
     def T_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
-        """Transform basis functions from the reference element ordering
+        """Transform basis from reference to physical ordering/orientation.
+
+        Transform basis functions from the reference element ordering
         and orientation to the globally consistent physical element
         ordering and orientation.
 
@@ -294,7 +305,7 @@ class FiniteElement:
         self._cpp_object.T_apply(x, cell_permutations, dim)
 
     def Tt_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
         """Apply the transpose of the operator applied by T_apply().
 
@@ -308,10 +319,9 @@ class FiniteElement:
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
     def Tt_inv_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
-        """Apply the inverse transpose of the operator applied by
-        T_apply().
+        """Apply the inverse transpose of T_apply().
 
         Args:
             x: Data to transform (in place). The shape is
@@ -326,7 +336,7 @@ class FiniteElement:
 def finiteelement(
     cell_type: _cpp.mesh.CellType,
     ufl_e: basix.ufl._ElementBase,
-    FiniteElement_dtype: np.dtype,
+    FiniteElement_dtype: npt.DTypeLike,
 ) -> FiniteElement:
     """Create a DOLFINx element from a basix.ufl element.
 

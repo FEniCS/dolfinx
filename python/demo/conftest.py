@@ -2,6 +2,7 @@ import pytest
 
 
 def pytest_addoption(parser):
+    """Add command line options to pytest."""
     parser.addoption(
         "--mpiexec",
         action="store",
@@ -13,9 +14,11 @@ def pytest_addoption(parser):
 
 @pytest.fixture
 def mpiexec(request):
+    """Name of program to run MPI, e.g. mpiexec."""
     return request.config.getoption("--mpiexec")
 
 
 @pytest.fixture
 def num_proc(request):
+    """Number of MPI processes to use."""
     return request.config.getoption("--num-proc")

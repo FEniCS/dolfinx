@@ -148,7 +148,7 @@ def test_create_submap_owner_change():
     | /                           | /
     6 - 8                         2G        0 - 2
     | /                                     | /
-    7                                       1
+    7                                       1.
     """
     comm = MPI.COMM_WORLD
 
@@ -197,7 +197,8 @@ def test_create_submap_owner_change():
 
 def test_sub_index_map_multiple_possible_owners():
     """Check that creating a submap doesn't crash when an index need to change owner and
-    there are multiple possible new owners"""
+    there are multiple possible new owners.
+    """
     comm = MPI.COMM_WORLD
 
     if comm.size < 3:

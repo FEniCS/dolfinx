@@ -82,7 +82,7 @@
 # polynomial order $k$ and let $V_h$ be discontinuous Lagrange elements of
 # polynomial order $k-1$.
 #
-# To solve the linear system for the mixed problem, we will use am
+# To solve the linear system for the mixed problem, we will use an
 # iterative method with a block-diagonal preconditioner that is based on
 # the Riesz map, see for example this
 # [paper](https://doi.org/10.1002/(SICI)1099-1506(199601/02)3:1%3C1::AID-NLA67%3E3.0.CO;2-E).
@@ -189,7 +189,7 @@ dofs_bottom = fem.locate_dofs_topological(V, fdim, facets_bottom)
 # -
 
 # Now, we create Dirichlet boundary objects for the condition $\sigma
-# \cdot n = \sin(5 x_(0)$ on the top and bottom boundaries:
+# \cdot n = \sin(5 x_0)$ on the top and bottom boundaries:
 
 # +
 cells_top_ = mesh.compute_incident_entities(msh.topology, facets_top, fdim, fdim + 1)
@@ -276,7 +276,7 @@ ksp.setMonitor(
 # (AMS) algebraic multigrid preconditioner. We can use
 # AMS for this $H({\rm div})$-type problem in two-dimensions because
 # $H({\rm div})$ and $H({\rm curl})$ spaces are effectively the same in
-# two-dimensions, just rotated by $\pi/2.
+# two-dimensions, just rotated by $\pi/2$.
 
 # +
 ksp_sigma, ksp_u = ksp.getPC().getFieldSplitSubKSP()

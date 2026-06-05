@@ -11,7 +11,6 @@ namespace nb = nanobind;
 namespace dolfinx_wrappers
 {
 void common(nb::module_& m);
-void mpi(nb::module_& m);
 
 void petsc(nb::module_& m_fem, nb::module_& m_la, nb::module_& m_nls);
 
@@ -23,7 +22,6 @@ void graph(nb::module_& m);
 void io(nb::module_& m);
 void la(nb::module_& m);
 void mesh(nb::module_& m);
-void nls(nb::module_& m);
 void refinement(nb::module_& m);
 } // namespace dolfinx_wrappers
 

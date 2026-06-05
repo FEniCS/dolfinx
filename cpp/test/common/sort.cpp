@@ -87,7 +87,7 @@ TEMPLATE_TEST_CASE("Test radix sort (projection)", "[radix]", std::int16_t,
     std::vector<TestType> indices(vec_array.size());
     std::iota(indices.begin(), indices.end(), 0);
 
-    auto proj = [&](auto index) { return vec_array[index][0]; };
+    auto proj = [&vec_array](auto index) { return vec_array[index][0]; };
     dolfinx::radix_sort(indices, proj);
     CHECK(std::ranges::is_sorted(indices, std::less{}, proj));
   }

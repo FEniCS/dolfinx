@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for the fem interface"""
+"""Unit tests for the fem interface."""
 
 import sys
 
@@ -69,7 +69,7 @@ def test_tabulate_dofs(mesh_factory):
 
 
 def test_entity_dofs(mesh):
-    """Test that num entity dofs is correctly wrapped to dolfinx::DofMap"""
+    """Test that num entity dofs is correctly wrapped to dolfinx::DofMap."""
     gdim = mesh.geometry.dim
 
     V = functionspace(mesh, ("Lagrange", 1))
@@ -224,7 +224,8 @@ def test_local_dimension(mesh_factory):
 @pytest.mark.skip
 def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
-    view into the data; in particular test lifetime of data owner"""
+    view into the data; in particular test lifetime of data owner.
+    """
     V = functionspace(mesh, "P", 1)
     dofmap = V.dofmap
     index_map = dofmap().index_map
@@ -329,9 +330,9 @@ def test_higher_order_coordinate_map(points, celltype, order):
 
     V = functionspace(mesh, ("Lagrange", 2))
     X = V.element.interpolation_points
-    coord_dofs = mesh.geometry.dofmap
+    coord_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
-    cmap = mesh.geometry.cmap
+    cmap = mesh.geometry.cmaps[0]
 
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
@@ -404,14 +405,14 @@ def test_higher_order_tetra_coordinate_map(order):
     mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     V = functionspace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points
-    x_dofs = mesh.geometry.dofmap
+    x_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
 
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
     for node in range(points.shape[0]):
         x_coord_new[node] = x_g[x_dofs[0, node], : mesh.geometry.dim]
 
-    x = mesh.geometry.cmap.push_forward(X, x_coord_new)
+    x = mesh.geometry.cmaps[0].push_forward(X, x_coord_new)
     assert np.allclose(x[:, 0], X[:, 0], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
     assert np.allclose(x[:, 1], 2 * X[:, 1], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
     assert np.allclose(x[:, 2], 3 * X[:, 2], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
@@ -425,7 +426,7 @@ def test_transpose_dofmap():
 
 
 def test_empty_rank_collapse():
-    """Test that dofmap with no dofs on a rank can be collapsed"""
+    """Test that dofmap with no dofs on a rank can be collapsed."""
     if MPI.COMM_WORLD.rank == 0:
         nodes = np.array([[0.0], [1.0], [2.0]], dtype=np.float64)
         cells = np.array([[0, 1], [1, 2]], dtype=np.int64)

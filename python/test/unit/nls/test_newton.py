@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for Newton solver assembly"""
+"""Unit tests for Newton solver assembly."""
 
 from mpi4py import MPI
 
@@ -22,6 +22,7 @@ class NonlinearPDEProblem:
     """Nonlinear problem class for a PDE problem."""
 
     def __init__(self, F, u, bc):
+        """Initialize nonlinear PDE problem."""
         V = u.function_space
         du = TrialFunction(V)
         self.L = form(F)
@@ -29,6 +30,7 @@ class NonlinearPDEProblem:
         self.bc = bc
 
     def form(self, x):
+        """Update ghost values of solution vector."""
         from petsc4py import PETSc
 
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -55,18 +57,23 @@ class NonlinearPDEProblem:
         A.assemble()
 
     def matrix(self):
+        """Create a PETSc matrix for the problem."""
         from dolfinx.fem.petsc import create_matrix
 
         return create_matrix(self.a)
 
     def vector(self):
+        """Create a PETSc vector for the problem."""
         from dolfinx.fem.petsc import create_vector
 
         return create_vector(extract_function_spaces(self.L))
 
 
 class NonlinearPDE_SNESProblem:
+    """Nonlinear problem class for a PDE problem using SNES interface."""
+
     def __init__(self, F, u, bc):
+        """Initialize nonlinear PDE problem."""
         V = u.function_space
         du = TrialFunction(V)
         self.L = form(F)
@@ -109,6 +116,8 @@ class NonlinearPDE_SNESProblem:
 
 @pytest.mark.petsc4py
 class TestNLS:
+    """Test Newton nonlinear solver for PDEs."""
+
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_linear_pde(self):
         """Test Newton solver for a linear PDE."""
@@ -161,7 +170,7 @@ class TestNLS:
 
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_nonlinear_pde(self):
-        """Test Newton solver for a simple nonlinear PDE"""
+        """Test Newton solver for a simple nonlinear PDE."""
         from petsc4py import PETSc
 
         from dolfinx.nls.petsc import NewtonSolver
@@ -200,7 +209,7 @@ class TestNLS:
         assert n > 0 and n < 6
 
     def test_nonlinear_pde_snes(self):
-        """Test Newton solver for a simple nonlinear PDE"""
+        """Test Newton solver for a simple nonlinear PDE."""
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import create_matrix, create_vector

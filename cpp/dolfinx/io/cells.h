@@ -79,7 +79,7 @@ Hexahedron:                Hexahedron27:
 0----------1               0-----8----1
 
 
-Prism:                       Prism15:
+Prism:                       Prism18:
             w
             ^
             |
@@ -89,16 +89,16 @@ Prism:                       Prism15:
       ,/    |    `\           ,/    |    `\
      4------+------5         4------14-----5
      |      |      |         |      8      |
-     |    ,/|`\    |         |      |      |
+     |    ,/|`\    |         | 15   |  16  |
      |  ,/  |  `\  |         |      |      |
-     |,/    0    `\|        10      0      11
+     |,/    0    `\|        10      0  17  11
    ./|    ,/ `\    |\        |    ,/ `\    |
   /  |  ,/     `\  | `\      |  ,6     `7  |
 u    |,/         `\|   v     |,/         `\|
      1-------------2         1------9------2
 
 
-Pyramid:                      Pyramid13:
+Pyramid:                      Pyramid14:
                4                             4
              ,/|\                          ,/|\
            ,/ .'|\                       ,/ .'|\
@@ -107,9 +107,9 @@ Pyramid:                      Pyramid13:
      \.      |  '.  \              11      |  12  \
    ,/  \.  .'  w |   \           ,/       .'   |   \
  ,/      \. |  ^ |    \        ,/         7    |    9
-2----------\'--|-3    `.      2-------10-.'----3     `.
+2----------\'--|-3    `.      2-------10-.'----3    `.
  `\       |  \.|  `\    \      `\        |      `\    \
-   `\     .'   +----`\ - \ -> u  `6     .'         8   \
+   `\     .'   +----`\ - \ -> u  `6     .'  13      8   \
      `\   |           `\  \        `\   |           `\  \
        `\.'             ` `\         `\.'             ` `\
           0-----------------1           0--------5--------1
@@ -176,5 +176,73 @@ std::vector<std::int64_t> apply_permutation(std::span<const std::int64_t> cells,
 /// @param[in] dim Topological dimension of the cell.
 /// @return VTK cell identifier.
 std::int8_t get_vtk_cell_type(mesh::CellType cell, int dim);
+
+/// @brief Get DOLFINx cell type and degree from VTK cell type.
+///
+/// @param[in] vtk_cell_type VTK cell type identifier.
+/// @return Return the cell type and degree. If arbitrary order Lagragian cell
+/// from VTK is supplied, return -1 for the degree.
+inline std::tuple<mesh::CellType, std::int8_t>
+vtk_to_dolfinx(std::int8_t vtk_cell_type)
+{
+  {
+    // For a complete overview of VTK cell types, see
+    // https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
+    switch (vtk_cell_type)
+    {
+      using enum mesh::CellType;
+    case 1:
+      return {point, -1};
+    case 3:
+      return {interval, 1};
+    case 5:
+      return {triangle, 1};
+    case 9:
+      return {quadrilateral, 1};
+    case 10:
+      return {tetrahedron, 1};
+    case 12:
+      return {hexahedron, 1};
+    case 13:
+      return {prism, 1};
+    case 14:
+      return {pyramid, 1};
+    case 21:
+      return {interval, 2};
+    case 22:
+      return {triangle, 2};
+    case 23:
+      return {quadrilateral, 2};
+    case 24:
+      return {tetrahedron, 2};
+    case 25:
+      return {hexahedron, 2};
+    case 26:
+      return {prism, 2};
+    case 27:
+      return {pyramid, 2};
+    case 35:
+      return {interval, 3};
+    case 68:
+      return {interval, -1};
+    case 69:
+      return {triangle, -1};
+    case 70:
+      return {quadrilateral, -1};
+    case 71:
+      return {tetrahedron, -1};
+    case 72:
+      return {hexahedron, -1};
+    case 73:
+      return {prism, -1};
+    case 74:
+      return {pyramid,
+              -1}; // Not implemented in VTK yet, but added as placeholder.
+    default:
+      break;
+    }
+    throw std::runtime_error("Unknown VTK cell type");
+  }
+}
 
 } // namespace dolfinx::io::cells

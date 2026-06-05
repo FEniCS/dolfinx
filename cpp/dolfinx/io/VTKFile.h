@@ -42,7 +42,7 @@ namespace dolfinx::io
 /// be isoparametic, i.e. the geometry and the finite element functions
 /// must be defined using the same basis.
 ///
-/// @warning This format is not suitable for checkpointing.
+/// @note This format is not suitable for checkpointing.
 class VTKFile
 {
 public:
@@ -59,8 +59,10 @@ public:
   /// Flushes XML files to disk
   void flush();
 
-  /// @brief Write a mesh to file. Supports arbitrary order Lagrange
-  /// isoparametric cells.
+  /// @brief Write a mesh to file.
+  ///
+  /// Supports arbitrary order Lagrange isoparametric cells.
+  ///
   /// @param[in] mesh Mesh to write to file.
   /// @param[in] time Time parameter to associate with `mesh`.
   template <std::floating_point U>
@@ -69,17 +71,19 @@ public:
   /// @brief Write finite elements function with an associated time
   /// step.
   ///
-  /// @pre Functions in `u` cannot be sub-Functions. Extract
-  /// sub-Functions before output.
+  /// Supports arbitrary order Lagrange isoparametric cells.
   ///
-  /// @pre All Functions in `u` with point-wise data must use the same
-  /// element type (up to the block size) and the element must be
+  /// @pre fem::Function%s in `u` cannot be sub-%fem::Function%s.
+  /// Extract sub-%fem::Function%s before output.
+  ///
+  /// @pre All fem::Function%s in `u` with point-wise data must use the
+  /// same element type (up to the block size) and the element must be
   /// (discontinuous) Lagrange. Interpolate fem::Function before output
   /// if required.
   ///
-  /// @param[in] u List of functions to write to file
-  /// @param[in] t Time parameter to associate with @p u
-  /// @pre All Functions in `u` must share the same mesh
+  /// @param[in] u List of functions to write to file.
+  /// @param[in] t Time parameter to associate with `u`.
+  /// @pre All fem::Function%s in `u` must share the same mesh.
   template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
   void
   write(const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,

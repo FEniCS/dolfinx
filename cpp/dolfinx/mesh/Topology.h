@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -14,6 +15,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -25,6 +27,12 @@ class IndexMap;
 
 namespace dolfinx::mesh
 {
+/// Requirement on range of cell indices.
+template <typename R>
+concept CellRange = std::ranges::input_range<R> and std::ranges::sized_range<R>
+                    and std::is_integral_v<
+                        std::remove_const_t<std::ranges::range_value_t<R>>>;
+
 enum class CellType : std::int8_t;
 
 /// @brief Topology stores the topology of a mesh, consisting of mesh
@@ -57,14 +65,15 @@ public:
   /// in `cell_types`.
   /// @param[in] original_cell_index Original indices for each cell in
   /// `cells`.
+  /// @param[in] num_threads Number of threads to use for entity creation.
   Topology(
       std::vector<CellType> cell_types,
       std::shared_ptr<const common::IndexMap> vertex_map,
       std::vector<std::shared_ptr<const common::IndexMap>> cell_maps,
       std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
       const std::optional<std::vector<std::vector<std::int64_t>>>&
-          original_cell_index
-      = std::nullopt);
+          original_cell_index = std::nullopt,
+      int num_threads = 1);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -188,10 +197,12 @@ public:
   const std::vector<std::int32_t>& interprocess_facets() const;
 
   /// @brief Create entities of given topological dimension.
+  ///
   /// @param[in] dim Topological dimension of entities to compute.
+  /// @param[in] num_threads Number of threads to use for entity creation.
   /// @return True if entities are created, false if entities already
   /// existed.
-  bool create_entities(int dim);
+  bool create_entities(int dim, int num_threads = 1);
 
   /// @brief Create connectivity between given pair of dimensions, `d0
   /// -> d1`.
@@ -272,13 +283,16 @@ private:
 /// @param[in] boundary_vertices Vertices on the 'exterior' (boundary)
 /// of the local topology. These vertices might appear on other
 /// processes.
+/// @param[in] num_threads Number of threads to use. Use 0 to not launch
+/// threads.
 /// @return A distributed mesh topology.
 Topology
 create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
                 std::vector<std::span<const std::int64_t>> cells,
                 std::vector<std::span<const std::int64_t>> original_cell_index,
                 std::vector<std::span<const int>> ghost_owners,
-                std::span<const std::int64_t> boundary_vertices);
+                std::span<const std::int64_t> boundary_vertices,
+                int num_threads);
 
 /// @brief Create a mesh topology for a single cell type.
 ///
@@ -302,11 +316,14 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
 /// @param[in] boundary_vertices Vertices on the 'exterior' (boundary)
 /// of the local topology. These vertices might appear on other
 /// processes.
+/// @param[in] num_threads Number of threads to use. Use 0 to not launch
+/// threads.
 /// @return A distributed mesh topology.
 Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const std::int64_t> original_cell_index,
                          std::span<const int> ghost_owners, CellType cell_type,
-                         std::span<const std::int64_t> boundary_vertices);
+                         std::span<const std::int64_t> boundary_vertices,
+                         int num_threads);
 
 /// @brief Create a topology for a subset of entities of a given
 /// topological dimension.

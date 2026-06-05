@@ -111,7 +111,7 @@ public:
   /// This constructor uses a 'consensus' algorithm to determine the
   /// ranks that ghost indices that are owned by the caller. This
   /// requires non-trivial MPI communication. If the ranks that ghost
-  /// indices owned by the caller are known, it more efficient to use
+  /// indices owned by the caller are known, it is more efficient to use
   /// the constructor that takes these ranks as an argument.
   ///
   /// @note Collective
@@ -245,7 +245,7 @@ public:
   ///
   /// Typically used when creating neighbourhood communicators.
   ///
-  /// @return MPI ranks than own ghost indices.  The ranks are unique
+  /// @return MPI ranks that own ghost indices.  The ranks are unique
   /// and sorted.
   std::span<const int> src() const noexcept;
 
@@ -254,8 +254,8 @@ public:
   ///
   /// Typically used when creating neighbourhood communicators.
   ///
-  /// @return MPI ranks than own ghost indices. The ranks are unique
-  /// and sorted.
+  /// @return MPI ranks that ghost indices owned by this rank.
+  /// The ranks are unique and sorted.
   std::span<const int> dest() const noexcept;
 
   /// @brief Compute the number of ghost indices owned by each rank in

@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Jørgen S. Dokken, Henrik N. T. Finsberg and
+# Copyright (C) 2022-2026 Jørgen S. Dokken, Henrik N. T. Finsberg and
 # Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -21,6 +21,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32 as _AdjacencyList_int32
+from dolfinx.fem import coordinate_element
 from dolfinx.graph import AdjacencyList, adjacencylist
 from dolfinx.io.utils import distribute_entity_data
 from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags_from_entities
@@ -39,8 +40,7 @@ __all__ = [
 
 
 class TopologyDict(typing.TypedDict):
-    """TopologyDict is a TypedDict for storing the topology of the marked
-    cell.
+    """TypedDict for storing the topology of the marked cell.
 
     Args:
         topology: 2D array containing the topology of the marked cell.
@@ -67,11 +67,15 @@ _gmsh_to_cells = {
     3: ("quadrilateral", 1),
     4: ("tetrahedron", 1),
     5: ("hexahedron", 1),
+    6: ("prism", 1),
+    7: ("pyramid", 1),
     8: ("interval", 2),
     9: ("triangle", 2),
     10: ("quadrilateral", 2),
     11: ("tetrahedron", 2),
     12: ("hexahedron", 2),
+    13: ("prism", 2),
+    14: ("pyramid", 2),
     15: ("point", 0),
     21: ("triangle", 3),
     26: ("interval", 3),
@@ -116,14 +120,14 @@ class MeshData(typing.NamedTuple):
 
 
 def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
-    """Create a UFL mesh from a Gmsh cell identifier and geometric
-    dimension.
+    """Create UFL mesh from Gmsh cell identifier and geometric dimension.
 
     See https://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
 
     Args:
         gmsh_cell: Gmsh cell identifier.
         gdim: Geometric dimension of the mesh.
+        dtype: Data-type used for the mesh coordinates.
 
     Returns:
         UFL Mesh using Lagrange elements (equispaced) of the
@@ -148,8 +152,7 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
 
 
 def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
-    """The permutation array for permuting Gmsh ordering to DOLFINx
-    ordering.
+    """Array for permuting Gmsh ordering to DOLFINx ordering.
 
     Args:
         cell_type: DOLFINx cell type.
@@ -165,8 +168,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
 def extract_topology_and_markers(
     model, name: str | None = None
 ) -> tuple[dict[int, TopologyDict], dict[str, PhysicalGroup]]:
-    """Extract all entities tagged with a physical marker in the gmsh
-    model.
+    """Extract entities with a physical marker in the Gmsh model.
 
     Returns a nested dictionary where the first key is the gmsh MSH
     element type integer. Each element type present in the model
@@ -208,48 +210,39 @@ def extract_topology_and_markers(
             # i.e. facets of prisms and pyramid meshes are not supported
             (entity_types, entity_tags, entity_topologies) = model.mesh.getElements(dim, tag=entity)
 
-            if len(entity_types) > 1:
-                raise RuntimeError(
-                    f"Unsupported mesh with multiple cell types {entity_types} for entity {entity}"
-                )
-            elif len(entity_types) == 0:
-                continue
+            for entity_type, entity_tag, entity_topology in zip(
+                entity_types, entity_tags, entity_topologies, strict=True
+            ):
+                # Determine number of local nodes per element to create the
+                # topology of the elements
+                properties = model.mesh.getElementProperties(entity_type)
+                name, dim, _, num_nodes, _, _ = properties
 
-            # Determine number of local nodes per element to create the
-            # topology of the elements
-            properties = model.mesh.getElementProperties(entity_types[0])
-            name, dim, _, num_nodes, _, _ = properties
+                # Array of shape (num_elements,num_nodes_per_element)
+                # containing the topology of the elements on this entity.
+                # NOTE: Gmsh indexing starts with one, we therefore
+                # subtract 1 from each node to use zero-based numbering
+                topology = entity_topology.reshape(-1, num_nodes) - 1
 
-            # Array of shape (num_elements,num_nodes_per_element)
-            # containing the topology of the elements on this entity.
-            # NOTE: Gmsh indexing starts with one, we therefore subtract
-            # 1 from each node to use zero-based numbering
-            topology = entity_topologies[0].reshape(-1, num_nodes) - 1
+                # Create marker array of length of number of tagged cells
+                marker = np.full_like(entity_tag, tag)
 
-            # Create marker array of length of number of tagged cells
-            marker = np.full_like(entity_tags[0], tag)
-
-            # Keep track of entity tags to check tag consistency
-            entity_tags = entity_tags[0]
-
-            # Group element topology and markers of the same entity type
-            entity_type = entity_types[0]
-            if entity_type in topologies.keys():
-                topologies[entity_type]["topology"] = np.concatenate(
-                    (topologies[entity_type]["topology"], topology), axis=0
-                )
-                topologies[entity_type]["cell_data"] = np.hstack(
-                    [topologies[entity_type]["cell_data"], marker]
-                )
-                topologies[entity_type]["entity_tags"] = np.hstack(
-                    [topologies[entity_type]["entity_tags"], entity_tags]
-                )
-            else:
-                topologies[entity_type] = {
-                    "topology": topology,
-                    "cell_data": marker,
-                    "entity_tags": entity_tags,
-                }
+                if entity_type in topologies.keys():
+                    topologies[entity_type]["topology"] = np.concatenate(
+                        (topologies[entity_type]["topology"], topology), axis=0
+                    )
+                    topologies[entity_type]["cell_data"] = np.hstack(
+                        [topologies[entity_type]["cell_data"], marker]
+                    )
+                    topologies[entity_type]["entity_tags"] = np.hstack(
+                        [topologies[entity_type]["entity_tags"], entity_tag]
+                    )
+                else:
+                    topologies[entity_type] = {
+                        "topology": topology,
+                        "cell_data": marker,
+                        "entity_tags": entity_tag,
+                    }
         physical_groups[model.getPhysicalName(dim, tag)] = PhysicalGroup(dim, tag)
 
     return topologies, physical_groups
@@ -297,6 +290,7 @@ def model_to_mesh(
     partitioner: Callable[[_MPI.Comm, int, int, _AdjacencyList_int32], _AdjacencyList_int32]
     | None = None,
     dtype=default_real_type,
+    max_facet_to_cell_links: int = 2,
 ) -> MeshData:
     """Create a Mesh from a Gmsh model.
 
@@ -312,6 +306,9 @@ def model_to_mesh(
         gdim: Geometrical dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
+        dtype: Data-type used for the mesh coordinates
+        max_facet_to_cell_links: Maximum number of cells a facet can
+                    be connected to.
 
     Returns:
         MeshData with mesh and tags of corresponding entities by
@@ -360,31 +357,28 @@ def model_to_mesh(
         raise RuntimeError("No 'physical groups' in gmsh mesh. Cannot continue.")
 
     # Sort elements by descending dimension
-    assert len(np.unique(entity_tdim)) == len(entity_tdim)
     perm_sort = np.argsort(entity_tdim)[::-1]
 
-    # Extract position of the highest topological entity and its
-    # topological dimension
-    cell_position = perm_sort[0]
-    tdim = int(entity_tdim[cell_position])
-
+    # Extract topological dimension of the highest topological entity
+    tdim = int(entity_tdim[perm_sort[0]])
     # Check that all cells are tagged once
     error_msg = ""
     if comm.rank == rank:
         _elementTypes, _elementTags, _nodeTags = model.mesh.getElements(dim=tdim, tag=-1)
-        _elementType_dim = _elementTypes[0]
-        if _elementType_dim not in topologies.keys():
-            error_msg = "All cells are expected to be tagged once; none found"
 
-        num_cells_tagged = len(topologies[_elementType_dim]["entity_tags"])
-        if (num_cells := len(_elementTags[0])) != num_cells_tagged:
-            error_msg = (
-                "All cells are expected to be tagged once;"
-                + f"found: {num_cells_tagged}, expected: {num_cells}"
-            )
-        num_cells_tagged_once = len(np.unique(topologies[_elementType_dim]["entity_tags"]))
-        if num_cells_tagged != num_cells_tagged_once:
-            error_msg = "All cells are expected to be tagged once, found duplicates"
+        for eTypes, eTags in zip(_elementTypes, _elementTags, strict=True):
+            if eTypes not in topologies.keys():
+                error_msg += f"All cells are expected to be tagged once; none found for {eTypes}"
+
+            num_cells_tagged = len(topologies[eTypes]["entity_tags"])
+            if (num_cells := len(eTags)) != num_cells_tagged:
+                error_msg = (
+                    "All cells are expected to be tagged once;"
+                    + f"found: {num_cells_tagged}, expected: {num_cells}"
+                )
+            num_cells_tagged_once = len(np.unique(topologies[eTypes]["entity_tags"]))
+            if num_cells_tagged != num_cells_tagged_once:
+                error_msg = "All cells are expected to be tagged once, found duplicates"
 
     error_msg = comm.bcast(error_msg, root=rank)
     if error_msg != "":
@@ -392,36 +386,75 @@ def model_to_mesh(
 
     # Extract entity -> node connectivity for all cells and sub-entities
     # marked in the GMSH model
-    meshtags: dict[int, tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]] = {}
+    meshtags: dict[int, list[tuple[int, npt.NDArray[np.int64], npt.NDArray[np.int32]]]] = {}
     for position in perm_sort:
         codim = tdim - entity_tdim[position]
+        if codim not in meshtags.keys():
+            meshtags[codim] = []
+        gmsh_entity_id = element_ids[position]
         if comm.rank == rank:
-            gmsh_entity_id = element_ids[position]
             marked_entities = np.asarray(topologies[gmsh_entity_id]["topology"], dtype=np.int64)
             entity_values = np.asarray(topologies[gmsh_entity_id]["cell_data"], dtype=np.int32)
-            meshtags[codim] = (marked_entities, entity_values)
+            meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
         else:
             # Any other process than input rank does not have any entities
             marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int32)
             entity_values = np.empty((0,), dtype=np.int32)
-            meshtags[codim] = (marked_entities, entity_values)
+            meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
 
     # Create a UFL Mesh object for the GMSH element with the highest
-    # topoligcal dimension
-    ufl_domain = ufl_mesh(element_ids[cell_position], gdim, dtype=dtype)
+    # topological dimension
+    ufl_domains = []
+    cell_connectivities = []
+    for gmsh_id, cell_tags, _cell_values in meshtags[0]:
+        ufl_domain = ufl_mesh(gmsh_id, gdim, dtype=dtype)
+        num_nodes = ufl_domain.ufl_coordinate_element().basix_element.dim
 
-    # Get cell->node connectivity and  permute to FEniCS ordering
-    num_nodes = num_nodes_per_element[cell_position]
-    gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
-    cell_connectivity = meshtags[0][0][:, gmsh_cell_perm].copy()
+        # Get cell->node connectivity and  permute to FEniCS ordering
+        gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
+        cell_connectivity = cell_tags[:, gmsh_cell_perm].copy().flatten()
+        cell_connectivities.append(cell_connectivity)
+        ufl_domains.append(ufl_domain)
 
     # Create a distributed mesh, where mesh nodes are only destributed from
     # the input rank
     if comm.rank != rank:
         x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
-    mesh = create_mesh(
-        comm, cell_connectivity, ufl_domain, x[:, :gdim].astype(dtype, copy=False), partitioner
-    )
+    if len(ufl_domains) > 1:
+        cmaps = []
+        for ufl_domain in ufl_domains:
+            basix_ct = ufl_domain.ufl_coordinate_element().basix_element.cell_type
+            dolfinx_ct = _cpp.mesh.to_type(basix_ct.name)
+            cmaps.append(
+                coordinate_element(
+                    dolfinx_ct,
+                    ufl_domain.ufl_coordinate_element().degree,
+                    variant=basix.LagrangeVariant.equispaced,
+                    dtype=dtype,
+                )._cpp_object
+            )
+        # The mixed topology constructor is not great at the moment
+        cpp_mesh = _cpp.mesh.create_mesh(
+            comm,
+            cell_connectivities,
+            cmaps,
+            x[:, :gdim].astype(dtype).copy(),
+            partitioner,
+            max_facet_to_cell_links,
+        )
+        mesh = Mesh(cpp_mesh, None)
+
+    else:
+        ufl_domain = ufl_domains[0]
+        num_nodes = ufl_domain.ufl_coordinate_element().basix_element.dim
+        mesh = create_mesh(
+            comm,
+            cell_connectivities[0].reshape(-1, num_nodes),
+            ufl_domains[0],
+            x[:, :gdim].astype(dtype, copy=False),
+            partitioner,
+            max_facet_to_cell_links=max_facet_to_cell_links,
+        )
     assert tdim == mesh.topology.dim, (
         f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}"
     )
@@ -432,20 +465,22 @@ def model_to_mesh(
     dolfinx_meshtags: dict[str, MeshTags | None] = {}
     for codim in [0, 1, 2, 3]:
         key = f"{codim_to_name[codim]}_tags"
+        meshtag_data = meshtags.get(codim, None)
+        if meshtag_data is None or len(meshtag_data) > 1:
+            # Skip if entity is not tagged
+            # Skip on mixed topology for now, as we don't have a public API
+            dolfinx_meshtags[key] = None
+            continue
+
         if (
             codim == 1 and topology.cell_type == CellType.prism
         ) or topology.cell_type == CellType.pyramid:
             raise RuntimeError(f"Unsupported facet tag for type {topology.cell_type}")
 
-        meshtag_data = meshtags.get(codim, None)
-        if meshtag_data is None:
-            dolfinx_meshtags[key] = None
-            continue
-
         # Distribute entity data [[e0_v0, e0_v1, ...], [e1_v0, e1_v1, ...],
         # ...] which is made in global input indices to local indices on
         # the owning process
-        (marked_entities, entity_values) = meshtag_data
+        (_gmsh_id, marked_entities, entity_values) = meshtag_data[0]
         local_entities, local_values = distribute_entity_data(
             mesh, tdim - codim, marked_entities, entity_values
         )
@@ -474,8 +509,7 @@ def read_from_msh(
     gdim: int = 3,
     partitioner: Callable[[_MPI.Comm, int, int, AdjacencyList], _AdjacencyList_int32] | None = None,
 ) -> MeshData:
-    """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and
-    cell facet markers.
+    """Read a Gmsh .msh file and return a mesh and cell facet markers.
 
     Note:
         This function requires the Gmsh Python module.
@@ -486,6 +520,8 @@ def read_from_msh(
         rank: Rank of ``comm`` responsible for reading the ``.msh``
             file.
         gdim: Geometric dimension of the mesh
+        partitioner: Function that computes the parallel
+            distribution of cells across MPI ranks.
 
     Returns:
         Meshdata with mesh, cell tags, facet tags, edge tags,

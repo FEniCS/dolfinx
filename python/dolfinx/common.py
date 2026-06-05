@@ -12,6 +12,7 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (
     IndexMap,
     git_commit_hash,
+    hardware_concurrency,
     has_adios2,
     has_complex_ufcx_kernels,
     has_debug,
@@ -21,6 +22,7 @@ from dolfinx.cpp.common import (
     has_petsc4py,
     has_ptscotch,
     has_slepc,
+    has_superlu_dist,
     ufcx_signature,
 )
 
@@ -29,6 +31,7 @@ __all__ = [
     "Reduction",
     "Timer",
     "git_commit_hash",
+    "hardware_concurrency",
     "has_adios2",
     "has_complex_ufcx_kernels",
     "has_debug",
@@ -38,6 +41,7 @@ __all__ = [
     "has_petsc4py",
     "has_ptscotch",
     "has_slepc",
+    "has_superlu_dist",
     "list_timings",
     "timed",
     "timing",
@@ -79,11 +83,11 @@ class Timer:
         With a context manager, the timer is started when entering
         and stopped at exit. With a named :class:`Timer`::
 
-            with Timer(\"Some costly operation\"):
+            with Timer("Some costly operation"):
                 costly_call_1()
                 costly_call_2()
 
-            delta = timing(\"Some costly operation\")
+            delta = timing("Some costly operation")
             print(delta)
 
         or with an un-named :class:`Timer`::
@@ -91,12 +95,12 @@ class Timer:
             with Timer() as t:
                 costly_call_1()
                 costly_call_2()
-                print(f\"Elapsed time: {t.elapsed()}\")
+                print(f"Elapsed time: {t.elapsed()}")
 
     Example:
         It is possible to start and stop a timer explicitly::
 
-            t = Timer(\"Some costly operation\")
+            t = Timer("Some costly operation")
             costly_call()
             delta = t.stop()
 
@@ -128,10 +132,12 @@ class Timer:
         self._cpp_object = _cpp.common.Timer(name)
 
     def __enter__(self):
+        """Start timer."""
         self._cpp_object.start()
         return self
 
     def __exit__(self, *args):
+        """Stop timer and flush timing data to logger."""
         self._cpp_object.stop()
         self._cpp_object.flush()
 

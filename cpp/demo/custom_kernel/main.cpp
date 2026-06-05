@@ -83,7 +83,7 @@ double assemble_matrix0(std::shared_ptr<const fem::FunctionSpace<T>> V,
   auto sp = la::SparsityPattern(
       V->mesh()->comm(), {dofmap->index_map, dofmap->index_map},
       {dofmap->index_map_bs(), dofmap->index_map_bs()});
-  fem::sparsitybuild::cells(sp, {cells, cells}, {*dofmap, *dofmap});
+  fem::sparsitybuild::cells(sp, std::pair{cells, cells}, {*dofmap, *dofmap});
   sp.finalize();
   la::MatrixCSR<T> A(sp);
   common::Timer timer("Assembler0 std::function (matrix)");
@@ -134,16 +134,17 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   auto sp = la::SparsityPattern(dofmap.index_map->comm(),
                                 {dofmap.index_map, dofmap.index_map},
                                 {dofmap.index_map_bs(), dofmap.index_map_bs()});
-  fem::sparsitybuild::cells(sp, {cells, cells}, {dofmap, dofmap});
+  fem::sparsitybuild::cells(sp, std::pair{cells, cells}, {dofmap, dofmap});
   sp.finalize();
   la::MatrixCSR<T> A(sp);
   auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
   common::Timer timer("Assembler1 lambda (matrix)");
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
-  fem::impl::assemble_cells_matrix<T>(
-      A.mat_add_values(), g.dofmap(), x, cells, {dofmap.map(), 1, cells}, ident,
-      {dofmap.map(), 1, cells}, ident, {}, {}, kernel, {}, {}, {}, {});
+  fem::impl::assemble_cells_matrix<T>(A.mat_add_values(), g.dofmaps().front(),
+                                      x, cells, {dofmap.map(), 1, cells}, ident,
+                                      {dofmap.map(), 1, cells}, ident, {}, {},
+                                      kernel, {}, {}, {}, {});
   A.scatter_rev();
   return A.squared_norm();
 }
@@ -168,8 +169,8 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
       g.x().data(), g.x().size() / 3, 3);
   common::Timer timer("Assembler1 lambda (vector)");
   fem::impl::assemble_cells<1>([](auto, auto, auto, auto) {}, b.array(),
-                               g.dofmap(), x, cells, {dofmap.map(), 1, cells},
-                               kernel, {}, {}, {});
+                               g.dofmaps().front(), x, cells,
+                               {dofmap.map(), 1, cells}, kernel, {}, {}, {});
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }

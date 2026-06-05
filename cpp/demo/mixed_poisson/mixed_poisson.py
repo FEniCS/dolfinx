@@ -1,7 +1,8 @@
+"""Mixed Poisson problem with weakly enforced boundary conditions."""
 # The first step is to define the variational problem at hand. We define
 # the variational problem in UFL terms in a separate form file
-# {download}`demo_mixed_poisson/mixed_poisson.py`.  We begin by defining the
-# finite element:
+# {download}`demo_mixed_poisson/mixed_poisson.py`.  We begin by defining
+# the finite element:
 
 from basix import CellType
 from basix.cell import sub_entity_type
@@ -21,9 +22,9 @@ from ufl import (
 # Cell type for the mesh
 msh_cell = CellType.triangle
 
-# Weakly enforced boundary data will be represented using a function space
-# defined over a submesh of the boundary. We get the submesh cell type from
-# then mesh cell type.
+# Weakly enforced boundary data will be represented using a function
+# space defined over a submesh of the boundary. We get the submesh cell
+# type from then mesh cell type.
 submsh_cell = sub_entity_type(msh_cell, dim=1, index=0)
 
 # Define finite elements for the problem
@@ -44,8 +45,8 @@ V = FunctionSpace(msh, ME)
 V0 = FunctionSpace(msh, P)
 f = Coefficient(V0)
 
-# We represent boundary data using a first-degree Lagrange space
-# defined over a submesh of the boundary
+# We represent boundary data using a first-degree Lagrange space defined
+# over a submesh of the boundary
 Q = FunctionSpace(submsh, element("Lagrange", submsh_cell, 1))
 u0 = Coefficient(Q)
 

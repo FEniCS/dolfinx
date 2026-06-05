@@ -25,7 +25,8 @@ namespace dolfinx::io::VTKHDF
 /// @param filename Name of file to write to.
 /// @param mesh Mesh to write to file.
 template <std::floating_point U>
-void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
+void write_mesh(const std::filesystem::path& filename,
+                const mesh::Mesh<U>& mesh)
 {
   hid_t h5file = hdf5::open_file(mesh.comm(), filename, "w", true);
 
@@ -69,7 +70,7 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   for (std::size_t i = 0; i < cell_index_maps.size(); ++i)
   {
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> g_dofmap
-        = mesh.geometry().dofmap(i);
+        = mesh.geometry().dofmaps().at(i);
 
     std::vector<std::uint16_t> perm
         = cells::perm_vtk(cell_types[i], g_dofmap.extent(1));
@@ -101,7 +102,7 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
   std::vector<std::int64_t> cell_stop_pos;
   for (std::size_t i = 0; i < cell_index_maps.size(); ++i)
   {
-    num_nodes_per_cell.push_back(mesh.geometry().cmaps()[i].dim());
+    num_nodes_per_cell.push_back(mesh.geometry().cmaps().at(i).dim());
     std::array<std::int64_t, 2> r = cell_index_maps[i]->local_range();
     cell_start_pos.push_back(r[0]);
     cell_stop_pos.push_back(r[1]);
@@ -171,7 +172,8 @@ void write_mesh(std::string filename, const mesh::Mesh<U>& mesh)
 /// @note Limited support for floating point types at present (no
 /// complex number support).
 template <std::floating_point U>
-void write_data(std::string point_or_cell, std::string filename,
+void write_data(std::string point_or_cell,
+                const std::filesystem::path& filename,
                 const mesh::Mesh<U>& mesh, const std::vector<U>& data,
                 double time)
 {
@@ -257,7 +259,7 @@ void write_data(std::string point_or_cell, std::string filename,
   hdf5::add_group(h5file, group_name);
 
   // Add point/cell data into dataset, extending each time by
-  // size_global with each process writing its own part.
+  // global_size with each process writing its own part.
   std::int64_t range0 = std::accumulate(index_maps.begin(), index_maps.end(), 0,
                                         [](int a, auto im)
                                         { return a + im->local_range()[0]; });
@@ -310,7 +312,7 @@ void write_data(std::string point_or_cell, std::string filename,
 /// facet can be connected to.
 /// @return The mesh read from file.
 template <std::floating_point U>
-mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
+mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
                         std::size_t gdim = 3,
                         std::optional<std::int32_t> max_facet_to_cell_links = 2)
 {
@@ -328,19 +330,6 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
       = hdf5::read_dataset<std::uint8_t>(dset_id, local_cell_range, true);
   H5Dclose(dset_id);
 
-  // Create reverse map (VTK -> DOLFINx cell type)
-  std::map<std::uint8_t, mesh::CellType> vtk_to_dolfinx;
-  {
-    for (auto type : {mesh::CellType::point, mesh::CellType::interval,
-                      mesh::CellType::triangle, mesh::CellType::quadrilateral,
-                      mesh::CellType::tetrahedron, mesh::CellType::prism,
-                      mesh::CellType::pyramid, mesh::CellType::hexahedron})
-    {
-      vtk_to_dolfinx.insert(
-          {cells::get_vtk_cell_type(type, mesh::cell_dim(type)), type});
-    }
-  }
-
   // Read in offsets to determine the different cell-types in the mesh
   dset_id = hdf5::open_dataset(h5file, "/VTKHDF/Offsets");
   std::vector<std::int64_t> offsets = hdf5::read_dataset<std::int64_t>(
@@ -353,8 +342,13 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   for (std::size_t i = 0; i < types.size(); ++i)
   {
     std::int64_t num_nodes = offsets[i + 1] - offsets[i];
+    auto [cell_type, degree] = io::cells::vtk_to_dolfinx(types[i]);
+    // If arbitrary order Lagrange VTK cell (indicated by -1), determine degree
+    // from number of nodes
+
     std::uint8_t cell_degree
-        = cells::cell_degree(vtk_to_dolfinx.at(types[i]), num_nodes);
+        = degree == -1 ? io::cells::cell_degree(cell_type, num_nodes)
+                       : (std::uint8_t)degree;
     types_unique.push_back({types[i], cell_degree});
     cell_degrees.push_back(cell_degree);
   }
@@ -401,7 +395,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, std::string filename,
   std::vector<std::uint8_t> dolfinx_cell_degree;
   for (std::array<std::uint8_t, 2> ct : recv_types)
   {
-    mesh::CellType cell_type = vtk_to_dolfinx.at(ct[0]);
+    mesh::CellType cell_type = std::get<0>(io::cells::vtk_to_dolfinx(ct[0]));
     type_to_index.insert({ct, dolfinx_cell_degree.size()});
     dolfinx_cell_degree.push_back(ct[1]);
     dolfinx_cell_type.push_back(cell_type);
