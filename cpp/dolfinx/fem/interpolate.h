@@ -1132,7 +1132,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
   // Get dofmap
   spdlog::debug("Interpolate: get dofmap");
-  const auto dofmap = u.function_space()->dofmaps(index);
+  const auto dofmap = u.function_space()->dofmaps().at(index);
   assert(dofmap);
 
   // Result will be stored to coeffs

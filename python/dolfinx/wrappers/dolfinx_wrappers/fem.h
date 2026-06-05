@@ -125,8 +125,7 @@ void declare_function_space(nb::module_& m, std::string type)
         .def("elements", &dolfinx::fem::FunctionSpace<T>::elements)
         .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
         .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
-        .def("dofmaps", &dolfinx::fem::FunctionSpace<T>::dofmaps,
-             nb::arg("cell_type_index"))
+        .def_prop_ro("dofmaps", &dolfinx::fem::FunctionSpace<T>::dofmaps)
         .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, nb::arg("component"))
         .def("tabulate_dof_coordinates",
              [](const dolfinx::fem::FunctionSpace<T>& self)

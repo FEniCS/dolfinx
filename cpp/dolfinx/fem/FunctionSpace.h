@@ -391,13 +391,13 @@ public:
           "FunctionSpace has multiple dofmaps, call `dofmaps` instead.");
     }
 
-    return dofmaps(0);
+    return dofmaps().front();
   }
 
   /// The dofmaps
-  std::shared_ptr<const DofMap> dofmaps(int cell_type_idx) const
+  const std::vector<std::shared_ptr<const DofMap>>& dofmaps() const
   {
-    return _dofmaps.at(cell_type_idx);
+    return _dofmaps;
   }
 
 private:
