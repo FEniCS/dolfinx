@@ -3,7 +3,7 @@
 ## v0.11.0
 
 Since the 0.10.0, there has been 177 merged pull requests from 27 contributors.
-Below follows a summary of the biggest chnages to the Python API.
+Below follows a summary of the biggest changes to the Python API.
 A full diff can be found [here](https://github.com/FEniCS/dolfinx/compare/v0.10.0.post5...main).
 
 ### SuperLU_DIST interface
