@@ -790,7 +790,7 @@ gcs = 2 * radius_wire  # Geometrical cross section of the wire
 n = ufl.FacetNormal(mesh_data.mesh)
 # -
 
-# As we would like to use the {py}`ufl.cross` operator for the
+# As we would like to use the {py:func}`ufl.cross` operator for the
 # calculation of the scattering efficiency, we pad the 2D vector
 # to 3D.
 
