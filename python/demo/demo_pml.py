@@ -781,26 +781,26 @@ ds_scatter = ufl.ds(
     subdomain_id=scatt_tag,
 )
 
-
-scatt_facets = mesh_data.facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(
-    mesh_data.mesh.topology, scatt_facets, tdim - 1, tdim
-)
-
 # +
 Z0 = np.sqrt(mu_0 / epsilon_0)  # Vacuum impedance
-Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)  # Magnetic field H
-Esh_3d = ufl.as_vector((Esh[0], Esh[1], 0))
-E_3d = ufl.as_vector((E[0], E[1], 0))
-
 # Intensity of the electromagnetic fields I0 = 0.5*E0**2/Z0
 # E0 = np.sqrt(ax**2 + ay**2) = 1, see background_electric_field
 I0 = 0.5 / Z0
 gcs = 2 * radius_wire  # Geometrical cross section of the wire
 n = ufl.FacetNormal(mesh_data.mesh)
+# -
+
+# As we would like to use the {py:func}`ufl.cross` operator for the
+# calculation of the scattering efficiency, we pad the 2D vector
+# to 3D.
+
 n_3d = ufl.as_vector((n[0], n[1], 0))
+E_3d = ufl.as_vector((E[0], E[1], 0))
 
 # Quantities for the calculation of efficiencies
+
+Hsh_3d = -1j * curl_2d(Esh) / (Z0 * k0 * n_bkg)  # Magnetic field H
+Esh_3d = ufl.as_vector((Esh[0], Esh[1], 0))
 P = 0.5 * ufl.inner(ufl.cross(Esh_3d, ufl.conj(Hsh_3d)), n_3d)
 Q = 0.5 * eps_au.imag * k0 * (ufl.inner(E_3d, E_3d)) / (Z0 * n_bkg)
 
@@ -824,17 +824,15 @@ err_abs = np.abs(q_abs_analyt - q_abs_fenics) / q_abs_analyt
 err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
 err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
 
-PETSc.Sys.Print(f"The analytical absorption efficiency is {q_abs_analyt}")
-PETSc.Sys.Print(f"The numerical absorption efficiency is {q_abs_fenics}")
-PETSc.Sys.Print(f"The error is {err_abs * 100}%")
-PETSc.Sys.Print()
-PETSc.Sys.Print(f"The analytical scattering efficiency is {q_sca_analyt}")
-PETSc.Sys.Print(f"The numerical scattering efficiency is {q_sca_fenics}")
-PETSc.Sys.Print(f"The error is {err_sca * 100}%")
-PETSc.Sys.Print()
-PETSc.Sys.Print(f"The analytical extinction efficiency is {q_ext_analyt}")
-PETSc.Sys.Print(f"The numerical extinction efficiency is {q_ext_fenics}")
-PETSc.Sys.Print(f"The error is {err_ext * 100}%")
+# +
+par_print = PETSc.Sys.Print  # type: ignore
+par_print(
+    f"Analytical: Q_abs={q_abs_analyt:.6f}, Q_sca={q_sca_analyt:.6f}, Q_ext={q_ext_analyt:.6f}"
+)
+par_print(
+    f"Numerical:  Q_abs={q_abs_fenics:.6f}, Q_sca={q_sca_fenics:.6f}, Q_ext={q_ext_fenics:.6f}"
+)
+par_print(f"Error is:   Q_abs={err_abs:.5%}, Q_sca={err_sca:.5%}, Q_ext={err_ext:.6%}")
 # -
 
 # Check if errors are smaller than 1%

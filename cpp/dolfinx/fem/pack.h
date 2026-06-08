@@ -17,6 +17,7 @@
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <dolfinx/mesh/Topology.h>
+#include <format>
 #include <ranges>
 #include <span>
 #include <stdexcept>
