@@ -9,9 +9,6 @@ Check that all CIs on `main` are running green.
 Check that the `main` documentation looks reasonable at
 https://docs.fenicsproject.org.
 
-As of 18/07/2025 the Windows CI is broken and consequently only @minrk
-can test the Windows build via the Condaforge CI.
-
 The release proceeds in a bottom up manner (UFL, Basix, FFCx, DOLFINx). pypa
 packages cannot be deleted and should be made a number of days after the
 creation of git tags so that errors can be fixed. GitHub releases can have their
@@ -21,18 +18,26 @@ The release process consists of the following steps:
 
 1. Update version numbers and dependencies on the `release` branches.
 2. Run integration tests, ensuring that the `release` branches work together.
-3. Make git tags on the tip of `release`.
+3. Make git tags on the tip of `release` (not permanent).
 4. Organise production of release artifacts.
 5. Update version numbers on `main`.
 6. Make GitHub releases (not permanent)
-7. pypa releases (permanent!).
+7. PyPi releases (permanent!).
 
-## Version bumping
+## Version number bumping
 
 At the current phase of development (<1.0) FEniCSx components are typically
 bumped an entire minor version i.e. `0.+1.0`.
 
-UFL still runs on the year-based release scheme.
+UFL uses year-based numbering and releases are made by both FEniCS and
+Firedrake teams. The version number should be bumped as follows:
+
+1. If the calendar year has changed, bump the year. Restart the minor and patch
+   versions at `1` and `0` respectively.
+2. Otherwise, always bump the minor version `0.+1.0`. A minor series belongs
+   to either FEniCS or Firedrake teams.
+3. If making a patch release, bump the patch version `0.0.+1` -- check
+   compatibility through CI runs before releasing.
 
 ### UFL version bump
 
@@ -93,7 +98,7 @@ UFL still runs on the year-based release scheme.
 
 5. Update the version number macros in `ffcx/codegeneration/ufcx.h`. Typically
    this should match the Python version number. Remember to change the
-   `UFCX_VERSION_RELEASE` to `1`.
+   `UFCX_VERSION_IS_RELEASE` to `true`.
 
 6. Commit and push.
 
@@ -256,14 +261,27 @@ integration tests on a proposed set of tags as it is easy to make an error.
 
 Contact Drew Parsons.
 
-### Conda Forge
+### conda-forge
 
-Conda Forge bots typically pickup new releases automatically. Can also contact
+Conda-forge bots typically pickup new releases automatically. Can also contact
 @minrk.
 
 ### Spack
 
-Update the Spack recipe for the FEniCSx components on the fork
-[FEniCS/spack](https://github.com/FEniCS/spack) using a branch e.g.
-`updates/dolfinx-<version>`. Create a pull request to the Spack mainline
-repository.
+Create a branch on
+[FEniCS/fenics-spack](https://github.com/FEniCS/fenics-spack]. Copy across the
+upstream `fenics_*` recipes from
+[spack/spack-packages](https://github.com/spack/spack-packages). Make
+appropriate updates for the latest releases and `main` branch and ensure the CI
+passes.
+
+Once the CI passes, update the Spack upsteam `fenics_*` recipes on the fork
+[FEniCS/spack-packages](https://github.com/FEniCS/spack-packages) using a
+branch per component e.g. `<username>/dolfinx-<version>`. Create a pull request
+to the Spack mainline repository for each FEniCS component, along with any
+required dependencies. If PRs are slow to merge ask in Slack Spack
+`#pull-requests`.
+
+### Easybuild/EESSI
+
+Contact Jack Hale.

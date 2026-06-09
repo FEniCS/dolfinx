@@ -33,18 +33,21 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // FIXME
   mesh::CellType cell_type = topology.cell_type();
 
-  if (tdim == 2 and cell_type == mesh::CellType::prism)
-    throw std::runtime_error("More work needed for prism cell");
+  if (tdim == 2
+      and (cell_type == mesh::CellType::prism
+           or cell_type == mesh::CellType::pyramid))
+    throw std::runtime_error("Prism/pyramid cell facet topology not supported");
 
   // Get entity 'cell' type
   const mesh::CellType entity_cell_type
       = mesh::cell_entity_type(cell_type, dim, 0);
 
   const fem::ElementDofLayout cmap_dof_layout
-      = geometry.cmap().create_dof_layout();
+      = geometry.cmaps().front().create_dof_layout();
 
   // Get number of nodes per entity
-  const int num_nodes_per_entity = cmap_dof_layout.num_entity_closure_dofs(dim);
+  const int num_nodes_per_entity
+      = cmap_dof_layout.entity_closure_dofs(dim, 0).size();
 
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type
@@ -58,7 +61,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Pack topology data
   std::vector<std::int64_t> topology_data;
 
-  auto x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.dofmaps().front();
   auto map_g = geometry.index_map();
   assert(map_g);
   const std::int64_t offset_g = map_g->local_range()[0];

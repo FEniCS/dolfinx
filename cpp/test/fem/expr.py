@@ -3,6 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Test expressions involving finite element spaces on different meshes."""
 
 import ufl
 from basix import CellType

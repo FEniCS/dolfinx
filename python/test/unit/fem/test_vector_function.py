@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Test that the vectors in vector spaces are correctly oriented"""
+"""Test that the vectors in vector spaces are correctly oriented."""
 
 from mpi4py import MPI
 
@@ -21,7 +21,7 @@ from dolfinx.mesh import create_mesh
 @pytest.mark.parametrize("space_type", ["RT"])
 @pytest.mark.parametrize("order", [1, 2, 3, 4, 5])
 def test_div_conforming_triangle(space_type, order):
-    """Checks that the vectors in div conforming spaces on a triangle are correctly oriented"""
+    """Checks that the vectors in div conforming spaces on a triangle are correctly oriented."""
 
     # Create simple triangle mesh
     def perform_test(points, cells):
@@ -52,7 +52,7 @@ def test_div_conforming_triangle(space_type, order):
 @pytest.mark.parametrize("space_type", ["RT"])
 @pytest.mark.parametrize("order", [1, 2, 3, 4, 5])
 def test_div_conforming_tetrahedron(space_type, order):
-    """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented"""
+    """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented."""
 
     # Create simple tetrahedron cell mesh
     def perform_test(points, cells):

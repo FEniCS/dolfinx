@@ -39,7 +39,6 @@ def test_edge_skeleton_mesh(dim, cell_type):
     The edge skeleton mesh is the mesh formed by the edges of another mesh (edges -> cell). In
     particular this is a branching mesh.
     """
-
     comm = MPI.COMM_WORLD
     if comm.rank == 0:
         if dim == 2:

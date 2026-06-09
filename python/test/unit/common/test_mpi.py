@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for MPI facilities"""
+"""Unit tests for MPI facilities."""
 
 import sys
 
@@ -13,7 +13,7 @@ from dolfinx.mesh import create_unit_square
 
 
 def test_mpi_comm_wrapper():
-    """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
+    """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion."""
     comm0 = MPI.COMM_WORLD
     m = create_unit_square(comm0, 4, 4)
     comm1 = m.comm
@@ -22,7 +22,7 @@ def test_mpi_comm_wrapper():
 
 
 def test_mpi_comm_refcount():
-    """Test MPICommWrapper <-> mpi4py.MPI.Comm reference counting"""
+    """Test MPICommWrapper <-> mpi4py.MPI.Comm reference counting."""
     comm0 = MPI.COMM_WORLD
     m = create_unit_square(comm0, 4, 4)
     comm1 = m.comm

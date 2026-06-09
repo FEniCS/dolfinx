@@ -1,3 +1,5 @@
+"""Biharmonic equation using interior penalty method."""
+
 # The first step is to define the variational problem at hand. We define
 # the variational problem in UFL terms in a separate form file. We begin
 # by defining the finite element:

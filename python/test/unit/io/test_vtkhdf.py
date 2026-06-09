@@ -82,8 +82,8 @@ def test_read_write_higher_order():
         for cell in [dolfinx.mesh.CellType.quadrilateral, dolfinx.mesh.CellType.triangle]
     ]
 
-    part = dolfinx.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.none)
     max_cells_per_facet = 2
+    part = dolfinx.mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.none, max_cells_per_facet)
     mesh = dolfinx.cpp.mesh.create_mesh(
         MPI.COMM_WORLD,
         cells_np,
@@ -102,8 +102,8 @@ def test_read_write_higher_order():
         mesh_in = read_mesh(MPI.COMM_WORLD, "mixed_mesh_second_order.vtkhdf", gdim=gdim)
         assert mesh_in.geometry.dim == gdim
         assert mesh_in.geometry.index_map().size_global == 12
-        cmap_0 = mesh_in.geometry._cpp_object.cmaps(0)
-        cmap_1 = mesh_in.geometry._cpp_object.cmaps(1)
+        cmap_0 = mesh_in.geometry.cmaps[0]
+        cmap_1 = mesh_in.geometry.cmaps[1]
         assert cmap_0.degree == 2
         assert cmap_1.degree == 2
 

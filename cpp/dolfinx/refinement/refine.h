@@ -74,7 +74,7 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
     if (comm == MPI_COMM_NULL)
       return graph::regular_adjacency_list(std::move(destinations), 1);
 
-    auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells);
+    auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells, 2);
     std::vector<std::int32_t> node_disp(MPI::size(comm) + 1, 0);
     std::int32_t local_size = dual_graph.num_nodes();
     MPI_Allgather(&local_size, 1, dolfinx::MPI::mpi_t<std::int32_t>,
@@ -123,8 +123,7 @@ std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
 refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges,
        std::variant<IdentityPartitionerPlaceholder, mesh::CellPartitionFunction>
-           partitioner
-       = IdentityPartitionerPlaceholder(),
+           partitioner = IdentityPartitionerPlaceholder(),
        Option option = Option::parent_cell)
 {
   auto topology = mesh.topology();
@@ -151,9 +150,9 @@ refine(const mesh::Mesh<T>& mesh,
   assert(std::holds_alternative<mesh::CellPartitionFunction>(partitioner));
 
   mesh::Mesh<T> mesh1 = mesh::create_mesh(
-      mesh.comm(), mesh.comm(), cell_adj.array(), mesh.geometry().cmap(),
-      mesh.comm(), new_vertex_coords, xshape,
-      std::get<mesh::CellPartitionFunction>(partitioner));
+      mesh.comm(), mesh.comm(), cell_adj.array(),
+      mesh.geometry().cmaps().front(), mesh.comm(), new_vertex_coords, xshape,
+      std::get<mesh::CellPartitionFunction>(partitioner), 2);
 
   // Report the number of refined cells
   const int D = topology->dim();

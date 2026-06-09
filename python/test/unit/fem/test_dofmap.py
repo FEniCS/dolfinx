@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Unit tests for the fem interface"""
+"""Unit tests for the fem interface."""
 
 import sys
 
@@ -69,39 +69,39 @@ def test_tabulate_dofs(mesh_factory):
 
 
 def test_entity_dofs(mesh):
-    """Test that num entity dofs is correctly wrapped to dolfinx::DofMap"""
+    """Test that num entity dofs is correctly wrapped to dolfinx::DofMap."""
     gdim = mesh.geometry.dim
 
     V = functionspace(mesh, ("Lagrange", 1))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 0
 
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     bs = V.dofmap.dof_layout.block_size
-    assert V.dofmap.dof_layout.num_entity_dofs(0) * bs == 2
-    assert V.dofmap.dof_layout.num_entity_dofs(1) * bs == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) * bs == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) * bs == 2
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) * bs == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) * bs == 0
 
     V = functionspace(mesh, ("Lagrange", 2))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 1
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 0
 
     V = functionspace(mesh, ("Lagrange", 3))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 2
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 2
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 1
 
     V = functionspace(mesh, ("DG", 0))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 1
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 1
 
     V = functionspace(mesh, ("DG", 1))
-    assert V.dofmap.dof_layout.num_entity_dofs(0) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
-    assert V.dofmap.dof_layout.num_entity_dofs(2) == 3
+    assert len(V.dofmap.dof_layout.entity_dofs(0, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(1, 0)) == 0
+    assert len(V.dofmap.dof_layout.entity_dofs(2, 0)) == 3
 
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     bs = V.dofmap.dof_layout.block_size
@@ -136,14 +136,15 @@ def test_entity_closure_dofs(mesh_factory):
                 entities = np.array([entity], dtype=np.uintp)
                 dofs_on_this_entity = V.dofmap.entity_dofs(mesh, d, entities)
                 closure_dofs = V.dofmap.entity_closure_dofs(mesh, d, entities)
-                assert len(dofs_on_this_entity) == V.dofmap.dof_layout.num_entity_dofs(d)
+                assert len(dofs_on_this_entity) == len(V.dofmap.dof_layout.entity_dofs(d, 0))
                 assert len(dofs_on_this_entity) <= len(closure_dofs)
                 covered.update(dofs_on_this_entity)
                 covered2.update(closure_dofs)
             dofs_on_all_entities = V.dofmap.entity_dofs(mesh, d, all_entities)
             closure_dofs_on_all_entities = V.dofmap.entity_closure_dofs(mesh, d, all_entities)
             assert (
-                len(dofs_on_all_entities) == V.dofmap.dof_layout.num_entity_dofs(d) * num_entities
+                len(dofs_on_all_entities)
+                == len(V.dofmap.dof_layout.entity_dofs(d, 0)) * num_entities
             )
             assert covered == set(dofs_on_all_entities)
             assert covered2 == set(closure_dofs_on_all_entities)
@@ -223,7 +224,8 @@ def test_local_dimension(mesh_factory):
 @pytest.mark.skip
 def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
-    view into the data; in particular test lifetime of data owner"""
+    view into the data; in particular test lifetime of data owner.
+    """
     V = functionspace(mesh, "P", 1)
     dofmap = V.dofmap
     index_map = dofmap().index_map
@@ -328,9 +330,9 @@ def test_higher_order_coordinate_map(points, celltype, order):
 
     V = functionspace(mesh, ("Lagrange", 2))
     X = V.element.interpolation_points
-    coord_dofs = mesh.geometry.dofmap
+    coord_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
-    cmap = mesh.geometry.cmap
+    cmap = mesh.geometry.cmaps[0]
 
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
@@ -403,14 +405,14 @@ def test_higher_order_tetra_coordinate_map(order):
     mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     V = functionspace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points
-    x_dofs = mesh.geometry.dofmap
+    x_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
 
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
     for node in range(points.shape[0]):
         x_coord_new[node] = x_g[x_dofs[0, node], : mesh.geometry.dim]
 
-    x = mesh.geometry.cmap.push_forward(X, x_coord_new)
+    x = mesh.geometry.cmaps[0].push_forward(X, x_coord_new)
     assert np.allclose(x[:, 0], X[:, 0], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
     assert np.allclose(x[:, 1], 2 * X[:, 1], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
     assert np.allclose(x[:, 2], 3 * X[:, 2], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
@@ -424,7 +426,7 @@ def test_transpose_dofmap():
 
 
 def test_empty_rank_collapse():
-    """Test that dofmap with no dofs on a rank can be collapsed"""
+    """Test that dofmap with no dofs on a rank can be collapsed."""
     if MPI.COMM_WORLD.rank == 0:
         nodes = np.array([[0.0], [1.0], [2.0]], dtype=np.float64)
         cells = np.array([[0, 1], [1, 2]], dtype=np.int64)

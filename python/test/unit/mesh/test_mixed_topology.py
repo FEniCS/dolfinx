@@ -11,8 +11,10 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import dolfinx
 from dolfinx.cpp.log import set_thread_name
 from dolfinx.cpp.mesh import (
+    Mesh_float32,
     Mesh_float64,
     compute_mixed_cell_pairs,
     create_cell_partitioner,
@@ -23,10 +25,11 @@ from dolfinx.cpp.mesh import (
 )
 from dolfinx.fem import coordinate_element
 from dolfinx.log import LogLevel, set_log_level
-from dolfinx.mesh import CellType, GhostMode, Mesh, create_unit_cube
+from dolfinx.mesh import CellType, GhostMode, Mesh, Topology, create_unit_cube
 
 
-def test_mixed_topology_mesh():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_mixed_topology_mesh(dtype):
     set_log_level(LogLevel.INFO)
 
     cells = [[0, 1, 2, 1, 2, 3], [2, 3, 4, 5]]
@@ -34,13 +37,16 @@ def test_mixed_topology_mesh():
     ghost_owners = [[], []]
     boundary_vertices = []
 
-    topology = create_topology(
-        MPI.COMM_SELF,
-        [CellType.triangle, CellType.quadrilateral],
-        cells,
-        orig_index,
-        ghost_owners,
-        boundary_vertices,
+    topology = Topology(
+        create_topology(
+            MPI.COMM_SELF,
+            [CellType.triangle, CellType.quadrilateral],
+            cells,
+            orig_index,
+            ghost_owners,
+            boundary_vertices,
+            0,
+        )
     )
 
     maps = topology.index_maps(topology.dim)
@@ -58,7 +64,7 @@ def test_mixed_topology_mesh():
     entity_types = topology.entity_types
     assert len(entity_types[0]) == 1
 
-    topology.create_entities(1)
+    topology.create_entities(1, dolfinx.hardware_concurrency())
     entity_types = topology.entity_types
     assert len(entity_types[1]) == 1
     assert CellType.interval in entity_types[1]
@@ -75,16 +81,18 @@ def test_mixed_topology_mesh():
     assert topology.connectivity((2, 1), (0, 0)).num_nodes == 1
 
     # Create dofmaps for Geometry
-    tri = coordinate_element(CellType.triangle, 1)
-    quad = coordinate_element(CellType.quadrilateral, 1)
+    tri = coordinate_element(CellType.triangle, 1, dtype=dtype)
+    quad = coordinate_element(CellType.quadrilateral, 1, dtype=dtype)
     nodes = np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)
     xdofs = np.array([0, 1, 2, 1, 2, 3, 2, 3, 4, 5], dtype=np.int64)
-    x = np.array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 0.0], dtype=np.float64)
-    geom = create_geometry(topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x, 2)
+    x = np.array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 0.0], dtype=dtype)
+    geom = create_geometry(
+        topology._cpp_object, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x, 2
+    )
     print(geom.x)
     print(geom.index_map().size_local)
-    print(geom.dofmaps(0))
-    print(geom.dofmaps(1))
+    print(geom.dofmaps[0])
+    print(geom.dofmaps[1])
     set_log_level(LogLevel.WARNING)
 
 
@@ -95,36 +103,40 @@ def test_mixed_topology_mesh_3d():
     ghost_owners = [[], [], []]
     boundary_vertices = []
 
-    topology = create_topology(
-        MPI.COMM_SELF,
-        [CellType.tetrahedron, CellType.prism, CellType.hexahedron],
-        cells,
-        orig_index,
-        ghost_owners,
-        boundary_vertices,
+    topology = Topology(
+        create_topology(
+            MPI.COMM_SELF,
+            [CellType.tetrahedron, CellType.prism, CellType.hexahedron],
+            cells,
+            orig_index,
+            ghost_owners,
+            boundary_vertices,
+            0,
+        )
     )
 
     entity_types = topology.entity_types
     assert len(entity_types[0]) == 1
 
-    topology.create_entities(1)
+    topology.create_entities(1, dolfinx.hardware_concurrency())
     entity_types = topology.entity_types
     assert len(entity_types[1]) == 1
 
-    topology.create_entities(2)
+    topology.create_entities(2, dolfinx.hardware_concurrency())
     entity_types = topology.entity_types
     assert len(entity_types[2]) == 2
 
     assert len(entity_types[3]) == 3
 
     # Create triangle and quadrilateral facets
-    topology.create_entities(2)
+    topology.create_entities(2, dolfinx.hardware_concurrency())
 
     qi = topology.entity_types[2].index(CellType.quadrilateral)
     ti = topology.entity_types[2].index(CellType.triangle)
 
     # Tet -> quad
-    assert topology.connectivity((3, 0), (2, qi)) is None
+    with pytest.raises(RuntimeError):
+        t = topology.connectivity((3, 0), (2, qi))
     # Tet -> triangle
     t = topology.connectivity((3, 0), (2, ti))
     assert t.num_nodes == 2
@@ -144,7 +156,8 @@ def test_mixed_topology_mesh_3d():
     assert t.num_nodes == 1
     assert len(t.links(0)) == 6
     # Hex -> triangle
-    assert topology.connectivity((3, 2), (2, ti)) is None
+    with pytest.raises(RuntimeError):
+        t = topology.connectivity((3, 2), (2, ti))
 
     # Quad -> vertex
     t = topology.connectivity((2, qi), (0, 0))
@@ -190,7 +203,8 @@ def test_mixed_topology_mesh_3d():
     assert t.array.size == 2
 
 
-def test_parallel_mixed_mesh():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_parallel_mixed_mesh(dtype):
     rank = MPI.COMM_WORLD.Get_rank()
 
     # Two triangles and one quadrilateral
@@ -211,6 +225,7 @@ def test_parallel_mixed_mesh():
         orig_index,
         ghost_owners,
         boundary_vertices,
+        0,
     )
 
     # Cell types appear in order as in create_topology
@@ -222,12 +237,12 @@ def test_parallel_mixed_mesh():
     assert topology.index_maps(2)[1].size_global == size
 
     # Create dofmaps for Geometry
-    tri = coordinate_element(CellType.triangle, 1)
-    quad = coordinate_element(CellType.quadrilateral, 1)
+    tri = coordinate_element(CellType.triangle, 1, dtype=dtype)
+    quad = coordinate_element(CellType.quadrilateral, 1, dtype=dtype)
     nodes = np.arange(6, dtype=np.int64) + 3 * rank
     xdofs = np.array([0, 1, 4, 0, 3, 4, 1, 4, 2, 5], dtype=np.int64) + 3 * rank
     x = np.array(
-        [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]], dtype=np.float64
+        [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]], dtype=dtype
     )
     x[:, 1] += 1.0 * rank
 
@@ -237,10 +252,11 @@ def test_parallel_mixed_mesh():
         topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x.flatten(), 2
     )
 
-    assert len(geom.dofmaps(0)) == 2
-    assert len(geom.dofmaps(1)) == 1
+    assert len(geom.dofmaps[0]) == 2
+    assert len(geom.dofmaps[1]) == 1
 
-    mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
+    mesh_t = Mesh_float64 if dtype == np.float64 else Mesh_float32
+    mesh = mesh_t(MPI.COMM_WORLD, topology, geom)
     tri = mesh.topology.connectivity((2, 0), (0, 0))
     quad = mesh.topology.connectivity((2, 1), (0, 0))
     assert len(tri.array) == 6
@@ -253,11 +269,14 @@ def test_parallel_mixed_mesh():
     set_log_level(LogLevel.WARNING)
 
 
-def test_create_entities():
-    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, CellType.prism, ghost_mode=GhostMode.none)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_create_entities(dtype):
+    mesh = create_unit_cube(
+        MPI.COMM_WORLD, 2, 2, 2, CellType.prism, ghost_mode=GhostMode.none, dtype=dtype
+    )
 
     # Make triangle and quadrilateral facets
-    mesh.topology.create_entities(2)
+    mesh.topology.create_entities(2, dolfinx.hardware_concurrency())
 
     assert len(mesh.topology.entity_types[2]) == 2
     qi = mesh.topology.entity_types[2].index(CellType.quadrilateral)
@@ -281,7 +300,7 @@ def test_create_entities():
     assert ims[ti].size_global == 24
     assert len(tri_v.links(0)) == 3
 
-    mesh.topology.create_entities(1)
+    mesh.topology.create_entities(1, dolfinx.hardware_concurrency())
     # 9 edges on each prism
     cell_edge = mesh.topology.connectivity((3, 0), (1, 0))
     assert cell_edge.links(0).size == 9
@@ -291,7 +310,8 @@ def test_create_entities():
 
 
 @pytest.mark.skip_in_parallel
-def test_locate_entities():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_locate_entities(dtype):
     # Create a unit cube mesh with one hex and two wedges
     if MPI.COMM_WORLD.rank == 0:
         hexes = np.array([0, 1, 3, 4, 6, 7, 9, 10], dtype=np.int64)
@@ -312,16 +332,15 @@ def test_locate_entities():
                 [0.5, 1.0, 1.0],
                 [1.0, 1.0, 1.0],
             ],
-            dtype=np.float64,
+            dtype=dtype,
         )
     else:
         cells = [np.array([], dtype=np.int64), np.array([], dtype=np.int64)]
-        geom = np.array([], dtype=np.float64)
+        geom = np.array([], dtype=dtype)
 
-    part = create_cell_partitioner(GhostMode.none)
-
-    hexahedron = coordinate_element(CellType.hexahedron, 1)
-    prism = coordinate_element(CellType.prism, 1)
+    part = create_cell_partitioner(GhostMode.none, 2)
+    hexahedron = coordinate_element(CellType.hexahedron, 1, dtype=dtype)
+    prism = coordinate_element(CellType.prism, 1, dtype=dtype)
     comm = MPI.COMM_WORLD
     max_cells_per_facet = 2
     mesh = create_mesh(
@@ -359,7 +378,7 @@ def test_locate_entities():
 
 def test_mixed_cell_pairs(mixed_topology_mesh):
     mesh = Mesh(mixed_topology_mesh, None)
-    mesh.topology.create_entities(2)
+    mesh.topology.create_entities(2, dolfinx.hardware_concurrency())
     mesh.topology.create_connectivity(2, 3)
     cell_types = mesh.topology.entity_types[3]
     facet_types = mesh.topology.entity_types[2]

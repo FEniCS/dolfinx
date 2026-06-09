@@ -38,10 +38,18 @@ fem::DofMap fem::create_dofmap(
 {
   // Create required mesh entities
   const int D = topology.dim();
-  for (int d = 0; d < D; ++d)
+
+  const auto& entity_dofs = layout.entity_dofs_all();
+  for (int dim = 1; dim < topology.dim(); ++dim)
   {
-    if (layout.num_entity_dofs(d) > 0)
-      topology.create_entities(d);
+    // Accumulate count of all dofs on this dimension
+    int dim_sum
+        = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
+                          [](int c, auto v) { return c + v.size(); });
+
+    spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
+    if (dim_sum > 0)
+      topology.create_entities(dim);
   }
 
   auto [_index_map, bs, dofmaps]
@@ -79,10 +87,20 @@ std::vector<fem::DofMap> fem::create_dofmaps(
   assert(layouts.size() == topology.entity_types(D).size());
 
   // Create required mesh entities
-  for (std::int32_t d = 0; d < D; ++d)
+  for (std::size_t i = 0; i < layouts.size(); ++i)
   {
-    if (layouts.front().num_entity_dofs(d) > 0)
-      topology.create_entities(d);
+    const auto& entity_dofs = layouts[i].entity_dofs_all();
+    for (int dim = 1; dim < topology.dim(); ++dim)
+    {
+      // Accumulate count of all dofs on this dimension
+      int dim_sum
+          = std::accumulate(entity_dofs[dim].begin(), entity_dofs[dim].end(), 0,
+                            [](int c, auto v) { return c + v.size(); });
+
+      spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
+      if (dim_sum > 0)
+        topology.create_entities(dim);
+    }
   }
 
   auto [_index_map, bs, dofmaps]

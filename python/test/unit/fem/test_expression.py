@@ -1,4 +1,5 @@
-# Copyright (C) 2019-2024 Michal Habera and Jørgen S. Dokken
+# Copyright (C) 2019-2026 Michal Habera, Matthew W. Scroggs
+# and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -10,12 +11,19 @@ import numpy as np
 import pytest
 
 import basix
-import dolfinx.cpp
 import ufl
 from basix.ufl import quadrature_element
 from dolfinx import fem, la
 from dolfinx.fem import Constant, Expression, Function, form, functionspace
-from dolfinx.mesh import create_unit_square
+from dolfinx.mesh import (
+    CellType,
+    compute_midpoints,
+    create_rectangle,
+    create_submesh,
+    create_unit_square,
+    exterior_facet_indices,
+    locate_entities,
+)
 
 
 @pytest.mark.parametrize(
@@ -314,7 +322,7 @@ def test_assembly_into_quadrature_function(dtype):
     # # FIXME: Below is only for testing purposes,
     # # never to be used in user code!
     # # TODO: Replace when interpolation into Quadrature element works.
-    coord_dofs = mesh.geometry.dofmap
+    coord_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
     tdim = mesh.topology.dim
     Q_dofs = Q.dofmap.list
@@ -328,7 +336,7 @@ def test_assembly_into_quadrature_function(dtype):
     e_exact_eval = np.zeros_like(local)
     for cell in range(num_cells):
         xg = x_g[coord_dofs[cell], :tdim]
-        x = mesh.geometry.cmap.push_forward(quadrature_points, xg)
+        x = mesh.geometry.cmaps[0].push_forward(quadrature_points, xg)
         e_exact_eval[Q_dofs_unrolled[cell]] = e_exact(x.T).T.flatten()
     assert np.allclose(local, e_exact_eval)
 
@@ -344,18 +352,18 @@ def test_assembly_into_quadrature_function(dtype):
 )
 def test_expression_eval_cells_subset(dtype):
     xtype = dtype(0).real.dtype
-    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 4, dtype=xtype)
-    V = dolfinx.fem.functionspace(mesh, ("DG", 0))
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 4, dtype=xtype)
+    V = fem.functionspace(mesh, ("DG", 0))
 
     cells_imap = mesh.topology.index_map(mesh.topology.dim)
     all_cells = np.arange(cells_imap.size_local + cells_imap.num_ghosts, dtype=np.int32)
     cells_to_dofs = np.array([V.dofmap.cell_dofs(i)[0] for i in all_cells], dtype=np.int32)
     dofs_to_cells = np.argsort(cells_to_dofs)
 
-    u = dolfinx.fem.Function(V, dtype=dtype)
+    u = fem.Function(V, dtype=dtype)
     u.x.array[:] = dofs_to_cells
     u.x.scatter_forward()
-    e = dolfinx.fem.Expression(u, V.element.interpolation_points)
+    e = fem.Expression(u, V.element.interpolation_points)
 
     # Test eval on single cell
     for c in range(cells_imap.size_local):
@@ -392,7 +400,7 @@ def test_expression_comm(dtype):
 
 
 def compute_exterior_facet_entities(mesh, facets):
-    """Helper function to compute (cell, local_facet_index) pairs for exterior facets"""
+    """Helper function to compute (cell, local_facet_index) pairs for exterior facets."""
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim - 1, tdim)
     mesh.topology.create_connectivity(tdim, tdim - 1)
@@ -426,7 +434,7 @@ def test_facet_expression(dtype):
 
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim - 1, tdim)
-    facets = dolfinx.mesh.exterior_facet_indices(mesh.topology)
+    facets = exterior_facet_indices(mesh.topology)
 
     boundary_entities = compute_exterior_facet_entities(mesh, facets)
 
@@ -441,7 +449,7 @@ def test_facet_expression(dtype):
     facet_normals = normal_expr.eval(mesh, boundary_entities)
 
     # Check facet normal by using midpoint to determine what exterior cell we are at
-    facet_midpoints = dolfinx.mesh.compute_midpoints(mesh, tdim - 1, facets)
+    facet_midpoints = compute_midpoints(mesh, tdim - 1, facets)
     atol = 100 * np.finfo(dtype).resolution
     for midpoint, normal in zip(facet_midpoints, facet_normals):
         if np.isclose(midpoint[0], 0, atol=atol):
@@ -459,14 +467,14 @@ def test_facet_expression(dtype):
     el_v = basix.ufl.element("Lagrange", "triangle", 2, shape=(2,), dtype=xtype)
     el_p = basix.ufl.element("Lagrange", "triangle", 1, dtype=xtype)
     mixed_el = basix.ufl.mixed_element([el_v, el_p])
-    W = dolfinx.fem.functionspace(mesh, mixed_el)
-    w = dolfinx.fem.Function(W, dtype=dtype)
+    W = fem.functionspace(mesh, mixed_el)
+    w = fem.Function(W, dtype=dtype)
     w.sub(0).interpolate(lambda x: (x[1] ** 2 + 3 * x[0] ** 2, -5 * x[1] ** 2 - 7 * x[0] ** 2))
     w.sub(1).interpolate(lambda x: 2 * (x[1] + x[0]))
     u, p = ufl.split(w)
     n = ufl.FacetNormal(mesh)
     mixed_expr = p * ufl.dot(ufl.grad(u), n)
-    facet_expression = dolfinx.fem.Expression(
+    facet_expression = fem.Expression(
         mixed_expr, np.array([[0.5]], dtype=np.real(dtype(0)).dtype), dtype=dtype
     )
     subset_values = facet_expression.eval(mesh, boundary_entities)
@@ -491,17 +499,16 @@ def test_facet_expression(dtype):
 def test_rank1_blocked():
     """Check that a test function with tensor shape is unrolled as
     (num_cells, num_points, num_dofs, bs) when evaluated as an
-    expression."""
-    mesh = dolfinx.mesh.create_unit_square(
-        MPI.COMM_SELF, 3, 4, cell_type=dolfinx.mesh.CellType.quadrilateral
-    )
+    expression.
+    """
+    mesh = create_unit_square(MPI.COMM_SELF, 3, 4, cell_type=CellType.quadrilateral)
     value_shape = (3, 2)
     vs = np.prod(value_shape)
-    V = dolfinx.fem.functionspace(mesh, ("Lagrange", 2, value_shape))
+    V = fem.functionspace(mesh, ("Lagrange", 2, value_shape))
     v = ufl.TestFunction(V)
 
     points = np.array([[0.513, 0.317], [0.11, 0.38]], dtype=mesh.geometry.x.dtype)
-    expr = dolfinx.fem.Expression(v, points)
+    expr = fem.Expression(v, points)
 
     values = expr.eval(mesh, np.array([0], dtype=np.int32))[0]
 
@@ -525,3 +532,173 @@ def test_rank1_blocked():
                 mask = np.ones(point_values.shape[2], dtype=bool)
                 mask[offset::vs] = False
                 np.testing.assert_allclose(point_values[i, j, mask], 0)
+
+
+@pytest.mark.parametrize("qdegree", [1, 3, 5])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_submesh_codim_zero(dtype, qdegree):
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=xtype)
+
+    V = fem.functionspace(mesh, ("Lagrange", 1))
+    u = fem.Function(V, dtype=dtype)
+    u.interpolate(lambda x: x[0] + 2.0 * x[1])
+
+    def mark_left_cells(x):
+        return x[0] <= 0.5 + 100 * np.finfo(xtype).resolution
+
+    left_cells = locate_entities(mesh, mesh.topology.dim, mark_left_cells)
+    submesh, entity_map, _, _ = create_submesh(mesh, mesh.topology.dim, left_cells)
+    u_sub = fem.Function(fem.functionspace(submesh, ("Lagrange", 2)), dtype=dtype)
+    u_sub.interpolate(lambda x: x[1] ** 2 + x[0] ** 2)
+
+    quadrature_points, _ = basix.make_quadrature(basix.CellType.triangle, qdegree)
+    quadrature_points = quadrature_points.astype(xtype)
+
+    sub_cellmap = submesh.topology.index_map(submesh.topology.dim)
+    num_sub_cells = sub_cellmap.size_local + sub_cellmap.num_ghosts
+    parent_cells = entity_map.sub_topology_to_topology(
+        np.arange(num_sub_cells, dtype=np.int32), inverse=False
+    )
+
+    expr = fem.Expression(u * u_sub, quadrature_points, dtype=dtype, entity_maps=[entity_map])
+    values = expr.eval(mesh, parent_cells)
+
+    values_sub = expr.eval(submesh, np.arange(num_sub_cells, dtype=np.int32))
+
+    tol = 50 * np.finfo(dtype).eps
+    np.testing.assert_allclose(values, values_sub, atol=tol)
+
+    x = ufl.SpatialCoordinate(mesh)
+    u_exact = (x[0] + 2.0 * x[1]) * (x[1] ** 2 + x[0] ** 2)
+    cell_map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = cell_map.size_local + cell_map.num_ghosts
+    expr_exact = fem.Expression(u_exact, quadrature_points, dtype=dtype)
+    values_exact = expr_exact.eval(mesh, np.arange(num_cells, dtype=np.int32))
+    np.testing.assert_allclose(values, values_exact[parent_cells], atol=tol)
+
+
+@pytest.mark.parametrize("qdegree", [1, 3, 5])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+def test_submesh_codim_one(dtype, qdegree):
+    xtype = dtype(0).real.dtype
+    L = 2.1
+    mesh = create_rectangle(
+        MPI.COMM_WORLD, np.array([[0, 0], [L, 2.0]], dtype=xtype), [5, 3], dtype=xtype
+    )
+    el = basix.ufl.element("Lagrange", mesh.basix_cell(), 1, shape=(), dtype=xtype)
+    V = fem.functionspace(mesh, el)
+    u = fem.Function(V, dtype=dtype)
+
+    def expr0(x):
+        return x[0] + 2.0 * x[1]
+
+    u.interpolate(expr0)
+
+    tol = 50 * np.finfo(xtype).resolution
+
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    exterior_facets = exterior_facet_indices(mesh.topology)
+    submesh, entity_map, _, _ = create_submesh(mesh, mesh.topology.dim - 1, exterior_facets)
+    sub_el = basix.ufl.element(
+        "Lagrange", submesh.basix_cell(), 2, shape=(submesh.geometry.dim,), dtype=xtype
+    )
+    u_sub = fem.Function(fem.functionspace(submesh, sub_el), dtype=dtype)
+
+    def expr1(x):
+        return (x[1] ** 2, -(x[0] ** 2))
+
+    u_sub.interpolate(expr1)
+
+    quadrature_points, _ = basix.make_quadrature(basix.CellType.interval, qdegree)
+    quadrature_points = quadrature_points.astype(xtype)
+
+    n_h = ufl.FacetNormal(mesh)
+
+    def combined_expr(u, u_sub, n_h):
+        return u * (ufl.dot(u_sub, n_h) + n_h[0] * u_sub[1])
+
+    # Get integration entities and evaluate exact expression on exterior facets
+    entities = fem.compute_integration_domains(
+        fem.IntegralType.exterior_facet, mesh.topology, exterior_facets
+    )
+
+    # Evaluate submesh expression
+    expr = combined_expr(u, u_sub, n_h)
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    expr = fem.Expression(expr, quadrature_points, dtype=dtype, entity_maps=[entity_map])
+    values = expr.eval(mesh, entities.reshape(-1, 2))
+
+    # Verify with standard evaluation of exact expression on exterior facets
+    x = ufl.SpatialCoordinate(mesh)
+    expr_exact = combined_expr(expr0(x), ufl.as_vector(expr1(x)), n_h)
+    expr_exact = fem.Expression(expr_exact, quadrature_points, dtype=dtype)
+    values_exact = expr_exact.eval(mesh, entities.reshape(-1, 2))
+    np.testing.assert_allclose(values, values_exact, atol=tol)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float64,
+    ],
+)
+def test_skewed_quadrature(dtype):
+    xtype = dtype(0).real.dtype
+    L = 2.1
+    mesh = create_rectangle(
+        MPI.COMM_WORLD, np.array([[0, 0], [L, 2.0]], dtype=xtype), [5, 3], dtype=xtype
+    )
+
+    tol = 50 * np.finfo(xtype).resolution
+
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    exterior_facets = exterior_facet_indices(mesh.topology)
+
+    submesh, entity_map, _, _ = create_submesh(mesh, mesh.topology.dim - 1, exterior_facets)
+    sub_el = basix.ufl.element(
+        "Lagrange", submesh.basix_cell(), 2, shape=(submesh.geometry.dim,), dtype=xtype
+    )
+    u_sub = fem.Function(fem.functionspace(submesh, sub_el), dtype=dtype)
+
+    def expr1(x):
+        return (x[0], x[1])
+
+    u_sub.interpolate(expr1)
+
+    quadrature_points = np.array([[0.25], [0.92], [0.99]], dtype=xtype)
+
+    # Get integration entities and evaluate exact expression on exterior facets
+    entities = fem.compute_integration_domains(
+        fem.IntegralType.exterior_facet, mesh.topology, exterior_facets
+    )
+
+    # Evaluate submesh expression
+    expr_codim = u_sub + fem.Constant(mesh, 0.0) * ufl.SpatialCoordinate(mesh)
+    mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
+    expr = fem.Expression(expr_codim, quadrature_points, dtype=dtype, entity_maps=[entity_map])
+    values_codim = expr.eval(mesh, entities.reshape(-1, 2))
+
+    # Verify with standard evaluation of exact expression on exterior facets
+    x = ufl.SpatialCoordinate(mesh)
+    expr_parent = ufl.as_vector(expr1(x))
+    expr_parent = fem.Expression(expr_parent, quadrature_points, dtype=dtype)
+    values_parent = expr_parent.eval(mesh, entities.reshape(-1, 2))
+
+    np.testing.assert_allclose(values_codim, values_parent, atol=tol)

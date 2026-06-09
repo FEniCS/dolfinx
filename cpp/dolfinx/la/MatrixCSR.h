@@ -19,6 +19,25 @@
 #include <utility>
 #include <vector>
 
+// Define requirements on sparsity pattern required for MatrixCSR constructor
+// allowing alternative implentations that can provide these essentials.
+template <typename T>
+concept SparsityImplementation = requires(T sp, int i) {
+  { sp.graph() };
+  requires std::forward_iterator<typename decltype(sp.graph().first)::iterator>;
+  requires std::convertible_to<std::int32_t,
+                               typename decltype(sp.graph().first)::value_type>;
+  requires std::forward_iterator<
+      typename decltype(sp.graph().second)::iterator>;
+  requires std::convertible_to<
+      std::int64_t, typename decltype(sp.graph().second)::value_type>;
+
+  { sp.block_size(i) } -> std::same_as<int>;
+  {
+    sp.index_map(i)
+  } -> std::same_as<std::shared_ptr<const dolfinx::common::IndexMap>>;
+};
+
 namespace dolfinx::la
 {
 /// @brief Modes for representing block structured matrices.
@@ -176,7 +195,8 @@ public:
   /// matrix entry is individual. In the "expanded" case, the sparsity
   /// is expanded for every entry in the block, and the block size of
   /// the matrix is set to `(1, 1)`.
-  MatrixCSR(const SparsityPattern& p, BlockMode mode = BlockMode::compact);
+  template <SparsityImplementation T>
+  MatrixCSR(const T& p, BlockMode mode = BlockMode::compact);
 
   /// Move constructor
   /// @todo Check handling of MPI_Request
@@ -339,7 +359,7 @@ public:
             std::array<std::int32_t, 1> local_col{_cols[j]};
             std::array<std::int64_t, 1> global_col{0};
             _index_maps[1]->local_to_global(local_col, global_col);
-            A[(r * _bs[1] + i0) * ncols * _bs[0] + global_col[0] * _bs[1] + i1]
+            A[(r * _bs[0] + i0) * ncols * _bs[1] + global_col[0] * _bs[1] + i1]
                 = _data[j * _bs[0] * _bs[1] + i0 * _bs[1] + i1];
           }
         }
@@ -469,7 +489,39 @@ public:
   ///
   /// @param[in] x Vector to apply `A` to.
   /// @param[in,out] y Vector to accumulate the result into.
-  void mult(Vector<value_type>& x, Vector<value_type>& y);
+  void mult(Vector<value_type>& x, Vector<value_type>& y) const;
+
+  /// @brief Compute the product `y += A^T x`.
+  ///
+  /// Performs the distributed sparse matrix–vector product with the
+  /// *transpose* of the matrix.  The computation is split into two phases:
+  ///
+  /// 1. **Off-diagonal phase** — contributions from the off-diagonal block
+  ///    (ghost columns of A, i.e. columns owned by remote ranks) are
+  ///    accumulated into the ghost region of `y`.  The ghost entries of
+  ///    `y` are zeroed before this phase so that stale values do not
+  ///    pollute the result.  A reverse scatter (`scatter_rev`) then
+  ///    reduces those ghost contributions back to the owning ranks.
+  ///
+  /// 2. **Diagonal phase** — contributions from the diagonal block
+  ///    (locally owned columns of A) are accumulated into the owned
+  ///    entries of `y`.
+  ///
+  /// **Layout requirements:**
+  /// - `x` must share the same `IndexMap` as the matrix *rows*,
+  ///   `A.index_map(0)`.
+  /// - `y` must share the same *owned* indices as the matrix *columns*,
+  ///   `A.index_map(1)`.  Only owned entries of `y` are meaningful after
+  ///   the call; ghost entries are used as scratch and left in an
+  ///   unspecified state.
+  ///
+  /// @note `y` is accumulated *into* (not overwritten) on the owned
+  ///       entries.  Zero `y` before the first call if a fresh result is
+  ///       required.
+  ///
+  /// @param[in]     x Vector to apply `A^T` to; must cover the row space of A.
+  /// @param[in,out] y Vector accumulated into; covers the column space of A.
+  void multT(Vector<value_type>& x, Vector<value_type>& y) const;
 
   /// @brief Get MPI communicator that matrix is defined on.
   MPI_Comm comm() const { return _comm.comm(); }
@@ -565,12 +617,14 @@ private:
   container_type _ghost_value_data_in;
 };
 //-----------------------------------------------------------------------------
-template <class U, class V, class W, class X>
-MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
-    : _index_maps({p.index_map(0),
-                   std::make_shared<common::IndexMap>(p.column_index_map())}),
-      _block_mode(mode), _bs({p.block_size(0), p.block_size(1)}),
-      _data(p.num_nonzeros() * _bs[0] * _bs[1], 0),
+
+/** @copydoc MatrixCSR::MatrixCSR */
+template <typename U, typename V, typename W, typename X>
+template <SparsityImplementation SparsityType>
+MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityType& p, BlockMode mode)
+    : _index_maps({p.index_map(0), p.index_map(1)}), _block_mode(mode),
+      _bs({p.block_size(0), p.block_size(1)}),
+      _data(p.graph().first.size() * _bs[0] * _bs[1], 0),
       _cols(p.graph().first.begin(), p.graph().first.end()),
       _row_ptr(p.graph().second.begin(), p.graph().second.end()),
       _comm(MPI_COMM_NULL)
@@ -816,7 +870,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
 /// x,y
 template <typename Scalar, typename V, typename W, typename X>
 void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
-                                      la::Vector<Scalar>& y)
+                                      la::Vector<Scalar>& y) const
 {
   // start communication (update ghosts)
   x.scatter_fwd_begin();
@@ -826,7 +880,8 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
   std::span<const std::int32_t> Acols(cols().data(), Arow_ptr[nrowslocal]);
   std::span<const std::int64_t> Aoff_diag_offset(off_diag_offset().data(),
                                                  nrowslocal);
-  std::span<const Scalar> Avalues(values().data(), Arow_ptr[nrowslocal]);
+  std::span<const Scalar> Avalues(values().data(),
+                                  Arow_ptr[nrowslocal] * _bs[0] * _bs[1]);
 
   std::span<const Scalar> _x = x.array();
   std::span<Scalar> _y = y.array();
@@ -862,6 +917,48 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
     impl::spmv<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
                            _bs[0], _bs[1]);
   }
+}
+
+/// @brief Out-of-line implementation of MatrixCSR::multT.
+/// @see MatrixCSR::multT for the full specification.
+template <typename Scalar, typename V, typename W, typename X>
+void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
+                                       la::Vector<Scalar>& y) const
+{
+  std::int32_t nrowslocal = num_owned_rows();
+  std::span<const std::int64_t> Arow_ptr(row_ptr().data(), nrowslocal + 1);
+  std::span<const std::int32_t> Acols(cols().data(), Arow_ptr[nrowslocal]);
+  std::span<const std::int64_t> Aoff_diag_offset(off_diag_offset().data(),
+                                                 nrowslocal);
+  std::span<const Scalar> Avalues(values().data(),
+                                  Arow_ptr[nrowslocal] * _bs[0] * _bs[1]);
+
+  std::span<const Scalar> _x = x.array();
+  std::span<Scalar> _y = y.array();
+
+  std::span<const std::int64_t> Arow_begin(Arow_ptr.data(), nrowslocal);
+  std::span<const std::int64_t> Arow_end(Arow_ptr.data() + 1, nrowslocal);
+
+  // Compute ghost region contribution and scatter back. Zero only the
+  // ghost portion of y so the caller's owned values are preserved (multT
+  // accumulates).
+  int ncolslocal = index_map(1)->size_local();
+  std::fill(std::next(_y.begin(), ncolslocal * _bs[1]), _y.end(), Scalar(0));
+  if (_bs[1] == 1)
+    impl::spmvT<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                           _bs[0], 1);
+  else
+    impl::spmvT<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                            _bs[0], _bs[1]);
+
+  y.scatter_rev(std::plus<Scalar>{});
+
+  if (_bs[1] == 1)
+    impl::spmvT<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                           _bs[0], 1);
+  else
+    impl::spmvT<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x,
+                            _y, _bs[0], _bs[1]);
 }
 
 } // namespace dolfinx::la

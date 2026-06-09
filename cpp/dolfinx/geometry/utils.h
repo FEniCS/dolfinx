@@ -57,7 +57,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
   const mesh::Geometry<T>& geometry = mesh.geometry();
 
   std::span<const T> geom_dofs = geometry.x();
-  auto x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.dofmaps().front();
   std::vector<T> shortest_vectors;
   shortest_vectors.reserve(3 * entities.size());
   if (dim == tdim)
@@ -106,7 +106,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       // Tabulate geometry dofs for the entity
       auto dofs = md::submdspan(x_dofmap, c, md::full_extent);
       const std::vector<int> entity_dofs
-          = geometry.cmap().create_dof_layout().entity_closure_dofs(
+          = geometry.cmaps().front().create_dof_layout().entity_closure_dofs(
               dim, local_cell_entity);
       std::vector<T> nodes(3 * entity_dofs.size());
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
@@ -528,7 +528,7 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
   {
     const mesh::Geometry<T>& geometry = mesh.geometry();
     std::span<const T> geom_dofs = geometry.x();
-    auto x_dofmap = geometry.dofmap();
+    auto x_dofmap = geometry.dofmaps().front();
     const std::size_t num_nodes = x_dofmap.extent(1);
     std::vector<T> coordinate_dofs(num_nodes * 3);
     for (auto cell : cells)
@@ -779,7 +779,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   // Get mesh geometry for closest entity
   const mesh::Geometry<T>& geometry = mesh.geometry();
   std::span<const T> geom_dofs = geometry.x();
-  auto x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.dofmaps().front();
 
   // Compute candidate cells for collisions (and extrapolation)
   const graph::AdjacencyList<std::int32_t> candidate_collisions
@@ -872,7 +872,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       std::array<T, 3> point;
       std::copy_n(std::next(received_points.begin(), 3 * i), 3, point.begin());
 
-      // Find shortest distance among cells with colldiing bounding box
+      // Find shortest distance among cells with colliding bounding box
       T shortest_distance = std::numeric_limits<T>::max();
       std::int32_t closest_cell = -1;
       for (auto cell : candidate_collisions.links(i))

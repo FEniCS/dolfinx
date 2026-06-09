@@ -5,11 +5,14 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Graph representations and operations on graphs."""
 
+from typing import Generic
+
 import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import partitioner
+from dolfinx.typing import Index
 
 # Import graph partitioners, which may or may not be available
 # (dependent on build configuration)
@@ -37,7 +40,9 @@ __all__ = [
 ]
 
 
-class AdjacencyList:
+class AdjacencyList(Generic[Index]):
+    """Adjacency list representation of a graph."""
+
     _cpp_object: (
         _cpp.graph.AdjacencyList_int32
         | _cpp.graph.AdjacencyList_int64
@@ -46,7 +51,7 @@ class AdjacencyList:
 
     def __init__(
         self,
-        cpp_object: (
+        g: (
             _cpp.graph.AdjacencyList_int32
             | _cpp.graph.AdjacencyList_int64
             | _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32
@@ -59,14 +64,15 @@ class AdjacencyList:
             :func:`adjacencylist`.
 
         Args:
-            The underlying cpp instance that this object will wrap.
+            g: The underlying cpp instance that this object will wrap.
         """
-        self._cpp_object = cpp_object
+        self._cpp_object = g
 
     def __repr__(self):
-        return self._cpp_object.__repr__
+        """String representation of the adjacency list."""
+        return self._cpp_object.__repr__()
 
-    def links(self, node: np.int32 | np.int64) -> npt.NDArray[np.int32 | np.int64]:
+    def links(self, node: int) -> npt.NDArray[Index]:
         """Retrieve the links of a node.
 
         Note:
@@ -74,7 +80,7 @@ class AdjacencyList:
             additional link (edge) data.
 
         Args:
-            Node to retrieve the connectivity of.
+            node: Node to retrieve the connectivity of.
 
         Returns:
             Neighbors of the node.
@@ -82,7 +88,7 @@ class AdjacencyList:
         return self._cpp_object.links(node)
 
     @property
-    def array(self) -> npt.NDArray[np.int32 | np.int64]:
+    def array(self) -> npt.NDArray[Index]:
         """Array representation of the adjacency list.
 
         Note:
@@ -114,8 +120,8 @@ class AdjacencyList:
 
 
 def adjacencylist(
-    data: npt.NDArray[np.int32 | np.int64], offsets: npt.NDArray[np.int32] | None = None
-) -> AdjacencyList:
+    data: npt.NDArray[Index], offsets: npt.NDArray[np.int32] | None = None
+) -> AdjacencyList[Index]:
     """Create an :class:`AdjacencyList` for `int32` or `int64` datasets.
 
     Args:
@@ -179,8 +185,7 @@ def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:
 def comm_graph_data(
     graph: AdjacencyList,
 ) -> tuple[list[tuple[int, int, dict[str, int]]], list[tuple[int, dict[str, int]]]]:
-    """Build from a communication graph data structures for use with
-    `NetworkX <https://networkx.org/>`_.
+    """Build communication graph data for use with `NetworkX <https://networkx.org/>`_.
 
     Args:
         graph: Communication graph to build data from. Normally created

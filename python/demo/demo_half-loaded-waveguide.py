@@ -19,8 +19,8 @@
 #
 # ```{admonition} Download sources
 # :class: download
-# * {download}`Python script <./demo_half_loaded_waveguide.py>`
-# * {download}`Jupyter notebook <./demo_half_loaded_waveguide.ipynb>`
+# * {download}`Python script <./demo_half-loaded-waveguide.py>`
+# * {download}`Jupyter notebook <./demo_half-loaded-waveguide.ipynb>`
 # ```
 #
 # The demo shows how to:
@@ -128,10 +128,12 @@ except ImportError:
 def TMx_condition(
     kx_d: complex, kx_v: complex, eps_d: complex, eps_v: complex, d: float, h: float
 ) -> float:
+    """Transcendental equation for TMx modes."""
     return kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d))
 
 
 def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> float:
+    """Transcendental equation for TEx modes."""
     return kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d))
 
 
@@ -153,6 +155,7 @@ def verify_mode(
     eps_v: complex,
     threshold: float,
 ) -> np.bool_:
+    """Verify if given kz satisfies the mode conditions."""
     k0 = 2 * np.pi / lmbd0
     ky = np.pi / w  # we assume n = 1
     kx_d_target = np.sqrt(k0**2 * eps_d - ky**2 + -(kz**2) + 0j)
@@ -466,10 +469,10 @@ for i, kz in vals:
 
         if has_vtx:
             # Save solutions
-            with VTXWriter(msh.comm, out_folder / f"/Et_{i}.bp", Et_dg) as f:
+            with VTXWriter(msh.comm, out_folder / f"Et_{i}.bp", Et_dg) as f:
                 f.write(0.0)
 
-            with VTXWriter(msh.comm, out_folder / f"sols/Ez_{i}.bp", ezh) as f:
+            with VTXWriter(msh.comm, out_folder / f"Ez_{i}.bp", ezh) as f:
                 f.write(0.0)
 
         # Visualize solutions with Pyvista
@@ -496,7 +499,7 @@ for i, kz in vals:
             V_lagr, lagr_dofs = V.sub(1).collapse()
             V_cells, V_types, V_x = plot.vtk_mesh(V_lagr)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
-            V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs]
+            V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs[0]]
             plotter = pyvista.Plotter()
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()
