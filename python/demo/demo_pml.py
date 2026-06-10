@@ -416,14 +416,14 @@ if have_pyvista:
 # specified here below:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # \text{PML}_\text{corners} \rightarrow \mathbf{r}^\prime &= (x^\prime,
 #   y^\prime) \\
 # \text{PML}_\text{rectangles along x} \rightarrow
 #   \mathbf{r}^\prime &= (x^\prime, y) \\
 # \text{PML}_\text{rectangles along y} \rightarrow
 #   \mathbf{r}^\prime &= (x, y^\prime).
-# \end{align}
+# \end{aligned}
 # $$
 #
 # Now we define some other problem specific parameters:
@@ -547,12 +547,12 @@ y_pml = ufl.as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 # https://www.tandfonline.com/doi/abs/10.1080/09500349608232782):
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # {\boldsymbol{\varepsilon}_{pml}} &=
 # A^{-1} \mathbf{A} {\boldsymbol{\varepsilon}_b}\mathbf{A}^{T},\\
 # {\boldsymbol{\mu}_{pml}} &=
 # A^{-1} \mathbf{A} {\boldsymbol{\mu}_b}\mathbf{A}^{T},
-# \end{align}
+# \end{aligned}
 # $$
 #
 # with $A^{-1}=\operatorname{det}(\mathbf{J})$.

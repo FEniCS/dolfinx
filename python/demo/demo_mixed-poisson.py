@@ -37,10 +37,10 @@
 # then read
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   \sigma - \nabla u &= 0 \quad {\rm in} \ \Omega, \\
 #   \nabla \cdot \sigma &= - f \quad {\rm in} \ \Omega,
-# \end{align}
+# \end{aligned}
 # $$
 # with boundary conditions
 #
