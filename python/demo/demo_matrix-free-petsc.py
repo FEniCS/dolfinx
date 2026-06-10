@@ -25,11 +25,11 @@
 # Find $(u_h, p_h) \in V_h \times Q_h$ such that
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   \min_{u_h, p_h} J(u_h, p_h) &=
 #   \frac{1}{2} \int_\Omega \vert u_h - f\vert^2~\mathrm{d}x
 #   + \int_\Omega \vert p_h - g\vert^2~\mathrm{d}x
-# \end{align}
+# \end{aligned}
 # $$
 #
 # By considering the optimality conditions of this system we arrive at the
@@ -37,11 +37,11 @@
 # Find $(u_h, p_h) \in V_h \times Q_h$ such that
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   \int_\Omega (u_h-f) \cdot v~\mathrm{d}x + \int_\Omega (p_h-g) q
 #  ~\mathrm{d}x
 # &= 0 \quad \forall (v, q) \in V_h \times Q_h
-# \end{align}
+# \end{aligned}
 # $$
 #
 # We start by importing the necessary modules
