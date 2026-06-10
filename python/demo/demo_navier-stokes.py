@@ -37,11 +37,11 @@
 # $(0, \infty)$, given by
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # \partial_t u - \nu \Delta u + (u \cdot \nabla)u + \nabla p &= f
 # \text{ in } \Omega_t, \\
 # \nabla \cdot u &= 0 \text{ in } \Omega_t,
-# \end{align}
+# \end{aligned}
 # $$
 #
 # where $u: \Omega_t \to \mathbb{R}^d$ is the velocity field, $p:
@@ -75,13 +75,13 @@
 # We begin by introducing the function spaces
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #     V_h^g &:= \left\{v \in H(\text{div}; \Omega);
 #     v|_K \in V_h(K) \; \forall K \in \mathcal{T}, v \cdot n = g \cdot n
 #     \text{ on } \partial \Omega \right\} \\
 #     Q_h &:= \left\{q \in L^2_0(\Omega);
 #     q|_K \in Q_h(K) \; \forall K \in \mathcal{T} \right\}.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # The local spaces $V_h(K)$ and $Q_h(K)$ should satisfy
@@ -141,12 +141,12 @@
 # $(u_h, p_h) \in V_h^{u_D} \times Q_h$ such that
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   \int_\Omega \partial_t u_h \cdot v + a_h(u_h, v_h) + c_h(u_h; u_h, v_h)
 #   + b_h(v_h, p_h) &= \int_\Omega f \cdot v_h + L_{a_h}(v_h) +
 #   L_{c_h}(v_h) \quad \forall v_h \in V_h^0, \\
 #   b_h(u_h, q_h) &= 0 \quad \forall q_h \in Q_h,
-# \end{align}
+# \end{aligned}
 # $$
 #
 # where
@@ -154,7 +154,7 @@
 # $\renewcommand{\sumF}[0]{\sum_{F \in \mathcal{F}_h}}$
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   a_h(u, v) &= Re^{-1} \left(\sumK \int_K \nabla u : \nabla v
 #   - \sumF \int_F \avg{\nabla u} : \jump{v}
 #   - \sumF \int_F \avg{\nabla v} : \jump{u} \\
@@ -167,7 +167,7 @@
 #   L_{c_h}(v_h) &= - \int_{\partial \Omega} u_D \cdot n \hat{u}_D \cdot
 #   v_h, \\
 #   b_h(v, q) &= - \int_K \nabla \cdot v q.
-# \end{align}
+# \end{aligned}
 # $$
 #
 #
