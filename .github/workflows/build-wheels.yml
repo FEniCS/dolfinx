@@ -163,6 +163,7 @@ jobs:
           CIBW_ENVIRONMENT_LINUX: PIP_EXTRA_INDEX_URL=file:///project/simple
           CIBW_ENVIRONMENT_MACOS: >
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
+            MACOSX_DEPLOYMENT_TARGET=14.0
             CMAKE_ARGS="-DMPI_HOME=$(brew --prefix open-mpi) -DHDF5_ROOT=$(brew --prefix hdf5-mpi) -DCMAKE_PREFIX_PATH=$(brew --prefix)"
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
