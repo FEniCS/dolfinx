@@ -164,8 +164,12 @@ def assemble_scalar(
         To compute the functional value on the whole domain, the output
         of this function is typically summed across all MPI ranks.
     """
-    constants = pack_constants(M) if constants is None else constants  # type: ignore[assignment]
-    coeffs = pack_coefficients(M) if coeffs is None else coeffs  # type: ignore[assignment]
+    if constants is None:
+        constants = pack_constants(M)
+
+    if coeffs is None:
+        coeffs = pack_coefficients(M)
+
     return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)
 
 
@@ -213,8 +217,13 @@ def _assemble_vector_form(
     """
     b = create_vector(L.function_spaces[0], L.dtype)
     b.array[:] = 0
-    constants = pack_constants(L) if constants is None else constants  # type: ignore[assignment]
-    coeffs = pack_coefficients(L) if coeffs is None else coeffs  # type: ignore[assignment]
+
+    if constants is None:
+        constants = pack_constants(L)
+
+    if coeffs is None:
+        coeffs = pack_coefficients(L)
+
     _assemble_vector_array(b.array, L, constants, coeffs)
     return b
 
@@ -248,8 +257,12 @@ def _assemble_vector_array(
         :func:`dolfinx.la.Vector.scatter_reverse` on the return vector
         can accumulate ghost contributions.
     """
-    constants = pack_constants(L) if constants is None else constants  # type: ignore[assignment]
-    coeffs = pack_coefficients(L) if coeffs is None else coeffs  # type: ignore[assignment]
+    if constants is None:
+        constants = pack_constants(L)
+
+    if coeffs is None:
+        coeffs = pack_coefficients(L)
+
     _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)
     return b
 
@@ -330,8 +343,13 @@ def _assemble_matrix_csr(
         accumulated.
     """
     bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
-    constants = pack_constants(a) if constants is None else constants  # type: ignore[assignment]
-    coeffs = pack_coefficients(a) if coeffs is None else coeffs  # type: ignore[assignment]
+
+    if constants is None:
+        constants = pack_constants(a)
+
+    if coeffs is None:
+        coeffs = pack_coefficients(a)
+
     _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, bcs)
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
@@ -350,8 +368,8 @@ def apply_lifting(
     bcs: Sequence[Sequence[DirichletBC]],
     x0: Sequence[npt.NDArray] | None = None,
     alpha: float = 1,
-    constants: npt.NDArray | None = None,
-    coeffs: dict[tuple[IntegralType, int], npt.NDArray] | None = None,
+    constants: Sequence[npt.NDArray] | None = None,
+    coeffs: Sequence[dict[tuple[IntegralType, int], npt.NDArray]] | None = None,
 ) -> None:
     """Modify right-hand side for lifting of Dirichlet conditions.
 
@@ -446,17 +464,17 @@ def apply_lifting(
         function. Use :func:`dolfinx.fem.DirichletBC.set` to set values
         in ``b``.
     """  # noqa: D301
-    x0 = [] if x0 is None else x0
-    constants = (
-        [pack_constants(form) if form is not None else np.array([], dtype=b.dtype) for form in a]  # type: ignore[assignment]
-        if constants is None
-        else constants
-    )
-    coeffs = (
-        [{} if form is None else pack_coefficients(form) for form in a]  # type: ignore[assignment]
-        if coeffs is None
-        else coeffs
-    )
+    if x0 is None:
+        x0 = []
+
+    if constants is None:
+        constants = [
+            pack_constants(form) if form is not None else np.array([], dtype=b.dtype) for form in a
+        ]
+
+    if coeffs is None:
+        coeffs = [pack_coefficients(form) for form in a]
+
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
     _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)
