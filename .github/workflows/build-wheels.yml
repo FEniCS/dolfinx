@@ -161,8 +161,7 @@ jobs:
             MACOSX_DEPLOYMENT_TARGET=14.0
             MPI_HOME=$(brew --prefix open-mpi)
             HDF5_ROOT=$(brew --prefix hdf5-mpi)
-            BREW_PREFIX=$(brew --prefix)
-            DOLFINX_INSTALL=$GITHUB_WORKSPACE/dolfinx-install
+            CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install:$(brew --prefix)
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -189,20 +188,17 @@ jobs:
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S $GITHUB_WORKSPACE/dolfinx/cpp -B $GITHUB_WORKSPACE/dolfinx-build-dir/ \
               -DPython3_EXECUTABLE=$(which python) \
-              -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dolfinx-install \
-              -DHDF5_ROOT=$HDF5_ROOT \
-              -DMPI_HOME=$MPI_HOME \
-              -DCMAKE_PREFIX_PATH=$BREW_PREFIX \
+              -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
               -DDOLFINX_ENABLE_SCOTCH=ON \
               -DCMAKE_BUILD_TYPE=RelWithDebug &&
             cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
-            cmake --install $GITHUB_WORKSPACE/dolfinx-build-dir/
+            cmake --install $GITHUB_WORKSPACE/dolfinx-build-dir/ --prefix $GITHUB_WORKSPACE/dolfinx-install
           CIBW_CONFIG_SETTINGS_LINUX: >
             cmake.args="-DMPI_HOME=/usr/lib64/mpich;-DHDF5_ROOT=/usr/lib64/mpich"
             wheel.py-api=cp312
             cmake.build-type="RelWithDebug"
           CIBW_CONFIG_SETTINGS_MACOS: >
-            cmake.args="-DMPI_HOME=$MPI_HOME;-DHDF5_ROOT=$HDF5_ROOT;-DCMAKE_PREFIX_PATH=$BREW_PREFIX;-DDOLFINx_ROOT=$DOLFINX_INSTALL"
+            cmake.args="-DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH"
             wheel.py-api=cp312
             cmake.build-type="RelWithDebug"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
