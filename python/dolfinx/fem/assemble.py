@@ -58,11 +58,17 @@ def pack_constants(
     return _pack(form)
 
 
+@typing.overload
+def pack_coefficients(form: None | Form) -> dict[tuple[IntegralType, int], npt.NDArray]: ...
+
+
+@typing.overload
 def pack_coefficients(
-    form: None | Form | Sequence[Form],
-) -> (
-    dict[tuple[IntegralType, int], npt.NDArray] | list[dict[tuple[IntegralType, int], npt.NDArray]]
-):
+    form: Sequence[Form],
+) -> list[dict[tuple[IntegralType, int], npt.NDArray]]: ...
+
+
+def pack_coefficients(form):
     """Pack form coefficients for use in assembly.
 
     Pack the ``coefficients`` that appear in forms. The packed
