@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import functools
 import typing
-import warnings
 from collections.abc import Sequence
 
 import numpy as np
@@ -478,26 +477,3 @@ def apply_lifting(
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
     _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)
-
-
-def set_bc(
-    b: npt.NDArray,
-    bcs: Sequence[DirichletBC],
-    x0: npt.NDArray | None = None,
-    alpha: float = 1,
-) -> None:
-    """Insert boundary condition values into vector.
-
-    Note:
-        This function is deprecated.
-
-    Only local (owned) entries are set, hence communication after
-    calling this function is not required unless ghost entries need to
-    be updated to the boundary condition value.
-    """
-    warnings.warn(
-        "dolfinx.fem.assembler.set_bc is deprecated. Use dolfinx.fem.DirichletBC.set instead.",
-        DeprecationWarning,
-    )
-    for bc in bcs:
-        bc.set(b, x0, alpha)
