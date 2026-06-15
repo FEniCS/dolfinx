@@ -41,33 +41,37 @@ set(KAHIP_FOUND FALSE)
 message(STATUS "Checking for package 'KaHIP'")
 
 if(MPI_CXX_FOUND)
-  find_path(
-    KAHIP_INCLUDE_DIRS parhip_interface.h
-    PATH_SUFFIXES kahip
-  )
-  find_library(PARHIP_LIBRARY parhip_interface)
-  find_library(KAHIP_LIBRARY kahip)
+    find_path(KAHIP_INCLUDE_DIRS parhip_interface.h PATH_SUFFIXES kahip)
+    find_library(PARHIP_LIBRARY parhip_interface)
+    find_library(KAHIP_LIBRARY kahip)
 
-  set(KAHIP_LIBRARIES ${PARHIP_LIBRARY} ${KAHIP_LIBRARY})
+    set(KAHIP_LIBRARIES ${PARHIP_LIBRARY} ${KAHIP_LIBRARY})
 
-  include(FindPackageHandleStandardArgs)
-  if(DOLFINX_SKIP_BUILD_TESTS)
-    find_package_handle_standard_args(
-      KaHIP "KaHIP could not be found/configured." KAHIP_INCLUDE_DIRS
-      KAHIP_LIBRARIES
-    )
-  else()
-    if(KAHIP_LIBRARIES AND KAHIP_LIBRARIES)
+    include(FindPackageHandleStandardArgs)
+    if(DOLFINX_SKIP_BUILD_TESTS)
+        find_package_handle_standard_args(
+            KaHIP
+            "KaHIP could not be found/configured."
+            KAHIP_INCLUDE_DIRS
+            KAHIP_LIBRARIES
+        )
+    else()
+        if(KAHIP_LIBRARIES AND KAHIP_LIBRARIES)
+            # Build and run test program
+            include(CheckCXXSourceRuns)
 
-      # Build and run test program
-      include(CheckCXXSourceRuns)
-
-      # Set flags for building test program
-      set(CMAKE_REQUIRED_INCLUDES ${KAHIP_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
-      set(CMAKE_REQUIRED_LIBRARIES ${KAHIP_LIBRARIES} ${MPI_CXX_LIBRARIES})
-      set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
-      check_cxx_source_runs(
-        "
+            # Set flags for building test program
+            set(CMAKE_REQUIRED_INCLUDES
+                ${KAHIP_INCLUDE_DIRS}
+                ${MPI_CXX_INCLUDE_PATH}
+            )
+            set(CMAKE_REQUIRED_LIBRARIES
+                ${KAHIP_LIBRARIES}
+                ${MPI_CXX_LIBRARIES}
+            )
+            set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
+            check_cxx_source_runs(
+                "
         #define MPICH_IGNORE_CXX_SEEK 1
         #include <mpi.h>
         #include <vector>
@@ -89,12 +93,15 @@ if(MPI_CXX_FOUND)
         return 0;
         }
         "
-        KAHIP_TEST_RUNS
-      )
+                KAHIP_TEST_RUNS
+            )
+        endif()
+        find_package_handle_standard_args(
+            KaHIP
+            "KaHIP could not be found/configured."
+            KAHIP_INCLUDE_DIRS
+            KAHIP_LIBRARIES
+            KAHIP_TEST_RUNS
+        )
     endif()
-    find_package_handle_standard_args(
-      KaHIP "KaHIP could not be found/configured." KAHIP_INCLUDE_DIRS
-      KAHIP_LIBRARIES KAHIP_TEST_RUNS
-    )
-  endif()
 endif()
