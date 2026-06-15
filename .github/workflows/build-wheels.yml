@@ -69,7 +69,7 @@ jobs:
             cibw_build: cp312-manylinux_x86_64
           - os: ubuntu-24.04-arm
             cibw_build: cp312-manylinux_aarch64
-          - os: macos-26
+          - os: macos-15
             cibw_build: cp312-macosx_arm64
 
     env:
@@ -186,6 +186,7 @@ jobs:
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S $GITHUB_WORKSPACE/dolfinx/cpp -B $GITHUB_WORKSPACE/dolfinx-build-dir/ \
               -DPython3_EXECUTABLE=$(which python) \
+              -DCMAKE_CXX_FLAGS_INIT=-fexperimental-library \
               -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
               -DDOLFINX_ENABLE_SCOTCH=ON \
               -DCMAKE_BUILD_TYPE=RelWithDebug &&
@@ -196,7 +197,7 @@ jobs:
             wheel.py-api=cp312
             cmake.build-type="RelWithDebug"
           CIBW_CONFIG_SETTINGS_MACOS: >
-            cmake.args="-DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH"
+            cmake.args="-DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH;-DCMAKE_CXX_FLAGS_INIT=-fexperimental-library"
             wheel.py-api=cp312
             cmake.build-type="RelWithDebug"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
