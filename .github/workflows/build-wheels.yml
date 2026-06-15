@@ -158,7 +158,7 @@ jobs:
               -DBUILD_SHARED_LIBS=ON -DMPI_HOME=/usr/lib64/mpich &&
             cmake --build scotch-build-dir/ &&
             cmake --install scotch-build-dir/ &&
-            pip -v install 'fenics-basix==0.11.0.dev0' 'fenics-ffcx==0.11.0.dev0' &&
+            pip -v install fenics-basix fenics-ffcx &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DPython3_EXECUTABLE=$(which python) \
               -DHDF5_ROOT=/usr/lib64/mpich -DMPI_HOME=/usr/lib64/mpich -DCMAKE_BUILD_TYPE=RelWithDebug &&
