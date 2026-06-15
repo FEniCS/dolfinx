@@ -64,13 +64,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm]
+        include:
+          - os: ubuntu-latest
+            cibw_build: cp312-manylinux_x86_64
+          - os: ubuntu-24.04-arm
+            cibw_build: cp312-manylinux_aarch64
+          - os: macos-26
+            cibw_build: cp312-macosx_arm64
 
     env:
-      CIBW_BUILD: cp312-manylinux_x86_64 cp312-manylinux_aarch64
+      CIBW_BUILD: ${{ matrix.cibw_build }}
       CIBW_BUILD_VERBOSITY: 1
-      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple
       CIBW_ARCHS_LINUX: native
+      CIBW_ARCHS_MACOS: arm64
       CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64:latest
       CIBW_MANYLINUX_AARCH64_IMAGE: quay.io/pypa/manylinux_2_34_aarch64:latest
 
@@ -107,7 +113,7 @@ jobs:
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         run: |
           python -m build -o wheelhouse/ ffcx/
-      
+
       - name: Checkout Basix
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         uses: actions/checkout@v6
@@ -122,6 +128,11 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir ../wheelhouse/ .
 
+      - name: Install Homebrew dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install boost hdf5-mpi ninja open-mpi pkgconf pugixml spdlog scotch
+
       - name: Make temporary simple503 repo directories
         run: mkdir -p wheelhouse/ simple/
 
@@ -130,7 +141,12 @@ jobs:
         run: cp wheelhouse/* simple/
 
       - name: Index simple503 repository
-        run: python -m simple503 --base-url file:///project/simple simple/
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            python -m simple503 --base-url file:///project/simple simple/
+          else
+            python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple/
+          fi
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v6
@@ -144,6 +160,10 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir wheelhouse/ dolfinx/python
         env:
+          CIBW_ENVIRONMENT_LINUX: PIP_EXTRA_INDEX_URL=file:///project/simple
+          CIBW_ENVIRONMENT_MACOS: >
+            PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
+            CMAKE_ARGS="-DMPI_HOME=$(brew --prefix open-mpi) -DHDF5_ROOT=$(brew --prefix hdf5-mpi) -DCMAKE_PREFIX_PATH=$(brew --prefix)"
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -164,8 +184,23 @@ jobs:
               -DHDF5_ROOT=/usr/lib64/mpich -DMPI_HOME=/usr/lib64/mpich -DCMAKE_BUILD_TYPE=RelWithDebug &&
             cmake --build dolfinx-build-dir/ &&
             cmake --install dolfinx-build-dir/
-          CIBW_CONFIG_SETTINGS_LINUX: > 
+          CIBW_BEFORE_BUILD_MACOS: >
+            pip -v install fenics-basix fenics-ffcx &&
+            pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
+            cmake -G Ninja -S $GITHUB_WORKSPACE/dolfinx/cpp -B $GITHUB_WORKSPACE/dolfinx-build-dir/
+              -DPython3_EXECUTABLE=$(which python)
+              -DHDF5_ROOT=$(brew --prefix hdf5-mpi)
+              -DMPI_HOME=$(brew --prefix open-mpi)
+              -DCMAKE_PREFIX_PATH=$(brew --prefix)
+              -DDOLFINX_ENABLE_SCOTCH=ON
+              -DCMAKE_BUILD_TYPE=RelWithDebug &&
+            cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
+            cmake --install $GITHUB_WORKSPACE/dolfinx-build-dir/
+          CIBW_CONFIG_SETTINGS_LINUX: >
             cmake.args="-DMPI_HOME=/usr/lib64/mpich;-DHDF5_ROOT=/usr/lib64/mpich"
+            wheel.py-api=cp312
+            cmake.build-type="RelWithDebug"
+          CIBW_CONFIG_SETTINGS_MACOS: >
             wheel.py-api=cp312
             cmake.build-type="RelWithDebug"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
@@ -173,20 +208,35 @@ jobs:
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
             auditwheel repair --exclude libmpi.so.* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
+          CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
+            delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel} --exclude libmpi &&
+            pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_EXTRAS: test
-          CIBW_TEST_COMMAND: >
+          CIBW_TEST_COMMAND_LINUX: >
             . /etc/profile &&
             module load mpi/mpich-$(arch) &&
             python -m pytest -n auto \
               -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest \
               -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
+          CIBW_TEST_COMMAND_MACOS: >
+            python -m pytest -n auto
+              -m "not adios2 and not petsc4py" {project}/test/unit &&
+            mpiexec -n 2 python -m pytest
+              -m "not adios2 and not petsc4py" {project}/test/unit
 
-      - name: Update temporary simple503 repository
+      - name: Update temporary simple503 repository (Linux)
+        if: runner.os == 'Linux'
         run: |
           cp wheelhouse/* simple
           python -m simple503 --base-url file:///shared simple
+
+      - name: Update temporary simple503 repository (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cp wheelhouse/* simple
+          python -m simple503 --base-url "file://${GITHUB_WORKSPACE}/simple" simple
 
       - name: Upload simple503-test artifact
         uses: actions/upload-artifact@v7
@@ -195,6 +245,7 @@ jobs:
           path: simple/*
 
       - name: Test in clean python image with pypi MPICH
+        if: runner.os == 'Linux'
         run: >
           cd dolfinx &&
           sudo git clean -fdx && cd ../ &&
@@ -203,13 +254,23 @@ jobs:
             /bin/bash -l -c "pip install mpich fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Test in clean python image with pypi Intel MPI (x86_64 only)
-        if: runner.arch == 'X64'
+        if: runner.os == 'Linux' && runner.arch == 'X64'
         run: >
           cd dolfinx &&
           sudo git clean -fdx && cd ../ &&
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
             --env PIP_EXTRA_INDEX_URL=file:///shared python:3.14 \
             /bin/bash -l -c "pip install impi-rt fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
+
+      - name: Test in clean virtual environment with pypi OpenMPI (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          python -m venv venv-test
+          source venv-test/bin/activate
+          PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install openmpi fenics-dolfinx[test]
+          export PATH=$(python -c "import os; print(':'.join(p for p in os.environ['PATH'].split(':') if '/opt/homebrew' not in p))")
+          python -m pytest -n auto -m "not adios2 and not petsc4py" dolfinx/python/test/unit
+          mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
 
       - name: Upload wheelhouse artifact
         uses: actions/upload-artifact@v7
