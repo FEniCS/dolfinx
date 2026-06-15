@@ -59,7 +59,7 @@ def pack_constants(
 
 
 def pack_coefficients(
-    form: Form | Sequence[Form],
+    form: None | Form | Sequence[Form],
 ) -> (
     dict[tuple[IntegralType, int], npt.NDArray] | list[dict[tuple[IntegralType, int], npt.NDArray]]
 ):
@@ -80,16 +80,12 @@ def pack_coefficients(
     Returns:
         Coefficients for each form.
     """
-
-    def _pack(form):
-        if form is None:
-            return {}
-        elif isinstance(form, Sequence):
-            return list(map(lambda sub_form: _pack(sub_form), form))
-        else:
-            return _pack_coefficients(form._cpp_object)
-
-    return _pack(form)
+    if form is None:
+        return {}
+    elif isinstance(form, Sequence):
+        return list(map(pack_coefficients, form))
+    else:
+        return _pack_coefficients(form._cpp_object)
 
 
 # -- Vector and matrix instantiation --------------------------------------
