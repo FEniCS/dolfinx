@@ -128,11 +128,6 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir ../wheelhouse/ .
 
-      - name: Install Homebrew dependencies
-        if: runner.os == 'macOS'
-        run: |
-          brew install boost hdf5-mpi ninja open-mpi pkgconf pugixml spdlog scotch
-
       - name: Make temporary simple503 repo directories
         run: mkdir -p wheelhouse/ simple/
 
@@ -164,7 +159,9 @@ jobs:
           CIBW_ENVIRONMENT_MACOS: >
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
             MACOSX_DEPLOYMENT_TARGET=14.0
-            CMAKE_ARGS="-DMPI_HOME=$(brew --prefix open-mpi) -DHDF5_ROOT=$(brew --prefix hdf5-mpi) -DCMAKE_PREFIX_PATH=$(brew --prefix)"
+            MPI_HOME=$(brew --prefix open-mpi)
+            HDF5_ROOT=$(brew --prefix hdf5-mpi)
+            BREW_PREFIX=$(brew --prefix)
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -186,13 +183,15 @@ jobs:
             cmake --build dolfinx-build-dir/ &&
             cmake --install dolfinx-build-dir/
           CIBW_BEFORE_BUILD_MACOS: >
+            brew install boost hdf5-mpi ninja open-mpi pkgconf pugixml spdlog scotch &&
             pip -v install fenics-basix fenics-ffcx &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S $GITHUB_WORKSPACE/dolfinx/cpp -B $GITHUB_WORKSPACE/dolfinx-build-dir/ \
               -DPython3_EXECUTABLE=$(which python) \
-              -DHDF5_ROOT=$(brew --prefix hdf5-mpi) \
-              -DMPI_HOME=$(brew --prefix open-mpi) \
-              -DCMAKE_PREFIX_PATH=$(brew --prefix) \
+              -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dolfinx-install \
+              -DHDF5_ROOT=$HDF5_ROOT \
+              -DMPI_HOME=$MPI_HOME \
+              -DCMAKE_PREFIX_PATH=$BREW_PREFIX \
               -DDOLFINX_ENABLE_SCOTCH=ON \
               -DCMAKE_BUILD_TYPE=RelWithDebug &&
             cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
@@ -202,12 +201,13 @@ jobs:
             wheel.py-api=cp312
             cmake.build-type="RelWithDebug"
           CIBW_CONFIG_SETTINGS_MACOS: >
+            cmake.args="-DMPI_HOME=$MPI_HOME;-DHDF5_ROOT=$HDF5_ROOT;-DCMAKE_PREFIX_PATH=$BREW_PREFIX;$GITHUB_WORKSPACE/dolfinx-install"
             wheel.py-api=cp312
             cmake.build-type="RelWithDebug"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
-            auditwheel repair --exclude libmpi.so.* -w {dest_dir} {wheel} &&
+            auditwheel repair --exclude libmpi.so* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel} --exclude libmpi &&
