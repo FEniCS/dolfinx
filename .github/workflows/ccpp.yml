@@ -60,8 +60,7 @@ jobs:
           cd python/dolfinx/wrappers
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
-      - name: gersemi (non-blocking)
-        continue-on-error: true
+      - name: gersemi
         run: gersemi --check .
 
   ccpp-build:
