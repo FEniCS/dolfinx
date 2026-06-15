@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2022 Garth N. Wells, Jack S. Hale
+# Copyright (C) 2018-2022 Garth N. Wells, Jack S. Hale and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -110,7 +110,7 @@ def create_vector(V: FunctionSpace, dtype: npt.DTypeLike = default_scalar_type) 
     """
     # Can just take the first dofmap here, since all dof maps have the same
     # index map in mixed-topology meshes
-    dofmap = V.dofmaps[0]  # type: ignore[attr-defined]
+    dofmap = V.dofmaps[0]
     return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=dtype)
 
 
@@ -303,8 +303,10 @@ def assemble_matrix(
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    bcs = [] if bcs is None else bcs
-    A: la.MatrixCSR = create_matrix(a, block_mode)
+    if bcs is None:
+        bcs = []
+
+    A = create_matrix(a, block_mode)
     _assemble_matrix_csr(A, a, bcs, diag, constants, coeffs)
     return A
 
