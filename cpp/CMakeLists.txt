@@ -343,7 +343,7 @@ if(DOLFINX_BASIX_PYTHON)
   endif()
 endif()
 
-find_package(Basix 0.11 REQUIRED CONFIG)
+find_package(Basix 0.12 REQUIRED CONFIG)
 set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
@@ -375,12 +375,12 @@ set_package_properties(
 # method UFCx was found.
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.11 REQUIRED CONFIG)
+  find_package(ufcx 0.12 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake) using Python
   # interpreter
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  find_package(UFCx 0.11 REQUIRED MODULE)
+  find_package(UFCx 0.12 REQUIRED MODULE)
 endif()
 
 set_package_properties(
