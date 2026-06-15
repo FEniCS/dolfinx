@@ -122,11 +122,15 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir ../wheelhouse/ .
 
-      - name: Make temporary simple503 repository
-        run: |
-          mkdir -p wheelhouse/ simple/
-          cp wheelhouse/* simple/
-          python -m simple503 --base-url file:///project/simple simple/
+      - name: Make temporary simple503 repo directories
+        run: mkdir -p wheelhouse/ simple/
+
+      - name: Add wheels to simple503 repository (if built)
+        if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
+        run: cp wheelhouse/* simple/
+
+      - name: Index simple503 repository
+        run: python -m simple503 --base-url file:///project/simple simple/
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v6
