@@ -69,7 +69,7 @@ jobs:
             cibw_build: cp312-manylinux_x86_64
           - os: ubuntu-24.04-arm
             cibw_build: cp312-manylinux_aarch64
-          - os: macos-15
+          - os: macos-26
             cibw_build: cp312-macosx_arm64
 
     env:
@@ -159,8 +159,6 @@ jobs:
           CIBW_ENVIRONMENT_MACOS: >
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
             MACOSX_DEPLOYMENT_TARGET=$(xcrun --sdk macosx --show-sdk-version)
-            MPI_HOME=$(brew --prefix open-mpi)
-            HDF5_ROOT=$(brew --prefix hdf5-mpi)
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install:$(brew --prefix)
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
