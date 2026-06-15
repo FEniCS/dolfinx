@@ -162,6 +162,7 @@ jobs:
             MPI_HOME=$(brew --prefix open-mpi)
             HDF5_ROOT=$(brew --prefix hdf5-mpi)
             BREW_PREFIX=$(brew --prefix)
+            DOLFINX_INSTALL=$GITHUB_WORKSPACE/dolfinx-install
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -201,7 +202,7 @@ jobs:
             wheel.py-api=cp312
             cmake.build-type="RelWithDebug"
           CIBW_CONFIG_SETTINGS_MACOS: >
-            cmake.args="-DMPI_HOME=$MPI_HOME;-DHDF5_ROOT=$HDF5_ROOT;-DCMAKE_PREFIX_PATH=$BREW_PREFIX;$GITHUB_WORKSPACE/dolfinx-install"
+            cmake.args="-DMPI_HOME=$MPI_HOME;-DHDF5_ROOT=$HDF5_ROOT;-DCMAKE_PREFIX_PATH=$BREW_PREFIX;-DDOLFINx_ROOT=$DOLFINX_INSTALL"
             wheel.py-api=cp312
             cmake.build-type="RelWithDebug"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
