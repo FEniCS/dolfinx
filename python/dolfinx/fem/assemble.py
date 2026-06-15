@@ -26,9 +26,15 @@ from dolfinx.fem.forms import Form
 from dolfinx.fem.function import FunctionSpace
 
 
-def pack_constants(
-    form: Form | Sequence[Form],
-) -> npt.NDArray | Sequence[npt.NDArray]:
+@typing.overload
+def pack_constants(form: Form) -> npt.NDArray: ...
+
+
+@typing.overload
+def pack_constants(form: Sequence[Form]) -> list[npt.NDArray]: ...
+
+
+def pack_constants(form):
     """Pack form constants for use in assembly.
 
     Pack the 'constants' that appear in forms. The packed constants can
@@ -46,16 +52,12 @@ def pack_constants(
     Returns:
         A ``constant`` array for each form.
     """
-
-    def _pack(form):
-        if form is None:
-            return None
-        elif isinstance(form, Sequence):
-            return list(map(lambda sub_form: _pack(sub_form), form))
-        else:
-            return _pack_constants(form._cpp_object)
-
-    return _pack(form)
+    if form is None:
+        return None
+    elif isinstance(form, Sequence):
+        return list(map(pack_constants, form))
+    else:
+        return _pack_constants(form._cpp_object)
 
 
 @typing.overload
