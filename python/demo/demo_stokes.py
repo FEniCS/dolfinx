@@ -35,20 +35,20 @@
 # ### Strong formulation
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   - \nabla \cdot (\nabla u + p I) &= f \quad {\rm in} \ \Omega,\\
 #   \nabla \cdot u &= 0 \quad {\rm in} \ \Omega.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # with conditions on the boundary $\partial \Omega = \Gamma_{D} \cup
 # \Gamma_{N}$ of the form:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   u &= u_0 \quad {\rm on} \ \Gamma_{D},\\
 #   \nabla u \cdot n + p n &= g \,   \quad\;\; {\rm on} \ \Gamma_{N}.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # ```{note}
@@ -68,12 +68,12 @@
 # where
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   a((u, p), (v, q)) &:= \int_{\Omega} \nabla u \cdot \nabla v -
 #            \nabla \cdot v \ p + \nabla \cdot u \ q \, {\rm d} x,\\
 #   L((v, q)) &:= \int_{\Omega} f \cdot v \, {\rm d} x + \int_{\partial
 #            \Omega_N} g \cdot v \, {\rm d} s.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # ### Domain and boundary conditions

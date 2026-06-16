@@ -4,7 +4,8 @@
 # NOTE: petsc4py is an optional build dependency, therefore we don't
 # list it here.
 [build-system]
-requires = ["scikit-build-core[pyproject]>=0.10", "nanobind>=2.5.0", "mpi4py"]
+# scikit-build-core>=0.11 has SPDX license support PEP 639
+requires = ["scikit-build-core[pyproject]>=0.11", "nanobind>=2.5.0", "mpi4py"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -12,14 +13,15 @@ name = "fenics-dolfinx"
 version = "0.11.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
-requires-python = ">=3.10.0"
-license = { file = "../COPYING.LESSER" }
+requires-python = ">=3.11"
+license = "LGPL-3.0-or-later"
+license-files = ["COPYING*"]
 authors = [
       { email = "fenics-steering-council@googlegroups.com" },
       { name = "FEniCS Steering Council" },
 ]
 dependencies = [
-      "numpy>=1.21",
+      "numpy>=2",
       "cffi",
       "mpi4py",
       "fenics-basix>=0.11.0.dev0",
@@ -44,12 +46,13 @@ docs = [
       "packaging",
       "pyyaml",
       "sphinx",
-      "sphinx_rtd_theme",
+      "pydata-sphinx-theme",
       "sphinx_codeautolink[ipython]",
       "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
 ]
-lint = ["ruff>=0.2.0"]
+lint = ["ruff"]
+mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
 optional = ["numba"]
 petsc4py = ["petsc4py"]
 test = [
@@ -61,12 +64,11 @@ test = [
       "fenics-dolfinx[optional]",
 ]
 ci = [
-      "mypy",
       "pytest-xdist",
-      "types-setuptools",
       "fenics-dolfinx[build]",
       "fenics-dolfinx[docs]",
       "fenics-dolfinx[lint]",
+      "fenics-dolfinx[mypy]",
       "fenics-dolfinx[optional]",
       "fenics-dolfinx[test]",
 ]
@@ -75,7 +77,6 @@ ci = [
 wheel.packages = ["dolfinx"]
 sdist.exclude = ["*.cpp"]
 cmake.build-type = "Release"
-wheel.license-files = ["../COPYING*"]
 
 [tool.pytest]
 junit_family = "xunit2"
@@ -97,7 +98,6 @@ warn_return_any = false
 warn_unused_ignores = false
 show_error_codes = true
 ignore_missing_imports = true
-
 
 [tool.ruff]
 line-length = 100

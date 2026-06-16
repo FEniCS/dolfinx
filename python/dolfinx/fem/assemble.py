@@ -107,7 +107,7 @@ def create_vector(V: FunctionSpace, dtype: npt.DTypeLike = default_scalar_type) 
     """
     # Can just take the first dofmap here, since all dof maps have the same
     # index map in mixed-topology meshes
-    dofmap = V.dofmaps(0)  # type: ignore[attr-defined]
+    dofmap = V.dofmaps[0]  # type: ignore[attr-defined]
     return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=dtype)
 
 
@@ -161,7 +161,7 @@ def assemble_scalar(
         of this function is typically summed across all MPI ranks.
     """
     constants = pack_constants(M) if constants is None else constants  # type: ignore[assignment]
-    coeffs = pack_coefficients(M) if coeffs is None else constants  # type: ignore[assignment]
+    coeffs = pack_coefficients(M) if coeffs is None else coeffs  # type: ignore[assignment]
     return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)
 
 

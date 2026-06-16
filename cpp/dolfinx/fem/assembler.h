@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2025 Garth N. Wells
+// Copyright (C) 2018-2026 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -19,6 +19,7 @@
 #include <basix/mdspan.hpp>
 #include <cstdint>
 #include <dolfinx/common/types.h>
+#include <dolfinx/mesh/EntityMap.h>
 #include <memory>
 #include <optional>
 #include <span>
@@ -70,6 +71,12 @@ void tabulate_expression(
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
+  // Check that domain is the same as mesh of the expression
+  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
+  {
+    throw std::runtime_error(
+        "Expression was created on a different mesh. Cannot tabulate.");
+  }
   auto [X, Xshape] = e.X();
   impl::tabulate_expression(values, e.kernel(), Xshape, e.value_size(), coeffs,
                             constants, mesh, entities, element);
@@ -95,6 +102,13 @@ template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
 {
+  // Check that domain is the same as mesh of the expression
+  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
+  {
+    throw std::runtime_error(
+        "Expression was created on a different mesh. Cannot tabulate.");
+  }
+
   std::optional<
       std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
       element = std::nullopt;
@@ -115,12 +129,13 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
     std::vector<std::reference_wrapper<const Function<T, U>>> c;
     std::ranges::transform(coefficients, std::back_inserter(c),
                            [](auto c) -> const Function<T, U>& { return *c; });
-    fem::pack_coefficients(c, coffsets, entities, std::span(coeffs));
+    fem::pack_coefficients(c, mesh, entities, e.entity_maps(), coffsets,
+                           std::span(coeffs));
   }
   std::vector<T> constants = fem::pack_constants(e);
 
   tabulate_expression<T, U>(
-      values, e, md::mdspan(coeffs.data(), entities.size(), cstride),
+      values, e, md::mdspan(coeffs.data(), entities.extent(0), cstride),
       std::span<const T>(constants), mesh, entities, element);
 }
 
@@ -167,19 +182,30 @@ T assemble_scalar(
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
   std::span x = mesh->geometry().x();
-  if constexpr (std::is_same_v<U, scalar_value_t<T>>)
+
+  // Accumulate contributions from each cell type
+  const int num_cell_types = mesh->topology()->cell_types().size();
+  T val = 0;
+  for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
-    return impl::assemble_scalar(M, mesh->geometry().dofmap(),
-                                 mdspanx3_t(x.data(), x.size() / 3, 3),
-                                 constants, coefficients);
+    // Geometry dofmap and data
+    md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> x_dofmap
+        = mesh->geometry().dofmaps().at(cell_type_idx);
+    if constexpr (std::is_same_v<U, scalar_value_t<T>>)
+    {
+      val += impl::assemble_scalar(M, x_dofmap,
+                                   mdspanx3_t(x.data(), x.size() / 3, 3),
+                                   constants, coefficients, cell_type_idx);
+    }
+    else
+    {
+      std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
+      val += impl::assemble_scalar(M, x_dofmap,
+                                   mdspanx3_t(_x.data(), _x.size() / 3, 3),
+                                   constants, coefficients, cell_type_idx);
+    }
   }
-  else
-  {
-    std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
-    return impl::assemble_scalar(M, mesh->geometry().dofmap(),
-                                 mdspanx3_t(_x.data(), _x.size() / 3, 3),
-                                 constants, coefficients);
-  }
+  return val;
 }
 
 /// @brief Assemble functional into scalar.
@@ -481,10 +507,10 @@ void assemble_matrix(
   // Index maps for dof ranges
   // NOTE: For mixed-topology meshes, there will be multiple DOF maps,
   // but the index maps are the same.
-  auto map0 = a.function_spaces().at(0)->dofmaps(0)->index_map;
-  auto map1 = a.function_spaces().at(1)->dofmaps(0)->index_map;
-  auto bs0 = a.function_spaces().at(0)->dofmaps(0)->index_map_bs();
-  auto bs1 = a.function_spaces().at(1)->dofmaps(0)->index_map_bs();
+  auto map0 = a.function_spaces().at(0)->dofmaps().front()->index_map;
+  auto map1 = a.function_spaces().at(1)->dofmaps().front()->index_map;
+  auto bs0 = a.function_spaces().at(0)->dofmaps().front()->index_map_bs();
+  auto bs1 = a.function_spaces().at(1)->dofmaps().front()->index_map_bs();
 
   // Build dof markers
   std::vector<std::int8_t> dof_marker0, dof_marker1;

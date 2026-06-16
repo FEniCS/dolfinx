@@ -66,7 +66,6 @@ public:
   AdjacencyList(U&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {
-    _array.reserve(_offsets.back());
     assert(_offsets.back() == (std::int32_t)_array.size());
   }
 
