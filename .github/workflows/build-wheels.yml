@@ -69,7 +69,7 @@ jobs:
             cibw_build: cp312-manylinux_x86_64
           - os: ubuntu-24.04-arm
             cibw_build: cp312-manylinux_aarch64
-          - os: macos-14
+          - os: macos-15
             cibw_build: cp312-macosx_arm64
 
     env:
