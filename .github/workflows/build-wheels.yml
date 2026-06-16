@@ -69,7 +69,7 @@ jobs:
             cibw_build: cp312-manylinux_x86_64
           - os: ubuntu-24.04-arm
             cibw_build: cp312-manylinux_aarch64
-          - os: macos-15
+          - os: macos-14
             cibw_build: cp312-macosx_arm64
 
     env:
@@ -156,10 +156,15 @@ jobs:
           python -m cibuildwheel --output-dir wheelhouse/ dolfinx/python
         env:
           CIBW_ENVIRONMENT_LINUX: PIP_EXTRA_INDEX_URL=file:///project/simple
+          # When using Homebrew the packaged .so are always built on the macOS
+          # SDK version of the current system. Consequently
+          # MACOSX_DEPLOYMENT_TARGET must always be set to the SDK version of
+          # the current system.
           CIBW_ENVIRONMENT_MACOS: >
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
             MACOSX_DEPLOYMENT_TARGET=$(xcrun --sdk macosx --show-sdk-version)
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install:$(brew --prefix)
+          # TODO: Build superlu-dist from source
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -180,6 +185,7 @@ jobs:
               -DHDF5_ROOT=/usr/lib64/mpich -DMPI_HOME=/usr/lib64/mpich -DCMAKE_BUILD_TYPE=RelWithDebug &&
             cmake --build dolfinx-build-dir/ &&
             cmake --install dolfinx-build-dir/
+          # TODO: Build superlu-dist from source - not packaged in Homebrew.
           CIBW_BEFORE_BUILD_MACOS: >
             brew install boost hdf5-mpi ninja open-mpi pkgconf pugixml spdlog scotch &&
             pip -v install fenics-basix fenics-ffcx &&
@@ -196,6 +202,9 @@ jobs:
             cmake.args="-DMPI_HOME=/usr/lib64/mpich;-DHDF5_ROOT=/usr/lib64/mpich"
             wheel.py-api=cp312
             cmake.build-type="RelWithDebug"
+          # As of 6/26 DOLFINx uses std::jthread which is only officially
+          # supported in macOS SDK 26. This enables experimental std library
+          # support which allows the build to complete on macOS SDK 15.
           CIBW_CONFIG_SETTINGS_MACOS: >
             cmake.args="-DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH;-DCMAKE_CXX_FLAGS_INIT=-fexperimental-library"
             wheel.py-api=cp312
@@ -206,6 +215,7 @@ jobs:
             auditwheel repair --exclude libmpi.so* -w {dest_dir} {wheel} &&
             pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
+            delocate-listdeps --depending {wheel} &&
             delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel} --exclude libmpi &&
             pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_TEST_REQUIRES: pytest-xdist
