@@ -8,6 +8,7 @@
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/FunctionSpace.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <mpi.h>
 
@@ -26,6 +27,8 @@ public:
   /// @param reference_dofs_global List of global reference dofs with
   /// weights for each local constrained dof
   /// @note u_constrained = sum(u_ref * coeff_ref)
+  /// @todo Add a constant term to the constraint, i.e. u_constrained =
+  /// sum(u_ref * coeff_ref) + constant
 
   MPC(const FunctionSpace<U>& V,
       const std::vector<std::int32_t>& constrained_dofs_local,
@@ -108,12 +111,14 @@ public:
         dm->index_map->size_local() + dm->index_map->num_ghosts(), 0);
     for (std::size_t i = 0; i < constrained_dofs_local.size(); ++i)
       count[constrained_dofs_local[i]] += reference_dofs_global[i].size();
-    dof_to_ref.resize(count.size() + 1, 0);
+    std::vector<std::int32_t> dof_to_ref(count.size() + 1, 0);
     std::partial_sum(count.begin(), count.end(), std::next(dof_to_ref.begin()));
 
     // Flatten reference dofs and weight arrays, in correct order
     std::vector<std::int64_t> ref_dofs_tmp(dof_to_ref.back());
-    ref_coeffs_flat.resize(dof_to_ref.back());
+    std::vector<T> ref_coeffs_flat(dof_to_ref.back());
+    std::vector<std::pair<std::int32_t, T>> constraints_flat(dof_to_ref.back());
+
     for (std::size_t i = 0; i < constrained_dofs_local.size(); ++i)
     {
       std::int32_t index = dof_to_ref[constrained_dofs_local[i]];
@@ -126,8 +131,15 @@ public:
     }
 
     // Convert reference dofs to local indexing
-    ref_dofs_flat.resize(ref_dofs_tmp.size());
+    std::vector<std::int32_t> ref_dofs_flat(ref_dofs_tmp.size());
     _V->dofmap()->index_map->global_to_local(ref_dofs_tmp, ref_dofs_flat);
+
+    for (std::size_t i = 0; i < ref_dofs_flat.size(); ++i)
+      constraints_flat[i] = {ref_dofs_flat[i], ref_coeffs_flat[i]};
+
+    _constraints
+        = std::make_unique<graph::AdjacencyList<std::pair<std::int32_t, T>>>(
+            constraints_flat, dof_to_ref);
   }
 
   /// @brief Get modified FunctionSpace containing reference dofs as ghosts
@@ -146,7 +158,7 @@ public:
       for (std::size_t j = 0; j < cell_dofs.extent(1); ++j)
       {
         int index = cell_dofs(i, j);
-        if (dof_to_ref[index] != dof_to_ref[index + 1])
+        if (_constraints->num_links(index) > 0)
           marked_cells.push_back(i);
       }
     }
@@ -162,15 +174,15 @@ public:
     std::vector<std::int32_t> ref_dofs;
     std::vector<T> coeffs;
 
-    int n = dof_to_ref[dof + 1] - dof_to_ref[dof];
+    int n = _constraints->num_links(dof);
     ref_dofs.resize(n);
-    std::copy(std::next(ref_dofs_flat.begin(), dof_to_ref[dof]),
-              std::next(ref_dofs_flat.begin(), dof_to_ref[dof + 1]),
-              ref_dofs.begin());
     coeffs.resize(n);
-    std::copy(std::next(ref_coeffs_flat.begin(), dof_to_ref[dof]),
-              std::next(ref_coeffs_flat.begin(), dof_to_ref[dof + 1]),
-              coeffs.begin());
+    for (int i = 0; i < n; ++i)
+    {
+      auto [ref_dof, coeff] = _constraints->links(dof)[i];
+      ref_dofs[i] = ref_dof;
+      coeffs[i] = coeff;
+    }
 
     return {ref_dofs, coeffs};
   }
@@ -184,26 +196,26 @@ public:
   {
     std::vector<std::int32_t> mdofs;
     mdofs.reserve(dofs.size());
-    // Copy unconstrained dofs
+    // Copy unconstrained dofs first
     for (std::int32_t r : dofs)
     {
-      if (dof_to_ref[r + 1] == dof_to_ref[r])
+      if (_constraints->num_links(r) == 0)
         mdofs.push_back(r);
     }
     // Add any new reference dofs
     for (std::int32_t r : dofs)
     {
-      if (dof_to_ref[r + 1] != dof_to_ref[r])
+      int n = _constraints->num_links(r);
+      if (n > 0)
       {
-        for (int j = dof_to_ref[r]; j < dof_to_ref[r + 1]; ++j)
+        for (int j = 0; j < n; ++j)
         {
-          if (std::find(mdofs.begin(), mdofs.end(), ref_dofs_flat[j])
-              == mdofs.end())
-            mdofs.push_back(ref_dofs_flat[j]);
+          std::int32_t ref_dof = _constraints->links(r)[j].first;
+          if (std::find(mdofs.begin(), mdofs.end(), ref_dof) == mdofs.end())
+            mdofs.push_back(ref_dof);
         }
       }
     }
-
     return mdofs;
   }
 
@@ -220,7 +232,7 @@ public:
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
       int r = dofs[i];
-      if (dof_to_ref[r + 1] - dof_to_ref[r] == 0)
+      if (_constraints->num_links(r) == 0)
       {
         auto it = std::find(mdofs.begin(), mdofs.end(), r);
         assert(it != mdofs.end());
@@ -229,12 +241,12 @@ public:
       }
       else
       {
-        for (int k = dof_to_ref[r]; k < dof_to_ref[r + 1]; ++k)
+        for (auto [ref_dof, ref_coeff] : _constraints->links(r))
         {
-          auto it = std::find(mdofs.begin(), mdofs.end(), ref_dofs_flat[k]);
+          auto it = std::find(mdofs.begin(), mdofs.end(), ref_dof);
           assert(it != mdofs.end());
           int j = std::distance(mdofs.begin(), it);
-          mat[mdofs.size() * i + j] = ref_coeffs_flat[k];
+          mat[mdofs.size() * i + j] = ref_coeff;
         }
       }
     }
@@ -244,16 +256,11 @@ private:
   // Modified FunctionSpace with additional ghost dofs
   std::shared_ptr<const FunctionSpace<U>> _V;
 
-  // Offset array to look up the reference data for constrained dofs
-  // Contains pointers to ref_dofs_flat and ref_coeffs_flat, both of which have
-  // the same layout. For unconstrained dofs, dof_to_ref[dof + 1] ==
-  // dof_to_ref[dof]
-  std::vector<std::int32_t> dof_to_ref;
-
-  // Stored (local) indices of reference dofs, flattened
-  std::vector<std::int32_t> ref_dofs_flat;
-  // Stored coefficients to apply to reference dofs, flattened
-  std::vector<T> ref_coeffs_flat;
+  // List of constraints for each local DoF (if any).
+  // For each local dof, the list contains pairs of reference dof index and
+  // coefficient.
+  std::unique_ptr<graph::AdjacencyList<std::pair<std::int32_t, T>>>
+      _constraints;
 };
 
 /// @brief Assemble a billinear form with MPC constraints into a `MatrixCSR`.
