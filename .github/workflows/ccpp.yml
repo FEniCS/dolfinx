@@ -123,6 +123,7 @@ jobs:
         run: |
           cmake --build .
           sudo cmake --install .
+          sudo ldconfig
 
       - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
@@ -214,7 +215,9 @@ jobs:
 
       - name: Build and install (C++)
         working-directory: cpp/build
-        run: cmake --build . --target install
+        run: | 
+          cmake --build . --target install
+          ldconfig
 
       - name: Build tests (C++, standalone)
         working-directory: cpp/test
