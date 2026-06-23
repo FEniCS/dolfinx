@@ -210,6 +210,7 @@ jobs:
             wheel.py-api=cp312
             cmake.build-type="RelWithDebug"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
+          # The first line allows auditwheel to find and bundle in libbasix
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
             auditwheel repair --exclude libmpi.so* -w {dest_dir} {wheel} &&
