@@ -310,9 +310,9 @@ if(DOLFINX_BASIX_PYTHON)
     message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 
     # These are nullops if the directories don't exist/contain nothing.
-    # Basix lib may be in the Python module directory (e.g. regular pip install)
+    # Basix lib may be in . (e.g. manual combined pip install)
     list(APPEND CMAKE_INSTALL_RPATH "${BASIX_PY_DIR}")
-    # Basix lib installed from wheel may be in fenics_basix.libs
+    # Basix lib installed from cibuildwheel wheel may be in ../fenics_basix.libs
     list(APPEND CMAKE_INSTALL_RPATH "${BASIX_PY_PARENT_DIR}/fenics_basix.libs")
 
     list(APPEND CMAKE_PREFIX_PATH ${BASIX_PY_DIR})
