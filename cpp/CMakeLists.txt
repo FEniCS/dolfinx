@@ -310,7 +310,7 @@ if(DOLFINX_BASIX_PYTHON)
     message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 
     # Basix installed from manylinux wheel requires rpath set
-    if(IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
+    if(IS_DIRECTORY "${BASIX_PY_DIR}/../fenics_basix.libs")
       set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
     endif()
 
@@ -450,7 +450,7 @@ endif()
 if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
   message(STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH.")
   set(SCOTCH_FOUND FALSE)
-  if(_REQUIRE_SCOTCH AND NOT SCOTCH_FOUND)
+  if(_REQUIRE_SCOTCH)
     message(FATAL_ERROR "SCOTCH requested, but not found.")
   endif()
 endif()
