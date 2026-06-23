@@ -19,6 +19,10 @@ To build in Developer and editable mode for development:
 
 Note that Developer mode is significantly stricter than CMake's default Debug mode.
 
+When DOLFINx C++ was installed into a non-standard prefix, passing
+`-Ccmake.args="-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON"` to pip ensures the
+extension module can locate its runtime dependencies.
+
 # Type checking with mypy
 
 1. Install DOLFINx Python with the `[mypy]` optional dependencies set, e.g.:
