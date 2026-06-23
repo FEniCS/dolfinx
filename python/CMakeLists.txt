@@ -38,14 +38,20 @@ find_package(nanobind CONFIG REQUIRED)
 enable_language(C)
 
 find_package(DOLFINX REQUIRED CONFIG)
-set_target_properties(dolfinx PROPERTIES SYSTEM OFF)
+message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 
-if(DOLFINX_FOUND)
-  message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
+if(CMAKE_BUILD_TYPE STREQUAL "Developer")
+  # This enables warnings from DOLFINx headers even though they are a SYSTEM
+  # dependency.
+  set_target_properties(dolfinx PROPERTIES SYSTEM OFF)
 endif()
 
-# SuperLU_DIST Python interface requires the superlu_defs.h header for int_t.
-pkg_search_module(SUPERLU_DIST OPTIONAL IMPORTED_TARGET superlu_dist)
+get_target_property(_dolfinx_defs dolfinx INTERFACE_COMPILE_DEFINITIONS)
+if("HAS_SUPERLU_DIST" IN_LIST _dolfinx_defs)
+  # SuperLU_DIST Python interface requires the superlu_defs.h header for int_t.
+  find_package(PkgConfig)
+  pkg_search_module(SUPERLU_DIST OPTIONAL IMPORTED_TARGET superlu_dist)
+endif()
 
 # Create the binding library nanobind handles its own calls to
 # target_link_libraries
@@ -136,7 +142,7 @@ target_compile_options(
 target_compile_definitions(
   cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS}>
 )
-target_compile_definitions(cpp PRIVATE cxx_std_20)
+target_compile_features(cpp PRIVATE cxx_std_20)
 
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
@@ -153,19 +159,25 @@ endif()
 
 # Check for petsc4py
 execute_process(
-  COMMAND ${Python_EXECUTABLE} -c
+  COMMAND "${Python_EXECUTABLE}" -c
           "import petsc4py; print(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIR
   RESULT_VARIABLE PETSC4PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-if(NOT PETSC4PY_COMMAND_RESULT)
-  message(STATUS "Found petsc4py include directory at ${PETSC4PY_INCLUDE_DIR}")
-  target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIR})
-  target_compile_definitions(cpp PRIVATE HAS_PETSC4PY)
+if("HAS_PETSC" IN_LIST _dolfinx_defs)
+  if(NOT PETSC4PY_COMMAND_RESULT)
+    message(STATUS "Found petsc4py include directory at ${PETSC4PY_INCLUDE_DIR}")
+    target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIR})
+    target_compile_definitions(cpp PRIVATE HAS_PETSC4PY)
+  else()
+    message(WARNING "DOLFINx was built with PETSc but petsc4py was not found.")
+  endif()
 else()
-  message(STATUS "petsc4py not found.")
+  if(NOT PETSC4PY_COMMAND_RESULT)
+    message(WARNING "DOLFINx was built without PETSc but petsc4py was found.")
+  endif()
 endif()
 
 # Check for mpi4py
@@ -182,7 +194,5 @@ if(NOT MPI4PY_COMMAND_RESULT)
 else()
   message(FATAL_ERROR "mpi4py could not be found.")
 endif()
-
-set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 install(TARGETS cpp DESTINATION dolfinx)
