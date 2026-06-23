@@ -80,7 +80,7 @@ add_feature_info(
 
 # Add shared library paths so shared libs in non-system paths are found
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH
-       "Add paths to linker search and installed rpath." ON
+  "Add paths to linker search and installed rpath." OFF
 )
 add_feature_info(
   CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_PATH
@@ -299,7 +299,6 @@ if(DOLFINX_BASIX_PYTHON)
         ${Python3_EXECUTABLE} -c
         "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
       OUTPUT_VARIABLE BASIX_PY_DIR
-      RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
       ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
     )
   endif()
@@ -307,12 +306,14 @@ if(DOLFINX_BASIX_PYTHON)
   if(BASIX_PY_DIR)
     # Converts os native to cmake native path
     cmake_path(SET BASIX_PY_DIR "${BASIX_PY_DIR}")
+    cmake_path(GET BASIX_PY_DIR PARENT_PATH BASIX_PY_PARENT_DIR)
     message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 
-    # Basix installed from manylinux wheel requires rpath set
-    if(IS_DIRECTORY "${BASIX_PY_DIR}/../fenics_basix.libs")
-      set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
-    endif()
+    # These are nullops if the directories don't exist/contain nothing.
+    # Basix lib may be in the Python module directory (e.g. regular pip install)
+    list(APPEND CMAKE_INSTALL_RPATH "${BASIX_PY_DIR}")
+    # Basix lib installed from wheel may be in fenics_basix.libs
+    list(APPEND CMAKE_INSTALL_RPATH "${BASIX_PY_PARENT_DIR}/fenics_basix.libs")
 
     list(APPEND CMAKE_PREFIX_PATH ${BASIX_PY_DIR})
   else()
