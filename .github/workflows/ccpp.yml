@@ -117,13 +117,13 @@ jobs:
           -DDOLFINX_ENABLE_PETSC=false
           -DDOLFINX_ENABLE_SUPERLU_DIST=true
           -DDOLFINX_ENABLE_PARMETIS=true
+          -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON
 
       - name: Build and install (C++)
         working-directory: cpp/build
         run: |
           cmake --build .
           sudo cmake --install .
-          sudo ldconfig
 
       - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
@@ -212,12 +212,12 @@ jobs:
           -DDOLFINX_ENABLE_SCOTCH=true
           -DDOLFINX_ENABLE_SLEPC=true
           -DDOLFINX_ENABLE_PARMETIS=false
+          -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON
 
       - name: Build and install (C++)
         working-directory: cpp/build
         run: | 
           cmake --build . --target install
-          ldconfig
 
       - name: Build tests (C++, standalone)
         working-directory: cpp/test
@@ -311,7 +311,7 @@ jobs:
 
       - name: Configure C++
         run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -B build -S cpp/
+          cmake -Werror=dev --warn-uninitialized -G Ninja -B build -S cpp/ -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON
           cmake --build build
           cmake --install build
 
