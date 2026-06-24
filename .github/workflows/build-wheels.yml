@@ -151,13 +151,20 @@ jobs:
             /usr/bin/crb enable &&
             dnf -y update &&
             dnf -y install boost-devel boost-program-options git hdf5-mpich-devel make \
-              mpich-devel ninja-build openblas-devel pugixml-devel spdlog-devel superlu_dist-mpich-devel &&
+              mpich-devel ninja-build openblas-devel pugixml-devel spdlog-devel &&
             ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
             git clone --branch v7.0.9 --single-branch https://gitlab.inria.fr/scotch/scotch.git &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
               -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=/usr/lib64/mpich &&
             cmake --build scotch-build-dir/ &&
             cmake --install scotch-build-dir/ &&
+            git clone --branch v9.2.1 --single-branch https://github.com/xiaoyeli/superlu_dist.git &&
+            cmake -G Ninja -S superlu_dist/ -B superlu_dist-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
+              -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=/usr/lib64/mpich -TPL_ENABLE_PARMETISLIB=OFF \
+              -DXSDK_ENABLE_Fortran=OFF &&
+            cmake --build superlu_dist-build-dir/ &&
+            cmake --install superlu_dist-build-dir/ &&
+
             pip -v install $(python -c "import tomllib; deps=tomllib.load(open('/project/dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DPython3_EXECUTABLE=$(which python) \
