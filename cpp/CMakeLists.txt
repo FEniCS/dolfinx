@@ -11,7 +11,7 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.11.0.0")
+project(DOLFINX VERSION "0.12.0.0")
 
 set(DOXYGEN_DOLFINX_VERSION
     ${DOLFINX_VERSION}
@@ -27,9 +27,9 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Get GIT changeset, if available
-find_program(GIT_FOUND git)
+find_program(GIT_EXECUTABLE git)
 
-if(GIT_FOUND)
+if(GIT_EXECUTABLE)
   # Get the commit hash of the working branch
   execute_process(
     COMMAND git rev-parse HEAD
@@ -45,10 +45,10 @@ endif()
 # General configuration
 
 # Set location of our FindFoo.cmake modules
-set(CMAKE_MODULE_PATH ${DOLFINX_SOURCE_DIR}/cmake/modules)
+list(APPEND CMAKE_MODULE_PATH "${DOLFINX_SOURCE_DIR}/cmake/modules")
 
 # Make sure CMake uses the correct DOLFINConfig.cmake for tests and demos
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_BINARY_DIR}/dolfinx")
 
 # ------------------------------------------------------------------------------
 # Configurable options for how we want to build
@@ -78,13 +78,16 @@ add_feature_info(
   "Skip build tests for testing usability of dependency packages."
 )
 
-# Add shared library paths so shared libs in non-system paths are found
-option(CMAKE_INSTALL_RPATH_USE_LINK_PATH
-       "Add paths to linker search and installed rpath." ON
+# Add all shared library paths to rpath so libs in non-system paths are found.
+# This is on by default because many users build against non-system paths.
+# Package builders may want to set this to FALSE.
+option(DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+	"Add linker search paths to rpath of dolfinx target. Packagers may want
+	to set FALSE." TRUE
 )
 add_feature_info(
-  CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_PATH
-  "Add paths to linker search and installed rpath."
+  DOLFINX_INSTALL_RPATH_USE_LINK_PATH DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+  "Add linker search paths to rpath of dolfinx target. Packagers may want to set to FALSE."
 )
 
 # Control Basix discovery
@@ -120,12 +123,21 @@ add_feature_info(
 # ------------------------------------------------------------------------------
 # Enable or disable optional packages
 
-if(DOLFINX_ENABLE_ADIOS2)
-  set(_REQUIRE_ADIOS2 TRUE CACHE BOOL "Is ADIOS2 REQUIRED?")
-else()
-  set(_REQUIRE_ADIOS2 FALSE CACHE BOOL "Is ADIOS2 REQUIRED?")
-endif()
-option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
+# Sets _REQUIRE_<X> TRUE if the user explicitly passed -DDOLFINX_ENABLE_<X>=ON
+# on the command line (cache type UNINITIALIZED), FALSE otherwise.
+function(dolfinx_enable_option name description)
+  get_property(_type CACHE ${name} PROPERTY TYPE)
+  if(_type STREQUAL "UNINITIALIZED")
+    set(_required TRUE)
+  else()
+    set(_required FALSE)
+  endif()
+  string(REPLACE "DOLFINX_ENABLE_" "_REQUIRE_" _require_var "${name}")
+  set(${_require_var} ${_required} CACHE BOOL "Is ${name} REQUIRED?" FORCE)
+  option(${name} "${description}" ON)
+endfunction()
+
+dolfinx_enable_option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2.")
 set_package_properties(
   ADIOS2 PROPERTIES
   TYPE OPTIONAL
@@ -134,13 +146,7 @@ set_package_properties(
   PURPOSE "IO, including in parallel"
 )
 
-if(DOLFINX_ENABLE_PETSC)
-  set(_REQUIRE_PETSC TRUE CACHE BOOL "Is PETSc REQUIRED?")
-else()
-  set(_REQUIRE_PETSC FALSE CACHE BOOL "Is PETSc REQUIRED?")
-endif()
-
-option(DOLFINX_ENABLE_PETSC "Compile with support for PETSc." ON)
+dolfinx_enable_option(DOLFINX_ENABLE_PETSC "Compile with support for PETSc.")
 set_package_properties(
   PETSc PROPERTIES
   TYPE RECOMMENDED
@@ -149,12 +155,7 @@ set_package_properties(
   PURPOSE "Linear and nonlinear solvers"
 )
 
-if(DOLFINX_ENABLE_PARMETIS)
-  set(_REQUIRE_PARMETIS TRUE CACHE BOOL "Is Parmetis REQUIRED?")
-else()
-  set(_REQUIRE_PARMETIS FALSE CACHE BOOL "Is Parmetis REQUIRED?")
-endif()
-option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
+dolfinx_enable_option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS.")
 set_package_properties(
   ParMETIS PROPERTIES
   TYPE RECOMMENDED
@@ -163,12 +164,7 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
-if(DOLFINX_ENABLE_SCOTCH)
-  set(_REQUIRE_SCOTCH TRUE CACHE BOOL "Is SCOTCH REQUIRED?")
-else()
-  set(_REQUIRE_SCOTCH FALSE CACHE BOOL "Is SCOTCH REQUIRED?")
-endif()
-option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
+dolfinx_enable_option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH.")
 set_package_properties(
   SCOTCH PROPERTIES
   TYPE OPTIONAL
@@ -178,12 +174,7 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
-if(DOLFINX_ENABLE_SLEPC)
-  set(_REQUIRE_SLEPC TRUE CACHE BOOL "Is SLEPc REQUIRED?")
-else()
-  set(_REQUIRE_SLEPC FALSE CACHE BOOL "Is SLEPc REQUIRED?")
-endif()
-option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
+dolfinx_enable_option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc.")
 set_package_properties(
   SLEPc PROPERTIES
   TYPE RECOMMENDED
@@ -192,12 +183,7 @@ set_package_properties(
   PURPOSE "Eigenvalue computation"
 )
 
-if(DOLFINX_ENABLE_KAHIP)
-  set(_REQUIRE_KAHIP TRUE CACHE BOOL "Is KaHIP REQUIRED?")
-else()
-  set(_REQUIRE_KAHIP FALSE CACHE BOOL "Is KaHIP REQUIRED?")
-endif()
-option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." ON)
+dolfinx_enable_option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP.")
 set_package_properties(
   KaHIP PROPERTIES
   TYPE OPTIONAL
@@ -206,13 +192,7 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
-if(DOLFINX_ENABLE_SUPERLU_DIST)
-  set(_REQUIRE_SUPERLU_DIST TRUE CACHE BOOL "Is SuperLU_DIST REQUIRED?")
-else()
-  set(_REQUIRE_SUPERLU_DIST FALSE CACHE BOOL "Is SuperLU_DIST REQUIRED?")
-endif()
-
-option(DOLFINX_ENABLE_SUPERLU_DIST "Compile with support for SuperLU_DIST." ON)
+dolfinx_enable_option(DOLFINX_ENABLE_SUPERLU_DIST "Compile with support for SuperLU_DIST.")
 set_package_properties(
   SuperLU_DIST PROPERTIES
   TYPE OPTIONAL
@@ -322,7 +302,6 @@ if(DOLFINX_BASIX_PYTHON)
         ${Python3_EXECUTABLE} -c
         "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
       OUTPUT_VARIABLE BASIX_PY_DIR
-      RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
       ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
     )
   endif()
@@ -330,20 +309,22 @@ if(DOLFINX_BASIX_PYTHON)
   if(BASIX_PY_DIR)
     # Converts os native to cmake native path
     cmake_path(SET BASIX_PY_DIR "${BASIX_PY_DIR}")
+    cmake_path(GET BASIX_PY_DIR PARENT_PATH BASIX_PY_PARENT_DIR)
+
+    # These are nullops if the directories don't exist/contain nothing.
+    # Basix lib may be in . (e.g. manual combined pip install)
+    list(APPEND CMAKE_INSTALL_RPATH "${BASIX_PY_DIR}")
+    # Basix lib installed from cibuildwheel wheel may be in ../fenics_basix.libs
+    list(APPEND CMAKE_INSTALL_RPATH "${BASIX_PY_PARENT_DIR}/fenics_basix.libs")
+
     message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
-
-    # Basix installed from manylinux wheel requires rpath set
-    if(IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
-      set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
-    endif()
-
     list(APPEND CMAKE_PREFIX_PATH ${BASIX_PY_DIR})
   else()
     message(STATUS "No Basix hint was found.")
   endif()
 endif()
 
-find_package(Basix 0.11 REQUIRED CONFIG)
+find_package(Basix 0.12 REQUIRED CONFIG)
 set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
@@ -375,12 +356,12 @@ set_package_properties(
 # method UFCx was found.
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.11 REQUIRED CONFIG)
+  find_package(ufcx 0.12 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake) using Python
   # interpreter
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  find_package(UFCx 0.11 REQUIRED MODULE)
+  find_package(UFCx 0.12 REQUIRED MODULE)
 endif()
 
 set_package_properties(
@@ -473,7 +454,7 @@ endif()
 if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
   message(STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH.")
   set(SCOTCH_FOUND FALSE)
-  if(_REQUIRE_SCOTCH AND NOT SCOTCH_FOUND)
+  if(_REQUIRE_SCOTCH)
     message(FATAL_ERROR "SCOTCH requested, but not found.")
   endif()
 endif()
@@ -503,7 +484,7 @@ if(DOLFINX_ENABLE_SUPERLU_DIST)
   if (DEFINED ENV{PKG_CONFIG_PATH})
     set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
   else()
-    set(ENV_PKG_CONFIG_PATH})
+    set(ENV_PKG_CONFIG_PATH "")
   endif()
 
   # If PETSc was built with SuperLU_DIST then pickup install there

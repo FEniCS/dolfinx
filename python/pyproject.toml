@@ -10,7 +10,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "fenics-dolfinx"
-version = "0.11.0.dev0"
+version = "0.12.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
 requires-python = ">=3.11"
@@ -24,9 +24,9 @@ dependencies = [
       "numpy>=2",
       "cffi",
       "mpi4py",
-      "fenics-basix>=0.11.0.dev0",
-      "fenics-ffcx>=0.11.0.dev0",
-      "fenics-ufl>=2025.3.0.dev0",
+      "fenics-basix>=0.12.0.dev0",
+      "fenics-ffcx>=0.12.0.dev0",
+      "fenics-ufl>=2026.2.0.dev0",
 ]
 
 [project.optional-dependencies]
@@ -77,6 +77,10 @@ ci = [
 wheel.packages = ["dolfinx"]
 sdist.exclude = ["*.cpp"]
 cmake.build-type = "Release"
+
+[tool.scikit-build.cmake.define]
+# Set to FALSE to disable automatic RPATH adjustments
+DOLFINX_INSTALL_RPATH_USE_LINK_PATH = "TRUE"
 
 [tool.pytest]
 junit_family = "xunit2"
