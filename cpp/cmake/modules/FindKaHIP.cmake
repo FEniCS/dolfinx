@@ -41,10 +41,7 @@ set(KAHIP_FOUND FALSE)
 message(STATUS "Checking for package 'KaHIP'")
 
 if(MPI_CXX_FOUND)
-  find_path(
-    KAHIP_INCLUDE_DIRS parhip_interface.h
-    PATH_SUFFIXES kahip
-  )
+  find_path(KAHIP_INCLUDE_DIRS parhip_interface.h PATH_SUFFIXES kahip)
   find_library(PARHIP_LIBRARY parhip_interface)
   find_library(KAHIP_LIBRARY kahip)
 
@@ -53,12 +50,13 @@ if(MPI_CXX_FOUND)
   include(FindPackageHandleStandardArgs)
   if(DOLFINX_SKIP_BUILD_TESTS)
     find_package_handle_standard_args(
-      KaHIP "KaHIP could not be found/configured." KAHIP_INCLUDE_DIRS
+      KaHIP
+      "KaHIP could not be found/configured."
+      KAHIP_INCLUDE_DIRS
       KAHIP_LIBRARIES
     )
   else()
     if(KAHIP_LIBRARIES AND KAHIP_LIBRARIES)
-
       # Build and run test program
       include(CheckCXXSourceRuns)
 
@@ -93,8 +91,11 @@ if(MPI_CXX_FOUND)
       )
     endif()
     find_package_handle_standard_args(
-      KaHIP "KaHIP could not be found/configured." KAHIP_INCLUDE_DIRS
-      KAHIP_LIBRARIES KAHIP_TEST_RUNS
+      KaHIP
+      "KaHIP could not be found/configured."
+      KAHIP_INCLUDE_DIRS
+      KAHIP_LIBRARIES
+      KAHIP_TEST_RUNS
     )
   endif()
 endif()
