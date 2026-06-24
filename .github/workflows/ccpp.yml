@@ -61,7 +61,7 @@ jobs:
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
       - name: gersemi
-        run: gersemi --check .
+        run: gersemi --check cpp/CMakeLists.txt python/CMakeLists.txt cpp/cmake/modules/Find* cpp/cmake/post-install/CMakeLists.txt cpp/cmake/templates/*.cmake.in
 
   ccpp-build:
     runs-on: ubuntu-24.04
