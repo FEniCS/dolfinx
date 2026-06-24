@@ -177,8 +177,8 @@ endif()
 # ------------------------------------------------------------------------------
 # Install dolfinx library and header files
 
-# By default ON
-set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH ${DOLFINX_INSTALL_RPATH_USE_LINK_PATH})
+# Add all discovered linker paths to install rpath?
+set_target_properties(dolfinx PROPERTIES INSTALL_RPATH_USE_LINK_PATH ${DOLFINX_INSTALL_RPATH_USE_LINK_PATH})
 
 install(
     TARGETS dolfinx
