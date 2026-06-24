@@ -195,4 +195,6 @@ else()
   message(FATAL_ERROR "mpi4py could not be found.")
 endif()
 
+set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 install(TARGETS cpp DESTINATION dolfinx)

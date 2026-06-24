@@ -78,13 +78,13 @@ add_feature_info(
   "Skip build tests for testing usability of dependency packages."
 )
 
-# Add shared library paths so shared libs in non-system paths are found
-option(CMAKE_INSTALL_RPATH_USE_LINK_PATH
-  "Add paths to linker search and installed rpath." OFF
+# Add shared library paths to rpath so shared libs in non-system paths are found.
+option(DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+  "Add paths to linker search and installed rpath." TRUE
 )
 add_feature_info(
-  CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_PATH
-  "Add paths to linker search and installed rpath."
+  DOLFINX_INSTALL_RPATH_USE_LINK_PATH DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+  "Add linker search paths to rpath of dolfinx target."
 )
 
 # Control Basix discovery
@@ -307,7 +307,6 @@ if(DOLFINX_BASIX_PYTHON)
     # Converts os native to cmake native path
     cmake_path(SET BASIX_PY_DIR "${BASIX_PY_DIR}")
     cmake_path(GET BASIX_PY_DIR PARENT_PATH BASIX_PY_PARENT_DIR)
-    message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 
     # These are nullops if the directories don't exist/contain nothing.
     # Basix lib may be in . (e.g. manual combined pip install)
@@ -315,6 +314,7 @@ if(DOLFINX_BASIX_PYTHON)
     # Basix lib installed from cibuildwheel wheel may be in ../fenics_basix.libs
     list(APPEND CMAKE_INSTALL_RPATH "${BASIX_PY_PARENT_DIR}/fenics_basix.libs")
 
+    message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
     list(APPEND CMAKE_PREFIX_PATH ${BASIX_PY_DIR})
   else()
     message(STATUS "No Basix hint was found.")
