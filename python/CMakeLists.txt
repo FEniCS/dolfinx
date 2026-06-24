@@ -21,6 +21,11 @@ include(FeatureSummary)
 option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
 add_feature_info(ENABLE_CLANG_TIDY ENABLE_CLANG_TIDY "Run clang-tidy while building")
 
+option(DOLFINX_INSTALL_RPATH_USE_LINK_PATH "Add linker search paths to rpath of dolfinx target. Packagers may want
+to set FALSE." FALSE)
+add_feature_info(DOLFINX_INSTALL_RPATH_USE_LINK_PATH DOLFINX_INSTALL_RPATH_USE_LINK_PATH "Add linker search paths to rpath of dolfinx target. Packagers may want
+	to set FALSE.")
+
 feature_summary(WHAT ALL)
 
 # Detect the installed nanobind package and import it into CMake
@@ -195,6 +200,6 @@ else()
   message(FATAL_ERROR "mpi4py could not be found.")
 endif()
 
-set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
+set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH DOLFINX_INSTALL_RPATH_USE_LINK_PATH)
 
 install(TARGETS cpp DESTINATION dolfinx)

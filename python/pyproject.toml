@@ -78,6 +78,10 @@ wheel.packages = ["dolfinx"]
 sdist.exclude = ["*.cpp"]
 cmake.build-type = "Release"
 
+[tool.scikit-build.cmake.define]
+# Set to FALSE to disable automatic RPATH adjustments
+DOLFINX_INSTALL_RPATH_USE_LINK_PATH = "FALSE"
+
 [tool.pytest]
 junit_family = "xunit2"
 markers = [
