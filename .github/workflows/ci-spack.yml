@@ -130,7 +130,6 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           cmake --build build --target install
-          ldconfig
 
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |

@@ -78,13 +78,16 @@ add_feature_info(
   "Skip build tests for testing usability of dependency packages."
 )
 
-# Add shared library paths to rpath so shared libs in non-system paths are found.
+# Add all shared library paths to rpath so libs in non-system paths are found.
+# This is on by default because many users build against non-system paths.
+# Package builders may want to set this to FALSE.
 option(DOLFINX_INSTALL_RPATH_USE_LINK_PATH
-  "Add paths to linker search and installed rpath." TRUE
+	"Add linker search paths to rpath of dolfinx target. Packagers may want
+	to set FALSE." TRUE
 )
 add_feature_info(
   DOLFINX_INSTALL_RPATH_USE_LINK_PATH DOLFINX_INSTALL_RPATH_USE_LINK_PATH
-  "Add linker search paths to rpath of dolfinx target."
+  "Add linker search paths to rpath of dolfinx target. Packagers may want to set to FALSE."
 )
 
 # Control Basix discovery
