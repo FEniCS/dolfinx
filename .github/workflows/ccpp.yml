@@ -216,8 +216,7 @@ jobs:
 
       - name: Build and install (C++)
         working-directory: cpp/build
-        run: | 
-          cmake --build . --target install
+        run: cmake --build . --target install
 
       - name: Build tests (C++, standalone)
         working-directory: cpp/test
