@@ -15,7 +15,7 @@ Below is guidance for building the DOLFINx Python interface.
 
 To build in Developer and editable mode for development:
 
-     pip -v install --check-build-dependencies -Cbuild-dir="build" -Ccmake.build-type="Developer" -Cinstall.strip=false -Ccmake.args="-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON" --no-build-isolation -e .
+     pip -v install --check-build-dependencies -Cbuild-dir="build" -Ccmake.build-type="Developer" -Cinstall.strip=false --no-build-isolation -e .
 
 Note that Developer mode is significantly stricter than CMake's default Debug mode.
 
