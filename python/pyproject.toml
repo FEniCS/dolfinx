@@ -51,7 +51,7 @@ docs = [
       "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
 ]
-lint = ["ruff"]
+lint = ["ruff", "gersemi"]
 mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
 optional = ["numba"]
 petsc4py = ["petsc4py"]

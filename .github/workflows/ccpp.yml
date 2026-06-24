@@ -33,7 +33,7 @@ jobs:
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install linting tools
-        run: pip install clang-format cmake-format[YAML] mypy ruff
+        run: pip install clang-format gersemi mypy ruff
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
@@ -60,10 +60,8 @@ jobs:
           cd python/dolfinx/wrappers
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
-      - name: cmake-format (non-blocking)
-        continue-on-error: true
-        run: |
-          find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
+      - name: gersemi
+        run: gersemi --check cpp/CMakeLists.txt cpp/dolfinx/CMakeLists.txt python/CMakeLists.txt cpp/cmake/modules/*.cmake cpp/cmake/post-install/CMakeLists.txt cpp/cmake/templates/*.cmake.in
 
   ccpp-build:
     runs-on: ubuntu-24.04

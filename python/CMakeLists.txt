@@ -19,12 +19,24 @@ find_package(
 include(FeatureSummary)
 
 option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
-add_feature_info(ENABLE_CLANG_TIDY ENABLE_CLANG_TIDY "Run clang-tidy while building")
+add_feature_info(
+  ENABLE_CLANG_TIDY
+  ENABLE_CLANG_TIDY
+  "Run clang-tidy while building"
+)
 
-option(DOLFINX_INSTALL_RPATH_USE_LINK_PATH "Add linker search paths to rpath of dolfinx target. Packagers may want
-to set FALSE." TRUE)
-add_feature_info(DOLFINX_INSTALL_RPATH_USE_LINK_PATH DOLFINX_INSTALL_RPATH_USE_LINK_PATH "Add linker search paths to rpath of dolfinx target. Packagers may want
-	to set FALSE.")
+option(
+  DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+  "Add linker search paths to rpath of dolfinx target. Packagers may want
+to set FALSE."
+  TRUE
+)
+add_feature_info(
+  DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+  DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+  "Add linker search paths to rpath of dolfinx target. Packagers may want
+	to set FALSE."
+)
 
 feature_summary(WHAT ALL)
 
@@ -125,7 +137,10 @@ check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
 check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
 
 if(LIBCPP)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG)
+  list(
+    APPEND DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS
+    _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG
+  )
 endif()
 
 if(GLIBCXX)
@@ -134,24 +149,35 @@ endif()
 
 # Turn off some checks in gcc12 and gcc13 due to false positives with
 # the fmt library
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
+if(
+  CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+  AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
+  AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
 )
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
+  list(
+    APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS
+    -Wno-array-bounds;-Wno-stringop-overflow
+  )
 endif()
 
 target_compile_options(
-  cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_FLAGS}>
+  cpp
+  PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_FLAGS}>
 )
 target_compile_definitions(
-  cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS}>
+  cpp
+  PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS}>
 )
 target_compile_features(cpp PRIVATE cxx_std_20)
 
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
-  set_target_properties(cpp PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../.clang-tidy")
+  set_target_properties(
+    cpp
+    PROPERTIES
+      CXX_CLANG_TIDY
+        "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../.clang-tidy"
+  )
 endif()
 
 # Add DOLFINx libraries
@@ -164,16 +190,20 @@ endif()
 
 # Check for petsc4py
 execute_process(
-  COMMAND "${Python_EXECUTABLE}" -c
-          "import petsc4py; print(petsc4py.get_include())"
+  COMMAND
+    "${Python_EXECUTABLE}" -c "import petsc4py; print(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIR
   RESULT_VARIABLE PETSC4PY_COMMAND_RESULT
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_QUIET
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
 if("HAS_PETSC" IN_LIST _dolfinx_defs)
   if(NOT PETSC4PY_COMMAND_RESULT)
-    message(STATUS "Found petsc4py include directory at ${PETSC4PY_INCLUDE_DIR}")
+    message(
+      STATUS
+      "Found petsc4py include directory at ${PETSC4PY_INCLUDE_DIR}"
+    )
     target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIR})
     target_compile_definitions(cpp PRIVATE HAS_PETSC4PY)
   else()
@@ -190,7 +220,8 @@ execute_process(
   COMMAND "${Python_EXECUTABLE}" -c "import mpi4py; print(mpi4py.get_include())"
   OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
   RESULT_VARIABLE MPI4PY_COMMAND_RESULT
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_QUIET
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
 if(NOT MPI4PY_COMMAND_RESULT)
@@ -200,6 +231,9 @@ else()
   message(FATAL_ERROR "mpi4py could not be found.")
 endif()
 
-set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH ${DOLFINX_INSTALL_RPATH_USE_LINK_PATH})
+set_target_properties(
+  cpp
+  PROPERTIES INSTALL_RPATH_USE_LINK_PATH ${DOLFINX_INSTALL_RPATH_USE_LINK_PATH}
+)
 
 install(TARGETS cpp DESTINATION dolfinx)
