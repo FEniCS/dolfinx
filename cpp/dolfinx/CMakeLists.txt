@@ -176,6 +176,10 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Install dolfinx library and header files
+
+# Add all discovered linker paths to install rpath?
+set_target_properties(dolfinx PROPERTIES INSTALL_RPATH_USE_LINK_PATH ${DOLFINX_INSTALL_RPATH_USE_LINK_PATH})
+
 install(
     TARGETS dolfinx
     EXPORT DOLFINXTargets

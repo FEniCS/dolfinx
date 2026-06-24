@@ -105,7 +105,7 @@ jobs:
           pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
-      - name: Configure (C++)
+      - name: Configure, no rpath (C++)
         working-directory: cpp
         run: >
           cmake -B build -S .
@@ -117,12 +117,14 @@ jobs:
           -DDOLFINX_ENABLE_PETSC=false
           -DDOLFINX_ENABLE_SUPERLU_DIST=true
           -DDOLFINX_ENABLE_PARMETIS=true
+          -DDOLFINX_INSTALL_RPATH_USE_LINK_PATH=false
 
       - name: Build and install (C++)
         working-directory: cpp/build
         run: |
           cmake --build .
           sudo cmake --install .
+          sudo ldconfig
 
       - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
