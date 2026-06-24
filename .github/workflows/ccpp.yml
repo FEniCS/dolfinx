@@ -105,7 +105,7 @@ jobs:
           pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
-      - name: Configure (C++)
+      - name: Configure, no rpath (C++)
         working-directory: cpp
         run: >
           cmake -B build -S .
@@ -130,7 +130,7 @@ jobs:
         working-directory: cpp/build
         run: cmake --build . --target test
 
-      - name: Build Python interface
+      - name: Build Python interface, no rpath
         run: |
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" -Ccmake.args=-DDOLFINX_INSTALL_RPATH_USE_LINK_PATH=false 'python/[test,mypy]'
           python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
