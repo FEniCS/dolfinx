@@ -69,7 +69,7 @@ jobs:
     env:
       CIBW_BUILD: cp312-manylinux_x86_64 cp312-manylinux_aarch64
       CIBW_BUILD_VERBOSITY: 1
-      CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=file:///project/simple
+      CIBW_ENVIRONMENT: PIP_INDEX_URL="file:///project/simple" PIP_EXTRA_INDEX_URL="https://pypi.org/simple"
       CIBW_ARCHS_LINUX: native
       CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64:latest
       CIBW_MANYLINUX_AARCH64_IMAGE: quay.io/pypa/manylinux_2_34_aarch64:latest
@@ -199,7 +199,7 @@ jobs:
           cd dolfinx &&
           sudo git clean -fdx && cd ../ &&
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
-            --env PIP_EXTRA_INDEX_URL=file:///shared python:3.13 \
+            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple python:3.13 \
             /bin/bash -l -c "pip install mpich fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Test in clean python image with pypi Intel MPI (x86_64 only)
@@ -208,7 +208,7 @@ jobs:
           cd dolfinx &&
           sudo git clean -fdx && cd ../ &&
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
-            --env PIP_EXTRA_INDEX_URL=file:///shared python:3.14 \
+            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple python:3.14 \
             /bin/bash -l -c "pip install impi-rt fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Upload wheelhouse artifact
