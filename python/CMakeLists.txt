@@ -22,7 +22,7 @@ option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
 add_feature_info(ENABLE_CLANG_TIDY ENABLE_CLANG_TIDY "Run clang-tidy while building")
 
 option(DOLFINX_INSTALL_RPATH_USE_LINK_PATH "Add linker search paths to rpath of dolfinx target. Packagers may want
-to set FALSE." FALSE)
+to set FALSE." TRUE)
 add_feature_info(DOLFINX_INSTALL_RPATH_USE_LINK_PATH DOLFINX_INSTALL_RPATH_USE_LINK_PATH "Add linker search paths to rpath of dolfinx target. Packagers may want
 	to set FALSE.")
 
