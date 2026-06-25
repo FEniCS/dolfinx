@@ -65,16 +65,17 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            cibw_build: cp312-manylinux_x86_64
-          - os: ubuntu-24.04-arm
-            cibw_build: cp312-manylinux_aarch64
+#          - os: ubuntu-latest
+#            cibw_build: cp312-manylinux_x86_64
+#          - os: ubuntu-24.04-arm
+#            cibw_build: cp312-manylinux_aarch64
           - os: macos-15
             cibw_build: cp312-macosx_arm64
 
     env:
       CIBW_BUILD: ${{ matrix.cibw_build }}
       CIBW_BUILD_VERBOSITY: 1
+      CIBW_ENVIRONMENT: PIP_INDEX_URL="file:///project/simple" PIP_EXTRA_INDEX_URL="https://pypi.org/simple"
       CIBW_ARCHS_LINUX: native
       CIBW_ARCHS_MACOS: arm64
       CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64:latest
@@ -164,7 +165,6 @@ jobs:
             PIP_EXTRA_INDEX_URL=file://$GITHUB_WORKSPACE/simple
             MACOSX_DEPLOYMENT_TARGET=$(xcrun --sdk macosx --show-sdk-version)
             CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/dolfinx-install:$(brew --prefix)
-          # TODO: Build superlu-dist from source
           CIBW_BEFORE_BUILD_LINUX: >
             dnf -y update &&
             dnf install -y dnf-plugins-core &&
@@ -174,37 +174,59 @@ jobs:
             dnf -y install boost-devel boost-program-options git hdf5-mpich-devel make \
               mpich-devel ninja-build openblas-devel pugixml-devel spdlog-devel &&
             ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
-            git clone --branch v7.0.9 --single-branch https://gitlab.inria.fr/scotch/scotch.git &&
+            mkdir -p scotch && curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
-              -DBUILD_SHARED_LIBS=ON -DMPI_HOME=/usr/lib64/mpich &&
+              -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=/usr/lib64/mpich \
+              -DBUILD_LIBSCOTCHMETIS=ON -DINSTALL_METIS_HEADERS=ON &&
             cmake --build scotch-build-dir/ &&
             cmake --install scotch-build-dir/ &&
-            pip -v install fenics-basix fenics-ffcx &&
+            git clone --branch v9.2.1 --single-branch https://github.com/xiaoyeli/superlu_dist.git &&
+            cmake -G Ninja -S superlu_dist/ -B superlu_dist-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
+              -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=/usr/lib64/mpich -DTPL_ENABLE_PARMETISLIB=ON \
+              -DXSDK_ENABLE_Fortran=OFF -DTPL_PARMETIS_INCLUDE_DIRS=/usr/local/include \
+              -DTPL_PARMETIS_LIBRARIES="/usr/local/lib64/libptscotchparmetisv3.so;/usr/local/lib64/libptscotch.so;/usr/local/lib64/libptscotcherr.so;/usr/local/lib64/libscotchmetisv5.so;/usr/local/lib64/libscotch.so;/usr/local/lib64/libscotcherr.so" -DCMAKE_C_FLAGS_INIT="-DSCOTCH_METIS_VERSION=5" \
+              -DTPL_ENABLE_LAPACKLIB=ON -DTPL_LAPACK_LIBRARIES="-lopenblas" &&
+            cmake --build superlu_dist-build-dir/ &&
+            cmake --install superlu_dist-build-dir/ &&
+            pip -v install $(python -c "import tomllib; deps=tomllib.load(open('/project/dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DPython3_EXECUTABLE=$(which python) \
-              -DHDF5_ROOT=/usr/lib64/mpich -DMPI_HOME=/usr/lib64/mpich -DCMAKE_BUILD_TYPE=RelWithDebug &&
+              -DCMAKE_PREFIX_PATH=/usr/lib64/mpich -DCMAKE_BUILD_TYPE=RelWithDebug \
+              -DDOLFINX_ENABLE_SUPERLU_DIST=ON -DDOLFINX_ENABLE_SCOTCH=ON -DDOLFINX_ENABLE_PARMETIS=OFF &&
             cmake --build dolfinx-build-dir/ &&
             cmake --install dolfinx-build-dir/
-          # TODO: Build superlu-dist from source - not packaged in Homebrew.
           CIBW_BEFORE_BUILD_MACOS: >
-            brew install boost hdf5-mpi ninja open-mpi pkgconf pugixml spdlog scotch &&
-            pip -v install fenics-basix fenics-ffcx &&
+            brew install boost hdf5-mpi ninja open-mpi openblas pkgconf pugixml spdlog scotch &&
+            cmake -G Ninja -S superlu_dist/ -B superlu_dist-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
+              -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
+              -DTPL_ENABLE_PARMETISLIB=ON \
+              -DXSDK_ENABLE_Fortran=OFF \
+              -DTPL_PARMETIS_INCLUDE_DIRS=/usr/local/include \
+              -DTPL_PARMETIS_LIBRARIES="-lptscotchparmetisv3 -lptscotch -lptscotcherr -lscotchmetisv5 -lscotch -lscotcherr" \
+              -DCMAKE_C_FLAGS_INIT="-DSCOTCH_METIS_VERSION=5" \
+              -DTPL_ENABLE_LAPACKLIB=ON \
+              -DTPL_LAPACK_LIBRARIES="-lopenblas" &&
+            cmake --build superlu_dist-build-dir/ &&
+            cmake --install superlu_dist-build-dir/ &&
+            pip -v install $(python -c "import tomllib; deps=tomllib.load(open('dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S $GITHUB_WORKSPACE/dolfinx/cpp -B $GITHUB_WORKSPACE/dolfinx-build-dir/ \
               -DPython3_EXECUTABLE=$(which python) \
-              -DCMAKE_CXX_FLAGS_INIT=-fexperimental-library \
+              -DCMAKE_CXX_FLAGS_INIT="-fexperimental-library" \
               -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
               -DDOLFINX_ENABLE_SCOTCH=ON \
+              -DDOLFINX_ENABLE_PARTMETIS=OFF \
+              -DDOLFINX_ENABLE_SUPERLU_DIST=ON \
               -DCMAKE_BUILD_TYPE=RelWithDebug &&
             cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
             cmake --install $GITHUB_WORKSPACE/dolfinx-build-dir/ --prefix $GITHUB_WORKSPACE/dolfinx-install
-          CIBW_CONFIG_SETTINGS_LINUX: >
-            cmake.args="-DMPI_HOME=/usr/lib64/mpich;-DHDF5_ROOT=/usr/lib64/mpich"
-            wheel.py-api=cp312
-            cmake.build-type="RelWithDebug"
           # As of 6/26 DOLFINx uses std::jthread which is only officially
           # supported in macOS SDK 26. This enables experimental std library
           # support which allows the build to complete on macOS SDK 15.
+          CIBW_CONFIG_SETTINGS_LINUX: > 
+            cmake.args="-DCMAKE_PREFIX_PATH=/usr/lib64/mpich"
+            wheel.py-api=cp312
+            cmake.build-type="Release"
           CIBW_CONFIG_SETTINGS_MACOS: >
             cmake.args="-DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH;-DCMAKE_CXX_FLAGS_INIT=-fexperimental-library"
             wheel.py-api=cp312
@@ -254,7 +276,7 @@ jobs:
           cd dolfinx &&
           sudo git clean -fdx && cd ../ &&
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
-            --env PIP_EXTRA_INDEX_URL=file:///shared python:3.13 \
+            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple python:3.13 \
             /bin/bash -l -c "pip install mpich fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Test in clean python image with pypi Intel MPI (x86_64 only)
@@ -263,7 +285,7 @@ jobs:
           cd dolfinx &&
           sudo git clean -fdx && cd ../ &&
           docker run -v $(pwd)/dolfinx:/dolfinx -v $(pwd)/simple:/shared \
-            --env PIP_EXTRA_INDEX_URL=file:///shared python:3.14 \
+            --env PIP_INDEX_URL=file:///shared --env PIP_EXTRA_INDEX_URL=https://pypi.org/simple python:3.14 \
             /bin/bash -l -c "pip install impi-rt fenics-dolfinx[test] && mpiexec -n 2 python -m pytest -m 'not adios2 and not petsc4py' /dolfinx/python/test/unit"
 
       - name: Test in clean virtual environment with pypi OpenMPI (macOS)

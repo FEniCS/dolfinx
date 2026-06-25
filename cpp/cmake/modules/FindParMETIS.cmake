@@ -38,23 +38,27 @@
 
 if(MPI_CXX_FOUND)
   find_library(
-    PARMETIS_LIBRARY parmetis
+    PARMETIS_LIBRARY
+    parmetis
     DOC "Directory where the ParMETIS library is located."
   )
 
   find_path(
-    PARMETIS_INCLUDE_DIRS parmetis.h
+    PARMETIS_INCLUDE_DIRS
+    parmetis.h
     DOC "Directory where the ParMETIS header files are located."
   )
 
   find_library(
-    METIS_LIBRARY metis
+    METIS_LIBRARY
+    metis
     DOC "Directory where the METIS library is located."
   )
 
   # Newer METIS and ParMETIS build against separate GKLib
   find_library(
-    GKLIB_LIBRARY gklib
+    GKLIB_LIBRARY
+    gklib
     DOC "Directory where the gklib library is located."
   )
 
@@ -63,8 +67,11 @@ if(MPI_CXX_FOUND)
     set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARIES} ${METIS_LIBRARY})
   endif()
   if(GKLIB_LIBRARY)
-    set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARIES} ${METIS_LIBRARY}
-                           ${GKLIB_LIBRARY}
+    set(
+      PARMETIS_LIBRARIES
+      ${PARMETIS_LIBRARIES}
+      ${METIS_LIBRARY}
+      ${GKLIB_LIBRARY}
     )
   endif()
 
@@ -76,15 +83,18 @@ if(MPI_CXX_FOUND)
   elseif(PARMETIS_INCLUDE_DIRS AND PARMETIS_LIBRARY)
 
     # Set flags for building test program
-    set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIRS}
-                                ${MPI_CXX_INCLUDE_PATH}
+    set(
+      CMAKE_REQUIRED_INCLUDES
+      ${PARMETIS_INCLUDE_DIRS}
+      ${MPI_CXX_INCLUDE_PATH}
     )
     set(CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARIES} ${MPI_CXX_LIBRARIES})
     set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
 
     # Check ParMETIS version
-    set(PARMETIS_CONFIG_TEST_VERSION_CPP
-        "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/parmetis_config_test_version.cpp"
+    set(
+      PARMETIS_CONFIG_TEST_VERSION_CPP
+      "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/parmetis_config_test_version.cpp"
     )
     file(
       WRITE ${PARMETIS_CONFIG_TEST_VERSION_CPP}
@@ -109,10 +119,12 @@ int main() {
 
     try_run(
       PARMETIS_CONFIG_TEST_VERSION_EXITCODE
-      PARMETIS_CONFIG_TEST_VERSION_COMPILED ${CMAKE_CURRENT_BINARY_DIR}
+      PARMETIS_CONFIG_TEST_VERSION_COMPILED
+      ${CMAKE_CURRENT_BINARY_DIR}
       ${PARMETIS_CONFIG_TEST_VERSION_CPP}
-      CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-                  "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+      CMAKE_FLAGS
+        "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+        "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
       COMPILE_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_COMPILE_OUTPUT
       RUN_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_OUTPUT
     )
@@ -150,7 +162,6 @@ int main()
 "
       PARMETIS_TEST_RUNS
     )
-
   endif()
 endif()
 
