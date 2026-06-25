@@ -210,12 +210,12 @@ jobs:
               -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
               -DBUILD_LIBSCOTCHMETIS=ON -DINSTALL_METIS_HEADERS=ON &&
             cmake --build scotch-build-dir/ &&
-            cmake --install scotch-build-dir/ &&
+            sudo cmake --install scotch-build-dir/ &&
             git clone --branch v9.2.1 --single-branch https://github.com/xiaoyeli/superlu_dist.git &&
             cmake -G Ninja -S superlu_dist/ -B superlu_dist-build-dir/ \
               -DCMAKE_INSTALL_PREFIX=/usr/local \
               -DBUILD_SHARED_LIBS=ON \
-              -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
+              -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} \
               -DTPL_ENABLE_PARMETISLIB=ON \
               -DXSDK_ENABLE_Fortran=OFF \
               -DTPL_PARMETIS_INCLUDE_DIRS=/usr/local/include \
@@ -226,13 +226,13 @@ jobs:
               -DTPL_ENABLE_LAPACKLIB=ON \
               -DTPL_LAPACK_LIBRARIES="-lopenblas" &&
             cmake --build superlu_dist-build-dir/ &&
-            cmake --install superlu_dist-build-dir/ &&
+            sudo cmake --install superlu_dist-build-dir/ &&
             pip -v install $(python -c "import tomllib; deps=tomllib.load(open('dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S $GITHUB_WORKSPACE/dolfinx/cpp -B $GITHUB_WORKSPACE/dolfinx-build-dir/ \
               -DPython3_EXECUTABLE=$(which python) \
               -DCMAKE_CXX_FLAGS_INIT="-fexperimental-library" \
-              -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
+              -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} \
               -DDOLFINX_ENABLE_SCOTCH=ON \
               -DDOLFINX_ENABLE_PARMETIS=OFF \
               -DDOLFINX_ENABLE_SUPERLU_DIST=ON \
