@@ -155,7 +155,7 @@ jobs:
             ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
             git clone --branch v7.0.9 --single-branch https://gitlab.inria.fr/scotch/scotch.git &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
-              -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=/usr/lib64/mpich
+              -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=/usr/lib64/mpich \
               -DBUILD_LIBPTSCOTCHPARMETIS=ON -DBUILD_LIBSCOTCHMETIS=ON -DINSTALL_METIS_HEADERS=ON &&
             cmake --build scotch-build-dir/ &&
             cmake --install scotch-build-dir/ &&
