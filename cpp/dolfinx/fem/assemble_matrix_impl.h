@@ -767,38 +767,6 @@ void assemble_matrix(
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
 
-      // Figure out reduced set of cells containing no BCs.
-      auto has_bc = [&](std::int32_t cell0, std::int32_t cell1) -> bool
-      {
-        if (!bc1.empty())
-        {
-          for (std::int32_t dof : dofmap1->cell_dofs(cell1))
-          {
-            for (int k = 0; k < bs1; ++k)
-            {
-              if (bc1[bs1 * dof + k])
-                return true;
-            }
-          }
-        }
-        if (!bc0.empty())
-        {
-          for (std::int32_t dof : dofmap0->cell_dofs(cell0))
-          {
-            for (int k = 0; k < bs0; ++k)
-            {
-              if (bc0[bs0 * dof + k])
-                return true;
-            }
-          }
-        }
-        return false;
-      };
-
-      std::vector<std::int32_t> cell_mark(cells.size());
-      for (std::size_t i = 0; i < cells.size(); ++i)
-        cell_mark[i] = has_bc(cells0[i], cells1[i]);
-
       impl::assemble_cells_matrix<T, LiftingMode>(
           mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
           {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
