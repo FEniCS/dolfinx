@@ -196,13 +196,19 @@ jobs:
             cmake --build dolfinx-build-dir/ &&
             cmake --install dolfinx-build-dir/
           CIBW_BEFORE_BUILD_MACOS: >
-            brew install boost hdf5-mpi ninja open-mpi openblas pkgconf pugixml spdlog scotch &&
+            brew install boost hdf5-mpi ninja open-mpi openblas pkgconf pugixml spdlog &&
+            mkdir -p scotch && curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch &&
+            cmake -G Ninja -S scotch/ -B scotch-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
+              -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
+              -DBUILD_LIBSCOTCHMETIS=ON -DINSTALL_METIS_HEADERS=ON &&
+            cmake --build scotch-build-dir/ &&
+            cmake --install scotch-build-dir/ &&
             git clone --branch v9.2.1 --single-branch https://github.com/xiaoyeli/superlu_dist.git &&
             cmake -G Ninja -S superlu_dist/ -B superlu_dist-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
               -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
               -DTPL_ENABLE_PARMETISLIB=ON \
               -DXSDK_ENABLE_Fortran=OFF \
-              -DTPL_PARMETIS_INCLUDE_DIRS=$(brew --prefix)/include \
+              -DTPL_PARMETIS_INCLUDE_DIRS=/usr/local/include \
               -DTPL_PARMETIS_LIBRARIES="-lptscotchparmetisv3 -lptscotch -lptscotcherr -lscotchmetisv5 -lscotch -lscotcherr" \
               -DCMAKE_C_FLAGS_INIT="-DSCOTCH_METIS_VERSION=5" \
               -DTPL_ENABLE_BLASLIB=ON \
