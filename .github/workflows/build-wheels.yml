@@ -156,7 +156,8 @@ jobs:
             mkdir -p scotch && curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
               -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=/usr/lib64/mpich \
-              -DBUILD_LIBSCOTCHMETIS=ON -DINSTALL_METIS_HEADERS=ON &&
+              -DBUILD_LIBSCOTCHMETIS=ON -DINSTALL_METIS_HEADERS=ON \
+              -DCMAKE_C_FLAGS_INIT="-DCOMMON_PTHREAD -DSCOTCH_PTHREAD -DCOMMON_PTHREAD_FILE -DCOMMON_PTHREAD_AFFINITY_LINUX" &&
             cmake --build scotch-build-dir/ &&
             cmake --install scotch-build-dir/ &&
             git clone --branch v9.2.1 --single-branch https://github.com/xiaoyeli/superlu_dist.git &&
