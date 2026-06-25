@@ -202,7 +202,7 @@ jobs:
               -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
               -DTPL_ENABLE_PARMETISLIB=ON \
               -DXSDK_ENABLE_Fortran=OFF \
-              -DTPL_PARMETIS_INCLUDE_DIRS=/usr/local/include \
+              -DTPL_PARMETIS_INCLUDE_DIRS=$(brew --prefix)/include \
               -DTPL_PARMETIS_LIBRARIES="-lptscotchparmetisv3 -lptscotch -lptscotcherr -lscotchmetisv5 -lscotch -lscotcherr" \
               -DCMAKE_C_FLAGS_INIT="-DSCOTCH_METIS_VERSION=5" \
               -DTPL_ENABLE_BLASLIB=ON \
