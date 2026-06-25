@@ -56,10 +56,9 @@ def cfun(p0, p1):
         return True
     return False
 
-    # Creating mapping of left side to right side dofs
-    # using local index for left, global for right.
 
-
+# Creating mapping of left side to right side dofs
+# using local index for left, global for right.
 map_LR = {}
 for dofL in dofsL:
     xL = coords[dofL]
