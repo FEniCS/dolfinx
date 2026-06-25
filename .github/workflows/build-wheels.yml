@@ -205,6 +205,8 @@ jobs:
               -DTPL_PARMETIS_INCLUDE_DIRS=/usr/local/include \
               -DTPL_PARMETIS_LIBRARIES="-lptscotchparmetisv3 -lptscotch -lptscotcherr -lscotchmetisv5 -lscotch -lscotcherr" \
               -DCMAKE_C_FLAGS_INIT="-DSCOTCH_METIS_VERSION=5" \
+              -DTPL_ENABLE_BLASLIB=ON \
+              -DTPL_BLAS_LIBRARIES="-lopenblas"
               -DTPL_ENABLE_LAPACKLIB=ON \
               -DTPL_LAPACK_LIBRARIES="-lopenblas" &&
             cmake --build superlu_dist-build-dir/ &&
