@@ -61,25 +61,58 @@ void assemble_matrix_mpc(
                                              std::span<const std::int32_t> cols,
                                              std::span<const T> vals) mutable
   {
-    std::vector<std::int32_t> mod_rows = mpc.modified_dofs(rows);
-    int kmat_size = rows.size() * mod_rows.size();
-    cache.resize(kmat_size * 2 + mod_rows.size() * mod_rows.size());
-    std::fill(cache.begin(), cache.end(), 0.0);
-    std::span<T> Kmat(cache.data(), kmat_size);
-    mpc.Kmat(rows, Kmat);
-    cmdspan2_t K(Kmat.data(), rows.size(), mod_rows.size());
-    cmdspan2T_t KT(Kmat.data(), rows.size(), mod_rows.size());
-    cmdspan2_t Ae(vals.data(), rows.size(), cols.size());
-    mdspan2_t A0(cache.data() + kmat_size, rows.size(), mod_rows.size());
-    mdspan2_t A1(cache.data() + 2 * kmat_size, mod_rows.size(),
-                 mod_rows.size());
-    // A0 = Ae.K^T
-    math::dot(Ae, KT, A0);
-    // A1 = K.Ae.K^T
-    math::dot(K, A0, A1);
+    // If no constraints, just add values to matrix
+    int nc = 0;
+    for (std::int32_t r : rows)
+      nc += mpc.constraints().num_links(r);
+    if (nc == 0)
+    {
+      mat_add(rows, cols, vals);
+      return;
+    }
+
+    std::vector<T> vvals;
+    std::vector<std::int32_t> modr;
+    std::vector<std::int32_t> count;
+    for (std::int32_t r : rows)
+    {
+      auto c = mpc.constraints().links(r);
+      if (c.size() == 0)
+      {
+        vvals.push_back(1.0);
+        modr.push_back(r);
+        count.push_back(1);
+      }
+      else
+      {
+        for (auto [ref_dof, ref_coeff] : c)
+        {
+          vvals.push_back(ref_coeff);
+          modr.push_back(ref_dof);
+        }
+        count.push_back(c.size());
+      }
+    }
+    int nrow = modr.size();
+    int irow = 0;
+    std::vector<T> A1(nrow * nrow, 0.0);
+    for (int i = 0; i < rows.size(); ++i)
+    {
+      int jcol = 0;
+      for (int j = 0; j < cols.size(); ++j)
+      {
+        T v = vals[cols.size() * i + j];
+        for (int k = 0; k < count[i]; ++k)
+          for (int l = 0; l < count[j]; ++l)
+            A1[nrow * (irow + k) + jcol + l]
+                += v * vvals[irow + k] * vvals[jcol + l];
+        jcol += count[j];
+      }
+      irow += count[i];
+    }
 
     // Revise rows, cols and vals for MPC
-    mat_add(mod_rows, mod_rows, std::span<T>(A1.data_handle(), A1.size()));
+    mat_add(modr, modr, std::span<T>(A1.data(), A1.size()));
   };
 
   // Prepare constants and coefficients
@@ -96,10 +129,12 @@ void assemble_matrix_mpc(
   {
     std::pair<std::vector<std::int32_t>, std::vector<T>> c
         = mpc.constraint(dof);
+    for (auto& val : c.second)
+      val *= -1.0;
     if (!c.first.empty())
     {
       c.first.push_back(dof);
-      c.second.push_back(-1.0);
+      c.second.push_back(1.0);
       std::vector<T> v;
       v.reserve(c.second.size() * c.second.size());
       for (std::size_t i = 0; i < c.second.size(); ++i)

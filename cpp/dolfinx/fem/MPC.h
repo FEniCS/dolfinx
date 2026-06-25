@@ -165,6 +165,15 @@ public:
     return marked_cells;
   }
 
+  /// @brief Return the list of constraints for each local dof (if any).
+  /// For each local dof, the list contains pairs of reference dof index and
+  /// coefficient.
+  /// @note The reference dofs are local indices in the modified FunctionSpace.
+  const graph::AdjacencyList<std::pair<std::int32_t, T>>& constraints() const
+  {
+    return *_constraints;
+  }
+
   /// @brief Return constraint on a given dof, if any.
   /// @param dof Index of degree of freedom
   /// @return list of reference dof indices and respective coefficients.
@@ -261,6 +270,9 @@ private:
   // coefficient.
   std::unique_ptr<graph::AdjacencyList<std::pair<std::int32_t, T>>>
       _constraints;
+
+  // Constants for the MPC, if any. For each local constrained dof.
+  std::unique_ptr<graph::AdjacencyList<T>> _constants;
 };
 
 /// @brief Assemble a billinear form with MPC constraints into a `MatrixCSR`.

@@ -95,7 +95,87 @@ void assemble_cells_matrix(
   // Iterate over active cells
   assert(cells0.size() == cells.size());
   assert(cells1.size() == cells.size());
+
+  spdlog::info("Assembling {} cells with {} test dofs and {} trial dofs",
+               cells.size(), ndim0, ndim1);
+
+  auto has_bc = [&](std::int32_t cell0, std::int32_t cell1)
+  {
+    std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
+    std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
+    if (!bc0.empty())
+    {
+      for (std::int32_t dof : dofs0)
+      {
+        for (int k = 0; k < bs0; ++k)
+        {
+          if (bc0[bs0 * dof + k])
+            return true;
+        }
+      }
+    }
+    if (!bc1.empty())
+    {
+      for (std::int32_t dof : dofs1)
+      {
+        for (int k = 0; k < bs1; ++k)
+        {
+          if (bc1[bs1 * dof + k])
+            return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  // Get two lists
+  std::vector<std::int32_t> constrained_cells;
+  std::vector<std::int32_t> unconstrained_cells;
+
+  spdlog::info("Checking {} cells for BCs", cells.size());
+
   for (std::size_t c = 0; c < cells.size(); ++c)
+  {
+    if (has_bc(cells0[c], cells1[c]))
+      constrained_cells.push_back(c);
+    else
+      unconstrained_cells.push_back(c);
+  }
+
+  spdlog::info("Assembling {} cells with BCs and {} cells without BCs",
+               constrained_cells.size(), unconstrained_cells.size());
+
+  if constexpr (!LiftingMode)
+  {
+    for (std::int32_t c : unconstrained_cells)
+    {
+      // Cell index in integration domain mesh (c), test function mesh
+      // (c0) and trial function mesh (c1)
+      std::int32_t cell = cells[c];
+      std::int32_t cell0 = cells0[c];
+      std::int32_t cell1 = cells1[c];
+
+      std::span dofs0(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
+      std::span dofs1(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
+
+      // Get cell coordinates/geometry
+      auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
+      for (std::size_t i = 0; i < x_dofs.size(); ++i)
+        std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs.begin(), 3 * i));
+
+      // Tabulate tensor
+      std::ranges::fill(Ae, 0);
+      kernel(Ae.data(), &coeffs(c, 0), constants.data(), cdofs.data(), nullptr,
+             nullptr, nullptr);
+
+      // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
+      P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
+      P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
+      mat_set(dofs0, dofs1, Ae);
+    }
+  }
+
+  for (std::int32_t c : constrained_cells)
   {
     // Cell index in integration domain mesh (c), test function mesh
     // (c0) and trial function mesh (c1)
@@ -140,8 +220,8 @@ void assemble_cells_matrix(
     P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
     P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
-    // In lifting mode only BC dofs are assembled, while in standard mode these
-    // row/column dofs are zeroed.
+    // In lifting mode only BC dofs are assembled, while in standard mode
+    // these row/column dofs are zeroed.
     if constexpr (!LiftingMode)
     {
       // Zero rows and columns for BCs
@@ -177,13 +257,12 @@ void assemble_cells_matrix(
         }
       }
     }
-
     mat_set(dofs0, dofs1, Ae);
   }
 }
 
-/// @brief Execute kernel over entities of codimension ≥ 1 and accumulate result
-/// in a matrix.
+/// @brief Execute kernel over entities of codimension ≥ 1 and accumulate
+/// result in a matrix.
 ///
 /// Each entity is represented by (i) a cell that the entity is attached to
 /// and (ii) the local index of the entity  with respect to the cell. The
@@ -200,8 +279,8 @@ void assemble_cells_matrix(
 /// matrix.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
 /// @param[in] x Mesh geometry (coordinates).
-/// @param[in] entities Integration entities (in the integration domain mesh) to
-/// execute the kernel over. These are pairs (cell, local entity index)
+/// @param[in] entities Integration entities (in the integration domain mesh)
+/// to execute the kernel over. These are pairs (cell, local entity index)
 /// @param[in] dofmap0 Test function (row) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
@@ -687,6 +766,39 @@ void assemble_matrix(
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
+
+      // Figure out reduced set of cells containing no BCs.
+      auto has_bc = [&](std::int32_t cell0, std::int32_t cell1) -> bool
+      {
+        if (!bc1.empty())
+        {
+          for (std::int32_t dof : dofmap1->cell_dofs(cell1))
+          {
+            for (int k = 0; k < bs1; ++k)
+            {
+              if (bc1[bs1 * dof + k])
+                return true;
+            }
+          }
+        }
+        if (!bc0.empty())
+        {
+          for (std::int32_t dof : dofmap0->cell_dofs(cell0))
+          {
+            for (int k = 0; k < bs0; ++k)
+            {
+              if (bc0[bs0 * dof + k])
+                return true;
+            }
+          }
+        }
+        return false;
+      };
+
+      std::vector<std::int32_t> cell_mark(cells.size());
+      for (std::size_t i = 0; i < cells.size(); ++i)
+        cell_mark[i] = has_bc(cells0[i], cells1[i]);
+
       impl::assemble_cells_matrix<T, LiftingMode>(
           mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
           {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
