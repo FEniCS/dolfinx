@@ -153,7 +153,7 @@ jobs:
             dnf -y install boost-devel boost-program-options git hdf5-mpich-devel make \
               mpich-devel ninja-build openblas-devel pugixml-devel spdlog-devel &&
             ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
-            git clone --branch v7.0.9 --single-branch https://gitlab.inria.fr/scotch/scotch.git &&
+            mkdir -p scotch && curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
               -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=/usr/lib64/mpich \
               -DBUILD_LIBSCOTCHMETIS=ON -DINSTALL_METIS_HEADERS=ON &&
@@ -176,7 +176,7 @@ jobs:
           CIBW_CONFIG_SETTINGS_LINUX: > 
             cmake.args="-DCMAKE_PREFIX_PATH=/usr/lib64/mpich"
             wheel.py-api=cp312
-            cmake.build-type="RelWithDebug"
+            cmake.build-type="Release"
           CIBW_BUILD_FRONTEND: "build; args: -nx"
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             export LD_LIBRARY_PATH=$(python -c "import site; print(site.getsitepackages()[0] + '/fenics_basix.libs')"):${LD_LIBRARY_PATH} &&
