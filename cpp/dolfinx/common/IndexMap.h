@@ -8,9 +8,9 @@
 
 #include "IndexMap.h"
 #include "MPI.h"
+#include "memory.h"
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <memory>
 #include <span>
 #include <tuple>
 #include <utility>
@@ -331,5 +331,10 @@ private:
   // Set of ranks ghost owned indices
   std::vector<int> _dest;
 };
+
+namespace impl
+{
+std::size_t memory(const IndexMap& im);
+}
 
 } // namespace dolfinx::common
