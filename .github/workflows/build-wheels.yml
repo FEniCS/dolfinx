@@ -164,7 +164,7 @@ jobs:
             cmake -G Ninja -S superlu_dist/ -B superlu_dist-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
               -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=/usr/lib64/mpich -DTPL_ENABLE_PARMETISLIB=ON \
               -DXSDK_ENABLE_Fortran=OFF -DTPL_PARMETIS_INCLUDE_DIRS=/usr/local/include \
-              -DTPL_PARMETIS_LIBRARIES="/usr/local/lib64/libptscotchparmetisv3.so;/usr/local/lib64/libptscotch.so;/usr/local/lib64/libptscotcherr.so;/usr/local/lib64/libscotchmetisv3.so;/usr/local/lib64/libscotch.so;/usr/local/lib64/libscotcherr.so" &&
+              -DTPL_PARMETIS_LIBRARIES="/usr/local/lib64/libptscotchparmetisv5.so;/usr/local/lib64/libptscotch.so;/usr/local/lib64/libptscotcherr.so;/usr/local/lib64/libscotchmetisv5.so;/usr/local/lib64/libscotch.so;/usr/local/lib64/libscotcherr.so" &&
             cmake --build superlu_dist-build-dir/ &&
             cmake --install superlu_dist-build-dir/ &&
             pip -v install $(python -c "import tomllib; deps=tomllib.load(open('/project/dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
