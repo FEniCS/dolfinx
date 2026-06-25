@@ -197,6 +197,7 @@ jobs:
             cmake --install dolfinx-build-dir/
           CIBW_BEFORE_BUILD_MACOS: >
             brew install boost hdf5-mpi ninja open-mpi openblas pkgconf pugixml spdlog scotch &&
+            git clone --branch v9.2.1 --single-branch https://github.com/xiaoyeli/superlu_dist.git &&
             cmake -G Ninja -S superlu_dist/ -B superlu_dist-build-dir/ -DCMAKE_INSTALL_PREFIX=/usr/local \
               -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
               -DTPL_ENABLE_PARMETISLIB=ON \
@@ -215,7 +216,7 @@ jobs:
               -DCMAKE_CXX_FLAGS_INIT="-fexperimental-library" \
               -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
               -DDOLFINX_ENABLE_SCOTCH=ON \
-              -DDOLFINX_ENABLE_PARTMETIS=OFF \
+              -DDOLFINX_ENABLE_PARMETIS=OFF \
               -DDOLFINX_ENABLE_SUPERLU_DIST=ON \
               -DCMAKE_BUILD_TYPE=RelWithDebug &&
             cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
@@ -223,7 +224,7 @@ jobs:
           # As of 6/26 DOLFINx uses std::jthread which is only officially
           # supported in macOS SDK 26. This enables experimental std library
           # support which allows the build to complete on macOS SDK 15.
-          CIBW_CONFIG_SETTINGS_LINUX: > 
+          CIBW_CONFIG_SETTINGS_LINUX: >
             cmake.args="-DCMAKE_PREFIX_PATH=/usr/lib64/mpich"
             wheel.py-api=cp312
             cmake.build-type="Release"
@@ -296,7 +297,7 @@ jobs:
           PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install openmpi fenics-dolfinx[test] pytest-xdist
           export PATH=$(python -c "import os; print(':'.join(p for p in os.environ['PATH'].split(':') if '/opt/homebrew' not in p))")
           python -m pytest -n auto -m "not adios2 and not petsc4py" dolfinx/python/test/unit
-          mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfix/python/test/unit
+          mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
 
       - name: Upload wheelhouse artifact
         uses: actions/upload-artifact@v7
