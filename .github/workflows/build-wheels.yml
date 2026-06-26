@@ -185,7 +185,7 @@ jobs:
             cmake --build scotch-build-dir/ &&
             cmake --install scotch-build-dir/ &&
             git clone --branch v9.2.1 --single-branch https://github.com/xiaoyeli/superlu_dist.git &&
-            cmake -G Ninja -S superlu_dist/ -B superlu_dist-build-dir/
+            cmake -G Ninja -S superlu_dist/ -B superlu_dist-build-dir/ \
               -DCMAKE_INSTALL_PREFIX=/usr/local \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_SHARED_LIBS=ON \
