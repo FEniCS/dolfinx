@@ -4,15 +4,17 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#pragma once
+
 #include <concepts>
+#include <dolfinx/common/types.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/MatrixCSR.h>
+#include <dolfinx/la/SparsityPattern.h>
 #include <mpi.h>
-
-#pragma once
 
 namespace dolfinx::fem
 {
@@ -290,6 +292,60 @@ void assemble_mpc(
 {
   auto mat_add = A.mat_add_values();
   assemble_matrix_mpc(mpc, mat_add, a, bcs);
+}
+
+/// @brief Add to a sparsity pattern for a form with multipoint constraints
+/// @tparam T Scalar type
+/// @tparam U Mesh geometry type
+/// @param pattern Sparsity pattern to build
+/// @param form Form for which to build sparsity pattern
+/// @param mpc Multipoint constraint
+/// @note The pattern is not finalised, i.e. the caller is responsible
+/// for calling SparsityPattern::assemble.
+template <dolfinx::scalar T, std::floating_point U>
+void build_sparsity_pattern_mpc(la::SparsityPattern& pattern,
+                                const Form<T, U>& form, const MPC<T, U>& mpc)
+{
+  if (form.rank() != 2)
+  {
+    throw std::runtime_error(
+        "Cannot add to sparsity pattern. Form is not a bilinear.");
+  }
+
+  if (form.function_spaces()[0] != mpc.V()
+      or form.function_spaces()[1] != mpc.V())
+  {
+    throw std::runtime_error(
+        "Cannot add to sparsity pattern. Form function spaces do not match "
+        "MPC function space.");
+  }
+
+  // Insert extra connectivity for cells containing constrained dofs
+  // NB - only works if row and column function spaces are the same, which is
+  // the case for now.
+  for (std::int32_t cell : mpc.cells())
+  {
+    auto cell_dofs = mpc.V()->dofmap()->cell_dofs(cell);
+    auto new_rc = mpc.modified_dofs(cell_dofs);
+    pattern.insert(new_rc, new_rc);
+  }
+
+  // Insert extra connectivity for reference dofs in the sparsity pattern
+  auto constraints = mpc.constraints();
+  std::vector<std::int32_t> ref_dofs;
+  for (std::size_t dof = 0; dof < mpc.V()->dofmap()->index_map->size_local();
+       ++dof)
+  {
+    if (constraints.num_links(dof) > 0)
+    {
+      auto c = constraints.links(dof);
+      ref_dofs.resize(c.size());
+      for (std::size_t i = 0; i < c.size(); ++i)
+        ref_dofs[i] = c[i].first;
+      ref_dofs.push_back(dof);
+      pattern.insert(ref_dofs, ref_dofs);
+    }
+  }
 }
 
 } // namespace dolfinx::fem

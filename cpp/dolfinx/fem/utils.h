@@ -313,6 +313,7 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
   t0.stop();
 }
 
+
 /// Create an ElementDofLayout from a FiniteElement
 template <std::floating_point T>
 ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,

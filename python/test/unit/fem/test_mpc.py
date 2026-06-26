@@ -78,18 +78,8 @@ def test_mpc():
 
     # Create SparsityPattern
     sp = create_sparsity_pattern(a)
-    # Add extra sparsity for MPC connections
-    for cell in mpc.cells():
-        cell_dofs = np.array(V_new.dofmap.cell_dofs(cell))
-        new_rc = np.array(mpc.modified_dofs(cell_dofs))
-        sp.insert(new_rc, new_rc)
-
-    # Add extra sparsity for constraint
-    for dof in range(V_new.dofmap.index_map.size_local):
-        c = mpc.constraint(dof)
-        if len(c[0]) > 0:
-            row_col = np.array([dof] + c[0])
-            sp.insert(row_col, row_col)
+    # Add extra MPC links to sparsity
+    dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc)
     sp.finalize()
 
     A = matrix_csr(sp)
