@@ -65,10 +65,10 @@ jobs:
     strategy:
       matrix:
         include:
-#          - os: ubuntu-latest
-#            cibw_build: cp312-manylinux_x86_64
-#          - os: ubuntu-24.04-arm
-#            cibw_build: cp312-manylinux_aarch64
+          - os: ubuntu-latest
+            cibw_build: cp312-manylinux_x86_64
+          - os: ubuntu-24.04-arm
+            cibw_build: cp312-manylinux_aarch64
           - os: macos-15
             cibw_build: cp312-macosx_arm64
 
@@ -282,8 +282,7 @@ jobs:
             python -m pytest -n auto -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
           CIBW_TEST_COMMAND_MACOS: >
-            export DYLD_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}" &&
-            mpiexec -n 1 python -c "from mpi4py import MPI; import dolfinx; mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10); print('hello')" &&
+            export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_FALLBACK_PATH:+:${DYLD_LIBRARY_FALLBACK_PATH}}" &&
             mpiexec -n 1 python -m pytest -n auto -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit &&
             mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
 
