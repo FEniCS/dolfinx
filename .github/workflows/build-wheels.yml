@@ -201,9 +201,13 @@ jobs:
             cmake --install superlu_dist-build-dir/ &&
             pip -v install $(python -c "import tomllib; deps=tomllib.load(open('/project/dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
             pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
-            cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ -DPython3_EXECUTABLE=$(which python) \
-              -DCMAKE_PREFIX_PATH=/usr/lib64/mpich -DCMAKE_BUILD_TYPE=RelWithDebug \
-              -DDOLFINX_ENABLE_SUPERLU_DIST=ON -DDOLFINX_ENABLE_SCOTCH=ON -DDOLFINX_ENABLE_PARMETIS=OFF &&
+            cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ \
+              -DPython3_EXECUTABLE=$(which python) \
+              -DCMAKE_PREFIX_PATH=/usr/lib64/mpich \
+              -DCMAKE_BUILD_TYPE=RelWithDebug \
+              -DDOLFINX_ENABLE_SUPERLU_DIST=ON \
+              -DDOLFINX_ENABLE_SCOTCH=ON \
+              -DDOLFINX_ENABLE_PARMETIS=OFF &&
             cmake --build dolfinx-build-dir/ &&
             cmake --install dolfinx-build-dir/
           CIBW_BEFORE_BUILD_MACOS: >
