@@ -232,7 +232,7 @@ jobs:
             cmake --build superlu_dist-build-dir/ &&
             sudo cmake --install superlu_dist-build-dir/ &&
             pip -v install $(python -c "import tomllib; deps=tomllib.load(open('dolfinx/python/pyproject.toml','rb'))['project']['dependencies']; print(' '.join(x for x in deps if 'fenics-basix' in x or 'fenics-ffcx' in x))") &&
-            pip -v install mpi4py scikit-build-core[pyproject] nanobind &&
+            pip -v install wheel mpi4py scikit-build-core[pyproject] nanobind &&
             cmake -G Ninja -S $GITHUB_WORKSPACE/dolfinx/cpp -B $GITHUB_WORKSPACE/dolfinx-build-dir/ \
               -DPython3_EXECUTABLE=$(which python) \
               -DCMAKE_CXX_FLAGS_INIT="-fexperimental-library" \
@@ -263,7 +263,12 @@ jobs:
             pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             delocate-listdeps --depending {wheel} &&
-            delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel} --exclude libmpi &&
+            delocate-wheel --require-archs {delocate_archs} --exclude libmpi -w {dest_dir} {wheel} &&
+            wheel unpack {dest_dir}/*.whl -d {dest_dir}/unpacked &&
+            rm {dest_dir}/*.whl &&
+            find {dest_dir}/unpacked \( -name "*.so" -o -name "*.dylib" \) | xargs -I% install_name_tool -change /opt/homebrew/opt/open-mpi/lib/libmpi.40.dylib @rpath/libmpi.40.dylib % &&
+            find {dest_dir}/unpacked \( -name "*.so" -o -name "*.dylib" \) | xargs -I% codesign --force --sign - % &&
+            wheel pack {dest_dir}/unpacked/* -d {dest_dir} &&
             pipx run abi3audit --verbose --strict --report {wheel}
           CIBW_TEST_REQUIRES: pytest-xdist
           CIBW_TEST_EXTRAS: test
@@ -324,10 +329,8 @@ jobs:
           python -m venv venv-test
           source venv-test/bin/activate
           PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install openmpi fenics-dolfinx[test] pytest-xdist
-          export PATH=$(python -c "import os; print(':'.join(p for p in os.environ['PATH'].split(':') if '/opt/homebrew' not in p))")
           which mpiexec
-          DYLD_PRINT_LIBRARIES=1 DYLD_PRINT_BINDINGS=1 mpiexec -n 1 python -c "from mpi4py import MPI"
-          DYLD_PRINT_LIBRARIES=1 DYLD_PRINT_BINDINGS=1 mpiexec -n 1 python -c "from mpi4py import MPI; import dolfinx;"
+          mpiexec -n 2 python -c "from mpi4py import MPI; import dolfinx; mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)"
 
       - name: Update FEniCS Project simple503 repository
         run: |
