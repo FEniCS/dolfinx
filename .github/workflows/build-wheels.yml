@@ -330,14 +330,13 @@ jobs:
 
       - name: Test in clean virtual environment with pypi OpenMPI (macOS)
         if: runner.os == 'macOS'
-        run: >
-          cd dolfinx &&
-          sudo git clean -fdx && cd ../ &&
-          python -m venv venv-test &&
-          source venv-test/bin/activate &&
-          PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install openmpi fenics-dolfinx[test] pytest-xdist &&
-          which mpiexec &&
-          mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" {project}/dolfinx/python/test/unit
+        run: |
+          cd dolfinx && git clean -fdx && cd ../
+          python -m venv venv-test
+          source venv-test/bin/activate
+          PIP_EXTRA_INDEX_URL="file://${GITHUB_WORKSPACE}/simple" pip install openmpi fenics-dolfinx[test]
+          which mpiexec
+          mpiexec -n 2 python -m pytest -m "not adios2 and not petsc4py" dolfinx/python/test/unit
 
       - name: Update FEniCS Project simple503 repository
         run: |
