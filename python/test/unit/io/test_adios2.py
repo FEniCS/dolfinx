@@ -251,9 +251,9 @@ class TestVTX:
 
     def test_dg_0_data(self, tempdir):
         """Test that we can mix DG-0 and other Lagrange functions."""
+        adios2 = import_adios2()
         from dolfinx.io import VTXWriter
 
-        adios2 = import_adios2()
         mesh = generate_mesh(2, False)
         v = Function(functionspace(mesh, ("Lagrange", 2, (2,))))
         filename = Path(tempdir, "v.bp")

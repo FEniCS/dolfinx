@@ -49,7 +49,10 @@ from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem import IntegralType, pack_coefficients, pack_constants
-from dolfinx.fem.assemble import _assemble_vector_array
+from dolfinx.fem.assemble import (
+    _assemble_vector_array,
+    _check_bcs_for_different_trial_test_spaces,
+)
 from dolfinx.fem.assemble import apply_lifting as _apply_lifting
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
@@ -395,8 +398,12 @@ def assemble_matrix(
     Returns:
         Matrix representing the bilinear form.
     """  # noqa: D301
+    bcs = [] if bcs is None else bcs
+    if not isinstance(a, Sequence):
+        _check_bcs_for_different_trial_test_spaces(a, bcs)
+
     A = create_matrix(a, kind)
-    assemble_matrix(A, a, bcs, diag, constants, coeffs)  # type: ignore[arg-type]
+    assemble_matrix(A, a, bcs, diag, constants, coeffs, _check_bcs=False)  # type: ignore[arg-type]
     return A
 
 
@@ -412,6 +419,8 @@ def _(
         | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
+    *,
+    _check_bcs: bool = True,
 ) -> PETSc.Mat:  # type: ignore[name-defined]
     """Assemble bilinear form into a matrix.
 
@@ -422,6 +431,10 @@ def _(
     The returned matrix is not finalised, i.e. ghost values are not
     accumulated.
     """
+    bcs = [] if bcs is None else bcs
+    if _check_bcs and not isinstance(a, Sequence):
+        _check_bcs_for_different_trial_test_spaces(a, bcs)
+
     if A.getType() == PETSc.Mat.Type.NEST:  # type: ignore[attr-defined]
         if not isinstance(a, Sequence):
             raise ValueError("Must provide a sequence of forms when assembling a nest matrix")
@@ -431,7 +444,7 @@ def _(
             for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
-                    assemble_matrix(Asub, a_block, bcs, diag, const, coeff)  # type: ignore[arg-type]
+                    assemble_matrix(Asub, a_block, bcs, diag, const, coeff, _check_bcs=False)  # type: ignore[arg-type]
                 elif i == j:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
@@ -462,7 +475,7 @@ def _(
             [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[1]]  # type: ignore[union-attr]
         )
 
-        _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
+        _bcs = [bc._cpp_object for bc in bcs]
         for i, a_row in enumerate(a):
             for j, a_sub in enumerate(a_row):
                 if a_sub is not None:
@@ -501,7 +514,7 @@ def _(
     else:  # Non-blocked
         constants = pack_constants(a) if constants is None else constants  # type: ignore[assignment]
         coeffs = pack_coefficients(a) if coeffs is None else coeffs  # type: ignore[assignment]
-        _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
+        _bcs = [bc._cpp_object for bc in bcs]
         _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)
         if a.function_spaces[0] is a.function_spaces[1]:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[attr-defined]

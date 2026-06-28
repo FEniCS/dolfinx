@@ -178,6 +178,26 @@ def nest_matrix_norm(A):
     return math.sqrt(norm)
 
 
+def _different_trial_test_space_form_and_bc():
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    U = functionspace(msh, ("Lagrange", 1))
+    V = functionspace(msh, ("Lagrange", 2))
+    u = ufl.TrialFunction(U)
+    v = ufl.TestFunction(V)
+    a = form(inner(u, v) * dx)
+
+    facets = locate_entities_boundary(msh, msh.topology.dim - 1, lambda x: np.isclose(x[0], 0.0))
+    dofs = locate_dofs_topological(V, msh.topology.dim - 1, facets)
+    bc = dirichletbc(default_scalar_type(0), dofs, V)
+    return a, bc
+
+
+def test_assembly_rejects_bcs_for_different_trial_test_spaces():
+    a, bc = _different_trial_test_space_form_and_bc()
+    with pytest.raises(RuntimeError, match="different test and trial spaces"):
+        assemble_matrix(a, bcs=[bc])
+
+
 @pytest.mark.petsc4py
 def test_vector_single_space_as_block():
     from dolfinx.fem.petsc import create_vector as petsc_create_vector
@@ -192,6 +212,14 @@ def test_vector_single_space_as_block():
 @pytest.mark.petsc4py
 class TestPETScAssemblers:
     """Test PETSc-based assemblers for matrices and vectors."""
+
+    def test_assembly_rejects_bcs_for_different_trial_test_spaces(self):
+        """Test that PETSc assembly rejects same-domain Petrov-Galerkin BCs."""
+        from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+
+        a, bc = _different_trial_test_space_form_and_bc()
+        with pytest.raises(RuntimeError, match="different test and trial spaces"):
+            petsc_assemble_matrix(a, bcs=[bc])
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_basic_assembly_petsc_matrixcsr(self, mode):

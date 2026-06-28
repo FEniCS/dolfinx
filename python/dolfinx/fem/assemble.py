@@ -26,6 +26,25 @@ from dolfinx.fem.forms import Form
 from dolfinx.fem.function import FunctionSpace
 
 
+def _check_bcs_for_different_trial_test_spaces(a: Form, bcs: Sequence[DirichletBC]) -> None:
+    """Reject DirichletBCs for unsupported Petrov-Galerkin assembly."""
+    if not bcs or len(a.function_spaces) != 2:
+        return
+
+    test_space, trial_space = a.function_spaces
+    if test_space is trial_space:
+        return
+    if test_space.mesh is not trial_space.mesh:
+        return
+
+    for bc in bcs:
+        if test_space.contains(bc.function_space) or trial_space.contains(bc.function_space):
+            raise RuntimeError(
+                "Dirichlet boundary conditions for bilinear forms with different test "
+                "and trial spaces are not supported by this matrix assembly path."
+            )
+
+
 def pack_constants(
     form: Form | Sequence[Form],
 ) -> npt.NDArray | Sequence[npt.NDArray]:
@@ -288,6 +307,7 @@ def assemble_matrix(
         accumulated.
     """
     bcs = [] if bcs is None else bcs
+    _check_bcs_for_different_trial_test_spaces(a, bcs)
     A: la.MatrixCSR = create_matrix(a, block_mode)
     _assemble_matrix_csr(A, a, bcs, diag, constants, coeffs)
     return A
@@ -325,15 +345,17 @@ def _assemble_matrix_csr(
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
+    bcs = [] if bcs is None else bcs
+    _check_bcs_for_different_trial_test_spaces(a, bcs)
+    _bcs = [bc._cpp_object for bc in bcs]
     constants = pack_constants(a) if constants is None else constants  # type: ignore[assignment]
     coeffs = pack_coefficients(a) if coeffs is None else coeffs  # type: ignore[assignment]
-    _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, bcs)
+    _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, _bcs)
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
     if a.function_spaces[0] is a.function_spaces[1]:
-        _cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], bcs, diag)
+        _cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], _bcs, diag)
     return A
 
 

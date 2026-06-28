@@ -57,11 +57,15 @@ la::petsc::create_vectors(MPI_Comm comm,
   std::vector<Vec> v(x.size());
   for (std::size_t i = 0; i < v.size(); ++i)
   {
-    VecCreateMPI(comm, x[i].size(), PETSC_DETERMINE, &v[i]);
-    PetscScalar* data;
-    VecGetArray(v[i], &data);
+    PetscErrorCode ierr
+        = VecCreateMPI(comm, x[i].size(), PETSC_DETERMINE, &v[i]);
+    CHECK_ERROR("VecCreateMPI");
+    PetscScalar* data = nullptr;
+    ierr = VecGetArray(v[i], &data);
+    CHECK_ERROR("VecGetArray");
     std::ranges::copy(x[i], data);
-    VecRestoreArray(v[i], &data);
+    ierr = VecRestoreArray(v[i], &data);
+    CHECK_ERROR("VecRestoreArray");
   }
 
   return v;
@@ -140,7 +144,9 @@ std::vector<IS> la::petsc::create_index_sets(
     std::int32_t size
         = map.first.get().size_local() + map.first.get().num_ghosts();
     IS _is;
-    ISCreateStride(PETSC_COMM_SELF, bs * size, offset, 1, &_is);
+    PetscErrorCode ierr
+        = ISCreateStride(PETSC_COMM_SELF, bs * size, offset, 1, &_is);
+    CHECK_ERROR("ISCreateStride");
     is.push_back(_is);
     offset += bs * size;
   }
@@ -160,11 +166,14 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
 
   // Unwrap PETSc vector
   Vec x_local;
-  VecGhostGetLocalForm(x, &x_local);
+  PetscErrorCode ierr = VecGhostGetLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostGetLocalForm");
   PetscInt n = 0;
-  VecGetSize(x_local, &n);
+  ierr = VecGetSize(x_local, &n);
+  CHECK_ERROR("VecGetSize");
   const PetscScalar* array = nullptr;
-  VecGetArrayRead(x_local, &array);
+  ierr = VecGetArrayRead(x_local, &array);
+  CHECK_ERROR("VecGetArrayRead");
   std::span _x(array, n);
 
   // Copy PETSc Vec data in to local vectors
@@ -185,8 +194,10 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
     offset_ghost += size_ghost;
   }
 
-  VecRestoreArrayRead(x_local, &array);
-  VecGhostRestoreLocalForm(x, &x_local);
+  ierr = VecRestoreArrayRead(x_local, &array);
+  CHECK_ERROR("VecRestoreArrayRead");
+  ierr = VecGhostRestoreLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
 
   return x_b;
 }
@@ -205,11 +216,14 @@ void la::petsc::scatter_local_vectors(
     offset_owned += map.first.get().size_local() * map.second;
 
   Vec x_local;
-  VecGhostGetLocalForm(x, &x_local);
+  PetscErrorCode ierr = VecGhostGetLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostGetLocalForm");
   PetscInt n = 0;
-  VecGetSize(x_local, &n);
+  ierr = VecGetSize(x_local, &n);
+  CHECK_ERROR("VecGetSize");
   PetscScalar* array = nullptr;
-  VecGetArray(x_local, &array);
+  ierr = VecGetArray(x_local, &array);
+  CHECK_ERROR("VecGetArray");
   std::span _x(array, n);
 
   // Copy local vectors into PETSc Vec
@@ -228,8 +242,10 @@ void la::petsc::scatter_local_vectors(
     offset_ghost += size_ghost;
   }
 
-  VecRestoreArray(x_local, &array);
-  VecGhostRestoreLocalForm(x, &x_local);
+  ierr = VecRestoreArray(x_local, &array);
+  CHECK_ERROR("VecRestoreArray");
+  ierr = VecGhostRestoreLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
 }
 //-----------------------------------------------------------------------------
 Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
@@ -245,8 +261,12 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   std::array maps = {sp.index_map(0), sp.index_map(1)};
   const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
-  if (type)
-    MatSetType(A, type->c_str());
+  if (type and !type->empty())
+  {
+    ierr = MatSetType(A, type->c_str());
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "MatSetType");
+  }
 
   // Get global and local dimensions
   const std::int64_t M = bs[0] * maps[0]->size_global();
@@ -294,7 +314,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   ierr = MatXAIJSetPreallocation(A, _bs, _nnz_diag.data(), _nnz_offdiag.data(),
                                  nullptr, nullptr);
   if (ierr != 0)
-    petsc::error(ierr, __FILE__, "MatXIJSetPreallocation");
+    petsc::error(ierr, __FILE__, "MatXAIJSetPreallocation");
 
   // Set block sizes
   ierr = MatSetBlockSizes(A, bs[0], bs[1]);
@@ -405,7 +425,10 @@ petsc::Vector::Vector(Vec x, bool inc_ref_count) : _x(x)
 {
   assert(x);
   if (inc_ref_count)
-    PetscObjectReference((PetscObject)_x);
+  {
+    PetscErrorCode ierr = PetscObjectReference((PetscObject)_x);
+    CHECK_ERROR("PetscObjectReference");
+  }
 }
 //-----------------------------------------------------------------------------
 petsc::Vector::Vector(Vector&& v) noexcept : _x(std::exchange(v._x, nullptr)) {}
@@ -413,7 +436,7 @@ petsc::Vector::Vector(Vector&& v) noexcept : _x(std::exchange(v._x, nullptr)) {}
 petsc::Vector::~Vector()
 {
   if (_x)
-    VecDestroy(&_x);
+    (void)VecDestroy(&_x);
 }
 //-----------------------------------------------------------------------------
 petsc::Vector& petsc::Vector::operator=(Vector&& v) noexcept
@@ -425,10 +448,13 @@ petsc::Vector& petsc::Vector::operator=(Vector&& v) noexcept
 petsc::Vector petsc::Vector::copy() const
 {
   Vec _y;
-  VecDuplicate(_x, &_y);
-  VecCopy(_x, _y);
+  PetscErrorCode ierr = VecDuplicate(_x, &_y);
+  CHECK_ERROR("VecDuplicate");
+  ierr = VecCopy(_x, _y);
+  CHECK_ERROR("VecCopy");
   Vector y(_y, true);
-  VecDestroy(&_y);
+  ierr = VecDestroy(&_y);
+  CHECK_ERROR("VecDestroy");
   return y;
 }
 //-----------------------------------------------------------------------------
@@ -499,7 +525,10 @@ petsc::Operator::Operator(Mat A, bool inc_ref_count) : _matA(A)
 {
   assert(A);
   if (inc_ref_count)
-    PetscObjectReference((PetscObject)_matA);
+  {
+    PetscErrorCode ierr = PetscObjectReference((PetscObject)_matA);
+    CHECK_ERROR("PetscObjectReference");
+  }
 }
 //-----------------------------------------------------------------------------
 petsc::Operator::Operator(Operator&& A) noexcept
@@ -512,7 +541,7 @@ petsc::Operator::~Operator()
   // Decrease reference count (PETSc will destroy object once reference
   // counts reached zero)
   if (_matA)
-    MatDestroy(&_matA);
+    (void)MatDestroy(&_matA);
 }
 //-----------------------------------------------------------------------------
 petsc::Operator& petsc::Operator::operator=(Operator&& A) noexcept
@@ -527,7 +556,7 @@ std::array<std::int64_t, 2> petsc::Operator::size() const
   PetscInt m(0), n(0);
   PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
   if (ierr != 0)
-    petsc::error(ierr, __FILE__, "MetGetSize");
+    petsc::error(ierr, __FILE__, "MatGetSize");
   return {{m, n}};
 }
 //-----------------------------------------------------------------------------
@@ -620,21 +649,24 @@ void petsc::Matrix::apply(AssemblyType type)
 void petsc::Matrix::set_options_prefix(const std::string& options_prefix)
 {
   assert(_matA);
-  MatSetOptionsPrefix(_matA, options_prefix.c_str());
+  PetscErrorCode ierr = MatSetOptionsPrefix(_matA, options_prefix.c_str());
+  CHECK_ERROR("MatSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string petsc::Matrix::get_options_prefix() const
 {
   assert(_matA);
   const char* prefix = nullptr;
-  MatGetOptionsPrefix(_matA, &prefix);
+  PetscErrorCode ierr = MatGetOptionsPrefix(_matA, &prefix);
+  CHECK_ERROR("MatGetOptionsPrefix");
   return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
 void petsc::Matrix::set_from_options()
 {
   assert(_matA);
-  MatSetFromOptions(_matA);
+  PetscErrorCode ierr = MatSetFromOptions(_matA);
+  CHECK_ERROR("MatSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -666,7 +698,7 @@ petsc::KrylovSolver::KrylovSolver(KrylovSolver&& solver) noexcept
 petsc::KrylovSolver::~KrylovSolver()
 {
   if (_ksp)
-    KSPDestroy(&_ksp);
+    (void)KSPDestroy(&_ksp);
 }
 //-----------------------------------------------------------------------------
 petsc::KrylovSolver&
@@ -695,10 +727,10 @@ int petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
 
   // Get PETSc operators
   Mat _A, _P;
-  KSPGetOperators(_ksp, &_A, &_P);
+  PetscErrorCode ierr = KSPGetOperators(_ksp, &_A, &_P);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "KSPGetOperators");
   assert(_A);
-
-  PetscErrorCode ierr;
 
   // Solve linear system
   spdlog::info("PETSc Krylov solver starting to solve system.");
