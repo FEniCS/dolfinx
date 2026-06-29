@@ -11,6 +11,8 @@ import numpy as np
 import pytest
 
 import dolfinx
+from dolfinx.common import IndexMap
+from dolfinx.cpp.la import SparsityPattern
 from dolfinx.fem import (
     Function,
     apply_lifting,
@@ -22,7 +24,7 @@ from dolfinx.fem import (
     functionspace,
     locate_dofs_topological,
 )
-from dolfinx.la import InsertMode
+from dolfinx.la import InsertMode, matrix_csr, vector
 from dolfinx.mesh import create_unit_square, exterior_facet_indices
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, as_vector, div, dx, grad, inner
 
@@ -183,3 +185,52 @@ def test_superlu_solver_blocked(dtype):
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     eps = np.sqrt(np.finfo(dtype).eps)
     assert np.isclose(error, 0.0, atol=eps)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
+@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
+@pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="Hand-built single-rank matrix")
+def test_superlu_solver_asymmetric_blocks(dtype):
+    """Hand-built MatrixCSR with bs[0] = 2 and bs[1] = 3 and final size 6 x 6."""
+    from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
+
+    bs0, bs1 = 2, 3
+    n_row_blocks, n_col_blocks = 3, 2
+
+    im_row = IndexMap(MPI.COMM_WORLD, n_row_blocks)
+    im_col = IndexMap(MPI.COMM_WORLD, n_col_blocks)
+    sp = SparsityPattern(MPI.COMM_WORLD, [im_row, im_col], [bs0, bs1])
+    for i in range(n_row_blocks):
+        for j in range(n_col_blocks):
+            sp.insert(i, j)
+    sp.finalize()
+
+    A = matrix_csr(sp, dtype=dtype)
+    assert A.block_size == [bs0, bs1]
+
+    rng = np.random.default_rng(0)
+    A_dense = (np.eye(6) * 10.0 + rng.standard_normal((6, 6))).astype(dtype)
+
+    for i in range(n_row_blocks):
+        for j in range(n_col_blocks):
+            block_idx = i * n_col_blocks + j
+            for i0 in range(bs0):
+                for i1 in range(bs1):
+                    A.data[block_idx * bs0 * bs1 + i0 * bs1 + i1] = A_dense[
+                        i * bs0 + i0, j * bs1 + i1
+                    ]
+
+    b_np = rng.standard_normal(6).astype(dtype)
+    x_expected = np.linalg.solve(A_dense, b_np)
+
+    b = vector(im_row, bs=bs0, dtype=dtype)
+    b.array[:] = b_np
+    u = vector(im_col, bs=bs1, dtype=dtype)
+
+    A_superlu = superlu_dist_matrix(A)
+    solver = superlu_dist_solver(A_superlu)
+    error_code = solver.solve(b, u)
+    assert error_code == 0
+    u.scatter_forward()
+
+    assert np.allclose(u.array, x_expected)
