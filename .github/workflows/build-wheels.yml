@@ -71,6 +71,8 @@ jobs:
             cibw_build: cp312-manylinux_aarch64
           - os: macos-15
             cibw_build: cp312-macosx_arm64
+          - os: macos-15-intel
+            cibw_build: cp312-macosx_x86_64
 
     env:
       CIBW_BUILD: ${{ matrix.cibw_build }}
