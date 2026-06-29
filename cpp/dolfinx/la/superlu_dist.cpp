@@ -14,10 +14,12 @@ extern "C"
 #include <superlu_zdefs.h>
 }
 #include <algorithm>
+#include <array>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <initializer_list>
+#include <numeric>
 #include <ranges>
 #include <stdexcept>
 #include <vector>
@@ -49,25 +51,106 @@ namespace
 template <typename...>
 constexpr bool always_false_v = false;
 
+// Expand MatrixCSR block column indices to scalar global column indices.
+// SuperLU_DIST has no block-CSR API, so blocked matrices must be flattened
+// to scalar CSR before being passed to it.
 std::vector<int_t> col_indices(const auto& A)
 {
-  // Local number of non-zeros
-  std::int32_t m_loc = A.num_owned_rows();
-  std::int64_t nnz_loc = A.row_ptr().at(m_loc);
-
+  std::array<int, 2> bs = A.block_size();
+  std::int32_t m_loc_block = A.num_owned_rows();
+  std::int64_t nnz_loc_block = A.row_ptr().at(m_loc_block);
   std::vector global_indices(A.index_map(1)->global_indices());
-  std::vector<int_t> col_indices(nnz_loc);
-  std::transform(A.cols().begin(), std::next(A.cols().begin(), nnz_loc),
-                 col_indices.begin(), [&global_indices](auto idx) -> int_t
-                 { return global_indices[idx]; });
+
+  if (bs[0] == 1 and bs[1] == 1)
+  {
+    std::vector<int_t> col_indices(nnz_loc_block);
+    std::transform(A.cols().begin(), std::next(A.cols().begin(), nnz_loc_block),
+                   col_indices.begin(), [&global_indices](auto idx) -> int_t
+                   { return global_indices[idx]; });
+    return col_indices;
+  }
+
+  std::vector<int_t> col_indices(nnz_loc_block * bs[0] * bs[1]);
+  const auto& A_cols = A.cols();
+  const auto& A_rowptr = A.row_ptr();
+  std::int64_t pos = 0;
+  for (std::int32_t i = 0; i < m_loc_block; ++i)
+  {
+    for (int i0 = 0; i0 < bs[0]; ++i0)
+    {
+      for (std::int64_t j = A_rowptr[i]; j < A_rowptr[i + 1]; ++j)
+      {
+        int_t col_block = global_indices[A_cols[j]];
+        for (int i1 = 0; i1 < bs[1]; ++i1)
+          col_indices[pos++] = col_block * bs[1] + i1;
+      }
+    }
+  }
   return col_indices;
 }
 //----------------------------------------------------------------------------
+// Expand MatrixCSR block row pointer to scalar row pointer.
 std::vector<int_t> row_indices(const auto& A)
 {
-  return std::vector<int_t>(
-      A.row_ptr().begin(),
-      std::next(A.row_ptr().begin(), A.num_owned_rows() + 1));
+  std::array<int, 2> bs = A.block_size();
+  std::int32_t m_loc_block = A.num_owned_rows();
+  const auto& A_rowptr = A.row_ptr();
+
+  if (bs[0] == 1 and bs[1] == 1)
+  {
+    return std::vector<int_t>(A_rowptr.begin(),
+                              std::next(A_rowptr.begin(), m_loc_block + 1));
+  }
+
+  // Write the per-scalar-row entry counts into `flattened_rowptr[1..]`
+  // (each block-row contributes `bs[0]` copies), then prefix-sum into the
+  // row pointer. `flattened_rowptr[0]` stays at its value-initialised zero.
+  std::vector<int_t> flattened_rowptr(m_loc_block * bs[0] + 1);
+  for (std::int32_t i = 0; i < m_loc_block; ++i)
+  {
+    int_t delta = (A_rowptr[i + 1] - A_rowptr[i]) * bs[1];
+    std::fill_n(std::next(flattened_rowptr.begin(), 1 + i * bs[0]), bs[0],
+                delta);
+  }
+  std::inclusive_scan(std::next(flattened_rowptr.begin()),
+                      flattened_rowptr.end(),
+                      std::next(flattened_rowptr.begin()));
+  return flattened_rowptr;
+}
+//----------------------------------------------------------------------------
+// Expand MatrixCSR blocked values to scalar CSR layout. Each block is
+// stored row-major at offset `j*bs[0]*bs[1] + i0*bs[1] + i1` in
+// `A.values()` (cf. `MatrixCSR::to_dense`).
+template <typename T>
+std::vector<T> matrix_values(const MatrixCSR<T>& A)
+{
+  std::array<int, 2> bs = A.block_size();
+  std::int32_t m_loc_block = A.num_owned_rows();
+  std::int64_t nnz_loc_block = A.row_ptr().at(m_loc_block);
+
+  if (bs[0] == 1 and bs[1] == 1)
+  {
+    return std::vector<T>(A.values().begin(),
+                          std::next(A.values().begin(), nnz_loc_block));
+  }
+
+  std::vector<T> flattened_values(nnz_loc_block * bs[0] * bs[1]);
+  const auto& A_values = A.values();
+  const auto& A_rowptr = A.row_ptr();
+  std::int64_t pos = 0;
+  for (std::int32_t i = 0; i < m_loc_block; ++i)
+  {
+    for (int i0 = 0; i0 < bs[0]; ++i0)
+    {
+      for (std::int64_t j = A_rowptr[i]; j < A_rowptr[i + 1]; ++j)
+      {
+        for (int i1 = 0; i1 < bs[1]; ++i1)
+          flattened_values[pos++]
+              = A_values[j * bs[0] * bs[1] + i0 * bs[1] + i1];
+      }
+    }
+  }
+  return flattened_values;
 }
 //----------------------------------------------------------------------------
 template <typename T>
@@ -78,17 +161,19 @@ create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
 
   auto map0 = A.index_map(0);
   auto map1 = A.index_map(1);
+  std::array<int, 2> bs = A.block_size();
 
-  // Global size
-  std::int64_t m = map0->size_global();
-  std::int64_t n = map1->size_global();
+  // Global size (scalar, after block expansion)
+  std::int64_t m = map0->size_global() * bs[0];
+  std::int64_t n = map1->size_global() * bs[1];
   if (m != n)
     throw std::runtime_error("Cannot solve non-square system");
 
-  // Number of local rows, first row and local number of non-zeros
-  std::int32_t m_loc = A.num_owned_rows();
-  std::int64_t first_row = map0->local_range().front();
-  std::int64_t nnz_loc = A.row_ptr().at(m_loc);
+  // Number of local rows, first row and local number of non-zeros (all
+  // in scalar units; MatrixCSR may store data with block size > 1).
+  std::int32_t m_loc = A.num_owned_rows() * bs[0];
+  std::int64_t first_row = map0->local_range().front() * bs[0];
+  std::int64_t nnz_loc = A.row_ptr().at(A.num_owned_rows()) * bs[0] * bs[1];
 
   // Check values fit into upper range of int_t.
   auto check = [](std::int64_t x)
@@ -137,7 +222,7 @@ create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistMatrix<T>::SuperLUDistMatrix(const MatrixCSR<T>& A)
-    : _comm(A.comm()), _matA_values(A.values()),
+    : _comm(A.comm()), _matA_values(matrix_values(A)),
       _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(A))),
       _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(A))),
       _supermatrix(create_supermatrix<T>(A, _matA_values, *_rowptr, *_cols))
