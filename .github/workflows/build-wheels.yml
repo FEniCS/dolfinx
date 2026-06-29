@@ -79,7 +79,7 @@ jobs:
       CIBW_BUILD_VERBOSITY: 1
       CIBW_ENVIRONMENT: PIP_INDEX_URL="file:///project/simple" PIP_EXTRA_INDEX_URL="https://pypi.org/simple"
       CIBW_ARCHS_LINUX: native
-      CIBW_ARCHS_MACOS: arm64
+      CIBW_ARCHS_MACOS: native
       CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64:latest
       CIBW_MANYLINUX_AARCH64_IMAGE: quay.io/pypa/manylinux_2_34_aarch64:latest
 
