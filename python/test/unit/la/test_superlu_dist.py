@@ -24,7 +24,7 @@ from dolfinx.fem import (
 )
 from dolfinx.la import InsertMode
 from dolfinx.mesh import create_unit_square, exterior_facet_indices
-from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, inner
+from ufl import SpatialCoordinate, TestFunction, TrialFunction, as_vector, div, dx, grad, inner
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
@@ -130,3 +130,56 @@ def test_superlu_solver(dtype):
     solver_2.set_option("Fact", "SamePattern")
     uh_2 = solve_and_check(solver_2, b_2)
     check_error(u_ex, uh_2)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
+@pytest.mark.skipif(not dolfinx.has_superlu_dist, reason="No SuperLU_DIST")
+def test_superlu_solver_blocked(dtype):
+    """Vector Poisson problem on a vector Lagrange space (block size 2)."""
+    from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
+
+    mesh_dtype = dtype().real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=mesh_dtype)
+    V = functionspace(mesh, ("Lagrange", 3, (2,)))
+    u, v = TrialFunction(V), TestFunction(V)
+
+    a = form(inner(grad(u), grad(v)) * dx, dtype=dtype)
+
+    def u_ex(x):
+        return np.vstack((x[1] ** 3, x[0] ** 3))
+
+    x = SpatialCoordinate(mesh)
+    u_ex_ufl = as_vector((x[1] ** 3, x[0] ** 3))
+    f = -div(grad(u_ex_ufl))
+    L = form(inner(f, v) * dx, dtype=dtype)
+
+    u_bc = Function(V, dtype=dtype)
+    u_bc.interpolate(u_ex)
+
+    facetdim = mesh.topology.dim - 1
+    mesh.topology.create_connectivity(facetdim, mesh.topology.dim)
+    bndry_facets = exterior_facet_indices(mesh.topology)
+    bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
+    bc = dirichletbc(u_bc, bdofs)
+
+    b = assemble_vector(L)
+    apply_lifting(b.array, [a], bcs=[[bc]])
+    b.scatter_reverse(InsertMode.add)
+    bc.set(b.array)
+
+    A = assemble_matrix(a, bcs=[bc])
+    A.scatter_reverse()
+    assert A.block_size == [2, 2]
+
+    A_superlu = superlu_dist_matrix(A)
+    solver = superlu_dist_solver(A_superlu)
+    solver.set_option("SymmetricMode", "YES")
+    uh = Function(V, dtype=dtype)
+    error_code = solver.solve(b, uh.x)
+    assert error_code == 0
+    uh.x.scatter_forward()
+
+    M = form(inner(u_ex_ufl - uh, u_ex_ufl - uh) * dx, dtype=dtype)
+    error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
+    eps = np.sqrt(np.finfo(dtype).eps)
+    assert np.isclose(error, 0.0, atol=eps)
