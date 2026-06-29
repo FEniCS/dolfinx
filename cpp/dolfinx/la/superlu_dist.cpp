@@ -51,9 +51,7 @@ namespace
 template <typename...>
 constexpr bool always_false_v = false;
 
-// Expand MatrixCSR block column indices to scalar global column indices.
-// SuperLU_DIST has no block-CSR API, so blocked matrices must be flattened
-// to scalar CSR before being passed to it.
+// Expand MatrixCSR block column indices to flattened column indices.
 std::vector<int_t> col_indices(const auto& A)
 {
   std::array<int, 2> bs = A.block_size();
@@ -89,7 +87,7 @@ std::vector<int_t> col_indices(const auto& A)
   return col_indices;
 }
 //----------------------------------------------------------------------------
-// Expand MatrixCSR block row pointer to scalar row pointer.
+// Expand MatrixCSR block row pointer to flattened row pointer.
 std::vector<int_t> row_indices(const auto& A)
 {
   std::array<int, 2> bs = A.block_size();
@@ -102,9 +100,8 @@ std::vector<int_t> row_indices(const auto& A)
                               std::next(A_rowptr.begin(), m_loc_block + 1));
   }
 
-  // Write the per-scalar-row entry counts into `flattened_rowptr[1..]`
-  // (each block-row contributes `bs[0]` copies), then prefix-sum into the
-  // row pointer. `flattened_rowptr[0]` stays at its value-initialised zero.
+  // Write the per-scalar-row entry counts into `flattened_rowptr[1:]`, with
+  // each block-row contributing `bs[0]` copies.
   std::vector<int_t> flattened_rowptr(m_loc_block * bs[0] + 1);
   for (std::int32_t i = 0; i < m_loc_block; ++i)
   {
@@ -118,9 +115,7 @@ std::vector<int_t> row_indices(const auto& A)
   return flattened_rowptr;
 }
 //----------------------------------------------------------------------------
-// Expand MatrixCSR blocked values to scalar CSR layout. Each block is
-// stored row-major at offset `j*bs[0]*bs[1] + i0*bs[1] + i1` in
-// `A.values()` (cf. `MatrixCSR::to_dense`).
+// Expand MatrixCSR block values to flattened CSR layout.
 template <typename T>
 std::vector<T> matrix_values(const MatrixCSR<T>& A)
 {
