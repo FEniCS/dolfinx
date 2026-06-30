@@ -1,4 +1,5 @@
 // Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
+// Copyright (C) 2026 Musawer Ahmad Saqif
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -171,7 +172,7 @@ void petsc_fem_module(nb::module_& m)
                                     nb::c_contig>>& coefficients,
          const std::vector<
              const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>*>& bcs,
-         bool unrolled)
+         bool unrolled, bool check_bcs)
       {
         std::vector<std::reference_wrapper<
             const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>
@@ -190,7 +191,8 @@ void petsc_fem_module(nb::module_& m)
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
           dolfinx::fem::assemble_matrix(
               set_fn, a, std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs,
+              check_bcs);
         }
         else
         {
@@ -201,19 +203,21 @@ void petsc_fem_module(nb::module_& m)
             dolfinx::fem::assemble_matrix(
                 dolfinx::la::petsc::Matrix::set_fn(A, ADD_VALUES), a,
                 std::span(constants.data(), constants.size()),
-                dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+                dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs,
+                check_bcs);
           }
           else
           {
             dolfinx::fem::assemble_matrix(
                 dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
                 std::span(constants.data(), constants.size()),
-                dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+                dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs,
+                check_bcs);
           }
         }
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
-      nb::arg("bcs"), nb::arg("unrolled") = false,
+      nb::arg("bcs"), nb::arg("unrolled") = false, nb::arg("check_bcs") = true,
       "Assemble bilinear form into an existing PETSc matrix");
   m.def(
       "assemble_matrix",
