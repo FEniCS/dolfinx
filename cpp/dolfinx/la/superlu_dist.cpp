@@ -164,8 +164,7 @@ create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
   if (m != n)
     throw std::runtime_error("Cannot solve non-square system");
 
-  // Number of local rows, first row and local number of non-zeros (all
-  // in scalar units; MatrixCSR may store data with block size > 1).
+  // Number of local rows, first row and local number of non-zeros.
   std::int32_t m_loc = A.num_owned_rows() * bs[0];
   std::int64_t first_row = map0->local_range().front() * bs[0];
   std::int64_t nnz_loc = A.row_ptr().at(A.num_owned_rows()) * bs[0] * bs[1];
