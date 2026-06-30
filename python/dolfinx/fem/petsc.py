@@ -49,7 +49,10 @@ from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem import IntegralType, pack_coefficients, pack_constants
-from dolfinx.fem.assemble import _assemble_vector_array
+from dolfinx.fem.assemble import (
+    _assemble_vector_array,
+    _check_bcs_for_different_trial_test_spaces,
+)
 from dolfinx.fem.assemble import apply_lifting as _apply_lifting
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
@@ -412,6 +415,8 @@ def _(
         | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
+    *,
+    _check_bcs: bool = True,
 ) -> PETSc.Mat:  # type: ignore[name-defined]
     """Assemble bilinear form into a matrix.
 
@@ -422,6 +427,10 @@ def _(
     The returned matrix is not finalised, i.e. ghost values are not
     accumulated.
     """
+    bcs = [] if bcs is None else bcs
+    if _check_bcs and not isinstance(a, Sequence):
+        _check_bcs_for_different_trial_test_spaces(a, bcs)
+
     if A.getType() == PETSc.Mat.Type.NEST:  # type: ignore[attr-defined]
         if not isinstance(a, Sequence):
             raise ValueError("Must provide a sequence of forms when assembling a nest matrix")
@@ -431,7 +440,9 @@ def _(
             for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
-                    assemble_matrix(Asub, a_block, bcs, diag, const, coeff)  # type: ignore[arg-type]
+                    assemble_matrix(
+                        Asub, a_block, bcs, diag, const, coeff, _check_bcs=False
+                    )  # type: ignore[arg-type]
                 elif i == j:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
