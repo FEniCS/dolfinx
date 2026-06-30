@@ -22,7 +22,7 @@ jobs:
     name: Lint
     steps:
       - name: Checkout DOLFINx
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -33,7 +33,7 @@ jobs:
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install linting tools
-        run: pip install clang-format cmake-format[YAML] mypy ruff
+        run: pip install clang-format gersemi mypy ruff
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
@@ -60,10 +60,8 @@ jobs:
           cd python/dolfinx/wrappers
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
-      - name: cmake-format (non-blocking)
-        continue-on-error: true
-        run: |
-          find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
+      - name: gersemi
+        run: gersemi --check cpp/CMakeLists.txt cpp/dolfinx/CMakeLists.txt python/CMakeLists.txt cpp/cmake/modules/*.cmake cpp/cmake/post-install/CMakeLists.txt cpp/cmake/templates/*.cmake.in
 
   ccpp-build:
     runs-on: ubuntu-24.04
@@ -77,7 +75,7 @@ jobs:
 
     name: Build and test
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -105,7 +103,7 @@ jobs:
           pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
-      - name: Configure (C++)
+      - name: Configure, no rpath (C++)
         working-directory: cpp
         run: >
           cmake -B build -S .
@@ -117,12 +115,14 @@ jobs:
           -DDOLFINX_ENABLE_PETSC=false
           -DDOLFINX_ENABLE_SUPERLU_DIST=true
           -DDOLFINX_ENABLE_PARMETIS=true
+          -DDOLFINX_INSTALL_RPATH_USE_LINK_PATH=false
 
       - name: Build and install (C++)
         working-directory: cpp/build
         run: |
           cmake --build .
           sudo cmake --install .
+          sudo ldconfig
 
       - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
@@ -180,7 +180,7 @@ jobs:
 
     name: Build and test (${{ matrix.petsc_arch }}, ${{ matrix.docker_image }})
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -289,7 +289,7 @@ jobs:
 
     name: Build and publish docs
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -349,7 +349,7 @@ jobs:
 
       - name: Checkout FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: "FEniCS/docs"
           path: "docs"
