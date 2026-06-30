@@ -18,7 +18,12 @@ using namespace dolfinx;
 using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm) { EPSCreate(comm, &_eps); }
+SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm)
+{
+  PetscErrorCode ierr = EPSCreate(comm, &_eps);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "EPSCreate");
+}
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(EPS eps, bool inc_ref_count) : _eps(eps)
 {
@@ -56,7 +61,9 @@ SLEPcEigenSolver::operator=(SLEPcEigenSolver&& solver) noexcept
 void SLEPcEigenSolver::set_operators(const Mat A, const Mat B)
 {
   assert(_eps);
-  EPSSetOperators(_eps, A, B);
+  PetscErrorCode ierr = EPSSetOperators(_eps, A, B);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "EPSSetOperators");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()
@@ -64,10 +71,15 @@ void SLEPcEigenSolver::solve()
   // Get operators
   Mat A, B;
   assert(_eps);
-  EPSGetOperators(_eps, &A, &B);
+  PetscErrorCode ierr = EPSGetOperators(_eps, &A, &B);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "EPSGetOperators");
 
   PetscInt m(0), n(0);
-  MatGetSize(A, &m, &n);
+  ierr = MatGetSize(A, &m, &n);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "MatGetSize");
+
   solve(m);
 }
 //-----------------------------------------------------------------------------
@@ -77,10 +89,15 @@ void SLEPcEigenSolver::solve(std::int64_t n)
   // Get operators
   Mat A, B;
   assert(_eps);
-  EPSGetOperators(_eps, &A, &B);
+  PetscErrorCode ierr = EPSGetOperators(_eps, &A, &B);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "EPSGetOperators");
 
   PetscInt _m(0), _n(0);
-  MatGetSize(A, &_m, &_n);
+  ierr = MatGetSize(A, &_m, &_n);
+  if (ierr != 0)
+    petsc::error(ierr, __FILE__, "MatGetSize");
+
   assert(n <= _n);
 #endif
 
