@@ -433,6 +433,8 @@ def _assemble_matrix_petsc(  # type: ignore[misc]
         | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
+    *,
+    _check_bcs: bool = True,
 ) -> PETSc.Mat:
     """Assemble bilinear form into a matrix.
 
@@ -443,6 +445,7 @@ def _assemble_matrix_petsc(  # type: ignore[misc]
     The returned matrix is not finalised, i.e. ghost values are not
     accumulated.
     """
+    bcs = [] if bcs is None else bcs
     if A.getType() == PETSc.Mat.Type.NEST:
         if not isinstance(a, Sequence):
             raise ValueError("Must provide a sequence of forms when assembling a nest matrix")
@@ -458,7 +461,7 @@ def _assemble_matrix_petsc(  # type: ignore[misc]
             ):
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
-                    _assemble_matrix_petsc(Asub, a_block, bcs, diag, const, coeff)
+                    _assemble_matrix_petsc(Asub, a_block, bcs, diag, const, coeff, _check_bcs=False)
                 elif i == j:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
@@ -502,6 +505,7 @@ def _assemble_matrix_petsc(  # type: ignore[misc]
                         coeffs[i][j],  # type: ignore[index]
                         _bcs,  # type: ignore[arg-type]
                         True,
+                        False,
                     )
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
                 elif i == j:
@@ -530,8 +534,8 @@ def _assemble_matrix_petsc(  # type: ignore[misc]
     else:  # Non-blocked
         constants = pack_constants(a) if constants is None else constants
         coeffs = pack_coefficients(a) if coeffs is None else coeffs
-        _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
-        _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)  # type: ignore
+        _bcs = [bc._cpp_object for bc in bcs]
+        _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs, False, _check_bcs)
         if a.function_spaces[0] is a.function_spaces[1]:
             A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
             A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)  # type: ignore[arg-type]
