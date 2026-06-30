@@ -14,10 +14,12 @@ import pytest
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_real_type
+from dolfinx import default_real_type, has_adios2
 from dolfinx.fem import Function, functionspace
 from dolfinx.graph import adjacencylist
 from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_square
+
+pytestmark = pytest.mark.skipif(not has_adios2, reason="DOLFINx has been built without ADIOS2")
 
 
 def import_adios2():
@@ -251,9 +253,9 @@ class TestVTX:
 
     def test_dg_0_data(self, tempdir):
         """Test that we can mix DG-0 and other Lagrange functions."""
+        adios2 = import_adios2()
         from dolfinx.io import VTXWriter
 
-        adios2 = import_adios2()
         mesh = generate_mesh(2, False)
         v = Function(functionspace(mesh, ("Lagrange", 2, (2,))))
         filename = Path(tempdir, "v.bp")
