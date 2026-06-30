@@ -52,7 +52,7 @@ jobs:
 
       - name: Restore cache PETSc and petsc4py
         id: cache-petsc-restore
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: |
             ${{ env.PETSC_DIR }}
@@ -86,7 +86,7 @@ jobs:
 
       - name: Save cache PETSc and petsc4py
         id: cache-petsc-save
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: |
             ${{ env.PETSC_DIR }}
