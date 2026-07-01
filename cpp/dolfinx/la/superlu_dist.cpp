@@ -103,6 +103,7 @@ std::vector<int_t> row_indices(const auto& A)
   // Write the per-scalar-row entry counts into `flattened_rowptr[1:]`, with
   // each block-row contributing `bs[0]` copies.
   std::vector<int_t> flattened_rowptr(m_loc_block * bs[0] + 1);
+  flattened_rowptr[0] = A_rowptr[0] * bs[1];
   for (std::int32_t i = 0; i < m_loc_block; ++i)
   {
     int_t delta = (A_rowptr[i + 1] - A_rowptr[i]) * bs[1];
@@ -462,8 +463,7 @@ template <typename T>
 void SuperLUDistSolver<T>::set_options(
     SuperLUDistStructs::superlu_dist_options_t options)
 {
-  _options = std::make_unique<SuperLUDistStructs::superlu_dist_options_t>(
-      std::move(options));
+  *_options = options;
 }
 //----------------------------------------------------------------------------
 template <typename T>
@@ -544,13 +544,69 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A)
+SuperLUDistSolver<T>::~SuperLUDistSolver()
 {
-  _superlu_matA = A;
+  if (_factored)
+  {
+    int_t n = _superlu_matA->supermatrix()->ncol;
+    if constexpr (std::is_same_v<T, double>)
+      dDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+    else if constexpr (std::is_same_v<T, float>)
+      sDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+    else if constexpr (std::is_same_v<T, std::complex<double>>)
+      zDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+    else
+      static_assert(always_false_v<T>, "Invalid scalar type");
+  }
 }
 //----------------------------------------------------------------------------
 template <typename T>
-int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
+void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
+                                 std::string fact)
+{
+  if (A->supermatrix()->nrow != _superlu_matA->supermatrix()->nrow
+      or A->supermatrix()->ncol != _superlu_matA->supermatrix()->ncol)
+  {
+    throw std::runtime_error(
+        "New matrix A has different size to the matrix used to construct the "
+        "solver.");
+  }
+  _superlu_matA = A;
+
+  // See pddistribute in SuperLU_DIST: on Fact=DOFACT or Fact=SamePattern
+  // pdgssvx overwrites LUstruct's internal pointers without freeing the
+  // previous arrays, so a prior factorisation must be released first.
+  // Fact=SamePattern_SameRowPerm reuses the existing arrays in place.
+  if (fact == "DOFACT" or fact == "SamePattern")
+  {
+    if (_factored)
+    {
+      int_t n = _superlu_matA->supermatrix()->ncol;
+      if constexpr (std::is_same_v<T, double>)
+        dDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+      else if constexpr (std::is_same_v<T, float>)
+        sDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+      else if constexpr (std::is_same_v<T, std::complex<double>>)
+        zDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+      else
+        static_assert(always_false_v<T>, "Invalid scalar type");
+      _factored = false;
+    }
+    _options->Fact = (fact == "DOFACT") ? DOFACT : SamePattern;
+  }
+  else if (fact == "SamePattern_SameRowPerm")
+  {
+    _options->Fact = SamePattern_SameRowPerm;
+  }
+  else
+  {
+    throw std::runtime_error("set_A fact must be one of 'DOFACT', "
+                             "'SamePattern', 'SamePattern_SameRowPerm'");
+  }
+}
+//----------------------------------------------------------------------------
+template <typename T>
+int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
 {
   common::Timer tsolve("SuperLU_DIST solve");
 
@@ -613,6 +669,10 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
 
   if (info != 0)
     spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
+
+  // pdgssvx allocates LUstruct internals during factorisation. Record this
+  // so the destructor / set_A can call Destroy_LU to release them.
+  _factored = true;
 
   PStatPrint(_options.get(), &stat, _gridinfo.get());
   PStatFree(&stat);

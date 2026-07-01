@@ -128,8 +128,7 @@ def test_superlu_solver(dtype):
     A_3.scatter_reverse()
 
     A_superlu_3 = superlu_dist_matrix(A_3)
-    solver_2.set_A(A_superlu_3)
-    solver_2.set_option("Fact", "SamePattern")
+    solver_2.set_A(A_superlu_3, "SamePattern")
     uh_2 = solve_and_check(solver_2, b_2)
     check_error(u_ex, uh_2)
 
