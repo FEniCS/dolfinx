@@ -103,6 +103,7 @@ std::vector<int_t> row_indices(const auto& A)
   // Write the per-scalar-row entry counts into `flattened_rowptr[1:]`, with
   // each block-row contributing `bs[0]` copies.
   std::vector<int_t> flattened_rowptr(m_loc_block * bs[0] + 1);
+  flattened_rowptr[0] = A_rowptr[0] * bs[1];
   for (std::int32_t i = 0; i < m_loc_block; ++i)
   {
     int_t delta = (A_rowptr[i + 1] - A_rowptr[i]) * bs[1];
