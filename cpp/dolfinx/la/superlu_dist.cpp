@@ -545,6 +545,13 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
 template <typename T>
 void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A)
 {
+  if (A->supermatrix()->nrow != _superlu_matA->supermatrix()->nrow
+      or A->supermatrix()->ncol != _superlu_matA->supermatrix()->ncol)
+  {
+    throw std::runtime_error(
+        "New matrix A has different size to the matrix used to construct the "
+        "solver.");
+  }
   _superlu_matA = A;
 }
 //----------------------------------------------------------------------------
