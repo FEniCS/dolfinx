@@ -95,6 +95,28 @@ def pack_coefficients(form):
         return _pack_coefficients(form._cpp_object)
 
 
+def _check_bcs_for_different_trial_test_spaces(a: Form, bcs: Sequence[DirichletBC]) -> None:
+    """Reject DirichletBCs for equivalent but distinct assembly spaces."""
+    if not bcs or len(a.function_spaces) != 2:
+        return
+
+    test_space, trial_space = a.function_spaces
+    if test_space is trial_space:
+        return
+    if test_space.mesh is not trial_space.mesh:
+        return
+    if test_space.ufl_element() != trial_space.ufl_element():
+        return
+
+    for bc in bcs:
+        if test_space.contains(bc.function_space) or trial_space.contains(bc.function_space):
+            raise RuntimeError(
+                "Dirichlet boundary conditions for bilinear forms with equivalent but "
+                "distinct test and trial spaces are not supported by this matrix "
+                "assembly path."
+            )
+
+
 # -- Vector and matrix instantiation --------------------------------------
 
 
@@ -343,6 +365,7 @@ def _assemble_matrix_csr(
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
+    _check_bcs_for_different_trial_test_spaces(a, [] if bcs is None else bcs)
     bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
 
     if constants is None:
