@@ -240,8 +240,8 @@ public:
 
   /// @brief Set assembled left-hand side matrix A.
   ///
-  /// New matrix must have the same global size as the matrix used to
-  /// construct the solver.
+  /// New matrix must have the same size/parallel layout as the matrix
+  /// used to construct the solver.
   ///
   /// @param A Assembled left-hand side matrix.
   /// @param fact One of `"DOFACT"`, `"SamePattern"`,
