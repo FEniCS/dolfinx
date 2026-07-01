@@ -198,6 +198,7 @@ jobs:
           pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
+      # SuperLU_DIST is not built with PETSc complex64 so cannot force finding it here
       - name: Configure (C++)
         working-directory: cpp
         run: >
@@ -211,7 +212,6 @@ jobs:
           -DDOLFINX_ENABLE_PETSC=true
           -DDOLFINX_ENABLE_SCOTCH=true
           -DDOLFINX_ENABLE_SLEPC=true
-          -DDOLFINX_ENABLE_SUPERLU_DIST=true
           -DDOLFINX_ENABLE_PARMETIS=false
 
       - name: Build and install (C++)
