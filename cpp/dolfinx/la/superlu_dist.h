@@ -247,8 +247,7 @@ public:
   /// @param fact One of `"DOFACT"`, `"SamePattern"`,
   ///   `"SamePattern_SameRowPerm"`. See the SuperLU_DIST documentation
   ///   for the meaning of these values.
-  void set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
-             std::string fact = "DOFACT");
+  void set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A, std::string fact);
 
   /// @brief Solve linear system Au = b.
   ///
