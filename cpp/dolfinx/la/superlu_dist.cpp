@@ -462,8 +462,7 @@ template <typename T>
 void SuperLUDistSolver<T>::set_options(
     SuperLUDistStructs::superlu_dist_options_t options)
 {
-  _options = std::make_unique<SuperLUDistStructs::superlu_dist_options_t>(
-      std::move(options));
+  *_options = options;
 }
 //----------------------------------------------------------------------------
 template <typename T>
