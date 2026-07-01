@@ -47,7 +47,7 @@ from scipy.special import h2vp, hankel2, jv, jvp
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_real_type, default_scalar_type, fem, io, plot
+from dolfinx import default_real_type, default_scalar_type, fem, has_adios2, io, plot
 from dolfinx.fem.petsc import LinearProblem
 
 try:
@@ -655,8 +655,11 @@ Esh_dg = fem.Function(V_dg)
 assert isinstance(Esh, fem.Function)
 Esh_dg.interpolate(Esh)
 
-with io.VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
-    vtx.write(0.0)
+if has_adios2:
+    with io.VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
+        vtx.write(0.0)
+else:
+    print("VTXWriter is unavailable, Esh.bp will not be saved.")
 # -
 
 # We visualize the solution using PyVista. For more information about
@@ -694,8 +697,11 @@ E = fem.Function(V)
 E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
-with io.VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
-    vtx.write(0.0)
+if has_adios2:
+    with io.VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
+        vtx.write(0.0)
+else:
+    print("VTXWriter is unavailable, E.bp will not be saved.")
 # -
 
 # We validate our numerical solution by computing the absorption,
