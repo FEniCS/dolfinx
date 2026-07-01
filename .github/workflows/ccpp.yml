@@ -66,7 +66,7 @@ jobs:
           find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
 
   ccpp-build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     needs: [lint]
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -159,7 +159,7 @@ jobs:
         run: mpirun -np 3 python -m pytest -m "not petsc4py and not adios2" python/test/unit
 
   ccpp-build-with-petsc:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     needs: [lint]
     strategy:
       matrix:
@@ -210,6 +210,7 @@ jobs:
           -DDOLFINX_ENABLE_PETSC=true
           -DDOLFINX_ENABLE_SCOTCH=true
           -DDOLFINX_ENABLE_SLEPC=true
+          -DDOLFINX_ENABLE_SUPERLU_DIST=true
           -DDOLFINX_ENABLE_PARMETIS=false
 
       - name: Build and install (C++)
@@ -240,7 +241,7 @@ jobs:
       - name: Build Python interface
         run: |
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test]'
-          python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
+          python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_superlu_dist; assert dolfinx.has_complex_ufcx_kernels"
 
       - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
         working-directory: python
