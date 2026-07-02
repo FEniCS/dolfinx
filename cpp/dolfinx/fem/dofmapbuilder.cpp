@@ -730,7 +730,7 @@ fem::DofMap fem::build_real_element_dofmap(
   for (int i = 0; i < value_size; ++i)
   {
     sub_layouts.emplace_back(1, entity_dofs, entity_closure_dofs,
-                             std::vector<int>{i}, std::vector<int>{});
+                             std::vector<int>{i}, std::vector<ElementDofLayout>{});
   }
   dolfinx::fem::ElementDofLayout dof_layout(
       value_size, entity_dofs, entity_closure_dofs, {}, sub_layouts);
