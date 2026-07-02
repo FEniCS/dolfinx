@@ -115,3 +115,35 @@ def test_complex_real_space(ftype, stype):
 
     tol = 100 * np.finfo(stype).eps
     np.testing.assert_allclose(b.array, b_const.array, atol=tol)
+
+
+@pytest.mark.parametrize(
+    "ftype",
+    [np.float32, np.float64],
+)
+@pytest.mark.parametrize("vs", [(3, 2), (2,), (), (1,)])
+def test_real_sub_spaces(vs, ftype):
+
+    mesh = dolfinx.mesh.create_unit_square(
+        MPI.COMM_WORLD, 4, 4, dolfinx.mesh.CellType.triangle, dtype=ftype
+    )
+    el = basix.ufl.real_element(mesh.basix_cell(), value_shape=vs, dtype=ftype)
+    V = dolfinx.fem.functionspace(mesh, el)
+    if vs == () or vs == (1,):
+        assert V.num_sub_spaces == 0
+        assert V.dofmap.index_map.size_global == 1
+        assert V.dofmap.index_map_bs == 1
+    else:
+        assert V.num_sub_spaces == int(np.prod(vs))
+
+        for i in range(V.num_sub_spaces):
+            subspace = V.sub(i)
+            sub, s_to_p = subspace.collapse()
+
+            assert s_to_p[0] == i
+
+            assert subspace.num_sub_spaces == 0
+            assert subspace.dofmap.index_map.size_global == 1
+            assert subspace.dofmap.index_map_bs == V.num_sub_spaces
+            assert sub.dofmap.index_map_bs == 1
+            assert sub.dofmap.index_map.size_global == 1
