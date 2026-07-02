@@ -728,12 +728,11 @@ fem::DofMap fem::build_real_element_dofmap(
   std::vector<ElementDofLayout> sub_layouts;
   for (int i = 0; i < value_size; ++i)
   {
-    sub_layouts.push_back(
-        dolfinx::fem::ElementDofLayout(1, entity_dofs,
-                                        entity_closure_dofs, {i}, {}));
+    sub_layouts.push_back(dolfinx::fem::ElementDofLayout(
+        1, entity_dofs, entity_closure_dofs, {i}, {}));
   }
-  dolfinx::fem::ElementDofLayout dof_layout(value_size, entity_dofs,
-                                            entity_closure_dofs, {}, sub_layouts);
+  dolfinx::fem::ElementDofLayout dof_layout(
+      value_size, entity_dofs, entity_closure_dofs, {}, sub_layouts);
 
   // Create dofmap array
   std::int32_t num_cells_on_process
