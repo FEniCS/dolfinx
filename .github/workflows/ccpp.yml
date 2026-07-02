@@ -138,7 +138,7 @@ jobs:
           mypy --config-file python/pyproject.toml -p dolfinx # package mode, type checks installed dolfinx (working around name collision in python/ directory)
           cd python/
           mypy test
-          #mypy demo # TODO: Enable this in future
+          mypy demo
 
       - name: Install gmsh and pyvista (and dependencies)
         run: |
