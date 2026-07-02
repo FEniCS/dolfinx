@@ -609,8 +609,8 @@ def apply_lifting(
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
                         zip(a, offset0, offset0[1:], offset1, offset1[1:])
                     ):
-                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore[arg-type]
-                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore[arg-type, assignment, index]
+                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore[arg-type, call-overload]
+                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore[arg-type, assignment, index, call-overload]
                         const_ = [
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val  # type: ignore[attr-defined]
                             for val in const
