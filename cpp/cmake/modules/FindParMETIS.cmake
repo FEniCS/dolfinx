@@ -82,12 +82,12 @@ if(MPI_CXX_FOUND)
   elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
 
     # Set flags for building test program
+    set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR} ${MPI_CXX_INCLUDE_PATH})
     set(
-      CMAKE_REQUIRED_INCLUDES
-      ${PARMETIS_INCLUDE_DIR}
-      ${MPI_CXX_INCLUDE_PATH}
+      CMAKE_REQUIRED_LIBRARIES
+      ${_parmetis_link_libraries}
+      ${MPI_CXX_LIBRARIES}
     )
-    set(CMAKE_REQUIRED_LIBRARIES ${_parmetis_link_libraries} ${MPI_CXX_LIBRARIES})
     set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
 
     # Check ParMETIS version
@@ -188,5 +188,10 @@ if(ParMETIS_FOUND AND NOT TARGET ParMETIS::ParMETIS)
   # MPI is a public dependency of ParMETIS
   target_link_libraries(ParMETIS::ParMETIS INTERFACE MPI::MPI_CXX)
 
-  mark_as_advanced(PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR METIS_LIBRARY GKLIB_LIBRARY)
+  mark_as_advanced(
+    PARMETIS_LIBRARY
+    PARMETIS_INCLUDE_DIR
+    METIS_LIBRARY
+    GKLIB_LIBRARY
+  )
 endif()
