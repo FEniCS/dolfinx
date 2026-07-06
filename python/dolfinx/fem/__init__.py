@@ -21,7 +21,6 @@ from dolfinx.fem.assemble import (
     create_vector,
     pack_coefficients,
     pack_constants,
-    set_bc,
 )
 from dolfinx.fem.bcs import (
     DirichletBC,
