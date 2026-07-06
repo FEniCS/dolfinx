@@ -378,6 +378,12 @@ void discrete_gradient(mesh::Topology& topology,
     math::dot(_Pi, dphi_reshaped, A);
   }
 
+  // Clamp values
+  
+  // std::ranges::transform(Ab, Ab.begin(),
+  //                        [](auto x) { return std::abs(x) < 1e-12 ? T(0) : x; });
+
+                         
   // Insert local interpolation matrix for each cell
   auto cell_map = topology.index_map(tdim);
   assert(cell_map);
