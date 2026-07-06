@@ -206,4 +206,5 @@ def test_quadrature_assembly(degree):
     b_ref.scatter_reverse(dolfinx.la.InsertMode.add)
     b_ref.scatter_forward()
 
-    np.testing.assert_allclose(b.array, b_ref.array)
+    rtol = np.sqrt(np.finfo(dolfinx.default_scalar_type).eps)
+    np.testing.assert_allclose(b.array, b_ref.array, rtol=rtol)
