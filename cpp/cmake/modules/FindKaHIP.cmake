@@ -56,7 +56,12 @@ if(MPI_CXX_FOUND)
       include(CheckCXXSourceRuns)
 
       set(CMAKE_REQUIRED_INCLUDES ${KAHIP_INCLUDE_DIR} ${MPI_CXX_INCLUDE_PATH})
-      set(CMAKE_REQUIRED_LIBRARIES ${PARHIP_LIBRARY} ${KAHIP_LIBRARY} ${MPI_CXX_LIBRARIES})
+      set(
+        CMAKE_REQUIRED_LIBRARIES
+        ${PARHIP_LIBRARY}
+        ${KAHIP_LIBRARY}
+        ${MPI_CXX_LIBRARIES}
+      )
       set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
       check_cxx_source_runs(
         "
