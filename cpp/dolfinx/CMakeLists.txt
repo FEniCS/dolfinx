@@ -110,10 +110,10 @@ else()
 endif()
 
 # UFCx
-if(TARGET ufcx::ufcx)
+if(TARGET UFCx::UFCx)
+  target_link_libraries(dolfinx PUBLIC UFCx::UFCx)
+elseif(TARGET ufcx::ufcx)
   target_link_libraries(dolfinx PUBLIC ufcx::ufcx)
-else()
-  target_include_directories(dolfinx SYSTEM PUBLIC ${UFCX_INCLUDE_DIRS})
 endif()
 
 # Basix
