@@ -22,7 +22,7 @@ class SuperLUDistStructs
 public:
   struct SuperMatrix;
   struct vec_int_t;
-  struct gridinfo_t;
+  struct gridinfo3d_t;
   struct superlu_dist_options_t;
 
   struct sScalePermstruct_t;
@@ -135,12 +135,12 @@ private:
 };
 
 /// Call library cleanup and delete pointer. For use with
-/// std::unique_ptr holding gridinfo_t.
+/// std::unique_ptr holding gridinfo3d_t.
 struct GridInfoDeleter
 {
-  /// @brief Deletion of gridinfo_t
+  /// @brief Deletion of gridinfo3d_t
   /// @param g
-  void operator()(SuperLUDistStructs::gridinfo_t* g) const noexcept;
+  void operator()(SuperLUDistStructs::gridinfo3d_t* g) const noexcept;
 };
 
 /// Call library cleanup and delete pointer. For use with std::unique_ptr
@@ -270,8 +270,8 @@ private:
   // Pointer to struct superlu_dist_options_t
   std::unique_ptr<SuperLUDistStructs::superlu_dist_options_t> _options;
 
-  // Pointer to struct gridinfo_t
-  std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> _gridinfo;
+  // Pointer to struct gridinfo3d_t
+  std::unique_ptr<SuperLUDistStructs::gridinfo3d_t, GridInfoDeleter> _gridinfo;
 
   // Pointer to 'typed' struct *ScalePermstruct_t
   std::unique_ptr<typename map_t<T>::ScalePermstruct_t, ScalePermStructDeleter>

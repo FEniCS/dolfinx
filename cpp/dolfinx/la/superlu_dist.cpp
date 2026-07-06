@@ -265,7 +265,7 @@ void option_setter(W& option, std::string_view value_in,
 
 //----------------------------------------------------------------------------
 // Trick for declaring anonymous typedef structs from SuperLU_DIST
-struct dolfinx::la::SuperLUDistStructs::gridinfo_t : public ::gridinfo_t
+struct dolfinx::la::SuperLUDistStructs::gridinfo3d_t : public ::gridinfo3d_t
 {
 };
 //----------------------------------------------------------------------------
@@ -314,9 +314,9 @@ struct dolfinx::la::SuperLUDistStructs::zSOLVEstruct_t : public ::zSOLVEstruct_t
 };
 //----------------------------------------------------------------------------
 void GridInfoDeleter::operator()(
-    SuperLUDistStructs::gridinfo_t* g) const noexcept
+    SuperLUDistStructs::gridinfo3d_t* g) const noexcept
 {
-  superlu_gridexit(g);
+  superlu_gridexit3d(g);
   delete g;
 };
 //----------------------------------------------------------------------------
@@ -397,16 +397,31 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
                 SuperLUDistStructs::superlu_dist_options_t>();
             set_default_options_dist(o.get());
             o->PrintStat = NO;
+            o->Algo3d = YES;
             return o;
           }()),
       _gridinfo(
           [comm = _superlu_matA->comm()]
           {
-            int nprow = dolfinx::MPI::size(comm);
-            int npcol = 1;
-            std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> p(
-                new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{});
-            superlu_gridinit(comm, nprow, npcol, p.get());
+            // Computes a balanced 2D process grid - see PETSc interface
+            int size = dolfinx::MPI::size(comm);
+            // npdep (Z-dimension replication) must be a power of 2; choose
+            // the largest power-of-2 <= cbrt(size) that divides size.
+            int npdep = 1;
+            int cbrt_size
+                = static_cast<int>(std::cbrt(static_cast<double>(size)));
+            while (npdep * 2 <= cbrt_size)
+              npdep *= 2;
+            while (npdep > 1 && size % npdep != 0)
+              npdep /= 2;
+            int size2d = size / npdep;
+            int nprow = static_cast<int>(std::sqrt(static_cast<double>(size2d)));
+            while (size2d % nprow != 0)
+              --nprow;
+            int npcol = size2d / nprow;
+            std::unique_ptr<SuperLUDistStructs::gridinfo3d_t, GridInfoDeleter> p(
+                new SuperLUDistStructs::gridinfo3d_t, GridInfoDeleter{});
+            superlu_gridinit3d(comm, nprow, npcol, npdep, p.get());
             return p;
           }()),
       _scalepermstruct(
@@ -550,11 +565,11 @@ SuperLUDistSolver<T>::~SuperLUDistSolver()
   {
     int_t n = _superlu_matA->supermatrix()->ncol;
     if constexpr (std::is_same_v<T, double>)
-      dDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+      dDestroy_LU(n, &_gridinfo->grid2d, _lustruct.get());
     else if constexpr (std::is_same_v<T, float>)
-      sDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+      sDestroy_LU(n, &_gridinfo->grid2d, _lustruct.get());
     else if constexpr (std::is_same_v<T, std::complex<double>>)
-      zDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+      zDestroy_LU(n, &_gridinfo->grid2d, _lustruct.get());
     else
       static_assert(always_false_v<T>, "Invalid scalar type");
   }
@@ -583,11 +598,11 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
     {
       int_t n = _superlu_matA->supermatrix()->ncol;
       if constexpr (std::is_same_v<T, double>)
-        dDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+        dDestroy_LU(n, &_gridinfo->grid2d, _lustruct.get());
       else if constexpr (std::is_same_v<T, float>)
-        sDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+        sDestroy_LU(n, &_gridinfo->grid2d, _lustruct.get());
       else if constexpr (std::is_same_v<T, std::complex<double>>)
-        zDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+        zDestroy_LU(n, &_gridinfo->grid2d, _lustruct.get());
       else
         static_assert(always_false_v<T>, "Invalid scalar type");
       _factored = false;
@@ -637,44 +652,47 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
   {
     spdlog::info("Start solve [float64]");
 
-    spdlog::info("Call SuperLU_DIST pdgssvx()");
-    pdgssvx(_options.get(), _superlu_matA->supermatrix(),
-            _scalepermstruct.get(), u.array().data(), ldb, nrhs,
-            _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
-            &stat, &info);
+    spdlog::info("Call SuperLU_DIST pdgssvx3d()");
+    pdgssvx3d(_options.get(), _superlu_matA->supermatrix(),
+              _scalepermstruct.get(), u.array().data(), ldb, nrhs,
+              _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
+              &stat, &info);
+    dDestroy_A3d_gathered_on_2d(_solvestruct.get(), _gridinfo.get());
   }
   else if constexpr (std::is_same_v<T, float>)
   {
     spdlog::info("Start solve [float32]");
 
-    spdlog::info("Call SuperLU_DIST psgssvx()");
-    psgssvx(_options.get(), _superlu_matA->supermatrix(),
-            _scalepermstruct.get(), u.array().data(), ldb, nrhs,
-            _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
-            &stat, &info);
+    spdlog::info("Call SuperLU_DIST psgssvx3d()");
+    psgssvx3d(_options.get(), _superlu_matA->supermatrix(),
+              _scalepermstruct.get(), u.array().data(), ldb, nrhs,
+              _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
+              &stat, &info);
+    sDestroy_A3d_gathered_on_2d(_solvestruct.get(), _gridinfo.get());
   }
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     spdlog::info("Start solve [complex128]");
 
-    spdlog::info("Call SuperLU_DIST pzgssvx()");
-    pzgssvx(_options.get(), _superlu_matA->supermatrix(),
-            _scalepermstruct.get(),
-            reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
-            _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
-            &stat, &info);
+    spdlog::info("Call SuperLU_DIST pzgssvx3d()");
+    pzgssvx3d(_options.get(), _superlu_matA->supermatrix(),
+              _scalepermstruct.get(),
+              reinterpret_cast<doublecomplex*>(u.array().data()), ldb, nrhs,
+              _gridinfo.get(), _lustruct.get(), _solvestruct.get(), berr.data(),
+              &stat, &info);
+    zDestroy_A3d_gathered_on_2d(_solvestruct.get(), _gridinfo.get());
   }
   else
     static_assert(always_false_v<T>, "Invalid scalar type");
 
   if (info != 0)
-    spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
+    spdlog::info("SuperLU_DIST p*gssvx3d() error: {}", info);
 
-  // pdgssvx allocates LUstruct internals during factorisation. Record this
+  // pdgssvx3d allocates LUstruct internals during factorisation. Record this
   // so the destructor / set_A can call Destroy_LU to release them.
   _factored = true;
 
-  PStatPrint(_options.get(), &stat, _gridinfo.get());
+  PStatPrint(_options.get(), &stat, &_gridinfo->grid2d);
   PStatFree(&stat);
 
   spdlog::info("Finished solve");
