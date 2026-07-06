@@ -170,10 +170,9 @@ if(DOLFINX_ENABLE_SCOTCH AND SCOTCH_FOUND)
 endif()
 
 # ParMETIS
-if(DOLFINX_ENABLE_PARMETIS AND PARMETIS_FOUND)
+if(DOLFINX_ENABLE_PARMETIS AND ParMETIS_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_PARMETIS)
-  target_link_libraries(dolfinx PRIVATE ${PARMETIS_LIBRARIES})
-  target_include_directories(dolfinx SYSTEM PRIVATE ${PARMETIS_INCLUDE_DIRS})
+  target_link_libraries(dolfinx PRIVATE ParMETIS::ParMETIS)
 endif()
 
 # KaHIP

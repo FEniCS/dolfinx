@@ -1,11 +1,14 @@
 #=============================================================================
 # - Try to find ParMETIS
-# Once done this will define
 #
-#  PARMETIS_FOUND        - system has ParMETIS
-#  PARMETIS_INCLUDE_DIRS - include directories for ParMETIS
-#  PARMETIS_LIBRARIES    - libraries for ParMETIS
-#  PARMETIS_VERSION      - version for ParMETIS
+# Once done this will define:
+#
+#  ParMETIS_FOUND   - system has ParMETIS
+#  ParMETIS_VERSION - version of ParMETIS
+#
+# and the imported target:
+#
+#  ParMETIS::ParMETIS
 #
 #=============================================================================
 # Copyright (C) 2010 Garth N. Wells, Anders Logg and Johannes Ring
@@ -44,7 +47,7 @@ if(MPI_CXX_FOUND)
   )
 
   find_path(
-    PARMETIS_INCLUDE_DIRS
+    PARMETIS_INCLUDE_DIR
     parmetis.h
     DOC "Directory where the ParMETIS header files are located."
   )
@@ -62,33 +65,29 @@ if(MPI_CXX_FOUND)
     DOC "Directory where the gklib library is located."
   )
 
-  set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY})
+  # Build the list of link libraries for the test and the imported target
+  set(_parmetis_link_libraries ${PARMETIS_LIBRARY})
   if(METIS_LIBRARY)
-    set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARIES} ${METIS_LIBRARY})
+    list(APPEND _parmetis_link_libraries ${METIS_LIBRARY})
   endif()
   if(GKLIB_LIBRARY)
-    set(
-      PARMETIS_LIBRARIES
-      ${PARMETIS_LIBRARIES}
-      ${METIS_LIBRARY}
-      ${GKLIB_LIBRARY}
-    )
+    list(APPEND _parmetis_link_libraries ${GKLIB_LIBRARY})
   endif()
 
   # Try compiling and running test program
   if(DOLFINX_SKIP_BUILD_TESTS)
     set(PARMETIS_TEST_RUNS TRUE)
-    set(PARMETIS_VERSION "UNKNOWN")
+    set(ParMETIS_VERSION "UNKNOWN")
     set(PARMETIS_VERSION_OK TRUE)
-  elseif(PARMETIS_INCLUDE_DIRS AND PARMETIS_LIBRARY)
+  elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
 
     # Set flags for building test program
     set(
       CMAKE_REQUIRED_INCLUDES
-      ${PARMETIS_INCLUDE_DIRS}
+      ${PARMETIS_INCLUDE_DIR}
       ${MPI_CXX_INCLUDE_PATH}
     )
-    set(CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARIES} ${MPI_CXX_LIBRARIES})
+    set(CMAKE_REQUIRED_LIBRARIES ${_parmetis_link_libraries} ${MPI_CXX_LIBRARIES})
     set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
 
     # Check ParMETIS version
@@ -130,13 +129,13 @@ int main() {
     )
 
     if(PARMETIS_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
-      set(PARMETIS_VERSION ${PARMETIS_CONFIG_TEST_VERSION_OUTPUT})
-      mark_as_advanced(PARMETIS_VERSION)
+      set(ParMETIS_VERSION ${PARMETIS_CONFIG_TEST_VERSION_OUTPUT})
+      mark_as_advanced(ParMETIS_VERSION)
     endif()
 
     if(ParMETIS_FIND_VERSION)
       # Check if version found is >= required version
-      if(NOT "${PARMETIS_VERSION}" VERSION_LESS "${ParMETIS_FIND_VERSION}")
+      if(NOT "${ParMETIS_VERSION}" VERSION_LESS "${ParMETIS_FIND_VERSION}")
         set(PARMETIS_VERSION_OK TRUE)
       endif()
     else()
@@ -168,10 +167,26 @@ endif()
 # Standard package handling
 find_package_handle_standard_args(
   ParMETIS
-  "ParMETIS could not be found/configured."
-  PARMETIS_LIBRARIES
-  PARMETIS_TEST_RUNS
-  PARMETIS_INCLUDE_DIRS
-  PARMETIS_VERSION
-  PARMETIS_VERSION_OK
+  REQUIRED_VARS
+    PARMETIS_LIBRARY
+    PARMETIS_INCLUDE_DIR
+    PARMETIS_TEST_RUNS
+    PARMETIS_VERSION_OK
+  VERSION_VAR ParMETIS_VERSION
+  FAIL_MESSAGE "ParMETIS could not be found/configured."
 )
+
+if(ParMETIS_FOUND AND NOT TARGET ParMETIS::ParMETIS)
+  add_library(ParMETIS::ParMETIS UNKNOWN IMPORTED)
+  set_target_properties(
+    ParMETIS::ParMETIS
+    PROPERTIES
+      IMPORTED_LOCATION "${PARMETIS_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${PARMETIS_INCLUDE_DIR}"
+      INTERFACE_LINK_LIBRARIES "${_parmetis_link_libraries}"
+  )
+  # MPI is a public dependency of ParMETIS
+  target_link_libraries(ParMETIS::ParMETIS INTERFACE MPI::MPI_CXX)
+
+  mark_as_advanced(PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR METIS_LIBRARY GKLIB_LIBRARY)
+endif()
