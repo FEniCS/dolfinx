@@ -379,9 +379,9 @@ void discrete_gradient(mesh::Topology& topology,
   }
 
   // Clamp values
-  
-  // std::ranges::transform(Ab, Ab.begin(),
-  //                        [](auto x) { return std::abs(x) < 1e-12 ? T(0) : x; });
+
+  std::ranges::transform(Ab, Ab.begin(),
+                         [](auto x) { return std::abs(x) < 1e-12 ? T(0) : x; });
 
                          
   // Insert local interpolation matrix for each cell
