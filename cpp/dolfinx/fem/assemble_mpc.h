@@ -9,14 +9,11 @@
 #include "traits.h"
 #include "utils.h"
 #include <algorithm>
-#include <basix/mdspan.hpp>
 #include <cmath>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#include <memory>
-#include <optional>
 #include <span>
 #include <vector>
 
@@ -54,10 +51,8 @@ void assemble_matrix_mpc(
     }
   }
 
-  using cmdspan2_t = md::mdspan<const T, md::dextents<std::size_t, 2>>;
-  using cmdspan2T_t
-      = md::mdspan<const T, md::dextents<std::size_t, 2>, md::layout_left>;
-  using mdspan2_t = md::mdspan<T, md::dextents<std::size_t, 2>>;
+  // Block size is the same for rows and columns (checked above).
+  const int bs = mpc.V()->dofmap()->bs();
 
   // Debug helper: log a matrix with row/column dof labels, e.g. to compare
   // the unmodified element matrix against the MPC-modified A0/A1 stages.
@@ -93,13 +88,11 @@ void assemble_matrix_mpc(
     }
   };
 
-  auto mat_add_mpc =
-      [mat_add, &mpc, &debug_matrix](std::span<const std::int32_t> rows,
-                                      std::span<const std::int32_t> cols,
-                                      std::span<const T> vals) mutable
+  auto mat_add_mpc
+      = [mat_add, &mpc, &debug_matrix, bs](std::span<const std::int32_t> rows,
+                                           std::span<const std::int32_t> cols,
+                                           std::span<const T> vals) mutable
   {
-    int bs = mpc.V()->dofmap()->bs();
-
     // If no constraints, just add values to matrix
     int nc = 0;
     for (std::int32_t r : rows)
@@ -191,7 +184,7 @@ void assemble_matrix_mpc(
         }
       }
       return std::tuple(std::move(offsets), std::move(targets),
-                         std::move(coeffs));
+                        std::move(coeffs));
     };
 
     auto [row_off, row_tgt, row_coeff] = build_dof_map(rows);
@@ -233,7 +226,6 @@ void assemble_matrix_mpc(
   spdlog::info("Assemble MPC");
   assemble_matrix(mat_add_mpc, a, bcs);
 
-  int bs = mpc.V()->dofmap()->bs();
   spdlog::info("Apply MPC constraints, bs = {}", bs);
   // Insert constraint u_i = sum(a_j u_j)
   // N.B. assumes b_i = 0 (make sure this is done in RHS)
@@ -261,20 +253,13 @@ void assemble_matrix_mpc(
     }
 
     spdlog::debug("dof: {}", dof);
-    if constexpr (std::is_same_v<T, double>)
-    {
-      for (auto [ref_dof, ref_coeff] : mpc.constraints().links(dof))
-        spdlog::debug("  ref_dof: {}, ref_coeff: {}", ref_dof, ref_coeff);
-    }
-    spdlog::debug("dofs1: {}", fmt::join(dofs1, ", "));
 
     std::vector<T> v(dofs1.size() * dofs1.size(), T(0));
-
     // Find constrained dof in dofs1 and set diagonal to 1.0
     auto it = std::lower_bound(dofs1.begin(), dofs1.end(), dof);
     if (it == dofs1.end() || *it != dof)
       throw std::runtime_error("Constrained dof not found in dofs1");
-    int jdof = std::distance(dofs1.begin(), it);
+    std::size_t jdof = std::distance(dofs1.begin(), it);
     v[jdof + dofs1.size() * jdof] = T(1.0);
 
     spdlog::debug("jdof: {}", jdof);
@@ -285,23 +270,21 @@ void assemble_matrix_mpc(
       auto it = std::lower_bound(dofs1.begin(), dofs1.end(), ref_dof);
       if (it == dofs1.end() || *it != ref_dof)
         throw std::runtime_error("Reference dof not found in dofs1");
-      int m = std::distance(dofs1.begin(), it);
+      std::size_t m = std::distance(dofs1.begin(), it);
       if constexpr (std::is_same_v<T, double>)
         spdlog::debug("  m: {}, ref_coeff: {}", m, ref_coeff);
       v[m + dofs1.size() * jdof] = -ref_coeff;
     }
-
-    // Transpose constraint row
-    // for (std::size_t i = 0; i < dofs1.size(); ++i)
-    //  v[i * dofs1.size() + jdof] = v[jdof * dofs1.size() + i];
 
     for (std::size_t i = 0; i < dofs1.size(); ++i)
     {
       if (i == jdof)
         continue;
       for (std::size_t j = 0; j < dofs1.size(); ++j)
+      {
         v[i * dofs1.size() + j]
             = v[jdof * dofs1.size() + i] * v[jdof * dofs1.size() + j];
+      }
     }
 
     mat_add(dofs0, dofs0, v);
