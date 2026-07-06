@@ -83,11 +83,7 @@ if(MPI_CXX_FOUND)
 
     # Set flags for building test program
     set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR})
-    set(
-      CMAKE_REQUIRED_LIBRARIES
-      MPI::MPI_CXX
-      ${_parmetis_link_libraries}
-    )
+    set(CMAKE_REQUIRED_LIBRARIES MPI::MPI_CXX ${_parmetis_link_libraries})
 
     # Check ParMETIS version
     set(
