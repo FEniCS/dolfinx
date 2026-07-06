@@ -16,6 +16,7 @@
 #include <dolfinx/common/math.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <limits>
 #include <memory>
 #include <span>
 #include <vector>
@@ -378,12 +379,16 @@ void discrete_gradient(mesh::Topology& topology,
     math::dot(_Pi, dphi_reshaped, A);
   }
 
-  // Clamp values
+  // Clamp entries that are negligible relative to the largest entry and
+  // the precision of the scalar type: |a| <= C * eps * max|a|.
+  constexpr U C = 1000;
+  U max_entry = 0;
+  for (T a : Ab)
+    max_entry = std::max(max_entry, std::abs(a));
+  const U atol = C * std::numeric_limits<U>::epsilon() * max_entry;
+  std::ranges::transform(Ab, Ab.begin(), [atol](auto x)
+                         { return std::abs(x) < atol ? T(0) : x; });
 
-  std::ranges::transform(Ab, Ab.begin(),
-                         [](auto x) { return std::abs(x) < 1e-12 ? T(0) : x; });
-
-                         
   // Insert local interpolation matrix for each cell
   auto cell_map = topology.index_map(tdim);
   assert(cell_map);
