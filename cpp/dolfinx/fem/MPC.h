@@ -29,6 +29,9 @@ public:
   /// @param reference_dofs_global List of global reference dofs with
   /// weights for each local constrained dof
   /// @note u_constrained = sum(u_ref * coeff_ref)
+  /// @note If the FunctionSpace V has a block size, then the dofs in
+  /// constrained_dofs_local and reference_dofs_global must be the fully
+  /// expanded dof indices.
   /// @todo Add a constant term to the constraint, i.e. u_constrained =
   /// sum(u_ref * coeff_ref) + constant
 
@@ -42,6 +45,8 @@ public:
           "Incompatible lists of constrained and reference dofs");
 
     std::shared_ptr<const fem::DofMap> dm = V.dofmap();
+    int bs = dm->bs();
+    int index_map_bs = dm->index_map_bs();
 
     // Get unique list of global dofs
     std::vector<std::int64_t> gl_dofs;
@@ -76,7 +81,8 @@ public:
       std::vector<int> gl_owner;
       for (auto g : gl_dofs)
       {
-        auto it = std::upper_bound(recvbuf.begin(), recvbuf.end(), g);
+        auto it = std::upper_bound(recvbuf.begin(), recvbuf.end(),
+                                   g / index_map_bs);
         gl_owner.push_back(std::distance(recvbuf.begin(), it) - 1);
       }
       // If not already included, add new global dofs to ghosts
@@ -84,18 +90,17 @@ public:
       {
         if (gl_owner[i] == rank)
           continue;
-        auto it = std::find(ghost_dofs.begin(), ghost_dofs.end(), gl_dofs[i]);
+        auto it = std::find(ghost_dofs.begin(), ghost_dofs.end(),
+                            gl_dofs[i] / index_map_bs);
         if (it == ghost_dofs.end())
         {
-          ghost_dofs.push_back(gl_dofs[i]);
+          ghost_dofs.push_back(gl_dofs[i] / index_map_bs);
           ghost_owners.push_back(gl_owner[i]);
         }
       }
     }
 
     // New DofMap and FunctionSpace with extra ghost dofs
-    int bs = dm->bs();
-    int index_map_bs = dm->index_map_bs();
     std::shared_ptr<const common::IndexMap> index_map
         = std::make_shared<const common::IndexMap>(dm->index_map->comm(),
                                                    dm->index_map->size_local(),
@@ -110,7 +115,9 @@ public:
 
     // Compute offsets for flattened arrays of reference dofs and weights
     std::vector<std::int32_t> count(
-        dm->index_map->size_local() + dm->index_map->num_ghosts(), 0);
+        index_map_bs
+            * (dm->index_map->size_local() + dm->index_map->num_ghosts()),
+        0);
     for (std::size_t i = 0; i < constrained_dofs_local.size(); ++i)
       count[constrained_dofs_local[i]] += reference_dofs_global[i].size();
     std::vector<std::int32_t> dof_to_ref(count.size() + 1, 0);
@@ -118,6 +125,7 @@ public:
 
     // Flatten reference dofs and weight arrays, in correct order
     std::vector<std::int64_t> ref_dofs_tmp(dof_to_ref.back());
+    std::vector<std::int64_t> ref_dofs_component(dof_to_ref.back());
     std::vector<T> ref_coeffs_flat(dof_to_ref.back());
     std::vector<std::pair<std::int32_t, T>> constraints_flat(dof_to_ref.back());
 
@@ -128,7 +136,15 @@ public:
       for (std::size_t j = 0; j < refs_i.size(); ++j)
       {
         ref_coeffs_flat[index + j] = refs_i[j].first;
-        ref_dofs_tmp[index + j] = refs_i[j].second;
+        // Remove and store the component, reapply after converting to local
+        // index
+        spdlog::info(
+            "ref_dofs_tmp[{}] = {} / {}, ref_dofs_component[{}] = {} % {}",
+            index + j, refs_i[j].second, index_map_bs, index + j,
+            refs_i[j].second, index_map_bs);
+
+        ref_dofs_tmp[index + j] = refs_i[j].second / index_map_bs;
+        ref_dofs_component[index + j] = refs_i[j].second % index_map_bs;
       }
     }
 
@@ -137,7 +153,9 @@ public:
     _V->dofmap()->index_map->global_to_local(ref_dofs_tmp, ref_dofs_flat);
 
     for (std::size_t i = 0; i < ref_dofs_flat.size(); ++i)
-      constraints_flat[i] = {ref_dofs_flat[i], ref_coeffs_flat[i]};
+      constraints_flat[i]
+          = {ref_dofs_flat[i] * index_map_bs + ref_dofs_component[i],
+             ref_coeffs_flat[i]};
 
     _constraints
         = std::make_unique<graph::AdjacencyList<std::pair<std::int32_t, T>>>(
@@ -153,114 +171,38 @@ public:
   /// @return List of cells containing constrained dofs
   std::vector<std::int32_t> cells() const
   {
+    // TODO: work on mixed-topology meshes.
     auto cell_dofs = _V->dofmap()->map();
+    int bs = _V->dofmap()->bs();
     std::vector<std::int32_t> marked_cells;
     for (std::size_t i = 0; i < cell_dofs.extent(0); ++i)
     {
       for (std::size_t j = 0; j < cell_dofs.extent(1); ++j)
       {
         int index = cell_dofs(i, j);
-        if (_constraints->num_links(index) > 0)
-          marked_cells.push_back(i);
+        for (int k = 0; k < bs; ++k)
+        {
+          if (_constraints->num_links(index * bs + k) > 0)
+          {
+            marked_cells.push_back(i);
+            break;
+          }
+        }
       }
     }
+    marked_cells.erase(std::unique(marked_cells.begin(), marked_cells.end()),
+                       marked_cells.end());
     return marked_cells;
   }
 
   /// @brief Return the list of constraints for each local dof (if any).
   /// For each local dof, the list contains pairs of reference dof index and
   /// coefficient.
+  /// @note The dof indices are expanded to include the block size.
   /// @note The reference dofs are local indices in the modified FunctionSpace.
   const graph::AdjacencyList<std::pair<std::int32_t, T>>& constraints() const
   {
     return *_constraints;
-  }
-
-  /// @brief Return constraint on a given dof, if any.
-  /// @param dof Index of degree of freedom
-  /// @return list of reference dof indices and respective coefficients.
-  std::pair<std::vector<std::int32_t>, std::vector<T>>
-  constraint(std::int32_t dof) const
-  {
-    std::vector<std::int32_t> ref_dofs;
-    std::vector<T> coeffs;
-
-    int n = _constraints->num_links(dof);
-    ref_dofs.resize(n);
-    coeffs.resize(n);
-    for (int i = 0; i < n; ++i)
-    {
-      auto [ref_dof, coeff] = _constraints->links(dof)[i];
-      ref_dofs[i] = ref_dof;
-      coeffs[i] = coeff;
-    }
-
-    return {ref_dofs, coeffs};
-  }
-
-  /// @brief Replace constrained dofs with reference dofs in list
-  /// @param dofs List of dofs, which may contain constrained dofs
-  /// @return List of dofs, where constrained dofs are replaced with reference
-  /// dofs
-  std::vector<std::int32_t>
-  modified_dofs(std::span<const std::int32_t> dofs) const
-  {
-    std::vector<std::int32_t> mdofs;
-    mdofs.reserve(dofs.size());
-    // Copy unconstrained dofs first
-    for (std::int32_t r : dofs)
-    {
-      if (_constraints->num_links(r) == 0)
-        mdofs.push_back(r);
-    }
-    // Add any new reference dofs
-    for (std::int32_t r : dofs)
-    {
-      int n = _constraints->num_links(r);
-      if (n > 0)
-      {
-        for (int j = 0; j < n; ++j)
-        {
-          std::int32_t ref_dof = _constraints->links(r)[j].first;
-          if (std::find(mdofs.begin(), mdofs.end(), ref_dof) == mdofs.end())
-            mdofs.push_back(ref_dof);
-        }
-      }
-    }
-    return mdofs;
-  }
-
-  /// @brief Compute K-matrix to convert between constrained and reference dofs
-  /// @param dofs Input dofs
-  /// @param mat Memory to be filled with matrix data, size given by the product
-  /// of the number of dofs and the number of modified dofs.
-  /// @return Flattened K-matrix
-  void Kmat(std::span<const std::int32_t> dofs, std::span<T> mat) const
-  {
-    std::vector<std::int32_t> mdofs = modified_dofs(dofs);
-    assert(mat.size() == dofs.size() * mdofs.size());
-
-    for (std::size_t i = 0; i < dofs.size(); ++i)
-    {
-      int r = dofs[i];
-      if (_constraints->num_links(r) == 0)
-      {
-        auto it = std::find(mdofs.begin(), mdofs.end(), r);
-        assert(it != mdofs.end());
-        int j = std::distance(mdofs.begin(), it);
-        mat[mdofs.size() * i + j] = 1.0;
-      }
-      else
-      {
-        for (auto [ref_dof, ref_coeff] : _constraints->links(r))
-        {
-          auto it = std::find(mdofs.begin(), mdofs.end(), ref_dof);
-          assert(it != mdofs.end());
-          int j = std::distance(mdofs.begin(), it);
-          mat[mdofs.size() * i + j] = ref_coeff;
-        }
-      }
-    }
   }
 
 private:
@@ -285,13 +227,23 @@ private:
 /// @param a Form to assemble
 /// @param bcs Dirichlet boundary conditions
 /// @note Matrix A must have appropriate sparsity set beforehand
-template <typename T, std::floating_point U>
+template <typename T, std::floating_point U, int BS = 1>
 void assemble_mpc(
     const MPC<T, U>& mpc, la::MatrixCSR<T>& A, const Form<T, U>& a,
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
 {
-  auto mat_add = A.mat_add_values();
-  assemble_matrix_mpc(mpc, mat_add, a, bcs);
+  if (mpc.V()->dofmap()->bs() == BS)
+  {
+    spdlog::info("Assemble MPC with bs={}", BS);
+    auto mat_add = A.template mat_add_values<BS, BS>();
+    assemble_matrix_mpc(mpc, mat_add, a, bcs);
+  }
+  else if constexpr (BS < 10)
+  {
+    assemble_mpc<T, U, BS + 1>(mpc, A, a, bcs);
+  }
+  else
+    throw std::runtime_error("Block size not supported");
 }
 
 /// @brief Add to a sparsity pattern for a form with multipoint constraints
@@ -323,11 +275,31 @@ void build_sparsity_pattern_mpc(la::SparsityPattern& pattern,
   // Insert extra connectivity for cells containing constrained dofs
   // NB - only works if row and column function spaces are the same, which is
   // the case for now.
+  int bs = mpc.V()->dofmap()->bs();
+  std::vector<std::int32_t> dofs0, dofs1;
   for (std::int32_t cell : mpc.cells())
   {
     auto cell_dofs = mpc.V()->dofmap()->cell_dofs(cell);
-    auto new_rc = mpc.modified_dofs(cell_dofs);
-    pattern.insert(new_rc, new_rc);
+    dofs0.clear();
+    for (std::int32_t d : cell_dofs)
+      for (int k = 0; k < bs; ++k)
+        dofs0.push_back(d * bs + k);
+    dofs1.clear();
+    for (std::int32_t d : dofs0)
+    {
+      if (mpc.constraints().num_links(d) == 0)
+        dofs1.push_back(d);
+      else
+      {
+        for (auto [ref_dof, coeff] : mpc.constraints().links(d))
+          dofs1.push_back(ref_dof);
+      }
+    }
+    std::sort(dofs1.begin(), dofs1.end());
+    dofs1.erase(std::unique(dofs1.begin(), dofs1.end()), dofs1.end());
+    for (std::int32_t& d : dofs1)
+      d /= bs;
+    pattern.insert(dofs1, dofs1);
   }
 
   // Insert extra connectivity for reference dofs in the sparsity pattern
@@ -336,14 +308,17 @@ void build_sparsity_pattern_mpc(la::SparsityPattern& pattern,
   for (std::size_t dof = 0; dof < mpc.V()->dofmap()->index_map->size_local();
        ++dof)
   {
-    if (constraints.num_links(dof) > 0)
+    for (int k = 0; k < bs; ++k)
     {
-      auto c = constraints.links(dof);
-      ref_dofs.resize(c.size());
-      for (std::size_t i = 0; i < c.size(); ++i)
-        ref_dofs[i] = c[i].first;
-      ref_dofs.push_back(dof);
-      pattern.insert(ref_dofs, ref_dofs);
+      if (constraints.num_links(dof * bs + k) > 0)
+      {
+        auto c = constraints.links(dof * bs + k);
+        ref_dofs.resize(c.size());
+        for (std::size_t i = 0; i < c.size(); ++i)
+          ref_dofs[i] = c[i].first / bs;
+        ref_dofs.push_back(dof);
+        pattern.insert(ref_dofs, ref_dofs);
+      }
     }
   }
 }

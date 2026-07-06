@@ -27,6 +27,7 @@
 #include <dolfinx/fem/interpolate.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
@@ -373,27 +374,31 @@ void declare_objects(nb::module_& m, std::string type)
                 ref_globals);
           })
       .def("V", &dolfinx::fem::MPC<T, U>::V)
-      .def("modified_dofs",
-           [](dolfinx::fem::MPC<T, U>& self,
-              nb::ndarray<std::int32_t, nb::c_contig> dofs)
-           {
-             std::span<std::int32_t> dspan(dofs.data(), dofs.size());
-             return self.modified_dofs(dspan);
-           })
-      .def("Kmat",
-           [](dolfinx::fem::MPC<T, U>& self,
-              nb::ndarray<std::int32_t, nb::c_contig> dofs)
-           {
-             std::span<const std::int32_t> _dofs(dofs.data(), dofs.size());
-             std::vector<std::int32_t> mdofs = self.modified_dofs(_dofs);
-             std::vector<T> kmat_data(dofs.size() * mdofs.size(), 0.0);
-             nb::ndarray<T, nb::numpy> Kmat(
-                 kmat_data.data(), {dofs.size(), mdofs.size()}, nullptr);
-             std::span<const std::int32_t> dspan(dofs.data(), dofs.size());
-             self.Kmat(dspan, std::span<T>(Kmat.data(), Kmat.size()));
-             return Kmat.cast();
-           })
-      .def("constraint", &dolfinx::fem::MPC<T, U>::constraint)
+      .def(
+          "constraints",
+          [](const dolfinx::fem::MPC<T, U>& self)
+          {
+            // `constraints()` returns an AdjacencyList<pair<int32_t, T>>,
+            // which has no nanobind binding. Flatten it into an
+            // (offsets, ref_dofs, coeffs) tuple of arrays instead, with
+            // offsets[i]:offsets[i + 1] indexing into ref_dofs/coeffs for
+            // the constraints on local dof i.
+            const auto& c = self.constraints();
+            const std::vector<std::pair<std::int32_t, T>>& array = c.array();
+            std::vector<std::int32_t> dofs(array.size());
+            std::vector<T> coeffs(array.size());
+            for (std::size_t i = 0; i < array.size(); ++i)
+              std::tie(dofs[i], coeffs[i]) = array[i];
+            std::vector<std::int32_t> offsets(c.offsets().begin(),
+                                              c.offsets().end());
+            return std::tuple(dolfinx_wrappers::as_nbarray(std::move(offsets)),
+                              dolfinx_wrappers::as_nbarray(std::move(dofs)),
+                              dolfinx_wrappers::as_nbarray(std::move(coeffs)));
+          },
+          "Return (offsets, reference_dofs, coefficients) describing the "
+          "constraints for each local dof. offsets[i]:offsets[i + 1] index "
+          "into reference_dofs/coefficients for the constraints on local "
+          "dof i.")
       .def("cells", &dolfinx::fem::MPC<T, U>::cells);
 
   m.def("assemble_matrix_mpc",

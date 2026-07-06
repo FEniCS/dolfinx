@@ -99,19 +99,20 @@ def test_mpc():
     dolfinx.fem.apply_lifting(b.array, [a], [[bc]])
     b.scatter_reverse(dolfinx.la.InsertMode.add)
     bc.set(b.array)
+    offsets, _, _ = mpc.constraints()
     for i in range(V_new.dofmap.index_map.size_local):
-        c = mpc.constraint(i)
-        if len(c[0]) > 0:
+        nc = offsets[i + 1] - offsets[i]
+        if nc > 0:
             b.array[i] = 0.0
 
     # Solve
     u = Function(V_new)
     solver.solve(b, u.x)
 
-    # xdmf = dolfinx.io.XDMFFile(mesh.comm, "demo.xdmf", "w")
-    # xdmf.write_mesh(mesh)
-    # u.name = "u"
-    # xdmf.write_function(u)
+    xdmf = dolfinx.io.XDMFFile(mesh.comm, "demo.xdmf", "w")
+    xdmf.write_mesh(mesh)
+    u.name = "u"
+    xdmf.write_function(u)
 
     # Verify periodicity: u on left edge should equal u on right edge at matching y
     u_arr = u.x.array

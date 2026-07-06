@@ -162,7 +162,7 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// @param[in] row_ptr Pointer to the ith row in the CSR data.
 /// @param[in] x The `m` by `n` dense block of values (row-major) to add
 /// to the matrix.
-/// @param[in] xrows Rrow indices of `x`.
+/// @param[in] xrows Row indices of `x`.
 /// @param[in] xcols Column indices of `x`.
 /// @param[in] op The operation (set or add).
 /// @param[in] num_rows Maximum row index that can be set. Used when
