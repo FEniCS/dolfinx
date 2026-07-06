@@ -27,11 +27,11 @@
 # particular boundary conditions reads:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
 #   u &= 0 \quad {\rm on} \ \Gamma_{D}, \\
 #   \nabla u \cdot n &= g \quad {\rm on} \ \Gamma_{N}. \\
-# \end{align}
+# \end{aligned}
 # $$
 #
 # where $f$ and $g$ are input data and $n$ denotes the outward directed
@@ -45,11 +45,11 @@
 # where $V$ is a suitable function space and
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   a(u, v) &:= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
 #   L(v)    &:= \int_{\Omega} f v \, {\rm d} x + \int_{\Gamma_{N}} g v \,
 #               {\rm d} s.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # The expression $a(u, v)$ is the bilinear form and $L(v)$

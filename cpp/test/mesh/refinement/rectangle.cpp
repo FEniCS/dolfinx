@@ -98,7 +98,8 @@ plotter.show()
   mesh.topology()->create_entities(1, std::thread::hardware_concurrency());
 
   auto [mesh_fine, parent_cell, parent_facet] = refinement::refine(
-      mesh, std::nullopt, mesh::create_cell_partitioner(mesh::GhostMode::none),
+      mesh, std::nullopt,
+      mesh::create_cell_partitioner(mesh::GhostMode::none, 2),
       refinement::Option::parent_cell_and_facet);
 
   // vertex layout:

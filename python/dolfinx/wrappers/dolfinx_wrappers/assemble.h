@@ -212,6 +212,7 @@ void declare_assembly_functions(nanobind::module_& m)
   m.def(
       "pack_coefficients",
       [](const dolfinx::fem::Expression<T, U>& e,
+         const dolfinx::mesh::Mesh<U>& mesh,
          nb::ndarray<const std::int32_t, nb::c_contig> entities)
       {
         std::vector<int> coffsets = e.coefficient_offsets();
@@ -228,22 +229,22 @@ void declare_assembly_functions(nanobind::module_& m)
         if (entities.ndim() == 1)
         {
           dolfinx::fem::pack_coefficients(
-              c, coffsets, md::mdspan(entities.data(), entities.shape(0)),
-              std::span(coeffs));
+              c, mesh, md::mdspan(entities.data(), entities.shape(0)),
+              e.entity_maps(), coffsets, std::span(coeffs));
         }
         else
         {
           dolfinx::fem::pack_coefficients(
-              c, coffsets,
+              c, mesh,
               md::mdspan<const std::int32_t,
                          md::extents<std::size_t, md::dynamic_extent, 2>>(
                   entities.data(), entities.shape(0), entities.shape(1)),
-              std::span(coeffs));
+              e.entity_maps(), coffsets, std::span(coeffs));
         }
         return dolfinx_wrappers::as_nbarray(std::move(coeffs),
                                             {entities.shape(0), cstride});
       },
-      nb::arg("expression"), nb::arg("entities"),
+      nb::arg("expression"), nb::arg("mesh"), nb::arg("entities"),
       "Pack coefficients for a Expression.");
   m.def(
       "pack_constants",
@@ -364,8 +365,8 @@ void declare_assembly_functions(nanobind::module_& m)
         // Get index map block size. Note that mixed-topology meshes
         // will have multiple DOF maps, but the block sizes are the same.
         const std::array<int, 2> data_bs
-            = {a.function_spaces().at(0)->dofmaps(0)->index_map_bs(),
-               a.function_spaces().at(1)->dofmaps(0)->index_map_bs()};
+            = {a.function_spaces().at(0)->dofmaps().front()->index_map_bs(),
+               a.function_spaces().at(1)->dofmaps().front()->index_map_bs()};
 
         if (data_bs[0] != data_bs[1])
         {

@@ -35,3 +35,4 @@ Advanced
    :maxdepth: 1
 
    demos/demo_custom_kernel.md
+   demos/demo_codim_0_assembly.md

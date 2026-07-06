@@ -40,13 +40,13 @@ jobs:
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
           apt-get install -y g++ gfortran  # compilers
       - name: Get DOLFINx code (to access Spack config and test files)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set up Spack
         uses: spack/setup-spack@main
         with:
-          ref: develop      # Spack version (examples: develop, releases/v0.23)
-          color: true       # Force color output (SPACK_COLOR=always)
-          path: spack-src   # Where to clone Spack
+          spack_ref: v1.1.1
+          color: true
+          path: spack-src
       - name: Add Spack package repository
         if: github.event_name == 'workflow_dispatch'
         shell: spack-bash {0}
@@ -94,13 +94,13 @@ jobs:
           apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
           apt-get install -y g++ gfortran  # compilers
       - name: Get DOLFINx code (to access Spack config and test files)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set up Spack
         uses: spack/setup-spack@main
         with:
-          ref: develop      # Spack version (examples: develop, releases/v0.23)
-          color: true       # Force color output (SPACK_COLOR=always)
-          path: spack-src   # Where to clone Spack
+          spack_ref: v1.1.1
+          color: true
+          path: spack-src
       - name: Add Spack package repository
         if: github.event_name == 'workflow_dispatch'
         shell: spack-bash {0}

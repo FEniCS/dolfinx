@@ -9,16 +9,17 @@ target_compile_features(dolfinx PUBLIC cxx_std_20)
 
 # ------------------------------------------------------------------------------
 # Add source files to the target
-set(DOLFINX_DIRS
-    common
-    fem
-    geometry
-    graph
-    io
-    la
-    mesh
-    nls
-    refinement
+set(
+  DOLFINX_DIRS
+  common
+  fem
+  geometry
+  graph
+  io
+  la
+  mesh
+  nls
+  refinement
 )
 
 # Add source to dolfinx target, and get sets of header files
@@ -38,38 +39,53 @@ target_include_directories(
 # Configure the common/version.h file
 
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/common/version.h.in common/version.h @ONLY
+  ${CMAKE_CURRENT_SOURCE_DIR}/common/version.h.in
+  common/version.h
+  @ONLY
 )
 
 # ------------------------------------------------------------------------------
 # Set target properties
 set_target_properties(
   dolfinx
-  PROPERTIES VERSION ${DOLFINX_VERSION}
-             SOVERSION ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR}
+  PROPERTIES
+    VERSION ${DOLFINX_VERSION}
+    SOVERSION ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR}
 )
 
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
-  set_target_properties(dolfinx PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy")
+  set_target_properties(
+    dolfinx
+    PROPERTIES
+      CXX_CLANG_TIDY
+        "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy"
+  )
 endif()
 
 # Add git revision and UFCx signature
-target_compile_definitions(dolfinx PUBLIC
-                           UFCX_SIGNATURE="${UFCX_SIGNATURE}"
-                           DOLFINX_GIT_COMMIT_HASH="${GIT_COMMIT_HASH}")
+target_compile_definitions(
+  dolfinx
+  PUBLIC
+    UFCX_SIGNATURE="${UFCX_SIGNATURE}"
+    DOLFINX_GIT_COMMIT_HASH="${GIT_COMMIT_HASH}"
+)
 
 # ------------------------------------------------------------------------------
 # Set compiler options and definitions
 
 # Set 'Developer' build type flags
 target_compile_options(
-  dolfinx PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  dolfinx
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 
 # Set 'Developer' compile definitions
 target_compile_definitions(
-  dolfinx PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+  dolfinx
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 
 # Add version to definitions (public)
@@ -123,12 +139,11 @@ if(ADIOS2_FOUND)
   # ADIOS2 2.11 and later
   if(TARGET adios2::cxx_mpi)
     set(_adios2_mpi_target adios2::cxx_mpi)
-  # And prior
+    # And prior
   elseif(TARGET adios2::cxx11_mpi)
     set(_adios2_mpi_target adios2::cxx11_mpi)
   else()
-    message(FATAL_ERROR
-      "ADIOS2 found, but no adios2::cxx*_mpi target found.")
+    message(FATAL_ERROR "ADIOS2 found, but no adios2::cxx*_mpi target found.")
   endif()
   target_link_libraries(dolfinx PUBLIC ${_adios2_mpi_target})
 endif()
@@ -176,28 +191,28 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Install dolfinx library and header files
+
+# Add all discovered linker paths to install rpath?
+set_target_properties(
+  dolfinx
+  PROPERTIES INSTALL_RPATH_USE_LINK_PATH ${DOLFINX_INSTALL_RPATH_USE_LINK_PATH}
+)
+
 install(
-    TARGETS dolfinx
-    EXPORT DOLFINXTargets
-    RUNTIME_DEPENDENCY_SET dependencies
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeExecutables
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
+  TARGETS dolfinx
+  EXPORT DOLFINXTargets
+  RUNTIME_DEPENDENCY_SET dependencies
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeExecutables
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
 )
 
 if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
   install(
-    RUNTIME_DEPENDENCY_SET
-    dependencies
-    DESTINATION
-    ${CMAKE_INSTALL_BINDIR}
-    PRE_EXCLUDE_REGEXES
-    [[api-ms-win-.*]] [[ext-ms-.*]]
-    POST_EXCLUDE_REGEXES
-    [[.*(\\|/)system32(\\|/).*\.dll]]
-    DIRECTORIES
-    $<TARGET_FILE_DIR:Basix::basix>
-    $<TARGET_FILE_DIR:hdf5::hdf5>
+    RUNTIME_DEPENDENCY_SET dependencies DESTINATION ${CMAKE_INSTALL_BINDIR}
+    PRE_EXCLUDE_REGEXES [[api-ms-win-.*]] [[ext-ms-.*]]
+    POST_EXCLUDE_REGEXES [[.*(\\|/)system32(\\|/).*\.dll]]
+    DIRECTORIES $<TARGET_FILE_DIR:Basix::basix> $<TARGET_FILE_DIR:hdf5::hdf5>
   )
 endif()
 
@@ -242,8 +257,9 @@ configure_package_config_file(
 
 # Install CMake helper files
 install(
-  FILES ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
-        ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
+  FILES
+    ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
+    ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
   COMPONENT Development
 )
@@ -256,10 +272,13 @@ set(PKG_REQUIRES "")
 
 # Get link libraries and includes
 get_target_property(
-  PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES dolfinx INTERFACE_LINK_LIBRARIES
+  PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES
+  dolfinx
+  INTERFACE_LINK_LIBRARIES
 )
 get_target_property(
-  PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES dolfinx
+  PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES
+  dolfinx
   INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
 )
 
@@ -268,7 +287,7 @@ set(PKGCONFIG_DOLFINX_LIBS)
 
 foreach(_target ${PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES})
   if("${_target}" MATCHES "^[^<>]+$") # Skip "$<foo...>", which we get with
-                                      # static libs
+    # static libs
     if("${_target}" MATCHES "^.*::.*$")
       # Get include paths
       get_target_property(_inc_dirs ${_target} INTERFACE_INCLUDE_DIRECTORIES)
@@ -291,8 +310,9 @@ foreach(_target ${PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES})
 
     # Special handling to extract data for compiled Boost imported
     # targets to use in generate pkg-config file
-    if(("${_target}" MATCHES "^.*Boost::.*$") AND NOT "${_target}" STREQUAL
-                                                  "Boost::headers"
+    if(
+      ("${_target}" MATCHES "^.*Boost::.*$")
+      AND NOT "${_target}" STREQUAL "Boost::headers"
     )
       get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
 
@@ -315,7 +335,9 @@ endforeach()
 
 # Get dolfinx definitions
 get_target_property(
-  PKG_DOLFINX_DEFINITIONS dolfinx INTERFACE_COMPILE_DEFINITIONS
+  PKG_DOLFINX_DEFINITIONS
+  dolfinx
+  INTERFACE_COMPILE_DEFINITIONS
 )
 set(PKG_DEFINITIONS)
 
@@ -327,7 +349,9 @@ endforeach()
 # pkg-config file, in the future Basix should create its own basix.pc file, see
 # https://github.com/FEniCS/basix/issues/204)
 get_target_property(
-  PKG_BASIX_DEFINITIONS Basix::basix INTERFACE_COMPILE_DEFINITIONS
+  PKG_BASIX_DEFINITIONS
+  Basix::basix
+  INTERFACE_COMPILE_DEFINITIONS
 )
 
 foreach(_def ${PKG_BASIX_DEFINITIONS})
@@ -362,13 +386,16 @@ string(REPLACE ";" " " PKG_LINKFLAGS "${PKG_LINKFLAGS}")
 
 # Boost include dir (used as pkg-config variable)
 get_target_property(
-  BOOST_INCLUDE_DIR Boost::headers INTERFACE_INCLUDE_DIRECTORIES
+  BOOST_INCLUDE_DIR
+  Boost::headers
+  INTERFACE_INCLUDE_DIRECTORIES
 )
 
 # Configure and install pkg-config file
 configure_file(
   ${DOLFINX_SOURCE_DIR}/cmake/templates/dolfinx.pc.in
-  ${CMAKE_BINARY_DIR}/dolfinx.pc @ONLY
+  ${CMAKE_BINARY_DIR}/dolfinx.pc
+  @ONLY
 )
 install(
   FILES ${CMAKE_BINARY_DIR}/dolfinx.pc

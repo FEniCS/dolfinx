@@ -162,12 +162,11 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install pyvista.
-# matplotlib improves plotting quality with better color maps and
-# properly rendering colorbars.
-# trame is the preferred backend for pyvista.
 # vtk>=9.5.0 required as minimal version for aarch64 wheels support.
-RUN pip install matplotlib; \
-    pip install --no-cache-dir vtk>=9.5.0 pyvista[jupyter] ; \
+# jupytext ensures DOLFINx `.py` demos can be opened in a JupyterLab
+# notebook environment.
+RUN pip install --no-cache-dir matplotlib && \
+    pip install --no-cache-dir vtk>=9.5.0 pyvista[jupyter] jupytext && \
     pip cache purge
 
 # Jupyter Notebook kernel specification for complex build DOLFINx

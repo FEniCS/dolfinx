@@ -35,7 +35,7 @@
 # derivatives.  The equation reads:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # \frac{\partial c}{\partial t} -
 #   \nabla \cdot M \left(\nabla\left(\frac{d f}{dc}
 #   - \lambda \nabla^{2}c\right)\right) &= 0 \quad {\rm in} \ \Omega, \\
@@ -43,7 +43,7 @@
 #   \lambda \nabla^{2}c\right)\right) \cdot n
 #   &= 0 \quad {\rm on} \ \partial\Omega, \\
 # M \lambda \nabla c \cdot n &= 0 \quad {\rm on} \ \partial\Omega.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # where $c$ is the unknown field, the function $f$ is usually non-convex
@@ -59,26 +59,26 @@
 # as two coupled second-order equations:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # \frac{\partial c}{\partial t} - \nabla \cdot M \nabla\mu
 #     &= 0 \quad {\rm in} \ \Omega, \\
 # \mu -  \frac{d f}{d c} + \lambda \nabla^{2}c &= 0 \quad {\rm in}
 #   \ \Omega.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # The unknown fields are now $c$ and $\mu$. The weak (variational) form
 # of the problem reads: find $(c, \mu) \in V \times V$ such that
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # \int_{\Omega} \frac{\partial c}{\partial t} q \, {\rm d} x +
 #     \int_{\Omega} M \nabla\mu \cdot \nabla q \, {\rm d} x
 #     &= 0 \quad \forall \ q \in V,  \\
 # \int_{\Omega} \mu v \, {\rm d} x - \int_{\Omega} \frac{d f}{d c} v \,
 #   {\rm d} x - \int_{\Omega} \lambda \nabla c \cdot \nabla v \, {\rm d} x
 #    &= 0 \quad \forall \ v \in V.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # ### Time discretisation
@@ -88,14 +88,14 @@
 # equation:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # \int_{\Omega} \frac{c_{n+1} - c_{n}}{dt} q \, {\rm d} x
 #   + \int_{\Omega} M \nabla \mu_{n+\theta} \cdot \nabla q \, {\rm d} x
 #   &= 0 \quad \forall \ q \in V  \\
 # \int_{\Omega} \mu_{n+1} v  \, {\rm d} x - \int_{\Omega}
 #   \frac{d f_{n+1}}{d c} v  \, {\rm d} x - \int_{\Omega} \lambda \nabla
 #   c_{n+1} \cdot \nabla v \, {\rm d} x &= 0 \quad \forall \ v \in V
-# \end{align}
+# \end{aligned}
 # $$
 #
 # where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} = (1-\theta) \mu_{n} +
