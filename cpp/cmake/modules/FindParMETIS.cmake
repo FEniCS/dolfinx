@@ -65,7 +65,7 @@ if(MPI_CXX_FOUND)
     DOC "Directory where the gklib library is located."
   )
 
-  # Build the list of link libraries for the test and the imported target
+  # Build the list of link libraries for the compile/link test
   set(_parmetis_link_libraries ${PARMETIS_LIBRARY})
   if(METIS_LIBRARY)
     list(APPEND _parmetis_link_libraries ${METIS_LIBRARY})
@@ -82,13 +82,12 @@ if(MPI_CXX_FOUND)
   elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
 
     # Set flags for building test program
-    set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR} ${MPI_CXX_INCLUDE_PATH})
+    set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR})
     set(
       CMAKE_REQUIRED_LIBRARIES
+      MPI::MPI_CXX
       ${_parmetis_link_libraries}
-      ${MPI_CXX_LIBRARIES}
     )
-    set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
 
     # Check ParMETIS version
     set(
@@ -183,10 +182,14 @@ if(ParMETIS_FOUND AND NOT TARGET ParMETIS::ParMETIS)
     PROPERTIES
       IMPORTED_LOCATION "${PARMETIS_LIBRARY}"
       INTERFACE_INCLUDE_DIRECTORIES "${PARMETIS_INCLUDE_DIR}"
-      INTERFACE_LINK_LIBRARIES "${_parmetis_link_libraries}"
   )
-  # MPI is a public dependency of ParMETIS
-  target_link_libraries(ParMETIS::ParMETIS INTERFACE MPI::MPI_CXX)
+  target_link_libraries(
+    ParMETIS::ParMETIS
+    INTERFACE
+      MPI::MPI_CXX
+      $<$<BOOL:${METIS_LIBRARY}>:${METIS_LIBRARY}>
+      $<$<BOOL:${GKLIB_LIBRARY}>:${GKLIB_LIBRARY}>
+  )
 
   mark_as_advanced(
     PARMETIS_LIBRARY
