@@ -39,6 +39,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
+include(CMakeCheckState)
+include(CheckCXXSourceRuns)
+
 if(MPI_CXX_FOUND)
   find_library(
     PARMETIS_LIBRARY
@@ -78,12 +81,7 @@ if(MPI_CXX_FOUND)
   if(DOLFINX_SKIP_BUILD_TESTS)
     set(PARMETIS_TEST_RUNS TRUE)
     set(ParMETIS_VERSION "UNKNOWN")
-    set(PARMETIS_VERSION_OK TRUE)
   elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
-
-    # Set flags for building test program
-    set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR})
-    set(CMAKE_REQUIRED_LIBRARIES MPI::MPI_CXX ${_parmetis_link_libraries})
 
     # Check ParMETIS version
     set(
@@ -114,33 +112,28 @@ int main() {
     try_run(
       PARMETIS_CONFIG_TEST_VERSION_EXITCODE
       PARMETIS_CONFIG_TEST_VERSION_COMPILED
-      ${CMAKE_CURRENT_BINARY_DIR}
-      ${PARMETIS_CONFIG_TEST_VERSION_CPP}
-      CMAKE_FLAGS
-        "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-        "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+      SOURCES
+        ${PARMETIS_CONFIG_TEST_VERSION_CPP}
+        INCLUDE_DIRECTORIES
+        ${PARMETIS_INCLUDE_DIR}
+      LINK_LIBRARIES MPI::MPI_CXX ${_parmetis_link_libraries}
       COMPILE_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_COMPILE_OUTPUT
       RUN_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_OUTPUT
     )
 
-    if(PARMETIS_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
+    if(NOT PARMETIS_CONFIG_TEST_VERSION_COMPILED)
+      message(
+        STATUS
+        "ParMETIS: version probe failed to compile:\n${PARMETIS_CONFIG_TEST_VERSION_COMPILE_OUTPUT}"
+      )
+    elseif(PARMETIS_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
       set(ParMETIS_VERSION ${PARMETIS_CONFIG_TEST_VERSION_OUTPUT})
-      mark_as_advanced(ParMETIS_VERSION)
     endif()
-
-    if(ParMETIS_FIND_VERSION)
-      # Check if version found is >= required version
-      if(NOT "${ParMETIS_VERSION}" VERSION_LESS "${ParMETIS_FIND_VERSION}")
-        set(PARMETIS_VERSION_OK TRUE)
-      endif()
-    else()
-      # No specific version requested
-      set(PARMETIS_VERSION_OK TRUE)
-    endif()
-    mark_as_advanced(PARMETIS_VERSION_OK)
 
     # Build and run test program
-    include(CheckCXXSourceRuns)
+    cmake_push_check_state(RESET)
+    set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR})
+    set(CMAKE_REQUIRED_LIBRARIES MPI::MPI_CXX ${_parmetis_link_libraries})
     check_cxx_source_runs(
       "
 #define MPICH_IGNORE_CXX_SEEK 1
@@ -156,22 +149,34 @@ int main()
 "
       PARMETIS_TEST_RUNS
     )
+    cmake_pop_check_state()
   endif()
 endif()
 
 # Standard package handling
 find_package_handle_standard_args(
   ParMETIS
-  REQUIRED_VARS
-    PARMETIS_LIBRARY
-    PARMETIS_INCLUDE_DIR
-    PARMETIS_TEST_RUNS
-    PARMETIS_VERSION_OK
+  REQUIRED_VARS PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR PARMETIS_TEST_RUNS
   VERSION_VAR ParMETIS_VERSION
   FAIL_MESSAGE "ParMETIS could not be found/configured."
 )
 
 if(ParMETIS_FOUND AND NOT TARGET ParMETIS::ParMETIS)
+  if(METIS_LIBRARY AND NOT TARGET METIS::METIS)
+    add_library(METIS::METIS UNKNOWN IMPORTED)
+    set_target_properties(
+      METIS::METIS
+      PROPERTIES IMPORTED_LOCATION "${METIS_LIBRARY}"
+    )
+  endif()
+  if(GKLIB_LIBRARY AND NOT TARGET GKLib::GKLib)
+    add_library(GKLib::GKLib UNKNOWN IMPORTED)
+    set_target_properties(
+      GKLib::GKLib
+      PROPERTIES IMPORTED_LOCATION "${GKLIB_LIBRARY}"
+    )
+  endif()
+
   add_library(ParMETIS::ParMETIS UNKNOWN IMPORTED)
   set_target_properties(
     ParMETIS::ParMETIS
@@ -183,8 +188,8 @@ if(ParMETIS_FOUND AND NOT TARGET ParMETIS::ParMETIS)
     ParMETIS::ParMETIS
     INTERFACE
       MPI::MPI_CXX
-      $<$<BOOL:${METIS_LIBRARY}>:${METIS_LIBRARY}>
-      $<$<BOOL:${GKLIB_LIBRARY}>:${GKLIB_LIBRARY}>
+      $<$<BOOL:${METIS_LIBRARY}>:METIS::METIS>
+      $<$<BOOL:${GKLIB_LIBRARY}>:GKLib::GKLib>
   )
 
   mark_as_advanced(
@@ -192,5 +197,7 @@ if(ParMETIS_FOUND AND NOT TARGET ParMETIS::ParMETIS)
     PARMETIS_INCLUDE_DIR
     METIS_LIBRARY
     GKLIB_LIBRARY
+    PARMETIS_CONFIG_TEST_VERSION_EXITCODE
+    PARMETIS_CONFIG_TEST_VERSION_COMPILED
   )
 endif()
