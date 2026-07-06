@@ -177,10 +177,9 @@ if(DOLFINX_ENABLE_PARMETIS AND PARMETIS_FOUND)
 endif()
 
 # KaHIP
-if(DOLFINX_ENABLE_KAHIP AND KAHIP_FOUND)
+if(DOLFINX_ENABLE_KAHIP AND KaHIP_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_KAHIP)
-  target_link_libraries(dolfinx PRIVATE ${KAHIP_LIBRARIES})
-  target_include_directories(dolfinx SYSTEM PRIVATE ${KAHIP_INCLUDE_DIRS})
+  target_link_libraries(dolfinx PRIVATE KaHIP::KaHIP)
 endif()
 
 # SuperLU_DIST

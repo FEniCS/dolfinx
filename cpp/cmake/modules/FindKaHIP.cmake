@@ -2,10 +2,10 @@
 # - Try to find KaHIP
 # Once done this will define
 #
-#  KAHIP_FOUND        - system has KaHIP
-#  KAHIP_INCLUDE_DIRS - include directories for KaHIP
-#  KAHIP_LIBRARIES    - libraries for KaHIP
-#  KAHIP_VERSION      - version for KaHIP
+#  KaHIP_FOUND        - system has KaHIP
+#  KaHIP::parhip      - imported target for parhip_interface library
+#  KaHIP::kahip       - imported target for kahip library (if found)
+#  KaHIP::KaHIP       - interface target linking all KaHIP components
 #
 #=============================================================================
 # Copyright (C) 2019 Igor A. Baratta
@@ -36,33 +36,27 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-set(KAHIP_FOUND FALSE)
-
 message(STATUS "Checking for package 'KaHIP'")
 
 if(MPI_CXX_FOUND)
-  find_path(KAHIP_INCLUDE_DIRS parhip_interface.h PATH_SUFFIXES kahip)
+  find_path(KAHIP_INCLUDE_DIR parhip_interface.h PATH_SUFFIXES kahip)
   find_library(PARHIP_LIBRARY parhip_interface)
   find_library(KAHIP_LIBRARY kahip)
-
-  set(KAHIP_LIBRARIES ${PARHIP_LIBRARY} ${KAHIP_LIBRARY})
 
   include(FindPackageHandleStandardArgs)
   if(DOLFINX_SKIP_BUILD_TESTS)
     find_package_handle_standard_args(
       KaHIP
       "KaHIP could not be found/configured."
-      KAHIP_INCLUDE_DIRS
-      KAHIP_LIBRARIES
+      KAHIP_INCLUDE_DIR
+      PARHIP_LIBRARY
     )
   else()
-    if(KAHIP_LIBRARIES AND KAHIP_LIBRARIES)
-      # Build and run test program
+    if(PARHIP_LIBRARY AND KAHIP_INCLUDE_DIR)
       include(CheckCXXSourceRuns)
 
-      # Set flags for building test program
-      set(CMAKE_REQUIRED_INCLUDES ${KAHIP_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
-      set(CMAKE_REQUIRED_LIBRARIES ${KAHIP_LIBRARIES} ${MPI_CXX_LIBRARIES})
+      set(CMAKE_REQUIRED_INCLUDES ${KAHIP_INCLUDE_DIR} ${MPI_CXX_INCLUDE_PATH})
+      set(CMAKE_REQUIRED_LIBRARIES ${PARHIP_LIBRARY} ${KAHIP_LIBRARY} ${MPI_CXX_LIBRARIES})
       set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
       check_cxx_source_runs(
         "
@@ -93,9 +87,37 @@ if(MPI_CXX_FOUND)
     find_package_handle_standard_args(
       KaHIP
       "KaHIP could not be found/configured."
-      KAHIP_INCLUDE_DIRS
-      KAHIP_LIBRARIES
+      KAHIP_INCLUDE_DIR
+      PARHIP_LIBRARY
       KAHIP_TEST_RUNS
     )
+  endif()
+
+  if(KaHIP_FOUND)
+    if(NOT TARGET KaHIP::parhip)
+      add_library(KaHIP::parhip UNKNOWN IMPORTED)
+      set_target_properties(
+        KaHIP::parhip
+        PROPERTIES
+          IMPORTED_LOCATION "${PARHIP_LIBRARY}"
+          INTERFACE_INCLUDE_DIRECTORIES "${KAHIP_INCLUDE_DIR}"
+      )
+    endif()
+
+    if(KAHIP_LIBRARY AND NOT TARGET KaHIP::kahip)
+      add_library(KaHIP::kahip UNKNOWN IMPORTED)
+      set_target_properties(
+        KaHIP::kahip
+        PROPERTIES IMPORTED_LOCATION "${KAHIP_LIBRARY}"
+      )
+    endif()
+
+    if(NOT TARGET KaHIP::KaHIP)
+      add_library(KaHIP::KaHIP INTERFACE IMPORTED)
+      target_link_libraries(KaHIP::KaHIP INTERFACE KaHIP::parhip)
+      if(TARGET KaHIP::kahip)
+        target_link_libraries(KaHIP::KaHIP INTERFACE KaHIP::kahip)
+      endif()
+    endif()
   endif()
 endif()
