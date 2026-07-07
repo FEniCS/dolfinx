@@ -151,9 +151,9 @@ int main()
   return 0;
 }
 "
-    PARMETIS_TEST_RUNS
+    PARMETIS_TEST_COMPILES
   )
-  if(NOT PARMETIS_TEST_RUNS)
+  if(NOT PARMETIS_TEST_COMPILES)
     message(WARNING "ParMETIS: Simple test executable did not compile.")
   endif()
   cmake_pop_check_state()
@@ -169,7 +169,7 @@ if(DOLFINX_SKIP_BUILD_TESTS)
 else()
   find_package_handle_standard_args(
     ParMETIS
-    REQUIRED_VARS PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR PARMETIS_TEST_RUNS
+    REQUIRED_VARS PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR PARMETIS_TEST_COMPILES
     VERSION_VAR ParMETIS_VERSION
     FAIL_MESSAGE "ParMETIS could not be found/configured."
   )
