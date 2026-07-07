@@ -365,7 +365,10 @@ macro(dolfinx_prepend_pkgconfig_path dir_env_var)
     set(_orig "")
   endif()
   if(DEFINED ENV{${dir_env_var}})
-    set(ENV{PKG_CONFIG_PATH} "$ENV{${dir_env_var}}/lib/pkgconfig${_sep}${_orig}")
+    set(
+      ENV{PKG_CONFIG_PATH}
+      "$ENV{${dir_env_var}}/lib/pkgconfig${_sep}${_orig}"
+    )
     if(DEFINED ENV{PETSC_ARCH})
       set(
         ENV{PKG_CONFIG_PATH}
