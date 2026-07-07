@@ -10,9 +10,12 @@
 #include "Vector.h"
 #include "matrix_csr_impl.h"
 #include <algorithm>
+#include <cmath>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <limits>
 #include <mpi.h>
 #include <numeric>
 #include <span>
@@ -130,6 +133,45 @@ public:
     };
   }
 
+  /// @brief Insertion functor for setting values in a matrix, clamping
+  /// negligible entries to zero before insertion.
+  ///
+  /// This creates a functor with the same interface as the one returned
+  /// by ::mat_set_values, but before values are set, entries that are
+  /// small relative to the largest-magnitude entry of the insertion
+  /// block and the precision of the scalar type are clamped to zero. An
+  /// entry \f$a\f$ is set to zero when
+  /// \f[ |a| \le C \epsilon \max_{ij} |a_{ij}|, \f]
+  /// where \f$\epsilon\f$ is the machine epsilon of the (real) scalar
+  /// type and the maximum is taken over the block of values passed to a
+  /// single insertion. Clamping is useful for removing spurious
+  /// near-zero entries in, e.g., discrete gradient and curl operators.
+  ///
+  /// @note The maximum is taken over each inserted block rather than the
+  /// whole matrix, so the tolerance is relative to the local block.
+  ///
+  /// @tparam BS0 Row block size of data for insertion
+  /// @tparam BS1 Column block size of data for insertion
+  ///
+  /// @param[in] C Multiplier for the relative clamping tolerance. A
+  /// moderate value such as 1000 is usually sufficient; larger values
+  /// clamp more aggressively.
+  /// @return Function for inserting clamped values into `A`.
+  template <int BS0 = 1, int BS1 = 1>
+  auto mat_set_values_clamp(double C = 1000)
+  {
+    return [mat_set = mat_set_values<BS0, BS1>(), C,
+            buffer = std::vector<value_type>()](
+               std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> cols,
+               std::span<const value_type> data) mutable -> int
+    {
+      buffer.assign(data.begin(), data.end());
+      clamp_values(buffer, C);
+      return mat_set(rows, cols, buffer);
+    };
+  }
+
   /// @brief Insertion functor for adding values to a matrix. It is
   /// typically used in finite element assembly functions.
   ///
@@ -169,6 +211,45 @@ public:
     {
       this->add<BS0, BS1>(data, rows, cols);
       return 0;
+    };
+  }
+
+  /// @brief Insertion functor for adding values to a matrix, clamping
+  /// negligible entries to zero before insertion.
+  ///
+  /// This creates a functor with the same interface as the one returned
+  /// by ::mat_add_values, but before values are added, entries that are
+  /// small relative to the largest-magnitude entry of the insertion
+  /// block and the precision of the scalar type are clamped to zero. An
+  /// entry \f$a\f$ is set to zero when
+  /// \f[ |a| \le C \epsilon \max_{ij} |a_{ij}|, \f]
+  /// where \f$\epsilon\f$ is the machine epsilon of the (real) scalar
+  /// type and the maximum is taken over the block of values passed to a
+  /// single insertion. Clamping is useful for removing spurious
+  /// near-zero entries in, e.g., interpolation operators.
+  ///
+  /// @note The maximum is taken over each inserted block rather than the
+  /// whole matrix, so the tolerance is relative to the local block.
+  ///
+  /// @tparam BS0 Row block size of data for insertion
+  /// @tparam BS1 Column block size of data for insertion
+  ///
+  /// @param[in] C Multiplier for the relative clamping tolerance. A
+  /// moderate value such as 1000 is usually sufficient; larger values
+  /// clamp more aggressively.
+  /// @return Function for adding clamped values into `A`.
+  template <int BS0 = 1, int BS1 = 1>
+  auto mat_add_values_clamp(double C = 1000)
+  {
+    return [mat_add = mat_add_values<BS0, BS1>(), C,
+            buffer = std::vector<value_type>()](
+               std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> cols,
+               std::span<const value_type> data) mutable -> int
+    {
+      buffer.assign(data.begin(), data.end());
+      clamp_values(buffer, C);
+      return mat_add(rows, cols, buffer);
     };
   }
 
@@ -576,6 +657,21 @@ public:
   BlockMode block_mode() const { return _block_mode; }
 
 private:
+  // Clamp entries of `data` that are negligible relative to the
+  // largest-magnitude entry and the precision of the scalar type to
+  // zero, i.e. set a_i = 0 when |a_i| <= C * eps * max_j |a_j|.
+  static void clamp_values(std::span<value_type> data, double C)
+  {
+    using R = dolfinx::scalar_value_t<value_type>;
+    R max_val = 0;
+    for (value_type v : data)
+      max_val = std::max(max_val, std::abs(v));
+    const R atol
+        = static_cast<R>(C) * std::numeric_limits<R>::epsilon() * max_val;
+    std::ranges::transform(data, data.begin(), [atol](value_type x)
+                           { return std::abs(x) < atol ? value_type(0) : x; });
+  }
+
   // Parallel distribution of the rows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 

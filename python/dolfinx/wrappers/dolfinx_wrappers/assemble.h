@@ -165,7 +165,7 @@ void declare_discrete_operators(nanobind::module_& m)
         dolfinx::la::MatrixCSR<T> A(sp);
         dolfinx::fem::discrete_gradient<T, U>(
             *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
-            {*V1.element(), *V1.dofmap()}, A.mat_set_values());
+            {*V1.element(), *V1.dofmap()}, A.mat_set_values_clamp());
         return A;
       },
       nb::arg("V0"), nb::arg("V1"));
