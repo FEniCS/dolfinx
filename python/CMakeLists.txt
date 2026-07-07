@@ -1,13 +1,7 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.26)
 
 project(dolfinx_nanobind LANGUAGES CXX)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-if(WIN32)
-  # Windows requires all symbols to be manually exported. This flag exports all
-  # symbols automatically, as in Unix.
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-endif(WIN32)
 
 find_package(
   Python
@@ -95,7 +89,9 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
-target_include_directories(cpp PRIVATE ${SUPERLU_DIST_INCLUDE_DIRS})
+if(TARGET PkgConfig::SUPERLU_DIST)
+  target_include_directories(cpp PRIVATE ${SUPERLU_DIST_INCLUDE_DIRS})
+endif()
 
 if(NANOBIND_SABI)
   # mpi4py and petsc4py use generated Cython headers so tell
@@ -108,65 +104,17 @@ if(NANOBIND_SABI)
   target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
 endif()
 
-# Check for some compiler flags
-include(CheckCXXCompilerFlag)
-
-# Add some strict compiler checks
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
-
-if(HAVE_PEDANTIC)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
-endif()
-
-# Debug flags
-check_cxx_compiler_flag(-g HAVE_DEBUG)
-if(HAVE_DEBUG)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -g)
-endif()
-
-# Optimisation
-check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
-if(HAVE_O2_OPTIMISATION)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -O2)
-endif()
-
-# Enable C++ standard library debugging
-include(CheckCXXSymbolExists)
-
-check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
-check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
-
-if(LIBCPP)
-  list(
-    APPEND DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS
-    _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG
-  )
-endif()
-
-if(GLIBCXX)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS _GLIBCXX_ASSERTIONS)
-endif()
-
-# Turn off some checks in gcc12 and gcc13 due to false positives with
-# the fmt library
-if(
-  CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-  AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-  AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
-)
-  list(
-    APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS
-    -Wno-array-bounds;-Wno-stringop-overflow
-  )
-endif()
+include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
 
 target_compile_options(
   cpp
-  PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_FLAGS}>
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 target_compile_definitions(
   cpp
-  PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS}>
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 target_compile_features(cpp PRIVATE cxx_std_20)
 
@@ -233,7 +181,9 @@ endif()
 
 set_target_properties(
   cpp
-  PROPERTIES INSTALL_RPATH_USE_LINK_PATH ${DOLFINX_INSTALL_RPATH_USE_LINK_PATH}
+  PROPERTIES
+    INSTALL_RPATH_USE_LINK_PATH ${DOLFINX_INSTALL_RPATH_USE_LINK_PATH}
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
 install(TARGETS cpp DESTINATION dolfinx)
