@@ -205,8 +205,7 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
                   // facet
                   for (std::size_t k = 0; k < vertices.size(); ++k)
                   {
-                    auto it = std::find(cell_vertices.begin(),
-                                        cell_vertices.end(), vertices[k]);
+                    auto it = std::ranges::find(cell_vertices, vertices[k]);
                     // Get the actual local vertex indices
                     e_vertices[k] = std::distance(cell_vertices.begin(), it);
                   }
@@ -267,23 +266,21 @@ compute_edge_reflections(const mesh::Topology& topology)
             cell_vertices.resize(c_to_v->num_links(c));
             im->local_to_global(c_to_v->links(c), cell_vertices);
             auto cell_edges = c_to_e->links(c);
-            for (int i = 0; i < edges_per_cell; ++i)
+            for (int edge = 0; edge < edges_per_cell; ++edge)
             {
-              vertices.resize(e_to_v->links(cell_edges[i]).size());
-              im->local_to_global(e_to_v->links(cell_edges[i]), vertices);
+              vertices.resize(e_to_v->links(cell_edges[edge]).size());
+              im->local_to_global(e_to_v->links(cell_edges[edge]), vertices);
 
               // If the entity is an interval, it should be oriented pointing
               // from the lowest numbered vertex to the highest numbered vertex.
 
               // Find iterators pointing to cell vertex given a vertex on facet
-              auto it0 = std::find(cell_vertices.begin(), cell_vertices.end(),
-                                   vertices[0]);
-              auto it1 = std::find(cell_vertices.begin(), cell_vertices.end(),
-                                   vertices[1]);
+              auto it0 = std::ranges::find(cell_vertices, vertices[0]);
+              auto it1 = std::ranges::find(cell_vertices, vertices[1]);
 
               // The number of reflections. Comparing iterators directly instead
               // of values they point to is sufficient here.
-              edge_perm[c][i] = (it1 < it0) == (vertices[1] > vertices[0]);
+              edge_perm[c][edge] = (it1 < it0) == (vertices[1] > vertices[0]);
             }
           }
         });
