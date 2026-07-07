@@ -163,16 +163,6 @@ jobs:
         run: |
           . ./spack-src/share/spack/setup-env.sh
           spack env activate py
-          # Work around a FreeType "raster overflow" crash (FT_Render_Glyph
-          # error 0x62) hit in this Spack/AlmaLinux environment when
-          # rendering the Unicode minus sign glyph for negative tick labels
-          # / log-scale exponents (e.g. demo_lagrange-variants.py,
-          # demo_tnt-elements.py). Fall back to the plain ASCII hyphen-minus
-          # instead, scoped to this CI job only via MATPLOTLIBRC, so demo
-          # output elsewhere (docs builds, other CI, local runs) is
-          # unaffected.
-          printf 'axes.unicode_minus: False\n' > "$RUNNER_TEMP/matplotlibrc-ci"
-          export MATPLOTLIBRC="$RUNNER_TEMP/matplotlibrc-ci"
           python -m pytest -n auto -m serial --durations=10 dolfinx-src/python/demo/test.py
           python -m pytest -m mpi --num-proc=2 dolfinx-src/python/demo/test.py
 
