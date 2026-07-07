@@ -11,7 +11,7 @@
 #  ParMETIS::ParMETIS
 #
 #=============================================================================
-# Copyright (C) 2010 Garth N. Wells, Anders Logg and Johannes Ring
+# Copyright (C) 2026 Garth N. Wells, Anders Logg, Johannes Ring, Jack S. Hale
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
