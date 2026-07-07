@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 
 project(dolfinx_nanobind LANGUAGES CXX)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(
   Python
@@ -89,6 +88,7 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
+set_target_properties(cpp PROPERTIES CXX_EXTENSIONS OFF)
 if(TARGET PkgConfig::SUPERLU_DIST)
   target_include_directories(cpp PRIVATE ${SUPERLU_DIST_INCLUDE_DIRS})
 endif()
