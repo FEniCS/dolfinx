@@ -121,7 +121,7 @@ jobs:
             ^adios2~libcatalyst~fortran
           spack -e cxx add catch2
           spack -e cxx concretize -j 4
-          spack -e cxx install -j 4 -p 2 --use-buildcache auto --show-log-on-error --verbose
+          spack -e cxx install -j 4 -p 2 --use-buildcache auto
 
       - name: Push C++ packages to cache
         run: |
