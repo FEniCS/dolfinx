@@ -619,7 +619,7 @@ compute_entities_by_key_matching(
       std::vector<std::jthread> threads(num_threads);
       for (int i = 0; i < num_threads; ++i)
       {
-        auto [c0, c1] = dolfinx::MPI::local_range(i, num_cells, num_threads);
+        auto [c0, c1] = dolfinx::common::local_range(i, num_cells, num_threads);
         std::size_t offset
             = cell_type_offsets[k] * num_vertices_per_entity
               + c0 * num_vertices_per_entity * num_entities_per_cell;

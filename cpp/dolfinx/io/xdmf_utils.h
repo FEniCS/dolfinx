@@ -214,8 +214,8 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     {
       if (shape_xml == shape_hdf5)
       {
-        range = dolfinx::MPI::local_range(mpi_rank, shape_hdf5[0],
-                                          dolfinx::MPI::size(comm));
+        range = dolfinx::common::local_range(mpi_rank, shape_hdf5[0],
+                                             dolfinx::MPI::size(comm));
       }
       else if (!shape_xml.empty() and shape_hdf5.size() == 1)
       {
@@ -231,8 +231,8 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
         }
 
         // Compute data range to read
-        range = dolfinx::MPI::local_range(mpi_rank, shape_xml[0],
-                                          dolfinx::MPI::rank(comm));
+        range = dolfinx::common::local_range(mpi_rank, shape_xml[0],
+                                             dolfinx::MPI::rank(comm));
         range[0] *= d;
         range[1] *= d;
       }

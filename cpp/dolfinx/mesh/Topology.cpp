@@ -714,7 +714,7 @@ std::vector<std::int32_t> convert_to_local_indexing(
     std::vector<std::jthread> threads(num_threads);
     for (int i = 0; i < num_threads; ++i)
     {
-      auto [c0, c1] = dolfinx::MPI::local_range(i, g.size(), num_threads);
+      auto [c0, c1] = dolfinx::common::local_range(i, g.size(), num_threads);
       threads[i] = std::jthread(transform, std::span(data.data() + c0, c1 - c0),
                                 g.subspan(c0, c1 - c0), global_to_local);
     }

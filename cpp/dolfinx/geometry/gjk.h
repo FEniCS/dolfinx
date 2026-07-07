@@ -545,7 +545,7 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
     std::vector<std::jthread> threads(num_threads);
     for (size_t i = 0; i < num_threads; ++i)
     {
-      auto [c0, c1] = dolfinx::MPI::local_range(i, total_size, num_threads);
+      auto [c0, c1] = dolfinx::common::local_range(i, total_size, num_threads);
       threads[i] = std::jthread(compute_chunk, c0, c1, q);
     }
   }
