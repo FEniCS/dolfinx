@@ -255,7 +255,7 @@ compute_edge_reflections(const mesh::Topology& topology)
   std::vector<std::int64_t> cell_vertices, vertices;
   std::vector<std::jthread> threads(
       std::max(1, static_cast<int>(std::thread::hardware_concurrency())));
-  for (int i = 0; i < threads.size(); ++i)
+  for (std::size_t i = 0; i < threads.size(); ++i)
   {
     threads[i] = std::jthread(
         [&, i]()
