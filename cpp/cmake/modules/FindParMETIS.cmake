@@ -39,7 +39,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-include(CMakeCheckState)
+include(CMakePushCheckState)
 include(CheckCXXSourceRuns)
 
 if(MPI_CXX_FOUND)
