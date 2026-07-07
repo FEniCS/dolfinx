@@ -94,8 +94,7 @@ add_feature_info(
 # Package builders may want to set this to FALSE.
 option(
   DOLFINX_INSTALL_RPATH_USE_LINK_PATH
-  "Add linker search paths to rpath of dolfinx target. Packagers may want
-	to set FALSE."
+  "Add linker search paths to rpath of dolfinx target. Packagers may want to set FALSE."
   TRUE
 )
 add_feature_info(
@@ -405,6 +404,25 @@ set_package_properties(
     URL "https://github.com/fenics/ffcx"
 )
 
+# Prepend <dir>/lib/pkgconfig (and <dir>/<arch>/lib/pkgconfig) to PKG_CONFIG_PATH.
+macro(dolfinx_prepend_pkgconfig_path dir_env_var)
+  if(DEFINED ENV{PKG_CONFIG_PATH})
+    set(_orig "$ENV{PKG_CONFIG_PATH}")
+  else()
+    set(_orig "")
+  endif()
+  if(DEFINED ENV{${dir_env_var}})
+    set(ENV{PKG_CONFIG_PATH} "$ENV{${dir_env_var}}/lib/pkgconfig:${_orig}")
+    if(DEFINED ENV{PETSC_ARCH})
+      set(
+        ENV{PKG_CONFIG_PATH}
+        "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
+      )
+    endif()
+  endif()
+  unset(_orig)
+endmacro()
+
 # ------------------------------------------------------------------------------
 # Find optional packages
 if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
@@ -415,25 +433,7 @@ endif()
 
 if(DOLFINX_ENABLE_PETSC)
   find_package(PkgConfig REQUIRED)
-
-  if(DEFINED ENV{PKG_CONFIG_PATH})
-    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
-  else()
-    set(ENV_PKG_CONFIG_PATH "")
-  endif()
-
-  if(DEFINED ENV{PETSC_DIR})
-    set(
-      ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/lib/pkgconfig:${ENV_PKG_CONFIG_PATH}"
-    )
-    if(DEFINED ENV{PETSC_ARCH})
-      set(
-        ENV{PKG_CONFIG_PATH}
-        "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-      )
-    endif()
-  endif()
+  dolfinx_prepend_pkgconfig_path(PETSC_DIR)
 
   if(_REQUIRE_PETSC)
     pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
@@ -456,25 +456,7 @@ endif()
 
 if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   find_package(PkgConfig REQUIRED)
-
-  if(DEFINED ENV{PKG_CONFIG_PATH})
-    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
-  else()
-    set(ENV_PKG_CONFIG_PATH "")
-  endif()
-
-  if(DEFINED ENV{SLEPC_DIR})
-    set(
-      ENV{PKG_CONFIG_PATH}
-      "$ENV{SLEPC_DIR}/lib/pkgconfig:${ENV_PKG_CONFIG_PATH}"
-    )
-    if(DEFINED ENV{PETSC_ARCH})
-      set(
-        ENV{PKG_CONFIG_PATH}
-        "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-      )
-    endif()
-  endif()
+  dolfinx_prepend_pkgconfig_path(SLEPC_DIR)
 
   if(_REQUIRE_SLEPC)
     pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
@@ -538,26 +520,8 @@ endif()
 
 if(DOLFINX_ENABLE_SUPERLU_DIST)
   find_package(PkgConfig REQUIRED)
-
-  if(DEFINED ENV{PKG_CONFIG_PATH})
-    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
-  else()
-    set(ENV_PKG_CONFIG_PATH "")
-  endif()
-
   # If PETSc was built with SuperLU_DIST then pickup install there
-  if(DEFINED ENV{PETSC_DIR})
-    set(
-      ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/lib/pkgconfig:${ENV_PKG_CONFIG_PATH}"
-    )
-    if(DEFINED ENV{PETSC_ARCH})
-      set(
-        ENV{PKG_CONFIG_PATH}
-        "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-      )
-    endif()
-  endif()
+  dolfinx_prepend_pkgconfig_path(PETSC_DIR)
 
   if(_REQUIRE_SUPERLU_DIST)
     pkg_search_module(SUPERLU_DIST REQUIRED IMPORTED_TARGET superlu_dist)
