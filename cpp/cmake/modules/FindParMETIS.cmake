@@ -81,9 +81,7 @@ if(GKLIB_LIBRARY)
 endif()
 
 # Identify ParMETIS version by compiling and running a small probe
-if(DOLFINX_SKIP_BUILD_TESTS)
-  set(ParMETIS_VERSION "100.0.0")
-elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
+if(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY AND NOT DOLFINX_SKIP_BUILD_TESTS)
   set(
     PARMETIS_CONFIG_TEST_VERSION_CPP
     "
@@ -128,7 +126,7 @@ endif()
 
 # Build and run a functional test program
 if(DOLFINX_SKIP_BUILD_TESTS)
-  set(PARMETIS_TEST_RUNS TRUE)
+  # skip
 elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
   cmake_push_check_state(RESET)
   set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR})
@@ -162,12 +160,20 @@ int main()
 endif()
 
 # Standard package handling
-find_package_handle_standard_args(
-  ParMETIS
-  REQUIRED_VARS PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR PARMETIS_TEST_RUNS
-  VERSION_VAR ParMETIS_VERSION
-  FAIL_MESSAGE "ParMETIS could not be found/configured."
-)
+if(DOLFINX_SKIP_BUILD_TESTS)
+  find_package_handle_standard_args(
+    ParMETIS
+    REQUIRED_VARS PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR
+    FAIL_MESSAGE "ParMETIS could not be found/configured."
+  )
+else()
+  find_package_handle_standard_args(
+    ParMETIS
+    REQUIRED_VARS PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR PARMETIS_TEST_RUNS
+    VERSION_VAR ParMETIS_VERSION
+    FAIL_MESSAGE "ParMETIS could not be found/configured."
+  )
+endif()
 
 if(ParMETIS_FOUND AND NOT TARGET ParMETIS::ParMETIS)
   if(METIS_LIBRARY AND NOT TARGET METIS::METIS)
