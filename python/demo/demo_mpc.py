@@ -73,15 +73,15 @@ for dofL in dofsL:
     xL = coords[dofL]
     for dofR, xR in zip(globalR, globalR_coords):
         if cfun(xL, xR):
-            map_LR[int(dofL) * 2] = int(dofR * 2)
-            map_LR[int(dofL) * 2 + 1] = int(dofR * 2 + 1)
+            map_LR[int(dofL) * 2] = (int(dofR * 2), 1.0)
+            map_LR[int(dofL) * 2 + 1] = (int(dofR * 2 + 1), -1.0)
 
 print(map_LR)
 
 # Create MPC
 local_dofs = np.array([k for k in map_LR.keys()], dtype=np.int32)
-global_dofs = [np.array([map_LR[k]], dtype=np.int64) for k in map_LR.keys()]
-global_coeffs = [np.array([1.0], dtype=np.float64) for k in map_LR.keys()]
+global_dofs = [np.array([map_LR[k][0]], dtype=np.int64) for k in map_LR.keys()]
+global_coeffs = [np.array([map_LR[k][1]], dtype=np.float64) for k in map_LR.keys()]
 
 print(local_dofs)
 
