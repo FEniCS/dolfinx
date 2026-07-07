@@ -44,41 +44,41 @@ cmake_minimum_required(VERSION 3.26)
 include(CMakePushCheckState)
 include(CheckCXXSourceRuns)
 
-if(MPI_CXX_FOUND)
-  find_library(
-    PARMETIS_LIBRARY
-    parmetis
-    DOC "Directory where the ParMETIS library is located."
-  )
+find_library(
+  PARMETIS_LIBRARY
+  parmetis
+  DOC "Directory where the ParMETIS library is located."
+)
 
-  find_path(
-    PARMETIS_INCLUDE_DIR
-    parmetis.h
-    DOC "Directory where the ParMETIS header files are located."
-  )
+find_path(
+  PARMETIS_INCLUDE_DIR
+  parmetis.h
+  DOC "Directory where the ParMETIS header files are located."
+)
 
-  find_library(
-    METIS_LIBRARY
-    metis
-    DOC "Directory where the METIS library is located."
-  )
+find_library(
+  METIS_LIBRARY
+  metis
+  DOC "Directory where the METIS library is located."
+)
 
-  # Newer METIS and ParMETIS build against separate GKLib
-  find_library(
-    GKLIB_LIBRARY
-    gklib
-    DOC "Directory where the gklib library is located."
-  )
+# Newer METIS and ParMETIS build against separate GKLib
+find_library(
+  GKLIB_LIBRARY
+  gklib
+  DOC "Directory where the gklib library is located."
+)
 
-  # Build the list of link libraries for the compile/link test
-  set(_parmetis_link_libraries ${PARMETIS_LIBRARY})
-  if(METIS_LIBRARY)
-    list(APPEND _parmetis_link_libraries ${METIS_LIBRARY})
-  endif()
-  if(GKLIB_LIBRARY)
-    list(APPEND _parmetis_link_libraries ${GKLIB_LIBRARY})
-  endif()
+# Build the list of link libraries for the compile/link test
+set(_parmetis_link_libraries ${PARMETIS_LIBRARY})
+if(METIS_LIBRARY)
+  list(APPEND _parmetis_link_libraries ${METIS_LIBRARY})
+endif()
+if(GKLIB_LIBRARY)
+  list(APPEND _parmetis_link_libraries ${GKLIB_LIBRARY})
+endif()
 
+if(TARGET MPI::MPI_CXX)
   # Try compiling and running test program
   if(DOLFINX_SKIP_BUILD_TESTS)
     set(PARMETIS_TEST_RUNS TRUE)
