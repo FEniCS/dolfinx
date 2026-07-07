@@ -80,11 +80,10 @@ if(GKLIB_LIBRARY)
   list(APPEND _parmetis_link_libraries ${GKLIB_LIBRARY})
 endif()
 
-# Try compiling and running test program
+# Identify ParMETIS version by compiling and running a small probe
 if(DOLFINX_SKIP_BUILD_TESTS)
   set(ParMETIS_VERSION "100.0.0")
 elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
-  # Find ParMETIS version
   set(
     PARMETIS_CONFIG_TEST_VERSION_CPP
     "
@@ -125,8 +124,12 @@ return 0;
   elseif(PARMETIS_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
     set(ParMETIS_VERSION ${PARMETIS_CONFIG_TEST_VERSION_OUTPUT})
   endif()
+endif()
 
-  # Build and run test program
+# Build and run a functional test program
+if(DOLFINX_SKIP_BUILD_TESTS)
+  set(PARMETIS_TEST_RUNS TRUE)
+elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
   cmake_push_check_state(RESET)
   set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR})
   set(CMAKE_REQUIRED_LIBRARIES MPI::MPI_CXX ${_parmetis_link_libraries})
