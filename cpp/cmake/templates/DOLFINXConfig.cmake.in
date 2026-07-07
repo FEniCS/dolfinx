@@ -29,6 +29,9 @@ find_package(Boost 1.70 REQUIRED)
 
 if(@ufcx_FOUND@)
   find_dependency(ufcx)
+elseif(@UFCx_FOUND@)
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+  find_dependency(UFCx MODULE)
 endif()
 
 # Basix
