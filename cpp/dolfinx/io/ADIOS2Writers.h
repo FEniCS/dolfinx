@@ -313,8 +313,8 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
       io, "NumberOfNodes", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
-  auto [vtkcells, shape]
-      = io::extract_vtk_connectivity(geometry.dofmap(), topology->cell_type());
+  auto [vtkcells, shape] = io::extract_vtk_connectivity(
+      geometry.dofmaps().front(), topology->cell_type());
 
   // Add cell metadata
   int tdim = topology->dim();

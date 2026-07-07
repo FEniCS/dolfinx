@@ -30,16 +30,14 @@ jupytext_process.process()
 
 # -- Project information -----------------------------------------------------
 
-project = "DOLFINx"
+project = "DOLFINx C++"
 now = datetime.datetime.now()
 date = now.date()
 copyright = f"{date.year}, FEniCS Project"
 author = "FEniCS Project"
 
-# TODO: automate version tagging?
-# The full version, including alpha/beta/rc tags
-release = dolfinx.cpp.__version__
-
+version = dolfinx.cpp.__version__
+release = version
 
 # -- General configuration ---------------------------------------------------
 
@@ -73,7 +71,8 @@ exclude_patterns = []
 #
 # html_theme = 'alabaster'
 # html_theme = "nature"
-html_theme = "sphinx_rtd_theme"
+html_theme = "pydata_sphinx_theme"
+html_title = f"DOLFINx C++ {release}"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

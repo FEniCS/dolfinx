@@ -21,9 +21,9 @@
 # ```{admonition} Download sources
 # :class: download
 # * {download}`Python script
-# <./demo_scattering_boundary_conditions.py>`
+# <./demo_scattering-boundary-conditions.py>`
 # * {download}`Jupyter notebook
-# <./demo_scattering_boundary_conditions.ipynb>`
+# <./demo_scattering-boundary-conditions.ipynb>`
 # ```
 #
 # This demo illustrates how to:
@@ -47,7 +47,7 @@ from scipy.special import h2vp, hankel2, jv, jvp
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_real_type, default_scalar_type, fem, io, plot
+from dolfinx import default_real_type, default_scalar_type, fem, has_adios2, io, plot
 from dolfinx.fem.petsc import LinearProblem
 
 try:
@@ -543,7 +543,7 @@ eps.x.scatter_forward()
 # integrate the terms over the corresponding domains:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # & \int_{\Omega}-\nabla \times( \nabla \times \mathbf{E}_s) \cdot
 # \bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
@@ -552,7 +552,7 @@ eps.x.scatter_forward()
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0
-# \end{align}
+# \end{aligned}
 # $$
 #
 # By using $(\nabla \times \mathbf{A}) \cdot \mathbf{B}=\mathbf{A}
@@ -560,7 +560,7 @@ eps.x.scatter_forward()
 # \mathbf{B}),$ we can change the first term into:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # & \int_{\Omega}-\nabla \cdot(\nabla\times\mathbf{E}_s \times
 # \bar{\mathbf{v}})-\nabla \times \mathbf{E}_s \cdot \nabla
 # \times\bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
@@ -570,7 +570,7 @@ eps.x.scatter_forward()
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0,
-# \end{align}
+# \end{aligned}
 # $$
 #
 # using the divergence theorem
@@ -578,7 +578,7 @@ eps.x.scatter_forward()
 # \mathbf{F}\cdot\mathbf{n}~\mathrm{d}s$, we can write:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # & \int_{\Omega}-(\nabla \times \mathbf{E}_s) \cdot (\nabla \times
 # \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
@@ -588,7 +588,7 @@ eps.x.scatter_forward()
 # + (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # Cancelling $-(\nabla\times\mathbf{E}_s \times \bar{\mathbf{V}})
@@ -601,7 +601,7 @@ eps.x.scatter_forward()
 # \mathbf{A})=\mathbf{C} \cdot(\mathbf{A} \times \mathbf{B})$, we get:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # & \int_{\Omega}-(\nabla \times \mathbf{E}_s) \cdot (\nabla \times
 # \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
@@ -609,7 +609,7 @@ eps.x.scatter_forward()
 # +&\int_{\partial \Omega}
 # \left(j n_bk_{0}+\frac{1}{2r}\right)( \mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}} ~\mathrm{d} s = 0.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # We use the [UFL](https://github.com/FEniCS/ufl/) to implement the
@@ -655,8 +655,11 @@ Esh_dg = fem.Function(V_dg)
 assert isinstance(Esh, fem.Function)
 Esh_dg.interpolate(Esh)
 
-with io.VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
-    vtx.write(0.0)
+if has_adios2:
+    with io.VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
+        vtx.write(0.0)
+else:
+    print("VTXWriter is unavailable, Esh.bp will not be saved.")
 # -
 
 # We visualize the solution using PyVista. For more information about
@@ -694,8 +697,11 @@ E = fem.Function(V)
 E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
-with io.VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
-    vtx.write(0.0)
+if has_adios2:
+    with io.VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
+        vtx.write(0.0)
+else:
+    print("VTXWriter is unavailable, E.bp will not be saved.")
 # -
 
 # We validate our numerical solution by computing the absorption,
@@ -714,7 +720,7 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # absorption, scattering and extinction are:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # & Q_{abs} = \operatorname{Re}\left(\int_{\Omega_{m}} \frac{1}{2}
 #   \frac{\operatorname{Im}(\varepsilon_m)k_0}{Z_0n_b}
 #   \mathbf{E}\cdot\hat{\mathbf{E}}~\mathrm{d}x\right) \\
@@ -722,7 +728,7 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 #   \left(\mathbf{E}_s\times\bar{\mathbf{H}}_s\right)
 #   \cdot\mathbf{n}~\mathrm{d}s\right)\\ \\
 # & Q_{ext} = Q_{abs} + Q_{sca},
-# \end{align}
+# \end{aligned}
 # $$
 #
 # with $Z_0 = \sqrt{\frac{\mu_0}{\varepsilon_0}}$ being the vacuum
@@ -733,11 +739,11 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # of the wire, $\sigma_{gcs} = 2r_w$:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # & q_{abs} = \frac{Q_{abs}}{I_0\sigma_{gcs}} \\
 # & q_{sca} = \frac{Q_{sca}}{I_0\sigma_{gcs}} \\
 # & q_{ext} = q_{abs} + q_{sca}.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # We can calculate these values in the following way:

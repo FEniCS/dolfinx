@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
         = std::make_shared<mesh::Mesh<float>>(mesh::create_rectangle<float>(
             MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
             mesh::CellType::triangle,
-            mesh::create_cell_partitioner(mesh::GhostMode::none)));
+            mesh::create_cell_partitioner(mesh::GhostMode::none, 2)));
 
     // Create mesh using same topology as mesh0, but with different
     // scalar type for geometry
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
         = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle<double>(
             MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
             mesh::CellType::triangle,
-            mesh::create_cell_partitioner(mesh::GhostMode::none)));
+            mesh::create_cell_partitioner(mesh::GhostMode::none, 2)));
 
     // Interpolate a function in a scalar Lagrange space and output the
     // result to file for visualisation using different types

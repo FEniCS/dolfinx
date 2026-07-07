@@ -15,9 +15,9 @@ PDEs (introductory)
 
    demos/demo_poisson.md
    demos/demo_helmholtz.md
-   demos/demo_scattering_boundary_conditions.md
+   demos/demo_scattering-boundary-conditions.md
    demos/demo_pml.md
-   demos/demo_half_loaded_waveguide.md
+   demos/demo_half-loaded-waveguide.md
    demos/demo_axis.md
 
 PDEs (advanced)
@@ -34,11 +34,11 @@ PDEs (advanced)
    demos/demo_static-condensation.md
    demos/demo_biharmonic.md
    demos/demo_types.md
-   demos/demo_poisson_matrix_free.md
+   demos/demo_poisson-matrix-free.md
    demos/demo_pyamg.md
    demos/demo_hdg.md
    demos/demo_mixed-topology.md
-   demos/demo_matrix_free_petsc.md
+   demos/demo_matrix-free-petsc.md
 
 
 
@@ -86,7 +86,7 @@ User-defined and advanced finite elements
 .. toctree::
    :maxdepth: 1
 
-   demos/demo_lagrange_variants.md
+   demos/demo_lagrange-variants.md
    demos/demo_tnt-elements.md
 
 
@@ -116,11 +116,11 @@ List of all demos
    demos/demo_pyvista.md
    demos/demo_interpolation-io.md
    demos/demo_types.md
-   demos/demo_lagrange_variants.md
+   demos/demo_lagrange-variants.md
    demos/demo_tnt-elements.md
-   demos/demo_scattering_boundary_conditions.md
+   demos/demo_scattering-boundary-conditions.md
    demos/demo_pml.md
-   demos/demo_half_loaded_waveguide.md
+   demos/demo_half-loaded-waveguide.md
    demos/demo_axis.md
    demos/demo_navier-stokes.md
    demos/demo_mixed-poisson.md

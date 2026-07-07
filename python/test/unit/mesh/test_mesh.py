@@ -99,7 +99,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
         mesh.topology.create_entity_permutations()
         e_to_g = entities_to_geometry(mesh, entity_dim, np.array(submesh_to_mesh), True)
         for submesh_entity in range(len(submesh_to_mesh)):
-            submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
+            submesh_x_dofs = submesh.geometry.dofmaps[0][submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
             # correspond to the x_dofs of cell i in the submesh
             mesh_x_dofs = e_to_g[submesh_entity]
@@ -742,26 +742,26 @@ def test_mesh_create_cmap(dtype):
     # ufl.Mesh case
     domain = ufl.Mesh(element("Lagrange", shape, degree, shape=(2,), dtype=dtype))
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
-    assert msh.geometry.cmap().dim == 3
+    assert msh.geometry.cmaps[0].dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.ufl.element
     domain = element("Lagrange", shape, degree, shape=(2,), dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
-    assert msh.geometry.cmap().dim == 3
+    assert msh.geometry.cmaps[0].dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.finite_element
     domain = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree, dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
-    assert msh.geometry.cmap().dim == 3
+    assert msh.geometry.cmaps[0].dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # cpp.fem.CoordinateElement
     e = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree, dtype=dtype)
     domain = coordinate_element(e)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
-    assert msh.geometry.cmap().dim == 3
+    assert msh.geometry.cmaps[0].dim == 3
     assert msh.ufl_domain() is None
 
 

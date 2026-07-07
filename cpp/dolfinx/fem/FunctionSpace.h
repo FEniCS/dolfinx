@@ -287,10 +287,11 @@ public:
       const auto [X, Xshape] = _elements[i]->interpolation_points();
 
       // Get coordinate map
-      const CoordinateElement<geometry_type>& cmap = _mesh->geometry().cmap(i);
+      const CoordinateElement<geometry_type>& cmap
+          = _mesh->geometry().cmaps().at(i);
 
       // Prepare cell geometry
-      auto x_dofmap = _mesh->geometry().dofmap(i);
+      auto x_dofmap = _mesh->geometry().dofmaps().at(i);
       const std::size_t num_dofs_g = cmap.dim();
       std::vector<geometry_type> coordinate_dofs_b(num_dofs_g * gdim);
       mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
@@ -390,13 +391,13 @@ public:
           "FunctionSpace has multiple dofmaps, call `dofmaps` instead.");
     }
 
-    return dofmaps(0);
+    return dofmaps().front();
   }
 
   /// The dofmaps
-  std::shared_ptr<const DofMap> dofmaps(int cell_type_idx) const
+  const std::vector<std::shared_ptr<const DofMap>>& dofmaps() const
   {
-    return _dofmaps.at(cell_type_idx);
+    return _dofmaps;
   }
 
 private:

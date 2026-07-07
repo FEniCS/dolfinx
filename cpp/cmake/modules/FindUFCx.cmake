@@ -36,16 +36,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-find_package(
-  Python3
-  COMPONENTS Interpreter
-  REQUIRED
-)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
-message(
-  STATUS
-    "Asking Python module FFCx for location of ufcx.h..."
-)
+message(STATUS "Asking Python module FFCx for location of ufcx.h...")
 
 # Get include path
 execute_process(
@@ -59,13 +52,11 @@ cmake_path(SET UFCX_INCLUDE_DIR "${UFCX_INCLUDE_DIR}")
 
 # Get ufcx.h version
 if(UFCX_INCLUDE_DIR)
-  set(UFCX_INCLUDE_DIRS
-      ${UFCX_INCLUDE_DIR}
-      CACHE STRING "Where to find ufcx.h"
-  )
+  set(UFCX_INCLUDE_DIRS ${UFCX_INCLUDE_DIR} CACHE STRING "Where to find ufcx.h")
   execute_process(
-    COMMAND ${Python3_EXECUTABLE} -c
-            "import ffcx, sys; sys.stdout.write(ffcx.__version__)"
+    COMMAND
+      ${Python3_EXECUTABLE} -c
+      "import ffcx, sys; sys.stdout.write(ffcx.__version__)"
     OUTPUT_VARIABLE UFCX_VERSION
   )
 endif()
@@ -80,6 +71,7 @@ mark_as_advanced(UFCX_VERSION UFCX_INCLUDE_DIRS UFCX_SIGNATURE)
 find_package_handle_standard_args(
   UFCx
   REQUIRED_VARS UFCX_INCLUDE_DIRS UFCX_SIGNATURE UFCX_VERSION
-  VERSION_VAR UFCX_VERSION HANDLE_VERSION_RANGE REASON_FAILURE_MESSAGE
-                           "UFCx could not be found."
+  VERSION_VAR UFCX_VERSION
+  HANDLE_VERSION_RANGE
+  REASON_FAILURE_MESSAGE "UFCx could not be found."
 )

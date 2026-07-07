@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
     auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_box<U>(
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
         mesh::CellType::tetrahedron,
-        mesh::create_cell_partitioner(mesh::GhostMode::none)));
+        mesh::create_cell_partitioner(mesh::GhostMode::none, 2)));
 
     auto element = basix::create_element<U>(
         basix::element::family::P, basix::cell::type::tetrahedron, 1,
@@ -326,7 +326,7 @@ int main(int argc, char* argv[])
     // Compute Cauchy stress. Construct appropriate Basix element for
     // stress.
     fem::Expression sigma_expression = fem::create_expression<T, U>(
-        *expression_hyperelasticity_sigma, {{"u", u}}, {});
+        *expression_hyperelasticity_sigma, {{"u", u}}, {}, {});
 
     constexpr auto family = basix::element::family::P;
     auto cell_type
