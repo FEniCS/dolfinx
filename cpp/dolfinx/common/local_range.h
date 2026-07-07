@@ -5,7 +5,6 @@
 #include <cassert>
 #include <cstdint>
 
-
 namespace dolfinx::common
 {
 /// @brief Return local range, partitioning a global [0, N - 1] range across all
