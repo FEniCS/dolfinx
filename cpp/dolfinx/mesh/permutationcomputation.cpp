@@ -157,8 +157,6 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
 
   const std::int32_t num_cells = c_to_v->num_nodes();
   std::vector<std::bitset<BITSETSIZE>> face_perm(num_cells, 0);
-  std::vector<std::int64_t> cell_vertices, vertices;
-  std::vector<std::int32_t> e_vertices;
   auto im = topology.index_map(0);
 
   for (std::size_t t = 0; t < face_type_indices.size(); ++t)
@@ -179,6 +177,8 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
         threads[i] = std::jthread(
             [&, i]()
             {
+              std::vector<std::int64_t> cell_vertices, vertices;
+              std::vector<std::int32_t> e_vertices;
               auto range
                   = dolfinx::common::local_range(i, num_cells, num_threads);
               for (int c = range[0]; c < range[1]; ++c)
@@ -252,7 +252,6 @@ compute_edge_reflections(const mesh::Topology& topology)
   assert(im);
 
   std::vector<std::bitset<BITSETSIZE>> edge_perm(num_cells, 0);
-  std::vector<std::int64_t> cell_vertices, vertices;
   std::vector<std::jthread> threads(
       std::max(1, static_cast<int>(std::thread::hardware_concurrency())));
   for (std::size_t i = 0; i < threads.size(); ++i)
@@ -260,6 +259,7 @@ compute_edge_reflections(const mesh::Topology& topology)
     threads[i] = std::jthread(
         [&, i]()
         {
+          std::vector<std::int64_t> cell_vertices, vertices;
           auto range = dolfinx::common::local_range(i, c_to_v->num_nodes(),
                                                     threads.size());
           for (int c = range[0]; c < range[1]; ++c)
