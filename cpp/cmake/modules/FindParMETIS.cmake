@@ -80,83 +80,81 @@ if(GKLIB_LIBRARY)
   list(APPEND _parmetis_link_libraries ${GKLIB_LIBRARY})
 endif()
 
-if(TARGET MPI::MPI_CXX)
-  # Try compiling and running test program
-  if(DOLFINX_SKIP_BUILD_TESTS)
-    set(PARMETIS_TEST_RUNS TRUE)
-    set(ParMETIS_VERSION "100.0.0")
-  elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
-
-    # Check ParMETIS version
-    set(
-      PARMETIS_CONFIG_TEST_VERSION_CPP
-      "
+# Try compiling and running test program
+if(DOLFINX_SKIP_BUILD_TESTS)
+  set(ParMETIS_VERSION "100.0.0")
+elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
+  # Find ParMETIS version
+  set(
+    PARMETIS_CONFIG_TEST_VERSION_CPP
+    "
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <iostream>
 #include \"parmetis.h\"
 
 int main() {
 #ifdef PARMETIS_SUBMINOR_VERSION
-  std::cout << PARMETIS_MAJOR_VERSION << \".\"
-	    << PARMETIS_MINOR_VERSION << \".\"
-            << PARMETIS_SUBMINOR_VERSION;
+std::cout << PARMETIS_MAJOR_VERSION << \".\"
+    << PARMETIS_MINOR_VERSION << \".\"
+    << PARMETIS_SUBMINOR_VERSION;
 #else
-  std::cout << PARMETIS_MAJOR_VERSION << \".\"
-	    << PARMETIS_MINOR_VERSION;
+std::cout << PARMETIS_MAJOR_VERSION << \".\"
+    << PARMETIS_MINOR_VERSION;
 #endif
-  return 0;
+return 0;
 }
 "
+  )
+
+  try_run(
+    PARMETIS_CONFIG_TEST_VERSION_EXITCODE
+    PARMETIS_CONFIG_TEST_VERSION_COMPILED
+    SOURCE_FROM_VAR parmetis_version_probe.cpp PARMETIS_CONFIG_TEST_VERSION_CPP
+    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${PARMETIS_INCLUDE_DIR}"
+    LINK_LIBRARIES MPI::MPI_CXX ${_parmetis_link_libraries}
+    COMPILE_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_COMPILE_OUTPUT
+    RUN_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_OUTPUT
+  )
+
+  if(NOT PARMETIS_CONFIG_TEST_VERSION_COMPILED)
+    message(
+      WARNING
+      "ParMETIS: version check failed to compile, assuming 100.0.0:\n${PARMETIS_CONFIG_TEST_VERSION_COMPILE_OUTPUT}"
     )
+    set(ParMETIS_VERSION "100.0.0")
+  elseif(PARMETIS_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
+    set(ParMETIS_VERSION ${PARMETIS_CONFIG_TEST_VERSION_OUTPUT})
+  endif()
 
-    try_run(
-      PARMETIS_CONFIG_TEST_VERSION_EXITCODE
-      PARMETIS_CONFIG_TEST_VERSION_COMPILED
-      SOURCE_FROM_VAR
-        parmetis_version_probe.cpp
-        PARMETIS_CONFIG_TEST_VERSION_CPP
-      CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${PARMETIS_INCLUDE_DIR}"
-      LINK_LIBRARIES MPI::MPI_CXX ${_parmetis_link_libraries}
-      COMPILE_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_COMPILE_OUTPUT
-      RUN_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_OUTPUT
-    )
-
-    if(NOT PARMETIS_CONFIG_TEST_VERSION_COMPILED)
-      message(
-        STATUS
-        "ParMETIS: version probe failed to compile:\n${PARMETIS_CONFIG_TEST_VERSION_COMPILE_OUTPUT}"
-      )
-    elseif(PARMETIS_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
-      set(ParMETIS_VERSION ${PARMETIS_CONFIG_TEST_VERSION_OUTPUT})
-    endif()
-
-    # Build and run test program
-    cmake_push_check_state(RESET)
-    set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR})
-    set(CMAKE_REQUIRED_LIBRARIES MPI::MPI_CXX ${_parmetis_link_libraries})
-    check_cxx_source_runs(
-      "
+  # Build and run test program
+  cmake_push_check_state(RESET)
+  set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR})
+  set(CMAKE_REQUIRED_LIBRARIES MPI::MPI_CXX ${_parmetis_link_libraries})
+  check_cxx_source_runs(
+    "
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 #include <parmetis.h>
 
 int main()
 {
-  // FIXME: Find a simple but sensible test for ParMETIS
+// FIXME: Find a simple but sensible test for ParMETIS
 
-  return 0;
+return 0;
 }
 "
-      PARMETIS_TEST_RUNS
-    )
-    cmake_pop_check_state()
+    PARMETIS_TEST_RUNS
+  )
+  if(NOT PARMETIS_TEST_RUNS)
+    message(WARNING "ParMETIS: Simple test executable did not run.")
   endif()
+  cmake_pop_check_state()
 endif()
 
 # Standard package handling
 find_package_handle_standard_args(
   ParMETIS
-  REQUIRED_VARS PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR PARMETIS_TEST_RUNS
+  REQUIRED_VARS PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR
   VERSION_VAR ParMETIS_VERSION
   FAIL_MESSAGE "ParMETIS could not be found/configured."
 )
