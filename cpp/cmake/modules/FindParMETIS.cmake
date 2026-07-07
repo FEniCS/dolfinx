@@ -6,9 +6,11 @@
 #  ParMETIS_FOUND   - system has ParMETIS
 #  ParMETIS_VERSION - version of ParMETIS
 #
-# and the imported target:
+# and the imported targets:
 #
 #  ParMETIS::ParMETIS
+#  GKLib::GKLib (if found)
+#  METIS::METIS (if found)
 #
 #=============================================================================
 # Copyright (C) 2026 Garth N. Wells, Anders Logg, Johannes Ring, Jack S. Hale
