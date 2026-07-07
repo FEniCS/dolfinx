@@ -84,7 +84,7 @@ if(TARGET MPI::MPI_CXX)
   # Try compiling and running test program
   if(DOLFINX_SKIP_BUILD_TESTS)
     set(PARMETIS_TEST_RUNS TRUE)
-    set(ParMETIS_VERSION "UNKNOWN")
+    set(ParMETIS_VERSION "100.0.0")
   elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
 
     # Check ParMETIS version
