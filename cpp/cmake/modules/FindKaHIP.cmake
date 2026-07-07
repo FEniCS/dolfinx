@@ -42,6 +42,7 @@ if(MPI_CXX_FOUND)
   find_path(KAHIP_INCLUDE_DIR parhip_interface.h PATH_SUFFIXES kahip)
   find_library(PARHIP_LIBRARY parhip_interface)
   find_library(KAHIP_LIBRARY kahip)
+  mark_as_advanced(KAHIP_INCLUDE_DIR PARHIP_LIBRARY KAHIP_LIBRARY)
 
   include(FindPackageHandleStandardArgs)
   if(DOLFINX_SKIP_BUILD_TESTS)
@@ -54,14 +55,14 @@ if(MPI_CXX_FOUND)
   else()
     if(PARHIP_LIBRARY AND KAHIP_INCLUDE_DIR)
       include(CheckCXXSourceRuns)
+      include(CMakePushCheckState)
 
+      cmake_push_check_state(RESET)
       set(CMAKE_REQUIRED_INCLUDES ${KAHIP_INCLUDE_DIR} ${MPI_CXX_INCLUDE_PATH})
-      set(
-        CMAKE_REQUIRED_LIBRARIES
-        ${PARHIP_LIBRARY}
-        ${KAHIP_LIBRARY}
-        ${MPI_CXX_LIBRARIES}
-      )
+      set(CMAKE_REQUIRED_LIBRARIES ${PARHIP_LIBRARY} ${MPI_CXX_LIBRARIES})
+      if(KAHIP_LIBRARY)
+        list(APPEND CMAKE_REQUIRED_LIBRARIES ${KAHIP_LIBRARY})
+      endif()
       set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
       check_cxx_source_runs(
         "
@@ -78,16 +79,17 @@ if(MPI_CXX_FOUND)
           double imbalance = 0.03;
           int edge_cut = 0;
           int nparts = 2;
-          int *vwgt = nullptr;;
-          int *adjcwgt = nullptr;;
+          int *vwgt = nullptr;
+          int *adjcwgt = nullptr;
           kaffpa(&n, vwgt, xadj.data(), adjcwgt, adjncy.data(),
                  &nparts, &imbalance, false, 0, ECO, &edge_cut,
                  part.data());
-        return 0;
+          return 0;
         }
         "
         KAHIP_TEST_RUNS
       )
+      cmake_pop_check_state()
     endif()
     find_package_handle_standard_args(
       KaHIP
@@ -113,7 +115,9 @@ if(MPI_CXX_FOUND)
       add_library(KaHIP::kahip UNKNOWN IMPORTED)
       set_target_properties(
         KaHIP::kahip
-        PROPERTIES IMPORTED_LOCATION "${KAHIP_LIBRARY}"
+        PROPERTIES
+          IMPORTED_LOCATION "${KAHIP_LIBRARY}"
+          INTERFACE_INCLUDE_DIRECTORIES "${KAHIP_INCLUDE_DIR}"
       )
     endif()
 
