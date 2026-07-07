@@ -8,7 +8,7 @@
 #  UFCX_VERSION   - version for UFCx
 #
 #=============================================================================
-# Copyright (C) 2010-2021 Johannes Ring and Garth N. Wells
+# Copyright (C) 2010-2026 Johannes Ring, Garth N. Wells, Jack S. Hale
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
