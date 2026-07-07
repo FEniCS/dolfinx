@@ -14,6 +14,13 @@
 #include <string>
 #include <utility>
 
+#define CHECK_ERROR(NAME)                                                      \
+  do                                                                           \
+  {                                                                            \
+    if (ierr != 0)                                                             \
+      petsc::error(ierr, __FILE__, NAME);                                      \
+  } while (0)
+
 using namespace dolfinx;
 
 namespace
@@ -30,8 +37,7 @@ std::pair<double, bool> converged(const nls::petsc::NewtonSolver& solver,
 {
   PetscReal residual = 0;
   PetscErrorCode ierr = VecNorm(r, NORM_2, &residual);
-  if (ierr != 0)
-    petsc::error(ierr, __FILE__, "VecNorm");
+  CHECK_ERROR("VecNorm");
 
   // Relative residual
   const double relative_residual = residual / solver.residual0();
@@ -65,8 +71,7 @@ void update_solution(const nls::petsc::NewtonSolver& solver, const Vec dx,
                      Vec x)
 {
   PetscErrorCode ierr = VecAXPY(x, -solver.relaxation_parameter, dx);
-  if (ierr != 0)
-    petsc::error(ierr, __FILE__, "VecAXPY");
+  CHECK_ERROR("VecAXPY");
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -103,7 +108,8 @@ void nls::petsc::NewtonSolver::setF(std::function<void(const Vec, Vec)> F,
 {
   _fnF = std::move(F);
   _b = b;
-  PetscObjectReference((PetscObject)_b);
+  PetscErrorCode ierr = PetscObjectReference((PetscObject)_b);
+  CHECK_ERROR("PetscObjectReference");
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::NewtonSolver::setJ(std::function<void(const Vec, Mat)> J,
@@ -111,7 +117,8 @@ void nls::petsc::NewtonSolver::setJ(std::function<void(const Vec, Mat)> J,
 {
   _fnJ = std::move(J);
   _matJ = Jmat;
-  PetscObjectReference((PetscObject)_matJ);
+  PetscErrorCode ierr = PetscObjectReference((PetscObject)_matJ);
+  CHECK_ERROR("PetscObjectReference");
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::NewtonSolver::setP(std::function<void(const Vec, Mat)> P,
@@ -119,7 +126,8 @@ void nls::petsc::NewtonSolver::setP(std::function<void(const Vec, Mat)> P,
 {
   _fnP = std::move(P);
   _matP = Pmat;
-  PetscObjectReference((PetscObject)_matP);
+  PetscErrorCode ierr = PetscObjectReference((PetscObject)_matP);
+  CHECK_ERROR("PetscObjectReference");
 }
 //-----------------------------------------------------------------------------
 const la::petsc::KrylovSolver&
@@ -201,8 +209,7 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
   if (!_dx)
   {
     PetscErrorCode ierr = MatCreateVecs(_matJ, &_dx, nullptr);
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "MatCreateVecs");
+    CHECK_ERROR("MatCreateVecs");
   }
   // Start iterations
   while (!newton_converged and _iteration < max_it)
@@ -232,8 +239,7 @@ std::pair<int, bool> nls::petsc::NewtonSolver::solve(Vec x)
     {
       PetscReal _r = 0;
       PetscErrorCode ierr = VecNorm(_dx, NORM_2, &_r);
-      if (ierr != 0)
-        petsc::error(ierr, __FILE__, "VecNorm");
+      CHECK_ERROR("VecNorm");
       _residual0 = _r;
     }
 
