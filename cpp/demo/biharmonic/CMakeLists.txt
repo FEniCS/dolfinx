@@ -55,7 +55,14 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
 target_compile_options(
-  ${PROJECT_NAME} PRIVATE $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>
+  ${PROJECT_NAME} PRIVATE
+  $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>
+)
+
+# FFCx-generated C kernels have unused parameters fixed by the UFL ABI
+set_source_files_properties(
+  ${CMAKE_CURRENT_BINARY_DIR}/biharmonic.c
+  PROPERTIES COMPILE_OPTIONS "-Wno-unused-parameter"
 )
 
 # Test targets (used by DOLFINx testing system)

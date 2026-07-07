@@ -56,7 +56,14 @@ else()
   include(CheckCXXCompilerFlag)
   check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
   target_compile_options(
-    ${PROJECT_NAME} PRIVATE $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>
+    ${PROJECT_NAME} PRIVATE
+    $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>
+  )
+
+  # FFCx-generated C kernels have unused parameters fixed by the UFL ABI
+  set_source_files_properties(
+    ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c
+    PROPERTIES COMPILE_OPTIONS "-Wno-unused-parameter"
   )
 
   # Test targets (used by DOLFINx testing system)

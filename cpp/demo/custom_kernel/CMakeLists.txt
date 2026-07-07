@@ -25,7 +25,8 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
 target_compile_options(
-  ${PROJECT_NAME} PRIVATE $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>
+  ${PROJECT_NAME} PRIVATE
+  $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>
 )
 
 # Test targets (used by DOLFINx testing system)

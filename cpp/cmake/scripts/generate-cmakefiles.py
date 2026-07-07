@@ -112,6 +112,12 @@ else()
     $<$<BOOL:${{HAVE_NO_MULTLINE}}>:-Wno-comment -Wall -Wextra -pedantic -Werror>
   )
 
+  # FFCx-generated C kernels have unused parameters fixed by the UFL ABI
+  set_source_files_properties(
+    ${{CMAKE_CURRENT_BINARY_DIR}}/{ufl_c_files}
+    PROPERTIES COMPILE_OPTIONS "-Wno-unused-parameter"
+  )
+
   # Test targets (used by DOLFINx testing system)
   add_test(NAME ${{PROJECT_NAME}}_mpi_2
            COMMAND ${{MPIEXEC_EXECUTABLE}} ${{MPIEXEC_NUMPROC_FLAG}} 2
@@ -182,6 +188,12 @@ check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
 target_compile_options(
   ${{PROJECT_NAME}} PRIVATE
   $<$<BOOL:${{HAVE_NO_MULTLINE}}>:-Wno-comment -Wall -Wextra -pedantic -Werror>
+)
+
+# FFCx-generated C kernels have unused parameters fixed by the UFL ABI
+set_source_files_properties(
+  ${{CMAKE_CURRENT_BINARY_DIR}}/{ufl_c_files}
+  PROPERTIES COMPILE_OPTIONS "-Wno-unused-parameter"
 )
 
 # Test targets (used by DOLFINx testing system)
