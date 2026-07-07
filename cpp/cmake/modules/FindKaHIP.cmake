@@ -4,11 +4,11 @@
 #
 #  KaHIP_FOUND        - system has KaHIP
 #  KaHIP::parhip      - imported target for parhip_interface library
-#  KaHIP::kahip       - imported target for kahip library (if found)
+#  KaHIP::kahip       - imported target for kahip library
 #  KaHIP::KaHIP       - interface target linking all KaHIP components
 #
 #=============================================================================
-# Copyright (C) 2019 Igor A. Baratta
+# Copyright (C) 2026 Igor A. Baratta, Jack S. Hale
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
