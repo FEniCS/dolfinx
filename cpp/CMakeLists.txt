@@ -22,11 +22,6 @@ set(
 )
 
 # ------------------------------------------------------------------------------
-if(WIN32)
-  # Windows requires all symbols to be manually exported. This flag exports all
-  # symbols automatically, as in Unix.
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-endif()
 
 # ------------------------------------------------------------------------------
 # Get GIT changeset, if available
@@ -56,6 +51,9 @@ list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_BINARY_DIR}/dolfinx")
 # ------------------------------------------------------------------------------
 # Configurable options for how we want to build
 include(FeatureSummary)
+include(GNUInstallDirs)
+
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(BUILD_SHARED_LIBS "Build DOLFINx with shared libraries." ON)
 add_feature_info(
@@ -406,21 +404,27 @@ set_package_properties(
 
 # Prepend <dir>/lib/pkgconfig (and <dir>/<arch>/lib/pkgconfig) to PKG_CONFIG_PATH.
 macro(dolfinx_prepend_pkgconfig_path dir_env_var)
+  if(WIN32)
+    set(_sep ";")
+  else()
+    set(_sep ":")
+  endif()
   if(DEFINED ENV{PKG_CONFIG_PATH})
     set(_orig "$ENV{PKG_CONFIG_PATH}")
   else()
     set(_orig "")
   endif()
   if(DEFINED ENV{${dir_env_var}})
-    set(ENV{PKG_CONFIG_PATH} "$ENV{${dir_env_var}}/lib/pkgconfig:${_orig}")
+    set(ENV{PKG_CONFIG_PATH} "$ENV{${dir_env_var}}/lib/pkgconfig${_sep}${_orig}")
     if(DEFINED ENV{PETSC_ARCH})
       set(
         ENV{PKG_CONFIG_PATH}
-        "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
+        "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig${_sep}$ENV{PKG_CONFIG_PATH}"
       )
     endif()
   endif()
   unset(_orig)
+  unset(_sep)
 endmacro()
 
 # ------------------------------------------------------------------------------
@@ -609,7 +613,6 @@ install(
 configure_file(
   "${DOLFINX_SOURCE_DIR}/cmake/templates/cmake_uninstall.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-  IMMEDIATE
   @ONLY
 )
 
