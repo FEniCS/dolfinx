@@ -45,13 +45,13 @@ execute_process(
   COMMAND
     ${Python3_EXECUTABLE} -c
     "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
-  OUTPUT_VARIABLE UFCX_INCLUDE_DIR
+  OUTPUT_VARIABLE _UFCX_INCLUDE_DIR
 )
 # Converts os native to cmake native path type
-cmake_path(SET UFCX_INCLUDE_DIR "${UFCX_INCLUDE_DIR}")
+cmake_path(SET _UFCX_INCLUDE_DIR "${_UFCX_INCLUDE_DIR}")
 
 # Get ufcx.h version
-if(UFCX_INCLUDE_DIR)
+if(_UFCX_INCLUDE_DIR)
   execute_process(
     COMMAND
       ${Python3_EXECUTABLE} -c
@@ -61,15 +61,15 @@ if(UFCX_INCLUDE_DIR)
 endif()
 
 # Compute hash of ufcx.h
-find_file(_UFCX_HEADER "ufcx.h" ${UFCX_INCLUDE_DIR})
+find_file(_UFCX_HEADER "ufcx.h" ${_UFCX_INCLUDE_DIR})
 if(_UFCX_HEADER)
   file(SHA1 ${_UFCX_HEADER} UFCX_SIGNATURE)
 endif()
 
-mark_as_advanced(UFCX_VERSION UFCX_INCLUDE_DIR UFCX_SIGNATURE)
+mark_as_advanced(UFCX_VERSION UFCX_SIGNATURE)
 find_package_handle_standard_args(
   UFCx
-  REQUIRED_VARS UFCX_INCLUDE_DIR UFCX_SIGNATURE UFCX_VERSION
+  REQUIRED_VARS _UFCX_INCLUDE_DIR UFCX_SIGNATURE UFCX_VERSION
   VERSION_VAR UFCX_VERSION
   HANDLE_VERSION_RANGE
   REASON_FAILURE_MESSAGE "UFCx could not be found."
@@ -79,6 +79,6 @@ if(UFCx_FOUND AND NOT TARGET UFCx::UFCx)
   add_library(UFCx::UFCx INTERFACE IMPORTED)
   set_target_properties(
     UFCx::UFCx
-    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${UFCX_INCLUDE_DIR}"
+    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${_UFCX_INCLUDE_DIR}"
   )
 endif()
