@@ -1,9 +1,5 @@
 # ------------------------------------------------------------------------------
-include(GNUInstallDirs)
-
-# ------------------------------------------------------------------------------
-# Declare the library (target) and set C++ standard
-set(CMAKE_CXX_EXTENSIONS OFF)
+# Declare the library (target)
 add_library(dolfinx)
 target_compile_features(dolfinx PUBLIC cxx_std_20)
 
@@ -51,6 +47,7 @@ set_target_properties(
   PROPERTIES
     VERSION ${DOLFINX_VERSION}
     SOVERSION ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR}
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
 if(ENABLE_CLANG_TIDY)
@@ -259,6 +256,7 @@ install(
     ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
     ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/FindUFCx.cmake
+    ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxDeveloperCompilerFlags.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
   COMPONENT Development
 )

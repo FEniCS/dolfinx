@@ -22,11 +22,6 @@ set(
 )
 
 # ------------------------------------------------------------------------------
-if(WIN32)
-  # Windows requires all symbols to be manually exported. This flag exports all
-  # symbols automatically, as in Unix.
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-endif()
 
 # ------------------------------------------------------------------------------
 # Get GIT changeset, if available
@@ -56,6 +51,9 @@ list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_BINARY_DIR}/dolfinx")
 # ------------------------------------------------------------------------------
 # Configurable options for how we want to build
 include(FeatureSummary)
+include(GNUInstallDirs)
+
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(BUILD_SHARED_LIBS "Build DOLFINx with shared libraries." ON)
 add_feature_info(
@@ -94,8 +92,7 @@ add_feature_info(
 # Package builders may want to set this to FALSE.
 option(
   DOLFINX_INSTALL_RPATH_USE_LINK_PATH
-  "Add linker search paths to rpath of dolfinx target. Packagers may want
-	to set FALSE."
+  "Add linker search paths to rpath of dolfinx target. Packagers may want to set FALSE."
   TRUE
 )
 add_feature_info(
@@ -242,57 +239,7 @@ if(NOT CMAKE_BUILD_TYPE)
   )
 endif()
 
-# Check for some compiler flags
-include(CheckCXXCompilerFlag)
-
-# Add some strict compiler checks
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
-
-if(HAVE_PEDANTIC)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
-endif()
-
-# Debug flags
-check_cxx_compiler_flag(-g HAVE_DEBUG)
-if(HAVE_DEBUG)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -g)
-endif()
-
-# Optimisation
-check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
-if(HAVE_O2_OPTIMISATION)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
-endif()
-
-# Enable C++ standard library debugging
-include(CheckCXXSymbolExists)
-
-check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
-check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
-
-if(LIBCPP)
-  list(
-    APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS
-    _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG
-  )
-endif()
-
-if(GLIBCXX)
-  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS _GLIBCXX_ASSERTIONS)
-endif()
-
-# Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
-# library
-if(
-  CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-  AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-  AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
-)
-  list(
-    APPEND DOLFINX_CXX_DEVELOPER_FLAGS
-    -Wno-array-bounds;-Wno-stringop-overflow
-  )
-endif()
+include(DolfinxDeveloperCompilerFlags)
 
 # ------------------------------------------------------------------------------
 # Find required packages
@@ -405,6 +352,34 @@ set_package_properties(
     URL "https://github.com/fenics/ffcx"
 )
 
+# Prepend <dir>/lib/pkgconfig (and <dir>/<arch>/lib/pkgconfig) to PKG_CONFIG_PATH.
+macro(dolfinx_prepend_pkgconfig_path dir_env_var)
+  if(WIN32)
+    set(_sep ";")
+  else()
+    set(_sep ":")
+  endif()
+  if(DEFINED ENV{PKG_CONFIG_PATH})
+    set(_orig "$ENV{PKG_CONFIG_PATH}")
+  else()
+    set(_orig "")
+  endif()
+  if(DEFINED ENV{${dir_env_var}})
+    set(
+      ENV{PKG_CONFIG_PATH}
+      "$ENV{${dir_env_var}}/lib/pkgconfig${_sep}${_orig}"
+    )
+    if(DEFINED ENV{PETSC_ARCH})
+      set(
+        ENV{PKG_CONFIG_PATH}
+        "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig${_sep}$ENV{PKG_CONFIG_PATH}"
+      )
+    endif()
+  endif()
+  unset(_orig)
+  unset(_sep)
+endmacro()
+
 # ------------------------------------------------------------------------------
 # Find optional packages
 if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
@@ -415,25 +390,7 @@ endif()
 
 if(DOLFINX_ENABLE_PETSC)
   find_package(PkgConfig REQUIRED)
-
-  if(DEFINED ENV{PKG_CONFIG_PATH})
-    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
-  else()
-    set(ENV_PKG_CONFIG_PATH "")
-  endif()
-
-  if(DEFINED ENV{PETSC_DIR})
-    set(
-      ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/lib/pkgconfig:${ENV_PKG_CONFIG_PATH}"
-    )
-    if(DEFINED ENV{PETSC_ARCH})
-      set(
-        ENV{PKG_CONFIG_PATH}
-        "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-      )
-    endif()
-  endif()
+  dolfinx_prepend_pkgconfig_path(PETSC_DIR)
 
   if(_REQUIRE_PETSC)
     pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
@@ -456,25 +413,7 @@ endif()
 
 if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   find_package(PkgConfig REQUIRED)
-
-  if(DEFINED ENV{PKG_CONFIG_PATH})
-    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
-  else()
-    set(ENV_PKG_CONFIG_PATH "")
-  endif()
-
-  if(DEFINED ENV{SLEPC_DIR})
-    set(
-      ENV{PKG_CONFIG_PATH}
-      "$ENV{SLEPC_DIR}/lib/pkgconfig:${ENV_PKG_CONFIG_PATH}"
-    )
-    if(DEFINED ENV{PETSC_ARCH})
-      set(
-        ENV{PKG_CONFIG_PATH}
-        "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-      )
-    endif()
-  endif()
+  dolfinx_prepend_pkgconfig_path(SLEPC_DIR)
 
   if(_REQUIRE_SLEPC)
     pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
@@ -538,26 +477,8 @@ endif()
 
 if(DOLFINX_ENABLE_SUPERLU_DIST)
   find_package(PkgConfig REQUIRED)
-
-  if(DEFINED ENV{PKG_CONFIG_PATH})
-    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
-  else()
-    set(ENV_PKG_CONFIG_PATH "")
-  endif()
-
   # If PETSc was built with SuperLU_DIST then pickup install there
-  if(DEFINED ENV{PETSC_DIR})
-    set(
-      ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/lib/pkgconfig:${ENV_PKG_CONFIG_PATH}"
-    )
-    if(DEFINED ENV{PETSC_ARCH})
-      set(
-        ENV{PKG_CONFIG_PATH}
-        "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-      )
-    endif()
-  endif()
+  dolfinx_prepend_pkgconfig_path(PETSC_DIR)
 
   if(_REQUIRE_SUPERLU_DIST)
     pkg_search_module(SUPERLU_DIST REQUIRED IMPORTED_TARGET superlu_dist)
@@ -645,7 +566,6 @@ install(
 configure_file(
   "${DOLFINX_SOURCE_DIR}/cmake/templates/cmake_uninstall.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-  IMMEDIATE
   @ONLY
 )
 
