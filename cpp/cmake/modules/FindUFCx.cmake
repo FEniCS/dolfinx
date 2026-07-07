@@ -2,13 +2,13 @@
 # - Try to find UFCx by interrogating the Python module FFCx
 # Once done this will define
 #
-#  UFCX_FOUND        - system has UFCx
-#  UFCX_INCLUDE_DIRS - include directories for UFCx
-#  UFCX_SIGNATURE    - signature for UFCx
-#  UFCX_VERSION      - version for UFCx
+#  UFCx_FOUND     - system has UFCx
+#  UFCx::UFCx     - imported interface target
+#  UFCX_SIGNATURE - SHA1 hash of ufcx.h
+#  UFCX_VERSION   - version for UFCx
 #
 #=============================================================================
-# Copyright (C) 2010-2021 Johannes Ring and Garth N. Wells
+# Copyright (C) 2010-2026 Johannes Ring, Garth N. Wells, Jack S. Hale
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,14 +45,13 @@ execute_process(
   COMMAND
     ${Python3_EXECUTABLE} -c
     "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
-  OUTPUT_VARIABLE UFCX_INCLUDE_DIR
+  OUTPUT_VARIABLE _UFCX_INCLUDE_DIR
 )
 # Converts os native to cmake native path type
-cmake_path(SET UFCX_INCLUDE_DIR "${UFCX_INCLUDE_DIR}")
+cmake_path(SET _UFCX_INCLUDE_DIR "${_UFCX_INCLUDE_DIR}")
 
 # Get ufcx.h version
-if(UFCX_INCLUDE_DIR)
-  set(UFCX_INCLUDE_DIRS ${UFCX_INCLUDE_DIR} CACHE STRING "Where to find ufcx.h")
+if(_UFCX_INCLUDE_DIR)
   execute_process(
     COMMAND
       ${Python3_EXECUTABLE} -c
@@ -62,16 +61,24 @@ if(UFCX_INCLUDE_DIR)
 endif()
 
 # Compute hash of ufcx.h
-find_file(_UFCX_HEADER "ufcx.h" ${UFCX_INCLUDE_DIR})
+find_file(_UFCX_HEADER "ufcx.h" ${_UFCX_INCLUDE_DIR})
 if(_UFCX_HEADER)
   file(SHA1 ${_UFCX_HEADER} UFCX_SIGNATURE)
 endif()
 
-mark_as_advanced(UFCX_VERSION UFCX_INCLUDE_DIRS UFCX_SIGNATURE)
+mark_as_advanced(UFCX_VERSION UFCX_SIGNATURE)
 find_package_handle_standard_args(
   UFCx
-  REQUIRED_VARS UFCX_INCLUDE_DIRS UFCX_SIGNATURE UFCX_VERSION
+  REQUIRED_VARS _UFCX_INCLUDE_DIR UFCX_SIGNATURE UFCX_VERSION
   VERSION_VAR UFCX_VERSION
   HANDLE_VERSION_RANGE
   REASON_FAILURE_MESSAGE "UFCx could not be found."
 )
+
+if(UFCx_FOUND AND NOT TARGET UFCx::UFCx)
+  add_library(UFCx::UFCx INTERFACE IMPORTED)
+  set_target_properties(
+    UFCx::UFCx
+    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${_UFCX_INCLUDE_DIR}"
+  )
+endif()

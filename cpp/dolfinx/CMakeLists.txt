@@ -110,10 +110,10 @@ else()
 endif()
 
 # UFCx
-if(TARGET ufcx::ufcx)
+if(TARGET UFCx::UFCx)
+  target_link_libraries(dolfinx PUBLIC UFCx::UFCx)
+elseif(TARGET ufcx::ufcx)
   target_link_libraries(dolfinx PUBLIC ufcx::ufcx)
-else()
-  target_include_directories(dolfinx SYSTEM PUBLIC ${UFCX_INCLUDE_DIRS})
 endif()
 
 # Basix
@@ -176,10 +176,9 @@ if(DOLFINX_ENABLE_PARMETIS AND ParMETIS_FOUND)
 endif()
 
 # KaHIP
-if(DOLFINX_ENABLE_KAHIP AND KAHIP_FOUND)
+if(DOLFINX_ENABLE_KAHIP AND KaHIP_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_KAHIP)
-  target_link_libraries(dolfinx PRIVATE ${KAHIP_LIBRARIES})
-  target_include_directories(dolfinx SYSTEM PRIVATE ${KAHIP_INCLUDE_DIRS})
+  target_link_libraries(dolfinx PRIVATE KaHIP::KaHIP)
 endif()
 
 # SuperLU_DIST
@@ -259,6 +258,7 @@ install(
   FILES
     ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
     ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
+    ${DOLFINX_SOURCE_DIR}/cmake/modules/FindUFCx.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
   COMPONENT Development
 )
