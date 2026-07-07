@@ -133,7 +133,7 @@ elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
   cmake_push_check_state(RESET)
   set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR})
   set(CMAKE_REQUIRED_LIBRARIES MPI::MPI_CXX ${_parmetis_link_libraries})
-  check_cxx_source_runs(
+  check_cxx_source_compiles(
     "
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
@@ -156,7 +156,7 @@ int main()
     PARMETIS_TEST_RUNS
   )
   if(NOT PARMETIS_TEST_RUNS)
-    message(WARNING "ParMETIS: Simple test executable did not run.")
+    message(WARNING "ParMETIS: Simple test executable did not compile.")
   endif()
   cmake_pop_check_state()
 endif()
