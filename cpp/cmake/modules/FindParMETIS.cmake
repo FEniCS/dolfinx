@@ -138,9 +138,16 @@ return 0;
 
 int main()
 {
-// FIXME: Find a simple but sensible test for ParMETIS
-
-return 0;
+  MPI_Init(NULL, NULL);
+  MPI_Comm comm = MPI_COMM_WORLD;
+  idx_t vtxdist[2] = {0, 1}, xadj[2] = {0, 0}, adjncy[1] = {0};
+  idx_t ncon = 1, nparts = 1, wgtflag = 0, numflag = 0, edgecut = 0;
+  idx_t options[3] = {0, 0, 0}, part[1] = {0};
+  real_t tpwgts[1] = {1.0}, ubvec[1] = {1.05};
+  ParMETIS_V3_PartKway(vtxdist, xadj, adjncy, NULL, NULL, &wgtflag, &numflag,
+                       &ncon, &nparts, tpwgts, ubvec, options, &edgecut, part, &comm);
+  MPI_Finalize();
+  return 0;
 }
 "
     PARMETIS_TEST_RUNS
@@ -154,7 +161,7 @@ endif()
 # Standard package handling
 find_package_handle_standard_args(
   ParMETIS
-  REQUIRED_VARS PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR
+  REQUIRED_VARS PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR PARMETIS_TEST_RUNS
   VERSION_VAR ParMETIS_VERSION
   FAIL_MESSAGE "ParMETIS could not be found/configured."
 )
