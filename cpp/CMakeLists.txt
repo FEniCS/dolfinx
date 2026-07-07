@@ -601,29 +601,6 @@ if(BUILD_TESTING)
 endif()
 
 # ------------------------------------------------------------------------------
-# Generate and install helper file dolfinx.conf
-
-# FIXME: Can CMake provide the library path name variable?
-if(APPLE)
-  set(OS_LIBRARY_PATH_NAME "DYLD_LIBRARY_PATH")
-else()
-  set(OS_LIBRARY_PATH_NAME "LD_LIBRARY_PATH")
-endif()
-
-# FIXME: not cross-platform compatible
-# Create and install dolfinx.conf file
-configure_file(
-  ${DOLFINX_SOURCE_DIR}/cmake/templates/dolfinx.conf.in
-  ${CMAKE_BINARY_DIR}/dolfinx.conf
-  @ONLY
-)
-install(
-  FILES ${CMAKE_BINARY_DIR}/dolfinx.conf
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/dolfinx
-  COMPONENT Development
-)
-
-# ------------------------------------------------------------------------------
 # Install the demo source files
 install(
   DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/demo
