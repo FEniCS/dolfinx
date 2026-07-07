@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFINx
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.26)
 
 if(POLICY CMP0167)
   cmake_policy(SET CMP0167 NEW) # Boost CONFIG mode
@@ -549,7 +549,7 @@ endif()
 feature_summary(WHAT ALL)
 
 # Check that at least one graph partitioner has been found
-if(NOT SCOTCH_FOUND AND NOT PARMETIS_FOUND AND NOT KaHIP_FOUND)
+if(NOT SCOTCH_FOUND AND NOT ParMETIS_FOUND AND NOT KaHIP_FOUND)
   message(
     FATAL_ERROR
     "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required."
