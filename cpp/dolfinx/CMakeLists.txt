@@ -256,6 +256,7 @@ install(
     ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
     ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/FindUFCx.cmake
+    ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxDeveloperCompilerFlags.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
   COMPONENT Development
 )
