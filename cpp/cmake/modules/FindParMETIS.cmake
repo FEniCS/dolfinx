@@ -44,6 +44,8 @@ cmake_minimum_required(VERSION 3.26)
 include(CMakePushCheckState)
 include(CheckCXXSourceRuns)
 
+find_package(MPI 3 REQUIRED)
+
 find_library(
   PARMETIS_LIBRARY
   parmetis
