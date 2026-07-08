@@ -11,8 +11,11 @@
 
 #include "Vector.h"
 #include "utils.h"
+#include <algorithm>
 #include <boost/lexical_cast.hpp>
+#include <cmath>
 #include <functional>
+#include <limits>
 #include <optional>
 #include <petscksp.h>
 #include <petscmat.h>
@@ -316,6 +319,34 @@ public:
         petsc::error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
       return ierr;
+    };
+  }
+
+  /// @brief Return a function for setting values in the matrix A that
+  /// clamps negligible entries to zero before insertion.  ///
+  /// @note The maximum is taken over each inserted block rather than the
+  /// whole matrix, so the tolerance is relative to the local block.
+  /// @param[in] A The matrix to set values in
+  /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
+  /// @param[in] C Multiplier for the relative clamping tolerance. Larger
+  /// values clamp more aggressively.
+  static auto set_fn_clamp(Mat A, InsertMode mode, double C = 1000)
+  {
+    return [set = set_fn(A, mode), C, buffer = std::vector<PetscScalar>()](
+               std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> cols,
+               std::span<const PetscScalar> vals) mutable -> int
+    {
+      buffer.assign(vals.begin(), vals.end());
+      PetscReal max_val = 0;
+      for (PetscScalar v : buffer)
+        max_val = std::max(max_val, std::abs(v));
+      const PetscReal atol = static_cast<PetscReal>(C)
+                             * std::numeric_limits<PetscReal>::epsilon()
+                             * max_val;
+      std::ranges::transform(buffer, buffer.begin(), [atol](PetscScalar x)
+                             { return std::abs(x) < atol ? PetscScalar(0) : x; });
+      return set(rows, cols, buffer);
     };
   }
 

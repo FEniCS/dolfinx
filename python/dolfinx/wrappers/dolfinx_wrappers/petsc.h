@@ -128,7 +128,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         dolfinx::fem::discrete_gradient<T, U>(
             *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
             {*V1.element(), *V1.dofmap()},
-            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
+            dolfinx::la::petsc::Matrix::set_fn_clamp(A, INSERT_VALUES));
         return A;
       },
       nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));

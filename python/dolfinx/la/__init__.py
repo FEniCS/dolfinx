@@ -224,6 +224,47 @@ class MatrixCSR(Generic[Scalar]):
         """Set a block of values in the matrix."""
         self._cpp_object.set(x, rows, cols, bs)
 
+    def add_clamped(
+        self,
+        x: npt.NDArray[Scalar],
+        rows: npt.NDArray[np.int32],
+        cols: npt.NDArray[np.int32],
+        bs: int = 1,
+        C: float = 1000.0,
+    ) -> None:
+        """Add a block of values in the matrix, clamping negligible
+        entries to zero.
+
+        Args:
+            x: Block of values to add.
+            rows: Row indices of the block.
+            cols: Column indices of the block.
+            bs: Block size of the data.
+            C: Multiplier for the relative clamping tolerance.
+        """
+
+        self._cpp_object.add_clamped(x, rows, cols, bs, C)
+
+    def set_clamped(
+        self,
+        x: npt.NDArray[Scalar],
+        rows: npt.NDArray[np.int32],
+        cols: npt.NDArray[np.int32],
+        bs: int = 1,
+        C: float = 1000.0,
+    ) -> None:
+        """Set a block of values in the matrix, clamping negligible
+        entries to zero.
+
+        Args:
+            x: Block of values to set.
+            rows: Row indices of the block.
+            cols: Column indices of the block.
+            bs: Block size of the data.
+            C: Multiplier for the relative clamping tolerance.
+        """
+        self._cpp_object.set_clamped(x, rows, cols, bs, C)
+
     def set_value(self, x: Scalar) -> None:
         """Set all non-zero entries to a value.
 
