@@ -54,8 +54,13 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
 target_compile_options(
-  ${PROJECT_NAME} PRIVATE
-  $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>
+  ${PROJECT_NAME}
+  PRIVATE
+    $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment
+    -Wall
+    -Wextra
+    -pedantic
+    -Werror>
 )
 
 # FFCx-generated C kernels have unused parameters fixed by the UFL ABI
@@ -65,10 +70,16 @@ set_source_files_properties(
 )
 
 # Test targets (used by DOLFINx testing system)
-add_test(NAME ${PROJECT_NAME}_mpi_2
-         COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2
-                 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS})
-add_test(NAME ${PROJECT_NAME}_mpi_3
-         COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3
-                 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS})
+add_test(
+  NAME ${PROJECT_NAME}_mpi_2
+  COMMAND
+    ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
+    $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS}
+)
+add_test(
+  NAME ${PROJECT_NAME}_mpi_3
+  COMMAND
+    ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS}
+    $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS}
+)
 add_test(NAME ${PROJECT_NAME}_serial COMMAND $<TARGET_FILE:${PROJECT_NAME}>)

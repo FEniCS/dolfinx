@@ -56,7 +56,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "Developer")
   set_target_properties(dolfinx::dolfinx PROPERTIES SYSTEM OFF)
 endif()
 
-get_target_property(_dolfinx_defs dolfinx::dolfinx INTERFACE_COMPILE_DEFINITIONS)
+get_target_property(
+  _dolfinx_defs
+  dolfinx::dolfinx
+  INTERFACE_COMPILE_DEFINITIONS
+)
 if("HAS_SUPERLU_DIST" IN_LIST _dolfinx_defs)
   # SuperLU_DIST Python interface requires the superlu_defs.h header for int_t.
   find_package(PkgConfig)
