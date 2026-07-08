@@ -15,6 +15,7 @@ extern "C"
 }
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
@@ -402,8 +403,12 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
       _gridinfo(
           [comm = _superlu_matA->comm()]
           {
-            int nprow = dolfinx::MPI::size(comm);
-            int npcol = 1;
+            // Computes a balanced 2D process grid - see PETSc interface
+            int size = dolfinx::MPI::size(comm);
+            int nprow = static_cast<int>(std::sqrt(static_cast<double>(size)));
+            while (size % nprow != 0)
+              --nprow;
+            int npcol = size / nprow;
             std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> p(
                 new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{});
             superlu_gridinit(comm, nprow, npcol, p.get());
