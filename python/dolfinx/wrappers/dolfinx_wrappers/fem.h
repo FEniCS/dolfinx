@@ -675,9 +675,8 @@ void declare_objects(nb::module_& m, std::string type)
                  argument_space)
           {
             auto tabulate_expression_ptr
-                = (void (*)(T*, const T*, const T*,
-                            const U*,
-                            const int*, const std::uint8_t*, void*))fn_addr;
+                = (void (*)(T*, const T*, const T*, const U*, const int*,
+                            const std::uint8_t*, void*))fn_addr;
             new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
                 {X.shape(0), X.shape(1)}, tabulate_expression_ptr, value_shape,
@@ -768,9 +767,8 @@ void declare_form(nb::module_& m, std::string type)
               for (auto& [id, ptr, e, c] : kernels)
               {
                 auto kn_ptr
-                    = (void (*)(T*, const T*, const T*,
-                                const U*,
-                                const int*, const std::uint8_t*, void*))ptr;
+                    = (void (*)(T*, const T*, const T*, const U*, const int*,
+                                const std::uint8_t*, void*))ptr;
                 _integrals.insert(
                     {{type, id, 0},
                      {kn_ptr,
