@@ -728,11 +728,9 @@ void declare_objects(nb::module_& m, std::string type)
       "Create Expression from a pointer to ufc_form.");
 }
 
-template <typename T>
+template <typename T, std::floating_point U = dolfinx::scalar_value_t<T>>
 void declare_form(nb::module_& m, std::string type)
 {
-  using U = typename dolfinx::scalar_value_t<T>;
-
   // dolfinx::fem::Form
   std::string pyclass_name_form = std::string("Form_") + type;
   nb::class_<dolfinx::fem::Form<T, U>>(m, pyclass_name_form.c_str(),
@@ -758,7 +756,7 @@ void declare_form(nb::module_& m, std::string type)
              std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
           {
             std::map<std::tuple<dolfinx::fem::IntegralType, int, int>,
-                     dolfinx::fem::integral_data<T>>
+                     dolfinx::fem::integral_data<T, U>>
                 _integrals;
 
             // Loop over kernel for each entity type
