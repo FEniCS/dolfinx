@@ -189,20 +189,16 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
+      - name: Configure matplotlib for CI
+        run: |
+          mkdir -p ~/.config/matplotlib
+          printf 'axes.unicode_minus: False\n' > ~/.config/matplotlib/matplotlibrc
+
       - name: Run Python demos
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate py
           spack load gcc
-          # Work around a FreeType "raster overflow" crash (FT_Render_Glyph
-          # error 0x62) hit in this Spack/Ubuntu environment when rendering
-          # the Unicode minus sign glyph for negative tick labels / log-scale
-          # exponents (e.g. demo_lagrange-variants.py, demo_tnt-elements.py).
-          # Fall back to the plain ASCII hyphen-minus instead, scoped to this
-          # CI job only via MATPLOTLIBRC, so demo output elsewhere (docs
-          # builds, other CI, local runs) is unaffected.
-          printf 'axes.unicode_minus: False\n' > "$RUNNER_TEMP/matplotlibrc-ci"
-          export MATPLOTLIBRC="$RUNNER_TEMP/matplotlibrc-ci"
           python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
           python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
 
