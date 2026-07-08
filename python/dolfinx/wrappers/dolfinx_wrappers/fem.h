@@ -58,17 +58,6 @@ namespace dolfinx_wrappers
 namespace nb = nanobind;
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
-template <typename T, typename = void>
-struct geom_type
-{
-  typedef T value_type;
-};
-template <typename T>
-struct geom_type<T, std::void_t<typename T::value_type>>
-{
-  typedef typename T::value_type value_type;
-};
-
 // Copy a container of pointers to a
 // std::vector<std::reference_wrapper<T>>
 auto ptr_to_ref_wrapper_vec(auto& x)

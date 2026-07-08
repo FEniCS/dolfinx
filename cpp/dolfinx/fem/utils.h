@@ -568,7 +568,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+        impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
         if (!k)
         {
           throw std::runtime_error(
@@ -648,7 +648,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+        impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
         assert(k);
 
         // Build list of entities to assembler over
@@ -774,7 +774,7 @@ Form<T, U> create_form_factory(
               active_coeffs.push_back(j);
           }
 
-          impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+          impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
 
           // Build list of entities to assembler over
           auto e_to_c = topology->connectivity(dim, tdim);
