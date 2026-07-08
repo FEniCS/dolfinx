@@ -118,7 +118,7 @@ if(@ADIOS2_FOUND@)
   )
 endif()
 
-if(NOT TARGET dolfinx)
+if(NOT TARGET dolfinx::dolfinx)
   include("${CMAKE_CURRENT_LIST_DIR}/DOLFINXTargets.cmake")
 endif()
 

@@ -55,7 +55,7 @@ add_executable(
   ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
-target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx)
+target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx::dolfinx)
 target_compile_features(unittests PRIVATE cxx_std_20 c_std_17)
 
 # NOTE: Fixes when using Catch2 <= 3.13 with Clang 22 and derivatives.

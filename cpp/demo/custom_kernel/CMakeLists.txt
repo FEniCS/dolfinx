@@ -9,12 +9,12 @@ project(${PROJECT_NAME} LANGUAGES C CXX)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(NOT TARGET dolfinx)
+if(NOT TARGET dolfinx::dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
 add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx)
+target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx::dolfinx)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 # Set C++20 standard
