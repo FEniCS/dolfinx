@@ -1,6 +1,6 @@
 install(
   CODE
-    "MESSAGE(
+    "message(
 \"----------------------------------------------------------------------------
 DOLFINx has now been installed in
 

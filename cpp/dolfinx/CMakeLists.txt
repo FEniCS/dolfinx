@@ -1,11 +1,8 @@
 # ------------------------------------------------------------------------------
-include(GNUInstallDirs)
-
-# ------------------------------------------------------------------------------
-# Declare the library (target) and set C++ standard
-set(CMAKE_CXX_EXTENSIONS OFF)
+# Declare the library (target)
 add_library(dolfinx)
 target_compile_features(dolfinx PUBLIC cxx_std_20)
+set_target_properties(dolfinx PROPERTIES CXX_EXTENSIONS OFF)
 
 # ------------------------------------------------------------------------------
 # Add source files to the target
@@ -51,6 +48,7 @@ set_target_properties(
   PROPERTIES
     VERSION ${DOLFINX_VERSION}
     SOVERSION ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR}
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
 if(ENABLE_CLANG_TIDY)
@@ -170,10 +168,9 @@ if(DOLFINX_ENABLE_SCOTCH AND SCOTCH_FOUND)
 endif()
 
 # ParMETIS
-if(DOLFINX_ENABLE_PARMETIS AND PARMETIS_FOUND)
+if(DOLFINX_ENABLE_PARMETIS AND ParMETIS_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_PARMETIS)
-  target_link_libraries(dolfinx PRIVATE ${PARMETIS_LIBRARIES})
-  target_include_directories(dolfinx SYSTEM PRIVATE ${PARMETIS_INCLUDE_DIRS})
+  target_link_libraries(dolfinx PRIVATE ParMETIS::ParMETIS)
 endif()
 
 # KaHIP
@@ -260,6 +257,7 @@ install(
     ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfig.cmake
     ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/FindUFCx.cmake
+    ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxDeveloperCompilerFlags.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
   COMPONENT Development
 )
