@@ -176,8 +176,7 @@ T assemble_scalar(
                    std::pair<std::span<const T>, int>>& coefficients)
 {
   using mdspanx3_t
-      = md::mdspan<const scalar_value_t<T>,
-                   md::extents<std::size_t, md::dynamic_extent, 3>>;
+      = md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>>;
 
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
@@ -191,19 +190,9 @@ T assemble_scalar(
     // Geometry dofmap and data
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> x_dofmap
         = mesh->geometry().dofmaps().at(cell_type_idx);
-    if constexpr (std::is_same_v<U, scalar_value_t<T>>)
-    {
-      val += impl::assemble_scalar(M, x_dofmap,
-                                   mdspanx3_t(x.data(), x.size() / 3, 3),
-                                   constants, coefficients, cell_type_idx);
-    }
-    else
-    {
-      std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
-      val += impl::assemble_scalar(M, x_dofmap,
-                                   mdspanx3_t(_x.data(), _x.size() / 3, 3),
-                                   constants, coefficients, cell_type_idx);
-    }
+    val += impl::assemble_scalar(M, x_dofmap,
+                                 mdspanx3_t(x.data(), x.size() / 3, 3),
+                                 constants, coefficients, cell_type_idx);
   }
   return val;
 }
@@ -469,25 +458,14 @@ void assemble_matrix(
 {
   common::Timer t_assm("[Assemble Matrix]");
   using mdspanx3_t
-      = md::mdspan<const scalar_value_t<T>,
-                   md::extents<std::size_t, md::dynamic_extent, 3>>;
+      = md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>>;
 
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
   std::span x = mesh->geometry().x();
-  if constexpr (std::is_same_v<U, scalar_value_t<T>>)
-  {
-    impl::assemble_matrix<T, U, LiftingMode>(
-        mat_add, a, mdspanx3_t(x.data(), x.size() / 3, 3), constants,
-        coefficients, dof_marker0, dof_marker1);
-  }
-  else
-  {
-    std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
-    impl::assemble_matrix<T, U, LiftingMode>(
-        mat_add, a, mdspanx3_t(_x.data(), _x.size() / 3, 3), constants,
-        coefficients, dof_marker0, dof_marker1);
-  }
+  impl::assemble_matrix<T, U, LiftingMode>(
+      mat_add, a, mdspanx3_t(x.data(), x.size() / 3, 3), constants,
+      coefficients, dof_marker0, dof_marker1);
 }
 
 /// @brief Assemble bilinear form into a matrix

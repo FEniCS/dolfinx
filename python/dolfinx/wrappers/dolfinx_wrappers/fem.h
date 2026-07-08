@@ -333,11 +333,9 @@ void declare_function_space(nb::module_& m, std::string type)
 }
 
 // Declare DirichletBC objects for type T
-template <typename T>
+template <typename T, std::floating_point U = dolfinx::scalar_value_t<T>>
 void declare_objects(nb::module_& m, std::string type)
 {
-  using U = typename dolfinx::scalar_value_t<T>;
-
   // dolfinx::fem::DirichletBC
   std::string pyclass_name = std::string("DirichletBC_") + type;
   nb::class_<dolfinx::fem::DirichletBC<T, U>> dirichletbc(

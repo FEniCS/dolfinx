@@ -310,7 +310,9 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 template <MDSpan U, MDSpan V, dolfinx::scalar T>
 void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 {
-  using X = typename dolfinx::scalar_value_t<T>;
+  // Geometry (real) scalar type, taken from the interpolation operator Pi
+  // rather than scalar_value_t<T> so it is independent of the value scalar T.
+  using X = typename std::remove_cvref_t<U>::value_type;
 
   // Compute coefficients = Pi * x (matrix-vector multiply)
   if (bs == 1)
@@ -421,7 +423,7 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
   auto [i_m, im_shape] = element1->create_interpolation_operator(*element0);
 
   // Iterate over mesh and interpolate on each cell
-  using X = typename dolfinx::scalar_value_t<T>;
+  using X = U;
   assert(cells0.size() == cells1.size());
   for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
        cell0_it != cells0.end() and cell1_it != cells1.end();
@@ -663,7 +665,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
         coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
 
     // Evaluate v at the interpolation points (physical space values)
-    using X = typename dolfinx::scalar_value_t<T>;
+    using X = U;
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       for (int k = 0; k < bs0; ++k)
