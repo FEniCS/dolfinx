@@ -687,7 +687,7 @@ void declare_objects(nb::module_& m, std::string type)
           {
             auto tabulate_expression_ptr
                 = (void (*)(T*, const T*, const T*,
-                            const typename geom_type<T>::value_type*,
+                            const U*,
                             const int*, const std::uint8_t*, void*))fn_addr;
             new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
@@ -780,7 +780,7 @@ void declare_form(nb::module_& m, std::string type)
               {
                 auto kn_ptr
                     = (void (*)(T*, const T*, const T*,
-                                const typename geom_type<T>::value_type*,
+                                const U*,
                                 const int*, const std::uint8_t*, void*))ptr;
                 _integrals.insert(
                     {{type, id, 0},
