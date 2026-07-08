@@ -1266,7 +1266,7 @@ def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:
     """Compute the indices of exterior facets that are owned by the caller.
 
     An exterior facet (co-dimension 1) is one that is connected globally
-    to only one cell of co-dimension 0).
+    to only one cell (co-dimension 0).
 
     Note:
         This is a collective operation that should be called on all

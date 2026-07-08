@@ -27,12 +27,12 @@ jobs:
       PYTEST_ADDOPTS: "-W error"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: |
           cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
-          echo DYLD_LIBRARY_PATH=/usr/local/lib >> $GITHUB_ENV
+          echo "DYLD_LIBRARY_PATH=/usr/local/lib:${PETSC_DIR}/${PETSC_ARCH}/lib:${DYLD_LIBRARY_PATH}" >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -52,7 +52,7 @@ jobs:
 
       - name: Restore cache PETSc and petsc4py
         id: cache-petsc-restore
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: |
             ${{ env.PETSC_DIR }}
@@ -86,7 +86,7 @@ jobs:
 
       - name: Save cache PETSc and petsc4py
         id: cache-petsc-save
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: |
             ${{ env.PETSC_DIR }}
