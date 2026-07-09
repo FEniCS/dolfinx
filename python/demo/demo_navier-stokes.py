@@ -242,7 +242,7 @@ def f_expr(x):
 
 # We define some simulation parameters
 
-n = 16
+n_el = 16
 num_time_steps = 25
 t_end = 10
 Re = 25  # Reynolds Number
@@ -254,7 +254,7 @@ k = 1  # Polynomial degree
 # interpolate into for artifact free visualisation.
 
 # +
-msh = mesh.create_unit_square(MPI.COMM_WORLD, n, n)
+msh = mesh.create_unit_square(MPI.COMM_WORLD, n_el, n_el)
 
 # Function spaces for the velocity and for the pressure
 V = fem.functionspace(msh, ("Raviart-Thomas", k + 1))
