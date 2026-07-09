@@ -97,7 +97,7 @@ values = element.tabulate(0, lattice)[0, :, :]
 if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
     for i in range(values.shape[1]):
         plt.plot(lattice, values[:, i])
-    plt.plot(element._element.points, [0] * 11, "ko")
+    plt.plot(element.basix_element.points, [0] * 11, "ko")
     plt.ylim((-1, 6))
     plt.savefig("demo_lagrange_variants_gll_10.png")
     plt.clf()
