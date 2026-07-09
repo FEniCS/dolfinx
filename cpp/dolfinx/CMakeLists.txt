@@ -273,6 +273,7 @@ install(
 # Define packages that should be required by pkg-config file
 set(PKG_REQUIRES "spdlog")
 list(APPEND PKG_REQUIRES "basix")
+list(APPEND PKG_REQUIRES "pugixml")
 
 if(TARGET PkgConfig::PETSC)
   list(APPEND PKG_REQUIRES ${PETSC_MODULE_NAME})
