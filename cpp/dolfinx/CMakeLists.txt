@@ -346,7 +346,10 @@ foreach(_target ${PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES})
     # Special handling for ADIOS2 and HDF5 imported targets which expose
     # IMPORTED_LOCATION_RELEASE (or IMPORTED_LOCATION) rather than
     # INTERFACE_LINK_LIBRARIES
-    if("${_target}" MATCHES "^.*adios2::.*$" OR "${_target}" MATCHES "^.*hdf5::.*$")
+    if(
+      "${_target}" MATCHES "^.*adios2::.*$"
+      OR "${_target}" MATCHES "^.*hdf5::.*$"
+    )
       get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
 
       if(NOT _libs)
