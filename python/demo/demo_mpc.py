@@ -117,7 +117,7 @@ v = TrialFunction(V_new)
 a = form(inner(σ(u), grad(v)) * dx)
 
 f = Function(V_new)
-f.interpolate(lambda x: [(x[0] - 0.1) ** 2, np.zeros_like(x[1])])
+f.interpolate(lambda x: [(x[0] - 0.1) ** 2 + (x[1] - 0.5) ** 2, np.zeros_like(x[1])])
 L = form(inner(f, v) * dx)
 
 bc = dirichletbc(value=np.array([0.0, 0.0], dtype=np.float64), dofs=dofsbc, V=V_new)
@@ -128,22 +128,14 @@ sp = create_sparsity_pattern(a)
 dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc)
 sp.finalize()
 
-from dolfinx.fem.petsc import create_matrix
-
-A = create_matrix(a)
-print(A)
-A.setOption(PETSc.Mat.Option.NEW_NONZERO_LOCATIONS, True)
-
+A = dolfinx.cpp.la.petsc.create_matrix(mesh.comm, sp)
 dolfinx.cpp.fem.petsc.assemble_matrix_mpc(mpc, A, a._cpp_object, [bc._cpp_object])
-# dolfinx.fem.assemble_matrix(A, a, [bc])
 A.assemble()
 dolfinx.cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], [bc._cpp_object], 1.0)
 A.assemble()
 
-
 offsets, ref_dof, ref_coeff = mpc.constraints()
 bs = V_new.dofmap.bs
-print(len(offsets), offsets)
 for i in range(V_new.dofmap.index_map.size_local * bs):
     if offsets[i + 1] - offsets[i] > 0:
         print(
