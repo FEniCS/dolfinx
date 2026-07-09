@@ -321,6 +321,37 @@ void declare_function_space(nb::module_& m, std::string type)
   }
 }
 
+template <typename T>
+void declare_constant(nb::module_& m, std::string type)
+{
+  // dolfinx::fem::Constant
+  std::string pyclass_name_constant = std::string("Constant_") + type;
+  nb::class_<dolfinx::fem::Constant<T>>(
+      m, pyclass_name_constant.c_str(),
+      "Value constant with respect to integration domain")
+      .def(
+          "__init__",
+          [](dolfinx::fem::Constant<T>* cp,
+             nb::ndarray<const T, nb::c_contig> c)
+          {
+            std::vector<std::size_t> shape(c.shape_ptr(),
+                                           c.shape_ptr() + c.ndim());
+            new (cp)
+                dolfinx::fem::Constant<T>(std::span(c.data(), c.size()), shape);
+          },
+          nb::arg("c").noconvert(), "Create a constant from a value array")
+      .def_prop_ro("dtype", [](const dolfinx::fem::Constant<T>&)
+                   { return dolfinx_wrappers::numpy_dtype_v<T>; })
+      .def_prop_ro(
+          "value",
+          [](dolfinx::fem::Constant<T>& self)
+          {
+            return nb::ndarray<T, nb::numpy>(
+                self.value.data(), self.shape.size(), self.shape.data());
+          },
+          nb::rv_policy::reference_internal);
+}
+
 // Declare DirichletBC objects for type T
 template <typename T, std::floating_point U = dolfinx::scalar_value_t<T>>
 void declare_objects(nb::module_& m, std::string type)
@@ -627,33 +658,6 @@ void declare_objects(nb::module_& m, std::string type)
           nb::arg("maxit"), "Evaluate Function")
       .def_prop_ro("function_space",
                    &dolfinx::fem::Function<T, U>::function_space);
-
-  // dolfinx::fem::Constant
-  std::string pyclass_name_constant = std::string("Constant_") + type;
-  nb::class_<dolfinx::fem::Constant<T>>(
-      m, pyclass_name_constant.c_str(),
-      "Value constant with respect to integration domain")
-      .def(
-          "__init__",
-          [](dolfinx::fem::Constant<T>* cp,
-             nb::ndarray<const T, nb::c_contig> c)
-          {
-            std::vector<std::size_t> shape(c.shape_ptr(),
-                                           c.shape_ptr() + c.ndim());
-            new (cp)
-                dolfinx::fem::Constant<T>(std::span(c.data(), c.size()), shape);
-          },
-          nb::arg("c").noconvert(), "Create a constant from a value array")
-      .def_prop_ro("dtype", [](const dolfinx::fem::Constant<T>&)
-                   { return dolfinx_wrappers::numpy_dtype_v<T>; })
-      .def_prop_ro(
-          "value",
-          [](dolfinx::fem::Constant<T>& self)
-          {
-            return nb::ndarray<T, nb::numpy>(
-                self.value.data(), self.shape.size(), self.shape.data());
-          },
-          nb::rv_policy::reference_internal);
 
   // dolfinx::fem::Expression
   std::string pyclass_name_expr = std::string("Expression_") + type;
