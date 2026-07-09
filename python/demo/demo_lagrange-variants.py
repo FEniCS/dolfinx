@@ -66,7 +66,7 @@ if MPI.COMM_WORLD.size == 1:
     for i in range(values.shape[1]):
         plt.plot(lattice, values[:, i])
     plt.plot(element.basix_element.points, [0] * 11, "ko")
-    plt.ylim([-1, 6])
+    plt.ylim((-1, 6))
     plt.savefig("demo_lagrange_variants_equispaced_10.png")
     plt.clf()
 # -
