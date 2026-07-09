@@ -366,10 +366,6 @@ foreach(_def ${PKG_DOLFINX_DEFINITIONS})
   set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
 endforeach()
 
-foreach(_def ${PKG_BASIX_DEFINITIONS})
-  set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
-endforeach()
-
 # Convert compiler flags and definitions into space separated strings
 string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
 get_target_property(_cxx_standard dolfinx CXX_STANDARD)
