@@ -204,12 +204,12 @@ def dirichletbc(
     except AttributeError:
         raise AttributeError("Boundary condition value must have a dtype attribute.")
 
-    # Geometry type is fixed by the function space (or the value's space),
-    # defaulting to matched precision when neither carries one.
+    # Geometry type is the mesh geometry type of the function space (or the
+    # value's space), defaulting to matched precision when neither has one.
     if V is not None:
-        geometry_dtype = np.dtype(V.element.dtype)
+        geometry_dtype = np.dtype(V.mesh.geometry.x.dtype)
     elif isinstance(value, Function):
-        geometry_dtype = np.dtype(value.function_space.element.dtype)
+        geometry_dtype = np.dtype(value.function_space.mesh.geometry.x.dtype)
     else:
         geometry_dtype = np.dtype(dtype).type(0).real.dtype
     bctype = get_cpp_type("DirichletBC", dtype, geometry_dtype)

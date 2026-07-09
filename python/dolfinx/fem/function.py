@@ -374,8 +374,8 @@ class Function(ufl.Coefficient, Generic[Scalar]):
                 dtype = default_scalar_type
 
         # Scalar type (dtype) is independent of the geometry type, which
-        # is fixed by the function space.
-        geometry_dtype = V.element.dtype
+        # is fixed by the mesh.
+        geometry_dtype = V.mesh.geometry.x.dtype
         cpp_type = get_cpp_type("Function", dtype, geometry_dtype)
         if x is not None:
             self._cpp_object = cpp_type(V._cpp_object, x._cpp_object)  # type: ignore
