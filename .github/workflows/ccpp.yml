@@ -231,7 +231,7 @@ jobs:
       - name: Run pkg-config test (C++)
         working-directory: cpp/test/pkgconfig
         run: |
-          export PKG_CONFIG_PATH=$PETSC_DIR/$PETSC_ARCH/lib/pkgconfig:$PKG_CONFIG_PATH
+          export PKG_CONFIG_PATH=$PETSC_DIR/$PETSC_ARCH/lib/pkgconfig:$SLEPC_DIR/$PETSC_ARCH/lib/pkgconfig:$PKG_CONFIG_PATH
           make
           make run
 
