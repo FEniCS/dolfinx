@@ -53,8 +53,6 @@ list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_BINARY_DIR}/dolfinx")
 include(FeatureSummary)
 include(GNUInstallDirs)
 
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 option(BUILD_SHARED_LIBS "Build DOLFINx with shared libraries." ON)
 add_feature_info(
   BUILD_SHARED_LIBS

@@ -7,9 +7,7 @@ cmake_minimum_required(VERSION 3.26)
 set(PROJECT_NAME demo_codim_0_assembly)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-if(NOT TARGET dolfinx)
+if(NOT TARGET dolfinx::dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
@@ -44,11 +42,12 @@ add_custom_command(
 )
 
 add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/mixed_codim0.c)
-target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx)
+target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx::dolfinx)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 # Set C++20 standard
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which
 # includes LaTeX)

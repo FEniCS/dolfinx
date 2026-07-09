@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 
 project(dolfinx_nanobind LANGUAGES CXX)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(
   Python
@@ -54,10 +53,10 @@ message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 if(CMAKE_BUILD_TYPE STREQUAL "Developer")
   # This enables warnings from DOLFINx headers even though they are a SYSTEM
   # dependency.
-  set_target_properties(dolfinx PROPERTIES SYSTEM OFF)
+  set_target_properties(dolfinx::dolfinx PROPERTIES SYSTEM OFF)
 endif()
 
-get_target_property(_dolfinx_defs dolfinx INTERFACE_COMPILE_DEFINITIONS)
+get_target_property(_dolfinx_defs dolfinx::dolfinx INTERFACE_COMPILE_DEFINITIONS)
 if("HAS_SUPERLU_DIST" IN_LIST _dolfinx_defs)
   # SuperLU_DIST Python interface requires the superlu_defs.h header for int_t.
   find_package(PkgConfig)
@@ -89,6 +88,7 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
+set_target_properties(cpp PROPERTIES CXX_EXTENSIONS OFF)
 if(TARGET PkgConfig::SUPERLU_DIST)
   target_include_directories(cpp PRIVATE ${SUPERLU_DIST_INCLUDE_DIRS})
 endif()
@@ -129,7 +129,7 @@ if(ENABLE_CLANG_TIDY)
 endif()
 
 # Add DOLFINx libraries
-target_link_libraries(cpp PRIVATE dolfinx)
+target_link_libraries(cpp PRIVATE dolfinx::dolfinx)
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
 if(WIN32)
