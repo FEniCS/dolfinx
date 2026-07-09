@@ -1,14 +1,18 @@
 CXX      = mpicxx
 CXXFLAGS = $(shell pkg-config --cflags dolfinx)
-LDFLAGS  = $(shell pkg-config --libs dolfinx) -Wl,-rpath,$(shell pkg-config --variable=libdir dolfinx)
+LDLIBS   = $(shell pkg-config --libs dolfinx)
+LDFLAGS  = -Wl,-rpath,$(shell pkg-config --variable=libdir dolfinx)
 
-main: main.cpp
-	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
+main.o: main.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+main: main.o
+	$(CXX) $(LDFLAGS) $< -o $@ $(LDLIBS)
 
 run: main
 	mpiexec -np 1 ./main
 
 clean:
-	rm -f main
+	rm -f main main.o
 
 .PHONY: run clean
