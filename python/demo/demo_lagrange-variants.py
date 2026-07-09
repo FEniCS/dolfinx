@@ -98,7 +98,7 @@ if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
     for i in range(values.shape[1]):
         plt.plot(lattice, values[:, i])
     plt.plot(element._element.points, [0] * 11, "ko")
-    plt.ylim([-1, 6])
+    plt.ylim((-1, 6))
     plt.savefig("demo_lagrange_variants_gll_10.png")
     plt.clf()
 # -
@@ -152,7 +152,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
         plt.plot(pts, [saw_tooth(i[0]) for i in pts], "k--")
         plt.plot(pts, values, "r-")
         plt.legend(["function", "approximation"])
-        plt.ylim([-0.1, 0.4])
+        plt.ylim((-0.1, 0.4))
         plt.title(variant.name)
         plt.savefig(f"demo_lagrange_variants_interpolation_{variant.name}.png")
         plt.clf()
