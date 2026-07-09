@@ -271,7 +271,16 @@ install(
 # Generate pkg-config file and install it
 
 # Define packages that should be required by pkg-config file
-set(PKG_REQUIRES "")
+set(PKG_REQUIRES "spdlog")
+
+if(TARGET PkgConfig::PETSC)
+  list(APPEND PKG_REQUIRES ${PETSC_MODULE_NAME})
+endif()
+if(TARGET PkgConfig::SLEPC)
+  list(APPEND PKG_REQUIRES ${SLEPC_MODULE_NAME})
+endif()
+
+string(REPLACE ";" " " PKG_REQUIRES "${PKG_REQUIRES}")
 
 # Get link libraries and includes
 get_target_property(
