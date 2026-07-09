@@ -3,12 +3,12 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Registry from (object kind, scalar dtype, geometry dtype) to compiled type.
+"""Registry from (kind, scalar dtype, geometry dtype) to compiled type.
 
-``Function``, ``Expression``, ``Form`` and ``DirichletBC`` are templated on
-both a scalar and a mesh geometry type. DOLFINx registers the matched-precision
-pairs; downstream libraries register further pairs (e.g. fp16 dofs on an fp64
-mesh) via :func:`register_cpp_type`.
+``Function``, ``Expression``, ``Form`` and ``DirichletBC`` are templated
+on both a scalar and a mesh geometry type. DOLFINx registers the
+matched-precision pairs; downstream libraries register further pairs
+(e.g. fp16 dofs on an fp64 mesh) via :func:`register_cpp_type`.
 """
 
 from __future__ import annotations
@@ -74,9 +74,9 @@ def get_cpp_type(
         ) from None
 
 
-# Register the matched-precision built-ins (geometry == real part of scalar).
-# ``Expression`` is built through a factory function, the others through their
-# class constructor.
+# Register the matched-precision built-ins (geometry == real part of
+# scalar). ``Expression`` is built through a factory, the others through
+# their class constructor.
 _MATCHED: tuple[tuple[npt.DTypeLike, npt.DTypeLike, str], ...] = (
     (np.float32, np.float32, "float32"),
     (np.float64, np.float64, "float64"),
