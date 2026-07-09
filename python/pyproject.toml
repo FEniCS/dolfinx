@@ -30,10 +30,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# llvmlite (numba) is not built for x86_64 on macOS or arm64 on Windows - advanced users can install manually.
 demo = [
   "gmsh",
   "networkx",
-  "numba",
+  "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
   "matplotlib",
   "scipy",
   "pyvista",
@@ -53,7 +54,6 @@ docs = [
 ]
 lint = ["ruff", "gersemi"]
 mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
-# llvmlite (numba) is not built for x86_64 on macOS or arm64 on Windows - advanced users can install manually.
 optional = ["numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')"]
 petsc4py = ["petsc4py"]
 test = [
