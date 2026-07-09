@@ -125,7 +125,7 @@ jobs:
           sudo ldconfig
 
       - name: Run pkg-config test (C++)
-        working-directory: cpp/test/pkgconfig-test
+        working-directory: cpp/test/pkgconfig
         run: |
           make
           make run
@@ -229,7 +229,7 @@ jobs:
           cmake --build build
 
       - name: Run pkg-config test (C++)
-        working-directory: cpp/test/pkgconfig-test
+        working-directory: cpp/test/pkgconfig
         run: |
           export PKG_CONFIG_PATH=$PETSC_DIR/$PETSC_ARCH/lib/pkgconfig:$PKG_CONFIG_PATH
           make
