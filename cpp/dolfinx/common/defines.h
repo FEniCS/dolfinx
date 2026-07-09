@@ -8,9 +8,6 @@
 
 #include <string>
 
-// Created by Cmake from version.h.in
-#include "version.h"
-
 namespace dolfinx
 {
 
