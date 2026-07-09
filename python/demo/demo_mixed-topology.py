@@ -195,7 +195,7 @@ b_scipy = b.array
 
 x_scipy = spsolve(A_scipy, b_scipy)
 
-print(f"Solution vector norm {np.linalg.norm(x)}")
+print(f"Solution vector norm {np.linalg.norm(x_scipy)}")
 
 # Mixed-topology I/O
 # We manually build a ASCII XDMF file to store the mesh
