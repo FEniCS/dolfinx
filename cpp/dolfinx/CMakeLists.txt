@@ -272,6 +272,7 @@ install(
 
 # Define packages that should be required by pkg-config file
 set(PKG_REQUIRES "spdlog")
+list(APPEND PKG_REQUIRES "basix")
 
 if(TARGET PkgConfig::PETSC)
   list(APPEND PKG_REQUIRES ${PETSC_MODULE_NAME})
@@ -364,15 +365,6 @@ set(PKG_DEFINITIONS)
 foreach(_def ${PKG_DOLFINX_DEFINITIONS})
   set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
 endforeach()
-
-# Get basix definitions (this is required to propagate Basix definition to the
-# pkg-config file, in the future Basix should create its own basix.pc file, see
-# https://github.com/FEniCS/basix/issues/204)
-get_target_property(
-  PKG_BASIX_DEFINITIONS
-  Basix::basix
-  INTERFACE_COMPILE_DEFINITIONS
-)
 
 foreach(_def ${PKG_BASIX_DEFINITIONS})
   set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
