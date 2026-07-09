@@ -1,4 +1,4 @@
-CXX      = mpicxx
+CXX      = $(shell pkg-config --variable compiler dolfinx)
 CXXFLAGS = $(shell pkg-config --cflags dolfinx)
 LDLIBS   = $(shell pkg-config --libs dolfinx)
 LDFLAGS  = -Wl,-rpath,$(shell pkg-config --variable=libdir dolfinx)
