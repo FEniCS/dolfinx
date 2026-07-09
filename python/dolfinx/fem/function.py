@@ -635,7 +635,6 @@ def functionspace(
         | tuple[str, int, tuple]
         | tuple[str, int, tuple, bool]
     ),
-    dtype: np.dtype = None,
 ) -> FunctionSpace:
     """Create a finite element function space.
 
@@ -648,8 +647,7 @@ def functionspace(
         A function space.
     """
     # Create UFL element
-    if dtype is None:
-        dtype = mesh.geometry.x.dtype
+    dtype = mesh.geometry.x.dtype
     try:
         e = ElementMetaData(*element)  # type: ignore
         ufl_e = basix.ufl.element(

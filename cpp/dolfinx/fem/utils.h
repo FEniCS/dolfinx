@@ -973,10 +973,10 @@ Expression<T, U> create_expression(
   std::function<void(T*, const T*, const T*, const U*, const int*,
                      const std::uint8_t*, void*)>
       tabulate_tensor = nullptr;
-  if constexpr (std::is_same_v<T, float>)
+  if constexpr (std::is_same_v<T, float> && std::is_same_v<U, float>)
     tabulate_tensor = e.tabulate_tensor_float32;
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-  else if constexpr (std::is_same_v<T, std::complex<float>>)
+  else if constexpr (std::is_same_v<T, std::complex<float>> && std::is_same_v<U, float>)
   {
     tabulate_tensor
         = reinterpret_cast<void (*)(T*, const T*, const T*, const U*,
@@ -984,10 +984,10 @@ Expression<T, U> create_expression(
             e.tabulate_tensor_complex64);
   }
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-  else if constexpr (std::is_same_v<T, double>)
+  else if constexpr (std::is_same_v<T, double> && std::is_same_v<U, double>)
     tabulate_tensor = e.tabulate_tensor_float64;
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-  else if constexpr (std::is_same_v<T, std::complex<double>>)
+  else if constexpr (std::is_same_v<T, std::complex<double>> && std::is_same_v<U, double>)
   {
     tabulate_tensor
         = reinterpret_cast<void (*)(T*, const T*, const T*, const U*,
