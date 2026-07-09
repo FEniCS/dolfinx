@@ -341,6 +341,16 @@ foreach(_target ${PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES})
         list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
       endif()
     endif()
+
+    # Special handling for ADIOS2 imported targets which expose
+    # IMPORTED_LOCATION_RELEASE rather than INTERFACE_LINK_LIBRARIES
+    if("${_target}" MATCHES "^.*adios2::.*$")
+      get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
+
+      if(_libs)
+        list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
+      endif()
+    endif()
   endif()
 endforeach()
 
