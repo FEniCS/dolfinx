@@ -48,6 +48,7 @@ from dolfinx.fem.function import (
     FunctionSpace,
     functionspace,
 )
+from dolfinx.fem.typemap import get_cpp_type, register_cpp_type
 from dolfinx.fem.utils import (
     build_sparsity_pattern,
     compute_integration_domains,
@@ -99,8 +100,10 @@ __all__ = [
     "locate_dofs_geometrical",
     "locate_dofs_topological",
     "mixed_topology_form",
+    "get_cpp_type",
     "pack_coefficients",
     "pack_constants",
+    "register_cpp_type",
     "set_bc",
     "transpose_dofmap",
 ]

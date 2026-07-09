@@ -21,6 +21,7 @@ import numpy.typing as npt
 import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.fem.function import Constant, Function, FunctionSpace
+from dolfinx.fem.typemap import get_cpp_type
 from dolfinx.typing import Scalar
 
 
@@ -200,18 +201,18 @@ def dirichletbc(
 
     try:
         dtype = value.dtype
-        if np.issubdtype(dtype, np.float32):
-            bctype = _cpp.fem.DirichletBC_float32
-        elif np.issubdtype(dtype, np.float64):
-            bctype = _cpp.fem.DirichletBC_float64
-        elif np.issubdtype(dtype, np.complex64):
-            bctype = _cpp.fem.DirichletBC_complex64
-        elif np.issubdtype(dtype, np.complex128):
-            bctype = _cpp.fem.DirichletBC_complex128
-        else:
-            raise NotImplementedError(f"Type {value.dtype} not supported.")
     except AttributeError:
         raise AttributeError("Boundary condition value must have a dtype attribute.")
+
+    # Geometry type is fixed by the function space (or the value's space),
+    # defaulting to matched precision when neither carries one.
+    if V is not None:
+        geometry_dtype = np.dtype(V.element.dtype)
+    elif isinstance(value, Function):
+        geometry_dtype = np.dtype(value.function_space.element.dtype)
+    else:
+        geometry_dtype = np.dtype(dtype).type(0).real.dtype
+    bctype = get_cpp_type("DirichletBC", dtype, geometry_dtype)
 
     # Unwrap value object, if required
     if isinstance(value, np.ndarray):

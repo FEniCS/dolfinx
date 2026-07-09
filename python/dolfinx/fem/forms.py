@@ -25,6 +25,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
 from dolfinx.fem.function import Constant, Function, FunctionSpace
+from dolfinx.fem.typemap import get_cpp_type
 from dolfinx.typing import Scalar
 
 if typing.TYPE_CHECKING:
@@ -280,7 +281,6 @@ def mixed_topology_form(
         form_compiler_options = dict()
 
     form_compiler_options["scalar_type"] = dtype
-    ftype = form_cpp_class(dtype)
 
     # Extract subdomain data from UFL form
     sd = next(iter(forms)).subdomain_data()
@@ -294,6 +294,9 @@ def mixed_topology_form(
     if mesh is None:
         raise RuntimeError("Expecting to find a Mesh in the form.")
     comm = mesh.comm if jit_comm is None else jit_comm
+
+    # Geometry type is fixed by the mesh.
+    ftype = get_cpp_type("Form", dtype, mesh.geometry.x.dtype)
 
     ufcx_forms = []
     modules = []
@@ -364,7 +367,6 @@ def form(
         form_compiler_options = dict()
 
     form_compiler_options["scalar_type"] = dtype
-    ftype = form_cpp_class(dtype)
 
     def _form(form):
         """Compile a single UFL form."""
@@ -380,6 +382,9 @@ def form(
         if msh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
         comm = msh.comm if jit_comm is None else jit_comm
+
+        # Geometry type is fixed by the mesh.
+        ftype = get_cpp_type("Form", dtype, msh.geometry.x.dtype)
 
         ufcx_form, module, code = jit.ffcx_jit(
             comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
@@ -442,6 +447,9 @@ def form(
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
         assert len(V) > 0
         msh = V[0].mesh
+
+        # Geometry type is fixed by the mesh.
+        ftype = get_cpp_type("Form", dtype, msh.geometry.x.dtype)
 
         f = ftype(
             spaces=V,

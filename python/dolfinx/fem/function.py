@@ -22,6 +22,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.element import FiniteElement, finiteelement
+from dolfinx.fem.typemap import get_cpp_type
 from dolfinx.geometry import PointOwnershipData
 from dolfinx.typing import Real, Scalar
 
@@ -205,17 +206,13 @@ class Expression(Generic[Scalar]):
         else:
             raise RuntimeError("Expressions with more that one Argument not allowed.")
 
-        def _create_expression(dtype):
-            if np.issubdtype(dtype, np.float32):
-                return _cpp.fem.create_expression_float32
-            elif np.issubdtype(dtype, np.float64):
-                return _cpp.fem.create_expression_float64
-            elif np.issubdtype(dtype, np.complex64):
-                return _cpp.fem.create_expression_complex64
-            elif np.issubdtype(dtype, np.complex128):
-                return _cpp.fem.create_expression_complex128
-            else:
-                raise NotImplementedError(f"Type {dtype} not supported.")
+        # Geometry type is fixed by the expression's mesh.
+        expr_domains = ufl.domain.extract_domains(e)
+        if len(expr_domains) > 0:
+            geometry_dtype = expr_domains[0].ufl_cargo().geometry.x.dtype
+        else:
+            geometry_dtype = np.dtype(dtype).type(0).real.dtype
+        create_expression = get_cpp_type("Expression", dtype, geometry_dtype)
 
         _entity_maps = (
             [entity_map._cpp_object for entity_map in entity_maps]
@@ -223,7 +220,7 @@ class Expression(Generic[Scalar]):
             else []
         )
         ffi = module.ffi
-        self._cpp_object = _create_expression(dtype)(
+        self._cpp_object = create_expression(
             ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
             coeffs,
             constants,
@@ -376,27 +373,14 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             if dtype is None:
                 dtype = default_scalar_type
 
-        assert np.issubdtype(V.element.dtype, np.dtype(dtype).type(0).real.dtype), (
-            "Incompatible FunctionSpace dtype and requested dtype."
-        )
-
-        # Create cpp Function
-        def functiontype(dtype):
-            if np.issubdtype(dtype, np.float32):
-                return _cpp.fem.Function_float32
-            elif np.issubdtype(dtype, np.float64):
-                return _cpp.fem.Function_float64
-            elif np.issubdtype(dtype, np.complex64):
-                return _cpp.fem.Function_complex64
-            elif np.issubdtype(dtype, np.complex128):
-                return _cpp.fem.Function_complex128
-            else:
-                raise NotImplementedError(f"Type {dtype} not supported.")
-
+        # Scalar type (dtype) is independent of the geometry type, which
+        # is fixed by the function space.
+        geometry_dtype = V.element.dtype
+        cpp_type = get_cpp_type("Function", dtype, geometry_dtype)
         if x is not None:
-            self._cpp_object = functiontype(dtype)(V._cpp_object, x._cpp_object)  # type: ignore
+            self._cpp_object = cpp_type(V._cpp_object, x._cpp_object)  # type: ignore
         else:
-            self._cpp_object = functiontype(dtype)(V._cpp_object)  # type: ignore
+            self._cpp_object = cpp_type(V._cpp_object)  # type: ignore
 
         # Initialize the ufl.FunctionSpace
         super().__init__(V.ufl_function_space())
@@ -651,18 +635,21 @@ def functionspace(
         | tuple[str, int, tuple]
         | tuple[str, int, tuple, bool]
     ),
+    dtype: np.dtype = None,
 ) -> FunctionSpace:
     """Create a finite element function space.
 
     Args:
         mesh: Mesh that space is defined on.
         element: Finite element description.
+        dtype: Scalar type of the element.
 
     Returns:
         A function space.
     """
     # Create UFL element
-    dtype = mesh.geometry.x.dtype
+    if dtype is None:
+        dtype = mesh.geometry.x.dtype
     try:
         e = ElementMetaData(*element)  # type: ignore
         ufl_e = basix.ufl.element(

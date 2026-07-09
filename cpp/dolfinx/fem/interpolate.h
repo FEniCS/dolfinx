@@ -423,7 +423,7 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
   auto [i_m, im_shape] = element1->create_interpolation_operator(*element0);
 
   // Iterate over mesh and interpolate on each cell
-  using X = U;
+  using X = scalar_value_t<T>;
   assert(cells0.size() == cells1.size());
   for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
        cell0_it != cells0.end() and cell1_it != cells1.end();
@@ -665,7 +665,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
         coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
 
     // Evaluate v at the interpolation points (physical space values)
-    using X = U;
+    using X = scalar_value_t<T>;
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       for (int k = 0; k < bs0; ++k)

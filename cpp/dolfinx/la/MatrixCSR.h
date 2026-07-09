@@ -347,7 +347,7 @@ public:
   {
     const std::size_t nrows = num_all_rows();
     const std::size_t ncols = _index_maps[1]->size_global();
-    std::vector<value_type> A(nrows * ncols * _bs[0] * _bs[1], 0.0);
+    std::vector<value_type> A(nrows * ncols * _bs[0] * _bs[1], value_type(0));
     for (std::size_t r = 0; r < nrows; ++r)
     {
       for (std::int32_t j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
