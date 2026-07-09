@@ -476,10 +476,23 @@ def form(
     return _create_form(form)
 
 
+@typing.overload
+def extract_function_spaces(forms: Form, index: int = 0) -> FunctionSpace | None: ...
+
+
+@typing.overload
 def extract_function_spaces(
-    forms: Form | Sequence[Form] | Sequence[Sequence[Form]],
-    index: int = 0,
-) -> FunctionSpace | list[None | FunctionSpace]:
+    forms: Sequence[Form], index: int = 0
+) -> list[FunctionSpace | None]: ...
+
+
+@typing.overload
+def extract_function_spaces(
+    forms: Sequence[Sequence[Form]], index: int = 0
+) -> list[list[FunctionSpace | None]]: ...
+
+
+def extract_function_spaces(forms, index: int = 0):
     """Extract common function spaces from an array of forms.
 
     If ``forms`` is a list of linear forms, this function returns of list
