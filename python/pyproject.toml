@@ -103,6 +103,14 @@ warn_unused_ignores = false
 show_error_codes = true
 ignore_missing_imports = true
 
+exclude = [
+      "demo/demo_hdg.py",
+      "demo/demo_lagrange-variants.py",
+      "demo/demo_matrix-free-petsc.py",
+      "demo/demo_mixed-topology.py",
+      "demo/demo_navier-stokes.py",
+]
+
 [tool.ruff]
 line-length = 100
 indent-width = 4
