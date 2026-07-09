@@ -413,7 +413,7 @@ navier_stokes_problem = LinearProblem(
 # We perform the time-stepping as a for-loop
 
 # +
-for n in range(num_time_steps):
+for _ in range(num_time_steps):
     t += delta_t.value
 
     navier_stokes_problem.solve()
