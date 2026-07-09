@@ -279,6 +279,9 @@ endif()
 if(TARGET PkgConfig::SLEPC)
   list(APPEND PKG_REQUIRES ${SLEPC_MODULE_NAME})
 endif()
+if(TARGET PkgConfig::SUPERLU_DIST)
+  list(APPEND PKG_REQUIRES ${SUPERLU_DIST_MODULE_NAME})
+endif()
 
 string(REPLACE ";" " " PKG_REQUIRES "${PKG_REQUIRES}")
 
@@ -377,6 +380,10 @@ endforeach()
 
 # Convert compiler flags and definitions into space separated strings
 string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
+get_target_property(_cxx_standard dolfinx CXX_STANDARD)
+if(_cxx_standard)
+  string(APPEND PKG_CXXFLAGS " -std=c++${_cxx_standard}")
+endif()
 string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 
 # Convert libraries to -L<libdir> -l<lib> form
