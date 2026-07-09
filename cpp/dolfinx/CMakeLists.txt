@@ -30,7 +30,7 @@ target_include_directories(
   dolfinx
   PUBLIC
     $<INSTALL_INTERFACE:include>
-    "$<BUILD_INTERFACE:${DOLFINX_SOURCE_DIR};${DOLFINX_SOURCE_DIR}/dolfinx>"
+    "$<BUILD_INTERFACE:${DOLFINX_SOURCE_DIR};${DOLFINX_SOURCE_DIR}/dolfinx;${CMAKE_CURRENT_BINARY_DIR}/..>"
 )
 
 # ------------------------------------------------------------------------------
@@ -38,7 +38,7 @@ target_include_directories(
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/common/version.h.in
-  common/version.h
+  ${CMAKE_CURRENT_BINARY_DIR}/common/version.h
   @ONLY
 )
 
