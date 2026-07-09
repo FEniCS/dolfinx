@@ -1,4 +1,5 @@
 from mpi4py import MPI
+from petsc4py import PETSc
 
 import numpy as np
 
@@ -127,15 +128,21 @@ sp = create_sparsity_pattern(a)
 dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc)
 sp.finalize()
 
-A = matrix_csr(sp)
+from dolfinx.fem.petsc import create_matrix
 
-dolfinx.cpp.fem.assemble_matrix_mpc(mpc, A._cpp_object, a._cpp_object, [bc._cpp_object])
+A = create_matrix(a)
+print(A)
+A.setOption(PETSc.Mat.Option.NEW_NONZERO_LOCATIONS, True)
+
+dolfinx.cpp.fem.petsc.assemble_matrix_mpc(mpc, A, a._cpp_object, [bc._cpp_object])
 # dolfinx.fem.assemble_matrix(A, a, [bc])
-dolfinx.cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], [bc._cpp_object], 1.0)
-A.scatter_reverse()
+A.assemble()
+dolfinx.cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], [bc._cpp_object], 1.0)
+A.assemble()
+
 
 offsets, ref_dof, ref_coeff = mpc.constraints()
-# offsets = np.zeros_like(offsets, dtype=np.int32)
+bs = V_new.dofmap.bs
 print(len(offsets), offsets)
 for i in range(V_new.dofmap.index_map.size_local * bs):
     if offsets[i + 1] - offsets[i] > 0:
@@ -146,17 +153,6 @@ for i in range(V_new.dofmap.index_map.size_local * bs):
             "with coeffs",
             ref_coeff[offsets[i] : offsets[i + 1]],
         )
-
-Ad = A.to_dense()
-for i, row in enumerate(Ad):
-    if row.max() == 0 and row.min() == 0:
-        print(f"row {i} is zero")
-
-from scipy.sparse.linalg import spsolve
-
-# A_superlu = superlu_dist_matrix(A)
-# solver = superlu_dist_solver(A_superlu)
-# solver.set_option("SymmetricMode", "YES")
 
 # Setting constraint b_i to zero
 b = dolfinx.fem.assemble_vector(L)
@@ -171,12 +167,18 @@ for i in range(V_new.dofmap.index_map.size_local * bs):
 b.scatter_forward()
 
 u = Function(V_new)
-# solver.solve(b, u.x)
 
-As = A.to_scipy()
-print(As.format)
+ksp = PETSc.KSP().create(mesh.comm)
+ksp.setOperators(A)
+ksp.setType("preonly")
+pc = ksp.getPC()
+pc.setType("lu")
+ksp.setFromOptions()
+ksp.solve(b.petsc_vec, u.x.petsc_vec)
 
-u.x.array[:] = spsolve(As, b.array)
+# Update ghost values, required since ref_dof (below) may index dofs
+# owned by another rank when running in parallel
+u.x.scatter_forward()
 
 xdmf = dolfinx.io.XDMFFile(mesh.comm, "demo_mpc.xdmf", "w")
 xdmf.write_mesh(mesh)
@@ -185,7 +187,9 @@ xdmf.write_function(u)
 
 # Check that each constrained dof actually matches the linear combination
 # of its reference dofs, i.e. u_i = sum_j coeff_j * u_{ref_j}
-# (assumes serial run, so no ghost/MPI handling needed here)
+# Only owned dofs are checked, but reference dofs may be ghosts owned by
+# another rank, so u.x must have up-to-date ghost values (scatter_forward
+# above) for this to be valid when running in parallel.
 for i in range(V_new.dofmap.index_map.size_local * bs):
     n0, n1 = offsets[i], offsets[i + 1]
     if n1 > n0:
@@ -195,4 +199,5 @@ for i in range(V_new.dofmap.index_map.size_local * bs):
             f"dof {i}: value {actual} does not match expected {expected} "
             f"from reference dofs {ref_dof[n0:n1]}"
         )
-print("Constrained dofs match their reference values")
+if mesh.comm.rank == 0:
+    print("Constrained dofs match their reference values")
