@@ -42,9 +42,16 @@ else()
     COMMENT "Compile hyperelasticity.py using FFCx"
   )
 
-  add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
+  add_executable(
+    ${PROJECT_NAME}
+    main.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c
+  )
   target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx::dolfinx)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+  target_include_directories(
+    ${PROJECT_NAME}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
+  )
 
   # Set C++20 standard
   target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
@@ -55,8 +62,13 @@ else()
   include(CheckCXXCompilerFlag)
   check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
   target_compile_options(
-    ${PROJECT_NAME} PRIVATE
-    $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>
+    ${PROJECT_NAME}
+    PRIVATE
+      $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment
+      -Wall
+      -Wextra
+      -pedantic
+      -Werror>
   )
 
   # FFCx-generated C kernels have unused parameters fixed by the UFL ABI
@@ -66,11 +78,17 @@ else()
   )
 
   # Test targets (used by DOLFINx testing system)
-  add_test(NAME ${PROJECT_NAME}_mpi_2
-           COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2
-                   ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS})
-  add_test(NAME ${PROJECT_NAME}_mpi_3
-           COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3
-                   ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS})
+  add_test(
+    NAME ${PROJECT_NAME}_mpi_2
+    COMMAND
+      ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
+      $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS}
+  )
+  add_test(
+    NAME ${PROJECT_NAME}_mpi_3
+    COMMAND
+      ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS}
+      $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS}
+  )
   add_test(NAME ${PROJECT_NAME}_serial COMMAND $<TARGET_FILE:${PROJECT_NAME}>)
 endif()
