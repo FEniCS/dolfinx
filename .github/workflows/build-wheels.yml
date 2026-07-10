@@ -345,3 +345,36 @@ jobs:
         with:
           name: simple503-${{ matrix.os }}
           path: simple/*
+
+  combined_repository:
+    name: Create combined simple503 repository
+    needs: build_wheels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.14
+
+      - name: Install Python dependencies
+        run: python -m pip install simple503
+
+      - name: Make shared wheel directory
+        run: mkdir -p shared/
+
+      - name: Download all wheel artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: wheelhouse-*
+          path: wheelhouse-artifacts/
+
+      - name: Extract wheels into shared folder
+        run: find wheelhouse-artifacts/ -name "*.whl" -exec cp {} shared/ \;
+
+      - name: Build simple503 repository
+        run: python -m simple503 --base-url http://packages.fenicsproject.org/simple-beta shared/
+
+      - name: Upload combined repository artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: simple503-combined
+          path: shared/*
