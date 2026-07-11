@@ -127,7 +127,7 @@ jobs:
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e cxx buildcache push --base-image ubuntu:24.04 --allow-missing --only dependencies --with-build-dependencies --update-index local-buildcache
-          spack -e cxx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache catch2 ninja
+          spack -e cxx buildcache push --base-image ubuntu:24.04 --allow-missing --update-index local-buildcache catch2 ninja
         if: ${{ !cancelled() }}
 
       - name: Build and run C++ unit tests
@@ -213,13 +213,13 @@ jobs:
       - name: Push dependency packages to cache and update index
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack -e py buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
+          spack -e py buildcache push --base-image ubuntu:24.04 --allow-missing --only dependencies --with-build-dependencies --update-index local-buildcache
         if: ${{ !cancelled() }}
 
       - name: Push test dependency packages to cache and update index
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack -e py buildcache push --base-image ubuntu:24.04 --update-index local-buildcache \
+          spack -e py buildcache push --base-image ubuntu:24.04 --allow-missing --update-index local-buildcache \
             py-gmsh py-matplotlib py-networkx py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
         if: ${{ !cancelled() }}
 
