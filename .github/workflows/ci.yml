@@ -128,8 +128,8 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e cxx buildcache push --base-image ubuntu:24.04 --only dependencies \
             --with-build-dependencies --update-index --allow-missing local-buildcache
-          spack -e cxx buildcache push --base-image ubuntu:24.04  \
-            --update-index local-buildcache catch2 ninja
+          # spack -e cxx buildcache push --base-image ubuntu:24.04  \
+          #   --update-index local-buildcache catch2 ninja
         if: ${{ !cancelled() }}
 
       - name: Build and run C++ unit tests
