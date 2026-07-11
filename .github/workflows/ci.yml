@@ -68,7 +68,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: spack/spack
-          ref: v1.1.1
+          ref: v1.2.1
           path: spack-src
 
       - name: Get upstream Spack packages
@@ -210,10 +210,16 @@ jobs:
           python -m pytest -n=auto --durations=50 dolfinx-src/python/test/unit/
           mpiexec -np 3 python -m pytest --durations=50 dolfinx-src/python/test/unit/
 
-      - name: Push packages to cache and update index
+      - name: Push dependency packages to cache and update index
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e py buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
+        if: ${{ !cancelled() }}
+
+      - name: Push test dependency packages to cache and update index
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e py buildcache push --base-image ubuntu:24.04 --update-index local-buildcache \
             py-gmsh py-matplotlib py-networkx py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
         if: ${{ !cancelled() }}
+
