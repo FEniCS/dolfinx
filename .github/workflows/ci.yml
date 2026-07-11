@@ -179,7 +179,7 @@ jobs:
             ^adios2~libcatalyst~fortran
           # hypre causing petsc to concretise to old version as of 12/11/2025
           spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer
-          spack -e py add py-gmsh ^gmsh~fltk+external py-pyamg py-matplotlib py-networkx \
+          spack -e py add py-gmsh ^gmsh~fltk+external py-pyamg py-matplotlib ^freetype@2.13.3 py-networkx \
             py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4
           spack -e py install -j 4 -p 2 --use-buildcache auto
@@ -189,25 +189,12 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
-      - name: Debug matplotlib text rendering config
-        run: |
-          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack env activate py
-          python -c "
-          import os
-          print('MATPLOTLIBRC =', os.environ.get('MATPLOTLIBRC'))
-          print('MPLCONFIGDIR =', os.environ.get('MPLCONFIGDIR'))
-          import matplotlib
-          print('unicode_minus =', matplotlib.rcParams['axes.unicode_minus'])
-          print('hinting =', matplotlib.rcParams['text.hinting'])
-          "
-
       - name: Run Python demos
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack env activate py
           spack load gcc
-          python -m pytest -m serial --durations=10 dolfinx-src/python/demo/test.py
+          python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
           python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
 
       - name: Run Python unit tests
