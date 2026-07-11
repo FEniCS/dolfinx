@@ -119,7 +119,7 @@ jobs:
           spack -e cxx add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
             ^petsc+mpi+mumps+superlu-dist~hypre \
             ^adios2~libcatalyst~fortran
-          spack -e cxx add catch2
+          spack -e cxx add catch2 ninja
           spack -e cxx concretize -j 4
           spack -e cxx install -j 4 --use-buildcache auto
 
@@ -128,8 +128,6 @@ jobs:
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
           spack -e cxx buildcache push --base-image ubuntu:24.04 --only dependencies \
             --with-build-dependencies --update-index --allow-missing local-buildcache
-          # spack -e cxx buildcache push --base-image ubuntu:24.04  \
-          #   --update-index local-buildcache catch2 ninja
         if: ${{ !cancelled() }}
 
       - name: Build and run C++ unit tests
