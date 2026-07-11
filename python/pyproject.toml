@@ -22,7 +22,7 @@ authors = [
 ]
 dependencies = [
       "numpy>=2",
-      "cffi",
+      "cffi<2.1",
       "mpi4py",
       "fenics-basix>=0.12.0.dev0",
       "fenics-ffcx>=0.12.0.dev0",
