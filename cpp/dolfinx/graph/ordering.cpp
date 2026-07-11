@@ -85,19 +85,18 @@ std::size_t max_level_width(const graph::AdjacencyList<int>& levels)
       [](auto x0, auto x1) -> std::size_t { return x1 - x0; });
 }
 //-----------------------------------------------------------------------------
-// Create a level structure from graph, rooted at node s.
-//
-// `labelled` is a caller-provided scratch buffer of size
-// graph.num_nodes() which must be all-false on entry, and is restored
-// to all-false before returning. This lets repeated calls (e.g. over
-// the candidate set S) reuse one buffer instead of reallocating and
-// zeroing an O(n) vector every time.
+// Create a level structure from graph, rooted at node s
 graph::AdjacencyList<int>
-create_level_structure(const graph::AdjacencyList<int>& graph, int s,
-                       std::vector<std::int8_t>& labelled)
+create_level_structure(const graph::AdjacencyList<int>& graph, int s)
 {
   common::Timer t("GPS: create_level_structure");
 
+  // Note: int8 is often faster than bool. A fresh buffer is
+  // allocated on each call (rather than a reused scratch buffer)
+  // since the allocator's bulk zero-fill is faster than resetting
+  // only the touched entries when a large fraction of the graph is
+  // typically visited, as is the case for compact/dense mesh graphs.
+  std::vector<std::int8_t> labelled(graph.num_nodes(), false);
   labelled[s] = true;
 
   // Current level
@@ -124,10 +123,6 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s,
     ++l;
   }
 
-  // Restore scratch buffer to all-false for the next call
-  for (int w : level_structure)
-    labelled[w] = false;
-
   return graph::AdjacencyList(std::move(level_structure),
                               std::move(level_offsets));
 }
@@ -147,10 +142,6 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   auto cmp_degree = [&graph](auto a, auto b)
   { return graph.num_links(a) < graph.num_links(b); };
 
-  // Reusable scratch buffer for create_level_structure, avoiding a
-  // fresh O(n) allocation/zero-fill on every call.
-  std::vector<std::int8_t> ls_scratch(n, false);
-
   // ALGORITHM I. Finding endpoints of a pseudo-diameter.
 
   // A. Pick an arbitrary vertex of minimal degree and call it v
@@ -166,7 +157,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   }
 
   // B. Generate a level structure Lv rooted at vertex v.
-  graph::AdjacencyList<int> lv = create_level_structure(graph, v, ls_scratch);
+  graph::AdjacencyList<int> lv = create_level_structure(graph, v);
   graph::AdjacencyList<int> lu(0);
   bool done = false;
   int u = 0;
@@ -185,8 +176,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
     // in order of increasing degree.
     for (int s : S)
     {
-      graph::AdjacencyList<int> lstmp
-          = create_level_structure(graph, s, ls_scratch);
+      graph::AdjacencyList<int> lstmp = create_level_structure(graph, s);
       if (lstmp.num_nodes() > lv.num_nodes())
       {
         // Found a deeper level structure, so restart
