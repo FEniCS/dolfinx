@@ -189,6 +189,19 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
+      - name: Debug matplotlib text rendering config
+        run: |
+          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
+          spack env activate py
+          python -c "
+          import os
+          print('MATPLOTLIBRC =', os.environ.get('MATPLOTLIBRC'))
+          print('MPLCONFIGDIR =', os.environ.get('MPLCONFIGDIR'))
+          import matplotlib
+          print('unicode_minus =', matplotlib.rcParams['axes.unicode_minus'])
+          print('hinting =', matplotlib.rcParams['text.hinting'])
+          "
+
       - name: Run Python demos
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
