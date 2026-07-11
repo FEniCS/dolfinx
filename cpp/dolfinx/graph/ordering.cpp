@@ -85,14 +85,19 @@ std::size_t max_level_width(const graph::AdjacencyList<int>& levels)
       [](auto x0, auto x1) -> std::size_t { return x1 - x0; });
 }
 //-----------------------------------------------------------------------------
-// Create a level structure from graph, rooted at node s
+// Create a level structure from graph, rooted at node s.
+//
+// `labelled` is a caller-provided scratch buffer of size
+// graph.num_nodes() which must be all-false on entry, and is restored
+// to all-false before returning. This lets repeated calls (e.g. over
+// the candidate set S) reuse one buffer instead of reallocating and
+// zeroing an O(n) vector every time.
 graph::AdjacencyList<int>
-create_level_structure(const graph::AdjacencyList<int>& graph, int s)
+create_level_structure(const graph::AdjacencyList<int>& graph, int s,
+                       std::vector<std::int8_t>& labelled)
 {
   common::Timer t("GPS: create_level_structure");
 
-  // Note: int8 is often faster than bool
-  std::vector<std::int8_t> labelled(graph.num_nodes(), false);
   labelled[s] = true;
 
   // Current level
@@ -119,6 +124,10 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
     ++l;
   }
 
+  // Restore scratch buffer to all-false for the next call
+  for (int w : level_structure)
+    labelled[w] = false;
+
   return graph::AdjacencyList(std::move(level_structure),
                               std::move(level_offsets));
 }
@@ -138,6 +147,10 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   auto cmp_degree = [&graph](auto a, auto b)
   { return graph.num_links(a) < graph.num_links(b); };
 
+  // Reusable scratch buffer for create_level_structure, avoiding a
+  // fresh O(n) allocation/zero-fill on every call.
+  std::vector<std::int8_t> ls_scratch(n, false);
+
   // ALGORITHM I. Finding endpoints of a pseudo-diameter.
 
   // A. Pick an arbitrary vertex of minimal degree and call it v
@@ -153,7 +166,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   }
 
   // B. Generate a level structure Lv rooted at vertex v.
-  graph::AdjacencyList<int> lv = create_level_structure(graph, v);
+  graph::AdjacencyList<int> lv = create_level_structure(graph, v, ls_scratch);
   graph::AdjacencyList<int> lu(0);
   bool done = false;
   int u = 0;
@@ -172,7 +185,8 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
     // in order of increasing degree.
     for (int s : S)
     {
-      graph::AdjacencyList<int> lstmp = create_level_structure(graph, s);
+      graph::AdjacencyList<int> lstmp
+          = create_level_structure(graph, s, ls_scratch);
       if (lstmp.num_nodes() > lv.num_nodes())
       {
         // Found a deeper level structure, so restart
@@ -284,8 +298,11 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   rv.push_back(v);
   labelled[v] = true;
 
-  // Temporary work vectors
-  std::vector<std::int8_t> in_level;
+  // Temporary work vectors. `in_level` is sized once and kept all-false
+  // between iterations by undoing exactly the entries it set, rather
+  // than re-zeroing all n entries on every level (which is O(n * k)
+  // over the whole level structure instead of O(n)).
+  std::vector<std::int8_t> in_level(n, false);
   std::vector<int> rv_next;
   std::vector<int> nbr, nbr_next;
   std::vector<int> nrem;
@@ -293,7 +310,6 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   for (const std::vector<int>& lslevel : ls)
   {
     // Mark all nodes of the current level
-    in_level.assign(n, false);
     for (int w : lslevel)
       in_level[w] = true;
 
@@ -351,6 +367,10 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
 
     // Insert already-labelled nodes of next level
     rv.insert(rv.end(), rv_next.begin(), rv_next.end());
+
+    // Undo the marks set for this level so in_level is all-false again
+    for (int w : lslevel)
+      in_level[w] = false;
   }
 
   return rv;
