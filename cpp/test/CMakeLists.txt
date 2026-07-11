@@ -5,7 +5,7 @@ project(dolfinx-tests LANGUAGES C CXX)
 if(PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
   find_package(DOLFINX REQUIRED)
-  include(DolfinxDeveloperCompilerFlags)
+  include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
 endif()
 
 find_package(Catch2 3 REQUIRED)
@@ -54,7 +54,7 @@ add_executable(
   ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
-target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx)
+target_link_libraries(unittests PRIVATE Catch2::Catch2 dolfinx::dolfinx)
 target_compile_features(unittests PRIVATE cxx_std_20 c_std_17)
 set_target_properties(unittests PROPERTIES CXX_EXTENSIONS OFF)
 

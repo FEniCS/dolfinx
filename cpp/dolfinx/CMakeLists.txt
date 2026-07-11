@@ -1,6 +1,7 @@
 # ------------------------------------------------------------------------------
 # Declare the library (target)
 add_library(dolfinx)
+add_library(dolfinx::dolfinx ALIAS dolfinx)
 target_compile_features(dolfinx PUBLIC cxx_std_20)
 set_target_properties(dolfinx PROPERTIES CXX_EXTENSIONS OFF)
 
@@ -213,7 +214,11 @@ if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
 endif()
 
 # Generate DOLFINTargets.cmake
-install(EXPORT DOLFINXTargets DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
+install(
+  EXPORT DOLFINXTargets
+  NAMESPACE dolfinx::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
+)
 
 # Install the header files
 install(

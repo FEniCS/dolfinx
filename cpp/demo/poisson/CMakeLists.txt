@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.26)
 set(PROJECT_NAME demo_poisson)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
-if(NOT TARGET dolfinx)
+if(NOT TARGET dolfinx::dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
@@ -42,7 +42,7 @@ add_custom_command(
 )
 
 add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
-target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx)
+target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx::dolfinx)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 # Set C++20 standard
@@ -54,8 +54,13 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
 target_compile_options(
-  ${PROJECT_NAME} PRIVATE
-  $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>
+  ${PROJECT_NAME}
+  PRIVATE
+    $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment
+    -Wall
+    -Wextra
+    -pedantic
+    -Werror>
 )
 
 # FFCx-generated C kernels have unused parameters fixed by the UFL ABI
@@ -65,10 +70,16 @@ set_source_files_properties(
 )
 
 # Test targets (used by DOLFINx testing system)
-add_test(NAME ${PROJECT_NAME}_mpi_2
-         COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2
-                 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS})
-add_test(NAME ${PROJECT_NAME}_mpi_3
-         COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3
-                 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS})
+add_test(
+  NAME ${PROJECT_NAME}_mpi_2
+  COMMAND
+    ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
+    $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS}
+)
+add_test(
+  NAME ${PROJECT_NAME}_mpi_3
+  COMMAND
+    ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS}
+    $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS}
+)
 add_test(NAME ${PROJECT_NAME}_serial COMMAND $<TARGET_FILE:${PROJECT_NAME}>)
