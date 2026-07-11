@@ -1,4 +1,22 @@
+"""Configuration for demo tests."""
+
+import os
+import tempfile
+
 import pytest
+
+
+def pytest_configure(config):
+    """Set a per-worker matplotlib config/cache directory.
+
+    This avoids concurrent pytest-xdist workers racing on the shared
+    font cache, which otherwise produces intermittent FreeType errors
+    like "raster overflow" during savefig() in parallel demo tests.
+    """
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "master")
+    cache_dir = os.path.join(tempfile.gettempdir(), f"mplconfig-{worker_id}")
+    os.makedirs(cache_dir, exist_ok=True)
+    os.environ["MPLCONFIGDIR"] = cache_dir
 
 
 def pytest_addoption(parser):
