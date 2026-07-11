@@ -34,8 +34,8 @@ jobs:
       - name: Install Spack requirements
         run: |
           apt-get -y update
-          apt-get install -y bzip2 curl file git gzip make patch python3-minimal \
-            tar unzip xz-utils g++ gcc gfortran
+          apt-get install -y file bzip2 ca-certificates g++ gcc gfortran git gzip \
+            lsb-release patch python3 tar unzip xz-utils zstd
 
       - name: Get DOLFINx code
         uses: actions/checkout@v7
@@ -126,7 +126,7 @@ jobs:
       - name: Push C++ packages to cache
         run: |
           . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack -e cxx buildcache push --base-image ubuntu:24.04 --only dependencies --with-build-dependencies --update-index local-buildcache
+          spack -e cxx buildcache push --base-image ubuntu:24.04 --allow-missing --only dependencies --with-build-dependencies --update-index local-buildcache
           spack -e cxx buildcache push --base-image ubuntu:24.04 --update-index local-buildcache catch2 ninja
         if: ${{ !cancelled() }}
 
