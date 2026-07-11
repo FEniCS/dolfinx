@@ -13,6 +13,7 @@
 #include <dolfinx/common/log.h>
 #include <limits>
 #include <span>
+#include <thread>
 
 using namespace dolfinx;
 
@@ -132,7 +133,8 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
 // with -1 in the vector rlabel).
 std::vector<std::int32_t>
 gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
-                       std::span<const std::int32_t> rlabel)
+                       std::span<const std::int32_t> rlabel,
+                       std::size_t num_threads)
 {
   common::Timer timer("Gibbs-Poole-Stockmeyer ordering");
 
@@ -173,15 +175,50 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
     done = true;
 
     // C. Generate level structures rooted at vertices s in S selected
-    // in order of increasing degree.
-    for (int s : S)
+    // in order of increasing degree. Each candidate's level structure
+    // is independent of the others, so when num_threads > 1 they are
+    // computed concurrently. The decision of which candidate to use
+    // is still made afterwards, sequentially, in the original order,
+    // so the result is identical regardless of num_threads.
+    std::vector<graph::AdjacencyList<int>> lstmps(S.size(),
+                                                  graph::AdjacencyList<int>(0));
+    std::size_t nt = std::min(num_threads, S.size());
+    if (nt <= 1)
     {
-      graph::AdjacencyList<int> lstmp = create_level_structure(graph, s);
+      for (std::size_t i = 0; i < S.size(); ++i)
+        lstmps[i] = create_level_structure(graph, S[i]);
+    }
+    else
+    {
+      // jthreads join automatically when `workers` goes out of scope,
+      // including if a worker throws.
+      std::vector<std::jthread> workers;
+      workers.reserve(nt);
+      std::size_t chunk = (S.size() + nt - 1) / nt;
+      for (std::size_t t = 0; t < nt; ++t)
+      {
+        std::size_t begin = t * chunk;
+        std::size_t end = std::min(S.size(), begin + chunk);
+        if (begin >= end)
+          break;
+        workers.emplace_back(
+            [&, begin, end]()
+            {
+              for (std::size_t i = begin; i < end; ++i)
+                lstmps[i] = create_level_structure(graph, S[i]);
+            });
+      }
+    }
+
+    for (std::size_t i = 0; i < S.size(); ++i)
+    {
+      int s = S[i];
+      graph::AdjacencyList<int>& lstmp = lstmps[i];
       if (lstmp.num_nodes() > lv.num_nodes())
       {
         // Found a deeper level structure, so restart
         v = s;
-        lv = lstmp;
+        lv = std::move(lstmp);
         done = false;
         break;
       }
@@ -192,7 +229,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
       {
         w_min = w;
         u = s;
-        lu = lstmp;
+        lu = std::move(lstmp);
       }
     }
   }
@@ -370,7 +407,8 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
 
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
-graph::reorder_gps(const graph::AdjacencyList<std::int32_t>& graph)
+graph::reorder_gps(const graph::AdjacencyList<std::int32_t>& graph,
+                   std::size_t num_threads)
 {
   const std::int32_t n = graph.num_nodes();
   std::vector<std::int32_t> r(n, -1);
@@ -380,7 +418,7 @@ graph::reorder_gps(const graph::AdjacencyList<std::int32_t>& graph)
   int count = 0;
   while (count < n)
   {
-    rv = gps_reorder_unlabelled(graph, r);
+    rv = gps_reorder_unlabelled(graph, r, num_threads);
     assert(!rv.empty());
 
     // Reverse permutation

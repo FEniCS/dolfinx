@@ -54,7 +54,7 @@ void fem(nb::module_& m)
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
             comm.get(), topology, {layout},
             [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
-            { return dolfinx::graph::reorder_gps(g); });
+            { return dolfinx::graph::reorder_gps(g, 1); });
         return std::tuple(std::move(map), bs, std::move(dofmap));
       },
       nb::arg("comm"), nb::arg("topology"), nb::arg("layout"),
