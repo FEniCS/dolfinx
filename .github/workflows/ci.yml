@@ -1,4 +1,4 @@
-name: CI (via Spack, experimental)
+name: CI (with Spack)
 
 on:
   # Uncomment the below 'push' to trigger on push
@@ -18,7 +18,7 @@ env:
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
 jobs:
-  ci-spack-experimental-build:
+  ci-spack-build:
     runs-on: ubuntu-latest
     container: ubuntu:24.04
     permissions:
