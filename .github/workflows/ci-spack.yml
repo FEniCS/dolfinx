@@ -33,7 +33,7 @@ jobs:
     steps:
       - name: Install Spack requirements
         run: |
-          dnf install file bzip2 ca-certificates git gzip patch python3 tar \
+          dnf -y install file bzip2 ca-certificates git gzip patch python3 tar \
             unzip xz zstd gcc gcc-c++ gcc-gfortran
 
       - name: Get Spack
