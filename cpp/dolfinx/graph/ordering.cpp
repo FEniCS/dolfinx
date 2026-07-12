@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Chris Richardson
+// Copyright (C) 2021-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -190,8 +190,6 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
     }
     else
     {
-      // jthreads join automatically when `workers` goes out of scope,
-      // including if a worker throws.
       std::vector<std::jthread> workers;
       workers.reserve(nt);
       std::size_t chunk = (S.size() + nt - 1) / nt;
@@ -202,7 +200,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
         if (begin >= end)
           break;
         workers.emplace_back(
-            [&, begin, end]()
+            [&S, &lstmps, &graph, begin, end]()
             {
               for (std::size_t i = begin; i < end; ++i)
                 lstmps[i] = create_level_structure(graph, S[i]);
