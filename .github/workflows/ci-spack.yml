@@ -70,7 +70,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           spack debug report
-          spack -d -e py buildcache push --base-image ghcr.io/almalinux/almalinux:10 --update-index local-buildcache
+          spack -d -e py buildcache push --base-image ghcr.io/almalinux/almalinux:10 --allow-missing --update-index local-buildcache
         if: ${{ !cancelled() }}
 
       - name: Load FEniCS testing environment variables
