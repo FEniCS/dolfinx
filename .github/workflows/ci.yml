@@ -70,7 +70,7 @@ jobs:
           path: spack-fenics
 
       - name: Set up Spack
-        uses: spack/setup-spack@v3
+        uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
         with:
           spack_ref: v1.2.1
           packages_ref: v2026.06.0
