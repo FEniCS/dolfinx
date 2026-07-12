@@ -1053,7 +1053,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::optional<std::int32_t> max_facet_to_cell_links,
     const CellReorderFunction& reorder_fn
     = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::reorder_gps(g, 5, 1); })
+    { return graph::reorder_rcm(g); })
 {
   assert(cells.size() == elements.size());
   std::vector<CellType> celltypes;
@@ -1269,7 +1269,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::optional<std::int32_t> max_facet_to_cell_links,
     const CellReorderFunction& reorder_fn
     = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::reorder_gps(g, 5, 1); })
+    { return graph::reorder_rcm(g); })
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
                      commg, x, xshape, partitioner, max_facet_to_cell_links,

@@ -63,4 +63,32 @@ std::vector<std::int32_t>
 reorder_gps(const graph::AdjacencyList<std::int32_t>& graph,
             std::size_t max_candidates, std::size_t num_threads);
 
+/// @brief Re-order a graph using the Reverse Cuthill-McKee algorithm.
+///
+/// The algorithm is described in *Reducing the Bandwidth of Sparse
+/// Symmetric Matrices*, Proceedings of the 1969 24th National
+/// Conference, ACM, 1969, pp. 157-172,
+/// https://doi.org/10.1145/800195.805928. The pseudo-peripheral root
+/// used to start the ordering is found using the George-Liu "double
+/// sweep" heuristic (as in `reorder_gps`'s Algorithm I, but trying only
+/// the single lowest-degree candidate at each step).
+///
+/// Unlike `reorder_gps`, there is no width-minimising second phase: a
+/// single level structure is built from the pseudo-peripheral root,
+/// each level is numbered in increasing degree order, and the whole
+/// numbering is reversed (the "reverse" in Reverse Cuthill-McKee, which
+/// tends to reduce profile relative to the plain, non-reversed
+/// numbering). This makes `reorder_rcm` an O(V+E) algorithm with a much
+/// smaller constant than `reorder_gps`, at the cost of the bandwidth
+/// and profile quality that `reorder_gps`'s extra phase can provide on
+/// non-convex or strongly graded meshes -- for simple, convex,
+/// roughly uniform-density meshes the two typically produce comparable
+/// bandwidth.
+///
+/// @param[in] graph The graph to compute a re-ordering for
+/// @return Reordering array `map`, where `map[i]` is the new index of
+/// node `i`.
+std::vector<std::int32_t>
+reorder_rcm(const graph::AdjacencyList<std::int32_t>& graph);
+
 } // namespace dolfinx::graph
