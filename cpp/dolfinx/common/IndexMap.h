@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "IndexMap.h"
 #include "MPI.h"
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
