@@ -13,7 +13,7 @@ modification of linear systems.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from typing import Generic
+from typing import ClassVar, Generic
 
 import numpy as np
 import numpy.typing as npt
@@ -21,7 +21,7 @@ import numpy.typing as npt
 import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.fem.function import Constant, Function, FunctionSpace
-from dolfinx.fem.typemap import get_cpp_type
+from dolfinx.fem.typemap import MATCHED_PRECISIONS, get_cpp_type, register_cpp_type
 from dolfinx.typing import Scalar
 
 
@@ -99,6 +99,7 @@ class DirichletBC(Generic[Scalar]):
     The conditions are imposed on a linear system.
     """
 
+    _cpp_registry: ClassVar[dict] = {}
     _cpp_object: (
         _cpp.fem.DirichletBC_complex64
         | _cpp.fem.DirichletBC_complex128
@@ -212,7 +213,7 @@ def dirichletbc(
         geometry_dtype = np.dtype(value.function_space.mesh.geometry.x.dtype)
     else:
         geometry_dtype = np.dtype(dtype).type(0).real.dtype
-    bctype = get_cpp_type("DirichletBC", dtype, geometry_dtype)
+    bctype = get_cpp_type(DirichletBC, dtype, geometry_dtype)
 
     # Unwrap value object, if required
     if isinstance(value, np.ndarray):
@@ -250,3 +251,8 @@ def bcs_by_block(
         return [bc for bc in bcs if V.contains(bc.function_space)]
 
     return [_bc_space(V, bcs) if V is not None else [] for V in spaces]
+
+
+# Register the matched-precision built-ins.
+for _scalar, _geom, _name in MATCHED_PRECISIONS:
+    register_cpp_type(DirichletBC, _scalar, _geom, getattr(_cpp.fem, f"DirichletBC_{_name}"))

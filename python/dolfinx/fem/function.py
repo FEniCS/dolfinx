@@ -22,7 +22,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.element import FiniteElement, finiteelement
-from dolfinx.fem.typemap import get_cpp_type
+from dolfinx.fem.typemap import MATCHED_PRECISIONS, get_cpp_type, register_cpp_type
 from dolfinx.geometry import PointOwnershipData
 from dolfinx.typing import Real, Scalar
 
@@ -113,6 +113,7 @@ class Expression(Generic[Scalar]):
 
     """
 
+    _cpp_registry: typing.ClassVar[dict] = {}
     _ufl_expression: ufl.core.expr.Expr
     _argument_space: FunctionSpace | None
     _cpp_object: (
@@ -212,7 +213,7 @@ class Expression(Generic[Scalar]):
             geometry_dtype = expr_domains[0].ufl_cargo().geometry.x.dtype
         else:
             geometry_dtype = np.dtype(dtype).type(0).real.dtype
-        create_expression = get_cpp_type("Expression", dtype, geometry_dtype)
+        create_expression = get_cpp_type(Expression, dtype, geometry_dtype)
 
         _entity_maps = (
             [entity_map._cpp_object for entity_map in entity_maps]
@@ -338,6 +339,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
 
     """
 
+    _cpp_registry: typing.ClassVar[dict] = {}
     _cpp_object: (
         _cpp.fem.Function_complex64
         | _cpp.fem.Function_complex128
@@ -376,7 +378,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         # Scalar type (dtype) is independent of the geometry type, which
         # is fixed by the mesh.
         geometry_dtype = V.mesh.geometry.x.dtype
-        cpp_type = get_cpp_type("Function", dtype, geometry_dtype)
+        cpp_type = get_cpp_type(Function, dtype, geometry_dtype)
         if x is not None:
             self._cpp_object = cpp_type(V._cpp_object, x._cpp_object)  # type: ignore
         else:
@@ -848,3 +850,10 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
             degrees-of-freedom.
         """
         return self._cpp_object.tabulate_dof_coordinates()
+
+
+# Register the matched-precision built-ins. ``Expression`` is built
+# through a factory, ``Function`` through its class constructor.
+for _scalar, _geom, _name in MATCHED_PRECISIONS:
+    register_cpp_type(Function, _scalar, _geom, getattr(_cpp.fem, f"Function_{_name}"))
+    register_cpp_type(Expression, _scalar, _geom, getattr(_cpp.fem, f"create_expression_{_name}"))

@@ -25,7 +25,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
 from dolfinx.fem.function import Constant, Function, FunctionSpace
-from dolfinx.fem.typemap import get_cpp_type
+from dolfinx.fem.typemap import MATCHED_PRECISIONS, get_cpp_type, register_cpp_type
 from dolfinx.typing import Scalar
 
 if typing.TYPE_CHECKING:
@@ -38,6 +38,7 @@ if typing.TYPE_CHECKING:
 class Form(typing.Generic[Scalar]):
     """A finite element form."""
 
+    _cpp_registry: typing.ClassVar[dict] = {}
     _cpp_object: (
         _cpp.fem.Form_complex64
         | _cpp.fem.Form_complex128
@@ -296,7 +297,7 @@ def mixed_topology_form(
     comm = mesh.comm if jit_comm is None else jit_comm
 
     # Geometry type is fixed by the mesh.
-    ftype = get_cpp_type("Form", dtype, mesh.geometry.x.dtype)
+    ftype = get_cpp_type(Form, dtype, mesh.geometry.x.dtype)
 
     ufcx_forms = []
     modules = []
@@ -384,7 +385,7 @@ def form(
         comm = msh.comm if jit_comm is None else jit_comm
 
         # Geometry type is fixed by the mesh.
-        ftype = get_cpp_type("Form", dtype, msh.geometry.x.dtype)
+        ftype = get_cpp_type(Form, dtype, msh.geometry.x.dtype)
 
         ufcx_form, module, code = jit.ffcx_jit(
             comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
@@ -449,7 +450,7 @@ def form(
         msh = V[0].mesh
 
         # Geometry type is fixed by the mesh.
-        ftype = get_cpp_type("Form", dtype, msh.geometry.x.dtype)
+        ftype = get_cpp_type(Form, dtype, msh.geometry.x.dtype)
 
         f = ftype(
             spaces=V,
@@ -814,3 +815,8 @@ def derivative_block(
             "F must be either a UFL form (with rank zero or one), or a sequence of "
             "rank-one UFL forms."
         )
+
+
+# Register the matched-precision built-ins.
+for _scalar, _geom, _name in MATCHED_PRECISIONS:
+    register_cpp_type(Form, _scalar, _geom, getattr(_cpp.fem, f"Form_{_name}"))
