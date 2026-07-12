@@ -31,13 +31,3 @@ def get_cpp_type(cls, scalar_dtype, geometry_dtype):
             f"No compiled {cls.__name__} for scalar '{key[0]}' on geometry "
             f"'{key[1]}'. Register one with dolfinx.fem.register_cpp_type()."
         ) from None
-
-
-# Matched-precision built-ins (geometry == real part of scalar) as
-# (scalar, geometry, C++ suffix).
-MATCHED_PRECISIONS = (
-    (np.float32, np.float32, "float32"),
-    (np.float64, np.float64, "float64"),
-    (np.complex64, np.float32, "complex64"),
-    (np.complex128, np.float64, "complex128"),
-)

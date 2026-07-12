@@ -25,7 +25,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
 from dolfinx.fem.function import Constant, Function, FunctionSpace
-from dolfinx.fem.typemap import MATCHED_PRECISIONS, get_cpp_type, register_cpp_type
+from dolfinx.fem.typemap import get_cpp_type, register_cpp_type
 from dolfinx.typing import Scalar
 
 if typing.TYPE_CHECKING:
@@ -817,6 +817,11 @@ def derivative_block(
         )
 
 
-# Register the matched-precision built-ins.
-for _scalar, _geom, _name in MATCHED_PRECISIONS:
+# Register the matched-precision built-ins (geometry == real scalar part).
+for _scalar, _geom, _name in (
+    (np.float32, np.float32, "float32"),
+    (np.float64, np.float64, "float64"),
+    (np.complex64, np.float32, "complex64"),
+    (np.complex128, np.float64, "complex128"),
+):
     register_cpp_type(Form, _scalar, _geom, getattr(_cpp.fem, f"Form_{_name}"))
