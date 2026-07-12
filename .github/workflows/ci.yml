@@ -170,7 +170,7 @@ jobs:
           # spack-packages recipe.
           spack -e py add py-gmsh ^gmsh~fltk+external py-pyamg py-matplotlib ^freetype@2.13.3 py-networkx \
             py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
-            py-pytest py-pytest-xdist py-scipy py-pyvista
+            py-pytest py-pytest-xdist py-scipy py-pyvista ^vtk~mpi io=none
           spack -e py concretize -j 4
           spack -e py install -j 4 --use-buildcache auto
 
