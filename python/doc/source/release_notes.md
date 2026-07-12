@@ -49,7 +49,7 @@ core libraries. Users can now call
 import basix.ufl
 import dolfinx.fem
 
-el = basix.ufl.real_element(mesh.basix_cell(), dtype=dtype, shape=(N, ))
+el = basix.ufl.real_element(mesh.basix_cell(), dtype=dtype, value_shape=(N, ))
 R = dolfinx.fem.functionspace(mesh, el)
 ```
 
