@@ -1,4 +1,5 @@
 name: "CI (RHEL clone: gcc, oneAPI)"
+
 on:
   push:
     branches:
@@ -52,9 +53,12 @@ jobs:
 
       - name: Add dependencies to environment
         run: |
-          spack -e py add mpi petsc+mpi+shared+mumps+superlu-dist slepc parmetis pkgconfig hdf5+mpi boost pugixml spdlog
-          spack -e py add python@3.14 py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
+          spack -e py add mpi petsc+mpi+shared+mumps+superlu-dist slepc parmetis pkgconfig \
+            hdf5+mpi boost pugixml spdlog
+          spack -e py add python@3.14 py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py \
+            py-scikit-build-core+pyproject py-setuptools py-cffi
           spack -e py add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
+          spack -e py add py-gmsh ^gmsh~fltk+external py-pyvista
           spack -e py add openblas
 
       - if: matrix.compiler == 'oneapi'
@@ -62,7 +66,7 @@ jobs:
         run: spack -e py add intel-oneapi-compilers
 
       - name: Install Spack packages
-        run: spack -e py install -j4 -p2 --use-buildcache auto
+        run: spack -e py install -j 4 --use-buildcache auto
 
       - name: Push packages to Spack cache and update index
         env:
@@ -116,13 +120,6 @@ jobs:
           cd build/demo
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2
-        shell: spack-bash {0}
-
-      - name: Install gmsh and pyvista (and via  package manager install dependencies)
-        run: |
-          dnf install -y mesa-libGLU libX11 libXrender mesa-libEGL libglvnd-glx libXcursor libXft libXinerama
-          spack env activate py
-          pip install gmsh pyvista
         shell: spack-bash {0}
 
       - name: Build Python interface (editable install)
