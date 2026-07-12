@@ -25,7 +25,7 @@ env:
 jobs:
   ci-spack-build:
     name: AlmaLinux build and test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     container: ghcr.io/almalinux/almalinux:10
     strategy:
       matrix:

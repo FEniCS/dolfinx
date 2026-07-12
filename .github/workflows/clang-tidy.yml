@@ -19,7 +19,7 @@ on:
 
 jobs:
   clang-tidy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     container: "ghcr.io/fenics/test-env:current-openmpi"
     env:
       PETSC_ARCH: linux-gnu-real64-32
@@ -33,7 +33,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y clang-tidy catch2
-        
+
       - name: Install Python build dependencies
         working-directory: python
         run: |
