@@ -35,6 +35,26 @@ jobs:
           apt-get install -y file bzip2 ca-certificates g++ gcc gfortran git gzip \
             lsb-release patch python3 tar unzip xz-utils zstd
 
+      - name: Set up Spack
+        uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
+        with:
+          spack_ref: v1.2.1
+          packages_ref: v2026.06.0
+
+      - name: Get FEniCS Spack packages
+        uses: actions/checkout@v7
+        with:
+          repository: fenics/spack-fenics
+          ref: main
+          path: spack-fenics
+
+      # Add FEniCS Spack packages on top of the upstream Spack packages
+      - name: Add FEniCS Spack packages repo
+        run: |
+          spack repo add --name fenics $GITHUB_WORKSPACE/spack-fenics/spack_repo/fenics
+          spack config get repos
+          spack repo list
+
       - name: Get DOLFINx code
         uses: actions/checkout@v7
         with:
@@ -62,31 +82,11 @@ jobs:
           ref: ${{ env.basix_ref }}
           path: basix-src
 
-      - name: Get FEniCS Spack packages
-        uses: actions/checkout@v7
-        with:
-          repository: fenics/spack-fenics
-          ref: main
-          path: spack-fenics
-
-      - name: Set up Spack
-        uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
-        with:
-          spack_ref: v1.2.1
-          packages_ref: v2026.06.0
-
       - name: Record source commit SHAs
         run: |
           echo "BASIX_SHA=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD)" >> $GITHUB_ENV
           echo "UFL_SHA=$(git -C $GITHUB_WORKSPACE/ufl-src rev-parse HEAD)" >> $GITHUB_ENV
           echo "FFCX_SHA=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)" >> $GITHUB_ENV
-
-      # Overlay FEniCS Spack packages on top of the upstream Spack packages
-      - name: Add FEniCS Spack packages repo
-        run: |
-          spack repo add --name fenics $GITHUB_WORKSPACE/spack-fenics/spack_repo/fenics
-          spack config get repos
-          spack repo list
 
       - name: Prepare C++ environment
         run: |
