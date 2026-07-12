@@ -94,9 +94,12 @@ TEMPLATE_TEST_CASE("Interval uniform refinement",
 
   // topology->create_connectivity(0, 1);
   // CHECK_adjacency_list_equal(*topology->connectivity(0, 1), {/* v_0 */ {0},
-  //                                                            /* v_1 */ {0, 1},
-  //                                                            /* v_2 */ {1, 2},
-  //                                                            /* v_3 */ {2, 3},
+  //                                                            /* v_1 */ {0,
+  //                                                            1},
+  //                                                            /* v_2 */ {1,
+  //                                                            2},
+  //                                                            /* v_3 */ {2,
+  //                                                            3},
   //                                                            /* v_4 */ {3}});
 
   // CHECK_THAT(parent_edge.value(),
