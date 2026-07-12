@@ -58,7 +58,10 @@ jobs:
           spack -e py add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py \
             py-scikit-build-core+pyproject py-setuptools py-cffi
           spack -e py add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
-          spack -e py add py-gmsh ^gmsh~fltk+external ^opencascade~draw py-pyvista ^mesa~llvm
+          # NOTE: freetype@2.13.3 works around a raster overflow bug in
+          # freetype@2.14.2 (2026-07). Re-check and drop once a fixed
+          # freetype (2.14.3+) lands in the spack-packages recipe.
+          spack -e py add py-gmsh ^gmsh~fltk+external ^opencascade~draw py-pyvista ^mesa~llvm ^freetype@2.13.3
           spack -e py add openblas
 
       - if: matrix.compiler == 'oneapi'
