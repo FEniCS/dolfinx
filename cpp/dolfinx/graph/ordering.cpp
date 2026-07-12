@@ -134,7 +134,7 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
 std::vector<std::int32_t>
 gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
                        std::span<const std::int32_t> rlabel,
-                       std::size_t num_threads)
+                       std::size_t max_candidates, std::size_t num_threads)
 {
   common::Timer timer("Gibbs-Poole-Stockmeyer ordering");
 
@@ -166,9 +166,17 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   std::vector<int> S;
   while (!done)
   {
-    // Sort final level S of Lv into increasing degree order
+    // Sort final level S of Lv into increasing degree order, capped to
+    // at most `max_candidates` (most likely peripheral) candidates.
+    // Testing every vertex in the final level costs O(|S| * (V+E)) per
+    // round; for a compact 3D mesh |S| scales as the cross-sectional
+    // area (~ N^(2/3)), which dominates run time at scale. A handful
+    // of the lowest-degree candidates often captures the same
+    // pseudo-diameter and width-minimising choice as an exhaustive
+    // search, but not always -- non-convex domains and strongly graded
+    // meshes can lose some bandwidth/profile quality with a small cap.
     auto lv_final = lv.links(lv.num_nodes() - 1);
-    S.resize(lv_final.size());
+    S.resize(std::min(lv_final.size(), max_candidates));
     std::partial_sort_copy(lv_final.begin(), lv_final.end(), S.begin(), S.end(),
                            cmp_degree);
     int w_min = std::numeric_limits<int>::max();
@@ -406,7 +414,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 graph::reorder_gps(const graph::AdjacencyList<std::int32_t>& graph,
-                   std::size_t num_threads)
+                   std::size_t max_candidates, std::size_t num_threads)
 {
   const std::int32_t n = graph.num_nodes();
   std::vector<std::int32_t> r(n, -1);
@@ -416,7 +424,7 @@ graph::reorder_gps(const graph::AdjacencyList<std::int32_t>& graph,
   int count = 0;
   while (count < n)
   {
-    rv = gps_reorder_unlabelled(graph, r, num_threads);
+    rv = gps_reorder_unlabelled(graph, r, max_candidates, num_threads);
     assert(!rv.empty());
 
     // Reverse permutation

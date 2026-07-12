@@ -108,7 +108,7 @@ Mesh<T> create_box(
     CellPartitionFunction partitioner = nullptr,
     const CellReorderFunction& reorder_fn
     = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::reorder_gps(g, 1); })
+    { return graph::reorder_gps(g, 5, 1); })
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell is required.");
@@ -159,7 +159,7 @@ Mesh<T> create_box(
     const CellPartitionFunction& partitioner = nullptr,
     const CellReorderFunction& reorder_fn
     = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::reorder_gps(g, 1); })
+    { return graph::reorder_gps(g, 5, 1); })
 {
   return create_box<T>(comm, comm, p, n, celltype, partitioner, reorder_fn);
 }
@@ -191,7 +191,7 @@ Mesh<T> create_rectangle(
     DiagonalType diagonal = DiagonalType::right, int gdim = 2,
     const CellReorderFunction& reorder_fn
     = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::reorder_gps(g, 1); })
+    { return graph::reorder_gps(g, 5, 1); })
 {
   if (gdim < 2 || gdim > 3)
     throw std::runtime_error("2 <= gdim <= 3 for rectangle mesh.");
@@ -267,7 +267,7 @@ Mesh<T> create_interval(
     CellPartitionFunction partitioner = nullptr, int gdim = 1,
     const CellReorderFunction& reorder_fn
     = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::reorder_gps(g, 1); })
+    { return graph::reorder_gps(g, 5, 1); })
 {
   if (gdim < 1 || gdim > 3)
     throw std::runtime_error("1 <= gdim <= 3 for interval mesh.");

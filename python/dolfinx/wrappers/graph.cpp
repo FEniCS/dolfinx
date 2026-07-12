@@ -83,7 +83,7 @@ void graph(nb::module_& m)
 #endif
 
   m.def("reorder_gps", &dolfinx::graph::reorder_gps, nb::arg("graph"),
-        nb::arg("num_threads"));
+        nb::arg("max_candidates"), nb::arg("num_threads"));
 
   m.def(
       "comm_graph", [](const dolfinx::common::IndexMap& map, int root)
