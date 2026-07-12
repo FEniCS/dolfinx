@@ -15,7 +15,7 @@ spack:
       - target=x86_64_v3
     mesa:
       require:
-      - "@24.3.7"
+      - "@24.3.4"
 
   mirrors:
     local-buildcache:
