@@ -107,11 +107,8 @@ jobs:
           spack -e cxx add py-fenics-ufl@main commit=$UFL_SHA
           spack -e cxx add fenics-ufcx@main commit=$FFCX_SHA
           spack -e cxx add py-fenics-ffcx@main commit=$FFCX_SHA
-          # TODO: ~hypre works around petsc concretising to an old version
-          # with +hypre, as of 12/11/2025. Re-check and drop once fixed upstream.
           spack -e cxx add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
-            ^petsc+mpi+mumps+superlu-dist~hypre \
-            ^adios2~libcatalyst~fortran
+            ^petsc+mpi+mumps+superlu-dist+hypre ^adios2~libcatalyst~fortran
           spack -e cxx add catch2 ninja
           spack -e cxx concretize -j 4
           spack -e cxx install -j 4 --use-buildcache auto
@@ -165,12 +162,9 @@ jobs:
           spack -e py add fenics-ufcx@main commit=$FFCX_SHA
           spack -e py add py-fenics-ffcx@main commit=$FFCX_SHA
           spack -e py add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
-            ^petsc+mpi+mumps+superlu-dist~hypre \
-            ^adios2~libcatalyst~fortran
-          # TODO: ~hypre works around petsc concretising to an old version
-          # with +hypre, as of 12/11/2025. Re-check and drop once fixed upstream.
+            ^petsc+mpi+mumps+superlu-dist+hypre ^adios2~libcatalyst~fortran
           spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer
-          # TODO: freetype@2.13.3 works around a raster overflow bug in
+          # NOTE: freetype@2.13.3 works around a raster overflow bug in
           # freetype@2.14.2 (2026-07) triggered by savefig() in some demos.
           # Re-check and drop once a fixed freetype (2.14.3+) lands in the
           # spack-packages recipe.
