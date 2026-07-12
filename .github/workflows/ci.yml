@@ -75,6 +75,12 @@ jobs:
           spack_ref: v1.2.1
           packages_ref: v2026.06.0
 
+      - name: Record source commit SHAs
+        run: |
+          echo "BASIX_SHA=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD)" >> $GITHUB_ENV
+          echo "UFL_SHA=$(git -C $GITHUB_WORKSPACE/ufl-src rev-parse HEAD)" >> $GITHUB_ENV
+          echo "FFCX_SHA=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)" >> $GITHUB_ENV
+
       # Overlay FEniCS Spack packages on top of the upstream Spack packages
       - name: Add FEniCS Spack packages repo
         run: |
@@ -96,11 +102,11 @@ jobs:
       - name: Build library (C++)
         run: |
           # Ensure build provenance by adding manually and providing git sha
-          spack -e cxx add fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD) build_type=Developer
-          spack -e cxx add py-fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD)
-          spack -e cxx add py-fenics-ufl@main commit=$(git -C $GITHUB_WORKSPACE/ufl-src rev-parse HEAD)
-          spack -e cxx add fenics-ufcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
-          spack -e cxx add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
+          spack -e cxx add fenics-basix@main commit=$BASIX_SHA build_type=Developer
+          spack -e cxx add py-fenics-basix@main commit=$BASIX_SHA
+          spack -e cxx add py-fenics-ufl@main commit=$UFL_SHA
+          spack -e cxx add fenics-ufcx@main commit=$FFCX_SHA
+          spack -e cxx add py-fenics-ffcx@main commit=$FFCX_SHA
           # TODO: ~hypre works around petsc concretising to an old version
           # with +hypre, as of 12/11/2025. Re-check and drop once fixed upstream.
           spack -e cxx add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
@@ -153,11 +159,11 @@ jobs:
       - name: Build library (Python)
         run: |
           # Ensure build provenance by adding manually and providing git sha
-          spack -e py add fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD) build_type=Developer
-          spack -e py add py-fenics-basix@main commit=$(git -C $GITHUB_WORKSPACE/basix-src rev-parse HEAD)
-          spack -e py add py-fenics-ufl@main commit=$(git -C $GITHUB_WORKSPACE/ufl-src rev-parse HEAD)
-          spack -e py add fenics-ufcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
-          spack -e py add py-fenics-ffcx@main commit=$(git -C $GITHUB_WORKSPACE/ffcx-src rev-parse HEAD)
+          spack -e py add fenics-basix@main commit=$BASIX_SHA build_type=Developer
+          spack -e py add py-fenics-basix@main commit=$BASIX_SHA
+          spack -e py add py-fenics-ufl@main commit=$UFL_SHA
+          spack -e py add fenics-ufcx@main commit=$FFCX_SHA
+          spack -e py add py-fenics-ffcx@main commit=$FFCX_SHA
           spack -e py add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
             ^petsc+mpi+mumps+superlu-dist~hypre \
             ^adios2~libcatalyst~fortran
