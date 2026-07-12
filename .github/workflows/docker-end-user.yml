@@ -201,7 +201,7 @@ jobs:
   create_multiarch_end_user_images:
     name: Create multiarch end-user images
     if: ${{ github.repository == 'FEniCS/dolfinx' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs:
       - create_end_user_images
     steps:

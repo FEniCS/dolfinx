@@ -16,6 +16,9 @@ on:
     - cron: "0 2 * * WED"
   workflow_dispatch: ~
 
+env:
+  UCX_TLS: tcp  # Use TCP only, avoiding InfiniBand/MANA
+
 jobs:
   conda-install:
     name: Install and test
