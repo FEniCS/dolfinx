@@ -589,7 +589,7 @@ def apply_lifting(
         constants = [pack_constants(forms) for forms in a] if constants is None else constants  # type: ignore[assignment]
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
         for b_sub, a_sub, const, coeff in zip(
-            b.getNestSubVecs(),  # type: ignore[arg-type]
+            b.getNestSubVecs(),
             a,
             constants,  # type: ignore[arg-type]
             coeffs,
