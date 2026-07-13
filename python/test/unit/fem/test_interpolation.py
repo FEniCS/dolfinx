@@ -97,7 +97,7 @@ def random_point_in_cell(mesh):
         axes = (mesh.geometry.x[1], mesh.geometry.x[2], mesh.geometry.x[4])
 
     return tuple(
-        origin[i] + sum((axis[i] - origin[i]) * p for axis, p in zip(axes, point, strict=False))
+        origin[i] + sum((axis[i] - origin[i]) * p for axis, p in zip(axes, point, strict=True))
         for i in range(3)
     )
 
@@ -233,7 +233,7 @@ def run_scalar_test(V, poly_order):
     points = np.asarray(points, dtype=default_real_type)
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
-    for p, val in zip(points, values, strict=False):
+    for p, val in zip(points, values, strict=True):
         assert np.allclose(val, f(p), atol=1.0e-5)
 
 
@@ -264,7 +264,7 @@ def run_vector_test(V, poly_order):
     points = [random_point_in_cell(V.mesh) for count in range(5)]
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
-    for p, val in zip(points, values, strict=False):
+    for p, val in zip(points, values, strict=True):
         assert np.allclose(val, f(p), atol=1.0e-5)
 
 
