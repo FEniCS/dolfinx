@@ -269,7 +269,7 @@ public:
   /// 2. Received by this rank from other ranks when performing a
   /// forward (owner -> ghost) scatter.
   ///
-  /// @return A weight vector, where `weight[i]` the the number of
+  /// @return A weight vector, where `weight[i]` is the number of
   /// ghost indices owned by rank IndexMap::src()`[i]`.
   std::vector<std::int32_t> weights_src() const;
 
@@ -284,7 +284,7 @@ public:
   /// 2. Received by this rank from other ranks when performing a
   /// reverse forward (owner <- ghost) scatter.
   ///
-  /// @return A weight vector, where `weight[i]` the the number of ghost
+  /// @return A weight vector, where `weight[i]` is the number of ghost
   /// indices owned by rank IndexMap::dest()`[i]`.
   std::vector<std::int32_t> weights_dest() const;
 

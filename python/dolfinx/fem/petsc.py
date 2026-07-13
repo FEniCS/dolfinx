@@ -233,7 +233,7 @@ def assemble_vector(
     3. If ``L`` is a sequence of linear forms and ``kind`` is
        ``PETSc.Vec.Type.NEST``, the forms are assembled into a PETSc
        nested vector ``b`` (a nest of ghosted PETSc vectors) such that
-       ``L[i]`` is assembled into into the ith nested matrix in ``b``.
+       ``L[i]`` is assembled into the ith nested matrix in ``b``.
 
     Constant and coefficient data that appear in the forms(s) can be
     packed outside of this function to avoid re-packing by this
@@ -327,7 +327,7 @@ def _(
                 offset0[1:],
                 offset1[:-1],
                 offset1[1:],
-                strict=False,
+                strict=True,
             ):
                 bx_ = np.zeros((off1 - off0) + (offg1 - offg0), dtype=PETSc.ScalarType)  # type: ignore[attr-defined]
                 _assemble_vector_array(bx_, L_, const, coeff)  # type: ignore[arg-type]
@@ -695,9 +695,9 @@ def set_bc(
         offset0, _ = b.getAttr("_blocks")
         b_array = b.getArray(readonly=False)
         x_array = x0.getArray(readonly=True) if x0 is not None else None
-        for bcs, off0, off1 in zip(bcs, offset0[:-1], offset0[1:], strict=True):  # type: ignore[assignment]
+        for bcs_block, off0, off1 in zip(bcs, offset0[:-1], offset0[1:], strict=True):
             x0_sub = x_array[off0:off1] if x0 is not None else None  # type: ignore[index]
-            for bc in bcs:
+            for bc in bcs_block:  # type: ignore[attr-defined]
                 bc.set(b_array[off0:off1], x0_sub, alpha)  # type: ignore[arg-type, union-attr]
 
 
@@ -1133,7 +1133,7 @@ def assemble_jacobian(
         bcs: List of Dirichlet boundary conditions to apply to the Jacobian
             and preconditioner matrices.
     """
-    # Copy existing soultion into the function used in the residual and
+    # Copy existing solution into the function used in the residual and
     # Jacobian
     dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[attr-defined]
     assign(x, u)

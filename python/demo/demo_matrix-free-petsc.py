@@ -59,7 +59,7 @@ import ufl
 # -
 
 # ## Matrix-free operator
-# Many interative methods, such as the conjugate gradient method, only
+# Many iterative methods, such as the conjugate gradient method, only
 # requires the action of the system matrix on a vector. Thus, one can
 # assemble a form of rank 1 with a given function replacing the trial
 # function and obtain this vector.

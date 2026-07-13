@@ -81,7 +81,7 @@ def create_vector(
 
     1. If ``maps=[(im_0, bs_0), ..., (im_n, bs_n)]`` is a sequence of
        indexmaps and blocksizes and ``kind`` is ``None``or is
-       ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector whith block structure
+       ``PETSc.Vec.Type.MPI``, a ghosted PETSc vector with block structure
        described by ``(im_i, bs_i)`` is created.
        The created vector ``b`` is initialized such that on each MPI
        process ``b = [b_0, b_1, ..., b_n, b_0g, b_1g, ..., b_ng]``, where

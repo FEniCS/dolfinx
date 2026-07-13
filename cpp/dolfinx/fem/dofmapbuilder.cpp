@@ -58,7 +58,7 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
 {
   std::vector<std::int32_t> graph_data, graph_offsets;
 
-  // Compute maximum number of graph out edges edges per dof
+  // Compute maximum number of graph out edges per dof
   std::vector<int> num_edges(owned_size);
   for (auto& dofmap : dofmaps)
   {

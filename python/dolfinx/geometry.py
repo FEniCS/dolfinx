@@ -299,7 +299,7 @@ def compute_distances_gjk(
 
     For each convex body defined in `bodies`;
     (a set of 3D points for each body) find the shortest distance vector
-    to to the body `q` defined by another set of 3D points.
+    to the body `q` defined by another set of 3D points.
     The method uses the
     Gilbert-Johnson-Keerthi (GJK) distance algorithm.
 
