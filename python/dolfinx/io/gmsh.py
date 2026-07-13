@@ -333,7 +333,7 @@ def model_to_mesh(
 
         # Extract Gmsh entity (cell) id, topological dimension and number
         # of nodes which is used to create an appropriate coordinate
-        # element, and seperate higher topological entities from lower
+        # element, and separate higher topological entities from lower
         # topological entities (e.g. facets, ridges and peaks).
         num_unique_entities = len(topologies.keys())
         element_ids = np.zeros(num_unique_entities, dtype=np.int32)
@@ -416,7 +416,7 @@ def model_to_mesh(
         cell_connectivities.append(cell_connectivity)
         ufl_domains.append(ufl_domain)
 
-    # Create a distributed mesh, where mesh nodes are only destributed from
+    # Create a distributed mesh, where mesh nodes are only distributed from
     # the input rank
     if comm.rank != rank:
         x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
@@ -530,12 +530,12 @@ def read_from_msh(
     """
     try:
         import gmsh
-    except ModuleNotFoundError:
+    except ModuleNotFoundError as err:
         # Python 3.11+ adds the add_note method to exceptions
         # e.add_note("Gmsh must be installed to import dolfinx.io.gmsh")
         raise ModuleNotFoundError(
             "No module named 'gmsh': dolfinx.io.gmsh.read_from_msh requires Gmsh.", name="gmsh"
-        )
+        ) from err
 
     if comm.rank == rank:
         gmsh.initialize()

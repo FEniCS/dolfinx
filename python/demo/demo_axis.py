@@ -553,7 +553,7 @@ I0 = 0.5 * n_bkg / Z0  # Intensity
 #
 # In light of this, we can solve the problem for $m\geq 0$.
 #
-# We now now define `eps_pml` and `mu_pml`:
+# We now define `eps_pml` and `mu_pml`:
 
 # +
 rho, z = ufl.SpatialCoordinate(mesh_data.mesh)

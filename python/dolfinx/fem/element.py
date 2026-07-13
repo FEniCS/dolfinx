@@ -254,7 +254,7 @@ class FiniteElement(Generic[Real]):
     def space_dimension(self) -> int:
         """Dimension of the finite element function space.
 
-        This is the the number of degrees-of-freedom for the element.
+        This is the number of degrees-of-freedom for the element.
         For 'blocked' elements, this function returns the dimension of
         the full element rather than the dimension of the base element.
         """
