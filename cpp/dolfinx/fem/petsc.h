@@ -459,7 +459,7 @@ void apply_lifting(
 /// (interpolated) boundary condition value.
 ///
 /// @param[in] b The vector to apply the boundary condition to. The local
-/// (owned) part of this vector is modified. The user is reponsible of
+/// (owned) part of this vector is modified. The user is responsible for
 /// scattering the changes to the ghost part of the vector if necessary.
 /// @param[in] bcs The boundary conditions to apply.
 /// @param[in] x0 Optional vector used in computing the value to set. If

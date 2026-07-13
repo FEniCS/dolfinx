@@ -72,7 +72,7 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
   auto sub_element = finite_element.sub_elements()[component[0]];
   assert(sub_element);
 
-  // Return sub system if sub sub system should not be extracted
+  // Return sub system if sub system should not be extracted
   if (component.size() == 1)
     return sub_element;
 
