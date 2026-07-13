@@ -40,11 +40,11 @@ assert dolfinx.has_petsc4py
 
 
 import numpy as np
+import ufl
 from numpy import typing as npt
 
 import dolfinx.cpp as _cpp
 import dolfinx.la.petsc
-import ufl
 from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
@@ -135,7 +135,8 @@ def create_vector(
         vector is not initialised to zero.
     """
     if isinstance(
-        V, _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
+        V,
+        _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64,
     ):
         V = [V]
     elif any(_V is None for _V in V):
@@ -319,7 +320,14 @@ def _(
         offset0, offset1 = b.getAttr("_blocks")
         with b.localForm() as b_l:
             for L_, const, coeff, off0, off1, offg0, offg1 in zip(
-                L, constants, coeffs, offset0, offset0[1:], offset1, offset1[1:], strict=True
+                L,
+                constants,
+                coeffs,
+                offset0,
+                offset0[1:],
+                offset1,
+                offset1[1:],
+                strict=False,
             ):
                 bx_ = np.zeros((off1 - off0) + (offg1 - offg0), dtype=PETSc.ScalarType)  # type: ignore[attr-defined]
                 _assemble_vector_array(bx_, L_, const, coeff)  # type: ignore[arg-type]
@@ -596,7 +604,10 @@ def apply_lifting(
             strict=True,
         ):
             const_ = list(
-                map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)  # type: ignore[attr-defined, call-overload]
+                map(
+                    lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x,
+                    const,
+                )  # type: ignore[attr-defined, call-overload]
             )
             apply_lifting(b_sub, a_sub, bcs, x0, alpha, const_, coeff)  # type: ignore[arg-type]
     else:
@@ -608,7 +619,7 @@ def apply_lifting(
                     xlocal = [
                         np.concatenate((xl[off0:off1], xl[offg0:offg1]))
                         for (off0, off1, offg0, offg1) in zip(
-                            offset0, offset0[1:], offset1, offset1[1:], strict=True
+                            offset0, offset0[1:], offset1, offset1[1:], strict=False
                         )
                     ]
                 else:
@@ -617,7 +628,7 @@ def apply_lifting(
                 offset0, offset1 = b.getAttr("_blocks")
                 with b.localForm() as b_l:
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
-                        zip(a, offset0, offset0[1:], offset1, offset1[1:], strict=True)
+                        zip(a, offset0, offset0[1:], offset1, offset1[1:], strict=False)
                     ):
                         const = pack_constants(a_) if constants is None else constants[i]  # type: ignore[arg-type, call-overload]
                         coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore[arg-type, assignment, index, call-overload]
@@ -684,7 +695,7 @@ def set_bc(
         offset0, _ = b.getAttr("_blocks")
         b_array = b.getArray(readonly=False)
         x_array = x0.getArray(readonly=True) if x0 is not None else None
-        for bcs, off0, off1 in zip(bcs, offset0, offset0[1:], strict=True):  # type: ignore[assignment]
+        for bcs, off0, off1 in zip(bcs, offset0, offset0[1:], strict=False):  # type: ignore[assignment]
             x0_sub = x_array[off0:off1] if x0 is not None else None  # type: ignore[index]
             for bc in bcs:
                 bc.set(b_array[off0:off1], x0_sub, alpha)  # type: ignore[arg-type, union-attr]
@@ -889,7 +900,8 @@ class LinearProblem:
     def __del__(self):
         """Destroy internally held PETSc objects."""
         for obj in filter(
-            lambda obj: obj is not None, (self._solver, self._A, self._b, self._x, self._P_mat)
+            lambda obj: obj is not None,
+            (self._solver, self._A, self._b, self._x, self._P_mat),
         ):
             obj.destroy()
 
@@ -1365,7 +1377,8 @@ class NonlinearProblem:
     def __del__(self):
         """Destroy PETSc objects created internally."""
         for obj in filter(
-            lambda obj: obj is not None, (self._snes, self._A, self._b, self._x, self._P_mat)
+            lambda obj: obj is not None,
+            (self._snes, self._A, self._b, self._x, self._P_mat),
         ):
             obj.destroy()
 
@@ -1723,10 +1736,9 @@ class numba_utils:
     """
 
     try:
-        import petsc4py.PETSc as _PETSc
-
         import llvmlite as _llvmlite
         import numba as _numba
+        import petsc4py.PETSc as _PETSc
 
         _llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
 
