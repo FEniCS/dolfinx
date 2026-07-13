@@ -41,7 +41,7 @@ from dolfinx.io import gmsh as gmshio
 def gmsh_sphere(model: gmsh.model, name: str) -> gmsh.model:
     """Create a Gmsh model of a sphere.
 
-    Tags sub entitites for all co-dimensions (peaks, ridges, facets and
+    Tags sub entities for all co-dimensions (peaks, ridges, facets and
     cells).
 
     Args:

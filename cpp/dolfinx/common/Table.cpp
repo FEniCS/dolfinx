@@ -8,8 +8,8 @@
 #include "MPI.h"
 #include <array>
 #include <functional>
-#include <iostream>
 #include <map>
+#include <sstream>
 #include <variant>
 
 namespace

@@ -46,7 +46,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// has performance benefits.
 /// @param[in] P0 Function that applies transformation `P0.b` in-place
 /// to `b` to transform test degrees-of-freedom.
-/// @param[in,out] b Aray to accumulate into.
+/// @param[in,out] b Array to accumulate into.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
 /// @param[in] x Mesh geometry (coordinates).
 /// @param[in] cells Cell indices to execute the kernel over. These are

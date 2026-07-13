@@ -285,7 +285,7 @@ def assemble_matrix(
         bcs: Boundary conditions that affect the assembled matrix.
             Degrees-of-freedom constrained by a boundary condition will
             have their rows/columns zeroed and the value ``diagonal``
-            set on on the matrix diagonal.
+            set on the matrix diagonal.
         diag: Value to set on the matrix diagonal for Dirichlet
             boundary condition constrained degrees-of-freedom belonging
             to the same trial and test space.
