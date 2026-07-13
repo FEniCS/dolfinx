@@ -25,7 +25,7 @@ enum class CellType : std::int8_t;
 /// @param[in] cells Lists of cell vertices (stored as flattened lists,
 /// one for each cell type).
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet needs to be connected to to be considered *matched*, i.e. a
+/// facet needs to be connected to be considered *matched*, i.e. a
 /// matched facet is not connected any cells on other processes. All
 /// facets connected to less than `max_facet_to_cell_links` cells are
 /// considered *unmatched* and parallel communication will check for
@@ -75,7 +75,7 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// from which to build the dual graph, as flattened arrays for each
 /// cell type in `celltypes`.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet needs to be connected to to be considered *matched*, i.e. a
+/// facet needs to be connected to be considered *matched*, i.e. a
 /// matched facet is not connected any cells on other processes. All
 /// facets connected to less than `max_facet_to_cell_links` cells are
 /// considered *unmatched* and parallel communication will check for

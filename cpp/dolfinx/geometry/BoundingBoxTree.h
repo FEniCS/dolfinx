@@ -226,7 +226,7 @@ public:
   /// @param[in] mesh Mesh for building the bounding box tree.
   /// @param[in] tdim Topological dimension of the mesh entities to
   /// build the bounding box tree for.
-  /// @param[in] padding Value to pad (extend) the the bounding box of
+  /// @param[in] padding Value to pad (extend) the bounding box of
   /// each entity by.
   /// @param[in] entities List of entity indices (local to process) to
   /// compute the bounding box for. If `std::nullopt`, the bounding box tree is

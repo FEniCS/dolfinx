@@ -33,7 +33,7 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> marker, T theta,
                                        MPI_Comm comm)
 {
   if ((theta <= 0) || (theta >= 1))
-    throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
+    throw std::invalid_argument("Theta needs to fulfill 0 < θ < 1.");
 
   T max = marker.empty() ? std::numeric_limits<T>::lowest()
                          : std::ranges::max(marker);

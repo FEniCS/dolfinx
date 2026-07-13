@@ -232,7 +232,7 @@ def assemble_vector(
     3. If ``L`` is a sequence of linear forms and ``kind`` is
        ``PETSc.Vec.Type.NEST``, the forms are assembled into a PETSc
        nested vector ``b`` (a nest of ghosted PETSc vectors) such that
-       ``L[i]`` is assembled into into the ith nested matrix in ``b``.
+       ``L[i]`` is assembled into the ith nested matrix in ``b``.
 
     Constant and coefficient data that appear in the forms(s) can be
     packed outside of this function to avoid re-packing by this
@@ -1111,7 +1111,7 @@ def assemble_jacobian(
         bcs: List of Dirichlet boundary conditions to apply to the Jacobian
             and preconditioner matrices.
     """
-    # Copy existing soultion into the function used in the residual and
+    # Copy existing solution into the function used in the residual and
     # Jacobian
     dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[attr-defined]
     assign(x, u)

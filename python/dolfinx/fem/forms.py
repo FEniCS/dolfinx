@@ -251,7 +251,7 @@ def mixed_topology_form(
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
 ):
-    """Create a mixed-topology from from an array of Forms.
+    """Create a mixed-topology from an array of Forms.
 
     # FIXME: This function is a temporary hack for mixed-topology
     meshes. # It is needed because UFL does not know about
@@ -621,7 +621,7 @@ def create_form(
             match the number of arguments in the form.
         msh: Mesh to associate form with.
         subdomains: A map from integral type to a list of pairs, where
-            each pair corresponds to a subdomain id and the set of of
+            each pair corresponds to a subdomain id and the set of
             integration entities to integrate over. Can be computed with
             {py:func}`dolfinx.fem.compute_integration_domains`.
         coefficient_map: Map from UFL coefficient to function with data.

@@ -496,7 +496,7 @@ class TestNLSPETSc:
         def nested():
             """Blocked and nested.
 
-            Shows how to setup some SNES options programatically.
+            Shows how to setup some SNES options programmatically.
             """
             u.interpolate(initial_guess_u)
             p.interpolate(initial_guess_p)
