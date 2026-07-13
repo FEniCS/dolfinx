@@ -323,9 +323,9 @@ def _(
                 L,
                 constants,
                 coeffs,
-                offset0,
+                offset0[:-1],
                 offset0[1:],
-                offset1,
+                offset1[:-1],
                 offset1[1:],
                 strict=False,
             ):
@@ -619,7 +619,7 @@ def apply_lifting(
                     xlocal = [
                         np.concatenate((xl[off0:off1], xl[offg0:offg1]))
                         for (off0, off1, offg0, offg1) in zip(
-                            offset0, offset0[1:], offset1, offset1[1:], strict=False
+                            offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True
                         )
                     ]
                 else:
@@ -628,7 +628,7 @@ def apply_lifting(
                 offset0, offset1 = b.getAttr("_blocks")
                 with b.localForm() as b_l:
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
-                        zip(a, offset0, offset0[1:], offset1, offset1[1:], strict=False)
+                        zip(a, offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True)
                     ):
                         const = pack_constants(a_) if constants is None else constants[i]  # type: ignore[arg-type, call-overload]
                         coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore[arg-type, assignment, index, call-overload]
@@ -695,7 +695,7 @@ def set_bc(
         offset0, _ = b.getAttr("_blocks")
         b_array = b.getArray(readonly=False)
         x_array = x0.getArray(readonly=True) if x0 is not None else None
-        for bcs, off0, off1 in zip(bcs, offset0, offset0[1:], strict=False):  # type: ignore[assignment]
+        for bcs, off0, off1 in zip(bcs, offset0[:-1], offset0[1:], strict=True):  # type: ignore[assignment]
             x0_sub = x_array[off0:off1] if x0 is not None else None  # type: ignore[index]
             for bc in bcs:
                 bc.set(b_array[off0:off1], x0_sub, alpha)  # type: ignore[arg-type, union-attr]
