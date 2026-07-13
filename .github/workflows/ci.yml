@@ -19,7 +19,7 @@ env:
 
 jobs:
   ci-spack-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     container: ubuntu:24.04
     permissions:
       packages: write
@@ -168,7 +168,8 @@ jobs:
           # freetype@2.14.2 (2026-07) triggered by savefig() in some demos.
           # Re-check and drop once a fixed freetype (2.14.3+) lands in the
           # spack-packages recipe.
-          spack -e py add py-gmsh ^gmsh~fltk+external py-pyamg py-matplotlib ^freetype@2.13.3 py-networkx \
+          spack -e py add py-gmsh ^gmsh~med~fltk+external ^opencascade~draw py-pyamg py-matplotlib ^freetype@2.13.3 \
+            py-networkx \
             py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
             py-pytest py-pytest-xdist py-scipy py-pyvista
           spack -e py concretize -j 4

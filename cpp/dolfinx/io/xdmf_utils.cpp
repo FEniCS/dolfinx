@@ -8,6 +8,7 @@
 #include <array>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <dolfinx/mesh/cell_types.h>
 #include <map>
 #include <pugixml.hpp>
 #include <vector>

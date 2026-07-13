@@ -66,8 +66,8 @@ class Constant(ufl.Constant, Generic[Scalar]):
                 self._cpp_object = _cpp.fem.Constant_float64(c)
             else:
                 raise RuntimeError("Unsupported dtype")
-        except AttributeError:
-            raise AttributeError("Constant value must have a dtype attribute.")
+        except AttributeError as err:
+            raise AttributeError("Constant value must have a dtype attribute.") from err
 
     @property
     def value(self):
