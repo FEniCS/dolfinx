@@ -64,7 +64,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm]
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
 
     env:
       CIBW_BUILD: cp312-manylinux_x86_64 cp312-manylinux_aarch64
@@ -105,7 +105,7 @@ jobs:
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         run: |
           python -m build -o wheelhouse/ ffcx/
-      
+
       - name: Checkout Basix
         if: ${{ github.event.inputs.build_fenicsx_stack == 'true' }}
         uses: actions/checkout@v7
@@ -158,7 +158,7 @@ jobs:
               -DHDF5_ROOT=/usr/lib64/mpich -DMPI_HOME=/usr/lib64/mpich -DCMAKE_BUILD_TYPE=RelWithDebug &&
             cmake --build dolfinx-build-dir/ &&
             cmake --install dolfinx-build-dir/
-          CIBW_CONFIG_SETTINGS_LINUX: > 
+          CIBW_CONFIG_SETTINGS_LINUX: >
             cmake.args="-DMPI_HOME=/usr/lib64/mpich;-DHDF5_ROOT=/usr/lib64/mpich"
             wheel.py-api=cp312
             cmake.build-type="RelWithDebug"

@@ -295,7 +295,7 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
-  /// @note The size of of `g` must be equal to the block size if `V`.
+  /// @note The size of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
   template <typename S, typename X>
@@ -320,7 +320,7 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
-  /// @note The size of of `g` must be equal to the block size if `V`.
+  /// @note The size of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
   template <typename X>

@@ -31,8 +31,8 @@ jobs:
 
   cpp-main:
     name: Build DOLFINx (C++, main)
-    runs-on: ubuntu-latest
-    container: ubuntu:24.04
+    runs-on: ubuntu-26.04
+    container: ubuntu:26.04
     steps:
       - name: Install Spack requirements
         run: |
@@ -85,8 +85,8 @@ jobs:
 
   python-main:
     name: Build DOLFINx (Python, main)
-    runs-on: ubuntu-latest
-    container: ubuntu:24.04
+    runs-on: ubuntu-26.04
+    container: ubuntu:26.04
     steps:
       - name: Install Spack requirements
         run: |

@@ -12,6 +12,7 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <pugixml.hpp>
 #include <vector>
 

@@ -45,7 +45,7 @@ enum class IntegralType : std::int8_t
 };
 
 /// @brief Represents integral data, containing the kernel, and a list
-/// of entities to integrate over and the indicies of the coefficient
+/// of entities to integrate over and the indices of the coefficient
 /// functions (relative to the Form) active for this integral.
 template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 struct integral_data
