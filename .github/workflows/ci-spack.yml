@@ -64,7 +64,7 @@ jobs:
           spack -e py add openblas
           spack -e py add py-gmsh ^gmsh~fltk~med~mmg+external ^opencascade~draw py-pyvista ^mesa~llvm ^freetype@2.13.3 \
             py-networkx py-matplotlib py-pyamg py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
-            py-scipy
+            py-scipy mesa-glu
 
       - if: matrix.compiler == 'oneapi'
         name: Add oneAPI compilers to environment
@@ -137,10 +137,6 @@ jobs:
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
-
-      # - name: Libraries that gmsh expects to find
-      #   run: |
-      #     dnf install -y mesa-libGLU libX11 libXrender mesa-libEGL libglvnd-glx libXcursor libXft libXinerama
 
       - name: Run demos (Python, serial and MPI)
         run: |
