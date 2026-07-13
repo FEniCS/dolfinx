@@ -589,11 +589,11 @@ def apply_lifting(
         constants = [pack_constants(forms) for forms in a] if constants is None else constants  # type: ignore[assignment]
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
         for b_sub, a_sub, const, coeff in zip(
-            b.getNestSubVecs(),
+            b.getNestSubVecs(),  # type: ignore[arg-type]
             a,
             constants,
             coeffs,
-            strict=True,  # type: ignore[arg-type]
+            strict=True,
         ):
             const_ = list(
                 map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)  # type: ignore[attr-defined, call-overload]
