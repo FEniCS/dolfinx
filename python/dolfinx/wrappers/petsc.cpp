@@ -50,7 +50,7 @@ void petsc_la_module(nb::module_& m)
         Mat A = dolfinx::la::petsc::create_matrix(comm.get(), p, type);
         PyObject* obj = PyPetscMat_New(A);
         PetscObjectDereference((PetscObject)A);
-        return nb::borrow(obj);
+        return nb::steal(obj);
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("type") = nb::none(),
       "Create a PETSc Mat from sparsity pattern.");

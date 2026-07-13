@@ -163,6 +163,13 @@ void declare_mesh(nb::module_& m, std::string type)
                  input_global_indices)
           {
             int shape1 = x.shape(1);
+            if (shape1 < 1 or shape1 > 3)
+            {
+              throw std::runtime_error(
+                  "Geometry point array must have shape (num_points, dim) "
+                  "with 0 < dim <= 3.");
+            }
+
             std::vector<T> x_vec;
             if (shape1 == 3 and x.stride(0) == 3 and x.stride(1) == 1)
               x_vec.assign(x.data(), x.data() + x.size());
