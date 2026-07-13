@@ -14,8 +14,15 @@ spack:
       require:
       - target=x86_64_v3
     mesa:
-      require:
-      - "@24.3.4"
+      # Mesa's bundled C11 threads shim (src/c11/threads.h) conflicts with
+      # glibc's own <threads.h> on this container's glibc (once_flag/call_once
+      # redefinition), breaking the build for every mesa version currently
+      # packaged in spack-packages (checked 24.3.4 and 25.0.5). Use the
+      # system Mesa installed via apt instead of building from source.
+      buildable: false
+      externals:
+      - spec: "mesa@26.0.3+glx+osmesa~llvm"
+        prefix: /usr
 
   mirrors:
     local-buildcache:
