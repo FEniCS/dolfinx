@@ -591,7 +591,7 @@ def apply_lifting(
         for b_sub, a_sub, const, coeff in zip(
             b.getNestSubVecs(),  # type: ignore[arg-type]
             a,
-            constants,
+            constants,  # type: ignore[arg-type]
             coeffs,
             strict=True,
         ):
