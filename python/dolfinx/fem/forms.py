@@ -653,8 +653,8 @@ def create_form(
         original_coeff = original_coefficients[original_index]
         try:
             coefficients[f"w{c}"] = coefficient_map[original_coeff]._cpp_object
-        except KeyError:
-            raise RuntimeError(f"Missing coefficient {original_coeff}")
+        except KeyError as err:
+            raise RuntimeError(f"Missing coefficient {original_coeff}") from err
 
     # Extract all constants of the compiled form in correct order
     # NOTE: Constants are not eliminated
@@ -670,8 +670,8 @@ def create_form(
         try:
             mapped_constant = constant_map[constant]
             constants[f"c{counter}"] = mapped_constant._cpp_object
-        except KeyError:
-            raise RuntimeError(f"Missing constant {constant}")
+        except KeyError as err:
+            raise RuntimeError(f"Missing constant {constant}") from err
 
     ftype = form_cpp_creator(form.dtype)
     f = ftype(
@@ -729,7 +729,7 @@ def _derive_block_jacobian(
         raise ValueError(
             "When F is a list of N forms, du must be a sequence containing N functions"
         )
-    return [[ufl.derivative(F_i, u_j, du_j) for u_j, du_j in zip(u, du)] for F_i in F]
+    return [[ufl.derivative(F_i, u_j, du_j) for u_j, du_j in zip(u, du, strict=True)] for F_i in F]
 
 
 def derivative_block(

@@ -174,7 +174,7 @@ def assign(
     """
     if x1.getType() == PETSc.Vec.Type().NEST:  # type: ignore[attr-defined]
         x1_nest = x1.getNestSubVecs()
-        for _x0, _x1 in zip(x0, x1_nest):
+        for _x0, _x1 in zip(x0, x1_nest, strict=True):
             with _x1.localForm() as x:
                 x.array_w[:] = _x0
     else:
@@ -206,7 +206,7 @@ def _(
     """
     if x0.getType() == PETSc.Vec.Type().NEST:  # type: ignore[attr-defined]
         x0_nest = x0.getNestSubVecs()
-        for _x0, _x1 in zip(x0_nest, x1):
+        for _x0, _x1 in zip(x0_nest, x1, strict=True):
             with _x0.localForm() as x:
                 _x1[:] = x.array_r[:]  # type: ignore[index]
     else:
