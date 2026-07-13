@@ -111,7 +111,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   {
     // Get number of geometry nodes per cell
     auto& geometry = mesh->geometry();
-    auto& cmap = geometry.cmap();
+    auto& cmap = geometry.cmaps().front();
     int cmap_dim = cmap.dim();
     int cell_dim = element->space_dimension() / element->block_size();
     if (cmap_dim != cell_dim)
@@ -138,7 +138,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     std::int32_t num_local_points = map_x->size_local();
 
     // Get dof array and pack into array (padded where appropriate)
-    auto dofmap_x = geometry.dofmap();
+    auto dofmap_x = geometry.dofmaps().front();
     data_values.resize(num_local_points * num_components, 0);
     for (std::int32_t c = 0; c < num_cells; ++c)
     {

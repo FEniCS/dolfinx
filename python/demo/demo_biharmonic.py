@@ -54,7 +54,7 @@
 # $$
 # \begin{aligned}
 # u =0 &\qquad \frac{\partial u}{\partial n} = 0
-# # \text{ on } \partial\Omega,\\
+# \text{ on } \partial\Omega,\\
 # u =0 &\qquad \Delta u = 0 \text{ on } \partial \Omega.
 # \end{aligned}
 # $$

@@ -507,6 +507,8 @@ std::vector<std::uint16_t> gmsh_prism(int num_nodes)
     return {0, 1, 2, 3, 4, 5};
   case 15:
     return {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+  case 18:
+    return {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17};
   default:
     throw std::runtime_error("Higher order Gmsh prism not supported");
   }
@@ -520,6 +522,8 @@ std::vector<std::uint16_t> gmsh_pyramid(int num_nodes)
     return {0, 1, 3, 2, 4};
   case 13:
     return {0, 1, 3, 2, 4, 5, 6, 7, 8, 9, 10, 12, 11};
+  case 14:
+    return {0, 1, 3, 2, 4, 5, 6, 7, 8, 9, 10, 12, 11, 13};
   default:
     throw std::runtime_error("Higher order Gmsh pyramid not supported");
   }

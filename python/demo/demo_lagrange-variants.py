@@ -12,8 +12,8 @@
 #
 # ```{admonition} Download sources
 # :class: download
-# * {download}`Python script <./demo_lagrange_variants.py>`
-# * {download}`Jupyter notebook <./demo_lagrange_variants.ipynb>`
+# * {download}`Python script <./demo_lagrange-variants.py>`
+# * {download}`Jupyter notebook <./demo_lagrange-variants.ipynb>`
 # ```
 # This demo illustrates how to:
 #

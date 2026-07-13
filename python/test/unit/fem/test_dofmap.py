@@ -330,9 +330,9 @@ def test_higher_order_coordinate_map(points, celltype, order):
 
     V = functionspace(mesh, ("Lagrange", 2))
     X = V.element.interpolation_points
-    coord_dofs = mesh.geometry.dofmap
+    coord_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
-    cmap = mesh.geometry.cmap()
+    cmap = mesh.geometry.cmaps[0]
 
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
@@ -405,14 +405,14 @@ def test_higher_order_tetra_coordinate_map(order):
     mesh = create_mesh(MPI.COMM_WORLD, cells, domain, points)
     V = functionspace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points
-    x_dofs = mesh.geometry.dofmap
+    x_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
 
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
     for node in range(points.shape[0]):
         x_coord_new[node] = x_g[x_dofs[0, node], : mesh.geometry.dim]
 
-    x = mesh.geometry.cmap().push_forward(X, x_coord_new)
+    x = mesh.geometry.cmaps[0].push_forward(X, x_coord_new)
     assert np.allclose(x[:, 0], X[:, 0], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
     assert np.allclose(x[:, 1], 2 * X[:, 1], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
     assert np.allclose(x[:, 2], 3 * X[:, 2], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)

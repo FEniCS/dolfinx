@@ -119,16 +119,16 @@ class SuperLUDistSolver(Generic[_T]):
         """
         self._cpp_object.set_option(name, value)
 
-    def set_A(self, A: SuperLUDistMatrix[_T]):
+    def set_A(self, A: SuperLUDistMatrix[_T], fact: str):
         """Set assembled left-hand side matrix.
-
-        For advanced use with SuperLU_DIST option `Factor` allowing use of
-        previously computed permutations when solving with new matrix A.
 
         Args:
             A: Assembled left-hand side matrix :math:`A`.
+            fact: One of ``"DOFACT"``, ``"SamePattern"``,
+                ``"SamePattern_SameRowPerm"``. See the SuperLU_DIST
+                documentation for the meaning of these values.
         """
-        self._cpp_object.set_A(A._cpp_object)
+        self._cpp_object.set_A(A._cpp_object, fact)
 
     def solve(self, b: dolfinx.la.Vector[_T], u: dolfinx.la.Vector[_T]) -> int:
         """Solve linear system :math:`Au = b`.

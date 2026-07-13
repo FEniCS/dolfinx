@@ -37,14 +37,14 @@ jobs:
             unzip xz zstd gcc gcc-c++ gcc-gfortran
 
       - name: Get Spack
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: spack/spack
           ref: v1.1.1
           path: spack-src
 
       - name: Get upstream Spack packages
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: spack/spack-packages
           ref: develop
@@ -58,7 +58,7 @@ jobs:
           spack repo list
 
       - name: Checkout DOLFINx
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: dolfinx-src
 
@@ -104,7 +104,7 @@ jobs:
           . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install -Ccmake.define.CMAKE_INSTALL_RPATH_USE_LINK_PATH=on git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
+          pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
           python -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
 

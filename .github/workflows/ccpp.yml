@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches:
+      - main
       - release
     tags:
       - "v*"
@@ -21,7 +22,7 @@ jobs:
     name: Lint
     steps:
       - name: Checkout DOLFINx
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -32,7 +33,7 @@ jobs:
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install linting tools
-        run: pip install clang-format cmake-format[YAML] mypy ruff
+        run: pip install clang-format gersemi mypy ruff
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
@@ -59,10 +60,8 @@ jobs:
           cd python/dolfinx/wrappers
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
-      - name: cmake-format (non-blocking)
-        continue-on-error: true
-        run: |
-          find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
+      - name: gersemi
+        run: gersemi --check . 
 
   ccpp-build:
     runs-on: ubuntu-24.04
@@ -76,7 +75,7 @@ jobs:
 
     name: Build and test
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -104,7 +103,7 @@ jobs:
           pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
-      - name: Configure (C++)
+      - name: Configure, no rpath (C++)
         working-directory: cpp
         run: >
           cmake -B build -S .
@@ -116,12 +115,14 @@ jobs:
           -DDOLFINX_ENABLE_PETSC=false
           -DDOLFINX_ENABLE_SUPERLU_DIST=true
           -DDOLFINX_ENABLE_PARMETIS=true
+          -DDOLFINX_INSTALL_RPATH_USE_LINK_PATH=false
 
       - name: Build and install (C++)
         working-directory: cpp/build
         run: |
           cmake --build .
           sudo cmake --install .
+          sudo ldconfig
 
       - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
@@ -129,18 +130,15 @@ jobs:
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test,mypy]'
           python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
-      - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
-        working-directory: python
+      - name: Run mypy
         run: |
-          python -m venv mypy-env
-          . ./mypy-env/bin/activate
-          pip install mypy types-cffi scipy-stubs
-          mypy -p dolfinx
+          mypy --config-file python/pyproject.toml -p dolfinx # package mode, type checks installed dolfinx (working around name collision in python/ directory)
+          cd python/
           mypy test
-          mypy demo
+          #mypy demo # TODO: Enable this in future
 
       - name: Install gmsh and pyvista (and dependencies)
         run: |
@@ -182,7 +180,7 @@ jobs:
 
     name: Build and test (${{ matrix.petsc_arch }}, ${{ matrix.docker_image }})
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -291,7 +289,7 @@ jobs:
 
     name: Build and publish docs
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -324,7 +322,7 @@ jobs:
           echo $DOLFINX_VERSION
           cd cpp/doc
           doxygen Doxyfile
-          make html
+          python -m sphinx -b html source/ build/html
       - name: Upload C++ Doxygen documentation artifact
         uses: actions/upload-artifact@v7
         with:
@@ -351,7 +349,7 @@ jobs:
 
       - name: Checkout FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: "FEniCS/docs"
           path: "docs"

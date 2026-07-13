@@ -167,7 +167,7 @@ face_long_edge(const mesh::Mesh<T>& mesh)
   if (tdim == 2)
     edge_ratio_ok.resize(num_faces);
 
-  auto x_dofmap = mesh.geometry().dofmap();
+  auto x_dofmap = mesh.geometry().dofmaps().front();
 
   auto c_to_v = mesh.topology()->connectivity(tdim, 0);
   assert(c_to_v);
