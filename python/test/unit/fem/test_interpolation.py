@@ -52,13 +52,13 @@ parametrize_cell_types = pytest.mark.parametrize(
 
 def random_point_in_reference(cell_type):
     if cell_type == CellType.interval:
-        return (random.random(), 0, 0)
+        return (random.random(),)
     elif cell_type == CellType.triangle:
         x, y = random.random(), random.random()
         # If point is outside cell, move it back inside
         if x + y > 1:
             x, y = 1 - x, 1 - y
-        return (x, y, 0)
+        return (x, y)
     elif cell_type == CellType.tetrahedron:
         x, y, z = random.random(), random.random(), random.random()
         # If point is outside cell, move it back inside
@@ -71,7 +71,7 @@ def random_point_in_reference(cell_type):
         return (x, y, z)
     elif cell_type == CellType.quadrilateral:
         x, y = random.random(), random.random()
-        return (x, y, 0)
+        return (x, y)
     elif cell_type == CellType.hexahedron:
         return (random.random(), random.random(), random.random())
 
