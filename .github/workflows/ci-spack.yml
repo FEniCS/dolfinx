@@ -21,6 +21,12 @@ env:
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
   PYTEST_ADDOPTS: "-W error"
+  # Spack environment activation does not add the view's library
+  # directories to the runtime linker search path, so packages that are
+  # only present in the environment (not linked via RPATH into a
+  # consuming package, e.g. mesa-glu's libGLU.so.1 for gmsh) are not
+  # found at runtime without this.
+  LD_LIBRARY_PATH: /opt/view/lib:/opt/view/lib64
 
 jobs:
   ci-spack-build:
