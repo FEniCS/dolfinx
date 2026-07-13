@@ -121,7 +121,7 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
 template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
 compute_triangle_quad_face_permutations(const mesh::Topology& topology,
-                                        int cell_index)
+                                        int cell_index, int num_threads)
 {
   common::Timer t_perm("* Compute triangle/quad face permutations");
   const std::vector<mesh::CellType>& cell_types = topology.entity_types(3);
@@ -167,8 +167,6 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
       auto compute_refl_rots = (mesh_face_types[t] == mesh::CellType::triangle)
                                    ? compute_triangle_rot_reflect
                                    : compute_quad_rot_reflect;
-      int num_threads
-          = std::max(1, static_cast<int>(std::thread::hardware_concurrency()));
       spdlog::debug("Using {} threads for face permutation computation",
                     num_threads);
       std::vector<std::jthread> threads(num_threads);
@@ -230,7 +228,7 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
 //-----------------------------------------------------------------------------
 template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
-compute_edge_reflections(const mesh::Topology& topology)
+compute_edge_reflections(const mesh::Topology& topology, int num_threads)
 {
   common::Timer t_perm("* Compute edge reflections");
 
@@ -251,8 +249,7 @@ compute_edge_reflections(const mesh::Topology& topology)
   assert(im);
 
   std::vector<std::bitset<BITSETSIZE>> edge_perm(num_cells, 0);
-  std::vector<std::jthread> threads(
-      std::max(1, static_cast<int>(std::thread::hardware_concurrency())));
+  std::vector<std::jthread> threads(num_threads);
   for (std::size_t i = 0; i < threads.size(); ++i)
   {
     threads[i] = std::jthread(
@@ -291,7 +288,7 @@ compute_edge_reflections(const mesh::Topology& topology)
 //-----------------------------------------------------------------------------
 template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
-compute_face_permutations(const mesh::Topology& topology)
+compute_face_permutations(const mesh::Topology& topology, int num_threads)
 {
   if (topology.entity_types(3).size() > 1)
   {
@@ -305,14 +302,16 @@ compute_face_permutations(const mesh::Topology& topology)
     throw std::runtime_error("Faces have not been computed.");
 
   // Compute face permutations for first cell type in the topology
-  return compute_triangle_quad_face_permutations<BITSETSIZE>(topology, 0);
+  return compute_triangle_quad_face_permutations<BITSETSIZE>(topology, 0,
+                                                             num_threads);
 }
 //-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
-mesh::compute_entity_permutations(const mesh::Topology& topology)
+mesh::compute_entity_permutations(const mesh::Topology& topology,
+                                  int num_threads)
 {
   common::Timer t_perm("Compute entity permutations");
   const int tdim = topology.dim();
@@ -329,7 +328,8 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   {
     spdlog::info("Compute face permutations");
     const int faces_per_cell = cell_num_entities(cell_type, 2);
-    const auto face_perm = compute_face_permutations<_BITSETSIZE>(topology);
+    const auto face_perm
+        = compute_face_permutations<_BITSETSIZE>(topology, num_threads);
     for (int c = 0; c < num_cells; ++c)
       cell_permutation_info[c] = face_perm[c].to_ulong();
 
@@ -351,7 +351,8 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   {
     spdlog::info("Compute edge permutations");
     const int edges_per_cell = cell_num_entities(cell_type, 1);
-    const auto edge_perm = compute_edge_reflections<_BITSETSIZE>(topology);
+    const auto edge_perm
+        = compute_edge_reflections<_BITSETSIZE>(topology, num_threads);
     for (int c = 0; c < num_cells; ++c)
       cell_permutation_info[c] |= edge_perm[c].to_ulong() << used_bits;
 
