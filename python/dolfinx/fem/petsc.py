@@ -40,11 +40,11 @@ assert dolfinx.has_petsc4py
 
 
 import numpy as np
-import ufl
 from numpy import typing as npt
 
 import dolfinx.cpp as _cpp
 import dolfinx.la.petsc
+import ufl
 from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
@@ -1736,9 +1736,10 @@ class numba_utils:
     """
 
     try:
+        import petsc4py.PETSc as _PETSc
+
         import llvmlite as _llvmlite
         import numba as _numba
-        import petsc4py.PETSc as _PETSc
 
         _llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
 
