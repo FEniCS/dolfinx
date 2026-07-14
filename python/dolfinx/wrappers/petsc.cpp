@@ -72,22 +72,12 @@ void petsc_la_module(nb::module_& m)
   m.def(
       "create_index_sets",
       [](const std::vector<std::pair<const dolfinx::common::IndexMap*, int>>&
-             maps)
+             maps) -> std::vector<IS>
       {
         auto _maps = to_index_map_refs(maps);
-        std::vector<IS> index_sets
-            = dolfinx::la::petsc::create_index_sets(_maps);
-
-        std::vector<nb::object> py_index_sets;
-        for (auto is : index_sets)
-        {
-          PyObject* obj = PyPetscIS_New(is);
-          PetscObjectDereference((PetscObject)is);
-          py_index_sets.push_back(nb::steal(obj));
-        }
-        return py_index_sets;
+        return dolfinx::la::petsc::create_index_sets(_maps);
       },
-      nb::arg("maps"));
+      nb::rv_policy::take_ownership, nb::arg("maps"));
 
   m.def(
       "scatter_local_vectors",
@@ -276,13 +266,11 @@ void petsc_nls_module(nb::module_& m)
                          "future release.\n";
           },
           nb::arg("comm"))
-      .def_prop_ro("krylov_solver",
-                   [](const dolfinx::nls::petsc::NewtonSolver& self)
-                   {
-                     KSP ksp = self.get_krylov_solver().ksp();
-                     PyObject* obj = PyPetscKSP_New(ksp);
-                     return nb::steal(obj);
-                   })
+      .def_prop_ro(
+          "krylov_solver",
+          [](const dolfinx::nls::petsc::NewtonSolver& self) -> KSP
+          { return self.get_krylov_solver().ksp(); },
+          nb::rv_policy::reference)
       .def("setF", &dolfinx::nls::petsc::NewtonSolver::setF, nb::arg("F"),
            nb::arg("b"))
       .def("setJ", &dolfinx::nls::petsc::NewtonSolver::setJ, nb::arg("J"),
