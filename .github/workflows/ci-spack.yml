@@ -70,7 +70,17 @@ jobs:
           spack -e py add openblas
           spack -e py add py-gmsh ^gmsh~fltk~med~mmg+external ^opencascade~draw py-pyvista ^mesa~llvm ^freetype@2.13.3 \
             py-networkx py-matplotlib py-pyamg py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
-            py-scipy mesa-glu libx11 libxcursor libxft libxinerama libxrender
+            py-scipy
+          # gmsh's compiled library dlopens libGLU.so.1 and several X11
+          # libraries unconditionally at runtime (its native file-chooser
+          # and OpenGL-based drawing code are always built in), but the
+          # gmsh Spack recipe only declares depends_on("glu"/"gl") when
+          # +fltk is set. We build gmsh ~fltk, so Spack's dependency graph
+          # never gets these libraries, and none of them are RPATH-linked
+          # in by any package either — hence they must be added explicitly
+          # here and put on LD_LIBRARY_PATH (see env above) so gmsh can
+          # find them at runtime.
+          spack -e py add mesa-glu libx11 libxcursor libxft libxinerama libxrender
 
       - if: matrix.compiler == 'oneapi'
         name: Add oneAPI compilers to environment
