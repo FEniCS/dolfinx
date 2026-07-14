@@ -162,7 +162,7 @@ void declare_mesh(nb::module_& m, std::string type)
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
                  input_global_indices)
           {
-            int shape1 = x.shape(1);
+            std::size_t shape1 = x.shape(1);
             if (shape1 < 1 or shape1 > 3)
             {
               throw std::runtime_error(
@@ -179,7 +179,7 @@ void declare_mesh(nb::module_& m, std::string type)
               x_vec.assign(3 * x.shape(0), 0);
               auto _x = x.view();
               for (std::size_t i = 0; i < x.shape(0); ++i)
-                for (int j = 0; j < shape1; ++j)
+                for (std::size_t j = 0; j < shape1; ++j)
                   x_vec[3 * i + j] = _x(i, j);
             }
 
@@ -199,16 +199,17 @@ void declare_mesh(nb::module_& m, std::string type)
                    "Geometric dimension")
       .def_prop_ro(
           "dofmaps",
-          [](dolfinx::mesh::Geometry<T>& self)
+          [](nb::object self)
           {
-            auto dms = self.dofmaps();
+            auto& obj = nb::cast<dolfinx::mesh::Geometry<T>&>(self);
+            auto dms = obj.dofmaps();
             nb::list result;
             for (auto& dm : dms)
               result.append(nb::ndarray<const std::int32_t, nb::numpy>(
-                  dm.data_handle(), {dm.extent(0), dm.extent(1)}));
+                  dm.data_handle(), {dm.extent(0), dm.extent(1)}, self));
             return result;
           },
-          nb::rv_policy::reference_internal, "The geometry dofmaps")
+          "The geometry dofmaps")
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_prop_ro(
           "x",
@@ -320,33 +321,11 @@ void declare_mesh(nb::module_& m, std::string type)
             cells_nb, std::back_inserter(cells), [](auto& c)
             { return std::span<const std::int64_t>(c.data(), c.size()); });
 
-        if (p)
-        {
-          auto p_wrap
-              = [p](MPI_Comm comm, int n,
-                    const std::vector<dolfinx::mesh::CellType>& cell_types,
-                    const std::vector<std::span<const std::int64_t>>& cells)
-          {
-            std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
-            std::ranges::transform(
-                cells, std::back_inserter(cells_nb),
-                [](auto c)
-                {
-                  return nb::ndarray<const std::int64_t, nb::numpy>(c.data(),
-                                                                    {c.size()});
-                });
-            return p(MPICommWrapper(comm), n, cell_types, cells_nb);
-          };
-          return dolfinx::mesh::create_mesh(
-              comm.get(), comm.get(), cells, elements, comm.get(),
-              std::span(x.data(), x.size()), {x.shape(0), shape1}, p_wrap,
-              max_facet_to_cell_links);
-        }
-        else
-          return dolfinx::mesh::create_mesh(
-              comm.get(), comm.get(), cells, elements, comm.get(),
-              std::span(x.data(), x.size()), {x.shape(0), shape1}, nullptr,
-              max_facet_to_cell_links);
+        return dolfinx::mesh::create_mesh(
+            comm.get(), comm.get(), cells, elements, comm.get(),
+            std::span(x.data(), x.size()), {x.shape(0), shape1},
+            part::impl::create_cell_partitioner_cpp(p),
+            max_facet_to_cell_links);
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("elements"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
@@ -363,35 +342,11 @@ void declare_mesh(nb::module_& m, std::string type)
          std::optional<std::int32_t> max_facet_to_cell_links)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
-        if (p)
-        {
-          auto p_wrap
-              = [p](MPI_Comm comm, int n,
-                    const std::vector<dolfinx::mesh::CellType>& cell_types,
-                    const std::vector<std::span<const std::int64_t>>& cells)
-          {
-            std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
-            std::ranges::transform(
-                cells, std::back_inserter(cells_nb),
-                [](auto c)
-                {
-                  return nb::ndarray<const std::int64_t, nb::numpy>(c.data(),
-                                                                    {c.size()});
-                });
-            return p(MPICommWrapper(comm), n, cell_types, cells_nb);
-          };
-          return dolfinx::mesh::create_mesh(
-              comm.get(), comm.get(), std::span(cells.data(), cells.size()),
-              element, comm.get(), std::span(x.data(), x.size()),
-              {x.shape(0), shape1}, p_wrap, max_facet_to_cell_links);
-        }
-        else
-        {
-          return dolfinx::mesh::create_mesh(
-              comm.get(), comm.get(), std::span(cells.data(), cells.size()),
-              element, comm.get(), std::span(x.data(), x.size()),
-              {x.shape(0), shape1}, nullptr, max_facet_to_cell_links);
-        }
+        return dolfinx::mesh::create_mesh(
+            comm.get(), comm.get(), std::span(cells.data(), cells.size()),
+            element, comm.get(), std::span(x.data(), x.size()),
+            {x.shape(0), shape1}, part::impl::create_cell_partitioner_cpp(p),
+            max_facet_to_cell_links);
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
