@@ -163,7 +163,7 @@ void declare_mesh(nb::module_& m, std::string type)
                  input_global_indices)
           {
             std::size_t shape1 = x.shape(1);
-            if (shape1 > 3)
+            if (shape1 == 0 or shape1 > 3)
             {
               throw std::runtime_error(
                   "Geometry point array must have shape (num_points, dim) "
