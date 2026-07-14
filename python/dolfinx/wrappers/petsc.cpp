@@ -21,6 +21,7 @@
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/nls/NewtonSolver.h>
 #include <iostream>
+#include <stdexcept>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
@@ -38,6 +39,22 @@ namespace
 {
 namespace nb = nanobind;
 
+/// @brief Convert a list of (IndexMap pointer-like, block size) pairs
+/// into the reference_wrapper form expected by dolfinx::la::petsc and
+/// dolfinx::fem::petsc functions.
+template <typename U>
+std::vector<
+    std::pair<std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
+to_index_map_refs(const std::vector<std::pair<U, int>>& maps)
+{
+  std::vector<
+      std::pair<std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
+      _maps;
+  std::ranges::transform(maps, std::back_inserter(_maps), [](auto& m)
+                         { return std::pair{std::cref(*m.first), m.second}; });
+  return _maps;
+}
+
 void petsc_la_module(nb::module_& m)
 {
   import_petsc4py();
@@ -45,14 +62,11 @@ void petsc_la_module(nb::module_& m)
   m.def(
       "create_matrix",
       [](dolfinx_wrappers::MPICommWrapper comm,
-         const dolfinx::la::SparsityPattern& p, std::optional<std::string> type)
-      {
-        Mat A = dolfinx::la::petsc::create_matrix(comm.get(), p, type);
-        PyObject* obj = PyPetscMat_New(A);
-        PetscObjectDereference((PetscObject)A);
-        return nb::steal(obj);
-      },
-      nb::arg("comm"), nb::arg("p"), nb::arg("type") = nb::none(),
+         const dolfinx::la::SparsityPattern& p,
+         std::optional<std::string> type) -> Mat
+      { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
+      nb::rv_policy::take_ownership, nb::arg("comm"), nb::arg("p"),
+      nb::arg("type") = nb::none(),
       "Create a PETSc Mat from sparsity pattern.");
 
   m.def(
@@ -60,12 +74,7 @@ void petsc_la_module(nb::module_& m)
       [](const std::vector<std::pair<const dolfinx::common::IndexMap*, int>>&
              maps)
       {
-        using X = std::vector<std::pair<
-            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
-        X _maps;
-        std::ranges::transform(maps, std::back_inserter(_maps),
-                               [](auto m) -> typename X::value_type
-                               { return {*m.first, m.second}; });
+        auto _maps = to_index_map_refs(maps);
         std::vector<IS> index_sets
             = dolfinx::la::petsc::create_index_sets(_maps);
 
@@ -92,12 +101,7 @@ void petsc_la_module(nb::module_& m)
         std::ranges::transform(x_b, std::back_inserter(_x_b), [](auto& x)
                                { return std::span(x.data(), x.size()); });
 
-        using X = std::vector<std::pair<
-            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
-        X _maps;
-        std::ranges::transform(maps, std::back_inserter(_maps),
-                               [](auto& q) -> typename X::value_type
-                               { return {*q.first, q.second}; });
+        auto _maps = to_index_map_refs(maps);
         dolfinx::la::petsc::scatter_local_vectors(x, _x_b, _maps);
       },
       nb::arg("x"), nb::arg("x_b"), nb::arg("maps"),
@@ -110,13 +114,7 @@ void petsc_la_module(nb::module_& m)
          const std::vector<std::pair<
              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
-        using X = std::vector<std::pair<
-            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
-        X _maps;
-        std::ranges::transform(maps, std::back_inserter(_maps),
-                               [](auto& m) -> typename X::value_type
-                               { return {*m.first, m.second}; });
-
+        auto _maps = to_index_map_refs(maps);
         std::vector<std::vector<PetscScalar>> vecs
             = dolfinx::la::petsc::get_local_vectors(x, _maps);
         std::vector<nb::ndarray<PetscScalar, nb::numpy>> ret;
@@ -139,12 +137,7 @@ void petsc_fem_module(nb::module_& m)
       [](const std::vector<std::pair<
              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
-        using X = std::vector<std::pair<
-            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
-        X _maps;
-        std::ranges::transform(maps, std::back_inserter(_maps),
-                               [](auto& q) -> typename X::value_type
-                               { return {*q.first, q.second}; });
+        auto _maps = to_index_map_refs(maps);
         return dolfinx::fem::petsc::create_vector_block(_maps);
       },
       nb::rv_policy::take_ownership, nb::arg("maps"),
@@ -154,12 +147,7 @@ void petsc_fem_module(nb::module_& m)
       [](const std::vector<std::pair<
              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
-        using X = std::vector<std::pair<
-            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>;
-        X _maps;
-        std::ranges::transform(maps, std::back_inserter(_maps),
-                               [](auto& m) -> typename X::value_type
-                               { return {*m.first, m.second}; });
+        auto _maps = to_index_map_refs(maps);
         return dolfinx::fem::petsc::create_vector_nest(_maps);
       },
       nb::rv_policy::take_ownership, nb::arg("maps"),
@@ -193,7 +181,8 @@ void petsc_fem_module(nb::module_& m)
             _bcs;
         for (auto bc : bcs)
         {
-          assert(bc);
+          if (!bc)
+            throw std::runtime_error("Null DirichletBC in bcs list.");
           _bcs.push_back(*bc);
         }
 
@@ -261,7 +250,8 @@ void petsc_fem_module(nb::module_& m)
             _bcs;
         for (auto bc : bcs)
         {
-          assert(bc);
+          if (!bc)
+            throw std::runtime_error("Null DirichletBC in bcs list.");
           _bcs.push_back(*bc);
         }
 
