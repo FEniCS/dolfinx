@@ -721,11 +721,17 @@ void declare_objects(nb::module_& m, std::string type)
          const std::vector<const dolfinx::mesh::EntityMap*>& entity_maps,
          std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> argument_space)
       {
-        const ufcx_expression* p
-            = reinterpret_cast<const ufcx_expression*>(expression);
-        return dolfinx::fem::create_expression<T, U>(
-            *p, coefficients, constants, ptr_to_ref_wrapper_vec(entity_maps),
-            argument_space);
+        if constexpr (std::is_same_v<U, dolfinx::scalar_value_t<T>>)
+        {
+          const ufcx_expression* p
+              = reinterpret_cast<const ufcx_expression*>(expression);
+          return dolfinx::fem::create_expression<T, U>(
+              *p, coefficients, constants, ptr_to_ref_wrapper_vec(entity_maps),
+              argument_space);
+        }
+        else
+          throw std::runtime_error(
+              "create_expression requires geometry type scalar_value_t<T>.");
       },
       nb::arg("expression"), nb::arg("coefficients"), nb::arg("constants"),
       nb::arg("entity_maps"), nb::arg("argument_space").none(),
@@ -818,14 +824,20 @@ void declare_form(nb::module_& m, std::string type)
               sd.insert({itg, std::move(x)});
             }
 
-            std::vector<std::reference_wrapper<const ufcx_form>> ps;
-            ps.reserve(forms.size());
-            for (auto form : forms)
-              ps.push_back(*(reinterpret_cast<ufcx_form*>(form)));
-            new (fp)
-                dolfinx::fem::Form<T, U>(dolfinx::fem::create_form_factory<T>(
-                    ps, spaces, coefficients, constants, sd,
-                    ptr_to_ref_wrapper_vec(entity_maps), mesh));
+            if constexpr (std::is_same_v<U, dolfinx::scalar_value_t<T>>)
+            {
+              std::vector<std::reference_wrapper<const ufcx_form>> ps;
+              ps.reserve(forms.size());
+              for (auto form : forms)
+                ps.push_back(*(reinterpret_cast<ufcx_form*>(form)));
+              new (fp)
+                  dolfinx::fem::Form<T, U>(dolfinx::fem::create_form_factory<T>(
+                      ps, spaces, coefficients, constants, sd,
+                      ptr_to_ref_wrapper_vec(entity_maps), mesh));
+            }
+            else
+              throw std::runtime_error(
+                  "create_form requires geometry type scalar_value_t<T>.");
           },
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("subdomains"), nb::arg("entity_maps"),
@@ -899,9 +911,15 @@ void declare_form(nb::module_& m, std::string type)
           sd.insert({itg, std::move(x)});
         }
 
-        ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-        return dolfinx::fem::create_form_factory<T>(
-            {*p}, spaces, coefficients, constants, sd, {}, std::move(mesh));
+        if constexpr (std::is_same_v<U, dolfinx::scalar_value_t<T>>)
+        {
+          ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
+          return dolfinx::fem::create_form_factory<T>(
+              {*p}, spaces, coefficients, constants, sd, {}, std::move(mesh));
+        }
+        else
+          throw std::runtime_error(
+              "create_form requires geometry type scalar_value_t<T>.");
       },
       nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
       nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh"),
@@ -937,10 +955,16 @@ void declare_form(nb::module_& m, std::string type)
           sd.insert({itg, std::move(x)});
         }
 
-        ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-        return dolfinx::fem::create_form<T, U>(
-            *p, spaces, coefficients, constants, sd,
-            ptr_to_ref_wrapper_vec(entity_maps), std::move(mesh));
+        if constexpr (std::is_same_v<U, dolfinx::scalar_value_t<T>>)
+        {
+          ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
+          return dolfinx::fem::create_form<T, U>(
+              *p, spaces, coefficients, constants, sd,
+              ptr_to_ref_wrapper_vec(entity_maps), std::move(mesh));
+        }
+        else
+          throw std::runtime_error(
+              "create_form requires geometry type scalar_value_t<T>.");
       },
       // NOLINTEND(performance-no-int-to-ptr)
       nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
