@@ -195,7 +195,7 @@ class Topology:
 
     def create_entity_permutations(self):
         """Compute entity permutations and reflections."""
-        self._cpp_object.create_entity_permutations()
+        self._cpp_object.create_entity_permutations(1)
 
     @property
     def dim(self) -> int:
