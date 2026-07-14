@@ -91,7 +91,7 @@ public:
   /// entries
   void finalize();
 
-  /// @brief Index map for given dimension dimension. Returns the index
+  /// @brief Index map for given dimension. Returns the index
   /// map for rows and columns that will be set by the current MPI rank.
   /// @note After finalization, the column index map is updated to account for
   /// additional column entries from other processes.

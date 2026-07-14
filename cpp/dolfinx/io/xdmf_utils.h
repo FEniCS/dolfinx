@@ -13,7 +13,6 @@
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
 #include <numeric>
 #include <pugixml.hpp>
@@ -42,6 +41,7 @@ namespace mesh
 template <std::floating_point T>
 class Mesh;
 class Topology;
+enum class CellType : std::int8_t;
 } // namespace mesh
 
 namespace io::xdmf_utils

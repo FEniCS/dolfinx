@@ -15,7 +15,7 @@ on:
 jobs:
   sonarcloud-build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     if: (github.event.pull_request.head.repo.full_name == github.repository) || github.ref_name == 'main'
     container: fenicsproject/test-env:current-mpich
     env:

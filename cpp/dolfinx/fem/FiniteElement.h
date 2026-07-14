@@ -39,7 +39,7 @@ struct BasixElementData
       element; ///< Finite element.
   std::optional<std::vector<std::size_t>> value_shape
       = std::nullopt;    ///< Value shape. Can only be set for scalar `element`.
-  bool symmetry = false; ///< Symmetry. Should only set set for 2nd-order tensor
+  bool symmetry = false; ///< Symmetry. Should only be set for 2nd-order tensor
                          ///< blocked elements.
 };
 

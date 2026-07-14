@@ -210,8 +210,8 @@ def dirichletbc(
             bctype = _cpp.fem.DirichletBC_complex128
         else:
             raise NotImplementedError(f"Type {value.dtype} not supported.")
-    except AttributeError:
-        raise AttributeError("Boundary condition value must have a dtype attribute.")
+    except AttributeError as err:
+        raise AttributeError("Boundary condition value must have a dtype attribute.") from err
 
     # Unwrap value object, if required
     if isinstance(value, np.ndarray):

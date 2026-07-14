@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "cell_types.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -22,6 +21,7 @@ class IndexMap;
 namespace dolfinx::mesh
 {
 class Topology;
+enum class CellType : std::int8_t;
 
 /// @brief Compute mesh entities of given topological dimension by
 /// computing cell-to-entity `(tdim, i) -> `(dim, entity_type)` and
