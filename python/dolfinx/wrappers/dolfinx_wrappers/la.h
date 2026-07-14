@@ -21,6 +21,7 @@
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -108,6 +109,17 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
               nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
               int bs = 1)
            {
+             if (x.size() != rows.size() * cols.size() * bs * bs)
+             {
+               throw std::runtime_error(
+                   "x size must equal rows size * cols size * bs * bs.");
+             }
+             const std::int32_t num_rows = self.num_all_rows();
+             for (std::size_t i = 0; i < rows.size(); ++i)
+             {
+               if (rows.data()[i] < 0 or rows.data()[i] >= num_rows)
+                 throw std::runtime_error("Index out of range in rows array.");
+             }
              std::span x_span = std::span(x.data(), x.size());
              std::span rows_span = std::span(rows.data(), rows.size());
              std::span cols_span = std::span(cols.data(), cols.size());
@@ -130,6 +142,17 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
               nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
               int bs = 1)
            {
+             if (x.size() != rows.size() * cols.size() * bs * bs)
+             {
+               throw std::runtime_error(
+                   "x size must equal rows size * cols size * bs * bs.");
+             }
+             const std::int32_t num_rows = self.num_all_rows();
+             for (std::size_t i = 0; i < rows.size(); ++i)
+             {
+               if (rows.data()[i] < 0 or rows.data()[i] >= num_rows)
+                 throw std::runtime_error("Index out of range in rows array.");
+             }
              std::span x_span = std::span(x.data(), x.size());
              std::span rows_span = std::span(rows.data(), rows.size());
              std::span cols_span = std::span(cols.data(), cols.size());
