@@ -306,7 +306,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   return new_mesh;
 }
 
-/// @cond Explicit instatiation for float and double
+/// @cond Explicit instantiation for float and double
 template mesh::Mesh<double>
 refinement::uniform_refine(const mesh::Mesh<double>& mesh,
                            const mesh::CellPartitionFunction&);

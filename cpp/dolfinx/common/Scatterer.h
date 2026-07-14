@@ -488,7 +488,7 @@ public:
   /// @brief Number of required `MPI_Request`s for point-to-point
   /// communication.
   ///
-  /// @return Numer of required MPI request handles.
+  /// @return Number of required MPI request handles.
   std::size_t num_p2p_requests() { return _dest.size() + _src.size(); }
 
 private:

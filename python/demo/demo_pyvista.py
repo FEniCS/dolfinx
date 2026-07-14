@@ -331,7 +331,7 @@ def plot_streamlines():
         vectors="vectors", return_source=False, source_radius=1, n_points=150
     )
 
-    # Create Create plotter
+    # Create plotter
     plotter = pyvista.Plotter()
     plotter.add_text("Streamlines.", position="upper_edge", font_size=20, color="black")
     plotter.add_mesh(grid, style="wireframe")

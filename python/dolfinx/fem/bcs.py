@@ -202,8 +202,8 @@ def dirichletbc(
 
     try:
         dtype = value.dtype
-    except AttributeError:
-        raise AttributeError("Boundary condition value must have a dtype attribute.")
+    except AttributeError as err:
+        raise AttributeError("Boundary condition value must have a dtype attribute.") from err
 
     # Geometry type is the mesh geometry type of the function space (or the
     # value's space), defaulting to matched precision when neither has one.

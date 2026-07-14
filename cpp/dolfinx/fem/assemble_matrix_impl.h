@@ -47,7 +47,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
 /// @param[in] P1T Function that applies transformation `A P_1^T`
-/// in-place to to the computed tensor `A` to transform trial
+/// in-place to the computed tensor `A` to transform trial
 /// degrees-of-freedom.
 /// @param bc0 Marker for rows with Dirichlet boundary conditions
 /// applied.

@@ -712,7 +712,7 @@ def transfer_meshtag(
         )
         return MeshTags(mt)
     else:
-        raise RuntimeError("MeshTag transfer is supported on on cells or facets.")
+        raise RuntimeError("MeshTag transfer is supported on cells or facets.")
 
 
 def uniform_refine(
