@@ -180,11 +180,6 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
-      - name: Configure matplotlib for CI
-        run: |
-          mkdir -p ~/.config/matplotlib
-          printf 'axes.unicode_minus: False\n' > ~/.config/matplotlib/matplotlibrc
-
       - name: Run Python demos
         shell: spack-bash {0}
         run: |
