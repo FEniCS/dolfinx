@@ -70,7 +70,7 @@ jobs:
           spack -e py add openblas
           spack -e py add py-gmsh ^gmsh~fltk~med~mmg+external ^opencascade~draw py-pyvista ^mesa~llvm ^freetype@2.13.3 \
             py-networkx py-matplotlib py-pyamg py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
-            py-scipy mesa-glu
+            py-scipy mesa-glu libx11 libxcursor libxft libxinerama libxrender
 
       - if: matrix.compiler == 'oneapi'
         name: Add oneAPI compilers to environment
