@@ -163,10 +163,11 @@ std::int64_t SLEPcEigenSolver::get_number_converged() const
   return num_conv;
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_options_prefix(const std::string& options_prefix)
+void SLEPcEigenSolver::set_options_prefix(std::string_view options_prefix)
 {
   assert(_eps);
-  PetscErrorCode ierr = EPSSetOptionsPrefix(_eps, options_prefix.c_str());
+  PetscErrorCode ierr
+      = EPSSetOptionsPrefix(_eps, std::string(options_prefix).c_str());
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "EPSSetOptionsPrefix");
 }

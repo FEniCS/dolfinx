@@ -21,21 +21,21 @@ TimeLogger& TimeLogger::instance()
 
 //-----------------------------------------------------------------------------
 void TimeLogger::register_timing(
-    const std::string& task, std::chrono::duration<double, std::ratio<1>> time)
+    std::string_view task, std::chrono::duration<double, std::ratio<1>> time)
 {
   // Print a message
-  std::string line
-      = "Elapsed time: " + std::to_string(time.count()) + " (" + task + ")";
+  std::string line = "Elapsed time: " + std::to_string(time.count()) + " ("
+                    + std::string(task) + ")";
   spdlog::debug(line.c_str());
 
   // Store values for summary
-  if (auto it = _timings.find(task); it != _timings.end())
+  if (auto it = _timings.find(std::string(task)); it != _timings.end())
   {
     std::get<0>(it->second) += 1;
     std::get<1>(it->second) += time;
   }
   else
-    _timings.insert({task, {1, time}});
+    _timings.insert({std::string(task), {1, time}});
 }
 //-----------------------------------------------------------------------------
 void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction) const
@@ -67,14 +67,14 @@ Table TimeLogger::timing_table() const
 }
 //-----------------------------------------------------------------------------
 std::pair<int, std::chrono::duration<double, std::ratio<1>>>
-TimeLogger::timing(const std::string& task) const
+TimeLogger::timing(std::string_view task) const
 {
   // Find timing
-  auto it = _timings.find(task);
+  auto it = _timings.find(std::string(task));
   if (it == _timings.end())
   {
-    throw std::runtime_error("No timings registered for task \"" + task
-                             + "\".");
+    throw std::runtime_error("No timings registered for task \""
+                             + std::string(task) + "\".");
   }
 
   return it->second;

@@ -13,6 +13,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace pugi
 {
@@ -48,7 +49,7 @@ class VTKFile
 public:
   /// Create VTK file
   VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
-          const std::string& file_mode);
+          std::string_view file_mode);
 
   /// Destructor
   ~VTKFile();

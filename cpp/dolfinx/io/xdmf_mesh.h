@@ -15,6 +15,7 @@
 #include <pugixml.hpp>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -46,7 +47,7 @@ namespace io::xdmf_mesh
 /// HDF file data is stored under path prefix.
 template <std::floating_point U>
 void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-              const mesh::Mesh<U>& mesh, const std::string& path_prefix);
+              const mesh::Mesh<U>& mesh, std::string_view path_prefix);
 
 /// Add Topology xml node
 /// @param[in] comm
@@ -60,7 +61,7 @@ void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 /// whose topology will be saved. This is used to save subsets of Mesh.
 template <std::floating_point U>
 void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                       const std::string& path_prefix,
+                       std::string_view path_prefix,
                        const mesh::Topology& topology,
                        const mesh::Geometry<U>& geometry, int cell_dim,
                        std::span<const std::int32_t> entities);
@@ -68,7 +69,7 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 /// Add Geometry xml node
 template <std::floating_point U>
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                       const std::string& path_prefix,
+                       std::string_view path_prefix,
                        const mesh::Geometry<U>& geometry);
 
 /// @brief Read geometry (coordinate) data.
@@ -94,9 +95,9 @@ read_topology_data(MPI_Comm comm, hid_t h5_id, const pugi::xml_node& node);
 template <typename T, std::floating_point U>
 void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
                   const mesh::Geometry<U>& geometry, pugi::xml_node& xml_node,
-                  hid_t h5_id, const std::string& name)
+                  hid_t h5_id, std::string_view name)
 {
-  spdlog::info("XDMF: add meshtags ({})", name.c_str());
+  spdlog::info("XDMF: add meshtags ({})", name);
   // Get mesh
   const int dim = meshtags.dim();
   std::shared_ptr<const common::IndexMap> entity_map
@@ -112,7 +113,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   auto it = std::ranges::lower_bound(meshtags.indices(), num_local_entities);
   const int num_active_entities = std::distance(meshtags.indices().begin(), it);
 
-  const std::string path_prefix = "/MeshTags/" + name;
+  const std::string path_prefix = "/MeshTags/" + std::string(name);
   xdmf_mesh::add_topology_data(
       comm, xml_node, h5_id, path_prefix, *meshtags.topology(), geometry, dim,
       std::span<const std::int32_t>(meshtags.indices().data(),
@@ -121,7 +122,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   // Add attribute node with values
   pugi::xml_node attribute_node = xml_node.append_child("Attribute");
   assert(attribute_node);
-  attribute_node.append_attribute("Name") = name.c_str();
+  attribute_node.append_attribute("Name") = std::string(name).c_str();
   attribute_node.append_attribute("AttributeType") = "Scalar";
   attribute_node.append_attribute("Center") = "Cell";
 

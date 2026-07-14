@@ -13,6 +13,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
+#include <string_view>
 #include <vector>
 
 namespace dolfinx::io::VTKHDF
@@ -172,7 +173,7 @@ void write_mesh(const std::filesystem::path& filename,
 /// @note Limited support for floating point types at present (no
 /// complex number support).
 template <std::floating_point U>
-void write_data(std::string point_or_cell,
+void write_data(std::string_view point_or_cell,
                 const std::filesystem::path& filename,
                 const mesh::Mesh<U>& mesh, const std::vector<U>& data,
                 double time)
@@ -185,7 +186,8 @@ void write_data(std::string point_or_cell,
   else
     throw std::runtime_error("Selection must be Point or Cell");
 
-  std::string dataset_name = "/VTKHDF/" + point_or_cell + "Data/u";
+  const std::string poc(point_or_cell);
+  std::string dataset_name = "/VTKHDF/" + poc + "Data/u";
   int npoints
       = std::accumulate(index_maps.begin(), index_maps.end(), 0,
                         [](int a, auto im) { return a + im->size_local(); });
@@ -247,15 +249,14 @@ void write_data(std::string point_or_cell,
   append_dataset("/VTKHDF/Steps/PointOffsets", 0);
 
   // Add the current data size to the end of the offset array
-  hdf5::add_group(h5file, "/VTKHDF/Steps/" + point_or_cell + "DataOffsets");
-  append_dataset("/VTKHDF/Steps/" + point_or_cell + "DataOffsets/u",
-                 point_data_offset);
+  hdf5::add_group(h5file, "/VTKHDF/Steps/" + poc + "DataOffsets");
+  append_dataset("/VTKHDF/Steps/" + poc + "DataOffsets/u", point_data_offset);
 
   // Time values
   // FIXME: check these are increasing?
   append_dataset("/VTKHDF/Steps/Values", time);
 
-  std::string group_name = "/VTKHDF/" + point_or_cell + "Data";
+  std::string group_name = "/VTKHDF/" + poc + "Data";
   hdf5::add_group(h5file, group_name);
 
   // Add point/cell data into dataset, extending each time by

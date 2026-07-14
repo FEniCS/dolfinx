@@ -36,11 +36,12 @@ namespace
 constexpr std::array field_ext = {"_real", "_imag"};
 
 /// Get counter string to include in filename
-std::string get_counter(const pugi::xml_node& node, const std::string& name)
+std::string get_counter(const pugi::xml_node& node, std::string_view name)
 {
+  const std::string nm(name);
   // Count number of entries
-  const size_t n = std::distance(node.children(name.c_str()).begin(),
-                                 node.children(name.c_str()).end());
+  const size_t n = std::distance(node.children(nm.c_str()).begin(),
+                                 node.children(nm.c_str()).end());
 
   // Compute counter string
   constexpr int num_digits = 6;
@@ -107,7 +108,7 @@ void add_pvtu_mesh(pugi::xml_node& node)
 /// @param[in] values The data array to add
 /// @param[in,out] data_node The XML node to add data to
 template <typename T>
-void add_data_float(const std::string& name,
+void add_data_float(std::string_view name,
                     std::span<const std::size_t> num_components,
                     std::span<const T> values, pugi::xml_node& node)
 {
@@ -118,7 +119,7 @@ void add_data_float(const std::string& name,
 
   pugi::xml_node field_node = node.append_child("DataArray");
   field_node.append_attribute("type") = type.c_str();
-  field_node.append_attribute("Name") = name.c_str();
+  field_node.append_attribute("Name") = std::string(name).c_str();
   field_node.append_attribute("format") = "ascii";
   if (!num_components.empty())
     field_node.append_attribute("NumberOfComponents") = num_components.front();
@@ -137,7 +138,7 @@ void add_data_float(const std::string& name,
 /// @param[in] values The data array to add
 /// @param[in,out] data_node The XML node to add data to
 template <typename T>
-void add_data(const std::string& name,
+void add_data(std::string_view name,
               std::span<const std::size_t> num_components,
               std::span<const T> values, pugi::xml_node& node)
 {
@@ -148,11 +149,11 @@ void add_data(const std::string& name,
     using U = typename T::value_type;
     std::vector<U> v(values.size());
     std::ranges::transform(values, v.begin(), [](auto x) { return x.real(); });
-    add_data_float(name + field_ext[0], num_components, std::span<const U>(v),
-                   node);
+    add_data_float(std::string(name) + field_ext[0], num_components,
+                   std::span<const U>(v), node);
     std::ranges::transform(values, v.begin(), [](auto x) { return x.imag(); });
-    add_data_float(name + field_ext[1], num_components, std::span<const U>(v),
-                   node);
+    add_data_float(std::string(name) + field_ext[1], num_components,
+                   std::span<const U>(v), node);
   }
 }
 //----------------------------------------------------------------------------
@@ -707,7 +708,7 @@ void write_function(
 
 //----------------------------------------------------------------------------
 io::VTKFile::VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
-                     const std::string&)
+                     std::string_view)
     : _filename(filename), _comm(comm)
 {
   _pvd_xml = std::make_unique<pugi::xml_document>();
