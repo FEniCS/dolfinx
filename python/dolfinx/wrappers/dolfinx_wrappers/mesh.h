@@ -163,7 +163,7 @@ void declare_mesh(nb::module_& m, std::string type)
                  input_global_indices)
           {
             std::size_t shape1 = x.shape(1);
-            if (shape1 < 1 or shape1 > 3)
+            if (shape1 > 3)
             {
               throw std::runtime_error(
                   "Geometry point array must have shape (num_points, dim) "
@@ -205,8 +205,10 @@ void declare_mesh(nb::module_& m, std::string type)
             auto dms = obj.dofmaps();
             nb::list result;
             for (auto& dm : dms)
+            {
               result.append(nb::ndarray<const std::int32_t, nb::numpy>(
                   dm.data_handle(), {dm.extent(0), dm.extent(1)}, self));
+            }
             return result;
           },
           "The geometry dofmaps")
