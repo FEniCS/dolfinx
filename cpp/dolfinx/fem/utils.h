@@ -64,7 +64,7 @@ class Expression;
 
 namespace impl
 {
-/// Helper function to get an array of of (cell, local_facet) pairs
+/// Helper function to get an array of (cell, local_facet) pairs
 /// corresponding to a given facet index.
 /// @param[in] f Facet index
 /// @param[in] cells List of cells incident to the facet

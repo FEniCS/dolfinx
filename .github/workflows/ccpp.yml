@@ -18,7 +18,7 @@ on:
 jobs:
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     name: Lint
     steps:
       - name: Checkout DOLFINx
@@ -27,7 +27,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: '3.14'
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -61,7 +61,7 @@ jobs:
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
       - name: gersemi
-        run: gersemi --check . 
+        run: gersemi --check .
 
   ccpp-build:
     runs-on: ubuntu-24.04
@@ -159,7 +159,7 @@ jobs:
         run: mpirun -np 3 python -m pytest -m "not petsc4py and not adios2" python/test/unit
 
   ccpp-build-with-petsc:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [lint]
     strategy:
       matrix:
@@ -278,7 +278,7 @@ jobs:
         run: mpirun -np 3 python -m pytest -m "petsc4py or adios2" python/test/unit/
 
   build-and-publish-docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [lint]
     container: "ghcr.io/fenics/test-env:current-openmpi"
     env:
