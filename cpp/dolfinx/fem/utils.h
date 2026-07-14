@@ -970,32 +970,24 @@ Expression<T, U> create_expression(
          static_cast<std::size_t>(e.entity_dimension)};
   std::vector<std::size_t> value_shape(e.value_shape,
                                        e.value_shape + e.num_components);
+
+  static_assert(std::is_same_v<U, scalar_value_t<T>>,
+                "UFCx kernels require geometry type U == scalar_value_t<T>.");
+
+  using kptr_t = void (*)(T*, const T*, const T*, const U*, const int*,
+                          const std::uint8_t*, void*);
   std::function<void(T*, const T*, const T*, const U*, const int*,
                      const std::uint8_t*, void*)>
       tabulate_tensor = nullptr;
-  if constexpr (std::is_same_v<T, float> && std::is_same_v<U, float>)
-    tabulate_tensor = e.tabulate_tensor_float32;
+  if constexpr (std::is_same_v<T, float>)
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_float32);
+  else if constexpr (std::is_same_v<T, double>)
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_float64);
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-  else if constexpr (std::is_same_v<T, std::complex<float>>
-                     && std::is_same_v<U, float>)
-  {
-    tabulate_tensor
-        = reinterpret_cast<void (*)(T*, const T*, const T*, const U*,
-                                    const int*, const unsigned char*, void*)>(
-            e.tabulate_tensor_complex64);
-  }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-  else if constexpr (std::is_same_v<T, double> && std::is_same_v<U, double>)
-    tabulate_tensor = e.tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
-  else if constexpr (std::is_same_v<T, std::complex<double>>
-                     && std::is_same_v<U, double>)
-  {
-    tabulate_tensor
-        = reinterpret_cast<void (*)(T*, const T*, const T*, const U*,
-                                    const int*, const unsigned char*, void*)>(
-            e.tabulate_tensor_complex128);
-  }
+  else if constexpr (std::is_same_v<T, std::complex<float>>)
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_complex64);
+  else if constexpr (std::is_same_v<T, std::complex<double>>)
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_complex128);
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else
     throw std::runtime_error("Type not supported.");
