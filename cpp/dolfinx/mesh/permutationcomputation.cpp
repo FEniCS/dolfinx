@@ -220,7 +220,7 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
       // in the main task.
       std::vector<std::jthread> threads;
       for (int i = 1; i < num_threads; ++i)
-        threads.push_back(std::jthread(process_thread, i));
+        threads.emplace_back(process_thread, i);
       process_thread(0);
     }
   }
@@ -285,7 +285,7 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   // the main task.
   std::vector<std::jthread> threads;
   for (int i = 1; i < num_threads; ++i)
-    threads.push_back(std::jthread(process_thread, i));
+    threads.emplace_back(process_thread, i);
   process_thread(0);
 
   return edge_perm;
