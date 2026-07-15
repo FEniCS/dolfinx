@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <complex>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/common/types.h>
@@ -19,6 +20,12 @@
 #include <span>
 #include <type_traits>
 #include <vector>
+
+namespace dolfinx::fem
+{
+template <std::floating_point T>
+class FunctionSpace;
+} // namespace dolfinx::fem
 
 namespace dolfinx::la
 {
@@ -132,6 +139,20 @@ public:
       : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
         _scatterer(
             std::make_shared<common::Scatterer<ScatterContainer>>(*_map, bs)),
+        _buffer_local(_scatterer->local_indices().size()),
+        _buffer_remote(_scatterer->remote_indices().size())
+  {
+  }
+
+  /// @brief Create a distributed vector from a FunctionSpace, inheriting a
+  /// shared Scatterer.
+  /// @param V FunctionSpace defining the block size and dofmap layout of the
+  /// vector, and sharing a common Scatterer.
+  template <std::floating_point U>
+  Vector(const fem::FunctionSpace<U>& V)
+      : _map(V.dofmap()->index_map), _bs(V.dofmap()->bs()),
+        _x(_bs * (_map->size_local() + _map->num_ghosts())),
+        _scatterer(V.scatterer()),
         _buffer_local(_scatterer->local_indices().size()),
         _buffer_remote(_scatterer->remote_indices().size())
   {

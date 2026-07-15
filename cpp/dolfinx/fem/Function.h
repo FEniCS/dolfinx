@@ -55,9 +55,7 @@ public:
   /// @brief Create function on given function space.
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
-      : _function_space(V), _x(std::make_shared<la::Vector<value_type>>(
-                                V->dofmaps().front()->index_map,
-                                V->dofmaps().front()->index_map_bs()))
+      : _function_space(V), _x(std::make_shared<la::Vector<value_type>>(*V))
   {
     if (!V->component().empty())
     {
