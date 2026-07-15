@@ -30,7 +30,8 @@ namespace dolfinx::fem
 /// degrees-of-freedom.
 /// @tparam T The floating point (real) type of the mesh geometry and
 /// the finite element basis.
-template <std::floating_point T>
+template <std::floating_point T,
+          typename ScatterT = common::Scatterer<std::vector<std::int32_t>>>
 class FunctionSpace
 {
 public:
@@ -47,9 +48,8 @@ public:
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _elements{element}, _dofmaps{std::move(dofmap)},
         _id(boost::uuids::random_generator()()), _root_space_id(_id),
-        _scatterer(
-            std::make_shared<common::Scatterer<std::vector<std::int32_t>>>(
-                *_dofmaps.front()->index_map, _dofmaps.front()->index_map_bs()))
+        _scatterer(std::make_shared<ScatterT>(*_dofmaps.front()->index_map,
+                                              _dofmaps.front()->index_map_bs()))
   {
     // Do nothing
   }
@@ -68,9 +68,8 @@ public:
       std::vector<std::shared_ptr<const DofMap>> dofmaps)
       : _mesh(mesh), _elements(elements), _dofmaps(std::move(dofmaps)),
         _id(boost::uuids::random_generator()()), _root_space_id(_id),
-        _scatterer(
-            std::make_shared<common::Scatterer<std::vector<std::int32_t>>>(
-                *_dofmaps.front()->index_map, _dofmaps.front()->index_map_bs()))
+        _scatterer(std::make_shared<ScatterT>(*_dofmaps.front()->index_map,
+                                              _dofmaps.front()->index_map_bs()))
   {
     std::vector<mesh::CellType> cell_types = mesh->topology()->cell_types();
     std::size_t num_cell_types = cell_types.size();
@@ -411,11 +410,7 @@ public:
   ///
   /// Used to scatter data between the local (owned + ghost) dof layout
   /// and the global layout.
-  std::shared_ptr<const common::Scatterer<std::vector<std::int32_t>>>
-  scatterer() const
-  {
-    return _scatterer;
-  }
+  std::shared_ptr<const ScatterT> scatterer() const { return _scatterer; }
 
 private:
   // The mesh
@@ -429,7 +424,7 @@ private:
 
   // An associated scatterer for the function space. This is used to scatter
   // data from the local dof layout to the global dof layout and vice versa.
-  std::shared_ptr<common::Scatterer<std::vector<std::int32_t>>> _scatterer;
+  std::shared_ptr<ScatterT> _scatterer;
 
   // The component w.r.t. to root space
   std::vector<int> _component;

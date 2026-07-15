@@ -37,7 +37,7 @@ template <dolfinx::scalar T, std::floating_point U>
 class Expression;
 template <dolfinx::scalar T, std::floating_point U>
 class Form;
-template <std::floating_point T>
+template <std::floating_point T, typename ScatterT>
 class FunctionSpace;
 
 /// @brief Evaluate an Expression on cells or facets.
