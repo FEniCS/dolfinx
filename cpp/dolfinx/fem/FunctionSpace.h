@@ -47,9 +47,10 @@ public:
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _elements{element}, _dofmaps{std::move(dofmap)},
-        _id(boost::uuids::random_generator()()), _root_space_id(_id),
-        _scatterer(std::make_shared<ScatterT>(*_dofmaps.front()->index_map,
-                                              _dofmaps.front()->index_map_bs()))
+        _scatterer(std::make_shared<ScatterT>(
+            *_dofmaps.front()->index_map, _dofmaps.front()->index_map_bs())),
+        _id(boost::uuids::random_generator()()), _root_space_id(_id)
+
   {
     // Do nothing
   }
@@ -67,9 +68,9 @@ public:
       std::vector<std::shared_ptr<const FiniteElement<geometry_type>>> elements,
       std::vector<std::shared_ptr<const DofMap>> dofmaps)
       : _mesh(mesh), _elements(elements), _dofmaps(std::move(dofmaps)),
-        _id(boost::uuids::random_generator()()), _root_space_id(_id),
-        _scatterer(std::make_shared<ScatterT>(*_dofmaps.front()->index_map,
-                                              _dofmaps.front()->index_map_bs()))
+        _scatterer(std::make_shared<ScatterT>(
+            *_dofmaps.front()->index_map, _dofmaps.front()->index_map_bs())),
+        _id(boost::uuids::random_generator()()), _root_space_id(_id)
   {
     std::vector<mesh::CellType> cell_types = mesh->topology()->cell_types();
     std::size_t num_cell_types = cell_types.size();
