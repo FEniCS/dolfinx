@@ -284,7 +284,7 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   // Launch threads for computing edge reflections. The first thread is run in
   // the main task.
   std::vector<std::jthread> threads;
-  for (std::size_t i = 1; i < num_threads; ++i)
+  for (int i = 1; i < num_threads; ++i)
     threads.push_back(std::jthread(process_thread, i));
   process_thread(0);
 
