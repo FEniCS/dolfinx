@@ -5,7 +5,7 @@ project(dolfinx-tests LANGUAGES C CXX)
 if(PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
   find_package(DOLFINX REQUIRED)
-  include(DolfinxDeveloperCompilerFlags)
+  include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
 endif()
 
 find_package(Catch2 3 REQUIRED)

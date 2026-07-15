@@ -158,7 +158,7 @@ public:
                        std::multiplies{});
   }
 
-  /// @brief Value shape of of Expression result (at a point),
+  /// @brief Value shape of Expression result (at a point),
   const std::vector<std::size_t>& value_shape() const { return _value_shape; }
 
   /// @brief Evaluation point coordinates on the reference cell.

@@ -1,4 +1,5 @@
-set(HEADERS_fem
+set(
+  HEADERS_fem
   ${CMAKE_CURRENT_SOURCE_DIR}/Constant.h
   ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateElement.h
   ${CMAKE_CURRENT_SOURCE_DIR}/DirichletBC.h
@@ -31,14 +32,15 @@ set(HEADERS_fem
 
 target_sources(
   dolfinx
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/DirichletBC.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateElement.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/DofMap.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/MPC.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/DirichletBC.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateElement.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/DofMap.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MPC.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
 )

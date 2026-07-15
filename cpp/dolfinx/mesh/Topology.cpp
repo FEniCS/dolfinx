@@ -714,7 +714,7 @@ std::vector<std::int32_t> convert_to_local_indexing(
     std::vector<std::jthread> threads(num_threads);
     for (int i = 0; i < num_threads; ++i)
     {
-      auto [c0, c1] = dolfinx::MPI::local_range(i, g.size(), num_threads);
+      auto [c0, c1] = dolfinx::common::local_range(i, g.size(), num_threads);
       threads[i] = std::jthread(transform, std::span(data.data() + c0, c1 - c0),
                                 g.subspan(c0, c1 - c0), global_to_local);
     }
@@ -1021,7 +1021,7 @@ void Topology::create_connectivity(int d0, int d1)
   }
 }
 //-----------------------------------------------------------------------------
-void Topology::create_entity_permutations()
+void Topology::create_entity_permutations(int num_threads)
 {
   if (!_cell_permutations.empty())
     return;
@@ -1036,7 +1036,7 @@ void Topology::create_entity_permutations()
     create_entities(d);
 
   auto [facet_permutations, cell_permutations]
-      = mesh::compute_entity_permutations(*this);
+      = mesh::compute_entity_permutations(*this, num_threads);
   _facet_permutations = std::move(facet_permutations);
   _cell_permutations = std::move(cell_permutations);
 }
