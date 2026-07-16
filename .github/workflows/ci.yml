@@ -207,4 +207,3 @@ jobs:
           spack -e py buildcache push --base-image ubuntu:24.04 --allow-missing --update-index local-buildcache \
             py-gmsh py-matplotlib py-networkx py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
         if: ${{ !cancelled() }}
-
