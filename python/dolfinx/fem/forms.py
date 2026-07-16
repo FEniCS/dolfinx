@@ -25,7 +25,6 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
 from dolfinx.fem.function import Constant, Function, FunctionSpace
-from dolfinx.fem.typemap import get_cpp_type, register_cpp_type
 from dolfinx.typing import Scalar
 
 if typing.TYPE_CHECKING:
@@ -38,7 +37,13 @@ if typing.TYPE_CHECKING:
 class Form(typing.Generic[Scalar]):
     """A finite element form."""
 
-    _cpp_registry: typing.ClassVar[dict] = {}
+    # Matched-precision built-ins (geometry == real scalar part).
+    _cpp_registry: typing.ClassVar[dict] = {
+        (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.Form_float32,
+        (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.Form_float64,
+        (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.Form_complex64,
+        (np.dtype(np.complex128), np.dtype(np.float64)): _cpp.fem.Form_complex128,
+    }
     _cpp_object: (
         _cpp.fem.Form_complex64
         | _cpp.fem.Form_complex128
@@ -46,6 +51,22 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_float64
     )
     _code: str | list[str] | None
+
+    @classmethod
+    def register_cpp_type(cls, cpp_type, scalar_dtype, geometry_dtype):
+        """Register a compiled C++ type for a (scalar, geometry) pair."""
+        cls._cpp_registry[scalar_dtype, geometry_dtype] = cpp_type
+
+    @classmethod
+    def get_cpp_type(cls, scalar_dtype, geometry_dtype):
+        """Compiled C++ type registered for a (scalar, geometry) pair."""
+        try:
+            return cls._cpp_registry[scalar_dtype, geometry_dtype]
+        except KeyError:
+            raise NotImplementedError(
+                f"No compiled {cls.__name__} for scalar '{scalar_dtype}' on geometry "
+                f"'{geometry_dtype}'. Register one with {cls.__name__}.register_cpp_type()."
+            ) from None
 
     def __init__(
         self,
@@ -224,16 +245,9 @@ def form_cpp_class(
         This function is for advanced usage, typically when writing
         custom kernels using Numba or C.
     """
-    if np.issubdtype(dtype, np.float32):
-        return _cpp.fem.Form_float32
-    elif np.issubdtype(dtype, np.float64):
-        return _cpp.fem.Form_float64
-    elif np.issubdtype(dtype, np.complex64):
-        return _cpp.fem.Form_complex64
-    elif np.issubdtype(dtype, np.complex128):
-        return _cpp.fem.Form_complex128
-    else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+    # Geometry is the real part of the scalar type (matched precision).
+    scalar_dtype = np.dtype(dtype)
+    return Form.get_cpp_type(scalar_dtype, scalar_dtype.type(0).real.dtype)
 
 
 _ufl_to_dolfinx_domain = {
@@ -297,7 +311,7 @@ def mixed_topology_form(
     comm = mesh.comm if jit_comm is None else jit_comm
 
     # Geometry type is fixed by the mesh.
-    ftype = get_cpp_type(Form, dtype, mesh.geometry.x.dtype)
+    ftype = Form.get_cpp_type(np.dtype(dtype), mesh.geometry.x.dtype)
 
     ufcx_forms = []
     modules = []
@@ -385,7 +399,7 @@ def form(
         comm = msh.comm if jit_comm is None else jit_comm
 
         # Geometry type is fixed by the mesh.
-        ftype = get_cpp_type(Form, dtype, msh.geometry.x.dtype)
+        ftype = Form.get_cpp_type(np.dtype(dtype), msh.geometry.x.dtype)
 
         ufcx_form, module, code = jit.ffcx_jit(
             comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
@@ -450,7 +464,7 @@ def form(
         msh = V[0].mesh
 
         # Geometry type is fixed by the mesh.
-        ftype = get_cpp_type(Form, dtype, msh.geometry.x.dtype)
+        ftype = Form.get_cpp_type(np.dtype(dtype), msh.geometry.x.dtype)
 
         f = ftype(
             spaces=V,
@@ -815,13 +829,3 @@ def derivative_block(
             "F must be either a UFL form (with rank zero or one), or a sequence of "
             "rank-one UFL forms."
         )
-
-
-# Register the matched-precision built-ins (geometry == real scalar part).
-for _scalar, _geom, _name in (
-    (np.float32, np.float32, "float32"),
-    (np.float64, np.float64, "float64"),
-    (np.complex64, np.float32, "complex64"),
-    (np.complex128, np.float64, "complex128"),
-):
-    register_cpp_type(Form, _scalar, _geom, getattr(_cpp.fem, f"Form_{_name}"))

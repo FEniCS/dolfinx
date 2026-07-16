@@ -6,7 +6,7 @@
 """Finite elements."""
 
 from functools import singledispatch
-from typing import Generic
+from typing import ClassVar, Generic
 
 import numpy as np
 import numpy.typing as npt
@@ -20,7 +20,28 @@ from dolfinx.typing import Real
 class CoordinateElement(Generic[Real]):
     """Coordinate element describing the geometry map for mesh cells."""
 
+    # Built-in geometry types.
+    _cpp_registry: ClassVar[dict] = {
+        np.dtype(np.float32): _cpp.fem.CoordinateElement_float32,
+        np.dtype(np.float64): _cpp.fem.CoordinateElement_float64,
+    }
     _cpp_object: _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
+
+    @classmethod
+    def register_cpp_type(cls, cpp_type, geometry_dtype):
+        """Register a compiled C++ type for a geometry dtype."""
+        cls._cpp_registry[geometry_dtype] = cpp_type
+
+    @classmethod
+    def get_cpp_type(cls, geometry_dtype):
+        """Compiled C++ type registered for a geometry dtype."""
+        try:
+            return cls._cpp_registry[geometry_dtype]
+        except KeyError:
+            raise NotImplementedError(
+                f"No compiled {cls.__name__} for geometry '{geometry_dtype}'. "
+                f"Register one with {cls.__name__}.register_cpp_type()."
+            ) from None
 
     def __init__(
         self, cmap: _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
@@ -144,12 +165,8 @@ def coordinate_element(
     Returns:
         A coordinate element.
     """
-    if np.issubdtype(dtype, np.float32):
-        return CoordinateElement(_cpp.fem.CoordinateElement_float32(celltype, degree, variant))
-    elif np.issubdtype(dtype, np.float64):
-        return CoordinateElement(_cpp.fem.CoordinateElement_float64(celltype, degree, variant))
-    else:
-        raise RuntimeError("Unsupported dtype.")
+    cpp_type = CoordinateElement.get_cpp_type(np.dtype(dtype))
+    return CoordinateElement(cpp_type(celltype, degree, variant))
 
 
 @coordinate_element.register(basix.finite_element.FiniteElement)
@@ -164,16 +181,35 @@ def _(e: basix.finite_element.FiniteElement) -> CoordinateElement:
     Returns:
         A coordinate element.
     """
-    try:
-        return CoordinateElement(_cpp.fem.CoordinateElement_float32(e._e))
-    except TypeError:
-        return CoordinateElement(_cpp.fem.CoordinateElement_float64(e._e))
+    cpp_type = CoordinateElement.get_cpp_type(e.dtype)
+    return CoordinateElement(cpp_type(e._e))
 
 
 class FiniteElement(Generic[Real]):
     """A finite element."""
 
+    # Built-in geometry types.
+    _cpp_registry: ClassVar[dict] = {
+        np.dtype(np.float32): _cpp.fem.FiniteElement_float32,
+        np.dtype(np.float64): _cpp.fem.FiniteElement_float64,
+    }
     _cpp_object: _cpp.fem.FiniteElement_float32 | _cpp.fem.FiniteElement_float64
+
+    @classmethod
+    def register_cpp_type(cls, cpp_type, geometry_dtype):
+        """Register a compiled C++ type for a geometry dtype."""
+        cls._cpp_registry[geometry_dtype] = cpp_type
+
+    @classmethod
+    def get_cpp_type(cls, geometry_dtype):
+        """Compiled C++ type registered for a geometry dtype."""
+        try:
+            return cls._cpp_registry[geometry_dtype]
+        except KeyError:
+            raise NotImplementedError(
+                f"No compiled {cls.__name__} for geometry '{geometry_dtype}'. "
+                f"Register one with {cls.__name__}.register_cpp_type()."
+            ) from None
 
     def __init__(
         self,
@@ -346,12 +382,7 @@ def finiteelement(
             the selected element.
         FiniteElement_dtype: Geometry type of the element.
     """
-    if np.issubdtype(FiniteElement_dtype, np.float32):
-        CppElement = _cpp.fem.FiniteElement_float32
-    elif np.issubdtype(FiniteElement_dtype, np.float64):
-        CppElement = _cpp.fem.FiniteElement_float64
-    else:
-        raise ValueError(f"Unsupported dtype: {FiniteElement_dtype}")
+    CppElement = FiniteElement.get_cpp_type(np.dtype(FiniteElement_dtype))
 
     if ufl_e.is_mixed:
         elements = [
