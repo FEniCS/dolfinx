@@ -14,7 +14,7 @@ set(
 target_sources(
   dolfinx
   PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/plaza.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/uniform.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
+    plaza.cpp
+    uniform.cpp
+    utils.cpp
 )

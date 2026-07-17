@@ -12,8 +12,8 @@ set(
 target_sources(
   dolfinx
   PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/ordering.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/partitioners.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/partition.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
+    ordering.cpp
+    partitioners.cpp
+    partition.cpp
+    utils.cpp
 )
