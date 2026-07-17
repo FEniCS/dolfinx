@@ -532,12 +532,11 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             """Interpolate a fem.Expression."""
             self._cpp_object.interpolate_expr(e0._cpp_object, cells0, cells1)
 
-        try:
-            # u is a Function or Expression (or pointer to one)
+        # A Function is callable (UFL Coefficient.__call__), so only type
+        # can identify a user-supplied callable.
+        if isinstance(u0, Function | Expression | int) or not callable(u0):
             _interpolate(u0)
-        except TypeError:
-            # u0 is callable
-            assert callable(u0)
+        else:
             x = _cpp.fem.interpolation_coords(
                 self._V.element._cpp_object, self._V.mesh.geometry._cpp_object, cells0
             )
