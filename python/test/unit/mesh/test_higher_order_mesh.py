@@ -146,11 +146,23 @@ def test_submesh(order, dtype):
         assert np.isclose(value, submesh_area)
 
 
-@pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("order", range(1, 5))
-def test_triangle_mesh(order, dtype):
-    points = []
-    points += [[i / order, 0] for i in range(order + 1)]
+def _coordinate_domain(family, cell, order, gdim, dtype):
+    """Mesh with an equispaced Lagrange coordinate element."""
+    return ufl.Mesh(
+        element(
+            family,
+            cell,
+            order,
+            lagrange_variant=basix.LagrangeVariant.equispaced,
+            shape=(gdim,),
+            dtype=dtype,
+        )
+    )
+
+
+def _triangle_lattice(order):
+    """Points of a triangle, and a map from lattice coordinate to point index."""
+    points = [[i / order, 0] for i in range(order + 1)]
     for j in range(1, order):
         points += [[i / order + 0.1, j / order] for i in range(order + 1 - j)]
     points += [[0, 1]]
@@ -158,259 +170,26 @@ def test_triangle_mesh(order, dtype):
     def coord_to_vertex(x, y):
         return y * (2 * order + 3 - y) // 2 + x
 
-    # Define a cell using DOLFINx ordering
+    return points, coord_to_vertex
+
+
+def _triangle_cell(order, coord_to_vertex, ordering):
+    """Nodes of one triangle, in DOLFINx or VTK order."""
     cell = [coord_to_vertex(i, j) for i, j in [(0, 0), (order, 0), (0, order)]]
-    if order > 1:
-        for i in range(1, order):
-            cell.append(coord_to_vertex(order - i, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(0, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(i, 0))
-
-        for j in range(1, order):
-            for i in range(1, order - j):
-                cell.append(coord_to_vertex(i, j))
-
-    domain = ufl.Mesh(
-        element(
-            "Lagrange",
-            "triangle",
-            order,
-            lagrange_variant=basix.LagrangeVariant.equispaced,
-            shape=(2,),
-            dtype=dtype,
-        )
-    )
-    check_cell_volume(points, cell, domain, 0.5, dtype=dtype)
-
-
-@pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("order", range(1, 5))
-def test_tetrahedron_mesh(order, dtype):
-    points = []
-    points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
-    for k in range(1, order):
-        points += [
-            [i / order, j / order + 0.1, k / order]
-            for j in range(order + 1 - k)
-            for i in range(order + 1 - k - j)
-        ]
-
-    points += [[0, 0, 1]]
-
-    def coord_to_vertex(x, y, z):
-        return (
-            z * (3 * order**2 - 3 * order * z + 12 * order + z**2 - 6 * z + 11) // 6
-            + y * (2 * (order - z) + 3 - y) // 2
-            + x
-        )
-
-    # Define a cell using DOLFINx ordering
-    cell = [
-        coord_to_vertex(x, y, z)
-        for x, y, z in [(0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order)]
-    ]
-
-    if order > 1:
-        for i in range(1, order):
-            cell.append(coord_to_vertex(0, order - i, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(order - i, 0, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(order - i, i, 0))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(0, 0, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(0, i, 0))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(i, 0, 0))
-
-        for j in range(1, order):
-            for i in range(1, order - j):
-                cell.append(coord_to_vertex(order - i - j, i, j))
-        for j in range(1, order):
-            for i in range(1, order - j):
-                cell.append(coord_to_vertex(0, i, j))
-        for j in range(1, order):
-            for i in range(1, order - j):
-                cell.append(coord_to_vertex(i, 0, j))
-        for j in range(1, order):
-            for i in range(1, order - j):
-                cell.append(coord_to_vertex(i, j, 0))
-
-        for k in range(1, order):
-            for j in range(1, order - k):
-                for i in range(1, order - j - k):
-                    cell.append(coord_to_vertex(i, j, k))
-
-    domain = ufl.Mesh(
-        element(
-            "Lagrange",
-            "tetrahedron",
-            order,
-            lagrange_variant=basix.LagrangeVariant.equispaced,
-            shape=(3,),
-            dtype=dtype,
-        )
-    )
-    check_cell_volume(points, cell, domain, 1 / 6, dtype=dtype)
-
-
-@pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("order", [1, 2, 3, 4])
-def test_quadrilateral_mesh(order, dtype):
-    random.seed(13)
-
-    points = []
-    points += [[i / order, 0] for i in range(order + 1)]
-    for j in range(1, order):
-        points += [[i / order + 0.1, j / order] for i in range(order + 1)]
-    points += [[j / order, 1] for j in range(order + 1)]
-
-    def coord_to_vertex(x, y):
-        return (order + 1) * y + x
-
-    # Define a cell using DOLFINx ordering
-    cell = [coord_to_vertex(i, j) for i, j in [(0, 0), (order, 0), (0, order), (order, order)]]
-    if order > 1:
-        for i in range(1, order):
-            cell.append(coord_to_vertex(i, 0))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(0, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(order, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(i, order))
-
-        for j in range(1, order):
+    if ordering == "dolfinx":
+        if order > 1:
             for i in range(1, order):
-                cell.append(coord_to_vertex(i, j))
-
-    domain = ufl.Mesh(
-        element(
-            "Q",
-            "quadrilateral",
-            order,
-            lagrange_variant=basix.LagrangeVariant.equispaced,
-            shape=(2,),
-            dtype=dtype,
-        )
-    )
-    check_cell_volume(points, cell, domain, 1, dtype=dtype)
-
-
-@pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("order", [1, 2, 3, 4])
-def test_hexahedron_mesh(order, dtype):
-    random.seed(13)
-    points = []
-    points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1)]
-    for k in range(1, order):
-        points += [
-            [i / order, j / order + 0.1, k / order]
-            for j in range(order + 1)
-            for i in range(order + 1)
-        ]
-
-    points += [[i / order, j / order, 1] for j in range(order + 1) for i in range(order + 1)]
-
-    def coord_to_vertex(x, y, z):
-        return (order + 1) ** 2 * z + (order + 1) * y + x
-
-    # Define a cell using DOLFINx ordering
-    cell = [
-        coord_to_vertex(x, y, z)
-        for x, y, z in [
-            (0, 0, 0),
-            (order, 0, 0),
-            (0, order, 0),
-            (order, order, 0),
-            (0, 0, order),
-            (order, 0, order),
-            (0, order, order),
-            (order, order, order),
-        ]
-    ]
-
-    if order > 1:
-        for i in range(1, order):
-            cell.append(coord_to_vertex(i, 0, 0))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(0, i, 0))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(0, 0, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(order, i, 0))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(order, 0, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(i, order, 0))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(0, order, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(order, order, i))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(i, 0, order))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(0, i, order))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(order, i, order))
-        for i in range(1, order):
-            cell.append(coord_to_vertex(i, order, order))
-
-        for j in range(1, order):
+                cell.append(coord_to_vertex(order - i, i))
             for i in range(1, order):
-                cell.append(coord_to_vertex(i, j, 0))
-        for j in range(1, order):
+                cell.append(coord_to_vertex(0, i))
             for i in range(1, order):
-                cell.append(coord_to_vertex(i, 0, j))
-        for j in range(1, order):
-            for i in range(1, order):
-                cell.append(coord_to_vertex(0, i, j))
-        for j in range(1, order):
-            for i in range(1, order):
-                cell.append(coord_to_vertex(order, i, j))
-        for j in range(1, order):
-            for i in range(1, order):
-                cell.append(coord_to_vertex(i, order, j))
-        for j in range(1, order):
-            for i in range(1, order):
-                cell.append(coord_to_vertex(i, j, order))
+                cell.append(coord_to_vertex(i, 0))
 
-        for k in range(1, order):
             for j in range(1, order):
-                for i in range(1, order):
-                    cell.append(coord_to_vertex(i, j, k))
+                for i in range(1, order - j):
+                    cell.append(coord_to_vertex(i, j))
+        return cell
 
-    domain = ufl.Mesh(
-        element(
-            "Q",
-            "hexahedron",
-            order,
-            lagrange_variant=basix.LagrangeVariant.equispaced,
-            shape=(3,),
-            dtype=dtype,
-        )
-    )
-    check_cell_volume(points, cell, domain, 1, dtype=dtype)
-
-
-@pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("order", range(1, 5))
-def test_triangle_mesh_vtk(order, dtype):
-    points = []
-    points += [[i / order, 0] for i in range(order + 1)]
-    for j in range(1, order):
-        points += [[i / order + 0.1, j / order] for i in range(order + 1 - j)]
-    points += [[0, 1]]
-
-    def coord_to_vertex(x, y):
-        return y * (2 * order + 3 - y) // 2 + x
-
-    # Make the cell, following
-    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
-    cell = [coord_to_vertex(i, j) for i, j in [(0, 0), (order, 0), (0, order)]]
     if order > 1:
         for i in range(1, order):
             cell.append(coord_to_vertex(i, 0))
@@ -428,34 +207,18 @@ def test_triangle_mesh_vtk(order, dtype):
         if order > 4:
             raise NotImplementedError
 
-    cell = np.array(cell)[perm_vtk(CellType.triangle, len(cell))]
-    domain = ufl.Mesh(
-        element(
-            "Lagrange",
-            "triangle",
-            order,
-            lagrange_variant=basix.LagrangeVariant.equispaced,
-            shape=(2,),
-            dtype=dtype,
-        )
-    )
-    check_cell_volume(points, cell, domain, 0.5, dtype=dtype)
+    return np.array(cell)[perm_vtk(CellType.triangle, len(cell))]
 
 
-@pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("order", range(1, 5))
-def test_tetrahedron_mesh_vtk(order, dtype):
-    if order > 3:
-        pytest.xfail("VTK permutation for order > 3 tetrahedra not implemented in DOLFINx.")
-    points = []
-    points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
+def _tetrahedron_lattice(order):
+    """Points of a tetrahedron, and a map from lattice coordinate to point index."""
+    points = [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
     for k in range(1, order):
         points += [
             [i / order, j / order + 0.1, k / order]
             for j in range(order + 1 - k)
             for i in range(order + 1 - k - j)
         ]
-
     points += [[0, 0, 1]]
 
     def coord_to_vertex(x, y, z):
@@ -465,12 +228,48 @@ def test_tetrahedron_mesh_vtk(order, dtype):
             + x
         )
 
-    # Make the cell, following
-    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
+    return points, coord_to_vertex
+
+
+def _tetrahedron_cell(order, coord_to_vertex, ordering):
+    """Nodes of one tetrahedron, in DOLFINx or VTK order."""
     cell = [
         coord_to_vertex(x, y, z)
         for x, y, z in [(0, 0, 0), (order, 0, 0), (0, order, 0), (0, 0, order)]
     ]
+    if ordering == "dolfinx":
+        if order > 1:
+            for i in range(1, order):
+                cell.append(coord_to_vertex(0, order - i, i))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(order - i, 0, i))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(order - i, i, 0))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(0, 0, i))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(0, i, 0))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(i, 0, 0))
+
+            for j in range(1, order):
+                for i in range(1, order - j):
+                    cell.append(coord_to_vertex(order - i - j, i, j))
+            for j in range(1, order):
+                for i in range(1, order - j):
+                    cell.append(coord_to_vertex(0, i, j))
+            for j in range(1, order):
+                for i in range(1, order - j):
+                    cell.append(coord_to_vertex(i, 0, j))
+            for j in range(1, order):
+                for i in range(1, order - j):
+                    cell.append(coord_to_vertex(i, j, 0))
+
+            for k in range(1, order):
+                for j in range(1, order - k):
+                    for i in range(1, order - j - k):
+                        cell.append(coord_to_vertex(i, j, k))
+        return cell
 
     if order > 1:
         for i in range(1, order):
@@ -486,16 +285,14 @@ def test_tetrahedron_mesh_vtk(order, dtype):
         for i in range(1, order):
             cell.append(coord_to_vertex(0, order - i, i))
 
+        # The ordering of faces does not match the documentation. See
+        # https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
         if order == 3:
-            # The ordering of faces does not match documentation. See
-            # https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
             cell.append(coord_to_vertex(1, 0, 1))
             cell.append(coord_to_vertex(1, 1, 1))
             cell.append(coord_to_vertex(0, 1, 1))
             cell.append(coord_to_vertex(1, 1, 0))
         elif order == 4:
-            # The ordering of faces does not match documentation.
-            # See https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
             cell.append(coord_to_vertex(1, 0, 1))
             cell.append(coord_to_vertex(2, 0, 1))
             cell.append(coord_to_vertex(1, 0, 2))
@@ -513,49 +310,15 @@ def test_tetrahedron_mesh_vtk(order, dtype):
             cell.append(coord_to_vertex(2, 1, 0))
 
             cell.append(coord_to_vertex(1, 1, 1))
-
         elif order > 4:
             raise NotImplementedError
-        if False:
-            for j in range(1, order):
-                for i in range(1, order - j):
-                    cell.append(coord_to_vertex(i, 0, j))
-            for j in range(1, order):
-                for i in range(1, order - j):
-                    cell.append(coord_to_vertex(0, i, j))
-            for j in range(1, order):
-                for i in range(1, order - j):
-                    cell.append(coord_to_vertex(i, j, 0))
-            for j in range(1, order):
-                for i in range(1, order - j):
-                    cell.append(coord_to_vertex(order - i - j, i, j))
 
-            for k in range(1, order):
-                for j in range(1, order - k):
-                    for i in range(1, order - j - k):
-                        cell.append(coord_to_vertex(i, j, k))
-
-    cell = np.array(cell)[perm_vtk(CellType.tetrahedron, len(cell))]
-    domain = ufl.Mesh(
-        element(
-            "Lagrange",
-            "tetrahedron",
-            order,
-            lagrange_variant=basix.LagrangeVariant.equispaced,
-            shape=(3,),
-            dtype=dtype,
-        )
-    )
-    check_cell_volume(points, cell, domain, 1 / 6, dtype=dtype)
+    return np.array(cell)[perm_vtk(CellType.tetrahedron, len(cell))]
 
 
-@pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("order", [1, 2, 3, 4])
-def test_quadrilateral_mesh_vtk(order, dtype):
-    random.seed(13)
-
-    points = []
-    points += [[i / order, 0] for i in range(order + 1)]
+def _quadrilateral_lattice(order):
+    """Points of a quadrilateral, and a map from lattice coordinate to point index."""
+    points = [[i / order, 0] for i in range(order + 1)]
     for j in range(1, order):
         points += [[i / order + 0.1, j / order] for i in range(order + 1)]
     points += [[j / order, 1] for j in range(order + 1)]
@@ -563,8 +326,28 @@ def test_quadrilateral_mesh_vtk(order, dtype):
     def coord_to_vertex(x, y):
         return (order + 1) * y + x
 
-    # Make the cell, following
-    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
+    return points, coord_to_vertex
+
+
+def _quadrilateral_cell(order, coord_to_vertex, ordering):
+    """Nodes of one quadrilateral, in DOLFINx or VTK order."""
+    if ordering == "dolfinx":
+        cell = [coord_to_vertex(i, j) for i, j in [(0, 0), (order, 0), (0, order), (order, order)]]
+        if order > 1:
+            for i in range(1, order):
+                cell.append(coord_to_vertex(i, 0))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(0, i))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(order, i))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(i, order))
+
+            for j in range(1, order):
+                for i in range(1, order):
+                    cell.append(coord_to_vertex(i, j))
+        return cell
+
     cell = [coord_to_vertex(i, j) for i, j in [(0, 0), (order, 0), (order, order), (0, order)]]
     if order > 1:
         for i in range(1, order):
@@ -580,43 +363,93 @@ def test_quadrilateral_mesh_vtk(order, dtype):
             for i in range(1, order):
                 cell.append(coord_to_vertex(i, j))
 
-    cell = np.array(cell)[perm_vtk(CellType.quadrilateral, len(cell))]
-    domain = ufl.Mesh(
-        element(
-            "Q",
-            "quadrilateral",
-            order,
-            lagrange_variant=basix.LagrangeVariant.equispaced,
-            shape=(2,),
-            dtype=dtype,
-        )
-    )
-    check_cell_volume(points, cell, domain, 1, dtype=dtype)
+    return np.array(cell)[perm_vtk(CellType.quadrilateral, len(cell))]
 
 
-@pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("order", [1, 2, 3, 4])
-def test_hexahedron_mesh_vtk(order, dtype):
-    if order > 2:
-        pytest.xfail("VTK permutation for order > 2 hexahedra not implemented in DOLFINx.")
-    random.seed(13)
-
-    points = []
-    points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1)]
+def _hexahedron_lattice(order):
+    """Points of a hexahedron, and a map from lattice coordinate to point index."""
+    points = [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1)]
     for k in range(1, order):
         points += [
             [i / order, j / order + 0.1, k / order]
             for j in range(order + 1)
             for i in range(order + 1)
         ]
-
     points += [[i / order, j / order, 1] for j in range(order + 1) for i in range(order + 1)]
 
     def coord_to_vertex(x, y, z):
         return (order + 1) ** 2 * z + (order + 1) * y + x
 
-    # Make the cell, following
-    # https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
+    return points, coord_to_vertex
+
+
+def _hexahedron_cell(order, coord_to_vertex, ordering):
+    """Nodes of one hexahedron, in DOLFINx or VTK order."""
+    if ordering == "dolfinx":
+        cell = [
+            coord_to_vertex(x, y, z)
+            for x, y, z in [
+                (0, 0, 0),
+                (order, 0, 0),
+                (0, order, 0),
+                (order, order, 0),
+                (0, 0, order),
+                (order, 0, order),
+                (0, order, order),
+                (order, order, order),
+            ]
+        ]
+        if order > 1:
+            for i in range(1, order):
+                cell.append(coord_to_vertex(i, 0, 0))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(0, i, 0))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(0, 0, i))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(order, i, 0))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(order, 0, i))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(i, order, 0))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(0, order, i))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(order, order, i))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(i, 0, order))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(0, i, order))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(order, i, order))
+            for i in range(1, order):
+                cell.append(coord_to_vertex(i, order, order))
+
+            for j in range(1, order):
+                for i in range(1, order):
+                    cell.append(coord_to_vertex(i, j, 0))
+            for j in range(1, order):
+                for i in range(1, order):
+                    cell.append(coord_to_vertex(i, 0, j))
+            for j in range(1, order):
+                for i in range(1, order):
+                    cell.append(coord_to_vertex(0, i, j))
+            for j in range(1, order):
+                for i in range(1, order):
+                    cell.append(coord_to_vertex(order, i, j))
+            for j in range(1, order):
+                for i in range(1, order):
+                    cell.append(coord_to_vertex(i, order, j))
+            for j in range(1, order):
+                for i in range(1, order):
+                    cell.append(coord_to_vertex(i, j, order))
+
+            for k in range(1, order):
+                for j in range(1, order):
+                    for i in range(1, order):
+                        cell.append(coord_to_vertex(i, j, k))
+        return cell
+
     cell = [
         coord_to_vertex(x, y, z)
         for x, y, z in [
@@ -630,7 +463,6 @@ def test_hexahedron_mesh_vtk(order, dtype):
             (0, order, order),
         ]
     ]
-
     if order > 1:
         for i in range(1, order):
             cell.append(coord_to_vertex(i, 0, 0))
@@ -657,10 +489,10 @@ def test_hexahedron_mesh_vtk(order, dtype):
         for i in range(1, order):
             cell.append(coord_to_vertex(0, order, i))
 
-        # The ordering of faces does not match documentation. See
+        # The ordering of faces does not match the documentation. See
         # https://gitlab.kitware.com/vtk/vtk/uploads/a0dc0173a41d3cf6b03a9266c0e23688/image.png
-        # The edge flip in this like however has been fixed in VTK so we
-        # follow the main documentation link for edges
+        # The edge flip in that link has since been fixed in VTK, so for edges
+        # we follow the main documentation link.
         for j in range(1, order):
             for i in range(1, order):
                 cell.append(coord_to_vertex(0, i, j))
@@ -685,17 +517,55 @@ def test_hexahedron_mesh_vtk(order, dtype):
                 for i in range(1, order):
                     cell.append(coord_to_vertex(i, j, k))
 
-    cell = np.array(cell)[perm_vtk(CellType.hexahedron, len(cell))]
-    domain = ufl.Mesh(
-        element(
-            "Q",
-            "hexahedron",
-            order,
-            lagrange_variant=basix.LagrangeVariant.equispaced,
-            shape=(3,),
-            dtype=dtype,
-        )
-    )
+    return np.array(cell)[perm_vtk(CellType.hexahedron, len(cell))]
+
+
+# VTK node orderings are built following
+# https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/
+parametrize_ordering = pytest.mark.parametrize("ordering", ["dolfinx", "vtk"])
+
+
+@pytest.mark.skip_in_parallel
+@parametrize_ordering
+@pytest.mark.parametrize("order", range(1, 5))
+def test_triangle_mesh(order, ordering, dtype):
+    points, coord_to_vertex = _triangle_lattice(order)
+    cell = _triangle_cell(order, coord_to_vertex, ordering)
+    domain = _coordinate_domain("Lagrange", "triangle", order, 2, dtype)
+    check_cell_volume(points, cell, domain, 0.5, dtype=dtype)
+
+
+@pytest.mark.skip_in_parallel
+@parametrize_ordering
+@pytest.mark.parametrize("order", range(1, 5))
+def test_tetrahedron_mesh(order, ordering, dtype):
+    if ordering == "vtk" and order > 3:
+        pytest.xfail("VTK permutation for order > 3 tetrahedra not implemented in DOLFINx.")
+    points, coord_to_vertex = _tetrahedron_lattice(order)
+    cell = _tetrahedron_cell(order, coord_to_vertex, ordering)
+    domain = _coordinate_domain("Lagrange", "tetrahedron", order, 3, dtype)
+    check_cell_volume(points, cell, domain, 1 / 6, dtype=dtype)
+
+
+@pytest.mark.skip_in_parallel
+@parametrize_ordering
+@pytest.mark.parametrize("order", [1, 2, 3, 4])
+def test_quadrilateral_mesh(order, ordering, dtype):
+    points, coord_to_vertex = _quadrilateral_lattice(order)
+    cell = _quadrilateral_cell(order, coord_to_vertex, ordering)
+    domain = _coordinate_domain("Q", "quadrilateral", order, 2, dtype)
+    check_cell_volume(points, cell, domain, 1, dtype=dtype)
+
+
+@pytest.mark.skip_in_parallel
+@parametrize_ordering
+@pytest.mark.parametrize("order", [1, 2, 3, 4])
+def test_hexahedron_mesh(order, ordering, dtype):
+    if ordering == "vtk" and order > 2:
+        pytest.xfail("VTK permutation for order > 2 hexahedra not implemented in DOLFINx.")
+    points, coord_to_vertex = _hexahedron_lattice(order)
+    cell = _hexahedron_cell(order, coord_to_vertex, ordering)
+    domain = _coordinate_domain("Q", "hexahedron", order, 3, dtype)
     check_cell_volume(points, cell, domain, 1, dtype=dtype)
 
 
