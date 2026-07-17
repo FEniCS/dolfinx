@@ -10,6 +10,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import simplex_cells, tp_cells
 
 import basix
 import dolfinx
@@ -294,7 +295,6 @@ def test_petsc_curl_curl_eigenvalue(family, order):
     B.destroy()
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("family", ["HHJ", "Regge"])
 def test_biharmonic(family, dtype):
     """Manufactured biharmonic problem.
@@ -471,23 +471,9 @@ def get_mesh(cell_type, datadir):
         return xdmf.read_mesh(name="Grid")
 
 
-parametrize_cell_types = pytest.mark.parametrize(
-    "cell_type",
-    [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
-)
-parametrize_cell_types_simplex = pytest.mark.parametrize(
-    "cell_type", [CellType.triangle, CellType.tetrahedron]
-)
-parametrize_cell_types_tp = pytest.mark.parametrize(
-    "cell_type", [CellType.quadrilateral, CellType.hexahedron]
-)
-parametrize_cell_types_quad = pytest.mark.parametrize("cell_type", [CellType.quadrilateral])
-parametrize_cell_types_hex = pytest.mark.parametrize("cell_type", [CellType.hexahedron])
-
-
 # Run tests on all spaces in periodic table on triangles and tetrahedra
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_simplex
+@simplex_cells
 @pytest.mark.parametrize("family", ["Lagrange"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_P_simplex(family, degree, cell_type, datadir, cg_solver):
@@ -498,10 +484,9 @@ def test_P_simplex(family, degree, cell_type, datadir, cg_solver):
     run_scalar_test(mesh, V, degree, cg_solver)
 
 
-@parametrize_cell_types_simplex
+@simplex_cells
 @pytest.mark.parametrize("family", ["Lagrange"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_P_simplex_built_in(family, degree, dtype, cell_type, datadir, cg_solver):
     if cell_type == CellType.tetrahedron:
         mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, dtype=dtype)
@@ -512,7 +497,7 @@ def test_P_simplex_built_in(family, degree, dtype, cell_type, datadir, cg_solver
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_simplex
+@simplex_cells
 @pytest.mark.parametrize("family", ["Lagrange"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_vector_P_simplex(family, degree, cell_type, datadir, cg_solver):
@@ -525,7 +510,7 @@ def test_vector_P_simplex(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_simplex
+@simplex_cells
 @pytest.mark.parametrize("family", ["DG"])
 @pytest.mark.parametrize("degree", [2, 3])
 def test_dP_simplex(family, degree, cell_type, datadir, cg_solver):
@@ -535,7 +520,7 @@ def test_dP_simplex(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_simplex
+@simplex_cells
 @pytest.mark.parametrize("family", ["RT", "N1curl"])
 @pytest.mark.parametrize("degree", [1, 2, 3, 4])
 def test_RT_N1curl_simplex(family, degree, cell_type, datadir, cg_solver):
@@ -547,7 +532,7 @@ def test_RT_N1curl_simplex(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_simplex
+@simplex_cells
 @pytest.mark.parametrize("family", ["Discontinuous Raviart-Thomas"])
 @pytest.mark.parametrize("degree", [1, 2, 3, 4])
 def test_discontinuous_RT(family, degree, cell_type, datadir, cg_solver):
@@ -559,7 +544,7 @@ def test_discontinuous_RT(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_simplex
+@simplex_cells
 @pytest.mark.parametrize("family", ["BDM", "N2curl"])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_BDM_N2curl_simplex(family, degree, cell_type, datadir, cg_solver):
@@ -571,7 +556,7 @@ def test_BDM_N2curl_simplex(family, degree, cell_type, datadir, cg_solver):
 # Skip slowest test in complex to stop CI timing out
 # @skip_if_complex
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_simplex
+@simplex_cells
 @pytest.mark.parametrize("family", ["BDM", "N2curl"])
 @pytest.mark.parametrize("degree", [3])
 def test_BDM_N2curl_simplex_highest_order(family, degree, cell_type, datadir, cg_solver):
@@ -583,7 +568,7 @@ def test_BDM_N2curl_simplex_highest_order(family, degree, cell_type, datadir, cg
 # Run tests on all spaces in periodic table on quadrilaterals and
 # hexahedra
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_tp
+@tp_cells
 @pytest.mark.parametrize("family", ["Q"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_P_tp(family, degree, cell_type, datadir, cg_solver):
@@ -593,7 +578,7 @@ def test_P_tp(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_tp
+@tp_cells
 @pytest.mark.parametrize("family", ["Q"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_P_tp_built_in_mesh(family, degree, cell_type, datadir, cg_solver):
@@ -607,7 +592,7 @@ def test_P_tp_built_in_mesh(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_tp
+@tp_cells
 @pytest.mark.parametrize("family", ["Q"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_vector_P_tp(family, degree, cell_type, datadir, cg_solver):
@@ -620,7 +605,7 @@ def test_vector_P_tp(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_quad
+@pytest.mark.parametrize("cell_type", [CellType.quadrilateral])
 @pytest.mark.parametrize("family", ["DQ"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_dP_quad(family, degree, cell_type, datadir, cg_solver):
@@ -630,7 +615,7 @@ def test_dP_quad(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_hex
+@pytest.mark.parametrize("cell_type", [CellType.hexahedron])
 @pytest.mark.parametrize("family", ["DQ"])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_dP_hex(family, degree, cell_type, datadir, cg_solver):
@@ -640,7 +625,7 @@ def test_dP_hex(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_tp
+@tp_cells
 @pytest.mark.parametrize("family", ["S"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_S_tp(family, degree, cell_type, datadir, cg_solver):
@@ -650,7 +635,7 @@ def test_S_tp(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_tp
+@tp_cells
 @pytest.mark.parametrize("family", ["S"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_S_tp_built_in_mesh(family, degree, cell_type, datadir, cg_solver):
@@ -664,7 +649,7 @@ def test_S_tp_built_in_mesh(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_tp
+@tp_cells
 @pytest.mark.parametrize("family", ["S"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_vector_S_tp(family, degree, cell_type, datadir, cg_solver):
@@ -677,7 +662,7 @@ def test_vector_S_tp(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_quad
+@pytest.mark.parametrize("cell_type", [CellType.quadrilateral])
 @pytest.mark.parametrize("family", ["DPC"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_DPC_quad(family, degree, cell_type, datadir, cg_solver):
@@ -687,7 +672,7 @@ def test_DPC_quad(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_hex
+@pytest.mark.parametrize("cell_type", [CellType.hexahedron])
 @pytest.mark.parametrize("family", ["DPC"])
 @pytest.mark.parametrize("degree", [2])
 def test_DPC_hex(family, degree, cell_type, datadir, cg_solver):
@@ -697,7 +682,7 @@ def test_DPC_hex(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_quad
+@pytest.mark.parametrize("cell_type", [CellType.quadrilateral])
 @pytest.mark.parametrize("family", ["RTCE", "RTCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_RTC_quad(family, degree, cell_type, datadir, cg_solver):
@@ -707,7 +692,7 @@ def test_RTC_quad(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_hex
+@pytest.mark.parametrize("cell_type", [CellType.hexahedron])
 @pytest.mark.parametrize("family", ["NCE", "NCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_NC_hex(family, degree, cell_type, datadir, cg_solver):
@@ -717,7 +702,7 @@ def test_NC_hex(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_quad
+@pytest.mark.parametrize("cell_type", [CellType.quadrilateral])
 @pytest.mark.parametrize("family", ["BDMCE", "BDMCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3, 4])
 def test_BDM_quad(family, degree, cell_type, datadir, cg_solver):
@@ -727,7 +712,7 @@ def test_BDM_quad(family, degree, cell_type, datadir, cg_solver):
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@parametrize_cell_types_hex
+@pytest.mark.parametrize("cell_type", [CellType.hexahedron])
 @pytest.mark.parametrize("family", ["AAE", "AAF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_AA_hex(family, degree, cell_type, datadir, cg_solver):

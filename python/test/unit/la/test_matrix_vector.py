@@ -9,6 +9,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import all_dtypes
 
 from dolfinx import cpp as _cpp
 from dolfinx import la
@@ -45,15 +46,7 @@ def test_create_matrix_csr():
 
 
 @pytest.mark.parametrize("bs", [[1, 1], [2, 2], [1, 2], [2, 1], [2, 3], [3, 3]])
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        np.complex64,
-        np.complex128,
-    ],
-)
+@all_dtypes
 def test_matvec(bs, dtype, mat_random, mat_gather):
     A = mat_random(0, 0, 12345, dtype, bs)
     Ascipy = mat_gather(A)
@@ -75,15 +68,7 @@ def test_matvec(bs, dtype, mat_random, mat_gather):
 
 
 @pytest.mark.parametrize("bs", [[1, 1], [2, 2], [1, 2], [2, 1], [2, 3], [3, 3]])
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        np.complex64,
-        np.complex128,
-    ],
-)
+@all_dtypes
 def test_matvec_transpose(bs, dtype, mat_random, mat_gather):
     # Create a random square MatrixCSR
     A = mat_random(0, 0, 54321, dtype, bs)

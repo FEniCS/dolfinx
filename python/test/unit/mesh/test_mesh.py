@@ -11,6 +11,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import cells_2d
 
 import basix
 import dolfinx.cpp.graph
@@ -110,7 +111,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
                 )
 
 
-@pytest.mark.parametrize("cell_type", [_mesh.CellType.triangle, _mesh.CellType.quadrilateral])
+@cells_2d
 def test_empty_entities_to_geometry(cell_type):
     """Test entities_to_geometry with empty entity list."""
     mesh = _mesh.create_unit_square(MPI.COMM_WORLD, 10, 12, cell_type=cell_type)
@@ -262,7 +263,6 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
     _check_ufl_domain(box)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("comm", [MPI.COMM_SELF, MPI.COMM_WORLD])
 def test_create_unit_square(comm, dtype):
     """Create mesh of unit square."""
@@ -274,7 +274,6 @@ def test_create_unit_square(comm, dtype):
     assert mesh.geometry.x.dtype == dtype
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("comm", [MPI.COMM_SELF, MPI.COMM_WORLD])
 def test_create_unit_cube(comm, dtype):
     """Create mesh of unit cube."""
@@ -286,7 +285,6 @@ def test_create_unit_cube(comm, dtype):
     assert mesh.geometry.x.dtype == dtype
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("comm", [MPI.COMM_SELF, MPI.COMM_WORLD])
 def test_create_unit_square_quads(comm, dtype):
     mesh = create_unit_square(comm, 5, 7, CellType.quadrilateral, dtype=dtype)
@@ -297,7 +295,6 @@ def test_create_unit_square_quads(comm, dtype):
     assert mesh.geometry.x.dtype == dtype
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("comm", [MPI.COMM_SELF, MPI.COMM_WORLD])
 def test_create_unit_square_hex(comm, dtype):
     mesh = create_unit_cube(comm, 5, 7, 9, CellType.hexahedron, dtype=dtype)
@@ -332,7 +329,7 @@ def test_create_interval_gdim(gdim):
     assert domain.ufl_coordinate_element().reference_value_shape == (gdim,)
 
 
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+@cells_2d
 @pytest.mark.parametrize("gdim", [2, 3])
 def test_create_rectangle_gdim(gdim, cell_type):
     """Rectangle mesh embedded in gdim-dimensional space has correct tdim and gdim."""
@@ -413,7 +410,6 @@ def dirname(request):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize(
     "_mesh,hmin,hmax",
     [
@@ -460,7 +456,6 @@ mesh_factories = [
 ]
 
 
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("mesh_factory", mesh_factories)
 def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to Basix reference
@@ -549,7 +544,6 @@ def boundary_2(x):
 @pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("codim", [0, 1, 2])
 @pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5, lambda x: x[0] >= -1])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
     if d == 1:
@@ -572,7 +566,6 @@ def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
 @pytest.mark.parametrize("d", [1, 2, 3])
 @pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("boundary", [boundary_0, boundary_1, boundary_2])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_submesh_boundary(d, n, boundary, ghost_mode):
     if d == 1:
         mesh = create_unit_interval(MPI.COMM_WORLD, n, ghost_mode=ghost_mode)
@@ -587,7 +580,6 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
     submesh_geometry_test(mesh, submesh, entity_map, geom_map, edim)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_empty_rank_mesh(dtype):
     """Construction of mesh where some ranks are empty."""
     comm = MPI.COMM_WORLD
@@ -670,8 +662,6 @@ def compute_num_boundary_facets(mesh):
 
 @pytest.mark.parametrize("n", [2, 5])
 @pytest.mark.parametrize("d", [2, 3])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_boundary_facets(n, d, ghost_mode, dtype):
     """Test that the correct number of boundary facets are computed."""
     if d == 2:
@@ -686,8 +676,6 @@ def test_boundary_facets(n, d, ghost_mode, dtype):
 
 @pytest.mark.parametrize("n", [3, 5])
 @pytest.mark.parametrize("d", [2, 3])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_submesh_codim_0_boundary_facets(n, d, ghost_mode, dtype):
     """Test that the correct number of boundary facets are computed
     for a submesh of codim 0.
@@ -716,8 +704,6 @@ def test_submesh_codim_0_boundary_facets(n, d, ghost_mode, dtype):
 
 
 @pytest.mark.parametrize("n", [2, 5])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_submesh_codim_1_boundary_facets(n, ghost_mode, dtype):
     """Test that the correct number of boundary facets are computed
     for a submesh of codim 1.
@@ -731,7 +717,6 @@ def test_submesh_codim_1_boundary_facets(n, ghost_mode, dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_mesh_create_cmap(dtype):
     shape = "triangle"
     degree = 1
@@ -846,7 +831,6 @@ def test_transfer_to_submesh(codim):
 
 
 @pytest.mark.parametrize("gdim", [1, 2, 3])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_point_mesh(gdim, dtype):
     rng = np.random.default_rng(12)
     num_points = 10

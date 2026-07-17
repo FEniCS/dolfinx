@@ -30,7 +30,6 @@ def distance_point_to_plane_3D(P1, P2, P3, point):
 
 
 @pytest.mark.parametrize("delta", [0.1, 1e-12, 0, -2])
-@pytest.mark.parametrize("dtype", [np.float64, np.float32])
 def test_line_point_distance(delta, dtype):
     line = np.array([[0.1, 0.2, 0.3], [0.5, 0.8, 0.7]], dtype=dtype)
     point_on_line = line[0] + 0.27 * (line[1] - line[0])
@@ -43,7 +42,6 @@ def test_line_point_distance(delta, dtype):
 
 
 @pytest.mark.parametrize("delta", [0.1, 1e-12, 0])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_line_line_distance(delta, dtype):
     line = np.array([[-0.5, -0.7, -0.3], [1, 2, 3]], dtype=dtype)
     point_on_line = line[0] + 0.38 * (line[1] - line[0])
@@ -69,7 +67,6 @@ def test_tri_distance(delta, dtype):
 
 
 @pytest.mark.parametrize("delta", [0.1 * 0.1 ** (3 * i) for i in range(6)])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_quad_distance2d(delta, dtype):
     quad_1 = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0]], dtype=dtype)
     quad_2 = np.array([[0, 1 + delta, 0], [2, 2, 0], [2, 4, 0], [4, 4, 0]], dtype=dtype)
@@ -183,7 +180,6 @@ def test_cube_distance(delta, scale, dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_collision_2nd_order_triangle(dtype):
     points = np.array(
         [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.65, 0.65], [0.0, 0.5], [0.5, 0.0]], dtype=dtype

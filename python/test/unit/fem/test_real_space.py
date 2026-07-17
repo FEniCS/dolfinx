@@ -2,6 +2,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import cells_2d, cells_3d
 
 import basix.ufl
 import dolfinx
@@ -10,10 +11,7 @@ import ufl
 
 @pytest.mark.parametrize("L", [0.1, 0.2, 0.3])
 @pytest.mark.parametrize("H", [1.3, 0.8, 0.2])
-@pytest.mark.parametrize(
-    "cell_type", [dolfinx.mesh.CellType.triangle, dolfinx.mesh.CellType.quadrilateral]
-)
-@pytest.mark.parametrize("dtype", [np.float64, np.float32])
+@cells_2d
 def test_real_function_space_mass(L, H, cell_type, dtype):
     """Test that real space mass matrix is the same as assembling the volume."""
     mesh = dolfinx.mesh.create_rectangle(
@@ -41,10 +39,7 @@ def test_real_function_space_mass(L, H, cell_type, dtype):
         assert V.dofmap.index_map.num_ghosts == 1
 
 
-@pytest.mark.parametrize("dtype", [np.float64, np.float32])
-@pytest.mark.parametrize(
-    "cell_type", [dolfinx.mesh.CellType.tetrahedron, dolfinx.mesh.CellType.hexahedron]
-)
+@cells_3d
 def test_real_function_space_vector(cell_type, dtype):
     """Test assembling with real space test function is equal to assembling with a constant."""
     mesh = dolfinx.mesh.create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, cell_type, dtype=dtype)

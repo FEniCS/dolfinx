@@ -83,7 +83,6 @@ def run_scalar_test(V, degree, dtype, cg_solver, rtol=None):
     assert np.isclose(error, 0, atol=eps)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", range(1, 6))
 def test_basix_element_wrapper(degree, dtype, cg_solver):
     ufl_element = basix.ufl.element(
@@ -98,7 +97,6 @@ def test_basix_element_wrapper(degree, dtype, cg_solver):
     run_scalar_test(V, degree, dtype, cg_solver)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_custom_element_triangle_degree1(dtype, cg_solver):
     wcoeffs = np.eye(3)
     z = np.zeros((0, 2))
@@ -129,7 +127,6 @@ def test_custom_element_triangle_degree1(dtype, cg_solver):
     run_scalar_test(V, 1, dtype, cg_solver)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_custom_element_triangle_degree4(dtype, cg_solver):
     wcoeffs = np.eye(15)
     x = [
@@ -169,7 +166,6 @@ def test_custom_element_triangle_degree4(dtype, cg_solver):
     run_scalar_test(V, 4, dtype, cg_solver)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_custom_element_triangle_degree4_integral(dtype, cg_solver):
     pts, wts = basix.make_quadrature(basix.CellType.interval, 10)
     tab = basix.create_element(
@@ -219,7 +215,6 @@ def test_custom_element_triangle_degree4_integral(dtype, cg_solver):
     run_scalar_test(V, 4, dtype, cg_solver, rtol=1e-5)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_custom_element_quadrilateral_degree1(dtype, cg_solver):
     wcoeffs = np.eye(4)
     z = np.zeros((0, 2))
@@ -265,11 +260,6 @@ def test_custom_element_quadrilateral_degree1(dtype, cg_solver):
     run_scalar_test(V, 1, dtype, cg_solver)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize(
-    "cell_type",
-    [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
-)
 @pytest.mark.parametrize(
     "element_family",
     [
@@ -319,11 +309,6 @@ def test_vector_copy_degree1(cell_type, element_family, dtype):
     assert np.isclose(error, 0)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize(
-    "cell_type",
-    [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
-)
 @pytest.mark.parametrize("element_family", [basix.ElementFamily.P, basix.ElementFamily.serendipity])
 def test_scalar_copy_degree1(cell_type, element_family, dtype):
     if element_family == basix.ElementFamily.serendipity and cell_type in [

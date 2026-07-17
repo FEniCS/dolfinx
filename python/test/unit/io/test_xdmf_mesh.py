@@ -172,9 +172,7 @@ def test_read_write_p2_mesh(tempdir, encoding):
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 5])
 @pytest.mark.parametrize("codim", [0, 1])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_submesh(tempdir, d, n, codim, ghost_mode, encoding, dtype):
     mesh = mesh_factory(d, n, ghost_mode, dtype=dtype)
     edim = d - codim

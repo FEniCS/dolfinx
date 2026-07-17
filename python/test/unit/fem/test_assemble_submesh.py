@@ -70,7 +70,6 @@ def assemble(mesh, space, k):
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     """Check that assembling a form over a unit square gives the same
     result as assembling over half of a 2x1 rectangle with the same
@@ -104,7 +103,6 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_submesh_facet_assembly(n, k, space, ghost_mode):
     """Test that assembling a form over the face of a unit cube gives
     the same result as assembling it over a unit square.

@@ -13,7 +13,6 @@ from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import create_unit_cube, create_unit_square
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", range(1, 5))
 def test_dof_coords_2d(degree, dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype)
@@ -25,7 +24,6 @@ def test_dof_coords_2d(degree, dtype):
     np.allclose(u.x.array, x[:, 0], atol=1e-7, rtol=1e-6)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", range(1, 5))
 def test_dof_coords_3d(degree, dtype):
     mesh = create_unit_cube(MPI.COMM_WORLD, 10, 10, 10, dtype=dtype)

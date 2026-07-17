@@ -7,17 +7,10 @@
 
 import numpy as np
 import pytest
+from unit.marks import all_dtypes
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        np.complex64,
-        np.complex128,
-    ],
-)
+@all_dtypes
 def test_matmul(dtype, mat_random, mat_gather):
     # Create two random square MatrixCSR
     A = mat_random(0, 0, 12345, dtype)
@@ -41,15 +34,7 @@ def test_matmul(dtype, mat_random, mat_gather):
     assert np.allclose(C.to_dense()[:nrC, :], Cscipy.todense()[lrC0:lrC1])
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        np.complex64,
-        np.complex128,
-    ],
-)
+@all_dtypes
 def test_matmul_rect(dtype, mat_random, mat_gather):
     # Create two random rectangular MatrixCSR
     A = mat_random(0, 1, 12345, dtype)
@@ -73,15 +58,7 @@ def test_matmul_rect(dtype, mat_random, mat_gather):
     assert np.allclose(C.to_dense()[:nrC, :], Cscipy.todense()[lrC0:lrC1])
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        np.complex64,
-        np.complex128,
-    ],
-)
+@all_dtypes
 def test_matmul_zeros(dtype, mat_random, mat_gather):
     A = mat_random(0, 0, 123, dtype)
     # Make first two entries in row zero of A (+1, +1).

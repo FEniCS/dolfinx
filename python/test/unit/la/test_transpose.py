@@ -7,17 +7,10 @@
 
 import numpy as np
 import pytest
+from unit.marks import all_dtypes
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        np.complex64,
-        np.complex128,
-    ],
-)
+@all_dtypes
 def test_transpose_square(dtype, mat_random, mat_gather):
     # Create random square MatrixCSR
     A = mat_random(0, 0, 12345, dtype)
@@ -37,15 +30,7 @@ def test_transpose_square(dtype, mat_random, mat_gather):
 
 
 @pytest.mark.parametrize("bs", [[1, 1], [2, 2], [3, 3], [2, 3], [3, 2]])
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        np.complex64,
-        np.complex128,
-    ],
-)
+@all_dtypes
 def test_transpose_block(dtype, bs, mat_random, mat_gather):
     # Create random rectangular MatrixCSR with various block sizes
     A = mat_random(0, 1, 12345, dtype, bs)

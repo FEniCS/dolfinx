@@ -171,7 +171,6 @@ def test_read_write_higher_order_mesh(order):
     assert np.isclose(ref_surface, surface)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_write_point_data(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     filename = "point_data.vtkhdf"
@@ -181,7 +180,6 @@ def test_write_point_data(dtype):
         write_point_data(filename, mesh, point_data, float(j))
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("width", [1, 3])
 def test_write_cell_data(dtype, width):
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)

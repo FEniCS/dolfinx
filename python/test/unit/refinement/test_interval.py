@@ -13,7 +13,6 @@ from dolfinx import mesh
 
 
 @pytest.mark.parametrize("n", [2, 10, 100])
-@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
 @pytest.mark.parametrize(
     "ghost_mode_refined",
     [mesh.GhostMode.none, mesh.GhostMode.shared_facet],
@@ -40,7 +39,6 @@ def test_refine_interval(n, ghost_mode, ghost_mode_refined, option):
 
 
 @pytest.mark.parametrize("n", [50, 100])
-@pytest.mark.parametrize("ghost_mode", [mesh.GhostMode.none, mesh.GhostMode.shared_facet])
 @pytest.mark.parametrize(
     "ghost_mode_refined",
     [mesh.GhostMode.none, mesh.GhostMode.shared_facet],

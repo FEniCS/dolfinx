@@ -7,28 +7,19 @@
 from mpi4py import MPI
 
 import numpy as np
-import pytest
+from unit.marks import all_dtypes_win32_xfail
 
 import basix.ufl
 import dolfinx
 import ufl
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-def test_compiled_form(dtype):
+@all_dtypes_win32_xfail
+def test_compiled_form(dtype, xtype):
     """Compile a form without an associated mesh and assemble a form over a sequence of meshes."""
-    real_type = dtype(0).real.dtype
-    c_el = basix.ufl.element("Lagrange", "triangle", 1, shape=(2,), dtype=real_type)
+    c_el = basix.ufl.element("Lagrange", "triangle", 1, shape=(2,), dtype=xtype)
     domain = ufl.Mesh(c_el)
-    el = basix.ufl.element("Lagrange", "triangle", 2, dtype=real_type)
+    el = basix.ufl.element("Lagrange", "triangle", 2, dtype=xtype)
     V = ufl.FunctionSpace(domain, el)
     u = ufl.Coefficient(V)
     w = ufl.Coefficient(V)
@@ -42,7 +33,7 @@ def test_compiled_form(dtype):
     )
 
     def create_and_integrate(N, compiled_form):
-        mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, N, N, dtype=real_type)
+        mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, N, N, dtype=xtype)
         assert mesh.ufl_domain().ufl_coordinate_element() == c_el
         Vh = dolfinx.fem.functionspace(mesh, u.ufl_element())
         uh = dolfinx.fem.Function(Vh, dtype=dtype)
@@ -60,27 +51,18 @@ def test_compiled_form(dtype):
         create_and_integrate(i, compiled_form)
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-def test_submesh_assembly(dtype):
+@all_dtypes_win32_xfail
+def test_submesh_assembly(dtype, xtype):
     """Compile a form without an associated mesh and assemble a form over a sequence of meshes."""
-    real_type = dtype(0).real.dtype
-    c_el = basix.ufl.element("Lagrange", "triangle", 1, shape=(2,), dtype=real_type)
+    c_el = basix.ufl.element("Lagrange", "triangle", 1, shape=(2,), dtype=xtype)
     domain = ufl.Mesh(c_el)
-    el = basix.ufl.element("Lagrange", "triangle", 2, dtype=real_type)
+    el = basix.ufl.element("Lagrange", "triangle", 2, dtype=xtype)
     V = ufl.FunctionSpace(domain, el)
     u = ufl.TestFunction(V)
 
-    f_el = basix.ufl.element("Lagrange", "interval", 1, shape=(2,), dtype=real_type)
+    f_el = basix.ufl.element("Lagrange", "interval", 1, shape=(2,), dtype=xtype)
     submesh = ufl.Mesh(f_el)
-    sub_el = basix.ufl.element("Lagrange", "interval", 3, dtype=real_type)
+    sub_el = basix.ufl.element("Lagrange", "interval", 3, dtype=xtype)
     V_sub = ufl.FunctionSpace(submesh, sub_el)
 
     w = ufl.Coefficient(V_sub)
@@ -99,7 +81,7 @@ def test_submesh_assembly(dtype):
             [np.array([0, 0]), np.array([2, 2])],
             [N, N],
             dolfinx.mesh.CellType.triangle,
-            dtype=real_type,
+            dtype=xtype,
         )
         assert mesh.ufl_domain().ufl_coordinate_element() == c_el
 
@@ -151,24 +133,15 @@ def test_submesh_assembly(dtype):
         create_and_integrate(i, compiled_form)
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-def test_eliminated_data(dtype):
+@all_dtypes_win32_xfail
+def test_eliminated_data(dtype, xtype):
     """Test that mesh independent compilation handles the re-ordering of coefficients and constants
     when removed through differentiation.
     """
     cell_name = "triangle"
-    real_type = dtype(0).real.dtype
-    c_el = basix.ufl.element("Lagrange", cell_name, 1, shape=(2,), dtype=real_type)
+    c_el = basix.ufl.element("Lagrange", cell_name, 1, shape=(2,), dtype=xtype)
     domain = ufl.Mesh(c_el)
-    el = basix.ufl.element("Lagrange", cell_name, 2, dtype=real_type)
+    el = basix.ufl.element("Lagrange", cell_name, 2, dtype=xtype)
 
     V = ufl.FunctionSpace(domain, el)
 
@@ -188,9 +161,7 @@ def test_eliminated_data(dtype):
 
     # Pack discrete data
     cell_type = dolfinx.mesh.to_type(cell_name)
-    mesh = dolfinx.mesh.create_unit_square(
-        MPI.COMM_WORLD, 5, 2, dtype=real_type, cell_type=cell_type
-    )
+    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 5, 2, dtype=xtype, cell_type=cell_type)
     Vh = dolfinx.fem.functionspace(mesh, el)
     uh = dolfinx.fem.Function(Vh, dtype=dtype)
     uh.interpolate(lambda x: x[0])

@@ -1,7 +1,6 @@
 from mpi4py import MPI
 
 import numpy as np
-import pytest
 
 from dolfinx.cpp.mesh import (
     GhostMode,
@@ -11,7 +10,6 @@ from dolfinx.fem import coordinate_element
 from dolfinx.mesh import CellType, create_cell_partitioner
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_create_mixed_mesh(dtype):
     nx = 7
     ny = 11

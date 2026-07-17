@@ -121,10 +121,8 @@ def test_discrete_curl_map_raises(elements):
         (CellType.hexahedron, "Nedelec 1st kind H(curl)", "Raviart-Thomas"),
     ],
 )
-def test_discrete_curl(element_data, p, dtype):
+def test_discrete_curl(element_data, p, dtype, xtype):
     """Compute discrete curl operator, with verification using Expression."""
-    xdtype = dtype(0).real.dtype
-
     celltype, E0, E1 = element_data
     N = 3
     msh = create_unit_cube(
@@ -134,7 +132,7 @@ def test_discrete_curl(element_data, p, dtype):
         2 * N,
         ghost_mode=GhostMode.none,
         cell_type=celltype,
-        dtype=xdtype,
+        dtype=xtype,
     )
 
     # Perturb mesh (making hexahedral cells no longer affine) in serial.
@@ -319,14 +317,9 @@ def test_gradient_interpolation(cell_type, p, q):
     assert np.allclose(w_expr.x.array, w.x.array, atol=atol)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
 @pytest.mark.parametrize("from_lagrange", [True, False])
-@pytest.mark.parametrize(
-    "cell_type",
-    [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron],
-)
 def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange):
     """Test that discrete interpolation matrix yields the same result as interpolation."""
     from dolfinx.fem import interpolation_matrix
@@ -393,11 +386,6 @@ def test_interpolation_matrix(dtype, cell_type, p, q, from_lagrange):
     assert np.allclose(w_vec.x.array, w.x.array, atol=atol)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize(
-    "cell_type",
-    [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
-)
 def test_discrete_interpolation(cell_type, dtype):
     tdim = dolfinx.cpp.mesh.cell_dim(cell_type)
     if tdim == 2:

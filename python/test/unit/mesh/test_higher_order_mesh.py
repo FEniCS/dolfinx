@@ -46,7 +46,6 @@ def check_cell_volume(points, cell, domain, volume, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", range(1, 5))
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_submesh(order, dtype):
     # Generate a single cell higher order mesh
     points = []
@@ -137,7 +136,6 @@ def test_submesh(order, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", range(1, 5))
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_triangle_mesh(order, dtype):
     points = []
     points += [[i / order, 0] for i in range(order + 1)]
@@ -177,7 +175,6 @@ def test_triangle_mesh(order, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", range(1, 5))
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tetrahedron_mesh(order, dtype):
     points = []
     points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
@@ -250,7 +247,6 @@ def test_tetrahedron_mesh(order, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_quadrilateral_mesh(order, dtype):
     random.seed(13)
 
@@ -294,7 +290,6 @@ def test_quadrilateral_mesh(order, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_hexahedron_mesh(order, dtype):
     random.seed(13)
     points = []
@@ -391,7 +386,6 @@ def test_hexahedron_mesh(order, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", range(1, 5))
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_triangle_mesh_vtk(order, dtype):
     points = []
     points += [[i / order, 0] for i in range(order + 1)]
@@ -438,7 +432,6 @@ def test_triangle_mesh_vtk(order, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", range(1, 5))
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tetrahedron_mesh_vtk(order, dtype):
     if order > 3:
         pytest.xfail("VTK permutation for order > 3 tetrahedra not implemented in DOLFINx.")
@@ -546,7 +539,6 @@ def test_tetrahedron_mesh_vtk(order, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_quadrilateral_mesh_vtk(order, dtype):
     random.seed(13)
 
@@ -592,7 +584,6 @@ def test_quadrilateral_mesh_vtk(order, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_hexahedron_mesh_vtk(order, dtype):
     if order > 2:
         pytest.xfail("VTK permutation for order > 2 hexahedra not implemented in DOLFINx.")
@@ -705,7 +696,6 @@ def test_hexahedron_mesh_vtk(order, dtype):
         ([0, 1, 2, 3, 4, 5, 6, 7], [0, 1, 3, 2, 4, 5, 7, 6], CellType.hexahedron),
     ],
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_map_vtk_to_dolfin(vtk, dolfin, cell_type, dtype):
     p = perm_vtk(cell_type, len(vtk))
     cell_p = np.array(vtk)[p]
@@ -730,7 +720,6 @@ def test_xdmf_input_tri(datadir, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_gmsh_mixed_mesh_2d(order, dtype):
     try:
         import gmsh
@@ -785,7 +774,6 @@ def test_gmsh_mixed_mesh_2d(order, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_gmsh_input_2d(order, dtype):
     try:
         import gmsh
@@ -818,7 +806,6 @@ def test_gmsh_input_2d(order, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_gmsh_mixed_mesh_3d(order, dtype):
     try:
         import gmsh
@@ -910,7 +897,6 @@ def test_gmsh_mixed_mesh_3d(order, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_gmsh_tetra(order, dtype):
     try:
         import gmsh
@@ -945,7 +931,6 @@ def test_gmsh_tetra(order, dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_quadrilateral_cell_order_3(dtype):
     points = [
         [0.0, 0.0],

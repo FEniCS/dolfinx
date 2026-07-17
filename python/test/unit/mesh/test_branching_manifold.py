@@ -8,6 +8,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import cells_3d
 
 import basix
 import ufl
@@ -88,7 +89,7 @@ def test_edge_skeleton_mesh(dim, cell_type):
         assert matched or on_boundary(skeleton_mesh.geometry.x[facet])
 
 
-@pytest.mark.parametrize("cell_type", [CellType.hexahedron, CellType.tetrahedron])
+@cells_3d
 def test_facet_skeleton_mesh(cell_type):
     comm = MPI.COMM_WORLD
     if comm.rank == 0:

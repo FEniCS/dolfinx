@@ -15,6 +15,40 @@ from dolfinx.cpp.mesh import create_mesh
 from dolfinx.fem import coordinate_element
 from dolfinx.mesh import CellType, GhostMode, create_cell_partitioner
 
+# Values a test argument is parametrized over when it does not say otherwise,
+# so that the common case needs no decorator. Use the marks in unit.marks for
+# anything else; an explicit parametrize also wins.
+_defaults = {
+    "dtype": [np.float32, np.float64],
+    "cell_type": [
+        CellType.triangle,
+        CellType.quadrilateral,
+        CellType.tetrahedron,
+        CellType.hexahedron,
+    ],
+    "ghost_mode": [GhostMode.none, GhostMode.shared_facet],
+}
+
+
+def _parametrized(metafunc, name):
+    """Check whether a test parametrizes ``name`` itself."""
+    for marker in metafunc.definition.iter_markers("parametrize"):
+        if marker.args and name in [a.strip() for a in str(marker.args[0]).split(",")]:
+            return True
+    return False
+
+
+def pytest_generate_tests(metafunc):
+    for arg, values in _defaults.items():
+        if arg in metafunc.fixturenames and not _parametrized(metafunc, arg):
+            metafunc.parametrize(arg, values)
+
+
+@pytest.fixture
+def xtype(dtype):
+    """Real type underlying ``dtype``, e.g. the mesh geometry type."""
+    return dtype(0).real.dtype
+
 
 @pytest.fixture
 def mixed_topology_mesh():

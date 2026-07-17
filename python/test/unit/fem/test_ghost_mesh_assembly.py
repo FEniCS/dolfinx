@@ -30,7 +30,7 @@ def dS_from_ufl(mesh):
 
 
 @pytest.mark.parametrize(
-    "mode",
+    "ghost_mode",
     [
         GhostMode.none,
         GhostMode.shared_facet,
@@ -38,8 +38,8 @@ def dS_from_ufl(mesh):
 )
 @pytest.mark.parametrize("dx", [dx_from_ufl])
 @pytest.mark.parametrize("ds", [ds_from_ufl])
-def test_ghost_mesh_assembly(mode, dx, ds):
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+def test_ghost_mesh_assembly(ghost_mode, dx, ds):
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=ghost_mode)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dx, ds = dx(mesh), ds(mesh)
@@ -65,7 +65,7 @@ def test_ghost_mesh_assembly(mode, dx, ds):
 
 
 @pytest.mark.parametrize(
-    "mode",
+    "ghost_mode",
     [
         GhostMode.shared_facet,
         pytest.param(
@@ -78,8 +78,8 @@ def test_ghost_mesh_assembly(mode, dx, ds):
     ],
 )
 @pytest.mark.parametrize("dS", [dS_from_ufl])
-def test_ghost_mesh_dS_assembly(mode, dS):
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+def test_ghost_mesh_dS_assembly(ghost_mode, dS):
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=ghost_mode)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dS = dS(mesh)

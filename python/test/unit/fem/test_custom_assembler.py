@@ -138,8 +138,8 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
         ),
     ],
 )
-def test_custom_mesh_loop_rank1(dtype):
-    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64, dtype=dtype(0).real.dtype)
+def test_custom_mesh_loop_rank1(dtype, xtype):
+    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64, dtype=xtype)
     V = functionspace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data

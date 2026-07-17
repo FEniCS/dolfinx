@@ -11,6 +11,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import all_dtypes
 
 import ufl
 from basix.ufl import element
@@ -117,7 +118,7 @@ class TestVTX:
         with pytest.raises(RuntimeError):
             VTXWriter(mesh.comm, filename, [v, w])
 
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+    @all_dtypes
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
     def test_vtx_functions(self, tempdir, dtype, dim, simplex):

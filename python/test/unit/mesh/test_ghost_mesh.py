@@ -50,15 +50,15 @@ def test_ghost_3d():
 
 
 @pytest.mark.parametrize(
-    "mode",
+    "ghost_mode",
     [
         GhostMode.none,
         GhostMode.shared_facet,
     ],
 )
-def test_ghost_connectivities(mode):
+def test_ghost_connectivities(ghost_mode):
     # Ghosted mesh
-    meshG = create_unit_square(MPI.COMM_WORLD, 4, 4, ghost_mode=mode)
+    meshG = create_unit_square(MPI.COMM_WORLD, 4, 4, ghost_mode=ghost_mode)
     meshG.topology.create_connectivity(1, 2)
 
     # Reference mesh, not ghosted, not parallel

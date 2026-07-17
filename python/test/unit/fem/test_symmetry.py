@@ -9,6 +9,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import cells_2d
 
 import basix
 import dolfinx
@@ -120,13 +121,8 @@ def test_stiffness_matrix_dS(cell_type, family, order, sign):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize(
-    "cell_type",
-    [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
-)
 @pytest.mark.parametrize("sign", ["+", "-"])
 @pytest.mark.parametrize("order", range(1, 2))
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_mixed_element_form(cell_type, sign, order, dtype):
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
         mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type, dtype=dtype)
@@ -152,10 +148,9 @@ def test_mixed_element_form(cell_type, sign, order, dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+@cells_2d
 @pytest.mark.parametrize("sign", ["+", "-"])
 @pytest.mark.parametrize("order", range(1, 2))
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_mixed_element_vector_element_form(cell_type, sign, order, dtype):
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
         mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type, dtype=dtype)

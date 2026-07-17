@@ -13,6 +13,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import all_dtypes
 
 import dolfinx
 import ffcx.codegeneration.utils
@@ -82,7 +83,7 @@ def tabulate_rank1_coeff(dtype, xdtype):
     return tabulate
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@all_dtypes
 def test_numba_assembly(dtype):
     xdtype = np.real(dtype(0)).dtype
     k2 = tabulate_rank2(dtype, xdtype)
@@ -120,7 +121,7 @@ def test_numba_assembly(dtype):
     list_timings(MPI.COMM_WORLD)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@all_dtypes
 def test_coefficient(dtype):
     xdtype = np.real(dtype(0)).dtype
     k1 = tabulate_rank1_coeff(dtype, xdtype)

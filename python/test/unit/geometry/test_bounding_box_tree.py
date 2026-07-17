@@ -97,7 +97,6 @@ def find_colliding_cells(mesh, bbox, dtype, num_threads):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("padding", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_padded_bbox(padding, dtype):
     """Test collision between two meshes separated by a distance of
     epsilon, and check if padding the mesh creates a possible
@@ -148,7 +147,6 @@ def rotation_matrix(axis, angle):
     return np.sin(angle) * axis_x + id + outer
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_empty_tree(dtype):
     mesh = create_unit_interval(MPI.COMM_WORLD, 16, dtype=dtype)
     bbtree = bb_tree(mesh, mesh.topology.dim, padding=0.0, entities=np.empty(0, dtype=dtype))
@@ -156,7 +154,6 @@ def test_empty_tree(dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_compute_collisions_point_1d(dtype):
     N = 16
     p = np.array([0.3, 0, 0], dtype=dtype)
@@ -184,7 +181,6 @@ def test_compute_collisions_point_1d(dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("point", [np.array([0.52, 0, 0]), np.array([0.9, 0, 0])])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_compute_collisions_tree_1d(point, dtype):
     mesh_A = create_unit_interval(MPI.COMM_WORLD, 16, dtype=dtype)
 
@@ -227,7 +223,6 @@ def test_compute_collisions_tree_1d(point, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("num_threads", [1, 2])
 @pytest.mark.parametrize("point", [np.array([0.52, 0.51, 0.0]), np.array([0.9, -0.9, 0.0])])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_compute_collisions_tree_2d(point, dtype, num_threads):
     mesh_A = create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=dtype)
     mesh_B = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
@@ -252,7 +247,6 @@ def test_compute_collisions_tree_2d(point, dtype, num_threads):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("num_threads", [1, 2])
 @pytest.mark.parametrize("point", [np.array([0.52, 0.51, 0.3]), np.array([0.9, -0.9, 0.3])])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_compute_collisions_tree_3d(point, dtype, num_threads):
     M = 10
     mesh_A = create_unit_cube(MPI.COMM_WORLD, M, M, M, dtype=dtype)
@@ -277,7 +271,6 @@ def test_compute_collisions_tree_3d(point, dtype, num_threads):
 
 
 @pytest.mark.parametrize("dim", [0, 1])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_compute_closest_entity_1d(dim, dtype):
     ref_distance = 0.75
     N = 16
@@ -312,7 +305,6 @@ def test_compute_closest_entity_1d(dim, dtype):
 
 
 @pytest.mark.parametrize("dim", [0, 1, 2])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_compute_closest_entity_2d(dim, dtype):
     points = np.array([-1.0, -0.01, 0.0], dtype=dtype)
     mesh = create_unit_square(MPI.COMM_WORLD, 15, 15, dtype=dtype)
@@ -343,7 +335,6 @@ def test_compute_closest_entity_2d(dim, dtype):
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_compute_closest_entity_3d(dim, dtype):
     points = np.array([[0.9, 0, 1.135]], dtype=dtype)
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, dtype=dtype)
@@ -373,7 +364,6 @@ def test_compute_closest_entity_3d(dim, dtype):
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_compute_closest_sub_entity(dim, dtype):
     """Compute distance from subset of cells in a mesh to a point inside the mesh."""
     ref_distance = 0.31
@@ -401,7 +391,6 @@ def test_compute_closest_sub_entity(dim, dtype):
             assert np.isin(closest_entities[0], colliding_entity_bboxes.links(0))
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_surface_bbtree(dtype):
     """Test creation of BBTree on subset of entities(surface cells)."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, dtype=dtype)
@@ -417,7 +406,6 @@ def test_surface_bbtree(dtype):
     assert len(compute_collisions_points(bbtree, p).array) == 0
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sub_bbtree_codim1(dtype):
     """Testing point collision with a BoundingBoxTree of sub entities."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type=CellType.hexahedron, dtype=dtype)
@@ -449,7 +437,6 @@ def test_sub_bbtree_codim1(dtype):
 
 
 @pytest.mark.parametrize("comm", [MPI.COMM_WORLD, MPI.COMM_SELF])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_serial_global_bb_tree(dtype, comm):
     # Test if global bb tree with only one node returns the correct collision
     mesh = create_unit_cube(comm, 4, 5, 3)
@@ -473,7 +460,6 @@ def test_serial_global_bb_tree(dtype, comm):
 
 @pytest.mark.parametrize("ct", [CellType.hexahedron, CellType.tetrahedron])
 @pytest.mark.parametrize("N", [7, 13])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sub_bbtree_box(ct, N, dtype):
     """Test that the bounding box of the stem of the bounding box tree is what we expect."""
     mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=ct, dtype=dtype)
@@ -493,7 +479,6 @@ def test_sub_bbtree_box(ct, N, dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_surface_bbtree_collision(dtype):
     """Compute collision between two meshes, where only one cell of each mesh are colliding."""
     tdim = 3
@@ -520,7 +505,6 @@ def test_surface_bbtree_collision(dtype):
 
 
 @pytest.mark.parametrize("ct", [CellType.tetrahedron])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_shift_bbtree(ct, dtype):
     tdim = 3
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, ct, dtype=dtype)
@@ -541,7 +525,6 @@ def test_shift_bbtree(ct, dtype):
 
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("affine", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_determine_point_ownership(dim, affine, dtype):
     """Find point owners (ranks and cells) using bounding box trees + global communication
     and compare to point ownership data results.

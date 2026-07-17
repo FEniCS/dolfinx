@@ -9,6 +9,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import all_dtypes, all_dtypes_win32_xfail
 
 import ufl
 from dolfinx import la
@@ -54,12 +55,11 @@ def build_elastic_nullspace(V, dtype):
     return ns
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@all_dtypes
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("degree", [1, 2])
-def test_nullspace_orthogonal(gdim, degree, dtype):
+def test_nullspace_orthogonal(gdim, degree, dtype, xtype):
     """Test null spaces orthogonalisation."""
-    xtype = dtype(0).real.dtype
     if gdim == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, 12, 13, dtype=xtype)
     elif gdim == 3:
@@ -72,22 +72,13 @@ def test_nullspace_orthogonal(gdim, degree, dtype):
     assert la.is_orthonormal(nullspace, eps=1.0e-3)
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@all_dtypes_win32_xfail
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("degree", [1, 2])
-def test_nullspace_check(gdim, degree, dtype):
+def test_nullspace_check(gdim, degree, dtype, xtype):
     """Test that elasticity nullspace is actually a nullspace."""
     # TODO: Once we support SpMV, run on MPI.COMM_WORLD
     comm = MPI.COMM_SELF
-    xtype = dtype(0).real.dtype
     if gdim == 2:
         mesh = create_unit_square(comm, 12, 13, dtype=xtype)
     elif gdim == 3:

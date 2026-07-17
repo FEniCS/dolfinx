@@ -10,6 +10,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import all_dtypes
 
 import basix
 from dolfinx import default_real_type
@@ -185,7 +186,7 @@ def test_save_2d_tensor(tempdir, encoding, dtype, cell_type):
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@all_dtypes
 def test_save_3d_tensor(tempdir, encoding, dtype, cell_type):
     xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "u3t.xdmf")
@@ -204,7 +205,7 @@ def test_save_3d_tensor(tempdir, encoding, dtype, cell_type):
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@all_dtypes
 def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type):
     filename = Path(tempdir, "u_3D.xdmf")
     xtype = np.real(dtype(0)).dtype

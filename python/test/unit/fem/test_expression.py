@@ -9,6 +9,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import all_dtypes_win32_xfail
 
 import basix
 import ufl
@@ -26,16 +27,8 @@ from dolfinx.mesh import (
 )
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-def test_rank0(dtype):
+@all_dtypes_win32_xfail
+def test_rank0(dtype, xtype):
     """Test evaluation of UFL expression.
 
     This test evaluates gradient of P2 function at interpolation points
@@ -44,7 +37,7 @@ def test_rank0(dtype):
     For a donor function f(x, y) = x^2 + 2*y^2 result is compared with the
     exact gradient grad f(x, y) = [2*x, 4*y].
     """
-    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype(0).real.dtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=xtype)
     gdim = mesh.geometry.dim
     P2 = functionspace(mesh, ("P", 2))
     vdP1 = functionspace(mesh, ("DG", 1, (gdim,)))
@@ -79,16 +72,8 @@ def test_rank0(dtype):
     )
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-def test_rank1_hdiv(dtype):
+@all_dtypes_win32_xfail
+def test_rank1_hdiv(dtype, xtype):
     """Test rank-1 Expression, i.e. Expression containing Argument
     (TrialFunction).
 
@@ -96,7 +81,7 @@ def test_rank1_hdiv(dtype):
     vector DG_2 and assembles it into global matrix A. Input space RT_2
     is chosen because it requires dof permutations.
     """
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype(0).real.dtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=xtype)
     gdim = mesh.geometry.dim
     vdP1 = functionspace(mesh, ("DG", 2, (gdim,)))
     RT1 = functionspace(mesh, ("RT", 2))
@@ -147,16 +132,8 @@ def test_rank1_hdiv(dtype):
     assert np.linalg.norm(h2.x.array - h.x.array) == pytest.approx(0.0, abs=1.0e-4)
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-def test_simple_evaluation(dtype):
+@all_dtypes_win32_xfail
+def test_simple_evaluation(dtype, xtype):
     """Test evaluation of UFL Expression.
 
     This test evaluates a UFL Expression on cells of the mesh and
@@ -174,7 +151,6 @@ def test_simple_evaluation(dtype):
     and passing the result to a numpy function that calculates the exact
     gradient.
     """
-    xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=xtype)
     P2 = functionspace(mesh, ("P", 2))
 
@@ -238,16 +214,8 @@ def test_simple_evaluation(dtype):
     )
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-def test_assembly_into_quadrature_function(dtype):
+@all_dtypes_win32_xfail
+def test_assembly_into_quadrature_function(dtype, xtype):
     """Test assembly into a Quadrature function.
 
     This test evaluates a UFL Expression into a Quadrature function
@@ -273,7 +241,6 @@ def test_assembly_into_quadrature_function(dtype):
     cells and ghost cells so that no parallel communication is required
     after insertion into the vector.
     """
-    xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 6, dtype=xtype)
 
     quadrature_degree = 2
@@ -341,17 +308,8 @@ def test_assembly_into_quadrature_function(dtype):
     assert np.allclose(local, e_exact_eval)
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-def test_expression_eval_cells_subset(dtype):
-    xtype = dtype(0).real.dtype
+@all_dtypes_win32_xfail
+def test_expression_eval_cells_subset(dtype, xtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 4, dtype=xtype)
     V = fem.functionspace(mesh, ("DG", 0))
 
@@ -381,17 +339,8 @@ def test_expression_eval_cells_subset(dtype):
     assert np.allclose(u_.ravel(), cells)
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-def test_expression_comm(dtype):
-    xtype = dtype(0).real.dtype
+@all_dtypes_win32_xfail
+def test_expression_comm(dtype, xtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=xtype)
     v = Constant(mesh, dtype(1))
     u = Function(functionspace(mesh, ("Lagrange", 1)), dtype=dtype)
@@ -418,17 +367,8 @@ def compute_exterior_facet_entities(mesh, facets):
     return integration_entities
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-def test_facet_expression(dtype):
-    xtype = dtype(0).real.dtype
+@all_dtypes_win32_xfail
+def test_facet_expression(dtype, xtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=xtype)
     n = ufl.FacetNormal(mesh)
 
@@ -535,17 +475,8 @@ def test_rank1_blocked():
 
 
 @pytest.mark.parametrize("qdegree", [1, 3, 5])
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-def test_submesh_codim_zero(dtype, qdegree):
-    xtype = dtype(0).real.dtype
+@all_dtypes_win32_xfail
+def test_submesh_codim_zero(dtype, qdegree, xtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=xtype)
 
     V = fem.functionspace(mesh, ("Lagrange", 1))
@@ -587,17 +518,8 @@ def test_submesh_codim_zero(dtype, qdegree):
 
 
 @pytest.mark.parametrize("qdegree", [1, 3, 5])
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
-def test_submesh_codim_one(dtype, qdegree):
-    xtype = dtype(0).real.dtype
+@all_dtypes_win32_xfail
+def test_submesh_codim_one(dtype, qdegree, xtype):
     L = 2.1
     mesh = create_rectangle(
         MPI.COMM_WORLD, np.array([[0, 0], [L, 2.0]], dtype=xtype), [5, 3], dtype=xtype
@@ -659,8 +581,7 @@ def test_submesh_codim_one(dtype, qdegree):
         np.float64,
     ],
 )
-def test_skewed_quadrature(dtype):
-    xtype = dtype(0).real.dtype
+def test_skewed_quadrature(dtype, xtype):
     L = 2.1
     mesh = create_rectangle(
         MPI.COMM_WORLD, np.array([[0, 0], [L, 2.0]], dtype=xtype), [5, 3], dtype=xtype

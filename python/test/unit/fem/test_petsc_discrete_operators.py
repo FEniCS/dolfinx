@@ -52,10 +52,6 @@ class TestPETScDiscreteOperators:
 
     @pytest.mark.parametrize("p", range(1, 4))
     @pytest.mark.parametrize("q", range(1, 4))
-    @pytest.mark.parametrize(
-        "cell_type",
-        [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron],
-    )
     def test_gradient_interpolation_petsc(self, cell_type, p, q):
         """Test discrete gradient computation with verification using Expression."""
         from dolfinx.fem.petsc import discrete_gradient
@@ -122,10 +118,6 @@ class TestPETScDiscreteOperators:
     @pytest.mark.parametrize("p", range(1, 4))
     @pytest.mark.parametrize("q", range(1, 4))
     @pytest.mark.parametrize("from_lagrange", [True, False])
-    @pytest.mark.parametrize(
-        "cell_type",
-        [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron],
-    )
     def test_interpolation_matrix_petsc(self, cell_type, p, q, from_lagrange):
         """Test that discrete interpolation matrix yields the same result as interpolation."""
         from dolfinx.fem.petsc import interpolation_matrix
@@ -254,11 +246,6 @@ class TestPETScDiscreteOperators:
         assert np.isclose(s, 0, atol=atol)
         G.destroy()
 
-    @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-    @pytest.mark.parametrize(
-        "cell_type",
-        [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
-    )
     def test_discrete_interpolation(self, cell_type, ghost_mode):
         """Test discrete interpolation operator."""
         from dolfinx.fem.petsc import interpolation_matrix

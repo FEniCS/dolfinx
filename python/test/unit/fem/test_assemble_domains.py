@@ -9,13 +9,13 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import interior_facet_ghost_modes
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
 from dolfinx.fem import Constant, Function, assemble_scalar, dirichletbc, form, functionspace
 from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (
-    GhostMode,
     Mesh,
     create_unit_square,
     locate_entities,
@@ -37,25 +37,9 @@ def create_cell_meshtags_from_entities(mesh: Mesh, dim: int, cells: np.ndarray, 
     return meshtags_from_entities(mesh, dim, entities, values)
 
 
-parametrize_ghost_mode = pytest.mark.parametrize(
-    "mode",
-    [
-        pytest.param(
-            GhostMode.none,
-            marks=pytest.mark.skipif(
-                condition=MPI.COMM_WORLD.size > 1,
-                reason="Unghosted interior facets fail in parallel",
-            ),
-        ),
-        GhostMode.shared_facet,
-    ],
-)
-
-
-@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("meshtags_factory", [meshtags, create_cell_meshtags_from_entities])
-def test_assembly_dx_domains(mode, meshtags_factory):
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
+def test_assembly_dx_domains(ghost_mode, meshtags_factory):
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=ghost_mode)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -121,9 +105,8 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     assert s_sum == pytest.approx(s2, rel=1.0e-6)
 
 
-@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-def test_assembly_ds_domains(mode):
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
+def test_assembly_ds_domains(ghost_mode):
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=ghost_mode)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
@@ -199,19 +182,19 @@ def test_assembly_ds_domains(mode):
     assert 2.0 == pytest.approx(s, 1.0e-6)  # /NOSONAR
 
 
-@parametrize_ghost_mode
-def test_assembly_dS_domains(mode):
+@interior_facet_ghost_modes
+def test_assembly_dS_domains(ghost_mode):
     N = 10
-    mesh = create_unit_square(MPI.COMM_WORLD, N, N, ghost_mode=mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, N, N, ghost_mode=ghost_mode)
     one = Constant(mesh, default_scalar_type(1))
     val = assemble_scalar(form(one * ufl.dS))
     val = mesh.comm.allreduce(val, op=MPI.SUM)
     assert val == pytest.approx(2 * (N - 1) + N * np.sqrt(2), 1.0e-5)
 
 
-@parametrize_ghost_mode
-def test_additivity(mode):
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+@interior_facet_ghost_modes
+def test_additivity(ghost_mode):
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=ghost_mode)
     V = functionspace(mesh, ("Lagrange", 1))
 
     f1 = Function(V)

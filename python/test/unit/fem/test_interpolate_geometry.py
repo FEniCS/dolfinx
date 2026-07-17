@@ -11,6 +11,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import cells_2d
 
 from basix import LagrangeVariant
 from dolfinx.fem import assemble_scalar, coordinate_element, form, interpolate_geometry
@@ -37,7 +38,6 @@ def _assert_close_up_to_row_permutation(a, b, atol):
             raise AssertionError(f"No match for {ra} in {b}")
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_interpolate_geometry_p1_to_p2(dtype):
     msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
     cmap = coordinate_element(CellType.triangle, 2, dtype=dtype)
@@ -61,7 +61,6 @@ def test_interpolate_geometry_p1_to_p2(dtype):
         _assert_close_up_to_row_permutation(x_new[dm_new[c]], expected, atol=atol)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_interpolate_geometry_p1_roundtrip(dtype):
     msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=dtype)
     cmap = coordinate_element(CellType.triangle, 1, dtype=dtype)
@@ -129,10 +128,9 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type, lagrange_variant):
     return abs(area - np.pi * R**2), abs(circ - 2.0 * np.pi * R)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 @pytest.mark.parametrize("R", [0.1])
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+@cells_2d
 @pytest.mark.parametrize(
     "lagrange_variant", [LagrangeVariant.equispaced, LagrangeVariant.gll_isaac]
 )

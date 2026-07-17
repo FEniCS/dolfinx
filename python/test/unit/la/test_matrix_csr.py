@@ -9,6 +9,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import all_dtypes, all_dtypes_win32_xfail
 
 import ufl
 from dolfinx import cpp as _cpp
@@ -32,7 +33,7 @@ def create_test_sparsity(n, bs):
     return sp
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@all_dtypes
 def test_add(dtype):
     # Regular CSR Matrix 6x6 with bs=1
     sp = create_test_sparsity(6, 1)
@@ -76,7 +77,7 @@ def test_add(dtype):
     assert mat3.squared_norm() == 0.0  # /NOSONAR
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@all_dtypes
 def test_set(dtype):
     mpi_size = MPI.COMM_WORLD.size
     # Regular CSR Matrix 6x6 with bs=1
@@ -94,7 +95,7 @@ def test_set(dtype):
     assert n1 == n2
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@all_dtypes
 def test_set_blocked(dtype):
     mpi_size = MPI.COMM_WORLD.size
     # Blocked CSR Matrix 3x3 with bs=2
@@ -107,7 +108,7 @@ def test_set_blocked(dtype):
     assert n1 == 54.0 * mpi_size  # /NOSONAR
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@all_dtypes
 def test_distributed_csr(dtype):
     size = MPI.COMM_WORLD.size
     rank = MPI.COMM_WORLD.rank
@@ -147,15 +148,7 @@ def test_distributed_csr(dtype):
     assert np.isclose(mat.data.sum(), pre_final_sum)
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@all_dtypes_win32_xfail
 def test_set_block_matrix(dtype):
     mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet
@@ -168,15 +161,7 @@ def test_set_block_matrix(dtype):
     assert As.blocksize == (2, 2)
 
 
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@all_dtypes_win32_xfail
 def test_set_diagonal_distributed(dtype):
     mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet
@@ -249,7 +234,7 @@ def test_set_diagonal_distributed(dtype):
     assert (As.diagonal()[:nlocal] == dtype(1.0)).all()
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@all_dtypes
 def test_bad_entry(dtype):
     sp = create_test_sparsity(6, 1)
     mat1 = matrix_csr(sp, dtype=dtype)

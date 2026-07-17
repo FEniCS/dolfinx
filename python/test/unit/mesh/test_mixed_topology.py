@@ -28,7 +28,6 @@ from dolfinx.log import LogLevel, set_log_level
 from dolfinx.mesh import CellType, GhostMode, Mesh, Topology, create_unit_cube
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_mixed_topology_mesh(dtype):
     set_log_level(LogLevel.INFO)
 
@@ -203,7 +202,6 @@ def test_mixed_topology_mesh_3d():
     assert t.array.size == 2
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_parallel_mixed_mesh(dtype):
     rank = MPI.COMM_WORLD.Get_rank()
 
@@ -269,7 +267,6 @@ def test_parallel_mixed_mesh(dtype):
     set_log_level(LogLevel.WARNING)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_create_entities(dtype):
     mesh = create_unit_cube(
         MPI.COMM_WORLD, 2, 2, 2, CellType.prism, ghost_mode=GhostMode.none, dtype=dtype
@@ -310,7 +307,6 @@ def test_create_entities(dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_locate_entities(dtype):
     # Create a unit cube mesh with one hex and two wedges
     if MPI.COMM_WORLD.rank == 0:

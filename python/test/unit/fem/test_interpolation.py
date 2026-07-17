@@ -11,6 +11,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import all_cells_with_interval, simplex_cells
 
 import basix
 import ufl
@@ -27,7 +28,6 @@ from dolfinx.fem import (
 from dolfinx.geometry import bb_tree, compute_collisions_points
 from dolfinx.mesh import (
     CellType,
-    GhostMode,
     create_mesh,
     create_rectangle,
     create_submesh,
@@ -36,17 +36,6 @@ from dolfinx.mesh import (
     locate_entities,
     locate_entities_boundary,
     meshtags,
-)
-
-parametrize_cell_types = pytest.mark.parametrize(
-    "cell_type",
-    [
-        CellType.interval,
-        CellType.triangle,
-        CellType.tetrahedron,
-        CellType.quadrilateral,
-        CellType.hexahedron,
-    ],
 )
 
 
@@ -269,7 +258,7 @@ def run_vector_test(V, poly_order):
 
 
 @pytest.mark.skip_in_parallel
-@parametrize_cell_types
+@all_cells_with_interval
 @pytest.mark.parametrize("order", range(1, 5))
 def test_Lagrange_interpolation(cell_type, order):
     """Test that interpolation is correct in a function space."""
@@ -291,7 +280,7 @@ def test_serendipity_interpolation(cell_type, order):
 
 
 @pytest.mark.skip_in_parallel
-@parametrize_cell_types
+@all_cells_with_interval
 @pytest.mark.parametrize("order", range(1, 5))
 def test_vector_interpolation(cell_type, order):
     """Test that interpolation is correct in a blocked (vector) function space."""
@@ -302,7 +291,7 @@ def test_vector_interpolation(cell_type, order):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+@simplex_cells
 @pytest.mark.parametrize("order", range(1, 5))
 def test_N1curl_interpolation(cell_type, order):
     random.seed(8)
@@ -851,7 +840,7 @@ def test_custom_vector_element():
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
+@simplex_cells
 @pytest.mark.parametrize("order", range(1, 5))
 def test_mixed_interpolation_permuting(cell_type, order):
     random.seed(8)
@@ -1153,7 +1142,6 @@ def xtest_submesh_expression_interpolation():
     np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=atol)
 
 
-@pytest.mark.parametrize("ghost_mode", [GhostMode.shared_facet, GhostMode.none])
 def test_submesh_interpolation_mapped(ghost_mode):
     """Test interpolation of Piola mapped cells with submeshes."""
     comm = MPI.COMM_WORLD

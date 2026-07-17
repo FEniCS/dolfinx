@@ -42,7 +42,6 @@ def test_refine_create_unit_square():
     assert mesh.geometry.dim == mesh_refined.geometry.dim
 
 
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_refine_create_unit_cube(ghost_mode):
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
@@ -215,7 +214,6 @@ def test_refine_ufl_cargo():
 
 
 @pytest.mark.parametrize("tdim", [1, 2, 3])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_identity_partitioner(tdim, ghost_mode):
     n = 2
     if tdim == 1:

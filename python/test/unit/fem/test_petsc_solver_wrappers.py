@@ -20,18 +20,18 @@ class TestPETScSolverWrappers:
     """Test PETSc solver wrappers for linear and nonlinear problems."""
 
     @pytest.mark.parametrize(
-        "mode",
+        "ghost_mode",
         [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet],
     )
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-    def test_compare_solution_linear_vs_nonlinear_problem(self, mode):
+    def test_compare_solution_linear_vs_nonlinear_problem(self, ghost_mode):
         """Test that the wrapper for Linear problem and NonlinearProblem give the same result."""
         from petsc4py import PETSc
 
         import dolfinx.fem.petsc
         import dolfinx.nls.petsc
 
-        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+        msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=ghost_mode)
         V = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
         uh = dolfinx.fem.Function(V)
         v = ufl.TestFunction(V)
@@ -57,7 +57,7 @@ class TestPETScSolverWrappers:
             "pc_factor_mat_solver_type": factor_type,
         }
         petsc_options_prefix_linear = (
-            f"test_compare_solution_linear_vs_nonlinear_problem__{mode}_linear_"
+            f"test_compare_solution_linear_vs_nonlinear_problem__{ghost_mode}_linear_"
         )
         linear_problem = dolfinx.fem.petsc.LinearProblem(
             ufl.lhs(a),
@@ -103,7 +103,7 @@ class TestPETScSolverWrappers:
             "snes_rtol": eps,
         }
         petsc_options_prefix_nonlinear = (
-            f"test_compare_solution_linear_vs_nonlinear_problem__{mode}__nonlinear_"
+            f"test_compare_solution_linear_vs_nonlinear_problem__{ghost_mode}__nonlinear_"
         )
         u_nonlin = dolfinx.fem.Function(V)
         nonlinear_problem = dolfinx.fem.petsc.NonlinearProblem(
@@ -121,17 +121,17 @@ class TestPETScSolverWrappers:
             assert np.allclose(_u_lin.array_r, _u_nonlin.array_r, atol=eps, rtol=eps)
 
     @pytest.mark.parametrize(
-        "mode", [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet]
+        "ghost_mode", [dolfinx.mesh.GhostMode.none, dolfinx.mesh.GhostMode.shared_facet]
     )
     @pytest.mark.parametrize("kind", [None, "mpi", "nest", [["aij", None], [None, "baij"]]])
-    def test_mixed_system(self, mode, kind):
+    def test_mixed_system(self, ghost_mode, kind):
         """Test solving a mixed system using different PETSc matrix layouts."""
         from petsc4py import PETSc
 
         import dolfinx.fem.petsc
 
         msh = dolfinx.mesh.create_unit_square(
-            MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=PETSc.RealType
+            MPI.COMM_WORLD, 12, 12, ghost_mode=ghost_mode, dtype=PETSc.RealType
         )
 
         def top_bc(x):

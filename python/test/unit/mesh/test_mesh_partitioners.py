@@ -10,6 +10,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
+from unit.marks import cells_3d
 
 import dolfinx
 import dolfinx.graph
@@ -76,7 +77,7 @@ def test_partition_box_mesh(gpart, Nx, cell_type):
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("Nx", [3, 10, 13])
-@pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
+@cells_3d
 def test_custom_partitioner(tempdir, Nx, cell_type):
     mpi_comm = MPI.COMM_WORLD
     Lx = mpi_comm.size
