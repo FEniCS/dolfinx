@@ -89,6 +89,7 @@ markers = [
       "petsc4py: tests that require PETSc/petsc4py (deselect with '-m \"not petsc4py\"').",
       "adios2: tests that require Adios2 (deselect with '-m \"not adios2\"').",
       "xfail_win32_complex: expected failures for complex numbers in Win32.",
+      "skip_float32: skip when DOLFINx is built with float32 as the default real type.",
 ]
 
 [tool.mypy]

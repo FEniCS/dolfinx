@@ -16,7 +16,6 @@ import pytest
 import basix
 import ufl
 from basix.ufl import element
-from dolfinx import default_real_type
 from dolfinx.cpp.io import perm_vtk
 from dolfinx.fem import assemble_scalar, form, mixed_topology_form
 from dolfinx.io import XDMFFile
@@ -706,7 +705,7 @@ def test_map_vtk_to_dolfin(vtk, dolfin, cell_type, dtype):
     assert (cell_p == vtk).all()
 
 
-@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
+@pytest.mark.skip_float32
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("dtype", [np.float64])
 def test_xdmf_input_tri(datadir, dtype):

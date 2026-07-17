@@ -10,6 +10,7 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+from dolfinx import default_real_type
 from dolfinx.la import vector as dolfinx_vector
 
 
@@ -38,6 +39,9 @@ def pytest_runtest_setup(item):
     marker = item.get_closest_marker("xfail_win32_complex")
     if marker and sys.platform.startswith("win32"):
         pytest.xfail("missing _Complex")
+    marker = item.get_closest_marker("skip_float32")
+    if marker and default_real_type != np.float64:
+        pytest.skip("float32 not supported yet")
 
 
 @pytest.fixture(scope="module")

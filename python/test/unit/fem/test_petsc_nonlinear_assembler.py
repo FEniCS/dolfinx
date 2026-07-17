@@ -5,8 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly."""
 
-import math
-
 from mpi4py import MPI
 
 import numpy as np
@@ -28,25 +26,11 @@ from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square, locate
 from ufl import derivative, dx, inner
 
 
-def nest_matrix_norm(A):
-    """Return norm of a MatNest matrix."""
-    assert A.getType() == "nest"
-    norm = 0.0
-    nrows, ncols = A.getNestSize()
-    for row in range(nrows):
-        for col in range(ncols):
-            A_sub = A.getNestSubMatrix(row, col)
-            if A_sub:
-                _norm = A_sub.norm()
-                norm += _norm * _norm
-    return math.sqrt(norm)
-
-
 @pytest.mark.petsc4py
 class TestNLSPETSc:
     """Test nonlinear solver functionality with PETSc."""
 
-    def test_matrix_assembly_block_nl(self):
+    def test_matrix_assembly_block_nl(self, nest_matrix_norm):
         """Test assembly of block matrices and vectors.
 
         Tests monolithic blocked structures, PETSc Nest structures, and
@@ -412,7 +396,7 @@ class TestNLSPETSc:
             create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
         ],
     )
-    def test_assembly_solve_taylor_hood_nl(self, mesh):
+    def test_assembly_solve_taylor_hood_nl(self, mesh, nest_matrix_norm):
         """Assemble Stokes problem with Taylor-Hood elements and solve."""
         import dolfinx.fem.petsc
         import dolfinx.nls.petsc

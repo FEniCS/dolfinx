@@ -16,7 +16,6 @@ import dolfinx
 import dolfinx.graph
 import ufl
 from basix.ufl import element
-from dolfinx import default_real_type
 from dolfinx.cpp.mesh import cell_num_vertices
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (
@@ -75,7 +74,7 @@ def test_partition_box_mesh(gpart, Nx, cell_type):
     assert mesh.topology.index_map(0).size_global == (Nx + 1) ** 3
 
 
-@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
+@pytest.mark.skip_float32
 @pytest.mark.parametrize("Nx", [3, 10, 13])
 @cells_3d
 def test_custom_partitioner(tempdir, Nx, cell_type):

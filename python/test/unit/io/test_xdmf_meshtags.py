@@ -12,7 +12,6 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_cube, locate_entities, meshtags
 
@@ -25,7 +24,7 @@ else:
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
-@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
+@pytest.mark.skip_float32
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_3d(tempdir, cell_type, encoding):

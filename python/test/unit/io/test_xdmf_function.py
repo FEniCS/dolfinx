@@ -28,15 +28,6 @@ celltypes_2D = [CellType.triangle, CellType.quadrilateral]
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
-def mesh_factory(tdim, n):
-    if tdim == 1:
-        return create_unit_interval(MPI.COMM_WORLD, n)
-    elif tdim == 2:
-        return create_unit_square(MPI.COMM_WORLD, n, n)
-    elif tdim == 3:
-        return create_unit_cube(MPI.COMM_WORLD, n, n, n)
-
-
 # --- Function
 
 

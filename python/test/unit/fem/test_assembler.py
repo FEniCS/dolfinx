@@ -5,7 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly."""
 
-import math
 import os
 
 from mpi4py import MPI
@@ -149,20 +148,6 @@ def test_basic_assembly(ghost_mode, dtype, xtype):
     assemble_matrix(A, a)
     A.scatter_reverse()
     assert 4 * normA == pytest.approx(A.squared_norm())
-
-
-def nest_matrix_norm(A):
-    """Return norm of a MatNest matrix."""
-    assert A.getType() == "nest"
-    norm = 0.0
-    nrows, ncols = A.getNestSize()
-    for row in range(nrows):
-        for col in range(ncols):
-            A_sub = A.getNestSubMatrix(row, col)
-            if A_sub:
-                _norm = A_sub.norm()
-                norm += _norm * _norm
-    return math.sqrt(norm)
 
 
 @pytest.mark.petsc4py
@@ -588,7 +573,7 @@ class TestPETScAssemblers:
         A_blocked.destroy(), b_blocked.destroy()
         A_monolithic.destroy(), b_monolithic.destroy()
 
-    def test_assembly_solve_block(self, ghost_mode):
+    def test_assembly_solve_block(self, ghost_mode, nest_matrix_norm):
         """Solve a two-field mass-matrix like problem with block matrix approaches."""
         from petsc4py import PETSc
 
@@ -755,7 +740,7 @@ class TestPETScAssemblers:
             create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.shared_facet),
         ],
     )
-    def test_assembly_solve_taylor_hood(self, mesh):
+    def test_assembly_solve_taylor_hood(self, mesh, nest_matrix_norm):
         """Assemble Stokes problem with Taylor-Hood elements and solve."""
         from petsc4py import PETSc
 

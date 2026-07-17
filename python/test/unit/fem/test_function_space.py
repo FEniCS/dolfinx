@@ -254,7 +254,7 @@ def test_cell_mismatch(mesh):
         functionspace(mesh, e)
 
 
-@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
+@pytest.mark.skip_float32
 def test_basix_element(V, W, Q, V2):
     for V_ in (V, W, V2):
         e = V_.element.basix_element
