@@ -115,9 +115,13 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
                    "x size must equal rows size * cols size * bs * bs.");
              }
              const std::int32_t num_rows = self.num_all_rows();
+             const int mat_bs0 = self.block_size()[0];
+             const std::int32_t max_row = mat_bs0 == bs  ? num_rows
+                                          : mat_bs0 == 1 ? num_rows / bs
+                                                         : num_rows * mat_bs0;
              for (std::size_t i = 0; i < rows.size(); ++i)
              {
-               if (rows.data()[i] < 0 or rows.data()[i] >= num_rows)
+               if (rows.data()[i] < 0 or rows.data()[i] >= max_row)
                  throw std::runtime_error("Index out of range in rows array.");
              }
              std::span x_span = std::span(x.data(), x.size());
@@ -148,9 +152,13 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
                    "x size must equal rows size * cols size * bs * bs.");
              }
              const std::int32_t num_rows = self.num_all_rows();
+             const int mat_bs0 = self.block_size()[0];
+             const std::int32_t max_row = mat_bs0 == bs  ? num_rows
+                                          : mat_bs0 == 1 ? num_rows / bs
+                                                         : num_rows * mat_bs0;
              for (std::size_t i = 0; i < rows.size(); ++i)
              {
-               if (rows.data()[i] < 0 or rows.data()[i] >= num_rows)
+               if (rows.data()[i] < 0 or rows.data()[i] >= max_row)
                  throw std::runtime_error("Index out of range in rows array.");
              }
              std::span x_span = std::span(x.data(), x.size());
