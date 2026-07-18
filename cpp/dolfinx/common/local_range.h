@@ -1,4 +1,10 @@
 
+// Copyright (C) 2007-2023 Magnus Vikstrøm, Garth N. Wells and Paul T. Kühner
+//
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+
 #pragma once
 
 #include <array>
@@ -7,15 +13,20 @@
 
 namespace dolfinx::common
 {
-/// @brief Return local range, partitioning a global [0, N - 1] range across all
-/// ranks into partitions of almost equal size.
-/// @param[in] rank The rank of the calling process.
-/// @param[in] N The value to partition.
-/// @param[in] size Number of ranks across which to partition `N`.
-constexpr std::array<std::int64_t, 2> local_range(int rank, std::int64_t N,
+/// @brief Partition a global range [0, N - 1] across callers into
+/// non-overlapping sub-partitions of almost equal size. Returns the
+/// local partition for the caller. The local partition range.
+///
+/// Partitions [0, N) into `size` non-overlapping partitions `[n_(i0},
+/// n_(i1))`, where `i` is `index` and `n_(i1) == n_((i+1)0)`.
+///
+/// @param[in] index Index of the partition to compute.
+/// @param[in] N Global range to partition.
+/// @param[in] size Number of partitions into which to partition `N`.
+constexpr std::array<std::int64_t, 2> local_range(int index, std::int64_t N,
                                                   int size)
 {
-  assert(rank >= 0);
+  assert(index >= 0);
   assert(N >= 0);
   assert(size > 0);
 
@@ -24,9 +35,9 @@ constexpr std::array<std::int64_t, 2> local_range(int rank, std::int64_t N,
   const std::int64_t r = N % size;
 
   // Compute local range
-  if (rank < r)
-    return {rank * (n + 1), rank * (n + 1) + n + 1};
+  if (index < r)
+    return {index * (n + 1), index * (n + 1) + n + 1};
   else
-    return {rank * n + r, rank * n + r + n};
+    return {index * n + r, index * n + r + n};
 }
 } // namespace dolfinx::common
