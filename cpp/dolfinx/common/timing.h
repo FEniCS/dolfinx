@@ -38,7 +38,8 @@ timing(std::string_view task);
 /// @brief Logged elapsed times.
 /// @return Elapsed [task id: (count, total wall time)].
 std::map<std::string,
-         std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+         std::pair<int, std::chrono::duration<double, std::ratio<1>>>,
+         std::less<>>
 timings();
 
 } // namespace dolfinx

@@ -358,7 +358,7 @@ template void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>&,
 mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
                         std::optional<std::string_view> attribute_name,
-                        std::string_view xpath)
+                        std::string_view xpath) const
 {
   spdlog::info("XDMF read meshtags ({})", name);
   pugi::xml_node node
@@ -429,7 +429,8 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
 }
 //-----------------------------------------------------------------------------
 std::pair<mesh::CellType, int>
-XDMFFile::read_cell_type(std::string_view grid_name, std::string_view xpath)
+XDMFFile::read_cell_type(std::string_view grid_name,
+                         std::string_view xpath) const
 {
   pugi::xml_node node
       = _xml_doc->select_node(std::string(xpath).c_str()).node();
@@ -478,7 +479,7 @@ void XDMFFile::write_information(std::string_view name, std::string_view value,
 }
 //-----------------------------------------------------------------------------
 std::string XDMFFile::read_information(std::string_view name,
-                                       std::string_view xpath)
+                                       std::string_view xpath) const
 {
   pugi::xml_node node
       = _xml_doc->select_node(std::string(xpath).c_str()).node();

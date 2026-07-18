@@ -29,7 +29,7 @@ void TimeLogger::register_timing(
   spdlog::debug(line.c_str());
 
   // Store values for summary
-  if (auto it = _timings.find(std::string(task)); it != _timings.end())
+  if (auto it = _timings.find(task); it != _timings.end())
   {
     std::get<0>(it->second) += 1;
     std::get<1>(it->second) += time;
@@ -43,7 +43,7 @@ void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction) const
   // Format and reduce to rank 0
   Table timings = this->timing_table();
   timings = timings.reduce(comm, reduction);
-  const std::string str = "\n" + timings.str();
+  std::string str = "\n" + timings.str();
 
   // Print just on rank 0
   if (dolfinx::MPI::rank(comm) == 0)
@@ -70,7 +70,7 @@ std::pair<int, std::chrono::duration<double, std::ratio<1>>>
 TimeLogger::timing(std::string_view task) const
 {
   // Find timing
-  auto it = _timings.find(std::string(task));
+  auto it = _timings.find(task);
   if (it == _timings.end())
   {
     throw std::runtime_error("No timings registered for task \""
@@ -81,7 +81,8 @@ TimeLogger::timing(std::string_view task) const
 }
 //-----------------------------------------------------------------------------
 std::map<std::string,
-         std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+         std::pair<int, std::chrono::duration<double, std::ratio<1>>>,
+         std::less<>>
 TimeLogger::timings() const
 {
   return _timings;

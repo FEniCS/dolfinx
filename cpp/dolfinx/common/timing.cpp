@@ -27,7 +27,8 @@ dolfinx::timing(std::string_view task)
 }
 //-----------------------------------------------------------------------------
 std::map<std::string,
-         std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+         std::pair<int, std::chrono::duration<double, std::ratio<1>>>,
+         std::less<>>
 dolfinx::timings()
 {
   return dolfinx::common::TimeLogger::instance().timings();

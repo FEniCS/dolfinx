@@ -135,7 +135,7 @@ public:
   /// @param[in] xpath XPath where Grid is stored
   std::pair<mesh::CellType, int> read_cell_type(std::string_view grid_name,
                                                 std::string_view xpath
-                                                = "/Xdmf/Domain");
+                                                = "/Xdmf/Domain") const;
 
   /// @brief Write a fem::Function to file.
   ///
@@ -180,7 +180,7 @@ public:
   mesh::MeshTags<std::int32_t>
   read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
                 std::optional<std::string_view> attribute_name,
-                std::string_view xpath = "/Xdmf/Domain");
+                std::string_view xpath = "/Xdmf/Domain") const;
 
   /// Write Information
   /// @param[in] name
@@ -193,7 +193,7 @@ public:
   /// @param[in] name
   /// @param[in] xpath XPath where Information is stored in file
   std::string read_information(std::string_view name,
-                               std::string_view xpath = "/Xdmf/Domain/");
+                               std::string_view xpath = "/Xdmf/Domain/") const;
 
   /// Flush the output to disk. Output is not guaranteed to be written fully to
   /// disk with a 'write' call.
