@@ -1051,7 +1051,7 @@ void Topology::create_connectivity(int d0, int d1)
   }
 }
 //-----------------------------------------------------------------------------
-void Topology::create_entity_permutations()
+void Topology::create_entity_permutations(int num_threads)
 {
   if (!_cell_permutations.empty())
     return;
@@ -1066,7 +1066,7 @@ void Topology::create_entity_permutations()
     create_entities(d);
 
   auto [facet_permutations, cell_permutations]
-      = mesh::compute_entity_permutations(*this);
+      = mesh::compute_entity_permutations(*this, num_threads);
   _facet_permutations = std::move(facet_permutations);
   _cell_permutations = std::move(cell_permutations);
 }

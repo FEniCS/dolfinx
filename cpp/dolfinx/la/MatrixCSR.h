@@ -20,7 +20,7 @@
 #include <vector>
 
 // Define requirements on sparsity pattern required for MatrixCSR constructor
-// allowing alternative implentations that can provide these essentials.
+// allowing alternative implementations that can provide these essentials.
 template <typename T>
 concept SparsityImplementation = requires(T sp, int i) {
   { sp.graph() };

@@ -210,10 +210,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
 {
   spdlog::debug("DofMap::collapse");
   if (!reorder_fn)
-  {
-    reorder_fn = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::reorder_gps(g); };
-  }
+    reorder_fn = graph::reorder_rcm;
   // Create new dofmap
   auto create_subdofmap = [](MPI_Comm comm, auto index_map_bs, auto& layout,
                              auto& topology, auto& reorder_fn, auto& dmap)

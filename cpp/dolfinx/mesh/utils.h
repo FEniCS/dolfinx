@@ -222,7 +222,7 @@ using CellReorderFunction = std::function<std::vector<std::int32_t>(
 
 /// @brief Creates the default boundary vertices routine for a given reorder
 /// function.
-/// @param[in] reorder_fn A cell reorder funciton which will be applied to
+/// @param[in] reorder_fn A cell reorder function which will be applied to
 /// reorder the cells.
 /// @param[in] max_facet_to_cell_links Maximum number of cells a facet can be
 /// connected to.
@@ -1051,7 +1051,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
     std::optional<std::int32_t> max_facet_to_cell_links,
-    const CellReorderFunction& reorder_fn = graph::reorder_gps)
+    const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   assert(cells.size() == elements.size());
   std::vector<CellType> celltypes;
@@ -1265,7 +1265,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
     std::optional<std::int32_t> max_facet_to_cell_links,
-    const CellReorderFunction& reorder_fn = graph::reorder_gps)
+    const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
                      commg, x, xshape, partitioner, max_facet_to_cell_links,
