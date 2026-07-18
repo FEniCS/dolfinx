@@ -126,7 +126,7 @@ def test_submesh(order, dtype):
     # 1. The cell
     # 2. The facets of the cell
     # Gives the correct computation of: volume (case 1) or surface area (case 2)
-    for dim, dC in zip(dimensions, measures):
+    for dim, dC in zip(dimensions, measures, strict=True):
         # Integrate on original mesh
         value = assemble_scalar(form(1 * dC, dtype=dtype))
         num_local_entities = mesh.topology.index_map(dim).size_local
