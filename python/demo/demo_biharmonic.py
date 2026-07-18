@@ -54,7 +54,7 @@
 # $$
 # \begin{aligned}
 # u =0 &\qquad \frac{\partial u}{\partial n} = 0
-# # \text{ on } \partial\Omega,\\
+# \text{ on } \partial\Omega,\\
 # u =0 &\qquad \Delta u = 0 \text{ on } \partial \Omega.
 # \end{aligned}
 # $$
@@ -204,7 +204,7 @@ V = fem.functionspace(msh, ("Lagrange", degree))
 #
 # Next, we locate the mesh facets that lie on the boundary
 # $\Gamma_D = \partial\Omega$.
-# We do this using using {py:func}`exterior_facet_indices
+# We do this using {py:func}`exterior_facet_indices
 # <dolfinx.mesh.exterior_facet_indices>` which returns all mesh boundary
 # facets (Note: if we are only interested in a subset of those, consider
 # {py:func}`locate_entities_boundary

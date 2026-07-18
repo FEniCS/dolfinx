@@ -295,7 +295,7 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
-  /// @note The size of of `g` must be equal to the block size if `V`.
+  /// @note The size of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
   template <typename S, typename X>
@@ -320,7 +320,7 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
-  /// @note The size of of `g` must be equal to the block size if `V`.
+  /// @note The size of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
   template <typename X>
@@ -339,7 +339,8 @@ public:
           "Rank mismatch between Constant and function space in DirichletBC");
     }
 
-    if (g->value.size() != (std::size_t)_function_space->dofmaps(0)->bs())
+    if (g->value.size()
+        != (std::size_t)_function_space->dofmaps().front()->bs())
     {
       throw std::runtime_error(
           "Creating a DirichletBC using a Constant is not supported when the "
@@ -354,10 +355,10 @@ public:
     }
 
     // Unroll _dofs0 if dofmap block size > 1
-    if (const int bs = V->dofmaps(0)->bs(); bs > 1)
+    if (const int bs = V->dofmaps().front()->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
 
-    _owned_indices0 = num_owned(*_function_space->dofmaps(0), _dofs0);
+    _owned_indices0 = num_owned(*_function_space->dofmaps().front(), _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -382,10 +383,10 @@ public:
     assert(_function_space);
 
     // Unroll _dofs0 if dofmap block size > 1
-    if (const int bs = _function_space->dofmaps(0)->bs(); bs > 1)
+    if (const int bs = _function_space->dofmaps().front()->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
 
-    _owned_indices0 = num_owned(*_function_space->dofmaps(0), _dofs0);
+    _owned_indices0 = num_owned(*_function_space->dofmaps().front(), _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -549,7 +550,7 @@ public:
     {
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       const std::vector<T>& value = g->value;
-      std::int32_t bs = _function_space->dofmaps(0)->bs();
+      std::int32_t bs = _function_space->dofmaps().front()->bs();
       if (x0)
       {
         assert(x.size() <= x0->size());

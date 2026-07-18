@@ -10,7 +10,6 @@
 #ifdef HAS_PETSC
 
 #include "Vector.h"
-#include "utils.h"
 #include <boost/lexical_cast.hpp>
 #include <functional>
 #include <optional>
@@ -30,6 +29,7 @@ class IndexMap;
 namespace dolfinx::la
 {
 class SparsityPattern;
+enum class Norm : std::int8_t;
 
 /// @brief PETSc linear algebra functions
 namespace petsc

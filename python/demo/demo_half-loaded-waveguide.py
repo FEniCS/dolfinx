@@ -205,11 +205,11 @@ eps.x.array[cells_d] = eps_d
 # waveguide wall:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # &\nabla \times \frac{1}{\mu_{r}} \nabla \times \mathbf{E}-k_{o}^{2}
 # \epsilon_{r} \mathbf{E}=0 \quad &\text { in } \Omega\\
 # &\hat{n}\times\mathbf{E} = 0 &\text { on } \Gamma
-# \end{align}
+# \end{aligned}
 # $$
 #
 # with $k_0$ and $\lambda_0 = 2\pi/k_0$ being the wavevector and the
@@ -232,10 +232,10 @@ eps.x.array[cells_d] = eps_d
 # the following substitution:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # & \mathbf{e}_t = k_z\mathbf{E}_t\\
 # & e_z = -jE_z
-# \end{align}
+# \end{aligned}
 # $$
 #
 # The final weak form can be written as:

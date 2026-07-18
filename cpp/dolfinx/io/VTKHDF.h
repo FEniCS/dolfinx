@@ -70,7 +70,7 @@ void write_mesh(const std::filesystem::path& filename,
   for (std::size_t i = 0; i < cell_index_maps.size(); ++i)
   {
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> g_dofmap
-        = mesh.geometry().dofmap(i);
+        = mesh.geometry().dofmaps().at(i);
 
     std::vector<std::uint16_t> perm
         = cells::perm_vtk(cell_types[i], g_dofmap.extent(1));
@@ -102,7 +102,7 @@ void write_mesh(const std::filesystem::path& filename,
   std::vector<std::int64_t> cell_stop_pos;
   for (std::size_t i = 0; i < cell_index_maps.size(); ++i)
   {
-    num_nodes_per_cell.push_back(mesh.geometry().cmap(i).dim());
+    num_nodes_per_cell.push_back(mesh.geometry().cmaps().at(i).dim());
     std::array<std::int64_t, 2> r = cell_index_maps[i]->local_range();
     cell_start_pos.push_back(r[0]);
     cell_stop_pos.push_back(r[1]);
@@ -323,7 +323,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   int rank = dolfinx::MPI::rank(comm);
   int mpi_size = dolfinx::MPI::size(comm);
   std::array<std::int64_t, 2> local_cell_range
-      = dolfinx::MPI::local_range(rank, shape[0], mpi_size);
+      = dolfinx::common::local_range(rank, shape[0], mpi_size);
 
   hid_t dset_id = hdf5::open_dataset(h5file, "/VTKHDF/Types");
   std::vector<std::uint8_t> types
@@ -406,7 +406,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   H5Dclose(dset_id);
   spdlog::info("Mesh with {} points", npoints[0]);
   std::array<std::int64_t, 2> local_point_range
-      = dolfinx::MPI::local_range(rank, npoints[0], mpi_size);
+      = dolfinx::common::local_range(rank, npoints[0], mpi_size);
 
   std::vector<std::int64_t> x_shape
       = hdf5::get_dataset_shape(h5file, "/VTKHDF/Points");

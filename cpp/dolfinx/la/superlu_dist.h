@@ -204,6 +204,9 @@ public:
   /// Copy assignment
   SuperLUDistSolver& operator=(const SuperLUDistSolver&) = delete;
 
+  /// @brief Destructor. Frees internal LU arrays before LUstructFree.
+  ~SuperLUDistSolver();
+
   /// @brief Set solver option name to value
   ///
   /// See SuperLU_DIST User's Guide for option names and values.
@@ -237,11 +240,14 @@ public:
 
   /// @brief Set assembled left-hand side matrix A.
   ///
-  /// For advanced use with SuperLU_DIST option `Factor` allowing use of
-  /// previously computed permutations when solving with new matrix A.
+  /// New matrix must have the same size/parallel layout as the matrix
+  /// used to construct the solver.
   ///
   /// @param A Assembled left-hand side matrix.
-  void set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A);
+  /// @param fact One of `"DOFACT"`, `"SamePattern"`,
+  ///   `"SamePattern_SameRowPerm"`. See the SuperLU_DIST documentation
+  ///   for the meaning of these values.
+  void set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A, std::string fact);
 
   /// @brief Solve linear system Au = b.
   ///
@@ -255,7 +261,7 @@ public:
   /// @note The values of `A` are modified in-place during the solve.
   /// @note To solve with successive right-hand sides the caller must
   ///   `solver.set_options("Factor", "FACTORED")` after the first solve.
-  int solve(const Vector<T>& b, Vector<T>& u) const;
+  int solve(const Vector<T>& b, Vector<T>& u);
 
 private:
   // Assembled left-hand side matrix
@@ -275,6 +281,10 @@ private:
   // Pointer to 'typed' struct *SOLVEstruct
   std::unique_ptr<typename map_t<T>::SOLVEstruct_t, SolveStructDeleter>
       _solvestruct;
+
+  // True once pdgssvx has populated LUstruct with per-block-column arrays
+  // that must be released via Destroy_LU before LUstructFree.
+  bool _factored = false;
 };
 } // namespace dolfinx::la
 #endif

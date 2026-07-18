@@ -73,7 +73,7 @@ class CoordinateElement(Generic[Real]):
             cell_geometry: Coordinate 'degrees-of-freedom' (nodes) of
                 the cell, ``shape=(num_geometry_basis_functions,
                 geometrical_dimension)``. Can be created by accessing
-                ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
+                ``geometry.x[geometry.dofmaps[0].cell_dofs(i)]``,
 
         Returns:
             Physical coordinates of the points reference points ``X``.
@@ -97,7 +97,7 @@ class CoordinateElement(Generic[Real]):
             cell_geometry: Physical coordinates describing the cell,
                 shape ``(num_of_geometry_basis_functions,
                 geometrical_dimension)``. They can be created by accessing
-                ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
+                ``geometry.x[geometry.dofmaps[0].cell_dofs(i)]``,
             tol: Tolerance for convergence in Newton method for
                 nonaffine pullbacks.
             maxit: Maximum number of Newton iterations for
@@ -254,7 +254,7 @@ class FiniteElement(Generic[Real]):
     def space_dimension(self) -> int:
         """Dimension of the finite element function space.
 
-        This is the the number of degrees-of-freedom for the element.
+        This is the number of degrees-of-freedom for the element.
         For 'blocked' elements, this function returns the dimension of
         the full element rather than the dimension of the base element.
         """

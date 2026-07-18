@@ -12,6 +12,7 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <pugixml.hpp>
 #include <vector>
 
@@ -43,7 +44,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
       = mesh::cell_entity_type(cell_type, dim, 0);
 
   const fem::ElementDofLayout cmap_dof_layout
-      = geometry.cmap().create_dof_layout();
+      = geometry.cmaps().front().create_dof_layout();
 
   // Get number of nodes per entity
   const int num_nodes_per_entity
@@ -61,7 +62,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Pack topology data
   std::vector<std::int64_t> topology_data;
 
-  auto x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.dofmaps().front();
   auto map_g = geometry.index_map();
   assert(map_g);
   const std::int64_t offset_g = map_g->local_range()[0];

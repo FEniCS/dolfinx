@@ -6,6 +6,7 @@
 
 #include "utils.h"
 #include <algorithm>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <format>
 #include <sstream>

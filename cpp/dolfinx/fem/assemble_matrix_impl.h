@@ -47,7 +47,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
 /// @param[in] P1T Function that applies transformation `A P_1^T`
-/// in-place to to the computed tensor `A` to transform trial
+/// in-place to the computed tensor `A` to transform trial
 /// degrees-of-freedom.
 /// @param bc0 Marker for rows with Dirichlet boundary conditions
 /// applied.
@@ -642,13 +642,13 @@ void assemble_matrix(
   for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
     // Geometry dofmap and data
-    mdspan2_t x_dofmap = mesh->geometry().dofmap(cell_type_idx);
+    mdspan2_t x_dofmap = mesh->geometry().dofmaps().at(cell_type_idx);
 
     // Get dofmap data
     std::shared_ptr<const fem::DofMap> dofmap0
-        = a.function_spaces().at(0)->dofmaps(cell_type_idx);
+        = a.function_spaces().at(0)->dofmaps().at(cell_type_idx);
     std::shared_ptr<const fem::DofMap> dofmap1
-        = a.function_spaces().at(1)->dofmaps(cell_type_idx);
+        = a.function_spaces().at(1)->dofmaps().at(cell_type_idx);
     assert(dofmap0);
     assert(dofmap1);
     auto dofs0 = dofmap0->map();

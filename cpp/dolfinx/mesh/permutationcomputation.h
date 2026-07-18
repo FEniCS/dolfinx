@@ -68,6 +68,6 @@ class Topology;
 ///
 /// @return Facet permutation and cells permutations
 std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
-compute_entity_permutations(const Topology& topology);
+compute_entity_permutations(const Topology& topology, int num_threads = 1);
 
 } // namespace dolfinx::mesh
