@@ -80,6 +80,7 @@ void declare_refinement(nanobind::module_& m)
             throw std::runtime_error(
                 "Edge entities have not been created on the mesh topology.");
           }
+
           const std::int32_t num_edges
               = index_map->size_local() + index_map->num_ghosts();
           for (std::size_t i = 0; i < edges.value().size(); ++i)

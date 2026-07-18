@@ -57,6 +57,7 @@ void refinement(nb::module_& m)
           throw std::runtime_error(
               "parent_facet size must equal parent_cell size * (tdim + 1).");
         }
+
         {
           auto index_map = parent_meshtag.topology()->index_map(tdim);
           const std::int32_t num_cells
@@ -64,10 +65,13 @@ void refinement(nb::module_& m)
           for (std::size_t i = 0; i < parent_cell.size(); ++i)
           {
             if (parent_cell.data()[i] < 0 or parent_cell.data()[i] >= num_cells)
+            {
               throw std::runtime_error(
                   "Index out of range in parent_cell array.");
+            }
           }
         }
+
         auto [entities, values] = dolfinx::refinement::transfer_facet_meshtag(
             parent_meshtag, *topology1,
             std::span(parent_cell.data(), parent_cell.size()),
@@ -86,8 +90,10 @@ void refinement(nb::module_& m)
         int tdim = parent_meshtag.topology()->dim();
         if (parent_meshtag.dim() != tdim)
           throw std::runtime_error("Input meshtag is not cell-based");
+
         if (parent_meshtag.topology()->index_map(tdim)->num_ghosts() > 0)
           throw std::runtime_error("Ghosted meshes are not supported");
+
         {
           auto index_map = parent_meshtag.topology()->index_map(tdim);
           const std::int32_t num_cells
@@ -95,8 +101,10 @@ void refinement(nb::module_& m)
           for (std::size_t i = 0; i < parent_cell.size(); ++i)
           {
             if (parent_cell.data()[i] < 0 or parent_cell.data()[i] >= num_cells)
+            {
               throw std::runtime_error(
                   "Index out of range in parent_cell array.");
+            }
           }
         }
         auto [entities, values] = dolfinx::refinement::transfer_cell_meshtag(

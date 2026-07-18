@@ -114,6 +114,7 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
                throw std::runtime_error(
                    "x size must equal rows size * cols size * bs * bs.");
              }
+
              const std::int32_t num_rows = self.num_all_rows();
              const int mat_bs0 = self.block_size()[0];
              const std::int32_t max_row
