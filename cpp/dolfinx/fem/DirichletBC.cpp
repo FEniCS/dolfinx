@@ -41,19 +41,17 @@ find_local_entity_index(const mesh::Topology& topology,
   auto e_to_c = topology.connectivity(dim, tdim);
   if (!e_to_c)
   {
-    throw std::runtime_error(std::format(
-        "Entity-to-cell connectivity has not been computed. Missing dims "
-        "{}->{}",
-        dim, tdim));
+    throw std::runtime_error(std::format("Entity-to-cell connectivity has not "
+                                         "been computed. Missing dims {}->{}",
+                                         dim, tdim));
   }
 
   auto c_to_e = topology.connectivity(tdim, dim);
   if (!c_to_e)
   {
-    throw std::runtime_error(std::format(
-        "Cell-to-entity connectivity has not been computed. Missing dims "
-        "{}->{}",
-        tdim, dim));
+    throw std::runtime_error(std::format("Cell-to-entity connectivity has not "
+                                         "been computed. Missing dims {}->{}",
+                                         tdim, dim));
   }
 
   std::vector<std::pair<std::int32_t, int>> entity_indices;
@@ -64,10 +62,10 @@ find_local_entity_index(const mesh::Topology& topology,
     // Get first attached cell
     if (e >= num_entities_local)
     {
-      throw std::out_of_range(std::format(
-          "Input entity {} is larger than the number of entities on this "
-          "process ({}).",
-          e, num_entities_local));
+      throw std::out_of_range(
+          std::format("Input entity {} is larger than the number of entities "
+                      "on this process ({}).",
+                      e, num_entities_local));
     }
     assert(e_to_c->num_links(e) > 0);
 

@@ -214,10 +214,10 @@ build_basic_dofmaps(
                 and !topology.connectivity({int(D), int(i)},
                                            {int(d), int(et_index)}))
             {
-              throw std::runtime_error(std::format(
-                  "Missing needed connectivity. Cell type: {} to dim: {}, "
-                  "ent: {}",
-                  i, d, et_index));
+              throw std::runtime_error(
+                  std::format("Missing needed connectivity. Cell type: {} to "
+                              "dim: {}, ent: {}",
+                              i, d, et_index));
             }
           }
           else

@@ -1073,10 +1073,10 @@ Topology mesh::create_topology(
     int num_vertices = mesh::num_cell_vertices(cell_types[i]);
     if (cells[i].size() % num_vertices != 0)
     {
-      throw std::runtime_error(std::format(
-          "Inconsistent number of cell vertices. Got {}, expected multiple "
-          "of {}.",
-          cells[i].size(), num_vertices));
+      throw std::runtime_error(
+          std::format("Inconsistent number of cell vertices. Got {}, expected "
+                      "multiple of {}.",
+                      cells[i].size(), num_vertices));
     }
     num_local_cells[i] = cells[i].size() / num_vertices;
     num_local_cells[i] -= ghost_owners[i].size();

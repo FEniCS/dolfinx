@@ -275,10 +275,10 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, hid_t h5_id,
     gdim = 3;
   else
   {
-    throw std::runtime_error(std::format(
-        "Cannot determine geometric dimension. GeometryType \"{}\" in XDMF "
-        "file is unknown or unsupported",
-        geometry_type));
+    throw std::runtime_error(
+        std::format("Cannot determine geometric dimension. GeometryType \"{}\" "
+                    "in XDMF file is unknown or unsupported",
+                    geometry_type));
   }
 
   // Get number of points from Geometry dataitem node

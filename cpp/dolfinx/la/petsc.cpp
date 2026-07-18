@@ -44,10 +44,10 @@ void la::petsc::error(PetscErrorCode error_code, std::string_view filename,
   spdlog::info("PETSc error in '{}', '{}'", filename, petsc_function);
   spdlog::info("PETSc error code '{}' '{}'", static_cast<int>(error_code),
                desc);
-  throw std::runtime_error(std::format(
-      "Failed to successfully call PETSc function '{}'. PETSc error code "
-      "is: {}, {}",
-      petsc_function, static_cast<int>(error_code), desc));
+  throw std::runtime_error(
+      std::format("Failed to successfully call PETSc function '{}'. PETSc "
+                  "error code is: {}, {}",
+                  petsc_function, static_cast<int>(error_code), desc));
 }
 //-----------------------------------------------------------------------------
 std::vector<Vec>

@@ -535,8 +535,8 @@ Form<T, U> create_form_factory(
     if (integral.coordinate_element_hash != geo.cmaps().at(cell_idx).hash())
     {
       throw std::runtime_error(std::format(
-          "Generated integral geometry element does not match mesh "
-          "geometry: {}, {}",
+          "Generated integral geometry element does not match mesh geometry: "
+          "{}, {}",
           integral.coordinate_element_hash, geo.cmaps().at(cell_idx).hash()));
     }
   };
