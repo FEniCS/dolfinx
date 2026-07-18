@@ -58,8 +58,7 @@ mesh::CellType mesh::to_type(std::string_view cell)
   else if (cell == "hexahedron")
     return CellType::hexahedron;
   else
-    throw std::runtime_error("Unknown cell type (" + std::string(cell)
-                              + ")");
+    throw std::runtime_error("Unknown cell type (" + std::string(cell) + ")");
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> mesh::get_entity_vertices(CellType type, int dim)

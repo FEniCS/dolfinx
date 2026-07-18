@@ -25,7 +25,7 @@ void TimeLogger::register_timing(
 {
   // Print a message
   std::string line = "Elapsed time: " + std::to_string(time.count()) + " ("
-                    + std::string(task) + ")";
+                     + std::string(task) + ")";
   spdlog::debug(line.c_str());
 
   // Store values for summary

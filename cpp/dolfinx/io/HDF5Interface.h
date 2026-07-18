@@ -217,8 +217,8 @@ void write_dataset(hid_t file_handle, std::string_view dataset_path,
 
     // Create global dataset (using dataset_path)
     const hid_t dset_id
-        = H5Dcreate2(file_handle, path.c_str(), h5type, filespace0,
-                     H5P_DEFAULT, chunking_properties, H5P_DEFAULT);
+        = H5Dcreate2(file_handle, path.c_str(), h5type, filespace0, H5P_DEFAULT,
+                     chunking_properties, H5P_DEFAULT);
     if (dset_id == H5I_INVALID_HID)
       throw std::runtime_error("Failed to create HDF5 global dataset.");
 

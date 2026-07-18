@@ -143,9 +143,11 @@ void XDMFFile::close()
 template <std::floating_point U>
 void XDMFFile::write_mesh(const mesh::Mesh<U>& mesh, std::string_view xpath)
 {
-  pugi::xml_node node = _xml_doc->select_node(std::string(xpath).c_str()).node();
+  pugi::xml_node node
+      = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error("XML node '" + std::string(xpath) + "' not found.");
+    throw std::runtime_error("XML node '" + std::string(xpath)
+                             + "' not found.");
 
   // Add the mesh Grid to the domain
   xdmf_mesh::add_mesh(_comm.comm(), node, _h5_id, mesh, mesh.name);
@@ -155,18 +157,18 @@ void XDMFFile::write_mesh(const mesh::Mesh<U>& mesh, std::string_view xpath)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 /// @cond
-template void XDMFFile::write_mesh(const mesh::Mesh<double>&,
-                                   std::string_view);
-template void XDMFFile::write_mesh(const mesh::Mesh<float>&,
-                                   std::string_view);
+template void XDMFFile::write_mesh(const mesh::Mesh<double>&, std::string_view);
+template void XDMFFile::write_mesh(const mesh::Mesh<float>&, std::string_view);
 /// @endcond
 //-----------------------------------------------------------------------------
 void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
                               std::string_view name, std::string_view xpath)
 {
-  pugi::xml_node node = _xml_doc->select_node(std::string(xpath).c_str()).node();
+  pugi::xml_node node
+      = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error("XML node '" + std::string(xpath) + "' not found.");
+    throw std::runtime_error("XML node '" + std::string(xpath)
+                             + "' not found.");
 
   // Prepare a Grid for Geometry only
   pugi::xml_node grid_node = node.append_child("Grid");
@@ -205,9 +207,11 @@ std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 XDMFFile::read_topology_data(std::string_view name,
                              std::string_view xpath) const
 {
-  pugi::xml_node node = _xml_doc->select_node(std::string(xpath).c_str()).node();
+  pugi::xml_node node
+      = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error("XML node '" + std::string(xpath) + "' not found.");
+    throw std::runtime_error("XML node '" + std::string(xpath)
+                             + "' not found.");
 
   pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + std::string(name) + "']").c_str())
@@ -225,9 +229,11 @@ std::pair<std::variant<std::vector<float>, std::vector<double>>,
 XDMFFile::read_geometry_data(std::string_view name,
                              std::string_view xpath) const
 {
-  pugi::xml_node node = _xml_doc->select_node(std::string(xpath).c_str()).node();
+  pugi::xml_node node
+      = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error("XML node '" + std::string(xpath) + "' not found.");
+    throw std::runtime_error("XML node '" + std::string(xpath)
+                             + "' not found.");
 
   pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + std::string(name) + "']").c_str())
@@ -276,7 +282,7 @@ void XDMFFile::write_function(const fem::Function<T, U>& u, double t,
   }
 
   const std::string ref_path = "xpointer(" + std::string(mesh_xpath)
-                              + "/*[self::Topology or self::Geometry])";
+                               + "/*[self::Topology or self::Geometry])";
 
   pugi::xml_node topo_geo_ref = grid_node.append_child("xi:include");
   topo_geo_ref.append_attribute("xpointer") = ref_path.c_str();
@@ -315,9 +321,11 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
                               std::string_view geometry_xpath,
                               std::string_view xpath)
 {
-  pugi::xml_node node = _xml_doc->select_node(std::string(xpath).c_str()).node();
+  pugi::xml_node node
+      = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error("XML node '" + std::string(xpath) + "' not found.");
+    throw std::runtime_error("XML node '" + std::string(xpath)
+                             + "' not found.");
 
   pugi::xml_node grid_node = node.append_child("Grid");
   assert(grid_node);
@@ -353,9 +361,11 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
                         std::string_view xpath)
 {
   spdlog::info("XDMF read meshtags ({})", name);
-  pugi::xml_node node = _xml_doc->select_node(std::string(xpath).c_str()).node();
+  pugi::xml_node node
+      = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error("XML node '" + std::string(xpath) + "' not found.");
+    throw std::runtime_error("XML node '" + std::string(xpath)
+                             + "' not found.");
   pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + std::string(name) + "']").c_str())
             .node();
@@ -376,8 +386,7 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
     if (!attribute_node)
     {
       throw std::runtime_error("Attribute with name '"
-                               + std::string(*attribute_name)
-                               + "' not found.");
+                               + std::string(*attribute_name) + "' not found.");
     }
     else
       values_data_node = attribute_node.child("DataItem");
@@ -422,11 +431,14 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
 std::pair<mesh::CellType, int>
 XDMFFile::read_cell_type(std::string_view grid_name, std::string_view xpath)
 {
-  pugi::xml_node node = _xml_doc->select_node(std::string(xpath).c_str()).node();
+  pugi::xml_node node
+      = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error("XML node '" + std::string(xpath) + "' not found.");
+    throw std::runtime_error("XML node '" + std::string(xpath)
+                             + "' not found.");
   pugi::xml_node grid_node
-      = node.select_node(("Grid[@Name='" + std::string(grid_name) + "']").c_str())
+      = node.select_node(
+                ("Grid[@Name='" + std::string(grid_name) + "']").c_str())
             .node();
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + std::string(grid_name)
@@ -446,13 +458,14 @@ XDMFFile::read_cell_type(std::string_view grid_name, std::string_view xpath)
   return {cell_type, cell_type_str.second};
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_information(std::string_view name,
-                                 std::string_view value,
+void XDMFFile::write_information(std::string_view name, std::string_view value,
                                  std::string_view xpath)
 {
-  pugi::xml_node node = _xml_doc->select_node(std::string(xpath).c_str()).node();
+  pugi::xml_node node
+      = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error("XML node '" + std::string(xpath) + "' not found.");
+    throw std::runtime_error("XML node '" + std::string(xpath)
+                             + "' not found.");
 
   pugi::xml_node info_node = node.append_child("Information");
   assert(info_node);
@@ -467,13 +480,15 @@ void XDMFFile::write_information(std::string_view name,
 std::string XDMFFile::read_information(std::string_view name,
                                        std::string_view xpath)
 {
-  pugi::xml_node node = _xml_doc->select_node(std::string(xpath).c_str()).node();
+  pugi::xml_node node
+      = _xml_doc->select_node(std::string(xpath).c_str()).node();
   if (!node)
-    throw std::runtime_error("XML node '" + std::string(xpath) + "' not found.");
-  pugi::xml_node info_node = node.select_node(("Information[@Name='"
-                                               + std::string(name) + "']")
-                                                  .c_str())
-                                 .node();
+    throw std::runtime_error("XML node '" + std::string(xpath)
+                             + "' not found.");
+  pugi::xml_node info_node
+      = node.select_node(
+                ("Information[@Name='" + std::string(name) + "']").c_str())
+            .node();
   if (!info_node)
     throw std::runtime_error("<Information> with name '" + std::string(name)
                              + "' not found.");

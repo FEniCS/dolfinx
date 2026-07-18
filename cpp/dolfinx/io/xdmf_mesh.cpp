@@ -228,7 +228,7 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   grid_node.append_attribute("GridType") = "Uniform";
 
   // Add topology node and attributes (including writing data)
-  const std::string path_prefix = "/Mesh/" + std::string(path_prefix);
+  const std::string full_path_prefix = "/Mesh/" + std::string(path_prefix);
   const int tdim = mesh.topology()->dim();
 
   // Prepare an array of active cells
@@ -239,12 +239,12 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   std::vector<std::int32_t> cells(num_cells);
   std::iota(cells.begin(), cells.end(), 0);
 
-  add_topology_data(comm, grid_node, h5_id, path_prefix, *mesh.topology(),
+  add_topology_data(comm, grid_node, h5_id, full_path_prefix, *mesh.topology(),
                     mesh.geometry(), tdim,
                     std::span<std::int32_t>(cells.data(), num_cells));
 
   // Add geometry node and attributes (including writing data)
-  add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
+  add_geometry_data(comm, grid_node, h5_id, full_path_prefix, mesh.geometry());
 }
 /// @cond
 template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, hid_t,
