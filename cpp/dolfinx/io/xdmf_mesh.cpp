@@ -216,18 +216,19 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 //----------------------------------------------------------------------------
 template <std::floating_point U>
 void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                         const mesh::Mesh<U>& mesh, std::string_view name)
+                         const mesh::Mesh<U>& mesh,
+                         std::string_view path_prefix)
 {
   spdlog::info("Adding mesh to node \"{}\"", xml_node.path('/'));
 
   // Add grid node and attributes
   pugi::xml_node grid_node = xml_node.append_child("Grid");
   assert(grid_node);
-  grid_node.append_attribute("Name") = std::string(name).c_str();
+  grid_node.append_attribute("Name") = std::string(path_prefix).c_str();
   grid_node.append_attribute("GridType") = "Uniform";
 
   // Add topology node and attributes (including writing data)
-  const std::string path_prefix = "/Mesh/" + std::string(name);
+  const std::string path_prefix = "/Mesh/" + std::string(path_prefix);
   const int tdim = mesh.topology()->dim();
 
   // Prepare an array of active cells
@@ -249,8 +250,7 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, hid_t,
                                   const mesh::Mesh<float>&, std::string_view);
 template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, hid_t,
-                                  const mesh::Mesh<double>&,
-                                  std::string_view);
+                                  const mesh::Mesh<double>&, std::string_view);
 /// @endcond
 //----------------------------------------------------------------------------
 std::pair<std::variant<std::vector<float>, std::vector<double>>,

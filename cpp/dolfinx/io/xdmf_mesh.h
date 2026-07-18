@@ -40,7 +40,6 @@ class Topology;
 /// Low-level methods for reading XDMF files
 namespace io::xdmf_mesh
 {
-
 /// Add Mesh to xml node
 ///
 /// Creates new Grid with Topology and Geometry xml nodes for mesh. In

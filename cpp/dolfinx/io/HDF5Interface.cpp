@@ -13,16 +13,17 @@ namespace
 {
 /// Check for existence of group in HDF5 file
 /// @param[in] handle HDF5 file handle
-/// @param[in] group_name Name of the group to check
+/// @param[in] name Name of the group to check
 /// @return True if @p group_name is in the file
-bool has_group(hid_t handle, std::string_view group_name)
+bool has_group(hid_t handle, std::string_view name)
 {
-  const std::string name(group_name);
   const hid_t lapl_id = H5Pcreate(H5P_LINK_ACCESS);
   if (lapl_id < 0)
     throw std::runtime_error("Failed to create HDF5 property list");
 
-  htri_t link_status = H5Lexists(handle, name.c_str(), lapl_id);
+  const std::string name_str(name);
+
+  htri_t link_status = H5Lexists(handle, name_str.c_str(), lapl_id);
   if (link_status < 0)
     throw std::runtime_error("Failed to check existence of HDF5 link in group");
 
@@ -35,11 +36,11 @@ bool has_group(hid_t handle, std::string_view group_name)
 
   H5O_info_t object_info;
 #if H5_VERSION_GE(1, 12, 0)
-  herr_t err = H5Oget_info_by_name3(handle, name.c_str(), &object_info,
+  herr_t err = H5Oget_info_by_name3(handle, name_str.c_str(), &object_info,
                                     H5O_INFO_ALL, lapl_id);
 #else
   herr_t err
-      = H5Oget_info_by_name1(handle, name.c_str(), &object_info, lapl_id);
+      = H5Oget_info_by_name1(handle, name_str.c_str(), &object_info, lapl_id);
 #endif
   if (err < 0)
     throw std::runtime_error("Call to H5Oget_info_by_name unsuccessful");
@@ -146,12 +147,12 @@ std::filesystem::path io::hdf5::get_filename(hid_t handle)
 //-----------------------------------------------------------------------------
 bool io::hdf5::has_dataset(hid_t handle, std::string_view dataset_path)
 {
-  const std::string path(dataset_path);
   const hid_t lapl_id = H5Pcreate(H5P_LINK_ACCESS);
   if (lapl_id < 0)
     throw std::runtime_error("Failed to create HDF5 property list");
 
-  const htri_t link_status = H5Lexists(handle, path.c_str(), lapl_id);
+  const htri_t link_status
+      = H5Lexists(handle, std::string(dataset_path).c_str(), lapl_id);
   if (link_status < 0)
     throw std::runtime_error("Failed to check existence of HDF5 link in group");
 
@@ -166,11 +167,8 @@ void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
 {
   const std::string name(attr_name);
   const std::string val(value);
-  if (htri_t attr_exists = H5Aexists(handle, name.c_str());
-      attr_exists < 0)
-  {
+  if (htri_t attr_exists = H5Aexists(handle, name.c_str()); attr_exists < 0)
     throw std::runtime_error("Error checking attribute");
-  }
   else if (attr_exists == 0)
   {
     // create attribute
@@ -200,8 +198,7 @@ void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
                              std::int32_t value)
 {
   const std::string name(attr_name);
-  if (htri_t attr_exists = H5Aexists(handle, name.c_str());
-      attr_exists < 0)
+  if (htri_t attr_exists = H5Aexists(handle, name.c_str()); attr_exists < 0)
   {
     throw std::runtime_error("Error checking attribute");
   }
@@ -210,8 +207,8 @@ void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
     // create attribute
     hsize_t dims = 1;
     hid_t space_id = H5Screate_simple(1, &dims, NULL);
-    hid_t attr_id = H5Acreate(handle, name.c_str(), H5T_NATIVE_INT32,
-                              space_id, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t attr_id = H5Acreate(handle, name.c_str(), H5T_NATIVE_INT32, space_id,
+                              H5P_DEFAULT, H5P_DEFAULT);
     H5Awrite(attr_id, H5T_NATIVE_INT32, &value);
     H5Aclose(attr_id);
     H5Sclose(space_id);
@@ -229,8 +226,7 @@ void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
                              const std::vector<std::int32_t>& value)
 {
   const std::string name(attr_name);
-  if (htri_t attr_exists = H5Aexists(handle, name.c_str());
-      attr_exists < 0)
+  if (htri_t attr_exists = H5Aexists(handle, name.c_str()); attr_exists < 0)
   {
     throw std::runtime_error("Error checking attribute");
   }
@@ -239,8 +235,8 @@ void io::hdf5::set_attribute(hid_t handle, std::string_view attr_name,
     // create attribute
     hsize_t dims = value.size();
     hid_t space_id = H5Screate_simple(1, &dims, NULL);
-    hid_t attr_id = H5Acreate(handle, name.c_str(), H5T_NATIVE_INT32,
-                              space_id, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t attr_id = H5Acreate(handle, name.c_str(), H5T_NATIVE_INT32, space_id,
+                              H5P_DEFAULT, H5P_DEFAULT);
     H5Awrite(attr_id, H5T_NATIVE_INT32, value.data());
     H5Aclose(attr_id);
     H5Sclose(space_id);
@@ -259,9 +255,9 @@ hid_t io::hdf5::open_dataset(hid_t handle, std::string_view path)
   return H5Dopen2(handle, std::string(path).c_str(), H5P_DEFAULT);
 }
 //-----------------------------------------------------------------------------
-void io::hdf5::add_group(hid_t handle, std::string_view group_name)
+void io::hdf5::add_group(hid_t handle, std::string_view dataset_path)
 {
-  std::string _group_name(group_name);
+  std::string _group_name(dataset_path);
 
   // Cannot create the root level group
   if (_group_name.size() == 0 or _group_name == "/")

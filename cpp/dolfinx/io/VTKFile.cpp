@@ -106,7 +106,7 @@ void add_pvtu_mesh(pugi::xml_node& node)
 /// @param[in] name The name of the data array
 /// @param[in] num_components An array indicating the value shape of `values`
 /// @param[in] values The data array to add
-/// @param[in,out] data_node The XML node to add data to
+/// @param[in,out] node The XML node to add data to
 template <typename T>
 void add_data_float(std::string_view name,
                     std::span<const std::size_t> num_components,
@@ -136,7 +136,7 @@ void add_data_float(std::string_view name,
 /// @param[in] name The name of the data array
 /// @param[in] num_components An array indicating the value shape of `values`
 /// @param[in] values The data array to add
-/// @param[in,out] data_node The XML node to add data to
+/// @param[in,out] node The XML node to add data to
 template <typename T>
 void add_data(std::string_view name,
               std::span<const std::size_t> num_components,
@@ -761,7 +761,7 @@ void io::VTKFile::flush()
 }
 //----------------------------------------------------------------------------
 template <std::floating_point U>
-void io::VTKFile::write(const mesh::Mesh<U>& mesh, double time)
+void io::VTKFile::write(const mesh::Mesh<U>& mesh, double t)
 {
   if (!_pvd_xml)
     throw std::runtime_error("VTKFile has already been closed");
@@ -859,7 +859,7 @@ void io::VTKFile::write(const mesh::Mesh<U>& mesh, double time)
 
   // Append PVD file
   pugi::xml_node dataset_node = xml_collections.append_child("DataSet");
-  dataset_node.append_attribute("timestep") = time;
+  dataset_node.append_attribute("timestep") = t;
   dataset_node.append_attribute("part") = "0";
   dataset_node.append_attribute("file") = p_pvtu.filename().c_str();
 }
@@ -867,9 +867,9 @@ void io::VTKFile::write(const mesh::Mesh<U>& mesh, double time)
 template <dolfinx::scalar T, std::floating_point U>
 void io::VTKFile::write(
     const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,
-    double time)
+    double t)
 {
-  write_function<T, U>(u, time, _pvd_xml.get(), _filename);
+  write_function<T, U>(u, t, _pvd_xml.get(), _filename);
 }
 //-----------------------------------------------------------------------------
 // Instantiation for different types

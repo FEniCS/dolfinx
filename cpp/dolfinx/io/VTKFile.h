@@ -49,7 +49,7 @@ class VTKFile
 public:
   /// Create VTK file
   VTKFile(MPI_Comm comm, const std::filesystem::path& filename,
-          std::string_view file_mode);
+          std::string_view;
 
   /// Destructor
   ~VTKFile();
@@ -65,9 +65,9 @@ public:
   /// Supports arbitrary order Lagrange isoparametric cells.
   ///
   /// @param[in] mesh Mesh to write to file.
-  /// @param[in] time Time parameter to associate with `mesh`.
+  /// @param[in] t Time parameter to associate with `mesh`.
   template <std::floating_point U>
-  void write(const mesh::Mesh<U>& mesh, double time = 0.0);
+  void write(const mesh::Mesh<U>& mesh, double t = 0.0);
 
   /// @brief Write finite elements function with an associated time
   /// step.
