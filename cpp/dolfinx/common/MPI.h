@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Timer.h"
+#include "local_range.h"
 #include "log.h"
 #include "types.h"
 #include <algorithm>
@@ -79,30 +80,6 @@ int size(MPI_Comm comm);
 /// @param[in] comm MPI communicator.
 /// @param[in] code Error code returned by an MPI function call.
 void check_error(MPI_Comm comm, int code);
-
-/// @brief Return local range for the calling process, partitioning the
-/// global [0, N - 1] range across all ranks into partitions of almost
-/// equal size.
-/// @param[in] rank MPI rank of the caller
-/// @param[in] N The value to partition.
-/// @param[in] size Number of MPI ranks across which to partition `N`.
-constexpr std::array<std::int64_t, 2> local_range(int rank, std::int64_t N,
-                                                  int size)
-{
-  assert(rank >= 0);
-  assert(N >= 0);
-  assert(size > 0);
-
-  // Compute number of items per rank and remainder
-  const std::int64_t n = N / size;
-  const std::int64_t r = N % size;
-
-  // Compute local range
-  if (rank < r)
-    return {rank * (n + 1), rank * (n + 1) + n + 1};
-  else
-    return {rank * n + r, rank * n + r + n};
-}
 
 /// @brief Return which rank owns index in global range [0, N - 1]
 /// (inverse of MPI::local_range).
@@ -451,7 +428,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   spdlog::debug("Completed send data to post offices.");
 
   // Convert to local indices
-  const std::int64_t r0 = MPI::local_range(rank, shape[0], size)[0];
+  const std::int64_t r0 = dolfinx::common::local_range(rank, shape[0], size)[0];
   std::vector<std::int32_t> index_local(recv_buffer_index.size());
   std::ranges::transform(recv_buffer_index, index_local.begin(),
                          [r0](auto idx) { return idx - r0; });
@@ -573,7 +550,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   // data that was already on this rank and was therefore was not
   // sent/received via a postoffice.
   const std::array<std::int64_t, 2> postoffice_range
-      = dolfinx::MPI::local_range(rank, shape[0], size);
+      = dolfinx::common::local_range(rank, shape[0], size);
   std::vector<std::int32_t> post_indices_map(
       postoffice_range[1] - postoffice_range[0], -1);
   for (std::size_t i = 0; i < post_indices.size(); ++i)
