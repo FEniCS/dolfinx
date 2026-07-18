@@ -106,7 +106,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    CellPartitionFunction partitioner = nullptr,
-                   const CellReorderFunction& reorder_fn = graph::reorder_gps)
+                   const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell is required.");
@@ -154,7 +154,7 @@ template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    const CellPartitionFunction& partitioner = nullptr,
-                   const CellReorderFunction& reorder_fn = graph::reorder_gps)
+                   const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   return create_box<T>(comm, comm, p, n, celltype, partitioner, reorder_fn);
 }
@@ -184,7 +184,7 @@ create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                  std::array<std::int64_t, 2> n, CellType celltype,
                  CellPartitionFunction partitioner,
                  DiagonalType diagonal = DiagonalType::right, int gdim = 2,
-                 const CellReorderFunction& reorder_fn = graph::reorder_gps)
+                 const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   if (gdim < 2 || gdim > 3)
     throw std::runtime_error("2 <= gdim <= 3 for rectangle mesh.");
@@ -258,7 +258,7 @@ Mesh<T>
 create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
                 mesh::GhostMode ghost_mode = mesh::GhostMode::none,
                 CellPartitionFunction partitioner = nullptr, int gdim = 1,
-                const CellReorderFunction& reorder_fn = graph::reorder_gps)
+                const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   if (gdim < 1 || gdim > 3)
     throw std::runtime_error("1 <= gdim <= 3 for interval mesh.");
