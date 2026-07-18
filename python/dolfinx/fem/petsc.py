@@ -135,7 +135,8 @@ def create_vector(
         vector is not initialised to zero.
     """
     if isinstance(
-        V, _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
+        V,
+        _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64,
     ):
         V = [V]
     elif any(_V is None for _V in V):
@@ -603,7 +604,10 @@ def apply_lifting(
             strict=True,
         ):
             const_ = list(
-                map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)  # type: ignore[attr-defined, call-overload]
+                map(
+                    lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x,
+                    const,
+                )  # type: ignore[attr-defined, call-overload]
             )
             apply_lifting(b_sub, a_sub, bcs, x0, alpha, const_, coeff)  # type: ignore[arg-type]
     else:
@@ -896,7 +900,8 @@ class LinearProblem:
     def __del__(self):
         """Destroy internally held PETSc objects."""
         for obj in filter(
-            lambda obj: obj is not None, (self._solver, self._A, self._b, self._x, self._P_mat)
+            lambda obj: obj is not None,
+            (self._solver, self._A, self._b, self._x, self._P_mat),
         ):
             obj.destroy()
 
@@ -1372,7 +1377,8 @@ class NonlinearProblem:
     def __del__(self):
         """Destroy PETSc objects created internally."""
         for obj in filter(
-            lambda obj: obj is not None, (self._snes, self._A, self._b, self._x, self._P_mat)
+            lambda obj: obj is not None,
+            (self._snes, self._A, self._b, self._x, self._P_mat),
         ):
             obj.destroy()
 
