@@ -69,7 +69,8 @@ void declare_adjacency_list_init(nanobind::module_& m, std::string type)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> displ)
           {
             if (displ.size() == 0 or displ.data()[0] != 0)
-              throw std::runtime_error("offsets must be non-empty and start at 0.");
+              throw std::runtime_error(
+                  "offsets must be non-empty and start at 0.");
             for (std::size_t i = 1; i < displ.size(); ++i)
             {
               if (displ.data()[i] < displ.data()[i - 1])

@@ -36,9 +36,9 @@ auto as_nbarray(V&& x, std::size_t ndim, const std::size_t* shape)
 {
   using VDecay = std::decay_t<V>;
   VDecay* ptr = new VDecay(std::forward<V>(x));
-  assert(std::accumulate(shape, shape + ndim, std::size_t(1),
-                         std::multiplies<>())
-         == ptr->size());
+  assert(
+      std::accumulate(shape, shape + ndim, std::size_t(1), std::multiplies<>())
+      == ptr->size());
   return nb::ndarray<typename VDecay::value_type, nb::numpy>(
       ptr->data(), ndim, shape,
       nb::capsule(ptr, [](void* p) noexcept { delete (VDecay*)p; }));

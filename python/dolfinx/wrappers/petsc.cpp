@@ -21,7 +21,6 @@
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/nls/NewtonSolver.h>
 #include <iostream>
-#include <stdexcept>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
@@ -34,6 +33,7 @@
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <petsc4py/petsc4py.h>
+#include <stdexcept>
 
 namespace
 {
@@ -269,8 +269,7 @@ void petsc_nls_module(nb::module_& m)
       .def_prop_ro(
           "krylov_solver",
           [](const dolfinx::nls::petsc::NewtonSolver& self) -> KSP
-          { return self.get_krylov_solver().ksp(); },
-          nb::rv_policy::reference)
+          { return self.get_krylov_solver().ksp(); }, nb::rv_policy::reference)
       .def("setF", &dolfinx::nls::petsc::NewtonSolver::setF, nb::arg("F"),
            nb::arg("b"))
       .def("setJ", &dolfinx::nls::petsc::NewtonSolver::setJ, nb::arg("J"),
