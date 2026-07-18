@@ -101,7 +101,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   }
 
   // Transformation from reference element basis function data to
-  // conforming element basis function function
+  // conforming element basis function
   auto apply_dof_transformation
       = element->template dof_transformation_fn<T>(fem::doftransform::standard);
 

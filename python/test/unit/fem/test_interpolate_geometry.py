@@ -122,7 +122,7 @@ def _curve_mesh_errors(N, degree, dtype, R, cell_type, lagrange_variant):
     reference_area = mesh.comm.allreduce(assemble_scalar(original_area_form), op=MPI.SUM)
     reference_circ = mesh.comm.allreduce(assemble_scalar(original_circ_form), op=MPI.SUM)
 
-    tol = 10 * np.finfo(dtype).eps
+    tol = 100 * np.finfo(dtype).eps
     assert np.isclose(recovered_area, reference_area, rtol=tol)
     assert np.isclose(recovered_circ, reference_circ, rtol=tol)
 

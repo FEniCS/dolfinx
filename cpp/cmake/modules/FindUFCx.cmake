@@ -61,7 +61,7 @@ if(_UFCX_INCLUDE_DIR)
 endif()
 
 # Compute hash of ufcx.h
-find_file(_UFCX_HEADER "ufcx.h" ${_UFCX_INCLUDE_DIR})
+find_file(_UFCX_HEADER "ufcx.h" PATHS ${_UFCX_INCLUDE_DIR} NO_DEFAULT_PATH)
 if(_UFCX_HEADER)
   file(SHA1 ${_UFCX_HEADER} UFCX_SIGNATURE)
 endif()

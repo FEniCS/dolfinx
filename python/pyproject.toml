@@ -120,6 +120,7 @@ select = [
       "NPY",    # numpy-specific rules
       "FLY",    # use f-string not static joins
       "NPY201", # numpy 2.x ruleset
+      "B905",   # zip-without-explicit-strict 
 ]
 ignore = ["RUF012"]
 allowed-confusables = ["σ", "ρ"]

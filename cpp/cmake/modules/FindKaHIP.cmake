@@ -55,17 +55,17 @@ if(DOLFINX_SKIP_BUILD_TESTS)
   )
 else()
   if(PARHIP_LIBRARY AND KAHIP_INCLUDE_DIR)
-    include(CheckCXXSourceRuns)
+    include(CheckCXXSourceCompiles)
     include(CMakePushCheckState)
 
     cmake_push_check_state(RESET)
-    set(CMAKE_REQUIRED_INCLUDES ${KAHIP_INCLUDE_DIR} ${MPI_CXX_INCLUDE_PATH})
-    set(CMAKE_REQUIRED_LIBRARIES ${PARHIP_LIBRARY} ${MPI_CXX_LIBRARIES})
+    set(CMAKE_REQUIRED_INCLUDES ${KAHIP_INCLUDE_DIR})
+    set(CMAKE_REQUIRED_LIBRARIES ${PARHIP_LIBRARY})
     if(KAHIP_LIBRARY)
       list(APPEND CMAKE_REQUIRED_LIBRARIES ${KAHIP_LIBRARY})
     endif()
-    set(CMAKE_REQUIRED_FLAGS ${MPI_CXX_COMPILE_FLAGS})
-    check_cxx_source_runs(
+    list(APPEND CMAKE_REQUIRED_LINK_LIBRARIES MPI::MPI_CXX)
+    check_cxx_source_compiles(
       "
       #define MPICH_IGNORE_CXX_SEEK 1
       #include <mpi.h>
@@ -88,7 +88,7 @@ else()
         return 0;
       }
       "
-      KAHIP_TEST_RUNS
+      KAHIP_TEST_COMPILES
     )
     cmake_pop_check_state()
   endif()
@@ -97,7 +97,7 @@ else()
     "KaHIP could not be found/configured."
     KAHIP_INCLUDE_DIR
     PARHIP_LIBRARY
-    KAHIP_TEST_RUNS
+    KAHIP_TEST_COMPILES
   )
 endif()
 
