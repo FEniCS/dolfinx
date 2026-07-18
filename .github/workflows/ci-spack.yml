@@ -21,6 +21,12 @@ env:
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
   PYTEST_ADDOPTS: "-W error"
+  # Spack environment activation does not add the view's library
+  # directories to the runtime linker search path, so packages that are
+  # only present in the environment (not linked via RPATH into a
+  # consuming package, e.g. mesa-glu's libGLU.so.1 for gmsh) are not
+  # found at runtime without this.
+  LD_LIBRARY_PATH: /opt/view/lib:/opt/view/lib64
 
 jobs:
   ci-spack-build:
@@ -65,6 +71,16 @@ jobs:
           spack -e py add py-gmsh ^gmsh~fltk~med~mmg+external ^opencascade~draw py-pyvista ^mesa~llvm ^freetype@2.13.3 \
             py-networkx py-matplotlib py-pyamg py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
             py-scipy
+          # gmsh's compiled library dlopens libGLU.so.1 and several X11
+          # libraries unconditionally at runtime (its native file-chooser
+          # and OpenGL-based drawing code are always built in), but the
+          # gmsh Spack recipe only declares depends_on("glu"/"gl") when
+          # +fltk is set. We build gmsh ~fltk, so Spack's dependency graph
+          # never gets these libraries, and none of them are RPATH-linked
+          # in by any package either — hence they must be added explicitly
+          # here and put on LD_LIBRARY_PATH (see env above) so gmsh can
+          # find them at runtime.
+          spack -e py add mesa-glu libx11 libxcursor libxft libxinerama libxrender
 
       - if: matrix.compiler == 'oneapi'
         name: Add oneAPI compilers to environment
@@ -137,10 +153,6 @@ jobs:
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
-
-      - name: Libraries that gmsh expects to find
-        run: |
-          dnf install -y mesa-libGLU libX11 libXrender mesa-libEGL libglvnd-glx libXcursor libXft libXinerama
 
       - name: Run demos (Python, serial and MPI)
         run: |

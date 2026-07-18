@@ -605,7 +605,7 @@ def test_determine_point_ownership(dim, affine, dtype):
     # (from each other process)
     assert len(global_po.dest_cells) == comm.size * (cell_map.size_local)
 
-    for cell, point in zip(global_po.dest_cells, global_po.dest_points):
+    for cell, point in zip(global_po.dest_cells, global_po.dest_points, strict=True):
         np.testing.assert_allclose(local_midpoints[cell], point)
 
     # Check ownership for subset of cells

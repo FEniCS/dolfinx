@@ -219,7 +219,8 @@ void mesh(nb::module_& m)
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
            nb::arg("dim"), nb::arg("num_threads") = 1)
       .def("create_entity_permutations",
-           &dolfinx::mesh::Topology::create_entity_permutations)
+           &dolfinx::mesh::Topology::create_entity_permutations,
+           nb::arg("num_threads"))
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity,
            nb::arg("d0"), nb::arg("d1"))
       .def(

@@ -130,7 +130,7 @@ def extract_diagonal(mat):
     assert num_rows == num_cols, "Matrix must be square"
     bs = mat.block_size[0]
     diag = np.empty(num_rows * bs, dtype=mat.data.dtype)
-    for row, (start, end) in enumerate(zip(mat.indptr[:-1], mat.indptr[1:])):
+    for row, (start, end) in enumerate(zip(mat.indptr[:-1], mat.indptr[1:], strict=True)):
         for i in range(start, end):
             if mat.indices[i] == row:
                 for block in range(bs):
