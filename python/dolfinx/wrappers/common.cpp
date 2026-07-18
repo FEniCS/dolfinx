@@ -26,6 +26,7 @@
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <utility>
@@ -219,6 +220,12 @@ void common(nb::module_& m)
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
          bool allow_owner_change)
       {
+        const std::int32_t size = imap.size_local() + imap.num_ghosts();
+        for (std::size_t i = 0; i < indices.size(); ++i)
+        {
+          if (indices.data()[i] < 0 or indices.data()[i] >= size)
+            throw std::runtime_error("Index out of range in indices array.");
+        }
         auto [map, submap_to_map] = dolfinx::common::create_sub_index_map(
             imap, std::span(indices.data(), indices.size()),
             dolfinx::common::IndexMapOrder::any, allow_owner_change);

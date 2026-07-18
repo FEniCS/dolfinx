@@ -208,6 +208,8 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
+              if (cell_permutations.size() == 0)
+                return;
               const std::size_t data_per_cell
                   = x.size() / cell_permutations.size();
               std::span<T> x_span(x.data(), x.size());
@@ -228,6 +230,8 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
+              if (cell_permutations.size() == 0)
+                return;
               const std::size_t data_per_cell
                   = x.size() / cell_permutations.size();
               std::span<T> x_span(x.data(), x.size());
@@ -248,6 +252,8 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
+              if (cell_permutations.size() == 0)
+                return;
               const std::size_t data_per_cell
                   = x.size() / cell_permutations.size();
               std::span<T> x_span(x.data(), x.size());
@@ -270,6 +276,8 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
+              if (cell_permutations.size() == 0)
+                return;
               const std::size_t data_per_cell
                   = x.size() / cell_permutations.size();
               std::span<std::complex<T>> x_span(x.data(), x.size());
@@ -291,6 +299,8 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
+              if (cell_permutations.size() == 0)
+                return;
               const std::size_t data_per_cell
                   = x.size() / cell_permutations.size();
               std::span<std::complex<T>> x_span(x.data(), x.size());
@@ -312,6 +322,8 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
+              if (cell_permutations.size() == 0)
+                return;
               const std::size_t data_per_cell
                   = x.size() / cell_permutations.size();
               std::span<std::complex<T>> x_span(x.data(), x.size());
