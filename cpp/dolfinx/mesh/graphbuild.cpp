@@ -10,6 +10,7 @@
 #include <boost/sort/sort.hpp>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -644,7 +645,7 @@ mesh::build_local_dual_graph(
       std::vector<std::jthread> threads;
       for (int i = 0; i < num_threads; ++i)
       {
-        auto [c0, c1] = dolfinx::MPI::local_range(
+        auto [c0, c1] = dolfinx::common::local_range(
             i, _cells.size() / num_cell_vertices, num_threads);
         threads.emplace_back(
             build_facets_fn, shape1, num_cell_vertices, cell_offsets[j] + c0,

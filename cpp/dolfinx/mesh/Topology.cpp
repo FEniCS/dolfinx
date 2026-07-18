@@ -13,6 +13,7 @@
 #include <array>
 #include <boost/sort/sort.hpp>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -744,7 +745,7 @@ std::vector<std::int32_t> convert_to_local_indexing(
     std::vector<std::jthread> threads;
     for (int i = 0; i < num_threads; ++i)
     {
-      auto [c0, c1] = dolfinx::MPI::local_range(i, g.size(), num_threads);
+      auto [c0, c1] = dolfinx::common::local_range(i, g.size(), num_threads);
       threads.emplace_back(transform, std::span(data.data() + c0, c1 - c0),
                            g.subspan(c0, c1 - c0), global_to_local);
     }
