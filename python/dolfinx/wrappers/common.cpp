@@ -172,7 +172,7 @@ void common(nb::module_& m)
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
       m, "Timer", "Timer class")
-      .def(nb::init<std::string>(), nb::arg("task").none())
+      .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
       .def("start",
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::start,
            "Start timer")
