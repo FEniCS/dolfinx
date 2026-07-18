@@ -1051,9 +1051,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
     std::optional<std::int32_t> max_facet_to_cell_links,
-    const CellReorderFunction& reorder_fn
-    = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::reorder_rcm(g); })
+    const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   assert(cells.size() == elements.size());
   std::vector<CellType> celltypes;
@@ -1267,9 +1265,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
     std::optional<std::int32_t> max_facet_to_cell_links,
-    const CellReorderFunction& reorder_fn
-    = [](const graph::AdjacencyList<std::int32_t>& g)
-    { return graph::reorder_rcm(g); })
+    const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
                      commg, x, xshape, partitioner, max_facet_to_cell_links,
