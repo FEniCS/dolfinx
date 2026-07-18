@@ -10,6 +10,7 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/mesh/MeshTags.h>
+#include <format>
 #include <hdf5.h>
 #include <mpi.h>
 #include <pugixml.hpp>
@@ -112,7 +113,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   auto it = std::ranges::lower_bound(meshtags.indices(), num_local_entities);
   const int num_active_entities = std::distance(meshtags.indices().begin(), it);
 
-  const std::string path_prefix = "/MeshTags/" + std::string(name);
+  const std::string path_prefix = std::format("/MeshTags/{}", name);
   xdmf_mesh::add_topology_data(
       comm, xml_node, h5_id, path_prefix, *meshtags.topology(), geometry, dim,
       std::span<const std::int32_t>(meshtags.indices().data(),
@@ -134,7 +135,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
   xdmf_utils::add_data_item(
-      attribute_node, h5_id, path_prefix + std::string("/Values"),
+      attribute_node, h5_id, std::format("{}/Values", path_prefix),
       std::span<const T>(meshtags.values().data(), num_active_entities), offset,
       {global_num_values, 1}, "", use_mpi_io);
 }

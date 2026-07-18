@@ -908,17 +908,19 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto e_to_c = topology->connectivity(dim, tdim);
   if (!e_to_c)
   {
-    throw std::runtime_error(
+    throw std::runtime_error(std::format(
         "Entity-to-cell connectivity has not been computed. Missing dims "
-        + std::to_string(dim) + "->" + std::to_string(tdim));
+        "{}->{}",
+        dim, tdim));
   }
 
   auto c_to_e = topology->connectivity(tdim, dim);
   if (!c_to_e)
   {
-    throw std::runtime_error(
+    throw std::runtime_error(std::format(
         "Cell-to-entity connectivity has not been computed. Missing dims "
-        + std::to_string(tdim) + "->" + std::to_string(dim));
+        "{}->{}",
+        tdim, dim));
   }
 
   // Get the cell info, which is needed to permute the closure dofs

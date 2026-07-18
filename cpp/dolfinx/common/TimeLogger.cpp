@@ -7,6 +7,7 @@
 #include "TimeLogger.h"
 #include "MPI.h"
 #include "log.h"
+#include <format>
 #include <iostream>
 
 using namespace dolfinx;
@@ -24,8 +25,7 @@ void TimeLogger::register_timing(
     std::string_view task, std::chrono::duration<double, std::ratio<1>> time)
 {
   // Print a message
-  std::string line = "Elapsed time: " + std::to_string(time.count()) + " ("
-                     + std::string(task) + ")";
+  std::string line = std::format("Elapsed time: {} ({})", time.count(), task);
   spdlog::debug(line.c_str());
 
   // Store values for summary
@@ -43,7 +43,7 @@ void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction) const
   // Format and reduce to rank 0
   Table timings = this->timing_table();
   timings = timings.reduce(comm, reduction);
-  std::string str = "\n" + timings.str();
+  std::string str = std::format("\n{}", timings.str());
 
   // Print just on rank 0
   if (dolfinx::MPI::rank(comm) == 0)
@@ -73,8 +73,8 @@ TimeLogger::timing(std::string_view task) const
   auto it = _timings.find(task);
   if (it == _timings.end())
   {
-    throw std::runtime_error("No timings registered for task \""
-                             + std::string(task) + "\".");
+    throw std::runtime_error(
+        std::format("No timings registered for task \"{}\".", task));
   }
 
   return it->second;

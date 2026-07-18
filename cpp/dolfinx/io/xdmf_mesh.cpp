@@ -13,6 +13,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <pugixml.hpp>
 #include <vector>
 
@@ -228,7 +229,7 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   grid_node.append_attribute("GridType") = "Uniform";
 
   // Add topology node and attributes (including writing data)
-  const std::string full_path_prefix = "/Mesh/" + std::string(path_prefix);
+  const std::string full_path_prefix = std::format("/Mesh/{}", path_prefix);
   const int tdim = mesh.topology()->dim();
 
   // Prepare an array of active cells
@@ -274,9 +275,10 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, hid_t h5_id,
     gdim = 3;
   else
   {
-    throw std::runtime_error(
-        "Cannot determine geometric dimension. GeometryType \"" + geometry_type
-        + "\" in XDMF file is unknown or unsupported");
+    throw std::runtime_error(std::format(
+        "Cannot determine geometric dimension. GeometryType \"{}\" in XDMF "
+        "file is unknown or unsupported",
+        geometry_type));
   }
 
   // Get number of points from Geometry dataitem node

@@ -6,6 +6,7 @@
 
 #include "HDF5Interface.h"
 #include <filesystem>
+#include <format>
 
 using namespace dolfinx;
 
@@ -265,7 +266,7 @@ void io::hdf5::add_group(hid_t handle, std::string_view dataset_path)
 
   // Prepend a slash if missing
   if (_group_name[0] != '/')
-    _group_name = "/" + _group_name;
+    _group_name = std::format("/{}", _group_name);
 
   // Starting from the root level, check and create groups if needed
   std::size_t pos = 0;

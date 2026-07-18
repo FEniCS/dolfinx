@@ -20,6 +20,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <filesystem>
+#include <format>
 #include <iterator>
 #include <pugixml.hpp>
 #include <span>
@@ -115,7 +116,7 @@ void add_data_float(std::string_view name,
   static_assert(std::is_floating_point_v<T>, "Scalar must be a float");
 
   constexpr int size = 8 * sizeof(T);
-  std::string type = std::string("Float") + std::to_string(size);
+  std::string type = std::format("Float{}", size);
 
   pugi::xml_node field_node = node.append_child("DataArray");
   field_node.append_attribute("type") = type.c_str();
@@ -599,7 +600,7 @@ void write_function(
                           file_name = filename.stem(), counter_str](int rank)
   {
     std::filesystem::path vtu = file_root / file_name;
-    vtu += +"_p" + std::to_string(rank) + "_" + counter_str;
+    vtu += std::format("_p{}_{}", rank, counter_str);
     vtu.replace_extension("vtu");
     return vtu;
   };
@@ -662,7 +663,7 @@ void write_function(
 
       auto add_field = [&](const std::string& name, int size)
       {
-        std::string type = std::string("Float") + std::to_string(size);
+        std::string type = std::format("Float{}", size);
         pugi::xml_node data_node = data_pnode.append_child("PDataArray");
         data_node.append_attribute("type") = type.c_str();
         data_node.append_attribute("Name") = name.c_str();
@@ -814,7 +815,7 @@ void io::VTKFile::write(const mesh::Mesh<U>& mesh, double t)
                           file_name = _filename.stem(), counter_str](int rank)
   {
     std::filesystem::path vtu = file_root / file_name;
-    vtu += +"_p" + std::to_string(rank) + "_" + counter_str;
+    vtu += std::format("_p{}_{}", rank, counter_str);
     vtu.replace_extension("vtu");
     return vtu;
   };

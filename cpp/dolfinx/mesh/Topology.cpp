@@ -1073,10 +1073,10 @@ Topology mesh::create_topology(
     int num_vertices = mesh::num_cell_vertices(cell_types[i]);
     if (cells[i].size() % num_vertices != 0)
     {
-      throw std::runtime_error("Inconsistent number of cell vertices. Got "
-                               + std::to_string(cells[i].size())
-                               + ", expected multiple of "
-                               + std::to_string(num_vertices) + ".");
+      throw std::runtime_error(std::format(
+          "Inconsistent number of cell vertices. Got {}, expected multiple "
+          "of {}.",
+          cells[i].size(), num_vertices));
     }
     num_local_cells[i] = cells[i].size() / num_vertices;
     num_local_cells[i] -= ghost_owners[i].size();
@@ -1457,8 +1457,8 @@ mesh::entities_to_index(const Topology& topology, int dim,
   auto map_e = topology.index_map(dim);
   if (!map_e)
   {
-    throw std::runtime_error("Mesh entities of dimension " + std::to_string(dim)
-                             + "have not been created.");
+    throw std::runtime_error(std::format(
+        "Mesh entities of dimension {} have not been created.", dim));
   }
 
   auto e_to_v = topology.connectivity(dim, 0);

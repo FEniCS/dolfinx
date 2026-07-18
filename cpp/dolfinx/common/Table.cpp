@@ -7,6 +7,7 @@
 #include "Table.h"
 #include "MPI.h"
 #include <array>
+#include <format>
 #include <functional>
 #include <map>
 #include <sstream>
@@ -59,9 +60,8 @@ std::variant<std::string, int, double> Table::get(std::string_view row,
   auto it = _values.find(key);
   if (it == _values.end())
   {
-    throw std::runtime_error("Missing table value for entry (\""
-                             + std::string(row) + "\", \"" + std::string(col)
-                             + "\")");
+    throw std::runtime_error(std::format(
+        "Missing table value for entry (\"{}\", \"{}\")", row, col));
   }
 
   return it->second;
