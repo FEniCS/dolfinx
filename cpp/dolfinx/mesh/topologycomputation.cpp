@@ -675,8 +675,9 @@ compute_entities_by_key_matching(
     };
 
     // Sort the list and label uniquely
+    assert(num_threads > 0);
     const std::vector<std::int32_t> sort_order
-        = num_threads == 0
+        = num_threads == 1
               ? dolfinx::sort_by_perm<std::int32_t, 16>(entity_list_sorted,
                                                         num_vertices_per_entity)
               : sort_threaded(entity_list_sorted, num_vertices_per_entity,
