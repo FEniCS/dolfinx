@@ -317,10 +317,11 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
     if (num_threads > 0)
     {
       boost::sort::block_indirect_sort(local_vertex_set.begin(),
-                                       local_vertex_set.end(), 10);
+                                       local_vertex_set.end(), num_threads);
     }
     else
       dolfinx::radix_sort(local_vertex_set);
+
     auto [unique_end, range_end] = std::ranges::unique(local_vertex_set);
     local_vertex_set.erase(unique_end, range_end);
   }
