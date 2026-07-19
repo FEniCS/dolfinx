@@ -167,27 +167,27 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
       auto compute_refl_rots = (mesh_face_types[t] == mesh::CellType::triangle)
                                    ? compute_triangle_rot_reflect
                                    : compute_quad_rot_reflect;
-      spdlog::debug("Using {} threads for face permutation computation",
-                    num_threads);
 
-      auto process_thread = [&](int i)
+      auto process_thread
+          = [im, c_to_v, &face_perm, t, &face_type_indices](
+                std::array<std::int64_t, 2> range, auto&& f_to_v, auto&& c_to_f,
+                auto&& compute_refl_rots)
       {
         std::vector<std::int64_t> cell_vertices, vertices;
         std::vector<std::int32_t> e_vertices;
-        auto range = dolfinx::common::local_range(i, num_cells, num_threads);
-        for (int c = range[0]; c < range[1]; ++c)
+        for (std::int64_t c = range[0]; c < range[1]; ++c)
         {
           cell_vertices.resize(c_to_v->links(c).size());
           im->local_to_global(c_to_v->links(c), cell_vertices);
 
-          auto cell_faces = c_to_f[t]->links(c);
+          auto cell_faces = c_to_f->links(c);
           for (std::size_t j = 0; j < cell_faces.size(); ++j)
           {
             // Get the face
             const int face = cell_faces[j];
-            e_vertices.resize(f_to_v[t]->num_links(face));
-            vertices.resize(f_to_v[t]->num_links(face));
-            im->local_to_global(f_to_v[t]->links(face), vertices);
+            e_vertices.resize(f_to_v->num_links(face));
+            vertices.resize(f_to_v->num_links(face));
+            im->local_to_global(f_to_v->links(face), vertices);
 
             // Orient that triangle or quadrilateral so the lowest
             // numbered vertex is the origin, and the next vertex
@@ -218,10 +218,19 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
 
       // Launch threads for computing face permutations. The first thread is run
       // in the main task.
-      std::vector<std::jthread> threads;
-      for (int i = 1; i < num_threads; ++i)
-        threads.emplace_back(process_thread, i);
-      process_thread(0);
+      if (num_threads > 0)
+      {
+        std::vector<std::jthread> threads;
+        for (int i = 1; i < num_threads; ++i)
+        {
+          std::array<std::int64_t, 2> range
+              = common::local_range(i, num_cells, num_threads);
+          threads.emplace_back(process_thread, range, f_to_v[t], c_to_f[t],
+                               compute_refl_rots);
+        }
+      }
+      else
+        process_thread({0, num_cells}, f_to_v[t], c_to_f[t], compute_refl_rots);
     }
   }
 
@@ -251,12 +260,11 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   assert(im);
 
   std::vector<std::bitset<BITSETSIZE>> edge_perm(num_cells, 0);
-
-  auto process_thread = [&](int i)
+  auto process_thread = [&im, &c_to_v, &e_to_v, &c_to_e, &edge_perm,
+                         edges_per_cell](std::array<std::int64_t, 2> range)
   {
     std::vector<std::int64_t> cell_vertices, vertices;
-    auto range
-        = dolfinx::common::local_range(i, c_to_v->num_nodes(), num_threads);
+
     for (int c = range[0]; c < range[1]; ++c)
     {
       cell_vertices.resize(c_to_v->num_links(c));
@@ -283,10 +291,21 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
 
   // Launch threads for computing edge reflections. The first thread is run in
   // the main task.
-  std::vector<std::jthread> threads;
-  for (int i = 1; i < num_threads; ++i)
-    threads.emplace_back(process_thread, i);
-  process_thread(0);
+
+  if (num_threads > 0)
+  {
+    std::vector<std::jthread> threads;
+    for (int i = 0; i < num_threads; ++i)
+    {
+      std::array<std::int64_t, 2> range
+          = common::local_range(i, c_to_v->num_nodes(), num_threads);
+      threads.emplace_back(process_thread, range);
+    }
+  }
+  else
+  {
+    process_thread({0, c_to_v->num_nodes()});
+  }
 
   return edge_perm;
 }

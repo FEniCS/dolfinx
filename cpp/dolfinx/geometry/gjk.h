@@ -536,11 +536,7 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
     }
   };
 
-  if (num_threads <= 1)
-  {
-    compute_chunk(0, total_size, q);
-  }
-  else
+  if (num_threads > 0)
   {
     std::vector<std::jthread> threads(num_threads);
     for (size_t i = 0; i < num_threads; ++i)
@@ -548,6 +544,10 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
       auto [c0, c1] = dolfinx::common::local_range(i, total_size, num_threads);
       threads[i] = std::jthread(compute_chunk, c0, c1, q);
     }
+  }
+  else
+  {
+    compute_chunk(0, total_size, q);
   }
 
   return results;
