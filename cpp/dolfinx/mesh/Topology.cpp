@@ -336,9 +336,8 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
   {
     if (num_threads > 0)
     {
-
       boost::sort::block_indirect_sort(ghost_vertex_set.begin(),
-                                       ghost_vertex_set.end(), 10);
+                                       ghost_vertex_set.end(), num_threads);
     }
     else
       dolfinx::radix_sort(ghost_vertex_set);

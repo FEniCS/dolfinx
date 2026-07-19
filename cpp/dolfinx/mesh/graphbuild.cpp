@@ -535,7 +535,6 @@ mesh::build_local_dual_graph(
     const std::vector<std::span<const std::int64_t>>& cells,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
 {
-  num_threads = 0;
   spdlog::info("Build local part of mesh dual graph");
   common::Timer timer("Compute local part of mesh dual graph");
 
@@ -666,39 +665,6 @@ mesh::build_local_dual_graph(
   timer1.stop();
   timer1.flush();
 
-  // const int shape1 = max_vertices_per_facet + 1;
-  // std::vector<std::int64_t> facets;
-  // facets.reserve(facet_count * shape1);
-  // constexpr std::int32_t padding_value = -1;
-
-  // for (std::size_t j = 0; j < cells.size(); ++j)
-  // {
-  //   const CellType& cell_type = celltypes[j];
-  //   std::span _cells = cells[j];
-
-  //   int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
-  //   std::int32_t num_cells = _cells.size() / num_cell_vertices;
-  //   graph::AdjacencyList<int> cell_facets
-  //       = mesh::get_entity_vertices(cell_type, tdim - 1);
-
-  //   for (std::int32_t c = 0; c < num_cells; ++c)
-  //   {
-  //     // Loop over cell facets
-  //     std::span v = _cells.subspan(num_cell_vertices * c, num_cell_vertices);
-  //     for (int f = 0; f < cell_facets.num_nodes(); ++f)
-  //     {
-  //       std::span facet_vertices = cell_facets.links(f);
-  //       std::ranges::transform(facet_vertices, std::back_inserter(facets),
-  //                              [v](auto idx) { return v[idx]; });
-  //       std::sort(std::prev(facets.end(), facet_vertices.size()),
-  //       facets.end()); facets.insert(facets.end(),
-  //                     max_vertices_per_facet - facet_vertices.size(),
-  //                     padding_value);
-  //       facets.push_back(c + cell_offsets[j]);
-  //     }
-  //   }
-  // }
-
   // 3) Sort facets by vertex key
   common::Timer timer3("Compute local part of mesh dual graph: 3");
 
@@ -719,7 +685,9 @@ mesh::build_local_dual_graph(
         num_threads);
   }
   else
+  {
     perm = dolfinx::sort_by_perm(std::span<const std::int64_t>(facets), shape1);
+  }
 
   timer3.stop();
   timer3.flush();

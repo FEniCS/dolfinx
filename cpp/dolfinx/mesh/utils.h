@@ -253,8 +253,8 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
              const std::vector<std::vector<int>>& ghost_owners,
              std::vector<std::vector<std::int64_t>>& cells,
              std::vector<std::vector<std::int64_t>>& cells_v,
-             std::vector<std::vector<std::int64_t>>& original_idx)
-             -> std::vector<std::int64_t>
+             std::vector<std::vector<std::int64_t>>& original_idx,
+             int num_threads) -> std::vector<std::int64_t>
   {
     // Build local dual graph for owned cells to (i) get list of vertices
     // on the process boundary and (ii) apply re-ordering to cells for
@@ -279,7 +279,7 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
       auto [graph, unmatched_facets, max_v, _facet_attached_cells]
           = build_local_dual_graph(std::vector{celltypes[i]},
                                    std::vector{cells1_v_local.back()},
-                                   max_facet_to_cell_links, 0);
+                                   max_facet_to_cell_links, num_threads);
 
       // Store unmatched_facets for current cell type
       facets.emplace_back(std::move(unmatched_facets), max_v);
@@ -1158,7 +1158,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   auto boundary_v_fn
       = create_boundary_vertices_fn(reorder_fn, max_facet_to_cell_links);
   const std::vector<std::int64_t> boundary_v = boundary_v_fn(
-      celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1);
+      celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1, 0);
 
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 
