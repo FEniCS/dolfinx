@@ -171,7 +171,6 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
     {
       cell_vertices.resize(c_to_v->links(c).size());
       im->local_to_global(c_to_v->links(c), cell_vertices);
-
       auto cell_faces = c_to_f->links(c);
       for (std::size_t j = 0; j < cell_faces.size(); ++j)
       {
@@ -192,6 +191,7 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
         for (std::size_t k = 0; k < vertices.size(); ++k)
         {
           auto it = std::ranges::find(cell_vertices, vertices[k]);
+          assert(it != cell_vertices.end());
 
           // Get the actual local vertex indices
           e_vertices[k] = std::distance(cell_vertices.begin(), it);
@@ -218,8 +218,6 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
                                    ? compute_triangle_rot_reflect
                                    : compute_quad_rot_reflect;
 
-      // Launch threads for computing face permutations. The first thread is run
-      // in the main task.
       if (num_threads > 1)
       {
         std::vector<std::jthread> threads;
@@ -313,8 +311,10 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   }
   else
   {
-    process_thread({0, c_to_v->num_nodes()}, im, edge_perm, c_to_v, e_to_v,
-                   c_to_e, edges_per_cell);
+    std::array<std::int64_t, 2> range
+        = common::local_range(0, c_to_v->num_nodes(), num_threads);
+    process_thread(range, im, edge_perm, c_to_v, e_to_v, c_to_e,
+                   edges_per_cell);
   }
 
   return edge_perm;
