@@ -66,6 +66,7 @@ class Topology;
 ///    This data is used to correct the direction of vector function
 ///    on permuted facets.
 ///
+/// @param[in] topology Mesh topology.
 /// @param[in] num_threads Number of threads to use. Use 0 to not
 /// launch threads.
 /// @return Facet permutation and cells permutations
