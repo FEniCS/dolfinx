@@ -441,6 +441,7 @@ def model_to_mesh(
             x[:, :gdim].astype(dtype).copy(),
             partitioner,
             max_facet_to_cell_links,
+            0,
         )
         mesh = Mesh(cpp_mesh, None)
 
