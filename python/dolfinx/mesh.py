@@ -193,8 +193,13 @@ class Topology:
         """
         return self._cpp_object.create_entities(dim, num_threads)
 
-    def create_entity_permutations(self, num_threads: int = 1):
-        """Compute entity permutations and reflections."""
+    def create_entity_permutations(self, num_threads: int = 0):
+        """Compute entity permutations and reflections.
+
+        Args:
+            num_threads: Number of threads to use. If 0, threads
+                are not spawned.
+        """
         self._cpp_object.create_entity_permutations(num_threads)
 
     @property

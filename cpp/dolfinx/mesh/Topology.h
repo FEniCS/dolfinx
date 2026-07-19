@@ -65,7 +65,8 @@ public:
   /// in `cell_types`.
   /// @param[in] original_cell_index Original indices for each cell in
   /// `cells`.
-  /// @param[in] num_threads Number of threads to use for entity creation.
+  /// @param[in] num_threads Number of threads to use for entity
+  /// creation. Use 0 to not launch threads.
   Topology(
       std::vector<CellType> cell_types,
       std::shared_ptr<const common::IndexMap> vertex_map,
@@ -73,7 +74,7 @@ public:
       std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> cells,
       const std::optional<std::vector<std::vector<std::int64_t>>>&
           original_cell_index = std::nullopt,
-      int num_threads = 1);
+      int num_threads = 0);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -199,10 +200,11 @@ public:
   /// @brief Create entities of given topological dimension.
   ///
   /// @param[in] dim Topological dimension of entities to compute.
-  /// @param[in] num_threads Number of threads to use for entity creation.
+  /// @param[in] num_threads Number of threads to use for entity
+  /// creation. Use 0 to not launch threads.
   /// @return True if entities are created, false if entities already
   /// existed.
-  bool create_entities(int dim, int num_threads = 1);
+  bool create_entities(int dim, int num_threads = 0);
 
   /// @brief Create connectivity between given pair of dimensions, `d0
   /// -> d1`.
@@ -211,7 +213,9 @@ public:
   void create_connectivity(int d0, int d1);
 
   /// @brief Compute entity permutations and reflections.
-  void create_entity_permutations(int num_threads = 1);
+  /// @param[in] num_threads Number of threads to use. Use 0 to not
+  /// launch threads.
+  void create_entity_permutations(int num_threads = 0);
 
   /// Original cell index for each cell type
   std::vector<std::vector<std::int64_t>> original_cell_index;

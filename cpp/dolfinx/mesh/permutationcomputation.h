@@ -66,8 +66,10 @@ class Topology;
 ///    This data is used to correct the direction of vector function
 ///    on permuted facets.
 ///
+/// @param[in] num_threads Number of threads to use. Use 0 to not
+/// launch threads.
 /// @return Facet permutation and cells permutations
 std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
-compute_entity_permutations(const Topology& topology, int num_threads = 1);
+compute_entity_permutations(const Topology& topology, int num_threads = 0);
 
 } // namespace dolfinx::mesh

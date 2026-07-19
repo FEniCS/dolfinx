@@ -184,37 +184,39 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
 
     // C. Generate level structures rooted at vertices s in S selected
     // in order of increasing degree. Each candidate's level structure
-    // is independent of the others, so when num_threads > 1 they are
+    // is independent of the others, so when num_threads > 0 they are
     // computed concurrently. The decision of which candidate to use
     // is still made afterwards, sequentially, in the original order,
     // so the result is identical regardless of num_threads.
     std::vector<graph::AdjacencyList<int>> lstmps(S.size(),
                                                   graph::AdjacencyList<int>(0));
-    std::size_t nt = std::min(num_threads, S.size());
-    if (nt <= 1)
+    auto compute_lstmps = [&](std::size_t num_threads)
     {
-      for (std::size_t i = 0; i < S.size(); ++i)
-        lstmps[i] = create_level_structure(graph, S[i]);
-    }
-    else
-    {
-      std::vector<std::jthread> workers;
-      workers.reserve(nt);
-      std::size_t chunk = (S.size() + nt - 1) / nt;
-      for (std::size_t t = 0; t < nt; ++t)
+      if (num_threads == 0)
       {
-        std::size_t begin = t * chunk;
-        std::size_t end = std::min(S.size(), begin + chunk);
-        if (begin >= end)
-          break;
-        workers.emplace_back(
-            [&S, &lstmps, &graph, begin, end]()
-            {
-              for (std::size_t i = begin; i < end; ++i)
-                lstmps[i] = create_level_structure(graph, S[i]);
-            });
+        for (std::size_t i = 0; i < S.size(); ++i)
+          lstmps[i] = create_level_structure(graph, S[i]);
       }
-    }
+      else
+      {
+        std::vector<std::jthread> threads(num_threads);
+        std::size_t chunk = (S.size() + num_threads - 1) / num_threads;
+        for (std::size_t t = 0; t < num_threads; ++t)
+        {
+          std::size_t begin = t * chunk;
+          std::size_t end = std::min(S.size(), begin + chunk);
+          if (begin >= end)
+            break;
+          threads[t] = std::jthread(
+              [&S, &lstmps, &graph, begin, end]()
+              {
+                for (std::size_t i = begin; i < end; ++i)
+                  lstmps[i] = create_level_structure(graph, S[i]);
+              });
+        }
+      }
+    };
+    compute_lstmps(std::min(num_threads, S.size()));
 
     for (std::size_t i = 0; i < S.size(); ++i)
     {

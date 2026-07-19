@@ -149,7 +149,7 @@ void mesh(nb::module_& m)
                                                num_threads);
       },
       nb::arg("topology"), nb::arg("dim"), nb::arg("entity_type"),
-      nb::arg("num_threads") = 1);
+      nb::arg("num_threads") = 0);
   m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity,
         nb::arg("topology"), nb::arg("d0"), nb::arg("d1"));
 
@@ -217,10 +217,10 @@ void mesh(nb::module_& m)
           nb::arg("cell_type"), nb::arg("vertex_map"), nb::arg("cell_map"),
           nb::arg("cells"), nb::arg("original_index").none())
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
-           nb::arg("dim"), nb::arg("num_threads") = 1)
+           nb::arg("dim"), nb::arg("num_threads") = 0)
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations,
-           nb::arg("num_threads"))
+           nb::arg("num_threads") = 0)
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity,
            nb::arg("d0"), nb::arg("d1"))
       .def(

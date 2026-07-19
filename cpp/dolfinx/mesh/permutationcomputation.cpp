@@ -170,7 +170,7 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
       spdlog::debug("Using {} threads for face permutation computation",
                     num_threads);
 
-      auto process_thread = [&](int i)
+      auto process_thread = [&](int i, int num_threads)
       {
         std::vector<std::int64_t> cell_vertices, vertices;
         std::vector<std::int32_t> e_vertices;
@@ -216,12 +216,14 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
         }
       };
 
-      // Launch threads for computing face permutations. The first thread is run
-      // in the main task.
-      std::vector<std::jthread> threads;
-      for (int i = 1; i < num_threads; ++i)
-        threads.emplace_back(process_thread, i);
-      process_thread(0);
+      if (num_threads > 0)
+      {
+        std::vector<std::jthread> threads(num_threads);
+        for (int i = 0; i < num_threads; ++i)
+          threads[i] = std::jthread(process_thread, i, num_threads);
+      }
+      else
+        process_thread(0, 1);
     }
   }
 
@@ -252,7 +254,7 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
 
   std::vector<std::bitset<BITSETSIZE>> edge_perm(num_cells, 0);
 
-  auto process_thread = [&](int i)
+  auto process_thread = [&](int i, int num_threads)
   {
     std::vector<std::int64_t> cell_vertices, vertices;
     auto range
@@ -281,12 +283,14 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
     }
   };
 
-  // Launch threads for computing edge reflections. The first thread is run in
-  // the main task.
-  std::vector<std::jthread> threads;
-  for (int i = 1; i < num_threads; ++i)
-    threads.emplace_back(process_thread, i);
-  process_thread(0);
+  if (num_threads > 0)
+  {
+    std::vector<std::jthread> threads(num_threads);
+    for (int i = 0; i < num_threads; ++i)
+      threads[i] = std::jthread(process_thread, i, num_threads);
+  }
+  else
+    process_thread(0, 1);
 
   return edge_perm;
 }
