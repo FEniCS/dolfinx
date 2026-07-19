@@ -709,6 +709,7 @@ std::vector<std::int32_t> convert_to_local_indexing(
   };
 
   std::vector<std::int32_t> data(g.size());
+  assert(num_threads > 0);
   std::vector<std::jthread> threads;
   for (int i = 1; i < num_threads; ++i)
   {

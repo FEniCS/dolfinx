@@ -217,6 +217,7 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
       auto compute_refl_rots = (mesh_face_types[t] == mesh::CellType::triangle)
                                    ? compute_triangle_rot_reflect
                                    : compute_quad_rot_reflect;
+      assert(num_threads > 0);
       std::vector<std::jthread> threads;
       for (int i : std::ranges::iota_view(1, num_threads))
       {
@@ -292,6 +293,7 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   // the main task.
 
   std::vector<std::jthread> threads;
+  assert(num_threads > 0);
   for (int i : std::ranges::iota_view(1, num_threads))
   {
     std::array<std::int64_t, 2> range
@@ -334,6 +336,8 @@ mesh::compute_entity_permutations(const mesh::Topology& topology,
                                   int num_threads)
 {
   common::Timer t_perm("Compute entity permutations");
+  assert(num_threads > 0);
+
   const int tdim = topology.dim();
   CellType cell_type = topology.cell_type();
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();

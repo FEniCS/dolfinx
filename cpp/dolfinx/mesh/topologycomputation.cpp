@@ -615,6 +615,7 @@ compute_entities_by_key_matching(
     int num_entities_per_cell = cell_type_entities[k].size();
     std::size_t num_cells = cells.size() / num_cell_vertices(cell_type);
 
+    assert(num_threads > 0);
     std::vector<std::jthread> threads;
     for (int i = 1; i < num_threads; ++i)
     {

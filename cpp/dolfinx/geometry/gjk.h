@@ -520,6 +520,7 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
                       std::span<const T> q, size_t num_threads)
 {
   size_t total_size = bodies.size();
+  assert(num_threads > 0);
   num_threads = std::min(num_threads, total_size);
 
   std::vector<T> results(total_size * 3);
@@ -536,6 +537,7 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
     }
   };
 
+  assert(num_threads > 0);
   std::vector<std::jthread> threads;
   for (size_t i = 1; i < num_threads; ++i)
   {
