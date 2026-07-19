@@ -1257,6 +1257,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// rank for each cell. If not callable, cells are not redistributed.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet can be connected to.
+/// @param[in] num_threads Number threads to use in mesh construction. If 0, no
+/// threads are launched.
 /// @param[in] reorder_fn Function that reorders (locally) cells that
 /// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
