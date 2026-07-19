@@ -217,25 +217,18 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
       auto compute_refl_rots = (mesh_face_types[t] == mesh::CellType::triangle)
                                    ? compute_triangle_rot_reflect
                                    : compute_quad_rot_reflect;
-
-      if (num_threads > 1)
+      std::vector<std::jthread> threads;
+      for (int i : std::ranges::iota_view(1, num_threads))
       {
-        std::vector<std::jthread> threads;
-        for (int i : std::ranges::iota_view(1, num_threads))
-        {
-          std::array range = common::local_range(i, num_cells, num_threads);
-          threads.emplace_back(process_thread, range, im, std::ref(face_perm),
-                               std::cref(face_type_indices[t]), c_to_v,
-                               f_to_v[t], c_to_f[t], compute_refl_rots);
-        }
+        std::array range = common::local_range(i, num_cells, num_threads);
+        threads.emplace_back(process_thread, range, im, std::ref(face_perm),
+                             std::cref(face_type_indices[t]), c_to_v, f_to_v[t],
+                             c_to_f[t], compute_refl_rots);
       }
-      else
-      {
-        std::array range = common::local_range(0, num_cells, num_threads);
-        process_thread(range, im, std::ref(face_perm),
-                       std::cref(face_type_indices[t]), c_to_v, f_to_v[t],
-                       c_to_f[t], compute_refl_rots);
-      }
+      std::array range = common::local_range(0, num_cells, num_threads);
+      process_thread(range, im, std::ref(face_perm),
+                     std::cref(face_type_indices[t]), c_to_v, f_to_v[t],
+                     c_to_f[t], compute_refl_rots);
     }
   }
 
@@ -298,24 +291,17 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   // Launch threads for computing edge reflections. The first thread is run in
   // the main task.
 
-  if (num_threads > 1)
-  {
-    std::vector<std::jthread> threads;
-    for (int i : std::ranges::iota_view(1, num_threads))
-    {
-      std::array<std::int64_t, 2> range
-          = common::local_range(i, c_to_v->num_nodes(), num_threads);
-      threads.emplace_back(process_thread, range, im, edge_perm, c_to_v, e_to_v,
-                           c_to_e, edges_per_cell);
-    }
-  }
-  else
+  std::vector<std::jthread> threads;
+  for (int i : std::ranges::iota_view(1, num_threads))
   {
     std::array<std::int64_t, 2> range
-        = common::local_range(0, c_to_v->num_nodes(), num_threads);
-    process_thread(range, im, edge_perm, c_to_v, e_to_v, c_to_e,
-                   edges_per_cell);
+        = common::local_range(i, c_to_v->num_nodes(), num_threads);
+    threads.emplace_back(process_thread, range, im, edge_perm, c_to_v, e_to_v,
+                         c_to_e, edges_per_cell);
   }
+  std::array<std::int64_t, 2> range
+      = common::local_range(0, c_to_v->num_nodes(), num_threads);
+  process_thread(range, im, edge_perm, c_to_v, e_to_v, c_to_e, edges_per_cell);
 
   return edge_perm;
 }

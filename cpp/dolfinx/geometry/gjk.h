@@ -536,20 +536,14 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
     }
   };
 
-  if (num_threads > 1)
+  std::vector<std::jthread> threads;
+  for (size_t i = 1; i < num_threads; ++i)
   {
-    std::vector<std::jthread> threads;
-    for (size_t i = 1; i < num_threads; ++i)
-    {
-      auto [c0, c1] = common::local_range(i, total_size, num_threads);
-      threads.emplace_back(compute_chunk, c0, c1, q);
-    }
+    auto [c0, c1] = common::local_range(i, total_size, num_threads);
+    threads.emplace_back(compute_chunk, c0, c1, q);
   }
-  else
-  {
-    auto [c0, c1] = common::local_range(0, total_size, num_threads);
-    compute_chunk(c0, c1, q);
-  }
+  auto [c0, c1] = common::local_range(0, total_size, num_threads);
+  compute_chunk(c0, c1, q);
 
   return results;
 }

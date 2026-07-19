@@ -614,29 +614,11 @@ compute_entities_by_key_matching(
     std::span<const std::int32_t> cells = std::get<1>(cell_lists[k]);
     int num_entities_per_cell = cell_type_entities[k].size();
     std::size_t num_cells = cells.size() / num_cell_vertices(cell_type);
-    if (num_threads > 1)
+
+    std::vector<std::jthread> threads;
+    for (int i = 1; i < num_threads; ++i)
     {
-      std::vector<std::jthread> threads;
-      for (int i = 1; i < num_threads; ++i)
-      {
-        auto [c0, c1] = common::local_range(i, num_cells, num_threads);
-        std::size_t offset
-            = cell_type_offsets[k] * num_vertices_per_entity
-              + c0 * num_vertices_per_entity * num_entities_per_cell;
-        std::size_t count
-            = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
-        auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
-                                     (c1 - c0) * num_vertices_per_cell);
-        threads.emplace_back(
-            build_entity_list, std::span(entity_list.data() + offset, count),
-            std::span(entity_list_sorted.data() + offset, count), cells_i,
-            num_vertices_per_cell, std::cref(e_vertices), entity_type,
-            std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
-      }
-    }
-    else
-    {
-      auto [c0, c1] = common::local_range(0, num_cells, num_threads);
+      auto [c0, c1] = common::local_range(i, num_cells, num_threads);
       std::size_t offset
           = cell_type_offsets[k] * num_vertices_per_entity
             + c0 * num_vertices_per_entity * num_entities_per_cell;
@@ -644,12 +626,24 @@ compute_entities_by_key_matching(
           = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
       auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
                                    (c1 - c0) * num_vertices_per_cell);
-      build_entity_list(std::span(entity_list.data() + offset, count),
-                        std::span(entity_list_sorted.data() + offset, count),
-                        cells_i, num_vertices_per_cell, std::cref(e_vertices),
-                        entity_type, std::cref(cell_type_entities[k]),
-                        std::cref(vertex_index_map));
+      threads.emplace_back(
+          build_entity_list, std::span(entity_list.data() + offset, count),
+          std::span(entity_list_sorted.data() + offset, count), cells_i,
+          num_vertices_per_cell, std::cref(e_vertices), entity_type,
+          std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
     }
+    auto [c0, c1] = common::local_range(0, num_cells, num_threads);
+    std::size_t offset = cell_type_offsets[k] * num_vertices_per_entity
+                         + c0 * num_vertices_per_entity * num_entities_per_cell;
+    std::size_t count
+        = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
+    auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
+                                 (c1 - c0) * num_vertices_per_cell);
+    build_entity_list(std::span(entity_list.data() + offset, count),
+                      std::span(entity_list_sorted.data() + offset, count),
+                      cells_i, num_vertices_per_cell, std::cref(e_vertices),
+                      entity_type, std::cref(cell_type_entities[k]),
+                      std::cref(vertex_index_map));
   }
 
   // Start numbering entities

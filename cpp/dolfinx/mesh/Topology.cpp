@@ -709,22 +709,16 @@ std::vector<std::int32_t> convert_to_local_indexing(
   };
 
   std::vector<std::int32_t> data(g.size());
-  if (num_threads > 1)
+  std::vector<std::jthread> threads;
+  for (int i = 1; i < num_threads; ++i)
   {
-    std::vector<std::jthread> threads;
-    for (int i = 1; i < num_threads; ++i)
-    {
-      auto [c0, c1] = common::local_range(i, g.size(), num_threads);
-      threads.emplace_back(transform, std::span(data.data() + c0, c1 - c0),
-                           g.subspan(c0, c1 - c0), global_to_local);
-    }
+    auto [c0, c1] = common::local_range(i, g.size(), num_threads);
+    threads.emplace_back(transform, std::span(data.data() + c0, c1 - c0),
+                         g.subspan(c0, c1 - c0), global_to_local);
   }
-  else
-  {
-    auto [c0, c1] = common::local_range(0, g.size(), num_threads);
-    transform(std::span(data.data() + c0, c1 - c0), g.subspan(c0, c1 - c0),
-              global_to_local);
-  }
+  auto [c0, c1] = common::local_range(0, g.size(), num_threads);
+  transform(std::span(data.data() + c0, c1 - c0), g.subspan(c0, c1 - c0),
+            global_to_local);
 
   return data;
 }
