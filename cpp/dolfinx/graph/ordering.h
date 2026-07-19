@@ -56,7 +56,7 @@ namespace dolfinx::graph
 /// `std::numeric_limits<std::size_t>::max()` for the original,
 /// exhaustive algorithm (see above).
 /// @param[in] num_threads Number of threads to use for the
-/// pseudo-diameter candidate search. `1` runs serially.
+/// pseudo-diameter candidate search.
 /// @return Reordering array `map`, where `map[i]` is the new index of
 /// node `i`.
 std::vector<std::int32_t>

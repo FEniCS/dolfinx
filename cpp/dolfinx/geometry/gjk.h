@@ -506,7 +506,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
 /// Row-major storage.
 /// @param[in] q Body 2 list of points, `shape=(num_points, 3)`. Row-major
 /// storage.
-/// @param[in] num_threads Thread count.
+/// @param[in] num_threads Number of threads to use.
 ///
 /// @tparam T Floating point type
 /// @tparam U Floating point type used for geometry computations internally,
@@ -536,18 +536,19 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
     }
   };
 
-  if (num_threads > 0)
+  if (num_threads > 1)
   {
-    std::vector<std::jthread> threads(num_threads);
-    for (size_t i = 0; i < num_threads; ++i)
+    std::vector<std::jthread> threads;
+    for (size_t i = 1; i < num_threads; ++i)
     {
-      auto [c0, c1] = dolfinx::common::local_range(i, total_size, num_threads);
-      threads[i] = std::jthread(compute_chunk, c0, c1, q);
+      auto [c0, c1] = common::local_range(i, total_size, num_threads);
+      threads.emplace_back(compute_chunk, c0, c1, q);
     }
   }
   else
   {
-    compute_chunk(0, total_size, q);
+    auto [c0, c1] = common::local_range(0, total_size, num_threads);
+    compute_chunk(c0, c1, q);
   }
 
   return results;
