@@ -409,6 +409,8 @@ public:
   /// @param[in] type Integral type.
   /// @param[in] id Integral index in the flattened list of integral
   /// kernels (see ::domain).
+  /// @return Indices of the coefficients that are active (present) in
+  /// the given integral.
   std::vector<int> active_coeffs(IntegralType type, int id) const
   {
     auto it = std::ranges::find_if(_integrals,
@@ -436,6 +438,8 @@ public:
   /// @param[in] type Integral type.
   /// @param[in] kernel_idx Index of the kernel (we may have multiple
   /// kernels for a integral type in mixed-topology meshes).
+  /// @return Number of integrals (kernels) of the given type and kernel
+  /// index.
   int num_integrals(IntegralType type, int kernel_idx) const
   {
 
@@ -562,6 +566,7 @@ public:
   }
 
   /// @brief Access coefficients.
+  /// @return Coefficients in the form.
   const std::vector<
       std::shared_ptr<const Function<scalar_type, geometry_type>>>&
   coefficients() const
@@ -578,6 +583,8 @@ public:
   ///
   /// Used to pack data for multiple coefficients in a flat array. The
   /// last entry is the size required to store all coefficients.
+  ///
+  /// @return Coefficient offsets.
   std::vector<int> coefficient_offsets() const
   {
     std::vector<int> n{0};
@@ -591,6 +598,7 @@ public:
   }
 
   /// @brief Access constants.
+  /// @return Constants in the form.
   const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
   constants() const
   {
