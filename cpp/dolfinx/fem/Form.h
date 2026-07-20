@@ -457,29 +457,32 @@ public:
   ///
   /// - For IntegralType::cell, returns a list of cell indices.
   /// - For IntegralType::exterior_facet, returns a list with shape
-  /// `(num_facets, 2)`, where `[cell_index, 0]` is the cell index and
-  /// `[cell_index, 1]` is the local facet index relative to the cell.
-  /// - For IntegralType::interior_facet the shape is `(num_facets, 4)`,
-  /// where `[cell_index, 0]` is one attached cell and `[cell_index, 1]`
-  /// is the is the local facet index relative to the cell, and
-  /// `[cell_index, 2]` is the other one attached cell and `[cell_index, 1]`
-  /// is the is the local facet index relative to this cell. Storage
-  /// is row-major.
+  /// `(num_facets, 2)` (row-major storage), where for row `i`, `[i, 0]`
+  /// is the cell index and `[i, 1]` is the local facet index relative
+  /// to the cell.
+  /// - For IntegralType::interior_facet, returns a list with shape
+  /// `(num_facets, 4)` (row-major storage), where for row `i`, `[i, 0]`
+  /// is the index of one attached cell, `[i, 1]` is the local facet
+  /// index relative to that cell, `[i, 2]` is the index of the other
+  /// attached cell, and `[i, 3]` is the local facet index relative to
+  /// that cell.
   ///
   /// @param[in] type Integral type.
-  /// @param[in] idx Integral index in flattened list of integral kernels.
-  /// For a form containing two integrals of `integral_a` and `integral_b`
-  /// with subdomain-ids `(1, 4)` and `(3, 4, 5)` respectively, the integrals
-  /// are stored as a flattened list, sorted by sudomain-ids
+  /// @param[in] idx Integral index in the flattened list of integral
+  /// kernels. For a form containing two integrals `integral_a` and
+  /// `integral_b` with subdomain ids `(1, 4)` and `(3, 4, 5)`
+  /// respectively, the integrals are stored as a flattened list,
+  /// sorted by subdomain id:
   /// ```cpp
-  /// auto form_integrals = {integral_a, integral_b, integral_a, integral_b,
-  /// integral_b}; auto form_integral_ids = {1, 3, 4, 4, 5}.
+  /// auto form_integrals = {integral_a, integral_b, integral_a,
+  ///                        integral_b, integral_b};
+  /// auto form_integral_ids = {1, 3, 4, 4, 5};
   /// ```
-  /// @param[in] kernel_idx Index of the kernel with in the domain (we
-  /// may have multiple kernels for a given ID in mixed-topology
+  /// @param[in] kernel_idx Index of the kernel within the domain (we
+  /// may have multiple kernels for a given id in mixed-topology
   /// meshes).
-  /// @return Entity indices in the mesh::Mesh returned by mesh() to
-  /// integrate over.
+  /// @return Entity indices, with respect to the mesh::Mesh returned by
+  /// ::mesh, to integrate over.
   std::span<const std::int32_t> domain(IntegralType type, int idx,
                                        int kernel_idx) const
   {
