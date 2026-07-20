@@ -792,7 +792,7 @@ def create_mesh(
     x: npt.NDArray[np.floating],
     partitioner: Callable | None = None,
     max_facet_to_cell_links: int = 2,
-    num_threads: int = 0,
+    num_threads: int = 1,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -808,8 +808,8 @@ def create_mesh(
             cells across MPI ranks.
         max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
-        num_threads: Number of threads to use tp build mesh. Set to 0 to
-            not spawn threads.
+        num_threads: Number of threads to use tp build mesh. Must be
+            greater than 0.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
