@@ -179,13 +179,12 @@ class Topology:
         """
         self._cpp_object.create_connectivity(d0, d1)
 
-    def create_entities(self, dim: int, num_threads: int = 0) -> bool:
+    def create_entities(self, dim: int, num_threads: int = 1) -> bool:
         """Create entities of given topological dimension.
 
         Args:
             dim: Topological dimension of entities to create.
-            num_threads: Number of CPU threads to use when creating. If
-                0, threads are not spawned.
+            num_threads: Number of CPU threads to use. Must be >= 1.
 
         Returns:
             ``True` is entities are created, ``False`` is if entities
@@ -194,7 +193,11 @@ class Topology:
         return self._cpp_object.create_entities(dim, num_threads)
 
     def create_entity_permutations(self, num_threads: int = 1):
-        """Compute entity permutations and reflections."""
+        """Compute entity permutations and reflections.
+
+        Args:
+            num_threads: Number of CPU threads to use. Must be >= 1.
+        """
         self._cpp_object.create_entity_permutations(num_threads)
 
     @property

@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.14'
 
@@ -87,7 +87,7 @@ jobs:
              libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev \
              libspdlog-dev libsuperlu-dist-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 

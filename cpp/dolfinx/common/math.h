@@ -11,6 +11,7 @@
 #include <array>
 #include <basix/mdspan.hpp>
 #include <cmath>
+#include <format>
 #include <string>
 #include <type_traits>
 
@@ -73,9 +74,9 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
     return w4;
   }
   default:
-    throw std::runtime_error("math::det is not implemented for "
-                             + std::to_string(A[0]) + "x" + std::to_string(A[1])
-                             + " matrices.");
+    throw std::runtime_error(
+        std::format("math::det is not implemented for {}x{} matrices.",
+                    shape[0], shape[1]));
   }
 }
 
@@ -109,9 +110,9 @@ auto det(Matrix A)
     return w4;
   }
   default:
-    throw std::runtime_error("math::det is not implemented for "
-                             + std::to_string(A.extent(0)) + "x"
-                             + std::to_string(A.extent(1)) + " matrices.");
+    throw std::runtime_error(
+        std::format("math::det is not implemented for {}x{} matrices.",
+                    A.extent(0), A.extent(1)));
   }
 }
 
@@ -165,9 +166,9 @@ void inv(U A, V B)
     break;
   }
   default:
-    throw std::runtime_error("math::inv is not implemented for "
-                             + std::to_string(A.extent(0)) + "x"
-                             + std::to_string(A.extent(1)) + " matrices.");
+    throw std::runtime_error(
+        std::format("math::inv is not implemented for {}x{} matrices.",
+                    A.extent(0), A.extent(1)));
   }
 }
 
@@ -253,9 +254,9 @@ void pinv(U A, V P)
   }
   else
   {
-    throw std::runtime_error("math::pinv is not implemented for "
-                             + std::to_string(A.extent(0)) + "x"
-                             + std::to_string(A.extent(1)) + " matrices.");
+    throw std::runtime_error(
+        std::format("math::pinv is not implemented for {}x{} matrices.",
+                    A.extent(0), A.extent(1)));
   }
 }
 

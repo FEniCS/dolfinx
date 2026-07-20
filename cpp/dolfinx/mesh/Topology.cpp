@@ -709,18 +709,17 @@ std::vector<std::int32_t> convert_to_local_indexing(
   };
 
   std::vector<std::int32_t> data(g.size());
-  if (num_threads > 0)
+  assert(num_threads > 0);
+  std::vector<std::jthread> threads;
+  for (int i = 1; i < num_threads; ++i)
   {
-    std::vector<std::jthread> threads(num_threads);
-    for (int i = 0; i < num_threads; ++i)
-    {
-      auto [c0, c1] = dolfinx::common::local_range(i, g.size(), num_threads);
-      threads[i] = std::jthread(transform, std::span(data.data() + c0, c1 - c0),
-                                g.subspan(c0, c1 - c0), global_to_local);
-    }
+    auto [c0, c1] = common::local_range(i, g.size(), num_threads);
+    threads.emplace_back(transform, std::span(data.data() + c0, c1 - c0),
+                         g.subspan(c0, c1 - c0), global_to_local);
   }
-  else
-    transform(data, g, global_to_local);
+  auto [c0, c1] = common::local_range(0, g.size(), num_threads);
+  transform(std::span(data.data() + c0, c1 - c0), g.subspan(c0, c1 - c0),
+            global_to_local);
 
   return data;
 }
@@ -1055,6 +1054,9 @@ Topology mesh::create_topology(
     std::vector<std::span<const int>> ghost_owners,
     std::span<const std::int64_t> boundary_vertices, int num_threads)
 {
+  if (num_threads < 1)
+    throw std::runtime_error("num_threads must be >= 1.");
+
   common::Timer timer("Topology: create");
 
   assert(cell_types.size() == cells.size());
@@ -1073,10 +1075,10 @@ Topology mesh::create_topology(
     int num_vertices = mesh::num_cell_vertices(cell_types[i]);
     if (cells[i].size() % num_vertices != 0)
     {
-      throw std::runtime_error("Inconsistent number of cell vertices. Got "
-                               + std::to_string(cells[i].size())
-                               + ", expected multiple of "
-                               + std::to_string(num_vertices) + ".");
+      throw std::runtime_error(
+          std::format("Inconsistent number of cell vertices. Got {}, expected "
+                      "multiple of {}.",
+                      cells[i].size(), num_vertices));
     }
     num_local_cells[i] = cells[i].size() / num_vertices;
     num_local_cells[i] -= ghost_owners[i].size();
@@ -1457,8 +1459,8 @@ mesh::entities_to_index(const Topology& topology, int dim,
   auto map_e = topology.index_map(dim);
   if (!map_e)
   {
-    throw std::runtime_error("Mesh entities of dimension " + std::to_string(dim)
-                             + "have not been created.");
+    throw std::runtime_error(std::format(
+        "Mesh entities of dimension {} have not been created.", dim));
   }
 
   auto e_to_v = topology.connectivity(dim, 0);

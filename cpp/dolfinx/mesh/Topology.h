@@ -65,7 +65,7 @@ public:
   /// in `cell_types`.
   /// @param[in] original_cell_index Original indices for each cell in
   /// `cells`.
-  /// @param[in] num_threads Number of threads to use for entity creation.
+  /// @param[in] num_threads Number of threads to use. Must be >= 1.
   Topology(
       std::vector<CellType> cell_types,
       std::shared_ptr<const common::IndexMap> vertex_map,
@@ -199,7 +199,7 @@ public:
   /// @brief Create entities of given topological dimension.
   ///
   /// @param[in] dim Topological dimension of entities to compute.
-  /// @param[in] num_threads Number of threads to use for entity creation.
+  /// @param[in] num_threads Number of threads to use. Must be >= 1.
   /// @return True if entities are created, false if entities already
   /// existed.
   bool create_entities(int dim, int num_threads = 1);
@@ -211,6 +211,7 @@ public:
   void create_connectivity(int d0, int d1);
 
   /// @brief Compute entity permutations and reflections.
+  /// @param[in] num_threads Number of threads to use. Must be >= 1.
   void create_entity_permutations(int num_threads = 1);
 
   /// Original cell index for each cell type
@@ -283,8 +284,7 @@ private:
 /// @param[in] boundary_vertices Vertices on the 'exterior' (boundary)
 /// of the local topology. These vertices might appear on other
 /// processes.
-/// @param[in] num_threads Number of threads to use. Use 0 to not launch
-/// threads.
+/// @param[in] num_threads Number of threads to use. Must be >= 1.
 /// @return A distributed mesh topology.
 Topology
 create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
@@ -316,8 +316,7 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
 /// @param[in] boundary_vertices Vertices on the 'exterior' (boundary)
 /// of the local topology. These vertices might appear on other
 /// processes.
-/// @param[in] num_threads Number of threads to use. Use 0 to not launch
-/// threads.
+/// @param[in] num_threads Number of threads to use. Must be >= 1.
 /// @return A distributed mesh topology.
 Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const std::int64_t> original_cell_index,
