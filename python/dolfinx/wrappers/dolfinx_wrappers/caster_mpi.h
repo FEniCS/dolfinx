@@ -42,21 +42,20 @@ public:
   static handle from_cpp(const dolfinx_wrappers::MPICommWrapper& src,
                          rv_policy policy, cleanup_list* /*cleanup*/) noexcept
   {
-    if (policy == rv_policy::automatic
-        or policy == rv_policy::automatic_reference
-        or policy == rv_policy::reference_internal)
-    {
-      if (!PyMPIComm_New)
-      {
-        if (import_mpi4py() != 0)
-          return {};
-      }
-
-      PyObject* c = PyMPIComm_New(src.get());
-      return nanobind::handle(c);
-    }
-    else
+    // MPICommWrapper always wraps a plain communicator handle by
+    // value, so every policy other than `none` (which must not
+    // create a new object) behaves identically here.
+    if (policy == rv_policy::none)
       return {};
+
+    if (!PyMPIComm_New)
+    {
+      if (import_mpi4py() != 0)
+        return {};
+    }
+
+    PyObject* c = PyMPIComm_New(src.get());
+    return nanobind::handle(c);
   }
 
   operator dolfinx_wrappers::MPICommWrapper() { return this->value; }

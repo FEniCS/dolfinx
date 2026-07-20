@@ -9,6 +9,7 @@
 #include "Topology.h"
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <format>
 #include <ranges>
 #include <span>
 #include <vector>
@@ -45,9 +46,9 @@ public:
     auto e_imap = sub_topology->index_map(_dim);
     if (!e_imap)
     {
-      throw std::runtime_error(
-          "No index map for entities, call `Topology::create_entities("
-          + std::to_string(_dim) + ")");
+      throw std::runtime_error(std::format(
+          "No index map for entities, call `Topology::create_entities({})",
+          _dim));
     }
 
     std::size_t num_ents = e_imap->size_local() + e_imap->num_ghosts();
