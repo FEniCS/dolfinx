@@ -33,8 +33,8 @@ enum class CellType : std::int8_t;
 /// Passing std::nullopt (no upper bound) corresponds.
 /// to `max_facet_to_cell_links`=∞, i.e. every facet is considered
 /// unmatched.
-/// @param[in] num_threads Number of threads to use. Use 0 to not launch
-/// threads.
+/// @param[in] num_threads Number of threads to use. Must be greater
+/// than 0.
 ///
 /// @return
 /// 1. Local dual graph
@@ -86,8 +86,8 @@ build_local_dual_graph(std::span<const CellType> celltypes,
 /// manifold meshes. Passing std::nullopt (no upper bound) corresponds
 /// to `max_facet_to_cell_links`=∞, i.e. every facet is considered
 /// unmatched.
-/// @param[in] num_threads Number of threads to use. Use 0 to not launch
-/// threads.
+/// @param[in] num_threads Number of threads to use. Must be greater
+/// than 0.
 ///
 /// @return The dual graph.
 ///
