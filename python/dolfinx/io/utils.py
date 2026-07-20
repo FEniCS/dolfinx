@@ -214,7 +214,6 @@ class XDMFFile(_cpp.io.XDMFFile):
         # Get coordinate element, special handling for second order
         # serendipity.
         num_nodes_per_cell = cells.shape[1]
-        basix_el: basix.ufl._ElementBase
         if (cell_shape == CellType.quadrilateral and num_nodes_per_cell == 8) or (
             cell_shape == CellType.hexahedron and num_nodes_per_cell == 20
         ):
@@ -255,7 +254,7 @@ class XDMFFile(_cpp.io.XDMFFile):
                 s_el.dtype,
             )
             cmap = _cpp.fem.CoordinateElement_float64(el.basix_element._e)
-            basix_el = basix.ufl.blocked_element(el, shape=(x.shape[1],))
+            basix_el: basix.ufl._ElementBase = basix.ufl.blocked_element(el, shape=(x.shape[1],))
         else:
             basix_el = basix.ufl.element(
                 "Lagrange",
