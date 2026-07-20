@@ -9,6 +9,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <map>
 #include <pugixml.hpp>
 #include <vector>
@@ -69,9 +70,8 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   const std::string dataitem_str = "DataItem";
   if (dataitem_node.name() != dataitem_str)
   {
-    throw std::runtime_error("Node name is \""
-                             + std::string(dataitem_node.name())
-                             + R"(", expecting "DataItem")");
+    throw std::runtime_error(std::format(
+        "Node name is \"{}\", expecting \"DataItem\"", dataitem_node.name()));
   }
 
   // Check that format is HDF
@@ -80,8 +80,8 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   const std::string format = format_attr.as_string();
   if (format.compare("HDF") != 0)
   {
-    throw std::runtime_error("DataItem format \"" + format
-                             + R"(" is not "HDF")");
+    throw std::runtime_error(
+        std::format("DataItem format \"{}\" is not \"HDF\"", format));
   }
 
   // Get path data
