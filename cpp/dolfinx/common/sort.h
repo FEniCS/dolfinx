@@ -103,9 +103,18 @@ constexpr void radix_sort(R&& range, P proj = {})
   uI mask = (uI(1) << _BITS) - 1;
   constexpr uI top_bit = uI(1) << (sizeof(uI) * 8 - 1);
 
-  // Single pass computing the maximum projected value and whether all
-  // elements share the top bit, in which case it carries no ordering
-  // information and can be dropped, reducing the iteration count
+  // Adjacency list arrays for computing insertion position. counter is
+  // pre-filled below with the first pass's histogram (bucketing on the
+  // low BITS bits, which is always the correct pass-0 bucket regardless
+  // of the top-bit special case), so that pass can skip a second full
+  // traversal to build it.
+  std::array<I, bucket_size> counter{};
+  std::array<I, bucket_size> offset;
+
+  // Single pass computing the maximum projected value, whether all
+  // elements share the top bit (in which case it carries no ordering
+  // information and can be dropped, reducing the iteration count), and
+  // the first pass's histogram
   uI max_value = 0;
   bool all_first_bit = true;
   for (const auto& e : range)
@@ -113,6 +122,7 @@ constexpr void radix_sort(R&& range, P proj = {})
     uI v = proj(e);
     max_value = std::max(max_value, v);
     all_first_bit = all_first_bit && (v & top_bit);
+    counter[v & mask]++;
   }
 
   if (all_first_bit)
@@ -127,22 +137,21 @@ constexpr void radix_sort(R&& range, P proj = {})
     its++;
   }
 
-  // Adjacency list arrays for computing insertion position
-  std::array<I, bucket_size> counter;
-  std::array<I, bucket_size> offset;
-
   uI mask_offset = 0;
   std::vector<T> buffer(range.size());
   std::span<T> current_perm = range;
   std::span<T> next_perm = buffer;
   for (I i = 0; i < its; i++)
   {
-    // Zero counter array
-    std::ranges::fill(counter, 0);
+    if (i > 0)
+    {
+      // Zero counter array
+      std::ranges::fill(counter, 0);
 
-    // Count number of elements per bucket
-    for (auto c : current_perm)
-      counter[(proj(c) & mask) >> mask_offset]++;
+      // Count number of elements per bucket
+      for (auto c : current_perm)
+        counter[(proj(c) & mask) >> mask_offset]++;
+    }
 
     // Exclusive prefix sum, used directly as the insertion cursor for
     // each bucket
