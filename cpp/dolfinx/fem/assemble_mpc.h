@@ -200,9 +200,9 @@ void assemble_matrix_mpc(
         = build_dof_map(cols, mpc_col);
 
     // Apply the row and column maps directly to the element matrix in a
-    // single pass, i.e. A1 = Pr^T * vals * Pc, without materialising the
+    // single pass, i.e. Ae = Pr^T * vals * Pc, without materialising the
     // column-remapped intermediate (A0) matrix.
-    std::vector<T> A1(dofs0_row.size() * bs_row * dofs0_col.size() * bs_col,
+    std::vector<T> Ae(dofs0_row.size() * bs_row * dofs0_col.size() * bs_col,
                       T(0));
     std::size_t ncols_full = bs_col * cols.size();
     for (std::size_t r = 0; r < bs_row * rows.size(); ++r)
@@ -215,7 +215,7 @@ void assemble_matrix_mpc(
         {
           T val = cr * vals[r * ncols_full + c];
           for (std::int32_t q = col_off[c]; q < col_off[c + 1]; ++q)
-            A1[tr * dofs0_col.size() * bs_col + col_tgt[q]]
+            Ae[tr * dofs0_col.size() * bs_col + col_tgt[q]]
                 += val * col_coeff[q];
         }
       }
@@ -238,11 +238,11 @@ void assemble_matrix_mpc(
         for (int k = 0; k < bs_col; ++k)
           dofs1_col.push_back(d * bs_col + k);
 
-      debug_matrix("mat_add_mpc: A1", dofs1_row, dofs1_col, A1);
+      debug_matrix("mat_add_mpc: Ae", dofs1_row, dofs1_col, Ae);
     }
 
     // Revise rows, cols and vals for MPC
-    mat_add(dofs0_row, dofs0_col, std::span<T>(A1.data(), A1.size()));
+    mat_add(dofs0_row, dofs0_col, std::span<T>(Ae.data(), Ae.size()));
   };
 
   // Prepare constants and coefficients
