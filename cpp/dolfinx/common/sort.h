@@ -98,26 +98,29 @@ constexpr void radix_sort(R&& range, P proj = {})
   if (range.size() <= 1)
     return;
 
-  uI max_value = proj(*std::ranges::max_element(range, std::less{}, proj));
-
   // Sort N bits at a time
   constexpr uI bucket_size = 1 << _BITS;
   uI mask = (uI(1) << _BITS) - 1;
+  constexpr uI top_bit = uI(1) << (sizeof(uI) * 8 - 1);
+
+  // Single pass computing the maximum projected value and whether all
+  // elements share the top bit, in which case it carries no ordering
+  // information and can be dropped, reducing the iteration count
+  uI max_value = 0;
+  bool all_first_bit = true;
+  for (const auto& e : range)
+  {
+    uI v = proj(e);
+    max_value = std::max(max_value, v);
+    all_first_bit = all_first_bit && (v & top_bit);
+  }
+
+  if (all_first_bit)
+    max_value = max_value & ~top_bit;
 
   // Compute number of iterations, most significant digit (N bits) of
   // maxvalue
   I its = 0;
-
-  // Optimize for case where all first bits are set - then order will
-  // not depend on it
-  if (bool all_first_bit = std::ranges::all_of(
-          range, [&proj](const auto& e)
-          { return proj(e) & (uI(1) << (sizeof(uI) * 8 - 1)); });
-      all_first_bit)
-  {
-    max_value = max_value & ~(uI(1) << (sizeof(uI) * 8 - 1));
-  }
-
   while (max_value)
   {
     max_value >>= _BITS;
@@ -126,7 +129,7 @@ constexpr void radix_sort(R&& range, P proj = {})
 
   // Adjacency list arrays for computing insertion position
   std::array<I, bucket_size> counter;
-  std::array<I, bucket_size + 1> offset;
+  std::array<I, bucket_size> offset;
 
   uI mask_offset = 0;
   std::vector<T> buffer(range.size());
@@ -141,15 +144,13 @@ constexpr void radix_sort(R&& range, P proj = {})
     for (auto c : current_perm)
       counter[(proj(c) & mask) >> mask_offset]++;
 
-    // Prefix sum to get the inserting position
-    offset[0] = 0;
-    std::partial_sum(counter.begin(), counter.end(), std::next(offset.begin()));
+    // Exclusive prefix sum, used directly as the insertion cursor for
+    // each bucket
+    std::exclusive_scan(counter.begin(), counter.end(), offset.begin(), I(0));
     for (auto c : current_perm)
     {
       uI bucket = (proj(c) & mask) >> mask_offset;
-      uI new_pos = offset[bucket + 1] - counter[bucket];
-      next_perm[new_pos] = c;
-      counter[bucket]--;
+      next_perm[offset[bucket]++] = c;
     }
 
     mask = mask << _BITS;
