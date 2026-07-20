@@ -625,7 +625,7 @@ private:
   // Consider:
   //
   // entities  = this->domain(type, idx, kernel_idx);
-  // entities0 = this->domain_arg(type, 0, idx, kernel_idx);
+  // entities0 = _edata[0][{type, idx, kernel_idx}];
   //
   // Then `entities[i]` is a mesh entity index (e.g., cell index) in
   // `_mesh`, and  `entities0[i]` is the index of the same entity but in
@@ -640,7 +640,9 @@ private:
   // Consider:
   //
   // entities  = this->domain(type, idx, kernel_idx);
-  // entities0 = this->domain_coeff(type, idx, c);
+  // entities0 = _cdata[{type, idx, c}];
+  //
+  // where `c` is the coefficient index.
   //
   // Then `entities[i]` is a mesh entity index (e.g., cell index) in
   // `_mesh`, and  `entities0[i]` is the index of the same entity but in
