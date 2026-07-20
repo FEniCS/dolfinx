@@ -284,7 +284,7 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
 
         // The number of reflections. Comparing iterators directly instead
         // of values they point to is sufficient here.
-        edge_perm[c][edge] = (it1 < it0) == (vertices[1] > vertices[0]);
+        edge_perm.get()[c][edge] = (it1 < it0) == (vertices[1] > vertices[0]);
       }
     }
   };
@@ -298,12 +298,13 @@ compute_edge_reflections(const mesh::Topology& topology, int num_threads)
   {
     std::array<std::int64_t, 2> range
         = common::local_range(i, c_to_v->num_nodes(), num_threads);
-    threads.emplace_back(process_thread, range, im, edge_perm, c_to_v, e_to_v,
-                         c_to_e, edges_per_cell);
+    threads.emplace_back(process_thread, range, im, std::ref(edge_perm), c_to_v,
+                         e_to_v, c_to_e, edges_per_cell);
   }
   std::array<std::int64_t, 2> range
       = common::local_range(0, c_to_v->num_nodes(), num_threads);
-  process_thread(range, im, edge_perm, c_to_v, e_to_v, c_to_e, edges_per_cell);
+  process_thread(range, im, std::ref(edge_perm), c_to_v, e_to_v, c_to_e,
+                 edges_per_cell);
 
   return edge_perm;
 }

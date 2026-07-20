@@ -519,7 +519,7 @@ std::vector<T>
 compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
                       std::span<const T> q, size_t num_threads)
 {
-  size_t total_size = bodies.size();
+  std::size_t total_size = bodies.size();
   assert(num_threads > 0);
   num_threads = std::min(num_threads, total_size);
 
