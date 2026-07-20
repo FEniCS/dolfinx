@@ -48,7 +48,7 @@ TEST_CASE("dual_graph_branching")
   {
     // default
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
-        = mesh::build_local_dual_graph(celltypes, {cells}, 2, 0);
+        = mesh::build_local_dual_graph(celltypes, {cells}, 2, 1);
 
     CHECK(dual_graph.num_nodes() == 4);
 
@@ -83,7 +83,7 @@ TEST_CASE("dual_graph_branching")
     // max_facet_to_cell_links = 3
     // Note: additionally facet (2) is now considered unmatched
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
-        = mesh::build_local_dual_graph(celltypes, {cells}, 3, 0);
+        = mesh::build_local_dual_graph(celltypes, {cells}, 3, 1);
 
     CHECK(dual_graph.num_nodes() == 4);
 
@@ -254,12 +254,10 @@ TEST_CASE("dual_graph_branching_parallel")
     // Check local dual graphs.
 
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
-        = mesh::build_local_dual_graph(celltypes, {cells}, 3, 0);
+        = mesh::build_local_dual_graph(celltypes, {cells}, 3, 1);
 
     CHECK(max_vertices_per_facet == 1);
-
     CHECK(dual_graph.num_nodes() == 2);
-
     CHECK(dual_graph.num_links(0) == 1);
     CHECK_THAT(dual_graph.links(0),
                Catch::Matchers::RangeEquals(std::array{1}));
