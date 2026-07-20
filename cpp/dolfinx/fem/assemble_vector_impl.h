@@ -39,11 +39,12 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 
 /// @brief Execute kernel over cells and accumulate result in vector.
 ///
-/// @tparam T  Scalar type
 /// @tparam _bs Block size of the form test function dof map. If less
 /// than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
+/// @tparam V Vector container type (i.e. the type of `b`).
+/// @tparam T Scalar type.
 /// @param[in] P0 Function that applies transformation `P0.b` in-place
 /// to `b` to transform test degrees-of-freedom.
 /// @param[in,out] b Array to accumulate into.
@@ -131,11 +132,12 @@ void assemble_cells(
 /// therefore computes 'one-sided' integrals, i.e. evaluates integrals as seen
 /// from cell used to define the entity.
 ///
-/// @tparam T Scalar type.
 /// @tparam _bs The block size of the form test function dof map. If
 /// less than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
+/// @tparam V Vector container type (i.e. the type of `b`).
+/// @tparam T Scalar type.
 /// @param P0 Function that applies transformation `P0.b` in-place to
 /// transform test degrees-of-freedom.
 /// @param[in,out] b The vector to accumulate into.
@@ -224,11 +226,12 @@ void assemble_entities(
 }
 
 /// @brief Assemble linear form interior facet integrals into an vector.
-/// @tparam T Scalar type.
 /// @tparam _bs Block size of the form test function dof map. If less
 /// than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
+/// @tparam V Vector container type (i.e. the type of `b`).
+/// @tparam T Scalar type.
 /// @param P0 Function that applies transformation P0.A in-place to
 /// transform trial degrees-of-freedom.
 /// @param[in,out] b The vector to accumulate into.
