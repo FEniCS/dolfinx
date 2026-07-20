@@ -23,8 +23,8 @@ template void assemble_mpc(
     const std::vector<
         std::reference_wrapper<const DirichletBC<double, double>>>& bcs);
 
-template void build_sparsity_pattern_mpc(la::SparsityPattern& pattern,
-                                         const Form<double, double>& form,
-                                         const MPC<double, double>& mpc);
+template void build_sparsity_pattern_mpc(
+    la::SparsityPattern& pattern, const Form<double, double>& form,
+    std::array<std::reference_wrapper<const MPC<double, double>>, 2> mpc);
 
 } // namespace dolfinx::fem

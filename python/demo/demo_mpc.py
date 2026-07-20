@@ -125,7 +125,7 @@ bc = dirichletbc(value=np.array([0.0, 0.0], dtype=np.float64), dofs=dofsbc, V=V_
 # Create SparsityPattern
 sp = create_sparsity_pattern(a)
 # Add extra sparsity for MPC connections
-dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc)
+dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc, mpc)
 sp.finalize()
 
 A = dolfinx.cpp.la.petsc.create_matrix(mesh.comm, sp)

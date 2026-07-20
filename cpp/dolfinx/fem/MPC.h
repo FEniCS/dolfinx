@@ -236,7 +236,7 @@ void assemble_mpc(
   {
     spdlog::info("Assemble MPC with bs={}", BS);
     auto mat_add = A.template mat_add_values<BS, BS>();
-    assemble_matrix_mpc(mpc, mat_add, a, bcs);
+    assemble_matrix_mpc({mpc, mpc}, mat_add, a, bcs);
   }
   else if constexpr (BS < 10)
   {
@@ -255,17 +255,21 @@ void assemble_mpc(
 /// @note The pattern is not finalised, i.e. the caller is responsible
 /// for calling SparsityPattern::assemble.
 template <dolfinx::scalar T, std::floating_point U>
-void build_sparsity_pattern_mpc(la::SparsityPattern& pattern,
-                                const Form<T, U>& form, const MPC<T, U>& mpc)
+void build_sparsity_pattern_mpc(
+    la::SparsityPattern& pattern, const Form<T, U>& form,
+    std::array<std::reference_wrapper<const MPC<T, U>>, 2> mpcs)
 {
+  const MPC<T, U>& mpc_row = mpcs[0].get();
+  const MPC<T, U>& mpc_col = mpcs[1].get();
+
   if (form.rank() != 2)
   {
     throw std::runtime_error(
         "Cannot add to sparsity pattern. Form is not a bilinear.");
   }
 
-  if (form.function_spaces()[0] != mpc.V()
-      or form.function_spaces()[1] != mpc.V())
+  if (form.function_spaces()[0] != mpc_row.V()
+      or form.function_spaces()[1] != mpc_col.V())
   {
     throw std::runtime_error(
         "Cannot add to sparsity pattern. Form function spaces do not match "
@@ -275,10 +279,13 @@ void build_sparsity_pattern_mpc(la::SparsityPattern& pattern,
   // Insert extra connectivity for cells containing constrained dofs
   // NB - only works if row and column function spaces are the same, which is
   // the case for now.
-  int bs = mpc.V()->dofmap()->bs();
-  std::vector<std::int32_t> dofs0, dofs1;
-  for (std::int32_t cell : mpc.cells())
+  int bs_row = mpc_row.V()->dofmap()->bs();
+  int bs_col = mpc_col.V()->dofmap()->bs();
+
+  auto get_dofs1 = [](const fem::MPC<T, U>& mpc, std::int32_t cell)
   {
+    int bs = mpc.V()->dofmap()->bs();
+    std::vector<std::int32_t> dofs0, dofs1;
     auto cell_dofs = mpc.V()->dofmap()->cell_dofs(cell);
     dofs0.clear();
     for (std::int32_t d : cell_dofs)
@@ -295,18 +302,32 @@ void build_sparsity_pattern_mpc(la::SparsityPattern& pattern,
           dofs1.push_back(ref_dof);
       }
     }
-    std::sort(dofs1.begin(), dofs1.end());
-    dofs1.erase(std::unique(dofs1.begin(), dofs1.end()), dofs1.end());
     for (std::int32_t& d : dofs1)
       d /= bs;
-    pattern.insert(dofs1, dofs1);
-  }
+    std::sort(dofs1.begin(), dofs1.end());
+    dofs1.erase(std::unique(dofs1.begin(), dofs1.end()), dofs1.end());
+    return dofs1;
+  };
+
+  // Find all cells with constraints on rows and columns
+  std::vector<std::int32_t> cells = mpc_row.cells();
+  std::vector<std::int32_t> cells_col = mpc_col.cells();
+  cells.insert(cells.end(), cells_col.begin(), cells_col.end());
+  std::sort(cells.begin(), cells.end());
+  cells.erase(std::unique(cells.begin(), cells.end()), cells.end());
+
+  for (std::int32_t cell : cells)
+    pattern.insert(get_dofs1(mpc_row, cell), get_dofs1(mpc_col, cell));
+
+  if (mpc_row.V() != mpc_col.V())
+    return;
 
   // Insert extra connectivity for reference dofs in the sparsity pattern
-  auto constraints = mpc.constraints();
+  auto constraints = mpc_row.constraints();
+  int bs = mpc_row.V()->dofmap()->bs();
   std::vector<std::int32_t> ref_dofs;
-  for (std::size_t dof = 0; dof < mpc.V()->dofmap()->index_map->size_local();
-       ++dof)
+  for (std::size_t dof = 0;
+       dof < mpc_row.V()->dofmap()->index_map->size_local(); ++dof)
   {
     for (int k = 0; k < bs; ++k)
     {

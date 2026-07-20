@@ -237,7 +237,7 @@ void petsc_fem_module(nb::module_& m)
             assert(bc);
             _bcs.push_back(*bc);
           }
-          dolfinx::fem::assemble_matrix_mpc(mpc, mat_add, a, _bcs);
+          dolfinx::fem::assemble_matrix_mpc({mpc, mpc}, mat_add, a, _bcs);
         });
 
   m.def(

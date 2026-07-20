@@ -417,10 +417,15 @@ void declare_objects(nb::module_& m, std::string type)
           dolfinx::fem::assemble_mpc<T, U>(mpc, A, a, _bcs);
         });
 
-  m.def("build_sparsity_pattern_mpc", [](dolfinx::la::SparsityPattern& pattern,
-                                         const dolfinx::fem::Form<T, U>& a,
-                                         const dolfinx::fem::MPC<T, U>& mpc)
-        { dolfinx::fem::build_sparsity_pattern_mpc(pattern, a, mpc); });
+  m.def("build_sparsity_pattern_mpc",
+        [](dolfinx::la::SparsityPattern& pattern,
+           const dolfinx::fem::Form<T, U>& a,
+           const dolfinx::fem::MPC<T, U>& mpc_row,
+           const dolfinx::fem::MPC<T, U>& mpc_col)
+        {
+          dolfinx::fem::build_sparsity_pattern_mpc(pattern, a,
+                                                   {mpc_row, mpc_col});
+        });
 
   // dolfinx::fem::DirichletBC
   pyclass_name = std::string("DirichletBC_") + type;

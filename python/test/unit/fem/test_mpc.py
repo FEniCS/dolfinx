@@ -56,7 +56,7 @@ def test_mpc():
     map_LR = {}
     for dofL in dofsL:
         xL = coords[dofL]
-        for dofR, xR in zip(globalR, globalR_coords):
+        for dofR, xR in zip(globalR, globalR_coords, strict=False):
             if cfun(xL, xR):
                 map_LR[int(dofL)] = int(dofR)
 
@@ -79,7 +79,7 @@ def test_mpc():
     # Create SparsityPattern
     sp = create_sparsity_pattern(a)
     # Add extra MPC links to sparsity
-    dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc)
+    dolfinx.cpp.fem.build_sparsity_pattern_mpc(sp, a._cpp_object, mpc, mpc)
     sp.finalize()
 
     A = matrix_csr(sp)
