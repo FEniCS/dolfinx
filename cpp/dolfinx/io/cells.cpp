@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <numeric>
 #include <span>
 #include <stdexcept>
@@ -619,8 +620,8 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     const int n = (std::sqrt(1 + 8 * num_nodes) - 1) / 2;
     if (2 * num_nodes != n * (n + 1))
     {
-      throw std::runtime_error("Unknown triangle layout. Number of nodes: "
-                               + std::to_string(num_nodes));
+      throw std::runtime_error(std::format(
+          "Unknown triangle layout. Number of nodes: {}", num_nodes));
     }
     return n - 1;
   }
@@ -631,8 +632,8 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
       ++n;
     if (n * (n + 1) * (n + 2) != 6 * num_nodes)
     {
-      throw std::runtime_error("Unknown tetrahedron layout. Number of nodes: "
-                               + std::to_string(num_nodes));
+      throw std::runtime_error(std::format(
+          "Unknown tetrahedron layout. Number of nodes: {}", num_nodes));
     }
     return n - 1;
   }
@@ -641,8 +642,8 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     const int n = std::sqrt(num_nodes);
     if (num_nodes != n * n)
     {
-      throw std::runtime_error("Unknown quadrilateral layout. Number of nodes: "
-                               + std::to_string(num_nodes));
+      throw std::runtime_error(std::format(
+          "Unknown quadrilateral layout. Number of nodes: {}", num_nodes));
     }
     return n - 1;
   }
@@ -651,8 +652,8 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     const int n = std::cbrt(num_nodes);
     if (num_nodes != n * n * n)
     {
-      throw std::runtime_error("Unknown hexahedron layout. Number of nodes: "
-                               + std::to_string(num_nodes));
+      throw std::runtime_error(std::format(
+          "Unknown hexahedron layout. Number of nodes: {}", num_nodes));
     }
     return n - 1;
   }
@@ -664,8 +665,8 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     case 15:
       return 2;
     default:
-      throw std::runtime_error("Unknown prism layout. Number of nodes: "
-                               + std::to_string(num_nodes));
+      throw std::runtime_error(
+          std::format("Unknown prism layout. Number of nodes: {}", num_nodes));
     }
   case mesh::CellType::pyramid:
     switch (num_nodes)
@@ -675,8 +676,8 @@ int io::cells::cell_degree(mesh::CellType type, int num_nodes)
     case 13:
       return 2;
     default:
-      throw std::runtime_error("Unknown pyramid layout. Number of nodes: "
-                               + std::to_string(num_nodes));
+      throw std::runtime_error(std::format(
+          "Unknown pyramid layout. Number of nodes: {}", num_nodes));
     }
   default:
     throw std::runtime_error("Unknown cell type.");

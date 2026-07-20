@@ -7,6 +7,7 @@
 #include "Table.h"
 #include "MPI.h"
 #include <array>
+#include <format>
 #include <functional>
 #include <map>
 #include <sstream>
@@ -36,31 +37,31 @@ Table::Table(std::string title, bool right_justify)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Table::set(const std::string& row, const std::string& col,
+void Table::set(std::string_view row, std::string_view col,
                 std::variant<std::string, int, double> value)
 {
   // Add row
   if (std::find(_rows.begin(), _rows.end(), row) == _rows.end())
-    _rows.push_back(row);
+    _rows.emplace_back(row);
 
   // Add column
   if (std::find(_cols.begin(), _cols.end(), col) == _cols.end())
-    _cols.push_back(col);
+    _cols.emplace_back(col);
 
   // Store value
   std::pair<std::string, std::string> key(row, col);
   _values[key] = std::move(value);
 }
 //-----------------------------------------------------------------------------
-std::variant<std::string, int, double> Table::get(const std::string& row,
-                                                  const std::string& col) const
+std::variant<std::string, int, double> Table::get(std::string_view row,
+                                                  std::string_view col) const
 {
   std::pair<std::string, std::string> key(row, col);
   auto it = _values.find(key);
   if (it == _values.end())
   {
-    throw std::runtime_error("Missing table value for entry (\"" + row
-                             + "\", \"" + col + "\")");
+    throw std::runtime_error(std::format(
+        "Missing table value for entry (\"{}\", \"{}\")", row, col));
   }
 
   return it->second;

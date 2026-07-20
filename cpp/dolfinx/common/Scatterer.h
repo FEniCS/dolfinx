@@ -477,7 +477,7 @@ public:
   /// For a reverse scatter, if `send_buffer` is the send buffer, then
   /// `send_buffer` is packaged such that:
   ///
-  ///     auto& idx = scatterer.local_indices()
+  ///     auto& idx = scatterer.remote_indices()
   ///     std::vector<T> send_buffer(idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
   ///         send_buffer[i] = xg[idx[i]];
