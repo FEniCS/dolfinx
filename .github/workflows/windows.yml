@@ -49,7 +49,7 @@ jobs:
         run: |
           cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $env:GITHUB_ENV
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
