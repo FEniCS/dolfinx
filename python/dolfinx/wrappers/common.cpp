@@ -173,7 +173,9 @@ void common(nb::module_& m)
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
       m, "Timer", "Timer class")
-      .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
+      .def(nb::init<std::optional<std::string>>(), nb::arg("task").none(),
+           "Create and start timer. Elapsed time is optionally registered in "
+           "the logger when the Timer destructor is called.")
       .def("start",
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::start,
            "Start timer")

@@ -14,10 +14,12 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
 #include <filesystem>
+#include <format>
 #include <numeric>
 #include <pugixml.hpp>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -70,9 +72,9 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// TODO: Document
 template <typename T>
 void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
-                   const std::string& h5_path, std::span<const T> x,
+                   std::string_view h5_path, std::span<const T> x,
                    std::int64_t offset, const std::vector<std::int64_t>& shape,
-                   const std::string& number_type, bool use_mpi_io)
+                   std::string_view number_type, bool use_mpi_io)
 {
   // Add DataItem node
   assert(xml_node);
@@ -82,14 +84,17 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
   // Add dimensions attribute
   std::string dims;
   for (auto d : shape)
-    dims += std::to_string(d) + std::string(" ");
+    dims += std::format("{} ", d);
   dims.pop_back();
   data_item_node.append_attribute("Dimensions") = dims.c_str();
 
   // Set type for topology data (needed by XDMF to prevent default to
   // float)
   if (!number_type.empty())
-    data_item_node.append_attribute("NumberType") = number_type.c_str();
+  {
+    data_item_node.append_attribute("NumberType")
+        = std::string(number_type).c_str();
+  }
 
   // Add format attribute
   if (h5_id < 0)
@@ -118,7 +123,7 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
 
     // Add HDF5 filename and HDF5 internal path to XML file
     const std::string xdmf_path
-        = filename.string() + std::string(":") + h5_path;
+        = std::format("{}:{}", filename.string(), h5_path);
     data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
 
     // Compute data offset and range of values
@@ -255,7 +260,8 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     }
   }
   else
-    throw std::runtime_error("Storage format \"" + format + "\" is unknown");
+    throw std::runtime_error(
+        std::format("Storage format \"{}\" is unknown", format));
 
   // Get dimensions for consistency (if available in DataItem node)
   if (shape_xml.empty())

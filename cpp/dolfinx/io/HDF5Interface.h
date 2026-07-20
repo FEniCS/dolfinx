@@ -16,6 +16,7 @@
 #include <mpi.h>
 #include <numeric>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace dolfinx::io::hdf5
@@ -57,7 +58,7 @@ hid_t hdf5_type()
 /// @param[in] mode Mode in which to open the file (w, r, a)
 /// @param[in] use_mpi_io True if MPI-IO should be used
 hid_t open_file(MPI_Comm comm, const std::filesystem::path& filename,
-                const std::string& mode, bool use_mpi_io);
+                std::string_view mode, bool use_mpi_io);
 
 /// Close HDF5 file
 /// @param[in] handle HDF5 file handle
@@ -76,32 +77,32 @@ std::filesystem::path get_filename(hid_t handle);
 /// @param[in] handle HDF5 file handle
 /// @param[in] dataset_path Data set path
 /// @return True if @p dataset_path is in the file
-bool has_dataset(hid_t handle, const std::string& dataset_path);
+bool has_dataset(hid_t handle, std::string_view dataset_path);
 
 /// @brief Set an attribute on a dataset or group.
 ///
 /// @param[in] handle Dataset or group handle.
 /// @param[in] attr_name Name of attribute.
 /// @param[in] value Value to set.
-void set_attribute(hid_t handle, const std::string& attr_name,
-                   const std::string& value);
-void set_attribute(hid_t handle, const std::string& attr_name,
+void set_attribute(hid_t handle, std::string_view attr_name,
+                   std::string_view value);
+void set_attribute(hid_t handle, std::string_view attr_name,
                    const std::vector<std::int32_t>& value);
-void set_attribute(hid_t handle, const std::string& attr_name,
+void set_attribute(hid_t handle, std::string_view attr_name,
                    std::int32_t value);
 
 /// Open dataset
 /// @param[in] handle HDF5 file handle.
 /// @param[in] path Data set path.
 /// @return Data set handle. Should be closed by caller using `H5Dclose`.
-hid_t open_dataset(hid_t handle, const std::string& path);
+hid_t open_dataset(hid_t handle, std::string_view path);
 
 /// Get dataset shape (size of each dimension)
 /// @param[in] handle HDF5 file handle
 /// @param[in] dataset_path Dataset path
 /// @return The shape of the dataset (row-major)
 std::vector<std::int64_t> get_dataset_shape(hid_t handle,
-                                            const std::string& dataset_path);
+                                            std::string_view dataset_path);
 
 /// @brief Set MPI atomicity.
 ///
@@ -123,7 +124,7 @@ bool get_mpi_atomicity(hid_t handle);
 /// Add group to HDF5 file
 /// @param[in] handle HDF5 file handle
 /// @param[in] dataset_path Data set path to add
-void add_group(hid_t handle, const std::string& dataset_path);
+void add_group(hid_t handle, std::string_view dataset_path);
 
 /// @brief Write data to existing HDF file as defined by range blocks on
 /// each process.
@@ -140,7 +141,7 @@ void add_group(hid_t handle, const std::string& dataset_path);
 /// @note Can be used to resize and write into an existing dataset.
 /// @note Chunking is required for extensible datasets.
 template <typename T>
-void write_dataset(hid_t file_handle, const std::string& dataset_path,
+void write_dataset(hid_t file_handle, std::string_view dataset_path,
                    const T* data, std::array<std::int64_t, 2> range,
                    const std::vector<int64_t>& global_size, bool use_mpi_io,
                    bool use_chunking)
@@ -148,6 +149,9 @@ void write_dataset(hid_t file_handle, const std::string& dataset_path,
   // Check that group exists and recursively create if required
   const std::string group_name(dataset_path, 0, dataset_path.rfind('/'));
   add_group(file_handle, group_name);
+
+  // Null-terminated copy for C API calls
+  const std::string path(dataset_path);
 
   // Data rank
   const int rank = global_size.size();
@@ -176,7 +180,7 @@ void write_dataset(hid_t file_handle, const std::string& dataset_path,
   if (has_dataset(file_handle, dataset_path))
   {
     // Resize to new global size
-    hid_t dset_id = hdf5::open_dataset(file_handle, dataset_path.c_str());
+    hid_t dset_id = hdf5::open_dataset(file_handle, dataset_path);
     H5Dset_extent(dset_id, dimsf.data());
     H5Dclose(dset_id);
   }
@@ -213,8 +217,8 @@ void write_dataset(hid_t file_handle, const std::string& dataset_path,
 
     // Create global dataset (using dataset_path)
     const hid_t dset_id
-        = H5Dcreate2(file_handle, dataset_path.c_str(), h5type, filespace0,
-                     H5P_DEFAULT, chunking_properties, H5P_DEFAULT);
+        = H5Dcreate2(file_handle, path.c_str(), h5type, filespace0, H5P_DEFAULT,
+                     chunking_properties, H5P_DEFAULT);
     if (dset_id == H5I_INVALID_HID)
       throw std::runtime_error("Failed to create HDF5 global dataset.");
 
@@ -235,7 +239,7 @@ void write_dataset(hid_t file_handle, const std::string& dataset_path,
   }
 
   // Reopen dataset and write data
-  hid_t dset_id = hdf5::open_dataset(file_handle, dataset_path.c_str());
+  hid_t dset_id = hdf5::open_dataset(file_handle, dataset_path);
   assert(dset_id != H5I_INVALID_HID);
 
   hid_t dataspace = H5Dget_space(dset_id);

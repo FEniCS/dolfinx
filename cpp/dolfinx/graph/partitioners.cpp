@@ -10,6 +10,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <format>
 #include <map>
 #include <numeric>
 #include <set>
@@ -577,8 +578,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
           opts.data(), &edgecut, part.data(), &pcomm);
       if (err != METIS_OK)
       {
-        throw std::runtime_error("ParMETIS_V3_PartKway failed. Error code: "
-                                 + std::to_string(err));
+        throw std::runtime_error(
+            std::format("ParMETIS_V3_PartKway failed. Error code: {}", err));
       }
     }
 
