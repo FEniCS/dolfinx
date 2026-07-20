@@ -639,27 +639,25 @@ mesh::build_local_dual_graph(
     graph::AdjacencyList<int> cell_facets
         = mesh::get_entity_vertices(cell_type, tdim - 1);
     std::span _cells = cells[j];
-    if (num_threads > 0)
+    std::vector<std::jthread> threads;
+    for (int i = 1; i < num_threads; ++i)
     {
-      std::vector<std::jthread> threads;
-      for (int i = 0; i < num_threads; ++i)
-      {
-        auto [c0, c1] = dolfinx::common::local_range(
-            i, _cells.size() / num_cell_vertices, num_threads);
-        threads.emplace_back(
-            build_facets_fn, shape1, num_cell_vertices, cell_offsets[j] + c0,
-            std::cref(cell_facets),
-            _cells.subspan(c0 * num_cell_vertices,
-                           (c1 - c0) * num_cell_vertices),
-            std::span(facets.data() + (c0 * cell_facets.num_nodes()) * shape1,
-                      ((c1 - c0) * cell_facets.num_nodes()) * shape1));
-      }
+      auto [c0, c1] = common::local_range(i, _cells.size() / num_cell_vertices,
+                                          num_threads);
+      threads.emplace_back(
+          build_facets_fn, shape1, num_cell_vertices, cell_offsets[j] + c0,
+          std::cref(cell_facets),
+          _cells.subspan(c0 * num_cell_vertices, (c1 - c0) * num_cell_vertices),
+          std::span(facets.data() + (c0 * cell_facets.num_nodes()) * shape1,
+                    ((c1 - c0) * cell_facets.num_nodes()) * shape1));
     }
-    else
-    {
-      build_facets_fn(shape1, num_cell_vertices, cell_offsets[j],
-                      std::cref(cell_facets), _cells, facets);
-    }
+    auto [c0, c1] = common::local_range(0, _cells.size() / num_cell_vertices,
+                                        num_threads);
+    build_facets_fn(
+        shape1, num_cell_vertices, cell_offsets[j] + c0, std::cref(cell_facets),
+        _cells.subspan(c0 * num_cell_vertices, (c1 - c0) * num_cell_vertices),
+        std::span(facets.data() + (c0 * cell_facets.num_nodes()) * shape1,
+                  ((c1 - c0) * cell_facets.num_nodes()) * shape1));
   }
 
   timer1.stop();
@@ -669,7 +667,7 @@ mesh::build_local_dual_graph(
   common::Timer timer3("Compute local part of mesh dual graph: 3");
 
   std::vector<std::int32_t> perm;
-  if (num_threads > 0)
+  if (num_threads > 1)
   {
     perm.resize(facets.size() / shape1, 0);
     std::iota(perm.begin(), perm.end(), 0);

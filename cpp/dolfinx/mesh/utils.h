@@ -1310,14 +1310,14 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
   if (dolfinx::MPI::size(comm) == 1)
   {
     return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
-                       comm, x, xshape, nullptr, max_facet_to_cell_links, 0);
+                       comm, x, xshape, nullptr, max_facet_to_cell_links, 1);
   }
   else
   {
     return create_mesh(
         comm, comm, std::vector{cells}, std::vector{elements}, comm, x, xshape,
         create_cell_partitioner(ghost_mode, max_facet_to_cell_links),
-        max_facet_to_cell_links, 0);
+        max_facet_to_cell_links, 1);
   }
 }
 

@@ -68,7 +68,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices,
       int dest = dolfinx::MPI::index_owner(size, idx, global_range);
       dest_to_index.push_back({dest, static_cast<int>(dest_to_index.size())});
     }
-    if (num_threads > 0)
+    if (num_threads > 1)
     {
       boost::sort::block_indirect_sort(dest_to_index.begin(),
                                        dest_to_index.end(), num_threads);
@@ -314,7 +314,7 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
     local_vertex_set.insert(local_vertex_set.end(), c.begin(), c.end());
 
   {
-    if (num_threads > 0)
+    if (num_threads > 1)
     {
       boost::sort::block_indirect_sort(local_vertex_set.begin(),
                                        local_vertex_set.end(), num_threads);
@@ -335,7 +335,7 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
     ghost_vertex_set.insert(ghost_vertex_set.end(), c.begin(), c.end());
 
   {
-    if (num_threads > 0)
+    if (num_threads > 1)
     {
       boost::sort::block_indirect_sort(ghost_vertex_set.begin(),
                                        ghost_vertex_set.end(), num_threads);

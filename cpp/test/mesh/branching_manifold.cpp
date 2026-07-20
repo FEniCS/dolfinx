@@ -125,7 +125,7 @@ TEST_CASE("dual_graph_branching")
 
       auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
           = mesh::build_local_dual_graph(celltypes, {cells},
-                                         max_facet_to_cell_links, 0);
+                                         max_facet_to_cell_links, 1);
 
       CHECK(dual_graph.num_nodes() == 4);
 
@@ -184,7 +184,7 @@ TEST_CASE("dual_graph_self_dual")
   {
     auto [dual_graph, unmatched_facets, max_vertices_per_facet, cell_data]
         = mesh::build_local_dual_graph(celltypes, {cells},
-                                       max_facet_to_cell_links, 0);
+                                       max_facet_to_cell_links, 1);
 
     CHECK(max_vertices_per_facet == 1);
     CHECK(dual_graph.num_nodes() == 3);
