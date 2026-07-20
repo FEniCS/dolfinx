@@ -174,7 +174,7 @@ constexpr void radix_sort(R&& range, P proj = {})
 /// @pre `x.size()` must be a multiple of `shape1`.
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.
-template <typename T, int BITS = 16>
+template <typename T, int BITS = 8>
 std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
 {
   static_assert(std::is_integral_v<T>, "Integral required.");
