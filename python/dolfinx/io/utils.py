@@ -255,7 +255,7 @@ class XDMFFile(_cpp.io.XDMFFile):
                 s_el.dtype,
             )
             cmap = _cpp.fem.CoordinateElement_float64(el.basix_element._e)
-            basix_el: basix.ufl._ElementBase = basix.ufl.blocked_element(el, shape=(x.shape[1],))
+            basix_el = basix.ufl.blocked_element(el, shape=(x.shape[1],))
         else:
             basix_el = basix.ufl.element(
                 "Lagrange",
