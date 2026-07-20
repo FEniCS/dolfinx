@@ -9,6 +9,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <format>
 #include <numeric>
 #include <optional>
 #include <span>
@@ -66,7 +67,6 @@ public:
   AdjacencyList(U&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {
-    _array.reserve(_offsets.back());
     assert(_offsets.back() == (std::int32_t)_array.size());
   }
 
@@ -199,7 +199,7 @@ public:
   std::string str() const
   {
     std::stringstream s;
-    s << "<AdjacencyList> with " + std::to_string(this->num_nodes()) + " nodes"
+    s << std::format("<AdjacencyList> with {} nodes", this->num_nodes())
       << std::endl;
     for (std::size_t e = 0; e < _offsets.size() - 1; ++e)
     {

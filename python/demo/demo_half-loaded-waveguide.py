@@ -19,8 +19,8 @@
 #
 # ```{admonition} Download sources
 # :class: download
-# * {download}`Python script <./demo_half_loaded_waveguide.py>`
-# * {download}`Jupyter notebook <./demo_half_loaded_waveguide.ipynb>`
+# * {download}`Python script <./demo_half-loaded-waveguide.py>`
+# * {download}`Jupyter notebook <./demo_half-loaded-waveguide.ipynb>`
 # ```
 #
 # The demo shows how to:
@@ -205,11 +205,11 @@ eps.x.array[cells_d] = eps_d
 # waveguide wall:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # &\nabla \times \frac{1}{\mu_{r}} \nabla \times \mathbf{E}-k_{o}^{2}
 # \epsilon_{r} \mathbf{E}=0 \quad &\text { in } \Omega\\
 # &\hat{n}\times\mathbf{E} = 0 &\text { on } \Gamma
-# \end{align}
+# \end{aligned}
 # $$
 #
 # with $k_0$ and $\lambda_0 = 2\pi/k_0$ being the wavevector and the
@@ -232,10 +232,10 @@ eps.x.array[cells_d] = eps_d
 # the following substitution:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # & \mathbf{e}_t = k_z\mathbf{E}_t\\
 # & e_z = -jE_z
-# \end{align}
+# \end{aligned}
 # $$
 #
 # The final weak form can be written as:
@@ -499,7 +499,7 @@ for i, kz in vals:
             V_lagr, lagr_dofs = V.sub(1).collapse()
             V_cells, V_types, V_x = plot.vtk_mesh(V_lagr)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
-            V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs]
+            V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs[0]]
             plotter = pyvista.Plotter()
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()

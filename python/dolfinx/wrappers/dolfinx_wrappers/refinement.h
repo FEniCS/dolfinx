@@ -7,10 +7,13 @@
 
 #pragma once
 
+#include "MPICommWrapper.h"
 #include "array.h"
+#include "caster_mpi.h"
 #include "mesh.h"
 #include <concepts>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/refinement/mark.h>
 #include <dolfinx/refinement/option.h>
 #include <dolfinx/refinement/refine.h>
 #include <dolfinx/refinement/uniform.h>
@@ -22,6 +25,7 @@
 #include <nanobind/stl/variant.h>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <variant>
 
 namespace dolfinx_wrappers
@@ -70,6 +74,21 @@ void declare_refinement(nanobind::module_& m)
         std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
         if (edges.has_value())
         {
+          auto index_map = mesh.topology()->index_map(1);
+          if (!index_map)
+          {
+            throw std::runtime_error(
+                "Edge entities have not been created on the mesh topology.");
+          }
+
+          const std::int32_t num_edges
+              = index_map->size_local() + index_map->num_ghosts();
+          for (std::size_t i = 0; i < edges.value().size(); ++i)
+          {
+            std::int32_t e = edges.value().data()[i];
+            if (e < 0 or e >= num_edges)
+              throw std::runtime_error("Index out of range in edges array.");
+          }
           cpp_edges.emplace(
               std::span(edges.value().data(), edges.value().size()));
         }
@@ -121,6 +140,16 @@ void declare_refinement(nanobind::module_& m)
       },
       nb::arg("mesh"), nb::arg("edges").none(), nb::arg("partitioner").none(),
       nb::arg("option"));
+
+  m.def(
+      "mark_maximum",
+      [](nb::ndarray<const T, nb::ndim<1>, nb::c_contig> marker, T theta,
+         MPICommWrapper comm)
+      {
+        return dolfinx_wrappers::as_nbarray(dolfinx::refinement::mark_maximum(
+            std::span(marker.data(), marker.size()), theta, comm.get()));
+      },
+      nb::arg("marker"), nb::arg("theta"), nb::arg("comm"));
 }
 
 } // namespace dolfinx_wrappers

@@ -12,11 +12,11 @@
 #include <map>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace dolfinx::mesh
 {
-
 /// Cell type identifier
 enum class CellType : std::int8_t
 {
@@ -39,7 +39,7 @@ std::string to_string(CellType type);
 /// Get the cell type from a cell string
 /// @param[in] cell Cell shape string
 /// @return The cell type
-CellType to_type(const std::string& cell);
+CellType to_type(std::string_view cell);
 
 /// Return topological dimension of cell type
 inline int cell_dim(CellType type)
@@ -120,8 +120,8 @@ inline CellType cell_entity_type(CellType type, int d, int index)
     return CellType::point;
 }
 
-/// Return list of entities, where entities(e, k) is the local vertex
-/// index for the kth vertex of entity e of dimension dim
+/// @brief List of entities, where entity `(e, k)` is the local vertex
+/// index for the `k`th vertex of entity `e` of dimension `dim`.
 graph::AdjacencyList<int> get_entity_vertices(CellType type, int dim);
 
 /// Get entities of dimension dim1 and that make up entities of dimension

@@ -14,6 +14,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <variant>
 
@@ -67,7 +68,7 @@ public:
 
   /// Constructor
   XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
-           const std::string& file_mode, Encoding encoding = Encoding::HDF5);
+           std::string_view file_mode, Encoding encoding = Encoding::HDF5);
 
   /// Move constructor
   XDMFFile(XDMFFile&&) = default;
@@ -87,15 +88,15 @@ public:
   /// @param[in] xpath XPath where Mesh Grid will be written
   template <std::floating_point U>
   void write_mesh(const mesh::Mesh<U>& mesh,
-                  const std::string& xpath = "/Xdmf/Domain");
+                  std::string_view xpath = "/Xdmf/Domain");
 
   /// Save Geometry
   /// @param[in] geometry
   /// @param[in] name
   /// @param[in] xpath XPath of a node where Geometry will be inserted
   void write_geometry(const mesh::Geometry<double>& geometry,
-                      const std::string& name,
-                      const std::string& xpath = "/Xdmf/Domain");
+                      std::string_view name,
+                      std::string_view xpath = "/Xdmf/Domain");
 
   /// Read Mesh
   /// @param[in] element Element that describes the geometry of a cell
@@ -109,7 +110,7 @@ public:
   ///   XDMFFile
   mesh::Mesh<double>
   read_mesh(const fem::CoordinateElement<double>& element, mesh::GhostMode mode,
-            const std::string& name, const std::string& xpath = "/Xdmf/Domain",
+            std::string_view name, std::string_view xpath = "/Xdmf/Domain",
             std::optional<std::int32_t> max_facet_to_cell_links = 2) const;
 
   /// Read Topology data for Mesh
@@ -117,8 +118,8 @@ public:
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return (Cell type, degree), and cells topology (global node indexing)
   std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
-  read_topology_data(const std::string& name,
-                     const std::string& xpath = "/Xdmf/Domain") const;
+  read_topology_data(std::string_view name,
+                     std::string_view xpath = "/Xdmf/Domain") const;
 
   /// Read Geometry data for Mesh
   /// @param[in] name Name of the mesh (Grid)
@@ -126,15 +127,15 @@ public:
   /// @return points on each process
   std::pair<std::variant<std::vector<float>, std::vector<double>>,
             std::array<std::size_t, 2>>
-  read_geometry_data(const std::string& name,
-                     const std::string& xpath = "/Xdmf/Domain") const;
+  read_geometry_data(std::string_view name,
+                     std::string_view xpath = "/Xdmf/Domain") const;
 
   /// Read information about cell type
   /// @param[in] grid_name Name of Grid for which cell type is needed
   /// @param[in] xpath XPath where Grid is stored
-  std::pair<mesh::CellType, int> read_cell_type(const std::string& grid_name,
-                                                const std::string& xpath
-                                                = "/Xdmf/Domain");
+  std::pair<mesh::CellType, int> read_cell_type(std::string_view grid_name,
+                                                std::string_view xpath
+                                                = "/Xdmf/Domain") const;
 
   /// @brief Write a fem::Function to file.
   ///
@@ -154,7 +155,7 @@ public:
   /// inserted.
   template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
   void write_function(const fem::Function<T, U>& u, double t,
-                      std::string mesh_xpath
+                      std::string_view mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
   /// Write MeshTags
@@ -166,8 +167,8 @@ public:
   template <std::floating_point T>
   void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
                       const mesh::Geometry<T>& x,
-                      const std::string& geometry_xpath,
-                      const std::string& xpath = "/Xdmf/Domain");
+                      std::string_view geometry_xpath,
+                      std::string_view xpath = "/Xdmf/Domain");
 
   /// Read MeshTags
   /// @param[in] mesh Mesh that the input data is defined on
@@ -177,22 +178,22 @@ public:
   /// @param[in] attribute_name Name of the attribute to read
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
   mesh::MeshTags<std::int32_t>
-  read_meshtags(const mesh::Mesh<double>& mesh, const std::string& name,
-                std::optional<std::string> attribute_name,
-                const std::string& xpath = "/Xdmf/Domain");
+  read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
+                std::optional<std::string_view> attribute_name,
+                std::string_view xpath = "/Xdmf/Domain") const;
 
   /// Write Information
   /// @param[in] name
   /// @param[in] value String to store into Information tag
   /// @param[in] xpath XPath where Information will be inserted
-  void write_information(const std::string& name, const std::string& value,
-                         const std::string& xpath = "/Xdmf/Domain/");
+  void write_information(std::string_view name, std::string_view value,
+                         std::string_view xpath = "/Xdmf/Domain/");
 
   /// Read Information
   /// @param[in] name
   /// @param[in] xpath XPath where Information is stored in file
-  std::string read_information(const std::string& name,
-                               const std::string& xpath = "/Xdmf/Domain/");
+  std::string read_information(std::string_view name,
+                               std::string_view xpath = "/Xdmf/Domain/") const;
 
   /// Flush the output to disk. Output is not guaranteed to be written fully to
   /// disk with a 'write' call.

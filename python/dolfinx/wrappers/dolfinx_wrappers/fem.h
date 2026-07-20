@@ -105,12 +105,18 @@ void declare_function_space(nb::module_& m, std::string type)
         .def("collapse",
              [](const dolfinx::fem::FunctionSpace<T>& self)
                  -> std::pair<dolfinx::fem::FunctionSpace<T>,
-                              nanobind::ndarray<std::int32_t, nanobind::numpy>>
+                              std::vector<nanobind::ndarray<std::int32_t,
+                                                            nanobind::numpy>>>
              {
                auto&& [collapsed_fs, dofs] = self.collapse();
-               return {std::move(collapsed_fs),
-                       dolfinx_wrappers::as_nbarray(std::move(dofs),
-                                                    {dofs.size()})};
+               std::vector<nanobind::ndarray<std::int32_t, nanobind::numpy>>
+                   collapsed_map;
+               for (auto d : dofs)
+               {
+                 collapsed_map.push_back(
+                     dolfinx_wrappers::as_nbarray(std::move(d), {d.size()}));
+               }
+               return {std::move(collapsed_fs), std::move(collapsed_map)};
              })
         .def("component", &dolfinx::fem::FunctionSpace<T>::component)
         .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,
@@ -119,8 +125,7 @@ void declare_function_space(nb::module_& m, std::string type)
         .def("elements", &dolfinx::fem::FunctionSpace<T>::elements)
         .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
         .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
-        .def("dofmaps", &dolfinx::fem::FunctionSpace<T>::dofmaps,
-             nb::arg("cell_type_index"))
+        .def_prop_ro("dofmaps", &dolfinx::fem::FunctionSpace<T>::dofmaps)
         .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, nb::arg("component"))
         .def("tabulate_dof_coordinates",
              [](const dolfinx::fem::FunctionSpace<T>& self)
@@ -203,6 +208,8 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
+              if (cell_permutations.size() == 0)
+                return;
               const std::size_t data_per_cell
                   = x.size() / cell_permutations.size();
               std::span<T> x_span(x.data(), x.size());
@@ -223,6 +230,8 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
+              if (cell_permutations.size() == 0)
+                return;
               const std::size_t data_per_cell
                   = x.size() / cell_permutations.size();
               std::span<T> x_span(x.data(), x.size());
@@ -243,6 +252,8 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
+              if (cell_permutations.size() == 0)
+                return;
               const std::size_t data_per_cell
                   = x.size() / cell_permutations.size();
               std::span<T> x_span(x.data(), x.size());
@@ -265,6 +276,8 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
+              if (cell_permutations.size() == 0)
+                return;
               const std::size_t data_per_cell
                   = x.size() / cell_permutations.size();
               std::span<std::complex<T>> x_span(x.data(), x.size());
@@ -286,6 +299,8 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
+              if (cell_permutations.size() == 0)
+                return;
               const std::size_t data_per_cell
                   = x.size() / cell_permutations.size();
               std::span<std::complex<T>> x_span(x.data(), x.size());
@@ -307,6 +322,8 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
+              if (cell_permutations.size() == 0)
+                return;
               const std::size_t data_per_cell
                   = x.size() / cell_permutations.size();
               std::span<std::complex<T>> x_span(x.data(), x.size());
@@ -532,12 +549,14 @@ void declare_objects(nb::module_& m, std::string type)
           [](dolfinx::fem::Function<T, U>& self,
              const dolfinx::fem::Function<T, U>& u,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+             double tol, int maxit,
              const dolfinx::geometry::PointOwnershipData<U>& interpolation_data)
           {
-            self.interpolate(u, std::span(cells.data(), cells.size()),
-                             interpolation_data);
+            self.interpolate(u, std::span(cells.data(), cells.size()), tol,
+                             maxit, interpolation_data);
           },
           nb::arg("u"), nb::arg("cells"), nb::arg("interpolation_data"),
+          nb::arg("tol"), nb::arg("maxit"),
           "Interpolate a finite element Function on non-matching meshes")
       // NOLINTBEGIN(performance-no-int-to-ptr)
       .def(
@@ -621,16 +640,16 @@ void declare_objects(nb::module_& m, std::string type)
           [](const dolfinx::fem::Function<T, U>& self,
              nb::ndarray<const U, nb::ndim<2>, nb::c_contig> x,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
-             nb::ndarray<T, nb::ndim<2>, nb::c_contig> u)
+             nb::ndarray<T, nb::ndim<2>, nb::c_contig> u, double tol, int maxit)
           {
             // TODO: handle 1d case
             self.eval(std::span(x.data(), x.size()), {x.shape(0), x.shape(1)},
                       std::span(cells.data(), cells.size()),
                       std::span<T>(u.data(), u.size()),
-                      {u.shape(0), u.shape(1)});
+                      {u.shape(0), u.shape(1)}, tol, maxit);
           },
-          nb::arg("x"), nb::arg("cells"), nb::arg("values"),
-          "Evaluate Function")
+          nb::arg("x"), nb::arg("cells"), nb::arg("values"), nb::arg("tol"),
+          nb::arg("maxit"), "Evaluate Function")
       .def_prop_ro("function_space",
                    &dolfinx::fem::Function<T, U>::function_space);
 
@@ -675,6 +694,8 @@ void declare_objects(nb::module_& m, std::string type)
              nb::ndarray<const U, nb::ndim<2>, nb::c_contig> X,
              std::uintptr_t fn_addr,
              const std::vector<std::size_t>& value_shape,
+             const std::vector<const dolfinx::mesh::EntityMap*>& entity_maps,
+             std::uint64_t coordinate_element_hash,
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
                  argument_space)
           {
@@ -685,10 +706,12 @@ void declare_objects(nb::module_& m, std::string type)
             new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
                 {X.shape(0), X.shape(1)}, tabulate_expression_ptr, value_shape,
+                ptr_to_ref_wrapper_vec(entity_maps), coordinate_element_hash,
                 argument_space);
           },
           nb::arg("coefficients"), nb::arg("constants"), nb::arg("X"),
-          nb::arg("fn"), nb::arg("value_shape"), nb::arg("argument_space"))
+          nb::arg("fn"), nb::arg("value_shape"), nb::arg("entity_maps"),
+          nb::arg("coordinate_element_hash"), nb::arg("argument_space"))
       .def("X",
            [](const dolfinx::fem::Expression<T, U>& self)
            {
@@ -717,15 +740,17 @@ void declare_objects(nb::module_& m, std::string type)
              coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
+         const std::vector<const dolfinx::mesh::EntityMap*>& entity_maps,
          std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> argument_space)
       {
         const ufcx_expression* p
             = reinterpret_cast<const ufcx_expression*>(expression);
-        return dolfinx::fem::create_expression<T, U>(*p, coefficients,
-                                                     constants, argument_space);
+        return dolfinx::fem::create_expression<T, U>(
+            *p, coefficients, constants, ptr_to_ref_wrapper_vec(entity_maps),
+            argument_space);
       },
       nb::arg("expression"), nb::arg("coefficients"), nb::arg("constants"),
-      nb::arg("argument_space").none(),
+      nb::arg("entity_maps"), nb::arg("argument_space").none(),
       "Create Expression from a pointer to ufc_form.");
 }
 
@@ -1018,7 +1043,8 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
           "pull_back",
           [](const dolfinx::fem::CoordinateElement<T>& self,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> x,
-             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_geometry)
+             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_geometry,
+             double tol, int maxit)
           {
             std::size_t num_points = x.shape(0);
             std::size_t gdim = x.shape(1);
@@ -1060,12 +1086,13 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
               self.pull_back_affine(X, K, x0, _x);
             }
             else
-              self.pull_back_nonaffine(X, _x, g);
+              self.pull_back_nonaffine(X, _x, g, tol, maxit);
 
             return dolfinx_wrappers::as_nbarray(std::move(Xb),
                                                 {num_points, tdim});
           },
-          nb::arg("x"), nb::arg("cell_geometry"));
+          nb::arg("x"), nb::arg("cell_geometry"), nb::arg("tol"),
+          nb::arg("maxit"));
 }
 
 template <typename T>
@@ -1216,7 +1243,7 @@ void declare_real_functions(nb::module_& m)
         }
         else
         {
-          std::int32_t num_cells = geometry.dofmap().extent(0);
+          std::int32_t num_cells = geometry.dofmaps().front().extent(0);
           auto iota = std::ranges::iota_view(0, num_cells);
           x = dolfinx::fem::interpolation_coords(e, geometry, iota);
         }
@@ -1224,6 +1251,13 @@ void declare_real_functions(nb::module_& m)
         return dolfinx_wrappers::as_nbarray(std::move(x), {3, x.size() / 3});
       },
       nb::arg("element"), nb::arg("V"), nb::arg("cells").none());
+
+  m.def(
+      "interpolate_geometry",
+      [](std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
+         const dolfinx::fem::CoordinateElement<T>& new_cmap)
+      { return dolfinx::fem::interpolate_geometry(mesh, new_cmap); },
+      nb::arg("mesh"), nb::arg("new_cmap"));
 
   m.def(
       "create_interpolation_data",

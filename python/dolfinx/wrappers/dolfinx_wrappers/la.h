@@ -12,6 +12,8 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
+#include <dolfinx/la/matmul.h>
+#include <dolfinx/la/mattrans.h>
 #include <dolfinx/la/utils.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -19,6 +21,7 @@
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -100,16 +103,38 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
       .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
       .def("index_map", &dolfinx::la::MatrixCSR<T>::index_map)
       .def("add",
-           [](dolfinx::la::MatrixCSR<T>& self, const std::vector<T>& x,
-              const std::vector<std::int32_t>& rows,
-              const std::vector<std::int32_t>& cols, int bs = 1)
+           [](dolfinx::la::MatrixCSR<T>& self,
+              nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x,
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
+              int bs = 1)
            {
+             if (x.size() != rows.size() * cols.size() * bs * bs)
+             {
+               throw std::runtime_error(
+                   "x size must equal rows size * cols size * bs * bs.");
+             }
+
+             const std::int32_t num_rows = self.num_all_rows();
+             const int mat_bs0 = self.block_size()[0];
+             const std::int32_t max_row
+                 = (mat_bs0 == bs) ? num_rows
+                                   : ((mat_bs0 == 1) ? (num_rows / bs)
+                                                     : (num_rows * mat_bs0));
+             for (std::size_t i = 0; i < rows.size(); ++i)
+             {
+               if (rows.data()[i] < 0 or rows.data()[i] >= max_row)
+                 throw std::runtime_error("Index out of range in rows array.");
+             }
+             std::span x_span = std::span(x.data(), x.size());
+             std::span rows_span = std::span(rows.data(), rows.size());
+             std::span cols_span = std::span(cols.data(), cols.size());
              if (bs == 1)
-               self.template add<1, 1>(x, rows, cols);
+               self.template add<1, 1>(x_span, rows_span, cols_span);
              else if (bs == 2)
-               self.template add<2, 2>(x, rows, cols);
+               self.template add<2, 2>(x_span, rows_span, cols_span);
              else if (bs == 3)
-               self.template add<3, 3>(x, rows, cols);
+               self.template add<3, 3>(x_span, rows_span, cols_span);
              else
              {
                throw std::runtime_error(
@@ -117,16 +142,37 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
              }
            })
       .def("set",
-           [](dolfinx::la::MatrixCSR<T>& self, const std::vector<T>& x,
-              const std::vector<std::int32_t>& rows,
-              const std::vector<std::int32_t>& cols, int bs = 1)
+           [](dolfinx::la::MatrixCSR<T>& self,
+              nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x,
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols,
+              int bs = 1)
            {
+             if (x.size() != rows.size() * cols.size() * bs * bs)
+             {
+               throw std::runtime_error(
+                   "x size must equal rows size * cols size * bs * bs.");
+             }
+             const std::int32_t num_rows = self.num_all_rows();
+             const int mat_bs0 = self.block_size()[0];
+             const std::int32_t max_row
+                 = (mat_bs0 == bs) ? num_rows
+                                   : ((mat_bs0 == 1) ? (num_rows / bs)
+                                                     : (num_rows * mat_bs0));
+             for (std::size_t i = 0; i < rows.size(); ++i)
+             {
+               if (rows.data()[i] < 0 or rows.data()[i] >= max_row)
+                 throw std::runtime_error("Index out of range in rows array.");
+             }
+             std::span x_span = std::span(x.data(), x.size());
+             std::span rows_span = std::span(rows.data(), rows.size());
+             std::span cols_span = std::span(cols.data(), cols.size());
              if (bs == 1)
-               self.template set<1, 1>(x, rows, cols);
+               self.template set<1, 1>(x_span, rows_span, cols_span);
              else if (bs == 2)
-               self.template set<2, 2>(x, rows, cols);
+               self.template set<2, 2>(x_span, rows_span, cols_span);
              else if (bs == 3)
-               self.template set<3, 3>(x, rows, cols);
+               self.template set<3, 3>(x_span, rows_span, cols_span);
              else
              {
                throw std::runtime_error(
@@ -135,6 +181,22 @@ void declare_la_objects(nanobind::module_& m, const std::string& type)
            })
       .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
       .def("mult", &dolfinx::la::MatrixCSR<T>::mult)
+      .def("mult", [](const dolfinx::la::MatrixCSR<T>& self,
+                      const dolfinx::la::MatrixCSR<T>& B)
+           { return dolfinx::la::matmul(self, B); })
+      .def("multT", &dolfinx::la::MatrixCSR<T>::multT)
+      .def("transpose",
+           [](const dolfinx::la::MatrixCSR<T>& self)
+           {
+             std::array<int, 2> bs = self.block_size();
+             if (bs[0] == 1 and bs[1] == 1)
+               return dolfinx::la::transpose<T, 1, 1>(self);
+             else if (bs[0] == 2 and bs[1] == 2)
+               return dolfinx::la::transpose<T, 2, 2>(self);
+             else if (bs[0] == 3 and bs[1] == 3)
+               return dolfinx::la::transpose<T, 3, 3>(self);
+             return dolfinx::la::transpose(self);
+           })
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {

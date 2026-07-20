@@ -58,6 +58,7 @@ namespace dolfinx::fem::impl
 /// @param[in] P0 Degree-of-freedom transformation function. Applied when
 /// expressions includes an argument function that requires a
 /// transformation.
+/// @param[in] perms Entity permutation information for use in `fn`.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
     std::span<T> values, fem::FEkernel<T> auto fn,
@@ -68,7 +69,8 @@ void tabulate_expression(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, fem::MDSpan2 auto entities,
     std::span<const std::uint32_t> cell_info,
-    fem::DofTransformKernel<T> auto P0)
+    fem::DofTransformKernel<T> auto P0,
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
 {
   static_assert(entities.rank() == 1 or entities.rank() == 2);
 
@@ -93,10 +95,14 @@ void tabulate_expression(
       }
       fn(values_local.data(), &coeffs(e, 0), constants.data(),
          coord_dofs.data(), nullptr, nullptr, nullptr);
+
+      P0(values_local, cell_info, entity, size0);
     }
     else
     {
       std::int32_t entity = entities(e, 0);
+      std::int32_t local_entity = entities(e, 1);
+      std::uint8_t perm = perms.empty() ? 0 : perms(entity, local_entity);
       auto x_dofs = md::submdspan(x_dofmap, entity, md::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
       {
@@ -104,10 +110,10 @@ void tabulate_expression(
                     std::next(coord_dofs.begin(), 3 * i));
       }
       fn(values_local.data(), &coeffs(e, 0), constants.data(),
-         coord_dofs.data(), &entities(e, 1), nullptr, nullptr);
+         coord_dofs.data(), &local_entity, &perm, nullptr);
+      P0(values_local, cell_info, entity, size0);
     }
 
-    P0(values_local, cell_info, e, size0);
     for (std::size_t j = 0; j < values_local.size(); ++j)
       values[e * offset + j] = values_local[j];
   }
@@ -180,10 +186,22 @@ void tabulate_expression(
               doftransform::transpose);
     }
   }
-
+  // An expression has no notion of requiring a facet permutation.
+  md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
+  if constexpr (entities.rank() == 2)
+  {
+    mesh::CellType cell_type = mesh.topology()->cell_types()[0];
+    int num_facets_per_cell
+        = mesh::cell_num_entities(cell_type, mesh.topology()->dim() - 1);
+    mesh.topology_mutable()->create_entity_permutations();
+    const std::vector<std::uint8_t>& p
+        = mesh.topology()->get_facet_permutations();
+    facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
+                             num_facets_per_cell);
+  }
   tabulate_expression<T, U>(values, fn, Xshape, value_size, num_argument_dofs,
-                            mesh.geometry().dofmap(), mesh.geometry().x(),
-                            coeffs, constants, entities, cell_info,
-                            post_dof_transform);
+                            mesh.geometry().dofmaps().front(),
+                            mesh.geometry().x(), coeffs, constants, entities,
+                            cell_info, post_dof_transform, facet_perms);
 }
 } // namespace dolfinx::fem::impl

@@ -26,6 +26,7 @@ class Topology;
 namespace dolfinx::fem
 {
 class ElementDofLayout;
+class DofMap;
 
 /// Build dofmap data for elements on a mesh topology
 /// @param[in] comm MPI communicator
@@ -40,5 +41,19 @@ build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
                   const std::vector<ElementDofLayout>& element_dof_layouts,
                   const std::function<std::vector<int>(
                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn);
+
+/// @brief Build a dofmap on a real element, i.e. a single constant dof shared
+/// by all cells.
+///
+/// @param[in] topology The mesh topology.
+/// @param[in] entity_dofs The dofs for each mesh entity.
+/// @param[in] entity_closure_dofs The closure dofs for each mesh entity.
+/// @param[in] value_size The number of components for the real element.
+/// @return The dofmap for the real element.
+fem::DofMap build_real_element_dofmap(
+    const mesh::Topology& topology,
+    const std::vector<std::vector<std::vector<int>>>& entity_dofs,
+    const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
+    int value_size);
 
 } // namespace dolfinx::fem

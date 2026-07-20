@@ -28,6 +28,7 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/string_view.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <span>
@@ -181,7 +182,9 @@ void mesh(nb::module_& m)
           {
             std::vector<std::int32_t> mapped_entities
                 = self.sub_topology_to_topology(
-                    std::span(entities.data(), entities.size()), inverse);
+                    std::span<const std::int32_t>(entities.data(),
+                                                  entities.size()),
+                    inverse);
             return as_nbarray(std::move(mapped_entities));
           },
           nb::arg("entities"), nb::arg("inverse"))
@@ -217,7 +220,8 @@ void mesh(nb::module_& m)
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
            nb::arg("dim"), nb::arg("num_threads") = 1)
       .def("create_entity_permutations",
-           &dolfinx::mesh::Topology::create_entity_permutations)
+           &dolfinx::mesh::Topology::create_entity_permutations,
+           nb::arg("num_threads"))
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity,
            nb::arg("d0"), nb::arg("d1"))
       .def(
@@ -256,6 +260,8 @@ void mesh(nb::module_& m)
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
                  original_cell_indices)
           {
+            if (self.original_cell_index.size() > 1)
+              throw std::runtime_error("Mixed topology unsupported.");
             self.original_cell_index.resize(1);
             self.original_cell_index.front().assign(
                 original_cell_indices.data(),
@@ -275,7 +281,8 @@ void mesh(nb::module_& m)
                   oci.data(), {oci.size()}));
             }
             return idx_nb;
-          })
+          },
+          nb::rv_policy::reference_internal)
       .def("connectivity",
            nb::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        nb::const_),
@@ -318,7 +325,7 @@ void mesh(nb::module_& m)
          const std::vector<std::vector<std::int64_t>>& cells,
          const std::vector<std::vector<std::int64_t>>& original_cell_index,
          const std::vector<std::vector<int>>& ghost_owners,
-         const std::vector<std::int64_t>& boundary_vertices)
+         const std::vector<std::int64_t>& boundary_vertices, int num_threads)
       {
         std::vector<std::span<const std::int64_t>> cells_span(cells.begin(),
                                                               cells.end());
@@ -328,10 +335,9 @@ void mesh(nb::module_& m)
             ghost_owners.begin(), ghost_owners.end());
         std::span<const std::int64_t> boundary_vertices_span(
             boundary_vertices.begin(), boundary_vertices.end());
-
         return dolfinx::mesh::create_topology(
             comm.get(), cell_type, cells_span, original_cell_index_span,
-            ghost_owners_span, boundary_vertices_span);
+            ghost_owners_span, boundary_vertices_span, num_threads);
       },
       "Create a Topology object.");
 

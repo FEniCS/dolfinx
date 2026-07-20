@@ -2,38 +2,48 @@
 #
 # python cmake/scripts/generate-cmakefiles.py from dolfinx/cpp
 #
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.26)
 
 set(PROJECT_NAME demo_interpolation-io)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
-if(NOT TARGET dolfinx)
+if(NOT TARGET dolfinx::dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
 add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} dolfinx)
+target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx::dolfinx)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 # Set C++20 standard
-set(CMAKE_CXX_EXTENSIONS OFF)
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which
 # includes LaTeX)
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
-set_source_files_properties(
-  main.cpp
-  PROPERTIES
-    COMPILE_FLAGS
-    "$<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment -Wall -Wextra -pedantic -Werror>"
+target_compile_options(
+  ${PROJECT_NAME}
+  PRIVATE
+    $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment
+    -Wall
+    -Wextra
+    -pedantic
+    -Werror>
 )
 
 # Test targets (used by DOLFINx testing system)
-set(TEST_PARAMETERS2 -np 2 "./${PROJECT_NAME}")
-set(TEST_PARAMETERS3 -np 3 "./${PROJECT_NAME}")
-add_test(NAME ${PROJECT_NAME}_mpi_2 COMMAND "mpirun" ${TEST_PARAMETERS2})
-add_test(NAME ${PROJECT_NAME}_mpi_3 COMMAND "mpirun" ${TEST_PARAMETERS3})
-add_test(NAME ${PROJECT_NAME}_serial COMMAND ${PROJECT_NAME})
+add_test(
+  NAME ${PROJECT_NAME}_mpi_2
+  COMMAND
+    ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
+    $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS}
+)
+add_test(
+  NAME ${PROJECT_NAME}_mpi_3
+  COMMAND
+    ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS}
+    $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS}
+)
+add_test(NAME ${PROJECT_NAME}_serial COMMAND $<TARGET_FILE:${PROJECT_NAME}>)

@@ -183,15 +183,18 @@ extract_function_names(const typename adios2_writer::U<T>& u)
               using U = std::decay_t<decltype(v)>;
               using X = typename U::element_type;
 
-              if (impl::is_cellwise(*(v->function_space()->element())))
-                names = dg0_names;
+              // append function names either to dg0_names or names
+              auto& fnames
+                  = impl::is_cellwise(*(v->function_space()->element()))
+                        ? dg0_names
+                        : names;
 
               if constexpr (std::is_floating_point_v<typename X::value_type>)
-                names.push_back(v->name);
+                fnames.push_back(v->name);
               else
               {
-                names.push_back(v->name + impl_adios2::field_ext[0]);
-                names.push_back(v->name + impl_adios2::field_ext[1]);
+                fnames.push_back(v->name + impl_adios2::field_ext[0]);
+                fnames.push_back(v->name + impl_adios2::field_ext[1]);
               }
             },
             v);
@@ -310,8 +313,8 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
       io, "NumberOfNodes", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
-  auto [vtkcells, shape]
-      = io::extract_vtk_connectivity(geometry.dofmap(), topology->cell_type());
+  auto [vtkcells, shape] = io::extract_vtk_connectivity(
+      geometry.dofmaps().front(), topology->cell_type());
 
   // Add cell metadata
   int tdim = topology->dim();

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -14,6 +15,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -25,6 +27,12 @@ class IndexMap;
 
 namespace dolfinx::mesh
 {
+/// Requirement on range of cell indices.
+template <typename R>
+concept CellRange = std::ranges::input_range<R> and std::ranges::sized_range<R>
+                    and std::is_integral_v<
+                        std::remove_const_t<std::ranges::range_value_t<R>>>;
+
 enum class CellType : std::int8_t;
 
 /// @brief Topology stores the topology of a mesh, consisting of mesh
@@ -203,7 +211,7 @@ public:
   void create_connectivity(int d0, int d1);
 
   /// @brief Compute entity permutations and reflections.
-  void create_entity_permutations();
+  void create_entity_permutations(int num_threads = 1);
 
   /// Original cell index for each cell type
   std::vector<std::vector<std::int64_t>> original_cell_index;
@@ -275,13 +283,16 @@ private:
 /// @param[in] boundary_vertices Vertices on the 'exterior' (boundary)
 /// of the local topology. These vertices might appear on other
 /// processes.
+/// @param[in] num_threads Number of threads to use. Use 0 to not launch
+/// threads.
 /// @return A distributed mesh topology.
 Topology
 create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
                 std::vector<std::span<const std::int64_t>> cells,
                 std::vector<std::span<const std::int64_t>> original_cell_index,
                 std::vector<std::span<const int>> ghost_owners,
-                std::span<const std::int64_t> boundary_vertices);
+                std::span<const std::int64_t> boundary_vertices,
+                int num_threads);
 
 /// @brief Create a mesh topology for a single cell type.
 ///
@@ -305,11 +316,14 @@ create_topology(MPI_Comm comm, const std::vector<CellType>& cell_types,
 /// @param[in] boundary_vertices Vertices on the 'exterior' (boundary)
 /// of the local topology. These vertices might appear on other
 /// processes.
+/// @param[in] num_threads Number of threads to use. Use 0 to not launch
+/// threads.
 /// @return A distributed mesh topology.
 Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const std::int64_t> original_cell_index,
                          std::span<const int> ghost_owners, CellType cell_type,
-                         std::span<const std::int64_t> boundary_vertices);
+                         std::span<const std::int64_t> boundary_vertices,
+                         int num_threads);
 
 /// @brief Create a topology for a subset of entities of a given
 /// topological dimension.

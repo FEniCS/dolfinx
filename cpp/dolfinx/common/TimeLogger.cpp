@@ -7,6 +7,7 @@
 #include "TimeLogger.h"
 #include "MPI.h"
 #include "log.h"
+#include <format>
 #include <iostream>
 
 using namespace dolfinx;
@@ -21,11 +22,10 @@ TimeLogger& TimeLogger::instance()
 
 //-----------------------------------------------------------------------------
 void TimeLogger::register_timing(
-    const std::string& task, std::chrono::duration<double, std::ratio<1>> time)
+    std::string_view task, std::chrono::duration<double, std::ratio<1>> time)
 {
   // Print a message
-  std::string line
-      = "Elapsed time: " + std::to_string(time.count()) + " (" + task + ")";
+  std::string line = std::format("Elapsed time: {} ({})", time.count(), task);
   spdlog::debug(line.c_str());
 
   // Store values for summary
@@ -35,7 +35,7 @@ void TimeLogger::register_timing(
     std::get<1>(it->second) += time;
   }
   else
-    _timings.insert({task, {1, time}});
+    _timings.insert({std::string(task), {1, time}});
 }
 //-----------------------------------------------------------------------------
 void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction) const
@@ -43,7 +43,7 @@ void TimeLogger::list_timings(MPI_Comm comm, Table::Reduction reduction) const
   // Format and reduce to rank 0
   Table timings = this->timing_table();
   timings = timings.reduce(comm, reduction);
-  const std::string str = "\n" + timings.str();
+  std::string str = std::format("\n{}", timings.str());
 
   // Print just on rank 0
   if (dolfinx::MPI::rank(comm) == 0)
@@ -67,21 +67,22 @@ Table TimeLogger::timing_table() const
 }
 //-----------------------------------------------------------------------------
 std::pair<int, std::chrono::duration<double, std::ratio<1>>>
-TimeLogger::timing(const std::string& task) const
+TimeLogger::timing(std::string_view task) const
 {
   // Find timing
   auto it = _timings.find(task);
   if (it == _timings.end())
   {
-    throw std::runtime_error("No timings registered for task \"" + task
-                             + "\".");
+    throw std::runtime_error(
+        std::format("No timings registered for task \"{}\".", task));
   }
 
   return it->second;
 }
 //-----------------------------------------------------------------------------
 std::map<std::string,
-         std::pair<int, std::chrono::duration<double, std::ratio<1>>>>
+         std::pair<int, std::chrono::duration<double, std::ratio<1>>>,
+         std::less<>>
 TimeLogger::timings() const
 {
   return _timings;

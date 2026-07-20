@@ -17,6 +17,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <format>
 #include <functional>
 #include <memory>
 #include <mpi.h>
@@ -574,7 +575,7 @@ compute_entities_by_key_matching(
   assert(cell_dim(entity_type) == dim);
 
   // Start timer
-  common::Timer timer("Compute entities of dim = " + std::to_string(dim));
+  common::Timer timer(std::format("Compute entities of dim = {}", dim));
 
   std::vector<std::vector<std::int32_t>> cell_type_entities(cell_lists.size());
   std::vector<std::int32_t> cell_type_offsets{0};
@@ -619,7 +620,7 @@ compute_entities_by_key_matching(
       std::vector<std::jthread> threads(num_threads);
       for (int i = 0; i < num_threads; ++i)
       {
-        auto [c0, c1] = dolfinx::MPI::local_range(i, num_cells, num_threads);
+        auto [c0, c1] = dolfinx::common::local_range(i, num_cells, num_threads);
         std::size_t offset
             = cell_type_offsets[k] * num_vertices_per_entity
               + c0 * num_vertices_per_entity * num_entities_per_cell;
@@ -958,21 +959,20 @@ mesh::compute_connectivity(const Topology& topology, std::array<int, 2> d0,
       = topology.connectivity(d0, {0, 0});
   if (d0[0] > 0 and !topology.connectivity(d0, {0, 0}))
   {
-    throw std::runtime_error("Missing entities of dimension "
-                             + std::to_string(d0[0]) + ".");
+    throw std::runtime_error(
+        std::format("Missing entities of dimension {}.", d0[0]));
   }
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d1_0
       = topology.connectivity(d1, {0, 0});
   if (d1[0] > 0 and !topology.connectivity(d1, {0, 0}))
   {
-    throw std::runtime_error("Missing entities of dimension "
-                             + std::to_string(d1[0]) + ".");
+    throw std::runtime_error(
+        std::format("Missing entities of dimension {}.", d1[0]));
   }
 
   // Start timer
-  common::Timer timer("Compute connectivity " + std::to_string(d0[0]) + "-"
-                      + std::to_string(d1[1]));
+  common::Timer timer(std::format("Compute connectivity {}-{}", d0[0], d1[1]));
 
   // Decide how to compute the connectivity
   if (d0 == d1)

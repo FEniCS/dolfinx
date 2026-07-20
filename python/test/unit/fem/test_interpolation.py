@@ -52,13 +52,13 @@ parametrize_cell_types = pytest.mark.parametrize(
 
 def random_point_in_reference(cell_type):
     if cell_type == CellType.interval:
-        return (random.random(), 0, 0)
+        return (random.random(),)
     elif cell_type == CellType.triangle:
         x, y = random.random(), random.random()
         # If point is outside cell, move it back inside
         if x + y > 1:
             x, y = 1 - x, 1 - y
-        return (x, y, 0)
+        return (x, y)
     elif cell_type == CellType.tetrahedron:
         x, y, z = random.random(), random.random(), random.random()
         # If point is outside cell, move it back inside
@@ -71,7 +71,7 @@ def random_point_in_reference(cell_type):
         return (x, y, z)
     elif cell_type == CellType.quadrilateral:
         x, y = random.random(), random.random()
-        return (x, y, 0)
+        return (x, y)
     elif cell_type == CellType.hexahedron:
         return (random.random(), random.random(), random.random())
 
@@ -97,7 +97,8 @@ def random_point_in_cell(mesh):
         axes = (mesh.geometry.x[1], mesh.geometry.x[2], mesh.geometry.x[4])
 
     return tuple(
-        origin[i] + sum((axis[i] - origin[i]) * p for axis, p in zip(axes, point)) for i in range(3)
+        origin[i] + sum((axis[i] - origin[i]) * p for axis, p in zip(axes, point, strict=True))
+        for i in range(3)
     )
 
 
@@ -232,7 +233,7 @@ def run_scalar_test(V, poly_order):
     points = np.asarray(points, dtype=default_real_type)
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
-    for p, val in zip(points, values):
+    for p, val in zip(points, values, strict=True):
         assert np.allclose(val, f(p), atol=1.0e-5)
 
 
@@ -263,7 +264,7 @@ def run_vector_test(V, poly_order):
     points = [random_point_in_cell(V.mesh) for count in range(5)]
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
-    for p, val in zip(points, values):
+    for p, val in zip(points, values, strict=True):
         assert np.allclose(val, f(p), atol=1.0e-5)
 
 
