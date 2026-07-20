@@ -28,6 +28,7 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/string_view.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <span>
@@ -259,6 +260,8 @@ void mesh(nb::module_& m)
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
                  original_cell_indices)
           {
+            if (self.original_cell_index.size() > 1)
+              throw std::runtime_error("Mixed topology unsupported.");
             self.original_cell_index.resize(1);
             self.original_cell_index.front().assign(
                 original_cell_indices.data(),
@@ -278,7 +281,8 @@ void mesh(nb::module_& m)
                   oci.data(), {oci.size()}));
             }
             return idx_nb;
-          })
+          },
+          nb::rv_policy::reference_internal)
       .def("connectivity",
            nb::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        nb::const_),

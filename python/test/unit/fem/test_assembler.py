@@ -1189,6 +1189,7 @@ class TestPETScAssemblers:
 
         constants = pack_constants(J)
         coeffs = pack_coefficients(J)
+        tol = 100 * np.finfo(default_scalar_type()).eps
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
             A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1], kind=kind)
             A.assemble()
@@ -1198,11 +1199,11 @@ class TestPETScAssemblers:
                     for j in range(2):
                         Asub = A.getNestSubMatrix(i, j)
                         A0sub = A0.getNestSubMatrix(i, j)
-                        assert 0.0 == pytest.approx((Asub - A0sub).norm(), abs=1.0e-12)  # /NOSONAR
+                        assert 0.0 == pytest.approx((Asub - A0sub).norm(), abs=tol)  # /NOSONAR
                         Asub.destroy()
                         A0sub.destroy()
             else:
-                assert 0.0 == pytest.approx((A - A0).norm(), abs=1.0e-12)  # /NOSONAR
+                assert 0.0 == pytest.approx((A - A0).norm(), abs=tol)  # /NOSONAR
 
         # Change coefficients and constants
         if kind is None:
