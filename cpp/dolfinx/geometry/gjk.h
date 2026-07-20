@@ -14,6 +14,7 @@
 #include <limits>
 #include <numeric>
 #include <span>
+#include <stdexcept>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -506,7 +507,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
 /// Row-major storage.
 /// @param[in] q Body 2 list of points, `shape=(num_points, 3)`. Row-major
 /// storage.
-/// @param[in] num_threads Thread count.
+/// @param[in] num_threads Number of threads to use. Must be >= 1.
 ///
 /// @tparam T Floating point type
 /// @tparam U Floating point type used for geometry computations internally,
@@ -517,16 +518,21 @@ template <std::floating_point T,
           typename U = boost::multiprecision::cpp_bin_float_double_extended>
 std::vector<T>
 compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
-                      std::span<const T> q, size_t num_threads)
+                      std::span<const T> q, int num_threads)
 {
-  size_t total_size = bodies.size();
-  num_threads = std::min(num_threads, total_size);
+  if (num_threads <= 0)
+    throw std::runtime_error("num_threads must be >= 1.");
+
+  std::size_t total_size = bodies.size();
+  num_threads
+      = std::max<std::size_t>(1, std::min(num_threads, (int)total_size));
 
   std::vector<T> results(total_size * 3);
-  auto compute_chunk
-      = [&results, &bodies](size_t c0, size_t c1, std::span<const T> q_ref)
+  auto compute_chunk =
+      [](std::vector<T>& results, const std::vector<std::span<const T>>& bodies,
+         std::size_t c0, std::size_t c1, std::span<const T> q_ref)
   {
-    for (size_t i = c0; i < c1; ++i)
+    for (std::size_t i = c0; i < c1; ++i)
     {
       // Using U explicitly as the internal precision type
       std::array<T, 3> dist = compute_distance_gjk<T, U>(bodies[i], q_ref);
@@ -536,19 +542,15 @@ compute_distances_gjk(const std::vector<std::span<const T>>& bodies,
     }
   };
 
-  if (num_threads <= 1)
+  std::vector<std::jthread> threads;
+  for (int i = 1; i < num_threads; ++i)
   {
-    compute_chunk(0, total_size, q);
+    auto [c0, c1] = common::local_range(i, total_size, num_threads);
+    threads.emplace_back(compute_chunk, std::ref(results), std::ref(bodies), c0,
+                         c1, std::ref(q));
   }
-  else
-  {
-    std::vector<std::jthread> threads(num_threads);
-    for (size_t i = 0; i < num_threads; ++i)
-    {
-      auto [c0, c1] = dolfinx::common::local_range(i, total_size, num_threads);
-      threads[i] = std::jthread(compute_chunk, c0, c1, q);
-    }
-  }
+  auto [c0, c1] = common::local_range(0, total_size, num_threads);
+  compute_chunk(std::ref(results), std::cref(bodies), c0, c1, q);
 
   return results;
 }

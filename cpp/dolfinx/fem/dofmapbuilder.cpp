@@ -17,6 +17,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <iterator>
 #include <memory>
 #include <numeric>
@@ -213,10 +214,10 @@ build_basic_dofmaps(
                 and !topology.connectivity({int(D), int(i)},
                                            {int(d), int(et_index)}))
             {
-              throw std::runtime_error("Missing needed connectivity. Cell type:"
-                                       + std::to_string(i)
-                                       + "to dim:" + std::to_string(d)
-                                       + ", ent:" + std::to_string(et_index));
+              throw std::runtime_error(
+                  std::format("Missing needed connectivity. Cell type: {} to "
+                              "dim: {}, ent: {}",
+                              i, d, et_index));
             }
           }
           else

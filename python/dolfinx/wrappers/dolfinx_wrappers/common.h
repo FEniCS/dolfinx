@@ -28,7 +28,7 @@ void declare_scatter_functions(
          nb::ndarray<const T, nb::ndim<1>, nb::c_contig> local_data,
          nb::ndarray<T, nb::ndim<1>, nb::c_contig> remote_data)
       {
-        if (local_data.size() < self.remote_indices().size())
+        if (local_data.size() < self.local_indices().size())
         {
           throw std::runtime_error(
               "Local data buffer too small in forward scatter.");

@@ -38,7 +38,7 @@ if(GLIBCXX)
 endif()
 
 # Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
-# library
+# library, and with std::optional (e.g. common::Timer::_start_time)
 if(
   CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
   AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
@@ -46,6 +46,6 @@ if(
 )
   list(
     APPEND DOLFINX_CXX_DEVELOPER_FLAGS
-    -Wno-array-bounds;-Wno-stringop-overflow
+    -Wno-array-bounds;-Wno-stringop-overflow;-Wno-maybe-uninitialized
   )
 endif()

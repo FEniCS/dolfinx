@@ -534,10 +534,10 @@ Form<T, U> create_form_factory(
   {
     if (integral.coordinate_element_hash != geo.cmaps().at(cell_idx).hash())
     {
-      throw std::runtime_error(
+      throw std::runtime_error(std::format(
           "Generated integral geometry element does not match mesh geometry: "
-          + std::to_string(integral.coordinate_element_hash) + ", "
-          + std::to_string(geo.cmaps().at(cell_idx).hash()));
+          "{}, {}",
+          integral.coordinate_element_hash, geo.cmaps().at(cell_idx).hash()));
     }
   };
 
@@ -861,8 +861,8 @@ Form<T, U> create_form(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Form coefficient \"" + name
-                               + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Form coefficient \"{}\" not provided.", name));
     }
   }
 
@@ -873,7 +873,8 @@ Form<T, U> create_form(
     if (auto it = constants.find(name); it != constants.end())
       const_map.push_back(it->second);
     else
-      throw std::runtime_error("Form constant \"" + name + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Form constant \"{}\" not provided.", name));
   }
 
   return create_form_factory({ufcx_form}, spaces, coeff_map, const_map,
@@ -1028,8 +1029,8 @@ Expression<T, U> create_expression(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Expression coefficient \"" + name
-                               + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Expression coefficient \"{}\" not provided.", name));
     }
   }
 
@@ -1046,8 +1047,8 @@ Expression<T, U> create_expression(
       const_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Expression constant \"" + name
-                               + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Expression constant \"{}\" not provided.", name));
     }
   }
 
