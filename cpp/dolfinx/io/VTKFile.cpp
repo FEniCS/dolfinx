@@ -39,8 +39,8 @@ constexpr std::array field_ext = {"_real", "_imag"};
 std::string get_counter(const pugi::xml_node& node, const std::string& name)
 {
   // Count number of entries
-  const size_t n = std::distance(node.children(name.c_str()).begin(),
-                                 node.children(name.c_str()).end());
+  const std::size_t n = std::distance(node.children(name.c_str()).begin(),
+                                      node.children(name.c_str()).end());
 
   // Compute counter string
   constexpr int num_digits = 6;

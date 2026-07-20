@@ -1054,6 +1054,9 @@ Topology mesh::create_topology(
     std::vector<std::span<const int>> ghost_owners,
     std::span<const std::int64_t> boundary_vertices, int num_threads)
 {
+  if (num_threads < 1)
+    throw std::runtime_error("num_threads must be >= 1.");
+
   common::Timer timer("Topology: create");
 
   assert(cell_types.size() == cells.size());

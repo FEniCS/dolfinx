@@ -572,6 +572,7 @@ compute_entities_by_key_matching(
   }
 
   assert(cell_dim(entity_type) == dim);
+  assert(num_threads > 0);
 
   // Start timer
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
@@ -615,7 +616,6 @@ compute_entities_by_key_matching(
     int num_entities_per_cell = cell_type_entities[k].size();
     std::size_t num_cells = cells.size() / num_cell_vertices(cell_type);
 
-    assert(num_threads > 0);
     std::vector<std::jthread> threads;
     for (int i = 1; i < num_threads; ++i)
     {
@@ -675,7 +675,6 @@ compute_entities_by_key_matching(
     };
 
     // Sort the list and label uniquely
-    assert(num_threads > 0);
     const std::vector<std::int32_t> sort_order
         = num_threads == 1
               ? dolfinx::sort_by_perm<std::int32_t, 16>(entity_list_sorted,
@@ -871,6 +870,9 @@ std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
 mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
                        int num_threads)
 {
+  if (num_threads < 1)
+    throw std::runtime_error("num_threads must be >= 1.");
+
   spdlog::info("Computing mesh entities of dimension {}", dim);
 
   // Vertices must always exist
