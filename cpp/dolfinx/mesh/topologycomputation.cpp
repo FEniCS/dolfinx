@@ -573,6 +573,7 @@ compute_entities_by_key_matching(
   }
 
   assert(cell_dim(entity_type) == dim);
+  assert(num_threads > 0);
 
   // Start timer
   common::Timer timer(std::format("Compute entities of dim = {}", dim));
@@ -615,37 +616,36 @@ compute_entities_by_key_matching(
     std::span<const std::int32_t> cells = std::get<1>(cell_lists[k]);
     int num_entities_per_cell = cell_type_entities[k].size();
     std::size_t num_cells = cells.size() / num_cell_vertices(cell_type);
-    if (num_threads > 0)
+
+    std::vector<std::jthread> threads;
+    for (int i = 1; i < num_threads; ++i)
     {
-      std::vector<std::jthread> threads(num_threads);
-      for (int i = 0; i < num_threads; ++i)
-      {
-        auto [c0, c1] = dolfinx::common::local_range(i, num_cells, num_threads);
-        std::size_t offset
-            = cell_type_offsets[k] * num_vertices_per_entity
-              + c0 * num_vertices_per_entity * num_entities_per_cell;
-        std::size_t count
-            = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
-        auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
-                                     (c1 - c0) * num_vertices_per_cell);
-        threads[i] = std::jthread(
-            build_entity_list, std::span(entity_list.data() + offset, count),
-            std::span(entity_list_sorted.data() + offset, count), cells_i,
-            num_vertices_per_cell, std::cref(e_vertices), entity_type,
-            std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
-      }
-    }
-    else
-    {
-      std::size_t offset = cell_type_offsets[k] * num_vertices_per_entity;
+      auto [c0, c1] = common::local_range(i, num_cells, num_threads);
+      std::size_t offset
+          = cell_type_offsets[k] * num_vertices_per_entity
+            + c0 * num_vertices_per_entity * num_entities_per_cell;
       std::size_t count
-          = num_cells * num_vertices_per_entity * num_entities_per_cell;
-      build_entity_list(std::span(entity_list.data() + offset, count),
-                        std::span(entity_list_sorted.data() + offset, count),
-                        cells, num_vertices_per_cell, std::cref(e_vertices),
-                        entity_type, std::cref(cell_type_entities[k]),
-                        std::cref(vertex_index_map));
+          = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
+      auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
+                                   (c1 - c0) * num_vertices_per_cell);
+      threads.emplace_back(
+          build_entity_list, std::span(entity_list.data() + offset, count),
+          std::span(entity_list_sorted.data() + offset, count), cells_i,
+          num_vertices_per_cell, std::cref(e_vertices), entity_type,
+          std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
     }
+    auto [c0, c1] = common::local_range(0, num_cells, num_threads);
+    std::size_t offset = cell_type_offsets[k] * num_vertices_per_entity
+                         + c0 * num_vertices_per_entity * num_entities_per_cell;
+    std::size_t count
+        = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
+    auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
+                                 (c1 - c0) * num_vertices_per_cell);
+    build_entity_list(std::span(entity_list.data() + offset, count),
+                      std::span(entity_list_sorted.data() + offset, count),
+                      cells_i, num_vertices_per_cell, std::cref(e_vertices),
+                      entity_type, std::cref(cell_type_entities[k]),
+                      std::cref(vertex_index_map));
   }
 
   // Start numbering entities
@@ -677,7 +677,7 @@ compute_entities_by_key_matching(
 
     // Sort the list and label uniquely
     const std::vector<std::int32_t> sort_order
-        = num_threads == 0
+        = num_threads == 1
               ? dolfinx::sort_by_perm<std::int32_t, 16>(entity_list_sorted,
                                                         num_vertices_per_entity)
               : sort_threaded(entity_list_sorted, num_vertices_per_entity,
@@ -871,6 +871,9 @@ std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
 mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
                        int num_threads)
 {
+  if (num_threads < 1)
+    throw std::runtime_error("num_threads must be >= 1.");
+
   spdlog::info("Computing mesh entities of dimension {}", dim);
 
   // Vertices must always exist

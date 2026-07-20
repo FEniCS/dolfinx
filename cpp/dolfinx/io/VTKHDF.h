@@ -326,7 +326,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   int rank = dolfinx::MPI::rank(comm);
   int mpi_size = dolfinx::MPI::size(comm);
   std::array<std::int64_t, 2> local_cell_range
-      = dolfinx::common::local_range(rank, shape[0], mpi_size);
+      = common::local_range(rank, shape[0], mpi_size);
 
   hid_t dset_id = hdf5::open_dataset(h5file, "/VTKHDF/Types");
   std::vector<std::uint8_t> types
@@ -409,7 +409,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   H5Dclose(dset_id);
   spdlog::info("Mesh with {} points", npoints[0]);
   std::array<std::int64_t, 2> local_point_range
-      = dolfinx::common::local_range(rank, npoints[0], mpi_size);
+      = common::local_range(rank, npoints[0], mpi_size);
 
   std::vector<std::int64_t> x_shape
       = hdf5::get_dataset_shape(h5file, "/VTKHDF/Points");
