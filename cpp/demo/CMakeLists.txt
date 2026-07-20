@@ -16,6 +16,7 @@ macro(add_demo_subdirectory subdir)
 endmacro(add_demo_subdirectory)
 
 # Add demos
+add_demo_subdirectory(affinity_test)
 add_demo_subdirectory(biharmonic)
 add_demo_subdirectory(codim_0_assembly)
 add_demo_subdirectory(custom_kernel)
