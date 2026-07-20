@@ -9,6 +9,7 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
 #include <memory>
 #include <tuple>
 #include <vector>
@@ -22,6 +23,17 @@ namespace dolfinx::mesh
 {
 class Topology;
 enum class CellType : std::int8_t;
+
+/// @brief Callback invoked from within a worker thread before it starts
+/// its share of work, used to apply thread placement (e.g. pinning to a
+/// specific core, typically within the NUMA domain the calling MPI rank
+/// is bound to).
+///
+/// Called with `(thread_index, num_threads)`, where `thread_index` is
+/// in `[0, num_threads)`. Invoked on the worker thread itself (not the
+/// spawning thread), so it may safely call platform affinity APIs (e.g.
+/// `pthread_setaffinity_np`) on the calling thread's native handle.
+using AffinityPolicy = std::function<void(int, int)>;
 
 /// @brief Compute mesh entities of given topological dimension by
 /// computing cell-to-entity `(tdim, i) -> `(dim, entity_type)` and
@@ -37,6 +49,10 @@ enum class CellType : std::int8_t;
 /// Entity type must be in the list returned by Topology::entity_types.
 /// @param[in] num_threads Number of threads to use for entity creation.
 /// Must be >= 1.
+/// @param[in] affinity_policy Optional callback applied by each worker
+/// thread before it begins its share of work, e.g. to pin the thread to
+/// a core. If empty (the default), no affinity is set and threads run
+/// with whatever affinity they inherit.
 ///
 /// @return Tuple of (cell->entity connectivity, entity->vertex
 /// connectivity, index map for created entities, list of interprocess
@@ -48,7 +64,7 @@ std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
 compute_entities(const Topology& topology, int dim, CellType entity_type,
-                 int num_threads = 1);
+                 int num_threads = 1, AffinityPolicy affinity_policy = nullptr);
 
 /// @brief Compute connectivity (d0 -> d1) for given pair of entity
 /// types, given by topological dimension and index, as found in

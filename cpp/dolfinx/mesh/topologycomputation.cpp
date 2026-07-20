@@ -564,7 +564,7 @@ compute_entities_by_key_matching(
                            std::reference_wrapper<const common::IndexMap>>>
         cell_lists,
     const common::IndexMap& vertex_index_map, mesh::CellType entity_type,
-    int dim, int num_threads)
+    int dim, int num_threads, const mesh::AffinityPolicy& affinity_policy)
 {
   if (dim == 0)
   {
@@ -629,10 +629,23 @@ compute_entities_by_key_matching(
       auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
                                    (c1 - c0) * num_vertices_per_cell);
       threads.emplace_back(
-          build_entity_list, std::span(entity_list.data() + offset, count),
-          std::span(entity_list_sorted.data() + offset, count), cells_i,
-          num_vertices_per_cell, std::cref(e_vertices), entity_type,
-          std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
+          [&affinity_policy, i, num_threads,
+           entity_list = std::span(entity_list.data() + offset, count),
+           entity_list_sorted
+           = std::span(entity_list_sorted.data() + offset, count),
+           cells_i, num_vertices_per_cell, &e_vertices, entity_type,
+           &entities = cell_type_entities[k], &vertex_index_map]
+          {
+            // Runs on the worker thread itself, so the policy may set
+            // this thread's own affinity (e.g. pin to a core within the
+            // calling MPI rank's NUMA domain).
+            if (affinity_policy)
+              affinity_policy(i, num_threads);
+            build_entity_list(entity_list, entity_list_sorted, cells_i,
+                              num_vertices_per_cell, std::cref(e_vertices),
+                              entity_type, std::cref(entities),
+                              std::cref(vertex_index_map));
+          });
     }
     auto [c0, c1] = common::local_range(0, num_cells, num_threads);
     std::size_t offset = cell_type_offsets[k] * num_vertices_per_entity
@@ -641,6 +654,8 @@ compute_entities_by_key_matching(
         = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
     auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
                                  (c1 - c0) * num_vertices_per_cell);
+    if (affinity_policy)
+      affinity_policy(0, num_threads);
     build_entity_list(std::span(entity_list.data() + offset, count),
                       std::span(entity_list_sorted.data() + offset, count),
                       cells_i, num_vertices_per_cell, std::cref(e_vertices),
@@ -869,7 +884,7 @@ std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
 mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
-                       int num_threads)
+                       int num_threads, AffinityPolicy affinity_policy)
 {
   if (num_threads < 1)
     throw std::runtime_error("num_threads must be >= 1.");
@@ -919,7 +934,8 @@ mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
 
   // c->e, e->v
   auto [d0, d1, im, interprocess_entities] = compute_entities_by_key_matching(
-      topology.comm(), cell_lists, *vertex_map, entity_type, dim, num_threads);
+      topology.comm(), cell_lists, *vertex_map, entity_type, dim, num_threads,
+      affinity_policy);
 
   return {d0,
           std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d1)),
