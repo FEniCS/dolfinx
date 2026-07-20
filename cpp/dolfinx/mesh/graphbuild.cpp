@@ -19,6 +19,7 @@
 #include <optional>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -535,6 +536,9 @@ mesh::build_local_dual_graph(
     const std::vector<std::span<const std::int64_t>>& cells,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
 {
+  if (num_threads < 1)
+    throw std::runtime_error("num_threads must be >= 1.");
+
   spdlog::info("Build local part of mesh dual graph");
   common::Timer timer("Compute local part of mesh dual graph");
 
@@ -632,6 +636,7 @@ mesh::build_local_dual_graph(
 
   const int shape1 = max_vertices_per_facet + 1;
   std::vector<std::int64_t> facets(facet_count * shape1);
+  std::size_t facet_offset = 0;
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
     CellType cell_type = celltypes[j];
@@ -639,25 +644,29 @@ mesh::build_local_dual_graph(
     graph::AdjacencyList<int> cell_facets
         = mesh::get_entity_vertices(cell_type, tdim - 1);
     std::span _cells = cells[j];
+    std::size_t num_cells_j = _cells.size() / num_cell_vertices;
     std::vector<std::jthread> threads;
     for (int i = 1; i < num_threads; ++i)
     {
-      auto [c0, c1] = common::local_range(i, _cells.size() / num_cell_vertices,
-                                          num_threads);
+      auto [c0, c1] = common::local_range(i, num_cells_j, num_threads);
       threads.emplace_back(
           build_facets_fn, shape1, num_cell_vertices, cell_offsets[j] + c0,
           std::cref(cell_facets),
           _cells.subspan(c0 * num_cell_vertices, (c1 - c0) * num_cell_vertices),
-          std::span(facets.data() + (c0 * cell_facets.num_nodes()) * shape1,
+          std::span(facets.data()
+                        + (facet_offset + c0 * cell_facets.num_nodes())
+                              * shape1,
                     ((c1 - c0) * cell_facets.num_nodes()) * shape1));
     }
-    auto [c0, c1] = common::local_range(0, _cells.size() / num_cell_vertices,
-                                        num_threads);
+    auto [c0, c1] = common::local_range(0, num_cells_j, num_threads);
     build_facets_fn(
         shape1, num_cell_vertices, cell_offsets[j] + c0, std::cref(cell_facets),
         _cells.subspan(c0 * num_cell_vertices, (c1 - c0) * num_cell_vertices),
-        std::span(facets.data() + (c0 * cell_facets.num_nodes()) * shape1,
+        std::span(facets.data()
+                      + (facet_offset + c0 * cell_facets.num_nodes()) * shape1,
                   ((c1 - c0) * cell_facets.num_nodes()) * shape1));
+
+    facet_offset += num_cells_j * cell_facets.num_nodes();
   }
 
   timer1.stop();
