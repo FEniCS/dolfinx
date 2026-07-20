@@ -91,7 +91,7 @@ def test_read_write_higher_order():
         geom,
         part,
         max_cells_per_facet,
-        0,
+        num_threads=1,
     )
     py_mesh = Mesh(mesh, None)
 

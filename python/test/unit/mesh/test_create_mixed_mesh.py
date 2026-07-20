@@ -91,7 +91,7 @@ def test_create_mixed_mesh(dtype):
         geomx,
         part,
         max_cells_per_facet,
-        0,
+        num_threads=0,
     )
 
     entity_types = mesh.topology.entity_types[3]
