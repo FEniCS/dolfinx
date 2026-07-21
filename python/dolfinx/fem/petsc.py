@@ -530,7 +530,7 @@ def apply_lifting(
     b: PETSc.Vec,
     a: Sequence[Form] | Sequence[Sequence[Form]],
     bcs: Sequence[DirichletBC] | Sequence[Sequence[DirichletBC]] | None,
-    x0: Sequence[PETSc.Vec] | None = None,
+    x0: PETSc.Vec | Sequence[PETSc.Vec] | None = None,
     alpha: float = 1,
     constants: Sequence[npt.NDArray] | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: (
@@ -593,7 +593,9 @@ def apply_lifting(
         in ``b``.
     """
     if b.getType() == PETSc.Vec.Type.NEST:
+        assert isinstance(x0, PETSc.Vec | None)
         x0 = [] if x0 is None else x0.getNestSubVecs()
+
         constants = [pack_constants(forms) for forms in a] if constants is None else constants  # type: ignore[assignment]
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
         for b_sub, a_sub, const, coeff in zip(
