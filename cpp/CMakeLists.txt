@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFINx
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 4.1)
 
 if(POLICY CMP0167)
   cmake_policy(SET CMP0167 NEW) # Boost CONFIG mode
@@ -355,33 +355,44 @@ set_package_properties(
     URL "https://github.com/fenics/ffcx"
 )
 
-# Prepend <dir>/lib/pkgconfig (and <dir>/<arch>/lib/pkgconfig) to PKG_CONFIG_PATH.
-macro(dolfinx_prepend_pkgconfig_path dir_env_var)
-  block(SCOPE_FOR VARIABLES)
-    if(WIN32)
-      set(_sep ";")
-    else()
-      set(_sep ":")
+# Compute <dir>/lib/pkgconfig (and <dir>/<arch>/lib/pkgconfig) search
+# dirs from an env var holding an install prefix (e.g. PETSC_DIR).
+function(dolfinx_pkgconfig_dirs out_var dir_env_var)
+  set(_dirs)
+  if(DEFINED ENV{${dir_env_var}})
+    list(APPEND _dirs "$ENV{${dir_env_var}}/lib/pkgconfig")
+    if(DEFINED ENV{PETSC_ARCH})
+      list(APPEND _dirs "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig")
     endif()
-    if(DEFINED ENV{PKG_CONFIG_PATH})
-      set(_orig "$ENV{PKG_CONFIG_PATH}")
-    else()
-      set(_orig "")
-    endif()
-    if(DEFINED ENV{${dir_env_var}})
-      set(
-        ENV{PKG_CONFIG_PATH}
-        "$ENV{${dir_env_var}}/lib/pkgconfig${_sep}${_orig}"
+  endif()
+  set(${out_var} "${_dirs}")
+  return(PROPAGATE ${out_var})
+endfunction()
+
+# Import the first found of <names> as target PkgConfig::<target_name>,
+# searching <pc_dirs>. Sets <target_name>_FOUND and, if found, _VERSION.
+function(dolfinx_import_pkgconfig target_name version pc_dirs)
+  foreach(_pkgconfig_name ${ARGN})
+    cmake_pkg_config(
+      IMPORT ${_pkgconfig_name} ${version}
+      NAME ${target_name}
+      PC_PATH ${pc_dirs}
+      QUIET
+    )
+    if(PKGCONFIG_${_pkgconfig_name}_FOUND)
+      cmake_pkg_config(
+        EXTRACT ${_pkgconfig_name} ${version}
+        PC_PATH ${pc_dirs}
+        QUIET
       )
-      if(DEFINED ENV{PETSC_ARCH})
-        set(
-          ENV{PKG_CONFIG_PATH}
-          "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig${_sep}$ENV{PKG_CONFIG_PATH}"
-        )
-      endif()
+      set(${target_name}_FOUND TRUE)
+      set(${target_name}_VERSION ${CMAKE_PKG_CONFIG_VERSION})
+      return(PROPAGATE ${target_name}_FOUND ${target_name}_VERSION)
     endif()
-  endblock()
-endmacro()
+  endforeach()
+  set(${target_name}_FOUND FALSE)
+  return(PROPAGATE ${target_name}_FOUND)
+endfunction()
 
 # ------------------------------------------------------------------------------
 # Find optional packages
@@ -392,44 +403,38 @@ elseif(DOLFINX_ENABLE_ADIOS2)
 endif()
 
 if(DOLFINX_ENABLE_PETSC)
-  find_package(PkgConfig REQUIRED)
-  dolfinx_prepend_pkgconfig_path(PETSC_DIR)
+  dolfinx_pkgconfig_dirs(_petsc_pc_dirs PETSC_DIR)
+  dolfinx_import_pkgconfig(PETSC ">=3.15" "${_petsc_pc_dirs}" PETSc petsc)
+  unset(_petsc_pc_dirs)
 
-  if(_REQUIRE_PETSC)
-    pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
-  else()
-    pkg_search_module(PETSC OPTIONAL IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
+  if(_REQUIRE_PETSC AND NOT PETSC_FOUND)
+    message(FATAL_ERROR "PETSc (>=3.15) requested, but not found.")
   endif()
 
   # Setting for FeatureSummary
   if(PETSC_FOUND)
-    message(
-      STATUS
-      "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}"
-    )
+    message(STATUS "Found PETSc version ${PETSC_VERSION}")
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND PETSc)
-    list(APPEND CMAKE_PREFIX_PATH ${PETSC_PREFIX})
+    if(DEFINED ENV{PETSC_DIR})
+      list(APPEND CMAKE_PREFIX_PATH $ENV{PETSC_DIR})
+    endif()
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND PETSc)
   endif()
 endif()
 
 if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
-  find_package(PkgConfig REQUIRED)
-  dolfinx_prepend_pkgconfig_path(SLEPC_DIR)
+  dolfinx_pkgconfig_dirs(_slepc_pc_dirs SLEPC_DIR)
+  dolfinx_import_pkgconfig(SLEPC ">=3.15" "${_slepc_pc_dirs}" slepc)
+  unset(_slepc_pc_dirs)
 
-  if(_REQUIRE_SLEPC)
-    pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
-  else()
-    pkg_search_module(SLEPC OPTIONAL IMPORTED_TARGET slepc>=3.15)
+  if(_REQUIRE_SLEPC AND NOT SLEPC_FOUND)
+    message(FATAL_ERROR "SLEPc (>=3.15) requested, but not found.")
   endif()
 
   # Setting for FeatureSummary
   if(SLEPC_FOUND)
-    message(
-      STATUS
-      "Found SLEPc version ${SLEPC_VERSION}, prefix: ${SLEPC_PREFIX}"
-    )
+    message(STATUS "Found SLEPc version ${SLEPC_VERSION}")
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND SLEPc)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
@@ -479,21 +484,22 @@ elseif(DOLFINX_ENABLE_KAHIP)
 endif()
 
 if(DOLFINX_ENABLE_SUPERLU_DIST)
-  find_package(PkgConfig REQUIRED)
-  # If PETSc was built with SuperLU_DIST then pickup install there
-  dolfinx_prepend_pkgconfig_path(PETSC_DIR)
+  # If PETSc was built with SuperLU_DIST then pick up the install there
+  dolfinx_pkgconfig_dirs(_superlu_dist_pc_dirs PETSC_DIR)
+  dolfinx_import_pkgconfig(
+    SUPERLU_DIST
+    ""
+    "${_superlu_dist_pc_dirs}"
+    superlu_dist
+  )
+  unset(_superlu_dist_pc_dirs)
 
-  if(_REQUIRE_SUPERLU_DIST)
-    pkg_search_module(SUPERLU_DIST REQUIRED IMPORTED_TARGET superlu_dist)
-  else()
-    pkg_search_module(SUPERLU_DIST OPTIONAL IMPORTED_TARGET superlu_dist)
+  if(_REQUIRE_SUPERLU_DIST AND NOT SUPERLU_DIST_FOUND)
+    message(FATAL_ERROR "SuperLU_DIST requested, but not found.")
   endif()
 
   if(SUPERLU_DIST_FOUND)
-    message(
-      STATUS
-      "Found SuperLU_DIST version ${SUPERLU_DIST_VERSION}, prefix: ${SUPERLU_DIST_PREFIX}"
-    )
+    message(STATUS "Found SuperLU_DIST version ${SUPERLU_DIST_VERSION}")
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND SuperLU_DIST)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SuperLU_DIST)
