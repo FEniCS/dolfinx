@@ -144,10 +144,10 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 
   std::vector<T> cdofs_b(3 * g.dofmaps().front().extent(1));
   std::vector<T> Ab(dofmap.map().extent(1) * dofmap.map().extent(1));
-  fem::impl::assemble_cells_matrix<T>(A.mat_add_values(), g.dofmaps().front(),
-                                      x, cells, {dofmap.map(), 1, cells}, ident,
-                                      {dofmap.map(), 1, cells}, ident, {}, {},
-                                      kernel, {}, {}, {}, {}, Ab, cdofs_b);
+  fem::impl::assemble_cells_matrix<T, T>(
+      A.mat_add_values(), g.dofmaps().front(), x, cells,
+      {dofmap.map(), 1, cells}, ident, {dofmap.map(), 1, cells}, ident, {}, {},
+      kernel, {}, {}, {}, {}, std::span(Ab), std::span(cdofs_b));
   A.scatter_rev();
   return A.squared_norm();
 }
