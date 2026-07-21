@@ -587,7 +587,9 @@ public:
   {
     for (std::int32_t idx : _dofs0)
     {
-      assert(idx < (std::int32_t)markers.size());
+      if (idx >= (std::int32_t)markers.size())
+        throw std::runtime_error("Marker array is too short for the "
+                                 "boundary condition dofs.");
       markers[idx] = true;
     }
   }

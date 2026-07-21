@@ -161,7 +161,8 @@ class Expression(Generic[Scalar]):
             UFL Expr and attaching the correct data to the underlying
             C++ Expression.
         """
-        assert X.ndim < 3
+        if X.ndim >= 3:
+            raise ValueError("X must be a 1D or 2D array of points.")
         num_points = X.shape[0] if X.ndim == 2 else 1
         _X = np.reshape(X, (num_points, -1))
 
@@ -268,10 +269,12 @@ class Expression(Generic[Scalar]):
         """
         _entities = np.asarray(entities, dtype=np.int32)
         if (tdim := mesh.topology.dim) != (expr_dim := self._cpp_object.X().shape[1]):
-            assert expr_dim == tdim - 1
-            assert entities.ndim == 2, (
-                "entities list should have two dimensions for expression evaluation on facets."
-            )
+            if expr_dim != tdim - 1:
+                raise ValueError("Expression must be defined on the mesh or its facets.")
+            if entities.ndim != 2:
+                raise ValueError(
+                    "entities list should have two dimensions for expression evaluation on facets."
+                )
 
         if self.argument_space is None:
             values_shape = (_entities.shape[0], self.X().shape[0], *self.value_shape)
@@ -386,7 +389,8 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             if dtype is None:
                 dtype = x.array.dtype
             else:
-                assert x.array.dtype == dtype, "Incompatible Vector and dtype."
+                if x.array.dtype != dtype:
+                    raise ValueError("Incompatible Vector and dtype.")
         else:
             if dtype is None:
                 dtype = default_scalar_type
@@ -443,7 +447,8 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         """
         # Make sure input coordinates are a NumPy array
         _x = np.asarray(x, dtype=self._V.mesh.geometry.x.dtype)
-        assert _x.ndim < 3
+        if _x.ndim >= 3:
+            raise ValueError("x must be a 1D or 2D array of points.")
         if len(_x) == 0:
             _x = np.zeros((0, 3), dtype=self._V.mesh.geometry.x.dtype)
         else:
@@ -455,7 +460,8 @@ class Function(ufl.Coefficient, Generic[Scalar]):
 
         # Make sure cells are a NumPy array
         _cells = np.asarray(cells, dtype=np.int32)
-        assert _cells.ndim < 2
+        if _cells.ndim >= 2:
+            raise ValueError("cells must be a 1D array of cell indices.")
         num_points_c = _cells.shape[0] if _cells.ndim == 1 else 1
         _cells = np.reshape(_cells, num_points_c)
 
@@ -696,9 +702,8 @@ def functionspace(
             mesh.topology._cpp_object,
             element._cpp_object,  # type: ignore
         )
-    assert np.issubdtype(mesh.geometry.x.dtype, element.dtype), (  # type: ignore
-        "Mesh and element dtype are not compatible."
-    )
+    if not np.issubdtype(mesh.geometry.x.dtype, element.dtype):  # type: ignore
+        raise ValueError("Mesh and element dtype are not compatible.")
 
     # Initialize the cpp.FunctionSpace. Geometry type is fixed by the mesh.
     cpp_type = FunctionSpace.cpp_types[dtype]
@@ -788,7 +793,8 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
             returned subspace should be stored by the caller to avoid
             repeated re-computation of the subspace.
         """
-        assert self.ufl_element().num_sub_elements > i
+        if i >= self.ufl_element().num_sub_elements:
+            raise IndexError(f"Function space has no sub space {i}.")
         sub_element = self.ufl_element().sub_elements[i]
         cppV_sub = self._cpp_object.sub([i])  # type: ignore
         return FunctionSpace(self._mesh, sub_element, cppV_sub)
