@@ -21,7 +21,7 @@ public:
   MPICommWrapper() : _comm(MPI_COMM_NULL) {}
 
   /// Wrap a MPI_Comm object
-  MPICommWrapper(MPI_Comm comm) : _comm(comm) {}
+  explicit MPICommWrapper(MPI_Comm comm) : _comm(comm) {}
 
   /// Assignment operator
   MPICommWrapper& operator=(const MPI_Comm comm)

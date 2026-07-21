@@ -37,6 +37,14 @@ if typing.TYPE_CHECKING:
 class Form(typing.Generic[Scalar]):
     """A finite element form."""
 
+    # Matched-precision built-ins (geometry == real scalar part). Public:
+    # extend with additional (scalar, geometry) dtype pairs as needed.
+    cpp_types: typing.ClassVar[dict] = {
+        (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.Form_float32,
+        (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.Form_float64,
+        (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.Form_complex64,
+        (np.dtype(np.complex128), np.dtype(np.float64)): _cpp.fem.Form_complex128,
+    }
     _cpp_object: (
         _cpp.fem.Form_complex64
         | _cpp.fem.Form_complex128
@@ -222,16 +230,9 @@ def form_cpp_class(
         This function is for advanced usage, typically when writing
         custom kernels using Numba or C.
     """
-    if np.issubdtype(dtype, np.float32):
-        return _cpp.fem.Form_float32
-    elif np.issubdtype(dtype, np.float64):
-        return _cpp.fem.Form_float64
-    elif np.issubdtype(dtype, np.complex64):
-        return _cpp.fem.Form_complex64
-    elif np.issubdtype(dtype, np.complex128):
-        return _cpp.fem.Form_complex128
-    else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+    # Geometry is the real part of the scalar type (matched precision).
+    scalar_dtype = np.dtype(dtype)
+    return Form.cpp_types[scalar_dtype, scalar_dtype.type(0).real.dtype]
 
 
 _ufl_to_dolfinx_domain = {
@@ -280,7 +281,6 @@ def mixed_topology_form(
         form_compiler_options = dict()
 
     form_compiler_options["scalar_type"] = dtype
-    ftype = form_cpp_class(dtype)
 
     # Extract subdomain data from UFL form
     sd = next(iter(forms)).subdomain_data()
@@ -294,6 +294,9 @@ def mixed_topology_form(
     if mesh is None:
         raise RuntimeError("Expecting to find a Mesh in the form.")
     comm = mesh.comm if jit_comm is None else jit_comm
+
+    # Geometry type is fixed by the mesh.
+    ftype = Form.cpp_types[np.dtype(dtype), mesh.geometry.x.dtype]
 
     ufcx_forms = []
     modules = []
@@ -364,7 +367,6 @@ def form(
         form_compiler_options = dict()
 
     form_compiler_options["scalar_type"] = dtype
-    ftype = form_cpp_class(dtype)
 
     def _form(form):
         """Compile a single UFL form."""
@@ -380,6 +382,9 @@ def form(
         if msh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
         comm = msh.comm if jit_comm is None else jit_comm
+
+        # Geometry type is fixed by the mesh.
+        ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
 
         ufcx_form, module, code = jit.ffcx_jit(
             comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
@@ -443,6 +448,9 @@ def form(
         assert len(V) > 0
         msh = V[0].mesh
 
+        # Geometry type is fixed by the mesh.
+        ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
+
         f = ftype(
             spaces=V,
             integrals={},
@@ -476,10 +484,23 @@ def form(
     return _create_form(form)
 
 
+@typing.overload
+def extract_function_spaces(forms: Form, index: int = 0) -> FunctionSpace | None: ...
+
+
+@typing.overload
 def extract_function_spaces(
-    forms: Form | Sequence[Form] | Sequence[Sequence[Form]],
-    index: int = 0,
-) -> FunctionSpace | list[None | FunctionSpace]:
+    forms: Sequence[Form], index: int = 0
+) -> list[FunctionSpace | None]: ...
+
+
+@typing.overload
+def extract_function_spaces(
+    forms: Sequence[Sequence[Form]], index: int = 0
+) -> list[list[FunctionSpace | None]]: ...
+
+
+def extract_function_spaces(forms, index: int = 0):
     """Extract common function spaces from an array of forms.
 
     If ``forms`` is a list of linear forms, this function returns of list

@@ -19,6 +19,7 @@
 #include <petscvec.h>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace dolfinx::common
@@ -35,8 +36,8 @@ enum class Norm : std::int8_t;
 namespace petsc
 {
 /// Print error message for PETSc calls that return an error
-void error(PetscErrorCode error_code, const std::string& filename,
-           const std::string& petsc_function);
+void error(PetscErrorCode error_code, std::string_view filename,
+           std::string_view petsc_function);
 
 /// Create PETsc vectors from the local data. The data is copied into
 /// the PETSc vectors and is not shared.
@@ -120,7 +121,7 @@ void scatter_local_vectors(
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                  std::optional<std::string> type = std::nullopt);
+                  std::optional<std::string_view> type = std::nullopt);
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.
@@ -219,7 +220,7 @@ public:
   MPI_Comm comm() const;
 
   /// Sets the prefix used by PETSc when searching the options database
-  void set_options_prefix(const std::string& options_prefix);
+  void set_options_prefix(std::string_view options_prefix);
 
   /// Returns the prefix used by PETSc when searching the options
   /// database
@@ -392,7 +393,7 @@ public:
 
   /// Create holder for a PETSc Mat object from a sparsity pattern
   Matrix(MPI_Comm comm, const SparsityPattern& sp,
-         std::optional<std::string> type = std::nullopt);
+         std::optional<std::string_view> type = std::nullopt);
 
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
   /// should already be created. If inc_ref_count is true, the reference
@@ -438,7 +439,7 @@ public:
 
   /// Sets the prefix used by PETSc when searching the options
   /// database
-  void set_options_prefix(const std::string& options_prefix);
+  void set_options_prefix(std::string_view options_prefix);
 
   /// Returns the prefix used by PETSc when searching the options
   /// database
@@ -489,7 +490,7 @@ public:
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
-  void set_options_prefix(const std::string& options_prefix);
+  void set_options_prefix(std::string_view options_prefix);
 
   /// Returns the prefix used by PETSc when searching the PETSc options
   /// database

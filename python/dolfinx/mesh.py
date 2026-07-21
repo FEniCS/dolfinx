@@ -179,13 +179,12 @@ class Topology:
         """
         self._cpp_object.create_connectivity(d0, d1)
 
-    def create_entities(self, dim: int, num_threads: int = 0) -> bool:
+    def create_entities(self, dim: int, num_threads: int = 1) -> bool:
         """Create entities of given topological dimension.
 
         Args:
             dim: Topological dimension of entities to create.
-            num_threads: Number of CPU threads to use when creating. If
-                0, threads are not spawned.
+            num_threads: Number of CPU threads to use. Must be >= 1.
 
         Returns:
             ``True` is entities are created, ``False`` is if entities
@@ -193,9 +192,13 @@ class Topology:
         """
         return self._cpp_object.create_entities(dim, num_threads)
 
-    def create_entity_permutations(self):
-        """Compute entity permutations and reflections."""
-        self._cpp_object.create_entity_permutations()
+    def create_entity_permutations(self, num_threads: int = 1):
+        """Compute entity permutations and reflections.
+
+        Args:
+            num_threads: Number of CPU threads to use. Must be >= 1.
+        """
+        self._cpp_object.create_entity_permutations(num_threads)
 
     @property
     def dim(self) -> int:
@@ -789,6 +792,7 @@ def create_mesh(
     x: npt.NDArray[np.floating],
     partitioner: Callable | None = None,
     max_facet_to_cell_links: int = 2,
+    num_threads: int = 1,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -804,6 +808,8 @@ def create_mesh(
             cells across MPI ranks.
         max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
+        num_threads: Number of threads to use to build mesh. Must be
+            greater than 0.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -856,7 +862,7 @@ def create_mesh(
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
-        comm, cells, cmap._cpp_object, x, partitioner, max_facet_to_cell_links
+        comm, cells, cmap._cpp_object, x, partitioner, max_facet_to_cell_links, num_threads
     )
 
     return Mesh(msh, domain)  # type: ignore

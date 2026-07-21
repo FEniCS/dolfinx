@@ -18,13 +18,13 @@ set(
 target_sources(
   dolfinx
   PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/ADIOS2Writers.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/cells.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtk_utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFile.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_function.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_mesh.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_utils.cpp
+    ADIOS2Writers.cpp
+    cells.cpp
+    HDF5Interface.cpp
+    VTKFile.cpp
+    vtk_utils.cpp
+    XDMFFile.cpp
+    xdmf_function.cpp
+    xdmf_mesh.cpp
+    xdmf_utils.cpp
 )

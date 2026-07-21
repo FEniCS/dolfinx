@@ -9,6 +9,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <format>
 #include <numeric>
 #include <optional>
 #include <span>
@@ -31,8 +32,8 @@ namespace dolfinx::graph
 ///
 /// Node data can also be stored.
 ///
-/// @tparam LinkData_t Graph link (edge) type.
-/// @tparam NodeData_t Data type for graph node data.
+/// @tparam LinkData Graph link (edge) type.
+/// @tparam NodeData Data type for graph node data.
 template <typename LinkData, typename NodeData = std::nullptr_t>
 class AdjacencyList
 {
@@ -198,7 +199,7 @@ public:
   std::string str() const
   {
     std::stringstream s;
-    s << "<AdjacencyList> with " + std::to_string(this->num_nodes()) + " nodes"
+    s << std::format("<AdjacencyList> with {} nodes", this->num_nodes())
       << std::endl;
     for (std::size_t e = 0; e < _offsets.size() - 1; ++e)
     {

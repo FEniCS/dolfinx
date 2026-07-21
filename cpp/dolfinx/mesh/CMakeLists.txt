@@ -18,11 +18,11 @@ set(
 target_sources(
   dolfinx
   PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/EntityMap.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphbuild.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/permutationcomputation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/topologycomputation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
+    Topology.cpp
+    EntityMap.cpp
+    cell_types.cpp
+    graphbuild.cpp
+    permutationcomputation.cpp
+    topologycomputation.cpp
+    utils.cpp
 )
