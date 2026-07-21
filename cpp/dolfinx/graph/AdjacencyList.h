@@ -32,8 +32,8 @@ namespace dolfinx::graph
 ///
 /// Node data can also be stored.
 ///
-/// @tparam LinkData_t Graph link (edge) type.
-/// @tparam NodeData_t Data type for graph node data.
+/// @tparam LinkData Graph link (edge) type.
+/// @tparam NodeData Data type for graph node data.
 template <typename LinkData, typename NodeData = std::nullptr_t>
 class AdjacencyList
 {

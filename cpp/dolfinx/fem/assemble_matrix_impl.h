@@ -62,18 +62,16 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// function mesh.
 /// @param cell_info1 Cell permutation information for the trial
 /// function mesh.
-template <dolfinx::scalar T, bool LiftingMode = false>
+template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
-        x,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     std::span<const std::int32_t> cells,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
-    std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
+    std::span<const std::int8_t> bc1, FEkernel<T, U> auto kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1)
@@ -90,7 +88,7 @@ void assemble_cells_matrix(
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
-  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
+  std::vector<U> cdofs(3 * x_dofmap.extent(1));
 
   // Iterate over active cells
   assert(cells0.size() == cells.size());
@@ -226,12 +224,10 @@ void assemble_cells_matrix(
 /// function mesh.
 /// @param[in] perms Entity permutation integer. Empty if entity
 /// permutations are not required.
-template <dolfinx::scalar T, bool LiftingMode = false>
+template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
 void assemble_entities(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
-        x,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
@@ -245,7 +241,7 @@ void assemble_entities(
                           std::extents<std::size_t, md::dynamic_extent, 2>>>
         dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
-    std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
+    std::span<const std::int8_t> bc1, FEkernel<T, U> auto kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
@@ -258,7 +254,7 @@ void assemble_entities(
   const auto [dmap1, bs1, entities1] = dofmap1;
 
   // Data structures used in assembly
-  std::vector<scalar_value_t<T>> cdofs(3 * x_dofmap.extent(1));
+  std::vector<U> cdofs(3 * x_dofmap.extent(1));
   const int num_dofs0 = dmap0.extent(1);
   const int num_dofs1 = dmap1.extent(1);
   const int ndim0 = bs0 * num_dofs0;
@@ -393,12 +389,10 @@ void assemble_entities(
 /// function mesh.
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
-template <dolfinx::scalar T, bool LiftingMode = false>
+template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
-        x,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
@@ -412,7 +406,7 @@ void assemble_interior_facets(
                           std::extents<std::size_t, md::dynamic_extent, 2, 2>>>
         dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
-    std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
+    std::span<const std::int8_t> bc1, FEkernel<T, U> auto kernel,
     md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                     md::dynamic_extent>>
         coeffs,
@@ -427,7 +421,7 @@ void assemble_interior_facets(
   const auto [dmap1, bs1, facets1] = dofmap1;
 
   // Data structures used in assembly
-  using X = scalar_value_t<T>;
+  using X = U;
   std::vector<X> cdofs(2 * x_dofmap.extent(1) * 3);
   std::span<X> cdofs0(cdofs.data(), x_dofmap.extent(1) * 3);
   std::span<X> cdofs1(cdofs.data() + x_dofmap.extent(1) * 3,
@@ -612,9 +606,7 @@ void assemble_interior_facets(
 template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
 void assemble_matrix(
     la::MatSet<T> auto mat_set, const Form<T, U>& a,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
-        x,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
@@ -687,7 +679,7 @@ void assemble_matrix(
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
-      impl::assemble_cells_matrix<T, LiftingMode>(
+      impl::assemble_cells_matrix<T, U, LiftingMode>(
           mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
           {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
           md::mdspan(coeffs.data(), cells.size(), cstride), constants,
@@ -732,7 +724,7 @@ void assemble_matrix(
       std::span facets0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
       std::span facets1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
-      impl::assemble_interior_facets<T, LiftingMode>(
+      impl::assemble_interior_facets<T, U, LiftingMode>(
           mat_set, x_dofmap, x,
           mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
           {*dofmap0, bs0,
@@ -777,7 +769,7 @@ void assemble_matrix(
         std::span e1 = a.domain_arg(itg_type, 1, i, 0);
         mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
         assert((entities.size() / 2) * cstride == coeffs.size());
-        impl::assemble_entities<T, LiftingMode>(
+        impl::assemble_entities<T, U, LiftingMode>(
             mat_set, x_dofmap, x, entities, {dofs0, bs0, entities0}, P0,
             {dofs1, bs1, entities1}, P1T, bc0, bc1, fn,
             md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,

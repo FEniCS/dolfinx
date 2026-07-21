@@ -568,7 +568,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+        impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
         if (!k)
         {
           throw std::runtime_error(
@@ -648,7 +648,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+        impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
         assert(k);
 
         // Build list of entities to assembler over
@@ -774,7 +774,7 @@ Form<T, U> create_form_factory(
               active_coeffs.push_back(j);
           }
 
-          impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+          impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
 
           // Build list of entities to assembler over
           auto e_to_c = topology->connectivity(dim, tdim);
@@ -971,28 +971,24 @@ Expression<T, U> create_expression(
          static_cast<std::size_t>(e.entity_dimension)};
   std::vector<std::size_t> value_shape(e.value_shape,
                                        e.value_shape + e.num_components);
-  std::function<void(T*, const T*, const T*, const scalar_value_t<T>*,
-                     const int*, const std::uint8_t*, void*)>
+
+  static_assert(std::is_same_v<U, scalar_value_t<T>>,
+                "UFCx kernels require geometry type U == scalar_value_t<T>.");
+
+  using kptr_t = void (*)(T*, const T*, const T*, const U*, const int*,
+                          const std::uint8_t*, void*);
+  std::function<void(T*, const T*, const T*, const U*, const int*,
+                     const std::uint8_t*, void*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
-    tabulate_tensor = e.tabulate_tensor_float32;
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_float32);
+  else if constexpr (std::is_same_v<T, double>)
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_float64);
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, std::complex<float>>)
-  {
-    tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-        const unsigned char*, void*)>(e.tabulate_tensor_complex64);
-  }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-  else if constexpr (std::is_same_v<T, double>)
-    tabulate_tensor = e.tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_complex64);
   else if constexpr (std::is_same_v<T, std::complex<double>>)
-  {
-    tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-        const unsigned char*, void*)>(e.tabulate_tensor_complex128);
-  }
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_complex128);
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else
     throw std::runtime_error("Type not supported.");

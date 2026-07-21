@@ -314,7 +314,7 @@ void declare_mesh(nb::module_& m, std::string type)
          const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
          nb::ndarray<const T, nb::c_contig> x,
          const part::impl::PythonCellPartitionFunction& p,
-         std::optional<std::int32_t> max_facet_to_cell_links)
+         std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
 
@@ -326,12 +326,12 @@ void declare_mesh(nb::module_& m, std::string type)
         return dolfinx::mesh::create_mesh(
             comm.get(), comm.get(), cells, elements, comm.get(),
             std::span(x.data(), x.size()), {x.shape(0), shape1},
-            part::impl::create_cell_partitioner_cpp(p),
-            max_facet_to_cell_links);
+            part::impl::create_cell_partitioner_cpp(p), max_facet_to_cell_links,
+            num_threads);
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("elements"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
-      nb::arg("max_facet_to_cell_links").none(),
+      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"),
       "Helper function for creating a mixed topology mesh.");
 
   m.def(
@@ -341,18 +341,18 @@ void declare_mesh(nb::module_& m, std::string type)
          const dolfinx::fem::CoordinateElement<T>& element,
          nb::ndarray<const T, nb::c_contig> x,
          const part::impl::PythonCellPartitionFunction& p,
-         std::optional<std::int32_t> max_facet_to_cell_links)
+         std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
         return dolfinx::mesh::create_mesh(
             comm.get(), comm.get(), std::span(cells.data(), cells.size()),
             element, comm.get(), std::span(x.data(), x.size()),
             {x.shape(0), shape1}, part::impl::create_cell_partitioner_cpp(p),
-            max_facet_to_cell_links);
+            max_facet_to_cell_links, num_threads);
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
-      nb::arg("max_facet_to_cell_links").none(),
+      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"),
       "Helper function for creating meshes.");
   m.def(
       "create_submesh",

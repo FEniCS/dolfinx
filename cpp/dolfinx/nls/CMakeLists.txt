@@ -5,4 +5,4 @@ set(
   PARENT_SCOPE
 )
 
-target_sources(dolfinx PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/NewtonSolver.cpp)
+target_sources(dolfinx PRIVATE NewtonSolver.cpp)

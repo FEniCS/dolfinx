@@ -253,8 +253,8 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
              const std::vector<std::vector<int>>& ghost_owners,
              std::vector<std::vector<std::int64_t>>& cells,
              std::vector<std::vector<std::int64_t>>& cells_v,
-             std::vector<std::vector<std::int64_t>>& original_idx)
-             -> std::vector<std::int64_t>
+             std::vector<std::vector<std::int64_t>>& original_idx,
+             int num_threads) -> std::vector<std::int64_t>
   {
     // Build local dual graph for owned cells to (i) get list of vertices
     // on the process boundary and (ii) apply re-ordering to cells for
@@ -279,7 +279,7 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
       auto [graph, unmatched_facets, max_v, _facet_attached_cells]
           = build_local_dual_graph(std::vector{celltypes[i]},
                                    std::vector{cells1_v_local.back()},
-                                   max_facet_to_cell_links);
+                                   max_facet_to_cell_links, num_threads);
 
       // Store unmatched_facets for current cell type
       facets.emplace_back(std::move(unmatched_facets), max_v);
@@ -1041,6 +1041,8 @@ compute_incident_entities(const Topology& topology,
 /// redistributed.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet can be connected to.
+/// @param[in] num_threads Number threads to use in mesh construction.
+/// Must be >= 1.
 /// @param[in] reorder_fn Function that reorders (locally) cells that
 /// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
@@ -1052,7 +1054,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::optional<std::int32_t> max_facet_to_cell_links,
+    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
     const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   assert(cells.size() == elements.size());
@@ -1159,8 +1161,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
   auto boundary_v_fn
       = create_boundary_vertices_fn(reorder_fn, max_facet_to_cell_links);
-  const std::vector<std::int64_t> boundary_v = boundary_v_fn(
-      celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1);
+  const std::vector<std::int64_t> boundary_v
+      = boundary_v_fn(celltypes, doflayouts, ghost_owners, cells1, cells1_v,
+                      original_idx1, num_threads);
 
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 
@@ -1256,6 +1259,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// rank for each cell. If not callable, cells are not redistributed.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet can be connected to.
+/// @param[in] num_threads Number threads to use in mesh construction.
+/// Must be >= 1.
 /// @param[in] reorder_fn Function that reorders (locally) cells that
 /// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
@@ -1266,12 +1271,12 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::optional<std::int32_t> max_facet_to_cell_links,
+    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
     const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
                      commg, x, xshape, partitioner, max_facet_to_cell_links,
-                     reorder_fn);
+                     num_threads, reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
@@ -1305,14 +1310,14 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
   if (dolfinx::MPI::size(comm) == 1)
   {
     return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
-                       comm, x, xshape, nullptr, max_facet_to_cell_links);
+                       comm, x, xshape, nullptr, max_facet_to_cell_links, 1);
   }
   else
   {
     return create_mesh(
         comm, comm, std::vector{cells}, std::vector{elements}, comm, x, xshape,
         create_cell_partitioner(ghost_mode, max_facet_to_cell_links),
-        max_facet_to_cell_links);
+        max_facet_to_cell_links, 1);
   }
 }
 
