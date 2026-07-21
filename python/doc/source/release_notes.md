@@ -28,7 +28,7 @@ The following constructors and classes have been added:
   solver options, and {py:class}`entity_maps<dolfinx.mesh.EntityMap>`.
 
 ### Built-in matrix support
-  
+
 **Authors**: [Chris Richardson](https://github.com/chrisrichardson)
 
 - Adds {py:meth}`A.transpose()<dolfinx.la.MatrixCSR.transpose>`, {py:meth}`A.mult(x, y, transpose=True)<dolfinx.la.MatrixCSR.mult>`
@@ -69,13 +69,12 @@ and [Garth N. Wells](https://github.com/garth-wells)
 
 For a long time, DOLFINx has been exclusively using MPI for the distribution of computational load.
 However, with the computational landscape evolving to more and more heterogeneous systems,
-the need for additional parallelisation methods are required. 
+the need for additional parallelisation methods are required.
 In this release, we introduce initial threading support using
 [std::jthread`](https://en.cppreference.com/cpp/thread/jthread) in the following methods:
 - {py:meth}`dolfinx.mesh.Topology.create_entities`
 - {py:func}`dolfinx.geometry.compute_distances_gjk`
 which both take an optional argument `num_threads` which specifies how many CPU threads should be used.
-If set to 0, threads are not spawned.
 
 ### New and improved demos
 
@@ -153,8 +152,8 @@ reading {py:class}`entity tags<dolfinx.mesh.MeshTags>` on mixed-topology grids t
 **Authors**: [Jørgen S. Dokken](https://github.com/jorgensd)
 
 A set of users have had issues with non-affine geometries, in particular higher order grids,
-and the tolerance and maximum number of iterations in the 
-{py:meth}`dolfinx.fem.CoordinateElement.pull_back`, {py:meth}`dolfinx.fem.Function.interpolate_nonmatching` 
+and the tolerance and maximum number of iterations in the
+{py:meth}`dolfinx.fem.CoordinateElement.pull_back`, {py:meth}`dolfinx.fem.Function.interpolate_nonmatching`
 and {py:meth}`dolfinx.fem.Function.eval` yielding errors such as:
 ```bash
 RuntimeError: Newton method failed to converge for non-affine geometry
@@ -175,7 +174,7 @@ Furthermore, {py:func}`dolfinx.fem.apply_lifting` and {py:func}`dolfinx.fem.asse
 
 ### Meshes
 
-**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd) and [Jack Hale](https://github.com/jhale) 
+**Authors**: [Jørgen S. Dokken](https://github.com/jorgensd) and [Jack Hale](https://github.com/jhale)
 
 - New function {py:func}`dolfinx.mesh.create_point_mesh` to create a point cloud mesh with no points shared between
   the different processes. Useful for reading in point measures or outputting data.
@@ -219,7 +218,7 @@ In addition to the changes below, the ever-lasting quest of improving performanc
 [Jack Hale](https://github.com/jhale) and [Garth N. Wells](https://github.com/garth-wells)
 
 Mapping data between {py:class}`PETSc.Vec<petsc4py.PETSc.Vec>` and {py:class}`dolfinx.fem.Function`s is now
-trivial for blocked problems by using {py:func}`dolfinx.fem.petsc.assign`. 
+trivial for blocked problems by using {py:func}`dolfinx.fem.petsc.assign`.
 
 Both solvers and assembly routines interfacing with PETSc has received a drastic make-over to
 improve usability and maintenance, both for developers and end-users.
@@ -387,7 +386,7 @@ The GMSH interface to DOLFINx has received a major upgrade.
 
 #### VTKHDF5
 
-**Authors**: [Chris Richardson](https://github.com/chrisrichardson) and [Jørgen S. Dokken](https://github.com/jorgensd) 
+**Authors**: [Chris Richardson](https://github.com/chrisrichardson) and [Jørgen S. Dokken](https://github.com/jorgensd)
 
 As Kitware has stated that [VTKHDF](https://www.kitware.com/vtk-hdf-reader/) is the future format they want to support,
 we have started the transition to this format.
@@ -409,12 +408,12 @@ from another (unique) function space.
 
 **Author**: [Massimiliano Leoni](https://github.com/mleoni-pf) and [Paul T. Kühner](https://github.com/schnellerhase)
 - When using {py:meth}`dolfinx.io.XDMFFIle.read_meshtags` one can now specify the attribute name, if the grid has
-multiple tags assigned to it. 
+multiple tags assigned to it.
 - Flushing data to file is now possible with {py:meth}`dolfinx.io.XDMFFile.flush`. This is useful when wanting to visualize
   long-running jobs in Paraview.
 
 #### Remove Fides backend
-As we unfortunately haven't seen an expanding set of features for the 
+As we unfortunately haven't seen an expanding set of features for the
 [Fides Reader](https://fides.readthedocs.io/en/latest/paraview/paraview.html)
 in Paraview, we have decided to remove it from DOLFINx.
 

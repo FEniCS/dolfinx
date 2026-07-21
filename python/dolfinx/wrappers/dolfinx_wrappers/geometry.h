@@ -221,7 +221,7 @@ void declare_bbtree(nb::module_& m, const std::string& type)
   m.def(
       gjks_name.c_str(),
       [](const std::vector<nb::ndarray<const T, nb::c_contig>>& bodies,
-         nb::ndarray<const T, nb::c_contig> q, size_t num_threads)
+         nb::ndarray<const T, nb::c_contig> q, int num_threads)
       {
         std::size_t q_s0 = num_points_3d(q, "q");
         std::span<const T> _q(q.data(), 3 * q_s0);

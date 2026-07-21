@@ -39,7 +39,7 @@ def test_dofmap_mixed_topology():
         orig_index,
         ghost_owners,
         boundary_vertices,
-        0,
+        1,
     )
     # Create dofmaps for Geometry
     tri = coordinate_element(CellType.triangle, 1)
@@ -93,7 +93,7 @@ def test_dofmap_prism_mesh():
 
     topology = Topology(
         create_topology(
-            MPI.COMM_SELF, [CellType.prism], cells, orig_index, ghost_owners, boundary_vertices, 0
+            MPI.COMM_SELF, [CellType.prism], cells, orig_index, ghost_owners, boundary_vertices, 1
         )
     )
     topology.create_entities(2)
