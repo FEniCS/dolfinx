@@ -489,7 +489,8 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
     old_to_new.push_back(
         {idx, static_cast<std::int64_t>(offset_local + old_to_new.size())});
   }
-  if (num_threads > 0)
+
+  if (num_threads > 1)
   {
     boost::sort::block_indirect_sort(old_to_new.begin(), old_to_new.end(),
                                      num_threads);

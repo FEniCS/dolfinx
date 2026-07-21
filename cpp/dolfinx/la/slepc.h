@@ -14,6 +14,7 @@
 #include <petscvec.h>
 #include <slepceps.h>
 #include <string>
+#include <string_view>
 
 namespace dolfinx::la
 {
@@ -70,7 +71,7 @@ public:
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
-  void set_options_prefix(const std::string& options_prefix);
+  void set_options_prefix(std::string_view options_prefix);
 
   /// Returns the prefix used by PETSc when searching the PETSc options
   /// database

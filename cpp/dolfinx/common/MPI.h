@@ -428,7 +428,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   spdlog::debug("Completed send data to post offices.");
 
   // Convert to local indices
-  const std::int64_t r0 = dolfinx::common::local_range(rank, shape[0], size)[0];
+  const std::int64_t r0 = common::local_range(rank, shape[0], size)[0];
   std::vector<std::int32_t> index_local(recv_buffer_index.size());
   std::ranges::transform(recv_buffer_index, index_local.begin(),
                          [r0](auto idx) { return idx - r0; });
@@ -550,7 +550,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   // data that was already on this rank and was therefore was not
   // sent/received via a postoffice.
   const std::array<std::int64_t, 2> postoffice_range
-      = dolfinx::common::local_range(rank, shape[0], size);
+      = common::local_range(rank, shape[0], size);
   std::vector<std::int32_t> post_indices_map(
       postoffice_range[1] - postoffice_range[0], -1);
   for (std::size_t i = 0; i < post_indices.size(); ++i)
