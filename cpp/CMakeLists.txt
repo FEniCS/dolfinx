@@ -25,16 +25,21 @@ set(
 
 # ------------------------------------------------------------------------------
 # Get GIT changeset, if available
-find_program(GIT_EXECUTABLE git)
+find_package(Git QUIET)
 
-if(GIT_EXECUTABLE)
+if(GIT_FOUND)
   # Get the commit hash of the working branch
   execute_process(
-    COMMAND git rev-parse HEAD
+    COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    RESULT_VARIABLE GIT_RESULT
     OUTPUT_VARIABLE GIT_COMMIT_HASH
     OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
   )
+  if(NOT GIT_RESULT EQUAL 0)
+    set(GIT_COMMIT_HASH "unknown")
+  endif()
 else()
   set(GIT_COMMIT_HASH "unknown")
 endif()
