@@ -31,13 +31,13 @@ set(
 target_sources(
   dolfinx
   PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/DirichletBC.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateElement.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/DofMap.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ElementDofLayout.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElement.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dofmapbuilder.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sparsitybuild.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
+    DirichletBC.cpp
+    CoordinateElement.cpp
+    DofMap.cpp
+    ElementDofLayout.cpp
+    FiniteElement.cpp
+    dofmapbuilder.cpp
+    petsc.cpp
+    sparsitybuild.cpp
+    utils.cpp
 )
