@@ -11,9 +11,5 @@ set(
 
 target_sources(
   dolfinx
-  PRIVATE
-    ordering.cpp
-    partitioners.cpp
-    partition.cpp
-    utils.cpp
+  PRIVATE ordering.cpp partitioners.cpp partition.cpp utils.cpp
 )

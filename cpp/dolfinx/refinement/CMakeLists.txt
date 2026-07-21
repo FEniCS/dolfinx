@@ -11,10 +11,4 @@ set(
   PARENT_SCOPE
 )
 
-target_sources(
-  dolfinx
-  PRIVATE
-    plaza.cpp
-    uniform.cpp
-    utils.cpp
-)
+target_sources(dolfinx PRIVATE plaza.cpp uniform.cpp utils.cpp)

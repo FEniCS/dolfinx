@@ -16,9 +16,5 @@ set(
 
 target_sources(
   dolfinx
-  PRIVATE
-    SparsityPattern.cpp
-    superlu_dist.cpp
-    petsc.cpp
-    slepc.cpp
+  PRIVATE SparsityPattern.cpp superlu_dist.cpp petsc.cpp slepc.cpp
 )
