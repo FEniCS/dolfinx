@@ -98,35 +98,44 @@ constexpr void radix_sort(R&& range, P proj = {})
   if (range.size() <= 1)
     return;
 
-  uI max_value = proj(*std::ranges::max_element(range, std::less{}, proj));
-
   // Sort N bits at a time
   constexpr uI bucket_size = 1 << _BITS;
   uI mask = (uI(1) << _BITS) - 1;
+  constexpr uI top_bit = uI(1) << (sizeof(uI) * 8 - 1);
+
+  // Adjacency list arrays for computing insertion position. counter is
+  // pre-filled below with the first pass's histogram (bucketing on the
+  // low BITS bits, which is always the correct pass-0 bucket regardless
+  // of the top-bit special case), so that pass can skip a second full
+  // traversal to build it.
+  std::array<I, bucket_size> counter{};
+  std::array<I, bucket_size> offset;
+
+  // Single pass computing the maximum projected value, whether all
+  // elements share the top bit (in which case it carries no ordering
+  // information and can be dropped, reducing the iteration count), and
+  // the first pass's histogram
+  uI max_value = 0;
+  bool all_first_bit = true;
+  for (const auto& e : range)
+  {
+    uI v = proj(e);
+    max_value = std::max(max_value, v);
+    all_first_bit = all_first_bit && (v & top_bit);
+    counter[v & mask]++;
+  }
+
+  if (all_first_bit)
+    max_value = max_value & ~top_bit;
 
   // Compute number of iterations, most significant digit (N bits) of
   // maxvalue
   I its = 0;
-
-  // Optimize for case where all first bits are set - then order will
-  // not depend on it
-  if (bool all_first_bit = std::ranges::all_of(
-          range, [&proj](const auto& e)
-          { return proj(e) & (uI(1) << (sizeof(uI) * 8 - 1)); });
-      all_first_bit)
-  {
-    max_value = max_value & ~(uI(1) << (sizeof(uI) * 8 - 1));
-  }
-
   while (max_value)
   {
     max_value >>= _BITS;
     its++;
   }
-
-  // Adjacency list arrays for computing insertion position
-  std::array<I, bucket_size> counter;
-  std::array<I, bucket_size + 1> offset;
 
   uI mask_offset = 0;
   std::vector<T> buffer(range.size());
@@ -134,22 +143,23 @@ constexpr void radix_sort(R&& range, P proj = {})
   std::span<T> next_perm = buffer;
   for (I i = 0; i < its; i++)
   {
-    // Zero counter array
-    std::ranges::fill(counter, 0);
+    if (i > 0)
+    {
+      // Zero counter array
+      std::ranges::fill(counter, 0);
 
-    // Count number of elements per bucket
-    for (auto c : current_perm)
-      counter[(proj(c) & mask) >> mask_offset]++;
+      // Count number of elements per bucket
+      for (auto c : current_perm)
+        counter[(proj(c) & mask) >> mask_offset]++;
+    }
 
-    // Prefix sum to get the inserting position
-    offset[0] = 0;
-    std::partial_sum(counter.begin(), counter.end(), std::next(offset.begin()));
+    // Exclusive prefix sum, used directly as the insertion cursor for
+    // each bucket
+    std::exclusive_scan(counter.begin(), counter.end(), offset.begin(), I(0));
     for (auto c : current_perm)
     {
       uI bucket = (proj(c) & mask) >> mask_offset;
-      uI new_pos = offset[bucket + 1] - counter[bucket];
-      next_perm[new_pos] = c;
-      counter[bucket]--;
+      next_perm[offset[bucket]++] = c;
     }
 
     mask = mask << _BITS;
@@ -173,7 +183,7 @@ constexpr void radix_sort(R&& range, P proj = {})
 /// @pre `x.size()` must be a multiple of `shape1`.
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.
-template <typename T, int BITS = 16>
+template <typename T, int BITS = 8>
 std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
 {
   static_assert(std::is_integral_v<T>, "Integral required.");

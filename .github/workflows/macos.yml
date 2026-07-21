@@ -35,7 +35,7 @@ jobs:
           echo "DYLD_LIBRARY_PATH=/usr/local/lib:${PETSC_DIR}/${PETSC_ARCH}/lib:${DYLD_LIBRARY_PATH}" >> $GITHUB_ENV
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         id: cp3
         with:
           python-version: "3.14"

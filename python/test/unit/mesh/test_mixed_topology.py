@@ -344,7 +344,7 @@ def test_locate_entities(dtype):
     comm = MPI.COMM_WORLD
     max_cells_per_facet = 2
     mesh = create_mesh(
-        comm, cells, [hexahedron._cpp_object, prism._cpp_object], geom, part, max_cells_per_facet
+        comm, cells, [hexahedron._cpp_object, prism._cpp_object], geom, part, max_cells_per_facet, 1
     )
 
     fdim = mesh.topology.dim - 1
