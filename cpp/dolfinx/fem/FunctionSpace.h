@@ -30,6 +30,8 @@ namespace dolfinx::fem
 /// degrees-of-freedom.
 /// @tparam T The floating point (real) type of the mesh geometry and
 /// the finite element basis.
+/// @tparam ScatterT Scatterer type used to scatter/gather dof data
+/// between the local (owned + ghost) and global dof layouts.
 template <std::floating_point T,
           typename ScatterT = common::Scatterer<std::vector<std::int32_t>>>
 class FunctionSpace

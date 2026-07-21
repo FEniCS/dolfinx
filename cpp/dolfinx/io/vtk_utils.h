@@ -26,12 +26,6 @@
 
 namespace dolfinx
 {
-namespace fem
-{
-template <std::floating_point T, typename ScatterT>
-class FunctionSpace;
-}
-
 namespace mesh
 {
 enum class CellType : std::int8_t;
