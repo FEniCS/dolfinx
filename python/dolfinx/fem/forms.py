@@ -37,8 +37,9 @@ if typing.TYPE_CHECKING:
 class Form(typing.Generic[Scalar]):
     """A finite element form."""
 
-    # Matched-precision built-ins (geometry == real scalar part).
-    _cpp_registry: typing.ClassVar[dict] = {
+    # Matched-precision built-ins (geometry == real scalar part). Public:
+    # extend with additional (scalar, geometry) dtype pairs as needed.
+    cpp_types: typing.ClassVar[dict] = {
         (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.Form_float32,
         (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.Form_float64,
         (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.Form_complex64,
@@ -51,22 +52,6 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_float64
     )
     _code: str | list[str] | None
-
-    @classmethod
-    def register_cpp_type(cls, cpp_type, scalar_dtype, geometry_dtype):
-        """Register a compiled C++ type for a (scalar, geometry) pair."""
-        cls._cpp_registry[scalar_dtype, geometry_dtype] = cpp_type
-
-    @classmethod
-    def get_cpp_type(cls, scalar_dtype, geometry_dtype):
-        """Compiled C++ type registered for a (scalar, geometry) pair."""
-        try:
-            return cls._cpp_registry[scalar_dtype, geometry_dtype]
-        except KeyError:
-            raise NotImplementedError(
-                f"No compiled {cls.__name__} for scalar '{scalar_dtype}' on geometry "
-                f"'{geometry_dtype}'. Register one with {cls.__name__}.register_cpp_type()."
-            ) from None
 
     def __init__(
         self,
@@ -247,7 +232,7 @@ def form_cpp_class(
     """
     # Geometry is the real part of the scalar type (matched precision).
     scalar_dtype = np.dtype(dtype)
-    return Form.get_cpp_type(scalar_dtype, scalar_dtype.type(0).real.dtype)
+    return Form.cpp_types[scalar_dtype, scalar_dtype.type(0).real.dtype]
 
 
 _ufl_to_dolfinx_domain = {
@@ -311,7 +296,7 @@ def mixed_topology_form(
     comm = mesh.comm if jit_comm is None else jit_comm
 
     # Geometry type is fixed by the mesh.
-    ftype = Form.get_cpp_type(np.dtype(dtype), mesh.geometry.x.dtype)
+    ftype = Form.cpp_types[np.dtype(dtype), mesh.geometry.x.dtype]
 
     ufcx_forms = []
     modules = []
@@ -399,7 +384,7 @@ def form(
         comm = msh.comm if jit_comm is None else jit_comm
 
         # Geometry type is fixed by the mesh.
-        ftype = Form.get_cpp_type(np.dtype(dtype), msh.geometry.x.dtype)
+        ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
 
         ufcx_form, module, code = jit.ffcx_jit(
             comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
@@ -464,7 +449,7 @@ def form(
         msh = V[0].mesh
 
         # Geometry type is fixed by the mesh.
-        ftype = Form.get_cpp_type(np.dtype(dtype), msh.geometry.x.dtype)
+        ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
 
         f = ftype(
             spaces=V,

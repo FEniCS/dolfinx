@@ -35,8 +35,9 @@ if typing.TYPE_CHECKING:
 class Constant(ufl.Constant, Generic[Scalar]):
     """A constant with respect to a domain."""
 
-    # Built-in scalar types.
-    _cpp_registry: typing.ClassVar[dict] = {
+    # Built-in scalar types. Public: extend with additional scalar dtypes
+    # as needed.
+    cpp_types: typing.ClassVar[dict] = {
         np.dtype(np.float32): _cpp.fem.Constant_float32,
         np.dtype(np.float64): _cpp.fem.Constant_float64,
         np.dtype(np.complex64): _cpp.fem.Constant_complex64,
@@ -48,22 +49,6 @@ class Constant(ufl.Constant, Generic[Scalar]):
         | _cpp.fem.Constant_float32
         | _cpp.fem.Constant_float64
     )
-
-    @classmethod
-    def register_cpp_type(cls, cpp_type, scalar_dtype):
-        """Register a compiled C++ type for a scalar dtype."""
-        cls._cpp_registry[scalar_dtype] = cpp_type
-
-    @classmethod
-    def get_cpp_type(cls, scalar_dtype):
-        """Compiled C++ type registered for a scalar dtype."""
-        try:
-            return cls._cpp_registry[scalar_dtype]
-        except KeyError:
-            raise NotImplementedError(
-                f"No compiled {cls.__name__} for scalar '{scalar_dtype}'. "
-                f"Register one with {cls.__name__}.register_cpp_type()."
-            ) from None
 
     def __init__(
         self,
@@ -79,7 +64,7 @@ class Constant(ufl.Constant, Generic[Scalar]):
         c = np.asarray(c)
         super().__init__(domain, c.shape)
         try:
-            cpp_type = Constant.get_cpp_type(c.dtype)
+            cpp_type = Constant.cpp_types[c.dtype]
         except AttributeError as err:
             raise AttributeError("Constant value must have a dtype attribute.") from err
         self._cpp_object = cpp_type(c)
@@ -129,7 +114,8 @@ class Expression(Generic[Scalar]):
 
     # Matched-precision built-ins (geometry == real scalar part). An
     # ``Expression`` is built through a factory, not a class constructor.
-    _cpp_registry: typing.ClassVar[dict] = {
+    # Public: extend with additional (scalar, geometry) dtype pairs.
+    cpp_types: typing.ClassVar[dict] = {
         (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.create_expression_float32,
         (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.create_expression_float64,
         (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.create_expression_complex64,
@@ -144,22 +130,6 @@ class Expression(Generic[Scalar]):
         | _cpp.fem.Expression_float64
     )
     _code: str
-
-    @classmethod
-    def register_cpp_type(cls, cpp_type, scalar_dtype, geometry_dtype):
-        """Register a C++ factory for a (scalar, geometry) pair."""
-        cls._cpp_registry[scalar_dtype, geometry_dtype] = cpp_type
-
-    @classmethod
-    def get_cpp_type(cls, scalar_dtype, geometry_dtype):
-        """C++ factory registered for a (scalar, geometry) pair."""
-        try:
-            return cls._cpp_registry[scalar_dtype, geometry_dtype]
-        except KeyError:
-            raise NotImplementedError(
-                f"No compiled {cls.__name__} for scalar '{scalar_dtype}' on geometry "
-                f"'{geometry_dtype}'. Register one with {cls.__name__}.register_cpp_type()."
-            ) from None
 
     def __init__(
         self,
@@ -252,7 +222,7 @@ class Expression(Generic[Scalar]):
             geometry_dtype = expr_domain.ufl_cargo().geometry.x.dtype
         else:
             geometry_dtype = np.dtype(dtype).type(0).real.dtype
-        create_expression = Expression.get_cpp_type(np.dtype(dtype), geometry_dtype)
+        create_expression = Expression.cpp_types[np.dtype(dtype), geometry_dtype]
 
         _entity_maps = (
             [entity_map._cpp_object for entity_map in entity_maps]
@@ -378,8 +348,9 @@ class Function(ufl.Coefficient, Generic[Scalar]):
 
     """
 
-    # Matched-precision built-ins (geometry == real scalar part).
-    _cpp_registry: typing.ClassVar[dict] = {
+    # Matched-precision built-ins (geometry == real scalar part). Public:
+    # extend with additional (scalar, geometry) dtype pairs.
+    cpp_types: typing.ClassVar[dict] = {
         (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.Function_float32,
         (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.Function_float64,
         (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.Function_complex64,
@@ -393,22 +364,6 @@ class Function(ufl.Coefficient, Generic[Scalar]):
     )
 
     _x: la.Vector[Scalar]
-
-    @classmethod
-    def register_cpp_type(cls, cpp_type, scalar_dtype, geometry_dtype):
-        """Register a compiled C++ type for a (scalar, geometry) pair."""
-        cls._cpp_registry[scalar_dtype, geometry_dtype] = cpp_type
-
-    @classmethod
-    def get_cpp_type(cls, scalar_dtype, geometry_dtype):
-        """Compiled C++ type registered for a (scalar, geometry) pair."""
-        try:
-            return cls._cpp_registry[scalar_dtype, geometry_dtype]
-        except KeyError:
-            raise NotImplementedError(
-                f"No compiled {cls.__name__} for scalar '{scalar_dtype}' on geometry "
-                f"'{geometry_dtype}'. Register one with {cls.__name__}.register_cpp_type()."
-            ) from None
 
     def __init__(
         self,
@@ -439,7 +394,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         # Scalar type (dtype) is independent of the geometry type, which
         # is fixed by the mesh.
         geometry_dtype = V.mesh.geometry.x.dtype
-        cpp_type = Function.get_cpp_type(np.dtype(dtype), geometry_dtype)
+        cpp_type = Function.cpp_types[np.dtype(dtype), geometry_dtype]
         if x is not None:
             self._cpp_object = cpp_type(V._cpp_object, x._cpp_object)  # type: ignore
         else:
@@ -747,7 +702,7 @@ def functionspace(
     )
 
     # Initialize the cpp.FunctionSpace. Geometry type is fixed by the mesh.
-    cpp_type = FunctionSpace.get_cpp_type(dtype)
+    cpp_type = FunctionSpace.cpp_types[dtype]
     cppV = cpp_type(mesh._cpp_object, element._cpp_object, cpp_dofmap)  # type: ignore
 
     return FunctionSpace(mesh, ufl_e, cppV)
@@ -756,29 +711,14 @@ def functionspace(
 class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
     """A space on which Functions (fields) can be defined."""
 
-    # Built-in geometry types.
-    _cpp_registry: typing.ClassVar[dict] = {
+    # Built-in geometry types. Public: extend with additional geometry
+    # dtypes as needed.
+    cpp_types: typing.ClassVar[dict] = {
         np.dtype(np.float32): _cpp.fem.FunctionSpace_float32,
         np.dtype(np.float64): _cpp.fem.FunctionSpace_float64,
     }
     _cpp_object: _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
     _mesh: Mesh[Real]
-
-    @classmethod
-    def register_cpp_type(cls, cpp_type, geometry_dtype):
-        """Register a compiled C++ type for a geometry dtype."""
-        cls._cpp_registry[geometry_dtype] = cpp_type
-
-    @classmethod
-    def get_cpp_type(cls, geometry_dtype):
-        """Compiled C++ type registered for a geometry dtype."""
-        try:
-            return cls._cpp_registry[geometry_dtype]
-        except KeyError:
-            raise NotImplementedError(
-                f"No compiled {cls.__name__} for geometry '{geometry_dtype}'. "
-                f"Register one with {cls.__name__}.register_cpp_type()."
-            ) from None
 
     def __init__(
         self,
@@ -826,7 +766,7 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
             A new function space that shares data
         """  # noqa: D301
         # Geometry type is fixed by the mesh.
-        cpp_type = FunctionSpace.get_cpp_type(self._mesh.geometry.x.dtype)
+        cpp_type = FunctionSpace.cpp_types[self._mesh.geometry.x.dtype]
         Vcpp = cpp_type(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)  # type: ignore
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 

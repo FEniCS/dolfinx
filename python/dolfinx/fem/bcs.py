@@ -98,8 +98,9 @@ class DirichletBC(Generic[Scalar]):
     The conditions are imposed on a linear system.
     """
 
-    # Matched-precision built-ins (geometry == real scalar part).
-    _cpp_registry: ClassVar[dict] = {
+    # Matched-precision built-ins (geometry == real scalar part). Public:
+    # extend with additional (scalar, geometry) dtype pairs as needed.
+    cpp_types: ClassVar[dict] = {
         (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.DirichletBC_float32,
         (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.DirichletBC_float64,
         (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.DirichletBC_complex64,
@@ -111,22 +112,6 @@ class DirichletBC(Generic[Scalar]):
         | _cpp.fem.DirichletBC_float32
         | _cpp.fem.DirichletBC_float64
     )
-
-    @classmethod
-    def register_cpp_type(cls, cpp_type, scalar_dtype, geometry_dtype):
-        """Register a compiled C++ type for a (scalar, geometry) pair."""
-        cls._cpp_registry[scalar_dtype, geometry_dtype] = cpp_type
-
-    @classmethod
-    def get_cpp_type(cls, scalar_dtype, geometry_dtype):
-        """Compiled C++ type registered for a (scalar, geometry) pair."""
-        try:
-            return cls._cpp_registry[scalar_dtype, geometry_dtype]
-        except KeyError:
-            raise NotImplementedError(
-                f"No compiled {cls.__name__} for scalar '{scalar_dtype}' on geometry "
-                f"'{geometry_dtype}'. Register one with {cls.__name__}.register_cpp_type()."
-            ) from None
 
     def __init__(self, bc):
         """Initialise a Dirichlet boundary condition.
@@ -234,7 +219,7 @@ def dirichletbc(
         geometry_dtype = np.dtype(value.function_space.mesh.geometry.x.dtype)
     else:
         geometry_dtype = np.dtype(dtype).type(0).real.dtype
-    bctype = DirichletBC.get_cpp_type(dtype, geometry_dtype)
+    bctype = DirichletBC.cpp_types[dtype, geometry_dtype]
 
     # Unwrap value object, if required
     if isinstance(value, np.ndarray):
