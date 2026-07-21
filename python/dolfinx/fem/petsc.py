@@ -593,7 +593,6 @@ def apply_lifting(
         in ``b``.
     """
     if b.getType() == PETSc.Vec.Type.NEST:
-        assert isinstance(x0, PETSc.Vec)
         x0 = [] if x0 is None else x0.getNestSubVecs()
         constants = [pack_constants(forms) for forms in a] if constants is None else constants  # type: ignore[assignment]
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
