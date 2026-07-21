@@ -357,30 +357,30 @@ set_package_properties(
 
 # Prepend <dir>/lib/pkgconfig (and <dir>/<arch>/lib/pkgconfig) to PKG_CONFIG_PATH.
 macro(dolfinx_prepend_pkgconfig_path dir_env_var)
-  if(WIN32)
-    set(_sep ";")
-  else()
-    set(_sep ":")
-  endif()
-  if(DEFINED ENV{PKG_CONFIG_PATH})
-    set(_orig "$ENV{PKG_CONFIG_PATH}")
-  else()
-    set(_orig "")
-  endif()
-  if(DEFINED ENV{${dir_env_var}})
-    set(
-      ENV{PKG_CONFIG_PATH}
-      "$ENV{${dir_env_var}}/lib/pkgconfig${_sep}${_orig}"
-    )
-    if(DEFINED ENV{PETSC_ARCH})
+  block(SCOPE_FOR VARIABLES)
+    if(WIN32)
+      set(_sep ";")
+    else()
+      set(_sep ":")
+    endif()
+    if(DEFINED ENV{PKG_CONFIG_PATH})
+      set(_orig "$ENV{PKG_CONFIG_PATH}")
+    else()
+      set(_orig "")
+    endif()
+    if(DEFINED ENV{${dir_env_var}})
       set(
         ENV{PKG_CONFIG_PATH}
-        "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig${_sep}$ENV{PKG_CONFIG_PATH}"
+        "$ENV{${dir_env_var}}/lib/pkgconfig${_sep}${_orig}"
       )
+      if(DEFINED ENV{PETSC_ARCH})
+        set(
+          ENV{PKG_CONFIG_PATH}
+          "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig${_sep}$ENV{PKG_CONFIG_PATH}"
+        )
+      endif()
     endif()
-  endif()
-  unset(_orig)
-  unset(_sep)
+  endblock()
 endmacro()
 
 # ------------------------------------------------------------------------------
