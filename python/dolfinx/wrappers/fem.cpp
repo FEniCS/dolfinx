@@ -160,6 +160,11 @@ void fem(nb::module_& m)
       .value("vertex", dolfinx::fem::IntegralType::vertex, "vertex integral")
       .value("ridge", dolfinx::fem::IntegralType::ridge, "ridge integral");
 
+  declare_constant<float>(m, "float32");
+  declare_constant<double>(m, "float64");
+  declare_constant<std::complex<float>>(m, "complex64");
+  declare_constant<std::complex<double>>(m, "complex128");
+
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
   declare_objects<std::complex<float>>(m, "complex64");

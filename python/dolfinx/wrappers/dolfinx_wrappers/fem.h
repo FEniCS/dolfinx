@@ -58,17 +58,6 @@ namespace dolfinx_wrappers
 namespace nb = nanobind;
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
-template <typename T, typename = void>
-struct geom_type
-{
-  typedef T value_type;
-};
-template <typename T>
-struct geom_type<T, std::void_t<typename T::value_type>>
-{
-  typedef typename T::value_type value_type;
-};
-
 // Copy a container of pointers to a
 // std::vector<std::reference_wrapper<T>>
 auto ptr_to_ref_wrapper_vec(auto& x)
@@ -344,12 +333,41 @@ void declare_function_space(nb::module_& m, std::string type)
   }
 }
 
-// Declare DirichletBC objects for type T
 template <typename T>
+void declare_constant(nb::module_& m, std::string type)
+{
+  // dolfinx::fem::Constant
+  std::string pyclass_name_constant = std::string("Constant_") + type;
+  nb::class_<dolfinx::fem::Constant<T>>(
+      m, pyclass_name_constant.c_str(),
+      "Value constant with respect to integration domain")
+      .def(
+          "__init__",
+          [](dolfinx::fem::Constant<T>* cp,
+             nb::ndarray<const T, nb::c_contig> c)
+          {
+            std::vector<std::size_t> shape(c.shape_ptr(),
+                                           c.shape_ptr() + c.ndim());
+            new (cp)
+                dolfinx::fem::Constant<T>(std::span(c.data(), c.size()), shape);
+          },
+          nb::arg("c").noconvert(), "Create a constant from a value array")
+      .def_prop_ro("dtype", [](const dolfinx::fem::Constant<T>&)
+                   { return dolfinx_wrappers::numpy_dtype_v<T>; })
+      .def_prop_ro(
+          "value",
+          [](dolfinx::fem::Constant<T>& self)
+          {
+            return nb::ndarray<T, nb::numpy>(
+                self.value.data(), self.shape.size(), self.shape.data());
+          },
+          nb::rv_policy::reference_internal);
+}
+
+// Declare DirichletBC objects for type T
+template <typename T, std::floating_point U = dolfinx::scalar_value_t<T>>
 void declare_objects(nb::module_& m, std::string type)
 {
-  using U = typename dolfinx::scalar_value_t<T>;
-
   // dolfinx::fem::DirichletBC
   std::string pyclass_name = std::string("DirichletBC_") + type;
   nb::class_<dolfinx::fem::DirichletBC<T, U>> dirichletbc(
@@ -555,8 +573,8 @@ void declare_objects(nb::module_& m, std::string type)
             self.interpolate(u, std::span(cells.data(), cells.size()), tol,
                              maxit, interpolation_data);
           },
-          nb::arg("u"), nb::arg("cells"), nb::arg("interpolation_data"),
-          nb::arg("tol"), nb::arg("maxit"),
+          nb::arg("u"), nb::arg("cells"), nb::arg("tol"), nb::arg("maxit"),
+          nb::arg("interpolation_data"),
           "Interpolate a finite element Function on non-matching meshes")
       // NOLINTBEGIN(performance-no-int-to-ptr)
       .def(
@@ -653,33 +671,6 @@ void declare_objects(nb::module_& m, std::string type)
       .def_prop_ro("function_space",
                    &dolfinx::fem::Function<T, U>::function_space);
 
-  // dolfinx::fem::Constant
-  std::string pyclass_name_constant = std::string("Constant_") + type;
-  nb::class_<dolfinx::fem::Constant<T>>(
-      m, pyclass_name_constant.c_str(),
-      "Value constant with respect to integration domain")
-      .def(
-          "__init__",
-          [](dolfinx::fem::Constant<T>* cp,
-             nb::ndarray<const T, nb::c_contig> c)
-          {
-            std::vector<std::size_t> shape(c.shape_ptr(),
-                                           c.shape_ptr() + c.ndim());
-            new (cp)
-                dolfinx::fem::Constant<T>(std::span(c.data(), c.size()), shape);
-          },
-          nb::arg("c").noconvert(), "Create a constant from a value array")
-      .def_prop_ro("dtype", [](const dolfinx::fem::Constant<T>&)
-                   { return dolfinx_wrappers::numpy_dtype_v<T>; })
-      .def_prop_ro(
-          "value",
-          [](dolfinx::fem::Constant<T>& self)
-          {
-            return nb::ndarray<T, nb::numpy>(
-                self.value.data(), self.shape.size(), self.shape.data());
-          },
-          nb::rv_policy::reference_internal);
-
   // dolfinx::fem::Expression
   std::string pyclass_name_expr = std::string("Expression_") + type;
   nb::class_<dolfinx::fem::Expression<T, U>>(m, pyclass_name_expr.c_str(),
@@ -700,9 +691,8 @@ void declare_objects(nb::module_& m, std::string type)
                  argument_space)
           {
             auto tabulate_expression_ptr
-                = (void (*)(T*, const T*, const T*,
-                            const typename geom_type<T>::value_type*,
-                            const int*, const std::uint8_t*, void*))fn_addr;
+                = (void (*)(T*, const T*, const T*, const U*, const int*,
+                            const std::uint8_t*, void*))fn_addr;
             new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
                 {X.shape(0), X.shape(1)}, tabulate_expression_ptr, value_shape,
@@ -743,22 +733,26 @@ void declare_objects(nb::module_& m, std::string type)
          const std::vector<const dolfinx::mesh::EntityMap*>& entity_maps,
          std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> argument_space)
       {
-        const ufcx_expression* p
-            = reinterpret_cast<const ufcx_expression*>(expression);
-        return dolfinx::fem::create_expression<T, U>(
-            *p, coefficients, constants, ptr_to_ref_wrapper_vec(entity_maps),
-            argument_space);
+        if constexpr (std::is_same_v<U, dolfinx::scalar_value_t<T>>)
+        {
+          const ufcx_expression* p
+              = reinterpret_cast<const ufcx_expression*>(expression);
+          return dolfinx::fem::create_expression<T, U>(
+              *p, coefficients, constants, ptr_to_ref_wrapper_vec(entity_maps),
+              argument_space);
+        }
+        else
+          throw std::runtime_error(
+              "create_expression requires geometry type scalar_value_t<T>.");
       },
       nb::arg("expression"), nb::arg("coefficients"), nb::arg("constants"),
       nb::arg("entity_maps"), nb::arg("argument_space").none(),
       "Create Expression from a pointer to ufc_form.");
 }
 
-template <typename T>
+template <typename T, std::floating_point U = dolfinx::scalar_value_t<T>>
 void declare_form(nb::module_& m, std::string type)
 {
-  using U = typename dolfinx::scalar_value_t<T>;
-
   // dolfinx::fem::Form
   std::string pyclass_name_form = std::string("Form_") + type;
   nb::class_<dolfinx::fem::Form<T, U>>(m, pyclass_name_form.c_str(),
@@ -784,7 +778,7 @@ void declare_form(nb::module_& m, std::string type)
              std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
           {
             std::map<std::tuple<dolfinx::fem::IntegralType, int, int>,
-                     dolfinx::fem::integral_data<T>>
+                     dolfinx::fem::integral_data<T, U>>
                 _integrals;
 
             // Loop over kernel for each entity type
@@ -793,9 +787,8 @@ void declare_form(nb::module_& m, std::string type)
               for (auto& [id, ptr, e, c] : kernels)
               {
                 auto kn_ptr
-                    = (void (*)(T*, const T*, const T*,
-                                const typename geom_type<T>::value_type*,
-                                const int*, const std::uint8_t*, void*))ptr;
+                    = (void (*)(T*, const T*, const T*, const U*, const int*,
+                                const std::uint8_t*, void*))ptr;
                 _integrals.insert(
                     {{type, id, 0},
                      {kn_ptr,
@@ -843,14 +836,20 @@ void declare_form(nb::module_& m, std::string type)
               sd.insert({itg, std::move(x)});
             }
 
-            std::vector<std::reference_wrapper<const ufcx_form>> ps;
-            ps.reserve(forms.size());
-            for (auto form : forms)
-              ps.push_back(*(reinterpret_cast<ufcx_form*>(form)));
-            new (fp)
-                dolfinx::fem::Form<T, U>(dolfinx::fem::create_form_factory<T>(
-                    ps, spaces, coefficients, constants, sd,
-                    ptr_to_ref_wrapper_vec(entity_maps), mesh));
+            if constexpr (std::is_same_v<U, dolfinx::scalar_value_t<T>>)
+            {
+              std::vector<std::reference_wrapper<const ufcx_form>> ps;
+              ps.reserve(forms.size());
+              for (auto form : forms)
+                ps.push_back(*(reinterpret_cast<ufcx_form*>(form)));
+              new (fp)
+                  dolfinx::fem::Form<T, U>(dolfinx::fem::create_form_factory<T>(
+                      ps, spaces, coefficients, constants, sd,
+                      ptr_to_ref_wrapper_vec(entity_maps), mesh));
+            }
+            else
+              throw std::runtime_error(
+                  "create_form requires geometry type scalar_value_t<T>.");
           },
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("subdomains"), nb::arg("entity_maps"),
@@ -924,9 +923,15 @@ void declare_form(nb::module_& m, std::string type)
           sd.insert({itg, std::move(x)});
         }
 
-        ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-        return dolfinx::fem::create_form_factory<T>(
-            {*p}, spaces, coefficients, constants, sd, {}, std::move(mesh));
+        if constexpr (std::is_same_v<U, dolfinx::scalar_value_t<T>>)
+        {
+          ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
+          return dolfinx::fem::create_form_factory<T>(
+              {*p}, spaces, coefficients, constants, sd, {}, std::move(mesh));
+        }
+        else
+          throw std::runtime_error(
+              "create_form requires geometry type scalar_value_t<T>.");
       },
       nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
       nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh"),
@@ -962,10 +967,16 @@ void declare_form(nb::module_& m, std::string type)
           sd.insert({itg, std::move(x)});
         }
 
-        ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-        return dolfinx::fem::create_form<T, U>(
-            *p, spaces, coefficients, constants, sd,
-            ptr_to_ref_wrapper_vec(entity_maps), std::move(mesh));
+        if constexpr (std::is_same_v<U, dolfinx::scalar_value_t<T>>)
+        {
+          ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
+          return dolfinx::fem::create_form<T, U>(
+              *p, spaces, coefficients, constants, sd,
+              ptr_to_ref_wrapper_vec(entity_maps), std::move(mesh));
+        }
+        else
+          throw std::runtime_error(
+              "create_form requires geometry type scalar_value_t<T>.");
       },
       // NOLINTEND(performance-no-int-to-ptr)
       nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),

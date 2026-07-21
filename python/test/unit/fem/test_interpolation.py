@@ -912,7 +912,15 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     # Interpolate 3D->2D
     u1 = Function(V1, dtype=xtype)
 
-    u1.interpolate_nonmatching(u0, cells, interpolation_data=interpolation_data)
+    # Pass by keyword to check each name binds the parameter it names;
+    # interpolate_nonmatching (used for 2D->3D below) passes positionally.
+    u1._cpp_object.interpolate(
+        u=u0._cpp_object,
+        cells=cells,
+        tol=1e-6,
+        maxit=15,
+        interpolation_data=interpolation_data._cpp_object,
+    )
     u1.x.scatter_forward()
 
     # Exact interpolation on 2D mesh
@@ -948,6 +956,18 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
         domain=mesh0, subdomain_data=facet_tag, subdomain_id=1
     )
     assert np.isclose(assemble_scalar(form(residual, dtype=xtype)), 0)
+
+
+def test_interpolate_mismatched_dtype_raises():
+    """Test that a Function of incompatible dtype reports the type error,
+    rather than being mistaken for a callable f(x).
+    """
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=np.float64)
+    V = functionspace(mesh, ("Lagrange", 1))
+    u = Function(V, dtype=np.float64)
+    v = Function(V, dtype=np.complex128)
+    with pytest.raises(TypeError):
+        u.interpolate(v)
 
 
 @pytest.mark.parametrize("xtype", [np.float64])
