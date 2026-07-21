@@ -213,6 +213,7 @@ class XDMFFile(_cpp.io.XDMFFile):
 
         # Get coordinate element, special handling for second order
         # serendipity.
+        basix_el: basix.ufl._BasixElement | basix.ufl._BlockedElement
         num_nodes_per_cell = cells.shape[1]
         if (cell_shape == CellType.quadrilateral and num_nodes_per_cell == 8) or (
             cell_shape == CellType.hexahedron and num_nodes_per_cell == 20

@@ -193,9 +193,9 @@ bc.set(b.array)
 A_scipy = A.to_scipy()
 b_scipy = b.array
 
-x = spsolve(A_scipy, b_scipy)
+x_scipy = spsolve(A_scipy, b_scipy)
 
-print(f"Solution vector norm {np.linalg.norm(x)}")
+print(f"Solution vector norm {np.linalg.norm(x_scipy)}")
 
 # Mixed-topology I/O
 # We manually build a ASCII XDMF file to store the mesh
@@ -235,8 +235,8 @@ for j in range(2):
           </DataItem>
         </Geometry>
         <Attribute Name="u" Center="Node" NumberType="float" Precision="8">
-          <DataItem Dimensions="{len(x)}" Format="XML">
-            {" ".join(str(val) for val in x)}
+          <DataItem Dimensions="{len(x_scipy)}" Format="XML">
+            {" ".join(str(val) for val in x_scipy)}
           </DataItem>
        </Attribute>
       </Grid>"""

@@ -6,8 +6,10 @@
 """Support functions for plotting."""
 
 import functools
+from typing import overload
 
 import numpy as np
+import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
 from dolfinx import fem, mesh
@@ -29,8 +31,18 @@ _first_order_vtk = {
 }
 
 
+@overload
+def vtk_mesh(
+    msh: mesh.Mesh, dim: int | None = None, entities: npt.NDArray[np.int32] | None = None
+): ...
+
+
+@overload
+def vtk_mesh(V: fem.FunctionSpace, entities: npt.NDArray[np.int32] | None = None): ...
+
+
 @functools.singledispatch
-def vtk_mesh(msh: mesh.Mesh, dim: int | None = None, entities=None):
+def vtk_mesh(msh: mesh.Mesh, dim: int | None = None, entities: npt.NDArray[np.int32] | None = None):
     """Create VTK mesh topology data for mesh entities.
 
     The vertex indices in the returned topology array are the indices
@@ -74,8 +86,8 @@ def vtk_mesh(msh: mesh.Mesh, dim: int | None = None, entities=None):
     return topology.reshape(-1), cell_types, msh.geometry.x
 
 
-@vtk_mesh.register
-def _(V: fem.FunctionSpace, entities=None):  # type: ignore
+@vtk_mesh.register  # type: ignore[attr-defined]
+def _(V: fem.FunctionSpace, entities: npt.NDArray[np.int32] | None = None):  # type: ignore
     """Create VTK mesh topology based on the degree-of-freedom coordinates.
 
     This function supports visualisation when the degree of the finite
@@ -113,7 +125,7 @@ def _(V: fem.FunctionSpace, entities=None):  # type: ignore
     msh = V.mesh
     tdim = msh.topology.dim
     if entities is None:
-        entities = range(msh.topology.index_map(tdim).size_local)
+        entities = np.arange(msh.topology.index_map(tdim).size_local, dtype=np.int32)
 
     dofmap = V.dofmap
     num_dofs_per_cell = V.dofmap.dof_layout.num_dofs
@@ -123,9 +135,9 @@ def _(V: fem.FunctionSpace, entities=None):  # type: ignore
     vtk_type = (
         _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, tdim)
     )
-    cell_types = np.full(len(entities), vtk_type)
+    cell_types = np.full(entities.size, vtk_type)
 
-    topology = np.zeros((len(entities), num_dofs_per_cell + 1), dtype=np.int32)
+    topology = np.zeros((entities.size, num_dofs_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_dofs_per_cell
     dofmap_ = dofmap.list
     topology[:, 1:] = dofmap_[entities][:, perm]
