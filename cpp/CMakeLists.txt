@@ -25,16 +25,21 @@ set(
 
 # ------------------------------------------------------------------------------
 # Get GIT changeset, if available
-find_program(GIT_EXECUTABLE git)
+find_package(Git QUIET)
 
-if(GIT_EXECUTABLE)
+if(GIT_FOUND)
   # Get the commit hash of the working branch
   execute_process(
-    COMMAND git rev-parse HEAD
+    COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    RESULT_VARIABLE GIT_RESULT
     OUTPUT_VARIABLE GIT_COMMIT_HASH
     OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
   )
+  if(NOT GIT_RESULT EQUAL 0)
+    set(GIT_COMMIT_HASH "unknown")
+  endif()
 else()
   set(GIT_COMMIT_HASH "unknown")
 endif()
@@ -352,30 +357,30 @@ set_package_properties(
 
 # Prepend <dir>/lib/pkgconfig (and <dir>/<arch>/lib/pkgconfig) to PKG_CONFIG_PATH.
 macro(dolfinx_prepend_pkgconfig_path dir_env_var)
-  if(WIN32)
-    set(_sep ";")
-  else()
-    set(_sep ":")
-  endif()
-  if(DEFINED ENV{PKG_CONFIG_PATH})
-    set(_orig "$ENV{PKG_CONFIG_PATH}")
-  else()
-    set(_orig "")
-  endif()
-  if(DEFINED ENV{${dir_env_var}})
-    set(
-      ENV{PKG_CONFIG_PATH}
-      "$ENV{${dir_env_var}}/lib/pkgconfig${_sep}${_orig}"
-    )
-    if(DEFINED ENV{PETSC_ARCH})
+  block(SCOPE_FOR VARIABLES)
+    if(WIN32)
+      set(_sep ";")
+    else()
+      set(_sep ":")
+    endif()
+    if(DEFINED ENV{PKG_CONFIG_PATH})
+      set(_orig "$ENV{PKG_CONFIG_PATH}")
+    else()
+      set(_orig "")
+    endif()
+    if(DEFINED ENV{${dir_env_var}})
       set(
         ENV{PKG_CONFIG_PATH}
-        "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig${_sep}$ENV{PKG_CONFIG_PATH}"
+        "$ENV{${dir_env_var}}/lib/pkgconfig${_sep}${_orig}"
       )
+      if(DEFINED ENV{PETSC_ARCH})
+        set(
+          ENV{PKG_CONFIG_PATH}
+          "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig${_sep}$ENV{PKG_CONFIG_PATH}"
+        )
+      endif()
     endif()
-  endif()
-  unset(_orig)
-  unset(_sep)
+  endblock()
 endmacro()
 
 # ------------------------------------------------------------------------------
