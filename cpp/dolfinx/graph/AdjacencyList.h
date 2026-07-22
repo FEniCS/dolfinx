@@ -69,8 +69,10 @@ public:
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {
     if (_offsets.back() != (std::int32_t)_array.size())
+    {
       throw std::runtime_error("Last offset must equal the size of the data "
                                "array.");
+    }
   }
 
   /// @brief Construct adjacency list from arrays of link (edge) data,
@@ -93,12 +95,16 @@ public:
         _node_data(std::forward<W>(node_data))
   {
     if (!_node_data.has_value() or _node_data->size() != _offsets.size() - 1)
+    {
       throw std::runtime_error("Node data size must equal the number of "
                                "nodes.");
+    }
     _array.reserve(_offsets.back());
     if (_offsets.back() != (std::int32_t)_array.size())
+    {
       throw std::runtime_error("Last offset must equal the size of the data "
                                "array.");
+    }
   }
 
   /// Set all connections for all entities (T is a '2D' container, e.g.

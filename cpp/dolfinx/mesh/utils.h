@@ -1102,8 +1102,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     {
       std::size_t num_cell_nodes = doflayouts[i].num_dofs();
       if (cells[i].size() % num_cell_nodes != 0)
+      {
         throw std::runtime_error("Cell array size is not a multiple of the "
                                  "number of nodes per cell.");
+      }
       std::size_t num_cells = cells[i].size() / num_cell_nodes;
 
       // Extract destination AdjacencyList for this cell type
@@ -1137,8 +1139,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       cells1[i] = std::vector<std::int64_t>(cells[i].begin(), cells[i].end());
       std::int32_t num_cell_nodes = doflayouts[i].num_dofs();
       if (cells1[i].size() % num_cell_nodes != 0)
+      {
         throw std::runtime_error("Cell array size is not a multiple of the "
                                  "number of nodes per cell.");
+      }
       original_idx1[i].resize(cells1[i].size() / num_cell_nodes);
       num_owned += original_idx1[i].size();
     }

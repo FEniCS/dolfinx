@@ -30,8 +30,10 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
   assert(topology_node);
   pugi::xml_attribute type_attr = topology_node.attribute("TopologyType");
   if (!type_attr)
+  {
     throw std::runtime_error("XDMF topology node has no \"TopologyType\" "
                              "attribute.");
+  }
 
   const static std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
       = {{"polyvertex", {"point", 1}},
@@ -98,8 +100,10 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   std::vector<std::string> paths;
   boost::split(paths, path, boost::is_any_of(":"));
   if (paths.size() != 2)
+  {
     throw std::runtime_error("XDMF DataItem path \"" + path
                              + "\" is not of the form \"file:path\".");
+  }
 
   return {{paths[0], paths[1]}};
 }
