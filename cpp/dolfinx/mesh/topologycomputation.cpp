@@ -566,9 +566,12 @@ compute_entities_by_key_matching(
     const common::IndexMap& vertex_index_map, mesh::CellType entity_type,
     int dim, int num_threads)
 {
-  assert(dim != 0
-         && "Vertex connectivity should already exist; the caller must not "
-            "request its computation.");
+  if (dim == 0)
+  {
+    throw std::runtime_error("Cannot create vertices for "
+                             "topology. Should already exist.");
+  }
+
   assert(cell_dim(entity_type) == dim);
   assert(num_threads > 0);
 
@@ -1023,11 +1026,6 @@ mesh::compute_connectivity(const Topology& topology, std::array<int, 2> d0,
     return {c_d0_d1, nullptr};
   }
   else
-  {
-    assert(false
-           && "Unreachable: d0[0] and d1[0] are integers, so one of "
-              "==, < or > must hold.");
-    return {nullptr, nullptr};
-  }
+    throw std::runtime_error("Entity dimension error when computing topology.");
 }
 //--------------------------------------------------------------------------
