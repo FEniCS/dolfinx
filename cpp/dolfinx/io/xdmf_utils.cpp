@@ -101,8 +101,8 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   boost::split(paths, path, boost::is_any_of(":"));
   if (paths.size() != 2)
   {
-    throw std::runtime_error("XDMF DataItem path \"" + path
-                             + "\" is not of the form \"file:path\".");
+    throw std::runtime_error(std::format(
+        "XDMF DataItem path \"{}\" is not of the form \"file:path\".", path));
   }
 
   return {{paths[0], paths[1]}};
