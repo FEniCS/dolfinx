@@ -585,13 +585,14 @@ public:
   /// unchanged.
   void mark_dofs(std::span<std::int8_t> markers) const
   {
-    for (std::int32_t idx : _dofs0)
+    if (!_dofs0.empty()
+        and *std::ranges::max_element(_dofs0) >= (std::int32_t)markers.size())
     {
-      if (idx >= (std::int32_t)markers.size())
-        throw std::runtime_error("Marker array is too short for the "
-                                 "boundary condition dofs.");
-      markers[idx] = true;
+      throw std::runtime_error("Marker array is too short for the boundary "
+                               "condition dofs.");
     }
+    for (std::int32_t idx : _dofs0)
+      markers[idx] = true;
   }
 
 private:
