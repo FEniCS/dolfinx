@@ -62,7 +62,8 @@ disclosure process.
 - **Errors and invariants**: throw `std::runtime_error` with a
   descriptive message for user-facing/API-boundary errors; use
   `assert` for internal invariants that indicate a library bug, not
-  bad user input. Prefer `spdlog::debug`/`info`/`warn` for logging
+  bad user input. Do not add exceptions inside hot loops.
+  Prefer `spdlog::debug`/`info`/`warn` for logging
   over `std::cout`/`std::cerr`.
 - **Function pointers over lambdas**: when a free function's signature
   already matches a callback/`std::function` parameter exactly, pass
@@ -102,6 +103,7 @@ disclosure process.
   `.def(...)`, `.def_prop_ro(...)`, `.def_ro(...)`.
 - These files are still C++: `clang-format` applies to them too (CI
   checks `python/dolfinx/wrappers` separately).
+- Do not use default argument values.
 
 ## CMake style
 
