@@ -108,12 +108,12 @@ std::string graph::comm_to_json(
   const std::vector<std::pair<std::int32_t, std::int32_t>>& node_weights
       = g.node_data().value();
 
-  std::string out = "{\"directed\": true, \"multigraph\": false, \"graph\": "
-                    "[], \"nodes\": [";
+  std::string out
+      = R"({"directed": true, "multigraph": false, "graph": [], "nodes": [)";
   for (std::int32_t n = 0; n < g.num_nodes(); ++n)
   {
     // Note: it is helpful to order map keys alphabetically
-    out += std::format("{{\"num_ghosts\": {}, \"weight\": {},  \"id\": {}}}",
+    out += std::format(R"({{"num_ghosts": {}, "weight": {},  "id": {}}})",
                        node_weights[n].second, node_weights[n].first, n);
     if (n != g.num_nodes() - 1)
       out += ", ";
@@ -127,8 +127,8 @@ std::string graph::comm_to_json(
     for (std::size_t edge = 0; edge < links.size(); ++edge)
     {
       auto [e, w, local] = links[edge];
-      out += std::format("{{\"local\": {}, \"weight\": {}, \"id\": {}}}", local,
-                         w, e);
+      out += std::format(R"({{"local": {}, "weight": {}, "id": {}}})", local, w,
+                         e);
       if (edge != links.size() - 1)
         out += ", ";
     }
