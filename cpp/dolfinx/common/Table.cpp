@@ -60,8 +60,8 @@ std::variant<std::string, int, double> Table::get(std::string_view row,
   auto it = _values.find(key);
   if (it == _values.end())
   {
-    throw std::runtime_error(std::format(
-        "Missing table value for entry (\"{}\", \"{}\")", row, col));
+    throw std::runtime_error(
+        std::format(R"(Missing table value for entry ("{}", "{}"))", row, col));
   }
 
   return it->second;
