@@ -19,9 +19,11 @@
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <format>
 #include <functional>
 #include <memory>
 #include <span>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -286,13 +288,13 @@ create_geometry(const Topology& topology,
 
   spdlog::info("xdofs.size = {}", xdofs.size());
   std::vector<std::int32_t> all_dofmaps;
-  std::stringstream s;
+  std::string s;
   for (auto q : dofmaps)
   {
-    s << q.size() << " ";
+    s += std::format("{} ", q.size());
     all_dofmaps.insert(all_dofmaps.end(), q.begin(), q.end());
   }
-  spdlog::info("dofmap sizes = {}", s.str());
+  spdlog::info("dofmap sizes = {}", s);
   spdlog::info("all_dofmaps.size = {}", all_dofmaps.size());
   spdlog::info("nodes.size = {}", nodes.size());
 

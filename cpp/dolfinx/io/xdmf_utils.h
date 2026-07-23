@@ -101,17 +101,17 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
   {
     data_item_node.append_attribute("Format") = "XML";
     assert(shape.size() == 2);
-    std::ostringstream s;
-    s.precision(16);
+    std::string s;
     for (std::size_t i = 0; i < x.size(); ++i)
     {
-      if ((i + 1) % shape[1] == 0 and shape[1] != 0)
-        s << x.data()[i] << std::endl;
+      if constexpr (std::floating_point<T>)
+        s += std::format("{:.16}", x.data()[i]);
       else
-        s << x.data()[i] << " ";
+        s += std::format("{}", x.data()[i]);
+      s += ((i + 1) % shape[1] == 0 and shape[1] != 0) ? '\n' : ' ';
     }
 
-    data_item_node.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+    data_item_node.append_child(pugi::node_pcdata).set_value(s.c_str());
   }
   else
   {

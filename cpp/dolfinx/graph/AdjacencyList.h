@@ -13,7 +13,7 @@
 #include <numeric>
 #include <optional>
 #include <span>
-#include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -198,17 +198,16 @@ public:
   /// @return String representation of the adjacency list.
   std::string str() const
   {
-    std::stringstream s;
-    s << std::format("<AdjacencyList> with {} nodes", this->num_nodes())
-      << std::endl;
+    std::string s
+        = std::format("<AdjacencyList> with {} nodes\n", this->num_nodes());
     for (std::size_t e = 0; e < _offsets.size() - 1; ++e)
     {
-      s << "  " << e << ": [";
+      s += std::format("  {}: [", e);
       for (auto link : this->links(e))
-        s << link << " ";
-      s << "]" << '\n';
+        s += std::format("{} ", link);
+      s += "]\n";
     }
-    return s.str();
+    return s;
   }
 
 private:
