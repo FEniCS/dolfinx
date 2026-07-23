@@ -22,7 +22,7 @@ cffi = pytest.importorskip("cffi")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 numba = pytest.importorskip("numba")
 
-from ffcx.codegeneration.numba import get_void_pointer  # noqa: E402
+from ffcx.codegeneration.numba.utils import get_void_pointer  # noqa: E402
 
 ffi = cffi.FFI()
 
