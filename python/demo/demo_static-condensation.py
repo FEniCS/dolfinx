@@ -61,8 +61,8 @@ from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
-from ffcx.codegeneration.utils import empty_void_pointer
-from ffcx.codegeneration.utils import numba_ufcx_kernel_signature as ufcx_signature
+from ffcx.codegeneration.numba.utils import empty_void_pointer
+from ffcx.codegeneration.numba.utils import ufcx_kernel_signature as ufcx_signature
 
 # -
 
