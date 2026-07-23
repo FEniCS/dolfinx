@@ -13,6 +13,7 @@
 #include <dolfinx/la/Vector.h>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace dolfinx::la
 {
@@ -213,7 +214,7 @@ public:
   ///
   /// @param name Option name.
   /// @param value Option value.
-  void set_option(std::string name, std::string value);
+  void set_option(std::string_view name, std::string_view value);
 
   /// @brief Set all solver options (native struct)
   ///
