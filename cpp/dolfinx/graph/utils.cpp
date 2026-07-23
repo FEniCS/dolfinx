@@ -10,6 +10,7 @@
 #include <dolfinx/common/MPI.h>
 #include <format>
 #include <iterator>
+#include <string>
 #include <vector>
 
 using namespace dolfinx;
@@ -120,8 +121,7 @@ std::string graph::comm_to_json(
     if (n != g.num_nodes() - 1)
       out += ", ";
   }
-  out += "], ";
-  out += "\"adjacency\": [";
+  out += R"(], "adjacency": [)";
   for (std::int32_t n = 0; n < g.num_nodes(); ++n)
   {
     out += "[";
