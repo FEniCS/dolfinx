@@ -9,6 +9,7 @@
 #include <array>
 #include <format>
 #include <functional>
+#include <iterator>
 #include <map>
 #include <sstream>
 #include <variant>
@@ -228,21 +229,37 @@ std::string Table::str() const
     return "";
 
   // Write table
-  s += std::format("{:<{}}  |", name, col_sizes[0]);
+  std::format_to(std::back_inserter(s), "{:<{}}  |", name, col_sizes[0]);
   for (std::size_t j = 0; j < _cols.size(); j++)
   {
-    s += _right_justify ? std::format("  {:>{}}", _cols[j], col_sizes[j + 1])
-                        : std::format("  {:<{}}", _cols[j], col_sizes[j + 1]);
+    if (_right_justify)
+    {
+      std::format_to(std::back_inserter(s), "  {:>{}}", _cols[j],
+                     col_sizes[j + 1]);
+    }
+    else
+    {
+      std::format_to(std::back_inserter(s), "  {:<{}}", _cols[j],
+                     col_sizes[j + 1]);
+    }
   }
   s += "\n" + std::string(row_size, '-');
   for (std::size_t i = 0; i < _rows.size(); i++)
   {
-    s += std::format("\n{:<{}}  |", _rows[i], col_sizes[0]);
+    std::format_to(std::back_inserter(s), "\n{:<{}}  |", _rows[i],
+                   col_sizes[0]);
     for (std::size_t j = 0; j < _cols.size(); j++)
     {
-      s += _right_justify
-               ? std::format("  {:>{}}", tvalues[i][j], col_sizes[j + 1])
-               : std::format("  {:<{}}", tvalues[i][j], col_sizes[j + 1]);
+      if (_right_justify)
+      {
+        std::format_to(std::back_inserter(s), "  {:>{}}", tvalues[i][j],
+                       col_sizes[j + 1]);
+      }
+      else
+      {
+        std::format_to(std::back_inserter(s), "  {:<{}}", tvalues[i][j],
+                       col_sizes[j + 1]);
+      }
     }
   }
 

@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <dolfinx/mesh/utils.h>
 #include <format>
+#include <iterator>
 #include <mpi.h>
 #include <optional>
 #include <span>
@@ -428,14 +429,20 @@ private:
     for (std::size_t j = 0; j < 2; ++j)
     {
       for (std::size_t k = 0; k < 3; ++k)
-        s += std::format("{:.6} ", _bbox_coordinates[6 * i + j * 3 + k]);
+      {
+        std::format_to(std::back_inserter(s), "{:.6} ",
+                       _bbox_coordinates[6 * i + j * 3 + k]);
+      }
       if (j == 0)
         s += "]->[";
     }
     s += "]\n";
 
     if (_bboxes[2 * i] == _bboxes[2 * i + 1])
-      s += std::format("leaf containing entity ({})", _bboxes[2 * i + 1]);
+    {
+      std::format_to(std::back_inserter(s), "leaf containing entity ({})",
+                     _bboxes[2 * i + 1]);
+    }
     else
     {
       s += "{";
