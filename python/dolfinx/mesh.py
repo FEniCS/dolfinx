@@ -709,7 +709,8 @@ def transfer_meshtag(
         )
         return MeshTags(mt)
     elif meshtag.dim == meshtag.topology.dim - 1:
-        assert parent_facet is not None
+        if parent_facet is None:
+            raise ValueError("parent_facet is required for transferring facet tags.")
         mt = _cpp.refinement.transfer_facet_meshtag(
             meshtag._cpp_object, msh1.topology._cpp_object, parent_cell, parent_facet
         )
@@ -925,7 +926,8 @@ def meshtags(
         ``values``.
     """
     if isinstance(values, int):
-        assert values >= np.iinfo(np.int32).min and values <= np.iinfo(np.int32).max
+        if not (np.iinfo(np.int32).min <= values <= np.iinfo(np.int32).max):
+            raise ValueError("Tag value is out of range for int32.")
         values = np.full(entities.shape, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(entities.shape, values, dtype=np.double)
@@ -969,7 +971,8 @@ def meshtags_from_entities(
         ``values``.
     """
     if isinstance(values, int):
-        assert np.can_cast(values, np.int32)
+        if not np.can_cast(values, np.int32):
+            raise ValueError("Tag value is out of range for int32.")
         values = np.full(entities.num_nodes, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(entities.num_nodes, values, dtype=np.double)

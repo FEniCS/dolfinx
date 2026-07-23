@@ -27,7 +27,8 @@ import dolfinx
 from dolfinx.common import IndexMap
 from dolfinx.la import Vector
 
-assert dolfinx.has_petsc4py
+if not dolfinx.has_petsc4py:
+    raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
 __all__ = ["assign", "create_vector", "create_vector_wrap"]
 
