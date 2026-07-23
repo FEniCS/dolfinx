@@ -65,6 +65,9 @@ disclosure process.
   bad user input. Do not add exceptions inside hot loops.
   Prefer `spdlog::debug`/`info`/`warn` for logging
   over `std::cout`/`std::cerr`.
+- **String formatting**: use `std::format` (`<format>`) to build
+  formatted/error strings rather than `printf`-style, `std::ostringstream`
+  concatenation, or the `fmt` library.
 - **Function pointers over lambdas**: when a free function's signature
   already matches a callback/`std::function` parameter exactly, pass
   the function directly (e.g. `graph::reorder_rcm`) rather than
