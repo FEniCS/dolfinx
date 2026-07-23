@@ -1586,10 +1586,10 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
             if (fci->num_links(k) == 2)
             {
               std::int32_t c0 = fci->links(k)[0], c1 = fci->links(k)[1];
-              facet_pairs_ij.push_back(c0);
-              facet_pairs_ij.push_back(local_facet(cfi, c0, k));
-              facet_pairs_ij.push_back(c1);
-              facet_pairs_ij.push_back(local_facet(cfi, c1, k));
+              facet_pairs_ij.insert(
+                  facet_pairs_ij.end(),
+                  {c0, static_cast<std::int32_t>(local_facet(cfi, c0, k)), c1,
+                   static_cast<std::int32_t>(local_facet(cfi, c1, k))});
             }
           }
         }
@@ -1609,10 +1609,10 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
             {
               std::int32_t ci = fci->links(k)[0];
               std::int32_t cj = fcj->links(k)[0];
-              facet_pairs_ij.push_back(ci);
-              facet_pairs_ij.push_back(local_facet(cfi, ci, k));
-              facet_pairs_ij.push_back(cj);
-              facet_pairs_ij.push_back(local_facet(cfj, cj, k));
+              facet_pairs_ij.insert(
+                  facet_pairs_ij.end(),
+                  {ci, static_cast<std::int32_t>(local_facet(cfi, ci, k)), cj,
+                   static_cast<std::int32_t>(local_facet(cfj, cj, k))});
             }
           }
         }
