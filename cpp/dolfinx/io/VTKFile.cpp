@@ -255,9 +255,9 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
     std::string ss;
     const std::int64_t cell_offset = cellmap.local_range()[0];
     for (std::int32_t c = 0; c < cellmap.size_local(); ++c)
-      ss += std::format("{} ", cell_offset + c);
-    std::ranges::for_each(cellmap.ghosts(),
-                          [&ss](auto& idx) { ss += std::format("{} ", idx); });
+      std::format_to(std::back_inserter(ss), "{} ", cell_offset + c);
+    for (auto idx : cellmap.ghosts())
+      std::format_to(std::back_inserter(ss), "{} ", idx);
     cell_id_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
 
@@ -283,8 +283,8 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   point_id_node.append_attribute("format") = "ascii";
   {
     std::string ss;
-    std::ranges::for_each(x_id,
-                          [&ss](auto idx) { ss += std::format("{} ", idx); });
+    for (auto idx : x_id)
+      std::format_to(std::back_inserter(ss), "{} ", idx);
     point_id_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
   if (!x_id.empty())
@@ -301,8 +301,8 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   point_ghost_node.append_attribute("format") = "ascii";
   {
     std::string ss;
-    std::ranges::for_each(x_ghost, [&ss](int ghost)
-                          { ss += std::format("{} ", ghost); });
+    for (int ghost : x_ghost)
+      std::format_to(std::back_inserter(ss), "{} ", ghost);
     point_ghost_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
   if (!x_ghost.empty())
