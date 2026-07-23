@@ -22,7 +22,7 @@ from dolfinx.fem import Form, Function, IntegralType, form_cpp_class, functionsp
 from dolfinx.mesh import create_unit_square
 
 numba = pytest.importorskip("numba")
-from ffcx.numba import numba_ufcx_kernel_signature as ufcx_signature  # noqa: E402
+from ffcx.codegeneration.numba import ufcx_kernel_signature as ufcx_signature  # noqa: E402
 
 sys.path.append(os.getcwd())
 
