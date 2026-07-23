@@ -55,8 +55,8 @@ template <typename T>
 std::string container_to_string(const T& x, int precision)
 {
   std::string s;
-  std::ranges::for_each(x, [&s, precision](auto e)
-                        { s += std::format("{:.{}} ", e, precision); });
+  for (auto e : x)
+    std::format_to(std::back_inserter(s), "{:.{}} ", e, precision);
   return s;
 }
 //----------------------------------------------------------------------------
@@ -198,8 +198,8 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   connectivity_node.append_attribute("format") = "ascii";
   {
     std::string ss;
-    std::ranges::for_each(cells,
-                          [&ss](auto& v) { ss += std::format("{} ", v); });
+    for (auto v : cells)
+      std::format_to(std::back_inserter(ss), "{} ", v);
     connectivity_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
 
@@ -211,7 +211,7 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
     std::string ss;
     int num_nodes = cshape[1];
     for (std::size_t i = 0; i < cshape[0]; ++i)
-      ss += std::format("{} ", (i + 1) * num_nodes);
+      std::format_to(std::back_inserter(ss), "{} ", (i + 1) * num_nodes);
     offsets_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
 
@@ -221,9 +221,11 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   type_node.append_attribute("format") = "ascii";
   int vtk_celltype = io::cells::get_vtk_cell_type(celltype, tdim);
   {
+    const std::string cell_type_str = std::format("{} ", vtk_celltype);
     std::string ss;
+    ss.reserve(cell_type_str.size() * cshape[0]);
     for (std::size_t c = 0; c < cshape[0]; ++c)
-      ss += std::format("{} ", vtk_celltype);
+      ss += cell_type_str;
     type_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
 

@@ -10,6 +10,7 @@
 #include <concepts>
 #include <cstdint>
 #include <format>
+#include <iterator>
 #include <numeric>
 #include <optional>
 #include <span>
@@ -202,9 +203,9 @@ public:
         = std::format("<AdjacencyList> with {} nodes\n", this->num_nodes());
     for (std::size_t e = 0; e < _offsets.size() - 1; ++e)
     {
-      s += std::format("  {}: [", e);
+      std::format_to(std::back_inserter(s), "  {}: [", e);
       for (auto link : this->links(e))
-        s += std::format("{} ", link);
+        std::format_to(std::back_inserter(s), "{} ", link);
       s += "]\n";
     }
     return s;

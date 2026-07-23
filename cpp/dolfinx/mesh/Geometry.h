@@ -21,6 +21,7 @@
 #include <dolfinx/graph/partition.h>
 #include <format>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <span>
 #include <string>
@@ -291,7 +292,7 @@ create_geometry(const Topology& topology,
   std::string s;
   for (auto q : dofmaps)
   {
-    s += std::format("{} ", q.size());
+    std::format_to(std::back_inserter(s), "{} ", q.size());
     all_dofmaps.insert(all_dofmaps.end(), q.begin(), q.end());
   }
   spdlog::info("dofmap sizes = {}", s);
