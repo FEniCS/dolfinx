@@ -472,7 +472,8 @@ void SuperLUDistSolver<T>::set_options(
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
+void SuperLUDistSolver<T>::set_option(std::string_view name,
+                                      std::string_view value)
 {
   spdlog::info("Attempting to set option {} to {}", name, value);
   const std::map<std::string, std::reference_wrapper<yes_no_t>> map_bool
@@ -491,7 +492,7 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
          {"Algo3d", _options->Algo3d}};
 
   // Search in map_bool first
-  auto it = map_bool.find(name);
+  auto it = map_bool.find(std::string(name));
   if (it != map_bool.end())
   {
     if (value == "YES")
