@@ -1572,8 +1572,8 @@ mesh::compute_mixed_cell_pairs(const Topology& topology,
       auto local_facet = [](const auto& cf, std::int32_t c, std::int32_t f)
       {
         auto it = std::find(cf->links(c).begin(), cf->links(c).end(), f);
-        if (it == cf->links(c).end())
-          throw std::runtime_error("Bad connectivity");
+        assert(it != cf->links(c).end()
+               && "Facet-cell and cell-facet connectivity are inconsistent.");
         return std::distance(cf->links(c).begin(), it);
       };
 
