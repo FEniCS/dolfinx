@@ -60,10 +60,17 @@ disclosure process.
   by tooling, so a rename must be applied to the declaration, the
   definition, and any doc comment together.
 - **Errors and invariants**: throw `std::runtime_error` with a
-  descriptive message for user-facing/API-boundary errors; use
-  `assert` for internal invariants that indicate a library bug, not
-  bad user input. Prefer `spdlog::debug`/`info`/`warn` for logging
+  descriptive message for user-facing/API-boundary errors when the
+  check is O(1). For more expensive single-line checks, use `assert`.
+  For more expensive multi-line checks, throw an exception but guard
+  the check so it only runs in debug builds (e.g. `#ifndef NDEBUG`).
+  `assert` itself is for internal invariants that indicate a library
+  bug, not bad user input. Do not add exceptions inside hot loops.
+  Prefer `spdlog::debug`/`info`/`warn` for logging
   over `std::cout`/`std::cerr`.
+- **String formatting**: use `std::format` (`<format>`) to build
+  formatted/error strings rather than `printf`-style, `std::ostringstream`
+  concatenation, or the `fmt` library.
 - **Function pointers over lambdas**: when a free function's signature
   already matches a callback/`std::function` parameter exactly, pass
   the function directly (e.g. `graph::reorder_rcm`) rather than
@@ -102,6 +109,7 @@ disclosure process.
   `.def(...)`, `.def_prop_ro(...)`, `.def_ro(...)`.
 - These files are still C++: `clang-format` applies to them too (CI
   checks `python/dolfinx/wrappers` separately).
+- Do not use default argument values.
 
 ## CMake style
 
