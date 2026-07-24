@@ -428,7 +428,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         self,
         x: npt.ArrayLike,
         cells: npt.NDArray[np.int32],
-        u: None | npt.NDArray[Scalar] = None,
+        u: npt.NDArray[Scalar] | None = None,
         tol: float = 1.0e-6,
         maxit: int = 15,
     ) -> npt.NDArray[Scalar]:
