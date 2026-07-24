@@ -412,7 +412,6 @@ block(
         list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
       endif()
     endif()
-  endif()
   endforeach()
 
   # Remove duplicated link flags
