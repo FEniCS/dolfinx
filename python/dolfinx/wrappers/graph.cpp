@@ -82,7 +82,10 @@ void graph(nb::module_& m)
       nb::arg("suppress_output") = true, "KaHIP graph partitioner");
 #endif
 
-  m.def("reorder_gps", &dolfinx::graph::reorder_gps, nb::arg("graph"));
+  m.def("reorder_gps", &dolfinx::graph::reorder_gps, nb::arg("graph"),
+        nb::arg("max_candidates"), nb::arg("num_threads"));
+
+  m.def("reorder_rcm", &dolfinx::graph::reorder_rcm, nb::arg("graph"));
 
   m.def(
       "comm_graph", [](const dolfinx::common::IndexMap& map, int root)

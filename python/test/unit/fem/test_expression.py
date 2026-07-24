@@ -451,7 +451,7 @@ def test_facet_expression(dtype):
     # Check facet normal by using midpoint to determine what exterior cell we are at
     facet_midpoints = compute_midpoints(mesh, tdim - 1, facets)
     atol = 100 * np.finfo(dtype).resolution
-    for midpoint, normal in zip(facet_midpoints, facet_normals):
+    for midpoint, normal in zip(facet_midpoints, facet_normals, strict=True):
         if np.isclose(midpoint[0], 0, atol=atol):
             assert np.allclose(normal, [-1, 0])
         elif np.isclose(midpoint[0], 1, atol=atol):
@@ -478,7 +478,7 @@ def test_facet_expression(dtype):
         mixed_expr, np.array([[0.5]], dtype=np.real(dtype(0)).dtype), dtype=dtype
     )
     subset_values = facet_expression.eval(mesh, boundary_entities)
-    for values, midpoint in zip(subset_values, facet_midpoints):
+    for values, midpoint in zip(subset_values, facet_midpoints, strict=True):
         grad_u = np.array(
             [[6 * midpoint[0], 2 * midpoint[1]], [-14 * midpoint[0], -10 * midpoint[1]]],
             dtype=dtype,

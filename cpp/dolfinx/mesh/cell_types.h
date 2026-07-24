@@ -12,6 +12,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace dolfinx::mesh
@@ -38,7 +39,7 @@ std::string to_string(CellType type);
 /// Get the cell type from a cell string
 /// @param[in] cell Cell shape string
 /// @return The cell type
-CellType to_type(const std::string& cell);
+CellType to_type(std::string_view cell);
 
 /// Return topological dimension of cell type
 inline int cell_dim(CellType type)

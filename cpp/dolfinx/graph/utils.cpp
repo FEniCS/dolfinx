@@ -9,7 +9,8 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <format>
-#include <sstream>
+#include <iterator>
+#include <string>
 #include <vector>
 
 using namespace dolfinx;
@@ -109,37 +110,36 @@ std::string graph::comm_to_json(
   const std::vector<std::pair<std::int32_t, std::int32_t>>& node_weights
       = g.node_data().value();
 
-  std::stringstream out;
-  out << std::format("{{\"directed\": true, \"multigraph\": false, \"graph\": "
-                     "[], \"nodes\": [");
+  std::string out
+      = R"({"directed": true, "multigraph": false, "graph": [], "nodes": [)";
   for (std::int32_t n = 0; n < g.num_nodes(); ++n)
   {
     // Note: it is helpful to order map keys alphabetically
-    out << std::format("{{\"num_ghosts\": {}, \"weight\": {},  \"id\": {}}}",
-                       node_weights[n].second, node_weights[n].first, n);
+    std::format_to(std::back_inserter(out),
+                   R"({{"num_ghosts": {}, "weight": {},  "id": {}}})",
+                   node_weights[n].second, node_weights[n].first, n);
     if (n != g.num_nodes() - 1)
-      out << ", ";
+      out += ", ";
   }
-  out << "], ";
-  out << "\"adjacency\": [";
+  out += R"(], "adjacency": [)";
   for (std::int32_t n = 0; n < g.num_nodes(); ++n)
   {
-    out << "[";
+    out += "[";
     auto links = g.links(n);
     for (std::size_t edge = 0; edge < links.size(); ++edge)
     {
       auto [e, w, local] = links[edge];
-      out << std::format("{{\"local\": {}, \"weight\": {}, \"id\": {}}}", local,
-                         w, e);
+      std::format_to(std::back_inserter(out),
+                     R"({{"local": {}, "weight": {}, "id": {}}})", local, w, e);
       if (edge != links.size() - 1)
-        out << ", ";
+        out += ", ";
     }
-    out << "]";
+    out += "]";
     if (n != g.num_nodes() - 1)
-      out << ", ";
+      out += ", ";
   }
-  out << "]}";
+  out += "]}";
 
-  return out.str();
+  return out;
 }
 //-----------------------------------------------------------------------------

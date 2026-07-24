@@ -33,10 +33,10 @@ from collections.abc import Sequence
 
 from petsc4py import PETSc
 
-# ruff: noqa: E402
 import dolfinx
 
-assert dolfinx.has_petsc4py
+if not dolfinx.has_petsc4py:
+    raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
 
 import numpy as np
@@ -135,7 +135,8 @@ def create_vector(
         vector is not initialised to zero.
     """
     if isinstance(
-        V, _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
+        V,
+        _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64,
     ):
         V = [V]
     elif any(_V is None for _V in V):
@@ -446,7 +447,8 @@ def _(
                 elif i == j:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
-                        assert len(row_forms) > 0
+                        if len(row_forms) == 0:
+                            raise ValueError(f"Row {i} of forms is entirely 'None'.")
                         if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
@@ -467,10 +469,10 @@ def _(
                     "Cannot have a entire {'row' if index == 0 else 'column'} of a full of None"
                 )
         is0 = _cpp.la.petsc.create_index_sets(
-            [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[0]]  # type: ignore[union-attr]
+            [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[0]]  # type: ignore
         )
         is1 = _cpp.la.petsc.create_index_sets(
-            [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[1]]  # type: ignore[union-attr]
+            [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[1]]  # type: ignore
         )
 
         _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
@@ -490,7 +492,8 @@ def _(
                 elif i == j:
                     for bc in _bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
-                        assert len(row_forms) > 0
+                        if len(row_forms) == 0:
+                            raise ValueError(f"Row {i} of forms is entirely 'None'.")
                         if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
@@ -603,7 +606,10 @@ def apply_lifting(
             strict=True,
         ):
             const_ = list(
-                map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)  # type: ignore[attr-defined, call-overload]
+                map(
+                    lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x,
+                    const,
+                )  # type: ignore[attr-defined, call-overload]
             )
             apply_lifting(b_sub, a_sub, bcs, x0, alpha, const_, coeff)  # type: ignore[arg-type]
     else:
@@ -896,7 +902,8 @@ class LinearProblem:
     def __del__(self):
         """Destroy internally held PETSc objects."""
         for obj in filter(
-            lambda obj: obj is not None, (self._solver, self._A, self._b, self._x, self._P_mat)
+            lambda obj: obj is not None,
+            (self._solver, self._A, self._b, self._x, self._P_mat),
         ):
             obj.destroy()
 
@@ -1066,7 +1073,8 @@ def assemble_residual(
 
     # Assign block data if block assembly is requested
     if isinstance(residual, Sequence) and b.getType() != PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
-        assert _blocks is not None, "Block data must be provided for block assembly."
+        if _blocks is None:
+            raise ValueError("Block data must be provided for block assembly.")
         b.setAttr("_blocks", _blocks)  # type: ignore[attr-defined]
         x.setAttr("_blocks", _blocks)  # type: ignore[attr-defined]
 
@@ -1372,7 +1380,8 @@ class NonlinearProblem:
     def __del__(self):
         """Destroy PETSc objects created internally."""
         for obj in filter(
-            lambda obj: obj is not None, (self._snes, self._A, self._b, self._x, self._P_mat)
+            lambda obj: obj is not None,
+            (self._snes, self._A, self._b, self._x, self._P_mat),
         ):
             obj.destroy()
 
