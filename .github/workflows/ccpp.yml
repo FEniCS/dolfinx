@@ -97,11 +97,24 @@ jobs:
           pip install scikit-build-core setuptools
           python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 
-      - name: Install FEniCS Python components
+      - name: Install UFL
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+
+      # Split install ensures that basix.pc ends up in PKG_CONFIG_PATH for later pkg-config test
+      - name: Install Basix (C++)
+        run: |
+          git clone --branch ${{ env.basix_ref }} --single-branch https://github.com/${{ env.basix_repository }}.git
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-basix -S basix/cpp
+          cmake --build build-basix
+          sudo cmake --install build-basix
+          sudo ldconfig
+
+      - name: Install Basix (Python)
+        run: pip install --no-build-isolation ./basix/python
+
+      - name: Install FFCx
+        run: pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure, no rpath (C++)
         working-directory: cpp
