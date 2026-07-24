@@ -371,10 +371,6 @@ block(
     set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
   endforeach()
 
-  foreach(_def ${PKG_BASIX_DEFINITIONS})
-    set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
-  endforeach()
-
   # Convert compiler flags and definitions into space separated strings
   string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
   string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
