@@ -605,12 +605,7 @@ def apply_lifting(
             coeffs,
             strict=True,
         ):
-            const_ = list(
-                map(
-                    lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x,
-                    const,
-                )  # type: ignore[attr-defined, call-overload]
-            )
+            const_ = [np.array([], dtype=PETSc.ScalarType) if x is None else x for x in const]  # type: ignore[attr-defined]
             apply_lifting(b_sub, a_sub, bcs, x0, alpha, const_, coeff)  # type: ignore[arg-type]
     else:
         with contextlib.ExitStack() as stack:
