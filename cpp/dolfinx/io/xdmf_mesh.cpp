@@ -15,6 +15,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <format>
 #include <pugixml.hpp>
+#include <stdexcept>
 #include <vector>
 
 using namespace dolfinx;
@@ -179,7 +180,8 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   int gdim = geometry.dim();
   pugi::xml_node geometry_node = xml_node.append_child("Geometry");
   assert(geometry_node);
-  assert(gdim > 0 and gdim <= 3);
+  if (gdim <= 0 or gdim > 3)
+    throw std::runtime_error("Geometric dimension must be 1, 2 or 3.");
   const std::string geometry_type = (gdim == 3) ? "XYZ" : "XY";
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 

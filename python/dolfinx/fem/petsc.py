@@ -33,10 +33,10 @@ from collections.abc import Sequence
 
 from petsc4py import PETSc
 
-# ruff: noqa: E402
 import dolfinx
 
-assert dolfinx.has_petsc4py
+if not dolfinx.has_petsc4py:
+    raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
 
 import numpy as np
@@ -447,7 +447,8 @@ def _(
                 elif i == j:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
-                        assert len(row_forms) > 0
+                        if len(row_forms) == 0:
+                            raise ValueError(f"Row {i} of forms is entirely 'None'.")
                         if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
@@ -491,7 +492,8 @@ def _(
                 elif i == j:
                     for bc in _bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
-                        assert len(row_forms) > 0
+                        if len(row_forms) == 0:
+                            raise ValueError(f"Row {i} of forms is entirely 'None'.")
                         if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
@@ -603,12 +605,7 @@ def apply_lifting(
             coeffs,
             strict=True,
         ):
-            const_ = list(
-                map(
-                    lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x,
-                    const,
-                )  # type: ignore[attr-defined, call-overload]
-            )
+            const_ = [np.array([], dtype=PETSc.ScalarType) if x is None else x for x in const]  # type: ignore[attr-defined]
             apply_lifting(b_sub, a_sub, bcs, x0, alpha, const_, coeff)  # type: ignore[arg-type]
     else:
         with contextlib.ExitStack() as stack:
@@ -1071,7 +1068,8 @@ def assemble_residual(
 
     # Assign block data if block assembly is requested
     if isinstance(residual, Sequence) and b.getType() != PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
-        assert _blocks is not None, "Block data must be provided for block assembly."
+        if _blocks is None:
+            raise ValueError("Block data must be provided for block assembly.")
         b.setAttr("_blocks", _blocks)  # type: ignore[attr-defined]
         x.setAttr("_blocks", _blocks)  # type: ignore[attr-defined]
 

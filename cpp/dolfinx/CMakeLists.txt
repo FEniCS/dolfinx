@@ -271,12 +271,26 @@ install(
 # Generate pkg-config file and install it
 
 # Define packages that should be required by pkg-config file
-set(PKG_REQUIRES "")
-
 block(
   SCOPE_FOR VARIABLES
   PROPAGATE PKG_REQUIRES PKG_CXXFLAGS PKG_LINKFLAGS PKG_INCLUDES PKG_DEFINITIONS
 )
+  set(PKG_REQUIRES "spdlog")
+  list(APPEND PKG_REQUIRES "basix")
+  list(APPEND PKG_REQUIRES "pugixml")
+
+  if(TARGET PkgConfig::PETSC)
+    list(APPEND PKG_REQUIRES ${PETSC_MODULE_NAME})
+  endif()
+  if(TARGET PkgConfig::SLEPC)
+    list(APPEND PKG_REQUIRES ${SLEPC_MODULE_NAME})
+  endif()
+  if(TARGET PkgConfig::SUPERLU_DIST)
+    list(APPEND PKG_REQUIRES ${SUPERLU_DIST_MODULE_NAME})
+  endif()
+
+  string(REPLACE ";" " " PKG_REQUIRES "${PKG_REQUIRES}")
+
   # Get link libraries and includes
   get_target_property(
     PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES
@@ -288,6 +302,11 @@ block(
     dolfinx
     INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
   )
+  if(PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES)
+    list(FILTER PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES EXCLUDE REGEX "^\\$<|>$")
+  else()
+    set(PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES "")
+  endif()
 
   # Add imported targets to lists for creating pkg-config file
   set(PKGCONFIG_DOLFINX_LIBS)
@@ -352,19 +371,6 @@ block(
     set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
   endforeach()
 
-  # Get basix definitions (this is required to propagate Basix definition to the
-  # pkg-config file, in the future Basix should create its own basix.pc file, see
-  # https://github.com/FEniCS/basix/issues/204)
-  get_target_property(
-    PKG_BASIX_DEFINITIONS
-    Basix::basix
-    INTERFACE_COMPILE_DEFINITIONS
-  )
-
-  foreach(_def ${PKG_BASIX_DEFINITIONS})
-    set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
-  endforeach()
-
   # Convert compiler flags and definitions into space separated strings
   string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
   string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
@@ -382,6 +388,24 @@ block(
       # Add libraries that matches the form -L<libdir> -l<lib>
       if(NOT "${_path}" STREQUAL "")
         set(PKG_LINKFLAGS "-L${_path} -l${_name} ${PKG_LINKFLAGS}")
+      endif()
+    endif()
+
+    # Special handling for ADIOS2 and HDF5 imported targets which expose
+    # IMPORTED_LOCATION_RELEASE (or IMPORTED_LOCATION) rather than
+    # INTERFACE_LINK_LIBRARIES
+    if(
+      "${_target}" MATCHES "^.*adios2::.*$"
+      OR "${_target}" MATCHES "^.*hdf5::.*$"
+    )
+      get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
+
+      if(NOT _libs)
+        get_target_property(_libs ${_target} IMPORTED_LOCATION)
+      endif()
+
+      if(_libs)
+        list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
       endif()
     endif()
   endforeach()

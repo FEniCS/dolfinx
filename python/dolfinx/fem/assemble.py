@@ -60,7 +60,7 @@ def pack_constants(form):
 
 
 @typing.overload
-def pack_coefficients(form: None | Form) -> dict[tuple[IntegralType, int], npt.NDArray]: ...
+def pack_coefficients(form: Form | None) -> dict[tuple[IntegralType, int], npt.NDArray]: ...
 
 
 @typing.overload

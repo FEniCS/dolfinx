@@ -101,7 +101,8 @@ class Vector(Generic[_T]):
           When the object is destroyed it will destroy the underlying
           petsc4py vector automatically.
         """
-        assert dolfinx.has_petsc4py
+        if not dolfinx.has_petsc4py:
+            raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
         from dolfinx.la.petsc import create_vector_wrap
 

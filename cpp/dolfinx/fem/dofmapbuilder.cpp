@@ -235,15 +235,14 @@ build_basic_dofmaps(
 #ifndef NDEBUG
   {
     // Debug output
-    std::stringstream s;
-    s << "Required entities:";
+    std::string s = "Required entities:";
     for (std::size_t i = 0; i < required_dim_et.size(); ++i)
     {
-      s << "(" << (int)required_dim_et[i].first << ", "
-        << (int)required_dim_et[i].second << ")=" << num_entity_dofs_et[i]
-        << " ";
+      std::format_to(std::back_inserter(s), "({}, {})={} ",
+                     (int)required_dim_et[i].first,
+                     (int)required_dim_et[i].second, num_entity_dofs_et[i]);
     }
-    spdlog::info("{}", s.str());
+    spdlog::info("{}", s);
   }
 #endif
 

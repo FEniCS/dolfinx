@@ -10,10 +10,12 @@
 #include <concepts>
 #include <cstdint>
 #include <format>
+#include <iterator>
 #include <numeric>
 #include <optional>
 #include <span>
-#include <sstream>
+#include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -67,7 +69,11 @@ public:
   AdjacencyList(U&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {
-    assert(_offsets.back() == (std::int32_t)_array.size());
+    if (_offsets.back() != (std::int32_t)_array.size())
+    {
+      throw std::runtime_error("Last offset must equal the size of the data "
+                               "array.");
+    }
   }
 
   /// @brief Construct adjacency list from arrays of link (edge) data,
@@ -89,10 +95,17 @@ public:
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets)),
         _node_data(std::forward<W>(node_data))
   {
-    assert(_node_data.has_value()
-           and _node_data->size() == _offsets.size() - 1);
+    if (!_node_data.has_value() or _node_data->size() != _offsets.size() - 1)
+    {
+      throw std::runtime_error("Node data size must equal the number of "
+                               "nodes.");
+    }
     _array.reserve(_offsets.back());
-    assert(_offsets.back() == (std::int32_t)_array.size());
+    if (_offsets.back() != (std::int32_t)_array.size())
+    {
+      throw std::runtime_error("Last offset must equal the size of the data "
+                               "array.");
+    }
   }
 
   /// Set all connections for all entities (T is a '2D' container, e.g.
@@ -198,17 +211,16 @@ public:
   /// @return String representation of the adjacency list.
   std::string str() const
   {
-    std::stringstream s;
-    s << std::format("<AdjacencyList> with {} nodes", this->num_nodes())
-      << std::endl;
+    std::string s
+        = std::format("<AdjacencyList> with {} nodes\n", this->num_nodes());
     for (std::size_t e = 0; e < _offsets.size() - 1; ++e)
     {
-      s << "  " << e << ": [";
+      std::format_to(std::back_inserter(s), "  {}: [", e);
       for (auto link : this->links(e))
-        s << link << " ";
-      s << "]" << '\n';
+        std::format_to(std::back_inserter(s), "{} ", link);
+      s += "]\n";
     }
-    return s.str();
+    return s;
   }
 
 private:

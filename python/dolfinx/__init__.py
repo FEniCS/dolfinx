@@ -22,7 +22,8 @@ try:
     # Additional sanity check that DOLFINx was built with petsc4py support.
     import dolfinx.common
 
-    assert dolfinx.common.has_petsc4py
+    if not dolfinx.common.has_petsc4py:
+        raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
     default_scalar_type = _PETSc.ScalarType  # type: ignore
     default_real_type = _PETSc.RealType  # type: ignore

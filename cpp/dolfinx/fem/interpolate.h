@@ -424,7 +424,8 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
 
   // Iterate over mesh and interpolate on each cell
   using X = U; // geometry (real) type, independent of the value scalar T
-  assert(cells0.size() == cells1.size());
+  if (cells0.size() != cells1.size())
+    throw std::runtime_error("Length of cells0 and cells1 must match.");
   for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
        cell0_it != cells0.end() and cell1_it != cells1.end();
        ++cell0_it, ++cell1_it)
@@ -604,9 +605,10 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   // Iterate over mesh and interpolate on each cell
   std::span<const T> array0 = u0.x()->array();
   std::span<T> array1 = u1.x()->array();
-  assert(cells0.size() == cells1.size());
+  if (cells0.size() != cells1.size())
+    throw std::runtime_error("Length of cells0 and cells1 must match.");
   for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
-       cell0_it != cells0.end() and cell1_it != cells0.end();
+       cell0_it != cells0.end() and cell1_it != cells1.end();
        ++cell0_it, ++cell1_it)
   {
     // Get cell geometry (coordinate dofs)
