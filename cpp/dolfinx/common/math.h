@@ -91,10 +91,9 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
 /// @return The determinant of @p A
 // TODO: mark constexpr with C++23 (relies on std::fma, constexpr from C++23).
 template <typename Matrix>
-  requires std::floating_point<typename Matrix::value_type>
+  requires mdspan2<Matrix> && std::floating_point<typename Matrix::value_type>
 auto det(Matrix A)
 {
-  static_assert(Matrix::rank() == 2, "Must be rank 2");
   assert(A.extent(0) == A.extent(1));
 
   using value_type = typename Matrix::value_type;
@@ -131,12 +130,10 @@ auto det(Matrix A)
 /// @warning This function does not check if A is invertible
 // TODO: mark constexpr with C++23 (relies on std::fma, constexpr from C++23).
 template <typename U, typename V>
-  requires std::floating_point<typename U::value_type>
+  requires mdspan2<U> && mdspan2<V>
+           && std::floating_point<typename U::value_type>
 void inv(U A, V B)
 {
-  static_assert(U::rank() == 2, "Must be rank 2");
-  static_assert(V::rank() == 2, "Must be rank 2");
-
   using value_type = typename U::value_type;
   const std::size_t nrows = A.extent(0);
   switch (nrows)
@@ -188,14 +185,11 @@ void inv(U A, V B)
 /// @param[in] transpose Computes C += A * B if false, otherwise
 /// computes C += A^T * B^T
 template <typename U, typename V, typename P>
-  requires scalar<typename U::value_type> && scalar<typename V::value_type>
+  requires mdspan2<U> && mdspan2<V> && mdspan2<P>
+           && scalar<typename U::value_type> && scalar<typename V::value_type>
            && scalar<typename P::value_type>
 constexpr void dot(U A, V B, P C, bool transpose = false)
 {
-  static_assert(U::rank() == 2, "Must be rank 2");
-  static_assert(V::rank() == 2, "Must be rank 2");
-  static_assert(P::rank() == 2, "Must be rank 2");
-
   if (transpose)
   {
     assert(A.extent(0) == B.extent(1));
@@ -223,12 +217,10 @@ constexpr void dot(U A, V B, P C, bool transpose = false)
 // TODO: mark constexpr with C++23 (relies on std::fma via inv, constexpr from
 // C++23).
 template <typename U, typename V>
-  requires std::floating_point<typename U::value_type>
+  requires mdspan2<U> && mdspan2<V>
+           && std::floating_point<typename U::value_type>
 void pinv(U A, V P)
 {
-  static_assert(U::rank() == 2, "Must be rank 2");
-  static_assert(V::rank() == 2, "Must be rank 2");
-
   assert(A.extent(0) > A.extent(1));
   assert(P.extent(1) == A.extent(0));
   assert(P.extent(0) == A.extent(1));
