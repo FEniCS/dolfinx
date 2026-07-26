@@ -1063,7 +1063,7 @@ void Topology::create_entity_permutations(int num_threads)
   // Create all mesh entities
   int tdim = this->dim();
   for (int d = 0; d < tdim; ++d)
-    create_entities(d);
+    create_entities(d, num_threads);
 
   auto [facet_permutations, cell_permutations]
       = mesh::compute_entity_permutations(*this, num_threads);
