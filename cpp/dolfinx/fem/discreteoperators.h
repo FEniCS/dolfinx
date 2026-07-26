@@ -490,7 +490,6 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 
   // Buffers
   std::vector<T> Ab(space_dim0 * space_dim1);
-  std::vector<T> local1(space_dim1);
 
   // Iterate over mesh and interpolate on each cell
   auto cell_map = mesh->topology()->index_map(tdim);
@@ -513,26 +512,51 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
         coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
     }
 
-    // Compute Jacobians and reference points for current cell
+    // Compute Jacobians and reference points for current cell. For an
+    // affine map the Jacobian (and hence its inverse and determinant)
+    // is constant over the cell, so it is computed once and broadcast
+    // to the remaining interpolation points rather than being
+    // recomputed Xshape[0] times.
     std::ranges::fill(J_b, 0);
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
+    if (cmap.is_affine() and Xshape[0] > 0)
     {
       auto dphi
-          = md::submdspan(phi, std::pair(1, tdim + 1), p, md::full_extent, 0);
-      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+          = md::submdspan(phi, std::pair(1, tdim + 1), 0, md::full_extent, 0);
+      auto _J = md::submdspan(J, 0, md::full_extent, md::full_extent);
       cmap.compute_jacobian(dphi, coord_dofs, _J);
-      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+      auto _K = md::submdspan(K, 0, md::full_extent, md::full_extent);
       cmap.compute_jacobian_inverse(_J, _K);
-      detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
+      detJ[0] = cmap.compute_jacobian_determinant(_J, det_scratch);
+      for (std::size_t p = 1; p < Xshape[0]; ++p)
+      {
+        std::copy_n(J_b.begin(), gdim * tdim, J_b.begin() + p * gdim * tdim);
+        std::copy_n(K_b.begin(), tdim * gdim, K_b.begin() + p * tdim * gdim);
+        detJ[p] = detJ[0];
+      }
+    }
+    else
+    {
+      for (std::size_t p = 0; p < Xshape[0]; ++p)
+      {
+        auto dphi
+            = md::submdspan(phi, std::pair(1, tdim + 1), p, md::full_extent, 0);
+        auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
+        cmap.compute_jacobian(dphi, coord_dofs, _J);
+        auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
+        cmap.compute_jacobian_inverse(_J, _K);
+        detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
+      }
     }
 
-    // Copy evaluated basis on reference, apply DOF transformations, and
-    // push forward to physical element
-    for (std::size_t k0 = 0; k0 < basis_reference0.extent(0); ++k0)
-      for (std::size_t k1 = 0; k1 < basis_reference0.extent(1); ++k1)
-        for (std::size_t k2 = 0; k2 < basis_reference0.extent(2); ++k2)
-          basis_reference0(k0, k1, k2)
-              = basis_derivatives_reference0(0, k0, k1, k2);
+    // Copy evaluated basis on reference (a fresh copy is needed each
+    // cell as DOF transformations below are applied in place), and
+    // push forward to physical element. The source and destination
+    // have identical memory layout (the leading, unit-length
+    // derivative axis of basis_derivatives_reference0 is a no-op for
+    // indexing purposes), so a flat copy is used instead of an
+    // element-by-element mdspan loop.
+    std::ranges::copy(basis_derivatives_reference0_b,
+                      basis_reference0_b.begin());
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       apply_dof_transformation0(
@@ -583,13 +607,42 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     }
     else
     {
-      for (std::size_t i = 0; i < mapped_values.extent(1); ++i)
+      // Apply interpolation matrix to basis values of V0 at the
+      // interpolation points of V1. Pi_1 does not depend on the basis
+      // function index i, so all space_dim0 applications are combined
+      // into a single loop nest (rather than calling
+      // interpolation_apply once per basis function) so that each row
+      // of Pi_1 is read from memory once instead of space_dim0 times.
+      // This mirrors the two cases handled by interpolation_apply
+      // (interpolate.h): bs1 == 1 (columns of Pi_1 fold the point and
+      // component indices together) and bs1 != 1 (each block/component
+      // is handled by a separate outer loop, columns of Pi_1 index
+      // points only).
+      std::ranges::fill(Ab, T(0));
+      std::size_t num_pts = mapped_values.extent(0);
+      if (bs1 == 1)
       {
-        auto values
-            = md::submdspan(mapped_values, md::full_extent, i, md::full_extent);
-        impl::interpolation_apply(Pi_1, values, std::span(local1), bs1);
-        for (std::size_t j = 0; j < local1.size(); j++)
-          Ab[space_dim0 * j + i] = local1[j];
+        for (std::size_t idof = 0; idof < Pi_1.extent(0); ++idof)
+          for (std::size_t k = 0; k < mapped_values.extent(2); ++k)
+            for (std::size_t p = 0; p < num_pts; ++p)
+            {
+              U pi_val = Pi_1(idof, k * num_pts + p);
+              for (std::size_t i = 0; i < space_dim0; ++i) // V0 basis fn
+                Ab[space_dim0 * idof + i]
+                    += static_cast<T>(pi_val * mapped_values(p, i, k));
+            }
+      }
+      else
+      {
+        for (std::size_t idof = 0; idof < Pi_1.extent(0); ++idof)
+          for (int k = 0; k < bs1; ++k)
+            for (std::size_t p = 0; p < num_pts; ++p)
+            {
+              U pi_val = Pi_1(idof, p);
+              for (std::size_t i = 0; i < space_dim0; ++i) // V0 basis fn
+                Ab[space_dim0 * (bs1 * idof + k) + i]
+                    += static_cast<T>(pi_val * mapped_values(p, i, k));
+            }
       }
     }
 
