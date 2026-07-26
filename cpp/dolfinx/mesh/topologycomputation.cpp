@@ -101,28 +101,90 @@ auto build_entity_list
       assert(entity_vertices.size() == global_vertices.size());
       vertex_index_map.local_to_global(entity_vertices, global_vertices);
 
-      std::iota(perm.begin(), perm.end(), 0);
-      std::ranges::sort(perm, [&global_vertices](auto i0, auto i1)
-                        { return global_vertices[i0] < global_vertices[i1]; });
-
-      // For quadrilaterals, the vertex opposite the lowest
-      // vertex should be last
-      if (entity_type == mesh::CellType::quadrilateral)
-      {
-        std::size_t min_vertex_idx = perm[0];
-        std::size_t opposite_vertex_index = 3 - min_vertex_idx;
-        auto it = std::find(perm.begin(), perm.end(), opposite_vertex_index);
-        assert(it != perm.end());
-        std::rotate(it, it + 1, perm.end());
-      }
-
       auto elist = std::span(it_e, num_vertices_per_entity);
-      for (std::size_t j = 0; j < ev.size(); ++j)
-        elist[j] = entity_vertices[perm[j]];
-
       auto elist_sorted = std::span(it_e_sorted, num_vertices_per_entity);
-      std::ranges::copy(elist, elist_sorted.begin());
-      std::ranges::sort(elist_sorted);
+
+      // Edges and triangles (by far the most common entity types, and
+      // never subject to the quadrilateral re-orientation rule below)
+      // are hand-unrolled: a generic std::ranges::sort of a 2- or
+      // 3-element array is disproportionately expensive when called
+      // once per entity instance over a very large mesh.
+      if (num_vertices_per_entity == 2)
+      {
+        std::int32_t l0 = entity_vertices[0], l1 = entity_vertices[1];
+        if (global_vertices[0] <= global_vertices[1])
+        {
+          elist[0] = l0;
+          elist[1] = l1;
+        }
+        else
+        {
+          elist[0] = l1;
+          elist[1] = l0;
+        }
+        elist_sorted[0] = std::min(elist[0], elist[1]);
+        elist_sorted[1] = std::max(elist[0], elist[1]);
+      }
+      else if (num_vertices_per_entity == 3)
+      {
+        std::int32_t l0 = entity_vertices[0], l1 = entity_vertices[1],
+                     l2 = entity_vertices[2];
+        std::int64_t g0 = global_vertices[0], g1 = global_vertices[1],
+                     g2 = global_vertices[2];
+        if (g0 > g1)
+        {
+          std::swap(g0, g1);
+          std::swap(l0, l1);
+        }
+        if (g1 > g2)
+        {
+          std::swap(g1, g2);
+          std::swap(l1, l2);
+        }
+        if (g0 > g1)
+        {
+          std::swap(g0, g1);
+          std::swap(l0, l1);
+        }
+        elist[0] = l0;
+        elist[1] = l1;
+        elist[2] = l2;
+
+        std::int32_t s0 = l0, s1 = l1, s2 = l2;
+        if (s0 > s1)
+          std::swap(s0, s1);
+        if (s1 > s2)
+          std::swap(s1, s2);
+        if (s0 > s1)
+          std::swap(s0, s1);
+        elist_sorted[0] = s0;
+        elist_sorted[1] = s1;
+        elist_sorted[2] = s2;
+      }
+      else
+      {
+        std::iota(perm.begin(), perm.end(), 0);
+        std::ranges::sort(
+            perm, [&global_vertices](auto i0, auto i1)
+            { return global_vertices[i0] < global_vertices[i1]; });
+
+        // For quadrilaterals, the vertex opposite the lowest
+        // vertex should be last
+        if (entity_type == mesh::CellType::quadrilateral)
+        {
+          std::size_t min_vertex_idx = perm[0];
+          std::size_t opposite_vertex_index = 3 - min_vertex_idx;
+          auto it = std::find(perm.begin(), perm.end(), opposite_vertex_index);
+          assert(it != perm.end());
+          std::rotate(it, it + 1, perm.end());
+        }
+
+        for (std::size_t j = 0; j < ev.size(); ++j)
+          elist[j] = entity_vertices[perm[j]];
+
+        std::ranges::copy(elist, elist_sorted.begin());
+        std::ranges::sort(elist_sorted);
+      }
 
       std::advance(it_e, num_vertices_per_entity);
       std::advance(it_e_sorted, num_vertices_per_entity);

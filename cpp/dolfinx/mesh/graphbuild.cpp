@@ -626,8 +626,27 @@ mesh::build_local_dual_graph(
         std::ranges::transform(facet_vertices, facet_c.begin(),
                                [v](auto idx) { return v[idx]; });
 
+        // Sort the facet's vertices (a hot loop over all cell facets, so
+        // the common sizes are hand-unrolled rather than calling the
+        // general-purpose std::sort for what is almost always a 2- or
+        // 3-element array).
         auto it = std::next(facet_c.begin(), facet_vertices.size());
-        std::sort(facet_c.begin(), it);
+        if (facet_vertices.size() == 2)
+        {
+          if (facet_c[0] > facet_c[1])
+            std::swap(facet_c[0], facet_c[1]);
+        }
+        else if (facet_vertices.size() == 3)
+        {
+          if (facet_c[0] > facet_c[1])
+            std::swap(facet_c[0], facet_c[1]);
+          if (facet_c[1] > facet_c[2])
+            std::swap(facet_c[1], facet_c[2]);
+          if (facet_c[0] > facet_c[1])
+            std::swap(facet_c[0], facet_c[1]);
+        }
+        else
+          std::sort(facet_c.begin(), it);
         std::fill(it, facet_c.end(), padding_value);
         facet_c.back() = c + cell_offset;
       }
