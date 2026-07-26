@@ -645,6 +645,21 @@ mesh::build_local_dual_graph(
           if (facet_c[0] > facet_c[1])
             std::swap(facet_c[0], facet_c[1]);
         }
+        else if (facet_vertices.size() == 4)
+        {
+          // 5-compare-exchange sorting network (quadrilateral facets,
+          // e.g. hexahedron/prism cells).
+          if (facet_c[0] > facet_c[1])
+            std::swap(facet_c[0], facet_c[1]);
+          if (facet_c[2] > facet_c[3])
+            std::swap(facet_c[2], facet_c[3]);
+          if (facet_c[0] > facet_c[2])
+            std::swap(facet_c[0], facet_c[2]);
+          if (facet_c[1] > facet_c[3])
+            std::swap(facet_c[1], facet_c[3]);
+          if (facet_c[1] > facet_c[2])
+            std::swap(facet_c[1], facet_c[2]);
+        }
         else
           std::sort(facet_c.begin(), it);
         std::fill(it, facet_c.end(), padding_value);
