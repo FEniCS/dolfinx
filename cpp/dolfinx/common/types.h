@@ -53,11 +53,13 @@ namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
 
 /// @private Concept for a rank-2 mdspan-like type: exposes a
 /// `value_type`, has static `rank() == 2`, and supports two-index access
-/// and per-dimension `extent` queries.
+/// and per-dimension `extent` queries. cv- and reference-qualifiers on
+/// `T` are stripped, so it can also constrain forwarding-reference
+/// parameters.
 template <typename T>
-concept mdspan2 = requires(T x, std::size_t i) {
-  typename T::value_type;
-  requires T::rank() == 2;
+concept mdspan2 = requires(std::remove_cvref_t<T> x, std::size_t i) {
+  typename std::remove_cvref_t<T>::value_type;
+  requires std::remove_cvref_t<T>::rank() == 2;
   x(i, i);
   { x.extent(i) } -> std::integral;
 };

@@ -29,13 +29,6 @@ namespace dolfinx::fem
 template <dolfinx::scalar T, std::floating_point U>
 class Function;
 
-template <typename T>
-concept MDSpan = requires(T x, std::size_t idx) {
-  x(idx, idx);
-  { x.extent(0) } -> std::integral;
-  { x.extent(1) } -> std::integral;
-};
-
 /// @brief Compute the evaluation points in the physical space at which
 /// an expression should be computed to interpolate it in a finite
 /// element space.
@@ -307,7 +300,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 /// f1(x0), f0(x1), f1(x1), ...).
 /// @param[out] coeffs Degrees of freedom to compute.
 /// @param[in] bs The block size.
-template <MDSpan U, MDSpan V, dolfinx::scalar T>
+template <dolfinx::mdspan2 U, dolfinx::mdspan2 V, dolfinx::scalar T>
 void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 {
   // Geometry (real) scalar type, taken from the interpolation operator Pi
