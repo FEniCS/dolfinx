@@ -22,7 +22,6 @@
 #include <memory>
 #include <mpi.h>
 #include <numeric>
-#include <random>
 #include <thread>
 #include <tuple>
 #include <utility>
@@ -271,13 +270,22 @@ graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 template <typename U, typename V>
 int get_ownership(const U& processes, const V& vertices)
 {
-  // Use a deterministic random number generator, seeded with global
-  // vertex indices ensuring all processes get the same answer
-  std::mt19937 gen;
-  std::seed_seq seq(vertices.begin(), vertices.end());
-  gen.seed(seq);
+  // Deterministic selection from the global vertex indices, ensuring
+  // all processes get the same answer. A plain FNV-1a hash of the
+  // vertices is used instead of a seeded std::mt19937: this function
+  // is called once per shared entity (so up to millions of times for
+  // a large, highly-ghosted mesh), and re-seeding a std::mt19937 (~2.5
+  // kB of internal state) via std::seed_seq on every call - needed
+  // only to extract a single index - was the dominant cost of entity
+  // ownership determination at scale.
+  std::uint64_t h = 0xcbf29ce484222325ULL; // FNV-1a offset basis
+  for (auto v : vertices)
+  {
+    h ^= static_cast<std::uint64_t>(v);
+    h *= 0x100000001b3ULL; // FNV-1a prime
+  }
   std::vector<int> p(processes.begin(), processes.end());
-  int index = gen() % p.size();
+  int index = static_cast<int>(h % p.size());
   int owner = p[index];
   return owner;
 }
@@ -353,16 +361,36 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   std::vector<std::int64_t> entity_to_local_idx;
   std::vector<std::int32_t> perm;
   {
+    // Entities are visited by (cell, local-entity) instance in
+    // entity_index, but many instances alias the same unique entity -
+    // e.g. on average close to 5 instances per unique entity for edges
+    // in a tetrahedral mesh, since interior edges are shared by ~5
+    // cells (vs. ~2 for facets). All instances of the same entity have
+    // an identical (globally-oriented) vertex list, so the
+    // rank-sharing computation below gives the same result for every
+    // instance - only one representative instance per unique entity is
+    // needed. Visiting every instance instead would repeat the same
+    // work (and, more importantly, push the same entity into
+    // send_entities/send_index once per instance, multiplying the MPI
+    // payload built below by the same factor).
+    std::vector<std::int32_t> first_instance(entity_count, -1);
+    for (std::size_t pos = 0; pos < entity_index.size(); ++pos)
+    {
+      std::int32_t id = entity_index[pos];
+      if (first_instance[id] == -1)
+        first_instance[id] = pos;
+    }
+
     // If another rank shares all vertices of an entity, it may need the
     // entity.
     // Set of sharing procs for each entity, counting vertex hits
     std::vector<std::int64_t> vglobal(num_vertices_per_e);
     std::vector<int> entity_ranks;
-    for (auto entity_idx = entity_index.begin();
-         entity_idx != entity_index.end(); ++entity_idx)
+    for (std::int32_t id = 0; id < entity_count; ++id)
     {
-      // Get entity vertices
-      std::size_t pos = std::distance(entity_index.begin(), entity_idx);
+      // Get entity vertices (any instance of this entity has the same,
+      // globally-oriented, vertex list)
+      std::size_t pos = first_instance[id];
       std::span entity
           = entity_list.subspan(pos * num_vertices_per_e, num_vertices_per_e);
 
@@ -389,19 +417,19 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           std::ranges::sort(vglobal);
           entity_to_local_idx.insert(entity_to_local_idx.end(), vglobal.begin(),
                                      vglobal.end());
-          entity_to_local_idx.push_back(*entity_idx);
+          entity_to_local_idx.push_back(id);
 
           // Only send entities that are not known to be ghosts
-          if (ghost_status[*entity_idx] != 1)
+          if (ghost_status[id] != 1)
           {
             auto itr_local = std::ranges::lower_bound(ranks, *it);
             assert(itr_local != ranks.end() and *itr_local == *it);
             std::size_t r = std::distance(ranks.begin(), itr_local);
 
-            // Entity entity_idx may be shared with rank r
+            // Entity id may be shared with rank r
             send_entities[r].insert(send_entities[r].end(), vglobal.begin(),
                                     vglobal.end());
-            send_index[r].push_back(*entity_idx);
+            send_index[r].push_back(id);
           }
         }
 
