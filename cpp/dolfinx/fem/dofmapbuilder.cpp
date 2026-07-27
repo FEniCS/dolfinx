@@ -1,4 +1,5 @@
-// Copyright (C) 2008-2018 Anders Logg, Ola Skavhaug and Garth N. Wells
+// Copyright (C) 2008-2026 Anders Logg, Ola Skavhaug, Garth N. Wells and Jørgen
+// S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -12,13 +13,14 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/fem/DofMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <iterator>
 #include <memory>
 #include <numeric>
-#include <random>
 #include <utility>
 #include <vector>
 
@@ -56,7 +58,7 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
 {
   std::vector<std::int32_t> graph_data, graph_offsets;
 
-  // Compute maximum number of graph out edges edges per dof
+  // Compute maximum number of graph out edges per dof
   std::vector<int> num_edges(owned_size);
   for (auto& dofmap : dofmaps)
   {
@@ -212,10 +214,10 @@ build_basic_dofmaps(
                 and !topology.connectivity({int(D), int(i)},
                                            {int(d), int(et_index)}))
             {
-              throw std::runtime_error("Missing needed connectivity. Cell type:"
-                                       + std::to_string(i)
-                                       + "to dim:" + std::to_string(d)
-                                       + ", ent:" + std::to_string(et_index));
+              throw std::runtime_error(
+                  std::format("Missing needed connectivity. Cell type: {} to "
+                              "dim: {}, ent: {}",
+                              i, d, et_index));
             }
           }
           else
@@ -233,15 +235,14 @@ build_basic_dofmaps(
 #ifndef NDEBUG
   {
     // Debug output
-    std::stringstream s;
-    s << "Required entities:";
+    std::string s = "Required entities:";
     for (std::size_t i = 0; i < required_dim_et.size(); ++i)
     {
-      s << "(" << (int)required_dim_et[i].first << ", "
-        << (int)required_dim_et[i].second << ")=" << num_entity_dofs_et[i]
-        << " ";
+      std::format_to(std::back_inserter(s), "({}, {})={} ",
+                     (int)required_dim_et[i].first,
+                     (int)required_dim_et[i].second, num_entity_dofs_et[i]);
     }
-    spdlog::info("{}", s.str());
+    spdlog::info("{}", s);
   }
 #endif
 
@@ -689,4 +690,50 @@ fem::build_dofmap_data(
   return {std::move(index_map), element_dof_layouts.front().block_size(),
           std::move(dofmaps)};
 }
+
+//-----------------------------------------------------------------------------
+fem::DofMap fem::build_real_element_dofmap(
+    const mesh::Topology& topology,
+    const std::vector<std::vector<std::vector<int>>>& entity_dofs,
+    const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
+    int value_size)
+{
+  // We select the process that owns cell 0 to have all dofs and all other
+  // processes ghost them
+  std::shared_ptr<const dolfinx::common::IndexMap> cell_map
+      = topology.index_map(topology.dim());
+  const int is_owner
+      = (cell_map->local_range()[0] == 0) && cell_map->size_local() > 0;
+
+  std::int32_t num_dofs = is_owner ? 1 : 0;
+  std::int32_t num_ghosts = is_owner ? 0 : 1;
+  std::vector<std::int64_t> ghosts(num_ghosts, 0);
+  ghosts.reserve(1);
+
+  // Send owning rank to all processes so that they can set owner of ghost dofs
+  int rank = dolfinx::MPI::rank(topology.comm());
+  std::array<int, 2> send_owner_pair = {is_owner, rank};
+  std::array<int, 2> recv_owner_pair;
+  MPI_Allreduce(&send_owner_pair, &recv_owner_pair, 1, MPI_2INT, MPI_MAXLOC,
+                topology.comm());
+  std::vector<int> owners(num_ghosts, recv_owner_pair[1]);
+  owners.reserve(1);
+
+  // Create index map
+  auto imap = std::make_shared<const dolfinx::common::IndexMap>(
+      topology.comm(), num_dofs, ghosts, owners);
+
+  // Create element dof layout
+  dolfinx::fem::ElementDofLayout dof_layout(value_size, entity_dofs,
+                                            entity_closure_dofs, {}, {});
+
+  // Create dofmap array
+  std::int32_t num_cells_on_process
+      = topology.index_map(topology.dim())->size_local()
+        + topology.index_map(topology.dim())->num_ghosts();
+
+  std::vector<std::int32_t> dofmap(num_cells_on_process, 0);
+  dofmap.reserve(1);
+  return dolfinx::fem::DofMap(dof_layout, imap, value_size, dofmap, value_size);
+};
 //-----------------------------------------------------------------------------

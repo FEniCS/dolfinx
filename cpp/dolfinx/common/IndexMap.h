@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "IndexMap.h"
 #include "MPI.h"
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -245,7 +244,7 @@ public:
   ///
   /// Typically used when creating neighbourhood communicators.
   ///
-  /// @return MPI ranks than own ghost indices.  The ranks are unique
+  /// @return MPI ranks that own ghost indices.  The ranks are unique
   /// and sorted.
   std::span<const int> src() const noexcept;
 
@@ -254,8 +253,8 @@ public:
   ///
   /// Typically used when creating neighbourhood communicators.
   ///
-  /// @return MPI ranks than own ghost indices. The ranks are unique
-  /// and sorted.
+  /// @return MPI ranks that ghost indices owned by this rank.
+  /// The ranks are unique and sorted.
   std::span<const int> dest() const noexcept;
 
   /// @brief Compute the number of ghost indices owned by each rank in
@@ -269,7 +268,7 @@ public:
   /// 2. Received by this rank from other ranks when performing a
   /// forward (owner -> ghost) scatter.
   ///
-  /// @return A weight vector, where `weight[i]` the the number of
+  /// @return A weight vector, where `weight[i]` is the number of
   /// ghost indices owned by rank IndexMap::src()`[i]`.
   std::vector<std::int32_t> weights_src() const;
 
@@ -284,7 +283,7 @@ public:
   /// 2. Received by this rank from other ranks when performing a
   /// reverse forward (owner <- ghost) scatter.
   ///
-  /// @return A weight vector, where `weight[i]` the the number of ghost
+  /// @return A weight vector, where `weight[i]` is the number of ghost
   /// indices owned by rank IndexMap::dest()`[i]`.
   std::vector<std::int32_t> weights_dest() const;
 

@@ -131,7 +131,7 @@ def σ(v):
 
 # -
 
-# A function space space is created and the elasticity variational
+# A function space is created and the elasticity variational
 # problem defined:
 
 gdim = msh.geometry.dim

@@ -13,6 +13,7 @@
 #include <nanobind/operators.h>
 #include <nanobind/stl/function.h>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -67,6 +68,25 @@ void declare_adjacency_list_init(nanobind::module_& m, std::string type)
              nb::ndarray<const T, nb::ndim<1>, nb::c_contig> array,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> displ)
           {
+            if (displ.size() == 0 or displ.data()[0] != 0)
+            {
+              throw std::runtime_error(
+                  "offsets must be non-empty and start at 0.");
+            }
+
+            for (std::size_t i = 1; i < displ.size(); ++i)
+            {
+              if (displ.data()[i] < displ.data()[i - 1])
+                throw std::runtime_error("offsets must be non-decreasing.");
+            }
+
+            if (static_cast<std::size_t>(displ.data()[displ.size() - 1])
+                != array.size())
+            {
+              throw std::runtime_error(
+                  "Last entry in offsets must equal the length of data.");
+            }
+
             std::vector<T> data(array.data(), array.data() + array.size());
             std::vector<std::int32_t> offsets(displ.data(),
                                               displ.data() + displ.size());

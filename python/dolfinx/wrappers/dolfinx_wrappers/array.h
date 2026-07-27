@@ -6,10 +6,13 @@
 
 #pragma once
 
+#include <cassert>
 #include <concepts>
+#include <functional>
 #include <initializer_list>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <numeric>
 #include <utility>
 
 namespace nb = nanobind;
@@ -31,11 +34,14 @@ template <typename V>
   requires std::movable<V>
 auto as_nbarray(V&& x, std::size_t ndim, const std::size_t* shape)
 {
-  using _V = std::decay_t<V>;
-  _V* ptr = new _V(std::forward<V>(x));
-  return nb::ndarray<typename _V::value_type, nb::numpy>(
+  using VDecay = std::decay_t<V>;
+  VDecay* ptr = new VDecay(std::forward<V>(x));
+  assert(
+      std::accumulate(shape, shape + ndim, std::size_t(1), std::multiplies<>())
+      == ptr->size());
+  return nb::ndarray<typename VDecay::value_type, nb::numpy>(
       ptr->data(), ndim, shape,
-      nb::capsule(ptr, [](void* p) noexcept { delete (_V*)p; }));
+      nb::capsule(ptr, [](void* p) noexcept { delete (VDecay*)p; }));
 }
 
 /// @brief Create a multi-dimensional `nb::ndarray` that shares data

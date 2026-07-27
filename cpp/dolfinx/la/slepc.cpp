@@ -11,6 +11,7 @@
 #include "utils.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
+#include <format>
 #include <petscmat.h>
 #include <slepcversion.h>
 
@@ -132,8 +133,8 @@ std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(int i) const
   }
   else
   {
-    throw std::runtime_error("Requested eigenvalue (" + std::to_string(i)
-                             + ") has not been computed");
+    throw std::runtime_error(
+        std::format("Requested eigenvalue ({}) has not been computed", i));
   }
 }
 //-----------------------------------------------------------------------------
@@ -150,8 +151,8 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
     EPSGetEigenpair(_eps, ii, &lr, &lc, r, c);
   else
   {
-    throw std::runtime_error("Requested eigenpair (" + std::to_string(i)
-                             + ") has not been computed");
+    throw std::runtime_error(
+        std::format("Requested eigenpair ({}) has not been computed", i));
   }
 }
 //-----------------------------------------------------------------------------
@@ -163,10 +164,11 @@ std::int64_t SLEPcEigenSolver::get_number_converged() const
   return num_conv;
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_options_prefix(const std::string& options_prefix)
+void SLEPcEigenSolver::set_options_prefix(std::string_view options_prefix)
 {
   assert(_eps);
-  PetscErrorCode ierr = EPSSetOptionsPrefix(_eps, options_prefix.c_str());
+  PetscErrorCode ierr
+      = EPSSetOptionsPrefix(_eps, std::string(options_prefix).c_str());
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "EPSSetOptionsPrefix");
 }

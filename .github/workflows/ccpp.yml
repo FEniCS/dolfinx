@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches:
+      - main
       - release
     tags:
       - "v*"
@@ -17,22 +18,22 @@ on:
 jobs:
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     name: Lint
     steps:
       - name: Checkout DOLFINx
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.12'
+          python-version: '3.14'
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install linting tools
-        run: pip install clang-format cmake-format[YAML] mypy ruff
+        run: pip install clang-format gersemi mypy ruff
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
@@ -59,10 +60,8 @@ jobs:
           cd python/dolfinx/wrappers
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
-      - name: cmake-format (non-blocking)
-        continue-on-error: true
-        run: |
-          find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
+      - name: gersemi
+        run: gersemi --check .
 
   ccpp-build:
     runs-on: ubuntu-24.04
@@ -76,7 +75,7 @@ jobs:
 
     name: Build and test
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -88,7 +87,7 @@ jobs:
              libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev \
              libspdlog-dev libsuperlu-dist-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -98,13 +97,26 @@ jobs:
           pip install scikit-build-core setuptools
           python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 
-      - name: Install FEniCS Python components
+      - name: Install UFL
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
-      - name: Configure (C++)
+      # Split install ensures that basix.pc ends up in PKG_CONFIG_PATH for later pkg-config test
+      - name: Install Basix (C++)
+        run: |
+          git clone --branch ${{ env.basix_ref }} --single-branch https://github.com/${{ env.basix_repository }}.git
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-basix -S basix/cpp
+          cmake --build build-basix
+          sudo cmake --install build-basix
+          sudo ldconfig
+
+      - name: Install Basix (Python)
+        run: pip install --no-build-isolation ./basix/python
+
+      - name: Install FFCx
+        run: pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+
+      - name: Configure, no rpath (C++)
         working-directory: cpp
         run: >
           cmake -B build -S .
@@ -116,12 +128,20 @@ jobs:
           -DDOLFINX_ENABLE_PETSC=false
           -DDOLFINX_ENABLE_SUPERLU_DIST=true
           -DDOLFINX_ENABLE_PARMETIS=true
+          -DDOLFINX_INSTALL_RPATH_USE_LINK_PATH=false
 
       - name: Build and install (C++)
         working-directory: cpp/build
         run: |
           cmake --build .
           sudo cmake --install .
+          sudo ldconfig
+
+      - name: Run pkg-config test (C++)
+        working-directory: cpp/test/pkgconfig
+        run: |
+          make
+          make run
 
       - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
@@ -129,18 +149,15 @@ jobs:
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test,mypy]'
           python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
-      - name: Run mypy  # Use a venv to avoid NumPy upgrades that are incompatible with numba
-        working-directory: python
+      - name: Run mypy
         run: |
-          python -m venv mypy-env
-          . ./mypy-env/bin/activate
-          pip install mypy types-cffi scipy-stubs
-          mypy -p dolfinx
-        # mypy test
-        # mypy demo
+          mypy --config-file python/pyproject.toml -p dolfinx # package mode, type checks installed dolfinx (working around name collision in python/ directory)
+          cd python/
+          mypy test
+          mypy demo
 
       - name: Install gmsh and pyvista (and dependencies)
         run: |
@@ -161,7 +178,7 @@ jobs:
         run: mpirun -np 3 python -m pytest -m "not petsc4py and not adios2" python/test/unit
 
   ccpp-build-with-petsc:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [lint]
     strategy:
       matrix:
@@ -182,7 +199,7 @@ jobs:
 
     name: Build and test (${{ matrix.petsc_arch }}, ${{ matrix.docker_image }})
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -193,11 +210,23 @@ jobs:
           pip install scikit-build-core
           python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 
-      - name: Install FEniCS Python components
+      - name: Install UFL
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+
+      # Split install ensures that basix.pc ends up in PKG_CONFIG_PATH for later pkg-config test
+      - name: Install Basix (C++)
+        run: |
+          git clone --branch ${{ env.basix_ref }} --single-branch https://github.com/${{ env.basix_repository }}.git
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-basix -S basix/cpp
+          cmake --build build-basix
+          cmake --install build-basix
+
+      - name: Install Basix (Python)
+        run: pip install --no-build-isolation ./basix/python
+
+      - name: Install FFCx
+        run: pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure (C++)
         working-directory: cpp
@@ -223,6 +252,13 @@ jobs:
         run: |
           cmake -B build -S . -DCMAKE_BUILD_TYPE=Developer -GNinja
           cmake --build build
+
+      - name: Run pkg-config test (C++)
+        working-directory: cpp/test/pkgconfig
+        run: |
+          export PKG_CONFIG_PATH=$PETSC_DIR/$PETSC_ARCH/lib/pkgconfig:$SLEPC_DIR/$PETSC_ARCH/lib/pkgconfig:$PKG_CONFIG_PATH
+          make
+          make run
 
       - name: Run tests (C++, serial)
         working-directory: cpp/test/build
@@ -280,7 +316,7 @@ jobs:
         run: mpirun -np 3 python -m pytest -m "petsc4py or adios2" python/test/unit/
 
   build-and-publish-docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [lint]
     container: "ghcr.io/fenics/test-env:current-openmpi"
     env:
@@ -291,7 +327,7 @@ jobs:
 
     name: Build and publish docs
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -324,7 +360,7 @@ jobs:
           echo $DOLFINX_VERSION
           cd cpp/doc
           doxygen Doxyfile
-          make html
+          python -m sphinx -b html source/ build/html
       - name: Upload C++ Doxygen documentation artifact
         uses: actions/upload-artifact@v7
         with:
@@ -351,7 +387,7 @@ jobs:
 
       - name: Checkout FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: "FEniCS/docs"
           path: "docs"

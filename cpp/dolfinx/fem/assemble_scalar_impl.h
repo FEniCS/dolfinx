@@ -17,20 +17,20 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 namespace dolfinx::fem::impl
 {
 /// Assemble functional over cells
-template <dolfinx::scalar T>
-T assemble_cells(mdspan2_t x_dofmap,
-                 md::mdspan<const scalar_value_t<T>,
-                            md::extents<std::size_t, md::dynamic_extent, 3>>
-                     x,
-                 std::span<const std::int32_t> cells, FEkernel<T> auto fn,
-                 std::span<const T> constants,
-                 md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
-                 std::span<scalar_value_t<T>> cdofs_b)
+template <dolfinx::scalar T, std::floating_point U>
+T assemble_cells(
+    mdspan2_t x_dofmap,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
+    std::span<const std::int32_t> cells, FEkernel<T, U> auto fn,
+    std::span<const T> constants,
+    md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
+    std::span<std::type_identity_t<U>> cdofs_b)
 {
   T value(0);
   if (cells.empty())
@@ -65,19 +65,17 @@ T assemble_cells(mdspan2_t x_dofmap,
 /// However, entities may be attached to more than one cell. This function
 /// therefore computes 'one-sided' integrals, i.e. evaluates integrals as seen
 /// from cell used to define the entity.
-template <dolfinx::scalar T>
+template <dolfinx::scalar T, std::floating_point U>
 T assemble_entities(
     mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
-        x,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
-    FEkernel<T> auto fn, std::span<const T> constants,
+    FEkernel<T, U> auto fn, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<scalar_value_t<T>> cdofs_b)
+    std::span<std::type_identity_t<U>> cdofs_b)
 {
   T value(0);
   if (entities.empty())
@@ -106,21 +104,19 @@ T assemble_entities(
 }
 
 /// Assemble functional over interior facets
-template <dolfinx::scalar T>
+template <dolfinx::scalar T, std::floating_point U>
 T assemble_interior_facets(
     mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
-        x,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
-    FEkernel<T> auto fn, std::span<const T> constants,
+    FEkernel<T, U> auto fn, std::span<const T> constants,
     md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                     md::dynamic_extent>>
         coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<scalar_value_t<T>> cdofs_b)
+    std::span<std::type_identity_t<U>> cdofs_b)
 {
   T value(0);
   if (facets.empty())
@@ -160,37 +156,38 @@ T assemble_interior_facets(
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_scalar(
     const fem::Form<T, U>& M, mdspan2_t x_dofmap,
-    md::mdspan<const scalar_value_t<T>,
-               md::extents<std::size_t, md::dynamic_extent, 3>>
-        x,
+    md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients)
+                   std::pair<std::span<const T>, int>>& coefficients,
+    std::size_t cell_type_idx)
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
 
-  std::vector<scalar_value_t<T>> cdofs_b(2 * 3 * x_dofmap.extent(1));
+  std::vector<U> cdofs_b(2 * 3 * x_dofmap.extent(1));
 
   T value = 0;
-  for (int i = 0; i < M.num_integrals(IntegralType::cell, 0); ++i)
+  for (int i = 0; i < M.num_integrals(IntegralType::cell, cell_type_idx); ++i)
   {
-    auto fn = M.kernel(IntegralType::cell, i, 0);
+    auto fn = M.kernel(IntegralType::cell, i, cell_type_idx);
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i, 0);
+    std::span<const std::int32_t> cells
+        = M.domain(IntegralType::cell, i, cell_type_idx);
     assert(cells.size() * cstride == coeffs.size());
     value += impl::assemble_cells(
         x_dofmap, x, cells, fn, constants,
         md::mdspan(coeffs.data(), cells.size(), cstride), cdofs_b);
   }
 
-  mesh::CellType cell_type = mesh->topology()->cell_type();
-  int num_facets_per_cell
-      = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
   md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
   if (M.needs_facet_permutations())
   {
+    mesh::CellType cell_type = mesh->topology()->cell_types()[cell_type_idx];
+    int num_facets_per_cell
+        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
+
     mesh->topology_mutable()->create_entity_permutations();
     const std::vector<std::uint8_t>& p
         = mesh->topology()->get_facet_permutations();
@@ -198,13 +195,14 @@ T assemble_scalar(
                              num_facets_per_cell);
   }
 
-  for (int i = 0; i < M.num_integrals(IntegralType::interior_facet, 0); ++i)
+  for (int i = 0;
+       i < M.num_integrals(IntegralType::interior_facet, cell_type_idx); ++i)
   {
-    auto fn = M.kernel(IntegralType::interior_facet, i, 0);
+    auto fn = M.kernel(IntegralType::interior_facet, i, cell_type_idx);
     assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::interior_facet, i});
-    std::span facets = M.domain(IntegralType::interior_facet, i, 0);
+    std::span facets = M.domain(IntegralType::interior_facet, i, cell_type_idx);
 
     constexpr std::size_t num_adjacent_cells = 2;
     // Two values per each adj. cell (cell index and local facet index).
@@ -231,13 +229,13 @@ T assemble_scalar(
               ? facet_perms
               : md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>{};
 
-    for (int i = 0; i < M.num_integrals(itg_type, 0); ++i)
+    for (int i = 0; i < M.num_integrals(itg_type, cell_type_idx); ++i)
     {
-      auto fn = M.kernel(itg_type, i, 0);
+      auto fn = M.kernel(itg_type, i, cell_type_idx);
       assert(fn);
       auto& [coeffs, cstride] = coefficients.at({itg_type, i});
 
-      std::span entities = M.domain(itg_type, i, 0);
+      std::span entities = M.domain(itg_type, i, cell_type_idx);
 
       // Two values per each adj. cell (cell index and local entity index).
       assert((entities.size() / 2) * cstride == coeffs.size());

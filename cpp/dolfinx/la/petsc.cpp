@@ -16,6 +16,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <format>
 #include <iostream>
 #include <sstream>
 #include <utility>
@@ -32,22 +33,21 @@ using namespace dolfinx::la;
   } while (0)
 
 //-----------------------------------------------------------------------------
-void la::petsc::error(PetscErrorCode error_code, const std::string& filename,
-                      const std::string& petsc_function)
+void la::petsc::error(PetscErrorCode error_code, std::string_view filename,
+                      std::string_view petsc_function)
 {
   // Fetch PETSc error description
   const char* desc;
   PetscErrorMessage(error_code, &desc, nullptr);
 
   // Log detailed error info
-  spdlog::info("PETSc error in '{}', '{}'", filename.c_str(),
-               petsc_function.c_str());
+  spdlog::info("PETSc error in '{}', '{}'", filename, petsc_function);
   spdlog::info("PETSc error code '{}' '{}'", static_cast<int>(error_code),
                desc);
-  throw std::runtime_error("Failed to successfully call PETSc function '"
-                           + petsc_function + "'. PETSc error code is: "
-                           + std ::to_string(error_code) + ", "
-                           + std::string(desc));
+  throw std::runtime_error(
+      std::format("Failed to successfully call PETSc function '{}'. PETSc "
+                  "error code is: {}, {}",
+                  petsc_function, static_cast<int>(error_code), desc));
 }
 //-----------------------------------------------------------------------------
 std::vector<Vec>
@@ -233,7 +233,7 @@ void la::petsc::scatter_local_vectors(
 }
 //-----------------------------------------------------------------------------
 Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                             std::optional<std::string> type)
+                             std::optional<std::string_view> type)
 {
   PetscErrorCode ierr;
   Mat A;
@@ -246,7 +246,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
   if (type)
-    MatSetType(A, type->c_str());
+    MatSetType(A, std::string(*type).c_str());
 
   // Get global and local dimensions
   const std::int64_t M = bs[0] * maps[0]->size_global();
@@ -469,10 +469,11 @@ MPI_Comm petsc::Vector::comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
-void petsc::Vector::set_options_prefix(const std::string& options_prefix)
+void petsc::Vector::set_options_prefix(std::string_view options_prefix)
 {
   assert(_x);
-  PetscErrorCode ierr = VecSetOptionsPrefix(_x, options_prefix.c_str());
+  PetscErrorCode ierr
+      = VecSetOptionsPrefix(_x, std::string(options_prefix).c_str());
   CHECK_ERROR("VecSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
@@ -564,8 +565,8 @@ Mat petsc::Operator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 petsc::Matrix::Matrix(MPI_Comm comm, const SparsityPattern& sp,
-                      std::optional<std::string> type)
-    : Operator(petsc::create_matrix(comm, sp, std::move(type)), false)
+                      std::optional<std::string_view> type)
+    : Operator(petsc::create_matrix(comm, sp, type), false)
 {
   // Do nothing
 }
@@ -617,10 +618,10 @@ void petsc::Matrix::apply(AssemblyType type)
     petsc::error(ierr, __FILE__, "MatAssemblyEnd");
 }
 //-----------------------------------------------------------------------------
-void petsc::Matrix::set_options_prefix(const std::string& options_prefix)
+void petsc::Matrix::set_options_prefix(std::string_view options_prefix)
 {
   assert(_matA);
-  MatSetOptionsPrefix(_matA, options_prefix.c_str());
+  MatSetOptionsPrefix(_matA, std::string(options_prefix).c_str());
 }
 //-----------------------------------------------------------------------------
 std::string petsc::Matrix::get_options_prefix() const
@@ -765,11 +766,12 @@ int petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-void petsc::KrylovSolver::set_options_prefix(const std::string& options_prefix)
+void petsc::KrylovSolver::set_options_prefix(std::string_view options_prefix)
 {
   // Set options prefix
   assert(_ksp);
-  PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, options_prefix.c_str());
+  PetscErrorCode ierr
+      = KSPSetOptionsPrefix(_ksp, std::string(options_prefix).c_str());
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "KSPSetOptionsPrefix");
 }

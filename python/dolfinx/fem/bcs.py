@@ -12,8 +12,8 @@ modification of linear systems.
 
 from __future__ import annotations
 
-import numbers
 from collections.abc import Callable, Iterable
+from typing import ClassVar, Generic
 
 import numpy as np
 import numpy.typing as npt
@@ -21,6 +21,7 @@ import numpy.typing as npt
 import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.fem.function import Constant, Function, FunctionSpace
+from dolfinx.typing import Scalar
 
 
 def locate_dofs_geometrical(
@@ -91,12 +92,20 @@ def locate_dofs_topological(
     return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
 
-class DirichletBC:
+class DirichletBC(Generic[Scalar]):
     """Representation of Dirichlet boundary conditions.
 
     The conditions are imposed on a linear system.
     """
 
+    # Matched-precision built-ins (geometry == real scalar part). Public:
+    # extend with additional (scalar, geometry) dtype pairs as needed.
+    cpp_types: ClassVar[dict] = {
+        (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.DirichletBC_float32,
+        (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.DirichletBC_float64,
+        (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.DirichletBC_complex64,
+        (np.dtype(np.complex128), np.dtype(np.float64)): _cpp.fem.DirichletBC_complex128,
+    }
     _cpp_object: (
         _cpp.fem.DirichletBC_complex64
         | _cpp.fem.DirichletBC_complex128
@@ -120,8 +129,9 @@ class DirichletBC:
         self._cpp_object = bc
 
     @property
-    def g(self) -> Function | Constant | np.ndarray:
+    def g(self) -> Function | Constant:
         """The boundary condition value(s)."""
+        # TODO: needs to be wrapped into Function or Constant
         return self._cpp_object.value
 
     @property
@@ -130,7 +140,7 @@ class DirichletBC:
         return self._cpp_object.function_space
 
     def set(
-        self, x: npt.NDArray, x0: npt.NDArray[np.int32] | None = None, alpha: float = 1
+        self, x: npt.NDArray[Scalar], x0: npt.NDArray[Scalar] | None = None, alpha: float = 1
     ) -> None:
         """Set array entries that are constrained by a Dirichlet condition.
 
@@ -172,10 +182,10 @@ class DirichletBC:
 
 
 def dirichletbc(
-    value: Function | Constant | np.ndarray,
+    value: Function | Constant | npt.NDArray[Scalar] | float | complex,
     dofs: npt.NDArray[np.int32],
     V: dolfinx.fem.FunctionSpace | None = None,
-) -> DirichletBC:
+) -> DirichletBC[Scalar]:
     """Representation of Dirichlet boundary condition.
 
     Args:
@@ -193,23 +203,23 @@ def dirichletbc(
         A representation of the boundary condition for modifying linear
         systems.
     """
-    if isinstance(value, numbers.Number):
+    if isinstance(value, float | complex):
         value = np.asarray(value)
 
     try:
         dtype = value.dtype
-        if np.issubdtype(dtype, np.float32):
-            bctype = _cpp.fem.DirichletBC_float32
-        elif np.issubdtype(dtype, np.float64):
-            bctype = _cpp.fem.DirichletBC_float64
-        elif np.issubdtype(dtype, np.complex64):
-            bctype = _cpp.fem.DirichletBC_complex64
-        elif np.issubdtype(dtype, np.complex128):
-            bctype = _cpp.fem.DirichletBC_complex128
-        else:
-            raise NotImplementedError(f"Type {value.dtype} not supported.")
-    except AttributeError:
-        raise AttributeError("Boundary condition value must have a dtype attribute.")
+    except AttributeError as err:
+        raise AttributeError("Boundary condition value must have a dtype attribute.") from err
+
+    # Geometry type is the mesh geometry type of the function space (or the
+    # value's space), defaulting to matched precision when neither has one.
+    if V is not None:
+        geometry_dtype = np.dtype(V.mesh.geometry.x.dtype)
+    elif isinstance(value, Function):
+        geometry_dtype = np.dtype(value.function_space.mesh.geometry.x.dtype)
+    else:
+        geometry_dtype = np.dtype(dtype).type(0).real.dtype
+    bctype = DirichletBC.cpp_types[dtype, geometry_dtype]
 
     # Unwrap value object, if required
     if isinstance(value, np.ndarray):
@@ -232,8 +242,8 @@ def dirichletbc(
 
 
 def bcs_by_block(
-    spaces: Iterable[FunctionSpace | None], bcs: Iterable[DirichletBC]
-) -> list[list[DirichletBC]]:
+    spaces: Iterable[FunctionSpace | None], bcs: Iterable[DirichletBC[Scalar]]
+) -> list[list[DirichletBC[Scalar]]]:
     """Arrange boundary conditions by the space that they constrain.
 
     Given a sequence of function spaces ``spaces`` and a sequence of

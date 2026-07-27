@@ -6,6 +6,7 @@
 """Finite elements."""
 
 from functools import singledispatch
+from typing import ClassVar, Generic
 
 import numpy as np
 import numpy.typing as npt
@@ -13,11 +14,18 @@ import numpy.typing as npt
 import basix
 import basix.ufl
 from dolfinx import cpp as _cpp
+from dolfinx.typing import Real
 
 
-class CoordinateElement:
+class CoordinateElement(Generic[Real]):
     """Coordinate element describing the geometry map for mesh cells."""
 
+    # Built-in geometry types. Public: extend with additional geometry
+    # dtypes as needed.
+    cpp_types: ClassVar[dict] = {
+        np.dtype(np.float32): _cpp.fem.CoordinateElement_float32,
+        np.dtype(np.float64): _cpp.fem.CoordinateElement_float64,
+    }
     _cpp_object: _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
 
     def __init__(
@@ -61,10 +69,8 @@ class CoordinateElement:
         return self._cpp_object.create_dof_layout()
 
     def push_forward(
-        self,
-        X: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+        self, X: npt.NDArray[Real], cell_geometry: npt.NDArray[Real]
+    ) -> npt.NDArray[Real]:
         """Push points on the reference cell forward to the physical cell.
 
         Args:
@@ -73,7 +79,7 @@ class CoordinateElement:
             cell_geometry: Coordinate 'degrees-of-freedom' (nodes) of
                 the cell, ``shape=(num_geometry_basis_functions,
                 geometrical_dimension)``. Can be created by accessing
-                ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
+                ``geometry.x[geometry.dofmaps[0].cell_dofs(i)]``,
 
         Returns:
             Physical coordinates of the points reference points ``X``.
@@ -82,9 +88,11 @@ class CoordinateElement:
 
     def pull_back(
         self,
-        x: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-        cell_geometry: npt.NDArray[np.float32] | npt.NDArray[np.float64],
-    ) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+        x: npt.NDArray[Real],
+        cell_geometry: npt.NDArray[Real],
+        tol: float = 1.0e-6,
+        maxit: int = 15,
+    ) -> npt.NDArray[Real]:
         """Pull points on the physical cell back to the reference cell.
 
         For non-affine cells, the pull-back is a nonlinear operation.
@@ -95,12 +103,16 @@ class CoordinateElement:
             cell_geometry: Physical coordinates describing the cell,
                 shape ``(num_of_geometry_basis_functions,
                 geometrical_dimension)``. They can be created by accessing
-                ``geometry.x[geometry.dofmap.cell_dofs(i)]``,
+                ``geometry.x[geometry.dofmaps[0].cell_dofs(i)]``,
+            tol: Tolerance for convergence in Newton method for
+                nonaffine pullbacks.
+            maxit: Maximum number of Newton iterations for
+                nonaffine pullbacks.
 
         Returns:
             Reference coordinates of the physical points ``x``.
         """
-        return self._cpp_object.pull_back(x, cell_geometry)
+        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit)
 
     @property
     def variant(self) -> int:
@@ -124,7 +136,7 @@ def coordinate_element(
     degree: int,
     variant=int(basix.LagrangeVariant.unset),
     dtype: npt.DTypeLike = np.float64,
-):
+) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from element metadata.
 
     Coordinate elements are typically used to create meshes.
@@ -138,16 +150,12 @@ def coordinate_element(
     Returns:
         A coordinate element.
     """
-    if np.issubdtype(dtype, np.float32):
-        return CoordinateElement(_cpp.fem.CoordinateElement_float32(celltype, degree, variant))
-    elif np.issubdtype(dtype, np.float64):
-        return CoordinateElement(_cpp.fem.CoordinateElement_float64(celltype, degree, variant))
-    else:
-        raise RuntimeError("Unsupported dtype.")
+    cpp_type = CoordinateElement.cpp_types[np.dtype(dtype)]
+    return CoordinateElement(cpp_type(celltype, degree, variant))
 
 
 @coordinate_element.register(basix.finite_element.FiniteElement)
-def _(e: basix.finite_element.FiniteElement):
+def _(e: basix.finite_element.FiniteElement) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from a Basix finite element.
 
     Coordinate elements are typically used when creating meshes.
@@ -158,15 +166,19 @@ def _(e: basix.finite_element.FiniteElement):
     Returns:
         A coordinate element.
     """
-    try:
-        return CoordinateElement(_cpp.fem.CoordinateElement_float32(e._e))
-    except TypeError:
-        return CoordinateElement(_cpp.fem.CoordinateElement_float64(e._e))
+    cpp_type = CoordinateElement.cpp_types[e.dtype]
+    return CoordinateElement(cpp_type(e._e))
 
 
-class FiniteElement:
+class FiniteElement(Generic[Real]):
     """A finite element."""
 
+    # Built-in geometry types. Public: extend with additional geometry
+    # dtypes as needed.
+    cpp_types: ClassVar[dict] = {
+        np.dtype(np.float32): _cpp.fem.FiniteElement_float32,
+        np.dtype(np.float64): _cpp.fem.FiniteElement_float64,
+    }
     _cpp_object: _cpp.fem.FiniteElement_float32 | _cpp.fem.FiniteElement_float64
 
     def __init__(
@@ -218,7 +230,7 @@ class FiniteElement:
         return self._cpp_object.value_shape
 
     @property
-    def interpolation_points(self) -> npt.NDArray[np.floating]:
+    def interpolation_points(self) -> npt.NDArray[Real]:
         """Points at which to evaluate the function to be interpolated.
 
         Interpolation point coordinates on the reference cell, returning
@@ -248,7 +260,7 @@ class FiniteElement:
     def space_dimension(self) -> int:
         """Dimension of the finite element function space.
 
-        This is the the number of degrees-of-freedom for the element.
+        This is the number of degrees-of-freedom for the element.
         For 'blocked' elements, this function returns the dimension of
         the full element rather than the dimension of the base element.
         """
@@ -276,7 +288,7 @@ class FiniteElement:
         return self._cpp_object.signature
 
     def T_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
         """Transform basis from reference to physical ordering/orientation.
 
@@ -299,7 +311,7 @@ class FiniteElement:
         self._cpp_object.T_apply(x, cell_permutations, dim)
 
     def Tt_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
         """Apply the transpose of the operator applied by T_apply().
 
@@ -313,7 +325,7 @@ class FiniteElement:
         self._cpp_object.Tt_apply(x, cell_permutations, dim)
 
     def Tt_inv_apply(
-        self, x: npt.NDArray[np.floating], cell_permutations: npt.NDArray[np.uint32], dim: int
+        self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
     ) -> None:
         """Apply the inverse transpose of T_apply().
 
@@ -330,7 +342,7 @@ class FiniteElement:
 def finiteelement(
     cell_type: _cpp.mesh.CellType,
     ufl_e: basix.ufl._ElementBase,
-    FiniteElement_dtype: np.dtype,
+    FiniteElement_dtype: npt.DTypeLike,
 ) -> FiniteElement:
     """Create a DOLFINx element from a basix.ufl element.
 
@@ -340,12 +352,7 @@ def finiteelement(
             the selected element.
         FiniteElement_dtype: Geometry type of the element.
     """
-    if np.issubdtype(FiniteElement_dtype, np.float32):
-        CppElement = _cpp.fem.FiniteElement_float32
-    elif np.issubdtype(FiniteElement_dtype, np.float64):
-        CppElement = _cpp.fem.FiniteElement_float64
-    else:
-        raise ValueError(f"Unsupported dtype: {FiniteElement_dtype}")
+    CppElement = FiniteElement.cpp_types[np.dtype(FiniteElement_dtype)]
 
     if ufl_e.is_mixed:
         elements = [

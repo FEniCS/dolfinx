@@ -13,6 +13,7 @@
 #include <dolfinx/la/Vector.h>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace dolfinx::la
 {
@@ -42,6 +43,7 @@ public:
 // the solver class to select the typed set based on T.
 namespace impl
 {
+/// \cond
 template <typename...>
 constexpr bool always_false_v = false;
 
@@ -55,34 +57,29 @@ struct map
 template <>
 struct map<double>
 {
-  /// \cond
   using ScalePermstruct_t = SuperLUDistStructs::dScalePermstruct_t;
   using LUstruct_t = SuperLUDistStructs::dLUstruct_t;
   using SOLVEstruct_t = SuperLUDistStructs::dSOLVEstruct_t;
-  /// \endcond
 };
 
 /// Map float type to float 'typed' structs
 template <>
 struct map<float>
 {
-  /// \cond
   using ScalePermstruct_t = SuperLUDistStructs::sScalePermstruct_t;
   using LUstruct_t = SuperLUDistStructs::sLUstruct_t;
   using SOLVEstruct_t = SuperLUDistStructs::sSOLVEstruct_t;
-  /// \endcond
 };
 
 /// Map std::complex type to doublecomplex 'typed' structs
 template <>
 struct map<std::complex<double>>
 {
-  /// \cond
   using ScalePermstruct_t = SuperLUDistStructs::zScalePermstruct_t;
   using LUstruct_t = SuperLUDistStructs::zLUstruct_t;
   using SOLVEstruct_t = SuperLUDistStructs::zSOLVEstruct_t;
-  /// \endcond
 };
+/// \endcond
 
 } // namespace impl
 
@@ -100,6 +97,7 @@ struct SuperMatrixDeleter
 };
 
 /// SuperLU_DIST matrix interface.
+/// @tparam T Scalar type.
 template <typename T>
 class SuperLUDistMatrix
 {
@@ -108,7 +106,6 @@ public:
   ///
   /// Copies data from native CSR into SuperLU_DIST format.
   ///
-  /// @tparam T Scalar type.
   /// @param A Matrix.
   SuperLUDistMatrix(const MatrixCSR<T>& A);
 
@@ -187,6 +184,7 @@ struct SolveStructDeleter
 };
 
 /// SuperLU_DIST linear solver interface.
+/// @tparam T Scalar type.
 template <typename T>
 class SuperLUDistSolver
 {
@@ -198,7 +196,6 @@ public:
   /// The SuperLU_DIST solver has options set to upstream defaults,
   /// except PrintStat (verbose solver output) set to NO.
   ///
-  /// @tparam T Scalar type.
   /// @param A Assembled left-hand side matrix.
   SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A);
 
@@ -208,13 +205,16 @@ public:
   /// Copy assignment
   SuperLUDistSolver& operator=(const SuperLUDistSolver&) = delete;
 
+  /// @brief Destructor. Frees internal LU arrays before LUstructFree.
+  ~SuperLUDistSolver();
+
   /// @brief Set solver option name to value
   ///
   /// See SuperLU_DIST User's Guide for option names and values.
   ///
   /// @param name Option name.
   /// @param value Option value.
-  void set_option(std::string name, std::string value);
+  void set_option(std::string_view name, std::string_view value);
 
   /// @brief Set all solver options (native struct)
   ///
@@ -241,11 +241,14 @@ public:
 
   /// @brief Set assembled left-hand side matrix A.
   ///
-  /// For advanced use with SuperLU_DIST option `Factor` allowing use of
-  /// previously computed permutations when solving with new matrix A.
+  /// New matrix must have the same size/parallel layout as the matrix
+  /// used to construct the solver.
   ///
   /// @param A Assembled left-hand side matrix.
-  void set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A);
+  /// @param fact One of `"DOFACT"`, `"SamePattern"`,
+  ///   `"SamePattern_SameRowPerm"`. See the SuperLU_DIST documentation
+  ///   for the meaning of these values.
+  void set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A, std::string fact);
 
   /// @brief Solve linear system Au = b.
   ///
@@ -259,7 +262,7 @@ public:
   /// @note The values of `A` are modified in-place during the solve.
   /// @note To solve with successive right-hand sides the caller must
   ///   `solver.set_options("Factor", "FACTORED")` after the first solve.
-  int solve(const Vector<T>& b, Vector<T>& u) const;
+  int solve(const Vector<T>& b, Vector<T>& u);
 
 private:
   // Assembled left-hand side matrix
@@ -279,6 +282,10 @@ private:
   // Pointer to 'typed' struct *SOLVEstruct
   std::unique_ptr<typename map_t<T>::SOLVEstruct_t, SolveStructDeleter>
       _solvestruct;
+
+  // True once pdgssvx has populated LUstruct with per-block-column arrays
+  // that must be released via Destroy_LU before LUstructFree.
+  bool _factored = false;
 };
 } // namespace dolfinx::la
 #endif
