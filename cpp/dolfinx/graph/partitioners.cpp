@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Garth N. Wells, Chris Richardson and Igor A. Baratta
+// Copyright (C) 2019-2026 Garth N. Wells, Chris Richardson and Igor A. Baratta
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -172,10 +172,22 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     local_node_to_dest.push_back({idx_local, d});
   }
 
+  // Sort local_node_to_dest (lexicographically, by the 2 int columns)
+  // and de-duplicate. As above, a radix sort on the flattened data is
+  // used in place of a generic comparison sort - this array is sized
+  // by the local node count plus received halo entries, and so can
+  // also have millions of entries for a large mesh.
   {
-    std::ranges::sort(local_node_to_dest);
-    auto [unique_end, range_end] = std::ranges::unique(local_node_to_dest);
-    local_node_to_dest.erase(unique_end, range_end);
+    std::span<const int> flat(
+        reinterpret_cast<const int*>(local_node_to_dest.data()),
+        2 * local_node_to_dest.size());
+    std::vector<std::int32_t> perm = dolfinx::sort_by_perm<int, 16>(flat, 2);
+    std::vector<std::array<int, 2>> sorted(local_node_to_dest.size());
+    for (std::size_t i = 0; i < perm.size(); ++i)
+      sorted[i] = local_node_to_dest[perm[i]];
+    auto [unique_end, range_end] = std::ranges::unique(sorted);
+    sorted.erase(unique_end, range_end);
+    local_node_to_dest = std::move(sorted);
   }
   // Compute offsets
   std::vector<std::int32_t> offsets(graph.num_nodes() + 1, 0);

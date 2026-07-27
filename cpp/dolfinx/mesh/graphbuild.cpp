@@ -185,7 +185,18 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       dest_to_index.push_back({dolfinx::MPI::index_owner(comm_size, v0, range),
                                static_cast<int>(f)});
     }
-    std::ranges::sort(dest_to_index);
+    // A radix sort on the flattened data is used in place of a generic
+    // comparison sort, as dest_to_index can have hundreds of thousands
+    // of entries for a large mesh.
+    std::span<const std::int32_t> flat(
+        reinterpret_cast<const std::int32_t*>(dest_to_index.data()),
+        2 * dest_to_index.size());
+    std::vector<std::int32_t> perm
+        = dolfinx::sort_by_perm<std::int32_t, 16>(flat, 2);
+    std::vector<std::array<std::int32_t, 2>> sorted(dest_to_index.size());
+    for (std::size_t i = 0; i < perm.size(); ++i)
+      sorted[i] = dest_to_index[perm[i]];
+    dest_to_index = std::move(sorted);
 
     // Build list of dest ranks and count number of items (facets+cell)
     // to send to each dest post office (by neighbourhood rank)
