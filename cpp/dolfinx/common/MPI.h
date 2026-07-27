@@ -17,6 +17,7 @@
 #include <complex>
 #include <cstdint>
 #include <numeric>
+#include <ranges>
 #include <set>
 #include <span>
 #include <tuple>
@@ -180,9 +181,8 @@ compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
 /// post-office partition of `[0, shape[0])`, and (1) the received row
 /// data (row-major). Rows for which the caller is itself the post
 /// office are not included.
-template <typename U>
-std::pair<std::vector<std::int32_t>,
-          std::vector<typename std::remove_reference_t<typename U::value_type>>>
+template <std::ranges::contiguous_range U>
+std::pair<std::vector<std::int32_t>, std::vector<std::ranges::range_value_t<U>>>
 distribute_to_postoffice(MPI_Comm comm, const U& x,
                          std::array<std::int64_t, 2> shape,
                          std::int64_t rank_offset);
@@ -208,8 +208,8 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
 /// @return The row for each entry of `indices`, in the same order
 /// (row-major storage).
 /// @pre `shape[1] > 0`.
-template <typename U>
-std::vector<typename std::remove_reference_t<typename U::value_type>>
+template <std::ranges::contiguous_range U>
+std::vector<std::ranges::range_value_t<U>>
 distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
                            const U& x, std::array<std::int64_t, 2> shape,
                            std::int64_t rank_offset);
@@ -233,8 +233,8 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
 /// @return The row for each entry of `indices`, in the same order
 /// (row-major storage).
 /// @pre `shape1 > 0`.
-template <typename U>
-std::vector<typename std::remove_reference_t<typename U::value_type>>
+template <std::ranges::contiguous_range U>
+std::vector<std::ranges::range_value_t<U>>
 distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                 MPI_Comm comm1, const U& x, int shape1);
 
@@ -282,15 +282,14 @@ MAP_TO_MPI_TYPE(std::uint64_t, MPI_UINT64_T)
 /// @}
 
 //---------------------------------------------------------------------------
-template <typename U>
-std::pair<std::vector<std::int32_t>,
-          std::vector<typename std::remove_reference_t<typename U::value_type>>>
+template <std::ranges::contiguous_range U>
+std::pair<std::vector<std::int32_t>, std::vector<std::ranges::range_value_t<U>>>
 distribute_to_postoffice(MPI_Comm comm, const U& x,
                          std::array<std::int64_t, 2> shape,
                          std::int64_t rank_offset)
 {
   assert(rank_offset >= 0 or x.empty());
-  using T = typename std::remove_reference_t<typename U::value_type>;
+  using T = std::ranges::range_value_t<U>;
 
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
@@ -440,14 +439,14 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   return {index_local, recv_buffer_data};
 }
 //---------------------------------------------------------------------------
-template <typename U>
-std::vector<typename std::remove_reference_t<typename U::value_type>>
+template <std::ranges::contiguous_range U>
+std::vector<std::ranges::range_value_t<U>>
 distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
                            const U& x, std::array<std::int64_t, 2> shape,
                            std::int64_t rank_offset)
 {
   assert(rank_offset >= 0 or x.empty());
-  using T = typename std::remove_reference_t<typename U::value_type>;
+  using T = std::ranges::range_value_t<U>;
 
   common::Timer timer("Distribute row-wise data (scalable)");
   assert(shape[1] > 0);
@@ -666,8 +665,8 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   return x_new;
 }
 //---------------------------------------------------------------------------
-template <typename U>
-std::vector<typename std::remove_reference_t<typename U::value_type>>
+template <std::ranges::contiguous_range U>
+std::vector<std::ranges::range_value_t<U>>
 distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                 MPI_Comm comm1, const U& x, int shape1)
 {
