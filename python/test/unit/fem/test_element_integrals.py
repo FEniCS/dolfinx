@@ -372,16 +372,16 @@ def test_plus_minus_simple_vector(cell_type, pm, dtype):
     # Check that the above vectors all have the same values as the first
     # one, but permuted due to differently ordered dofs
     dofmap0 = spaces[0].mesh.geometry.dofmaps[0]
-    for result, space in zip(results[1:], spaces[1:]):
+    for result, space in zip(results[1:], spaces[1:], strict=True):
         # Get the data relating to two results
         dofmap1 = space.mesh.geometry.dofmaps[0]
 
         # For each cell
         for cell in range(2):
             # For each point in cell 0 in the first mesh
-            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell]):
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell], strict=True):
                 # Find the point in the cell 0 in the second mesh
-                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell]):
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell], strict=True):
                     if np.allclose(
                         spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]
                     ):
@@ -427,16 +427,16 @@ def test_plus_minus_vector(cell_type, pm1, pm2, dtype):
     # Check that the above vectors all have the same values as the first
     # one, but permuted due to differently ordered dofs
     dofmap0 = spaces[0].mesh.geometry.dofmaps[0]
-    for result, space in zip(results[1:], spaces[1:]):
+    for result, space in zip(results[1:], spaces[1:], strict=True):
         # Get the data relating to two results
         dofmap1 = space.mesh.geometry.dofmaps[0]
 
         # For each cell
         for cell in range(2):
             # For each point in cell 0 in the first mesh
-            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell]):
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell], strict=True):
                 # Find the point in the cell 0 in the second mesh
-                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell]):
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell], strict=True):
                     if np.allclose(
                         spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]
                     ):
@@ -478,7 +478,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
     # Check that the above matrices all have the same values, but
     # permuted due to differently ordered dofs
     dofmap0 = spaces[0].mesh.geometry.dofmaps[0]
-    for result, space in zip(results[1:], spaces[1:]):
+    for result, space in zip(results[1:], spaces[1:], strict=True):
         # Get the data relating to two results
         dofmap1 = space.mesh.geometry.dofmaps[0]
         dof_order = []
@@ -486,9 +486,9 @@ def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
         # For each cell
         for cell in range(2):
             # For each point in cell 0 in the first mesh
-            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell]):
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell], strict=True):
                 # Find the point in the cell 0 in the second mesh
-                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell]):
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell], strict=True):
                     if np.allclose(
                         spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]
                     ):
@@ -552,7 +552,7 @@ def test_curl(space_type, order, dtype):
             [result[V0.dofmap.cell_dofs(0)[a]] for a in V0.dofmap.dof_layout.entity_dofs(1, i)]
         )
 
-        for V, result in zip(spaces[1:], results[1:]):
+        for V, result in zip(spaces[1:], results[1:], strict=True):
             # Get edge->vertex connectivity
             c10 = V.mesh.topology.connectivity(1, 0)
 

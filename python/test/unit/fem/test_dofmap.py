@@ -107,7 +107,7 @@ def test_entity_dofs(mesh):
     bs = V.dofmap.dof_layout.block_size
     for i, cdofs in enumerate([[0, 1], [2, 3], [4, 5]]):
         dofs = [bs * d + b for d in V.dofmap.dof_layout.entity_dofs(0, i) for b in range(bs)]
-        assert all(d == cd for d, cd in zip(dofs, cdofs))
+        assert all(d == cd for d, cd in zip(dofs, cdofs, strict=True))
 
 
 @pytest.mark.skip

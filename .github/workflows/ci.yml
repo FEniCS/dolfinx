@@ -38,7 +38,7 @@ jobs:
       - name: Set up Spack
         uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
         with:
-          spack_ref: v1.2.1
+          spack_ref: v1.2.2
           packages_ref: v2026.06.0
 
       - name: Get FEniCS Spack packages
@@ -207,4 +207,3 @@ jobs:
           spack -e py buildcache push --base-image ubuntu:24.04 --allow-missing --update-index local-buildcache \
             py-gmsh py-matplotlib py-networkx py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
         if: ${{ !cancelled() }}
-

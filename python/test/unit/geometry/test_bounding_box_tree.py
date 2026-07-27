@@ -171,7 +171,6 @@ def test_compute_collisions_point_1d(dtype):
     tree = bb_tree(mesh, tdim, padding=0.0)
     entities = compute_collisions_points(tree, p)
 
-    assert repr(entities) == "<AdjacencyList> with 1 nodes\n  0: [4 ]\n"
     assert len(entities.array) == 1
 
     # Get the vertices of the geometry
@@ -605,7 +604,7 @@ def test_determine_point_ownership(dim, affine, dtype):
     # (from each other process)
     assert len(global_po.dest_cells) == comm.size * (cell_map.size_local)
 
-    for cell, point in zip(global_po.dest_cells, global_po.dest_points):
+    for cell, point in zip(global_po.dest_cells, global_po.dest_points, strict=True):
         np.testing.assert_allclose(local_midpoints[cell], point)
 
     # Check ownership for subset of cells

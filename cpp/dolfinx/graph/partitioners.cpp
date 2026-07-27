@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Garth N. Wells, Chris Richardson and Igor A. Baratta
+// Copyright (C) 2019-2026 Garth N. Wells, Chris Richardson and Igor A. Baratta
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,9 +10,12 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/sort.h>
+#include <format>
 #include <map>
 #include <numeric>
 #include <set>
+#include <span>
 #include <vector>
 
 #ifdef HAS_PTSCOTCH
@@ -51,6 +54,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
   // an edge ('node1'). Task is to let the owner of node1 know the extra
   // ranks that it needs to send node1 to.
   std::vector<std::array<std::int64_t, 3>> node_to_dest;
+  node_to_dest.reserve(graph.array().size());
   for (int node0 = 0; node0 < graph.num_nodes(); ++node0)
   {
     // Wherever 'node' goes to, so must the attached 'node1'
@@ -69,9 +73,23 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     }
   }
 
-  std::ranges::sort(node_to_dest);
-  auto [unique_end, range_end] = std::ranges::unique(node_to_dest);
-  node_to_dest.erase(unique_end, range_end);
+  // Sort node_to_dest (lexicographically, by the 3 std::int64_t columns)
+  // and de-duplicate. A radix sort on the flattened data is used in
+  // place of a generic comparison sort, as node_to_dest can have tens of
+  // millions of entries for a large mesh.
+  {
+    std::span<const std::int64_t> flat(
+        reinterpret_cast<const std::int64_t*>(node_to_dest.data()),
+        3 * node_to_dest.size());
+    std::vector<std::int32_t> perm
+        = dolfinx::sort_by_perm<std::int64_t, 16>(flat, 3);
+    std::vector<std::array<std::int64_t, 3>> sorted(node_to_dest.size());
+    for (std::size_t i = 0; i < perm.size(); ++i)
+      sorted[i] = node_to_dest[perm[i]];
+    auto [unique_end, range_end] = std::ranges::unique(sorted);
+    sorted.erase(unique_end, range_end);
+    node_to_dest = std::move(sorted);
+  }
 
   // Build send data and buffer
   std::vector<int> dest, send_sizes;
@@ -154,10 +172,22 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     local_node_to_dest.push_back({idx_local, d});
   }
 
+  // Sort local_node_to_dest (lexicographically, by the 2 int columns)
+  // and de-duplicate. As above, a radix sort on the flattened data is
+  // used in place of a generic comparison sort - this array is sized
+  // by the local node count plus received halo entries, and so can
+  // also have millions of entries for a large mesh.
   {
-    std::ranges::sort(local_node_to_dest);
-    auto [unique_end, range_end] = std::ranges::unique(local_node_to_dest);
-    local_node_to_dest.erase(unique_end, range_end);
+    std::span<const int> flat(
+        reinterpret_cast<const int*>(local_node_to_dest.data()),
+        2 * local_node_to_dest.size());
+    std::vector<std::int32_t> perm = dolfinx::sort_by_perm<int, 16>(flat, 2);
+    std::vector<std::array<int, 2>> sorted(local_node_to_dest.size());
+    for (std::size_t i = 0; i < perm.size(); ++i)
+      sorted[i] = local_node_to_dest[perm[i]];
+    auto [unique_end, range_end] = std::ranges::unique(sorted);
+    sorted.erase(unique_end, range_end);
+    local_node_to_dest = std::move(sorted);
   }
   // Compute offsets
   std::vector<std::int32_t> offsets(graph.num_nodes() + 1, 0);
@@ -577,8 +607,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
           opts.data(), &edgecut, part.data(), &pcomm);
       if (err != METIS_OK)
       {
-        throw std::runtime_error("ParMETIS_V3_PartKway failed. Error code: "
-                                 + std::to_string(err));
+        throw std::runtime_error(
+            std::format("ParMETIS_V3_PartKway failed. Error code: {}", err));
       }
     }
 

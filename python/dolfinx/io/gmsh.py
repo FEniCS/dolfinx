@@ -278,7 +278,8 @@ def extract_geometry(model, name: str | None = None) -> npt.NDArray[np.float64]:
     # order as their unique node index. We therefore sort nodes in
     # geometry according to the unique index
     perm_sort = np.argsort(indices)
-    assert np.all(indices[perm_sort] == np.arange(len(indices)))
+    if not np.all(indices[perm_sort] == np.arange(len(indices))):
+        raise RuntimeError("Gmsh model node indices are not contiguous.")
     return points[perm_sort]
 
 
@@ -325,7 +326,8 @@ def model_to_mesh(
     """
     valid_mesh = None
     if comm.rank == rank:
-        assert model is not None, "Gmsh model is None on rank responsible for mesh creation."
+        if model is None:
+            raise ValueError("Gmsh model is None on rank responsible for mesh creation.")
         # Get mesh geometry and mesh topology for each element
         x = extract_geometry(model)
         topologies, physical_groups = extract_topology_and_markers(model)
@@ -441,6 +443,7 @@ def model_to_mesh(
             x[:, :gdim].astype(dtype).copy(),
             partitioner,
             max_facet_to_cell_links,
+            1,
         )
         mesh = Mesh(cpp_mesh, None)
 
@@ -455,9 +458,8 @@ def model_to_mesh(
             partitioner,
             max_facet_to_cell_links=max_facet_to_cell_links,
         )
-    assert tdim == mesh.topology.dim, (
-        f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}"
-    )
+    if tdim != mesh.topology.dim:
+        raise RuntimeError(f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}")
 
     # Create MeshTags for all sub entities
     topology = mesh.topology

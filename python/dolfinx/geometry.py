@@ -284,7 +284,8 @@ def compute_distance_gjk(p: npt.NDArray[Real], q: npt.NDArray[Real]) -> npt.NDAr
     Returns:
         Shortest vector between the two bodies.
     """
-    assert p.dtype == q.dtype
+    if p.dtype != q.dtype:
+        raise ValueError("p and q must have the same dtype.")
     if np.issubdtype(p.dtype, np.float32):
         return _cpp.geometry.compute_distance_gjk_float32(p, q)
     elif np.issubdtype(p.dtype, np.float64):
@@ -312,7 +313,8 @@ def compute_distances_gjk(
     Returns:
         Shortest vector between the two bodies.
     """
-    assert all([p.dtype == q.dtype for p in bodies])
+    if not all(p.dtype == q.dtype for p in bodies):
+        raise ValueError("All bodies and q must have the same dtype.")
     if np.issubdtype(q.dtype, np.float32):
         return _cpp.geometry.compute_distances_gjk_float32(bodies, q, num_threads)
     elif np.issubdtype(q.dtype, np.float64):

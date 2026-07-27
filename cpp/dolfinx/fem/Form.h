@@ -38,7 +38,7 @@ class Function;
 enum class IntegralType : std::int8_t
 {
   cell = 0,           ///< Cell
-  exterior_facet = 1, ///< Facet
+  exterior_facet = 1, ///< Exterior facet
   interior_facet = 2, ///< Interior facet
   vertex = 3,         ///< Vertex
   ridge = 4           ///< Ridge
@@ -111,7 +111,6 @@ struct integral_data
 /// @tparam T Scalar type in the form.
 /// @tparam U Float (real) type used for the finite element and
 /// geometry.
-/// @tparam Kern Element kernel.
 template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_t<T>>
 class Form
 {
@@ -140,11 +139,11 @@ public:
   /// @param[in] constants Constants in the form.
   /// @param[in] mesh Mesh of the domain to integrate over (the
   /// 'integration domain').
-  /// @param[in] needs_facet_permutations Set to `true` is any of the
+  /// @param[in] needs_facet_permutations Set to `true` if any of the
   /// integration kernels require cell permutation data.
   /// @param[in] entity_maps If any trial functions, test functions, or
   /// coefficients in the form are not defined on `mesh` (the
-  /// 'integration domain'),`entity_maps` must be supplied. For each key
+  /// 'integration domain'), `entity_maps` must be supplied. For each key
   /// (a mesh, which is different to `mesh`) an array map must be
   /// provided which relates the entities in `mesh` to the entities in
   /// the key mesh e.g. for a key/value pair `(mesh0, emap)` in
@@ -374,8 +373,6 @@ public:
 
   /// @brief Get the kernel function for an integral.
   ///
-  ///
-  ///
   /// @param[in] type Integral type.
   /// @param[in] id Integral subdomain ID.
   /// @param[in] kernel_idx Index of the kernel (we may have multiple
@@ -405,12 +402,15 @@ public:
   /// integral (kernel).
   ///
   /// A form is split into multiple integrals (kernels) and each
-  /// integral might container only a subset of all coefficients in the
+  /// integral might contain only a subset of all coefficients in the
   /// form. This function returns an indicator array for a given
   /// integral kernel that signifies which coefficients are present.
   ///
   /// @param[in] type Integral type.
-  /// @param[in] id Domain index (identifier) of the integral.
+  /// @param[in] id Integral index in the flattened list of integral
+  /// kernels (see ::domain).
+  /// @return Indices of the coefficients that are active (present) in
+  /// the given integral.
   std::vector<int> active_coeffs(IntegralType type, int id) const
   {
     auto it = std::ranges::find_if(_integrals,
@@ -427,16 +427,19 @@ public:
   /// @brief Get number of integrals (kernels) for a given integral type and
   /// kernel index.
   ///
-  /// For a form containing two integrals of `integral_a` and `integral_b`
-  /// with subdomain-ids `(1, 4)` and `(3, 4, 5)` respectively, the integrals
-  /// are stored as a flattened list, sorted by sudomain-ids
+  /// For a form containing two integrals `integral_a` and `integral_b`
+  /// with subdomain ids `(1, 4)` and `(3, 4, 5)` respectively, the integrals
+  /// are stored as a flattened list, sorted by subdomain id:
   /// ```cpp
-  /// auto form_integrals = {integral_a, integral_b, integral_a, integral_b,
-  /// integral_b}; auto form_integral_ids = {1, 3, 4, 4, 5}.
+  /// auto form_integrals = {integral_a, integral_b, integral_a,
+  ///                        integral_b, integral_b};
+  /// auto form_integral_ids = {1, 3, 4, 4, 5};
   /// ```
   /// @param[in] type Integral type.
   /// @param[in] kernel_idx Index of the kernel (we may have multiple
   /// kernels for a integral type in mixed-topology meshes).
+  /// @return Number of integrals (kernels) of the given type and kernel
+  /// index.
   int num_integrals(IntegralType type, int kernel_idx) const
   {
 
@@ -457,29 +460,32 @@ public:
   ///
   /// - For IntegralType::cell, returns a list of cell indices.
   /// - For IntegralType::exterior_facet, returns a list with shape
-  /// `(num_facets, 2)`, where `[cell_index, 0]` is the cell index and
-  /// `[cell_index, 1]` is the local facet index relative to the cell.
-  /// - For IntegralType::interior_facet the shape is `(num_facets, 4)`,
-  /// where `[cell_index, 0]` is one attached cell and `[cell_index, 1]`
-  /// is the is the local facet index relative to the cell, and
-  /// `[cell_index, 2]` is the other one attached cell and `[cell_index, 1]`
-  /// is the is the local facet index relative to this cell. Storage
-  /// is row-major.
+  /// `(num_facets, 2)` (row-major storage), where for row `i`, `[i, 0]`
+  /// is the cell index and `[i, 1]` is the local facet index relative
+  /// to the cell.
+  /// - For IntegralType::interior_facet, returns a list with shape
+  /// `(num_facets, 4)` (row-major storage), where for row `i`, `[i, 0]`
+  /// is the index of one attached cell, `[i, 1]` is the local facet
+  /// index relative to that cell, `[i, 2]` is the index of the other
+  /// attached cell, and `[i, 3]` is the local facet index relative to
+  /// that cell.
   ///
   /// @param[in] type Integral type.
-  /// @param[in] idx Integral index in flattened list of integral kernels.
-  /// For a form containing two integrals of `integral_a` and `integral_b`
-  /// with subdomain-ids `(1, 4)` and `(3, 4, 5)` respectively, the integrals
-  /// are stored as a flattened list, sorted by sudomain-ids
+  /// @param[in] idx Integral index in the flattened list of integral
+  /// kernels. For a form containing two integrals `integral_a` and
+  /// `integral_b` with subdomain ids `(1, 4)` and `(3, 4, 5)`
+  /// respectively, the integrals are stored as a flattened list,
+  /// sorted by subdomain id:
   /// ```cpp
-  /// auto form_integrals = {integral_a, integral_b, integral_a, integral_b,
-  /// integral_b}; auto form_integral_ids = {1, 3, 4, 4, 5}.
+  /// auto form_integrals = {integral_a, integral_b, integral_a,
+  ///                        integral_b, integral_b};
+  /// auto form_integral_ids = {1, 3, 4, 4, 5};
   /// ```
-  /// @param[in] kernel_idx Index of the kernel with in the domain (we
-  /// may have multiple kernels for a given ID in mixed-topology
+  /// @param[in] kernel_idx Index of the kernel within the domain (we
+  /// may have multiple kernels for a given id in mixed-topology
   /// meshes).
-  /// @return Entity indices in the mesh::Mesh returned by mesh() to
-  /// integrate over.
+  /// @return Entity indices, with respect to the mesh::Mesh returned by
+  /// ::mesh, to integrate over.
   std::span<const std::int32_t> domain(IntegralType type, int idx,
                                        int kernel_idx) const
   {
@@ -498,8 +504,8 @@ public:
   /// mesh::Mesh. Consider:
   /// ```cpp
   /// auto mesh = this->mesh();
-  /// auto entities = this->domain(type, id, kernel_idx);
-  /// auto entities0 = this->domain_arg(type, rank, id, kernel_idx);
+  /// auto entities = this->domain(type, idx, kernel_idx);
+  /// auto entities0 = this->domain_arg(type, rank, idx, kernel_idx);
   /// ```
   ///
   /// Assembly is performed over `entities`, where `entities[i]` is an
@@ -516,11 +522,12 @@ public:
   /// @param[in] rank Argument index, e.g. `0` for the test function space, `1`
   /// for the trial function space.
   /// @param[in] idx Integral identifier.
-  /// @param[in] kernel_idx Kernel index (cell type).
+  /// @param[in] kernel_idx Index of the kernel (we may have multiple
+  /// kernels for a given id in mixed-topology meshes).
   /// @return Entity indices in the argument function space mesh that is
   /// integrated over.
   /// - For cell integrals it has shape `(num_cells,)`.
-  /// - For exterior/interior facet integrals, it has shape `(num_facts, 2)`
+  /// - For exterior/interior facet integrals, it has shape `(num_facets, 2)`
   /// (row-major storage), where `[i, 0]` is the index of a cell and
   /// `[i, 1]` is the local index of the facet relative to the cell.
   std::span<const std::int32_t> domain_arg(IntegralType type, int rank, int idx,
@@ -545,7 +552,7 @@ public:
   /// @return Entity indices in the coefficient function space mesh that
   /// is integrated over.
   /// - For cell integrals it has shape `(num_cells,)`.
-  /// - For exterior/interior facet integrals, it has shape `(num_facts, 2)`
+  /// - For exterior/interior facet integrals, it has shape `(num_facets, 2)`
   /// (row-major storage), where `[i, 0]` is the index of a cell and
   /// `[i, 1]` is the local index of the facet relative to the cell.
   std::span<const std::int32_t> domain_coeff(IntegralType type, int idx,
@@ -559,6 +566,7 @@ public:
   }
 
   /// @brief Access coefficients.
+  /// @return Coefficients in the form.
   const std::vector<
       std::shared_ptr<const Function<scalar_type, geometry_type>>>&
   coefficients() const
@@ -575,6 +583,8 @@ public:
   ///
   /// Used to pack data for multiple coefficients in a flat array. The
   /// last entry is the size required to store all coefficients.
+  ///
+  /// @return Coefficient offsets.
   std::vector<int> coefficient_offsets() const
   {
     std::vector<int> n{0};
@@ -588,6 +598,7 @@ public:
   }
 
   /// @brief Access constants.
+  /// @return Constants in the form.
   const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
   constants() const
   {
@@ -599,7 +610,7 @@ private:
   std::vector<std::shared_ptr<const FunctionSpace<geometry_type>>>
       _function_spaces;
 
-  // Integrals (integral type, id, celltype)
+  // Integrals (integral type, idx, kernel_idx)
   std::map<std::tuple<IntegralType, int, int>,
            integral_data<scalar_type, geometry_type>>
       _integrals;
@@ -621,8 +632,8 @@ private:
   //
   // Consider:
   //
-  // entities  = this->domain(IntegralType, integral(id), kernel_idx];
-  // entities0 = _edata[0][IntegralType, integral(id), coefficient_index];
+  // entities  = this->domain(type, idx, kernel_idx);
+  // entities0 = _edata[0][{type, idx, kernel_idx}];
   //
   // Then `entities[i]` is a mesh entity index (e.g., cell index) in
   // `_mesh`, and  `entities0[i]` is the index of the same entity but in
@@ -636,8 +647,10 @@ private:
   //
   // Consider:
   //
-  // entities  = this->domain(IntegralType, integral(id), kernel_idx];
-  // entities0 = _cdata[IntegralType, integral(id), coefficient_index];
+  // entities  = this->domain(type, idx, kernel_idx);
+  // entities0 = _cdata[{type, idx, c}];
+  //
+  // where `c` is the coefficient index.
   //
   // Then `entities[i]` is a mesh entity index (e.g., cell index) in
   // `_mesh`, and  `entities0[i]` is the index of the same entity but in

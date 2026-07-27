@@ -9,6 +9,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <map>
 #include <pugixml.hpp>
 #include <vector>
@@ -28,7 +29,11 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
 {
   assert(topology_node);
   pugi::xml_attribute type_attr = topology_node.attribute("TopologyType");
-  assert(type_attr);
+  if (!type_attr)
+  {
+    throw std::runtime_error("XDMF topology node has no \"TopologyType\" "
+                             "attribute.");
+  }
 
   const static std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
       = {{"polyvertex", {"point", 1}},
@@ -69,9 +74,8 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   const std::string dataitem_str = "DataItem";
   if (dataitem_node.name() != dataitem_str)
   {
-    throw std::runtime_error("Node name is \""
-                             + std::string(dataitem_node.name())
-                             + R"(", expecting "DataItem")");
+    throw std::runtime_error(std::format(
+        R"(Node name is "{}", expecting "DataItem")", dataitem_node.name()));
   }
 
   // Check that format is HDF
@@ -80,8 +84,8 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   const std::string format = format_attr.as_string();
   if (format.compare("HDF") != 0)
   {
-    throw std::runtime_error("DataItem format \"" + format
-                             + R"(" is not "HDF")");
+    throw std::runtime_error(
+        std::format(R"(DataItem format "{}" is not "HDF")", format));
   }
 
   // Get path data
@@ -95,7 +99,11 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   // Split string into file path and HD5 internal path
   std::vector<std::string> paths;
   boost::split(paths, path, boost::is_any_of(":"));
-  assert(paths.size() == 2);
+  if (paths.size() != 2)
+  {
+    throw std::runtime_error(std::format(
+        "XDMF DataItem path \"{}\" is not of the form \"file:path\".", path));
+  }
 
   return {{paths[0], paths[1]}};
 }

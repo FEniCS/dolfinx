@@ -212,7 +212,12 @@ public:
   /// Examples of use for this constructor include copying a matrix to a
   /// different value type, or copying the matrix to a GPU.
   ///
-  /// @tparam Mat
+  /// @tparam Scalar0 Scalar type of the matrix being copied.
+  /// @tparam Container0 Data container type of the matrix being copied.
+  /// @tparam ColContainer0 Column index container type of the matrix
+  /// being copied.
+  /// @tparam RowPtrContainer0 Row pointer container type of the matrix
+  /// being copied.
   /// @param A Matrix to copy.
   template <typename Scalar0, typename Container0, typename ColContainer0,
             typename RowPtrContainer0>
@@ -347,7 +352,7 @@ public:
   {
     const std::size_t nrows = num_all_rows();
     const std::size_t ncols = _index_maps[1]->size_global();
-    std::vector<value_type> A(nrows * ncols * _bs[0] * _bs[1], 0.0);
+    std::vector<value_type> A(nrows * ncols * _bs[0] * _bs[1], value_type(0));
     for (std::size_t r = 0; r < nrows; ++r)
     {
       for (std::int32_t j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
