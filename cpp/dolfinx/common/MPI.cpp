@@ -249,8 +249,11 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
     }
   }
 
-  // No more messages can arrive once the barrier has completed;
-  // cancel the still-outstanding listener.
+  // No more messages can arrive once the barrier has completed, so
+  // cancel the still-outstanding listener. A sender's Issend only
+  // requires the receive to be posted, not yet observed by this rank,
+  // so cancellation can race with a real match; if so, record it
+  // instead of discarding it.
   err = MPI_Cancel(&recv_request);
   dolfinx::MPI::check_error(comm0, err);
   MPI_Status cancel_status;
@@ -258,7 +261,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
   dolfinx::MPI::check_error(comm0, err);
   int cancelled;
   MPI_Test_cancelled(&cancel_status, &cancelled);
-  assert(cancelled);
+  if (!cancelled)
+    src_ranks.push_back(cancel_status.MPI_SOURCE);
 
   spdlog::info("Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges {}",
