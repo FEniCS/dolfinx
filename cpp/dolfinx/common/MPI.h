@@ -238,48 +238,52 @@ std::vector<std::ranges::range_value_t<U>>
 distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                 MPI_Comm comm1, const U& x, int shape1);
 
+/// @private Type-dependent `false` for use in a `static_assert` that
+/// should only fire when a template is actually instantiated (a bare
+/// `static_assert(false, ...)` would fire unconditionally).
 template <typename T>
 struct dependent_false : std::false_type
 {
 };
 
-/// MPI Type
-
-/// @brief Type trait for MPI type conversions.
+/// @private Map a C++ scalar type to its MPI_Datatype. New types are
+/// added here as another `else if constexpr` branch.
 template <typename T>
-struct mpi_type_mapping;
+MPI_Datatype mpi_datatype()
+{
+  if constexpr (std::is_same_v<T, float>)
+    return MPI_FLOAT;
+  else if constexpr (std::is_same_v<T, double>)
+    return MPI_DOUBLE;
+  else if constexpr (std::is_same_v<T, std::complex<float>>)
+    return MPI_C_FLOAT_COMPLEX;
+  else if constexpr (std::is_same_v<T, std::complex<double>>)
+    return MPI_C_DOUBLE_COMPLEX;
+  else if constexpr (std::is_same_v<T, std::int8_t>)
+    return MPI_INT8_T;
+  else if constexpr (std::is_same_v<T, std::int16_t>)
+    return MPI_INT16_T;
+  else if constexpr (std::is_same_v<T, std::int32_t>)
+    return MPI_INT32_T;
+  else if constexpr (std::is_same_v<T, std::int64_t>)
+    return MPI_INT64_T;
+  else if constexpr (std::is_same_v<T, std::uint8_t>)
+    return MPI_UINT8_T;
+  else if constexpr (std::is_same_v<T, std::uint16_t>)
+    return MPI_UINT16_T;
+  else if constexpr (std::is_same_v<T, std::uint32_t>)
+    return MPI_UINT32_T;
+  else if constexpr (std::is_same_v<T, std::uint64_t>)
+    return MPI_UINT64_T;
+  else
+    static_assert(dependent_false<T>::value,
+                  "No MPI datatype registered for this type.");
+}
 
 /// @brief Retrieves the MPI data type associated to the provided type.
 /// @tparam T cpp type to map
 template <typename T>
-MPI_Datatype mpi_t = mpi_type_mapping<T>::type;
-
-/// @brief Registers for cpp_t the corresponding mpi_t which can then be
-/// retrieved with mpi_t<cpp_t> from here on.
-#define MAP_TO_MPI_TYPE(cpp_t, mpi_t)                                          \
-  template <>                                                                  \
-  struct mpi_type_mapping<cpp_t>                                               \
-  {                                                                            \
-    static inline MPI_Datatype type = mpi_t;                                   \
-  };
-
-/// @defgroup MPI type mappings
-/// @{
-/// @cond
-MAP_TO_MPI_TYPE(float, MPI_FLOAT)
-MAP_TO_MPI_TYPE(double, MPI_DOUBLE)
-MAP_TO_MPI_TYPE(std::complex<float>, MPI_C_FLOAT_COMPLEX)
-MAP_TO_MPI_TYPE(std::complex<double>, MPI_C_DOUBLE_COMPLEX)
-MAP_TO_MPI_TYPE(std::int8_t, MPI_INT8_T)
-MAP_TO_MPI_TYPE(std::int16_t, MPI_INT16_T)
-MAP_TO_MPI_TYPE(std::int32_t, MPI_INT32_T)
-MAP_TO_MPI_TYPE(std::int64_t, MPI_INT64_T)
-MAP_TO_MPI_TYPE(std::uint8_t, MPI_UINT8_T)
-MAP_TO_MPI_TYPE(std::uint16_t, MPI_UINT16_T)
-MAP_TO_MPI_TYPE(std::uint32_t, MPI_UINT32_T)
-MAP_TO_MPI_TYPE(std::uint64_t, MPI_UINT64_T)
-/// @endcond
-/// @}
+MPI_Datatype mpi_t = mpi_datatype<T>();
 
 //---------------------------------------------------------------------------
 template <std::ranges::contiguous_range U>
