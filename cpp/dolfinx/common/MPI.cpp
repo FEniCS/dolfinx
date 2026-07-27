@@ -151,6 +151,11 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
     }
   }
 
+  // Complete sends before send_buffer is destroyed
+  err = MPI_Waitall(send_requests.size(), send_requests.data(),
+                    MPI_STATUSES_IGNORE);
+  dolfinx::MPI::check_error(comm, err);
+
   spdlog::info("Finished graph edge discovery using PCX algorithm. Number "
                "of discovered edges {}",
                static_cast<int>(other_ranks.size()));
