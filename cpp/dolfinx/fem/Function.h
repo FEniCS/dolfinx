@@ -623,7 +623,8 @@ public:
       else
       {
         // Pull-back physical point xp to reference coordinate Xp
-        cmap.pull_back_nonaffine(Xp, xp, coord_dofs, pull_back_scratch, tol, maxit);
+        cmap.pull_back_nonaffine(Xp, xp, coord_dofs, pull_back_scratch, tol,
+                                 maxit);
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
         CoordinateElement<geometry_type>::compute_jacobian(dphi, coord_dofs,
                                                            _J);
