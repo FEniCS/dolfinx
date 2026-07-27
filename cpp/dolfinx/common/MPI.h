@@ -9,6 +9,7 @@
 #include "Timer.h"
 #include "local_range.h"
 #include "log.h"
+#include "sort.h"
 #include "types.h"
 #include <algorithm>
 #include <array>
@@ -300,14 +301,6 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
 
   spdlog::debug("Sending data to post offices (distribute_to_postoffice)");
 
-  // Post office ranks will receive data from this rank
-  std::vector<int> row_to_dest(shape0_local);
-  for (std::int32_t i = 0; i < shape0_local; ++i)
-  {
-    int dest = MPI::index_owner(size, i + rank_offset, shape[0]);
-    row_to_dest[i] = dest;
-  }
-
   // Build list of (dest, positions) for each row that doesn't belong to
   // this rank, then sort
   std::vector<std::array<std::int32_t, 2>> dest_to_index;
@@ -318,7 +311,21 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
     if (int dest = MPI::index_owner(size, idx, shape[0]); dest != rank)
       dest_to_index.push_back({dest, i});
   }
-  std::ranges::sort(dest_to_index);
+
+  // Radix sort (rather than a generic comparison sort), since
+  // dest_to_index can have hundreds of thousands of entries for a
+  // large mesh/problem.
+  {
+    std::span<const std::int32_t> flat(
+        reinterpret_cast<const std::int32_t*>(dest_to_index.data()),
+        2 * dest_to_index.size());
+    std::vector<std::int32_t> perm
+        = dolfinx::sort_by_perm<std::int32_t, 16>(flat, 2);
+    std::vector<std::array<std::int32_t, 2>> sorted(dest_to_index.size());
+    for (std::size_t i = 0; i < perm.size(); ++i)
+      sorted[i] = dest_to_index[perm[i]];
+    dest_to_index = std::move(sorted);
+  }
 
   // Build list of neighbour src ranks and count number of items (rows
   // of x) to receive from each src post office (by neighbourhood rank)
@@ -463,15 +470,35 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   // 1. Send request to post office ranks for data
 
   // Build list of (src, global index, global, index position) for each
-  // entry in 'indices' that doesn't belong to this rank, then sort
+  // entry in 'indices' that doesn't belong to this rank, then sort.
+  // Entries already held locally in `x` (before any post office
+  // communication) are skipped -- they are read directly from `x`
+  // below, so routing them through a (possibly unrelated) post office
+  // rank would only add unnecessary communication.
   std::vector<std::tuple<int, std::int64_t, std::int32_t>> src_to_index;
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
-    std::size_t idx = indices[i];
+    std::int64_t idx = indices[i];
+    if (idx >= rank_offset and idx < rank_offset + shape0_local)
+      continue;
     if (int src = dolfinx::MPI::index_owner(size, idx, shape[0]); src != rank)
       src_to_index.push_back({src, idx, i});
   }
-  std::ranges::sort(src_to_index);
+
+  // Group by source rank using a radix sort on the rank alone (rather
+  // than a generic comparison sort of the full tuple) -- only grouping
+  // by rank matters below, entry order within a group is irrelevant.
+  {
+    std::vector<std::int32_t> perm(src_to_index.size());
+    std::iota(perm.begin(), perm.end(), 0);
+    dolfinx::radix_sort(perm, [&src_to_index](std::int32_t i)
+                        { return std::get<0>(src_to_index[i]); });
+    std::vector<std::tuple<int, std::int64_t, std::int32_t>> sorted(
+        src_to_index.size());
+    for (std::size_t i = 0; i < perm.size(); ++i)
+      sorted[i] = src_to_index[perm[i]];
+    src_to_index = std::move(sorted);
+  }
 
   // Build list is neighbour src ranks and count number of items (rows
   // of x) to receive from each src post office (by neighbourhood rank)
