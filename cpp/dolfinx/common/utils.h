@@ -9,8 +9,13 @@
 #include "MPI.h"
 #include <algorithm>
 #include <boost/functional/hash.hpp>
+#include <cstddef>
+#include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <iterator>
 #include <mpi.h>
+#include <ranges>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -28,7 +33,7 @@ namespace dolfinx::common
 /// @param[in] indices Array of indices.
 /// @param[in] values Array of values.
 /// @return Sorted (indices, values), with sorting based on indices.
-template <typename U, typename V>
+template <std::ranges::input_range U, std::ranges::input_range V>
 std::pair<std::vector<typename U::value_type>,
           std::vector<typename V::value_type>>
 sort_unique(const U& indices, const V& values)
@@ -36,25 +41,28 @@ sort_unique(const U& indices, const V& values)
   if (indices.size() != values.size())
     throw std::runtime_error("Cannot sort two arrays of different lengths");
 
-  using T = typename std::pair<typename U::value_type, typename V::value_type>;
+  using T = std::pair<typename U::value_type, typename V::value_type>;
   std::vector<T> data(indices.size());
   std::ranges::transform(indices, values, data.begin(),
-                         [](auto& idx, auto& v) -> T { return {idx, v}; });
+                         [](const auto& idx, const auto& v) -> T
+                         { return {idx, v}; });
 
-  // Sort make unique
+  // Sort by (index, value), then drop duplicate indices keeping the
+  // first of each run, i.e. the smallest value (as documented).
   std::ranges::sort(data);
-  auto it = std::ranges::unique(data, [](auto& a, auto& b)
+  auto it = std::ranges::unique(data, [](const auto& a, const auto& b)
                                 { return a.first == b.first; })
                 .begin();
 
   std::vector<typename U::value_type> indices_new;
   std::vector<typename V::value_type> values_new;
-  indices_new.reserve(data.size());
-  values_new.reserve(data.size());
+  std::size_t n = std::distance(data.begin(), it);
+  indices_new.reserve(n);
+  values_new.reserve(n);
   std::transform(data.begin(), it, std::back_inserter(indices_new),
-                 [](auto& d) { return d.first; });
+                 [](const auto& d) { return d.first; });
   std::transform(data.begin(), it, std::back_inserter(values_new),
-                 [](auto& d) { return d.second; });
+                 [](const auto& d) { return d.second; });
 
   return {std::move(indices_new), std::move(values_new)};
 }
