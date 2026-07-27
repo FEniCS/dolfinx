@@ -13,6 +13,7 @@
 #include <dolfinx/la/Vector.h>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace dolfinx::la
 {
@@ -96,6 +97,7 @@ struct SuperMatrixDeleter
 };
 
 /// SuperLU_DIST matrix interface.
+/// @tparam T Scalar type.
 template <typename T>
 class SuperLUDistMatrix
 {
@@ -104,7 +106,6 @@ public:
   ///
   /// Copies data from native CSR into SuperLU_DIST format.
   ///
-  /// @tparam T Scalar type.
   /// @param A Matrix.
   SuperLUDistMatrix(const MatrixCSR<T>& A);
 
@@ -183,6 +184,7 @@ struct SolveStructDeleter
 };
 
 /// SuperLU_DIST linear solver interface.
+/// @tparam T Scalar type.
 template <typename T>
 class SuperLUDistSolver
 {
@@ -194,7 +196,6 @@ public:
   /// The SuperLU_DIST solver has options set to upstream defaults,
   /// except PrintStat (verbose solver output) set to NO.
   ///
-  /// @tparam T Scalar type.
   /// @param A Assembled left-hand side matrix.
   SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A);
 
@@ -213,7 +214,7 @@ public:
   ///
   /// @param name Option name.
   /// @param value Option value.
-  void set_option(std::string name, std::string value);
+  void set_option(std::string_view name, std::string_view value);
 
   /// @brief Set all solver options (native struct)
   ///

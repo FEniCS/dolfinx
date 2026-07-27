@@ -172,7 +172,10 @@ public:
   /// type, e.g. double to float, or copying a Vector from a CPU to a
   /// GPU.
   ///
-  /// @tparam Vec Type of the Vector being copied.
+  /// @tparam T0 Scalar type of the Vector being copied.
+  /// @tparam Container0 Data container type of the Vector being copied.
+  /// @tparam ScatterContainer0 Scatterer container type of the Vector
+  /// being copied.
   /// @param x Vector to copy.
   template <typename T0, typename Container0, typename ScatterContainer0>
   explicit Vector(const Vector<T0, Container0, ScatterContainer0>& x)

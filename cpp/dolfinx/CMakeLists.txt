@@ -271,128 +271,157 @@ install(
 # Generate pkg-config file and install it
 
 # Define packages that should be required by pkg-config file
-set(PKG_REQUIRES "")
-
-# Get link libraries and includes
-get_target_property(
-  PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES
-  dolfinx
-  INTERFACE_LINK_LIBRARIES
+block(
+  SCOPE_FOR VARIABLES
+  PROPAGATE PKG_REQUIRES PKG_CXXFLAGS PKG_LINKFLAGS PKG_INCLUDES PKG_DEFINITIONS
 )
-get_target_property(
-  PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES
-  dolfinx
-  INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
-)
+  set(PKG_REQUIRES "spdlog")
+  list(APPEND PKG_REQUIRES "basix")
+  list(APPEND PKG_REQUIRES "pugixml")
 
-# Add imported targets to lists for creating pkg-config file
-set(PKGCONFIG_DOLFINX_LIBS)
+  if(TARGET PkgConfig::PETSC)
+    list(APPEND PKG_REQUIRES ${PETSC_MODULE_NAME})
+  endif()
+  if(TARGET PkgConfig::SLEPC)
+    list(APPEND PKG_REQUIRES ${SLEPC_MODULE_NAME})
+  endif()
+  if(TARGET PkgConfig::SUPERLU_DIST)
+    list(APPEND PKG_REQUIRES ${SUPERLU_DIST_MODULE_NAME})
+  endif()
 
-foreach(_target ${PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES})
-  if("${_target}" MATCHES "^[^<>]+$") # Skip "$<foo...>", which we get with
-    # static libs
-    if("${_target}" MATCHES "^.*::.*$")
-      # Get include paths
-      get_target_property(_inc_dirs ${_target} INTERFACE_INCLUDE_DIRECTORIES)
+  string(REPLACE ";" " " PKG_REQUIRES "${PKG_REQUIRES}")
 
-      if(_inc_dirs)
-        list(APPEND PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES ${_inc_dirs})
+  # Get link libraries and includes
+  get_target_property(
+    PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES
+    dolfinx
+    INTERFACE_LINK_LIBRARIES
+  )
+  get_target_property(
+    PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES
+    dolfinx
+    INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
+  )
+  if(PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES)
+    list(FILTER PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES EXCLUDE REGEX "^\\$<|>$")
+  else()
+    set(PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES "")
+  endif()
+
+  # Add imported targets to lists for creating pkg-config file
+  set(PKGCONFIG_DOLFINX_LIBS)
+
+  foreach(_target ${PKGCONFIG_DOLFINX_TARGET_LINK_LIBRARIES})
+    if("${_target}" MATCHES "^[^<>]+$") # Skip "$<foo...>", which we get with
+      # static libs
+      if("${_target}" MATCHES "^.*::.*$")
+        # Get include paths
+        get_target_property(_inc_dirs ${_target} INTERFACE_INCLUDE_DIRECTORIES)
+
+        if(_inc_dirs)
+          list(APPEND PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES ${_inc_dirs})
+        endif()
+
+        # Get libraries
+        get_target_property(_libs ${_target} INTERFACE_LINK_LIBRARIES)
+
+        if(_libs)
+          list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
+        endif()
+
+      else()
+        # 'regular' libs, i.e. not imported targets
+        list(APPEND PKGCONFIG_DOLFINX_LIBS ${_target})
       endif()
 
-      # Get libraries
-      get_target_property(_libs ${_target} INTERFACE_LINK_LIBRARIES)
+      # Special handling to extract data for compiled Boost imported
+      # targets to use in generate pkg-config file
+      if(
+        ("${_target}" MATCHES "^.*Boost::.*$")
+        AND NOT "${_target}" STREQUAL "Boost::headers"
+      )
+        get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
 
-      if(_libs)
-        list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
+        if(_libs)
+          list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
+        endif()
       endif()
+    endif()
+  endforeach()
 
+  # Join include lists and remove duplicates
+  list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES)
+  list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_LIBS)
+
+  # Convert include dirs to -I<incdir> form
+  set(PKG_INCLUDES)
+  foreach(_inc_dir ${PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES})
+    set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
+  endforeach()
+
+  # Get dolfinx definitions
+  get_target_property(
+    PKG_DOLFINX_DEFINITIONS
+    dolfinx
+    INTERFACE_COMPILE_DEFINITIONS
+  )
+  set(PKG_DEFINITIONS)
+
+  foreach(_def ${PKG_DOLFINX_DEFINITIONS})
+    set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
+  endforeach()
+
+  # Convert compiler flags and definitions into space separated strings
+  string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
+  string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+
+  # Convert libraries to -L<libdir> -l<lib> form
+  foreach(_lib ${PKGCONFIG_DOLFINX_LIBS})
+    # Add -Wl,option directives
+    if("${_lib}" MATCHES "-Wl,[^ ]*")
+      set(PKG_LINKFLAGS "${_lib} ${PKG_LINKFLAGS}")
     else()
-      # 'regular' libs, i.e. not imported targets
-      list(APPEND PKGCONFIG_DOLFINX_LIBS ${_target})
+      get_filename_component(_path ${_lib} DIRECTORY)
+      get_filename_component(_name ${_lib} NAME_WE)
+      string(REPLACE "lib" "" _name "${_name}")
+
+      # Add libraries that matches the form -L<libdir> -l<lib>
+      if(NOT "${_path}" STREQUAL "")
+        set(PKG_LINKFLAGS "-L${_path} -l${_name} ${PKG_LINKFLAGS}")
+      endif()
     endif()
 
-    # Special handling to extract data for compiled Boost imported
-    # targets to use in generate pkg-config file
+    # Special handling for ADIOS2 and HDF5 imported targets which expose
+    # IMPORTED_LOCATION_RELEASE (or IMPORTED_LOCATION) rather than
+    # INTERFACE_LINK_LIBRARIES
     if(
-      ("${_target}" MATCHES "^.*Boost::.*$")
-      AND NOT "${_target}" STREQUAL "Boost::headers"
+      "${_target}" MATCHES "^.*adios2::.*$"
+      OR "${_target}" MATCHES "^.*hdf5::.*$"
     )
       get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
 
+      if(NOT _libs)
+        get_target_property(_libs ${_target} IMPORTED_LOCATION)
+      endif()
+
       if(_libs)
         list(APPEND PKGCONFIG_DOLFINX_LIBS ${_libs})
       endif()
     endif()
-  endif()
-endforeach()
+  endforeach()
 
-# Join include lists and remove duplicates
-list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES)
-list(REMOVE_DUPLICATES PKGCONFIG_DOLFINX_LIBS)
+  # Remove duplicated link flags
+  separate_arguments(PKG_LINKFLAGS)
+  list(REMOVE_DUPLICATES PKG_LINKFLAGS)
+  string(REPLACE ";" " " PKG_LINKFLAGS "${PKG_LINKFLAGS}")
 
-# Convert include dirs to -I<incdir> form
-set(PKG_INCLUDES)
-foreach(_inc_dir ${PKGCONFIG_DOLFINX_INCLUDE_DIRECTORIES})
-  set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
-endforeach()
-
-# Get dolfinx definitions
-get_target_property(
-  PKG_DOLFINX_DEFINITIONS
-  dolfinx
-  INTERFACE_COMPILE_DEFINITIONS
-)
-set(PKG_DEFINITIONS)
-
-foreach(_def ${PKG_DOLFINX_DEFINITIONS})
-  set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
-endforeach()
-
-# Get basix definitions (this is required to propagate Basix definition to the
-# pkg-config file, in the future Basix should create its own basix.pc file, see
-# https://github.com/FEniCS/basix/issues/204)
-get_target_property(
-  PKG_BASIX_DEFINITIONS
-  Basix::basix
-  INTERFACE_COMPILE_DEFINITIONS
-)
-
-foreach(_def ${PKG_BASIX_DEFINITIONS})
-  set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
-endforeach()
-
-# Convert compiler flags and definitions into space separated strings
-string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
-string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
-
-# Convert libraries to -L<libdir> -l<lib> form
-foreach(_lib ${PKGCONFIG_DOLFINX_LIBS})
-  # Add -Wl,option directives
-  if("${_lib}" MATCHES "-Wl,[^ ]*")
-    set(PKG_LINKFLAGS "${_lib} ${PKG_LINKFLAGS}")
-  else()
-    get_filename_component(_path ${_lib} DIRECTORY)
-    get_filename_component(_name ${_lib} NAME_WE)
-    string(REPLACE "lib" "" _name "${_name}")
-
-    # Add libraries that matches the form -L<libdir> -l<lib>
-    if(NOT "${_path}" STREQUAL "")
-      set(PKG_LINKFLAGS "-L${_path} -l${_name} ${PKG_LINKFLAGS}")
-    endif()
-  endif()
-endforeach()
-
-# Remove duplicated link flags
-separate_arguments(PKG_LINKFLAGS)
-list(REMOVE_DUPLICATES PKG_LINKFLAGS)
-string(REPLACE ";" " " PKG_LINKFLAGS "${PKG_LINKFLAGS}")
-
-# Boost include dir (used as pkg-config variable)
-get_target_property(
-  BOOST_INCLUDE_DIR
-  Boost::headers
-  INTERFACE_INCLUDE_DIRECTORIES
-)
+  # Boost include dir (used as pkg-config variable)
+  get_target_property(
+    BOOST_INCLUDE_DIR
+    Boost::headers
+    INTERFACE_INCLUDE_DIRECTORIES
+  )
+endblock()
 
 # Configure and install pkg-config file
 configure_file(

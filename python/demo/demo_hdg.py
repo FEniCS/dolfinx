@@ -98,8 +98,8 @@ dtype = PETSc.ScalarType
 
 # Create the mesh
 
-n = 8  # Number of elements in each direction
-msh = mesh.create_unit_cube(comm, n, n, n, ghost_mode=mesh.GhostMode.none)
+n_el = 8  # Number of elements in each direction
+msh = mesh.create_unit_cube(comm, n_el, n_el, n_el, ghost_mode=mesh.GhostMode.none)
 
 # We need to create a broken Lagrange space defined over the facets of
 # the mesh. To do so, we require a sub-mesh of the all facets. We begin

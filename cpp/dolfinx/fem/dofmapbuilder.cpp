@@ -17,10 +17,10 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <iterator>
 #include <memory>
 #include <numeric>
-#include <random>
 #include <utility>
 #include <vector>
 
@@ -58,7 +58,7 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
 {
   std::vector<std::int32_t> graph_data, graph_offsets;
 
-  // Compute maximum number of graph out edges edges per dof
+  // Compute maximum number of graph out edges per dof
   std::vector<int> num_edges(owned_size);
   for (auto& dofmap : dofmaps)
   {
@@ -214,10 +214,10 @@ build_basic_dofmaps(
                 and !topology.connectivity({int(D), int(i)},
                                            {int(d), int(et_index)}))
             {
-              throw std::runtime_error("Missing needed connectivity. Cell type:"
-                                       + std::to_string(i)
-                                       + "to dim:" + std::to_string(d)
-                                       + ", ent:" + std::to_string(et_index));
+              throw std::runtime_error(
+                  std::format("Missing needed connectivity. Cell type: {} to "
+                              "dim: {}, ent: {}",
+                              i, d, et_index));
             }
           }
           else
@@ -235,15 +235,14 @@ build_basic_dofmaps(
 #ifndef NDEBUG
   {
     // Debug output
-    std::stringstream s;
-    s << "Required entities:";
+    std::string s = "Required entities:";
     for (std::size_t i = 0; i < required_dim_et.size(); ++i)
     {
-      s << "(" << (int)required_dim_et[i].first << ", "
-        << (int)required_dim_et[i].second << ")=" << num_entity_dofs_et[i]
-        << " ";
+      std::format_to(std::back_inserter(s), "({}, {})={} ",
+                     (int)required_dim_et[i].first,
+                     (int)required_dim_et[i].second, num_entity_dofs_et[i]);
     }
-    spdlog::info("{}", s.str());
+    spdlog::info("{}", s);
   }
 #endif
 

@@ -33,10 +33,10 @@ from collections.abc import Sequence
 
 from petsc4py import PETSc
 
-# ruff: noqa: E402
 import dolfinx
 
-assert dolfinx.has_petsc4py
+if not dolfinx.has_petsc4py:
+    raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
 
 import numpy as np
@@ -135,7 +135,8 @@ def create_vector(
         vector is not initialised to zero.
     """
     if isinstance(
-        V, _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
+        V,
+        _FunctionSpace | _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64,
     ):
         V = [V]
     elif any(_V is None for _V in V):
@@ -232,7 +233,7 @@ def assemble_vector(
     3. If ``L`` is a sequence of linear forms and ``kind`` is
        ``PETSc.Vec.Type.NEST``, the forms are assembled into a PETSc
        nested vector ``b`` (a nest of ghosted PETSc vectors) such that
-       ``L[i]`` is assembled into into the ith nested matrix in ``b``.
+       ``L[i]`` is assembled into the ith nested matrix in ``b``.
 
     Constant and coefficient data that appear in the forms(s) can be
     packed outside of this function to avoid re-packing by this
@@ -308,7 +309,9 @@ def _(
             raise ValueError("Must provide a sequence of forms when assembling a nest vector")
         constants = [None] * len(L) if constants is None else constants  # type: ignore[list-item]
         coeffs = [None] * len(L) if coeffs is None else coeffs  # type: ignore[list-item]
-        for b_sub, L_sub, const, coeff in zip(b.getNestSubVecs(), L, constants, coeffs):
+        for b_sub, L_sub, const, coeff in zip(
+            b.getNestSubVecs(), L, constants, coeffs, strict=True
+        ):
             with b_sub.localForm() as b_local:
                 _assemble_vector_array(b_local.array_w, L_sub, const, coeff)  # type: ignore[arg-type]
     elif isinstance(L, Sequence):
@@ -317,7 +320,14 @@ def _(
         offset0, offset1 = b.getAttr("_blocks")
         with b.localForm() as b_l:
             for L_, const, coeff, off0, off1, offg0, offg1 in zip(
-                L, constants, coeffs, offset0, offset0[1:], offset1, offset1[1:]
+                L,
+                constants,
+                coeffs,
+                offset0[:-1],
+                offset0[1:],
+                offset1[:-1],
+                offset1[1:],
+                strict=True,
             ):
                 bx_ = np.zeros((off1 - off0) + (offg1 - offg0), dtype=PETSc.ScalarType)  # type: ignore[attr-defined]
                 _assemble_vector_array(bx_, L_, const, coeff)  # type: ignore[arg-type]
@@ -427,15 +437,18 @@ def _(
             raise ValueError("Must provide a sequence of forms when assembling a nest matrix")
         constants = [pack_constants(forms) for forms in a] if constants is None else constants  # type: ignore[misc]
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
-        for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs)):
-            for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
+        for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs, strict=True)):
+            for j, (a_block, const, coeff) in enumerate(
+                zip(a_row, const_row, coeff_row, strict=True)
+            ):
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
                     assemble_matrix(Asub, a_block, bcs, diag, const, coeff)  # type: ignore[arg-type]
                 elif i == j:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
-                        assert len(row_forms) > 0
+                        if len(row_forms) == 0:
+                            raise ValueError(f"Row {i} of forms is entirely 'None'.")
                         if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
@@ -456,10 +469,10 @@ def _(
                     "Cannot have a entire {'row' if index == 0 else 'column'} of a full of None"
                 )
         is0 = _cpp.la.petsc.create_index_sets(
-            [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[0]]  # type: ignore[union-attr]
+            [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[0]]  # type: ignore
         )
         is1 = _cpp.la.petsc.create_index_sets(
-            [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[1]]  # type: ignore[union-attr]
+            [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[1]]  # type: ignore
         )
 
         _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
@@ -479,7 +492,8 @@ def _(
                 elif i == j:
                     for bc in _bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
-                        assert len(row_forms) > 0
+                        if len(row_forms) == 0:
+                            raise ValueError(f"Row {i} of forms is entirely 'None'.")
                         if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
@@ -584,10 +598,14 @@ def apply_lifting(
         x0 = [] if x0 is None else x0.getNestSubVecs()  # type: ignore[attr-defined]
         constants = [pack_constants(forms) for forms in a] if constants is None else constants  # type: ignore[assignment]
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
-        for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):  # type: ignore[arg-type]
-            const_ = list(
-                map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)  # type: ignore[attr-defined, call-overload]
-            )
+        for b_sub, a_sub, const, coeff in zip(
+            b.getNestSubVecs(),
+            a,
+            constants,  # type: ignore[arg-type]
+            coeffs,
+            strict=True,
+        ):
+            const_ = [np.array([], dtype=PETSc.ScalarType) if x is None else x for x in const]  # type: ignore[attr-defined]
             apply_lifting(b_sub, a_sub, bcs, x0, alpha, const_, coeff)  # type: ignore[arg-type]
     else:
         with contextlib.ExitStack() as stack:
@@ -598,7 +616,7 @@ def apply_lifting(
                     xlocal = [
                         np.concatenate((xl[off0:off1], xl[offg0:offg1]))
                         for (off0, off1, offg0, offg1) in zip(
-                            offset0, offset0[1:], offset1, offset1[1:]
+                            offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True
                         )
                     ]
                 else:
@@ -607,7 +625,7 @@ def apply_lifting(
                 offset0, offset1 = b.getAttr("_blocks")
                 with b.localForm() as b_l:
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
-                        zip(a, offset0, offset0[1:], offset1, offset1[1:])
+                        zip(a, offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True)
                     ):
                         const = pack_constants(a_) if constants is None else constants[i]  # type: ignore[arg-type, call-overload]
                         coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore[arg-type, assignment, index, call-overload]
@@ -668,15 +686,15 @@ def set_bc(
     elif b.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         _b = b.getNestSubVecs()
         x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()
-        for b_sub, bc, x_sub in zip(_b, bcs, x0):  # type: ignore[assignment, arg-type]
+        for b_sub, bc, x_sub in zip(_b, bcs, x0, strict=True):  # type: ignore[assignment, arg-type]
             set_bc(b_sub, bc, x_sub, alpha)  # type: ignore[arg-type]
     else:  # block vector
         offset0, _ = b.getAttr("_blocks")
         b_array = b.getArray(readonly=False)
         x_array = x0.getArray(readonly=True) if x0 is not None else None
-        for bcs, off0, off1 in zip(bcs, offset0, offset0[1:]):  # type: ignore[assignment]
+        for bcs_block, off0, off1 in zip(bcs, offset0[:-1], offset0[1:], strict=True):
             x0_sub = x_array[off0:off1] if x0 is not None else None  # type: ignore[index]
-            for bc in bcs:
+            for bc in bcs_block:  # type: ignore[attr-defined]
                 bc.set(b_array[off0:off1], x0_sub, alpha)  # type: ignore[arg-type, union-attr]
 
 
@@ -871,7 +889,7 @@ class LinearProblem:
             fieldsplit_IS = tuple(
                 [
                     (f"{u.name + '_' if u.name != 'f' else ''}{i}", IS)
-                    for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))
+                    for i, (u, IS) in enumerate(zip(self.u, nest_IS[0], strict=True))
                 ]
             )
             self.solver.getPC().setFieldSplitIS(*fieldsplit_IS)
@@ -879,7 +897,8 @@ class LinearProblem:
     def __del__(self):
         """Destroy internally held PETSc objects."""
         for obj in filter(
-            lambda obj: obj is not None, (self._solver, self._A, self._b, self._x, self._P_mat)
+            lambda obj: obj is not None,
+            (self._solver, self._A, self._b, self._x, self._P_mat),
         ):
             obj.destroy()
 
@@ -1049,7 +1068,8 @@ def assemble_residual(
 
     # Assign block data if block assembly is requested
     if isinstance(residual, Sequence) and b.getType() != PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
-        assert _blocks is not None, "Block data must be provided for block assembly."
+        if _blocks is None:
+            raise ValueError("Block data must be provided for block assembly.")
         b.setAttr("_blocks", _blocks)  # type: ignore[attr-defined]
         x.setAttr("_blocks", _blocks)  # type: ignore[attr-defined]
 
@@ -1111,7 +1131,7 @@ def assemble_jacobian(
         bcs: List of Dirichlet boundary conditions to apply to the Jacobian
             and preconditioner matrices.
     """
-    # Copy existing soultion into the function used in the residual and
+    # Copy existing solution into the function used in the residual and
     # Jacobian
     dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[attr-defined]
     assign(x, u)
@@ -1319,7 +1339,7 @@ class NonlinearProblem:
             fieldsplit_IS = tuple(
                 [
                     (f"{u.name + '_' if u.name != 'f' else ''}{i}", IS)
-                    for i, (u, IS) in enumerate(zip(self.u, nest_IS[0]))
+                    for i, (u, IS) in enumerate(zip(self.u, nest_IS[0], strict=True))
                 ]
             )
             self.solver.getKSP().getPC().setFieldSplitIS(*fieldsplit_IS)
@@ -1355,7 +1375,8 @@ class NonlinearProblem:
     def __del__(self):
         """Destroy PETSc objects created internally."""
         for obj in filter(
-            lambda obj: obj is not None, (self._snes, self._A, self._b, self._x, self._P_mat)
+            lambda obj: obj is not None,
+            (self._snes, self._A, self._b, self._x, self._P_mat),
         ):
             obj.destroy()
 

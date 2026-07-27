@@ -84,9 +84,7 @@ jobs:
       CIBW_MANYLINUX_AARCH64_IMAGE: quay.io/pypa/manylinux_2_34_aarch64:latest
 
     steps:
-      - uses: actions/setup-python@v6
-        with:
-          python-version: 3.14
+      - uses: actions/setup-python@v7
 
       - name: Install Python dependencies
         run: python -m pip install cibuildwheel simple503 build
@@ -351,9 +349,7 @@ jobs:
     needs: build_wheels
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-python@v6
-        with:
-          python-version: 3.14
+      - uses: actions/setup-python@v7
 
       - name: Install Python dependencies
         run: python -m pip install simple503

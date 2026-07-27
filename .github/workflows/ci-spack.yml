@@ -1,4 +1,5 @@
 name: "CI (RHEL clone: gcc, oneAPI)"
+
 on:
   push:
     branches:
@@ -20,11 +21,17 @@ env:
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
   PYTEST_ADDOPTS: "-W error"
+  # Spack environment activation does not add the view's library
+  # directories to the runtime linker search path, so packages that are
+  # only present in the environment (not linked via RPATH into a
+  # consuming package, e.g. mesa-glu's libGLU.so.1 for gmsh) are not
+  # found at runtime without this.
+  LD_LIBRARY_PATH: /opt/view/lib:/opt/view/lib64
 
 jobs:
   ci-spack-build:
     name: AlmaLinux build and test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     container: ghcr.io/almalinux/almalinux:10
     strategy:
       matrix:
@@ -36,26 +43,11 @@ jobs:
           dnf -y install file bzip2 ca-certificates git gzip patch python3 tar \
             unzip xz zstd gcc gcc-c++ gcc-gfortran
 
-      - name: Get Spack
-        uses: actions/checkout@v7
+      - name: Set up Spack
+        uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
         with:
-          repository: spack/spack
-          ref: v1.1.1
-          path: spack-src
-
-      - name: Get upstream Spack packages
-        uses: actions/checkout@v7
-        with:
-          repository: spack/spack-packages
-          ref: develop
-          path: spack-packages
-
-      - name: Add Spack packages repo
-        run: |
-          . $GITHUB_WORKSPACE/spack-src/share/spack/setup-env.sh
-          spack repo add --name builtin $GITHUB_WORKSPACE/spack-packages/repos/spack_repo/builtin
-          spack config get repos
-          spack repo list
+          spack_ref: v1.2.2
+          packages_ref: v2026.06.0
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v7
@@ -63,37 +55,47 @@ jobs:
           path: dolfinx-src
 
       - name: Create Spack environment
-        run: |
-          . ./spack-src/share/spack/setup-env.sh
-          spack env create py dolfinx-src/.github/workflows/spack-config/gh-actions-rh.yml
+        run: spack env create py dolfinx-src/.github/workflows/spack-config/gh-actions-rh.yml
 
       - name: Add dependencies to environment
         run: |
-          . ./spack-src/share/spack/setup-env.sh
-          spack -e py add mpi petsc+mpi+shared+mumps+superlu-dist slepc parmetis pkgconfig hdf5+mpi boost pugixml spdlog
-          spack -e py add python@3.14 py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py py-scikit-build-core+pyproject py-setuptools py-cffi
+          spack -e py add mpi petsc+mpi+shared+mumps+superlu-dist slepc parmetis pkgconfig \
+            hdf5+mpi boost pugixml spdlog
+          spack -e py add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py \
+            py-scikit-build-core+pyproject py-setuptools py-cffi
           spack -e py add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
+          # NOTE: freetype@2.13.3 works around a raster overflow bug in
+          # freetype@2.14.2 (2026-07). Re-check and drop once a fixed
+          # freetype (2.14.3+) lands in the spack-packages recipe.
           spack -e py add openblas
+          spack -e py add py-gmsh ^gmsh~fltk~med~mmg+external ^opencascade~draw py-pyvista ^mesa~llvm ^freetype@2.13.3 \
+            py-networkx py-matplotlib py-pyamg py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
+            py-scipy
+          # gmsh's compiled library dlopens libGLU.so.1 and several X11
+          # libraries unconditionally at runtime (its native file-chooser
+          # and OpenGL-based drawing code are always built in), but the
+          # gmsh Spack recipe only declares depends_on("glu"/"gl") when
+          # +fltk is set. We build gmsh ~fltk, so Spack's dependency graph
+          # never gets these libraries, and none of them are RPATH-linked
+          # in by any package either — hence they must be added explicitly
+          # here and put on LD_LIBRARY_PATH (see env above) so gmsh can
+          # find them at runtime.
+          spack -e py add mesa-glu libx11 libxcursor libxft libxinerama libxrender
 
       - if: matrix.compiler == 'oneapi'
         name: Add oneAPI compilers to environment
-        run: |
-          . ./spack-src/share/spack/setup-env.sh
-          spack -e py add intel-oneapi-compilers
+        run: spack -e py add intel-oneapi-compilers
 
       - name: Install Spack packages
-        run: |
-          . ./spack-src/share/spack/setup-env.sh
-          spack -e py install -j4 -p2 --use-buildcache auto
+        run: spack -e py install -j 4 --use-buildcache auto
 
       - name: Push packages to Spack cache and update index
         env:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          . ./spack-src/share/spack/setup-env.sh
           spack debug report
-          spack -d -e py buildcache push --base-image ghcr.io/almalinux/almalinux:10 --update-index local-buildcache
+          spack -d -e py buildcache push --base-image ghcr.io/almalinux/almalinux:10 --allow-missing --update-index local-buildcache
         if: ${{ !cancelled() }}
 
       - name: Load FEniCS testing environment variables
@@ -101,58 +103,51 @@ jobs:
 
       - name: Install FEniCS Python components
         run: |
-          . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
           pip install git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
           pip install git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
           python -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+        shell: spack-bash {0}
 
       - name: Configure and build C++
         run: |
-          . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           cmake -Werror=dev --warn-uninitialized -G Ninja -DBUILD_TESTING=true -DCMAKE_BUILD_TYPE=Developer \
             -DDOLFINX_ENABLE_PETSC=on -DDOLFINX_ENABLE_SLEPC=true \
             -DDOLFINX_ENABLE_PARMETIS=true -DDOLFINX_ENABLE_SUPERLU_DIST=true -B build -S dolfinx-src/cpp/
           cmake --build build
+        shell: spack-bash {0}
 
       - name: Run tests without install (C++, serial and MPI np=2)
         run: |
-          . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           cd build
           ctest -V --output-on-failure -R unittests_np_1
           ctest -V --output-on-failure -R unittests_np_2
+        shell: spack-bash {0}
 
       - name: Install C++
         run: |
-          . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           cmake --build build --target install
+        shell: spack-bash {0}
 
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
-          . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
           cmake --build build/demo
           cd build/demo
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2
-
-      - name: Install gmsh and pyvista (and via  package manager install dependencies)
-        run: |
-          dnf install -y mesa-libGLU libX11 libXrender mesa-libEGL libglvnd-glx libXcursor libXft libXinerama
-          . ./spack-src/share/spack/setup-env.sh
-          spack env activate py
-          pip install gmsh pyvista
+        shell: spack-bash {0}
 
       - name: Build Python interface (editable install)
         run: |
-          . ./spack-src/share/spack/setup-env.sh
           spack env activate py
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Developer --config-settings=build-dir="build" -e 'dolfinx-src/python/[test]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Developer --config-settings=build-dir="build" -e 'dolfinx-src/python/'
+        shell: spack-bash {0}
 
       - name: Set default DOLFINx JIT options
         run: |
@@ -161,14 +156,14 @@ jobs:
 
       - name: Run demos (Python, serial and MPI)
         run: |
-          . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           python -m pytest -n auto -m serial --durations=10 dolfinx-src/python/demo/test.py
           python -m pytest -m mpi --num-proc=2 dolfinx-src/python/demo/test.py
+        shell: spack-bash {0}
 
       - name: Run Python unit tests (serial and MPI)
         run: |
-          . ./spack-src/share/spack/setup-env.sh
           spack env activate py
           python -m pytest -n auto -m "not adios2" --durations=50 dolfinx-src/python/test/unit/
           mpirun -np 2 python -m pytest -m "not adios2" dolfinx-src/python/test/unit/
+        shell: spack-bash {0}

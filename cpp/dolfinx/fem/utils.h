@@ -64,7 +64,7 @@ class Expression;
 
 namespace impl
 {
-/// Helper function to get an array of of (cell, local_facet) pairs
+/// Helper function to get an array of (cell, local_facet) pairs
 /// corresponding to a given facet index.
 /// @param[in] f Facet index
 /// @param[in] cells List of cells incident to the facet
@@ -534,10 +534,10 @@ Form<T, U> create_form_factory(
   {
     if (integral.coordinate_element_hash != geo.cmaps().at(cell_idx).hash())
     {
-      throw std::runtime_error(
+      throw std::runtime_error(std::format(
           "Generated integral geometry element does not match mesh geometry: "
-          + std::to_string(integral.coordinate_element_hash) + ", "
-          + std::to_string(geo.cmaps().at(cell_idx).hash()));
+          "{}, {}",
+          integral.coordinate_element_hash, geo.cmaps().at(cell_idx).hash()));
     }
   };
 
@@ -568,7 +568,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+        impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
         if (!k)
         {
           throw std::runtime_error(
@@ -648,7 +648,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+        impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
         assert(k);
 
         // Build list of entities to assembler over
@@ -774,7 +774,7 @@ Form<T, U> create_form_factory(
               active_coeffs.push_back(j);
           }
 
-          impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+          impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
 
           // Build list of entities to assembler over
           auto e_to_c = topology->connectivity(dim, tdim);
@@ -861,8 +861,8 @@ Form<T, U> create_form(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Form coefficient \"" + name
-                               + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Form coefficient \"{}\" not provided.", name));
     }
   }
 
@@ -873,7 +873,8 @@ Form<T, U> create_form(
     if (auto it = constants.find(name); it != constants.end())
       const_map.push_back(it->second);
     else
-      throw std::runtime_error("Form constant \"" + name + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Form constant \"{}\" not provided.", name));
   }
 
   return create_form_factory({ufcx_form}, spaces, coeff_map, const_map,
@@ -970,28 +971,24 @@ Expression<T, U> create_expression(
          static_cast<std::size_t>(e.entity_dimension)};
   std::vector<std::size_t> value_shape(e.value_shape,
                                        e.value_shape + e.num_components);
-  std::function<void(T*, const T*, const T*, const scalar_value_t<T>*,
-                     const int*, const std::uint8_t*, void*)>
+
+  static_assert(std::is_same_v<U, scalar_value_t<T>>,
+                "UFCx kernels require geometry type U == scalar_value_t<T>.");
+
+  using kptr_t = void (*)(T*, const T*, const T*, const U*, const int*,
+                          const std::uint8_t*, void*);
+  std::function<void(T*, const T*, const T*, const U*, const int*,
+                     const std::uint8_t*, void*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
-    tabulate_tensor = e.tabulate_tensor_float32;
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_float32);
+  else if constexpr (std::is_same_v<T, double>)
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_float64);
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, std::complex<float>>)
-  {
-    tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-        const unsigned char*, void*)>(e.tabulate_tensor_complex64);
-  }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-  else if constexpr (std::is_same_v<T, double>)
-    tabulate_tensor = e.tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_complex64);
   else if constexpr (std::is_same_v<T, std::complex<double>>)
-  {
-    tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-        const unsigned char*, void*)>(e.tabulate_tensor_complex128);
-  }
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_complex128);
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else
     throw std::runtime_error("Type not supported.");
@@ -1028,8 +1025,8 @@ Expression<T, U> create_expression(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Expression coefficient \"" + name
-                               + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Expression coefficient \"{}\" not provided.", name));
     }
   }
 
@@ -1046,8 +1043,8 @@ Expression<T, U> create_expression(
       const_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Expression constant \"" + name
-                               + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Expression constant \"{}\" not provided.", name));
     }
   }
 

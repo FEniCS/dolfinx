@@ -28,6 +28,7 @@
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <numbers>
 #include <petscmat.h>
 #include <petscsys.h>
@@ -213,8 +214,8 @@ int main(int argc, char* argv[])
 
   // Set the logging thread name to show the process rank
   int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-  std::string fmt = "[%Y-%m-%d %H:%M:%S.%e] [RANK " + std::to_string(mpi_rank)
-                    + "] [%l] %v";
+  std::string fmt
+      = std::format("[%Y-%m-%d %H:%M:%S.%e] [RANK {}] [%l] %v", mpi_rank);
   spdlog::set_pattern(fmt);
   {
     // Inside the `main` function, we begin by defining a tetrahedral

@@ -10,6 +10,7 @@
 #include <map>
 #include <mpi.h>
 #include <string>
+#include <string_view>
 #include <variant>
 #include <vector>
 
@@ -59,15 +60,15 @@ public:
   /// @param[in] row Row name
   /// @param[in] col Column name
   /// @param[in] value The value to set
-  void set(const std::string& row, const std::string& col,
+  void set(std::string_view row, std::string_view col,
            std::variant<std::string, int, double> value);
 
   /// Get value of table entry
   /// @param[in] row Row name
   /// @param[in] col Column name
   /// @returns Returns the entry for requested row and columns
-  std::variant<std::string, int, double> get(const std::string& row,
-                                             const std::string& col) const;
+  std::variant<std::string, int, double> get(std::string_view row,
+                                             std::string_view col) const;
 
   /// Do MPI reduction on Table
   /// @param[in] comm MPI communicator

@@ -134,6 +134,7 @@ elseif(PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY)
   check_cxx_source_compiles(
     "
 #define MPICH_IGNORE_CXX_SEEK 1
+#include <stddef.h>
 #include <mpi.h>
 #include <parmetis.h>
 
