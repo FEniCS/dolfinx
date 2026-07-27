@@ -172,19 +172,14 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
       "of input edges: {}",
       static_cast<int>(edges.size()));
 
-  // Duplicate comm so this call's messages can't be confused with an
-  // overlapping call using the same tag.
-  dolfinx::MPI::Comm nbx_comm(comm, true);
-  const MPI_Comm comm0 = nbx_comm.comm();
-
   // Post a persistent listener. Posting the receive ahead of arrival,
   // rather than probing reactively, lets MPI treat it as an expected
   // message and avoid unexpected-message buffering overhead.
   std::byte buffer_recv;
   MPI_Request recv_request;
-  int err = MPI_Irecv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE, tag, comm0,
+  int err = MPI_Irecv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE, tag, comm,
                       &recv_request);
-  dolfinx::MPI::check_error(comm0, err);
+  dolfinx::MPI::check_error(comm, err);
 
   // Start non-blocking synchronised send. The message content is never
   // inspected (only its arrival matters), so every send can share the
@@ -193,9 +188,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
   std::byte send_buffer{0};
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    int err = MPI_Issend(&send_buffer, 1, MPI_BYTE, edges[e], tag, comm0,
+    int err = MPI_Issend(&send_buffer, 1, MPI_BYTE, edges[e], tag, comm,
                          &send_requests[e]);
-    dolfinx::MPI::check_error(comm0, err);
+    dolfinx::MPI::check_error(comm, err);
   }
 
   // Vector to hold ranks that send data to this rank
@@ -211,16 +206,16 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
     int flag_recv;
     MPI_Status status;
     int err = MPI_Test(&recv_request, &flag_recv, &status);
-    dolfinx::MPI::check_error(comm0, err);
+    dolfinx::MPI::check_error(comm, err);
     while (flag_recv)
     {
       src_ranks.push_back(status.MPI_SOURCE);
-      int err = MPI_Irecv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE, tag, comm0,
+      int err = MPI_Irecv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE, tag, comm,
                           &recv_request);
-      dolfinx::MPI::check_error(comm0, err);
+      dolfinx::MPI::check_error(comm, err);
 
       err = MPI_Test(&recv_request, &flag_recv, &status);
-      dolfinx::MPI::check_error(comm0, err);
+      dolfinx::MPI::check_error(comm, err);
     }
 
     if (barrier_active)
@@ -228,7 +223,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
       // Check for barrier completion
       int flag = 0;
       int err = MPI_Test(&barrier_request, &flag, MPI_STATUS_IGNORE);
-      dolfinx::MPI::check_error(comm0, err);
+      dolfinx::MPI::check_error(comm, err);
       if (flag)
         comm_complete = true;
     }
@@ -238,12 +233,12 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
       int flag = 0;
       int err = MPI_Testall(send_requests.size(), send_requests.data(), &flag,
                             MPI_STATUSES_IGNORE);
-      dolfinx::MPI::check_error(comm0, err);
+      dolfinx::MPI::check_error(comm, err);
       if (flag)
       {
         // All sends have completed, start non-blocking barrier
-        int err = MPI_Ibarrier(comm0, &barrier_request);
-        dolfinx::MPI::check_error(comm0, err);
+        int err = MPI_Ibarrier(comm, &barrier_request);
+        dolfinx::MPI::check_error(comm, err);
         barrier_active = true;
       }
     }
@@ -255,10 +250,10 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
   // so cancellation can race with a real match; if so, record it
   // instead of discarding it.
   err = MPI_Cancel(&recv_request);
-  dolfinx::MPI::check_error(comm0, err);
+  dolfinx::MPI::check_error(comm, err);
   MPI_Status cancel_status;
   err = MPI_Wait(&recv_request, &cancel_status);
-  dolfinx::MPI::check_error(comm0, err);
+  dolfinx::MPI::check_error(comm, err);
   int cancelled;
   MPI_Test_cancelled(&cancel_status, &cancelled);
   if (!cancelled)
