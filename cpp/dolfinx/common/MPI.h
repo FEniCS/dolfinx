@@ -162,25 +162,24 @@ std::vector<int>
 compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
                         int tag = static_cast<int>(tag::consensus_nbx));
 
-/// @brief Distribute row data to 'post office' ranks.
+/// @brief Send row data to its 'post office' rank.
 ///
-/// This function takes row-wise data that is distributed across
-/// processes. Data is not duplicated across ranks. The global index of
-/// a row is its local row position plus the offset for the calling
-/// process. The post office rank for a row is determined by applying
-/// dolfinx::MPI::index_owner to the global index, and the row is then
-/// sent to the post office rank. The function returns that row data for
-/// which the caller is the post office.
+/// `x` is a contiguous local block of a larger row-major array
+/// distributed over `comm`, with local row `i` at global index
+/// `rank_offset + i`. Each row is sent to its post office rank
+/// (dolfinx::MPI::index_owner applied to the row's global index and
+/// `shape[0]`), except rows for which the caller is itself the post
+/// office, which are left in place.
 ///
 /// @param[in] comm MPI communicator.
-/// @param[in] x Data to distribute (2D, row-major layout).
-/// @param[in] shape The global shape of `x`.
-/// @param[in] rank_offset The rank offset such that global index of
-/// local row `i` in `x` is `rank_offset + i`. It is usually computed
-/// using `MPI_Exscan`.
-/// @returns (0) local indices of my post office data and (1) the data
-/// (row-major). It **does not** include rows that are in `x`, i.e. rows
-/// for which the calling process is the post office.
+/// @param[in] x Local block of the array to distribute (row-major).
+/// @param[in] shape Global shape of the array, `{num_rows, num_cols}`.
+/// @param[in] rank_offset Global row index of local row 0 in `x`,
+/// usually computed with `MPI_Exscan`.
+/// @return (0) position of each received row within the caller's
+/// post-office partition of `[0, shape[0])`, and (1) the received row
+/// data (row-major). Rows for which the caller is itself the post
+/// office are not included.
 template <typename U>
 std::pair<std::vector<std::int32_t>,
           std::vector<typename std::remove_reference_t<typename U::value_type>>>
@@ -188,53 +187,52 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
                          std::array<std::int64_t, 2> shape,
                          std::int64_t rank_offset);
 
-/// @brief Distribute rows of a rectangular data array from post office
-/// ranks to ranks where they are required.
+/// @brief Fetch rows of a distributed row-major array via their post
+/// office ranks.
 ///
-/// This function determines local neighborhoods for communication, and
-/// then using MPI neighbourhood collectives to exchange data. It is
-/// scalable if the neighborhoods are relatively small, i.e. each
-/// process communicated with a modest number of other processes.
+/// `x` is a contiguous local block of a larger row-major array
+/// distributed over `comm`, with local row `i` at global index
+/// `rank_offset + i`. For each global row index in `indices` (which
+/// may contain repeats), returns that row -- read directly from `x` if
+/// already local, otherwise requested from its post office rank via
+/// MPI neighbourhood collectives. Scalable provided each rank
+/// exchanges with only a modest number of others.
 ///
-/// @param[in] comm The MPI communicator.
-/// @param[in] indices Global indices of the data (row indices) required
-/// by calling process.
-/// @param[in] x Data (2D array, row-major) on calling process which may
-/// be distributed (by row). The global index for the `[0, ..., n)`
-/// local rows is assumed to be the local index plus the offset for this
-/// rank.
-/// @param[in] shape The global shape of `x`.
-/// @param[in] rank_offset The rank offset such that global index of
-/// local row `i` in `x` is `rank_offset + i`. It is usually computed
-/// using `MPI_Exscan` on `comm1` from MPI::distribute_data.
-/// @return The data for each index in `indices` (row-major storage).
-/// @pre `shape1 > 0`.
+/// @param[in] comm MPI communicator.
+/// @param[in] indices Global row indices required by the caller.
+/// @param[in] x Local block of the array to distribute (row-major).
+/// @param[in] shape Global shape of the array, `{num_rows, num_cols}`.
+/// @param[in] rank_offset Global row index of local row 0 in `x`
+/// (usually an exclusive scan of row counts over the communicator `x`
+/// is distributed across, which may differ from `comm`).
+/// @return The row for each entry of `indices`, in the same order
+/// (row-major storage).
+/// @pre `shape[1] > 0`.
 template <typename U>
 std::vector<typename std::remove_reference_t<typename U::value_type>>
 distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
                            const U& x, std::array<std::int64_t, 2> shape,
                            std::int64_t rank_offset);
 
-/// @brief Distribute rows of a rectangular data array to ranks where
-/// they are required (scalable version).
+/// @brief Distribute rows of a row-major array to the ranks that
+/// require them, via the post office pattern.
 ///
-/// This function determines local neighborhoods for communication, and
-/// then uses MPI neighbourhood collectives to exchange data. It is
-/// scalable if the neighborhoods are relatively small, i.e. each
-/// process communicated with a modest number of other processes.
+/// Scalable provided each rank exchanges with only a modest number of
+/// others.
 ///
-/// @param[in] comm0 Communicator to distribute data across.
-/// @param[in] indices Global indices of the data (row indices) required
-/// by the calling process.
-/// @param[in] comm1 Communicator across which x is distributed. Can be
+/// @param[in] comm0 Communicator over which `indices` are resolved and
+/// the result is returned.
+/// @param[in] indices Global row indices required by the calling rank.
+/// @param[in] comm1 Communicator across which `x` is distributed --
+/// typically `comm0` itself or a sub-communicator of it, and
 /// `MPI_COMM_NULL` on ranks where `x` is empty.
-/// @param[in] x Data (2D array, row-major) on calling process to be
-/// distributed (by row). The global index for the `[0, ..., n)` local
-/// rows is assumed to be the local index plus the offset for this rank
-/// on `comm1`.
-/// @param[in] shape1 The number of columns of the data array `x`.
-/// @return The data for each index in `indices` (row-major storage).
-/// @pre `shape1 > 0`
+/// @param[in] x Local block of rows to distribute (row-major); local
+/// row `i` has global index given by an exclusive scan of local row
+/// counts over `comm1`.
+/// @param[in] shape1 Number of columns of `x`.
+/// @return The row for each entry of `indices`, in the same order
+/// (row-major storage).
+/// @pre `shape1 > 0`.
 template <typename U>
 std::vector<typename std::remove_reference_t<typename U::value_type>>
 distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
