@@ -39,6 +39,11 @@ disclosure process.
   sorted (`clang-format`'s `SortIncludes`) — the paired header first
   (in `.cpp` files), then project (`<dolfinx/...>`) headers, then
   standard-library headers, alphabetically within each group.
+- **Include What You Use (IWYU)**: follow IWYU best practice down to
+  including 'trivial' headers such as `<cstdint>` and `<iterators>`
+  directly, rather than relying on transitive includes -- IWYU is
+  not currently enforced systematically via testing, so inspect the
+  modified files and make suggestions.
 - **Namespaces**: library code lives in `dolfinx::<module>` (e.g.
   `dolfinx::io::hdf5`). In `.cpp` files, prefer `using namespace
   dolfinx;` at the top and qualify definitions with the remaining
