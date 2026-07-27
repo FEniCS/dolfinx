@@ -736,6 +736,12 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
       = element.template dof_transformation_fn<T>(
           doftransform::inverse_transpose, true);
   std::vector<T> coeffs_b(num_scalar_dofs);
+
+  // Common case: the dofmap and element share the same block
+  // structure, so the local-to-block-component split is the identity
+  // and the integer division/modulo below can be skipped.
+  const bool same_bs = (dofmap_bs == element_bs);
+
   if (symmetric)
   {
     std::size_t matrix_size = 0;
@@ -773,11 +779,18 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
             num_scalar_dofs, coeffs_b.data());
         apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
                                                1);
-        for (int i = 0; i < num_scalar_dofs; ++i)
+        if (same_bs)
         {
-          const int dof = i * element_bs + k;
-          std::div_t pos = std::div(dof, dofmap_bs);
-          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
+          for (int i = 0; i < num_scalar_dofs; ++i)
+            coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
+        }
+        else
+        {
+          for (int i = 0; i < num_scalar_dofs; ++i)
+          {
+            std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
+            coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
+          }
         }
       }
     }
@@ -798,11 +811,18 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
             num_scalar_dofs, coeffs_b.data());
         apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it,
                                                1);
-        for (int i = 0; i < num_scalar_dofs; ++i)
+        if (same_bs)
         {
-          const int dof = i * element_bs + k;
-          std::div_t pos = std::div(dof, dofmap_bs);
-          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
+          for (int i = 0; i < num_scalar_dofs; ++i)
+            coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
+        }
+        else
+        {
+          for (int i = 0; i < num_scalar_dofs; ++i)
+          {
+            std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
+            coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
+          }
         }
       }
     }
@@ -853,6 +873,11 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       = element.template dof_transformation_fn<T>(
           doftransform::inverse_transpose, true);
 
+  // Common case: the dofmap and element share the same block
+  // structure, so the local-to-block-component split is the identity
+  // and the integer division/modulo below can be skipped.
+  const bool same_bs = (dofmap_bs == element_bs);
+
   // Loop over cells
   std::vector<T> ref_data_b(num_interp_points);
   md::mdspan<T, md::extents<std::size_t, md::dynamic_extent, 1>> ref_data(
@@ -875,11 +900,18 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
       impl::interpolation_apply(Pi, ref_data, std::span(coeffs_b), 1);
       apply_inv_transpose_dof_transformation(coeffs_b, cell_info, *cell_it, 1);
-      for (int i = 0; i < num_scalar_dofs; ++i)
+      if (same_bs)
       {
-        const int dof = i * element_bs + k;
-        std::div_t pos = std::div(dof, dofmap_bs);
-        coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
+        for (int i = 0; i < num_scalar_dofs; ++i)
+          coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
+      }
+      else
+      {
+        for (int i = 0; i < num_scalar_dofs; ++i)
+        {
+          std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
+        }
       }
     }
   }
@@ -916,6 +948,11 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const int num_scalar_dofs = element.space_dimension() / element_bs;
   const int value_size = element.reference_value_size();
   const int dofmap_bs = dofmap.bs();
+
+  // Common case: the dofmap and element share the same block
+  // structure, so the local-to-block-component split is the identity
+  // and the integer division/modulo below can be skipped.
+  const bool same_bs = (dofmap_bs == element_bs);
 
   md::mdspan<const T, md::dextents<std::size_t, 2>> _f(f.data(), fshape);
 
@@ -1045,11 +1082,18 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 
       // Copy interpolation dofs into coefficient vector
       assert(coeffs_b.size() == static_cast<std::size_t>(num_scalar_dofs));
-      for (int i = 0; i < num_scalar_dofs; ++i)
+      if (same_bs)
       {
-        const int dof = i * element_bs + k;
-        std::div_t pos = std::div(dof, dofmap_bs);
-        coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
+        for (int i = 0; i < num_scalar_dofs; ++i)
+          coeffs[dofmap_bs * dofs[i] + k] = coeffs_b[i];
+      }
+      else
+      {
+        for (int i = 0; i < num_scalar_dofs; ++i)
+        {
+          std::div_t pos = std::div(i * element_bs + k, dofmap_bs);
+          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = coeffs_b[i];
+        }
       }
     }
   }
