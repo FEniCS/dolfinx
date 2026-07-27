@@ -737,9 +737,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
           doftransform::inverse_transpose, true);
   std::vector<T> coeffs_b(num_scalar_dofs);
 
-  // Common case: the dofmap and element share the same block
-  // structure, so the local-to-block-component split is the identity
-  // and the integer division/modulo below can be skipped.
+  // Skip the div/mod below when block sizes match (the common case)
   const bool same_bs = (dofmap_bs == element_bs);
 
   if (symmetric)
@@ -873,9 +871,7 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       = element.template dof_transformation_fn<T>(
           doftransform::inverse_transpose, true);
 
-  // Common case: the dofmap and element share the same block
-  // structure, so the local-to-block-component split is the identity
-  // and the integer division/modulo below can be skipped.
+  // Skip the div/mod below when block sizes match (the common case)
   const bool same_bs = (dofmap_bs == element_bs);
 
   // Loop over cells
@@ -949,9 +945,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const int value_size = element.reference_value_size();
   const int dofmap_bs = dofmap.bs();
 
-  // Common case: the dofmap and element share the same block
-  // structure, so the local-to-block-component split is the identity
-  // and the integer division/modulo below can be skipped.
+  // Skip the div/mod below when block sizes match (the common case)
   const bool same_bs = (dofmap_bs == element_bs);
 
   md::mdspan<const T, md::dextents<std::size_t, 2>> _f(f.data(), fshape);
