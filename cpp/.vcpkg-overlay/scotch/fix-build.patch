@@ -229,3 +229,94 @@ index 243e21d..2d62c4b 100644
      target_include_directories(${file_we} PRIVATE ${GENERATED_INCLUDE_DIR})
      target_link_libraries(${file_we} PUBLIC scotch ptscotch ptscotcherrexit)
    endfunction(add_ptscotch_exe)
+diff --git a/src/libscotch/bgraph_bipart_st.h b/src/libscotch/bgraph_bipart_st.h
+index d3d7d92..beaddde 100644
+--- a/src/libscotch/bgraph_bipart_st.h
++++ b/src/libscotch/bgraph_bipart_st.h
+@@ -80,7 +80,7 @@ typedef int (* BgraphBipartFunc) (Bgraph * restrict const, const void * const);
+ **  The external declarations.
+ */
+ 
+-extern StratTab             bgraphbipartststratab;
++extern SCOTCH_DATA StratTab bgraphbipartststratab;
+ 
+ /*
+ **  The function prototypes.
+diff --git a/src/libscotch/common.h b/src/libscotch/common.h
+index b4f94ef..02c2944 100644
+--- a/src/libscotch/common.h
++++ b/src/libscotch/common.h
+@@ -113,8 +113,21 @@
+ #endif /* ((defined _WIN32) && (! defined __MINGW32__)) */
+ #define pipe(fd)                    _pipe (fd, 32768, O_BINARY)
+ #define sleep(s)                    Sleep (1000 * (s))
++/* A handful of StratTab/Strat globals defined in libscotch are referenced
++** directly (not just via function calls) from libptscotch, crossing a DLL
++** boundary on Windows. CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS only auto-exports
++** functions, not data, so these need explicit annotation. */
++#if defined scotch_EXPORTS
++#define SCOTCH_DATA                 __declspec(dllexport)
++#else /* defined scotch_EXPORTS */
++#define SCOTCH_DATA                 __declspec(dllimport)
++#endif /* defined scotch_EXPORTS */
+ #endif /* COMMON_OS_WINDOWS */
+ 
++#ifndef SCOTCH_DATA
++#define SCOTCH_DATA
++#endif /* SCOTCH_DATA */
++
+ #if ((! defined COMMON_OS_WINDOWS) && (! defined HAVE_NOT_UNISTD_H))
+ #include            <unistd.h>
+ #endif /* ((! defined COMMON_OS_WINDOWS) && (! defined HAVE_NOT_UNISTD_H)) */
+diff --git a/src/libscotch/hgraph_order_st.h b/src/libscotch/hgraph_order_st.h
+index 81a905e..a5dd483 100644
+--- a/src/libscotch/hgraph_order_st.h
++++ b/src/libscotch/hgraph_order_st.h
+@@ -79,7 +79,7 @@ typedef int (* HgraphOrderFunc) (Hgraph * restrict const, Order * restrict const
+ **  The external declarations.
+ */
+ 
+-extern StratTab             hgraphorderststratab;
++extern SCOTCH_DATA StratTab hgraphorderststratab;
+ 
+ /*
+ **  The function prototypes.
+diff --git a/src/libscotch/kgraph_map_st.h b/src/libscotch/kgraph_map_st.h
+index d40f468..b74a0ca 100644
+--- a/src/libscotch/kgraph_map_st.h
++++ b/src/libscotch/kgraph_map_st.h
+@@ -81,7 +81,7 @@ typedef int (* KgraphMapFunc) (Kgraph * restrict const, const void * const);
+ **  The external declarations.
+ */
+ 
+-extern StratTab             kgraphmapststratab;
++extern SCOTCH_DATA StratTab kgraphmapststratab;
+ 
+ /*
+ **  The function prototypes.
+diff --git a/src/libscotch/parser.h b/src/libscotch/parser.h
+index 2d1a747..dfe4212 100644
+--- a/src/libscotch/parser.h
++++ b/src/libscotch/parser.h
+@@ -247,7 +247,7 @@ typedef struct ParserLocation_ {
+ **  The external declarations.
+ */
+ 
+-extern Strat                stratdummy;           /*+ Dummy empty strategy node +*/
++extern SCOTCH_DATA Strat    stratdummy;           /*+ Dummy empty strategy node +*/
+ 
+ /*
+ **  The function prototypes.
+diff --git a/src/libscotch/vgraph_separate_st.h b/src/libscotch/vgraph_separate_st.h
+index 725a320..d8f5bfd 100644
+--- a/src/libscotch/vgraph_separate_st.h
++++ b/src/libscotch/vgraph_separate_st.h
+@@ -82,7 +82,7 @@ typedef int (* VgraphSeparateFunc) (Vgraph * restrict const, const void * const)
+ **  The external declarations.
+ */
+ 
+-extern StratTab             vgraphseparateststratab;
++extern SCOTCH_DATA StratTab vgraphseparateststratab;
+ 
+ /*
+ **  The function prototypes.
