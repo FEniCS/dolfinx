@@ -33,7 +33,7 @@
 namespace dolfinx::MPI
 {
 /// MPI communication tags
-enum class tag : std::uint16_t
+enum class tag : int
 {
   consensus_pcx = 1200,
   consensus_pex = 1201,
@@ -158,10 +158,11 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 /// @pre `edges` must not contain duplicate ranks.
 /// @param[in] tag Tag used in non-blocking MPI calls. A tag can be
 /// required when this function is called a second time on some ranks
-/// before a previous call has completed on all other ranks. @return
-/// Ranks that have defined edges from them to this rank. @note An
-/// alternative to passing a tag is to ensure that there is an implicit
-/// or explicit barrier before and after the call to this function.
+/// before a previous call has completed on all other ranks.
+/// @return Ranks that have defined edges from them to this rank.
+/// @note An alternative to passing a tag is to ensure that there is
+/// an implicit or explicit barrier before and after the call to this
+/// function.
 std::vector<int>
 compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
                         int tag = static_cast<int>(tag::consensus_nbx));
@@ -319,83 +320,59 @@ MPI_Datatype mpi_t = mpi_datatype<T>();
 //---------------------------------------------------------------------------
 namespace impl
 {
-/// @private Local (non-communicating) part of distribute_to_postoffice:
-/// group the local rows of `x` that do not belong to this rank by
-/// their post office (destination) rank.
+/// @private Local (non-communicating) part of distribute_to_postoffice.
+///
+/// For each local row of `x`, determines its post office (destination)
+/// rank by applying dolfinx::MPI::index_owner to the row's global
+/// index and `shape0`, skipping rows already owned by this rank (which
+/// never need to be sent anywhere). The remaining (destination,
+/// position) pairs are grouped by destination with a radix sort --
+/// this list can have hundreds of thousands of entries for a large
+/// mesh/problem, too many for a generic comparison sort -- producing
+/// the compact per-neighbour form (unique destination ranks, row
+/// count per destination, and a local-row-to-neighbour-rank map)
+/// that postoffice_exchange needs to drive MPI neighbourhood
+/// collectives without a further per-row lookup during packing.
+///
+/// Factored out of distribute_to_postoffice so distribute_from_postoffice
+/// can reuse the same planning step when it overlaps this push with
+/// the NBX round that resolves who is requesting data from it.
+///
+/// @param[in] size Number of ranks in the communicator `x` is
+/// distributed/required across.
+/// @param[in] rank Rank of the caller in that communicator.
+/// @param[in] shape0_local Number of local rows of `x` (before any
+/// post-office redistribution).
+/// @param[in] shape0 Global number of rows (row count summed over all
+/// ranks).
+/// @param[in] rank_offset Global row index of local row 0 in `x`.
 /// @return (0) unique destination ranks, (1) number of rows destined
 /// for each rank in (0), and (2) a map from local row index to
 /// position in (0), or -1 if the row is already owned by this rank.
-inline std::tuple<std::vector<int>, std::vector<std::int32_t>,
-                  std::vector<std::int32_t>>
-postoffice_plan(MPI_Comm comm, std::int32_t shape0_local, std::int64_t shape0,
-                std::int64_t rank_offset)
-{
-  const int size = dolfinx::MPI::size(comm);
-  const int rank = dolfinx::MPI::rank(comm);
-
-  // Build list of (dest, positions) for each row that doesn't belong to
-  // this rank, then sort
-  std::vector<std::array<std::int32_t, 2>> dest_to_index;
-  dest_to_index.reserve(shape0_local);
-  for (std::int32_t i = 0; i < shape0_local; ++i)
-  {
-    std::size_t idx = i + rank_offset;
-    if (int dest = MPI::index_owner(size, idx, shape0); dest != rank)
-      dest_to_index.push_back({dest, i});
-  }
-
-  // Radix sort (not a comparison sort): dest_to_index can have
-  // hundreds of thousands of entries for a large mesh/problem.
-  {
-    std::span<const std::int32_t> flat(
-        reinterpret_cast<const std::int32_t*>(dest_to_index.data()),
-        2 * dest_to_index.size());
-    std::vector<std::int32_t> perm
-        = dolfinx::sort_by_perm<std::int32_t, 16>(flat, 2);
-    std::vector<std::array<std::int32_t, 2>> sorted(dest_to_index.size());
-    for (std::size_t i = 0; i < perm.size(); ++i)
-      sorted[i] = dest_to_index[perm[i]];
-    dest_to_index = std::move(sorted);
-  }
-
-  // Build list of neighbour src ranks and count number of items (rows
-  // of x) to receive from each src post office (by neighbourhood rank)
-  std::vector<int> dest;
-  std::vector<std::int32_t> num_items_per_dest,
-      pos_to_neigh_rank(shape0_local, -1);
-  {
-    auto it = dest_to_index.begin();
-    while (it != dest_to_index.end())
-    {
-      const int neigh_rank = dest.size();
-
-      // Store global rank
-      dest.push_back((*it)[0]);
-
-      // Find iterator to next global rank
-      auto it1
-          = std::find_if(it, dest_to_index.end(),
-                         [r = dest.back()](auto& idx) { return idx[0] != r; });
-
-      // Store number of items for current rank
-      num_items_per_dest.push_back(std::distance(it, it1));
-
-      // Map from local x index to local destination rank
-      for (auto e = it; e != it1; ++e)
-        pos_to_neigh_rank[(*e)[1]] = neigh_rank;
-
-      // Advance iterator
-      it = it1;
-    }
-  }
-
-  return {std::move(dest), std::move(num_items_per_dest),
-          std::move(pos_to_neigh_rank)};
-}
+std::tuple<std::vector<int>, std::vector<std::int32_t>,
+           std::vector<std::int32_t>>
+postoffice_plan(int size, int rank, std::int32_t shape0_local,
+                std::int64_t shape0, std::int64_t rank_offset);
 
 /// @private Neighbourhood data exchange step of distribute_to_postoffice,
 /// given an already-resolved `src` (e.g. from a single or overlapped
 /// NBX consensus round).
+/// @param[in] comm MPI communicator.
+/// @param[in] x Local block of the array to distribute (row-major).
+/// @param[in] shape Global shape of the array, `{num_rows, num_cols}`.
+/// @param[in] rank_offset Global row index of local row 0 in `x`.
+/// @param[in] dest Destination (post office) ranks, from
+/// `postoffice_plan`.
+/// @param[in] num_items_per_dest0 Number of rows destined for each
+/// rank in `dest`, from `postoffice_plan`.
+/// @param[in] pos_to_neigh_rank Map from local row index to position
+/// in `dest`, from `postoffice_plan`.
+/// @param[in] src Ranks that will send this rank data, i.e. the
+/// incoming edges resolved from `dest` (e.g. via
+/// `compute_graph_edges_nbx`).
+/// @return (0) position of each received row within the caller's
+/// post-office partition of `[0, shape[0])`, and (1) the received row
+/// data (row-major).
 template <std::ranges::contiguous_range U>
 std::pair<std::vector<std::int32_t>, std::vector<std::ranges::range_value_t<U>>>
 postoffice_exchange(MPI_Comm comm, const U& x,
@@ -503,14 +480,16 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
 
   spdlog::debug("Sending data to post offices (distribute_to_postoffice)");
 
+  const int size = dolfinx::MPI::size(comm);
+  const int rank = dolfinx::MPI::rank(comm);
   auto [dest, num_items_per_dest, pos_to_neigh_rank]
-      = impl::postoffice_plan(comm, shape0_local, shape[0], rank_offset);
+      = impl::postoffice_plan(size, rank, shape0_local, shape[0], rank_offset);
 
   // Determine source ranks
   const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
   spdlog::info(
       "Number of neighbourhood source ranks in distribute_to_postoffice: {}",
-      static_cast<int>(src.size()));
+      src.size());
 
   auto result
       = impl::postoffice_exchange(comm, x, shape, rank_offset, dest,
@@ -543,7 +522,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   //    overlapped round rather than back-to-back.
 
   auto [send_dest, num_items_per_send_dest, pos_to_neigh_rank]
-      = impl::postoffice_plan(comm, shape0_local, shape[0], rank_offset);
+      = impl::postoffice_plan(size, rank, shape0_local, shape[0], rank_offset);
 
   // Build (src, global index, position) for each entry in 'indices'
   // not held locally, then sort. Locally-held entries are read
@@ -599,8 +578,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   spdlog::info(
       "Neighbourhood destination ranks from post office in "
       "distribute_data (rank, num dests, num dests/mpi_size): {}, {}, {}",
-      rank, static_cast<int>(dest.size()),
-      static_cast<double>(dest.size()) / size);
+      rank, dest.size(), static_cast<double>(dest.size()) / size);
 
   // Send receive x data to post office (only for rows that need to be
   // communicated)

@@ -5,10 +5,15 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MPI.h"
+#include "sort.h"
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <dolfinx/common/log.h>
 #include <iostream>
+#include <iterator>
+#include <span>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -101,7 +106,7 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
   spdlog::info(
       "Computing communication graph edges (using PCX algorithm). Number "
       "of input edges: {}",
-      static_cast<int>(edges.size()));
+      edges.size());
 
   // Build array with '0' for no outedge and '1' for an outedge for each
   // rank
@@ -162,7 +167,7 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
 
   spdlog::info("Finished graph edge discovery using PCX algorithm. Number "
                "of discovered edges {}",
-               static_cast<int>(other_ranks.size()));
+               other_ranks.size());
 
   return other_ranks;
 }
@@ -297,14 +302,14 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
   spdlog::info(
       "Computing communication graph edges (using NBX algorithm). Number "
       "of input edges: {}",
-      static_cast<int>(edges.size()));
+      edges.size());
 
   std::array<std::vector<int>, 1> src_ranks
       = ::nbx_consensus_rounds<1>(comm, {edges}, {tag});
 
   spdlog::info("Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges {}",
-               static_cast<int>(src_ranks[0].size()));
+               src_ranks[0].size());
 
   return std::move(src_ranks[0]);
 }
@@ -318,16 +323,82 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
   spdlog::info(
       "Computing communication graph edges for two overlapped consensus "
       "rounds (using NBX algorithm). Number of input edges: {}, {}",
-      static_cast<int>(edges0.size()), static_cast<int>(edges1.size()));
+      edges0.size(), edges1.size());
 
   std::array<std::vector<int>, 2> src_ranks
       = ::nbx_consensus_rounds<2>(comm, {edges0, edges1}, {tag0, tag1});
 
   spdlog::info("Finished overlapped graph edge discovery using NBX "
                "algorithm. Number of discovered edges {}, {}",
-               static_cast<int>(src_ranks[0].size()),
-               static_cast<int>(src_ranks[1].size()));
+               src_ranks[0].size(), src_ranks[1].size());
 
   return {std::move(src_ranks[0]), std::move(src_ranks[1])};
+}
+//-----------------------------------------------------------------------------
+std::tuple<std::vector<int>, std::vector<std::int32_t>,
+           std::vector<std::int32_t>>
+dolfinx::MPI::impl::postoffice_plan(int size, int rank,
+                                    std::int32_t shape0_local,
+                                    std::int64_t shape0,
+                                    std::int64_t rank_offset)
+{
+  // Build list of (dest, positions) for each row that doesn't belong to
+  // this rank, then sort
+  std::vector<std::array<std::int32_t, 2>> dest_to_index;
+  dest_to_index.reserve(shape0_local);
+  for (std::int32_t i = 0; i < shape0_local; ++i)
+  {
+    std::size_t idx = i + rank_offset;
+    if (int dest = MPI::index_owner(size, idx, shape0); dest != rank)
+      dest_to_index.push_back({dest, i});
+  }
+
+  // Radix sort (not a comparison sort): dest_to_index can have
+  // hundreds of thousands of entries for a large mesh/problem.
+  {
+    std::span<const std::int32_t> flat(
+        reinterpret_cast<const std::int32_t*>(dest_to_index.data()),
+        2 * dest_to_index.size());
+    std::vector<std::int32_t> perm
+        = dolfinx::sort_by_perm<std::int32_t, 16>(flat, 2);
+    std::vector<std::array<std::int32_t, 2>> sorted(dest_to_index.size());
+    for (std::size_t i = 0; i < perm.size(); ++i)
+      sorted[i] = dest_to_index[perm[i]];
+    dest_to_index = std::move(sorted);
+  }
+
+  // Build list of neighbour src ranks and count number of items (rows
+  // of x) to receive from each src post office (by neighbourhood rank)
+  std::vector<int> dest;
+  std::vector<std::int32_t> num_items_per_dest,
+      pos_to_neigh_rank(shape0_local, -1);
+  {
+    auto it = dest_to_index.begin();
+    while (it != dest_to_index.end())
+    {
+      const int neigh_rank = dest.size();
+
+      // Store global rank
+      dest.push_back((*it)[0]);
+
+      // Find iterator to next global rank
+      auto it1
+          = std::find_if(it, dest_to_index.end(),
+                         [r = dest.back()](auto& idx) { return idx[0] != r; });
+
+      // Store number of items for current rank
+      num_items_per_dest.push_back(std::distance(it, it1));
+
+      // Map from local x index to local destination rank
+      for (auto e = it; e != it1; ++e)
+        pos_to_neigh_rank[(*e)[1]] = neigh_rank;
+
+      // Advance iterator
+      it = it1;
+    }
+  }
+
+  return {std::move(dest), std::move(num_items_per_dest),
+          std::move(pos_to_neigh_rank)};
 }
 //-----------------------------------------------------------------------------
