@@ -112,12 +112,11 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
   // rank
   const int size = dolfinx::MPI::size(comm);
   std::vector<int> edge_count_send(size, 0);
-  for (auto e : edges)
+  for (int e : edges)
     edge_count_send[e] = 1;
 
-  // Determine how many in-edges this rank has. All ranks receive the
-  // same single-int block, so *_block avoids an O(size) recvcounts
-  // array of all-ones.
+  // Determine how many in-edges this rank has. All ranks get the same
+  // single-int block, so _block avoids an O(size) recvcounts array.
   int in_edges = 0;
   MPI_Request request_scatter;
   int err = MPI_Ireduce_scatter_block(edge_count_send.data(), &in_edges, 1,
@@ -136,10 +135,9 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
     dolfinx::MPI::check_error(comm, err);
   }
 
-  // Receive exactly in_edges messages and record their source. A
-  // blocking recv is fine here (unlike NBX): the exact count is
-  // already known, so there is nothing to poll for and no risk of
-  // burning CPU cycles waiting on a message that may never arrive.
+  // Receive exactly in_edges messages, recording each source. A
+  // blocking recv is fine here (unlike NBX): the count is already
+  // known, so there is nothing to poll for.
   err = MPI_Wait(&request_scatter, MPI_STATUS_IGNORE);
   dolfinx::MPI::check_error(comm, err);
   std::vector<int> other_ranks;
