@@ -34,18 +34,7 @@ diff --git a/src/libscotch/CMakeLists.txt b/src/libscotch/CMakeLists.txt
 index c142c22..873bc7e 100644
 --- a/src/libscotch/CMakeLists.txt
 +++ b/src/libscotch/CMakeLists.txt
-@@ -520,6 +520,10 @@ add_dependencies(scotch parser_yy_c parser_ll_c)
- add_dependencies(scotch parser_yy_c parser_ll_c)
- 
- # scotcherr lib
- if(NOT "${LIBSCOTCHERR}" STREQUAL "")
-   target_link_libraries(scotch PUBLIC ${LIBSCOTCHERR})
-+  # ${LIBSCOTCHERR} (scotcherr/scotcherrexit) is only add_library()'d later
-+  # in this file, so the line above is a forward reference that CMake does
-+  # not turn into a build-order edge; make it explicit.
-+  add_dependencies(scotch ${LIBSCOTCHERR})
- endif()
-@@ -573,9 +577,13 @@ if(LIBLZMA_FOUND)
+@@ -573,9 +573,13 @@ if(LIBLZMA_FOUND)
  endif()
  
  # Add thread library
@@ -62,7 +51,16 @@ index c142c22..873bc7e 100644
  endif()
  
  # Include files
-@@ -854,9 +858,13 @@ if(BUILD_PTSCOTCH)
+@@ -600,4 +604,8 @@
+ 
+ add_dependencies(scotcherr scotch_h)
++
++if(NOT "${LIBSCOTCHERR}" STREQUAL "")
++  add_dependencies(scotch ${LIBSCOTCHERR})
++endif()
+ 
+ add_library(scotcherrexit library_error_exit.c)
+@@ -854,9 +862,13 @@ if(BUILD_PTSCOTCH)
      set_target_properties(ptscotch PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
    endif()
  
@@ -79,7 +77,7 @@ index c142c22..873bc7e 100644
    endif()
  
    add_library(ptscotcherr library_error.c)
-@@ -885,5 +893,6 @@
+@@ -885,5 +897,6 @@
    add_dependencies(ptscotcherrexit ptscotch_h scotch_h)
    if(NOT "${LIBPTSCOTCHERR}" STREQUAL "")
      target_link_libraries(ptscotch PUBLIC ${LIBPTSCOTCHERR})
