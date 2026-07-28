@@ -15,7 +15,6 @@
       ]
     },
     "mpi",
-    "parmetis",
     "pugixml",
     "pkgconf",
     { "name": "scotch",
