@@ -172,17 +172,13 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
       "of input edges: {}",
       static_cast<int>(edges.size()));
 
-  // Duplicate comm so concurrent calls can't collide on messages.
-  dolfinx::MPI::Comm nbx_comm(comm, true);
-  const MPI_Comm comm0 = nbx_comm.comm();
-
   // Post the receive before arrival (vs. probing reactively) so MPI
   // treats it as an expected message, avoiding buffering overhead.
   std::byte buffer_recv;
   MPI_Request recv_request;
-  int err = MPI_Irecv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE, tag, comm0,
+  int err = MPI_Irecv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE, tag, comm,
                       &recv_request);
-  dolfinx::MPI::check_error(comm0, err);
+  dolfinx::MPI::check_error(comm, err);
 
   // Synchronised, non-blocking send; content is never inspected (only
   // arrival matters), so every send shares one source buffer.
@@ -190,9 +186,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
   std::byte send_buffer{0};
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    int err = MPI_Issend(&send_buffer, 1, MPI_BYTE, edges[e], tag, comm0,
+    int err = MPI_Issend(&send_buffer, 1, MPI_BYTE, edges[e], tag, comm,
                          &send_requests[e]);
-    dolfinx::MPI::check_error(comm0, err);
+    dolfinx::MPI::check_error(comm, err);
   }
 
   // Vector to hold ranks that send data to this rank
@@ -208,16 +204,16 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
     int flag_recv;
     MPI_Status status;
     int err = MPI_Test(&recv_request, &flag_recv, &status);
-    dolfinx::MPI::check_error(comm0, err);
+    dolfinx::MPI::check_error(comm, err);
     while (flag_recv)
     {
       src_ranks.push_back(status.MPI_SOURCE);
-      int err = MPI_Irecv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE, tag, comm0,
+      int err = MPI_Irecv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE, tag, comm,
                           &recv_request);
-      dolfinx::MPI::check_error(comm0, err);
+      dolfinx::MPI::check_error(comm, err);
 
       err = MPI_Test(&recv_request, &flag_recv, &status);
-      dolfinx::MPI::check_error(comm0, err);
+      dolfinx::MPI::check_error(comm, err);
     }
 
     if (barrier_active)
@@ -225,7 +221,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
       // Check for barrier completion
       int flag = 0;
       int err = MPI_Test(&barrier_request, &flag, MPI_STATUS_IGNORE);
-      dolfinx::MPI::check_error(comm0, err);
+      dolfinx::MPI::check_error(comm, err);
       if (flag)
         comm_complete = true;
     }
@@ -235,12 +231,12 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
       int flag = 0;
       int err = MPI_Testall(send_requests.size(), send_requests.data(), &flag,
                             MPI_STATUSES_IGNORE);
-      dolfinx::MPI::check_error(comm0, err);
+      dolfinx::MPI::check_error(comm, err);
       if (flag)
       {
         // All sends have completed, start non-blocking barrier
-        int err = MPI_Ibarrier(comm0, &barrier_request);
-        dolfinx::MPI::check_error(comm0, err);
+        int err = MPI_Ibarrier(comm, &barrier_request);
+        dolfinx::MPI::check_error(comm, err);
         barrier_active = true;
       }
     }
@@ -250,10 +246,10 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
   // arrive. Issend only needs the receive posted, not yet observed, so
   // cancellation can race with a real match -- record it if so.
   err = MPI_Cancel(&recv_request);
-  dolfinx::MPI::check_error(comm0, err);
+  dolfinx::MPI::check_error(comm, err);
   MPI_Status cancel_status;
   err = MPI_Wait(&recv_request, &cancel_status);
-  dolfinx::MPI::check_error(comm0, err);
+  dolfinx::MPI::check_error(comm, err);
   int cancelled;
   MPI_Test_cancelled(&cancel_status, &cancelled);
   if (!cancelled)
@@ -264,5 +260,127 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
                static_cast<int>(src_ranks.size()));
 
   return src_ranks;
+}
+//-----------------------------------------------------------------------------
+std::pair<std::vector<int>, std::vector<int>>
+dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
+                                      std::span<const int> edges0, int tag0,
+                                      std::span<const int> edges1, int tag1)
+{
+  assert(tag0 != tag1);
+  spdlog::info(
+      "Computing communication graph edges for two overlapped consensus "
+      "rounds (using NBX algorithm). Number of input edges: {}, {}",
+      static_cast<int>(edges0.size()), static_cast<int>(edges1.size()));
+
+  // One persistent listener per edge set (distinguished by tag), so
+  // that arrivals for one round are never mistaken for the other.
+  std::array<std::byte, 2> buffer_recv;
+  std::array<MPI_Request, 2> recv_request;
+  int err = MPI_Irecv(&buffer_recv[0], 1, MPI_BYTE, MPI_ANY_SOURCE, tag0, comm,
+                      &recv_request[0]);
+  dolfinx::MPI::check_error(comm, err);
+  err = MPI_Irecv(&buffer_recv[1], 1, MPI_BYTE, MPI_ANY_SOURCE, tag1, comm,
+                  &recv_request[1]);
+  dolfinx::MPI::check_error(comm, err);
+
+  std::array<std::vector<MPI_Request>, 2> send_requests
+      = {std::vector<MPI_Request>(edges0.size()),
+         std::vector<MPI_Request>(edges1.size())};
+  std::byte send_buffer{0};
+  for (std::size_t e = 0; e < edges0.size(); ++e)
+  {
+    int err = MPI_Issend(&send_buffer, 1, MPI_BYTE, edges0[e], tag0, comm,
+                         &send_requests[0][e]);
+    dolfinx::MPI::check_error(comm, err);
+  }
+  for (std::size_t e = 0; e < edges1.size(); ++e)
+  {
+    int err = MPI_Issend(&send_buffer, 1, MPI_BYTE, edges1[e], tag1, comm,
+                         &send_requests[1][e]);
+    dolfinx::MPI::check_error(comm, err);
+  }
+
+  // Ranks that send to this rank, for edge set 0 and edge set 1
+  std::array<std::vector<int>, 2> src_ranks;
+
+  // Start sending/receiving. A single barrier covers both edge sets:
+  // it can only start once every send in both sets has completed.
+  MPI_Request barrier_request;
+  bool comm_complete = false;
+  bool barrier_active = false;
+  while (!comm_complete)
+  {
+    // Drain all currently queued messages for each edge set
+    for (int i = 0; i < 2; ++i)
+    {
+      int tag = (i == 0) ? tag0 : tag1;
+      int flag_recv;
+      MPI_Status status;
+      int err = MPI_Test(&recv_request[i], &flag_recv, &status);
+      dolfinx::MPI::check_error(comm, err);
+      while (flag_recv)
+      {
+        src_ranks[i].push_back(status.MPI_SOURCE);
+        int err = MPI_Irecv(&buffer_recv[i], 1, MPI_BYTE, MPI_ANY_SOURCE, tag,
+                            comm, &recv_request[i]);
+        dolfinx::MPI::check_error(comm, err);
+
+        err = MPI_Test(&recv_request[i], &flag_recv, &status);
+        dolfinx::MPI::check_error(comm, err);
+      }
+    }
+
+    if (barrier_active)
+    {
+      // Check for barrier completion
+      int flag = 0;
+      int err = MPI_Test(&barrier_request, &flag, MPI_STATUS_IGNORE);
+      dolfinx::MPI::check_error(comm, err);
+      if (flag)
+        comm_complete = true;
+    }
+    else
+    {
+      // Check if all sends, in both edge sets, have completed
+      int flag0 = 0, flag1 = 0;
+      int err = MPI_Testall(send_requests[0].size(), send_requests[0].data(),
+                            &flag0, MPI_STATUSES_IGNORE);
+      dolfinx::MPI::check_error(comm, err);
+      err = MPI_Testall(send_requests[1].size(), send_requests[1].data(),
+                        &flag1, MPI_STATUSES_IGNORE);
+      dolfinx::MPI::check_error(comm, err);
+      if (flag0 and flag1)
+      {
+        // All sends have completed, start non-blocking barrier
+        int err = MPI_Ibarrier(comm, &barrier_request);
+        dolfinx::MPI::check_error(comm, err);
+        barrier_active = true;
+      }
+    }
+  }
+
+  // No more messages can arrive once the barrier has completed, so
+  // cancel the still-outstanding listeners (see single edge-set
+  // overload for the rationale on handling the cancellation race).
+  for (int i = 0; i < 2; ++i)
+  {
+    err = MPI_Cancel(&recv_request[i]);
+    dolfinx::MPI::check_error(comm, err);
+    MPI_Status cancel_status;
+    err = MPI_Wait(&recv_request[i], &cancel_status);
+    dolfinx::MPI::check_error(comm, err);
+    int cancelled;
+    MPI_Test_cancelled(&cancel_status, &cancelled);
+    if (!cancelled)
+      src_ranks[i].push_back(cancel_status.MPI_SOURCE);
+  }
+
+  spdlog::info("Finished overlapped graph edge discovery using NBX "
+               "algorithm. Number of discovered edges {}, {}",
+               static_cast<int>(src_ranks[0].size()),
+               static_cast<int>(src_ranks[1].size()));
+
+  return {std::move(src_ranks[0]), std::move(src_ranks[1])};
 }
 //-----------------------------------------------------------------------------
