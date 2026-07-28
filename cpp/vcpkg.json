@@ -23,7 +23,6 @@
       ]
     },
     "spdlog",
-    "superlu-dist",
     "vcpkg-cmake",
     "vcpkg-cmake-config"
   ]
