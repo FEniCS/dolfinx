@@ -18,6 +18,7 @@
     "parmetis",
     "pugixml",
     "pkgconf",
+    "scotch",
     "spdlog",
     "vcpkg-cmake",
     "vcpkg-cmake-config"
