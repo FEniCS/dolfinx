@@ -36,7 +36,6 @@ namespace dolfinx::MPI
 enum class tag : int
 {
   consensus_pcx = 1200,
-  consensus_pex = 1201,
   consensus_nbx = 1202,
 };
 
