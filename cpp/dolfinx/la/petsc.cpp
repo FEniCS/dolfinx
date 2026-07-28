@@ -18,6 +18,7 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <format>
+#include <numeric>
 #include <ranges>
 #include <stdexcept>
 #include <utility>
@@ -334,10 +335,25 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "MatSetBlockSizes");
 
+  // Build a PETSc (PetscInt) local-to-global map directly from an
+  // IndexMap's local range and ghosts, rather than going via
+  // IndexMap::global_indices() (which materialises an intermediate
+  // std::int64_t array that would then need a second, full-size
+  // conversion pass -- wasteful for the large local sizes seen in
+  // practice)
+  auto build_l2g = [](const common::IndexMap& map) -> std::vector<PetscInt>
+  {
+    const std::int32_t size_local = map.size_local();
+    std::vector<PetscInt> l2g(size_local + map.num_ghosts());
+    std::iota(l2g.begin(), std::next(l2g.begin(), size_local),
+              static_cast<PetscInt>(map.local_range()[0]));
+    std::ranges::copy(map.ghosts(), std::next(l2g.begin(), size_local));
+    return l2g;
+  };
+
   // Create PETSc local-to-global map/index sets
   ISLocalToGlobalMapping local_to_global0;
-  const std::vector map0 = maps[0]->global_indices();
-  const std::vector<PetscInt> _map0(map0.begin(), map0.end());
+  std::vector<PetscInt> _map0 = build_l2g(*maps[0]);
   ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs[0], _map0.size(),
                                       _map0.data(), PETSC_COPY_VALUES,
                                       &local_to_global0);
@@ -355,8 +371,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   else
   {
     ISLocalToGlobalMapping local_to_global1;
-    const std::vector map1 = maps[1]->global_indices();
-    const std::vector<PetscInt> _map1(map1.begin(), map1.end());
+    std::vector<PetscInt> _map1 = build_l2g(*maps[1]);
     ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs[1], _map1.size(),
                                         _map1.data(), PETSC_COPY_VALUES,
                                         &local_to_global1);
