@@ -131,6 +131,10 @@ constexpr int index_owner(int size, std::size_t index, std::size_t N)
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] edges Edges (ranks) from this rank (the caller).
+/// @pre `edges` must not contain duplicate ranks: a duplicate makes
+/// the sender emit more messages than the reduce-scatter-based
+/// receive count expects, leaving a message unconsumed on the shared
+/// PCX tag that can corrupt a later, unrelated call.
 /// @return Ranks that have defined edges from them to this rank.
 std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
                                          std::span<const int> edges);

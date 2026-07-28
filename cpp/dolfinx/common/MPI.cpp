@@ -115,49 +115,43 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
   for (auto e : edges)
     edge_count_send[e] = 1;
 
-  // Determine how many in-edges this rank has
-  std::vector<int> recvcounts(size, 1);
+  // Determine how many in-edges this rank has. All ranks receive the
+  // same single-int block, so *_block avoids an O(size) recvcounts
+  // array of all-ones.
   int in_edges = 0;
   MPI_Request request_scatter;
-  int err = MPI_Ireduce_scatter(edge_count_send.data(), &in_edges,
-                                recvcounts.data(), MPI_INT, MPI_SUM, comm,
-                                &request_scatter);
+  int err = MPI_Ireduce_scatter_block(edge_count_send.data(), &in_edges, 1,
+                                      MPI_INT, MPI_SUM, comm, &request_scatter);
   dolfinx::MPI::check_error(comm, err);
 
+  // Synchronised, non-blocking send; content is never inspected (only
+  // arrival matters), so every send shares one source buffer.
   std::vector<MPI_Request> send_requests(edges.size());
-  std::vector<std::byte> send_buffer(edges.size());
+  std::byte send_buffer{0};
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    int err = MPI_Isend(send_buffer.data() + e, 1, MPI_BYTE, edges[e],
+    int err = MPI_Isend(&send_buffer, 1, MPI_BYTE, edges[e],
                         static_cast<int>(tag::consensus_pcx), comm,
                         &send_requests[e]);
     dolfinx::MPI::check_error(comm, err);
   }
 
-  // Probe for incoming messages and store incoming rank
+  // Receive exactly in_edges messages and record their source. A
+  // blocking recv is fine here (unlike NBX): the exact count is
+  // already known, so there is nothing to poll for and no risk of
+  // burning CPU cycles waiting on a message that may never arrive.
   err = MPI_Wait(&request_scatter, MPI_STATUS_IGNORE);
   dolfinx::MPI::check_error(comm, err);
   std::vector<int> other_ranks;
-  while (in_edges > 0)
+  other_ranks.reserve(in_edges);
+  for (int i = 0; i < in_edges; ++i)
   {
-    // Check for message
-    int request_pending;
     MPI_Status status;
-    int err = MPI_Iprobe(MPI_ANY_SOURCE, static_cast<int>(tag::consensus_pcx),
-                         comm, &request_pending, &status);
+    std::byte buffer_recv;
+    int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE,
+                       static_cast<int>(tag::consensus_pcx), comm, &status);
     dolfinx::MPI::check_error(comm, err);
-    if (request_pending)
-    {
-      // Receive message and store rank
-      int other_rank = status.MPI_SOURCE;
-      std::byte buffer_recv;
-      int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank,
-                         static_cast<int>(tag::consensus_pcx), comm,
-                         MPI_STATUS_IGNORE);
-      dolfinx::MPI::check_error(comm, err);
-      other_ranks.push_back(other_rank);
-      --in_edges;
-    }
+    other_ranks.push_back(status.MPI_SOURCE);
   }
 
   // Complete sends before send_buffer is destroyed
