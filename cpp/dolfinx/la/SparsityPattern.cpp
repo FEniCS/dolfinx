@@ -11,7 +11,7 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <limits>
-#include <map>
+#include <unordered_map>
 
 using namespace dolfinx;
 using namespace dolfinx::la;
@@ -255,19 +255,27 @@ void SparsityPattern::finalize()
   _col_ghost_owners.assign(_index_maps[1]->owners().begin(),
                            _index_maps[1]->owners().end());
 
+  // Neighbourhood rank of the owner of each ghost row (looked up once
+  // and reused below, rather than repeating the search per use)
+  std::vector<int> neighbour_rank(owners0.size());
+  std::ranges::transform(owners0, neighbour_rank.begin(),
+                         [src0](int owner)
+                         {
+                           auto it = std::ranges::lower_bound(src0, owner);
+                           assert(it != src0.end() and *it == owner);
+                           return static_cast<int>(
+                               std::distance(src0.begin(), it));
+                         });
+
   // Compute size of data to send to each process
   std::vector<int> send_sizes(src0.size(), 0);
   for (std::size_t i = 0; i < owners0.size(); ++i)
   {
-    auto it = std::ranges::lower_bound(src0, owners0[i]);
-    assert(it != src0.end() and *it == owners0[i]);
-    const int neighbour_rank = std::distance(src0.begin(), it);
-
     // Guard against overflowing the int MPI count
     const std::size_t count = 3 * _row_cache[i + local_size0].size();
-    assert(send_sizes[neighbour_rank] + count
+    assert(send_sizes[neighbour_rank[i]] + count
            <= static_cast<std::size_t>(std::numeric_limits<int>::max()));
-    send_sizes[neighbour_rank] += count;
+    send_sizes[neighbour_rank[i]] += count;
   }
 
   // Compute send displacements
@@ -282,14 +290,10 @@ void SparsityPattern::finalize()
   const int rank = dolfinx::MPI::rank(_comm.comm());
   for (std::size_t i = 0; i < owners0.size(); ++i)
   {
-    auto it = std::ranges::lower_bound(src0, owners0[i]);
-    assert(it != src0.end() and *it == owners0[i]);
-    const int neighbour_rank = std::distance(src0.begin(), it);
-
     for (std::int32_t col_local : _row_cache[i + local_size0])
     {
       // Get index in send buffer
-      const std::int32_t pos = insert_pos[neighbour_rank];
+      const std::int32_t pos = insert_pos[neighbour_rank[i]];
 
       // Pack send data
       ghost_data[pos] = ghosts0[i];
@@ -304,7 +308,7 @@ void SparsityPattern::finalize()
         ghost_data[pos + 2] = _col_ghost_owners[col_local - local_size1];
       }
 
-      insert_pos[neighbour_rank] += 3;
+      insert_pos[neighbour_rank[i]] += 3;
     }
   }
 
@@ -337,7 +341,8 @@ void SparsityPattern::finalize()
   }
 
   // Global to local map for ghost column indices
-  std::map<std::int64_t, std::int32_t> global_to_local;
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local;
+  global_to_local.reserve(_col_ghosts.size());
   std::int32_t local_i = local_size1;
   for (std::int64_t global_i : _col_ghosts)
     global_to_local.insert({global_i, local_i++});
@@ -370,10 +375,19 @@ void SparsityPattern::finalize()
     }
   }
 
-  // Sort and remove duplicate column indices in each row. Counts are
-  // std::int64_t to avoid overflowing the partial sum into _offsets.
-  std::vector<std::int64_t> adj_counts(local_size0 + owners0.size(), 0);
+  // Reserve an upper bound (pre-duplicate-removal count) for the edge
+  // list so it is not repeatedly reallocated in the loop below
+  std::size_t nnz_upper_bound = 0;
+  for (const std::vector<std::int32_t>& row : _row_cache)
+    nnz_upper_bound += row.size();
+  _edges.reserve(nnz_upper_bound);
+
+  // Sort and remove duplicate column indices in each row, building the
+  // CSR offsets as we go. Offsets are std::int64_t to avoid
+  // overflowing the running sum into _offsets.
   _off_diagonal_offsets.resize(local_size0 + owners0.size());
+  _offsets.reserve(local_size0 + owners0.size() + 1);
+  _offsets.push_back(0);
   for (std::size_t i = 0; i < local_size0 + owners0.size(); ++i)
   {
     std::vector<std::int32_t>& row = _row_cache[i];
@@ -386,14 +400,10 @@ void SparsityPattern::finalize()
         std::ranges::lower_bound(row.begin(), it_end, local_size1));
 
     _edges.insert(_edges.end(), row.begin(), it_end);
-    adj_counts[i] += std::distance(row.begin(), it_end);
+    _offsets.push_back(_offsets.back() + std::distance(row.begin(), it_end));
   }
   // Clear cache
   std::vector<std::vector<std::int32_t>>().swap(_row_cache);
-
-  // Compute offsets for adjacency list
-  _offsets.resize(local_size0 + owners0.size() + 1, 0);
-  std::partial_sum(adj_counts.begin(), adj_counts.end(), _offsets.begin() + 1);
 
   _edges.shrink_to_fit();
 
