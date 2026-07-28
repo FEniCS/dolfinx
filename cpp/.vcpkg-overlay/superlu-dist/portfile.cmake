@@ -22,22 +22,34 @@ if(VCPKG_TARGET_IS_WINDOWS)
     scotch
     scotcherr
   )
-  set(SUPERLU_DIST_PARMETIS_LIBRARIES "")
+  # Debug/release scotch import libs share the same file names (no debug
+  # postfix), but live under debug/lib and lib respectively, so the two
+  # configs need distinct TPL_PARMETIS_LIBRARIES values.
+  set(SUPERLU_DIST_PARMETIS_LIBRARIES_DEBUG "")
+  set(SUPERLU_DIST_PARMETIS_LIBRARIES_RELEASE "")
   foreach(
     SUPERLU_DIST_SCOTCH_LIBRARY_NAME
     IN
     LISTS SUPERLU_DIST_SCOTCH_LIBRARY_NAMES
   )
     string(
-      APPEND SUPERLU_DIST_PARMETIS_LIBRARIES
+      APPEND SUPERLU_DIST_PARMETIS_LIBRARIES_DEBUG
+      "${CURRENT_INSTALLED_DIR}/debug/lib/${SUPERLU_DIST_SCOTCH_LIBRARY_NAME}.lib "
+    )
+    string(
+      APPEND SUPERLU_DIST_PARMETIS_LIBRARIES_RELEASE
       "${CURRENT_INSTALLED_DIR}/lib/${SUPERLU_DIST_SCOTCH_LIBRARY_NAME}.lib "
     )
   endforeach()
 else()
+  # No debug/release split needed: "-lname" relies on vcpkg's
+  # toolchain-managed, already config-aware library search paths.
   set(
     SUPERLU_DIST_PARMETIS_LIBRARIES
     "-lptscotchparmetisv3 -lptscotch -lptscotcherr -lscotchmetisv5 -lscotch -lscotcherr"
   )
+  set(SUPERLU_DIST_PARMETIS_LIBRARIES_DEBUG "${SUPERLU_DIST_PARMETIS_LIBRARIES}")
+  set(SUPERLU_DIST_PARMETIS_LIBRARIES_RELEASE "${SUPERLU_DIST_PARMETIS_LIBRARIES}")
 endif()
 
 vcpkg_cmake_configure(
@@ -53,8 +65,11 @@ vcpkg_cmake_configure(
     -DTPL_ENABLE_LAPACKLIB=ON
     -DTPL_ENABLE_PARMETISLIB=ON
     "-DTPL_PARMETIS_INCLUDE_DIRS=${CURRENT_INSTALLED_DIR}/include"
-    "-DTPL_PARMETIS_LIBRARIES=${SUPERLU_DIST_PARMETIS_LIBRARIES}"
     "-DCMAKE_C_FLAGS_INIT=-DSCOTCH_METIS_VERSION=5"
+  OPTIONS_DEBUG
+    "-DTPL_PARMETIS_LIBRARIES=${SUPERLU_DIST_PARMETIS_LIBRARIES_DEBUG}"
+  OPTIONS_RELEASE
+    "-DTPL_PARMETIS_LIBRARIES=${SUPERLU_DIST_PARMETIS_LIBRARIES_RELEASE}"
 )
 vcpkg_cmake_install()
 vcpkg_fixup_pkgconfig()
