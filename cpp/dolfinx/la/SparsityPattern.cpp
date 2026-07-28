@@ -18,19 +18,13 @@ using namespace dolfinx::la;
 
 namespace
 {
-/// @brief Bucket (row, column) entries by row.
-///
-/// Groups entries with matching row indices together, without
-/// sorting or removing duplicates within a row. Used to obtain
-/// per-row slices from the flat (row, column) insertion cache without
-/// keeping one heap-allocated container per row.
-///
+/// @brief Bucket (row, column) entries by row (not sorted or deduped
+/// within a row).
 /// @param[in] rows Row index of each entry.
 /// @param[in] cols Column index of each entry (same length as `rows`).
 /// @param[in] num_rows Number of rows to bucket into.
-/// @return Row offsets (size `num_rows + 1`) and the column indices
-/// grouped by row, i.e. row `i` occupies
-/// `cols[offsets[i]:offsets[i + 1]]`.
+/// @return Row offsets (size `num_rows + 1`) and column indices
+/// grouped by row: row `i` occupies `cols[offsets[i]:offsets[i+1]]`.
 std::pair<std::vector<std::int64_t>, std::vector<std::int32_t>>
 bucket_by_row(std::span<const std::int32_t> rows,
               std::span<const std::int32_t> cols, std::int32_t num_rows)
@@ -130,8 +124,7 @@ SparsityPattern::SparsityPattern(
       const int bs_dof0 = bs[0][row];
       const int bs_dof1 = bs[1][col];
 
-      // Bucket the sub-pattern's insertion cache by row once, giving
-      // per-row column slices for the owned/ghost row loops below
+      // Bucket the sub-pattern's cache by row for the loops below
       const auto [p_offsets, p_cols]
           = bucket_by_row(p->_cache_rows, p->_cache_cols,
                           num_rows_local + num_ghost_rows_local);
@@ -305,14 +298,12 @@ void SparsityPattern::finalize()
   _col_ghost_owners.assign(_index_maps[1]->owners().begin(),
                            _index_maps[1]->owners().end());
 
-  // Bucket the flat (row, column) insertion cache by row, giving
-  // per-row slices without keeping one heap-allocated vector per row
+  // Bucket the insertion cache by row for the loops below
   const std::int32_t num_rows0 = local_size0 + _index_maps[0]->num_ghosts();
   const auto [cache_offsets, cache_cols]
       = bucket_by_row(_cache_rows, _cache_cols, num_rows0);
 
-  // Neighbourhood rank of the owner of each ghost row (looked up once
-  // and reused below, rather than repeating the search per use)
+  // Neighbourhood rank of each ghost row's owner, looked up once
   std::vector<int> neighbour_rank(owners0.size());
   std::ranges::transform(owners0, neighbour_rank.begin(),
                          [src0](int owner)
@@ -408,9 +399,7 @@ void SparsityPattern::finalize()
   for (std::int64_t global_i : _col_ghosts)
     global_to_local.insert({global_i, local_i++});
 
-  // Add data received from the neighborhood. Collected separately
-  // from the local cache (only owned rows can receive) and bucketed
-  // by row below, rather than appending into per-row vectors.
+  // Add data received from the neighborhood, bucketed by row below
   std::vector<std::int32_t> recv_rows, recv_cols;
   recv_rows.reserve(ghost_data_in.size() / 3);
   recv_cols.reserve(ghost_data_in.size() / 3);
@@ -443,14 +432,11 @@ void SparsityPattern::finalize()
   const auto [recv_offsets, recv_cols_bucketed]
       = bucket_by_row(recv_rows, recv_cols, local_size0);
 
-  // Reserve the (exact, pre-duplicate-removal) edge count so the edge
-  // list is not repeatedly reallocated in the loop below
+  // Reserve the exact pre-dedup edge count
   _edges.reserve(cache_cols.size() + recv_cols_bucketed.size());
 
-  // Sort and remove duplicate column indices in each row, building the
-  // CSR offsets as we go. Offsets are std::int64_t to avoid
-  // overflowing the running sum into _offsets. A single scratch buffer
-  // is reused across rows rather than keeping one vector per row.
+  // Sort and remove duplicates per row, building CSR offsets as we
+  // go. Offsets are int64_t to avoid overflow.
   _off_diagonal_offsets.resize(num_rows0);
   _offsets.reserve(num_rows0 + 1);
   _offsets.push_back(0);

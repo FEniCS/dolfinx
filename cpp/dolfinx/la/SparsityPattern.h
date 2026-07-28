@@ -165,8 +165,7 @@ private:
   std::vector<std::int32_t> _col_ghost_owners;
 
   // Cache of unassembled (row, column) entries on owned and unowned
-  // (ghost) rows, stored as parallel row/column arrays (row-major COO)
-  // rather than one heap-allocated vector per row.
+  // (ghost) rows, as parallel row/column arrays (row-major COO).
   std::vector<std::int32_t> _cache_rows;
   std::vector<std::int32_t> _cache_cols;
 
