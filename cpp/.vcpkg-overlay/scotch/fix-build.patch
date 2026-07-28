@@ -3,7 +3,7 @@ index f410480..9a95d1f 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -134,9 +134,12 @@ endif()
-
+ 
  # Thread support in Scotch
  if(THREADS)
 -  find_package(Threads)
@@ -28,7 +28,7 @@ index f410480..9a95d1f 100644
 +  set(USE_PTHREAD ON)
 +endif()
  endif()
-
+ 
  # Detect and remove GCC _FORTIFY_SOURCE
 diff --git a/src/libscotch/CMakeLists.txt b/src/libscotch/CMakeLists.txt
 index c142c22..873bc7e 100644
@@ -36,7 +36,7 @@ index c142c22..873bc7e 100644
 +++ b/src/libscotch/CMakeLists.txt
 @@ -573,9 +573,13 @@ if(LIBLZMA_FOUND)
  endif()
-
+ 
  # Add thread library
 -if(Threads_FOUND)
 -  target_compile_definitions(scotch PRIVATE COMMON_PTHREAD SCOTCH_PTHREAD)
@@ -49,12 +49,12 @@ index c142c22..873bc7e 100644
 +    target_link_libraries(scotch PUBLIC PThreads4W::PThreads4W)
 +  endif()
  endif()
-
+ 
  # Include files
 @@ -854,9 +858,13 @@ if(BUILD_PTSCOTCH)
      set_target_properties(ptscotch PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
    endif()
-
+ 
 -  if(Threads_FOUND)
 -    target_compile_definitions(ptscotch PRIVATE SCOTCH_PTHREAD COMMON_PTHREAD)
 -    target_link_libraries(ptscotch PRIVATE Threads::Threads ${THREADS_PTHREADS_WIN32_LIBRARY})
@@ -66,7 +66,7 @@ index c142c22..873bc7e 100644
 +      target_link_libraries(ptscotch PUBLIC PThreads4W::PThreads4W)
 +    endif()
    endif()
-
+ 
    add_library(ptscotcherr library_error.c)
 diff --git a/src/libscotch/common_file_compress.c b/src/libscotch/common_file_compress.c
 index 5255cdc..5f60dc8 100644
@@ -98,7 +98,7 @@ index 6e80222..3048d90 100644
 +#else
        ssize_t             bytenbr;
 +#endif
-
+ 
        bytenbr = fread (compptr->bufftab, 1, FILECOMPRESSDATASIZE, compptr->oustptr); /* Read from pipe */
        if (ferror (compptr->oustptr)) {
 diff --git a/src/libscotch/common_thread.h b/src/libscotch/common_thread.h
@@ -128,18 +128,18 @@ index acda708..3bf20e5 100644
 +  , { }
 +#endif
 +  };
-
+ 
  /***********************************/
  /*                                 */
 @@ -91,8 +95,8 @@ Context * const             contptr)
    int                 o;
-
+ 
    o = contextValuesInit (contptr, &contextvaluesdat, sizeof (contextvaluesdat),
 -                         CONTEXTOPTIONNUMNBR, (byte *) &contextvaluesdat.vinttab - (byte *) &contextvaluesdat,
 -                         CONTEXTOPTIONDBLNBR, (byte *) &contextvaluesdat.vdbltab - (byte *) &contextvaluesdat);
 +                         CONTEXTOPTIONNUMNBR, (char *) &contextvaluesdat.vinttab - (char *) &contextvaluesdat,
 +                         CONTEXTOPTIONDBLNBR, (char *) &contextvaluesdat.vdbltab - (char *) &contextvaluesdat);
-
+ 
    if (o == 0) {                                   /* If values array allocated, update it with existing environment variables */
      INT                 deteval;
 diff --git a/src/libscotch/parser_ll.l b/src/libscotch/parser_ll.l
@@ -149,7 +149,7 @@ index 7b690e0..cf9bf20 100644
 @@ -96,6 +96,10 @@
  %option noyywrap
  %option reentrant
-
+ 
 +/* To support build on Windows */
 +%option nounistd
 +
@@ -162,7 +162,7 @@ index ef36169..fcbc1f4 100644
 --- a/src/libscotch/parser_yy.y
 +++ b/src/libscotch/parser_yy.y
 @@ -64,6 +64,9 @@
-
+ 
  #include "module.h"
  #include "common.h"
 +#ifdef _MSC_VER
@@ -193,7 +193,7 @@ index 243e21d..2d62c4b 100644
 +  endif(USE_PTHREAD)
    target_link_libraries(${file_we} PUBLIC scotch scotcherrexit)
  endfunction(add_scotch_exe)
-
+ 
 @@ -145,10 +149,14 @@ if(BUILD_PTSCOTCH)
        ${GENERATED_INCLUDE_DIR}/ptscotch.h)
      add_dependencies(${file_we} ptscotch_h)
