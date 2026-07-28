@@ -525,6 +525,17 @@ if(BUILD_TESTING)
 endif()
 
 # ------------------------------------------------------------------------------
+# Demos
+option(
+  DOLFINX_BUILD_DEMOS
+  "Build DOLFINx C++ demos and create demo test targets."
+  OFF
+)
+if(DOLFINX_BUILD_DEMOS)
+  add_subdirectory(demo)
+endif()
+
+# ------------------------------------------------------------------------------
 # Generate and install helper file dolfinx.conf
 
 # FIXME: Can CMake provide the library path name variable?
@@ -550,7 +561,7 @@ install(
 # ------------------------------------------------------------------------------
 # Install the demo source files
 install(
-  DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/demo
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/demo
   DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx
   FILES_MATCHING
   PATTERN "CMakeLists.txt"

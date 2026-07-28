@@ -39,13 +39,16 @@ target_compile_options(
 )
 
 # Test targets (used by DOLFINx testing system)
-add_test(NAME ${{PROJECT_NAME}}_mpi_2
-         COMMAND ${{MPIEXEC_EXECUTABLE}} ${{MPIEXEC_NUMPROC_FLAG}} 2
-                 ${{MPIEXEC_PREFLAGS}} $<TARGET_FILE:${{PROJECT_NAME}}> ${{MPIEXEC_POSTFLAGS}})
-add_test(NAME ${{PROJECT_NAME}}_mpi_3
-         COMMAND ${{MPIEXEC_EXECUTABLE}} ${{MPIEXEC_NUMPROC_FLAG}} 3
-                 ${{MPIEXEC_PREFLAGS}} $<TARGET_FILE:${{PROJECT_NAME}}> ${{MPIEXEC_POSTFLAGS}})
-add_test(NAME ${{PROJECT_NAME}}_serial COMMAND $<TARGET_FILE:${{PROJECT_NAME}}>)
+# To select one np use, e.g.:
+# ctest -R {project_name}_np_3
+foreach(N 1 2 3)
+  add_test(NAME ${{PROJECT_NAME}}_np_${{N}}
+           COMMAND ${{MPIEXEC_EXECUTABLE}} ${{MPIEXEC_NUMPROC_FLAG}} ${{N}}
+                   ${{MPIEXEC_PREFLAGS}} $<TARGET_FILE:${{PROJECT_NAME}}> ${{MPIEXEC_POSTFLAGS}})
+  # This tells ctest how many physical cores (i.e., ${{N}}) are needed for each
+  # test, preventing oversubscription when using e.g. `ctest -j2`.
+  set_tests_properties(${{PROJECT_NAME}}_np_${{N}} PROPERTIES PROCESSORS ${{N}})
+endforeach()
 """
 
 
@@ -117,13 +120,16 @@ else()
   )
 
   # Test targets (used by DOLFINx testing system)
-  add_test(NAME ${{PROJECT_NAME}}_mpi_2
-           COMMAND ${{MPIEXEC_EXECUTABLE}} ${{MPIEXEC_NUMPROC_FLAG}} 2
-                   ${{MPIEXEC_PREFLAGS}} $<TARGET_FILE:${{PROJECT_NAME}}> ${{MPIEXEC_POSTFLAGS}})
-  add_test(NAME ${{PROJECT_NAME}}_mpi_3
-           COMMAND ${{MPIEXEC_EXECUTABLE}} ${{MPIEXEC_NUMPROC_FLAG}} 3
-                   ${{MPIEXEC_PREFLAGS}} $<TARGET_FILE:${{PROJECT_NAME}}> ${{MPIEXEC_POSTFLAGS}})
-  add_test(NAME ${{PROJECT_NAME}}_serial COMMAND $<TARGET_FILE:${{PROJECT_NAME}}>)
+  # To select one np use, e.g.:
+  # ctest -R {project_name}_np_3
+  foreach(N 1 2 3)
+    add_test(NAME ${{PROJECT_NAME}}_np_${{N}}
+             COMMAND ${{MPIEXEC_EXECUTABLE}} ${{MPIEXEC_NUMPROC_FLAG}} ${{N}}
+                     ${{MPIEXEC_PREFLAGS}} $<TARGET_FILE:${{PROJECT_NAME}}> ${{MPIEXEC_POSTFLAGS}})
+    # This tells ctest how many physical cores (i.e., ${{N}}) are needed for each
+    # test, preventing oversubscription when using e.g. `ctest -j2`.
+    set_tests_properties(${{PROJECT_NAME}}_np_${{N}} PROPERTIES PROCESSORS ${{N}})
+  endforeach()
 endif()
 """
 
@@ -194,13 +200,16 @@ set_source_files_properties(
 )
 
 # Test targets (used by DOLFINx testing system)
-add_test(NAME ${{PROJECT_NAME}}_mpi_2
-         COMMAND ${{MPIEXEC_EXECUTABLE}} ${{MPIEXEC_NUMPROC_FLAG}} 2
-                 ${{MPIEXEC_PREFLAGS}} $<TARGET_FILE:${{PROJECT_NAME}}> ${{MPIEXEC_POSTFLAGS}})
-add_test(NAME ${{PROJECT_NAME}}_mpi_3
-         COMMAND ${{MPIEXEC_EXECUTABLE}} ${{MPIEXEC_NUMPROC_FLAG}} 3
-                 ${{MPIEXEC_PREFLAGS}} $<TARGET_FILE:${{PROJECT_NAME}}> ${{MPIEXEC_POSTFLAGS}})
-add_test(NAME ${{PROJECT_NAME}}_serial COMMAND $<TARGET_FILE:${{PROJECT_NAME}}>)
+# To select one np use, e.g.:
+# ctest -R {project_name}_np_3
+foreach(N 1 2 3)
+  add_test(NAME ${{PROJECT_NAME}}_np_${{N}}
+           COMMAND ${{MPIEXEC_EXECUTABLE}} ${{MPIEXEC_NUMPROC_FLAG}} ${{N}}
+                   ${{MPIEXEC_PREFLAGS}} $<TARGET_FILE:${{PROJECT_NAME}}> ${{MPIEXEC_POSTFLAGS}})
+  # This tells ctest how many physical cores (i.e., ${{N}}) are needed for each
+  # test, preventing oversubscription when using e.g. `ctest -j2`.
+  set_tests_properties(${{PROJECT_NAME}}_np_${{N}} PROPERTIES PROCESSORS ${{N}})
+endforeach()
 """
 
 # Subdirectories

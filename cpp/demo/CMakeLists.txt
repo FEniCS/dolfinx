@@ -1,11 +1,14 @@
-cmake_minimum_required(VERSION 3.16)
-project(dolfinx-demos)
+cmake_minimum_required(VERSION 3.21)
 
-# Find DOLFINx config file
-find_package(DOLFINX REQUIRED)
+project(dolfinx-demos LANGUAGES C CXX)
 
-# Enable testing
-enable_testing()
+if(PROJECT_IS_TOP_LEVEL)
+  include(CTest) # enables testing
+  find_package(DOLFINX REQUIRED)
+else()
+  # Required to find version.h, propagates to the demo subdirectories.
+  include_directories(${CMAKE_CURRENT_BINARY_DIR}/../)
+endif()
 
 # Macro to add demos. Some subdirectories might be skipped because demos may not
 # be running in both real and complex modes.
