@@ -374,9 +374,9 @@ dolfinx::MPI::impl::postoffice_plan(int size, int rank,
       dest.push_back((*it)[0]);
 
       // Find iterator to next global rank
-      auto it1
-          = std::find_if(it, dest_to_index.end(),
-                         [r = dest.back()](auto& idx) { return idx[0] != r; });
+      auto it1 = std::ranges::find_if(it, dest_to_index.end(),
+                                      [r = dest.back()](auto& idx)
+                                      { return idx[0] != r; });
 
       // Store number of items for current rank
       num_items_per_dest.push_back(std::distance(it, it1));
