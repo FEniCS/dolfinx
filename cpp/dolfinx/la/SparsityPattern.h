@@ -164,8 +164,11 @@ private:
   // Owning process of ghost columns in owned rows
   std::vector<std::int32_t> _col_ghost_owners;
 
-  // Cache for unassembled entries on owned and unowned (ghost) rows
-  std::vector<std::vector<std::int32_t>> _row_cache;
+  // Cache of unassembled (row, column) entries on owned and unowned
+  // (ghost) rows, stored as parallel row/column arrays (row-major COO)
+  // rather than one heap-allocated vector per row.
+  std::vector<std::int32_t> _cache_rows;
+  std::vector<std::int32_t> _cache_cols;
 
   // Sparsity pattern adjacency data (computed once pattern is
   // finalised). _edges holds the edges (connected dofs). The edges for

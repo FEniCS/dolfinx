@@ -16,6 +16,40 @@
 using namespace dolfinx;
 using namespace dolfinx::la;
 
+namespace
+{
+/// @brief Bucket (row, column) entries by row.
+///
+/// Groups entries with matching row indices together, without
+/// sorting or removing duplicates within a row. Used to obtain
+/// per-row slices from the flat (row, column) insertion cache without
+/// keeping one heap-allocated container per row.
+///
+/// @param[in] rows Row index of each entry.
+/// @param[in] cols Column index of each entry (same length as `rows`).
+/// @param[in] num_rows Number of rows to bucket into.
+/// @return Row offsets (size `num_rows + 1`) and the column indices
+/// grouped by row, i.e. row `i` occupies
+/// `cols[offsets[i]:offsets[i + 1]]`.
+std::pair<std::vector<std::int64_t>, std::vector<std::int32_t>>
+bucket_by_row(std::span<const std::int32_t> rows,
+              std::span<const std::int32_t> cols, std::int32_t num_rows)
+{
+  assert(rows.size() == cols.size());
+  std::vector<std::int64_t> offsets(num_rows + 1, 0);
+  for (std::int32_t row : rows)
+    ++offsets[row + 1];
+  std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
+
+  std::vector<std::int64_t> pos(offsets.begin(), std::prev(offsets.end()));
+  std::vector<std::int32_t> bucketed(cols.size());
+  for (std::size_t i = 0; i < rows.size(); ++i)
+    bucketed[pos[rows[i]]++] = cols[i];
+
+  return {std::move(offsets), std::move(bucketed)};
+}
+} // namespace
+
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
     MPI_Comm comm, std::array<std::shared_ptr<const common::IndexMap>, 2> maps,
@@ -23,8 +57,6 @@ SparsityPattern::SparsityPattern(
     : _comm(comm), _index_maps(std::move(maps)), _bs(bs)
 {
   assert(_index_maps[0]);
-  _row_cache.resize(_index_maps[0]->size_local()
-                    + _index_maps[0]->num_ghosts());
 }
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
@@ -70,8 +102,6 @@ SparsityPattern::SparsityPattern(
   _index_maps[1] = std::make_shared<common::IndexMap>(
       comm, local_offset1.back(), ghosts1, ghost_owners1);
 
-  _row_cache.resize(_index_maps[0]->size_local()
-                    + _index_maps[0]->num_ghosts());
   const std::int32_t num_rows_local_new = _index_maps[0]->size_local();
 
   // Iterate over block rows
@@ -100,11 +130,18 @@ SparsityPattern::SparsityPattern(
       const int bs_dof0 = bs[0][row];
       const int bs_dof1 = bs[1][col];
 
+      // Bucket the sub-pattern's insertion cache by row once, giving
+      // per-row column slices for the owned/ghost row loops below
+      const auto [p_offsets, p_cols]
+          = bucket_by_row(p->_cache_rows, p->_cache_cols,
+                          num_rows_local + num_ghost_rows_local);
+
       // Iterate over owned rows cache
       for (std::int32_t i = 0; i < num_rows_local; ++i)
       {
-        for (std::int32_t c_old : p->_row_cache[i])
+        for (std::int64_t k = p_offsets[i]; k < p_offsets[i + 1]; ++k)
         {
+          const std::int32_t c_old = p_cols[k];
           const std::int32_t r_new = bs_dof0 * i + local_offset0[row];
           const std::int32_t c_new = (c_old < num_cols_local)
                                          ? bs_dof1 * c_old + local_offset1[col]
@@ -115,15 +152,20 @@ SparsityPattern::SparsityPattern(
           for (int k0 = 0; k0 < bs_dof0; ++k0)
           {
             for (int k1 = 0; k1 < bs_dof1; ++k1)
-              _row_cache[r_new + k0].push_back(c_new + k1);
+            {
+              _cache_rows.push_back(r_new + k0);
+              _cache_cols.push_back(c_new + k1);
+            }
           }
         }
       }
       // Iterate over unowned rows cache
       for (std::int32_t i = 0; i < num_ghost_rows_local; ++i)
       {
-        for (std::int32_t c_old : p->_row_cache[i + num_rows_local])
+        for (std::int64_t k = p_offsets[num_rows_local + i];
+             k < p_offsets[num_rows_local + i + 1]; ++k)
         {
+          const std::int32_t c_old = p_cols[k];
           const std::int32_t r_new = bs_dof0 * i + ghost_offsets0[row];
           const std::int32_t c_new = (c_old < num_cols_local)
                                          ? bs_dof1 * c_old + local_offset1[col]
@@ -133,7 +175,10 @@ SparsityPattern::SparsityPattern(
           for (int k0 = 0; k0 < bs_dof0; ++k0)
           {
             for (int k1 = 0; k1 < bs_dof1; ++k1)
-              _row_cache[num_rows_local_new + r_new + k0].push_back(c_new + k1);
+            {
+              _cache_rows.push_back(num_rows_local_new + r_new + k0);
+              _cache_cols.push_back(c_new + k1);
+            }
           }
         }
       }
@@ -159,7 +204,8 @@ void SparsityPattern::insert(std::int32_t row, std::int32_t col)
         "Cannot insert rows that do not exist in the IndexMap.");
   }
 
-  _row_cache[row].push_back(col);
+  _cache_rows.push_back(row);
+  _cache_cols.push_back(col);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(std::span<const std::int32_t> rows,
@@ -175,6 +221,8 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
   const std::int32_t max_row
       = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
 
+  _cache_rows.reserve(_cache_rows.size() + rows.size() * cols.size());
+  _cache_cols.reserve(_cache_cols.size() + rows.size() * cols.size());
   for (std::int32_t row : rows)
   {
     if (row > max_row or row < 0)
@@ -182,7 +230,8 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
       throw std::runtime_error(
           "Cannot insert rows that do not exist in the IndexMap.");
     }
-    _row_cache[row].insert(_row_cache[row].end(), cols.begin(), cols.end());
+    _cache_rows.insert(_cache_rows.end(), cols.size(), row);
+    _cache_cols.insert(_cache_cols.end(), cols.begin(), cols.end());
   }
 }
 //-----------------------------------------------------------------------------
@@ -205,9 +254,10 @@ void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
       throw std::runtime_error(
           "Cannot insert rows that do not exist in the IndexMap.");
     }
-
-    _row_cache[row].push_back(row);
   }
+
+  _cache_rows.insert(_cache_rows.end(), rows.begin(), rows.end());
+  _cache_cols.insert(_cache_cols.end(), rows.begin(), rows.end());
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
@@ -255,6 +305,12 @@ void SparsityPattern::finalize()
   _col_ghost_owners.assign(_index_maps[1]->owners().begin(),
                            _index_maps[1]->owners().end());
 
+  // Bucket the flat (row, column) insertion cache by row, giving
+  // per-row slices without keeping one heap-allocated vector per row
+  const std::int32_t num_rows0 = local_size0 + _index_maps[0]->num_ghosts();
+  const auto [cache_offsets, cache_cols]
+      = bucket_by_row(_cache_rows, _cache_cols, num_rows0);
+
   // Neighbourhood rank of the owner of each ghost row (looked up once
   // and reused below, rather than repeating the search per use)
   std::vector<int> neighbour_rank(owners0.size());
@@ -272,7 +328,9 @@ void SparsityPattern::finalize()
   for (std::size_t i = 0; i < owners0.size(); ++i)
   {
     // Guard against overflowing the int MPI count
-    const std::size_t count = 3 * _row_cache[i + local_size0].size();
+    const std::size_t count = 3
+                              * (cache_offsets[local_size0 + i + 1]
+                                 - cache_offsets[local_size0 + i]);
     assert(send_sizes[neighbour_rank[i]] + count
            <= static_cast<std::size_t>(std::numeric_limits<int>::max()));
     send_sizes[neighbour_rank[i]] += count;
@@ -290,8 +348,11 @@ void SparsityPattern::finalize()
   const int rank = dolfinx::MPI::rank(_comm.comm());
   for (std::size_t i = 0; i < owners0.size(); ++i)
   {
-    for (std::int32_t col_local : _row_cache[i + local_size0])
+    for (std::int64_t k = cache_offsets[local_size0 + i];
+         k < cache_offsets[local_size0 + i + 1]; ++k)
     {
+      const std::int32_t col_local = cache_cols[k];
+
       // Get index in send buffer
       const std::int32_t pos = insert_pos[neighbour_rank[i]];
 
@@ -347,17 +408,23 @@ void SparsityPattern::finalize()
   for (std::int64_t global_i : _col_ghosts)
     global_to_local.insert({global_i, local_i++});
 
-  // Add data received from the neighborhood
+  // Add data received from the neighborhood. Collected separately
+  // from the local cache (only owned rows can receive) and bucketed
+  // by row below, rather than appending into per-row vectors.
+  std::vector<std::int32_t> recv_rows, recv_cols;
+  recv_rows.reserve(ghost_data_in.size() / 3);
+  recv_cols.reserve(ghost_data_in.size() / 3);
   for (std::size_t i = 0; i < ghost_data_in.size(); i += 3)
   {
     const std::int32_t row_local = ghost_data_in[i] - local_range0[0];
     const std::int64_t col = ghost_data_in[i + 1];
     const int owner = ghost_data_in[i + 2];
+    recv_rows.push_back(row_local);
     if (col >= local_range1[0] and col < local_range1[1])
     {
       // Convert to local column index
       const std::int32_t J = col - local_range1[0];
-      _row_cache[row_local].push_back(J);
+      recv_cols.push_back(J);
     }
     else
     {
@@ -370,27 +437,35 @@ void SparsityPattern::finalize()
         ++local_i;
       }
 
-      const std::int32_t col_local = it.first->second;
-      _row_cache[row_local].push_back(col_local);
+      recv_cols.push_back(it.first->second);
     }
   }
+  const auto [recv_offsets, recv_cols_bucketed]
+      = bucket_by_row(recv_rows, recv_cols, local_size0);
 
-  // Reserve an upper bound (pre-duplicate-removal count) for the edge
-  // list so it is not repeatedly reallocated in the loop below
-  std::size_t nnz_upper_bound = 0;
-  for (const std::vector<std::int32_t>& row : _row_cache)
-    nnz_upper_bound += row.size();
-  _edges.reserve(nnz_upper_bound);
+  // Reserve the (exact, pre-duplicate-removal) edge count so the edge
+  // list is not repeatedly reallocated in the loop below
+  _edges.reserve(cache_cols.size() + recv_cols_bucketed.size());
 
   // Sort and remove duplicate column indices in each row, building the
   // CSR offsets as we go. Offsets are std::int64_t to avoid
-  // overflowing the running sum into _offsets.
-  _off_diagonal_offsets.resize(local_size0 + owners0.size());
-  _offsets.reserve(local_size0 + owners0.size() + 1);
+  // overflowing the running sum into _offsets. A single scratch buffer
+  // is reused across rows rather than keeping one vector per row.
+  _off_diagonal_offsets.resize(num_rows0);
+  _offsets.reserve(num_rows0 + 1);
   _offsets.push_back(0);
-  for (std::size_t i = 0; i < local_size0 + owners0.size(); ++i)
+  std::vector<std::int32_t> row;
+  for (std::int32_t i = 0; i < num_rows0; ++i)
   {
-    std::vector<std::int32_t>& row = _row_cache[i];
+    row.clear();
+    row.insert(row.end(), cache_cols.begin() + cache_offsets[i],
+               cache_cols.begin() + cache_offsets[i + 1]);
+    if (i < local_size0)
+    {
+      row.insert(row.end(), recv_cols_bucketed.begin() + recv_offsets[i],
+                 recv_cols_bucketed.begin() + recv_offsets[i + 1]);
+    }
+
     std::ranges::sort(row);
     auto it_end = std::ranges::unique(row).begin();
 
@@ -402,8 +477,10 @@ void SparsityPattern::finalize()
     _edges.insert(_edges.end(), row.begin(), it_end);
     _offsets.push_back(_offsets.back() + std::distance(row.begin(), it_end));
   }
+
   // Clear cache
-  std::vector<std::vector<std::int32_t>>().swap(_row_cache);
+  std::vector<std::int32_t>().swap(_cache_rows);
+  std::vector<std::int32_t>().swap(_cache_cols);
 
   _edges.shrink_to_fit();
 
