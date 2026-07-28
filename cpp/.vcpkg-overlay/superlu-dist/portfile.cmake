@@ -6,6 +6,15 @@ vcpkg_from_github(
   HEAD_REF master
 )
 
+# Upstream typo: every other source under prec-independent/ is spelled
+# correctly except the MSVC-only wingetopt.c entry, which breaks the
+# Windows configure (Cannot find source file: pred-independent/wingetopt.c).
+vcpkg_replace_string(
+  "${SOURCE_PATH}/SRC/CMakeLists.txt"
+  "pred-independent/wingetopt.c"
+  "prec-independent/wingetopt.c"
+)
+
 # SuperLU_DIST's ParMETIS TPL is satisfied by the ScotchParMETIS
 # compatibility layer (scotch[metis,parmetis,ptscotch]): scotchmetisv5
 # provides the METIS API used by SuperLU_DIST itself, and
