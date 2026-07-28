@@ -91,7 +91,7 @@ SparsityPattern::SparsityPattern(
       if (!p)
         continue;
 
-      if (!_offsets.empty())
+      if (!p->_offsets.empty())
       {
         throw std::runtime_error("Sub-sparsity pattern has been finalised. "
                                  "Cannot compute stacked pattern.");
@@ -410,21 +410,21 @@ void SparsityPattern::finalize()
 std::int64_t SparsityPattern::num_nonzeros() const
 {
   if (_offsets.empty())
-    throw std::runtime_error("Sparsity pattern has not be finalized.");
+    throw std::runtime_error("Sparsity pattern has not been finalized.");
   return _edges.size();
 }
 //-----------------------------------------------------------------------------
 std::int32_t SparsityPattern::nnz_diag(std::int32_t row) const
 {
   if (_offsets.empty())
-    throw std::runtime_error("Sparsity pattern has not be finalized.");
+    throw std::runtime_error("Sparsity pattern has not been finalized.");
   return _off_diagonal_offsets[row];
 }
 //-----------------------------------------------------------------------------
 std::int32_t SparsityPattern::nnz_off_diag(std::int32_t row) const
 {
   if (_offsets.empty())
-    throw std::runtime_error("Sparsity pattern has not be finalized.");
+    throw std::runtime_error("Sparsity pattern has not been finalized.");
   return (_offsets[row + 1] - _offsets[row]) - _off_diagonal_offsets[row];
 }
 //-----------------------------------------------------------------------------
@@ -439,7 +439,7 @@ SparsityPattern::graph() const
 std::span<const std::int32_t> SparsityPattern::off_diagonal_offsets() const
 {
   if (_offsets.empty())
-    throw std::runtime_error("Sparsity pattern has not be finalized.");
+    throw std::runtime_error("Sparsity pattern has not been finalized.");
   return _off_diagonal_offsets;
 }
 //-----------------------------------------------------------------------------
