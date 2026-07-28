@@ -18,7 +18,11 @@
     "parmetis",
     "pugixml",
     "pkgconf",
-    "scotch",
+    { "name": "scotch",
+      "features": [
+        "ptscotch"
+      ]
+    },
     "spdlog",
     "vcpkg-cmake",
     "vcpkg-cmake-config"
