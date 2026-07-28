@@ -12,6 +12,7 @@
 #include <functional>
 #include <numeric>
 #include <ranges>
+#include <set>
 #include <span>
 #include <utility>
 #include <vector>

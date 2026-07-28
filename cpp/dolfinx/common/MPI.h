@@ -15,10 +15,11 @@
 #include <array>
 #include <cassert>
 #include <complex>
+#include <concepts>
 #include <cstdint>
+#include <iterator>
 #include <numeric>
 #include <ranges>
-#include <set>
 #include <span>
 #include <tuple>
 #include <type_traits>
@@ -251,29 +252,29 @@ struct dependent_false : std::false_type
 template <typename T>
 MPI_Datatype mpi_datatype()
 {
-  if constexpr (std::is_same_v<T, float>)
+  if constexpr (std::same_as<T, float>)
     return MPI_FLOAT;
-  else if constexpr (std::is_same_v<T, double>)
+  else if constexpr (std::same_as<T, double>)
     return MPI_DOUBLE;
-  else if constexpr (std::is_same_v<T, std::complex<float>>)
+  else if constexpr (std::same_as<T, std::complex<float>>)
     return MPI_C_FLOAT_COMPLEX;
-  else if constexpr (std::is_same_v<T, std::complex<double>>)
+  else if constexpr (std::same_as<T, std::complex<double>>)
     return MPI_C_DOUBLE_COMPLEX;
-  else if constexpr (std::is_same_v<T, std::int8_t>)
+  else if constexpr (std::same_as<T, std::int8_t>)
     return MPI_INT8_T;
-  else if constexpr (std::is_same_v<T, std::int16_t>)
+  else if constexpr (std::same_as<T, std::int16_t>)
     return MPI_INT16_T;
-  else if constexpr (std::is_same_v<T, std::int32_t>)
+  else if constexpr (std::same_as<T, std::int32_t>)
     return MPI_INT32_T;
-  else if constexpr (std::is_same_v<T, std::int64_t>)
+  else if constexpr (std::same_as<T, std::int64_t>)
     return MPI_INT64_T;
-  else if constexpr (std::is_same_v<T, std::uint8_t>)
+  else if constexpr (std::same_as<T, std::uint8_t>)
     return MPI_UINT8_T;
-  else if constexpr (std::is_same_v<T, std::uint16_t>)
+  else if constexpr (std::same_as<T, std::uint16_t>)
     return MPI_UINT16_T;
-  else if constexpr (std::is_same_v<T, std::uint32_t>)
+  else if constexpr (std::same_as<T, std::uint32_t>)
     return MPI_UINT32_T;
-  else if constexpr (std::is_same_v<T, std::uint64_t>)
+  else if constexpr (std::same_as<T, std::uint64_t>)
     return MPI_UINT64_T;
   else
     static_assert(dependent_false<T>::value,
@@ -313,9 +314,8 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
       dest_to_index.push_back({dest, i});
   }
 
-  // Radix sort (rather than a generic comparison sort), since
-  // dest_to_index can have hundreds of thousands of entries for a
-  // large mesh/problem.
+  // Radix sort (not a comparison sort): dest_to_index can have
+  // hundreds of thousands of entries for a large mesh/problem.
   {
     std::span<const std::int32_t> flat(
         reinterpret_cast<const std::int32_t*>(dest_to_index.data()),
@@ -438,7 +438,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   const std::int64_t r0 = common::local_range(rank, shape[0], size)[0];
   std::vector<std::int32_t> index_local(recv_buffer_index.size());
   std::ranges::transform(recv_buffer_index, index_local.begin(),
-                         [r0](auto idx) { return idx - r0; });
+                         [r0](std::int64_t idx) { return idx - r0; });
 
   return {index_local, recv_buffer_data};
 }
@@ -470,12 +470,9 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
 
   // 1. Send request to post office ranks for data
 
-  // Build list of (src, global index, position) for each entry in
-  // 'indices' that doesn't belong to this rank, then sort.
-  // Entries already held locally in `x` (before any post office
-  // communication) are skipped -- they are read directly from `x`
-  // below, so routing them through a (possibly unrelated) post office
-  // rank would only add unnecessary communication.
+  // Build (src, global index, position) for each entry in 'indices'
+  // not held locally, then sort. Locally-held entries are read
+  // directly below -- skipping them here avoids a wasted round trip.
   std::vector<std::tuple<int, std::int64_t, std::int32_t>> src_to_index;
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
@@ -486,9 +483,8 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
       src_to_index.push_back({src, idx, i});
   }
 
-  // Group by source rank using a radix sort on the rank alone (rather
-  // than a generic comparison sort of the full tuple) -- only grouping
-  // by rank matters below, entry order within a group is irrelevant.
+  // Radix sort on the rank alone (not the full tuple) -- only
+  // grouping by rank matters below; order within a group doesn't.
   {
     std::vector<std::int32_t> perm(src_to_index.size());
     std::iota(perm.begin(), perm.end(), 0);
@@ -601,7 +597,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
     else
     {
       // Take from my 'post bag'
-      auto local_index = index - postoffice_range[0];
+      std::int64_t local_index = index - postoffice_range[0];
       std::int32_t pos = post_indices_map[local_index];
       assert(pos != -1);
       std::copy_n(std::next(post_x.begin(), shape[1] * pos), shape[1],
@@ -642,23 +638,22 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
     if (index >= rank_offset and index < (rank_offset + shape0_local))
     {
       // Had data from the start in x
-      auto local_index = index - rank_offset;
+      std::int64_t local_index = index - rank_offset;
       std::copy_n(std::next(x.begin(), shape[1] * local_index), shape[1],
                   std::next(x_new.begin(), shape[1] * i));
     }
     else if (std::int32_t pos = index_pos_to_buffer[i]; pos != -1)
     {
-      // In my received post. `index_pos_to_buffer[i] != -1` iff `index`
-      // was in `src_to_index`, i.e. iff its post office owner is not
-      // this rank -- this avoids recomputing the owner with
-      // index_owner.
+      // In my received post: index_pos_to_buffer[i] != -1 iff
+      // index_owner would say this rank isn't the owner -- avoids
+      // recomputing it.
       std::copy_n(std::next(recv_buffer_data.begin(), shape[1] * pos), shape[1],
                   std::next(x_new.begin(), shape[1] * i));
     }
     else
     {
       // In my post office bag
-      auto local_index = index - postoffice_range[0];
+      std::int64_t local_index = index - postoffice_range[0];
       std::int32_t bag_pos = post_indices_map[local_index];
       assert(bag_pos != -1);
       std::copy_n(std::next(post_x.begin(), shape[1] * bag_pos), shape[1],

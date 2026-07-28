@@ -172,23 +172,20 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
       "of input edges: {}",
       static_cast<int>(edges.size()));
 
-  // Duplicate comm so this call's messages can't be confused with an
-  // overlapping call using the same tag.
+  // Duplicate comm so concurrent calls can't collide on messages.
   dolfinx::MPI::Comm nbx_comm(comm, true);
   const MPI_Comm comm0 = nbx_comm.comm();
 
-  // Post a persistent listener. Posting the receive ahead of arrival,
-  // rather than probing reactively, lets MPI treat it as an expected
-  // message and avoid unexpected-message buffering overhead.
+  // Post the receive before arrival (vs. probing reactively) so MPI
+  // treats it as an expected message, avoiding buffering overhead.
   std::byte buffer_recv;
   MPI_Request recv_request;
   int err = MPI_Irecv(&buffer_recv, 1, MPI_BYTE, MPI_ANY_SOURCE, tag, comm0,
                       &recv_request);
   dolfinx::MPI::check_error(comm0, err);
 
-  // Start non-blocking synchronised send. The message content is never
-  // inspected (only its arrival matters), so every send can share the
-  // same source buffer.
+  // Synchronised, non-blocking send; content is never inspected (only
+  // arrival matters), so every send shares one source buffer.
   std::vector<MPI_Request> send_requests(edges.size());
   std::byte send_buffer{0};
   for (std::size_t e = 0; e < edges.size(); ++e)
@@ -249,11 +246,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
     }
   }
 
-  // No more messages can arrive once the barrier has completed, so
-  // cancel the still-outstanding listener. A sender's Issend only
-  // requires the receive to be posted, not yet observed by this rank,
-  // so cancellation can race with a real match; if so, record it
-  // instead of discarding it.
+  // Cancel the listener once the barrier confirms no more messages can
+  // arrive. Issend only needs the receive posted, not yet observed, so
+  // cancellation can race with a real match -- record it if so.
   err = MPI_Cancel(&recv_request);
   dolfinx::MPI::check_error(comm0, err);
   MPI_Status cancel_status;
