@@ -35,8 +35,7 @@ vcpkg_check_features(
 vcpkg_cmake_configure(
   SOURCE_PATH "${SOURCE_PATH}"
   OPTIONS ${FEATURE_OPTIONS} -DBUILD_LIBESMUMPS=OFF -DBUILD_FORTRAN=OFF -DTHREADS=ON
-          -DMPI_THREAD_MULTIPLE=OFF -DINSTALL_METIS_HEADERS=ON -DLIBSCOTCHERR=scotcherr
-          -DLIBPTSCOTCHERR=ptscotcherr
+          -DMPI_THREAD_MULTIPLE=OFF -DINSTALL_METIS_HEADERS=ON
 )
 vcpkg_cmake_install()
 vcpkg_cmake_config_fixup(CONFIG_PATH "lib/cmake/scotch")
