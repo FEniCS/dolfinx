@@ -1,6 +1,3 @@
-if(VCPKG_TARGET_IS_WINDOWS)
-  vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
-endif()
 vcpkg_from_gitlab(
   GITLAB_URL https://gitlab.inria.fr/
   OUT_SOURCE_PATH SOURCE_PATH
@@ -39,6 +36,7 @@ vcpkg_cmake_configure(
   SOURCE_PATH "${SOURCE_PATH}"
   OPTIONS ${FEATURE_OPTIONS} -DBUILD_LIBESMUMPS=OFF -DTHREADS=ON -DMPI_THREAD_MULTIPLE=OFF
           -DINSTALL_METIS_HEADERS=ON
+          "-DCMAKE_PROJECT_INCLUDE=${CURRENT_PORT_DIR}/cmake-project-include.cmake"
 )
 vcpkg_cmake_install()
 vcpkg_cmake_config_fixup(CONFIG_PATH "lib/cmake/scotch")

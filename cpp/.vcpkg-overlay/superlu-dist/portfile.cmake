@@ -9,11 +9,9 @@ vcpkg_from_github(
 # SuperLU_DIST's ParMETIS TPL is satisfied by the ScotchParMETIS
 # compatibility layer (scotch[metis,parmetis,ptscotch]): scotchmetisv5
 # provides the METIS API used by SuperLU_DIST itself, and
-# ptscotchparmetisv3 provides the ParMETIS API. TPL_PARMETIS_LIBRARIES
-# is a raw (non-target) link line, so scotch's static-library
-# dependencies have to be listed out by hand on Windows, where the
-# scotch port is always built static; on other platforms scotch is
-# built shared, so its own dependencies are pulled in transitively.
+# ptscotchparmetisv3 provides the ParMETIS API. TPL_PARMETIS_LIBRARIES is
+# a raw (non-target) link line; scotch is built shared, so its own
+# dependencies are pulled in transitively and don't need listing here.
 if(VCPKG_TARGET_IS_WINDOWS)
   set(
     SUPERLU_DIST_SCOTCH_LIBRARY_NAMES
@@ -23,10 +21,6 @@ if(VCPKG_TARGET_IS_WINDOWS)
     scotchmetisv5
     scotch
     scotcherr
-    pthreadVC3
-    zlib
-    bz2
-    lzma
   )
   set(SUPERLU_DIST_PARMETIS_LIBRARIES "")
   foreach(
