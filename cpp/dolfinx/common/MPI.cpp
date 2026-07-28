@@ -299,7 +299,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
       "of input edges: {}",
       static_cast<int>(edges.size()));
 
-  auto src_ranks = ::nbx_consensus_rounds<1>(comm, {edges}, {tag});
+  std::array<std::vector<int>, 1> src_ranks
+      = ::nbx_consensus_rounds<1>(comm, {edges}, {tag});
 
   spdlog::info("Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges {}",
@@ -319,7 +320,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
       "rounds (using NBX algorithm). Number of input edges: {}, {}",
       static_cast<int>(edges0.size()), static_cast<int>(edges1.size()));
 
-  auto src_ranks
+  std::array<std::vector<int>, 2> src_ranks
       = ::nbx_consensus_rounds<2>(comm, {edges0, edges1}, {tag0, tag1});
 
   spdlog::info("Finished overlapped graph edge discovery using NBX "
