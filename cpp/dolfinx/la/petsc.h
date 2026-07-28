@@ -10,7 +10,9 @@
 #ifdef HAS_PETSC
 
 #include "Vector.h"
-#include <boost/lexical_cast.hpp>
+#include <cassert>
+#include <cstdint>
+#include <format>
 #include <functional>
 #include <optional>
 #include <petscksp.h>
@@ -39,12 +41,13 @@ namespace petsc
 void error(PetscErrorCode error_code, std::string_view filename,
            std::string_view petsc_function);
 
-/// Create PETsc vectors from the local data. The data is copied into
-/// the PETSc vectors and is not shared.
+/// Create PETSc vectors from the local data. The data is copied into
+/// the PETSc vectors and is not shared. Each vector's global size is
+/// determined by summing the corresponding local size across all
+/// ranks in `comm`.
 /// @note Caller is responsible for destroying the returned object
 /// @param[in] comm The MPI communicator
-/// @param[in] x The vector data owned by the calling rank. All
-/// components must have the same length.
+/// @param[in] x The vector data owned by the calling rank
 /// @return Array of PETSc vectors
 std::vector<Vec>
 create_vectors(MPI_Comm comm,
@@ -72,7 +75,8 @@ Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 /// @param[in] map The index map that describes the parallel layout of
 /// the distributed vector (by block)
 /// @param[in] bs Block size
-/// @param[in] x The local part of the vector, including ghost entries
+/// @param[in] x The local part of the vector, including ghost entries.
+/// Must have size at least `bs * (map.size_local() + map.num_ghosts())`.
 /// @return A PETSc Vec object that shares the data in @p x
 /// @note The array `x` must be kept alive to use the PETSc Vec object
 /// @note The caller should call VecDestroy to free the return PETSc
@@ -142,6 +146,7 @@ void set(std::string option);
 
 /// Generic function for setting PETSc option
 template <typename T>
+  requires requires(const T& value) { std::format("{}", value); }
 void set(std::string option, const T& value)
 {
   if (option[0] != '-')
@@ -149,7 +154,7 @@ void set(std::string option, const T& value)
 
   PetscErrorCode ierr;
   ierr = PetscOptionsSetValue(nullptr, option.c_str(),
-                              boost::lexical_cast<std::string>(value).c_str());
+                              std::format("{}", value).c_str());
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "PetscOptionsSetValue");
 }
@@ -485,7 +490,9 @@ public:
   void set_operators(const Mat A, const Mat P);
 
   /// Solve linear system Ax = b and return number of iterations (A^t x
-  /// = b if transpose is true)
+  /// = b if transpose is true). Non-convergence is not treated as an
+  /// error by this function (a warning is logged); use ksp() and
+  /// KSPGetConvergedReason to check the outcome if required.
   int solve(Vec x, const Vec b, bool transpose = false) const;
 
   /// Sets the prefix used by PETSc when searching the PETSc options
