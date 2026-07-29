@@ -11,20 +11,22 @@
 #include "traits.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
+#include <cassert>
 #include <concepts>
 #include <cstdint>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
 #include <map>
 #include <memory>
-#include <optional>
 #include <ranges>
+#include <set>
 #include <span>
+#include <stdexcept>
 #include <tuple>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace dolfinx::fem
@@ -200,8 +202,8 @@ public:
     // argument/coefficient domain from the (cell, local_facet) pairs in
     // `this->mesh()`.
     auto compute_facet_domains
-        = [&](const auto& int_ents_mesh, int codim, const auto& c_to_f,
-              const auto& emap, bool inverse)
+        = [](const auto& int_ents_mesh, int codim, const auto& c_to_f,
+             const auto& emap, bool inverse)
     {
       // TODO: This function would be much neater using
       // `std::views::stride(2)` from C++ 23
@@ -340,10 +342,18 @@ public:
     }
   }
 
-  /// Copy constructor
+  /// @brief Copy constructor (deleted).
+  ///
+  /// @note Deleted because ::_edata and ::_cdata cache `std::span`s
+  /// aliasing the entity vectors owned by ::_integrals; a shallow copy
+  /// would leave the copy's spans pointing into the original's data.
   Form(const Form& form) = delete;
 
-  /// Move constructor
+  /// @brief Move constructor.
+  ///
+  /// @note Valid because ::_integrals is a `std::map`, whose elements
+  /// keep a stable address across a move, so the `std::span`s cached
+  /// in ::_edata and ::_cdata remain valid after the move.
   Form(Form&& form) = default;
 
   /// Destructor
@@ -392,10 +402,10 @@ public:
   /// @return Integrals types.
   std::set<IntegralType> integral_types() const
   {
-    std::vector<IntegralType> set_data;
-    std::ranges::transform(_integrals, std::back_inserter(set_data),
-                           [](auto& x) { return std::get<0>(x.first); });
-    return std::set<IntegralType>(set_data.begin(), set_data.end());
+    std::set<IntegralType> types;
+    for (auto& [key, integral] : _integrals)
+      types.insert(std::get<0>(key));
+    return types;
   }
 
   /// @brief Indices of coefficients that are active for a given
@@ -442,14 +452,12 @@ public:
   /// index.
   int num_integrals(IntegralType type, int kernel_idx) const
   {
-
-    int count = std::count_if(_integrals.begin(), _integrals.end(),
-                              [type, kernel_idx](auto& x)
-                              {
-                                auto [t, id, k_idx] = x.first;
-                                return t == type and k_idx == kernel_idx;
-                              });
-    return count;
+    return std::ranges::count_if(_integrals,
+                                 [type, kernel_idx](auto& x)
+                                 {
+                                   auto [t, id, k_idx] = x.first;
+                                   return t == type and k_idx == kernel_idx;
+                                 });
   }
 
   /// @brief Mesh entity indices to integrate over for a given integral
@@ -588,6 +596,7 @@ public:
   std::vector<int> coefficient_offsets() const
   {
     std::vector<int> n{0};
+    n.reserve(_coefficients.size() + 1);
     for (auto& c : _coefficients)
     {
       if (!c)
