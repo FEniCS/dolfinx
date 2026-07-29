@@ -39,6 +39,11 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 
 /// @brief Execute kernel over cells and accumulate result in vector.
 ///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of cells, so
+/// a per-call allocation would not be amortized. Buffers must be
+/// sized by the caller and passed in via `be_b`/`cdofs_b`.
+///
 /// @tparam _bs Block size of the form test function dof map. If less
 /// than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
@@ -134,6 +139,11 @@ void assemble_cells(
 /// However, entities may be attached to more than one cell. This function
 /// therefore computes 'one-sided' integrals, i.e. evaluates integrals as seen
 /// from cell used to define the entity.
+///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of
+/// entities, so a per-call allocation would not be amortized. Buffers
+/// must be sized by the caller and passed in via `be_b`/`cdofs_b`.
 ///
 /// @tparam _bs The block size of the form test function dof map. If
 /// less than zero the block size is determined at runtime. If `_bs` is
@@ -232,6 +242,12 @@ void assemble_entities(
 }
 
 /// @brief Assemble linear form interior facet integrals into an vector.
+///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of facets,
+/// so a per-call allocation would not be amortized. Buffers must be
+/// sized by the caller and passed in via `be_b`/`cdofs_b`.
+///
 /// @tparam _bs Block size of the form test function dof map. If less
 /// than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which

@@ -29,6 +29,11 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 
 /// @brief Execute kernel over cells and accumulate result in a matrix.
 ///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of cells, so
+/// a per-call allocation would not be amortized. Buffers must be
+/// sized by the caller and passed in via `Ab`/`cdofs_b`.
+///
 /// @tparam T Matrix/form scalar type.
 /// @tparam LiftingMode If set true, only execute mat_set on cells with BCs in
 /// column space.
@@ -201,6 +206,11 @@ void assemble_cells_matrix(
 /// therefore computes 'one-sided' integrals, i.e. evaluates integrals as seen
 /// from cell used to define the entity.
 ///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of
+/// entities, so a per-call allocation would not be amortized. Buffers
+/// must be sized by the caller and passed in via `Ab`/`cdofs_b`.
+///
 /// @tparam T Matrix/form scalar type.
 /// @tparam LiftingMode If set true, only execute mat_set on cells with BCs in
 /// column space.
@@ -369,6 +379,11 @@ void assemble_entities(
 
 /// @brief Execute kernel over interior facets and accumulate result in
 /// a matrix.
+///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of facets,
+/// so a per-call allocation would not be amortized. Buffers must be
+/// sized by the caller and passed in via `Ab`/`cdofs_b`/`dofs_b`.
 ///
 /// @tparam T Matrix/form scalar type.
 /// @tparam LiftingMode If set true, only execute mat_set on cells with BCs in

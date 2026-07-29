@@ -22,7 +22,12 @@
 
 namespace dolfinx::fem::impl
 {
-/// Assemble functional over cells
+/// @brief Assemble functional over cells.
+///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of cells, so
+/// a per-call allocation would not be amortized. The buffer must be
+/// sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_cells(
     mdspan2_t x_dofmap,
@@ -65,6 +70,11 @@ T assemble_cells(
 /// However, entities may be attached to more than one cell. This function
 /// therefore computes 'one-sided' integrals, i.e. evaluates integrals as seen
 /// from cell used to define the entity.
+///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of entities,
+/// so a per-call allocation would not be amortized. The buffer must
+/// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_entities(
     mdspan2_t x_dofmap,
@@ -103,7 +113,12 @@ T assemble_entities(
   return value;
 }
 
-/// Assemble functional over interior facets
+/// @brief Assemble functional over interior facets.
+///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of facets,
+/// so a per-call allocation would not be amortized. The buffer must
+/// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_interior_facets(
     mdspan2_t x_dofmap,
