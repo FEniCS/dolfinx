@@ -209,7 +209,6 @@ if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
     RUNTIME_DEPENDENCY_SET dependencies DESTINATION ${CMAKE_INSTALL_BINDIR}
     PRE_EXCLUDE_REGEXES [[api-ms-win-.*]] [[ext-ms-.*]]
     POST_EXCLUDE_REGEXES [[.*(\\|/)system32(\\|/).*\.dll]]
-    DIRECTORIES $<TARGET_FILE_DIR:Basix::basix> $<TARGET_FILE_DIR:hdf5::hdf5>
   )
 endif()
 
