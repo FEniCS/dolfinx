@@ -23,6 +23,7 @@ extern "C"
 #include <numeric>
 #include <ranges>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 using namespace dolfinx;
@@ -49,9 +50,6 @@ void SuperMatrixDeleter::operator()(
 //----------------------------------------------------------------------------
 namespace
 {
-template <typename...>
-constexpr bool always_false_v = false;
-
 // Expand MatrixCSR block column indices to flattened column indices.
 std::vector<int_t> col_indices(const auto& A)
 {
@@ -209,7 +207,7 @@ create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
         rowptr.vec.data(), SLU_NR_loc, SLU_Z, SLU_GE);
   }
   else
-    static_assert(always_false_v<T>, "Invalid scalar type");
+    static_assert(dolfinx::la::impl::always_false_v<T>, "Invalid scalar type");
 
   spdlog::info("Finished create_supermatrix");
   return p;
@@ -434,7 +432,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
               zScalePermstructInit(m, m, s.get());
             }
             else
-              static_assert(always_false_v<T>, "Invalid scalar type");
+              static_assert(impl::always_false_v<T>, "Invalid scalar type");
             return s;
           }()),
       _lustruct(
@@ -456,7 +454,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
               zLUstructInit(m, l.get());
             }
             else
-              static_assert(always_false_v<T>, "Invalid scalar type");
+              static_assert(impl::always_false_v<T>, "Invalid scalar type");
             return l;
           }()),
       _solvestruct(new typename map_t<T>::SOLVEstruct_t{},
@@ -466,7 +464,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
 //----------------------------------------------------------------------------
 template <typename T>
 void SuperLUDistSolver<T>::set_options(
-    SuperLUDistStructs::superlu_dist_options_t options)
+    const SuperLUDistStructs::superlu_dist_options_t& options)
 {
   *_options = options;
 }
@@ -476,42 +474,43 @@ void SuperLUDistSolver<T>::set_option(std::string_view name,
                                       std::string_view value)
 {
   spdlog::info("Attempting to set option {} to {}", name, value);
-  const std::map<std::string, std::reference_wrapper<yes_no_t>> map_bool
-      = {{"Equil", _options->Equil},
-         {"DiagInv", _options->DiagInv},
-         {"SymmetricMode", _options->SymmetricMode},
-         {"PivotGrowth", _options->PivotGrowth},
-         {"ConditionNumber", _options->ConditionNumber},
-         {"ReplaceTinyPivot", _options->ReplaceTinyPivot},
-         {"SolveInitialized", _options->SolveInitialized},
-         {"RefineInitialized", _options->RefineInitialized},
-         {"PrintStat", _options->PrintStat},
-         {"lookahead_etree", _options->lookahead_etree},
-         {"SymPattern", _options->SymPattern},
-         {"Use_TensorCore", _options->Use_TensorCore},
-         {"Algo3d", _options->Algo3d}};
 
-  // Search in map_bool first
-  auto it = map_bool.find(std::string(name));
-  if (it != map_bool.end())
+  // Boolean-valued options, keyed to their member in superlu_dist_options_t.
+  // Internal state flags managed by the solver (e.g. SolveInitialized,
+  // RefineInitialized) are deliberately excluded: setting them by hand can
+  // trigger cleanup of uninitialised SuperLU_DIST structures.
+  using bool_option_t = decltype(&::superlu_dist_options_t::Equil);
+  static constexpr std::array<std::pair<std::string_view, bool_option_t>, 11>
+      bool_options{
+          {{"Equil", &::superlu_dist_options_t::Equil},
+           {"DiagInv", &::superlu_dist_options_t::DiagInv},
+           {"SymmetricMode", &::superlu_dist_options_t::SymmetricMode},
+           {"PivotGrowth", &::superlu_dist_options_t::PivotGrowth},
+           {"ConditionNumber", &::superlu_dist_options_t::ConditionNumber},
+           {"ReplaceTinyPivot", &::superlu_dist_options_t::ReplaceTinyPivot},
+           {"PrintStat", &::superlu_dist_options_t::PrintStat},
+           {"lookahead_etree", &::superlu_dist_options_t::lookahead_etree},
+           {"SymPattern", &::superlu_dist_options_t::SymPattern},
+           {"Use_TensorCore", &::superlu_dist_options_t::Use_TensorCore},
+           {"Algo3d", &::superlu_dist_options_t::Algo3d}}};
+
+  // Search the boolean options first
+  if (auto it = std::ranges::find_if(bool_options, [name](const auto& e)
+                                     { return e.first == name; });
+      it != bool_options.end())
   {
+    yes_no_t& field = _options.get()->*(it->second);
     if (value == "YES")
-    {
-      spdlog::info("Set {} to YES", name);
-      it->second.get() = YES;
-      return;
-    }
+      field = YES;
     else if (value == "NO")
-    {
-      spdlog::info("Set {} to NO", name);
-      it->second.get() = NO;
-      return;
-    }
+      field = NO;
     else
     {
       throw std::runtime_error(
           "'Boolean' option values must be string 'YES' or 'NO'");
     }
+    spdlog::info("Set {} to {}", name, value);
+    return;
   }
 
   // Search some enum types
@@ -562,13 +561,13 @@ SuperLUDistSolver<T>::~SuperLUDistSolver()
     else if constexpr (std::is_same_v<T, std::complex<double>>)
       zDestroy_LU(n, _gridinfo.get(), _lustruct.get());
     else
-      static_assert(always_false_v<T>, "Invalid scalar type");
+      static_assert(impl::always_false_v<T>, "Invalid scalar type");
   }
 }
 //----------------------------------------------------------------------------
 template <typename T>
 void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
-                                 std::string fact)
+                                 std::string_view fact)
 {
   if (A->supermatrix()->nrow != _superlu_matA->supermatrix()->nrow
       or A->supermatrix()->ncol != _superlu_matA->supermatrix()->ncol)
@@ -576,6 +575,17 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
     throw std::runtime_error(
         "New matrix A has different size to the matrix used to construct the "
         "solver.");
+  }
+
+  // The process grid is built from the original matrix's communicator and is
+  // reused, so the new matrix must live on a compatible communicator.
+  int comm_cmp;
+  MPI_Comm_compare(A->comm(), _superlu_matA->comm(), &comm_cmp);
+  if (comm_cmp != MPI_IDENT and comm_cmp != MPI_CONGRUENT)
+  {
+    throw std::runtime_error(
+        "New matrix A is defined on a different MPI communicator to the "
+        "matrix used to construct the solver.");
   }
   _superlu_matA = A;
 
@@ -595,7 +605,7 @@ void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
       else if constexpr (std::is_same_v<T, std::complex<double>>)
         zDestroy_LU(n, _gridinfo.get(), _lustruct.get());
       else
-        static_assert(always_false_v<T>, "Invalid scalar type");
+        static_assert(impl::always_false_v<T>, "Invalid scalar type");
       _factored = false;
     }
     _options->Fact = (fact == "DOFACT") ? DOFACT : SamePattern;
@@ -624,7 +634,8 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
     spdlog::warn("Extra call to solve with option Fact set to DOFACT. "
                  "This leads to incorrect results; try FACTORED.");
 
-  int_t m_loc = ((NRformat_loc*)(_superlu_matA->supermatrix()->Store))->m_loc;
+  int_t m_loc
+      = static_cast<NRformat_loc*>(_superlu_matA->supermatrix()->Store)->m_loc;
   // RHS
   int_t ldb = m_loc;
   // TODO: Support for multiple right-hand sides?
@@ -671,14 +682,16 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
             &stat, &info);
   }
   else
-    static_assert(always_false_v<T>, "Invalid scalar type");
+    static_assert(impl::always_false_v<T>, "Invalid scalar type");
 
   if (info != 0)
-    spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
+    spdlog::warn("SuperLU_DIST p*gssvx() returned info = {}", info);
 
-  // pdgssvx allocates LUstruct internals during factorisation. Record this
-  // so the destructor / set_A can call Destroy_LU to release them.
-  _factored = true;
+  // Record the factorisation so Destroy_LU is called on the LUstruct
+  // internals. info < 0 means an illegal argument, where pdgssvx returns
+  // before allocating anything.
+  if (info >= 0)
+    _factored = true;
 
   PStatPrint(_options.get(), &stat, _gridinfo.get());
   PStatFree(&stat);
