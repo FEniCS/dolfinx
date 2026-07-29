@@ -108,7 +108,7 @@ if(NANOBIND_SABI)
   target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
 endif()
 
-include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
+include(DolfinxDeveloperCompilerFlags)
 
 target_compile_options(
   cpp

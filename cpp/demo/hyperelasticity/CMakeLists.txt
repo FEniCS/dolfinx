@@ -57,18 +57,26 @@ else()
   target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
   set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
+  # Use the DOLFINx Developer compiler flags for Developer build types
+  include(DolfinxDeveloperCompilerFlags)
+  target_compile_options(
+    ${PROJECT_NAME}
+    PRIVATE
+      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  )
+  target_compile_definitions(
+    ${PROJECT_NAME}
+    PRIVATE
+      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+  )
+
   # Do not throw error for 'multi-line comments' (these are typical in rst which
-  # includes LaTeX)
+  # includes LaTeX). Appended last so that it overrides -Wcomment set above.
   include(CheckCXXCompilerFlag)
   check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
   target_compile_options(
     ${PROJECT_NAME}
-    PRIVATE
-      $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment
-      -Wall
-      -Wextra
-      -pedantic
-      -Werror>
+    PRIVATE $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment>
   )
 
   # FFCx-generated C kernels have unused parameters fixed by the UFL ABI
