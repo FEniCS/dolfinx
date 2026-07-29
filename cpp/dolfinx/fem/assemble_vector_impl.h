@@ -297,8 +297,6 @@ void assemble_interior_facets(
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
     std::span<T> be_b, std::span<U> cdofs_b)
 {
-  using X = U;
-
   if (facets.empty())
     return;
 
@@ -306,9 +304,8 @@ void assemble_interior_facets(
   assert(_bs < 0 or _bs == bs);
 
   assert(cdofs_b.size() >= 2 * x_dofmap.extent(1) * 3);
-  std::span<X> cdofs0 = cdofs_b.first(x_dofmap.extent(1) * 3);
-  std::span<X> cdofs1
-      = cdofs_b.subspan(x_dofmap.extent(1) * 3, x_dofmap.extent(1) * 3);
+  auto cdofs0 = cdofs_b.first(x_dofmap.extent(1) * 3);
+  auto cdofs1 = cdofs_b.subspan(x_dofmap.extent(1) * 3, x_dofmap.extent(1) * 3);
 
   const std::size_t dmap_size = dmap.map().extent(1);
   assert(be_b.size() >= static_cast<std::size_t>(bs) * 2 * dmap_size);
