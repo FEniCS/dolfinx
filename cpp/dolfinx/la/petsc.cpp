@@ -280,7 +280,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
 
   if (type)
   {
-    ierr = MatSetType(A, type->c_str());
+    ierr = MatSetType(A, std::string(*type).c_str());
     CHECK_ERROR("MatSetType");
   }
   
