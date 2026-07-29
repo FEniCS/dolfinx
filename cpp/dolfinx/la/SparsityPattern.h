@@ -127,7 +127,7 @@ public:
   /// @brief Sparsity pattern graph after assembly. Uses local indices
   /// for the columns.
   /// @note Column global indices can be obtained from
-  /// SparsityPattern::column_index_map()
+  /// SparsityPattern::column_indices()
   /// @note Includes ghost rows
   /// @return Adjacency list edges and offsets
   std::pair<std::span<const std::int32_t>, std::span<const std::int64_t>>
