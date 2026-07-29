@@ -26,6 +26,28 @@ vcpkg_replace_string(
 #endif"
 )
 
+# Astore->nzval is void* (SuperLU_DIST's generic, precision-independent
+# matrix storage type), so indexing it directly is arithmetic on a void
+# pointer -- a GCC/Clang extension (treating void* like char*) that ISO C
+# and MSVC both reject (C2036: 'void *': unknown size). Cast to the
+# precision-specific element type each of these three files already
+# otherwise assumes (matching the sizeof() used on the same line).
+vcpkg_replace_string(
+  "${SOURCE_PATH}/SRC/double/d3DPartition.c"
+  "Astore->nzval[idx]"
+  "((double *)Astore->nzval)[idx]"
+)
+vcpkg_replace_string(
+  "${SOURCE_PATH}/SRC/single/s3DPartition.c"
+  "Astore->nzval[idx]"
+  "((float *)Astore->nzval)[idx]"
+)
+vcpkg_replace_string(
+  "${SOURCE_PATH}/SRC/complex16/z3DPartition.c"
+  "Astore->nzval[idx]"
+  "((doublecomplex *)Astore->nzval)[idx]"
+)
+
 # SuperLU_DIST's ParMETIS TPL is satisfied by the ScotchParMETIS
 # compatibility layer (scotch[metis,parmetis,ptscotch]): scotchmetisv5
 # provides the METIS API used by SuperLU_DIST itself, and
