@@ -15,6 +15,16 @@ vcpkg_replace_string(
   "prec-independent/wingetopt.c"
 )
 
+# Same class of upstream bug: every other header in this list has its
+# subdirectory prefix (include/, CplusplusFactor/); the MSVC-only
+# wingetopt.h entry is missing "include/", so the install step fails
+# looking for it directly under SRC/.
+vcpkg_replace_string(
+  "${SOURCE_PATH}/SRC/CMakeLists.txt"
+  "list(APPEND headers wingetopt.h)"
+  "list(APPEND headers include/wingetopt.h)"
+)
+
 # unistd.h doesn't exist under MSVC. The only things util.c used it for
 # (sleep()) are already commented out, so the include is unconditionally
 # unused dead weight; guard it out rather than trying to shim unistd.h.
