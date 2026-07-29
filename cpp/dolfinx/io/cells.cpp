@@ -698,7 +698,8 @@ io::cells::apply_permutation(std::span<const std::int64_t> cells,
                              std::array<std::size_t, 2> shape,
                              std::span<const std::uint16_t> p)
 {
-  assert(cells.size() == shape[0] * shape[1]);
+  if (cells.size() != shape[0] * shape[1])
+    throw std::runtime_error("Cell array size does not match given shape.");
   assert(shape[1] == p.size());
 
   spdlog::info("IO permuting cells");

@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2025 Garth N. Wells and Paul T. Kühner
+// Copyright (C) 2010-2026 Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -185,7 +185,18 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
       dest_to_index.push_back({dolfinx::MPI::index_owner(comm_size, v0, range),
                                static_cast<int>(f)});
     }
-    std::ranges::sort(dest_to_index);
+    // A radix sort on the flattened data is used in place of a generic
+    // comparison sort, as dest_to_index can have hundreds of thousands
+    // of entries for a large mesh.
+    std::span<const std::int32_t> flat(
+        reinterpret_cast<const std::int32_t*>(dest_to_index.data()),
+        2 * dest_to_index.size());
+    std::vector<std::int32_t> perm
+        = dolfinx::sort_by_perm<std::int32_t, 16>(flat, 2);
+    std::vector<std::array<std::int32_t, 2>> sorted(dest_to_index.size());
+    for (std::size_t i = 0; i < perm.size(); ++i)
+      sorted[i] = dest_to_index[perm[i]];
+    dest_to_index = std::move(sorted);
 
     // Build list of dest ranks and count number of items (facets+cell)
     // to send to each dest post office (by neighbourhood rank)
@@ -295,18 +306,27 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   std::vector<std::int32_t> dedge_send_displs(dedge_send_count.size() + 1, 0);
   std::vector<std::int64_t> dedge_send_data;
   {
-    // Compute sort permutation for received data
-    std::vector<int> sort_order(recv_buffer.size() / buffer_shape1);
-    std::iota(sort_order.begin(), sort_order.end(), 0);
-    std::ranges::sort(sort_order, std::ranges::lexicographical_compare,
-                      [max_vertices_per_facet, buffer_shape1,
-                       recv_buffer = std::cref(recv_buffer)](auto f)
-                      {
-                        auto begin = std::next(recv_buffer.get().begin(),
-                                               f * buffer_shape1);
-                        return std::ranges::subrange(
-                            begin, std::next(begin, max_vertices_per_facet));
-                      });
+    common::Timer timer0(
+        "Compute non-local part of mesh dual graph: sort received facets");
+
+    // Compute sort permutation for received data. Facet rows are
+    // strided by buffer_shape1 (vertices plus a trailing attached-cell
+    // entry) but only the leading max_vertices_per_facet columns are
+    // the sort key, so those columns are extracted into a compact,
+    // contiguously-strided buffer before calling the radix-sort-based
+    // sort_by_perm (a generic comparison sort here previously
+    // dominated this function's cost at scale).
+    const std::size_t num_recv_facets = recv_buffer.size() / buffer_shape1;
+    std::vector<std::int64_t> facet_keys(num_recv_facets
+                                         * max_vertices_per_facet);
+    for (std::size_t f = 0; f < num_recv_facets; ++f)
+    {
+      std::copy_n(std::next(recv_buffer.begin(), f * buffer_shape1),
+                  max_vertices_per_facet,
+                  std::next(facet_keys.begin(), f * max_vertices_per_facet));
+    }
+    std::vector<std::int32_t> sort_order
+        = sort_by_perm<std::int64_t>(facet_keys, max_vertices_per_facet);
 
     auto for_each_matched_pair
         = [buffer_shape1, max_vertices_per_facet,
@@ -503,25 +523,35 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     }
 
     // Local connections are possibly introduced again by remote ->
-    // remove duplicates
-    std::size_t duplicates_count = 0;
+    // remove duplicates. Each node's own duplicates are removed in
+    // place and the surviving entries are compacted forward into the
+    // gap left by earlier nodes' removed duplicates, so every entry of
+    // `data` is read and written at most once (a per-node
+    // std::vector::erase here would instead shift the untouched tail
+    // of `data` on every node with a duplicate, which is O(num_nodes)
+    // times more expensive at scale).
+    std::size_t write_pos = 0;
     for (std::size_t node = 0; node < offsets.size() - 1; node++)
     {
-      // Account for offset
-      offsets[node] -= duplicates_count;
+      std::size_t node_start = offsets[node];
+      std::size_t node_end = offsets[node + 1];
+      offsets[node] = write_pos;
 
-      auto links = std::ranges::subrange(
-          std::next(data.begin(), offsets[node]),
-          std::next(data.begin(), offsets[node + 1] - duplicates_count));
+      auto links = std::ranges::subrange(std::next(data.begin(), node_start),
+                                         std::next(data.begin(), node_end));
       std::ranges::sort(links);
-      auto duplicate_links = std::ranges::unique(links);
-      if (duplicate_links.empty())
-        continue;
+      std::size_t count = std::ranges::distance(
+          links.begin(), std::ranges::unique(links).begin());
 
-      data.erase(duplicate_links.begin(), duplicate_links.end());
-      duplicates_count += std::ranges::size(duplicate_links);
+      if (write_pos != node_start)
+      {
+        std::copy_n(std::next(data.begin(), node_start), count,
+                    std::next(data.begin(), write_pos));
+      }
+      write_pos += count;
     }
-    offsets[offsets.size() - 1] -= duplicates_count;
+    offsets.back() = write_pos;
+    data.resize(write_pos);
   }
 
   return graph::AdjacencyList(std::move(data), std::move(offsets));
@@ -626,8 +656,42 @@ mesh::build_local_dual_graph(
         std::ranges::transform(facet_vertices, facet_c.begin(),
                                [v](auto idx) { return v[idx]; });
 
+        // Sort the facet's vertices (a hot loop over all cell facets, so
+        // the common sizes are hand-unrolled rather than calling the
+        // general-purpose std::sort for what is almost always a 2- or
+        // 3-element array).
         auto it = std::next(facet_c.begin(), facet_vertices.size());
-        std::sort(facet_c.begin(), it);
+        if (facet_vertices.size() == 2)
+        {
+          if (facet_c[0] > facet_c[1])
+            std::swap(facet_c[0], facet_c[1]);
+        }
+        else if (facet_vertices.size() == 3)
+        {
+          if (facet_c[0] > facet_c[1])
+            std::swap(facet_c[0], facet_c[1]);
+          if (facet_c[1] > facet_c[2])
+            std::swap(facet_c[1], facet_c[2]);
+          if (facet_c[0] > facet_c[1])
+            std::swap(facet_c[0], facet_c[1]);
+        }
+        else if (facet_vertices.size() == 4)
+        {
+          // 5-compare-exchange sorting network (quadrilateral facets,
+          // e.g. hexahedron/prism cells).
+          if (facet_c[0] > facet_c[1])
+            std::swap(facet_c[0], facet_c[1]);
+          if (facet_c[2] > facet_c[3])
+            std::swap(facet_c[2], facet_c[3]);
+          if (facet_c[0] > facet_c[2])
+            std::swap(facet_c[0], facet_c[2]);
+          if (facet_c[1] > facet_c[3])
+            std::swap(facet_c[1], facet_c[3]);
+          if (facet_c[1] > facet_c[2])
+            std::swap(facet_c[1], facet_c[2]);
+        }
+        else
+          std::sort(facet_c.begin(), it);
         std::fill(it, facet_c.end(), padding_value);
         facet_c.back() = c + cell_offset;
       }

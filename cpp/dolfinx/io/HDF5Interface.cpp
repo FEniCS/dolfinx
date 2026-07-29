@@ -108,8 +108,9 @@ hid_t io::hdf5::open_file(MPI_Comm comm, const std::filesystem::path& filename,
     }
     else
     {
-      throw std::runtime_error("Unable to open HDF5 file. File "
-                               + filename.string() + " does not exist.");
+      throw std::runtime_error(
+          std::format("Unable to open HDF5 file. File {} does not exist.",
+                      filename.string()));
     }
   }
 

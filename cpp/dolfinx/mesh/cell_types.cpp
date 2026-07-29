@@ -7,6 +7,7 @@
 #include "cell_types.h"
 #include <algorithm>
 #include <basix/cell.h>
+#include <cassert>
 #include <cfloat>
 #include <cstdlib>
 #include <format>

@@ -10,6 +10,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <limits>
 #include <map>
 
 using namespace dolfinx;
@@ -19,10 +20,11 @@ using namespace dolfinx::la;
 SparsityPattern::SparsityPattern(
     MPI_Comm comm, std::array<std::shared_ptr<const common::IndexMap>, 2> maps,
     std::array<int, 2> bs)
-    : _comm(comm), _index_maps(maps), _bs(bs),
-      _row_cache(maps[0]->size_local() + maps[0]->num_ghosts())
+    : _comm(comm), _index_maps(std::move(maps)), _bs(bs)
 {
-  assert(maps[0]);
+  assert(_index_maps[0]);
+  _row_cache.resize(_index_maps[0]->size_local()
+                    + _index_maps[0]->num_ghosts());
 }
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
@@ -221,7 +223,7 @@ std::vector<std::int64_t> SparsityPattern::column_indices() const
 
   std::array range = _index_maps[1]->local_range();
   const std::int32_t local_size = range[1] - range[0];
-  const std::int32_t num_ghosts = _col_ghosts.size();
+  const std::int32_t num_ghosts = static_cast<std::int32_t>(_col_ghosts.size());
   std::vector<std::int64_t> global(local_size + num_ghosts);
   std::iota(global.begin(), std::next(global.begin(), local_size), range[0]);
   std::ranges::copy(_col_ghosts, global.begin() + local_size);
@@ -260,7 +262,12 @@ void SparsityPattern::finalize()
     auto it = std::ranges::lower_bound(src0, owners0[i]);
     assert(it != src0.end() and *it == owners0[i]);
     const int neighbour_rank = std::distance(src0.begin(), it);
-    send_sizes[neighbour_rank] += 3 * _row_cache[i + local_size0].size();
+
+    // Guard against overflowing the int MPI count
+    const std::size_t count = 3 * _row_cache[i + local_size0].size();
+    assert(send_sizes[neighbour_rank] + count
+           <= static_cast<std::size_t>(std::numeric_limits<int>::max()));
+    send_sizes[neighbour_rank] += count;
   }
 
   // Compute send displacements
@@ -363,8 +370,9 @@ void SparsityPattern::finalize()
     }
   }
 
-  // Sort and remove duplicate column indices in each row
-  std::vector<std::int32_t> adj_counts(local_size0 + owners0.size(), 0);
+  // Sort and remove duplicate column indices in each row. Counts are
+  // std::int64_t to avoid overflowing the partial sum into _offsets.
+  std::vector<std::int64_t> adj_counts(local_size0 + owners0.size(), 0);
   _off_diagonal_offsets.resize(local_size0 + owners0.size());
   for (std::size_t i = 0; i < local_size0 + owners0.size(); ++i)
   {
@@ -374,7 +382,8 @@ void SparsityPattern::finalize()
 
     // Find position of first "off-diagonal" column
     _off_diagonal_offsets[i] = std::distance(
-        row.begin(), std::lower_bound(row.begin(), it_end, local_size1));
+        row.begin(),
+        std::ranges::lower_bound(row.begin(), it_end, local_size1));
 
     _edges.insert(_edges.end(), row.begin(), it_end);
     adj_counts[i] += std::distance(row.begin(), it_end);
@@ -389,8 +398,8 @@ void SparsityPattern::finalize()
   _edges.shrink_to_fit();
 
   // Column count increased due to received rows from other processes
-  spdlog::info("Column ghost size increased from {} to {}",
-               _index_maps[1]->ghosts().size(), _col_ghosts.size());
+  spdlog::debug("Column ghost size increased from {} to {}",
+                _index_maps[1]->ghosts().size(), _col_ghosts.size());
 
   // Update to new column index map
   _index_maps[1] = std::make_shared<common::IndexMap>(

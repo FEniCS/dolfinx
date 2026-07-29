@@ -288,7 +288,8 @@ def mixed_topology_form(
 
     # Check that subdomain data for each integral type is the same
     for data in sd.get(domain).values():
-        assert all([d is data[0] for d in data if d is not None])
+        if not all(d is data[0] for d in data if d is not None):
+            raise ValueError("Subdomain data must be the same for each integral type.")
 
     mesh = domain.ufl_cargo()
     if mesh is None:
@@ -376,7 +377,8 @@ def form(
 
         # Check that subdomain data for each integral type is the same
         for data in sd.get(domain).values():
-            assert all([d is data[0] for d in data if d is not None])
+            if not all(d is data[0] for d in data if d is not None):
+                raise ValueError("Subdomain data must be the same for each integral type.")
 
         msh = domain.ufl_cargo()
         if msh is None:
@@ -523,13 +525,15 @@ def extract_function_spaces(forms, index: int = 0):
         form: Form = _forms.tolist()
         return form.function_spaces[0] if form is not None else None
     elif _forms.ndim == 1:
-        assert index == 0, "Expected index=0 for 1D array of forms"
+        if index != 0:
+            raise ValueError("index must be 0 for a 1D array of forms.")
         for form in _forms:
-            if form is not None:
-                assert form.rank == 1, "Expected linear form"
+            if form is not None and form.rank != 1:
+                raise ValueError("Expected a linear form.")
         return [form.function_spaces[0] if form is not None else None for form in forms]  # type: ignore[union-attr]
     elif _forms.ndim == 2:
-        assert index == 0 or index == 1, "Expected index=0 or index=1 for 2D array of forms"
+        if index not in (0, 1):
+            raise ValueError("index must be 0 or 1 for a 2D array of forms.")
         extract_spaces = np.vectorize(
             lambda form: form.function_spaces[index] if form is not None else None
         )
@@ -548,7 +552,8 @@ def extract_function_spaces(forms, index: int = 0):
                     if V0[row] is None and V[row, col] is not None:
                         V0[row] = V[row, col]
                     elif V0[row] is not None and V[row, col] is not None:
-                        assert V0[row] is V[row, col], "Cannot extract unique function spaces"
+                        if V0[row] is not V[row, col]:
+                            raise ValueError("Cannot extract unique function spaces.")
             return V0
 
         if index == 0:
