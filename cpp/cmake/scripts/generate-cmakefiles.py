@@ -12,8 +12,14 @@ import warnings
 # Compiler flags block, shared by all templates below. Written with single
 # braces as it is substituted into the templates as a format argument.
 compiler_flags_str = """\
-# Use the DOLFINx Developer compiler flags for Developer build types
-include(DolfinxDeveloperCompilerFlags)
+# Use the DOLFINx Developer compiler flags for Developer build types. Included
+# by path, as putting DOLFINX_DIR on CMAKE_MODULE_PATH lets the installed
+# FindUFCx.cmake shadow the ufcx CONFIG package on case-insensitive filesystems.
+if(DOLFINX_DIR)
+  include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
+else()
+  include(DolfinxDeveloperCompilerFlags)
+endif()
 target_compile_options(
   ${PROJECT_NAME} PRIVATE
   $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>

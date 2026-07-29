@@ -53,8 +53,14 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
-# Use the DOLFINx Developer compiler flags for Developer build types
-include(DolfinxDeveloperCompilerFlags)
+# Use the DOLFINx Developer compiler flags for Developer build types. Included
+# by path, as putting DOLFINX_DIR on CMAKE_MODULE_PATH lets the installed
+# FindUFCx.cmake shadow the ufcx CONFIG package on case-insensitive filesystems.
+if(DOLFINX_DIR)
+  include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
+else()
+  include(DolfinxDeveloperCompilerFlags)
+endif()
 target_compile_options(
   ${PROJECT_NAME}
   PRIVATE
