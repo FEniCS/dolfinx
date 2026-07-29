@@ -250,6 +250,7 @@ public:
       return e;
     };
 
+    _edata.reserve(_function_spaces.size());
     for (auto& space : _function_spaces)
     {
       // Working map: [integral type, integral_idx, kernel_idx]->entities
@@ -281,14 +282,14 @@ public:
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
           {
-            const mesh::Topology topology = *_mesh->topology();
+            assert(_mesh->topology());
+            const mesh::Topology& topology = *_mesh->topology();
             int tdim = topology.dim();
             assert(mesh0);
             int codim = tdim - mesh0->topology()->dim();
             assert(codim >= 0);
             auto c_to_f = topology.connectivity(tdim, tdim - 1);
             assert(c_to_f);
-
             e = compute_facet_domains(itg.entities, codim, c_to_f, emap,
                                       inverse);
           }
@@ -299,7 +300,7 @@ public:
         }
       }
 
-      _edata.push_back(vdata);
+      _edata.push_back(std::move(vdata));
     }
 
     for (auto& [key, integral] : _integrals)
@@ -324,7 +325,7 @@ public:
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
           {
-            const mesh::Topology topology = *_mesh->topology();
+            const mesh::Topology& topology = *_mesh->topology();
             int tdim = topology.dim();
             assert(mesh0);
             int codim = tdim - mesh0->topology()->dim();
