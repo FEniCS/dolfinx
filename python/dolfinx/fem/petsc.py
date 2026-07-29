@@ -166,8 +166,8 @@ def create_matrix(
        with the forms ``a``.
     3. For a rectangular array of bilinear forms, it create a single
        (non-nested) matrix of type ``kind`` that is compatible with the
-       array of for forms ``a``. If ``kind`` is ``None``, then the
-       matrix is the default type.
+       array of for forms ``a``. If ``kind`` is ``None`` or
+       ``PETSc.Vec.Type.MPI``, then the matrix is the default type.
 
        In this case, the matrix is arranged::
 
@@ -190,7 +190,9 @@ def create_matrix(
             return _cpp.fem.petsc.create_matrix_nest(_a, None)
         else:
             if kind is None or isinstance(kind, str):  # Single 'kind' type
-                return _cpp.fem.petsc.create_matrix_block(_a, kind)
+                # "mpi" is create_vector's sentinel, not a Mat type
+                mat_kind = None if kind == PETSc.Vec.Type.MPI else kind  # type: ignore[attr-defined]
+                return _cpp.fem.petsc.create_matrix_block(_a, mat_kind)
             else:  # Array of 'kind' types
                 return _cpp.fem.petsc.create_matrix_nest(_a, kind)
     else:  # Single form
@@ -896,11 +898,10 @@ class LinearProblem:
 
     def __del__(self):
         """Destroy internally held PETSc objects."""
-        for obj in filter(
-            lambda obj: obj is not None,
-            (self._solver, self._A, self._b, self._x, self._P_mat),
-        ):
-            obj.destroy()
+        # __init__ may have raised before all attributes were set
+        for name in ("_solver", "_A", "_b", "_x", "_P_mat"):
+            if (obj := getattr(self, name, None)) is not None:
+                obj.destroy()
 
     def solve(self) -> _Function | Sequence[_Function]:
         """Solve the problem.
@@ -1374,11 +1375,10 @@ class NonlinearProblem:
 
     def __del__(self):
         """Destroy PETSc objects created internally."""
-        for obj in filter(
-            lambda obj: obj is not None,
-            (self._snes, self._A, self._b, self._x, self._P_mat),
-        ):
-            obj.destroy()
+        # __init__ may have raised before all attributes were set
+        for name in ("_snes", "_A", "_b", "_x", "_P_mat"):
+            if (obj := getattr(self, name, None)) is not None:
+                obj.destroy()
 
     @property
     def F(self) -> Form | Sequence[Form]:

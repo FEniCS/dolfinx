@@ -270,7 +270,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   std::array maps = {sp.index_map(0), sp.index_map(1)};
   const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
-  if (type)
+  if (type and !type->empty())
   {
     ierr = MatSetType(A, std::string(*type).c_str());
     if (ierr != 0)

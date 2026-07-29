@@ -124,6 +124,11 @@ void scatter_local_vectors(
 
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
+/// @param[in] comm The MPI communicator
+/// @param[in] sp The sparsity pattern that determines the layout and
+/// non-zero structure of the matrix
+/// @param[in] type The PETSc Mat type to create. If `std::nullopt` or
+/// an empty string, the PETSc default is used.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
                   std::optional<std::string_view> type = std::nullopt);
 
