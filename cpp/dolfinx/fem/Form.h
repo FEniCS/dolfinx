@@ -131,26 +131,21 @@ public:
   /// @param[in] V Function spaces for the form arguments, e.g. test and
   /// trial function spaces.
   /// @param[in] integrals Integrals in the form, where
-  /// `integrals[IntegralType, i, kernel index]` returns the `i`th integral
-  /// (`integral_data`) of type `IntegralType` with kernel index `kernel index`.
-  /// The `i`-index refers to the position of a kernel when flattened by
-  /// sorted subdomain ids, sorted by subdomain ids. The subdomain ids can
-  /// contain duplicate entries referring to different kernels over the same
-  /// subdomain.
+  /// `integrals[{type, i, kernel_index}]` gives the `integral_data` of
+  /// type `type` at position `i` in the flattened, sorted-by-subdomain-id
+  /// list of integrals, for kernel `kernel_index`. The subdomain ids can
+  /// contain duplicate entries referring to different kernels over the
+  /// same subdomain.
   /// @param[in] coefficients Coefficients in the form.
   /// @param[in] constants Constants in the form.
   /// @param[in] mesh Mesh of the domain to integrate over (the
   /// 'integration domain').
   /// @param[in] needs_facet_permutations Set to `true` if any of the
   /// integration kernels require cell permutation data.
-  /// @param[in] entity_maps If any trial functions, test functions, or
-  /// coefficients in the form are not defined on `mesh` (the
-  /// 'integration domain'), `entity_maps` must be supplied. For each key
-  /// (a mesh, which is different to `mesh`) an array map must be
-  /// provided which relates the entities in `mesh` to the entities in
-  /// the key mesh e.g. for a key/value pair `(mesh0, emap)` in
-  /// `entity_maps`, `emap[i]` is the entity in `mesh0` corresponding to
-  /// entity `i` in `mesh`.
+  /// @param[in] entity_maps A list of `EntityMap`s. For every mesh other
+  /// than `mesh` on which a trial function, test function, or
+  /// coefficient is defined, `entity_maps` must contain an `EntityMap`
+  /// relating that mesh and `mesh`.
   ///
   /// @note For the single domain case, pass an empty `entity_maps`.
   template <typename X>
@@ -175,6 +170,12 @@ public:
   {
     if (!_mesh)
       throw std::runtime_error("Form Mesh is null.");
+
+    // `_mesh` is fixed for the remainder of construction, so its
+    // topology and dimension are fetched once and reused below rather
+    // than being re-fetched for every integral/coefficient.
+    const mesh::Topology& topology = *_mesh->topology();
+    const int tdim = topology.dim();
 
     // A helper function to find the correct entity map for a given mesh
     auto get_entity_map
@@ -282,9 +283,6 @@ public:
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
           {
-            assert(_mesh->topology());
-            const mesh::Topology& topology = *_mesh->topology();
-            int tdim = topology.dim();
             assert(mesh0);
             int codim = tdim - mesh0->topology()->dim();
             assert(codim >= 0);
@@ -325,13 +323,10 @@ public:
           else if (type == IntegralType::exterior_facet
                    or type == IntegralType::interior_facet)
           {
-            const mesh::Topology& topology = *_mesh->topology();
-            int tdim = topology.dim();
             assert(mesh0);
             int codim = tdim - mesh0->topology()->dim();
             auto c_to_f = topology.connectivity(tdim, tdim - 1);
             assert(c_to_f);
-
             e = compute_facet_domains(integral.entities, codim, c_to_f, emap,
                                       inverse);
           }
@@ -385,15 +380,16 @@ public:
   /// @brief Get the kernel function for an integral.
   ///
   /// @param[in] type Integral type.
-  /// @param[in] id Integral subdomain ID.
+  /// @param[in] idx Integral index in the flattened list of integral
+  /// kernels (see ::domain).
   /// @param[in] kernel_idx Index of the kernel (we may have multiple
-  /// kernels for a given ID in mixed-topology meshes).
+  /// kernels for a given idx in mixed-topology meshes).
   /// @return Function to call for `tabulate_tensor`.
   std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
                      const geometry_type*, const int*, const uint8_t*, void*)>
-  kernel(IntegralType type, int id, int kernel_idx) const
+  kernel(IntegralType type, int idx, int kernel_idx) const
   {
-    auto it = _integrals.find({type, id, kernel_idx});
+    auto it = _integrals.find({type, idx, kernel_idx});
     if (it == _integrals.end())
       throw std::runtime_error("Requested integral kernel not found.");
     return it->second.kernel;
@@ -418,17 +414,17 @@ public:
   /// integral kernel that signifies which coefficients are present.
   ///
   /// @param[in] type Integral type.
-  /// @param[in] id Integral index in the flattened list of integral
+  /// @param[in] idx Integral index in the flattened list of integral
   /// kernels (see ::domain).
   /// @return Indices of the coefficients that are active (present) in
   /// the given integral.
-  std::vector<int> active_coeffs(IntegralType type, int id) const
+  std::vector<int> active_coeffs(IntegralType type, int idx) const
   {
     auto it = std::ranges::find_if(_integrals,
-                                   [type, id](auto& x)
+                                   [type, idx](auto& x)
                                    {
-                                     auto [t, id_, kernel_idx] = x.first;
-                                     return t == type and id_ == id;
+                                     auto [t, idx_, kernel_idx] = x.first;
+                                     return t == type and idx_ == idx;
                                    });
     if (it == _integrals.end())
       throw std::runtime_error("Could not find active coefficient list.");
