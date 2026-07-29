@@ -15,6 +15,17 @@ vcpkg_replace_string(
   "prec-independent/wingetopt.c"
 )
 
+# unistd.h doesn't exist under MSVC. The only things util.c used it for
+# (sleep()) are already commented out, so the include is unconditionally
+# unused dead weight; guard it out rather than trying to shim unistd.h.
+vcpkg_replace_string(
+  "${SOURCE_PATH}/SRC/prec-independent/util.c"
+  "#include <unistd.h>"
+  "#ifndef _MSC_VER
+#include <unistd.h>
+#endif"
+)
+
 # SuperLU_DIST's ParMETIS TPL is satisfied by the ScotchParMETIS
 # compatibility layer (scotch[metis,parmetis,ptscotch]): scotchmetisv5
 # provides the METIS API used by SuperLU_DIST itself, and
