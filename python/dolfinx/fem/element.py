@@ -6,7 +6,7 @@
 """Finite elements."""
 
 from functools import singledispatch
-from typing import Generic
+from typing import ClassVar, Generic
 
 import numpy as np
 import numpy.typing as npt
@@ -20,6 +20,12 @@ from dolfinx.typing import Real
 class CoordinateElement(Generic[Real]):
     """Coordinate element describing the geometry map for mesh cells."""
 
+    # Built-in geometry types. Public: extend with additional geometry
+    # dtypes as needed.
+    cpp_types: ClassVar[dict] = {
+        np.dtype(np.float32): _cpp.fem.CoordinateElement_float32,
+        np.dtype(np.float64): _cpp.fem.CoordinateElement_float64,
+    }
     _cpp_object: _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
 
     def __init__(
@@ -144,12 +150,8 @@ def coordinate_element(
     Returns:
         A coordinate element.
     """
-    if np.issubdtype(dtype, np.float32):
-        return CoordinateElement(_cpp.fem.CoordinateElement_float32(celltype, degree, variant))
-    elif np.issubdtype(dtype, np.float64):
-        return CoordinateElement(_cpp.fem.CoordinateElement_float64(celltype, degree, variant))
-    else:
-        raise RuntimeError("Unsupported dtype.")
+    cpp_type = CoordinateElement.cpp_types[np.dtype(dtype)]
+    return CoordinateElement(cpp_type(celltype, degree, variant))
 
 
 @coordinate_element.register(basix.finite_element.FiniteElement)
@@ -164,15 +166,19 @@ def _(e: basix.finite_element.FiniteElement) -> CoordinateElement:
     Returns:
         A coordinate element.
     """
-    try:
-        return CoordinateElement(_cpp.fem.CoordinateElement_float32(e._e))
-    except TypeError:
-        return CoordinateElement(_cpp.fem.CoordinateElement_float64(e._e))
+    cpp_type = CoordinateElement.cpp_types[e.dtype]
+    return CoordinateElement(cpp_type(e._e))
 
 
 class FiniteElement(Generic[Real]):
     """A finite element."""
 
+    # Built-in geometry types. Public: extend with additional geometry
+    # dtypes as needed.
+    cpp_types: ClassVar[dict] = {
+        np.dtype(np.float32): _cpp.fem.FiniteElement_float32,
+        np.dtype(np.float64): _cpp.fem.FiniteElement_float64,
+    }
     _cpp_object: _cpp.fem.FiniteElement_float32 | _cpp.fem.FiniteElement_float64
 
     def __init__(
@@ -254,7 +260,7 @@ class FiniteElement(Generic[Real]):
     def space_dimension(self) -> int:
         """Dimension of the finite element function space.
 
-        This is the the number of degrees-of-freedom for the element.
+        This is the number of degrees-of-freedom for the element.
         For 'blocked' elements, this function returns the dimension of
         the full element rather than the dimension of the base element.
         """
@@ -346,12 +352,7 @@ def finiteelement(
             the selected element.
         FiniteElement_dtype: Geometry type of the element.
     """
-    if np.issubdtype(FiniteElement_dtype, np.float32):
-        CppElement = _cpp.fem.FiniteElement_float32
-    elif np.issubdtype(FiniteElement_dtype, np.float64):
-        CppElement = _cpp.fem.FiniteElement_float64
-    else:
-        raise ValueError(f"Unsupported dtype: {FiniteElement_dtype}")
+    CppElement = FiniteElement.cpp_types[np.dtype(FiniteElement_dtype)]
 
     if ufl_e.is_mixed:
         elements = [

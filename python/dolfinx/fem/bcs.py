@@ -13,7 +13,7 @@ modification of linear systems.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from typing import Generic
+from typing import ClassVar, Generic
 
 import numpy as np
 import numpy.typing as npt
@@ -98,6 +98,14 @@ class DirichletBC(Generic[Scalar]):
     The conditions are imposed on a linear system.
     """
 
+    # Matched-precision built-ins (geometry == real scalar part). Public:
+    # extend with additional (scalar, geometry) dtype pairs as needed.
+    cpp_types: ClassVar[dict] = {
+        (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.DirichletBC_float32,
+        (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.DirichletBC_float64,
+        (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.DirichletBC_complex64,
+        (np.dtype(np.complex128), np.dtype(np.float64)): _cpp.fem.DirichletBC_complex128,
+    }
     _cpp_object: (
         _cpp.fem.DirichletBC_complex64
         | _cpp.fem.DirichletBC_complex128
@@ -200,18 +208,18 @@ def dirichletbc(
 
     try:
         dtype = value.dtype
-        if np.issubdtype(dtype, np.float32):
-            bctype = _cpp.fem.DirichletBC_float32
-        elif np.issubdtype(dtype, np.float64):
-            bctype = _cpp.fem.DirichletBC_float64
-        elif np.issubdtype(dtype, np.complex64):
-            bctype = _cpp.fem.DirichletBC_complex64
-        elif np.issubdtype(dtype, np.complex128):
-            bctype = _cpp.fem.DirichletBC_complex128
-        else:
-            raise NotImplementedError(f"Type {value.dtype} not supported.")
-    except AttributeError:
-        raise AttributeError("Boundary condition value must have a dtype attribute.")
+    except AttributeError as err:
+        raise AttributeError("Boundary condition value must have a dtype attribute.") from err
+
+    # Geometry type is the mesh geometry type of the function space (or the
+    # value's space), defaulting to matched precision when neither has one.
+    if V is not None:
+        geometry_dtype = np.dtype(V.mesh.geometry.x.dtype)
+    elif isinstance(value, Function):
+        geometry_dtype = np.dtype(value.function_space.mesh.geometry.x.dtype)
+    else:
+        geometry_dtype = np.dtype(dtype).type(0).real.dtype
+    bctype = DirichletBC.cpp_types[dtype, geometry_dtype]
 
     # Unwrap value object, if required
     if isinstance(value, np.ndarray):

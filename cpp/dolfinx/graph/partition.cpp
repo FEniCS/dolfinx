@@ -489,7 +489,8 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
     old_to_new.push_back(
         {idx, static_cast<std::int64_t>(offset_local + old_to_new.size())});
   }
-  if (num_threads > 0)
+
+  if (num_threads > 1)
   {
     boost::sort::block_indirect_sort(old_to_new.begin(), old_to_new.end(),
                                      num_threads);
@@ -575,13 +576,29 @@ std::vector<std::int32_t> graph::build::compute_local_to_local(
     global_to_local1.push_back({idx_global, global_to_local1.size()});
   std::ranges::sort(global_to_local1);
 
+  // If global_to_local1 is contiguous starting at 0 (its .first values
+  // are sorted and unique, so this is easy to detect and implies
+  // position == .first), reading .second directly avoids a
+  // binary-search lookup for every element of local0_to_global below.
+  // Every value looked up is guaranteed present in global_to_local1 by
+  // this function's precondition, so - given is_identity - always
+  // within bounds; the bounds check is a defensive no-op fallback
+  // rather than something expected to trigger.
+  const bool is_identity
+      = !global_to_local1.empty() and global_to_local1.front().first == 0
+        and global_to_local1.back().first
+                == static_cast<std::int64_t>(global_to_local1.size()) - 1;
+
   // Compute inverse map for local0_to_local1
   std::vector<std::int32_t> local0_to_local1;
   local0_to_local1.reserve(local0_to_global.size());
   std::ranges::transform(
       local0_to_global, std::back_inserter(local0_to_local1),
-      [&global_to_local1](auto l2g)
+      [&global_to_local1, is_identity](auto l2g)
       {
+        if (is_identity and std::size_t(l2g) < global_to_local1.size())
+          return global_to_local1[l2g].second;
+
         auto it = std::ranges::lower_bound(global_to_local1, l2g,
                                            std::ranges::less(),
                                            [](auto e) { return e.first; });

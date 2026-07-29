@@ -18,6 +18,7 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
+#include <format>
 #include <optional>
 #include <span>
 #include <stdexcept>
@@ -136,22 +137,22 @@ mesh::compute_incident_entities(const Topology& topology,
   auto map0 = topology.index_map(d0);
   if (!map0)
   {
-    throw std::runtime_error("Mesh entities of dimension " + std::to_string(d0)
-                             + " have not been created.");
+    throw std::runtime_error(std::format(
+        "Mesh entities of dimension {} have not been created.", d0));
   }
 
   auto map1 = topology.index_map(d1);
   if (!map1)
   {
-    throw std::runtime_error("Mesh entities of dimension " + std::to_string(d1)
-                             + " have not been created.");
+    throw std::runtime_error(std::format(
+        "Mesh entities of dimension {} have not been created.", d1));
   }
 
   auto e0_to_e1 = topology.connectivity(d0, d1);
   if (!e0_to_e1)
   {
-    throw std::runtime_error("Connectivity missing: (" + std::to_string(d0)
-                             + ", " + std::to_string(d1) + ")");
+    throw std::runtime_error(
+        std::format("Connectivity missing: ({}, {})", d0, d1));
   }
 
   std::vector<std::int32_t> entities1;

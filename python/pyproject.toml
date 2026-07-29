@@ -10,7 +10,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "fenics-dolfinx"
-version = "0.11.0.dev0"
+version = "0.12.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
 requires-python = ">=3.11"
@@ -22,18 +22,19 @@ authors = [
 ]
 dependencies = [
       "numpy>=2",
-      "cffi",
+      "cffi<2.1",
       "mpi4py",
-      "fenics-basix>=0.11.0.dev0",
-      "fenics-ffcx>=0.11.0.dev0",
-      "fenics-ufl>=2025.3.0.dev0",
+      "fenics-basix>=0.12.0.dev0",
+      "fenics-ffcx>=0.12.0.dev0",
+      "fenics-ufl>=2026.2.0.dev0",
 ]
 
 [project.optional-dependencies]
+# llvmlite (numba) is not built for x86_64 on macOS or arm64 on Windows - advanced users can install manually.
 demo = [
   "gmsh",
   "networkx",
-  "numba",
+  "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
   "matplotlib",
   "scipy",
   "pyvista",
@@ -51,9 +52,9 @@ docs = [
       "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
 ]
-lint = ["ruff"]
+lint = ["ruff", "gersemi"]
 mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
-optional = ["numba"]
+optional = ["numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')"]
 petsc4py = ["petsc4py"]
 test = [
       "matplotlib",
@@ -77,6 +78,10 @@ ci = [
 wheel.packages = ["dolfinx"]
 sdist.exclude = ["*.cpp"]
 cmake.build-type = "Release"
+
+[tool.scikit-build.cmake.define]
+# Set to FALSE to disable automatic RPATH adjustments
+DOLFINX_INSTALL_RPATH_USE_LINK_PATH = "TRUE"
 
 [tool.pytest]
 junit_family = "xunit2"
@@ -116,6 +121,7 @@ select = [
       "NPY",    # numpy-specific rules
       "FLY",    # use f-string not static joins
       "NPY201", # numpy 2.x ruleset
+      "B905",   # zip-without-explicit-strict 
 ]
 ignore = ["RUF012"]
 allowed-confusables = ["σ", "ρ"]

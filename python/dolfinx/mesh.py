@@ -179,13 +179,12 @@ class Topology:
         """
         self._cpp_object.create_connectivity(d0, d1)
 
-    def create_entities(self, dim: int, num_threads: int = 0) -> bool:
+    def create_entities(self, dim: int, num_threads: int = 1) -> bool:
         """Create entities of given topological dimension.
 
         Args:
             dim: Topological dimension of entities to create.
-            num_threads: Number of CPU threads to use when creating. If
-                0, threads are not spawned.
+            num_threads: Number of CPU threads to use. Must be >= 1.
 
         Returns:
             ``True` is entities are created, ``False`` is if entities
@@ -193,9 +192,13 @@ class Topology:
         """
         return self._cpp_object.create_entities(dim, num_threads)
 
-    def create_entity_permutations(self):
-        """Compute entity permutations and reflections."""
-        self._cpp_object.create_entity_permutations()
+    def create_entity_permutations(self, num_threads: int = 1):
+        """Compute entity permutations and reflections.
+
+        Args:
+            num_threads: Number of CPU threads to use. Must be >= 1.
+        """
+        self._cpp_object.create_entity_permutations(num_threads)
 
     @property
     def dim(self) -> int:
@@ -706,13 +709,14 @@ def transfer_meshtag(
         )
         return MeshTags(mt)
     elif meshtag.dim == meshtag.topology.dim - 1:
-        assert parent_facet is not None
+        if parent_facet is None:
+            raise ValueError("parent_facet is required for transferring facet tags.")
         mt = _cpp.refinement.transfer_facet_meshtag(
             meshtag._cpp_object, msh1.topology._cpp_object, parent_cell, parent_facet
         )
         return MeshTags(mt)
     else:
-        raise RuntimeError("MeshTag transfer is supported on on cells or facets.")
+        raise RuntimeError("MeshTag transfer is supported on cells or facets.")
 
 
 def uniform_refine(
@@ -789,6 +793,7 @@ def create_mesh(
     x: npt.NDArray[np.floating],
     partitioner: Callable | None = None,
     max_facet_to_cell_links: int = 2,
+    num_threads: int = 1,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -804,6 +809,8 @@ def create_mesh(
             cells across MPI ranks.
         max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
+        num_threads: Number of threads to use to build mesh. Must be
+            greater than 0.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -856,7 +863,7 @@ def create_mesh(
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
-        comm, cells, cmap._cpp_object, x, partitioner, max_facet_to_cell_links
+        comm, cells, cmap._cpp_object, x, partitioner, max_facet_to_cell_links, num_threads
     )
 
     return Mesh(msh, domain)  # type: ignore
@@ -919,7 +926,8 @@ def meshtags(
         ``values``.
     """
     if isinstance(values, int):
-        assert values >= np.iinfo(np.int32).min and values <= np.iinfo(np.int32).max
+        if not (np.iinfo(np.int32).min <= values <= np.iinfo(np.int32).max):
+            raise ValueError("Tag value is out of range for int32.")
         values = np.full(entities.shape, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(entities.shape, values, dtype=np.double)
@@ -963,7 +971,8 @@ def meshtags_from_entities(
         ``values``.
     """
     if isinstance(values, int):
-        assert np.can_cast(values, np.int32)
+        if not np.can_cast(values, np.int32):
+            raise ValueError("Tag value is out of range for int32.")
         values = np.full(entities.num_nodes, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(entities.num_nodes, values, dtype=np.double)
@@ -1266,7 +1275,7 @@ def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:
     """Compute the indices of exterior facets that are owned by the caller.
 
     An exterior facet (co-dimension 1) is one that is connected globally
-    to only one cell of co-dimension 0).
+    to only one cell (co-dimension 0).
 
     Note:
         This is a collective operation that should be called on all

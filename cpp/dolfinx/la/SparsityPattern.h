@@ -91,7 +91,7 @@ public:
   /// entries
   void finalize();
 
-  /// @brief Index map for given dimension dimension. Returns the index
+  /// @brief Index map for given dimension. Returns the index
   /// map for rows and columns that will be set by the current MPI rank.
   /// @note After finalization, the column index map is updated to account for
   /// additional column entries from other processes.
@@ -127,7 +127,7 @@ public:
   /// @brief Sparsity pattern graph after assembly. Uses local indices
   /// for the columns.
   /// @note Column global indices can be obtained from
-  /// SparsityPattern::column_index_map()
+  /// SparsityPattern::column_indices()
   /// @note Includes ghost rows
   /// @return Adjacency list edges and offsets
   std::pair<std::span<const std::int32_t>, std::span<const std::int64_t>>

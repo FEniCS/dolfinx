@@ -119,7 +119,7 @@ try:
     pl.add_text("y-component", font_size=12, color="black", position="upper_edge")
     pl.add_mesh(grid.copy(), component=1, show_edges=True)
 
-    pl.view_xy()
+    pl.view_xy()  # type: ignore
     pl.link_views()
 
     # If pyvista environment variable is set to off-screen (static)

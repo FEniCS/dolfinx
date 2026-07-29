@@ -295,7 +295,7 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
-  /// @note The size of of `g` must be equal to the block size if `V`.
+  /// @note The size of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
   template <typename S, typename X>
@@ -320,7 +320,7 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
-  /// @note The size of of `g` must be equal to the block size if `V`.
+  /// @note The size of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
   template <typename X>
@@ -585,11 +585,16 @@ public:
   /// unchanged.
   void mark_dofs(std::span<std::int8_t> markers) const
   {
-    for (std::int32_t idx : _dofs0)
+#ifndef NDEBUG
+    if (!_dofs0.empty()
+        and *std::ranges::max_element(_dofs0) >= (std::int32_t)markers.size())
     {
-      assert(idx < (std::int32_t)markers.size());
-      markers[idx] = true;
+      throw std::runtime_error("Marker array is too short for the boundary "
+                               "condition dofs.");
     }
+#endif
+    for (std::int32_t idx : _dofs0)
+      markers[idx] = true;
   }
 
 private:

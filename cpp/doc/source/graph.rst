@@ -22,6 +22,9 @@ Re-ordering
 .. doxygenfunction:: dolfinx::graph::reorder_gps
    :project: DOLFINx
 
+.. doxygenfunction:: dolfinx::graph::reorder_rcm
+   :project: DOLFINx
+
 
 Partitioning
 ------------

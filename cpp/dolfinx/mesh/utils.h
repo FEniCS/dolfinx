@@ -222,7 +222,7 @@ using CellReorderFunction = std::function<std::vector<std::int32_t>(
 
 /// @brief Creates the default boundary vertices routine for a given reorder
 /// function.
-/// @param[in] reorder_fn A cell reorder funciton which will be applied to
+/// @param[in] reorder_fn A cell reorder function which will be applied to
 /// reorder the cells.
 /// @param[in] max_facet_to_cell_links Maximum number of cells a facet can be
 /// connected to.
@@ -253,8 +253,8 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
              const std::vector<std::vector<int>>& ghost_owners,
              std::vector<std::vector<std::int64_t>>& cells,
              std::vector<std::vector<std::int64_t>>& cells_v,
-             std::vector<std::vector<std::int64_t>>& original_idx)
-             -> std::vector<std::int64_t>
+             std::vector<std::vector<std::int64_t>>& original_idx,
+             int num_threads) -> std::vector<std::int64_t>
   {
     // Build local dual graph for owned cells to (i) get list of vertices
     // on the process boundary and (ii) apply re-ordering to cells for
@@ -279,7 +279,7 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
       auto [graph, unmatched_facets, max_v, _facet_attached_cells]
           = build_local_dual_graph(std::vector{celltypes[i]},
                                    std::vector{cells1_v_local.back()},
-                                   max_facet_to_cell_links);
+                                   max_facet_to_cell_links, num_threads);
 
       // Store unmatched_facets for current cell type
       facets.emplace_back(std::move(unmatched_facets), max_v);
@@ -908,17 +908,19 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto e_to_c = topology->connectivity(dim, tdim);
   if (!e_to_c)
   {
-    throw std::runtime_error(
+    throw std::runtime_error(std::format(
         "Entity-to-cell connectivity has not been computed. Missing dims "
-        + std::to_string(dim) + "->" + std::to_string(tdim));
+        "{}->{}",
+        dim, tdim));
   }
 
   auto c_to_e = topology->connectivity(tdim, dim);
   if (!c_to_e)
   {
-    throw std::runtime_error(
+    throw std::runtime_error(std::format(
         "Cell-to-entity connectivity has not been computed. Missing dims "
-        + std::to_string(tdim) + "->" + std::to_string(dim));
+        "{}->{}",
+        tdim, dim));
   }
 
   // Get the cell info, which is needed to permute the closure dofs
@@ -1039,6 +1041,8 @@ compute_incident_entities(const Topology& topology,
 /// redistributed.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet can be connected to.
+/// @param[in] num_threads Number threads to use in mesh construction.
+/// Must be >= 1.
 /// @param[in] reorder_fn Function that reorders (locally) cells that
 /// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
@@ -1050,10 +1054,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::optional<std::int32_t> max_facet_to_cell_links,
-    const CellReorderFunction& reorder_fn = graph::reorder_gps)
+    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
+    const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
-  assert(cells.size() == elements.size());
+  if (cells.size() != elements.size())
+    throw std::runtime_error("Number of cell arrays and elements must match.");
   std::vector<CellType> celltypes;
   std::ranges::transform(elements, std::back_inserter(celltypes),
                          [](auto& e) { return e.cell_shape(); });
@@ -1096,7 +1101,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     for (std::int32_t i = 0; i < num_cell_types; ++i)
     {
       std::size_t num_cell_nodes = doflayouts[i].num_dofs();
-      assert(cells[i].size() % num_cell_nodes == 0);
+      if (cells[i].size() % num_cell_nodes != 0)
+      {
+        throw std::runtime_error("Cell array size is not a multiple of the "
+                                 "number of nodes per cell.");
+      }
       std::size_t num_cells = cells[i].size() / num_cell_nodes;
 
       // Extract destination AdjacencyList for this cell type
@@ -1129,7 +1138,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     {
       cells1[i] = std::vector<std::int64_t>(cells[i].begin(), cells[i].end());
       std::int32_t num_cell_nodes = doflayouts[i].num_dofs();
-      assert(cells1[i].size() % num_cell_nodes == 0);
+      if (cells1[i].size() % num_cell_nodes != 0)
+      {
+        throw std::runtime_error("Cell array size is not a multiple of the "
+                                 "number of nodes per cell.");
+      }
       original_idx1[i].resize(cells1[i].size() / num_cell_nodes);
       num_owned += original_idx1[i].size();
     }
@@ -1157,8 +1170,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
   auto boundary_v_fn
       = create_boundary_vertices_fn(reorder_fn, max_facet_to_cell_links);
-  const std::vector<std::int64_t> boundary_v = boundary_v_fn(
-      celltypes, doflayouts, ghost_owners, cells1, cells1_v, original_idx1);
+  const std::vector<std::int64_t> boundary_v
+      = boundary_v_fn(celltypes, doflayouts, ghost_owners, cells1, cells1_v,
+                      original_idx1, num_threads);
 
   spdlog::debug("Got {} boundary vertices", boundary_v.size());
 
@@ -1174,7 +1188,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                          [](auto& c) { return std::span(c); });
   Topology topology
       = create_topology(comm, celltypes, cells1_v_span, original_idx1_span,
-                        ghost_owners_span, boundary_v, 0);
+                        ghost_owners_span, boundary_v, num_threads);
 
   // Create connectivities required higher-order geometries for creating
   // a Geometry object
@@ -1254,6 +1268,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// rank for each cell. If not callable, cells are not redistributed.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet can be connected to.
+/// @param[in] num_threads Number threads to use in mesh construction.
+/// Must be >= 1.
 /// @param[in] reorder_fn Function that reorders (locally) cells that
 /// are owned by this process.
 /// @return A mesh distributed on the communicator `comm`.
@@ -1264,12 +1280,12 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner,
-    std::optional<std::int32_t> max_facet_to_cell_links,
-    const CellReorderFunction& reorder_fn = graph::reorder_gps)
+    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
+    const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
                      commg, x, xshape, partitioner, max_facet_to_cell_links,
-                     reorder_fn);
+                     num_threads, reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
@@ -1303,14 +1319,14 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
   if (dolfinx::MPI::size(comm) == 1)
   {
     return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
-                       comm, x, xshape, nullptr, max_facet_to_cell_links);
+                       comm, x, xshape, nullptr, max_facet_to_cell_links, 1);
   }
   else
   {
     return create_mesh(
         comm, comm, std::vector{cells}, std::vector{elements}, comm, x, xshape,
         create_cell_partitioner(ghost_mode, max_facet_to_cell_links),
-        max_facet_to_cell_links);
+        max_facet_to_cell_links, 1);
   }
 }
 
