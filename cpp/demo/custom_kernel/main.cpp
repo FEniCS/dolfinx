@@ -171,9 +171,12 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 3>> x(
       g.x().data(), g.x().size() / 3, 3);
   common::Timer timer("Assembler1 lambda (vector)");
+  std::vector<T> cdofs_b(3 * g.dofmaps().front().extent(1));
+  std::vector<T> be_b(dofmap.map().extent(1));
   fem::impl::assemble_cells<1>([](auto, auto, auto, auto) {}, b.array(),
                                g.dofmaps().front(), x, cells,
-                               {dofmap.map(), 1, cells}, kernel, {}, {}, {});
+                               {dofmap.map(), 1, cells}, kernel, {}, {}, {},
+                               std::span(be_b), std::span(cdofs_b));
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }
