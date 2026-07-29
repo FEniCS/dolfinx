@@ -565,6 +565,7 @@ install(
   DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx
   FILES_MATCHING
   PATTERN "CMakeLists.txt"
+  PATTERN "README.md"
   PATTERN "*.cpp"
   PATTERN "*.py"
   # Guard against in-source build detritus, e.g. CMakeCXXCompilerId.cpp
