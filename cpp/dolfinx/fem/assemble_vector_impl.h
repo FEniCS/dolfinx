@@ -73,13 +73,12 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 template <int _bs = -1, typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
-
 void assemble_cells(
-    fem::DofTransformKernel<T> auto P0, V&& b, mdspan2_t x_dofmap,
+    const fem::DofTransformKernel<T> auto& P0, V&& b, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     std::span<const std::int32_t> cells,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap,
-    FEkernel<T, U> auto kernel, std::span<const T> constants,
+    const FEkernel<T, U> auto& kernel, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const std::uint32_t> cell_info0, std::span<T> be_b,
     std::span<U> cdofs_b)
@@ -176,7 +175,7 @@ template <int _bs = -1, typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void assemble_entities(
-    fem::DofTransformKernel<T> auto P0, V&& b, mdspan2_t x_dofmap,
+    const fem::DofTransformKernel<T> auto& P0, V&& b, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
@@ -185,7 +184,7 @@ void assemble_entities(
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2>>>
         dofmap,
-    FEkernel<T, U> auto kernel, std::span<const T> constants,
+    const FEkernel<T, U> auto& kernel, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const std::uint32_t> cell_info0,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
@@ -281,7 +280,7 @@ template <int _bs = -1, typename V, std::floating_point U,
           dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void assemble_interior_facets(
-    fem::DofTransformKernel<T> auto P0, V&& b, mdspan2_t x_dofmap,
+    const fem::DofTransformKernel<T> auto& P0, V&& b, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2, 2>>
@@ -290,7 +289,7 @@ void assemble_interior_facets(
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2, 2>>>
         dofmap,
-    FEkernel<T, U> auto kernel, std::span<const T> constants,
+    const FEkernel<T, U> auto& kernel, std::span<const T> constants,
     md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                     md::dynamic_extent>>
         coeffs,
@@ -626,7 +625,7 @@ void assemble_vector(
     std::vector<T> be_buffer(2 * bs * dofs.extent(1));
     std::vector<U> cdofs_buffer(2 * 3 * x_dofmap.extent(1));
 
-    fem::DofTransformKernel<T> auto P0
+    const fem::DofTransformKernel<T> auto P0
         = element->template dof_transformation_fn<T>(doftransform::standard);
 
     std::span<const std::uint32_t> cell_info0;

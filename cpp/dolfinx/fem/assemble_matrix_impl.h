@@ -79,10 +79,11 @@ void assemble_cells_matrix(
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     std::span<const std::int32_t> cells,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
-    fem::DofTransformKernel<T> auto P0,
+    const fem::DofTransformKernel<T> auto& P0,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
-    fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
-    std::span<const std::int8_t> bc1, FEkernel<T, U> auto kernel,
+    const fem::DofTransformKernel<T> auto& P1T,
+    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
+    const FEkernel<T, U> auto& kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1, std::span<T> Ab,
@@ -261,13 +262,14 @@ void assemble_entities(
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2>>>
         dofmap0,
-    fem::DofTransformKernel<T> auto P0,
+    const fem::DofTransformKernel<T> auto& P0,
     std::tuple<mdspan2_t, int,
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2>>>
         dofmap1,
-    fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
-    std::span<const std::int8_t> bc1, FEkernel<T, U> auto kernel,
+    const fem::DofTransformKernel<T> auto& P1T,
+    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
+    const FEkernel<T, U> auto& kernel,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
@@ -439,13 +441,14 @@ void assemble_interior_facets(
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2, 2>>>
         dofmap0,
-    fem::DofTransformKernel<T> auto P0,
+    const fem::DofTransformKernel<T> auto& P0,
     std::tuple<const DofMap&, int,
                md::mdspan<const std::int32_t,
                           std::extents<std::size_t, md::dynamic_extent, 2, 2>>>
         dofmap1,
-    fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
-    std::span<const std::int8_t> bc1, FEkernel<T, U> auto kernel,
+    const fem::DofTransformKernel<T> auto& P1T,
+    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
+    const FEkernel<T, U> auto& kernel,
     md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                     md::dynamic_extent>>
         coeffs,
@@ -704,9 +707,9 @@ void assemble_matrix(
     assert(element0);
     auto element1 = a.function_spaces().at(1)->elements(cell_type_idx);
     assert(element1);
-    fem::DofTransformKernel<T> auto P0
+    const fem::DofTransformKernel<T> auto P0
         = element0->template dof_transformation_fn<T>(doftransform::standard);
-    fem::DofTransformKernel<T> auto P1T
+    const fem::DofTransformKernel<T> auto P1T
         = element1->template dof_transformation_right_fn<T>(
             doftransform::transpose);
 
