@@ -150,7 +150,8 @@ public:
   /// @param V FunctionSpace defining the block size and dofmap layout of the
   /// vector, and sharing a common Scatterer.
   template <std::floating_point U>
-  Vector(const fem::FunctionSpace<U, common::Scatterer<ScatterContainer>>& V)
+  explicit Vector(
+      const fem::FunctionSpace<U, common::Scatterer<ScatterContainer>>& V)
       : _map(V.dofmap()->index_map), _bs(V.dofmap()->index_map_bs()),
         _x(_bs * (_map->size_local() + _map->num_ghosts())),
         _scatterer(V.scatterer()),

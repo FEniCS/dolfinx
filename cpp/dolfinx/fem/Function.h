@@ -120,8 +120,7 @@ public:
     auto [V, map] = _function_space->collapse();
 
     // Create new vector
-    auto x = std::make_shared<la::Vector<value_type>>(
-        V.dofmap()->index_map, V.dofmap()->index_map_bs());
+    auto x = std::make_shared<la::Vector<value_type>>(V);
 
     // Copy values into new vector
     std::span<const value_type> x_old = _x->array();

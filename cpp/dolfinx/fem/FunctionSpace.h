@@ -52,7 +52,6 @@ public:
         _scatterer(std::make_shared<ScatterT>(
             *_dofmaps.front()->index_map, _dofmaps.front()->index_map_bs())),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
-
   {
     // Do nothing
   }
