@@ -482,6 +482,31 @@ void assemble_interior_facets(
   assert(facets1.size() == facets.size());
   assert(Ab.size() >= num_rows * num_cols);
   auto Ae = Ab.first(num_rows * num_cols);
+
+  // Buffer used to gather a contiguous (test, trial) block of Ae when
+  // one of the two cells attached to the facet does not exist in the
+  // test/trial function domain (e.g. an interface between two
+  // domains) -- the sparsity pattern only holds entries for blocks
+  // where both cells exist, so such blocks must be inserted
+  // individually rather than as part of the full joint block.
+  std::vector<T> Ae_block;
+  auto insert_block = [&](std::span<const std::int32_t> rdofs,
+                          std::span<const std::int32_t> cdofs,
+                          std::size_t row_offset, std::size_t col_offset)
+  {
+    if (rdofs.empty() or cdofs.empty())
+      return;
+    Ae_block.resize(rdofs.size() * bs0 * cdofs.size() * bs1);
+    for (std::size_t i = 0; i < rdofs.size() * bs0; ++i)
+    {
+      auto row
+          = std::next(Ae.begin(), (row_offset + i) * num_cols + col_offset);
+      std::copy_n(row, cdofs.size() * bs1,
+                  std::next(Ae_block.begin(), i * cdofs.size() * bs1));
+    }
+    mat_set(rdofs, cdofs, Ae_block);
+  };
+
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
     // Cells in integration domain,  test function domain and trial
@@ -623,7 +648,22 @@ void assemble_interior_facets(
       }
     }
 
-    mat_set(dmapjoint0, dmapjoint1, Ae);
+    // The common case is that a cell exists on both sides of the
+    // facet for both the test and trial function domains, in which
+    // case the full joint block can be inserted in one go. Otherwise
+    // (e.g. an interface between two domains), only the blocks
+    // corresponding to existing (test, trial) cell pairs are present
+    // in the sparsity pattern, so each must be inserted individually.
+    if (cells0[0] >= 0 and cells0[1] >= 0 and cells1[0] >= 0 and cells1[1] >= 0)
+      mat_set(dmapjoint0, dmapjoint1, Ae);
+    else
+    {
+      insert_block(dmap0_cell0, dmap1_cell0, 0, 0);
+      insert_block(dmap0_cell0, dmap1_cell1, 0, bs1 * dmap1_size);
+      insert_block(dmap0_cell1, dmap1_cell0, bs0 * dmap0_size, 0);
+      insert_block(dmap0_cell1, dmap1_cell1, bs0 * dmap0_size,
+                   bs1 * dmap1_size);
+    }
   }
 }
 
