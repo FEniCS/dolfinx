@@ -11,6 +11,10 @@ if(NOT TARGET dolfinx::dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
+if(PROJECT_IS_TOP_LEVEL)
+  include(CTest) # enables testing
+endif()
+
 add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx::dolfinx)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

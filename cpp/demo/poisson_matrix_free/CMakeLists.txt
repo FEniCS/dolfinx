@@ -11,6 +11,10 @@ if(NOT TARGET dolfinx::dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
+if(PROJECT_IS_TOP_LEVEL)
+  include(CTest) # enables testing
+endif()
+
 include(CheckSymbolExists)
 include(CMakePushCheckState)
 cmake_push_check_state(RESET)

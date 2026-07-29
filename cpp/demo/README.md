@@ -11,11 +11,9 @@ To build all demos:
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S .
     cmake --build build
 
-To build a single demo, use its directory as the source, e.g. `-S poisson`, and
-run the resulting executable directly.
+To build a single demo, use its directory as the source, e.g. `-S poisson`.
 
-Configuring this directory additionally registers tests for each demo on 1, 2
-and 3 MPI processes:
+Each demo registers tests for 1, 2 and 3 MPI processes:
 
     ctest --test-dir build          # all demos
     ctest --test-dir build -R demo_poisson_np_3
