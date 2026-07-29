@@ -35,6 +35,12 @@ class Expression;
 namespace impl
 {
 /// @private
+/// @brief Get cell permutation data for a coefficient, if its element
+/// needs it, otherwise an empty span.
+/// @param[in] coefficient Coefficient to get cell permutation data for.
+/// @return Cell permutation data, indexed by cell (see
+/// mesh::Topology::get_cell_permutation_info), or an empty span if
+/// `coefficient`'s element does not require it.
 template <dolfinx::scalar T, std::floating_point U>
 std::span<const std::uint32_t>
 get_cell_orientation_info(const Function<T, U>& coefficient)
@@ -52,7 +58,22 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
   return cell_info;
 }
 
-/// Pack a single coefficient for a single cell
+/// @brief Gather a single coefficient's degrees-of-freedom for a single
+/// cell and apply its DOF transformation.
+/// @tparam _bs Block size known at compile time (1, 2, or 3), or -1 to
+/// use the runtime block size `bs` (allows the compiler to specialize
+/// and unroll the inner loop for the common block sizes). If `_bs >=
+/// 0`, it must equal `bs`.
+/// @param[out] coeffs Destination for this cell's packed values.
+/// @param[in] cell Cell to gather DOF values for.
+/// @param[in] bs Runtime block size of `dofmap`.
+/// @param[in] v Function values to gather from, indexed by
+/// process-local DOF (see DofMap::cell_dofs).
+/// @param[in] cell_info Cell permutation data (see
+/// get_cell_orientation_info), passed through to `transform`.
+/// @param[in] dofmap Dofmap used to look up `cell`'s DOFs.
+/// @param[in] transform DOF transformation applied to `coeffs` after
+/// gathering (see FiniteElement::dof_transformation_fn).
 template <int _bs, dolfinx::scalar T>
 void pack_impl(std::span<T> coeffs, std::int32_t cell, int bs,
                std::span<const T> v, std::span<const std::uint32_t> cell_info,
@@ -83,14 +104,20 @@ void pack_impl(std::span<T> coeffs, std::int32_t cell, int bs,
 
 /// @brief Pack a single coefficient for a set of active entities.
 ///
-/// @param[out] c Coefficient to be packed.
-/// @param[in] cstride Total number of coefficient values to pack for
-/// each entity.
+/// @tparam T Scalar type of the coefficient.
+/// @tparam U Floating point type of the mesh geometry.
+/// @param[out] c Coefficient storage to pack into, shape
+/// `(cells.extent(0), cstride)`, flattened row-major.
+/// @param[in] cstride Row length of `c`, i.e. the total number of
+/// coefficient values packed per entity across *all* coefficients
+/// sharing `c` (not just `u`'s own `space_dim` values).
 /// @param[in] u Function to extract coefficient data from.
-/// @param[in] cell_info Array of bytes describing which transformation
-/// has to be applied on the cell to map it to the reference element.
-/// @param[in] cells Set of active cells.
-/// @param[in] offset The offset for c.
+/// @param[in] cell_info Cell permutation information, indexed by cell
+/// (see get_cell_orientation_info).
+/// @param[in] cells Cell index for each active entity. A negative
+/// entry marks an entity absent from `u`'s mesh (e.g. the far side of
+/// an interface), and is skipped.
+/// @param[in] offset Offset of `u`'s data within each row of `c`.
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficient_entity(std::span<T> c, int cstride,
                              const Function<T, U>& u,
@@ -112,9 +139,11 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
       = element->template dof_transformation_fn<T>(doftransform::transpose);
   const int bs = dofmap.bs();
 
-  // Dispatch on a compile-time block size for blocks of 1, 2, or 3
-  // (the common cases), falling back to a runtime block size (-1)
-  // otherwise.
+  // Passing the block size as a compile-time constant lets `pack_impl`
+  // unroll its inner (per-DOF) loop for the common block sizes 1, 2,
+  // and 3, rather than looping `bs` times at runtime for every cell.
+  // `bs_c` is a `std::integral_constant<int, N>`, converted to `N` via
+  // `bs_c()` where `pack_impl`'s `_bs` template parameter is needed.
   auto pack_for_bs = [&](auto bs_c)
   {
     for (std::size_t e = 0; e < cells.extent(0); ++e)
@@ -168,15 +197,15 @@ allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
     cstride = offsets.back();
 
     // `domain()` returns entities flattened as (cell,) for cell
-    // integrals, (cell, local_facet) pairs for exterior_facet/vertex/
-    // ridge integrals, and (cell, local_facet, cell, local_facet)
-    // quadruples for interior_facet integrals (one '+' and one '-'
-    // side). Dividing by 2 therefore gives the number of entities for
-    // exterior_facet/vertex/ridge integrals, but *twice* the number of
-    // facets for interior_facet integrals -- which is exactly the
-    // entity count required, since interior_facet coefficient data is
-    // packed at a doubled `cstride` (one side each), see
-    // ::pack_coefficients.
+    // integrals, (cell, local_entity_index) pairs for exterior_facet/
+    // vertex/ridge integrals, and (cell, local_facet, cell,
+    // local_facet) quadruples for interior_facet integrals (one '+'
+    // and one '-' side). Dividing by 2 therefore gives the number of
+    // entities for exterior_facet/vertex/ridge integrals, but *twice*
+    // the number of facets for interior_facet integrals -- which is
+    // exactly the entity count required, since interior_facet
+    // coefficient data is packed at a doubled `cstride` (one side
+    // each), see ::pack_coefficients.
     num_entities = form.domain(integral_type, idx, 0).size();
     if (integral_type != IntegralType::cell)
       num_entities /= 2;
@@ -216,13 +245,22 @@ allocate_coefficient_storage(const Form<T, U>& form)
 /// @param[in] form Form to pack the coefficients for.
 /// @param[in,out] coeffs Map from a `(integral_type, idx)` pair, where
 /// `idx` is the integral index in the flattened list of integral
-/// kernels (see Form::domain), to a `(coeffs, cstride)` pair.
+/// kernels (see Form::domain), to a `(coeffs, cstride)` pair, as
+/// returned by ::allocate_coefficient_storage.
 /// - `coeffs` is an array of shape `(num_int_entities, cstride)` into
 /// which coefficient data will be packed.
 /// - `num_int_entities` is the number of entities over which
 /// coefficient data is packed.
 /// - `cstride` is the number of coefficient data entries per entity.
 /// - `coeffs` is flattened using  row-major layout.
+///
+/// @note The `(num_int_entities, cstride)` shape above holds as stated
+/// for `IntegralType::cell`, `exterior_facet`, `vertex`, and `ridge`
+/// integrals. For `IntegralType::interior_facet`, each facet's row
+/// holds `2 * cstride` values -- one side's worth of data per
+/// coefficient immediately followed by the other's -- and
+/// `num_int_entities` is twice the number of facets; see the packing
+/// code below for the exact per-facet layout.
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(const Form<T, U>& form,
                        std::map<std::pair<IntegralType, int>,
@@ -254,9 +292,10 @@ void pack_coefficients(const Form<T, U>& form,
           auto mesh = coefficients[coeff]->function_space()->mesh();
           assert(mesh);
 
-          // Other integrals in the form might have coefficients defined
-          // over entities of codim > 0, which don't make sense for cell
-          // integrals, so don't pack them.
+          // A cell-integral coefficient must be defined over cells (or
+          // a mesh view of them), not lower-codimension entities such
+          // as facets -- that combination doesn't make sense and is a
+          // logic error, so fail loudly rather than pack it anyway.
           if (int codim = form_tdim - mesh->topology()->dim(); codim > 0)
           {
             throw std::runtime_error("Should not be packing coefficients with "
@@ -348,13 +387,16 @@ void pack_coefficients(const Form<T, U>& form,
 
 /// @brief Given a Function and a related mesh and its integration entities,
 /// extract the cell indices of the coefficient mesh.
+/// @tparam T Scalar type of the coefficient.
+/// @tparam U Floating point type of the mesh geometry.
 /// @param[in] coeff The coefficient to extract cell indices for.
 /// @param[in] mesh The mesh which the integration entities belong to.
 /// @param[in] entities The integration entities. Is either a sequence of local
 /// cell indices, or a sequence of (cell, local entity index) tuples.
-/// @param[in] entity_map The map between the mesh and the coefficient mesh in
-/// case they are different.
-/// @returns A vector of cell indices on the coefficient mesh corresponding to
+/// @param[in] entity_map The map between `mesh` and `coeff`'s mesh.
+/// Required (must have a value) whenever `coeff` is not defined on
+/// `mesh` itself.
+/// @return A vector of cell indices on the coefficient mesh corresponding to
 /// the integration entities.
 template <dolfinx::scalar T, std::floating_point U>
 std::vector<std::int32_t> extract_coefficient_cells_from_entities(
@@ -450,7 +492,8 @@ std::vector<std::int32_t> extract_coefficient_cells_from_entities(
 /// @tparam U Floating point type of mesh geometry
 /// @param coeffs Coefficients to pack
 /// @param mesh Mesh which the entities belong to
-/// @param entities Entities to pack over
+/// @param entities Entities to pack over: either a rank-1 list of cell
+/// indices, or a rank-2 list of (cell, local_entity_index) pairs.
 /// @param entity_maps Bidirectional maps between the entities of a
 /// parent mesh and a submesh in case of coefficients being defined on
 /// both.
@@ -524,10 +567,13 @@ void pack_coefficients(
                                   cell_info, cells, offsets[coeff]);
   }
 }
+
 /// @brief Pack constants of an Expression or Form into a single array
 /// ready for assembly.
+/// @tparam T Scalar type of the constants.
 /// @param c Constants to pack.
-/// @return Packed constants
+/// @return Packed constants, as the concatenation of each constant's
+/// values in order.
 template <typename T>
 std::vector<T> pack_constants(
     const std::vector<std::reference_wrapper<const fem::Constant<T>>>& c)
