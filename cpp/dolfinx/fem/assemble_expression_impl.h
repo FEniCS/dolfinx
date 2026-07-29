@@ -162,7 +162,9 @@ void tabulate_expression(
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
-  auto post_dof_transform
+  std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
+                     int)>
+      post_dof_transform
       = [](std::span<T>, std::span<const std::uint32_t>, std::int32_t, int)
   {
     // Do nothing
