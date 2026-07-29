@@ -7,9 +7,13 @@
 #ifdef HAS_PETSC
 
 #include "petsc.h"
+#include <cassert>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <functional>
+#include <memory>
 #include <petscistypes.h>
+#include <vector>
 
 using namespace dolfinx;
 
@@ -54,7 +58,7 @@ Vec fem::petsc::create_vector_block(
       = VecCreateGhost(maps[0].first.get().comm(), local_size, PETSC_DETERMINE,
                        _ghosts.size(), _ghosts.data(), &x);
   if (ierr != 0)
-    throw std::runtime_error("Call to PETSc VecCreateGhost failed.");
+    la::petsc::error(ierr, __FILE__, "VecCreateGhost");
 
   return x;
 }
@@ -74,10 +78,16 @@ Vec fem::petsc::create_vector_nest(
     petsc_vecs.push_back(vecs.back()->vec());
   }
 
-  // Create nested (VecNest) vector
+  // Create nested (VecNest) vector. Note: VecCreateNest increases the
+  // reference count on each of petsc_vecs, so the Vec wrappers in
+  // vecs (and the Vec objects they own) can be safely destroyed once
+  // this function returns.
   Vec y;
-  VecCreateNest(vecs.front()->comm(), petsc_vecs.size(), nullptr,
-                petsc_vecs.data(), &y);
+  PetscErrorCode ierr = VecCreateNest(vecs.front()->comm(), petsc_vecs.size(),
+                                      nullptr, petsc_vecs.data(), &y);
+  if (ierr != 0)
+    la::petsc::error(ierr, __FILE__, "VecCreateNest");
+
   return y;
 }
 //-----------------------------------------------------------------------------
