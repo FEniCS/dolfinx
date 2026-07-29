@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2023 Garth N. Wells
+// Copyright (C) 2007-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -51,14 +51,16 @@ void cells(la::SparsityPattern& pattern, const std::pair<R0, R1>& cells,
 /// @brief Iterate over interior facets and insert entries into sparsity
 /// pattern.
 ///
-/// Inserts the rectangular blocks of indices `[dofmap[0][cell0],
-/// dofmap[0][cell1]] x [dofmap[1][cell0] + dofmap[1][cell1]]` where
+/// Inserts the rectangular block of indices `[dofmap[0][cell0],
+/// dofmap[0][cell1]] x [dofmap[1][cell0], dofmap[1][cell1]]` where
 /// `cell0` and `cell1` are the two cells attached to a facet.
 ///
 /// @param[in,out] pattern Sparsity pattern to insert into.
 /// @param[in] cells Cells to index into each dofmap. `cells[i]` is a
 /// list of `(cell0, cell1)` pairs for each interior facet to index into
-/// `dofmap[i]`. `cells[0]` and `cells[1]` must have the same size.
+/// `dofmap[i]`. `cells[0]` and `cells[1]` must have the same size. A
+/// negative cell index means no cell exists on that side (e.g. an
+/// interface between two domains); no entries are inserted for it.
 /// @param[in] dofmaps Dofmaps to use in building the sparsity pattern.
 ///
 /// @note The sparsity pattern is not finalised.
