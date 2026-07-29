@@ -565,13 +565,9 @@ install(
   DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx
   FILES_MATCHING
   PATTERN "CMakeLists.txt"
-  PATTERN "*.h"
-  PATTERN "*.hpp"
-  PATTERN "*.c"
   PATTERN "*.cpp"
   PATTERN "*.py"
-  PATTERN "*.xdmf"
-  PATTERN "*.h5"
+  # Guard against in-source build detritus, e.g. CMakeCXXCompilerId.cpp
   PATTERN "CMakeFiles" EXCLUDE
 )
 
