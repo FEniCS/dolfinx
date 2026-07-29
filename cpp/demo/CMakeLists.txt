@@ -15,6 +15,7 @@ endif()
 macro(add_demo_subdirectory subdir)
   if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${subdir})
     add_subdirectory(${subdir})
+    list(APPEND DEMO_TARGETS demo_${subdir})
   endif()
 endmacro(add_demo_subdirectory)
 
@@ -28,3 +29,6 @@ add_demo_subdirectory(interpolation_different_meshes)
 add_demo_subdirectory(mixed_poisson)
 add_demo_subdirectory(poisson)
 add_demo_subdirectory(poisson_matrix_free)
+
+# Target to build all demos, e.g. `ninja demos`
+add_custom_target(demos DEPENDS ${DEMO_TARGETS})
