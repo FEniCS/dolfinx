@@ -236,6 +236,8 @@ jobs:
           --warn-uninitialized
           -G Ninja
           -DCMAKE_BUILD_TYPE=Developer
+          -DBUILD_TESTING=true
+          -DDOLFINX_BUILD_DEMOS=true
           -DDOLFINX_ENABLE_ADIOS2=true
           -DDOLFINX_ENABLE_KAHIP=true
           -DDOLFINX_ENABLE_PETSC=true
@@ -247,12 +249,6 @@ jobs:
         working-directory: cpp/build
         run: cmake --build . --target install
 
-      - name: Build tests (C++, standalone)
-        working-directory: cpp/test
-        run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=Developer -GNinja
-          cmake --build build
-
       - name: Run pkg-config test (C++)
         working-directory: cpp/test/pkgconfig
         run: |
@@ -260,20 +256,11 @@ jobs:
           make
           make run
 
-      - name: Run tests (C++, serial)
-        working-directory: cpp/test/build
-        run: ctest -V --output-on-failure -R unittests_np_1
-      - name: Run tests (C++, MPI, np=3)
-        working-directory: cpp/test/build
-        run: ctest -V --output-on-failure -R unittests_np_3
-
-      - name: Build and run C++ regression tests (serial and MPI (np=2))
-        run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
-          cmake --build build/demo
-          cd build/demo
-          ctest -V -R demo -R serial
-          ctest --output-on-failure -V -R demo -R mpi_2
+      - name: Run unit tests and demos via target (C++, serial and parallel)
+        working-directory: cpp/build
+        env:
+          CTEST_OUTPUT_ON_FAILURE: 1
+        run: cmake --build . --target test
 
       - name: Build Python interface
         run: |
