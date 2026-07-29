@@ -33,7 +33,14 @@ if(VCPKG_TARGET_IS_WINDOWS)
   )
   # Debug/release scotch import libs share the same file names (no debug
   # postfix), but live under debug/lib and lib respectively, so the two
-  # configs need distinct TPL_PARMETIS_LIBRARIES values.
+  # configs need distinct TPL_PARMETIS_LIBRARIES values. This must be a
+  # proper CMake list (semicolon-separated): SuperLU_DIST's own CMakeLists
+  # does set(PARMETIS_LIB ${TPL_PARMETIS_LIBRARIES}) unquoted, and CMake
+  # only splits unquoted variable references on semicolons, never on
+  # spaces. A space-joined string therefore collapses into a single list
+  # element, and CMake's Ninja generator then emits that whole element as
+  # one bogus combined implicit dependency, which ninja rejects with
+  # "FindFirstFileExA(...): The filename ... is incorrect".
   set(SUPERLU_DIST_PARMETIS_LIBRARIES_DEBUG "")
   set(SUPERLU_DIST_PARMETIS_LIBRARIES_RELEASE "")
   foreach(
@@ -41,21 +48,27 @@ if(VCPKG_TARGET_IS_WINDOWS)
     IN
     LISTS SUPERLU_DIST_SCOTCH_LIBRARY_NAMES
   )
-    string(
+    list(
       APPEND SUPERLU_DIST_PARMETIS_LIBRARIES_DEBUG
-      "${CURRENT_INSTALLED_DIR}/debug/lib/${SUPERLU_DIST_SCOTCH_LIBRARY_NAME}.lib "
+      "${CURRENT_INSTALLED_DIR}/debug/lib/${SUPERLU_DIST_SCOTCH_LIBRARY_NAME}.lib"
     )
-    string(
+    list(
       APPEND SUPERLU_DIST_PARMETIS_LIBRARIES_RELEASE
-      "${CURRENT_INSTALLED_DIR}/lib/${SUPERLU_DIST_SCOTCH_LIBRARY_NAME}.lib "
+      "${CURRENT_INSTALLED_DIR}/lib/${SUPERLU_DIST_SCOTCH_LIBRARY_NAME}.lib"
     )
   endforeach()
 else()
-  # No debug/release split needed: "-lname" relies on vcpkg's
-  # toolchain-managed, already config-aware library search paths.
+  # No debug/release split needed: vcpkg's toolchain-managed library
+  # search paths are already config-aware. A proper list here too, for
+  # the same reason as the Windows branch above.
   set(
     SUPERLU_DIST_PARMETIS_LIBRARIES
-    "-lptscotchparmetisv3 -lptscotch -lptscotcherr -lscotchmetisv5 -lscotch -lscotcherr"
+    -lptscotchparmetisv3
+    -lptscotch
+    -lptscotcherr
+    -lscotchmetisv5
+    -lscotch
+    -lscotcherr
   )
   set(
     SUPERLU_DIST_PARMETIS_LIBRARIES_DEBUG
