@@ -15,7 +15,7 @@
   do                                                                           \
   {                                                                            \
     if (ierr != 0)                                                             \
-      petsc::error(ierr, __FILE__, NAME);                                      \
+      ::dolfinx::la::petsc::error(ierr, __FILE__, NAME);                       \
   } while (0)
 
 using namespace dolfinx;
