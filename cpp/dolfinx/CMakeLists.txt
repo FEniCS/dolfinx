@@ -210,6 +210,9 @@ if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
     PRE_EXCLUDE_REGEXES [[api-ms-win-.*]] [[ext-ms-.*]]
     POST_EXCLUDE_REGEXES [[.*(\\|/)system32(\\|/).*\.dll]]
   )
+  # basix.dll isn't a vcpkg dependency, so VCPKG_APPLOCAL_DEPS never copies
+  # it anywhere the dependency set above would find it; install it directly.
+  install(FILES $<TARGET_FILE:Basix::basix> DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 # Generate DOLFINTargets.cmake
