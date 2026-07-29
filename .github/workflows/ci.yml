@@ -138,8 +138,8 @@ jobs:
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
           cmake --build build/demo
           cd build/demo
-          ctest -V -R demo -R serial
-          ctest --output-on-failure -V -R demo -R mpi_2
+          ctest -V --output-on-failure -R "demo_.*_np_1"
+          ctest -V --output-on-failure -R "demo_.*_np_2"
 
       - name: Prepare Python environment
         run: |
