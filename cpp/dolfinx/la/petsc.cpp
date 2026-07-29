@@ -283,8 +283,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
     ierr = MatSetType(A, type->c_str());
     CHECK_ERROR("MatSetType");
   }
-    MatSetType(A, std::string(*type).c_str());
-
+  
   // Get global and local dimensions
   const std::int64_t M = bs[0] * maps[0]->size_global();
   const std::int64_t N = bs[1] * maps[1]->size_global();
@@ -635,10 +634,8 @@ void petsc::Matrix::apply(AssemblyType type)
 void petsc::Matrix::set_options_prefix(std::string_view options_prefix)
 {
   assert(_matA);
-  PetscErrorCode ierr = MatSetOptionsPrefix(_matA, options_prefix.c_str());
-  CHECK_ERROR("MatSetOptionsPrefix");
-  MatSetOptionsPrefix(_matA, std::string(options_prefix).c_str());
-}
+  PetscErrorCode ierr = MatSetOptionsPrefix(_matA, std::string(options_prefix).c_str());
+  CHECK_ERROR("MatSetOptionsPrefix");}
 //-----------------------------------------------------------------------------
 std::string petsc::Matrix::get_options_prefix() const
 {
@@ -782,12 +779,8 @@ void petsc::KrylovSolver::set_options_prefix(std::string_view options_prefix)
 {
   // Set options prefix
   assert(_ksp);
-  PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, options_prefix.c_str());
+  PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, std::string(options_prefix).c_str());
   CHECK_ERROR("KSPSetOptionsPrefix");
-  PetscErrorCode ierr
-      = KSPSetOptionsPrefix(_ksp, std::string(options_prefix).c_str());
-  if (ierr != 0)
-    petsc::error(ierr, __FILE__, "KSPSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string petsc::KrylovSolver::get_options_prefix() const
