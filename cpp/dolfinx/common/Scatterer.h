@@ -294,7 +294,7 @@ public:
     for (std::size_t i = 0; i < _src.size(); ++i)
     {
       int ierr = MPI_Irecv(recv_buffer + _displs_remote[i], _sizes_remote[i],
-                           dolfinx::MPI::mpi_t<T>, _src[i], MPI_ANY_TAG,
+                           dolfinx::MPI::mpi_t<T>, _src[i], p2p_tag_fwd,
                            _comm0.comm(), &requests[i]);
       dolfinx::MPI::check_error(_comm0.comm(), ierr);
     }
@@ -302,8 +302,8 @@ public:
     for (std::size_t i = 0; i < _dest.size(); ++i)
     {
       int ierr = MPI_Isend(send_buffer + _displs_local[i], _sizes_local[i],
-                           dolfinx::MPI::mpi_t<T>, _dest[i], 0, _comm0.comm(),
-                           &requests[i + _src.size()]);
+                           dolfinx::MPI::mpi_t<T>, _dest[i], p2p_tag_fwd,
+                           _comm0.comm(), &requests[i + _src.size()]);
       dolfinx::MPI::check_error(_comm0.comm(), ierr);
     }
   }
@@ -380,7 +380,7 @@ public:
     for (std::size_t i = 0; i < _dest.size(); i++)
     {
       int ierr = MPI_Irecv(recv_buffer + _displs_local[i], _sizes_local[i],
-                           dolfinx::MPI::mpi_t<T>, _dest[i], MPI_ANY_TAG,
+                           dolfinx::MPI::mpi_t<T>, _dest[i], p2p_tag_rev,
                            _comm0.comm(), &requests[i]);
       dolfinx::MPI::check_error(_comm0.comm(), ierr);
     }
@@ -390,8 +390,8 @@ public:
     for (std::size_t i = 0; i < _src.size(); i++)
     {
       int ierr = MPI_Isend(send_buffer + _displs_remote[i], _sizes_remote[i],
-                           dolfinx::MPI::mpi_t<T>, _src[i], 0, _comm0.comm(),
-                           &requests[i + _dest.size()]);
+                           dolfinx::MPI::mpi_t<T>, _src[i], p2p_tag_rev,
+                           _comm0.comm(), &requests[i + _dest.size()]);
       dolfinx::MPI::check_error(_comm0.comm(), ierr);
     }
   }
@@ -495,6 +495,14 @@ public:
   }
 
 private:
+  // MPI tags for point-to-point forward/reverse scatter messages.
+  // Both directions share communicator _comm0, so a fixed, distinct
+  // tag per direction is required to stop a forward message being
+  // matched against a reverse receive (or vice versa) irrespective of
+  // the relative order in which the two directions are posted.
+  static constexpr int p2p_tag_fwd = 0;
+  static constexpr int p2p_tag_rev = 1;
+
   // Communicator where the source ranks own the indices in the callers
   // halo, and the destination ranks 'ghost' indices owned by the
   // caller. I.e.,
