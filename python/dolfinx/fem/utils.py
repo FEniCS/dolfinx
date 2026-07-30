@@ -147,7 +147,21 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    return _MatrixCSR(_interpolation_matrix(space0._cpp_object, space1._cpp_object))  # type: ignore[arg-type]
+    match space0._cpp_object, space1._cpp_object:
+        case (
+            _cpp.fem.FunctionSpace_float32() as cpp0,
+            _cpp.fem.FunctionSpace_float32() as cpp1,
+        ):
+            return _MatrixCSR(_interpolation_matrix(cpp0, cpp1))
+        case (
+            _cpp.fem.FunctionSpace_float64() as cpp0,
+            _cpp.fem.FunctionSpace_float64() as cpp1,
+        ):
+            return _MatrixCSR(_interpolation_matrix(cpp0, cpp1))
+        case _:
+            raise TypeError(
+                "interpolation_matrix requires space0 and space1 to have the same dtype."
+            )
 
 
 def compute_integration_domains(

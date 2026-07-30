@@ -22,7 +22,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32 as _AdjacencyList_int32
 from dolfinx.fem import coordinate_element
-from dolfinx.graph import AdjacencyList, adjacencylist
+from dolfinx.graph import adjacencylist
 from dolfinx.io.utils import distribute_entity_data
 from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags_from_entities
 
@@ -509,7 +509,8 @@ def read_from_msh(
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
-    partitioner: Callable[[_MPI.Comm, int, int, AdjacencyList], _AdjacencyList_int32] | None = None,
+    partitioner: Callable[[_MPI.Comm, int, int, _AdjacencyList_int32], _AdjacencyList_int32]
+    | None = None,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a mesh and cell facet markers.
 
@@ -543,8 +544,8 @@ def read_from_msh(
         gmsh.initialize()
         gmsh.model.add("Mesh from file")
         gmsh.merge(str(filename))
-        msh = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)  # type: ignore[arg-type]
+        msh = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
         gmsh.finalize()
         return msh
     else:
-        return model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)  # type: ignore[arg-type]
+        return model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
