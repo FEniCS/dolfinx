@@ -8,6 +8,7 @@
 
 #include <numeric>
 #include <span>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -237,24 +238,17 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
     for (std::size_t i = 0; i < row_begin.size(); i++)
     {
       T vi{0};
+      auto accumulate = [&](auto n, std::int64_t j)
+      {
+        for (int k1 = 0; k1 < n; ++k1)
+          vi += values[j * bs0 * n + k0 * n + k1] * x[indices[j] * n + k1];
+      };
       for (std::int64_t j = row_begin[i]; j < row_end[i]; j++)
       {
         if constexpr (BS1 == -1)
-        {
-          for (int k1 = 0; k1 < bs1; ++k1)
-          {
-            vi += values[j * bs0 * bs1 + k0 * bs1 + k1]
-                  * x[indices[j] * bs1 + k1];
-          }
-        }
+          accumulate(bs1, j);
         else
-        {
-          for (int k1 = 0; k1 < BS1; ++k1)
-          {
-            vi += values[j * bs0 * BS1 + k0 * BS1 + k1]
-                  * x[indices[j] * BS1 + k1];
-          }
-        }
+          accumulate(std::integral_constant<int, BS1>(), j);
       }
 
       y[i * bs0 + k0] += vi;
@@ -309,24 +303,17 @@ void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
     for (std::size_t i = 0; i < row_begin.size(); i++)
     {
       const T xval = x[i * bs0 + k0];
+      auto accumulate = [&](auto n, std::int64_t j)
+      {
+        for (int k1 = 0; k1 < n; ++k1)
+          y[indices[j] * n + k1] += values[j * bs0 * n + k0 * n + k1] * xval;
+      };
       for (std::int64_t j = row_begin[i]; j < row_end[i]; j++)
       {
         if constexpr (BS1 == -1)
-        {
-          for (int k1 = 0; k1 < bs1; ++k1)
-          {
-            y[indices[j] * bs1 + k1]
-                += values[j * bs0 * bs1 + k0 * bs1 + k1] * xval;
-          }
-        }
+          accumulate(bs1, j);
         else
-        {
-          for (int k1 = 0; k1 < BS1; ++k1)
-          {
-            y[indices[j] * BS1 + k1]
-                += values[j * bs0 * BS1 + k0 * BS1 + k1] * xval;
-          }
-        }
+          accumulate(std::integral_constant<int, BS1>(), j);
       }
     }
   }

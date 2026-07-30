@@ -23,6 +23,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 namespace dolfinx::fem
@@ -113,18 +114,16 @@ void assemble_cells(
 
     // Scatter cell vector to 'global' vector array
     auto dofs = md::submdspan(dmap, c0, md::full_extent);
+    auto scatter = [&](auto n)
+    {
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+        for (int k = 0; k < n; ++k)
+          b[n * dofs[i] + k] += be[n * i + k];
+    };
     if constexpr (_bs > 0)
-    {
-      for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (int k = 0; k < _bs; ++k)
-          b[_bs * dofs[i] + k] += be[_bs * i + k];
-    }
+      scatter(std::integral_constant<int, _bs>());
     else
-    {
-      for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (int k = 0; k < bs; ++k)
-          b[bs * dofs[i] + k] += be[bs * i + k];
-    }
+      scatter(bs);
   }
 }
 
@@ -225,18 +224,16 @@ void assemble_entities(
 
     // Add element vector to global vector
     auto dofs = md::submdspan(dmap, cell0, md::full_extent);
+    auto scatter = [&](auto n)
+    {
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+        for (int k = 0; k < n; ++k)
+          b[n * dofs[i] + k] += be[n * i + k];
+    };
     if constexpr (_bs > 0)
-    {
-      for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (int k = 0; k < _bs; ++k)
-          b[_bs * dofs[i] + k] += be[_bs * i + k];
-    }
+      scatter(std::integral_constant<int, _bs>());
     else
-    {
-      for (std::size_t i = 0; i < dofs.size(); ++i)
-        for (int k = 0; k < bs; ++k)
-          b[bs * dofs[i] + k] += be[bs * i + k];
-    }
+      scatter(bs);
   }
 }
 
@@ -355,24 +352,19 @@ void assemble_interior_facets(
     }
 
     // Add element vector to global vector
+    auto scatter = [&](auto n)
+    {
+      for (std::size_t i = 0; i < dmap0.size(); ++i)
+        for (int k = 0; k < n; ++k)
+          b[n * dmap0[i] + k] += be[n * i + k];
+      for (std::size_t i = 0; i < dmap1.size(); ++i)
+        for (int k = 0; k < n; ++k)
+          b[n * dmap1[i] + k] += be[n * (i + dmap_size) + k];
+    };
     if constexpr (_bs > 0)
-    {
-      for (std::size_t i = 0; i < dmap0.size(); ++i)
-        for (int k = 0; k < _bs; ++k)
-          b[_bs * dmap0[i] + k] += be[_bs * i + k];
-      for (std::size_t i = 0; i < dmap1.size(); ++i)
-        for (int k = 0; k < _bs; ++k)
-          b[_bs * dmap1[i] + k] += be[_bs * (i + dmap_size) + k];
-    }
+      scatter(std::integral_constant<int, _bs>());
     else
-    {
-      for (std::size_t i = 0; i < dmap0.size(); ++i)
-        for (int k = 0; k < bs; ++k)
-          b[bs * dmap0[i] + k] += be[bs * i + k];
-      for (std::size_t i = 0; i < dmap1.size(); ++i)
-        for (int k = 0; k < bs; ++k)
-          b[bs * dmap1[i] + k] += be[bs * (i + dmap_size) + k];
-    }
+      scatter(bs);
   }
 }
 
