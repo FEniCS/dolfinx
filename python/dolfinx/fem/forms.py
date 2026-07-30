@@ -825,7 +825,11 @@ def derivative_block(
         else:
             raise ValueError("u must be either a ufl.Function or a sequence of ufl.Function")
     elif isinstance(F, ufl.Form) and len(F.arguments()) == 1:
-        return _derive_univariate_jacobian(F, u, du)  # type: ignore[arg-type]
+        if not isinstance(u, Function):
+            raise ValueError("u must be a ufl.Function when F is a rank-one form.")
+        if du is not None and not isinstance(du, ufl.Argument):
+            raise ValueError("du must be a ufl.Argument when F is a rank-one form.")
+        return _derive_univariate_jacobian(F, u, du)
     elif isinstance(F, Sequence):
         return _derive_block_jacobian(F, u, du)  # type: ignore
     else:
