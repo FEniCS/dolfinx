@@ -949,17 +949,23 @@ class LinearProblem:
         # Apply boundary conditions to the rhs
         if self.bcs is not None:
             if isinstance(self.u, Sequence):  # block or nest
-                bcs1 = _bcs_by_block(_extract_function_spaces(self.a, 1), self.bcs)  # type: ignore[arg-type]
-                apply_lifting(self.b, self.a, bcs=bcs1)  # type: ignore[arg-type]
+                a, L = self.a, self.L
+                if not isinstance(a, Sequence) or not isinstance(L, Sequence):
+                    raise ValueError("Expected a sequence of forms for a block/nest problem.")
+                bcs1 = _bcs_by_block(_extract_function_spaces(a, 1), self.bcs)
+                apply_lifting(self.b, a, bcs=bcs1)
                 dolfinx.la.petsc._ghost_update(
                     self.b,
                     PETSc.InsertMode.ADD,  # type: ignore
                     PETSc.ScatterMode.REVERSE,  # type: ignore
                 )
-                bcs0 = _bcs_by_block(_extract_function_spaces(self.L), self.bcs)  # type: ignore[arg-type]
+                bcs0 = _bcs_by_block(_extract_function_spaces(L), self.bcs)
                 dolfinx.fem.petsc.set_bc(self.b, bcs0)
             else:  # single form
-                apply_lifting(self.b, [self.a], bcs=[self.bcs])  # type: ignore[arg-type]
+                a = self.a
+                if isinstance(a, Sequence):
+                    raise ValueError("Expected a single form for a non-block/nest problem.")
+                apply_lifting(self.b, [a], bcs=[self.bcs])
                 dolfinx.la.petsc._ghost_update(
                     self.b,
                     PETSc.InsertMode.ADD,  # type: ignore
@@ -982,12 +988,12 @@ class LinearProblem:
         return self._L
 
     @property
-    def a(self) -> Form | Sequence[Form]:
+    def a(self) -> Form | Sequence[Sequence[Form]]:
         """The compiled bilinear form representing the right-hand side."""
         return self._a
 
     @property
-    def preconditioner(self) -> Form | Sequence[Form]:
+    def preconditioner(self) -> Form | Sequence[Sequence[Form]]:
         """The compiled bilinear form representing the preconditioner."""
         return self._preconditioner
 
@@ -1094,10 +1100,12 @@ def assemble_residual(
     # Lift vector
     if isinstance(jacobian, Sequence):
         # Nest and blocked lifting
-        bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)  # type: ignore[arg-type]
+        if not isinstance(residual, Sequence):
+            raise ValueError("Expected a sequence of forms for a block/nest residual.")
+        bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)
         apply_lifting(b, jacobian, bcs=bcs1, x0=x, alpha=-1.0)  # type: ignore
         dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
-        bcs0 = _bcs_by_block(_extract_function_spaces(residual), bcs)  # type: ignore[arg-type]
+        bcs0 = _bcs_by_block(_extract_function_spaces(residual), bcs)
         set_bc(b, bcs0, x0=x, alpha=-1.0)
     else:
         # Single form lifting

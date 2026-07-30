@@ -500,7 +500,7 @@ def extract_function_spaces(
 @typing.overload
 def extract_function_spaces(
     forms: Sequence[Sequence[Form]], index: int = 0
-) -> list[list[FunctionSpace | None]]: ...
+) -> list[FunctionSpace | None]: ...
 
 
 def extract_function_spaces(forms, index: int = 0):
