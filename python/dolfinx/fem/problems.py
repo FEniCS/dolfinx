@@ -22,11 +22,11 @@ from dolfinx.fem import (
     Function,
     apply_lifting,
     assemble_matrix,
-    assemble_vector,
     create_matrix,
     create_vector,
     form,
 )
+from dolfinx.fem.assemble import _assemble_vector_array
 from dolfinx.la import InsertMode, MatrixCSR, Vector
 from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 from dolfinx.mesh import EntityMap as EntityMap
@@ -155,7 +155,7 @@ class LinearProblem:
 
         # Assemble rhs
         self.b.array[:] = 0.0
-        assemble_vector(self.b.array, self.L)  # type: ignore[arg-type]
+        _assemble_vector_array(self.b.array, self.L)
 
         # Apply boundary conditions to the rhs
         if self.bcs:
