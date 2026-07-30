@@ -700,7 +700,9 @@ def set_bc(
         _b = b.getNestSubVecs()
         x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()  # type: ignore
         for b_sub, bc, x_sub in zip(_b, bcs, x0, strict=True):  # type: ignore[assignment, arg-type]
-            set_bc(b_sub, bc, x_sub, alpha)  # type: ignore[arg-type]
+            if not isinstance(bc, Sequence):
+                raise ValueError("Expected a sequence of DirichletBC for a nested vector.")
+            set_bc(b_sub, bc, x_sub, alpha)
     else:  # block vector
         offset0, _ = b.getAttr("_blocks")  # type: ignore
         b_array = b.getArray(readonly=False)
