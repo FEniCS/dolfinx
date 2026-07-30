@@ -478,4 +478,4 @@ def apply_lifting(
 
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
-    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)  # type: ignore[call-overload]
+    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)  # type: ignore[call-overload, arg-type]

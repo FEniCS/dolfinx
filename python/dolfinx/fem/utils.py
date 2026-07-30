@@ -32,7 +32,7 @@ from dolfinx.la import MatrixCSR as _MatrixCSR
 
 if typing.TYPE_CHECKING:
     import dolfinx.mesh
-    from dolfinx.cpp.fem import _IntegralType as IntegralType
+    from dolfinx.cpp.fem import IntegralType as IntegralType
 
 
 def create_sparsity_pattern(a: dolfinx.fem.forms.Form) -> SparsityPattern:
@@ -90,9 +90,9 @@ def create_interpolation_data(
     """
     return _PointOwnershipData(
         _create_interpolation_data(
-            V_to.mesh._cpp_object.geometry,
-            V_to.element._cpp_object,
-            V_from.mesh._cpp_object,
+            V_to.mesh._cpp_object.geometry,  # type: ignore[arg-type]
+            V_to.element._cpp_object,  # type: ignore[arg-type]
+            V_from.mesh._cpp_object,  # type: ignore[arg-type]
             cells,
             padding,
         )
@@ -112,7 +112,7 @@ def discrete_curl(V0: FunctionSpace, V1: FunctionSpace) -> _MatrixCSR:
     Returns:
         Discrete curl operator.
     """
-    return _MatrixCSR(_discrete_curl(V0._cpp_object, V1._cpp_object))
+    return _MatrixCSR(_discrete_curl(V0._cpp_object, V1._cpp_object))  # type: ignore[arg-type]
 
 
 def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
@@ -130,7 +130,7 @@ def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCS
     Returns:
         Discrete gradient operator.
     """
-    return _MatrixCSR(_discrete_gradient(space0._cpp_object, space1._cpp_object))
+    return _MatrixCSR(_discrete_gradient(space0._cpp_object, space1._cpp_object))  # type: ignore[arg-type]
 
 
 def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
@@ -147,7 +147,7 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    return _MatrixCSR(_interpolation_matrix(space0._cpp_object, space1._cpp_object))
+    return _MatrixCSR(_interpolation_matrix(space0._cpp_object, space1._cpp_object))  # type: ignore[arg-type]
 
 
 def compute_integration_domains(
@@ -207,7 +207,10 @@ def interpolate_geometry(msh: dolfinx.mesh.Mesh, cmap: CoordinateElement) -> dol
     """
     import dolfinx.mesh as _mesh  # lazy to avoid circular import
 
-    new_msh = _cpp.fem.interpolate_geometry(msh._cpp_object, cmap._cpp_object)
+    new_msh = _cpp.fem.interpolate_geometry(
+        msh._cpp_object,  # type: ignore[arg-type]
+        cmap._cpp_object,  # type: ignore[arg-type]
+    )
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",

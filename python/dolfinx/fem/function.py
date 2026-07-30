@@ -296,11 +296,15 @@ class Expression(Generic[Scalar]):
                 raise TypeError("Passed values array does not have correct dtype.")
 
         constants = _cpp.fem.pack_constants(self._cpp_object)
-        coeffs = _cpp.fem.pack_coefficients(self._cpp_object, mesh._cpp_object, _entities)
+        coeffs = _cpp.fem.pack_coefficients(
+            self._cpp_object,  # type: ignore[arg-type]
+            mesh._cpp_object,  # type: ignore[arg-type]
+            _entities,
+        )
         _cpp.fem.tabulate_expression(
             values,  # type: ignore[arg-type]
-            self._cpp_object,
-            constants,
+            self._cpp_object,  # type: ignore[arg-type]
+            constants,  # type: ignore[arg-type]
             coeffs,
             mesh._cpp_object,  # type: ignore[arg-type]
             _entities,
@@ -547,7 +551,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         @_interpolate.register(Expression)
         def _(e0: Expression):
             """Interpolate a fem.Expression."""
-            self._cpp_object.interpolate_expr(e0._cpp_object, cells0, cells1)
+            self._cpp_object.interpolate_expr(e0._cpp_object, cells0, cells1)  # type: ignore[arg-type]
 
         # A Function is callable (UFL Coefficient.__call__), so only type
         # can identify a user-supplied callable.
