@@ -162,7 +162,7 @@ def assemble_scalar(
     """
     constants = pack_constants(M) if constants is None else constants  # type: ignore[assignment]
     coeffs = pack_coefficients(M) if coeffs is None else coeffs  # type: ignore[assignment]
-    return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)
+    return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)  # type: ignore[arg-type]
 
 
 # -- Vector assembly ------------------------------------------------------
@@ -246,7 +246,7 @@ def _assemble_vector_array(
     """
     constants = pack_constants(L) if constants is None else constants  # type: ignore[assignment]
     coeffs = pack_coefficients(L) if coeffs is None else coeffs  # type: ignore[assignment]
-    _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)
+    _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)  # type: ignore[arg-type]
     return b
 
 
@@ -325,15 +325,15 @@ def _assemble_matrix_csr(
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
+    bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]  # type: ignore[misc]
     constants = pack_constants(a) if constants is None else constants  # type: ignore[assignment]
     coeffs = pack_coefficients(a) if coeffs is None else coeffs  # type: ignore[assignment]
-    _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, bcs)
+    _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, bcs)  # type: ignore[arg-type]
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
     if a.function_spaces[0] is a.function_spaces[1]:
-        _cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], bcs, diag)
+        _cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], bcs, diag)  # type: ignore[arg-type]
     return A
 
 
@@ -455,7 +455,7 @@ def apply_lifting(
     )
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
-    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)
+    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)  # type: ignore[call-overload]
 
 
 def set_bc(

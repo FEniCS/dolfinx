@@ -205,6 +205,7 @@ if(ENABLE_NANOBIND_STUBGEN)
       MODULE dolfinx.cpp
       RECURSIVE
       VERBOSE
+      PATTERN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx/wrappers/stub_patterns.txt
       MARKER_FILE dolfinx/cpp/py.typed
       OUTPUT
         dolfinx/cpp/__init__.pyi
@@ -227,37 +228,58 @@ if(ENABLE_NANOBIND_STUBGEN)
     )
   else()
     # On UNIX-like systems we can import the cpp compiled module before
-    # installing and rely on dynamic linking at import time.
+    # installing and rely on dynamic linking at import time. Stage it
+    # under a throwaway "dolfinx" package directory so that the module
+    # imports under its real name (dolfinx.cpp): otherwise nanobind's
+    # stubgen resolves submodule cross-references (e.g. dolfinx.cpp.la)
+    # against the bare top-level name "cpp", producing "import cpp.la"
+    # in the generated stubs, which does not exist as an importable
+    # module and silently resolves to Any under mypy. stubgen infers its
+    # output location from the imported module's __file__, so staging
+    # under CMAKE_CURRENT_BINARY_DIR keeps that location matching the
+    # OUTPUT paths below (relative to CMAKE_CURRENT_BINARY_DIR).
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
+    file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/__init__.py)
+    add_custom_command(
+      TARGET cpp
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E create_symlink
+        $<TARGET_FILE:cpp>
+        ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/$<TARGET_FILE_NAME:cpp>
+      COMMENT "Staging cpp module as dolfinx.cpp for stub generation"
+    )
+
     nanobind_add_stub(
       cpp_stub
-      MODULE cpp
-      PYTHON_PATH $<TARGET_FILE_DIR:cpp>
+      MODULE dolfinx.cpp
+      PYTHON_PATH ${CMAKE_CURRENT_BINARY_DIR}
       DEPENDS cpp
       RECURSIVE
       VERBOSE
-      MARKER_FILE cpp/py.typed
+      PATTERN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx/wrappers/stub_patterns.txt
+      MARKER_FILE dolfinx/cpp/py.typed
       OUTPUT
-        cpp/__init__.pyi
-        cpp/common.pyi
-        cpp/fem.pyi
-        cpp/fem/__init__.pyi
-        cpp/fem/petsc.pyi
-        cpp/geometry.pyi
-        cpp/graph.pyi
-        cpp/io.pyi
-        cpp/la.pyi
-        cpp/la/__init__.pyi
-        cpp/la/petsc.pyi
-        cpp/log.pyi
-        cpp/mesh.pyi
-        cpp/nls.pyi
-        cpp/nls/__init__.pyi
-        cpp/nls/petsc.pyi
-        cpp/refinement.pyi
+        dolfinx/cpp/__init__.pyi
+        dolfinx/cpp/common.pyi
+        dolfinx/cpp/fem.pyi
+        dolfinx/cpp/fem/__init__.pyi
+        dolfinx/cpp/fem/petsc.pyi
+        dolfinx/cpp/geometry.pyi
+        dolfinx/cpp/graph.pyi
+        dolfinx/cpp/io.pyi
+        dolfinx/cpp/la.pyi
+        dolfinx/cpp/la/__init__.pyi
+        dolfinx/cpp/la/petsc.pyi
+        dolfinx/cpp/log.pyi
+        dolfinx/cpp/mesh.pyi
+        dolfinx/cpp/nls.pyi
+        dolfinx/cpp/nls/__init__.pyi
+        dolfinx/cpp/nls/petsc.pyi
+        dolfinx/cpp/refinement.pyi
     )
 
     install(TARGETS cpp LIBRARY DESTINATION dolfinx)
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cpp
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/cpp
       DESTINATION dolfinx
       FILES_MATCHING
       PATTERN "*.pyi"

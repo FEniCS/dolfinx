@@ -89,7 +89,7 @@ __all__ = [
 
 @singledispatch
 def create_cell_partitioner(
-    part: Callable, mode: GhostMode, max_facet_to_cell_links: int
+    part: Callable | GhostMode, mode: GhostMode, max_facet_to_cell_links: int
 ) -> Callable:
     """Create a function to partition a mesh.
 
@@ -104,7 +104,7 @@ def create_cell_partitioner(
     Return:
         Partitioning function.
     """
-    return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links)
+    return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links)  # type: ignore[arg-type]
 
 
 @create_cell_partitioner.register(GhostMode)
@@ -323,7 +323,7 @@ class Geometry(typing.Generic[Real]):
 
         Shape is ``shape=(num_points, 3)``.
         """
-        return self._cpp_object.x
+        return self._cpp_object.x  # type: ignore[return-value]
 
 
 class Mesh(typing.Generic[Real]):
@@ -407,7 +407,7 @@ class Mesh(typing.Generic[Real]):
         Returns:
             Size measure for each requested entity.
         """
-        return _cpp.mesh.h(self._cpp_object, dim, entities)
+        return _cpp.mesh.h(self._cpp_object, dim, entities)  # type: ignore[return-value]
 
     @property
     def topology(self) -> Topology:
@@ -757,7 +757,7 @@ def refine(
     # Create new ufl domain as it will carry a reference to the C++ mesh
     # in the ufl_cargo
     ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())  # type: ignore
-    return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
+    return Mesh(mesh1, ufl_domain), parent_cell, parent_facet  # type: ignore[return-value]
 
 
 def create_mesh(
@@ -834,7 +834,12 @@ def create_mesh(
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
-        comm, cells, cmap._cpp_object, x, partitioner, max_facet_to_cell_links
+        comm,
+        cells,
+        cmap._cpp_object,  # type: ignore[arg-type]
+        x,
+        partitioner,
+        max_facet_to_cell_links,
     )
 
     return Mesh(msh, domain)  # type: ignore
@@ -903,6 +908,12 @@ def meshtags(
         values = np.full(entities.shape, values, dtype=np.double)
 
     values = np.asarray(values)
+    ftype: (
+        type[_cpp.mesh.MeshTags_int8]
+        | type[_cpp.mesh.MeshTags_int32]
+        | type[_cpp.mesh.MeshTags_int64]
+        | type[_cpp.mesh.MeshTags_float64]
+    )
     if values.dtype == np.int8:
         ftype = _cpp.mesh.MeshTags_int8
     elif values.dtype == np.int32:
@@ -915,7 +926,7 @@ def meshtags(
         raise NotImplementedError(f"Type {values.dtype} not supported.")
 
     return MeshTags(
-        ftype(msh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values)
+        ftype(msh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values)  # type: ignore[arg-type]
     )
 
 
@@ -947,7 +958,7 @@ def meshtags_from_entities(
         values = np.full(entities.num_nodes, values, dtype=np.double)
     values = np.asarray(values)
     return MeshTags(
-        _cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities._cpp_object, values)
+        _cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities._cpp_object, values)  # type: ignore[arg-type]
     )
 
 
@@ -990,10 +1001,11 @@ def create_interval(
             dtype=dtype,
         )
     )  # type: ignore
+    msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner, gdim)
+        msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner, gdim)  # type: ignore[arg-type]
     elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner, gdim)
+        msh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner, gdim)  # type: ignore[arg-type]
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
 
@@ -1074,13 +1086,26 @@ def create_rectangle(
             dtype=dtype,
         )
     )  # type: ignore
+    msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_rectangle_float32(
-            comm, points, n, cell_type, partitioner, diagonal, gdim
+            comm,
+            points,  # type: ignore[arg-type]
+            n,
+            cell_type,
+            partitioner,
+            diagonal,
+            gdim,
         )
     elif np.issubdtype(dtype, np.float64):
         msh = _cpp.mesh.create_rectangle_float64(
-            comm, points, n, cell_type, partitioner, diagonal, gdim
+            comm,
+            points,  # type: ignore[arg-type]
+            n,
+            cell_type,
+            partitioner,
+            diagonal,
+            gdim,
         )
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
@@ -1171,10 +1196,11 @@ def create_box(
             dtype=dtype,
         )
     )  # type: ignore
+    msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
-        msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)
+        msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)  # type: ignore[arg-type]
     elif np.issubdtype(dtype, np.float64):
-        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner)
+        msh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner)  # type: ignore[arg-type]
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
 
@@ -1281,6 +1307,7 @@ def create_geometry(
         input_global_indices: The 'global' input index of each point,
             commonly from a mesh input file.
     """
+    ftype: type[_cpp.mesh.Geometry_float64] | type[_cpp.mesh.Geometry_float32]
     if x.dtype == np.float64:
         ftype = _cpp.mesh.Geometry_float64
     elif x.dtype == np.float32:
@@ -1290,7 +1317,7 @@ def create_geometry(
 
     if (dtype := np.dtype(element.dtype)) != x.dtype:
         raise ValueError(f"Mismatch in x dtype ({x.dtype}) and coordinate element ({dtype})")
-    return Geometry(ftype(index_map, dofmap, element._cpp_object, x, input_global_indices))
+    return Geometry(ftype(index_map, dofmap, element._cpp_object, x, input_global_indices))  # type: ignore[arg-type]
 
 
 def transfer_meshtags_to_submesh(
@@ -1323,6 +1350,7 @@ def transfer_meshtags_to_submesh(
     entity_tag.topology.create_connectivity(dim, 0)
     entity_tag.topology.create_connectivity(dim, sub_tdim)
     dtype = entity_tag.values.dtype
+    ftype: Callable[..., typing.Any]
     if dtype == np.int32:
         ftype = _cpp.mesh.transfer_meshtags_to_submesh_int32
     elif dtype == np.int64:
@@ -1370,10 +1398,11 @@ def create_point_mesh(comm: _MPI.Intracomm, points: npt.NDArray[np.float32 | np.
     c_el = _coordinate_element(e.basix_element)  # type: ignore[call-arg]
     geometry = create_geometry(imap, cells, c_el, points, igi)
 
+    cpp_mesh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if points.dtype == np.float64:
-        cpp_mesh = _cpp.mesh.Mesh_float64(comm, topology, geometry._cpp_object)
+        cpp_mesh = _cpp.mesh.Mesh_float64(comm, topology, geometry._cpp_object)  # type: ignore[arg-type]
     elif points.dtype == np.float32:
-        cpp_mesh = _cpp.mesh.Mesh_float32(comm, topology, geometry._cpp_object)
+        cpp_mesh = _cpp.mesh.Mesh_float32(comm, topology, geometry._cpp_object)  # type: ignore[arg-type]
     else:
         raise RuntimeError(f"Unsupported dtype for mesh {points.dtype}")
 

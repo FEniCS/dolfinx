@@ -53,7 +53,7 @@ def locate_dofs_geometrical(
         return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)  # type: ignore
 
     _V = [space._cpp_object for space in V]  # type: ignore
-    return _cpp.fem.locate_dofs_geometrical(_V, marker)
+    return _cpp.fem.locate_dofs_geometrical(_V, marker)  # type: ignore
 
 
 def locate_dofs_topological(
@@ -89,7 +89,7 @@ def locate_dofs_topological(
         return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)  # type: ignore
 
     _V = [space._cpp_object for space in V]  # type: ignore
-    return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
+    return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)  # type: ignore
 
 
 class DirichletBC(Generic[Scalar]):
@@ -124,12 +124,12 @@ class DirichletBC(Generic[Scalar]):
     def g(self) -> Function | Constant:
         """The boundary condition value(s)."""
         # TODO: needs to be wrapped into Function or Constant
-        return self._cpp_object.value
+        return self._cpp_object.value  # type: ignore[return-value]
 
     @property
     def function_space(self) -> dolfinx.fem.FunctionSpace:
         """Function space on which the boundary condition is defined."""
-        return self._cpp_object.function_space
+        return self._cpp_object.function_space  # type: ignore[return-value]
 
     def set(
         self, x: npt.NDArray[Scalar], x0: npt.NDArray[Scalar] | None = None, alpha: float = 1
@@ -156,7 +156,7 @@ class DirichletBC(Generic[Scalar]):
                 not provided it is treated as zero.
             alpha: Scaling factor.
         """
-        self._cpp_object.set(x, x0, alpha)
+        self._cpp_object.set(x, x0, alpha)  # type: ignore[arg-type]
 
     def dof_indices(self) -> tuple[npt.NDArray[np.int32], int]:
         """Dof indices to  which a Dirichlet condition is applied.
@@ -198,6 +198,12 @@ def dirichletbc(
     if isinstance(value, float | complex):
         value = np.asarray(value)
 
+    bctype: (
+        type[_cpp.fem.DirichletBC_float32]
+        | type[_cpp.fem.DirichletBC_float64]
+        | type[_cpp.fem.DirichletBC_complex64]
+        | type[_cpp.fem.DirichletBC_complex128]
+    )
     try:
         dtype = value.dtype
         if np.issubdtype(dtype, np.float32):
@@ -218,17 +224,17 @@ def dirichletbc(
         _value = value
     else:
         try:
-            _value = value._cpp_object
+            _value = value._cpp_object  # type: ignore[assignment]
         except AttributeError:
             _value = value  # type: ignore[assignment]
 
     if V is not None:
         try:
-            bc = bctype(_value, dofs, V)
+            bc = bctype(_value, dofs, V)  # type: ignore[arg-type]
         except TypeError:
-            bc = bctype(_value, dofs, V._cpp_object)
+            bc = bctype(_value, dofs, V._cpp_object)  # type: ignore[arg-type]
     else:
-        bc = bctype(_value, dofs)
+        bc = bctype(_value, dofs)  # type: ignore[arg-type]
 
     return DirichletBC(bc)
 

@@ -1,0 +1,26 @@
+# nanobind stubgen pattern file.
+#
+# The overloads and cross-package types referenced below are indistinguishable
+# to mypy's static type system even though nanobind correctly dispatches them
+# at runtime (numpy does not encode array rank/dtype width in a way mypy can
+# use to disambiguate overloads, and basix's C++ types are not resolvable to
+# a Python-visible class from this module). Silence the resulting, unfixable
+# false positives on a per-generated-file basis.
+
+dolfinx.cpp.graph.__prefix__:
+    # mypy: disable-error-code="overload-cannot-match"
+
+dolfinx.cpp.mesh.__prefix__:
+    # mypy: disable-error-code="overload-overlap"
+
+dolfinx.cpp.geometry.__prefix__:
+    # mypy: disable-error-code="overload-cannot-match"
+
+dolfinx.cpp.fem.__prefix__:
+    # mypy: disable-error-code="overload-cannot-match, valid-type"
+
+dolfinx.cpp.io.__prefix__:
+    # mypy: disable-error-code="overload-overlap"
+
+dolfinx.cpp.la.__prefix__:
+    # mypy: disable-error-code="valid-type"

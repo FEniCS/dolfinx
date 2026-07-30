@@ -33,7 +33,7 @@ from dolfinx.fem.petsc import (
 __all__ = ["NewtonSolver"]
 
 
-class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
+class NewtonSolver(_cpp.nls.petsc.NewtonSolver):  # type: ignore[name-defined]
     """Newton solver for non-linear problems.
 
     Deprecated.

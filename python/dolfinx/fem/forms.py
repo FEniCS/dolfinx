@@ -97,7 +97,7 @@ class Form(typing.Generic[Scalar]):
     @property
     def function_spaces(self) -> list[FunctionSpace]:
         """Function spaces on which this form is defined."""
-        return self._cpp_object.function_spaces
+        return self._cpp_object.function_spaces  # type: ignore[return-value]
 
     @property
     def dtype(self) -> np.dtype:
@@ -205,10 +205,10 @@ def get_integration_domains(
 def form_cpp_class(
     dtype: npt.DTypeLike,
 ) -> (
-    _cpp.fem.Form_float32
-    | _cpp.fem.Form_float64
-    | _cpp.fem.Form_complex64
-    | _cpp.fem.Form_complex128
+    type[_cpp.fem.Form_float32]
+    | type[_cpp.fem.Form_float64]
+    | type[_cpp.fem.Form_complex64]
+    | type[_cpp.fem.Form_complex128]
 ):
     """Wrapped C++ class of a variational form of a specific scalar type.
 
@@ -575,10 +575,10 @@ def compile_form(
 def form_cpp_creator(
     dtype: npt.DTypeLike,
 ) -> (
-    _cpp.fem.Form_float32
-    | _cpp.fem.Form_float64
-    | _cpp.fem.Form_complex64
-    | _cpp.fem.Form_complex128
+    typing.Callable[..., _cpp.fem.Form_float32]
+    | typing.Callable[..., _cpp.fem.Form_float64]
+    | typing.Callable[..., _cpp.fem.Form_complex64]
+    | typing.Callable[..., _cpp.fem.Form_complex128]
 ):
     """A wrapped C++ constructor for a form with a specified scalar type.
 

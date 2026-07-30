@@ -50,9 +50,9 @@ def read_mesh(
             linked to a facet.
     """
     if dtype == np.float64:
-        mesh_cpp = read_vtkhdf_mesh_float64(comm, filename, gdim, max_facet_to_cell_links)
+        mesh_cpp = read_vtkhdf_mesh_float64(comm, filename, gdim, max_facet_to_cell_links)  # type: ignore[arg-type]
     elif dtype == np.float32:
-        mesh_cpp = read_vtkhdf_mesh_float32(comm, filename, gdim, max_facet_to_cell_links)
+        mesh_cpp = read_vtkhdf_mesh_float32(comm, filename, gdim, max_facet_to_cell_links)  # type: ignore[arg-type,assignment]
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:
@@ -63,7 +63,11 @@ def read_mesh(
         variant = mesh_cpp.geometry.cmap().variant
         domain = ufl.Mesh(
             basix.ufl.element(
-                "Lagrange", cell_types[0].name, cell_degree, variant, shape=(mesh_cpp.geometry.dim,)
+                "Lagrange",
+                cell_types[0].name,  # type: ignore[arg-type]
+                cell_degree,
+                variant,  # type: ignore[arg-type]
+                shape=(mesh_cpp.geometry.dim,),
             )
         )
     return Mesh(mesh_cpp, domain)
@@ -88,7 +92,7 @@ def write_point_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: 
         data: Data at the points of the mesh, local to each process.
         time: Timestamp.
     """
-    write_vtkhdf_data("Point", filename, mesh._cpp_object, data, time)
+    write_vtkhdf_data("Point", filename, mesh._cpp_object, data, time)  # type: ignore[call-overload]
 
 
 def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float):
@@ -100,4 +104,4 @@ def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: f
         data: Data at the cells of the mesh, local to each process.
         time: Timestamp.
     """
-    write_vtkhdf_data("Cell", filename, mesh._cpp_object, data, time)
+    write_vtkhdf_data("Cell", filename, mesh._cpp_object, data, time)  # type: ignore[call-overload]

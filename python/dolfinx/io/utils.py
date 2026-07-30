@@ -27,7 +27,7 @@ __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute
 
 # VTXWriter requires ADIOS2
 if _cpp.common.has_adios2:
-    from dolfinx.cpp.io import VTXMeshPolicy  # F401
+    from dolfinx.cpp.io import VTXMeshPolicy  # type: ignore[attr-defined] # F401
 
     __all__ = [*__all__, "VTXWriter", "VTXMeshPolicy"]
 
@@ -41,7 +41,7 @@ if _cpp.common.has_adios2:
         The files can be viewed using Paraview.
         """
 
-        _cpp_object: _cpp.io.VTXWriter_float32 | _cpp.io.VTXWriter_float64
+        _cpp_object: _cpp.io.VTXWriter_float32 | _cpp.io.VTXWriter_float64  # type: ignore[name-defined]
 
         def __init__(
             self,
@@ -80,9 +80,9 @@ if _cpp.common.has_adios2:
                 dtype = output[0].function_space.mesh.geometry.x.dtype
 
             if np.issubdtype(dtype, np.float32):
-                _vtxwriter = _cpp.io.VTXWriter_float32
+                _vtxwriter = _cpp.io.VTXWriter_float32  # type: ignore[attr-defined]
             elif np.issubdtype(dtype, np.float64):
-                _vtxwriter = _cpp.io.VTXWriter_float64
+                _vtxwriter = _cpp.io.VTXWriter_float64  # type: ignore[attr-defined]
             else:
                 raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
@@ -136,7 +136,7 @@ class VTKFile(_cpp.io.VTKFile):
     def write_function(self, u: list[Function] | Function, t: float = 0.0) -> None:
         """Write a functions to file with a given time."""
         cpp_objects = [u._cpp_object] if isinstance(u, Function) else [_u._cpp_object for _u in u]
-        super().write(cpp_objects, t)
+        super().write(cpp_objects, t)  # type: ignore[arg-type]
 
 
 class XDMFFile(_cpp.io.XDMFFile):
@@ -152,11 +152,11 @@ class XDMFFile(_cpp.io.XDMFFile):
         """Exit context manager and close file."""
         self.close()
 
-    def write_mesh(self, mesh: Mesh, xpath: str = "/Xdmf/Domain") -> None:
+    def write_mesh(self, mesh: Mesh, xpath: str = "/Xdmf/Domain") -> None:  # type: ignore[override]
         """Write mesh to file."""
         super().write_mesh(mesh._cpp_object, xpath)
 
-    def write_meshtags(
+    def write_meshtags(  # type: ignore[override]
         self,
         tags: MeshTags,
         x: Geometry,
@@ -166,7 +166,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         """Write mesh tags to file."""
         super().write_meshtags(tags._cpp_object, x._cpp_object, geometry_xpath, xpath)
 
-    def write_function(
+    def write_function(  # type: ignore[override]
         self, u: Function, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"
     ):
         """Write function to file for a given time.
@@ -219,7 +219,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         ):
             s_el = basix.ufl.element(
                 basix.ElementFamily.serendipity,
-                cell_shape.name,
+                cell_shape.name,  # type: ignore[arg-type]
                 2,
             )
             # Create a custom element that is serendipity but uses points
@@ -258,7 +258,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         else:
             basix_el = basix.ufl.element(
                 "Lagrange",
-                cell_shape.name,
+                cell_shape.name,  # type: ignore[arg-type]
                 cell_degree,
                 basix.LagrangeVariant.unset,
                 shape=(x.shape[1],),
@@ -278,7 +278,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         domain = ufl.Mesh(basix_el)
         return Mesh(msh, domain)
 
-    def read_meshtags(
+    def read_meshtags(  # type: ignore[override]
         self,
         mesh: Mesh,
         name: str,
@@ -303,7 +303,7 @@ class XDMFFile(_cpp.io.XDMFFile):
             A MeshTags object containing the requested data read from
             file.
         """
-        mt = super().read_meshtags(mesh._cpp_object, name, attribute_name, xpath)
+        mt = super().read_meshtags(mesh._cpp_object, name, attribute_name, xpath)  # type: ignore[arg-type]
         return MeshTags(mt)
 
 

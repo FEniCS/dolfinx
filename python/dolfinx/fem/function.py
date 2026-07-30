@@ -266,7 +266,12 @@ class Expression(Generic[Scalar]):
         constants = _cpp.fem.pack_constants(self._cpp_object)
         coeffs = _cpp.fem.pack_coefficients(self._cpp_object, _entities)
         _cpp.fem.tabulate_expression(
-            values, self._cpp_object, constants, coeffs, mesh._cpp_object, _entities
+            values,  # type: ignore[arg-type]
+            self._cpp_object,
+            constants,
+            coeffs,
+            mesh._cpp_object,  # type: ignore[arg-type]
+            _entities,
         )
         return values
 
@@ -468,8 +473,12 @@ class Function(ufl.Coefficient, Generic[Scalar]):
                 Ignored if mesh geometry is affine.
         """
         self._cpp_object.interpolate(
-            u0._cpp_object, cells, tol, maxit, interpolation_data._cpp_object
-        )  # type: ignore
+            u0._cpp_object,  # type: ignore[arg-type]
+            cells,
+            tol,
+            maxit,
+            interpolation_data._cpp_object,  # type: ignore[arg-type]
+        )
 
     def interpolate(
         self,
@@ -498,7 +507,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         @_interpolate.register(Function)
         def _(u0: Function):
             """Interpolate a fem.Function."""
-            self._cpp_object.interpolate(u0._cpp_object, cells0, cells1)
+            self._cpp_object.interpolate(u0._cpp_object, cells0, cells1)  # type: ignore[arg-type]
 
         @_interpolate.register(int)
         def _(u0_ptr: int):
@@ -517,7 +526,9 @@ class Function(ufl.Coefficient, Generic[Scalar]):
             # u0 is callable
             assert callable(u0)
             x = _cpp.fem.interpolation_coords(
-                self._V.element._cpp_object, self._V.mesh.geometry._cpp_object, cells0
+                self._V.element._cpp_object,  # type: ignore[arg-type]
+                self._V.mesh.geometry._cpp_object,  # type: ignore[arg-type]
+                cells0,
             )
             self._cpp_object.interpolate_f(np.asarray(u0(x), dtype=self.dtype), cells0)
 
@@ -532,7 +543,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         """
         return Function(
             self.function_space,
-            la.Vector(type(self.x._cpp_object)(self.x._cpp_object)),
+            la.Vector(type(self.x._cpp_object)(self.x._cpp_object)),  # type: ignore[arg-type]
             name=self.name,
         )
 
@@ -739,12 +750,16 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
         """  # noqa: D301
         try:
             Vcpp = _cpp.fem.FunctionSpace_float64(
-                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
-            )  # type: ignore
+                self._cpp_object.mesh,  # type: ignore[arg-type]
+                self._cpp_object.element,  # type: ignore[arg-type]
+                self._cpp_object.dofmap,
+            )
         except TypeError:
-            Vcpp = _cpp.fem.FunctionSpace_float32(
-                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
-            )  # type: ignore
+            Vcpp = _cpp.fem.FunctionSpace_float32(  # type: ignore[assignment]
+                self._cpp_object.mesh,  # type: ignore[arg-type]
+                self._cpp_object.element,  # type: ignore[arg-type]
+                self._cpp_object.dofmap,
+            )
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
     @property
@@ -839,4 +854,4 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
             This method is only for elements with point evaluation
             degrees-of-freedom.
         """
-        return self._cpp_object.tabulate_dof_coordinates()
+        return self._cpp_object.tabulate_dof_coordinates()  # type: ignore[return-value]

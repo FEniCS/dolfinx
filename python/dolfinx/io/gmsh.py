@@ -437,9 +437,9 @@ def model_to_mesh(
         cpp_mesh = _cpp.mesh.create_mesh(
             comm,
             cell_connectivities,
-            cmaps,
+            cmaps,  # type: ignore[arg-type]
             x[:, :gdim].astype(dtype).copy(),
-            partitioner,
+            partitioner,  # type: ignore[arg-type]
             max_facet_to_cell_links,
         )
         mesh = Mesh(cpp_mesh, None)
@@ -541,8 +541,8 @@ def read_from_msh(
         gmsh.initialize()
         gmsh.model.add("Mesh from file")
         gmsh.merge(str(filename))
-        msh = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
+        msh = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)  # type: ignore[arg-type]
         gmsh.finalize()
         return msh
     else:
-        return model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
+        return model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)  # type: ignore[arg-type]

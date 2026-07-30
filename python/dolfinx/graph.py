@@ -17,15 +17,15 @@ from dolfinx.typing import Index
 # Import graph partitioners, which may or may not be available
 # (dependent on build configuration)
 try:
-    from dolfinx.cpp.graph import partitioner_scotch  # noqa
+    from dolfinx.cpp.graph import partitioner_scotch  # type: ignore[attr-defined] # noqa
 except ImportError:
     pass
 try:
-    from dolfinx.cpp.graph import partitioner_parmetis  # noqa
+    from dolfinx.cpp.graph import partitioner_parmetis  # type: ignore[attr-defined] # noqa
 except ImportError:
     pass
 try:
-    from dolfinx.cpp.graph import partitioner_kahip  # noqa
+    from dolfinx.cpp.graph import partitioner_kahip  # type: ignore[attr-defined] # noqa
 except ImportError:
     pass
 
@@ -85,7 +85,7 @@ class AdjacencyList(Generic[Index]):
         Returns:
             Neighbors of the node.
         """
-        return self._cpp_object.links(node)
+        return self._cpp_object.links(node)  # type: ignore[union-attr,return-value]
 
     @property
     def array(self) -> npt.NDArray[Index]:
@@ -98,7 +98,7 @@ class AdjacencyList(Generic[Index]):
         Returns:
             Flattened array representation of the adjacency list.
         """
-        return self._cpp_object.array
+        return self._cpp_object.array  # type: ignore[union-attr,return-value]
 
     @property
     def offsets(self) -> npt.NDArray[np.int32]:
@@ -116,7 +116,7 @@ class AdjacencyList(Generic[Index]):
         Returns:
             Number of nodes.
         """
-        return self._cpp_object.num_nodes
+        return self._cpp_object.num_nodes  # type: ignore[return-value]
 
 
 def adjacencylist(
@@ -135,6 +135,7 @@ def adjacencylist(
     """
     # TODO: Switch to np.isdtype(data.dtype, np.int32) once numpy >= 2.0 is
     # enforced
+    cpp_t: type[_cpp.graph.AdjacencyList_int32] | type[_cpp.graph.AdjacencyList_int64]
     if data.dtype == np.int32:
         cpp_t = _cpp.graph.AdjacencyList_int32
     elif data.dtype == np.int64:
@@ -142,7 +143,7 @@ def adjacencylist(
     else:
         raise TypeError("Data type for adjacency list not supported.")
 
-    cpp_object = cpp_t(data, offsets) if offsets is not None else cpp_t(data)
+    cpp_object = cpp_t(data, offsets) if offsets is not None else cpp_t(data)  # type: ignore[arg-type]
     return AdjacencyList(cpp_object)
 
 
@@ -197,7 +198,7 @@ def comm_graph_data(
         `dict` holds edge data. The second list hold node data, where a
         node is a `(nodeID, dict)` tuple, where `dict` holds node data.
     """
-    return _cpp.graph.comm_graph_data(graph._cpp_object)
+    return _cpp.graph.comm_graph_data(graph._cpp_object)  # type: ignore[arg-type]
 
 
 def comm_to_json(graph: AdjacencyList) -> str:
@@ -215,4 +216,4 @@ def comm_to_json(graph: AdjacencyList) -> str:
     Returns:
         A JSON string representing the communication graph.
     """
-    return _cpp.graph.comm_to_json(graph._cpp_object)
+    return _cpp.graph.comm_to_json(graph._cpp_object)  # type: ignore[arg-type]
