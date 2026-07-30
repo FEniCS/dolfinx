@@ -11,6 +11,7 @@
 #include <basix/interpolation.h>
 #include <basix/polyset.h>
 #include <dolfinx/common/log.h>
+#include <format>
 #include <functional>
 #include <numeric>
 #include <utility>
@@ -72,7 +73,7 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
   auto sub_element = finite_element.sub_elements()[component[0]];
   assert(sub_element);
 
-  // Return sub system if sub sub system should not be extracted
+  // Return sub system if sub system should not be extracted
   if (component.size() == 1)
     return sub_element;
 
@@ -156,7 +157,7 @@ FiniteElement<T>::FiniteElement(
     break;
   }
 
-  _signature = "Basix element " + family + " " + std::to_string(_bs);
+  _signature = std::format("Basix element {} {}", family, _bs);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -232,8 +233,7 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 bool symmetric)
     : _value_shape(value_shape),
       _bs(_compute_block_size(value_shape, symmetric)), _cell_type(cell_type),
-      _signature("Quadrature element " + std::to_string(pshape[0]) + " "
-                 + std::to_string(_bs)),
+      _signature(std::format("Quadrature element {} {}", pshape[0], _bs)),
       _space_dim(pshape[0] * _bs), _sub_elements({}),
       _reference_value_shape(std::vector<std::size_t>()), _element(nullptr),
       _symmetric(symmetric), _needs_dof_permutations(false),

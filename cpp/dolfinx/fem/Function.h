@@ -55,9 +55,9 @@ public:
   /// @brief Create function on given function space.
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
-      : _function_space(V),
-        _x(std::make_shared<la::Vector<value_type>>(
-            V->dofmaps(0)->index_map, V->dofmaps(0)->index_map_bs()))
+      : _function_space(V), _x(std::make_shared<la::Vector<value_type>>(
+                                V->dofmaps().front()->index_map,
+                                V->dofmaps().front()->index_map_bs()))
   {
     if (!V->component().empty())
     {
@@ -179,7 +179,7 @@ public:
 
     const auto [fx, fshape] = f(_x);
     assert(fshape.size() <= 2);
-    if (int vs = _function_space->element()->value_size();
+    if (std::size_t vs = _function_space->element()->value_size();
         vs == 1 and fshape.size() == 1)
     {
       // Check for scalar-valued functions
@@ -489,10 +489,11 @@ public:
     auto map = mesh->topology()->index_map(tdim);
 
     // Get coordinate map
-    const CoordinateElement<geometry_type>& cmap = mesh->geometry().cmap();
+    const CoordinateElement<geometry_type>& cmap
+        = mesh->geometry().cmaps().front();
 
     // Get geometry data
-    auto x_dofmap = mesh->geometry().dofmap();
+    auto x_dofmap = mesh->geometry().dofmaps().front();
     const std::size_t num_dofs_g = cmap.dim();
     auto x_g = mesh->geometry().x();
 

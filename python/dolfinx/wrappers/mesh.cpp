@@ -28,6 +28,7 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/string_view.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <span>
@@ -107,14 +108,16 @@ void mesh(nb::module_& m)
       "build_dual_graph",
       [](const MPICommWrapper comm, dolfinx::mesh::CellType cell_type,
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-         std::optional<std::int32_t> max_facet_to_cell_links)
+         std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
       {
         std::vector<dolfinx::mesh::CellType> c = {cell_type};
         return dolfinx::mesh::build_dual_graph(
-            comm.get(), std::span{c}, {cells.array()}, max_facet_to_cell_links);
+            comm.get(), std::span{c}, {cells.array()}, max_facet_to_cell_links,
+            num_threads);
       },
       nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells"),
-      nb::arg("max_facet_to_cell_links").none(), "Build dual graph for cells");
+      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"),
+      "Build dual graph for cells");
 
   m.def(
       "build_dual_graph",
@@ -122,7 +125,7 @@ void mesh(nb::module_& m)
          std::vector<dolfinx::mesh::CellType>& cell_types,
          const std::vector<
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>& cells,
-         std::optional<std::int32_t> max_facet_to_cell_links)
+         std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
       {
         std::vector<std::span<const std::int64_t>> cell_span(cells.size());
         for (std::size_t i = 0; i < cells.size(); ++i)
@@ -131,10 +134,12 @@ void mesh(nb::module_& m)
               = std::span<const std::int64_t>(cells[i].data(), cells[i].size());
         }
         return dolfinx::mesh::build_dual_graph(
-            comm.get(), cell_types, cell_span, max_facet_to_cell_links);
+            comm.get(), cell_types, cell_span, max_facet_to_cell_links,
+            num_threads);
       },
       nb::arg("comm"), nb::arg("cell_types"), nb::arg("cells"),
-      nb::arg("max_facet_to_cell_links").none(), "Build dual graph for cells");
+      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"),
+      "Build dual graph for cells");
 
   // dolfinx::mesh::GhostMode enums
   nb::enum_<dolfinx::mesh::GhostMode>(m, "GhostMode")
@@ -221,7 +226,8 @@ void mesh(nb::module_& m)
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
            nb::arg("dim"), nb::arg("num_threads") = 1)
       .def("create_entity_permutations",
-           &dolfinx::mesh::Topology::create_entity_permutations)
+           &dolfinx::mesh::Topology::create_entity_permutations,
+           nb::arg("num_threads"))
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity,
            nb::arg("d0"), nb::arg("d1"))
       .def(
@@ -260,6 +266,8 @@ void mesh(nb::module_& m)
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
                  original_cell_indices)
           {
+            if (self.original_cell_index.size() > 1)
+              throw std::runtime_error("Mixed topology unsupported.");
             self.original_cell_index.resize(1);
             self.original_cell_index.front().assign(
                 original_cell_indices.data(),
@@ -279,7 +287,8 @@ void mesh(nb::module_& m)
                   oci.data(), {oci.size()}));
             }
             return idx_nb;
-          })
+          },
+          nb::rv_policy::reference_internal)
       .def("connectivity",
            nb::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        nb::const_),

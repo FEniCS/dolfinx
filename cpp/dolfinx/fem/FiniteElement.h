@@ -39,7 +39,7 @@ struct BasixElementData
       element; ///< Finite element.
   std::optional<std::vector<std::size_t>> value_shape
       = std::nullopt;    ///< Value shape. Can only be set for scalar `element`.
-  bool symmetry = false; ///< Symmetry. Should only set set for 2nd-order tensor
+  bool symmetry = false; ///< Symmetry. Should only be set for 2nd-order tensor
                          ///< blocked elements.
 };
 
@@ -554,13 +554,15 @@ public:
         std::vector<std::function<void(
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
             sub_element_fns;
+        std::vector<int> dims;
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
         {
           sub_element_fns.push_back(
               _sub_elements[i]->template dof_transformation_right_fn<U>(ttype));
+          dims.push_back(_sub_elements[i]->space_dimension());
         }
 
-        return [this, sub_element_fns](std::span<U> data,
+        return [dims, sub_element_fns](std::span<U> data,
                                        std::span<const std::uint32_t> cell_info,
                                        std::int32_t cell, int block_size)
         {
@@ -569,7 +571,7 @@ public:
           {
             sub_element_fns[e](data.subspan(offset, data.size() - offset),
                                cell_info, cell, block_size);
-            offset += _sub_elements[e]->space_dimension();
+            offset += dims[e];
           }
         };
       }

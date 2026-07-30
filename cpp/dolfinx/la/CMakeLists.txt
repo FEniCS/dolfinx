@@ -1,4 +1,5 @@
-set(HEADERS_la
+set(
+  HEADERS_la
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx_la.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MatrixCSR.h
   ${CMAKE_CURRENT_SOURCE_DIR}/matrix_csr_impl.h
@@ -15,8 +16,5 @@ set(HEADERS_la
 
 target_sources(
   dolfinx
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPattern.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/superlu_dist.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/slepc.cpp
+  PRIVATE SparsityPattern.cpp superlu_dist.cpp petsc.cpp slepc.cpp
 )

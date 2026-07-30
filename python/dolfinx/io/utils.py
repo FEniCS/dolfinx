@@ -213,6 +213,7 @@ class XDMFFile(_cpp.io.XDMFFile):
 
         # Get coordinate element, special handling for second order
         # serendipity.
+        basix_el: basix.ufl._BasixElement | basix.ufl._BlockedElement
         num_nodes_per_cell = cells.shape[1]
         if (cell_shape == CellType.quadrilateral and num_nodes_per_cell == 8) or (
             cell_shape == CellType.hexahedron and num_nodes_per_cell == 20
@@ -273,6 +274,7 @@ class XDMFFile(_cpp.io.XDMFFile):
             x,
             create_cell_partitioner(ghost_mode, max_facet_to_cell_links),  # type: ignore
             max_facet_to_cell_links,
+            1,
         )
         msh.name = name
         domain = ufl.Mesh(basix_el)
@@ -323,8 +325,8 @@ def distribute_entity_data(
         mesh.topology._cpp_object,
         mesh.geometry.input_global_indices,
         mesh.geometry.index_map().size_global,
-        mesh.geometry.cmap().create_dof_layout(),
-        mesh.geometry.dofmap,
+        mesh.geometry.cmaps[0].create_dof_layout(),
+        mesh.geometry.dofmaps[0],
         entity_dim,
         entities,
         values,

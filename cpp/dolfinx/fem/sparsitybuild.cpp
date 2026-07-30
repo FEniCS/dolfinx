@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2023 Garth N. Wells
+// Copyright (C) 2007-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -24,42 +24,32 @@ void sparsitybuild::interior_facets(
   const DofMap& dofmap0 = dofmaps[0];
   const DofMap& dofmap1 = dofmaps[1];
 
-  const std::size_t dmap0_size = dofmap0.map().extent(1);
-  const std::size_t dmap1_size = dofmap1.map().extent(1);
-
   // Iterate over facets
-  std::vector<std::int32_t> macro_dofs0, macro_dofs1;
-  for (std::size_t f = 0; f < cells[0].size(); f += 2)
+  for (std::size_t f = 0; f < cells0.size(); f += 2)
   {
-    // Test function dofs (sparsity pattern rows)
-    std::span<const std::int32_t> dofs00;
-    std::span<const std::int32_t> dofs01;
-
-    // When integrating over interfaces between two domains, the test
-    // function might only be defined on one side, so we check which
-    // cells exist in the test function domain
-    if (cells0[f] >= 0)
-      dofs00 = dofmap0.cell_dofs(cells0[f]);
-    if (cells0[f + 1] >= 0)
-      dofs01 = dofmap0.cell_dofs(cells0[f + 1]);
-    macro_dofs0.resize(2 * dmap0_size);
-    std::ranges::copy(dofs00, macro_dofs0.begin());
-    std::ranges::copy(dofs01, std::next(macro_dofs0.begin(), dmap0_size));
+    // Test function dofs (sparsity pattern rows). A cell may not
+    // exist on this side (e.g. an interface between two domains).
+    std::span<const std::int32_t> dofs00
+        = cells0[f] >= 0 ? dofmap0.cell_dofs(cells0[f])
+                         : std::span<const std::int32_t>();
+    std::span<const std::int32_t> dofs01
+        = cells0[f + 1] >= 0 ? dofmap0.cell_dofs(cells0[f + 1])
+                             : std::span<const std::int32_t>();
 
     // Trial function dofs (sparsity pattern columns)
-    std::span<const std::int32_t> dofs10;
-    std::span<const std::int32_t> dofs11;
+    std::span<const std::int32_t> dofs10
+        = cells1[f] >= 0 ? dofmap1.cell_dofs(cells1[f])
+                         : std::span<const std::int32_t>();
+    std::span<const std::int32_t> dofs11
+        = cells1[f + 1] >= 0 ? dofmap1.cell_dofs(cells1[f + 1])
+                             : std::span<const std::int32_t>();
 
-    // Check which cells exist in the trial function domain
-    if (cells1[f] >= 0)
-      dofs10 = dofmap1.cell_dofs(cells1[f]);
-    if (cells1[f + 1] >= 0)
-      dofs11 = dofmap1.cell_dofs(cells1[f + 1]);
-    macro_dofs1.resize(2 * dmap1_size);
-    std::ranges::copy(dofs10, macro_dofs1.begin());
-    std::ranges::copy(dofs11, std::next(macro_dofs1.begin(), dmap1_size));
-
-    pattern.insert(macro_dofs0, macro_dofs1);
+    // Insert the four (test, trial) blocks directly, rather than via
+    // a temporary buffer that could leak a previous facet's dofs
+    pattern.insert(dofs00, dofs10);
+    pattern.insert(dofs00, dofs11);
+    pattern.insert(dofs01, dofs10);
+    pattern.insert(dofs01, dofs11);
   }
 }
 //-----------------------------------------------------------------------------

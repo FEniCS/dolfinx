@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import typing
+import warnings
 from collections.abc import Callable, Sequence
 from functools import singledispatch
 
@@ -178,13 +179,12 @@ class Topology:
         """
         self._cpp_object.create_connectivity(d0, d1)
 
-    def create_entities(self, dim: int, num_threads: int = 0) -> bool:
+    def create_entities(self, dim: int, num_threads: int = 1) -> bool:
         """Create entities of given topological dimension.
 
         Args:
             dim: Topological dimension of entities to create.
-            num_threads: Number of CPU threads to use when creating. If
-                0, threads are not spawned.
+            num_threads: Number of CPU threads to use. Must be >= 1.
 
         Returns:
             ``True` is entities are created, ``False`` is if entities
@@ -192,9 +192,13 @@ class Topology:
         """
         return self._cpp_object.create_entities(dim, num_threads)
 
-    def create_entity_permutations(self):
-        """Compute entity permutations and reflections."""
-        self._cpp_object.create_entity_permutations()
+    def create_entity_permutations(self, num_threads: int = 1):
+        """Compute entity permutations and reflections.
+
+        Args:
+            num_threads: Number of CPU threads to use. Must be >= 1.
+        """
+        self._cpp_object.create_entity_permutations(num_threads)
 
     @property
     def dim(self) -> int:
@@ -291,9 +295,20 @@ class Geometry(typing.Generic[Real]):
         """
         self._cpp_object = geometry
 
-    def cmap(self, i=None) -> _CoordinateElement:
-        """Element that describes the ith geometry map."""
-        return _CoordinateElement(self._cpp_object.cmap(i))
+    @property
+    def cmaps(self) -> list[_CoordinateElement]:
+        """The coordinate maps."""
+        return [_CoordinateElement(cm) for cm in self._cpp_object.cmaps]
+
+    @property
+    def cmap(self) -> _CoordinateElement:
+        """The coordinate map (deprecated, use ``cmaps[0]``)."""
+        warnings.warn(
+            "cmap is deprecated. Use cmaps[0] instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.cmaps[0]
 
     @property
     def dim(self):
@@ -301,12 +316,22 @@ class Geometry(typing.Generic[Real]):
         return self._cpp_object.dim
 
     @property
+    def dofmaps(self) -> list[npt.NDArray[np.int32]]:
+        """The geometry dofmaps, one per cell type."""
+        return self._cpp_object.dofmaps
+
+    @property
     def dofmap(self) -> npt.NDArray[np.int32]:
-        """Dofmap for the geometry.
+        """Dofmap for the geometry (deprecated, use ``dofmaps[0]``).
 
         Shape is ``(num_cells, dofs_per_cell)``.
         """
-        return self._cpp_object.dofmap
+        warnings.warn(
+            "dofmap is deprecated. Use dofmaps[0] instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._cpp_object.dofmaps[0]
 
     def index_map(self) -> _IndexMap:
         """Index map for the geometry points (nodes) distribution."""
@@ -684,13 +709,14 @@ def transfer_meshtag(
         )
         return MeshTags(mt)
     elif meshtag.dim == meshtag.topology.dim - 1:
-        assert parent_facet is not None
+        if parent_facet is None:
+            raise ValueError("parent_facet is required for transferring facet tags.")
         mt = _cpp.refinement.transfer_facet_meshtag(
             meshtag._cpp_object, msh1.topology._cpp_object, parent_cell, parent_facet
         )
         return MeshTags(mt)
     else:
-        raise RuntimeError("MeshTag transfer is supported on on cells or facets.")
+        raise RuntimeError("MeshTag transfer is supported on cells or facets.")
 
 
 def uniform_refine(
@@ -767,6 +793,7 @@ def create_mesh(
     x: npt.NDArray[np.floating],
     partitioner: Callable | None = None,
     max_facet_to_cell_links: int = 2,
+    num_threads: int = 1,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -782,6 +809,8 @@ def create_mesh(
             cells across MPI ranks.
         max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
+        num_threads: Number of threads to use to build mesh. Must be
+            greater than 0.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -840,6 +869,7 @@ def create_mesh(
         x,
         partitioner,
         max_facet_to_cell_links,
+        num_threads,
     )
 
     return Mesh(msh, domain)  # type: ignore
@@ -869,8 +899,8 @@ def create_submesh(
         basix.ufl.element(
             "Lagrange",
             to_string(submsh.topology.cell_type),
-            submsh.geometry.cmap().degree,
-            basix.LagrangeVariant(submsh.geometry.cmap().variant),
+            submsh.geometry.cmaps[0].degree,
+            basix.LagrangeVariant(submsh.geometry.cmaps[0].variant),
             shape=(submsh.geometry.dim,),
             dtype=submsh.geometry.x.dtype,
         )
@@ -902,7 +932,8 @@ def meshtags(
         ``values``.
     """
     if isinstance(values, int):
-        assert values >= np.iinfo(np.int32).min and values <= np.iinfo(np.int32).max
+        if not (np.iinfo(np.int32).min <= values <= np.iinfo(np.int32).max):
+            raise ValueError("Tag value is out of range for int32.")
         values = np.full(entities.shape, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(entities.shape, values, dtype=np.double)
@@ -952,7 +983,8 @@ def meshtags_from_entities(
         ``values``.
     """
     if isinstance(values, int):
-        assert np.can_cast(values, np.int32)
+        if not np.can_cast(values, np.int32):
+            raise ValueError("Tag value is out of range for int32.")
         values = np.full(entities.num_nodes, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(entities.num_nodes, values, dtype=np.double)
@@ -1270,7 +1302,7 @@ def exterior_facet_indices(topology: Topology) -> npt.NDArray[np.int32]:
     """Compute the indices of exterior facets that are owned by the caller.
 
     An exterior facet (co-dimension 1) is one that is connected globally
-    to only one cell of co-dimension 0).
+    to only one cell (co-dimension 0).
 
     Note:
         This is a collective operation that should be called on all

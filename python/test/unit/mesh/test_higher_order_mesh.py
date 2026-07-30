@@ -126,7 +126,7 @@ def test_submesh(order, dtype):
     # 1. The cell
     # 2. The facets of the cell
     # Gives the correct computation of: volume (case 1) or surface area (case 2)
-    for dim, dC in zip(dimensions, measures):
+    for dim, dC in zip(dimensions, measures, strict=True):
         # Integrate on original mesh
         value = assemble_scalar(form(1 * dC, dtype=dtype))
         num_local_entities = mesh.topology.index_map(dim).size_local
@@ -763,7 +763,7 @@ def test_gmsh_mixed_mesh_2d(order, dtype):
         Js = []
         for i, cell_type in enumerate(mesh._cpp_object.topology.cell_types):
             cell_name = cell_type.name
-            cmap = mesh._cpp_object.geometry.cmap(i)
+            cmap = mesh._cpp_object.geometry.cmaps[i]
             domain = ufl.Mesh(
                 basix.ufl.element(
                     "Lagrange",
@@ -888,7 +888,7 @@ def test_gmsh_mixed_mesh_3d(order, dtype):
         Js = []
         for i, cell_type in enumerate(cell_types):
             cell_name = cell_type.name
-            cmap = mesh._cpp_object.geometry.cmap(i)
+            cmap = mesh._cpp_object.geometry.cmaps[i]
             domain = ufl.Mesh(
                 basix.ufl.element(
                     "Lagrange",

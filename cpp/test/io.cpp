@@ -15,6 +15,7 @@
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/generation.h>
+#include <format>
 #include <mpi.h>
 
 using namespace dolfinx;
@@ -43,8 +44,7 @@ void test_vtx_reuse_mesh()
   auto u = std::make_shared<fem::Function<T>>(V);
   auto v = std::make_shared<fem::Function<std::complex<T>>>(V);
 
-  std::filesystem::path f
-      = "test_vtx_reuse_mesh" + std::to_string(sizeof(T)) + ".bp";
+  std::filesystem::path f = std::format("test_vtx_reuse_mesh{}.bp", sizeof(T));
   io::VTXWriter<T> writer(mesh->comm(), f, {u, v}, "BPFile",
                           io::VTXMeshPolicy::reuse);
   writer.write(0);

@@ -12,6 +12,7 @@
 #include <functional>
 #include <numeric>
 #include <ranges>
+#include <set>
 #include <span>
 #include <utility>
 #include <vector>
@@ -1330,27 +1331,23 @@ std::vector<std::int32_t> IndexMap::weights_src() const
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> IndexMap::weights_dest() const
 {
-  int ierr = 0;
   std::vector<std::int32_t> w_src = this->weights_src();
+  w_src.reserve(1);
 
-  std::vector<MPI_Request> requests(_dest.size() + _src.size());
+  // Create owner -> ghost comm
+  MPI_Comm comm;
+  int ierr = MPI_Dist_graph_create_adjacent(
+      _comm.comm(), _dest.size(), _dest.data(), MPI_UNWEIGHTED, _src.size(),
+      _src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   std::vector<std::int32_t> w_dest(_dest.size());
-  for (std::size_t i = 0; i < _dest.size(); ++i)
-  {
-    ierr = MPI_Irecv(w_dest.data() + i, 1, MPI_INT32_T, _dest[i], MPI_ANY_TAG,
-                     _comm.comm(), &requests[i]);
-    dolfinx::MPI::check_error(_comm.comm(), ierr);
-  }
+  w_dest.reserve(1);
+  ierr = MPI_Neighbor_alltoall(w_src.data(), 1, MPI_INT32_T, w_dest.data(), 1,
+                               MPI_INT32_T, comm);
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
 
-  for (std::size_t i = 0; i < _src.size(); ++i)
-  {
-    ierr = MPI_Isend(w_src.data() + i, 1, MPI_INT32_T, _src[i], 0, _comm.comm(),
-                     &requests[i + _dest.size()]);
-    dolfinx::MPI::check_error(_comm.comm(), ierr);
-  }
-
-  ierr = MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
+  ierr = MPI_Comm_free(&comm);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   return w_dest;

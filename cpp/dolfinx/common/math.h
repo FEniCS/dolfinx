@@ -10,9 +10,12 @@
 #include <algorithm>
 #include <array>
 #include <basix/mdspan.hpp>
+#include <cassert>
 #include <cmath>
+#include <concepts>
+#include <format>
+#include <stdexcept>
 #include <string>
-#include <type_traits>
 
 namespace dolfinx::math
 {
@@ -22,7 +25,9 @@ namespace dolfinx::math
 /// @param v The second vector. It must have size 3.
 /// @return The cross product `u x v`. The type will be the same as `u`.
 template <typename U, typename V>
-std::array<typename U::value_type, 3> cross(const U& u, const V& v)
+  requires scalar<typename U::value_type>
+           && std::same_as<typename U::value_type, typename V::value_type>
+constexpr std::array<typename U::value_type, 3> cross(const U& u, const V& v)
 {
   assert(u.size() == 3);
   assert(v.size() == 3);
@@ -32,7 +37,8 @@ std::array<typename U::value_type, 3> cross(const U& u, const V& v)
 
 /// Kahan’s method to compute x = ad − bc with fused multiply-adds. The
 /// absolute error is bounded by 1.5 ulps, units of least precision.
-template <typename T>
+// TODO: mark constexpr with C++23 (std::fma becomes constexpr).
+template <std::floating_point T>
 T difference_of_products(T a, T b, T c, T d) noexcept
 {
   T w = b * c;
@@ -46,13 +52,13 @@ T difference_of_products(T a, T b, T c, T d) noexcept
 /// @param[in] A The matrix to compute the determinant of. Row-major
 /// storage.
 /// @param[in] shape The shape of `A`
-/// @return The determinate of `A`
-template <typename T>
+/// @return The determinant of `A`
+// TODO: mark constexpr with C++23 (relies on std::fma, constexpr from C++23).
+template <std::floating_point T>
 auto det(const T* A, std::array<std::size_t, 2> shape)
 {
   assert(shape[0] == shape[1]);
 
-  // const int nrows = shape[0];
   switch (shape[0])
   {
   case 1:
@@ -73,17 +79,19 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
     return w4;
   }
   default:
-    throw std::runtime_error("math::det is not implemented for "
-                             + std::to_string(A[0]) + "x" + std::to_string(A[1])
-                             + " matrices.");
+    throw std::runtime_error(
+        std::format("math::det is not implemented for {}x{} matrices.",
+                    shape[0], shape[1]));
   }
 }
 
 /// Compute the determinant of a small matrix (1x1, 2x2, or 3x3)
 /// @note Tailored for use in computations using the Jacobian
-/// @param[in] A The matrix tp compute the determinant of
-/// @return The determinate of @p A
+/// @param[in] A The matrix to compute the determinant of
+/// @return The determinant of @p A
+// TODO: mark constexpr with C++23 (relies on std::fma, constexpr from C++23).
 template <typename Matrix>
+  requires std::floating_point<typename Matrix::value_type>
 auto det(Matrix A)
 {
   static_assert(Matrix::rank() == 2, "Must be rank 2");
@@ -109,9 +117,9 @@ auto det(Matrix A)
     return w4;
   }
   default:
-    throw std::runtime_error("math::det is not implemented for "
-                             + std::to_string(A.extent(0)) + "x"
-                             + std::to_string(A.extent(1)) + " matrices.");
+    throw std::runtime_error(
+        std::format("math::det is not implemented for {}x{} matrices.",
+                    A.extent(0), A.extent(1)));
   }
 }
 
@@ -121,7 +129,9 @@ auto det(Matrix A)
 /// @param[out] B The inverse of A. It must be pre-allocated to be the
 /// same shape as @p A.
 /// @warning This function does not check if A is invertible
+// TODO: mark constexpr with C++23 (relies on std::fma, constexpr from C++23).
 template <typename U, typename V>
+  requires std::floating_point<typename U::value_type>
 void inv(U A, V B)
 {
   static_assert(U::rank() == 2, "Must be rank 2");
@@ -132,7 +142,7 @@ void inv(U A, V B)
   switch (nrows)
   {
   case 1:
-    B(0, 0) = 1 / A(0, 0);
+    B(0, 0) = value_type{1} / A(0, 0);
     break;
   case 2:
   {
@@ -165,9 +175,9 @@ void inv(U A, V B)
     break;
   }
   default:
-    throw std::runtime_error("math::inv is not implemented for "
-                             + std::to_string(A.extent(0)) + "x"
-                             + std::to_string(A.extent(1)) + " matrices.");
+    throw std::runtime_error(
+        std::format("math::inv is not implemented for {}x{} matrices.",
+                    A.extent(0), A.extent(1)));
   }
 }
 
@@ -175,10 +185,12 @@ void inv(U A, V B)
 /// @param[in] A Input matrix
 /// @param[in] B Input matrix
 /// @param[in, out] C Filled to be C += A * B
-/// @param[in] transpose Computes C += A^T * B^T if false, otherwise
-/// computed C += A^T * B^T
+/// @param[in] transpose Computes C += A * B if false, otherwise
+/// computes C += A^T * B^T
 template <typename U, typename V, typename P>
-void dot(U A, V B, P C, bool transpose = false)
+  requires scalar<typename U::value_type> && scalar<typename V::value_type>
+           && scalar<typename P::value_type>
+constexpr void dot(U A, V B, P C, bool transpose = false)
 {
   static_assert(U::rank() == 2, "Must be rank 2");
   static_assert(V::rank() == 2, "Must be rank 2");
@@ -208,7 +220,10 @@ void dot(U A, V B, P C, bool transpose = false)
 /// @param[out] P The pseudo inverse of `A`. It must be pre-allocated
 /// with a size which is the transpose of the size of `A`.
 /// @pre The matrix `A` must be full rank
+// TODO: mark constexpr with C++23 (relies on std::fma via inv, constexpr from
+// C++23).
 template <typename U, typename V>
+  requires std::floating_point<typename U::value_type>
 void pinv(U A, V P)
 {
   static_assert(U::rank() == 2, "Must be rank 2");
@@ -220,6 +235,8 @@ void pinv(U A, V P)
   using T = typename U::value_type;
   if (A.extent(1) == 2)
   {
+    // Fixed-size buffers below assume A is 3x2
+    assert(A.extent(0) == 3);
     std::array<T, 6> ATb;
     std::array<T, 4> ATAb, Invb;
     md::mdspan<T, md::extents<std::size_t, 2, 3>> AT(ATb.data(), 2, 3);
@@ -253,9 +270,9 @@ void pinv(U A, V P)
   }
   else
   {
-    throw std::runtime_error("math::pinv is not implemented for "
-                             + std::to_string(A.extent(0)) + "x"
-                             + std::to_string(A.extent(1)) + " matrices.");
+    throw std::runtime_error(
+        std::format("math::pinv is not implemented for {}x{} matrices.",
+                    A.extent(0), A.extent(1)));
   }
 }
 

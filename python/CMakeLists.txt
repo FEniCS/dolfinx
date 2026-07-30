@@ -1,13 +1,6 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.26)
 
 project(dolfinx_nanobind LANGUAGES CXX)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-if(WIN32)
-  # Windows requires all symbols to be manually exported. This flag exports all
-  # symbols automatically, as in Unix.
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-endif(WIN32)
 
 find_package(
   Python
@@ -19,7 +12,24 @@ find_package(
 include(FeatureSummary)
 
 option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
-add_feature_info(ENABLE_CLANG_TIDY ENABLE_CLANG_TIDY "Run clang-tidy while building")
+add_feature_info(
+  ENABLE_CLANG_TIDY
+  ENABLE_CLANG_TIDY
+  "Run clang-tidy while building"
+)
+
+option(
+  DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+  "Add linker search paths to rpath of dolfinx target. Packagers may want
+to set FALSE."
+  TRUE
+)
+add_feature_info(
+  DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+  DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+  "Add linker search paths to rpath of dolfinx target. Packagers may want
+	to set FALSE."
+)
 
 option(ENABLE_NANOBIND_STUBGEN "Run nanobind stub generation" ON)
 add_feature_info(ENABLE_NANOBIND_STUBGEN ENABLE_NANOBIND_STUBGEN "Run nanobind stub generation")
@@ -41,14 +51,24 @@ find_package(nanobind CONFIG REQUIRED)
 enable_language(C)
 
 find_package(DOLFINX REQUIRED CONFIG)
-set_target_properties(dolfinx PROPERTIES SYSTEM OFF)
+message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 
-if(DOLFINX_FOUND)
-  message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
+if(CMAKE_BUILD_TYPE STREQUAL "Developer")
+  # This enables warnings from DOLFINx headers even though they are a SYSTEM
+  # dependency.
+  set_target_properties(dolfinx::dolfinx PROPERTIES SYSTEM OFF)
 endif()
 
-# SuperLU_DIST Python interface requires the superlu_defs.h header for int_t.
-pkg_search_module(SUPERLU_DIST OPTIONAL IMPORTED_TARGET superlu_dist)
+get_target_property(
+  _dolfinx_defs
+  dolfinx::dolfinx
+  INTERFACE_COMPILE_DEFINITIONS
+)
+if("HAS_SUPERLU_DIST" IN_LIST _dolfinx_defs)
+  # SuperLU_DIST Python interface requires the superlu_defs.h header for int_t.
+  find_package(PkgConfig)
+  pkg_search_module(SUPERLU_DIST OPTIONAL IMPORTED_TARGET superlu_dist)
+endif()
 
 # Create the binding library nanobind handles its own calls to
 # target_link_libraries
@@ -75,7 +95,10 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
-target_include_directories(cpp PRIVATE ${SUPERLU_DIST_INCLUDE_DIRS})
+set_target_properties(cpp PROPERTIES CXX_EXTENSIONS OFF)
+if(TARGET PkgConfig::SUPERLU_DIST)
+  target_include_directories(cpp PRIVATE ${SUPERLU_DIST_INCLUDE_DIRS})
+endif()
 
 if(NANOBIND_SABI)
   # mpi4py and petsc4py use generated Cython headers so tell
@@ -88,66 +111,32 @@ if(NANOBIND_SABI)
   target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
 endif()
 
-# Check for some compiler flags
-include(CheckCXXCompilerFlag)
-
-# Add some strict compiler checks
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
-
-if(HAVE_PEDANTIC)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
-endif()
-
-# Debug flags
-check_cxx_compiler_flag(-g HAVE_DEBUG)
-if(HAVE_DEBUG)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -g)
-endif()
-
-# Optimisation
-check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
-if(HAVE_O2_OPTIMISATION)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -O2)
-endif()
-
-# Enable C++ standard library debugging
-include(CheckCXXSymbolExists)
-
-check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
-check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
-
-if(LIBCPP)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG)
-endif()
-
-if(GLIBCXX)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS _GLIBCXX_ASSERTIONS)
-endif()
-
-# Turn off some checks in gcc12 and gcc13 due to false positives with
-# the fmt library
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-    AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
-)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
-endif()
+include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
 
 target_compile_options(
-  cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_FLAGS}>
+  cpp
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 target_compile_definitions(
-  cpp PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS}>
+  cpp
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
-target_compile_definitions(cpp PRIVATE cxx_std_20)
+target_compile_features(cpp PRIVATE cxx_std_20)
 
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
-  set_target_properties(cpp PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../.clang-tidy")
+  set_target_properties(
+    cpp
+    PROPERTIES
+      CXX_CLANG_TIDY
+        "${CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/../.clang-tidy"
+  )
 endif()
 
 # Add DOLFINx libraries
-target_link_libraries(cpp PRIVATE dolfinx)
+target_link_libraries(cpp PRIVATE dolfinx::dolfinx)
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
 if(WIN32)
@@ -156,19 +145,29 @@ endif()
 
 # Check for petsc4py
 execute_process(
-  COMMAND ${Python_EXECUTABLE} -c
-          "import petsc4py; print(petsc4py.get_include())"
+  COMMAND
+    "${Python_EXECUTABLE}" -c "import petsc4py; print(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIR
   RESULT_VARIABLE PETSC4PY_COMMAND_RESULT
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_QUIET
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-if(NOT PETSC4PY_COMMAND_RESULT)
-  message(STATUS "Found petsc4py include directory at ${PETSC4PY_INCLUDE_DIR}")
-  target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIR})
-  target_compile_definitions(cpp PRIVATE HAS_PETSC4PY)
+if("HAS_PETSC" IN_LIST _dolfinx_defs)
+  if(NOT PETSC4PY_COMMAND_RESULT)
+    message(
+      STATUS
+      "Found petsc4py include directory at ${PETSC4PY_INCLUDE_DIR}"
+    )
+    target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIR})
+    target_compile_definitions(cpp PRIVATE HAS_PETSC4PY)
+  else()
+    message(WARNING "DOLFINx was built with PETSc but petsc4py was not found.")
+  endif()
 else()
-  message(STATUS "petsc4py not found.")
+  if(NOT PETSC4PY_COMMAND_RESULT)
+    message(WARNING "DOLFINx was built without PETSc but petsc4py was found.")
+  endif()
 endif()
 
 # Check for mpi4py
@@ -176,7 +175,8 @@ execute_process(
   COMMAND "${Python_EXECUTABLE}" -c "import mpi4py; print(mpi4py.get_include())"
   OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
   RESULT_VARIABLE MPI4PY_COMMAND_RESULT
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_QUIET
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
 if(NOT MPI4PY_COMMAND_RESULT)
@@ -186,7 +186,12 @@ else()
   message(FATAL_ERROR "mpi4py could not be found.")
 endif()
 
-set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
+set_target_properties(
+  cpp
+  PROPERTIES
+    INSTALL_RPATH_USE_LINK_PATH ${DOLFINX_INSTALL_RPATH_USE_LINK_PATH}
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+)
 
 # and the nanobind typing stubs.
 if(ENABLE_NANOBIND_STUBGEN)
