@@ -105,7 +105,9 @@ def create_cell_partitioner(
     Return:
         Partitioning function.
     """
-    return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links)  # type: ignore[arg-type]
+    if isinstance(part, GhostMode):
+        raise TypeError("Expected a partition function, not a GhostMode.")
+    return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links)
 
 
 @create_cell_partitioner.register(GhostMode)
