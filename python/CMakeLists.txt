@@ -32,7 +32,11 @@ add_feature_info(
 )
 
 option(ENABLE_NANOBIND_STUBGEN "Run nanobind stub generation" ON)
-add_feature_info(ENABLE_NANOBIND_STUBGEN ENABLE_NANOBIND_STUBGEN "Run nanobind stub generation")
+add_feature_info(
+  ENABLE_NANOBIND_STUBGEN
+  ENABLE_NANOBIND_STUBGEN
+  "Run nanobind stub generation"
+)
 
 feature_summary(WHAT ALL)
 
@@ -248,8 +252,8 @@ if(ENABLE_NANOBIND_STUBGEN)
     add_custom_command(
       TARGET cpp
       POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E create_symlink
-        $<TARGET_FILE:cpp>
+      COMMAND
+        ${CMAKE_COMMAND} -E create_symlink $<TARGET_FILE:cpp>
         ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/$<TARGET_FILE_NAME:cpp>
       COMMENT "Staging cpp module as dolfinx.cpp for stub generation"
     )
@@ -284,7 +288,8 @@ if(ENABLE_NANOBIND_STUBGEN)
     )
 
     install(TARGETS cpp LIBRARY DESTINATION dolfinx)
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/cpp
+    install(
+      DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/cpp
       DESTINATION dolfinx
       FILES_MATCHING
       PATTERN "*.pyi"
