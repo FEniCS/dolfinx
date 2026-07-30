@@ -50,9 +50,9 @@ def locate_dofs_geometrical(
         first column.
     """
     if not isinstance(V, Iterable):
-        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)  # type: ignore
+        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
 
-    _V = [space._cpp_object for space in V]  # type: ignore
+    _V = [space._cpp_object for space in V]
     return _cpp.fem.locate_dofs_geometrical(_V, marker)  # type: ignore
 
 
@@ -86,9 +86,9 @@ def locate_dofs_topological(
     """
     _entities = np.asarray(entities, dtype=np.int32)
     if not isinstance(V, Iterable):
-        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)  # type: ignore
+        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
 
-    _V = [space._cpp_object for space in V]  # type: ignore
+    _V = [space._cpp_object for space in V]
     return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)  # type: ignore
 
 
