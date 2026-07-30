@@ -11,10 +11,4 @@ set(
   PARENT_SCOPE
 )
 
-target_sources(
-  dolfinx
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/plaza.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/uniform.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
-)
+target_sources(dolfinx PRIVATE plaza.cpp uniform.cpp utils.cpp)

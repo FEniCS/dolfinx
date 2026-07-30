@@ -573,8 +573,8 @@ void declare_objects(nb::module_& m, std::string type)
             self.interpolate(u, std::span(cells.data(), cells.size()), tol,
                              maxit, interpolation_data);
           },
-          nb::arg("u"), nb::arg("cells"), nb::arg("interpolation_data"),
-          nb::arg("tol"), nb::arg("maxit"),
+          nb::arg("u"), nb::arg("cells"), nb::arg("tol"), nb::arg("maxit"),
+          nb::arg("interpolation_data"),
           "Interpolate a finite element Function on non-matching meshes")
       // NOLINTBEGIN(performance-no-int-to-ptr)
       .def(

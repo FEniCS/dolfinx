@@ -33,10 +33,10 @@ from collections.abc import Sequence
 
 from petsc4py import PETSc
 
-# ruff: noqa: E402
 import dolfinx
 
-assert dolfinx.has_petsc4py
+if not dolfinx.has_petsc4py:
+    raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
 
 import numpy as np
@@ -166,8 +166,8 @@ def create_matrix(
        with the forms ``a``.
     3. For a rectangular array of bilinear forms, it create a single
        (non-nested) matrix of type ``kind`` that is compatible with the
-       array of for forms ``a``. If ``kind`` is ``None``, then the
-       matrix is the default type.
+       array of for forms ``a``. If ``kind`` is ``None`` or
+       ``PETSc.Vec.Type.MPI``, then the matrix is the default type.
 
        In this case, the matrix is arranged::
 
@@ -190,7 +190,9 @@ def create_matrix(
             return _cpp.fem.petsc.create_matrix_nest(_a, None)
         else:
             if kind is None or isinstance(kind, str):  # Single 'kind' type
-                return _cpp.fem.petsc.create_matrix_block(_a, kind)
+                # "mpi" is create_vector's sentinel, not a Mat type
+                mat_kind = None if kind == PETSc.Vec.Type.MPI else kind  # type: ignore[attr-defined]
+                return _cpp.fem.petsc.create_matrix_block(_a, mat_kind)
             else:  # Array of 'kind' types
                 return _cpp.fem.petsc.create_matrix_nest(_a, kind)
     else:  # Single form
@@ -447,7 +449,8 @@ def _(
                 elif i == j:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
-                        assert len(row_forms) > 0
+                        if len(row_forms) == 0:
+                            raise ValueError(f"Row {i} of forms is entirely 'None'.")
                         if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
@@ -491,7 +494,8 @@ def _(
                 elif i == j:
                     for bc in _bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
-                        assert len(row_forms) > 0
+                        if len(row_forms) == 0:
+                            raise ValueError(f"Row {i} of forms is entirely 'None'.")
                         if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
@@ -605,9 +609,7 @@ def apply_lifting(
             coeffs,
             strict=True,
         ):
-            const_ = list(
-                map(lambda x: np.array([], dtype=PETSc.ScalarType) if x is None else x, const)  # type: ignore[call-overload]
-            )
+            const_ = [np.array([], dtype=PETSc.ScalarType) if x is None else x for x in const]  # type: ignore[attr-defined]
             apply_lifting(b_sub, a_sub, bcs, x0, alpha, const_, coeff)  # type: ignore[arg-type]
     else:
         with contextlib.ExitStack() as stack:
@@ -898,11 +900,10 @@ class LinearProblem:
 
     def __del__(self):
         """Destroy internally held PETSc objects."""
-        for obj in filter(
-            lambda obj: obj is not None,
-            (self._solver, self._A, self._b, self._x, self._P_mat),
-        ):
-            obj.destroy()
+        # __init__ may have raised before all attributes were set
+        for name in ("_solver", "_A", "_b", "_x", "_P_mat"):
+            if (obj := getattr(self, name, None)) is not None:
+                obj.destroy()
 
     def solve(self) -> _Function | Sequence[_Function]:
         """Solve the problem.
@@ -1070,7 +1071,8 @@ def assemble_residual(
 
     # Assign block data if block assembly is requested
     if isinstance(residual, Sequence) and b.getType() != PETSc.Vec.Type.NEST:
-        assert _blocks is not None, "Block data must be provided for block assembly."
+        if _blocks is None:
+            raise ValueError("Block data must be provided for block assembly.")
         b.setAttr("_blocks", _blocks)
         x.setAttr("_blocks", _blocks)
 
@@ -1375,11 +1377,10 @@ class NonlinearProblem:
 
     def __del__(self):
         """Destroy PETSc objects created internally."""
-        for obj in filter(
-            lambda obj: obj is not None,
-            (self._snes, self._A, self._b, self._x, self._P_mat),
-        ):
-            obj.destroy()
+        # __init__ may have raised before all attributes were set
+        for name in ("_snes", "_A", "_b", "_x", "_P_mat"):
+            if (obj := getattr(self, name, None)) is not None:
+                obj.destroy()
 
     @property
     def F(self) -> Form | Sequence[Form]:

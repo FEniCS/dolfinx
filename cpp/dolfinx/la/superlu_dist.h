@@ -8,11 +8,14 @@
 
 #ifdef HAS_SUPERLU_DIST
 
+#include <complex>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <memory>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace dolfinx::la
 {
@@ -52,7 +55,7 @@ struct map
   static_assert(always_false_v<T>, "Invalid scalar type");
 };
 
-/// Map double type to float 'typed' structs
+/// Map double type to double 'typed' structs
 template <>
 struct map<double>
 {
@@ -213,7 +216,7 @@ public:
   ///
   /// @param name Option name.
   /// @param value Option value.
-  void set_option(std::string name, std::string value);
+  void set_option(std::string_view name, std::string_view value);
 
   /// @brief Set all solver options (native struct)
   ///
@@ -236,7 +239,7 @@ public:
   /// ```
   ///
   /// @param options SuperLU_DIST option struct.
-  void set_options(SuperLUDistStructs::superlu_dist_options_t options);
+  void set_options(const SuperLUDistStructs::superlu_dist_options_t& options);
 
   /// @brief Set assembled left-hand side matrix A.
   ///
@@ -247,7 +250,8 @@ public:
   /// @param fact One of `"DOFACT"`, `"SamePattern"`,
   ///   `"SamePattern_SameRowPerm"`. See the SuperLU_DIST documentation
   ///   for the meaning of these values.
-  void set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A, std::string fact);
+  void set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
+             std::string_view fact);
 
   /// @brief Solve linear system Au = b.
   ///

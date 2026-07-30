@@ -24,7 +24,6 @@
 #include <iterator>
 #include <pugixml.hpp>
 #include <span>
-#include <sstream>
 #include <string>
 
 using namespace dolfinx;
@@ -51,13 +50,13 @@ std::string get_counter(const pugi::xml_node& node, std::string_view name)
 }
 //----------------------------------------------------------------------------
 
-/// Convert a container to a std::stringstream
+/// Convert a container to a std::string
 template <typename T>
-std::stringstream container_to_string(const T& x, int precision)
+std::string container_to_string(const T& x, int precision)
 {
-  std::stringstream s;
-  s.precision(precision);
-  std::ranges::for_each(x, [&s](auto e) { s << e << " "; });
+  std::string s;
+  for (auto e : x)
+    std::format_to(std::back_inserter(s), "{:.{}} ", e, precision);
   return s;
 }
 //----------------------------------------------------------------------------
@@ -126,7 +125,7 @@ void add_data_float(std::string_view name,
     field_node.append_attribute("NumberOfComponents") = num_components.front();
 
   field_node.append_child(pugi::node_pcdata)
-      .set_value(container_to_string(values, 16).str().c_str());
+      .set_value(container_to_string(values, 16).c_str());
 }
 //----------------------------------------------------------------------------
 
@@ -188,7 +187,7 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   x_node.append_attribute("NumberOfComponents") = "3";
   x_node.append_attribute("format") = "ascii";
   x_node.append_child(pugi::node_pcdata)
-      .set_value(container_to_string(x, 16).str().c_str());
+      .set_value(container_to_string(x, 16).c_str());
 
   // -- Add topology (cells)
 
@@ -198,10 +197,10 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   connectivity_node.append_attribute("Name") = "connectivity";
   connectivity_node.append_attribute("format") = "ascii";
   {
-    std::stringstream ss;
-    std::ranges::for_each(cells, [&ss](auto& v) { ss << v << " "; });
-    connectivity_node.append_child(pugi::node_pcdata)
-        .set_value(ss.str().c_str());
+    std::string ss;
+    for (auto v : cells)
+      std::format_to(std::back_inserter(ss), "{} ", v);
+    connectivity_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
 
   pugi::xml_node offsets_node = cells_node.append_child("DataArray");
@@ -209,11 +208,11 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   offsets_node.append_attribute("Name") = "offsets";
   offsets_node.append_attribute("format") = "ascii";
   {
-    std::stringstream ss;
+    std::string ss;
     int num_nodes = cshape[1];
     for (std::size_t i = 0; i < cshape[0]; ++i)
-      ss << (i + 1) * num_nodes << " ";
-    offsets_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+      std::format_to(std::back_inserter(ss), "{} ", (i + 1) * num_nodes);
+    offsets_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
 
   pugi::xml_node type_node = cells_node.append_child("DataArray");
@@ -222,10 +221,12 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   type_node.append_attribute("format") = "ascii";
   int vtk_celltype = io::cells::get_vtk_cell_type(celltype, tdim);
   {
-    std::stringstream ss;
+    const std::string cell_type_str = std::format("{} ", vtk_celltype);
+    std::string ss;
+    ss.reserve(cell_type_str.size() * cshape[0]);
     for (std::size_t c = 0; c < cshape[0]; ++c)
-      ss << vtk_celltype << " ";
-    type_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+      ss += cell_type_str;
+    type_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
 
   // Ghost cell markers
@@ -238,12 +239,12 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   ghost_cell_node.append_attribute("RangeMin") = "0";
   ghost_cell_node.append_attribute("RangeMax") = "1";
   {
-    std::stringstream ss;
+    std::string ss;
     for (std::int32_t c = 0; c < cellmap.size_local(); ++c)
-      ss << 0 << " ";
+      ss += "0 ";
     for (std::size_t c = cellmap.size_local(); c < cshape[0]; ++c)
-      ss << 1 << " ";
-    ghost_cell_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+      ss += "1 ";
+    ghost_cell_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
 
   // Original cell IDs
@@ -253,13 +254,13 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   cell_id_node.append_attribute("Name") = "vtkOriginalCellIds";
   cell_id_node.append_attribute("format") = "ascii";
   {
-    std::stringstream ss;
+    std::string ss;
     const std::int64_t cell_offset = cellmap.local_range()[0];
     for (std::int32_t c = 0; c < cellmap.size_local(); ++c)
-      ss << cell_offset + c << " ";
-    std::ranges::for_each(cellmap.ghosts(),
-                          [&ss](auto& idx) { ss << idx << " "; });
-    cell_id_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+      std::format_to(std::back_inserter(ss), "{} ", cell_offset + c);
+    for (auto idx : cellmap.ghosts())
+      std::format_to(std::back_inserter(ss), "{} ", idx);
+    cell_id_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
 
   auto [min_idx, max_idx] = cellmap.local_range();
@@ -283,9 +284,10 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   point_id_node.append_attribute("Name") = "vtkOriginalPointIds";
   point_id_node.append_attribute("format") = "ascii";
   {
-    std::stringstream ss;
-    std::ranges::for_each(x_id, [&ss](auto idx) { ss << idx << " "; });
-    point_id_node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+    std::string ss;
+    for (auto idx : x_id)
+      std::format_to(std::back_inserter(ss), "{} ", idx);
+    point_id_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
   if (!x_id.empty())
   {
@@ -300,10 +302,10 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   point_ghost_node.append_attribute("Name") = "vtkGhostType";
   point_ghost_node.append_attribute("format") = "ascii";
   {
-    std::stringstream ss;
-    std::ranges::for_each(x_ghost, [&ss](int ghost) { ss << ghost << " "; });
-    point_ghost_node.append_child(pugi::node_pcdata)
-        .set_value(ss.str().c_str());
+    std::string ss;
+    for (int ghost : x_ghost)
+      std::format_to(std::back_inserter(ss), "{} ", ghost);
+    point_ghost_node.append_child(pugi::node_pcdata).set_value(ss.c_str());
   }
   if (!x_ghost.empty())
   {

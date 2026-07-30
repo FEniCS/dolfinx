@@ -38,7 +38,7 @@ jobs:
       - name: Set up Spack
         uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
         with:
-          spack_ref: v1.2.1
+          spack_ref: v1.2.2
           packages_ref: v2026.06.0
 
       - name: Get FEniCS Spack packages
@@ -138,8 +138,8 @@ jobs:
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
           cmake --build build/demo
           cd build/demo
-          ctest -V -R demo -R serial
-          ctest --output-on-failure -V -R demo -R mpi_2
+          ctest -V --output-on-failure -R "demo_.*_np_1"
+          ctest -V --output-on-failure -R "demo_.*_np_2"
 
       - name: Prepare Python environment
         run: |

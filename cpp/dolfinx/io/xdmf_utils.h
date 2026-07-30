@@ -15,6 +15,7 @@
 #include <dolfinx/common/types.h>
 #include <filesystem>
 #include <format>
+#include <iterator>
 #include <numeric>
 #include <pugixml.hpp>
 #include <span>
@@ -84,7 +85,7 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
   // Add dimensions attribute
   std::string dims;
   for (auto d : shape)
-    dims += std::format("{} ", d);
+    std::format_to(std::back_inserter(dims), "{} ", d);
   dims.pop_back();
   data_item_node.append_attribute("Dimensions") = dims.c_str();
 
@@ -101,17 +102,17 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
   {
     data_item_node.append_attribute("Format") = "XML";
     assert(shape.size() == 2);
-    std::ostringstream s;
-    s.precision(16);
+    std::string s;
     for (std::size_t i = 0; i < x.size(); ++i)
     {
-      if ((i + 1) % shape[1] == 0 and shape[1] != 0)
-        s << x.data()[i] << std::endl;
+      if constexpr (std::floating_point<T>)
+        std::format_to(std::back_inserter(s), "{:.16}", x.data()[i]);
       else
-        s << x.data()[i] << " ";
+        std::format_to(std::back_inserter(s), "{}", x.data()[i]);
+      s += ((i + 1) % shape[1] == 0 and shape[1] != 0) ? '\n' : ' ';
     }
 
-    data_item_node.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+    data_item_node.append_child(pugi::node_pcdata).set_value(s.c_str());
   }
   else
   {
