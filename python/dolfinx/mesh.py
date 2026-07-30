@@ -1438,10 +1438,11 @@ def create_point_mesh(comm: _MPI.Intracomm, points: npt.NDArray[np.float32 | np.
     geometry = create_geometry(imap, cells, c_el, points, igi)
 
     cpp_mesh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
-    if points.dtype == np.float64:
-        cpp_mesh = _cpp.mesh.Mesh_float64(comm, topology, geometry._cpp_object)  # type: ignore[arg-type]
-    elif points.dtype == np.float32:
-        cpp_mesh = _cpp.mesh.Mesh_float32(comm, topology, geometry._cpp_object)  # type: ignore[arg-type]
+    cpp_geometry = geometry._cpp_object
+    if isinstance(cpp_geometry, _cpp.mesh.Geometry_float64):
+        cpp_mesh = _cpp.mesh.Mesh_float64(comm, topology, cpp_geometry)
+    elif isinstance(cpp_geometry, _cpp.mesh.Geometry_float32):
+        cpp_mesh = _cpp.mesh.Mesh_float32(comm, topology, cpp_geometry)
     else:
         raise RuntimeError(f"Unsupported dtype for mesh {points.dtype}")
 
