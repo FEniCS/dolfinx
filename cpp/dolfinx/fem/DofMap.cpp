@@ -149,14 +149,8 @@ graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
       data[pos[dofs[d]]++] = cell_offset++;
   }
 
-  // Sort the source indices for each global index
-  // This could improve linear memory access
-  // FIXME: needs profiling
-  for (int index = 0; index < max_index; ++index)
-  {
-    std::sort(data.begin() + index_offsets[index],
-              data.begin() + index_offsets[index + 1]);
-  }
+  // `data` is already sorted per index: `cell_offset` only increases,
+  // so repeat occurrences of a dof are written in increasing order.
 
   return graph::AdjacencyList(std::move(data), std::move(index_offsets));
 }
@@ -184,14 +178,25 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
   const std::int32_t dofs_per_cell = sub_element_map_view.size();
   std::vector<std::int32_t> dofmap(num_cells * dofs_per_cell);
   const int bs_parent = this->bs();
+
+  // Split each entry once, rather than dividing per cell below
+  std::vector<std::int32_t> parent_dof_index(dofs_per_cell);
+  std::vector<std::int32_t> parent_dof_component(dofs_per_cell);
+  for (std::int32_t i = 0; i < dofs_per_cell; ++i)
+  {
+    std::div_t pos = std::div(sub_element_map_view[i], bs_parent);
+    parent_dof_index[i] = pos.quot;
+    parent_dof_component[i] = pos.rem;
+  }
+
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto cell_dmap_parent = this->cell_dofs(c);
     for (std::int32_t i = 0; i < dofs_per_cell; ++i)
     {
-      std::div_t pos = std::div(sub_element_map_view[i], bs_parent);
       dofmap[c * dofs_per_cell + i]
-          = bs_parent * cell_dmap_parent[pos.quot] + pos.rem;
+          = bs_parent * cell_dmap_parent[parent_dof_index[i]]
+            + parent_dof_component[i];
     }
   }
 
