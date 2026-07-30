@@ -769,9 +769,9 @@ avail_partitioners = []
 if dolfinx.has_ptscotch:
     avail_partitioners.append(dolfinx.cpp.graph.partitioner_scotch)
 if dolfinx.has_kahip:
-    avail_partitioners.append(dolfinx.cpp.graph.partitioner_kahip)
+    avail_partitioners.append(dolfinx.cpp.graph.partitioner_kahip)  # type: ignore[attr-defined]
 if dolfinx.has_parmetis:
-    avail_partitioners.append(dolfinx.cpp.graph.partitioner_parmetis)
+    avail_partitioners.append(dolfinx.cpp.graph.partitioner_parmetis)  # type: ignore[attr-defined]
 
 
 @pytest.mark.parametrize("partitioner", avail_partitioners)

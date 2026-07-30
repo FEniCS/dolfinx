@@ -112,7 +112,13 @@ prism = coordinate_element(CellType.prism, 1)
 
 part = create_cell_partitioner(GhostMode.none, 2)  # type: ignore
 mesh = create_mesh(
-    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part, 2, 1
+    MPI.COMM_WORLD,
+    cells_np,
+    [hexahedron._cpp_object, prism._cpp_object],  # type: ignore[list-item]
+    geomx,  # type: ignore[arg-type]
+    part,
+    2,
+    1,
 )
 # -
 
@@ -135,7 +141,7 @@ dofmaps = create_dofmaps(
 )
 
 # Create C++ function space
-V_cpp = _cpp.fem.FunctionSpace_float64(
+V_cpp = _cpp.fem.FunctionSpace_float64(  # type: ignore[call-overload]
     mesh, [e._cpp_object for e in dolfinx_elements], [dofmap._cpp_object for dofmap in dofmaps]
 )
 

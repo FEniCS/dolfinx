@@ -749,7 +749,9 @@ def uniform_refine(
 def refine(
     msh: Mesh,
     edges: np.ndarray | None = None,
-    partitioner: Callable | IdentityPartitionerPlaceholder = IdentityPartitionerPlaceholder(),
+    partitioner: Callable | IdentityPartitionerPlaceholder | None = (
+        IdentityPartitionerPlaceholder()
+    ),
     option: RefinementOption = RefinementOption.parent_cell,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.

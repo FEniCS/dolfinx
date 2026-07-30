@@ -245,7 +245,7 @@ formtype = form_cpp_class(dtype)  # type: ignore
 cells = np.arange(msh.topology.index_map(msh.topology.dim).size_local)
 integrals = {IntegralType.cell: [(0, tabulate_A.address, cells, np.array([], dtype=np.int8))]}
 a_cond = Form(
-    formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, [], mesh=msh._cpp_object)
+    formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, [], mesh=msh._cpp_object)  # type: ignore
 )
 
 # Next, we pass the compiled kernel to the standard {py:func}`

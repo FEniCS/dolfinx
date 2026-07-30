@@ -238,11 +238,11 @@ def dirichletbc(
 
     if V is not None:
         try:
-            bc = bctype(_value, dofs, V)  # type: ignore[arg-type]
+            bc = bctype(_value, dofs, V)  # type: ignore
         except TypeError:
             bc = bctype(_value, dofs, V._cpp_object)  # type: ignore[arg-type]
     else:
-        bc = bctype(_value, dofs)  # type: ignore[arg-type]
+        bc = bctype(_value, dofs)  # type: ignore
 
     return DirichletBC(bc)
 
