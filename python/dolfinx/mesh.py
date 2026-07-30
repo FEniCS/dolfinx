@@ -111,7 +111,9 @@ def create_cell_partitioner(
 
 
 @create_cell_partitioner.register(GhostMode)
-def _(mode: GhostMode, max_facet_to_cell_links: int) -> Callable:
+def _create_cell_partitioner_from_ghost_mode(
+    mode: GhostMode, max_facet_to_cell_links: int
+) -> Callable:
     """Create a function to partition a mesh.
 
     Args:
@@ -828,7 +830,7 @@ def create_mesh(
         A mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = create_cell_partitioner(GhostMode.none, 2)  # type: ignore
+        partitioner = _create_cell_partitioner_from_ghost_mode(GhostMode.none, 2)
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:
