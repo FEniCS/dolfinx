@@ -198,7 +198,10 @@ def comm_graph_data(
         `dict` holds edge data. The second list hold node data, where a
         node is a `(nodeID, dict)` tuple, where `dict` holds node data.
     """
-    return _cpp.graph.comm_graph_data(graph._cpp_object)  # type: ignore[arg-type]
+    cpp_graph = graph._cpp_object
+    if not isinstance(cpp_graph, _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32):
+        raise TypeError("comm_graph_data requires a graph created by comm_graph().")
+    return _cpp.graph.comm_graph_data(cpp_graph)
 
 
 def comm_to_json(graph: AdjacencyList) -> str:
@@ -216,4 +219,7 @@ def comm_to_json(graph: AdjacencyList) -> str:
     Returns:
         A JSON string representing the communication graph.
     """
-    return _cpp.graph.comm_to_json(graph._cpp_object)  # type: ignore[arg-type]
+    cpp_graph = graph._cpp_object
+    if not isinstance(cpp_graph, _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32):
+        raise TypeError("comm_to_json requires a graph created by comm_graph().")
+    return _cpp.graph.comm_to_json(cpp_graph)
