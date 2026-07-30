@@ -7,7 +7,7 @@
 """Tools to extract data from Gmsh models."""
 
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -288,7 +288,9 @@ def model_to_mesh(
     comm: _MPI.Comm,
     rank: int,
     gdim: int = 3,
-    partitioner: Callable[[_MPI.Comm, int, int, _AdjacencyList_int32], _AdjacencyList_int32]
+    partitioner: Callable[
+        [_MPI.Comm, int, Sequence[CellType], Sequence[npt.NDArray[np.int64]]], _AdjacencyList_int32
+    ]
     | None = None,
     dtype=default_real_type,
     max_facet_to_cell_links: int = 2,
@@ -441,7 +443,7 @@ def model_to_mesh(
             cell_connectivities,
             cmaps,  # type: ignore[arg-type]
             x[:, :gdim].astype(dtype).copy(),
-            partitioner,  # type: ignore[arg-type]
+            partitioner,
             max_facet_to_cell_links,
             1,
         )
@@ -509,7 +511,9 @@ def read_from_msh(
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
-    partitioner: Callable[[_MPI.Comm, int, int, _AdjacencyList_int32], _AdjacencyList_int32]
+    partitioner: Callable[
+        [_MPI.Comm, int, Sequence[CellType], Sequence[npt.NDArray[np.int64]]], _AdjacencyList_int32
+    ]
     | None = None,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a mesh and cell facet markers.
