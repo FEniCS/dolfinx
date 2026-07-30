@@ -348,7 +348,7 @@ class XDMFFile:
         ):
             s_el = basix.ufl.element(
                 basix.ElementFamily.serendipity,
-                cell_shape.name,  # type: ignore[arg-type]
+                cell_shape.name,
                 2,
             )
             # Create a custom element that is serendipity but uses points
@@ -387,7 +387,7 @@ class XDMFFile:
         else:
             basix_el = basix.ufl.element(
                 "Lagrange",
-                cell_shape.name,  # type: ignore[arg-type]
+                cell_shape.name,
                 cell_degree,
                 basix.LagrangeVariant.unset,
                 shape=(x.shape[1],),

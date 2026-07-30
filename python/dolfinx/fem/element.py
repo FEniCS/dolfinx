@@ -359,12 +359,12 @@ def finiteelement(
             finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object  # type: ignore
             for e in ufl_e.sub_elements
         ]
-        return FiniteElement(CppElement(elements))  # type: ignore[arg-type]
+        return FiniteElement(CppElement(elements))
     elif ufl_e.is_quadrature:
         return FiniteElement(
             CppElement(
                 cell_type,
-                ufl_e.custom_quadrature()[0],  # type: ignore[arg-type]
+                ufl_e.custom_quadrature()[0],
                 ufl_e.reference_value_shape,
                 ufl_e.is_symmetric,
             )
