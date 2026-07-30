@@ -767,7 +767,7 @@ def test_mesh_create_cmap(dtype):
 
 avail_partitioners = []
 if dolfinx.has_ptscotch:
-    avail_partitioners.append(dolfinx.cpp.graph.partitioner_scotch)
+    avail_partitioners.append(dolfinx.cpp.graph.partitioner_scotch)  # type: ignore[attr-defined]
 if dolfinx.has_kahip:
     avail_partitioners.append(dolfinx.cpp.graph.partitioner_kahip)  # type: ignore[attr-defined]
 if dolfinx.has_parmetis:
