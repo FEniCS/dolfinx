@@ -138,17 +138,17 @@ def bb_tree(
     if map is None:
         raise RuntimeError(f"Mesh entities of dimension {dim} have not been created.")
 
-    dtype = mesh.geometry.x.dtype
-    if np.issubdtype(dtype, np.float32):
+    cpp_mesh = mesh._cpp_object
+    if isinstance(cpp_mesh, _cpp.mesh.Mesh_float32):
         return BoundingBoxTree(
-            _cpp.geometry.BoundingBoxTree_float32(mesh._cpp_object, dim, padding, entities)  # type: ignore[arg-type]
+            _cpp.geometry.BoundingBoxTree_float32(cpp_mesh, dim, padding, entities)
         )
-    elif np.issubdtype(dtype, np.float64):
+    elif isinstance(cpp_mesh, _cpp.mesh.Mesh_float64):
         return BoundingBoxTree(
-            _cpp.geometry.BoundingBoxTree_float64(mesh._cpp_object, dim, padding, entities)  # type: ignore[arg-type]
+            _cpp.geometry.BoundingBoxTree_float64(cpp_mesh, dim, padding, entities)
         )
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise NotImplementedError(f"Type {mesh.geometry.x.dtype} not supported.")
 
 
 def compute_collisions_trees(
