@@ -263,11 +263,11 @@ def assemble_vector(
     """
     b = create_vector(_extract_function_spaces(L), kind=kind)  # type: ignore
     dolfinx.la.petsc._zero_vector(b)
-    return assemble_vector(b, L, constants, coeffs)  # type: ignore[arg-type]
+    return _assemble_vector_petsc(b, L, constants, coeffs)
 
 
 @assemble_vector.register
-def _(  # type: ignore
+def _assemble_vector_petsc(
     b: PETSc.Vec,  # type: ignore[name-defined]
     L: Form | Sequence[Form],
     constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
@@ -350,10 +350,10 @@ def assemble_matrix(
     a: Form | Sequence[Sequence[Form]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1,
-    constants: Sequence[npt.NDArray] | Sequence[Sequence[npt.NDArray]] | None = None,
+    constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: (
         dict[tuple[IntegralType, int], npt.NDArray]
-        | Sequence[dict[tuple[IntegralType, int], npt.NDArray]]
+        | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
     kind=None,
@@ -409,12 +409,12 @@ def assemble_matrix(
         Matrix representing the bilinear form.
     """  # noqa: D301
     A = create_matrix(a, kind)
-    assemble_matrix(A, a, bcs, diag, constants, coeffs)  # type: ignore[arg-type]
+    _assemble_matrix_petsc(A, a, bcs, diag, constants, coeffs)
     return A
 
 
 @assemble_matrix.register
-def _(  # type: ignore
+def _assemble_matrix_petsc(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form]],
     bcs: Sequence[DirichletBC] | None = None,
@@ -438,6 +438,10 @@ def _(  # type: ignore
     if A.getType() == PETSc.Mat.Type.NEST:  # type: ignore[attr-defined]
         if not isinstance(a, Sequence):
             raise ValueError("Must provide a sequence of forms when assembling a nest matrix")
+        if isinstance(coeffs, dict):
+            raise ValueError(
+                "Must provide a sequence of sequences of coefficients when assembling a nest matrix"
+            )
         constants = [pack_constants(forms) for forms in a] if constants is None else constants  # type: ignore[misc]
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
         for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs, strict=True)):
@@ -446,7 +450,7 @@ def _(  # type: ignore
             ):
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
-                    assemble_matrix(Asub, a_block, bcs, diag, const, coeff)  # type: ignore[arg-type]
+                    _assemble_matrix_petsc(Asub, a_block, bcs, diag, const, coeff)
                 elif i == j:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
@@ -930,7 +934,7 @@ class LinearProblem:
 
         # Assemble rhs
         dolfinx.la.petsc._zero_vector(self.b)
-        assemble_vector(self.b, self.L)  # type: ignore[arg-type]
+        _assemble_vector_petsc(self.b, self.L)
 
         # Apply boundary conditions to the rhs
         if self.bcs is not None:
@@ -1075,7 +1079,7 @@ def assemble_residual(
 
     # Assemble the residual
     dolfinx.la.petsc._zero_vector(b)
-    assemble_vector(b, residual)  # type: ignore[arg-type]
+    _assemble_vector_petsc(b, residual)
 
     # Lift vector
     if isinstance(jacobian, Sequence):
@@ -1557,7 +1561,7 @@ class NewtonSolverNonlinearProblem:
             A: Matrix to assembler into.
         """
         A.zeroEntries()
-        assemble_matrix(A, self._a, self.bcs)  # type: ignore[arg-type]
+        _assemble_matrix_petsc(A, self._a, self.bcs)
         A.assemble()
 
 
