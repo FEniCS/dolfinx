@@ -61,7 +61,7 @@ namespace dolfinx::fem::impl
 /// @param[in] perms Entity permutation information for use in `fn`.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
-    std::span<T> values, fem::FEkernel<T, U> auto fn,
+    std::span<T> values, const fem::FEkernel<T, U> auto& fn,
     std::array<std::size_t, 2> Xshape, std::size_t value_size,
     std::size_t num_argument_dofs,
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> x_dofmap,
@@ -69,7 +69,7 @@ void tabulate_expression(
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, fem::MDSpan2 auto entities,
     std::span<const std::uint32_t> cell_info,
-    fem::DofTransformKernel<T> auto P0,
+    const fem::DofTransformKernel<T> auto& P0,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms)
 {
   static_assert(entities.rank() == 1 or entities.rank() == 2);
@@ -153,7 +153,7 @@ void tabulate_expression(
 /// expression values at the evaluation points.
 template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(
-    std::span<T> values, fem::FEkernel<T, U> auto fn,
+    std::span<T> values, const fem::FEkernel<T, U> auto& fn,
     std::array<std::size_t, 2> Xshape, std::size_t value_size,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const T> constants, const mesh::Mesh<U>& mesh,
