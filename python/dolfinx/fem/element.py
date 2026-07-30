@@ -155,7 +155,7 @@ def coordinate_element(
 
 
 @coordinate_element.register(basix.finite_element.FiniteElement)
-def _(e: basix.finite_element.FiniteElement) -> CoordinateElement:
+def _coordinate_element_from_basix(e: basix.finite_element.FiniteElement) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from a Basix finite element.
 
     Coordinate elements are typically used when creating meshes.

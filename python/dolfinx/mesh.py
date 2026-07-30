@@ -42,7 +42,7 @@ from dolfinx.cpp.refinement import (
     uniform_refine as _uniform_refine,
 )
 from dolfinx.fem import CoordinateElement as _CoordinateElement
-from dolfinx.fem import coordinate_element as _coordinate_element
+from dolfinx.fem.element import _coordinate_element_from_basix
 from dolfinx.graph import AdjacencyList
 from dolfinx.typing import Real
 
@@ -383,7 +383,7 @@ class Mesh(typing.Generic[Real]):
         self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
-            self._ufl_domain._ufl_cargo = self._cpp_object  # type: ignore
+            self._ufl_domain._ufl_cargo = self._cpp_object
 
     @property
     def comm(self):
@@ -422,7 +422,7 @@ class Mesh(typing.Generic[Real]):
         """Return the Basix cell type."""
         return getattr(basix.CellType, self.topology.cell_name())
 
-    def h(self, dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[np.float64]:
+    def h(self, dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[Real]:
         """Geometric size measure of cell entities.
 
         Args:
@@ -742,9 +742,11 @@ def uniform_refine(
         The refined mesh.
     """
     _cpp_mesh = _uniform_refine(msh._cpp_object, partitioner)
+    if msh._ufl_domain is None:
+        raise ValueError("Cannot refine a mesh without a UFL domain.")
     # Create new ufl domain as it will carry a reference to the C++ mesh
     # in the ufl_cargo
-    ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())  # type: ignore
+    ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())
     return Mesh(_cpp_mesh, ufl_domain)
 
 
@@ -755,7 +757,7 @@ def refine(
         IdentityPartitionerPlaceholder()
     ),
     option: RefinementOption = RefinementOption.parent_cell,
-) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
+) -> tuple[Mesh, npt.NDArray[np.int32] | None, npt.NDArray[np.int8] | None]:
     """Refine a mesh.
 
     Note:
@@ -784,10 +786,12 @@ def refine(
     mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
         msh._cpp_object, edges, partitioner, option
     )
+    if msh._ufl_domain is None:
+        raise ValueError("Cannot refine a mesh without a UFL domain.")
     # Create new ufl domain as it will carry a reference to the C++ mesh
     # in the ufl_cargo
-    ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())  # type: ignore
-    return Mesh(mesh1, ufl_domain), parent_cell, parent_facet  # type: ignore[return-value]
+    ufl_domain = ufl.Mesh(msh._ufl_domain.ufl_coordinate_element())
+    return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
 
 
 def create_mesh(
@@ -835,8 +839,8 @@ def create_mesh(
     dtype = None
     if isinstance(e, ufl.domain.Mesh):
         # e is a UFL domain
-        e_ufl = e.ufl_coordinate_element()  # type: ignore
-        cmap = _coordinate_element(e_ufl.basix_element)  # type: ignore
+        e_ufl = e.ufl_coordinate_element()
+        cmap = _coordinate_element_from_basix(e_ufl.basix_element)
         domain = e
         dtype = cmap.dtype
         # TODO: Resolve UFL vs Basix geometric dimension issue
@@ -844,15 +848,15 @@ def create_mesh(
     elif isinstance(e, basix.finite_element.FiniteElement):
         # e is a Basix element
         # TODO: Resolve geometric dimension vs shape for manifolds
-        cmap = _coordinate_element(e)  # type: ignore
-        e_ufl = basix.ufl._BasixElement(e)  # type: ignore
+        cmap = _coordinate_element_from_basix(e)
+        e_ufl = basix.ufl._BasixElement(e)
         e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
         domain = ufl.Mesh(e_ufl)
         dtype = cmap.dtype
         assert domain.geometric_dimension == gdim
     elif isinstance(e, ufl.finiteelement.AbstractFiniteElement):
         # e is a Basix 'UFL' element
-        cmap = _coordinate_element(e.basix_element)  # type: ignore
+        cmap = _coordinate_element_from_basix(e.basix_element)
         domain = ufl.Mesh(e)
         dtype = cmap.dtype
         assert domain.geometric_dimension == gdim
@@ -860,7 +864,7 @@ def create_mesh(
         # e is a CoordinateElement
         cmap = e
         domain = None
-        dtype = cmap.dtype  # type: ignore
+        dtype = cmap.dtype
     else:
         raise ValueError(f"Unsupported element type {type(e)}.")
 
@@ -876,7 +880,7 @@ def create_mesh(
         num_threads,
     )
 
-    return Mesh(msh, domain)  # type: ignore
+    return Mesh(msh, domain)
 
 
 def create_submesh(
@@ -961,7 +965,7 @@ def meshtags(
         raise NotImplementedError(f"Type {values.dtype} not supported.")
 
     return MeshTags(
-        ftype(msh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values)  # type: ignore[arg-type]
+        ftype(msh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values)
     )
 
 
@@ -1036,7 +1040,7 @@ def create_interval(
             shape=(gdim,),
             dtype=dtype,
         )
-    )  # type: ignore
+    )
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner, gdim)  # type: ignore[arg-type]
@@ -1121,7 +1125,7 @@ def create_rectangle(
             shape=(gdim,),
             dtype=dtype,
         )
-    )  # type: ignore
+    )
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_rectangle_float32(
@@ -1231,7 +1235,7 @@ def create_box(
             shape=(3,),
             dtype=dtype,
         )
-    )  # type: ignore
+    )
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)  # type: ignore[arg-type]
@@ -1436,7 +1440,7 @@ def create_point_mesh(comm: _MPI.Intracomm, points: npt.NDArray[np.float32 | np.
     )
 
     e = basix.ufl.element("Lagrange", "point", 0, shape=(points.shape[1],), dtype=points.dtype)
-    c_el = _coordinate_element(e.basix_element)  # type: ignore[call-arg]
+    c_el = _coordinate_element_from_basix(e.basix_element)
     geometry = create_geometry(imap, cells, c_el, points, igi)
 
     cpp_mesh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
