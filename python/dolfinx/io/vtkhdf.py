@@ -50,9 +50,11 @@ def read_mesh(
             linked to a facet.
     """
     if dtype == np.float64:
-        mesh_cpp = read_vtkhdf_mesh_float64(comm, filename, gdim, max_facet_to_cell_links)  # type: ignore[arg-type]
+        mesh_cpp = read_vtkhdf_mesh_float64(comm, str(filename), gdim, max_facet_to_cell_links)
     elif dtype == np.float32:
-        mesh_cpp = read_vtkhdf_mesh_float32(comm, filename, gdim, max_facet_to_cell_links)  # type: ignore[arg-type,assignment]
+        mesh_cpp = read_vtkhdf_mesh_float32(  # type: ignore[assignment]
+            comm, str(filename), gdim, max_facet_to_cell_links
+        )
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:
@@ -64,9 +66,9 @@ def read_mesh(
         domain = ufl.Mesh(
             basix.ufl.element(
                 "Lagrange",
-                cell_types[0].name,  # type: ignore[arg-type]
+                cell_types[0].name,
                 cell_degree,
-                variant,  # type: ignore[arg-type]
+                basix.LagrangeVariant(variant),
                 shape=(mesh_cpp.geometry.dim,),
             )
         )
