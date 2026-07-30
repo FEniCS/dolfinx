@@ -310,13 +310,17 @@ def _assemble_vector_petsc(
     if b.getType() == PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
         if not isinstance(L, Sequence):
             raise ValueError("Must provide a sequence of forms when assembling a nest vector")
+        if isinstance(coeffs, dict):
+            raise ValueError(
+                "Must provide a sequence of coefficients when assembling a nest vector"
+            )
         constants = [None] * len(L) if constants is None else constants  # type: ignore[list-item]
         coeffs = [None] * len(L) if coeffs is None else coeffs  # type: ignore[list-item]
         for b_sub, L_sub, const, coeff in zip(
             b.getNestSubVecs(), L, constants, coeffs, strict=True
         ):
             with b_sub.localForm() as b_local:
-                _assemble_vector_array(b_local.array_w, L_sub, const, coeff)  # type: ignore[arg-type]
+                _assemble_vector_array(b_local.array_w, L_sub, const, coeff)
     elif isinstance(L, Sequence):
         constants = pack_constants(L) if constants is None else constants
         coeffs = pack_coefficients(L) if coeffs is None else coeffs
@@ -333,13 +337,17 @@ def _assemble_vector_petsc(
                 strict=True,
             ):
                 bx_ = np.zeros((off1 - off0) + (offg1 - offg0), dtype=PETSc.ScalarType)  # type: ignore[attr-defined]
-                _assemble_vector_array(bx_, L_, const, coeff)  # type: ignore[arg-type]
+                _assemble_vector_array(bx_, L_, const, coeff)
                 size = off1 - off0
                 b_l.array_w[off0:off1] += bx_[:size]
                 b_l.array_w[offg0:offg1] += bx_[size:]
     else:
+        if isinstance(constants, Sequence) or isinstance(coeffs, Sequence):
+            raise ValueError(
+                "Must not provide a sequence of constants/coefficients for a single form"
+            )
         with b.localForm() as b_local:
-            _assemble_vector_array(b_local.array_w, L, constants, coeffs)  # type: ignore[arg-type]
+            _assemble_vector_array(b_local.array_w, L, constants, coeffs)
 
     return b
 
