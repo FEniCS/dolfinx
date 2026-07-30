@@ -9,6 +9,7 @@
 #include <basix/mdspan.hpp>
 #include <complex>
 #include <concepts>
+#include <cstddef>
 #include <type_traits>
 
 namespace dolfinx
@@ -49,5 +50,18 @@ using scalar_value_t = typename scalar_value<T>::type;
 
 /// @private mdspan/mdarray namespace
 namespace md = MDSPAN_IMPL_STANDARD_NAMESPACE;
+
+/// @brief Concept for a rank-2 mdspan-like type: exposes a
+/// `value_type`, has static `rank() == 2`, and supports two-index access
+/// and per-dimension `extent` queries. cv- and reference-qualifiers on
+/// `T` are stripped, so it can also constrain forwarding-reference
+/// parameters.
+template <typename T>
+concept MDSpanRank2 = requires(std::remove_cvref_t<T> x, std::size_t i) {
+  typename std::remove_cvref_t<T>::value_type;
+  requires std::remove_cvref_t<T>::rank() == 2;
+  x(i, i);
+  { x.extent(i) } -> std::integral;
+};
 
 } // namespace dolfinx
