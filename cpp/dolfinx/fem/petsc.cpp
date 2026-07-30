@@ -7,9 +7,13 @@
 #ifdef HAS_PETSC
 
 #include "petsc.h"
+#include <cassert>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <functional>
+#include <memory>
 #include <petscistypes.h>
+#include <vector>
 
 #define CHECK_ERROR(NAME)                                                      \
   do                                                                           \
@@ -79,7 +83,10 @@ Vec fem::petsc::create_vector_nest(
     petsc_vecs.push_back(vecs.back()->vec());
   }
 
-  // Create nested (VecNest) vector
+  // Create nested (VecNest) vector. Note: VecCreateNest increases the
+  // reference count on each of petsc_vecs, so the Vec wrappers in
+  // vecs (and the Vec objects they own) can be safely destroyed once
+  // this function returns.
   Vec y;
   PetscErrorCode ierr = VecCreateNest(vecs.front()->comm(), petsc_vecs.size(),
                                       nullptr, petsc_vecs.data(), &y);
