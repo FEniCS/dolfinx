@@ -1341,17 +1341,22 @@ def create_geometry(
         input_global_indices: The 'global' input index of each point,
             commonly from a mesh input file.
     """
-    ftype: type[_cpp.mesh.Geometry_float64] | type[_cpp.mesh.Geometry_float32]
-    if x.dtype == np.float64:
-        ftype = _cpp.mesh.Geometry_float64
-    elif x.dtype == np.float32:
-        ftype = _cpp.mesh.Geometry_float32
-    else:
-        raise ValueError("Unknown floating type for geometry, got: {x.dtype}")
-
+    if x.dtype not in (np.float32, np.float64):
+        raise ValueError(f"Unknown floating type for geometry, got: {x.dtype}")
     if (dtype := np.dtype(element.dtype)) != x.dtype:
         raise ValueError(f"Mismatch in x dtype ({x.dtype}) and coordinate element ({dtype})")
-    return Geometry(ftype(index_map, dofmap, element._cpp_object, x, input_global_indices))  # type: ignore[arg-type]
+
+    cpp_element = element._cpp_object
+    if isinstance(cpp_element, _cpp.fem.CoordinateElement_float64):
+        return Geometry(
+            _cpp.mesh.Geometry_float64(index_map, dofmap, cpp_element, x, input_global_indices)
+        )
+    elif isinstance(cpp_element, _cpp.fem.CoordinateElement_float32):
+        return Geometry(
+            _cpp.mesh.Geometry_float32(index_map, dofmap, cpp_element, x, input_global_indices)
+        )
+    else:
+        raise ValueError(f"Unknown floating type for coordinate element, got: {dtype}")
 
 
 def transfer_meshtags_to_submesh(
