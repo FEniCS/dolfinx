@@ -302,20 +302,20 @@ public:
                  num_bboxes(), points.size());
   }
 
+  // Copy constructor (deleted)
+  BoundingBoxTree(const BoundingBoxTree& tree) = delete;
+
   /// Move constructor
   BoundingBoxTree(BoundingBoxTree&& tree) = default;
 
-  /// Copy constructor
-  BoundingBoxTree(const BoundingBoxTree& tree) = delete;
+  /// Destructor
+  ~BoundingBoxTree() = default;
+
+  // Copy assignment (deleted)
+  BoundingBoxTree& operator=(const BoundingBoxTree& other) = delete;
 
   /// Move assignment
   BoundingBoxTree& operator=(BoundingBoxTree&& other) = default;
-
-  /// Copy assignment
-  BoundingBoxTree& operator=(const BoundingBoxTree& other) = default;
-
-  /// Destructor
-  ~BoundingBoxTree() = default;
 
   /// @brief Return bounding box coordinates for a given node in the
   /// tree,
