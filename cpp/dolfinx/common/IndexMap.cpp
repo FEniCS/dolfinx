@@ -227,7 +227,7 @@ compute_submap_indices(const IndexMap& imap,
         std::int32_t idx_local
             = static_cast<std::int32_t>(idx - local_range[0]);
         assert(idx_local >= 0);
-        assert(idx_local < local_range[1]);
+        assert(idx_local < local_range[1] - local_range[0]);
 
         // Check if index is included in the submap on this process. If
         // so, this process remains its owner in the submap. Otherwise,
@@ -912,7 +912,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
   const std::int64_t local_size_tmp = local_size;
   MPI_Request request_scan;
   int ierr = MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM,
-                         comm, &request_scan);
+                         _comm.comm(), &request_scan);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   // Send local size to sum reduction to get global size
