@@ -14,6 +14,7 @@ import numpy.typing as npt
 
 import basix
 import ufl
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import (
     read_vtkhdf_mesh_float32,
     read_vtkhdf_mesh_float64,
@@ -49,12 +50,11 @@ def read_mesh(
         max_facet_to_cell_links: Maximum number of cells that can be
             linked to a facet.
     """
+    mesh_cpp: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if dtype == np.float64:
         mesh_cpp = read_vtkhdf_mesh_float64(comm, str(filename), gdim, max_facet_to_cell_links)
     elif dtype == np.float32:
-        mesh_cpp = read_vtkhdf_mesh_float32(  # type: ignore[assignment]
-            comm, str(filename), gdim, max_facet_to_cell_links
-        )
+        mesh_cpp = read_vtkhdf_mesh_float32(comm, str(filename), gdim, max_facet_to_cell_links)
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:
