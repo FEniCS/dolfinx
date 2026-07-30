@@ -531,7 +531,7 @@ def extract_function_spaces(forms, index: int = 0):
         for form in _forms:
             if form is not None and form.rank != 1:
                 raise ValueError("Expected a linear form.")
-        return [form.function_spaces[0] if form is not None else None for form in forms]  # type: ignore[union-attr]
+        return [form.function_spaces[0] if form is not None else None for form in forms]
     elif _forms.ndim == 2:
         if index not in (0, 1):
             raise ValueError("index must be 0 or 1 for a 2D array of forms.")
@@ -595,7 +595,7 @@ def compile_form(
     p_ffcx = ffcx.get_options(form_compiler_options)
     p_jit = jit.get_options(jit_options)
     ufcx_form, module, code = jit.ffcx_jit(comm, form, p_ffcx, p_jit)
-    scalar_type: npt.DTypeLike = p_ffcx["scalar_type"]  # type: ignore [assignment]
+    scalar_type: npt.DTypeLike = typing.cast(npt.DTypeLike, p_ffcx["scalar_type"])
     return CompiledForm(form, ufcx_form, module, code, scalar_type)
 
 
@@ -819,9 +819,13 @@ def derivative_block(
     """  # noqa: D301
     if isinstance(F, ufl.Form) and not F.arguments():
         if isinstance(u, Function):
-            return _derive_univariate_residual(F, u, du)  # type: ignore
+            if du is not None and not isinstance(du, ufl.Argument):
+                raise ValueError("du must be a ufl.Argument when u is a ufl.Function.")
+            return _derive_univariate_residual(F, u, du)
         elif isinstance(u, Sequence):
-            return _derive_block_residual(F, u, du)  # type: ignore
+            if du is not None and not isinstance(du, Sequence):
+                raise ValueError("du must be a sequence of ufl.Argument when u is a sequence.")
+            return _derive_block_residual(F, u, du)
         else:
             raise ValueError("u must be either a ufl.Function or a sequence of ufl.Function")
     elif isinstance(F, ufl.Form) and len(F.arguments()) == 1:
@@ -831,7 +835,11 @@ def derivative_block(
             raise ValueError("du must be a ufl.Argument when F is a rank-one form.")
         return _derive_univariate_jacobian(F, u, du)
     elif isinstance(F, Sequence):
-        return _derive_block_jacobian(F, u, du)  # type: ignore
+        if not isinstance(u, Sequence):
+            raise ValueError("u must be a sequence of ufl.Function when F is a sequence.")
+        if du is not None and not isinstance(du, Sequence):
+            raise ValueError("du must be a sequence of ufl.Argument when F is a sequence.")
+        return _derive_block_jacobian(F, u, du)
     else:
         raise ValueError(
             "F must be either a UFL form (with rank zero or one), or a sequence of "
