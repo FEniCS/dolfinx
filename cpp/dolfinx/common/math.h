@@ -90,10 +90,10 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
 /// @param[in] A The matrix to compute the determinant of
 /// @return The determinant of @p A
 // TODO: mark constexpr with C++23 (relies on std::fma, constexpr from C++23).
-template <typename Matrix>
-  requires MDSpanRank2<Matrix>
-           && std::floating_point<typename Matrix::value_type>
-auto det(Matrix A)
+template <typename U>
+  requires MDSpanRank2<U>
+           && std::floating_point<typename U::value_type>
+auto det(U A)
 {
   assert(A.extent(0) == A.extent(1));
 
