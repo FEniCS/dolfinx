@@ -224,8 +224,7 @@ compute_submap_indices(const IndexMap& imap,
         // Compute the local index
         std::int64_t idx = recv_indices[j];
         assert(idx >= 0);
-        std::int32_t idx_local
-            = static_cast<std::int32_t>(idx - local_range[0]);
+        std::int32_t idx_local = idx - local_range[0];
         assert(idx_local >= 0);
         assert(idx_local < local_range[1] - local_range[0]);
 
@@ -302,8 +301,8 @@ compute_submap_indices(const IndexMap& imap,
             = std::ranges::unique(dest_begin, new_owner_dest_ranks.end());
         new_owner_dest_ranks.erase(unique_end, range_end);
 
-        std::int32_t num_unique_dest_ranks
-            = static_cast<std::int32_t>(std::distance(dest_begin, unique_end));
+        std::size_t num_unique_dest_ranks
+            = std::distance(dest_begin, unique_end);
         new_owner_dest_ranks_sizes[i] = num_unique_dest_ranks;
         new_owner_dest_ranks_offsets[i + 1]
             = new_owner_dest_ranks_offsets[i] + num_unique_dest_ranks;
@@ -555,8 +554,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   // owning rank by construction, rather than relying on the global-index
   // and owner arrays sorting into a mutually consistent order.
   std::size_t first_ghost_index = std::distance(indices.begin(), it_owned_end);
-  std::int32_t num_ghost_indices
-      = static_cast<std::int32_t>(indices.size() - first_ghost_index);
+  std::int32_t num_ghost_indices = indices.size() - first_ghost_index;
   std::vector<std::pair<int, std::int64_t>> owner_to_global(num_ghost_indices);
   for (std::int32_t i = 0; i < num_ghost_indices; ++i)
   {
@@ -957,8 +955,7 @@ void IndexMap::local_to_global(std::span<const std::int32_t> local,
                                std::span<std::int64_t> global) const
 {
   assert(local.size() <= global.size());
-  const std::int32_t local_size
-      = static_cast<std::int32_t>(_local_range[1] - _local_range[0]);
+  const std::int32_t local_size = _local_range[1] - _local_range[0];
   std::ranges::transform(
       local, global.begin(),
       [local_size, local_range = _local_range[0], &ghosts = _ghosts](auto local)
@@ -976,8 +973,7 @@ void IndexMap::local_to_global(std::span<const std::int32_t> local,
 void IndexMap::global_to_local(std::span<const std::int64_t> global,
                                std::span<std::int32_t> local) const
 {
-  const std::int32_t local_size
-      = static_cast<std::int32_t>(_local_range[1] - _local_range[0]);
+  const std::int32_t local_size = _local_range[1] - _local_range[0];
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local(
       _ghosts.size());
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
@@ -1008,9 +1004,8 @@ void IndexMap::global_to_local(std::span<const std::int64_t> global,
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> IndexMap::global_indices() const
 {
-  const std::int32_t local_size
-      = static_cast<std::int32_t>(_local_range[1] - _local_range[0]);
-  const std::int32_t num_ghosts = static_cast<std::int32_t>(_ghosts.size());
+  const std::int32_t local_size = _local_range[1] - _local_range[0];
+  const std::int32_t num_ghosts = _ghosts.size();
   const std::int64_t global_offset = _local_range[0];
   std::vector<std::int64_t> global(local_size + num_ghosts);
   std::iota(global.begin(), std::next(global.begin(), local_size),
