@@ -822,7 +822,7 @@ class LinearProblem:
         )
         self._A = create_matrix(self._a, kind=kind)
         self._preconditioner = _create_form(
-            P,  # type: ignore[arg-type]
+            P,
             dtype=PETSc.ScalarType,  # type: ignore[attr-defined]
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,

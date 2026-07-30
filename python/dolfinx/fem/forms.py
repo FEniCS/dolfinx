@@ -331,7 +331,7 @@ def mixed_topology_form(
 
 
 def form(
-    form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]],
+    form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]] | None,
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
@@ -341,7 +341,8 @@ def form(
     """Create a Form or list of Forms.
 
     Args:
-        form: A UFL form or iterable of UFL forms.
+        form: A UFL form or iterable of UFL forms. ``None`` is passed
+            through unchanged.
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
