@@ -91,7 +91,8 @@ auto det(const T* A, std::array<std::size_t, 2> shape)
 /// @return The determinant of @p A
 // TODO: mark constexpr with C++23 (relies on std::fma, constexpr from C++23).
 template <typename Matrix>
-  requires mdspan2<Matrix> && std::floating_point<typename Matrix::value_type>
+  requires MDSpanRank2<Matrix>
+           && std::floating_point<typename Matrix::value_type>
 auto det(Matrix A)
 {
   assert(A.extent(0) == A.extent(1));
@@ -130,7 +131,7 @@ auto det(Matrix A)
 /// @warning This function does not check if A is invertible
 // TODO: mark constexpr with C++23 (relies on std::fma, constexpr from C++23).
 template <typename U, typename V>
-  requires mdspan2<U> && mdspan2<V>
+  requires MDSpanRank2<U> && MDSpanRank2<V>
            && std::floating_point<typename U::value_type>
 void inv(U A, V B)
 {
@@ -185,7 +186,7 @@ void inv(U A, V B)
 /// @param[in] transpose Computes C += A * B if false, otherwise
 /// computes C += A^T * B^T
 template <typename U, typename V, typename P>
-  requires mdspan2<U> && mdspan2<V> && mdspan2<P>
+  requires MDSpanRank2<U> && MDSpanRank2<V> && MDSpanRank2<P>
            && scalar<typename U::value_type> && scalar<typename V::value_type>
            && scalar<typename P::value_type>
 constexpr void dot(U A, V B, P C, bool transpose = false)
@@ -217,7 +218,7 @@ constexpr void dot(U A, V B, P C, bool transpose = false)
 // TODO: mark constexpr with C++23 (relies on std::fma via inv, constexpr from
 // C++23).
 template <typename U, typename V>
-  requires mdspan2<U> && mdspan2<V>
+  requires MDSpanRank2<U> && MDSpanRank2<V>
            && std::floating_point<typename U::value_type>
 void pinv(U A, V P)
 {

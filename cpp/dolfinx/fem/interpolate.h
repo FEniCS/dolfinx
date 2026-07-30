@@ -300,7 +300,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 /// f1(x0), f0(x1), f1(x1), ...).
 /// @param[out] coeffs Degrees of freedom to compute.
 /// @param[in] bs The block size.
-template <dolfinx::mdspan2 U, dolfinx::mdspan2 V, dolfinx::scalar T>
+template <dolfinx::MDSpanRank2 U, dolfinx::MDSpanRank2 V, dolfinx::scalar T>
 void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 {
   // Geometry (real) scalar type, taken from the interpolation operator Pi
