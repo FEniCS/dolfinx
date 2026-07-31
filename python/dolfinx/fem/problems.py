@@ -21,12 +21,11 @@ from dolfinx.fem import (
     Form,
     Function,
     apply_lifting,
-    assemble_matrix,
     create_matrix,
     create_vector,
     form,
 )
-from dolfinx.fem.assemble import _assemble_vector_array
+from dolfinx.fem.assemble import _assemble_matrix_csr, _assemble_vector_array
 from dolfinx.la import InsertMode, MatrixCSR, Vector
 from dolfinx.la.superlu_dist import superlu_dist_matrix, superlu_dist_solver
 from dolfinx.mesh import EntityMap as EntityMap
@@ -143,7 +142,7 @@ class LinearProblem:
         """
         # Assemble lhs
         self.A.set_value(self.A.data.dtype.type(0.0))
-        assemble_matrix(self.A, self.a, bcs=self.bcs)  # type: ignore[arg-type, misc]
+        _assemble_matrix_csr(self.A, self.a, bcs=self.bcs)
         self.A.scatter_reverse()
 
         # SuperLU_DIST solves in-place, so a deep copy of A is required.
