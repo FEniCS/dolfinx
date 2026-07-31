@@ -143,10 +143,10 @@ jobs:
           ctest -V --output-on-failure -R "demo_.*_np_2"
         shell: spack-bash {0}
 
-      - name: Build Python interface (editable install)
+      - name: Build Python interface
         run: |
           spack env activate py
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Developer --config-settings=build-dir="build" -e 'dolfinx-src/python/'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Developer --config-settings=build-dir="build" 'dolfinx-src/python/'
         shell: spack-bash {0}
 
       - name: Set default DOLFINx JIT options
