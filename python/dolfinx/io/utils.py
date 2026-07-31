@@ -83,19 +83,19 @@ if _cpp.common.has_adios2:
             if np.issubdtype(dtype, np.float32):
                 _vtxwriter = _cpp.io.VTXWriter_float32  # type: ignore[attr-defined]
             elif np.issubdtype(dtype, np.float64):
-                _vtxwriter = _cpp.io.VTXWriter_float64  # type: ignore[attr-defined]
+                _vtxwriter = _cpp.io.VTXWriter_float64  # type: ignore[attr-defined, assignment]
             else:
                 raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
             if isinstance(output, Mesh):
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
+                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[arg-type]
             else:
                 cpp_objects = (
                     [output._cpp_object]
                     if isinstance(output, Function)
                     else [o._cpp_object for o in output]
                 )
-                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)
+                self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)  # type: ignore[arg-type]
 
         def __enter__(self):
             """Enter context manager."""
