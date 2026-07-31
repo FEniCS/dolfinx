@@ -169,7 +169,7 @@ V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # +
 # No-slip condition on boundaries where x = 0, x = 1, and y = 0
-noslip = np.zeros(gdim, dtype=PETSc.ScalarType)  # type: ignore
+noslip = np.zeros(gdim, dtype=PETSc.ScalarType)
 facets = locate_entities_boundary(msh, 1, noslip_boundary)
 bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
@@ -190,7 +190,7 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore
+f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore[operator]
 
 a_ufl = [
     [ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, ufl.inner(p, ufl.div(v)) * ufl.dx],
