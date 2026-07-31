@@ -197,14 +197,35 @@ set_target_properties(
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
+install(TARGETS cpp LIBRARY DESTINATION dolfinx)
+
 # and the nanobind typing stubs.
 if(ENABLE_NANOBIND_STUBGEN)
+  set(
+    NANOBIND_STUB_OUTPUTS
+    dolfinx/cpp/__init__.pyi
+    dolfinx/cpp/common.pyi
+    dolfinx/cpp/fem.pyi
+    dolfinx/cpp/fem/__init__.pyi
+    dolfinx/cpp/fem/petsc.pyi
+    dolfinx/cpp/geometry.pyi
+    dolfinx/cpp/graph.pyi
+    dolfinx/cpp/io.pyi
+    dolfinx/cpp/la.pyi
+    dolfinx/cpp/la/__init__.pyi
+    dolfinx/cpp/la/petsc.pyi
+    dolfinx/cpp/log.pyi
+    dolfinx/cpp/mesh.pyi
+    dolfinx/cpp/nls.pyi
+    dolfinx/cpp/nls/__init__.pyi
+    dolfinx/cpp/nls/petsc.pyi
+    dolfinx/cpp/refinement.pyi
+  )
+
   if(WIN32)
     # On Windows we cannot import dolfinx.cpp without installing the package
-    # alongside its external dlls.
-
-    # This *must* be called prior to nanobind_add_stub
-    install(TARGETS cpp LIBRARY DESTINATION dolfinx)
+    # alongside its external dlls. cpp is installed unconditionally above,
+    # which nanobind requires to have happened prior to nanobind_add_stub.
     # nanobind automatically installs into ${CMAKE_INSTALL_PREFIX} in
     # INSTALL_TIME mode.
     # DEPENDS is redundant in INSTALL_TIME mode - cpp must be installed.
@@ -216,24 +237,7 @@ if(ENABLE_NANOBIND_STUBGEN)
       VERBOSE
       PATTERN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx/wrappers/stub_patterns.txt
       MARKER_FILE dolfinx/cpp/py.typed
-      OUTPUT
-        dolfinx/cpp/__init__.pyi
-        dolfinx/cpp/common.pyi
-        dolfinx/cpp/fem.pyi
-        dolfinx/cpp/fem/__init__.pyi
-        dolfinx/cpp/fem/petsc.pyi
-        dolfinx/cpp/geometry.pyi
-        dolfinx/cpp/graph.pyi
-        dolfinx/cpp/io.pyi
-        dolfinx/cpp/la.pyi
-        dolfinx/cpp/la/__init__.pyi
-        dolfinx/cpp/la/petsc.pyi
-        dolfinx/cpp/log.pyi
-        dolfinx/cpp/mesh.pyi
-        dolfinx/cpp/nls.pyi
-        dolfinx/cpp/nls/__init__.pyi
-        dolfinx/cpp/nls/petsc.pyi
-        dolfinx/cpp/refinement.pyi
+      OUTPUT ${NANOBIND_STUB_OUTPUTS}
     )
   else()
     # On UNIX-like systems we can import the cpp compiled module before
@@ -267,27 +271,9 @@ if(ENABLE_NANOBIND_STUBGEN)
       VERBOSE
       PATTERN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx/wrappers/stub_patterns.txt
       MARKER_FILE dolfinx/cpp/py.typed
-      OUTPUT
-        dolfinx/cpp/__init__.pyi
-        dolfinx/cpp/common.pyi
-        dolfinx/cpp/fem.pyi
-        dolfinx/cpp/fem/__init__.pyi
-        dolfinx/cpp/fem/petsc.pyi
-        dolfinx/cpp/geometry.pyi
-        dolfinx/cpp/graph.pyi
-        dolfinx/cpp/io.pyi
-        dolfinx/cpp/la.pyi
-        dolfinx/cpp/la/__init__.pyi
-        dolfinx/cpp/la/petsc.pyi
-        dolfinx/cpp/log.pyi
-        dolfinx/cpp/mesh.pyi
-        dolfinx/cpp/nls.pyi
-        dolfinx/cpp/nls/__init__.pyi
-        dolfinx/cpp/nls/petsc.pyi
-        dolfinx/cpp/refinement.pyi
+      OUTPUT ${NANOBIND_STUB_OUTPUTS}
     )
 
-    install(TARGETS cpp LIBRARY DESTINATION dolfinx)
     install(
       DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/cpp
       DESTINATION dolfinx
