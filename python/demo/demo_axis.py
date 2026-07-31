@@ -53,7 +53,7 @@ except ModuleNotFoundError:
 
 # The time-harmonic Maxwell equation is complex-valued. PETSc must
 # therefore have been compiled with complex scalars.
-if not np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
+if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo can only be executed when PETSc using complex scalars.")
     exit(0)
 
@@ -651,11 +651,11 @@ for m in m_list:
         + k0**2 * ufl.inner(eps_pml * Es_m, v_m) * rho * dPml
     )
     a, L = ufl.lhs(F), ufl.rhs(F)
-    sys = PETSc.Sys()  # type: ignore
+    sys = PETSc.Sys()  # type: ignore[assignment]
     use_superlu = PETSc.IntType == np.int64
-    if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
+    if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore[attr-defined]
         mat_factor_backend = "mumps"
-    elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
+    elif sys.hasExternalPackage("superlu_dist"):  # type: ignore[attr-defined]
         mat_factor_backend = "superlu_dist"
     else:
         if mesh_data.mesh.comm.size > 1:
