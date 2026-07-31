@@ -65,7 +65,7 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):  # type: ignore[name-defined]
         for obj in filter(lambda obj: obj is not None, (self._A, self._b)):
             obj.destroy()
 
-    def solve(self, u: fem.Function):
+    def solve(self, u: fem.Function):  # type: ignore[override]
         """Solve non-linear problem into function ``u``.
 
         Returns the number of iterations and if the solver converged.
@@ -75,16 +75,16 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):  # type: ignore[name-defined]
         return n, converged
 
     @property
-    def A(self) -> PETSc.Mat:  # type: ignore
+    def A(self) -> PETSc.Mat:
         """Jacobian matrix."""
         return self._A
 
     @property
-    def b(self) -> PETSc.Vec:  # type: ignore
+    def b(self) -> PETSc.Vec:
         """Residual vector."""
         return self._b
 
-    def setP(self, P: types.FunctionType, Pmat: PETSc.Mat):  # type: ignore
+    def setP(self, P: types.FunctionType, Pmat: PETSc.Mat):  # type: ignore[override]
         """Set the function for computing the preconditioner matrix.
 
         Args:
