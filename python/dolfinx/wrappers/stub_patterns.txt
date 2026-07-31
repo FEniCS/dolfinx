@@ -21,6 +21,3 @@ dolfinx.cpp.fem.__prefix__:
 
 dolfinx.cpp.io.__prefix__:
     # mypy: disable-error-code="overload-overlap"
-
-dolfinx.cpp.la.__prefix__:
-    # mypy: disable-error-code="valid-type"
