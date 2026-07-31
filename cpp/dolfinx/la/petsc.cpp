@@ -171,8 +171,6 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
   for (auto& [map, bs] : maps)
     offset_owned += map.get().size_local() * bs;
 
-  PetscErrorCode ierr;
-
   // Unwrap PETSc vector
   PetscErrorCode ierr;
   Vec x_local;
