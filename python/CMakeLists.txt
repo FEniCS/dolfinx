@@ -233,27 +233,24 @@ if(WIN32)
   )
 else()
   # On UNIX-like systems we can import the cpp compiled module before
-  # installing and rely on dynamic linking at import time. Stage it
-  # under a throwaway "dolfinx" package directory so that the module
-  # imports under its real name (dolfinx.cpp): otherwise nanobind's
-  # stubgen resolves submodule cross-references (e.g. dolfinx.cpp.la)
-  # against the bare top-level name "cpp", producing "import cpp.la"
-  # in the generated stubs, which does not exist as an importable
-  # module and silently resolves to Any under mypy. stubgen infers its
-  # output location from the imported module's __file__, so staging
-  # under CMAKE_CURRENT_BINARY_DIR keeps that location matching the
-  # OUTPUT paths below (relative to CMAKE_CURRENT_BINARY_DIR). See
-  # nanobind's nanobind_add_stub docs for the import mechanism:
+  # installing and rely on dynamic linking at import time. Build it
+  # directly into a throwaway "dolfinx" package directory so that the
+  # module imports under its real name (dolfinx.cpp): otherwise
+  # nanobind's stubgen resolves submodule cross-references (e.g.
+  # dolfinx.cpp.la) against the bare top-level name "cpp", producing
+  # "import cpp.la" in the generated stubs, which does not exist as an
+  # importable module and silently resolves to Any under mypy. stubgen
+  # infers its output location from the imported module's __file__, so
+  # placing the build output under CMAKE_CURRENT_BINARY_DIR/dolfinx
+  # keeps that location matching the OUTPUT paths below (relative to
+  # CMAKE_CURRENT_BINARY_DIR). See nanobind's nanobind_add_stub docs
+  # for the import mechanism:
   # https://nanobind.readthedocs.io/en/latest/api_cmake.html#command:nanobind_add_stub
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
   file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/__init__.py)
-  add_custom_command(
-    TARGET cpp
-    POST_BUILD
-    COMMAND
-      ${CMAKE_COMMAND} -E create_symlink $<TARGET_FILE:cpp>
-      ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/$<TARGET_FILE_NAME:cpp>
-    COMMENT "Staging cpp module as dolfinx.cpp for stub generation"
+  set_target_properties(
+    cpp
+    PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx
   )
 
   nanobind_add_stub(
