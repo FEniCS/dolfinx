@@ -82,10 +82,44 @@ disclosure process.
   Prefer `spdlog::debug`/`info`/`warn` for logging
   over `std::cout`/`std::cerr`.
 - **Move/copy semantics**: Moving is preferred over copying, unless
-  the object is very lightweight. Many DOLFINx classes disable move
-  constructors. `std::move` is used systematically on incoming
-  `std::shared_ptr` to avoid unnecessary copies of `std::shared_ptr`
-  and also to avoid copies when returning with a `std::pair{}`.
+  the object is very lightweight. Many DOLFINx classes disable
+  copying; none disable moving. `std::move` is used systematically on
+  incoming `std::shared_ptr` to avoid unnecessary copies of
+  `std::shared_ptr` and also to avoid copies when returning with a
+  `std::pair{}`.
+- **Special member functions**: a class that declares any of the five
+  (copy constructor, move constructor, destructor, copy assignment,
+  move assignment) declares all five explicitly, `public`, as a
+  contiguous block immediately after the named constructors, in that
+  order — see `mesh/Mesh.h`, `fem/DofMap.h`, `common/Table.h`. Write
+  `= default` rather than relying on implicit generation; declaring
+  only some of the five silently suppresses the others.
+- **Deleting copies**: delete both copy operations for classes owning
+  an external handle (MPI communicator, PETSc/SLEPc object,
+  ADIOS2/HDF5 file) and for 'heavy' data classes where an accidental
+  deep copy is a performance bug (`common::IndexMap`,
+  `fem::FunctionSpace`, `fem::Function`). Classes that are cheap to
+  copy explicitly but should not be copied into an existing object
+  delete copy assignment only, keeping a defaulted copy constructor
+  (`mesh::Mesh`, `mesh::Topology`, `mesh::Geometry`).
+- **Never delete moves**: no class in the library deletes a move
+  operation. If a class caches `std::span`s or other pointers into its
+  own members, explain in a `@note` why moving remains valid instead
+  of disabling it (see the deleted copy constructor and defaulted move
+  constructor of `fem::Form`).
+- **Destructors**: `= default` unless a raw handle must be released
+  (`common::Comm`, `la::petsc::Vector`, `io::VTKFile`). Mark the
+  destructor `virtual` only when the class is actually used as a base
+  class.
+- **`noexcept`**: used on hand-written move operations of handle owners
+  (`common::Comm`, `la::petsc::*`); defaulted moves are left
+  unannotated as they are implicitly `noexcept`.
+- **Documenting special members**: the conventional wordings are
+  `/// Copy constructor`, `/// Move constructor`, `/// Destructor`,
+  `/// Copy assignment` and `/// Move assignment`; `@param` is
+  normally omitted. Deleted members use a non-Doxygen `//` comment
+  with `(deleted)` appended so they stay out of the generated
+  documentation.
 - **String formatting**: use `std::format` (`<format>`) to build
   formatted/error strings rather than `printf`-style, `std::ostringstream`
   concatenation, or the `fmt` library.
