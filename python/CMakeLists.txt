@@ -242,7 +242,9 @@ else()
   # module and silently resolves to Any under mypy. stubgen infers its
   # output location from the imported module's __file__, so staging
   # under CMAKE_CURRENT_BINARY_DIR keeps that location matching the
-  # OUTPUT paths below (relative to CMAKE_CURRENT_BINARY_DIR).
+  # OUTPUT paths below (relative to CMAKE_CURRENT_BINARY_DIR). See
+  # nanobind's nanobind_add_stub docs for the import mechanism:
+  # https://nanobind.readthedocs.io/en/latest/api_cmake.html#command:nanobind_add_stub
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
   file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/__init__.py)
   add_custom_command(
