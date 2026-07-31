@@ -84,7 +84,7 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
 
     dofs = locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
-    bc = dirichletbc(value=dtype(0.0), dofs=dofs, V=V)  # type: ignore
+    bc = dirichletbc(value=dtype(0.0), dofs=dofs, V=V)  # type: ignore[operator, misc]
 
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     x = ufl.SpatialCoordinate(mesh)
