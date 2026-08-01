@@ -75,6 +75,7 @@ class Form(typing.Generic[Scalar]):
 
         Args:
             form: Compiled form object.
+            msh: Mesh that form is defined on.
             ufcx_form: UFCx form.
             code: Form C++ code.
             module: CFFI module.
