@@ -464,7 +464,7 @@ def _assemble_matrix_petsc(  # type: ignore[misc]
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0].contains(bc.function_space):
+                        if row_forms[0].function_spaces[0].contains(bc.function_space._cpp_object):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
                                 " and have DirichletBC applied."

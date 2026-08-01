@@ -160,8 +160,17 @@ def marker(x):
     return np.logical_or(np.isclose(x[2], 0.0), np.isclose(x[2], 1.0))
 
 
+# dirichletbc needs a function space that carries a UFL domain, to
+# associate one with the (uniform) boundary value. UFL does not yet
+# support mixed-topology domains (see the FIXME below), so wrap V_cpp
+# with an arbitrarily chosen cell type's domain/element -- neither is
+# used for anything beyond this association.
+domain = ufl.Mesh(basix.ufl.element("Lagrange", "hexahedron", 1, shape=(3,)))
+element = basix.ufl.wrap_element(elements[0])
+V = FunctionSpace(Mesh(mesh, domain), element, V_cpp)
+
 bcdofs = locate_dofs_geometrical(V_cpp, marker)
-bc = dirichletbc(value=0.0, dofs=bcdofs, V=V_cpp)  # type: ignore[arg-type]
+bc = dirichletbc(value=0.0, dofs=bcdofs, V=V)
 
 # -
 
