@@ -480,15 +480,18 @@ public:
   /// degrees-of-freedom, `x_bc` is the value of the boundary condition
   /// interpolated into the finite element space.
   ///
-  /// If `x` includes ghosted entries (entries available on the calling
-  /// rank but owned by another rank), ghosted entries constrained by a
-  /// Dirichlet condition will also be set.
+  /// `x` may hold only owned entries or also include ghosts (entries
+  /// available on the calling rank but owned by another rank); a
+  /// constrained degree-of-freedom beyond the end of `x` is silently
+  /// skipped, so an owned-only `x` sets only owned entries.
   ///
   /// @param[in,out] x Array to modify for Dirichlet boundary
-  /// conditions.
+  /// conditions. May include ghost entries.
   /// @param[in] x0 Optional array used in computing the value to set.
   /// If not provided it is treated as zero.
   /// @param[in] alpha Scaling to apply.
+  /// @note If `x0` is provided, it must be at least as long as `x`
+  /// (checked only in Debug builds).
   void set(std::span<T> x, std::optional<std::span<const T>> x0,
            T alpha = 1) const
   {

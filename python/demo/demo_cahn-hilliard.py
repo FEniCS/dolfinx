@@ -263,7 +263,7 @@ F = F0 + F1
 
 # +
 use_superlu = PETSc.IntType == np.int64  # or PETSc.ScalarType == np.complex64
-sys = PETSc.Sys()  # type: ignore
+sys = PETSc.Sys()
 if sys.hasExternalPackage("mumps") and not use_superlu:
     linear_solver = "mumps"
 elif sys.hasExternalPackage("superlu_dist"):

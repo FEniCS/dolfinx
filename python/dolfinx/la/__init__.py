@@ -87,7 +87,7 @@ class Vector(Generic[_T]):
     @property
     def array(self) -> npt.NDArray[_T]:
         """Local representation of the vector."""
-        return self._cpp_object.array
+        return self._cpp_object.array  # type: ignore[return-value]
 
     @property
     def petsc_vec(self):
@@ -171,9 +171,9 @@ class MatrixCSR(Generic[Scalar]):
             transpose: if True, compute y += A^T x
         """
         if transpose:
-            self._cpp_object.multT(x._cpp_object, y._cpp_object)
+            self._cpp_object.multT(x._cpp_object, y._cpp_object)  # type: ignore[arg-type]
         else:
-            self._cpp_object.mult(x._cpp_object, y._cpp_object)
+            self._cpp_object.mult(x._cpp_object, y._cpp_object)  # type: ignore[arg-type]
 
     def matmul(self, B):
         """Compute matrix product ``A * B``, where `A` is this matrix.
@@ -213,7 +213,7 @@ class MatrixCSR(Generic[Scalar]):
         bs: int = 1,
     ) -> None:
         """Add a block of values in the matrix."""
-        self._cpp_object.add(x, rows, cols, bs)
+        self._cpp_object.add(x, rows, cols, bs)  # type: ignore[arg-type]
 
     def set(
         self,
@@ -223,7 +223,7 @@ class MatrixCSR(Generic[Scalar]):
         bs: int = 1,
     ) -> None:
         """Set a block of values in the matrix."""
-        self._cpp_object.set(x, rows, cols, bs)
+        self._cpp_object.set(x, rows, cols, bs)  # type: ignore[arg-type]
 
     def set_value(self, x: Scalar) -> None:
         """Set all non-zero entries to a value.
@@ -237,7 +237,7 @@ class MatrixCSR(Generic[Scalar]):
         """Scatter and accumulate ghost values."""
         self._cpp_object.scatter_reverse()
 
-    def squared_norm(self) -> np.floating:
+    def squared_norm(self) -> float:
         """Compute the squared Frobenius norm.
 
         Note:
@@ -248,7 +248,7 @@ class MatrixCSR(Generic[Scalar]):
     @property
     def data(self) -> npt.NDArray[Scalar]:
         """Underlying matrix entry data."""
-        return self._cpp_object.data
+        return self._cpp_object.data  # type: ignore[return-value]
 
     @property
     def indices(self) -> npt.NDArray[np.int32]:
@@ -266,7 +266,7 @@ class MatrixCSR(Generic[Scalar]):
         Note:
             Typically used for debugging.
         """
-        return self._cpp_object.to_dense()
+        return self._cpp_object.to_dense()  # type: ignore[return-value]
 
     def to_scipy(self, ghosted: bool = False):
         """Convert to a SciPy CSR/BSR matrix. Data is shared.
@@ -325,6 +325,12 @@ def matrix_csr(
     Returns:
         A sparse matrix.
     """
+    ftype: (
+        type[_cpp.la.MatrixCSR_float32]
+        | type[_cpp.la.MatrixCSR_float64]
+        | type[_cpp.la.MatrixCSR_complex64]
+        | type[_cpp.la.MatrixCSR_complex128]
+    )
     if np.issubdtype(dtype, np.float32):
         ftype = _cpp.la.MatrixCSR_float32
     elif np.issubdtype(dtype, np.float64):
@@ -351,6 +357,15 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     Returns:
         A distributed vector.
     """
+    vtype: (
+        type[_cpp.la.Vector_float32]
+        | type[_cpp.la.Vector_float64]
+        | type[_cpp.la.Vector_complex64]
+        | type[_cpp.la.Vector_complex128]
+        | type[_cpp.la.Vector_int8]
+        | type[_cpp.la.Vector_int32]
+        | type[_cpp.la.Vector_int64]
+    )
     if np.issubdtype(dtype, np.float32):
         vtype = _cpp.la.Vector_float32
     elif np.issubdtype(dtype, np.float64):
@@ -373,15 +388,15 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
 
 def orthonormalize(basis: list[Vector[_T]]) -> None:
     """Orthogonalise set of vectors in-place."""
-    _cpp.la.orthonormalize([x._cpp_object for x in basis])
+    _cpp.la.orthonormalize([x._cpp_object for x in basis])  # type: ignore[misc]
 
 
 def is_orthonormal(basis: list[Vector[_T]], eps: float = 1.0e-12) -> bool:
     """Check that list of vectors are orthonormal."""
-    return _cpp.la.is_orthonormal([x._cpp_object for x in basis], eps)
+    return _cpp.la.is_orthonormal([x._cpp_object for x in basis], eps)  # type: ignore[misc]
 
 
-def norm(x: Vector[_T], type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
+def norm(x: Vector[_T], type: _cpp.la.Norm = _cpp.la.Norm.l2) -> float:
     """Compute a norm of the vector.
 
     Args:
@@ -391,4 +406,4 @@ def norm(x: Vector[_T], type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
     Returns:
         Computed norm.
     """
-    return _cpp.la.norm(x._cpp_object, type)
+    return _cpp.la.norm(x._cpp_object, type)  # type: ignore[arg-type]

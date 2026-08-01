@@ -102,8 +102,8 @@ for j, v in enumerate(evals):
 # +
 geometry = basix.geometry(basix.CellType.quadrilateral)
 topology = basix.topology(basix.CellType.quadrilateral)
-x = [[], [], [], []]  # type: ignore [var-annotated]
-M = [[], [], [], []]  # type: ignore [var-annotated]
+x: list[list[np.ndarray]] = [[], [], [], []]
+M: list[list[np.ndarray]] = [[], [], [], []]
 
 for v in topology[0]:
     x[0].append(np.array(geometry[v]))
