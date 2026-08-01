@@ -122,7 +122,7 @@ void assemble_cells_matrix(
     // In "LiftingMode" only execute kernel if there are BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [&]()
+      auto has_bc = [&dofs1, &bc1, &bs1]()
       {
         for (std::int32_t dof : dofs1)
         {
@@ -307,7 +307,7 @@ void assemble_entities(
     // Check for BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [&]()
+      auto has_bc = [&dofs1, &bc1, &bs1]()
       {
         for (std::int32_t dof : dofs1)
         {
@@ -490,9 +490,10 @@ void assemble_interior_facets(
   // where both cells exist, so such blocks must be inserted
   // individually rather than as part of the full joint block.
   std::vector<T> Ae_block;
-  auto insert_block = [&](std::span<const std::int32_t> rdofs,
-                          std::span<const std::int32_t> cdofs,
-                          std::size_t row_offset, std::size_t col_offset)
+  auto insert_block = [&Ae_block, &Ae, &bs0, &bs1, &num_cols,
+                       &mat_set](std::span<const std::int32_t> rdofs,
+                                 std::span<const std::int32_t> cdofs,
+                                 std::size_t row_offset, std::size_t col_offset)
   {
     if (rdofs.empty() or cdofs.empty())
       return;
@@ -554,7 +555,7 @@ void assemble_interior_facets(
     // Check for BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [&]()
+      auto has_bc = [&dmapjoint1, &bc1, &bs1]()
       {
         for (std::int32_t dof : dmapjoint1)
         {
