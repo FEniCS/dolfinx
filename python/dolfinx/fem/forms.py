@@ -60,7 +60,7 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_complex128
         | _cpp.fem.Form_float32
         | _cpp.fem.Form_float64,
-        msh: Mesh[Real]
+        msh: Mesh[Real],
         ufcx_form=None,
         code: str | list[str] | None = None,
         module: types.ModuleType | list[types.ModuleType] | None = None,
@@ -84,7 +84,6 @@ class Form(typing.Generic[Scalar]):
         self._code = code
         self._ufcx_form = ufcx_form
         self._module = module
-
 
     @property
     def ufcx_form(self):
