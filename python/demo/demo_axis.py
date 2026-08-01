@@ -651,11 +651,11 @@ for m in m_list:
         + k0**2 * ufl.inner(eps_pml * Es_m, v_m) * rho * dPml
     )
     a, L = ufl.lhs(F), ufl.rhs(F)
-    sys = PETSc.Sys()  # type: ignore[assignment]
+    petsc_sys = PETSc.Sys()
     use_superlu = PETSc.IntType == np.int64
-    if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore[attr-defined]
+    if petsc_sys.hasExternalPackage("mumps") and not use_superlu:
         mat_factor_backend = "mumps"
-    elif sys.hasExternalPackage("superlu_dist"):  # type: ignore[attr-defined]
+    elif petsc_sys.hasExternalPackage("superlu_dist"):
         mat_factor_backend = "superlu_dist"
     else:
         if mesh_data.mesh.comm.size > 1:

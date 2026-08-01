@@ -343,7 +343,7 @@ def _assemble_matrix_csr(
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]  # type: ignore[misc]
+    _bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
 
     if constants is None:
         constants = pack_constants(a)
@@ -351,7 +351,7 @@ def _assemble_matrix_csr(
     if coeffs is None:
         coeffs = pack_coefficients(a)
 
-    _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, bcs)  # type: ignore[arg-type]
+    _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, _bcs)  # type: ignore[arg-type]
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
