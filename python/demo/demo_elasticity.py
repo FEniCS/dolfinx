@@ -38,7 +38,6 @@ from dolfinx import la
 from dolfinx.fem import (
     Expression,
     Function,
-    FunctionSpace,
     dirichletbc,
     form,
     functionspace,
@@ -51,31 +50,13 @@ from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_bounda
 dtype = PETSc.ScalarType
 # -
 
-# ## Create the operator near-nullspace
-#
-# Smooth aggregation algebraic multigrid solvers require the so-called
-# 'near-nullspace', which is the nullspace of the operator in the
-# absence of boundary conditions. The below function builds a
-# `PETSc.NullSpace` object for a 3D elasticity problem. The nullspace is
-# spanned by six vectors -- three translation modes and three rotation
-# modes.
-
-
-def build_nullspace(V: FunctionSpace) -> PETSc.NullSpace:
-    """Build PETSc nullspace for 3D elasticity."""
-    x = V.tabulate_dof_coordinates().flatten()
-    gdim = V.mesh.geometry.dim
-    comm = V.mesh.comm
-    coords = PETSc.Vec().createWithArray(x, comm=comm, bsize=gdim)
-    return PETSc.NullSpace().createRigidBody(coords)
-
 # ## Problem definition
 
 # Create a {py:func}`box mesh<dolfinx.mesh.create_box>`:
 
 
 msh = create_box(
-    MPI.COMM_WORLD,
+    comm := MPI.COMM_WORLD,
     [np.array([0.0, 0.0, 0.0]), np.array([2.0, 1.0, 1.0])],
     (16, 16, 16),
     CellType.tetrahedron,
@@ -152,9 +133,20 @@ b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bc.set(b.array_w)
 # -
 
+# ### Create the operator near-nullspace
+#
+# Smooth aggregation algebraic multigrid solvers require the so-called
+# 'near-nullspace', which is the nullspace of the operator in the
+# absence of boundary conditions. The below function builds a
+# `PETSc.NullSpace` object for a 3D elasticity problem. The nullspace is
+# spanned by six vectors -- three translation modes and three rotation
+# modes.
+#
 # Create the near-nullspace and attach it to the PETSc matrix:
 
-ns = build_nullspace(V)
+x = V.tabulate_dof_coordinates().flatten()
+coords = PETSc.Vec().createWithArray(x, comm=comm, bsize=gdim)
+ns = PETSc.NullSpace().createRigidBody(coords)
 A.setNearNullSpace(ns)
 A.setOption(PETSc.Mat.Option.SPD, True)
 
