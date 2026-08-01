@@ -12,8 +12,8 @@ modification of linear systems.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
-from typing import ClassVar, Generic
+from collections.abc import Callable, Iterable, Sequence
+from typing import ClassVar, Generic, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -24,10 +24,16 @@ from dolfinx.fem.function import Constant, Function, FunctionSpace
 from dolfinx.typing import Scalar
 
 
+@overload
+def locate_dofs_geometrical(V: dolfinx.fem.FunctionSpace, marker: Callable) -> np.ndarray: ...
+@overload
+def locate_dofs_geometrical(
+    V: Iterable[dolfinx.fem.FunctionSpace], marker: Callable
+) -> list[np.ndarray]: ...
 def locate_dofs_geometrical(
     V: dolfinx.fem.FunctionSpace | Iterable[dolfinx.fem.FunctionSpace],
     marker: Callable,
-) -> np.ndarray:
+) -> np.ndarray | list[np.ndarray]:
     """Locate degrees-of-freedom geometrically using a marker function.
 
     Args:
@@ -43,25 +49,37 @@ def locate_dofs_geometrical(
         degrees-of-freedom whose coordinate evaluates to True for the
         marker function.
 
-        If ``V`` is a list of two function spaces, then a 2-D array of
-        shape (number of dofs, 2) is returned.
-
-        Returned degree-of-freedom indices are unique and ordered by the
-        first column.
+        If ``V`` is an iterable of function spaces, a list with one
+        such array per space is returned instead, in the same order as
+        ``V``.
     """
     if not isinstance(V, Iterable):
         return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
 
     _V = [space._cpp_object for space in V]
-    return _cpp.fem.locate_dofs_geometrical(_V, marker)  # type: ignore
+    return _cpp.fem.locate_dofs_geometrical(_V, marker)  # type: ignore[arg-type]
 
 
+@overload
+def locate_dofs_topological(
+    V: dolfinx.fem.FunctionSpace,
+    entity_dim: int,
+    entities: npt.NDArray[np.int32],
+    remote: bool = True,
+) -> np.ndarray: ...
+@overload
+def locate_dofs_topological(
+    V: Iterable[dolfinx.fem.FunctionSpace],
+    entity_dim: int,
+    entities: npt.NDArray[np.int32],
+    remote: bool = True,
+) -> list[np.ndarray]: ...
 def locate_dofs_topological(
     V: dolfinx.fem.FunctionSpace | Iterable[dolfinx.fem.FunctionSpace],
     entity_dim: int,
     entities: npt.NDArray[np.int32],
     remote: bool = True,
-) -> np.ndarray:
+) -> np.ndarray | list[np.ndarray]:
     """Locate degrees-of-freedom belonging to mesh entities topologically.
 
     Args:
@@ -78,18 +96,16 @@ def locate_dofs_topological(
         An array of degree-of-freedom indices (local to the process) for
         degrees-of-freedom topologically belonging to mesh entities.
 
-        If ``V`` is a list of two function spaces, then a 2-D array of
-        shape (number of dofs, 2) is returned.
-
-        Returned degree-of-freedom indices are unique and ordered by the
-        first column.
+        If ``V`` is an iterable of function spaces, a list with one
+        such array per space is returned instead, in the same order as
+        ``V``.
     """
     _entities = np.asarray(entities, dtype=np.int32)
     if not isinstance(V, Iterable):
         return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
 
     _V = [space._cpp_object for space in V]
-    return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)  # type: ignore
+    return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)  # type: ignore[arg-type]
 
 
 class DirichletBC(Generic[Scalar]):
@@ -200,7 +216,7 @@ def dirichletbc(
     | np.complexfloating
     | float
     | complex,
-    dofs: npt.NDArray[np.int32],
+    dofs: npt.NDArray[np.int32] | Sequence[npt.NDArray[np.int32]],
     V: dolfinx.fem.FunctionSpace | None = None,
 ) -> DirichletBC[Scalar]:
     """Representation of Dirichlet boundary condition.
@@ -209,10 +225,15 @@ def dirichletbc(
         value: Lifted boundary values function. It must have a ``dtype``
             property.
         dofs: Local indices of degrees of freedom in function space to
-            which boundary condition applies. Expects array of size
-            (number of dofs, 2) if function space of the problem, ``V``,
-            is passed. Otherwise assumes function space of the problem
-            is the same of function space of boundary values function.
+            which boundary condition applies. When ``V`` is a sub-space
+            and ``value``'s function space is a different (e.g.
+            collapsed) space, this is a pair of arrays -- dof indices
+            in ``V`` and the matching dof indices in ``value``'s
+            function space -- as returned by
+            :func:`locate_dofs_topological` or
+            :func:`locate_dofs_geometrical` when passed a pair of
+            spaces. Otherwise assumes function space of the problem is
+            the same of function space of boundary values function.
         V: Function space of a problem to which boundary conditions are
             applied.
 
