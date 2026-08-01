@@ -158,14 +158,21 @@ class DirichletBC(Generic[Scalar]):
         degrees-of-freedom, ``x_bc`` is the value of the boundary condition
         interpolated into the finite element space.
 
-        If `x` includes ghosted entries (entries available on the calling
-        rank but owned by another rank), ghosted entries constrained by a
-        Dirichlet condition will also be set.
+        ``x`` may be sized to hold only owned entries or to also
+        include ghost entries (entries available on the calling rank
+        but owned by another rank); a constrained degree-of-freedom
+        beyond the end of ``x`` is silently skipped. Passing an
+        owned-only array therefore sets only owned entries, while an
+        array that also includes ghosts (e.g. the full array of a
+        :class:`Vector<dolfinx.la.Vector>`) additionally sets ghost
+        entries constrained by the condition.
 
         Args:
-            x: Array to modify for Dirichlet boundary conditions.
+            x: Array to modify for Dirichlet boundary conditions. May
+                include ghost entries.
             x0: Optional array used in computing the value to set. If
-                not provided it is treated as zero.
+                not provided it is treated as zero. Must be at least
+                as long as ``x`` (checked only in Developer builds).
             alpha: Scaling factor.
         """
         self._cpp_object.set(x, x0, alpha)  # type: ignore[arg-type]
