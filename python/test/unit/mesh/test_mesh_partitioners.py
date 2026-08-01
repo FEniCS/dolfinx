@@ -27,7 +27,7 @@ from dolfinx.mesh import (
     create_mesh,
 )
 
-partitioners = [dolfinx.graph.partitioner()]
+partitioners: list = [dolfinx.graph.partitioner()]
 try:
     from dolfinx.graph import partitioner_scotch
 
