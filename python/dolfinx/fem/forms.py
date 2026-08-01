@@ -332,13 +332,13 @@ def mixed_topology_form(
 
 @typing.overload
 def form(
-    form: ufl.Form,
+    form: Sequence[Sequence[ufl.Form]],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
-) -> Form: ...
+) -> list[list[Form]]: ...
 @typing.overload
 def form(
     form: Sequence[ufl.Form],
@@ -350,15 +350,6 @@ def form(
 ) -> list[Form]: ...
 @typing.overload
 def form(
-    form: Sequence[Sequence[ufl.Form]],
-    dtype: npt.DTypeLike = default_scalar_type,
-    form_compiler_options: dict | None = None,
-    jit_options: dict | None = None,
-    jit_comm: MPI.Intracomm | None = None,
-    entity_maps: Sequence[_EntityMap] | None = None,
-) -> list[list[Form]]: ...
-@typing.overload
-def form(
     form: None,
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
@@ -366,6 +357,15 @@ def form(
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
 ) -> None: ...
+@typing.overload
+def form(
+    form: ufl.Form,
+    dtype: npt.DTypeLike = default_scalar_type,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    jit_comm: MPI.Intracomm | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
+) -> Form: ...
 def form(
     form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]] | None,
     dtype: npt.DTypeLike = default_scalar_type,
@@ -799,14 +799,14 @@ def _derive_block_jacobian(
 def derivative_block(F: ufl.Form, u: Function, du: ufl.Argument | None = None) -> ufl.Form: ...
 @typing.overload
 def derivative_block(
-    F: ufl.Form, u: Sequence[Function], du: Sequence[ufl.Argument] | None = None
-) -> Sequence[ufl.Form]: ...
-@typing.overload
-def derivative_block(
     F: Sequence[ufl.Form],
     u: Sequence[Function],
     du: Sequence[ufl.Argument] | None = None,
 ) -> Sequence[Sequence[ufl.Form]]: ...
+@typing.overload
+def derivative_block(
+    F: ufl.Form, u: Sequence[Function], du: Sequence[ufl.Argument] | None = None
+) -> Sequence[ufl.Form]: ...
 def derivative_block(
     F: ufl.Form | Sequence[ufl.Form],
     u: Function | Sequence[Function],
