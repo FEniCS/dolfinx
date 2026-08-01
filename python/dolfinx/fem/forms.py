@@ -109,8 +109,7 @@ class Form(typing.Generic[Scalar]):
     @property
     def function_spaces(self) -> list[FunctionSpace]:
         """Function spaces on which this form is defined."""
-        # return [FunctionSpace(fs) for fs in self._cpp_object.function_spaces]
-        # return self._cpp_object.function_spaces  # type: ignore[return-value]
+        return self._cpp_object.function_spaces  # type: ignore[return-value]
 
     @property
     def dtype(self) -> np.dtype:
@@ -728,7 +727,7 @@ def create_form(
         _entity_maps,
         msh._cpp_object,
     )
-    return Form(f, form.ufcx_form, form.code)
+    return Form(f, msh, form.ufcx_form, form.code)
 
 
 def _derive_univariate_residual(
