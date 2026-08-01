@@ -25,7 +25,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
 from dolfinx.fem.function import Constant, Function, FunctionSpace
-from dolfinx.typing import Real, Scalar
+from dolfinx.typing import Scalar
 
 if typing.TYPE_CHECKING:
     # import dolfinx.mesh just when doing type checking to avoid
@@ -51,7 +51,7 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_float32
         | _cpp.fem.Form_float64
     )
-    _mesh: Mesh[Real]
+    _mesh: Mesh
     _code: str | list[str] | None
 
     def __init__(
@@ -60,7 +60,7 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_complex128
         | _cpp.fem.Form_float32
         | _cpp.fem.Form_float64,
-        msh: Mesh[Real],
+        msh: Mesh,
         ufcx_form=None,
         code: str | list[str] | None = None,
         module: types.ModuleType | list[types.ModuleType] | None = None,
