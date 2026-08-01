@@ -11,6 +11,10 @@ if(NOT TARGET dolfinx::dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
+if(PROJECT_IS_TOP_LEVEL)
+  include(CTest) # enables testing
+endif()
+
 add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx::dolfinx)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
@@ -19,31 +23,45 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
+# Use the DOLFINx Developer compiler flags for Developer build types. Included
+# by path, as putting DOLFINX_DIR on CMAKE_MODULE_PATH lets the installed
+# FindUFCx.cmake shadow the ufcx CONFIG package on case-insensitive filesystems.
+if(DOLFINX_DIR)
+  include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
+else()
+  include(DolfinxDeveloperCompilerFlags)
+endif()
+target_compile_options(
+  ${PROJECT_NAME}
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+)
+target_compile_definitions(
+  ${PROJECT_NAME}
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+)
+
 # Do not throw error for 'multi-line comments' (these are typical in rst which
-# includes LaTeX)
+# includes LaTeX). Appended last so that it overrides -Wcomment set above.
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wno-comment" HAVE_NO_MULTLINE)
 target_compile_options(
   ${PROJECT_NAME}
-  PRIVATE
-    $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment
-    -Wall
-    -Wextra
-    -pedantic
-    -Werror>
+  PRIVATE $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment>
 )
 
 # Test targets (used by DOLFINx testing system)
-add_test(
-  NAME ${PROJECT_NAME}_mpi_2
-  COMMAND
-    ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
-    $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS}
-)
-add_test(
-  NAME ${PROJECT_NAME}_mpi_3
-  COMMAND
-    ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS}
-    $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS}
-)
-add_test(NAME ${PROJECT_NAME}_serial COMMAND $<TARGET_FILE:${PROJECT_NAME}>)
+# To select one np use, e.g.:
+# ctest -R demo_interpolation_different_meshes_np_3
+foreach(N 1 2 3)
+  add_test(
+    NAME ${PROJECT_NAME}_np_${N}
+    COMMAND
+      ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${N} ${MPIEXEC_PREFLAGS}
+      $<TARGET_FILE:${PROJECT_NAME}> ${MPIEXEC_POSTFLAGS}
+  )
+  # This tells ctest how many physical cores (i.e., ${N}) are needed for each
+  # test, preventing oversubscription when using e.g. `ctest -j2`.
+  set_tests_properties(${PROJECT_NAME}_np_${N} PROPERTIES PROCESSORS ${N})
+endforeach()

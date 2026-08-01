@@ -12,13 +12,15 @@
 #include "Vector.h"
 #include "utils.h"
 #include <algorithm>
+#include <cassert>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <format>
-#include <iostream>
-#include <sstream>
+#include <numeric>
+#include <ranges>
+#include <stdexcept>
 #include <utility>
 
 using namespace dolfinx;
@@ -41,9 +43,9 @@ void la::petsc::error(PetscErrorCode error_code, std::string_view filename,
   PetscErrorMessage(error_code, &desc, nullptr);
 
   // Log detailed error info
-  spdlog::info("PETSc error in '{}', '{}'", filename, petsc_function);
-  spdlog::info("PETSc error code '{}' '{}'", static_cast<int>(error_code),
-               desc);
+  spdlog::error("PETSc error in '{}', '{}'", filename, petsc_function);
+  spdlog::error("PETSc error code '{}' '{}'", static_cast<int>(error_code),
+                desc);
   throw std::runtime_error(
       std::format("Failed to successfully call PETSc function '{}'. PETSc "
                   "error code is: {}, {}",
@@ -57,11 +59,15 @@ la::petsc::create_vectors(MPI_Comm comm,
   std::vector<Vec> v(x.size());
   for (std::size_t i = 0; i < v.size(); ++i)
   {
-    VecCreateMPI(comm, x[i].size(), PETSC_DETERMINE, &v[i]);
+    PetscErrorCode ierr;
+    ierr = VecCreateMPI(comm, x[i].size(), PETSC_DETERMINE, &v[i]);
+    CHECK_ERROR("VecCreateMPI");
     PetscScalar* data;
-    VecGetArray(v[i], &data);
+    ierr = VecGetArray(v[i], &data);
+    CHECK_ERROR("VecGetArray");
     std::ranges::copy(x[i], data);
-    VecRestoreArray(v[i], &data);
+    ierr = VecRestoreArray(v[i], &data);
+    CHECK_ERROR("VecRestoreArray");
   }
 
   return v;
@@ -107,6 +113,12 @@ Vec la::petsc::create_vector_wrap(const common::IndexMap& map, int bs,
   const std::int32_t size_local = bs * map.size_local();
   const std::int64_t size_global = bs * map.size_global();
   const std::vector<PetscInt> ghosts(map.ghosts().begin(), map.ghosts().end());
+  if (x.size() < static_cast<std::size_t>(size_local) + bs * ghosts.size())
+  {
+    throw std::runtime_error(
+        "Array size is too small for the index map, including ghosts.");
+  }
+
   Vec vec;
   PetscErrorCode ierr;
   if (bs == 1)
@@ -134,13 +146,13 @@ std::vector<IS> la::petsc::create_index_sets(
 {
   std::vector<IS> is;
   std::int64_t offset = 0;
-  for (auto& map : maps)
+  for (auto& [map, bs] : maps)
   {
-    int bs = map.second;
-    std::int32_t size
-        = map.first.get().size_local() + map.first.get().num_ghosts();
+    std::int32_t size = map.get().size_local() + map.get().num_ghosts();
     IS _is;
-    ISCreateStride(PETSC_COMM_SELF, bs * size, offset, 1, &_is);
+    PetscErrorCode ierr
+        = ISCreateStride(PETSC_COMM_SELF, bs * size, offset, 1, &_is);
+    CHECK_ERROR("ISCreateStride");
     is.push_back(_is);
     offset += bs * size;
   }
@@ -155,26 +167,30 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
 {
   // Get ghost offset
   int offset_owned = 0;
-  for (auto& map : maps)
-    offset_owned += map.first.get().size_local() * map.second;
+  for (auto& [map, bs] : maps)
+    offset_owned += map.get().size_local() * bs;
 
   // Unwrap PETSc vector
+  PetscErrorCode ierr;
   Vec x_local;
-  VecGhostGetLocalForm(x, &x_local);
+  ierr = VecGhostGetLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostGetLocalForm");
   PetscInt n = 0;
-  VecGetSize(x_local, &n);
+  ierr = VecGetSize(x_local, &n);
+  CHECK_ERROR("VecGetSize");
   const PetscScalar* array = nullptr;
-  VecGetArrayRead(x_local, &array);
+  ierr = VecGetArrayRead(x_local, &array);
+  CHECK_ERROR("VecGetArrayRead");
   std::span _x(array, n);
 
   // Copy PETSc Vec data in to local vectors
   std::vector<std::vector<PetscScalar>> x_b;
   int offset = 0;
   int offset_ghost = offset_owned; // Ghost DoFs start after owned
-  for (auto map : maps)
+  for (auto& [map, bs] : maps)
   {
-    const std::int32_t size_owned = map.first.get().size_local() * map.second;
-    const std::int32_t size_ghost = map.first.get().num_ghosts() * map.second;
+    const std::int32_t size_owned = map.get().size_local() * bs;
+    const std::int32_t size_ghost = map.get().num_ghosts() * bs;
 
     x_b.emplace_back(size_owned + size_ghost);
     std::copy_n(std::next(_x.begin(), offset), size_owned, x_b.back().begin());
@@ -185,8 +201,10 @@ std::vector<std::vector<PetscScalar>> la::petsc::get_local_vectors(
     offset_ghost += size_ghost;
   }
 
-  VecRestoreArrayRead(x_local, &array);
-  VecGhostRestoreLocalForm(x, &x_local);
+  ierr = VecRestoreArrayRead(x_local, &array);
+  CHECK_ERROR("VecRestoreArrayRead");
+  ierr = VecGhostRestoreLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
 
   return x_b;
 }
@@ -201,15 +219,19 @@ void la::petsc::scatter_local_vectors(
 
   // Get ghost offset
   int offset_owned = 0;
-  for (auto& map : maps)
-    offset_owned += map.first.get().size_local() * map.second;
+  for (auto& [map, bs] : maps)
+    offset_owned += map.get().size_local() * bs;
 
+  PetscErrorCode ierr;
   Vec x_local;
-  VecGhostGetLocalForm(x, &x_local);
+  ierr = VecGhostGetLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostGetLocalForm");
   PetscInt n = 0;
-  VecGetSize(x_local, &n);
+  ierr = VecGetSize(x_local, &n);
+  CHECK_ERROR("VecGetSize");
   PetscScalar* array = nullptr;
-  VecGetArray(x_local, &array);
+  ierr = VecGetArray(x_local, &array);
+  CHECK_ERROR("VecGetArray");
   std::span _x(array, n);
 
   // Copy local vectors into PETSc Vec
@@ -217,10 +239,11 @@ void la::petsc::scatter_local_vectors(
   int offset_ghost = offset_owned; // Ghost DoFs start after owned
   for (std::size_t i = 0; i < maps.size(); ++i)
   {
-    std::int32_t size_owned = maps[i].first.get().size_local() * maps[i].second;
+    const auto& [map, bs] = maps[i];
+    std::int32_t size_owned = map.get().size_local() * bs;
     std::copy_n(x_b[i].begin(), size_owned, std::next(_x.begin(), offset));
 
-    std::int32_t size_ghost = maps[i].first.get().num_ghosts() * maps[i].second;
+    std::int32_t size_ghost = map.get().num_ghosts() * bs;
     std::copy_n(std::next(x_b[i].begin(), size_owned), size_ghost,
                 std::next(_x.begin(), offset_ghost));
 
@@ -228,8 +251,10 @@ void la::petsc::scatter_local_vectors(
     offset_ghost += size_ghost;
   }
 
-  VecRestoreArray(x_local, &array);
-  VecGhostRestoreLocalForm(x, &x_local);
+  ierr = VecRestoreArray(x_local, &array);
+  CHECK_ERROR("VecRestoreArray");
+  ierr = VecGhostRestoreLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
 }
 //-----------------------------------------------------------------------------
 Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
@@ -241,12 +266,16 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "MatCreate");
 
-  // Get IndexMaps from sparsity patterm, and block size
+  // Get IndexMaps from sparsity pattern, and block size
   std::array maps = {sp.index_map(0), sp.index_map(1)};
   const std::array bs = {sp.block_size(0), sp.block_size(1)};
 
-  if (type)
-    MatSetType(A, std::string(*type).c_str());
+  if (type and !type->empty())
+  {
+    ierr = MatSetType(A, std::string(*type).c_str());
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "MatSetType");
+  }
 
   // Get global and local dimensions
   const std::int64_t M = bs[0] * maps[0]->size_global();
@@ -272,39 +301,59 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   std::vector<PetscInt> _nnz_diag, _nnz_offdiag;
   if (bs[0] == bs[1])
   {
-    _nnz_diag.resize(maps[0]->size_local());
-    _nnz_offdiag.resize(maps[0]->size_local());
-    for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
-      _nnz_diag[i] = sp.nnz_diag(i);
-    for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
-      _nnz_offdiag[i] = sp.nnz_off_diag(i);
+    const std::int32_t size_local = maps[0]->size_local();
+    _nnz_diag.resize(size_local);
+    _nnz_offdiag.resize(size_local);
+    auto rows = std::views::iota(std::int32_t(0), size_local);
+    std::ranges::transform(rows, _nnz_diag.begin(),
+                           [&sp](std::int32_t i) { return sp.nnz_diag(i); });
+    std::ranges::transform(rows, _nnz_offdiag.begin(), [&sp](std::int32_t i)
+                           { return sp.nnz_off_diag(i); });
   }
   else
   {
     // Expand for block size 1
-    _nnz_diag.resize(maps[0]->size_local() * bs[0]);
-    _nnz_offdiag.resize(maps[0]->size_local() * bs[0]);
-    for (std::size_t i = 0; i < _nnz_diag.size(); ++i)
-      _nnz_diag[i] = bs[1] * sp.nnz_diag(i / bs[0]);
-    for (std::size_t i = 0; i < _nnz_offdiag.size(); ++i)
-      _nnz_offdiag[i] = bs[1] * sp.nnz_off_diag(i / bs[0]);
+    const std::int32_t n = maps[0]->size_local() * bs[0];
+    _nnz_diag.resize(n);
+    _nnz_offdiag.resize(n);
+    auto rows = std::views::iota(std::int32_t(0), n);
+    std::ranges::transform(rows, _nnz_diag.begin(), [&sp, &bs](std::int32_t i)
+                           { return bs[1] * sp.nnz_diag(i / bs[0]); });
+    std::ranges::transform(rows, _nnz_offdiag.begin(),
+                           [&sp, &bs](std::int32_t i)
+                           { return bs[1] * sp.nnz_off_diag(i / bs[0]); });
   }
 
   // Allocate space for matrix
   ierr = MatXAIJSetPreallocation(A, _bs, _nnz_diag.data(), _nnz_offdiag.data(),
                                  nullptr, nullptr);
   if (ierr != 0)
-    petsc::error(ierr, __FILE__, "MatXIJSetPreallocation");
+    petsc::error(ierr, __FILE__, "MatXAIJSetPreallocation");
 
   // Set block sizes
   ierr = MatSetBlockSizes(A, bs[0], bs[1]);
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "MatSetBlockSizes");
 
+  // Build a PETSc (PetscInt) local-to-global map directly from an
+  // IndexMap's local range and ghosts, rather than going via
+  // IndexMap::global_indices() (which materialises an intermediate
+  // std::int64_t array that would then need a second, full-size
+  // conversion pass -- wasteful for the large local sizes seen in
+  // practice)
+  auto build_l2g = [](const common::IndexMap& map) -> std::vector<PetscInt>
+  {
+    const std::int32_t size_local = map.size_local();
+    std::vector<PetscInt> l2g(size_local + map.num_ghosts());
+    std::iota(l2g.begin(), std::next(l2g.begin(), size_local),
+              static_cast<PetscInt>(map.local_range()[0]));
+    std::ranges::copy(map.ghosts(), std::next(l2g.begin(), size_local));
+    return l2g;
+  };
+
   // Create PETSc local-to-global map/index sets
   ISLocalToGlobalMapping local_to_global0;
-  const std::vector map0 = maps[0]->global_indices();
-  const std::vector<PetscInt> _map0(map0.begin(), map0.end());
+  std::vector<PetscInt> _map0 = build_l2g(*maps[0]);
   ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs[0], _map0.size(),
                                       _map0.data(), PETSC_COPY_VALUES,
                                       &local_to_global0);
@@ -322,8 +371,7 @@ Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
   else
   {
     ISLocalToGlobalMapping local_to_global1;
-    const std::vector map1 = maps[1]->global_indices();
-    const std::vector<PetscInt> _map1(map1.begin(), map1.end());
+    std::vector<PetscInt> _map1 = build_l2g(*maps[1]);
     ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs[1], _map1.size(),
                                         _map1.data(), PETSC_COPY_VALUES,
                                         &local_to_global1);
@@ -425,11 +473,11 @@ petsc::Vector& petsc::Vector::operator=(Vector&& v) noexcept
 petsc::Vector petsc::Vector::copy() const
 {
   Vec _y;
-  VecDuplicate(_x, &_y);
-  VecCopy(_x, _y);
-  Vector y(_y, true);
-  VecDestroy(&_y);
-  return y;
+  PetscErrorCode ierr = VecDuplicate(_x, &_y);
+  CHECK_ERROR("VecDuplicate");
+  ierr = VecCopy(_x, _y);
+  CHECK_ERROR("VecCopy");
+  return Vector(_y, false);
 }
 //-----------------------------------------------------------------------------
 std::int64_t petsc::Vector::size() const
@@ -528,7 +576,7 @@ std::array<std::int64_t, 2> petsc::Operator::size() const
   PetscInt m(0), n(0);
   PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
   if (ierr != 0)
-    petsc::error(ierr, __FILE__, "MetGetSize");
+    petsc::error(ierr, __FILE__, "MatGetSize");
   return {{m, n}};
 }
 //-----------------------------------------------------------------------------
@@ -724,44 +772,24 @@ int petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "KSPGetIterationNumber");
 
-  // Check if the solution converged and print error/warning if not
-  // converged
+  // Check if the solution converged and warn if not. Note: this does
+  // not throw on non-convergence -- the caller is responsible for
+  // checking the convergence reason (via ksp()) if this matters for
+  // its use case.
   KSPConvergedReason reason;
   ierr = KSPGetConvergedReason(_ksp, &reason);
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "KSPGetConvergedReason");
   if (reason < 0)
   {
-    /*
-    // Get solver residual norm
-    double rnorm = 0;
-    ierr = KSPGetResidualNorm(_ksp, &rnorm);
-    if (ierr != 0) error(ierr, __FILE__, "KSPGetResidualNorm");
-    const char *reason_str = KSPConvergedReasons[reason];
-    bool error_on_nonconvergence =
-    this->parameters["error_on_nonconvergence"].is_set() ?
-    this->parameters["error_on_nonconvergence"] : true;
-    if (error_on_nonconvergence)
-    {
-      log::dolfin_error("PETScKrylovSolver.cpp",
-                   "solve linear system using PETSc Krylov solver",
-                   "Solution failed to converge in %i iterations (PETSc reason
-    %s, residual norm ||r|| = %e)",
-                   static_cast<int>(num_iterations), reason_str, rnorm);
-    }
-    else
-    {
-      log::warning("Krylov solver did not converge in %i iterations (PETSc
-    reason %s,
-    residual norm ||r|| = %e).",
-              num_iterations, reason_str, rnorm);
-    }
-    */
+    const char* reason_str;
+    ierr = KSPGetConvergedReasonString(_ksp, &reason_str);
+    if (ierr != 0)
+      petsc::error(ierr, __FILE__, "KSPGetConvergedReasonString");
+    spdlog::warn("PETSc Krylov solver did not converge in {} iterations "
+                 "(PETSc reason: {}).",
+                 num_iterations, reason_str);
   }
-
-  // Report results
-  // if (report && dolfinx::MPI::rank(this->comm()) == 0)
-  //  write_report(num_iterations, reason);
 
   return num_iterations;
 }

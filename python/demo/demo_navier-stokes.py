@@ -347,7 +347,7 @@ stokes_problem = LinearProblem(
 
 try:
     stokes_problem.solve()
-except PETSc.Error as e:  # type: ignore
+except PETSc.Error as e:
     if e.ierr == 92:
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)

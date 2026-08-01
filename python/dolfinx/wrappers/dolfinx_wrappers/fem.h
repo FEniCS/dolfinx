@@ -162,7 +162,15 @@ void declare_function_space(nb::module_& m, std::string type)
             },
             nb::arg("cell_type"), nb::arg("points"), nb::arg("block_shape"),
             nb::arg("symmetry"), "Quadrature element constructor.")
-        .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
+        .def(
+            "__eq__",
+            [](const dolfinx::fem::FiniteElement<T>& self, nb::handle other)
+            {
+              return nb::isinstance<dolfinx::fem::FiniteElement<T>>(other)
+                     and self
+                             == nb::cast<const dolfinx::fem::FiniteElement<T>&>(
+                                 other);
+            })
         .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>&)
                      { return dolfinx_wrappers::numpy_dtype_v<T>; })
         .def_prop_ro("basix_element",

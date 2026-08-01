@@ -4,6 +4,11 @@
 include(CheckCXXCompilerFlag)
 include(CheckCXXSymbolExists)
 
+# Cleared so that the module can be included in more than one directory scope
+# without accumulating duplicate flags.
+unset(DOLFINX_CXX_DEVELOPER_FLAGS)
+unset(DOLFINX_CXX_DEVELOPER_DEFINITIONS)
+
 # Add some strict compiler checks
 check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
 if(HAVE_PEDANTIC)

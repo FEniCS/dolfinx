@@ -15,7 +15,6 @@
 #include <concepts>
 #include <format>
 #include <stdexcept>
-#include <string>
 
 namespace dolfinx::math
 {
@@ -49,55 +48,16 @@ T difference_of_products(T a, T b, T c, T d) noexcept
 
 /// Compute the determinant of a small matrix (1x1, 2x2, or 3x3)
 /// @note Tailored for use in computations using the Jacobian
-/// @param[in] A The matrix to compute the determinant of. Row-major
-/// storage.
-/// @param[in] shape The shape of `A`
-/// @return The determinant of `A`
-// TODO: mark constexpr with C++23 (relies on std::fma, constexpr from C++23).
-template <std::floating_point T>
-auto det(const T* A, std::array<std::size_t, 2> shape)
-{
-  assert(shape[0] == shape[1]);
-
-  switch (shape[0])
-  {
-  case 1:
-    return *A;
-  case 2:
-    /* A(0, 0), A(0, 1), A(1, 0), A(1, 1) */
-    return difference_of_products(A[0], A[1], A[2], A[3]);
-  case 3:
-  {
-    // Leibniz formula combined with Kahan’s method for accurate
-    // computation of 3 x 3 determinants
-    T w0 = difference_of_products(A[3 + 1], A[3 + 2], A[3 * 2 + 1],
-                                  A[2 * 3 + 2]);
-    T w1 = difference_of_products(A[3], A[3 + 2], A[3 * 2], A[3 * 2 + 2]);
-    T w2 = difference_of_products(A[3], A[3 + 1], A[3 * 2], A[3 * 2 + 1]);
-    T w3 = difference_of_products(A[0], A[1], w1, w0);
-    T w4 = std::fma(A[2], w2, w3);
-    return w4;
-  }
-  default:
-    throw std::runtime_error(
-        std::format("math::det is not implemented for {}x{} matrices.",
-                    shape[0], shape[1]));
-  }
-}
-
-/// Compute the determinant of a small matrix (1x1, 2x2, or 3x3)
-/// @note Tailored for use in computations using the Jacobian
 /// @param[in] A The matrix to compute the determinant of
 /// @return The determinant of @p A
 // TODO: mark constexpr with C++23 (relies on std::fma, constexpr from C++23).
-template <typename Matrix>
-  requires std::floating_point<typename Matrix::value_type>
-auto det(Matrix A)
+template <typename U>
+  requires MDSpanRank2<U> && std::floating_point<typename U::value_type>
+auto det(U A)
 {
-  static_assert(Matrix::rank() == 2, "Must be rank 2");
   assert(A.extent(0) == A.extent(1));
 
-  using value_type = typename Matrix::value_type;
+  using value_type = typename U::value_type;
   const int nrows = A.extent(0);
   switch (nrows)
   {
@@ -131,12 +91,10 @@ auto det(Matrix A)
 /// @warning This function does not check if A is invertible
 // TODO: mark constexpr with C++23 (relies on std::fma, constexpr from C++23).
 template <typename U, typename V>
-  requires std::floating_point<typename U::value_type>
+  requires MDSpanRank2<U> && MDSpanRank2<V>
+           && std::floating_point<typename U::value_type>
 void inv(U A, V B)
 {
-  static_assert(U::rank() == 2, "Must be rank 2");
-  static_assert(V::rank() == 2, "Must be rank 2");
-
   using value_type = typename U::value_type;
   const std::size_t nrows = A.extent(0);
   switch (nrows)
@@ -188,14 +146,11 @@ void inv(U A, V B)
 /// @param[in] transpose Computes C += A * B if false, otherwise
 /// computes C += A^T * B^T
 template <typename U, typename V, typename P>
-  requires scalar<typename U::value_type> && scalar<typename V::value_type>
+  requires MDSpanRank2<U> && MDSpanRank2<V> && MDSpanRank2<P>
+           && scalar<typename U::value_type> && scalar<typename V::value_type>
            && scalar<typename P::value_type>
 constexpr void dot(U A, V B, P C, bool transpose = false)
 {
-  static_assert(U::rank() == 2, "Must be rank 2");
-  static_assert(V::rank() == 2, "Must be rank 2");
-  static_assert(P::rank() == 2, "Must be rank 2");
-
   if (transpose)
   {
     assert(A.extent(0) == B.extent(1));
@@ -223,12 +178,10 @@ constexpr void dot(U A, V B, P C, bool transpose = false)
 // TODO: mark constexpr with C++23 (relies on std::fma via inv, constexpr from
 // C++23).
 template <typename U, typename V>
-  requires std::floating_point<typename U::value_type>
+  requires MDSpanRank2<U> && MDSpanRank2<V>
+           && std::floating_point<typename U::value_type>
 void pinv(U A, V P)
 {
-  static_assert(U::rank() == 2, "Must be rank 2");
-  static_assert(V::rank() == 2, "Must be rank 2");
-
   assert(A.extent(0) > A.extent(1));
   assert(P.extent(1) == A.extent(0));
   assert(P.extent(0) == A.extent(1));

@@ -176,7 +176,7 @@ public:
 
     const auto [fx, fshape] = f(_x);
     assert(fshape.size() <= 2);
-    if (int vs = _function_space->element()->value_size();
+    if (std::size_t vs = _function_space->element()->value_size();
         vs == 1 and fshape.size() == 1)
     {
       // Check for scalar-valued functions
