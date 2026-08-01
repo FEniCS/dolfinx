@@ -26,6 +26,8 @@
 # ```
 
 # +
+import typing
+
 from mpi4py import MPI
 
 import numpy as np
@@ -115,8 +117,11 @@ part = _cell_partitioner(GhostMode.none, 2)
 mesh = create_mesh(
     MPI.COMM_WORLD,
     cells_np,
-    [hexahedron._cpp_object, prism._cpp_object],  # type: ignore[list-item]
-    geomx,  # type: ignore[arg-type]
+    [
+        typing.cast(_cpp.fem.CoordinateElement_float64, hexahedron._cpp_object),
+        typing.cast(_cpp.fem.CoordinateElement_float64, prism._cpp_object),
+    ],
+    geomx,
     part,
     2,
     1,
@@ -143,7 +148,9 @@ dofmaps = create_dofmaps(
 
 # Create C++ function space
 V_cpp = _cpp.fem.FunctionSpace_float64(  # type: ignore[call-overload]
-    mesh, [e._cpp_object for e in dolfinx_elements], [dofmap._cpp_object for dofmap in dofmaps]
+    mesh,
+    [e._cpp_object for e in dolfinx_elements],  # type: ignore[misc]
+    [dofmap._cpp_object for dofmap in dofmaps],
 )
 
 
@@ -154,7 +161,7 @@ def marker(x):
 
 
 bcdofs = locate_dofs_geometrical(V_cpp, marker)
-bc = dirichletbc(value=0.0, dofs=bcdofs, V=V_cpp)
+bc = dirichletbc(value=0.0, dofs=bcdofs, V=V_cpp)  # type: ignore[arg-type]
 
 # -
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and
+# Copyright (C) 2017-2026 Chris N. Richardson, Garth N. Wells and
 # Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -113,7 +113,7 @@ class DirichletBC(Generic[Scalar]):
         | _cpp.fem.DirichletBC_float64
     )
 
-    def __init__(self, bc):
+    def __init__(self, bc, V: FunctionSpace, g: Function | Constant):
         """Initialise a Dirichlet boundary condition.
 
         Note:
@@ -125,19 +125,23 @@ class DirichletBC(Generic[Scalar]):
 
         Args:
             bc: C++ wrapped Dirichlet condition.
+            V: Function space on which the boundary condition is
+                defined.
+            g: The boundary condition value(s).
         """
         self._cpp_object = bc
+        self._V = V
+        self._g = g
 
     @property
     def g(self) -> Function | Constant:
         """The boundary condition value(s)."""
-        # TODO: needs to be wrapped into Function or Constant
-        return self._cpp_object.value  # type: ignore[return-value]
+        return self._g
 
     @property
     def function_space(self) -> dolfinx.fem.FunctionSpace:
         """Function space on which the boundary condition is defined."""
-        return self._cpp_object.function_space  # type: ignore[return-value]
+        return self._V
 
     def set(
         self, x: npt.NDArray[Scalar], x0: npt.NDArray[Scalar] | None = None, alpha: float = 1
@@ -182,7 +186,13 @@ class DirichletBC(Generic[Scalar]):
 
 
 def dirichletbc(
-    value: Function | Constant | npt.NDArray[Scalar] | float | complex,
+    value: Function
+    | Constant
+    | npt.NDArray[Scalar]
+    | np.floating
+    | np.complexfloating
+    | float
+    | complex,
     dofs: npt.NDArray[np.int32],
     V: dolfinx.fem.FunctionSpace | None = None,
 ) -> DirichletBC[Scalar]:
@@ -227,14 +237,22 @@ def dirichletbc(
         geometry_dtype = np.dtype(dtype).type(0).real.dtype
     bctype = DirichletBC.cpp_types[dtype, geometry_dtype]
 
-    # Unwrap value object, if required
-    if isinstance(value, np.ndarray):
-        _value = value
+    if V is not None:
+        V_used = V
     else:
-        try:
-            _value = value._cpp_object  # type: ignore[assignment]
-        except AttributeError:
-            _value = value  # type: ignore[assignment]
+        # The cpp constructor's V-less overload only accepts a Function,
+        # so value must be one here.
+        assert isinstance(value, Function)
+        V_used = value.function_space
+
+    # Promote a raw array/scalar to a Constant *before* constructing the
+    # cpp object, so that mutating value.value in place afterwards
+    # changes the same underlying storage that the boundary condition
+    # reads.
+    if not isinstance(value, Function | Constant):
+        value = Constant(V_used.mesh, value)
+
+    _value = value._cpp_object  # type: ignore[assignment]
 
     if V is not None:
         try:
@@ -244,7 +262,7 @@ def dirichletbc(
     else:
         bc = bctype(_value, dofs)  # type: ignore
 
-    return DirichletBC(bc)
+    return DirichletBC(bc, V_used, value)
 
 
 def bcs_by_block(
@@ -260,6 +278,10 @@ def bcs_by_block(
 
     def _bc_space(V, bcs):
         """Return list of bcs that have the same space as V."""
-        return [bc for bc in bcs if V.contains(bc.function_space)]
+        # V may be a wrapped FunctionSpace or a raw cpp FunctionSpace
+        # (Form.function_spaces returns the latter), so normalise both
+        # sides to cpp objects before calling the cpp-level contains().
+        V_cpp = V._cpp_object if isinstance(V, FunctionSpace) else V
+        return [bc for bc in bcs if V_cpp.contains(bc.function_space._cpp_object)]
 
     return [_bc_space(V, bcs) if V is not None else [] for V in spaces]
