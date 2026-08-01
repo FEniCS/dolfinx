@@ -165,7 +165,7 @@ from dolfinx import default_real_type, default_scalar_type, fem, has_adios2, io,
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
 
-if np.issubdtype(default_real_type, np.float32):  # type: ignore
+if np.issubdtype(default_real_type, np.float32):
     print("float32 not yet supported for this demo.")
     exit(0)
 # -

@@ -25,7 +25,7 @@
 # +
 from mpi4py import MPI
 
-import gmsh  # type: ignore
+import gmsh
 
 from dolfinx.io import XDMFFile
 from dolfinx.io import gmsh as gmshio

@@ -32,7 +32,7 @@ from dolfinx.la import MatrixCSR as _MatrixCSR
 
 if typing.TYPE_CHECKING:
     import dolfinx.mesh
-    from dolfinx.cpp.fem import _IntegralType as IntegralType
+    from dolfinx.cpp.fem import IntegralType as IntegralType
 
 
 def create_sparsity_pattern(a: dolfinx.fem.forms.Form) -> SparsityPattern:
@@ -88,15 +88,27 @@ def create_interpolation_data(
         Data needed to interpolation functions defined on function
         spaces on the meshes.
     """
-    return _PointOwnershipData(
-        _create_interpolation_data(
-            V_to.mesh._cpp_object.geometry,
-            V_to.element._cpp_object,
-            V_from.mesh._cpp_object,
-            cells,
-            padding,
-        )
-    )
+    match V_to.mesh._cpp_object.geometry, V_to.element._cpp_object, V_from.mesh._cpp_object:
+        case (
+            _cpp.mesh.Geometry_float32() as geometry0,
+            _cpp.fem.FiniteElement_float32() as element0,
+            _cpp.mesh.Mesh_float32() as mesh1,
+        ):
+            return _PointOwnershipData(
+                _create_interpolation_data(geometry0, element0, mesh1, cells, padding)
+            )
+        case (
+            _cpp.mesh.Geometry_float64() as geometry0,
+            _cpp.fem.FiniteElement_float64() as element0,
+            _cpp.mesh.Mesh_float64() as mesh1,
+        ):
+            return _PointOwnershipData(
+                _create_interpolation_data(geometry0, element0, mesh1, cells, padding)
+            )
+        case _:
+            raise TypeError(
+                "create_interpolation_data requires V_to and V_from to have the same dtype."
+            )
 
 
 def discrete_curl(V0: FunctionSpace, V1: FunctionSpace) -> _MatrixCSR:
@@ -112,7 +124,19 @@ def discrete_curl(V0: FunctionSpace, V1: FunctionSpace) -> _MatrixCSR:
     Returns:
         Discrete curl operator.
     """
-    return _MatrixCSR(_discrete_curl(V0._cpp_object, V1._cpp_object))
+    match V0._cpp_object, V1._cpp_object:
+        case (
+            _cpp.fem.FunctionSpace_float32() as cpp_V0,
+            _cpp.fem.FunctionSpace_float32() as cpp_V1,
+        ):
+            return _MatrixCSR(_discrete_curl(cpp_V0, cpp_V1))
+        case (
+            _cpp.fem.FunctionSpace_float64() as cpp_V0,
+            _cpp.fem.FunctionSpace_float64() as cpp_V1,
+        ):
+            return _MatrixCSR(_discrete_curl(cpp_V0, cpp_V1))
+        case _:
+            raise TypeError("discrete_curl requires V0 and V1 to have the same dtype.")
 
 
 def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
@@ -130,7 +154,19 @@ def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCS
     Returns:
         Discrete gradient operator.
     """
-    return _MatrixCSR(_discrete_gradient(space0._cpp_object, space1._cpp_object))
+    match space0._cpp_object, space1._cpp_object:
+        case (
+            _cpp.fem.FunctionSpace_float32() as cpp_space0,
+            _cpp.fem.FunctionSpace_float32() as cpp_space1,
+        ):
+            return _MatrixCSR(_discrete_gradient(cpp_space0, cpp_space1))
+        case (
+            _cpp.fem.FunctionSpace_float64() as cpp_space0,
+            _cpp.fem.FunctionSpace_float64() as cpp_space1,
+        ):
+            return _MatrixCSR(_discrete_gradient(cpp_space0, cpp_space1))
+        case _:
+            raise TypeError("discrete_gradient requires space0 and space1 to have the same dtype.")
 
 
 def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
@@ -147,7 +183,21 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    return _MatrixCSR(_interpolation_matrix(space0._cpp_object, space1._cpp_object))
+    match space0._cpp_object, space1._cpp_object:
+        case (
+            _cpp.fem.FunctionSpace_float32() as cpp0,
+            _cpp.fem.FunctionSpace_float32() as cpp1,
+        ):
+            return _MatrixCSR(_interpolation_matrix(cpp0, cpp1))
+        case (
+            _cpp.fem.FunctionSpace_float64() as cpp0,
+            _cpp.fem.FunctionSpace_float64() as cpp1,
+        ):
+            return _MatrixCSR(_interpolation_matrix(cpp0, cpp1))
+        case _:
+            raise TypeError(
+                "interpolation_matrix requires space0 and space1 to have the same dtype."
+            )
 
 
 def compute_integration_domains(
@@ -207,7 +257,20 @@ def interpolate_geometry(msh: dolfinx.mesh.Mesh, cmap: CoordinateElement) -> dol
     """
     import dolfinx.mesh as _mesh  # lazy to avoid circular import
 
-    new_msh = _cpp.fem.interpolate_geometry(msh._cpp_object, cmap._cpp_object)
+    new_msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
+    match msh._cpp_object, cmap._cpp_object:
+        case (
+            _cpp.mesh.Mesh_float32() as cpp_msh,
+            _cpp.fem.CoordinateElement_float32() as cpp_cmap,
+        ):
+            new_msh = _cpp.fem.interpolate_geometry(cpp_msh, cpp_cmap)
+        case (
+            _cpp.mesh.Mesh_float64() as cpp_msh,
+            _cpp.fem.CoordinateElement_float64() as cpp_cmap,
+        ):
+            new_msh = _cpp.fem.interpolate_geometry(cpp_msh, cpp_cmap)
+        case _:
+            raise TypeError("interpolate_geometry requires msh and cmap to have the same dtype.")
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",

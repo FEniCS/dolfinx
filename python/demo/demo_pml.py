@@ -35,6 +35,7 @@ from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import gmsh as gmshio
+from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
 
 try:
     from dolfinx.io import VTXWriter
@@ -212,10 +213,10 @@ def generate_mesh_wire(
 # +
 
 
-def compute_a(nu: int, m: complex, alpha: float) -> float:
+def compute_a(nu: int, m: complex, alpha: float) -> complex:
     """Compute the Mie coefficient a_nu for a cylinder."""
-    J_nu_alpha = jv(nu, alpha)  # type: ignore
-    J_nu_malpha = jv(nu, m * alpha)  # type: ignore
+    J_nu_alpha = jv(nu, alpha)
+    J_nu_malpha = jv(nu, np.complex128(m * alpha))
     J_nu_alpha_p = jvp(nu, alpha, 1)
     J_nu_malpha_p = jvp(nu, m * alpha, 1)
 
@@ -375,7 +376,7 @@ if MPI.COMM_WORLD.rank == 0:
         pml_tag,
     )
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet, 2)  # type: ignore
+partitioner = _cell_partitioner(dolfinx.mesh.GhostMode.shared_facet, 2)
 
 mesh_data = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
