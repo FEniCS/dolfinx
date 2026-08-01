@@ -26,9 +26,8 @@ namespace dolfinx::common
 /// distributed data that is associated with a common::IndexMap, using
 /// MPI.
 ///
-/// Scatter and gather operations can use:
-/// 1. MPI neighbourhood collectives (recommended), or
-/// 2. Non-blocking point-to-point communication modes.
+/// Scatter and gather operations use non-blocking MPI neighbourhood
+/// collective communication.
 ///
 /// The implementation is designed for sparse communication
 /// patterns, as is typical of patterns based on an IndexMap.
@@ -225,8 +224,7 @@ public:
   }
 
   /// @brief Start a non-blocking send of owned data to ranks that ghost
-  /// the data using *MPI neighbourhood collective communication*
-  /// (recommended).
+  /// the data using *MPI neighbourhood collective communication*.
   ///
   /// The communication is completed by calling Scatterer::scatter_end.
   /// See ::local_indices for instructions on packing `send_buffer` and
@@ -264,53 +262,8 @@ public:
     dolfinx::MPI::check_error(_comm0.comm(), ierr);
   }
 
-  /// @brief Start a non-blocking send of owned data to ranks that ghost
-  /// the data using *point-to-point MPI communication*.
-  ///
-  /// See ::scatter_fwd_begin for a detailed explanation of usage,
-  /// including on the send and receive buffer packing and unpacking
-  ///
-  /// @note Use of the neighbourhood version of ::scatter_fwd_begin is
-  /// recommended over this version.
-  ///
-  /// @param[in] send_buffer Send buffer.
-  /// @param[in,out] recv_buffer Receive buffer.
-  /// @param[in] requests List of MPI request handles. The length of the
-  /// list must be ::num_p2p_requests()
-  template <typename T>
-  void scatter_fwd_begin(const T* send_buffer, T* recv_buffer,
-                         std::span<MPI_Request> requests) const
-  {
-    if (requests.size() != _dest.size() + _src.size())
-    {
-      throw std::runtime_error(
-          "Point-to-point scatterer has wrong number of MPI_Requests.");
-    }
-
-    // Return early if there are no incoming or outgoing edges
-    if (_sizes_local.empty() and _sizes_remote.empty())
-      return;
-
-    for (std::size_t i = 0; i < _src.size(); ++i)
-    {
-      int ierr = MPI_Irecv(recv_buffer + _displs_remote[i], _sizes_remote[i],
-                           dolfinx::MPI::mpi_t<T>, _src[i], p2p_tag_fwd,
-                           _comm0.comm(), &requests[i]);
-      dolfinx::MPI::check_error(_comm0.comm(), ierr);
-    }
-
-    for (std::size_t i = 0; i < _dest.size(); ++i)
-    {
-      int ierr = MPI_Isend(send_buffer + _displs_local[i], _sizes_local[i],
-                           dolfinx::MPI::mpi_t<T>, _dest[i], p2p_tag_fwd,
-                           _comm0.comm(), &requests[i + _src.size()]);
-      dolfinx::MPI::check_error(_comm0.comm(), ierr);
-    }
-  }
-
   /// @brief Start a non-blocking send of ghost data to ranks that own
-  /// the data using *MPI neighbourhood collective communication*
-  /// (recommended).
+  /// the data using *MPI neighbourhood collective communication*.
   ///
   /// The communication is completed by calling Scatterer::scatter_end.
   /// See ::remote_indices for instructions on packing `send_buffer` and
@@ -349,70 +302,6 @@ public:
     dolfinx::MPI::check_error(_comm1.comm(), ierr);
   }
 
-  /// @brief Start a non-blocking send of ghost data to ranks that own
-  /// the data using *point-to-point MPI communication*.
-  ///
-  /// See ::scatter_rev_begin for a detailed explanation of usage,
-  /// including on the send and receive buffer packing and unpacking
-  ///
-  /// @note Use of the neighbourhood version of ::scatter_rev_begin is
-  /// recommended over this version
-  ///
-  /// @param[in] send_buffer Send buffer.
-  /// @param[in,out] recv_buffer Receive buffer.
-  /// @param[in] requests List of MPI request handles. The length of the
-  /// list must be ::num_p2p_requests()
-  template <typename T>
-  void scatter_rev_begin(const T* send_buffer, T* recv_buffer,
-                         std::span<MPI_Request> requests) const
-  {
-    if (requests.size() != _dest.size() + _src.size())
-    {
-      throw std::runtime_error(
-          "Point-to-point scatterer has wrong number of MPI_Requests.");
-    }
-
-    // Return early if there are no incoming or outgoing edges
-    if (_sizes_local.empty() and _sizes_remote.empty())
-      return;
-
-    // Start non-blocking send from this process to ghost owners
-    for (std::size_t i = 0; i < _dest.size(); i++)
-    {
-      int ierr = MPI_Irecv(recv_buffer + _displs_local[i], _sizes_local[i],
-                           dolfinx::MPI::mpi_t<T>, _dest[i], p2p_tag_rev,
-                           _comm0.comm(), &requests[i]);
-      dolfinx::MPI::check_error(_comm0.comm(), ierr);
-    }
-
-    // Start non-blocking receive from neighbor process for which an
-    // owned index is a ghost
-    for (std::size_t i = 0; i < _src.size(); i++)
-    {
-      int ierr = MPI_Isend(send_buffer + _displs_remote[i], _sizes_remote[i],
-                           dolfinx::MPI::mpi_t<T>, _src[i], p2p_tag_rev,
-                           _comm0.comm(), &requests[i + _dest.size()]);
-      dolfinx::MPI::check_error(_comm0.comm(), ierr);
-    }
-  }
-
-  /// @brief Complete non-blocking MPI point-to-point sends.
-  ///
-  /// This function completes the communication started by
-  /// ::scatter_fwd_begin or ::scatter_rev_begin.
-  ///
-  /// @param[in] requests MPI request handles for tracking the status of
-  /// sends.
-  void scatter_end(std::span<MPI_Request> requests) const
-  {
-    // Return early if there are no incoming or outgoing edges
-    if (_sizes_local.empty() and _sizes_remote.empty())
-      return;
-
-    // Wait for communication to complete
-    MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
-  }
-
   /// @brief Complete a non-blocking MPI neighbourhood collective send.
   ///
   /// This function completes the communication started by
@@ -422,7 +311,12 @@ public:
   /// the send.
   void scatter_end(MPI_Request& request) const
   {
-    scatter_end(std::span<MPI_Request>(&request, 1));
+    // Return early if there are no incoming or outgoing edges
+    if (_sizes_local.empty() and _sizes_remote.empty())
+      return;
+
+    // Wait for communication to complete
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
 
   /// @brief Array of indices for packing/unpacking owned data to/from a
@@ -485,24 +379,7 @@ public:
   /// @return Indices container.
   const container_type& remote_indices() const noexcept { return _remote_inds; }
 
-  /// @brief Number of required `MPI_Request`s for point-to-point
-  /// communication.
-  ///
-  /// @return Number of required MPI request handles.
-  std::size_t num_p2p_requests() const noexcept
-  {
-    return _dest.size() + _src.size();
-  }
-
 private:
-  // MPI tags for point-to-point forward/reverse scatter messages.
-  // Both directions share communicator _comm0, so a fixed, distinct
-  // tag per direction is required to stop a forward message being
-  // matched against a reverse receive (or vice versa) irrespective of
-  // the relative order in which the two directions are posted.
-  static constexpr int p2p_tag_fwd = 0;
-  static constexpr int p2p_tag_rev = 1;
-
   // Communicator where the source ranks own the indices in the callers
   // halo, and the destination ranks 'ghost' indices owned by the
   // caller. I.e.,
