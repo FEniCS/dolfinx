@@ -377,8 +377,11 @@ def form(
     """Create a Form or list of Forms.
 
     Args:
-        form: A UFL form or iterable of UFL forms. ``None`` is passed
-            through unchanged.
+        form: A UFL form, or a nested sequence of UFL forms (e.g. for
+            a block form). Any entry may be ``None``, e.g. to indicate
+            a zero block in a block form; each ``None`` entry is
+            returned as ``None`` in the corresponding position of the
+            result, rather than being compiled.
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
