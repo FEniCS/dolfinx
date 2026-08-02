@@ -6,12 +6,10 @@
 
 #pragma once
 
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
-
 #include <dolfinx/la/MatrixCSR.h>
 #include <mpi.h>
-
-#include <algorithm>
 #include <numeric>
 #include <span>
 #include <vector>
@@ -19,7 +17,8 @@
 namespace dolfinx::la
 {
 
-/// @brief Fetch the rows of B that correspond to the ghost columns of A.
+/// @brief Fetch the rows of B that correspond to the ghost columns of
+/// A.
 ///
 /// For computing the product A*B, each rank needs the rows of B whose
 /// global indices match the ghost columns of A. Those ghost columns are
@@ -27,55 +26,59 @@ namespace dolfinx::la
 /// communication.
 ///
 /// @param A Matrix whose ghost column indices determine which rows of B
-///          are needed.
+/// are needed.
 /// @param B Matrix whose rows are fetched.
 /// @return A new MatrixCSR containing the fetched ghost rows of B, with
-///         an extended column IndexMap covering any new ghost columns
-///         introduced by those rows.
+/// an extended column IndexMap covering any new ghost columns
+/// introduced by those rows.
 namespace impl
 {
 
 /// @brief Lightweight sparsity descriptor satisfying the
-///        `SparsityImplementation` concept required by the `MatrixCSR`
-///        constructor.
+/// `SparsityImplementation` concept required by the `MatrixCSR`
+/// constructor.
 ///
-/// Holds non-owning views into externally managed CSR arrays together with
-/// the row and column `IndexMap`s that describe the parallel distribution.
-/// It is intended as a short-lived helper: to be constructed it from the
-/// output of `impl::matmul` and passed to the
+/// Holds non-owning views into externally managed CSR arrays together
+/// with the row and column `IndexMap`s that describe the parallel
+/// distribution. It is intended as a short-lived helper: to be
+/// constructed it from the output of impl::matmul and passed to the
 /// `MatrixCSR` constructor.
 ///
 /// @note All spans must remain valid for the lifetime of this object.
 struct Sparsity
 {
-  /// @brief Row `IndexMap` — describes the parallel distribution of rows.
+  /// @brief Row `IndexMap` — describes the parallel distribution of
+  /// rows.
   std::shared_ptr<const common::IndexMap> _row_map;
 
   /// @brief Column `IndexMap` — describes the parallel distribution of
-  ///        columns, including any ghost columns needed for the
-  ///        off-diagonal block.
+  /// columns, including any ghost columns needed for the off-diagonal
+  /// block.
   std::shared_ptr<const common::IndexMap> _col_map;
 
-  /// @brief CSR column indices, length `nnz`.  Values in
-  ///        `[0, size_local(col) + num_ghosts(col))`, sorted within each row.
+  /// @brief CSR column indices, length `nnz`.  Values in `[0,
+  /// size_local(col) + num_ghosts(col))`, sorted within each row.
   std::span<const std::int32_t> _cols;
 
-  /// @brief CSR row pointers, length `num_rows + 1`.  `_offsets[i]` is the
-  ///        start of row `i` in `_cols`; `_offsets[num_rows]` equals `nnz`.
+  /// @brief CSR row pointers, length `num_rows + 1`.  `_offsets[i]` is
+  /// the start of row `i` in `_cols`; `_offsets[num_rows]` equals
+  /// `nnz`.
   std::span<const std::int64_t> _offsets;
 
   /// @brief Per-row diagonal block size, length `num_rows`.
-  ///        `_off_diag[i]` is the number of entries in row `i` whose column
-  ///        index is strictly less than `_col_map->size_local()`, i.e. the
-  ///        count of entries in the diagonal (owned-column) block.  Entries
-  ///        at positions `[_off_diag[i], row_end)` belong to the
-  ///        off-diagonal block.
+  /// `_off_diag[i]` is the number of entries in row `i` whose column
+  /// index is strictly less than `_col_map->size_local()`, i.e. the
+  /// count of entries in the diagonal (owned-column) block.
+  ///
+  /// Entries at positions `[_off_diag[i], row_end)` belong to the
+  /// off-diagonal block.
   std::span<const std::int32_t> _off_diag;
 
   /// @brief block size in each direction.
   std::array<int, 2> _bs;
 
-  /// @brief Return the row (`dim == 0`) or column (`dim == 1`) `IndexMap`.
+  /// @brief Return the row (`dim == 0`) or column (`dim == 1`)
+  /// common::IndexMap.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const
   {
     return dim == 0 ? _row_map : _col_map;
@@ -102,8 +105,8 @@ struct Sparsity
 /// columns of Matrix A.
 /// @param A MatrixCSR
 /// @param B MatrixCSR
-/// @returns Tuple containing [new index map, rowptr, cols, values] for the
-/// received rows
+/// @returns Tuple containing [new index map, rowptr, cols, values] for
+/// the received rows
 template <typename T>
 std::tuple<std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>,
            std::vector<std::int32_t>, std::vector<T>>

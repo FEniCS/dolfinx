@@ -55,7 +55,10 @@ public:
   /// @brief Create function on given function space.
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
-      : _function_space(V), _x(std::make_shared<la::Vector<value_type>>(*V))
+      : _function_space(V),
+        _x(std::make_shared<la::Vector<value_type>>(V->dofmap()->index_map,
+                                                    V->dofmap()->index_map_bs(),
+                                                    V->scatterer()))
   {
     if (!V->component().empty())
     {
@@ -120,7 +123,8 @@ public:
     auto [V, map] = _function_space->collapse();
 
     // Create new vector
-    auto x = std::make_shared<la::Vector<value_type>>(V);
+    auto x = std::make_shared<la::Vector<value_type>>(
+        V.dofmap()->index_map, V.dofmap()->index_map_bs(), V.scatterer());
 
     // Copy values into new vector
     std::span<const value_type> x_old = _x->array();
