@@ -121,9 +121,9 @@ public:
           "Cannot insert blocks of different size than matrix block size");
     }
 
-    return [&](std::span<const std::int32_t> rows,
-               std::span<const std::int32_t> cols,
-               std::span<const value_type> data) -> int
+    return [this](std::span<const std::int32_t> rows,
+                  std::span<const std::int32_t> cols,
+                  std::span<const value_type> data) -> int
     {
       this->set<BS0, BS1>(data, rows, cols);
       return 0;
@@ -163,9 +163,9 @@ public:
           "Cannot insert blocks of different size than matrix block size");
     }
 
-    return [&](std::span<const std::int32_t> rows,
-               std::span<const std::int32_t> cols,
-               std::span<const value_type> data) -> int
+    return [this](std::span<const std::int32_t> rows,
+                  std::span<const std::int32_t> cols,
+                  std::span<const value_type> data) -> int
     {
       this->add<BS0, BS1>(data, rows, cols);
       return 0;

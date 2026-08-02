@@ -360,7 +360,9 @@ void lift_bc_impl(
   const int bs1
       = BS1 > 0 ? BS1 : a.function_spaces()[1]->dofmaps().front()->bs();
 
-  // Use default [=] capture for bs0, bs1 which may be compile-time constants
+  // Default capture is required for bs0/bs1: when BS0/BS1 are
+  // compile-time constants they are constant-initialised and an
+  // explicit capture is rejected by -Wunused-lambda-capture
   auto lifting_fn
       = [=, &b, &bc_values1, &bc_markers1,
          &x0](std::span<const std::int32_t> rows,
