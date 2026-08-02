@@ -146,6 +146,20 @@ disclosure process.
   over hand-written loops where it doesn't hurt clarity or
   performance; flattened row-major storage is the default convention
   for multi-dimensional data passed as flat buffers.
+- **`std::distance`/`std::advance`/`std::next`/`std::prev` on a
+  generic, template-parameterized range**: these legacy `<iterator>`
+  algorithms dispatch on `std::iterator_traits<It>::iterator_category`,
+  not the C++20 iterator concepts. Views such as
+  `std::ranges::iota_view` satisfy `std::random_access_iterator` but
+  not the legacy `LegacyRandomAccessIterator` (`operator*` returns a
+  prvalue, not a reference), so their `iterator_category` degrades to
+  `input_iterator_tag` and `std::distance` silently falls back to an
+  O(n) count instead of an O(1) subtraction, turning an O(n) loop into
+  O(n²) in unoptimised (Debug) builds only. When indexing into a
+  generic range parameter inside a loop, use
+  `std::ranges::distance`/`std::ranges::advance`, which dispatch on
+  the C++20 concept and stay O(1) for these views, or track the index
+  with a plain counter incremented alongside the iterator.
 - **Windows**: Windows is continuously tested on GitHub with the
   most important missing feature being the lack of C99 `_Complex`
   support denoted by existence of `DOLFINX_NO_STDC_COMPLEX_KERNELS`
