@@ -109,7 +109,7 @@ public:
   /// Copies data from native CSR into SuperLU_DIST format.
   ///
   /// @param A Matrix.
-  SuperLUDistMatrix(const MatrixCSR<T>& A);
+  explicit SuperLUDistMatrix(const MatrixCSR<T>& A);
 
   /// @brief Copy constructor (deleted)
   SuperLUDistMatrix(const SuperLUDistMatrix&) = delete;
@@ -199,7 +199,7 @@ public:
   /// except PrintStat (verbose solver output) set to NO.
   ///
   /// @param A Assembled left-hand side matrix.
-  SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A);
+  explicit SuperLUDistSolver(std::shared_ptr<const SuperLUDistMatrix<T>> A);
 
   /// Copy constructor
   SuperLUDistSolver(const SuperLUDistSolver&) = delete;

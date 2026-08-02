@@ -67,10 +67,10 @@ public:
   /// elements it should be `std::nullopt`.
   /// @param[in] symmetric Is the element a symmetric tensor? Should
   /// only set for 2nd-order tensor blocked elements.
-  FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                const std::optional<std::vector<std::size_t>>& value_shape
-                = std::nullopt,
-                bool symmetric = false);
+  explicit FiniteElement(
+      const basix::FiniteElement<geometry_type>& element,
+      const std::optional<std::vector<std::size_t>>& value_shape = std::nullopt,
+      bool symmetric = false);
 
   /// @brief Create a mixed finite element from Basix finite elements.
   ///
@@ -80,7 +80,7 @@ public:
   ///
   /// @param[in] elements List of (Basix finite element, block size,
   /// symmetric) tuples, one for each element in the mixed element.
-  FiniteElement(std::vector<BasixElementData<geometry_type>> elements);
+  explicit FiniteElement(std::vector<BasixElementData<geometry_type>> elements);
 
   /// @brief Create a mixed finite element from a list of finite
   /// elements.
@@ -99,7 +99,7 @@ public:
   ///
   /// @param[in] elements Finite elements to compose the mixed element
   /// from.
-  FiniteElement(
+  explicit FiniteElement(
       const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>&
           elements);
 

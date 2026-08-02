@@ -214,7 +214,7 @@ public:
   ///
   /// @param s Scatterer to copy
   template <class U>
-  Scatterer(const Scatterer<U>& s)
+  explicit Scatterer(const Scatterer<U>& s)
       : _comm0(s._comm0), _comm1(s._comm1), _src(s._src), _dest(s._dest),
         _remote_inds(s._remote_inds.begin(), s._remote_inds.end()),
         _sizes_remote(s._sizes_remote), _displs_remote(s._displs_remote),
