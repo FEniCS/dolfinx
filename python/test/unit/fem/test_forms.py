@@ -109,7 +109,7 @@ def test_incorrect_element():
         [],
         mesh._cpp_object,
     )
-    dolfinx.fem.Form(f, ufcx_form, code)
+    dolfinx.fem.Form(f, mesh, ufcx_form, code)
 
     with pytest.raises(RuntimeError):
         f = ftype(
@@ -121,7 +121,7 @@ def test_incorrect_element():
             [],
             mesh._cpp_object,
         )
-        dolfinx.fem.Form(f, ufcx_form, code)
+        dolfinx.fem.Form(f, mesh, ufcx_form, code)
 
 
 def test_multiple_measures_one_subdomain_data():
