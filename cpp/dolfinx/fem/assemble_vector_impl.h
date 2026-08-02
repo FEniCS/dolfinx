@@ -74,7 +74,7 @@ template <typename V, std::floating_point U,
 void assemble_cells(
     const fem::DofTransformKernel<T> auto& P0, V&& b, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    std::span<const std::int32_t> cells, const auto& dofmap,
+    std::span<const std::int32_t> cells, const DofMapPackCells auto& dofmap,
     const FEkernel<T, U> auto& kernel, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const std::uint32_t> cell_info0, std::span<T> be_b,
@@ -91,7 +91,7 @@ void assemble_cells(
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
-    // Integration domain celland test function cell
+    // Integration domain cell and test function cell
     std::int32_t c = cells[index];
     std::int32_t c0 = cells0[index];
 
@@ -162,7 +162,7 @@ void assemble_entities(
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
-    const auto& dofmap, const FEkernel<T, U> auto& kernel,
+    const DofMapPackEntities auto& dofmap, const FEkernel<T, U> auto& kernel,
     std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<const std::uint32_t> cell_info0,
@@ -250,7 +250,7 @@ void assemble_interior_facets(
     md::mdspan<const std::int32_t,
                std::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
-    const auto& dofmap, const FEkernel<T, U> auto& kernel,
+    const DofMapPackFacets auto& dofmap, const FEkernel<T, U> auto& kernel,
     std::span<const T> constants,
     md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                     md::dynamic_extent>>
