@@ -123,7 +123,7 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
   if (comm_size == 1)
     SKIP("Only runs in parallel");
 
-  auto create_mesh = [&]()
+  auto create_mesh = [&rank, &comm_size]()
   {
     std::vector<T> x;
     std::vector<std::int64_t> cells;

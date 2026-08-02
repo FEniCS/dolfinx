@@ -972,8 +972,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// boundary for non-branching meshes).
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction
-create_cell_partitioner(mesh::GhostMode ghost_mode,
-                        const graph::partition_fn& partfn,
+create_cell_partitioner(mesh::GhostMode ghost_mode, graph::partition_fn partfn,
                         std::optional<std::int32_t> max_facet_to_cell_links);
 
 /// @brief Create a function that computes destination rank for mesh
@@ -1619,7 +1618,7 @@ MeshTags<T> transfer_meshtags_to_submesh(
           // parent entity
           bool entity_matches = std::ranges::all_of(
               parent_vertices,
-              [&](auto p_v)
+              [&entity_vertices](auto p_v)
               {
                 // With C++23 this can use std::ranges::contains
                 return std::ranges::find(entity_vertices, p_v)
