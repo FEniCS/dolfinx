@@ -223,11 +223,11 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
 /// @param y
 /// @param bs0
 /// @param bs1
-template <typename T, int BS1>
+template <typename T>
 void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
           std::span<const std::int64_t> row_end,
           std::span<const std::int32_t> indices, std::span<const T> x,
-          std::span<T> y, int bs0, int bs1)
+          std::span<T> y, auto bs0, auto bs1)
 {
   assert(row_begin.size() == row_end.size());
   // Block layout: row-major within each block. The element at row-offset
@@ -238,18 +238,13 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
     for (std::size_t i = 0; i < row_begin.size(); i++)
     {
       T vi{0};
-      auto accumulate
-          = [&vi, values, bs0, k0, x, indices](auto n, std::int64_t j)
-      {
-        for (int k1 = 0; k1 < n; ++k1)
-          vi += values[j * bs0 * n + k0 * n + k1] * x[indices[j] * n + k1];
-      };
       for (std::int64_t j = row_begin[i]; j < row_end[i]; j++)
       {
-        if constexpr (BS1 == -1)
-          accumulate(bs1, j);
-        else
-          accumulate(std::integral_constant<int, BS1>(), j);
+        for (int k1 = 0; k1 < bs1; ++k1)
+        {
+          vi += values[j * bs0 * bs1 + k0 * bs1 + k1]
+                * x[indices[j] * bs1 + k1];
+        }
       }
 
       y[i * bs0 + k0] += vi;
@@ -290,11 +285,11 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
 /// @param[in]  bs0       Row block size (runtime value).
 /// @param[in]  bs1       Column block size (runtime value, used when
 ///                       `BS1 == -1`).
-template <typename T, int BS1>
+template <typename T>
 void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
            std::span<const std::int64_t> row_end,
            std::span<const std::int32_t> indices, std::span<const T> x,
-           std::span<T> y, int bs0, int bs1)
+           std::span<T> y, auto bs0, auto bs1)
 {
   assert(row_begin.size() == row_end.size());
 
@@ -304,18 +299,13 @@ void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
     for (std::size_t i = 0; i < row_begin.size(); i++)
     {
       const T xval = x[i * bs0 + k0];
-      auto accumulate
-          = [y, values, indices, bs0, k0, xval](auto n, std::int64_t j)
-      {
-        for (int k1 = 0; k1 < n; ++k1)
-          y[indices[j] * n + k1] += values[j * bs0 * n + k0 * n + k1] * xval;
-      };
       for (std::int64_t j = row_begin[i]; j < row_end[i]; j++)
       {
-        if constexpr (BS1 == -1)
-          accumulate(bs1, j);
-        else
-          accumulate(std::integral_constant<int, BS1>(), j);
+        for (int k1 = 0; k1 < bs1; ++k1)
+        {
+          y[indices[j] * bs1 + k1]
+              += values[j * bs0 * bs1 + k0 * bs1 + k1] * xval;
+        }
       }
     }
   }

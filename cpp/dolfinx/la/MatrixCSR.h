@@ -898,13 +898,13 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
   // yi[0] += Ai[0] * xi[0]
   if (_bs[1] == 1)
   {
-    impl::spmv<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
-                          _bs[0], 1);
+    impl::spmv<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                       _bs[0], std::integral_constant<int, 1>{});
   }
   else
   {
-    impl::spmv<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
-                           _bs[0], _bs[1]);
+    impl::spmv<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                       _bs[0], _bs[1]);
   }
 
   // finalize ghost update
@@ -914,13 +914,13 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
   // yi[0] += Ai[1] * xi[1]
   if (_bs[1] == 1)
   {
-    impl::spmv<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
-                          _bs[0], 1);
+    impl::spmv<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                       _bs[0], std::integral_constant<int, 1>{});
   }
   else
   {
-    impl::spmv<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
-                           _bs[0], _bs[1]);
+    impl::spmv<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                       _bs[0], _bs[1]);
   }
 }
 
@@ -947,23 +947,30 @@ void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
   // Compute ghost region contribution and scatter back. Zero only the
   // ghost portion of y so the caller's owned values are preserved (multT
   // accumulates).
-  int ncolslocal = index_map(1)->size_local();
+  std::int32_t ncolslocal = index_map(1)->size_local();
   std::fill(std::next(_y.begin(), ncolslocal * _bs[1]), _y.end(), Scalar(0));
   if (_bs[1] == 1)
-    impl::spmvT<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
-                           _bs[0], 1);
+  {
+    impl::spmvT<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                        _bs[0], std::integral_constant<int, 1>{});
+  }
   else
-    impl::spmvT<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
-                            _bs[0], _bs[1]);
-
+  {
+    impl::spmvT<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                        _bs[0], _bs[1]);
+  }
   y.scatter_rev(std::plus<Scalar>{});
 
   if (_bs[1] == 1)
-    impl::spmvT<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
-                           _bs[0], 1);
+  {
+    impl::spmvT<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                        _bs[0], std::integral_constant<int, 1>{});
+  }
   else
-    impl::spmvT<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x,
-                            _y, _bs[0], _bs[1]);
+  {
+    impl::spmvT<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                        _bs[0], _bs[1]);
+  }
 }
 
 } // namespace dolfinx::la
