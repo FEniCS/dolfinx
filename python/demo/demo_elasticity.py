@@ -144,7 +144,7 @@ bc.set(b.array_w)
 #
 # Create the near-nullspace and attach it to the PETSc matrix:
 
-x = V.tabulate_dof_coordinates()[: V.dofmap.index_map.size_local, :].flatten()
+x = V.tabulate_dof_coordinates()[: V.dofmap.index_map.size_local, :].ravel()
 coords = PETSc.Vec().createWithArray(x, bsize=gdim, comm=comm)
 ns = PETSc.NullSpace().createRigidBody(coords)
 A.setNearNullSpace(ns)
