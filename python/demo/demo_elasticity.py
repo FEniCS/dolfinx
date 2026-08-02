@@ -137,7 +137,7 @@ bc.set(b.array_w)
 #
 # Smooth aggregation algebraic multigrid solvers require the so-called
 # 'near-nullspace', which is the nullspace of the operator in the
-# absence of boundary conditions. The below function builds a
+# absence of boundary conditions. `createRigidBody` builds a
 # `PETSc.NullSpace` object for a 3D elasticity problem. The nullspace is
 # spanned by six vectors -- three translation modes and three rotation
 # modes.
