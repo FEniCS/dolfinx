@@ -39,4 +39,20 @@ concept MDSpan2
           std::remove_cvref_t<T>,
           md::mdspan<const std::int32_t, md::dextents<std::size_t, 1>>>;
 
+/// @cond
+template <class T>
+struct is_integral_constant : std::false_type
+{
+};
+template <class T, T v>
+struct is_integral_constant<std::integral_constant<T, v>> : std::true_type
+{
+};
+/// @endcond
+
+/// @brief Concept satisfied by specializations of
+/// `std::integral_constant`.
+template <class T>
+concept IntegralConstant = is_integral_constant<std::remove_cvref_t<T>>::value;
+
 } // namespace dolfinx::fem
