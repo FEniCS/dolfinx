@@ -123,21 +123,7 @@ public:
   static_assert(std::is_same_v<value_type, typename container_type::value_type>,
                 "Scalar type and container value type must be the same.");
 
-  /// @brief Create a distributed vector.
-  ///
-  /// @param map Index map that describes the parallel layout of
-  /// the data.
-  /// @param bs Number of entries per index map 'index' (block size).
-  Vector(std::shared_ptr<const common::IndexMap> map, int bs)
-      : _map(map), _bs(bs), _x(bs * (map->size_local() + map->num_ghosts())),
-        _scatterer(
-            std::make_shared<common::Scatterer<ScatterContainer>>(*_map, bs)),
-        _buffer_local(_scatterer->local_indices().size()),
-        _buffer_remote(_scatterer->remote_indices().size())
-  {
-  }
-
-  /// @brief Create a distributed vector, sharing an existing Scatterer.
+  /// @brief Create a distributed vector with a provided Scatterer.
   ///
   /// @param map Index map that describes the parallel layout of
   /// the data.
@@ -150,6 +136,17 @@ public:
         _scatterer(std::move(scatterer)),
         _buffer_local(_scatterer->local_indices().size()),
         _buffer_remote(_scatterer->remote_indices().size())
+  {
+  }
+
+  /// @brief Create a distributed vector.
+  ///
+  /// @param map Index map that describes the parallel layout of
+  /// the data.
+  /// @param bs Number of entries per index map 'index' (block size).
+  Vector(std::shared_ptr<const common::IndexMap> map, int bs)
+      : Vector(map, bs,
+               std::make_shared<common::Scatterer<ScatterContainer>>(*map, bs))
   {
   }
 
