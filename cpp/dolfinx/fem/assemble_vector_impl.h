@@ -114,7 +114,7 @@ void assemble_cells(
 
     // Scatter cell vector to 'global' vector array
     auto dofs = md::submdspan(dmap, c0, md::full_extent);
-    auto scatter = [&](auto n)
+    auto scatter = [&b, be, dofs](auto n)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < n; ++k)
@@ -224,7 +224,7 @@ void assemble_entities(
 
     // Add element vector to global vector
     auto dofs = md::submdspan(dmap, cell0, md::full_extent);
-    auto scatter = [&](auto n)
+    auto scatter = [&b, be, dofs](auto n)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < n; ++k)
@@ -352,7 +352,7 @@ void assemble_interior_facets(
     }
 
     // Add element vector to global vector
-    auto scatter = [&](auto n)
+    auto scatter = [&b, be, dmap0, dmap1, dmap_size](auto n)
     {
       for (std::size_t i = 0; i < dmap0.size(); ++i)
         for (int k = 0; k < n; ++k)

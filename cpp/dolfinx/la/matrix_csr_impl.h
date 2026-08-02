@@ -238,7 +238,8 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
     for (std::size_t i = 0; i < row_begin.size(); i++)
     {
       T vi{0};
-      auto accumulate = [&](auto n, std::int64_t j)
+      auto accumulate
+          = [&vi, values, bs0, k0, x, indices](auto n, std::int64_t j)
       {
         for (int k1 = 0; k1 < n; ++k1)
           vi += values[j * bs0 * n + k0 * n + k1] * x[indices[j] * n + k1];
@@ -303,7 +304,8 @@ void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
     for (std::size_t i = 0; i < row_begin.size(); i++)
     {
       const T xval = x[i * bs0 + k0];
-      auto accumulate = [&](auto n, std::int64_t j)
+      auto accumulate
+          = [y, values, indices, bs0, k0, xval](auto n, std::int64_t j)
       {
         for (int k1 = 0; k1 < n; ++k1)
           y[indices[j] * n + k1] += values[j * bs0 * n + k0 * n + k1] * xval;
