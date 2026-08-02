@@ -35,11 +35,11 @@ TEMPLATE_TEST_CASE("Mark maximum", "[refinement][mark][maximum]", double, float)
   auto indices = mark_maximum<TestType>(marker, theta, comm);
 
   CHECK(std::ranges::all_of(
-      indices, [&](auto e)
+      indices, [&marker](auto e)
       { return (0 <= e) && (e <= static_cast<std::int32_t>(marker.size())); }));
 
   TestType max = dolfinx::MPI::size(comm) * 10 - 1;
-  auto mark = [=](auto e) { return e > theta * max; };
+  auto mark = [&theta, &max](auto e) { return e > theta * max; };
 
   CHECK(std::ranges::count_if(marker, mark)
         == static_cast<std::int32_t>(indices.size()));

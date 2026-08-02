@@ -497,7 +497,7 @@ public:
   {
     // set_fn is a lambda which gets evaluated for every index in [0,
     // _dofs0.size()) and its result is assigned to x[_dofs0[i]].
-    auto apply = [&](std::invocable<std::int32_t> auto set_fn)
+    auto apply = [this, &x](std::invocable<std::int32_t> auto set_fn)
     {
       static_assert(
           std::is_same_v<std::invoke_result_t<decltype(set_fn), std::int32_t>,
