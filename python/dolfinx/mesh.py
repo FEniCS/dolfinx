@@ -838,7 +838,7 @@ def create_mesh(
     else:
         gdim = x.shape[1]
 
-    dtype = None
+    dtype: npt.DTypeLike | None = None
     if isinstance(e, ufl.domain.Mesh):
         # e is a UFL domain
         e_ufl = e.ufl_coordinate_element()

@@ -40,6 +40,8 @@ if not dolfinx.has_petsc4py:
     raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
 
+from typing import overload
+
 import numpy as np
 from numpy import typing as npt
 
@@ -201,9 +203,34 @@ def create_matrix(
 
 
 # -- Vector assembly ------------------------------------------------------
+@overload
+def assemble_vector(
+    L: Form | Sequence[Form],
+    constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
+    coeffs: (
+        dict[tuple[IntegralType, int], npt.NDArray]
+        | Sequence[dict[tuple[IntegralType, int], npt.NDArray]]
+        | None
+    ) = None,
+    kind: str | None = None,
+) -> PETSc.Vec: ...
 
 
-@functools.singledispatch
+@overload
+def assemble_vector(
+    b: PETSc.Vec,
+    L: Form | Sequence[Form],
+    constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
+    coeffs: (
+        dict[tuple[IntegralType, int], npt.NDArray]
+        | Sequence[dict[tuple[IntegralType, int], npt.NDArray]]
+        | None
+    ) = None,
+    kind: str | None = None,
+) -> PETSc.Vec: ...
+
+
+@functools.singledispatch  # type: ignore[attr-defined]
 def assemble_vector(
     L: Form | Sequence[Form],
     constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
@@ -266,8 +293,8 @@ def assemble_vector(
     return _assemble_vector_petsc(b, L, constants, coeffs)
 
 
-@assemble_vector.register
-def _assemble_vector_petsc(  # type: ignore[misc]
+@assemble_vector.register  # type: ignore[attr-defined]
+def _assemble_vector_petsc(
     b: PETSc.Vec,
     L: Form | Sequence[Form],
     constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
@@ -353,6 +380,35 @@ def _assemble_vector_petsc(  # type: ignore[misc]
 
 
 # -- Matrix assembly ------------------------------------------------------
+@overload
+def assemble_matrix(
+    a: Form | Sequence[Sequence[Form]],
+    bcs: Sequence[DirichletBC] | None = None,
+    diag: float = 1.0,
+    constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
+    coeffs: dict[tuple[IntegralType, int], npt.NDArray]
+    | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
+    | None = None,
+    kind: str | Sequence[Sequence[str]] | None = None,
+) -> PETSc.Mat: ...
+
+
+@overload
+def assemble_matrix(
+    A: PETSc.Mat,
+    a: Form | Sequence[Sequence[Form]],
+    bcs: Sequence[DirichletBC] | None = None,
+    diag: float = 1.0,
+    constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
+    coeffs: (
+        dict[tuple[IntegralType, int], npt.NDArray]
+        | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
+        | None
+    ) = None,
+    kind: str | Sequence[Sequence[str]] | None = None,
+) -> PETSc.Mat: ...
+
+
 @functools.singledispatch
 def assemble_matrix(
     a: Form | Sequence[Sequence[Form]],
@@ -421,8 +477,8 @@ def assemble_matrix(
     return A
 
 
-@assemble_matrix.register
-def _assemble_matrix_petsc(  # type: ignore[misc]
+@assemble_matrix.register  # type: ignore[attr-defined]
+def _assemble_matrix_petsc(
     A: PETSc.Mat,
     a: Form | Sequence[Sequence[Form]],
     bcs: Sequence[DirichletBC] | None = None,
