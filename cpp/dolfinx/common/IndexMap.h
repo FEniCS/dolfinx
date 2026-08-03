@@ -8,7 +8,6 @@
 
 #include "MPI.h"
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <span>
 #include <tuple>
@@ -221,8 +220,8 @@ public:
 
   /// @todo Aim to remove this function?
   ///
-  /// @brief Compute map from each local (owned) index to the set of
-  /// ranks that have the index as a ghost.
+  /// @brief For each local (owned) index compute the set of ranks that
+  /// have the index as a ghost.
   ///
   /// @note Collective
   ///
@@ -231,7 +230,7 @@ public:
   /// std::int64_t>,std::span<const int>,int) for an explanation of when
   /// `tag` is required.
   /// @return Shared indices.
-  graph::AdjacencyList<int> index_to_dest_ranks(
+  std::pair<std::vector<int>, std::vector<std::int32_t>> index_to_dest_ranks(
       int tag = static_cast<int>(dolfinx::MPI::tag::consensus_nbx)) const;
 
   /// @brief Build a list of owned indices that are ghosted by another
