@@ -105,7 +105,7 @@ def create_cell_partitioner(mode: GhostMode, max_facet_to_cell_links: int) -> Ca
 
 @singledispatch
 def create_cell_partitioner(
-    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int
+    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int | None
 ) -> Callable:
     """Create a function to partition a mesh.
 
@@ -127,7 +127,7 @@ def create_cell_partitioner(
 
 @create_cell_partitioner.register(GhostMode)  # type: ignore[attr-defined]
 def _create_cell_partitioner_from_ghost_mode(
-    mode: GhostMode, max_facet_to_cell_links: int
+    mode: GhostMode, max_facet_to_cell_links: int | None
 ) -> Callable:
     """Create a function to partition a mesh.
 
