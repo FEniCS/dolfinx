@@ -770,11 +770,7 @@ _part_func = typing.Callable[
     [MPI.Comm, int, dolfinx.cpp.graph.AdjacencyList_int64, bool],
     dolfinx.cpp.graph.AdjacencyList_int32,
 ]
-avail_partitioners: list[
-    typing.Callable[[float, int], _part_func]
-    | typing.Callable[[float, typing.Sequence[int]], _part_func]
-    | typing.Callable[[int, int, float, bool], _part_func]
-] = []
+avail_partitioners: list[typing.Callable[..., _part_func]] = []
 if dolfinx.has_ptscotch:
     avail_partitioners.append(dolfinx.cpp.graph.partitioner_scotch)  # type: ignore[attr-defined]
 if dolfinx.has_kahip:
