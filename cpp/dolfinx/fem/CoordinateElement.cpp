@@ -103,7 +103,8 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
       = tdim * (2 * gdim + 2 * num_xnodes + 2) + gdim + num_xnodes;
   if (working_array.size() < required_size)
     throw std::runtime_error(std::format(
-        "working_array is too small in pull_back_nonaffine, requires {}", required_size));
+        "working_array is too small in pull_back_nonaffine, requires {}",
+        required_size));
 
   mdspan2_t<T> dphi(working_array.data(), tdim, num_xnodes);
   mdspan2_t<const T> Xk(working_array.data() + tdim * num_xnodes, 1, tdim);
