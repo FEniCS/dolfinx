@@ -95,12 +95,12 @@ PartitioningFunc = typing.Callable[
 
 @typing.overload
 def create_cell_partitioner(
-    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int
+    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int | None
 ) -> Callable: ...
 
 
 @typing.overload
-def create_cell_partitioner(mode: GhostMode, max_facet_to_cell_links: int) -> Callable: ...
+def create_cell_partitioner(mode: GhostMode, max_facet_to_cell_links: int | None) -> Callable: ...
 
 
 @singledispatch
