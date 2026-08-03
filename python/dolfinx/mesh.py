@@ -88,6 +88,16 @@ __all__ = [
 ]
 
 
+@typing.overload
+def create_cell_partitioner(
+    part: Callable, mode: GhostMode, max_facet_to_cell_links: int
+) -> Callable: ...
+
+
+@typing.overload
+def create_cell_partitioner(mode: GhostMode, max_facet_to_cell_links: int) -> Callable: ...
+
+
 @singledispatch
 def create_cell_partitioner(
     part: Callable | GhostMode, mode: GhostMode, max_facet_to_cell_links: int
