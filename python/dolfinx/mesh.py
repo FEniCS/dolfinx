@@ -120,7 +120,7 @@ def create_cell_partitioner(
     return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links)
 
 
-@create_cell_partitioner.register(GhostMode)  # type: ignore[attr-defined]]
+@create_cell_partitioner.register(GhostMode)  # type: ignore[attr-defined]
 def _create_cell_partitioner_from_ghost_mode(
     mode: GhostMode, max_facet_to_cell_links: int
 ) -> Callable:
