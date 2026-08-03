@@ -10,6 +10,10 @@
 #include <cmath>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <format>
+#include <numeric>
+#include <ranges>
+#include <stdexcept>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
