@@ -144,7 +144,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   // and 3, rather than looping `bs` times at runtime for every cell.
   // `bs_c` is a `std::integral_constant<int, N>`, converted to `N` via
   // `bs_c()` where `pack_impl`'s `_bs` template parameter is needed.
-  auto pack_for_bs = [&](auto bs_c)
+  auto pack_for_bs = [&cells, &c, &cstride, &offset, &space_dim, &bs, &v,
+                      &cell_info, &dofmap, &transformation](auto bs_c)
   {
     for (std::size_t e = 0; e < cells.extent(0); ++e)
     {

@@ -92,7 +92,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
     }
 
     // Push forward coordinates (X -> x)
-    std::size_t offset = std::distance(cells.begin(), cell_it);
+    std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       for (std::size_t j = 0; j < gdim; ++j)
@@ -753,7 +753,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
       std::size_t row = 0;
       std::size_t rowstart = 0;
       std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
-      std::size_t offset = std::distance(cells.begin(), cell_it);
+      std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
       for (int k = 0; k < element_bs; ++k)
       {
         if (k - rowstart > row)
@@ -791,7 +791,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
     // Loop over cells
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
-      std::size_t offset = std::distance(cells.begin(), cell_it);
+      std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
       std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
       for (int k = 0; k < element_bs; ++k)
       {
@@ -874,7 +874,7 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   std::vector<T> coeffs_b(num_scalar_dofs);
   for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
   {
-    std::size_t offset = std::distance(cells.begin(), cell_it);
+    std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
     std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
     for (int k = 0; k < element_bs; ++k)
     {
@@ -1039,7 +1039,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
     }
 
-    const std::size_t offset = std::distance(cells.begin(), cell_it);
+    const std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
     std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
     for (int k = 0; k < element_bs; ++k)
     {
