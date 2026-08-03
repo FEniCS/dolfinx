@@ -7,6 +7,7 @@
 #pragma once
 
 #include "AdjacencyList.h"
+#include <dolfinx/common/MPI.h>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -51,6 +52,41 @@ namespace dolfinx::graph
 AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
               std::pair<std::int32_t, std::int32_t>>
 comm_graph(const common::IndexMap& map, int root = 0);
+
+/// @brief Build communication graph data as a JSON string.
+///
+/// The data string can be decoded (loaded) to create a Python object
+/// from which a [NetworkX](https://networkx.org/) graph can be
+/// constructed.
+///
+/// See ::comm_graph for a description of the data.
+///
+/// @param[in] g Communication graph.
+/// @return JSON string representing the communication graph. Edge
+/// data is data volume (`weight`) and local/remote memory indicator
+/// (`local==1` is an edge to an shared memory process/rank, other
+/// wise the target node is a remote memory rank).
+std::string
+comm_to_json(const AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
+                                 std::pair<std::int32_t, std::int32_t>>& g);
+
+/// @todo Aim to remove this function?
+///
+/// @brief Compute map from each local (owned) index to the set of
+/// ranks that have the index as a ghost.
+///
+/// @note Collective
+///
+/// @param[in] map Index map.
+/// @param[in] tag Tag to pass to MPI calls.
+/// @note See ::IndexMap(MPI_Comm,std::int32_t,std::span<const
+/// std::int64_t>,std::span<const int>,int) for an explanation of when
+/// `tag` is required.
+/// @return Shared indices.
+AdjacencyList<int>
+index_to_dest_ranks(const common::IndexMap& map,
+                    int tag
+                    = static_cast<int>(dolfinx::MPI::tag::consensus_nbx));
 
 /// @brief Build communication graph data as a JSON string.
 ///

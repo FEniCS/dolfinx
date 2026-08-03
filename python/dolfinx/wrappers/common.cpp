@@ -15,6 +15,7 @@
 #include <dolfinx/common/defines.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/timing.h>
+#include <dolfinx/graph/utils.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
@@ -129,8 +130,11 @@ void common(nb::module_& m)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
       .def_prop_ro("local_range", &dolfinx::common::IndexMap::local_range,
                    "Range of indices owned by this map")
-      .def("index_to_dest_ranks",
-           &dolfinx::common::IndexMap::index_to_dest_ranks)
+      .def(
+          "index_to_dest_ranks",
+          [](const dolfinx::common::IndexMap& self, int tag)
+          { return dolfinx::graph::index_to_dest_ranks(self, tag); },
+          nb::arg("tag"))
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)

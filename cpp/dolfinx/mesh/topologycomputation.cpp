@@ -17,6 +17,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/utils.h>
 #include <format>
 #include <functional>
 #include <memory>
@@ -336,7 +337,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   // Create a symmetric neighbor_comm from vertex_ranks
 
   // Get sharing ranks for each vertex
-  graph::AdjacencyList<int> vertex_ranks = vertex_map.index_to_dest_ranks();
+  graph::AdjacencyList<int> vertex_ranks
+      = graph::index_to_dest_ranks(vertex_map);
 
   // Create unique list of ranks that share vertices (owners of)
   std::vector<int> ranks(vertex_ranks.array().begin(),

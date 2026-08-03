@@ -4,15 +4,16 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "dolfinx/graph/AdjacencyList.h"
-#include "dolfinx/mesh/Mesh.h"
-#include "dolfinx/mesh/Topology.h"
-#include "dolfinx/mesh/utils.h"
 #include "option.h"
 #include "utils.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/utils.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/utils.h>
 #include <optional>
 #include <span>
 #include <tuple>
@@ -478,7 +479,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
     throw std::runtime_error("Edges must be initialised");
 
   // Get sharing ranks for each edge
-  graph::AdjacencyList<int> edge_ranks = map_e->index_to_dest_ranks();
+  graph::AdjacencyList<int> edge_ranks = graph::index_to_dest_ranks(*map_e);
 
   // Create unique list of ranks that share edges (owners of ghosts plus
   // ranks that ghost owned indices)
