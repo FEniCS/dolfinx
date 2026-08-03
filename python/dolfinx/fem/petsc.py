@@ -51,7 +51,7 @@ import ufl
 from dolfinx.cpp.fem.petsc import discrete_curl as _discrete_curl
 from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
-from dolfinx.fem import IntegralType, pack_coefficients, pack_constants
+from dolfinx.fem import pack_coefficients, pack_constants
 from dolfinx.fem.assemble import _assemble_vector_array
 from dolfinx.fem.assemble import apply_lifting as _apply_lifting
 from dolfinx.fem.bcs import DirichletBC
@@ -208,8 +208,8 @@ def assemble_vector(
     L: Form | Sequence[Form],
     constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
     coeffs: (
-        dict[tuple[IntegralType, int], npt.NDArray]
-        | Sequence[dict[tuple[IntegralType, int], npt.NDArray]]
+        dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+        | Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]
         | None
     ) = None,
     kind: str | None = None,
@@ -222,8 +222,8 @@ def assemble_vector(
     L: Form | Sequence[Form],
     constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
     coeffs: (
-        dict[tuple[IntegralType, int], npt.NDArray]
-        | Sequence[dict[tuple[IntegralType, int], npt.NDArray]]
+        dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+        | Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]
         | None
     ) = None,
     kind: str | None = None,
@@ -235,8 +235,8 @@ def assemble_vector(
     L: Form | Sequence[Form],
     constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
     coeffs: (
-        dict[tuple[IntegralType, int], npt.NDArray]
-        | Sequence[dict[tuple[IntegralType, int], npt.NDArray]]
+        dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+        | Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]
         | None
     ) = None,
     kind: str | None = None,
@@ -299,8 +299,8 @@ def _assemble_vector_petsc(
     L: Form | Sequence[Form],
     constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
     coeffs: (
-        dict[tuple[IntegralType, int], npt.NDArray]
-        | Sequence[dict[tuple[IntegralType, int], npt.NDArray]]
+        dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+        | Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]
         | None
     ) = None,
 ) -> PETSc.Vec:
@@ -386,8 +386,8 @@ def assemble_matrix(
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1.0,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
-    coeffs: dict[tuple[IntegralType, int], npt.NDArray]
-    | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
+    coeffs: dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+    | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
     | None = None,
     kind: str | Sequence[Sequence[str]] | None = None,
 ) -> PETSc.Mat: ...
@@ -401,8 +401,8 @@ def assemble_matrix(
     diag: float = 1.0,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: (
-        dict[tuple[IntegralType, int], npt.NDArray]
-        | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
+        dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+        | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
     kind: str | Sequence[Sequence[str]] | None = None,
@@ -416,8 +416,8 @@ def assemble_matrix(
     diag: float = 1,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: (
-        dict[tuple[IntegralType, int], npt.NDArray]
-        | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
+        dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+        | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
     kind=None,
@@ -485,8 +485,8 @@ def _assemble_matrix_petsc(
     diag: float = 1,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: (
-        dict[tuple[IntegralType, int], npt.NDArray]
-        | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
+        dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+        | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
 ) -> PETSc.Mat:
@@ -607,8 +607,8 @@ def apply_lifting(
     alpha: float = 1,
     constants: Sequence[npt.NDArray] | Sequence[Sequence[npt.NDArray]] | None = None,
     coeffs: (
-        dict[tuple[IntegralType, int], npt.NDArray]
-        | Sequence[Sequence[dict[tuple[IntegralType, int], npt.NDArray]]]
+        dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]
+        | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
 ) -> None:
