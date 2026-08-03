@@ -98,6 +98,18 @@ SparsityPattern::SparsityPattern(
 
   const std::int32_t num_rows_local_new = _index_maps[0]->size_local();
 
+  // Reserve the exact final cache size (sub-pattern cache sizes are
+  // already known, so this is a one-off reserve, not a per-call one)
+  {
+    std::size_t num_entries = 0;
+    for (std::size_t row = 0; row < patterns.size(); ++row)
+      for (std::size_t col = 0; col < patterns[row].size(); ++col)
+        if (const SparsityPattern* p = patterns[row][col]; p)
+          num_entries += p->_cache_rows.size() * bs[0][row] * bs[1][col];
+    _cache_rows.reserve(num_entries);
+    _cache_cols.reserve(num_entries);
+  }
+
   // Iterate over block rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
@@ -277,6 +289,11 @@ void SparsityPattern::finalize()
   const auto [cache_offsets, cache_cols]
       = bucket_by_row(_cache_rows, _cache_cols, num_rows0);
 
+  // Cache is now fully bucketed into cache_offsets/cache_cols; drop it
+  // early to reduce peak memory for the rest of finalize()
+  std::vector<std::int32_t>().swap(_cache_rows);
+  std::vector<std::int32_t>().swap(_cache_cols);
+
   // Neighbourhood rank of each ghost row's owner, looked up once
   std::vector<int> neighbour_rank(owners0.size());
   std::ranges::transform(owners0, neighbour_rank.begin(),
@@ -366,9 +383,11 @@ void SparsityPattern::finalize()
     MPI_Comm_free(&comm);
   }
 
-  // Global to local map for ghost column indices
+  // Global to local map for ghost column indices. Reserve for the
+  // worst case where every received entry is a new ghost column, to
+  // avoid rehashing while the map is populated below.
   std::unordered_map<std::int64_t, std::int32_t> global_to_local;
-  global_to_local.reserve(_col_ghosts.size());
+  global_to_local.reserve(_col_ghosts.size() + ghost_data_in.size() / 3);
   std::int32_t local_i = local_size1;
   for (std::int64_t global_i : _col_ghosts)
     global_to_local.insert({global_i, local_i++});
@@ -437,10 +456,6 @@ void SparsityPattern::finalize()
     _edges.insert(_edges.end(), row.begin(), it_end);
     _offsets.push_back(_offsets.back() + std::distance(row.begin(), it_end));
   }
-
-  // Clear cache
-  std::vector<std::int32_t>().swap(_cache_rows);
-  std::vector<std::int32_t>().swap(_cache_cols);
 
   _edges.shrink_to_fit();
 
