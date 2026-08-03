@@ -188,15 +188,6 @@ void SparsityPattern::insert(std::int32_t row, std::int32_t col)
   }
 
   assert(_index_maps[0]);
-  const std::int32_t max_row
-      = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
-
-  if (row > max_row or row < 0)
-  {
-    throw std::runtime_error(
-        "Cannot insert rows that do not exist in the IndexMap.");
-  }
-
   _cache_rows.push_back(row);
   _cache_cols.push_back(col);
 }
@@ -211,18 +202,13 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
   }
 
   assert(_index_maps[0]);
-  const std::int32_t max_row
-      = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
 
-  _cache_rows.reserve(_cache_rows.size() + rows.size() * cols.size());
-  _cache_cols.reserve(_cache_cols.size() + rows.size() * cols.size());
+  // Note: no explicit reserve() here. reserve(n) allocates exactly n,
+  // not the amortised (e.g. doubled) capacity insert() itself would
+  // pick, so reserving to the current size on every call would turn
+  // the cache into an O(#insert calls^2) allocation pattern.
   for (std::int32_t row : rows)
   {
-    if (row > max_row or row < 0)
-    {
-      throw std::runtime_error(
-          "Cannot insert rows that do not exist in the IndexMap.");
-    }
     _cache_rows.insert(_cache_rows.end(), cols.size(), row);
     _cache_cols.insert(_cache_cols.end(), cols.begin(), cols.end());
   }
@@ -237,18 +223,6 @@ void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
   }
 
   assert(_index_maps[0]);
-  const std::int32_t max_row
-      = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
-
-  for (std::int32_t row : rows)
-  {
-    if (row > max_row or row < 0)
-    {
-      throw std::runtime_error(
-          "Cannot insert rows that do not exist in the IndexMap.");
-    }
-  }
-
   _cache_rows.insert(_cache_rows.end(), rows.begin(), rows.end());
   _cache_cols.insert(_cache_cols.end(), rows.begin(), rows.end());
 }
