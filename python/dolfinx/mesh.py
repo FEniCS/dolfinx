@@ -87,10 +87,15 @@ __all__ = [
     "uniform_refine",
 ]
 
+PartitioningFunc = typing.Callable[
+    [_MPI.Comm, int, _cpp.graph.AdjacencyList_int64, bool],
+    _cpp.graph.AdjacencyList_int32,
+]
+
 
 @typing.overload
 def create_cell_partitioner(
-    part: Callable, mode: GhostMode, max_facet_to_cell_links: int
+    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int
 ) -> Callable: ...
 
 
@@ -100,7 +105,7 @@ def create_cell_partitioner(mode: GhostMode, max_facet_to_cell_links: int) -> Ca
 
 @singledispatch
 def create_cell_partitioner(
-    part: Callable | GhostMode, mode: GhostMode, max_facet_to_cell_links: int
+    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int
 ) -> Callable:
     """Create a function to partition a mesh.
 

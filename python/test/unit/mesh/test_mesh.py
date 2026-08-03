@@ -766,11 +766,7 @@ def test_mesh_create_cmap(dtype):
     assert msh.ufl_domain() is None
 
 
-_part_func = typing.Callable[
-    [MPI.Comm, int, dolfinx.cpp.graph.AdjacencyList_int64, bool],
-    dolfinx.cpp.graph.AdjacencyList_int32,
-]
-avail_partitioners: list[typing.Callable[..., _part_func]] = []
+avail_partitioners: list[typing.Callable[..., dolfinx.mesh.PartitioningFunc]] = []
 if dolfinx.has_ptscotch:
     avail_partitioners.append(dolfinx.cpp.graph.partitioner_scotch)  # type: ignore[attr-defined]
 if dolfinx.has_kahip:
