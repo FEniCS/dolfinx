@@ -244,7 +244,7 @@ std::size_t CoordinateElement<T>::pull_back_working_size(std::size_t gdim) const
   std::size_t tdim = dolfinx::mesh::cell_dim(cell_shape());
 
   if (is_affine())
-    return tdim * (2 * gdim) + (tdim + 1) * dim();
+    return tdim * (2 * gdim + 1) + (tdim + 1) * dim();
   else
   {
     return tdim * (2 * gdim + 2 * dim() + 2) + gdim + dim();

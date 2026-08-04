@@ -1069,7 +1069,7 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> x,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_geometry,
              double tol, int maxit,
-             nb::ndarray<T, nb::ndim<1>, nb::c_contig> working_memory)
+             nb::ndarray<T, nb::ndim<1>, nb::c_contig> working_array)
           {
             std::size_t num_points = x.shape(0);
             std::size_t gdim = x.shape(1);
@@ -1088,30 +1088,30 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
                          cell_geometry.shape(1));
 
             std::size_t working_size = self.pull_back_working_size(gdim);
-            if (working_memory.size() < working_size)
+            if (working_array.size() < working_size)
             {
               throw std::runtime_error(
                   std::format("Working memory is too small for pull_back, "
                               "got {}, need {}.",
-                              working_memory.size(), working_size));
+                              working_array.size(), working_size));
             }
             if (self.is_affine())
             {
-              std::span<T> J_b(working_memory.data(), gdim * tdim);
+              std::span<T> J_b(working_array.data(), gdim * tdim);
               std::ranges::fill(J_b, 0);
               mdspan2_t J(J_b.data(), gdim, tdim);
-              std::span<T> K_b(working_memory.data() + gdim * tdim,
-                               tdim * gdim);
+              std::span<T> K_b(working_array.data() + gdim * tdim, tdim * gdim);
               mdspan2_t K(K_b.data(), tdim, gdim);
-
+              std::span<T> x_ref(working_array.data() + 2 * gdim * tdim, tdim);
+              std::ranges::fill(x_ref, 0);
               std::array<std::size_t, 4> phi_shape = self.tabulate_shape(1, 1);
-              std::span<T> phi_b(working_memory.data() + gdim * tdim
+              std::span<T> phi_b(working_array.data() + gdim * tdim
                                      + tdim * gdim,
                                  std::reduce(phi_shape.begin(), phi_shape.end(),
                                              1, std::multiplies{}));
               cmdspan4_t phi(phi_b.data(), phi_shape);
 
-              self.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi_b);
+              self.tabulate(1, x_ref, {1, tdim}, phi_b);
               auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), 0,
                                         md::full_extent, 0);
 
@@ -1126,14 +1126,14 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
             {
               self.pull_back_nonaffine(
                   X, _x, g,
-                  std::span(working_memory.data(), working_memory.size()), tol,
+                  std::span(working_array.data(), working_array.size()), tol,
                   maxit);
             }
             return dolfinx_wrappers::as_nbarray(std::move(Xb),
                                                 {num_points, tdim});
           },
           nb::arg("x"), nb::arg("cell_geometry"), nb::arg("tol"),
-          nb::arg("maxit"), nb::arg("working_memory"));
+          nb::arg("maxit"), nb::arg("working_array"));
 }
 
 template <typename T>

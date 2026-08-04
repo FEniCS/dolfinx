@@ -474,7 +474,7 @@ def test_push_forward_pull_back(gdim: int, is_affine: bool):
     # Push point forward
     num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
     scratch_size = mesh.geometry.cmaps[0].pull_back_working_size(gdim)
-    working_memory = np.zeros(scratch_size, dtype=dtype)
+    working_array = np.zeros(scratch_size, dtype=dtype)
 
     for cell in range(num_cells_local):
         # Push forward
@@ -484,14 +484,14 @@ def test_push_forward_pull_back(gdim: int, is_affine: bool):
         )
         # Pull back
         x_pullback = mesh.geometry.cmaps[0].pull_back(
-            x, cell_geometry, working_array=working_memory
+            x, cell_geometry, working_array=working_array
         )
         assert np.allclose(x_pullback, ref_point, rtol=np.sqrt(np.finfo(dtype).eps))
 
 
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("is_affine", [True, False])
-def test_undersized_working_memory(gdim: int, is_affine: bool):
+def test_undersized_working_array(gdim: int, is_affine: bool):
     """Test that an error is raised when the working memory is too small."""
     if gdim == 2:
         ct = CellType.triangle if is_affine else CellType.quadrilateral
@@ -502,7 +502,7 @@ def test_undersized_working_memory(gdim: int, is_affine: bool):
 
     # Create a small working memory array
     dtype = mesh.geometry.x.dtype
-    working_memory = np.zeros(1, dtype=dtype)
+    working_array = np.zeros(1, dtype=dtype)
 
     # Try to pull back with insufficient working memory
     ref_point = np.full((1, mesh.topology.dim), 0.0, dtype=dtype)
@@ -513,4 +513,4 @@ def test_undersized_working_memory(gdim: int, is_affine: bool):
         )
         # Pull back
         with pytest.raises(RuntimeError):
-            mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_memory)
+            mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)
