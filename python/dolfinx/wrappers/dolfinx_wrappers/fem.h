@@ -1124,8 +1124,8 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
             {
               self.pull_back_nonaffine(
                   X, _x, g,
-                  std::span(working_memory.data(), working_memory.size()),
-                  tol, maxit);
+                  std::span(working_memory.data(), working_memory.size()), tol,
+                  maxit);
             }
             return dolfinx_wrappers::as_nbarray(std::move(Xb),
                                                 {num_points, tdim});
