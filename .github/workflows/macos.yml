@@ -133,12 +133,12 @@ jobs:
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" './[test]'
 
       - name: Run mypy
-        working-directory: python
         run: |
           pip install mypy types-cffi scipy-stubs
+          mypy --config-file python/pyproject.toml -p dolfinx
           mypy -p dolfinx
-          mypy test
-          mypy demo
+          mypy python/test
+          mypy python/demo
 
       - name: Basic test
         run: |
