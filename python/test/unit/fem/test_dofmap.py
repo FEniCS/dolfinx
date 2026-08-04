@@ -452,7 +452,7 @@ def test_empty_rank_collapse():
 
 @pytest.mark.parametrize("gdim", [2, 3])
 @pytest.mark.parametrize("is_affine", [True, False])
-def test_non_affine_pullback(gdim: int, is_affine: bool):
+def test_push_forward_pull_back(gdim: int, is_affine: bool):
     if gdim == 2:
         ct = CellType.triangle if is_affine else CellType.quadrilateral
         mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, ct)
@@ -487,3 +487,30 @@ def test_non_affine_pullback(gdim: int, is_affine: bool):
             x, cell_geometry, working_array=working_memory
         )
         assert np.allclose(x_pullback, ref_point, rtol=np.sqrt(np.finfo(dtype).eps))
+
+
+@pytest.mark.parametrize("gdim", [2, 3])
+@pytest.mark.parametrize("is_affine", [True, False])
+def test_undersized_working_memory(gdim: int, is_affine: bool):
+    """Test that an error is raised when the working memory is too small."""
+    if gdim == 2:
+        ct = CellType.triangle if is_affine else CellType.quadrilateral
+        mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, ct)
+    else:
+        ct = CellType.tetrahedron if is_affine else CellType.hexahedron
+        mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, ct)
+
+    # Create a small working memory array
+    dtype = mesh.geometry.x.dtype
+    working_memory = np.zeros(1, dtype=dtype)
+
+    # Try to pull back with insufficient working memory
+    ref_point = np.full((1, mesh.topology.dim), 0.0, dtype=dtype)
+    if mesh.topology.index_map(mesh.topology.dim).size_local > 0:
+        cell_geometry = mesh.geometry.x[mesh.geometry.dofmaps[0][0], :gdim]
+        x = mesh.geometry.cmaps[0].push_forward(
+            ref_point.reshape(ref_point.shape[0], gdim), cell_geometry
+        )
+        # Pull back
+        with pytest.raises(RuntimeError):
+            mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_memory)
