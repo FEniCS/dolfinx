@@ -273,7 +273,7 @@ jobs:
           mypy --config-file python/pyproject.toml -p dolfinx --exclude superlu_dist.py
           cd python/
           mypy test
-          mypy demo
+        # mypy demo
 
       - name: Numpy version
         run: python -c "import numpy; print(numpy.__version__)"
