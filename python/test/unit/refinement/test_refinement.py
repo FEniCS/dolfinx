@@ -81,7 +81,7 @@ def test_sub_refine():
 
     edges = locate_entities_boundary(msh, 1, left_corner_edge)
     if MPI.COMM_WORLD.size == 1:
-        assert edges == 1
+        assert len(edges) == 1
 
     msh1, _, _ = refine(msh, edges)
     assert msh.topology.index_map(2).size_global + 3 == msh1.topology.index_map(2).size_global

@@ -11,25 +11,31 @@ import sys
 # Template placeholder for injecting Windows dll directories in CI
 # WINDOWSDLL
 
+import numpy as _np
+
+default_scalar_type: type[_np.floating | _np.complexfloating]
+default_real_type: type[_np.floating]
+
 try:
     from petsc4py import PETSc as _PETSc
 
     # Additional sanity check that DOLFINx was built with petsc4py support.
     import dolfinx.common
 
-    assert dolfinx.common.has_petsc4py
+    if not dolfinx.common.has_petsc4py:
+        raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
     default_scalar_type = _PETSc.ScalarType  # type: ignore
     default_real_type = _PETSc.RealType  # type: ignore
 except ImportError:
-    import numpy as _np
-
     default_scalar_type = _np.float64
     default_real_type = _np.float64
 
+del _np
+
 from dolfinx import common
 from dolfinx import cpp as _cpp
-from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot
+from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, typing
 
 from dolfinx.common import (
     git_commit_hash,
@@ -79,6 +85,7 @@ __all__ = [
     "mesh",
     "nls",
     "plot",
+    "typing",
     "git_commit_hash",
     "hardware_concurrency",
     "has_adios2",

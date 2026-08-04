@@ -6,6 +6,7 @@
 
 import math
 import sys
+import typing
 
 from mpi4py import MPI
 
@@ -27,6 +28,7 @@ from dolfinx.mesh import (
     GhostMode,
     create_box,
     create_interval,
+    create_point_mesh,
     create_rectangle,
     create_submesh,
     create_unit_cube,
@@ -98,7 +100,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
         mesh.topology.create_entity_permutations()
         e_to_g = entities_to_geometry(mesh, entity_dim, np.array(submesh_to_mesh), True)
         for submesh_entity in range(len(submesh_to_mesh)):
-            submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
+            submesh_x_dofs = submesh.geometry.dofmaps[0][submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
             # correspond to the x_dofs of cell i in the submesh
             mesh_x_dofs = e_to_g[submesh_entity]
@@ -318,6 +320,29 @@ def test_create_box_prism():
     )
     assert mesh.topology.index_map(0).size_global == 60
     assert mesh.topology.index_map(3).size_global == 48
+
+
+@pytest.mark.parametrize("gdim", [1, 2, 3])
+def test_create_interval_gdim(gdim):
+    """Interval mesh embedded in gdim-dimensional space has correct tdim and gdim."""
+    mesh = create_interval(MPI.COMM_WORLD, 6, [0.0, 1.0], gdim=gdim)
+    assert mesh.topology.dim == 1
+    assert mesh.geometry.dim == gdim
+    domain = mesh.ufl_domain()
+    assert domain is not None
+    assert domain.ufl_coordinate_element().reference_value_shape == (gdim,)
+
+
+@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
+@pytest.mark.parametrize("gdim", [2, 3])
+def test_create_rectangle_gdim(gdim, cell_type):
+    """Rectangle mesh embedded in gdim-dimensional space has correct tdim and gdim."""
+    mesh = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [4, 4], cell_type, gdim=gdim)
+    assert mesh.topology.dim == 2
+    assert mesh.geometry.dim == gdim
+    domain = mesh.ufl_domain()
+    assert domain is not None
+    assert domain.ufl_coordinate_element().reference_value_shape == (gdim,)
 
 
 @pytest.mark.skip_in_parallel
@@ -718,36 +743,36 @@ def test_mesh_create_cmap(dtype):
     # ufl.Mesh case
     domain = ufl.Mesh(element("Lagrange", shape, degree, shape=(2,), dtype=dtype))
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
-    assert msh.geometry.cmap().dim == 3
+    assert msh.geometry.cmaps[0].dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.ufl.element
     domain = element("Lagrange", shape, degree, shape=(2,), dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
-    assert msh.geometry.cmap().dim == 3
+    assert msh.geometry.cmaps[0].dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.finite_element
     domain = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree, dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
-    assert msh.geometry.cmap().dim == 3
+    assert msh.geometry.cmaps[0].dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # cpp.fem.CoordinateElement
     e = basix.create_element(basix.ElementFamily.P, basix.CellType[shape], degree, dtype=dtype)
     domain = coordinate_element(e)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
-    assert msh.geometry.cmap().dim == 3
+    assert msh.geometry.cmaps[0].dim == 3
     assert msh.ufl_domain() is None
 
 
-avail_partitioners = []
+avail_partitioners: list[typing.Callable[..., dolfinx.mesh.PartitioningFunc]] = []
 if dolfinx.has_ptscotch:
-    avail_partitioners.append(dolfinx.cpp.graph.partitioner_scotch)
+    avail_partitioners.append(dolfinx.cpp.graph.partitioner_scotch)  # type: ignore[attr-defined]
 if dolfinx.has_kahip:
-    avail_partitioners.append(dolfinx.cpp.graph.partitioner_kahip)
+    avail_partitioners.append(dolfinx.cpp.graph.partitioner_kahip)  # type: ignore[attr-defined]
 if dolfinx.has_parmetis:
-    avail_partitioners.append(dolfinx.cpp.graph.partitioner_parmetis)
+    avail_partitioners.append(dolfinx.cpp.graph.partitioner_parmetis)  # type: ignore[attr-defined]
 
 
 @pytest.mark.parametrize("partitioner", avail_partitioners)
@@ -819,3 +844,17 @@ def test_transfer_to_submesh(codim):
         marked2 = sub_et.find(2)
         np.testing.assert_allclose(marked1, ref_one)
         np.testing.assert_allclose(marked2, ref_two)
+
+
+@pytest.mark.parametrize("gdim", [1, 2, 3])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_point_mesh(gdim, dtype):
+    rng = np.random.default_rng(12)
+    num_points = 10
+    x = rng.random((num_points, gdim), dtype=dtype)
+    mesh = create_point_mesh(MPI.COMM_WORLD, x)
+    assert mesh.comm.size == MPI.COMM_WORLD.size
+    assert mesh.topology.dim == 0
+    assert mesh.geometry.dim == gdim
+    assert mesh.topology.index_map(0).size_global == MPI.COMM_WORLD.size * num_points
+    assert mesh.topology.index_map(0).size_local == num_points

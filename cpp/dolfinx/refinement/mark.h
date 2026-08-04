@@ -33,13 +33,13 @@ std::vector<std::int32_t> mark_maximum(std::span<const T> marker, T theta,
                                        MPI_Comm comm)
 {
   if ((theta <= 0) || (theta >= 1))
-    throw std::invalid_argument("Theta needs to fullfill 0 < θ < 1.");
+    throw std::invalid_argument("Theta needs to fulfill 0 < θ < 1.");
 
   T max = marker.empty() ? std::numeric_limits<T>::lowest()
                          : std::ranges::max(marker);
   MPI_Allreduce(MPI_IN_PLACE, &max, 1, dolfinx::MPI::mpi_t<T>, MPI_MAX, comm);
 
-  auto mark = [=](T e) { return e > theta * max; };
+  auto mark = [&theta, &max](T e) { return e > theta * max; };
 
   std::vector<std::int32_t> indices;
   indices.reserve(std::ranges::count_if(marker, mark));

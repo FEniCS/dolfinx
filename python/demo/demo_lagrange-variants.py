@@ -12,8 +12,8 @@
 #
 # ```{admonition} Download sources
 # :class: download
-# * {download}`Python script <./demo_lagrange_variants.py>`
-# * {download}`Jupyter notebook <./demo_lagrange_variants.ipynb>`
+# * {download}`Python script <./demo_lagrange-variants.py>`
+# * {download}`Jupyter notebook <./demo_lagrange-variants.ipynb>`
 # ```
 # This demo illustrates how to:
 #
@@ -26,6 +26,7 @@
 from mpi4py import MPI
 
 import matplotlib.pylab as plt
+import numpy as np
 
 import basix
 import basix.ufl
@@ -64,8 +65,8 @@ values = element.tabulate(0, lattice)[0, :, :]
 if MPI.COMM_WORLD.size == 1:
     for i in range(values.shape[1]):
         plt.plot(lattice, values[:, i])
-    plt.plot(element._element.points, [0] * 11, "ko")
-    plt.ylim([-1, 6])
+    plt.plot(element.basix_element.points, [0] * 11, "ko")
+    plt.ylim((-1, 6))
     plt.savefig("demo_lagrange_variants_equispaced_10.png")
     plt.clf()
 # -
@@ -96,8 +97,8 @@ values = element.tabulate(0, lattice)[0, :, :]
 if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
     for i in range(values.shape[1]):
         plt.plot(lattice, values[:, i])
-    plt.plot(element._element.points, [0] * 11, "ko")
-    plt.ylim([-1, 6])
+    plt.plot(element.basix_element.points, [0] * 11, "ko")
+    plt.ylim((-1, 6))
     plt.savefig("demo_lagrange_variants_gll_10.png")
     plt.clf()
 # -
@@ -142,16 +143,16 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     uh.interpolate(lambda x: saw_tooth(x[0]))
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
         pts: list[list[float]] = []
-        cells: list[int] = []
+        cells = np.empty((0,), dtype=np.int32)
         for cell in range(N):
             for i in range(51):
                 pts.append([cell / N + i / 50 / N, 0, 0])
-                cells.append(cell)
+                cells = np.append(cells, [cell])
         values = uh.eval(pts, cells)
         plt.plot(pts, [saw_tooth(i[0]) for i in pts], "k--")
         plt.plot(pts, values, "r-")
         plt.legend(["function", "approximation"])
-        plt.ylim([-0.1, 0.4])
+        plt.ylim((-0.1, 0.4))
         plt.title(variant.name)
         plt.savefig(f"demo_lagrange_variants_interpolation_{variant.name}.png")
         plt.clf()

@@ -35,20 +35,20 @@
 # ### Strong formulation
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   - \nabla \cdot (\nabla u + p I) &= f \quad {\rm in} \ \Omega,\\
 #   \nabla \cdot u &= 0 \quad {\rm in} \ \Omega.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # with conditions on the boundary $\partial \Omega = \Gamma_{D} \cup
 # \Gamma_{N}$ of the form:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   u &= u_0 \quad {\rm on} \ \Gamma_{D},\\
 #   \nabla u \cdot n + p n &= g \,   \quad\;\; {\rm on} \ \Gamma_{N}.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # ```{note}
@@ -68,12 +68,12 @@
 # where
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 #   a((u, p), (v, q)) &:= \int_{\Omega} \nabla u \cdot \nabla v -
 #            \nabla \cdot v \ p + \nabla \cdot u \ q \, {\rm d} x,\\
 #   L((v, q)) &:= \int_{\Omega} f \cdot v \, {\rm d} x + \int_{\partial
 #            \Omega_N} g \cdot v \, {\rm d} s.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # ### Domain and boundary conditions
@@ -169,7 +169,7 @@ V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # +
 # No-slip condition on boundaries where x = 0, x = 1, and y = 0
-noslip = np.zeros(gdim, dtype=PETSc.ScalarType)  # type: ignore
+noslip = np.zeros(gdim, dtype=PETSc.ScalarType)
 facets = locate_entities_boundary(msh, 1, noslip_boundary)
 bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
@@ -190,7 +190,7 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore
+f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore[operator]
 
 a_ufl = [
     [ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, ufl.inner(p, ufl.div(v)) * ufl.dx],
@@ -301,7 +301,9 @@ def nested_iterative_solver_low_level():
     # Create a nested matrix P to use as the preconditioner. The
     # top-left block of P is shared with the top-left block of A. The
     # bottom-right diagonal entry is assembled from the form a_p11:
-    P11 = assemble_matrix(a_p11, [])
+    # Even if the Dirichlet conditions are only enforced on the velocity
+    # space, we pass it to the pressure assembler for consistency.
+    P11 = assemble_matrix(a_p11, bcs=bcs)
     P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
     P.assemble()
 

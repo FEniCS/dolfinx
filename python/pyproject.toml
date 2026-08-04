@@ -4,34 +4,43 @@
 # NOTE: petsc4py is an optional build dependency, therefore we don't
 # list it here.
 [build-system]
-requires = ["scikit-build-core[pyproject]>=0.10", "nanobind>=2.5.0", "mpi4py"]
+# scikit-build-core>=0.11 has SPDX license support PEP 639
+# scikit-build-core>=1.0.0: editable installs need its PathFinder-based
+# module resolution. Older versions' editable redirect always fails to
+# import dolfinx.cpp, since the nanobind-generated dolfinx/cpp/*.pyi stub
+# directory sits alongside the compiled dolfinx/cpp.<ext> module and
+# confuses their file-vs-package classifier.
+# nanobind>=2.9.2 has working recursive stubgen
+requires = ["scikit-build-core>=1.0.0", "nanobind>=2.9.2", "mpi4py"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "fenics-dolfinx"
-version = "0.11.0.dev0"
+version = "0.12.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
-requires-python = ">=3.10.0"
-license = { file = "../COPYING.LESSER" }
+requires-python = ">=3.11"
+license = "LGPL-3.0-or-later"
+license-files = ["COPYING*"]
 authors = [
       { email = "fenics-steering-council@googlegroups.com" },
       { name = "FEniCS Steering Council" },
 ]
 dependencies = [
       "numpy>=2",
-      "cffi",
+      "cffi<2.1",
       "mpi4py",
-      "fenics-basix>=0.11.0.dev0",
-      "fenics-ffcx>=0.11.0.dev0",
-      "fenics-ufl>=2025.3.0.dev0",
+      "fenics-basix>=0.12.0.dev0",
+      "fenics-ffcx>=0.12.0.dev0",
+      "fenics-ufl>=2026.2.0.dev0",
 ]
 
 [project.optional-dependencies]
+# llvmlite (numba) is not built for x86_64 on macOS or arm64 on Windows - advanced users can install manually.
 demo = [
   "gmsh",
   "networkx",
-  "numba",
+  "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
   "matplotlib",
   "scipy",
   "pyvista",
@@ -44,13 +53,14 @@ docs = [
       "packaging",
       "pyyaml",
       "sphinx",
-      "sphinx_rtd_theme",
+      "pydata-sphinx-theme",
       "sphinx_codeautolink[ipython]",
       "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
 ]
-lint = ["ruff"]
-optional = ["numba"]
+lint = ["ruff", "gersemi"]
+mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
+optional = ["numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')"]
 petsc4py = ["petsc4py"]
 test = [
       "matplotlib",
@@ -61,12 +71,11 @@ test = [
       "fenics-dolfinx[optional]",
 ]
 ci = [
-      "mypy",
       "pytest-xdist",
-      "types-setuptools",
       "fenics-dolfinx[build]",
       "fenics-dolfinx[docs]",
       "fenics-dolfinx[lint]",
+      "fenics-dolfinx[mypy]",
       "fenics-dolfinx[optional]",
       "fenics-dolfinx[test]",
 ]
@@ -75,7 +84,10 @@ ci = [
 wheel.packages = ["dolfinx"]
 sdist.exclude = ["*.cpp"]
 cmake.build-type = "Release"
-wheel.license-files = ["../COPYING*"]
+
+[tool.scikit-build.cmake.define]
+# Set to FALSE to disable automatic RPATH adjustments
+DOLFINX_INSTALL_RPATH_USE_LINK_PATH = "TRUE"
 
 [tool.pytest]
 junit_family = "xunit2"
@@ -98,7 +110,6 @@ warn_unused_ignores = false
 show_error_codes = true
 ignore_missing_imports = true
 
-
 [tool.ruff]
 line-length = 100
 indent-width = 4
@@ -116,6 +127,7 @@ select = [
       "NPY",    # numpy-specific rules
       "FLY",    # use f-string not static joins
       "NPY201", # numpy 2.x ruleset
+      "B905",   # zip-without-explicit-strict 
 ]
 ignore = ["RUF012"]
 allowed-confusables = ["σ", "ρ"]

@@ -39,7 +39,7 @@ struct BasixElementData
       element; ///< Finite element.
   std::optional<std::vector<std::size_t>> value_shape
       = std::nullopt;    ///< Value shape. Can only be set for scalar `element`.
-  bool symmetry = false; ///< Symmetry. Should only set set for 2nd-order tensor
+  bool symmetry = false; ///< Symmetry. Should only be set for 2nd-order tensor
                          ///< blocked elements.
 };
 
@@ -458,9 +458,10 @@ public:
           dims.push_back(_sub_elements[i]->space_dimension());
         }
 
-        return [dims, sub_element_fns](std::span<U> data,
-                                       std::span<const std::uint32_t> cell_info,
-                                       std::int32_t cell, int block_size)
+        return [dims = std::move(dims),
+                sub_element_fns = std::move(sub_element_fns)](
+                   std::span<U> data, std::span<const std::uint32_t> cell_info,
+                   std::int32_t cell, int block_size)
         {
           std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_fns.size(); ++e)
@@ -480,9 +481,9 @@ public:
             sub_fn
             = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
         const int ebs = _bs;
-        return [ebs, sub_fn](std::span<U> data,
-                             std::span<const std::uint32_t> cell_info,
-                             std::int32_t cell, int data_block_size)
+        return [ebs, sub_fn = std::move(sub_fn)](
+                   std::span<U> data, std::span<const std::uint32_t> cell_info,
+                   std::int32_t cell, int data_block_size)
         { sub_fn(data, cell_info, cell, ebs * data_block_size); };
       }
     }
@@ -554,22 +555,25 @@ public:
         std::vector<std::function<void(
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
             sub_element_fns;
+        std::vector<int> dims;
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
         {
           sub_element_fns.push_back(
               _sub_elements[i]->template dof_transformation_right_fn<U>(ttype));
+          dims.push_back(_sub_elements[i]->space_dimension());
         }
 
-        return [this, sub_element_fns](std::span<U> data,
-                                       std::span<const std::uint32_t> cell_info,
-                                       std::int32_t cell, int block_size)
+        return [dims = std::move(dims),
+                sub_element_fns = std::move(sub_element_fns)](
+                   std::span<U> data, std::span<const std::uint32_t> cell_info,
+                   std::int32_t cell, int block_size)
         {
           std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_fns.size(); ++e)
           {
             sub_element_fns[e](data.subspan(offset, data.size() - offset),
                                cell_info, cell, block_size);
-            offset += _sub_elements[e]->space_dimension();
+            offset += dims[e];
           }
         };
       }
@@ -584,9 +588,9 @@ public:
                            std::int32_t, int)>
             sub_fn
             = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
-        return [this, sub_fn](std::span<U> data,
-                              std::span<const std::uint32_t> cell_info,
-                              std::int32_t cell, int data_block_size)
+        return [this, sub_fn = std::move(sub_fn)](
+                   std::span<U> data, std::span<const std::uint32_t> cell_info,
+                   std::int32_t cell, int data_block_size)
         {
           const int ebs = block_size();
           const std::size_t dof_count = data.size() / data_block_size;

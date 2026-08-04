@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and
+# Copyright (C) 2017-2026 Chris N. Richardson, Garth N. Wells and
 # Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -12,7 +12,8 @@ modification of linear systems.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
+from typing import ClassVar, Generic, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -20,12 +21,19 @@ import numpy.typing as npt
 import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.fem.function import Constant, Function, FunctionSpace
+from dolfinx.typing import Scalar
 
 
+@overload
+def locate_dofs_geometrical(V: dolfinx.fem.FunctionSpace, marker: Callable) -> np.ndarray: ...
+@overload
+def locate_dofs_geometrical(
+    V: Iterable[dolfinx.fem.FunctionSpace], marker: Callable
+) -> list[np.ndarray]: ...
 def locate_dofs_geometrical(
     V: dolfinx.fem.FunctionSpace | Iterable[dolfinx.fem.FunctionSpace],
     marker: Callable,
-) -> np.ndarray:
+) -> np.ndarray | list[np.ndarray]:
     """Locate degrees-of-freedom geometrically using a marker function.
 
     Args:
@@ -41,25 +49,37 @@ def locate_dofs_geometrical(
         degrees-of-freedom whose coordinate evaluates to True for the
         marker function.
 
-        If ``V`` is a list of two function spaces, then a 2-D array of
-        shape (number of dofs, 2) is returned.
-
-        Returned degree-of-freedom indices are unique and ordered by the
-        first column.
+        If ``V`` is an iterable of function spaces, a list with one
+        such array per space is returned instead, in the same order as
+        ``V``.
     """
     if not isinstance(V, Iterable):
-        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)  # type: ignore
+        return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
 
-    _V = [space._cpp_object for space in V]  # type: ignore
-    return _cpp.fem.locate_dofs_geometrical(_V, marker)
+    _V = [space._cpp_object for space in V]
+    return _cpp.fem.locate_dofs_geometrical(_V, marker)  # type: ignore[arg-type]
 
 
+@overload
+def locate_dofs_topological(
+    V: dolfinx.fem.FunctionSpace,
+    entity_dim: int,
+    entities: npt.NDArray[np.int32],
+    remote: bool = True,
+) -> np.ndarray: ...
+@overload
+def locate_dofs_topological(
+    V: Iterable[dolfinx.fem.FunctionSpace],
+    entity_dim: int,
+    entities: npt.NDArray[np.int32],
+    remote: bool = True,
+) -> list[np.ndarray]: ...
 def locate_dofs_topological(
     V: dolfinx.fem.FunctionSpace | Iterable[dolfinx.fem.FunctionSpace],
     entity_dim: int,
     entities: npt.NDArray[np.int32],
     remote: bool = True,
-) -> np.ndarray:
+) -> np.ndarray | list[np.ndarray]:
     """Locate degrees-of-freedom belonging to mesh entities topologically.
 
     Args:
@@ -76,26 +96,32 @@ def locate_dofs_topological(
         An array of degree-of-freedom indices (local to the process) for
         degrees-of-freedom topologically belonging to mesh entities.
 
-        If ``V`` is a list of two function spaces, then a 2-D array of
-        shape (number of dofs, 2) is returned.
-
-        Returned degree-of-freedom indices are unique and ordered by the
-        first column.
+        If ``V`` is an iterable of function spaces, a list with one
+        such array per space is returned instead, in the same order as
+        ``V``.
     """
     _entities = np.asarray(entities, dtype=np.int32)
     if not isinstance(V, Iterable):
-        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)  # type: ignore
+        return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)
 
-    _V = [space._cpp_object for space in V]  # type: ignore
-    return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
+    _V = [space._cpp_object for space in V]
+    return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)  # type: ignore[arg-type]
 
 
-class DirichletBC:
+class DirichletBC(Generic[Scalar]):
     """Representation of Dirichlet boundary conditions.
 
     The conditions are imposed on a linear system.
     """
 
+    # Matched-precision built-ins (geometry == real scalar part). Public:
+    # extend with additional (scalar, geometry) dtype pairs as needed.
+    cpp_types: ClassVar[dict] = {
+        (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.DirichletBC_float32,
+        (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.DirichletBC_float64,
+        (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.DirichletBC_complex64,
+        (np.dtype(np.complex128), np.dtype(np.float64)): _cpp.fem.DirichletBC_complex128,
+    }
     _cpp_object: (
         _cpp.fem.DirichletBC_complex64
         | _cpp.fem.DirichletBC_complex128
@@ -103,7 +129,7 @@ class DirichletBC:
         | _cpp.fem.DirichletBC_float64
     )
 
-    def __init__(self, bc):
+    def __init__(self, bc, V: FunctionSpace, g: Function | Constant):
         """Initialise a Dirichlet boundary condition.
 
         Note:
@@ -115,21 +141,26 @@ class DirichletBC:
 
         Args:
             bc: C++ wrapped Dirichlet condition.
+            V: Function space on which the boundary condition is
+                defined.
+            g: The boundary condition value(s).
         """
         self._cpp_object = bc
+        self._V = V
+        self._g = g
 
     @property
-    def g(self) -> Function | Constant | np.ndarray:
+    def g(self) -> Function | Constant:
         """The boundary condition value(s)."""
-        return self._cpp_object.value
+        return self._g
 
     @property
     def function_space(self) -> dolfinx.fem.FunctionSpace:
         """Function space on which the boundary condition is defined."""
-        return self._cpp_object.function_space
+        return self._V
 
     def set(
-        self, x: npt.NDArray, x0: npt.NDArray[np.int32] | None = None, alpha: float = 1
+        self, x: npt.NDArray[Scalar], x0: npt.NDArray[Scalar] | None = None, alpha: float = 1
     ) -> None:
         """Set array entries that are constrained by a Dirichlet condition.
 
@@ -143,17 +174,24 @@ class DirichletBC:
         degrees-of-freedom, ``x_bc`` is the value of the boundary condition
         interpolated into the finite element space.
 
-        If `x` includes ghosted entries (entries available on the calling
-        rank but owned by another rank), ghosted entries constrained by a
-        Dirichlet condition will also be set.
+        ``x`` may be sized to hold only owned entries or to also
+        include ghost entries (entries available on the calling rank
+        but owned by another rank); a constrained degree-of-freedom
+        beyond the end of ``x`` is silently skipped. Passing an
+        owned-only array therefore sets only owned entries, while an
+        array that also includes ghosts (e.g. the full array of a
+        :class:`Vector<dolfinx.la.Vector>`) additionally sets ghost
+        entries constrained by the condition.
 
         Args:
-            x: Array to modify for Dirichlet boundary conditions.
+            x: Array to modify for Dirichlet boundary conditions. May
+                include ghost entries.
             x0: Optional array used in computing the value to set. If
-                not provided it is treated as zero.
+                not provided it is treated as zero. Must be at least
+                as long as ``x`` (checked only in Developer builds).
             alpha: Scaling factor.
         """
-        self._cpp_object.set(x, x0, alpha)
+        self._cpp_object.set(x, x0, alpha)  # type: ignore[arg-type]
 
     def dof_indices(self) -> tuple[npt.NDArray[np.int32], int]:
         """Dof indices to  which a Dirichlet condition is applied.
@@ -171,20 +209,31 @@ class DirichletBC:
 
 
 def dirichletbc(
-    value: Function | Constant | np.ndarray | float | complex,
-    dofs: npt.NDArray[np.int32],
+    value: Function
+    | Constant
+    | npt.NDArray[Scalar]
+    | np.floating
+    | np.complexfloating
+    | float
+    | complex,
+    dofs: npt.NDArray[np.int32] | Sequence[npt.NDArray[np.int32]],
     V: dolfinx.fem.FunctionSpace | None = None,
-) -> DirichletBC:
+) -> DirichletBC[Scalar]:
     """Representation of Dirichlet boundary condition.
 
     Args:
         value: Lifted boundary values function. It must have a ``dtype``
             property.
         dofs: Local indices of degrees of freedom in function space to
-            which boundary condition applies. Expects array of size
-            (number of dofs, 2) if function space of the problem, ``V``,
-            is passed. Otherwise assumes function space of the problem
-            is the same of function space of boundary values function.
+            which boundary condition applies. When ``V`` is a sub-space
+            and ``value``'s function space is a different (e.g.
+            collapsed) space, this is a pair of arrays -- dof indices
+            in ``V`` and the matching dof indices in ``value``'s
+            function space -- as returned by
+            :func:`locate_dofs_topological` or
+            :func:`locate_dofs_geometrical` when passed a pair of
+            spaces. Otherwise assumes function space of the problem is
+            the same of function space of boundary values function.
         V: Function space of a problem to which boundary conditions are
             applied.
 
@@ -195,44 +244,58 @@ def dirichletbc(
     if isinstance(value, float | complex):
         value = np.asarray(value)
 
+    bctype: (
+        type[_cpp.fem.DirichletBC_float32]
+        | type[_cpp.fem.DirichletBC_float64]
+        | type[_cpp.fem.DirichletBC_complex64]
+        | type[_cpp.fem.DirichletBC_complex128]
+    )
     try:
         dtype = value.dtype
-        if np.issubdtype(dtype, np.float32):
-            bctype = _cpp.fem.DirichletBC_float32
-        elif np.issubdtype(dtype, np.float64):
-            bctype = _cpp.fem.DirichletBC_float64
-        elif np.issubdtype(dtype, np.complex64):
-            bctype = _cpp.fem.DirichletBC_complex64
-        elif np.issubdtype(dtype, np.complex128):
-            bctype = _cpp.fem.DirichletBC_complex128
-        else:
-            raise NotImplementedError(f"Type {value.dtype} not supported.")
-    except AttributeError:
-        raise AttributeError("Boundary condition value must have a dtype attribute.")
+    except AttributeError as err:
+        raise AttributeError("Boundary condition value must have a dtype attribute.") from err
 
-    # Unwrap value object, if required
-    if isinstance(value, np.ndarray):
-        _value = value
+    # Geometry type is the mesh geometry type of the function space (or the
+    # value's space), defaulting to matched precision when neither has one.
+    if V is not None:
+        geometry_dtype = np.dtype(V.mesh.geometry.x.dtype)
+    elif isinstance(value, Function):
+        geometry_dtype = np.dtype(value.function_space.mesh.geometry.x.dtype)
     else:
-        try:
-            _value = value._cpp_object
-        except AttributeError:
-            _value = value  # type: ignore[assignment]
+        geometry_dtype = np.dtype(dtype).type(0).real.dtype
+    bctype = DirichletBC.cpp_types[dtype, geometry_dtype]
+
+    if V is not None:
+        V_used = V
+    else:
+        # The cpp constructor's V-less overload only accepts a Function,
+        # so value must be one here.
+        assert isinstance(value, Function)
+        V_used = value.function_space
+
+    # Promote a raw array/scalar to a Constant *before* constructing the
+    # cpp object, so that mutating value.value in place afterwards
+    # changes the same underlying storage that the boundary condition
+    # reads.
+    if not isinstance(value, Function | Constant):
+        value = Constant(V_used.mesh, value)
+
+    _value = value._cpp_object  # type: ignore[assignment]
 
     if V is not None:
         try:
-            bc = bctype(_value, dofs, V)
+            bc = bctype(_value, dofs, V)  # type: ignore
         except TypeError:
-            bc = bctype(_value, dofs, V._cpp_object)
+            bc = bctype(_value, dofs, V._cpp_object)  # type: ignore[arg-type]
     else:
-        bc = bctype(_value, dofs)
+        bc = bctype(_value, dofs)  # type: ignore
 
-    return DirichletBC(bc)
+    return DirichletBC(bc, V_used, value)
 
 
 def bcs_by_block(
-    spaces: Iterable[FunctionSpace | None], bcs: Iterable[DirichletBC]
-) -> list[list[DirichletBC]]:
+    spaces: Iterable[FunctionSpace | None], bcs: Iterable[DirichletBC[Scalar]]
+) -> list[list[DirichletBC[Scalar]]]:
     """Arrange boundary conditions by the space that they constrain.
 
     Given a sequence of function spaces ``spaces`` and a sequence of
@@ -243,6 +306,10 @@ def bcs_by_block(
 
     def _bc_space(V, bcs):
         """Return list of bcs that have the same space as V."""
-        return [bc for bc in bcs if V.contains(bc.function_space)]
+        # V may be a wrapped FunctionSpace or a raw cpp FunctionSpace
+        # (Form.function_spaces returns the latter), so normalise both
+        # sides to cpp objects before calling the cpp-level contains().
+        V_cpp = V._cpp_object if isinstance(V, FunctionSpace) else V
+        return [bc for bc in bcs if V_cpp.contains(bc.function_space._cpp_object)]
 
     return [_bc_space(V, bcs) if V is not None else [] for V in spaces]

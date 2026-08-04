@@ -18,6 +18,7 @@ if typing.TYPE_CHECKING:
 
 from dolfinx import cpp as _cpp
 from dolfinx.graph import AdjacencyList
+from dolfinx.typing import Real
 
 __all__ = [
     "BoundingBoxTree",
@@ -35,7 +36,7 @@ __all__ = [
 ]
 
 
-class PointOwnershipData:
+class PointOwnershipData(typing.Generic[Real]):
     """Class for storing data related to the ownership of points."""
 
     _cpp_object: _cpp.geometry.PointOwnershipData_float32 | _cpp.geometry.PointOwnershipData_float64
@@ -55,9 +56,9 @@ class PointOwnershipData:
         return self._cpp_object.dest_owners
 
     @property
-    def dest_points(self) -> npt.NDArray[np.floating]:
+    def dest_points(self) -> npt.NDArray[Real]:
         """Points owned by current rank."""
-        return self._cpp_object.dest_points
+        return self._cpp_object.dest_points  # type: ignore[return-value]
 
     @property
     def dest_cells(self) -> npt.NDArray[np.int32]:
@@ -65,7 +66,7 @@ class PointOwnershipData:
         return self._cpp_object.dest_cells
 
 
-class BoundingBoxTree:
+class BoundingBoxTree(typing.Generic[Real]):
     """Bounding box trees used in collision detection."""
 
     _cpp_object: _cpp.geometry.BoundingBoxTree_float32 | _cpp.geometry.BoundingBoxTree_float64
@@ -86,16 +87,16 @@ class BoundingBoxTree:
         return self._cpp_object.num_bboxes
 
     @property
-    def bbox_coordinates(self) -> npt.NDArray[np.float32] | npt.NDArray[np.float64]:
+    def bbox_coordinates(self) -> npt.NDArray[Real]:
         """Coordinates of lower and upper corners of bounding boxes.
 
         Note:
             Rows `2*ibbox` and `2*ibbox+1` correspond to the lower
             and upper corners of bounding box `ibbox`, respectively.
         """
-        return self._cpp_object.bbox_coordinates
+        return self._cpp_object.bbox_coordinates  # type: ignore[return-value]
 
-    def get_bbox(self, i) -> npt.NDArray[np.floating]:
+    def get_bbox(self, i) -> npt.NDArray[Real]:
         """Get lower and upper corners of the ith bounding box.
 
         Args:
@@ -106,20 +107,20 @@ class BoundingBoxTree:
             Shape is ``(2, 3)``,
 
         """
-        return self._cpp_object.get_bbox(i)
+        return self._cpp_object.get_bbox(i)  # type: ignore[return-value]
 
-    def create_global_tree(self, comm) -> BoundingBoxTree:
+    def create_global_tree(self, comm) -> BoundingBoxTree[Real]:
         """Create a global bounding box tree."""
         return BoundingBoxTree(self._cpp_object.create_global_tree(comm))
 
 
 def bb_tree(
-    mesh: Mesh,
+    mesh: Mesh[Real],
     dim: int,
     *,
     padding: float = 0.0,
     entities: npt.NDArray[np.int32] | None = None,
-) -> BoundingBoxTree:
+) -> BoundingBoxTree[Real]:
     """Create a bounding box tree for use in collision detection.
 
     Args:
@@ -137,21 +138,21 @@ def bb_tree(
     if map is None:
         raise RuntimeError(f"Mesh entities of dimension {dim} have not been created.")
 
-    dtype = mesh.geometry.x.dtype
-    if np.issubdtype(dtype, np.float32):
+    cpp_mesh = mesh._cpp_object
+    if isinstance(cpp_mesh, _cpp.mesh.Mesh_float32):
         return BoundingBoxTree(
-            _cpp.geometry.BoundingBoxTree_float32(mesh._cpp_object, dim, padding, entities)
+            _cpp.geometry.BoundingBoxTree_float32(cpp_mesh, dim, padding, entities)
         )
-    elif np.issubdtype(dtype, np.float64):
+    elif isinstance(cpp_mesh, _cpp.mesh.Mesh_float64):
         return BoundingBoxTree(
-            _cpp.geometry.BoundingBoxTree_float64(mesh._cpp_object, dim, padding, entities)
+            _cpp.geometry.BoundingBoxTree_float64(cpp_mesh, dim, padding, entities)
         )
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise NotImplementedError(f"Type {mesh.geometry.x.dtype} not supported.")
 
 
 def compute_collisions_trees(
-    tree0: BoundingBoxTree, tree1: BoundingBoxTree
+    tree0: BoundingBoxTree[Real], tree1: BoundingBoxTree[Real]
 ) -> npt.NDArray[np.int32]:
     """Compute all collisions between two bounding box trees.
 
@@ -164,10 +165,10 @@ def compute_collisions_trees(
         is ``(num_collisions, 2)``.
 
     """
-    return _cpp.geometry.compute_collisions_trees(tree0._cpp_object, tree1._cpp_object)
+    return _cpp.geometry.compute_collisions_trees(tree0._cpp_object, tree1._cpp_object)  # type: ignore[arg-type]
 
 
-def compute_collisions_points(tree: BoundingBoxTree, x: npt.NDArray[np.floating]) -> AdjacencyList:
+def compute_collisions_points(tree: BoundingBoxTree[Real], x: npt.NDArray[Real]) -> AdjacencyList:
     """Compute collisions between points and leaf bounding boxes.
 
     Bounding boxes can overlap, therefore points can collide with more
@@ -182,14 +183,14 @@ def compute_collisions_points(tree: BoundingBoxTree, x: npt.NDArray[np.floating]
        point.
 
     """
-    return AdjacencyList(_cpp.geometry.compute_collisions_points(tree._cpp_object, x))
+    return AdjacencyList(_cpp.geometry.compute_collisions_points(tree._cpp_object, x))  # type: ignore[arg-type]
 
 
 def compute_closest_entity(
-    tree: BoundingBoxTree,
-    midpoint_tree: BoundingBoxTree,
-    mesh: Mesh,
-    points: npt.NDArray[np.floating],
+    tree: BoundingBoxTree[Real],
+    midpoint_tree: BoundingBoxTree[Real],
+    mesh: Mesh[Real],
+    points: npt.NDArray[Real],
 ) -> npt.NDArray[np.int32]:
     """Compute closest mesh entity to a point.
 
@@ -207,11 +208,16 @@ def compute_closest_entity(
 
     """
     return _cpp.geometry.compute_closest_entity(
-        tree._cpp_object, midpoint_tree._cpp_object, mesh._cpp_object, points
+        tree._cpp_object,  # type: ignore[arg-type]
+        midpoint_tree._cpp_object,  # type: ignore[arg-type]
+        mesh._cpp_object,  # type: ignore[arg-type]
+        points,  # type: ignore[arg-type]
     )
 
 
-def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) -> BoundingBoxTree:
+def create_midpoint_tree(
+    mesh: Mesh[Real], dim: int, entities: npt.NDArray[np.int32]
+) -> BoundingBoxTree[Real]:
     """Create bounding box tree for the midpoints of a subset of entities.
 
     Args:
@@ -226,7 +232,7 @@ def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) 
 
 
 def compute_colliding_cells(
-    msh: Mesh, candidates: AdjacencyList, x: npt.NDArray[np.floating]
+    msh: Mesh[Real], candidates: AdjacencyList, x: npt.NDArray[Real]
 ) -> AdjacencyList:
     """From a mesh, find which cells collide with a set of points.
 
@@ -242,13 +248,13 @@ def compute_colliding_cells(
 
     """
     return AdjacencyList(
-        _cpp.geometry.compute_colliding_cells(msh._cpp_object, candidates._cpp_object, x)
+        _cpp.geometry.compute_colliding_cells(msh._cpp_object, candidates._cpp_object, x)  # type: ignore[arg-type]
     )
 
 
 def squared_distance(
-    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], points: npt.NDArray[np.floating]
-) -> npt.NDArray[np.floating]:
+    mesh: Mesh[Real], dim: int, entities: npt.NDArray[np.int32], points: npt.NDArray[Real]
+) -> npt.NDArray[Real]:
     """Compute the squared distance between a point and a mesh entity.
 
     The distance is computed between the ith input points and the ith
@@ -265,12 +271,10 @@ def squared_distance(
         Squared shortest distance from ``points[i]`` to ``entities[i]``.
 
     """
-    return _cpp.geometry.squared_distance(mesh._cpp_object, dim, entities, points)
+    return _cpp.geometry.squared_distance(mesh._cpp_object, dim, entities, points)  # type: ignore[arg-type,return-value]
 
 
-def compute_distance_gjk(
-    p: npt.NDArray[np.floating], q: npt.NDArray[np.floating]
-) -> npt.NDArray[np.floating]:
+def compute_distance_gjk(p: npt.NDArray[Real], q: npt.NDArray[Real]) -> npt.NDArray[Real]:
     """Compute the distance between two convex bodies.
 
     Each body is defined by a set of points. Uses the
@@ -283,22 +287,23 @@ def compute_distance_gjk(
     Returns:
         Shortest vector between the two bodies.
     """
-    assert p.dtype == q.dtype
+    if p.dtype != q.dtype:
+        raise ValueError("p and q must have the same dtype.")
     if np.issubdtype(p.dtype, np.float32):
-        return _cpp.geometry.compute_distance_gjk_float32(p, q)
+        return _cpp.geometry.compute_distance_gjk_float32(p, q)  # type: ignore[arg-type,return-value]
     elif np.issubdtype(p.dtype, np.float64):
-        return _cpp.geometry.compute_distance_gjk_float64(p, q)
+        return _cpp.geometry.compute_distance_gjk_float64(p, q)  # type: ignore[arg-type,return-value]
     raise RuntimeError("Invalid dtype in compute_distance_gjk")
 
 
 def compute_distances_gjk(
-    bodies: list[npt.NDArray[np.floating]], q: npt.NDArray[np.floating], num_threads: int
-) -> npt.NDArray[np.floating]:
+    bodies: list[npt.NDArray[Real]], q: npt.NDArray[Real], num_threads: int
+) -> npt.NDArray[Real]:
     """Compute the distance between a set of convex bodies.
 
     For each convex body defined in `bodies`;
     (a set of 3D points for each body) find the shortest distance vector
-    to to the body `q` defined by another set of 3D points.
+    to the body `q` defined by another set of 3D points.
     The method uses the
     Gilbert-Johnson-Keerthi (GJK) distance algorithm.
 
@@ -311,20 +316,21 @@ def compute_distances_gjk(
     Returns:
         Shortest vector between the two bodies.
     """
-    assert all([p.dtype == q.dtype for p in bodies])
+    if not all(p.dtype == q.dtype for p in bodies):
+        raise ValueError("All bodies and q must have the same dtype.")
     if np.issubdtype(q.dtype, np.float32):
-        return _cpp.geometry.compute_distances_gjk_float32(bodies, q, num_threads)
+        return _cpp.geometry.compute_distances_gjk_float32(bodies, q, num_threads)  # type: ignore[arg-type,return-value]
     elif np.issubdtype(q.dtype, np.float64):
-        return _cpp.geometry.compute_distances_gjk_float64(bodies, q, num_threads)
+        return _cpp.geometry.compute_distances_gjk_float64(bodies, q, num_threads)  # type: ignore[arg-type,return-value]
     raise RuntimeError("Invalid dtype in compute_distances_gjk")
 
 
 def determine_point_ownership(
     mesh: Mesh,
-    points: npt.NDArray[np.floating],
+    points: npt.NDArray[Real],
     padding: float,
     cells: npt.NDArray[np.int32] | None = None,
-) -> PointOwnershipData:
+) -> PointOwnershipData[Real]:
     """Build point ownership data for a mesh-points pair.
 
     First, potential collisions are found by computing intersections
@@ -355,5 +361,5 @@ def determine_point_ownership(
             the scale of the cell size.
     """
     return PointOwnershipData(
-        _cpp.geometry.determine_point_ownership(mesh._cpp_object, points, padding, cells)
+        _cpp.geometry.determine_point_ownership(mesh._cpp_object, points, padding, cells)  # type: ignore[arg-type]
     )

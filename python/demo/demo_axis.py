@@ -33,6 +33,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
+from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
 
 try:
     from dolfinx.io import VTXWriter
@@ -52,7 +53,7 @@ except ModuleNotFoundError:
 
 # The time-harmonic Maxwell equation is complex-valued. PETSc must
 # therefore have been compiled with complex scalars.
-if not np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
+if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo can only be executed when PETSc using complex scalars.")
     exit(0)
 
@@ -171,14 +172,14 @@ def generate_mesh_sphere_axis(
 # cylindrical harmonics:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # \mathbf{E}_s(\rho, z, \phi) &= \sum_m\mathbf{E}^{(m)}_s(\rho, z)
 #   e^{-jm\phi} \\
 # \mathbf{E}_b(\rho, z, \phi) &= \sum_m\mathbf{E}^{(m)}_b(\rho, z)
 #   e^{-jm\phi} \\
 # \bar{\mathbf{v}}(\rho, z, \phi) &=
 # \sum_m\bar{\mathbf{v}}^{(m)}(\rho, z)e^{+jm\phi}
-# \end{align}
+# \end{aligned}
 # $$
 #
 # The curl operator $\nabla\times$ in cylindrical coordinates becomes:
@@ -325,13 +326,13 @@ def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
 # PML:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # &\rho^{\prime} = \rho\left[1 +j \alpha/k_0 \left(\frac{r
 # - r_{dom}}{r~r_{pml}}\right)\right] \\
 # &z^{\prime} = z\left[1 +j \alpha/k_0 \left(\frac{r
 # - r_{dom}}{r~r_{pml}}\right)\right] \\
 # &\phi^{\prime} = \phi
-# \end{align}
+# \end{aligned}
 # $$
 #
 # with $\alpha$ tuning the absorption inside the PML, and $r =
@@ -362,12 +363,12 @@ def background_field_p(theta: float, n_bkg: float, k0: float, m: int, x):
 # ${\boldsymbol{\mu}_{pml}}$:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # & {\boldsymbol{\varepsilon}_{pml}} =
 # A^{-1} \mathbf{A} {\boldsymbol{\varepsilon}_b}\mathbf{A}^{T}\\
 # & {\boldsymbol{\mu}_{pml}} =
 # A^{-1} \mathbf{A} {\boldsymbol{\mu}_b}\mathbf{A}^{T}
-# \end{align}
+# \end{aligned}
 # $$
 #
 # For doing these calculations, we define the `pml_coordinate` and
@@ -452,7 +453,7 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet, 2)  # type: ignore
+partitioner = _cell_partitioner(dolfinx.mesh.GhostMode.shared_facet, 2)
 mesh_data = io.gmsh.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
@@ -534,26 +535,26 @@ I0 = 0.5 * n_bkg / Z0  # Intensity
 # to few harmonic numbers, e.g., $m = -1, 0, 1$. Besides, we have that:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # &J_{-m}=(-1)^m J_m \\
 # &J_{-m}^{\prime}=(-1)^m J_m^{\prime} \\
 # &j^{-m}=(-1)^m j^m
-# \end{align}
+# \end{aligned}
 # $$
 #
 # and therefore:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # &E_{b, \rho}^{(m)}=E_{b, \rho}^{(-m)} \\
 # &E_{b, \phi}^{(m)}=-E_{b, \phi}^{(-m)} \\
 # &E_{b, z}^{(m)}=E_{b, z}^{(-m)}
-# \end{align}
+# \end{aligned}
 # $$
 #
 # In light of this, we can solve the problem for $m\geq 0$.
 #
-# We now now define `eps_pml` and `mu_pml`:
+# We now define `eps_pml` and `mu_pml`:
 
 # +
 rho, z = ufl.SpatialCoordinate(mesh_data.mesh)
@@ -608,11 +609,11 @@ dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
 # following way:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # &E_{s, \rho}^{(m)}(\phi)=E_{s, \rho}^{(m)}(e^{-jm\phi}+e^{jm\phi}) \\
 # &E_{s, \phi}^{(m)}(\phi)=E_{s, \phi}^{(m)}(e^{-jm\phi}-e^{jm\phi}) \\
 # &E_{s, z}^{(m)}(\phi)=E_{s, z}^{(m)}(e^{-jm\phi}+e^{jm\phi})
-# \end{align}
+# \end{aligned}
 # $$
 #
 # For this reason, we also add a `phase` constant for the above phase
@@ -650,11 +651,11 @@ for m in m_list:
         + k0**2 * ufl.inner(eps_pml * Es_m, v_m) * rho * dPml
     )
     a, L = ufl.lhs(F), ufl.rhs(F)
-    sys = PETSc.Sys()  # type: ignore
+    petsc_sys = PETSc.Sys()
     use_superlu = PETSc.IntType == np.int64
-    if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
+    if petsc_sys.hasExternalPackage("mumps") and not use_superlu:
         mat_factor_backend = "mumps"
-    elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
+    elif petsc_sys.hasExternalPackage("superlu_dist"):
         mat_factor_backend = "superlu_dist"
     else:
         if mesh_data.mesh.comm.size > 1:

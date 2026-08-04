@@ -55,7 +55,7 @@ create_new_geometry(const mesh::Mesh<T>& mesh,
                     const std::vector<std::int32_t>& marked_edge_list)
 {
   // Build map from vertex -> geometry dof
-  auto x_dofmap = mesh.geometry().dofmap();
+  auto x_dofmap = mesh.geometry().dofmaps().front();
   const int tdim = mesh.topology()->dim();
   auto c_to_v = mesh.topology()->connectivity(tdim, 0);
   assert(c_to_v);
@@ -66,7 +66,7 @@ create_new_geometry(const mesh::Mesh<T>& mesh,
   auto map_c = mesh.topology()->index_map(tdim);
 
   assert(map_c);
-  auto dof_layout = mesh.geometry().cmap().create_dof_layout();
+  auto dof_layout = mesh.geometry().cmaps().front().create_dof_layout();
   auto entity_dofs_all = dof_layout.entity_dofs_all();
   for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
   {

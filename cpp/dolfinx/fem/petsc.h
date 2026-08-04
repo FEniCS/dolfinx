@@ -11,15 +11,20 @@
 #include "Form.h"
 #include "assembler.h"
 #include "utils.h"
+#include <cassert>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/la/petsc.h>
 #include <functional>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <petscmat.h>
 #include <petscvec.h>
+#include <ranges>
 #include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -36,6 +41,15 @@ class DirichletBC;
 /// @brief Helper functions for assembly into PETSc data structures
 namespace petsc
 {
+// Check a PETSc error code and throw a descriptive exception if it is
+// non-zero. Expects a local `PetscErrorCode ierr` in scope.
+#define CHECK_ERROR(NAME)                                                      \
+  do                                                                           \
+  {                                                                            \
+    if (ierr != 0)                                                             \
+      la::petsc::error(ierr, __FILE__, NAME);                                  \
+  } while (0)
+
 /// @brief Create a matrix
 /// @param[in] a A bilinear form
 /// @param[in] type The PETSc matrix type to create
@@ -125,6 +139,11 @@ Mat create_matrix_block(
   // FIXME: Add option to pass customised local-to-global map to PETSc
   // Mat constructor
 
+  // TODO: Index map concatenation has already been computed inside
+  // the SparsityPattern constructor, but we also need it here to
+  // build the PETSc local-to-global map. Compute outside and pass
+  // into SparsityPattern constructor.
+
   // Initialise matrix
   Mat A = la::petsc::create_matrix(mesh->comm(), pattern, type);
 
@@ -133,12 +152,15 @@ Mat create_matrix_block(
   std::array<std::vector<PetscInt>, 2> _maps;
   for (int d = 0; d < 2; ++d)
   {
-    // TODO: Index map concatenation has already been computed inside
-    // the SparsityPattern constructor, but we also need it here to
-    // build the PETSc local-to-global map. Compute outside and pass
-    // into SparsityPattern constructor.
-    // TODO: avoid concatenating the same maps twice in case that V[0]
-    // == V[1].
+    if (d == 1 and V[0] == V[1])
+    {
+      // Row and column spaces are identical, so the concatenated
+      // index map for d=1 is identical to the one already computed
+      // for d=0 -- reuse it rather than paying for a second,
+      // communication-heavy call to stack_index_maps.
+      _maps[1] = _maps[0];
+      continue;
+    }
 
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& map
@@ -148,40 +170,52 @@ Mat create_matrix_block(
     // Concatenate the block index map in the row and column directions
     const auto [rank_offset, local_offset, ghosts, _]
         = common::stack_index_maps(map);
+    const std::size_t num_ghosts
+        = std::accumulate(ghosts.begin(), ghosts.end(), std::size_t(0),
+                          [](std::size_t n, auto& g) { return n + g.size(); });
+    _map.reserve(local_offset.back() + num_ghosts);
     for (std::size_t f = 0; f < map.size(); ++f)
     {
       auto offset = local_offset[f];
       const common::IndexMap& imap = map[f].first.get();
       int bs = map[f].second;
-      for (std::int32_t i = 0; i < bs * imap.size_local(); ++i)
-        _map.push_back(i + rank_offset + offset);
-      for (std::int32_t i = 0; i < bs * imap.num_ghosts(); ++i)
-        _map.push_back(ghosts[f][i]);
+      auto owned
+          = std::views::iota(std::int32_t(0), bs * imap.size_local())
+            | std::views::transform([offset, rank_offset](std::int32_t i)
+                                    { return i + rank_offset + offset; });
+      _map.insert(_map.end(), owned.begin(), owned.end());
+      _map.insert(_map.end(), ghosts[f].begin(), ghosts[f].end());
     }
   }
 
   // Create PETSc local-to-global map/index sets and attach to matrix
   ISLocalToGlobalMapping petsc_local_to_global0;
-  ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[0].size(),
-                               _maps[0].data(), PETSC_COPY_VALUES,
-                               &petsc_local_to_global0);
+  PetscErrorCode ierr = ISLocalToGlobalMappingCreate(
+      MPI_COMM_SELF, 1, _maps[0].size(), _maps[0].data(), PETSC_COPY_VALUES,
+      &petsc_local_to_global0);
+  CHECK_ERROR("ISLocalToGlobalMappingCreate");
   if (V[0] == V[1])
   {
-    MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
-                               petsc_local_to_global0);
-    ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+    ierr = MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
+                                      petsc_local_to_global0);
+    CHECK_ERROR("MatSetLocalToGlobalMapping");
+    ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+    CHECK_ERROR("ISLocalToGlobalMappingDestroy");
   }
   else
   {
-
     ISLocalToGlobalMapping petsc_local_to_global1;
-    ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
-                                 _maps[1].data(), PETSC_COPY_VALUES,
-                                 &petsc_local_to_global1);
-    MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
-                               petsc_local_to_global1);
-    ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
-    ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
+    ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
+                                        _maps[1].data(), PETSC_COPY_VALUES,
+                                        &petsc_local_to_global1);
+    CHECK_ERROR("ISLocalToGlobalMappingCreate");
+    ierr = MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
+                                      petsc_local_to_global1);
+    CHECK_ERROR("MatSetLocalToGlobalMapping");
+    ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+    CHECK_ERROR("ISLocalToGlobalMappingDestroy");
+    ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
+    CHECK_ERROR("ISLocalToGlobalMappingDestroy");
   }
 
   return A;
@@ -195,6 +229,9 @@ Mat create_matrix_nest(
     const std::vector<std::vector<const Form<PetscScalar, T>*>>& a,
     std::optional<std::vector<std::vector<std::optional<std::string>>>> types)
 {
+  if (a.empty())
+    throw std::runtime_error("Rectangular array of forms must be non-empty.");
+
   // Extract and check row/column ranges
   auto V = fem::common_function_spaces(extract_function_spaces(a));
 
@@ -221,26 +258,41 @@ Mat create_matrix_nest(
   if (!mesh)
     throw std::runtime_error("Could not find a Mesh.");
 
-  // Initialise block (MatNest) matrix
+  // Initialise block (MatNest) matrix. On error, destroy the
+  // already-created sub-matrices in `mats` before propagating, since
+  // the nest (which would otherwise take joint ownership of them) was
+  // never successfully assembled.
   Mat A;
-  MatCreate(mesh->comm(), &A);
-  MatSetType(A, MATNEST);
-  MatNestSetSubMats(A, rows, nullptr, cols, nullptr, mats.data());
-  MatSetUp(A);
+  try
+  {
+    PetscErrorCode ierr = MatCreate(mesh->comm(), &A);
+    CHECK_ERROR("MatCreate");
+    ierr = MatSetType(A, MATNEST);
+    CHECK_ERROR("MatSetType");
+    ierr = MatNestSetSubMats(A, rows, nullptr, cols, nullptr, mats.data());
+    CHECK_ERROR("MatNestSetSubMats");
+    ierr = MatSetUp(A);
+    CHECK_ERROR("MatSetUp");
+  }
+  catch (...)
+  {
+    for (Mat& m : mats)
+      if (m)
+        MatDestroy(&m);
+    throw;
+  }
 
   // De-reference Mat objects
-  for (std::size_t i = 0; i < mats.size(); ++i)
-  {
-    if (mats[i])
-      MatDestroy(&mats[i]);
-  }
+  for (Mat& m : mats)
+    if (m)
+      MatDestroy(&m);
 
   return A;
 }
 
 /// @brief Initialise monolithic vector. Vector is not zeroed.
 ///
-/// The caller is responsible for destroying the Mat object
+/// The caller is responsible for destroying the Vec object
 Vec create_vector_block(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
@@ -272,15 +324,20 @@ void assemble_vector(
                    std::pair<std::span<const PetscScalar>, int>>& coeffs)
 {
   Vec b_local;
-  VecGhostGetLocalForm(b, &b_local);
+  PetscErrorCode ierr = VecGhostGetLocalForm(b, &b_local);
+  CHECK_ERROR("VecGhostGetLocalForm");
   PetscInt n = 0;
-  VecGetSize(b_local, &n);
+  ierr = VecGetSize(b_local, &n);
+  CHECK_ERROR("VecGetSize");
   PetscScalar* array = nullptr;
-  VecGetArray(b_local, &array);
+  ierr = VecGetArray(b_local, &array);
+  CHECK_ERROR("VecGetArray");
   std::span<PetscScalar> _b(array, n);
   fem::assemble_vector(_b, L, constants, coeffs);
-  VecRestoreArray(b_local, &array);
-  VecGhostRestoreLocalForm(b, &b_local);
+  ierr = VecRestoreArray(b_local, &array);
+  CHECK_ERROR("VecRestoreArray");
+  ierr = VecGhostRestoreLocalForm(b, &b_local);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
 }
 
 /// @brief Assemble linear form into an already allocated PETSc vector.
@@ -297,21 +354,22 @@ template <std::floating_point T>
 void assemble_vector(Vec b, const Form<PetscScalar, T>& L)
 {
   Vec b_local;
-  VecGhostGetLocalForm(b, &b_local);
+  PetscErrorCode ierr = VecGhostGetLocalForm(b, &b_local);
+  CHECK_ERROR("VecGhostGetLocalForm");
   PetscInt n = 0;
-  VecGetSize(b_local, &n);
+  ierr = VecGetSize(b_local, &n);
+  CHECK_ERROR("VecGetSize");
   PetscScalar* array = nullptr;
-  VecGetArray(b_local, &array);
+  ierr = VecGetArray(b_local, &array);
+  CHECK_ERROR("VecGetArray");
   std::span<PetscScalar> _b(array, n);
   fem::assemble_vector(_b, L);
-  VecRestoreArray(b_local, &array);
-  VecGhostRestoreLocalForm(b, &b_local);
+  ierr = VecRestoreArray(b_local, &array);
+  CHECK_ERROR("VecRestoreArray");
+  ierr = VecGhostRestoreLocalForm(b, &b_local);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
 }
 
-// FIXME: clarify how x0 is used
-// FIXME: if bcs entries are set
-
-// FIXME: need to pass an array of Vec for x0?
 // FIXME: clarify zeroing of vector
 
 /// @brief Modify RHS vector to account for Dirichlet boundary
@@ -329,6 +387,20 @@ void assemble_vector(Vec b, const Form<PetscScalar, T>& L)
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
+///
+/// @param[in,out] b Vector to modify by lifting.
+/// @param[in] a Bilinear forms, one per block `j`. A `std::nullopt`
+/// entry skips that block.
+/// @param[in] constants Constants that appear in each form in `a`, one
+/// entry per block `j`.
+/// @param[in] coeffs Coefficients that appear in each form in `a`, one
+/// entry per block `j`.
+/// @param[in] bcs1 Boundary conditions on the trial space `V_j` for
+/// each block `j`.
+/// @param[in] x0 Vectors used in the lifting, one per block `j`. If
+/// empty, `x0_j` is treated as zero for every block. Otherwise must
+/// have the same length as `a`.
+/// @param[in] alpha Scaling to apply.
 template <std::floating_point T>
 void apply_lifting(
     Vec b,
@@ -344,12 +416,18 @@ void apply_lifting(
         bcs1,
     const std::vector<Vec>& x0, PetscScalar alpha)
 {
+  if (!x0.empty() and x0.size() != a.size())
+    throw std::runtime_error("Mismatch between x0 and a in apply_lifting.");
+
   Vec b_local;
-  VecGhostGetLocalForm(b, &b_local);
+  PetscErrorCode ierr = VecGhostGetLocalForm(b, &b_local);
+  CHECK_ERROR("VecGhostGetLocalForm");
   PetscInt n = 0;
-  VecGetSize(b_local, &n);
+  ierr = VecGetSize(b_local, &n);
+  CHECK_ERROR("VecGetSize");
   PetscScalar* array = nullptr;
-  VecGetArray(b_local, &array);
+  ierr = VecGetArray(b_local, &array);
+  CHECK_ERROR("VecGetArray");
   std::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
@@ -362,33 +440,38 @@ void apply_lifting(
     for (std::size_t i = 0; i < a.size(); ++i)
     {
       assert(x0[i]);
-      VecGhostGetLocalForm(x0[i], &x0_local[i]);
-      PetscInt n = 0;
-      VecGetSize(x0_local[i], &n);
-      VecGetArrayRead(x0_local[i], &x0_array[i]);
-      x0_ref.emplace_back(x0_array[i], n);
+      ierr = VecGhostGetLocalForm(x0[i], &x0_local[i]);
+      CHECK_ERROR("VecGhostGetLocalForm");
+      PetscInt n0 = 0;
+      ierr = VecGetSize(x0_local[i], &n0);
+      CHECK_ERROR("VecGetSize");
+      ierr = VecGetArrayRead(x0_local[i], &x0_array[i]);
+      CHECK_ERROR("VecGetArrayRead");
+      x0_ref.emplace_back(x0_array[i], n0);
     }
 
-    std::vector x0_tmp(x0_ref.begin(), x0_ref.end());
-    fem::apply_lifting(_b, a, constants, coeffs, bcs1, x0_tmp, alpha);
+    fem::apply_lifting(_b, a, constants, coeffs, bcs1, x0_ref, alpha);
 
     for (std::size_t i = 0; i < x0_local.size(); ++i)
     {
-      VecRestoreArrayRead(x0_local[i], &x0_array[i]);
-      VecGhostRestoreLocalForm(x0[i], &x0_local[i]);
+      ierr = VecRestoreArrayRead(x0_local[i], &x0_array[i]);
+      CHECK_ERROR("VecRestoreArrayRead");
+      ierr = VecGhostRestoreLocalForm(x0[i], &x0_local[i]);
+      CHECK_ERROR("VecGhostRestoreLocalForm");
     }
   }
 
-  VecRestoreArray(b_local, &array);
-  VecGhostRestoreLocalForm(b, &b_local);
+  ierr = VecRestoreArray(b_local, &array);
+  CHECK_ERROR("VecRestoreArray");
+  ierr = VecGhostRestoreLocalForm(b, &b_local);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
 }
 
-// FIXME: clarify how x0 is used
-// FIXME: if bcs entries are set
-
-// FIXME: need to pass an array of Vec for x0?
 // FIXME: clarify zeroing of vector
 
+/// @brief Modify RHS vector to account for Dirichlet boundary
+/// conditions.
+///
 /// Modify b such that:
 ///
 ///   b <- b - alpha * A_j (g_j - x0_j)
@@ -401,22 +484,38 @@ void apply_lifting(
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
+///
+/// @param[in,out] b Vector to modify by lifting.
+/// @param[in] a Bilinear forms, one per block `j`. A `std::nullopt`
+/// entry skips that block.
+/// @param[in] bcs1 Boundary conditions on the trial space `V_j` for
+/// each block `j`.
+/// @param[in] x0 Vectors used in the lifting, one per block `j`. If
+/// empty, `x0_j` is treated as zero for every block. Otherwise must
+/// have the same length as `a`.
+/// @param[in] alpha Scaling to apply.
 template <std::floating_point T>
 void apply_lifting(
     Vec b,
     const std::vector<
-        std::optional<std::reference_wrapper<const Form<PetscScalar, double>>>>&
-        a,
-    const std::vector<std::vector<
-        std::reference_wrapper<const DirichletBC<PetscScalar, double>>>>& bcs1,
+        std::optional<std::reference_wrapper<const Form<PetscScalar, T>>>>& a,
+    const std::vector<
+        std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>>>&
+        bcs1,
     const std::vector<Vec>& x0, PetscScalar alpha)
 {
+  if (!x0.empty() and x0.size() != a.size())
+    throw std::runtime_error("Mismatch between x0 and a in apply_lifting.");
+
   Vec b_local;
-  VecGhostGetLocalForm(b, &b_local);
+  PetscErrorCode ierr = VecGhostGetLocalForm(b, &b_local);
+  CHECK_ERROR("VecGhostGetLocalForm");
   PetscInt n = 0;
-  VecGetSize(b_local, &n);
+  ierr = VecGetSize(b_local, &n);
+  CHECK_ERROR("VecGetSize");
   PetscScalar* array = nullptr;
-  VecGetArray(b_local, &array);
+  ierr = VecGetArray(b_local, &array);
+  CHECK_ERROR("VecGetArray");
   std::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
@@ -429,25 +528,31 @@ void apply_lifting(
     for (std::size_t i = 0; i < a.size(); ++i)
     {
       assert(x0[i]);
-      VecGhostGetLocalForm(x0[i], &x0_local[i]);
-      PetscInt n = 0;
-      VecGetSize(x0_local[i], &n);
-      VecGetArrayRead(x0_local[i], &x0_array[i]);
-      x0_ref.emplace_back(x0_array[i], n);
+      ierr = VecGhostGetLocalForm(x0[i], &x0_local[i]);
+      CHECK_ERROR("VecGhostGetLocalForm");
+      PetscInt n0 = 0;
+      ierr = VecGetSize(x0_local[i], &n0);
+      CHECK_ERROR("VecGetSize");
+      ierr = VecGetArrayRead(x0_local[i], &x0_array[i]);
+      CHECK_ERROR("VecGetArrayRead");
+      x0_ref.emplace_back(x0_array[i], n0);
     }
 
-    std::vector x0_tmp(x0_ref.begin(), x0_ref.end());
-    fem::apply_lifting(_b, a, bcs1, x0_tmp, alpha);
+    fem::apply_lifting(_b, a, bcs1, x0_ref, alpha);
 
     for (std::size_t i = 0; i < x0_local.size(); ++i)
     {
-      VecRestoreArrayRead(x0_local[i], &x0_array[i]);
-      VecGhostRestoreLocalForm(x0[i], &x0_local[i]);
+      ierr = VecRestoreArrayRead(x0_local[i], &x0_array[i]);
+      CHECK_ERROR("VecRestoreArrayRead");
+      ierr = VecGhostRestoreLocalForm(x0[i], &x0_local[i]);
+      CHECK_ERROR("VecGhostRestoreLocalForm");
     }
   }
 
-  VecRestoreArray(b_local, &array);
-  VecGhostRestoreLocalForm(b, &b_local);
+  ierr = VecRestoreArray(b_local, &array);
+  CHECK_ERROR("VecRestoreArray");
+  ierr = VecGhostRestoreLocalForm(b, &b_local);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
 }
 
 // -- Setting bcs ------------------------------------------------------------
@@ -459,7 +564,7 @@ void apply_lifting(
 /// (interpolated) boundary condition value.
 ///
 /// @param[in] b The vector to apply the boundary condition to. The local
-/// (owned) part of this vector is modified. The user is reponsible of
+/// (owned) part of this vector is modified. The user is responsible for
 /// scattering the changes to the ghost part of the vector if necessary.
 /// @param[in] bcs The boundary conditions to apply.
 /// @param[in] x0 Optional vector used in computing the value to set. If
@@ -467,38 +572,47 @@ void apply_lifting(
 /// used.
 /// @param[in] alpha Scaling to apply.
 template <std::floating_point T>
-void set_bc(
-    Vec b,
-    const std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>>
-        bcs,
-    std::optional<const Vec> x0, PetscScalar alpha = 1)
+void set_bc(Vec b,
+            const std::vector<
+                std::reference_wrapper<const DirichletBC<PetscScalar, T>>>& bcs,
+            std::optional<const Vec> x0, PetscScalar alpha = 1)
 {
   PetscInt n = 0;
-  VecGetLocalSize(b, &n);
+  PetscErrorCode ierr = VecGetLocalSize(b, &n);
+  CHECK_ERROR("VecGetLocalSize");
   PetscScalar* array = nullptr;
-  VecGetArray(b, &array);
+  ierr = VecGetArray(b, &array);
+  CHECK_ERROR("VecGetArray");
   std::span<PetscScalar> _b(array, n);
   if (x0.has_value())
   {
     Vec x0_local;
-    VecGhostGetLocalForm(x0.value(), &x0_local);
-    PetscInt n = 0;
-    VecGetSize(x0_local, &n);
-    const PetscScalar* array = nullptr;
-    VecGetArrayRead(x0_local, &array);
-    std::span<const PetscScalar> _x0(array, n);
+    ierr = VecGhostGetLocalForm(x0.value(), &x0_local);
+    CHECK_ERROR("VecGhostGetLocalForm");
+    PetscInt n0 = 0;
+    ierr = VecGetSize(x0_local, &n0);
+    CHECK_ERROR("VecGetSize");
+    const PetscScalar* x0_array = nullptr;
+    ierr = VecGetArrayRead(x0_local, &x0_array);
+    CHECK_ERROR("VecGetArrayRead");
+    std::span<const PetscScalar> _x0(x0_array, n0);
     for (auto& bc : bcs)
       bc.get().set(_b, _x0, alpha);
-    VecRestoreArrayRead(x0_local, &array);
-    VecGhostRestoreLocalForm(x0.value(), &x0_local);
+    ierr = VecRestoreArrayRead(x0_local, &x0_array);
+    CHECK_ERROR("VecRestoreArrayRead");
+    ierr = VecGhostRestoreLocalForm(x0.value(), &x0_local);
+    CHECK_ERROR("VecGhostRestoreLocalForm");
   }
   else
   {
     for (auto& bc : bcs)
       bc.get().set(_b, std::nullopt, alpha);
   }
-  VecRestoreArray(b, &array);
+  ierr = VecRestoreArray(b, &array);
+  CHECK_ERROR("VecRestoreArray");
 }
+
+#undef CHECK_ERROR
 
 } // namespace petsc
 } // namespace dolfinx::fem
