@@ -103,8 +103,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   assert(X.extent(1) == tdim);
 
   // Allocate various components of working array
-  const std::size_t required_size
-      = tdim * (2 * gdim + 2 * num_xnodes + 2) + gdim + num_xnodes;
+  const std::size_t required_size = pull_back_working_size(gdim);
   if (working_array.size() < required_size)
     throw std::runtime_error(
         std::format("working_array is too small in pull_back_nonaffine, got "
@@ -237,6 +236,19 @@ std::uint64_t CoordinateElement<T>::hash() const
 {
   assert(_element);
   return _element->hash();
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+std::size_t CoordinateElement<T>::pull_back_working_size(std::size_t gdim) const
+{
+  std::size_t tdim = dolfinx::mesh::cell_dim(cell_shape());
+
+  if (is_affine())
+    return tdim * (2 * gdim) + (tdim + 1) * dim();
+  else
+  {
+    return tdim * (2 * gdim + 2 * dim() + 2) + gdim + dim();
+  }
 }
 //-----------------------------------------------------------------------------
 template class fem::CoordinateElement<float>;

@@ -240,7 +240,7 @@ public:
   /// @param [in] x Physical coordinates (`shape=(num_points, gdim)`).
   /// @param [in] cell_geometry Cell nodes coordinates (`shape=(num_xnodes,
   /// gdim)`).
-  /// @param [in] working_array Working memory. Size must be at least
+  /// @param [in,out] working_array Working memory. Size must be at least
   /// `tdim * (2 * gdim + 2 * num_xnodes + 2) + gdim + num_xnodes`.
   /// @param [in] tol Tolerance for termination of Newton method.
   /// @param [in] maxit Maximum number of Newton iterations
@@ -250,6 +250,13 @@ public:
                            mdspan2_t<const T> cell_geometry,
                            std::span<T> working_array, double tol,
                            int maxit) const;
+
+
+  /// @brief Compute the working array size required for pull back
+  /// @param gdim Geometrical dimension of input points
+  /// @return Number of elements required in the working array for pull back
+  std::size_t pull_back_working_size(std::size_t gdim) const;
+
 
   /// @brief Permute a list of DOF numbers on a cell.
   void permute(std::span<std::int32_t> dofs, std::uint32_t cell_perm) const;

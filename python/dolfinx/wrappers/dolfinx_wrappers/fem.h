@@ -1026,6 +1026,9 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
       .def_prop_ro("variant", [](const dolfinx::fem::CoordinateElement<T>& self)
                    { return static_cast<int>(self.variant()); })
       .def("hash", &dolfinx::fem::CoordinateElement<T>::hash)
+      .def("pull_back_working_size",
+           &dolfinx::fem::CoordinateElement<T>::pull_back_working_size,
+           nb::arg("gdim"))
       .def(
           "push_forward",
           [](const dolfinx::fem::CoordinateElement<T>& self,
@@ -1063,7 +1066,8 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
           [](const dolfinx::fem::CoordinateElement<T>& self,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> x,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_geometry,
-             double tol, int maxit)
+             double tol, int maxit,
+             nb::ndarray<T, nb::ndim<1>, nb::c_contig> working_memory)
           {
             std::size_t num_points = x.shape(0);
             std::size_t gdim = x.shape(1);
@@ -1081,16 +1085,28 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
             cmdspan2_t g(cell_geometry.data(), cell_geometry.shape(0),
                          cell_geometry.shape(1));
 
+            std::size_t working_size = self.pull_back_working_size(gdim);
+            if (working_memory.size() < working_size)
+            {
+              throw std::runtime_error(
+                  std::format("Working memory is too small for pull_back, "
+                              "got {}, need {}.",
+                              working_memory.size(), working_size));
+            }
             if (self.is_affine())
             {
-              std::vector<T> J_b(gdim * tdim);
+              std::span<T> J_b(working_memory.data(), gdim * tdim);
+              std::ranges::fill(J_b, 0);
               mdspan2_t J(J_b.data(), gdim, tdim);
-              std::vector<T> K_b(tdim * gdim);
+              std::span<T> K_b(working_memory.data() + gdim * tdim,
+                               tdim * gdim);
               mdspan2_t K(K_b.data(), tdim, gdim);
 
               std::array<std::size_t, 4> phi_shape = self.tabulate_shape(1, 1);
-              std::vector<T> phi_b(std::reduce(
-                  phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+              std::span<T> phi_b(working_memory.data() + gdim * tdim
+                                     + tdim * gdim,
+                                 std::reduce(phi_shape.begin(), phi_shape.end(),
+                                             1, std::multiplies{}));
               cmdspan4_t phi(phi_b.data(), phi_shape);
 
               self.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi_b);
@@ -1106,19 +1122,16 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
             }
             else
             {
-
-              // Scratch space for pull-back of point coordinates for
-              // non-affine cells.
-              std::size_t num_dofs_g = cell_geometry.shape(0);
-              std::vector<T> pull_back_scratch(
-                  tdim * (2 * gdim + 2 * num_dofs_g + 2) + gdim + num_dofs_g);
-              self.pull_back_nonaffine(X, _x, g, pull_back_scratch, tol, maxit);
+              self.pull_back_nonaffine(
+                  X, _x, g,
+                  std::span(working_memory.data(), working_memory.size()),
+                  tol, maxit);
             }
             return dolfinx_wrappers::as_nbarray(std::move(Xb),
                                                 {num_points, tdim});
           },
           nb::arg("x"), nb::arg("cell_geometry"), nb::arg("tol"),
-          nb::arg("maxit"));
+          nb::arg("maxit"), nb::arg("working_memory"));
 }
 
 template <typename T>

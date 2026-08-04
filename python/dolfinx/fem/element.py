@@ -90,8 +90,10 @@ class CoordinateElement(Generic[Real]):
         self,
         x: npt.NDArray[Real],
         cell_geometry: npt.NDArray[Real],
+        *,
         tol: float = 1.0e-6,
         maxit: int = 15,
+        working_array: npt.NDArray[Real] | None = None,
     ) -> npt.NDArray[Real]:
         """Pull points on the physical cell back to the reference cell.
 
@@ -108,11 +110,17 @@ class CoordinateElement(Generic[Real]):
                 nonaffine pullbacks.
             maxit: Maximum number of Newton iterations for
                 nonaffine pullbacks.
+            working_array: Working memory for the pull-back operation.
+                If not provided, a new array will be allocated. The size of
+                the working array can be computed using
+                :func:`pull_back_working_size`.
 
         Returns:
             Reference coordinates of the physical points ``x``.
         """
-        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit)  # type: ignore[arg-type,return-value]
+        if working_array is None:
+            working_array = np.zeros(self.pull_back_working_size(x.shape[1]), dtype=x.dtype)
+        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit, working_array)  # type: ignore[arg-type,return-value]
 
     @property
     def variant(self) -> int:
@@ -128,6 +136,14 @@ class CoordinateElement(Generic[Real]):
     def degree(self) -> int:
         """Polynomial degree of the coordinate element."""
         return self._cpp_object.degree
+
+    def pull_back_working_size(self, gdim: int) -> int:
+        """Compute the working array size required for pull back.
+
+        Args:
+            gdim: Geometrical dimension of input points
+        """
+        return self._cpp_object.pull_back_working_size(gdim)
 
 
 @singledispatch
