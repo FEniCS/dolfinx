@@ -483,9 +483,7 @@ def test_push_forward_pull_back(gdim: int, is_affine: bool):
             ref_point.reshape(ref_point.shape[0], gdim), cell_geometry
         )
         # Pull back
-        x_pullback = mesh.geometry.cmaps[0].pull_back(
-            x, cell_geometry, working_array=working_array
-        )
+        x_pullback = mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)
         assert np.allclose(x_pullback, ref_point, rtol=np.sqrt(np.finfo(dtype).eps))
 
 
