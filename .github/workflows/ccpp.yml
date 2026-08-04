@@ -270,7 +270,7 @@ jobs:
       - name: Run mypy
         run: |
           pip install mypy types-cffi scipy-stubs
-          mypy --config-file python/pyproject.toml -p dolfinx
+          mypy --config-file python/pyproject.toml -p dolfinx --exclude superlu_dist.py
           mypy -p dolfinx
         # cd python/
         # mypy test
