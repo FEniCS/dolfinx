@@ -251,12 +251,10 @@ public:
                            std::span<T> working_array, double tol,
                            int maxit) const;
 
-
   /// @brief Compute the working array size required for pull back
   /// @param gdim Geometrical dimension of input points
   /// @return Number of elements required in the working array for pull back
   std::size_t pull_back_working_size(std::size_t gdim) const;
-
 
   /// @brief Permute a list of DOF numbers on a cell.
   void permute(std::span<std::int32_t> dofs, std::uint32_t cell_perm) const;
