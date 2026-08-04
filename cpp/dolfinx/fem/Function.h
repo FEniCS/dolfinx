@@ -572,9 +572,10 @@ public:
     std::vector<geometry_type> det_scratch(2 * gdim * tdim);
 
     // Scratch space for pull-back of point coordinates for non-affine cells.
-    std::vector<geometry_type> pull_back_scratch;
+    std::vector<geometry_type> pull_back_scratch_b;
     if (!cmap.is_affine())
-      pull_back_scratch.resize(cmap.pull_back_working_size(gdim));
+      pull_back_scratch_b.resize(cmap.pull_back_working_size(gdim));
+    std::span<geometry_type> pull_back_scratch(pull_back_scratch_b);
 
     // Prepare geometry data in each cell
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
