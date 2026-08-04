@@ -65,7 +65,7 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:
         A PETSc vector that shares data with ``x``.
     """
     index_map = x.index_map
-    ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore[attr-defined]
+    ghosts = index_map.ghosts.astype(PETSc.IntType)
     bs = x.block_size
     size = (index_map.size_local * bs, index_map.size_global * bs)
 
@@ -123,7 +123,7 @@ def create_vector(
     if len(maps) == 1:
         # Single space case
         index_map, bs = maps[0]
-        ghosts = index_map.ghosts.astype(PETSc.IntType)  # type: ignore[attr-defined]
+        ghosts = index_map.ghosts.astype(PETSc.IntType)
         size = (index_map.size_local * bs, index_map.size_global * bs)
         b = PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)
         if kind == PETSc.Vec.Type.MPI:
@@ -146,7 +146,7 @@ def create_vector(
 
 @functools.singledispatch
 def assign(
-    x0: PETSc.Vec | npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
+    x0: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
     x1: PETSc.Vec,
 ):
     """Assign ``x0`` values to a PETSc vector ``x1``.

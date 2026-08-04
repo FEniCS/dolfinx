@@ -65,20 +65,20 @@ protected:
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                std::string tag, std::string engine);
 
+  // Copy constructor (deleted)
+  ADIOS2Writer(const ADIOS2Writer&) = delete;
+
   /// @brief Move constructor
   ADIOS2Writer(ADIOS2Writer&& writer) = default;
-
-  /// @brief Copy constructor
-  ADIOS2Writer(const ADIOS2Writer&) = delete;
 
   /// @brief Destructor
   ~ADIOS2Writer();
 
+  // Copy assignment (deleted)
+  ADIOS2Writer& operator=(const ADIOS2Writer&) = delete;
+
   /// @brief Move assignment
   ADIOS2Writer& operator=(ADIOS2Writer&& writer) = default;
-
-  // Copy assignment
-  ADIOS2Writer& operator=(const ADIOS2Writer&) = delete;
 
 public:
   /// @brief  Close the file
@@ -609,7 +609,7 @@ public:
   {
   }
 
-  // Copy constructor
+  // Copy constructor (deleted)
   VTXWriter(const VTXWriter&) = delete;
 
   /// @brief Move constructor
@@ -618,11 +618,11 @@ public:
   /// @brief Destructor
   ~VTXWriter() = default;
 
+  // Copy assignment (deleted)
+  VTXWriter& operator=(const VTXWriter&) = delete;
+
   /// @brief Move assignment
   VTXWriter& operator=(VTXWriter&&) = default;
-
-  // Copy assignment
-  VTXWriter& operator=(const VTXWriter&) = delete;
 
   /// @brief Write data with a given time stamp.
   /// @param[in] t Time stamp to associate with output.
@@ -652,7 +652,7 @@ public:
         // Write a single mesh for functions as they share finite
         // element
         std::tie(_x_id, _x_ghost) = std::visit(
-            [&](auto& u)
+            [this](auto& u)
             {
               spdlog::debug("ADIOS2: write_mesh_from_space");
               return impl_vtx::vtx_write_mesh_from_space(*_io, *_engine,
@@ -677,8 +677,8 @@ public:
     // Write function data for each function to file
     for (auto& v : _u)
     {
-      std::visit([&](auto& u) { impl_vtx::vtx_write_data(*_io, *_engine, *u); },
-                 v);
+      std::visit([this](auto& u)
+                 { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
     }
 
     _engine->EndStep();
