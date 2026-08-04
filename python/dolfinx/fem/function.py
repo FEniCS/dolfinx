@@ -705,11 +705,6 @@ def functionspace(
     dolfinx_element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
 
     if ufl_e.is_real:
-        num_components = max(dolfinx_element.num_sub_elements, 1)
-        if num_components != int(np.prod(dolfinx_element.value_shape)):
-            raise RuntimeError(
-                "Mismatch between number of sub elements and value shape of the element."
-            )
         dof_layout = _cpp.fem.create_element_dof_layout(dolfinx_element._cpp_object, [])
         cpp_dofmap = _cpp.fem.build_real_element_dofmap(mesh.topology._cpp_object, dof_layout)
     else:

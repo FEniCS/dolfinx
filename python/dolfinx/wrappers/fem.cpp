@@ -59,10 +59,7 @@ void fem(nb::module_& m)
       "Build a dofmap on a mesh.");
 
   m.def(
-      "build_real_element_dofmap",
-      [](const dolfinx::mesh::Topology& topology,
-         const dolfinx::fem::ElementDofLayout& layout)
-      { return dolfinx::fem::build_real_element_dofmap(topology, layout); },
+      "build_real_element_dofmap", dolfinx::fem::build_real_element_dofmap,
       nb::arg("topology"), nb::arg("layout"),
       "Build a dofmap on a real element, i.e. a single constant dof shared by "
       "all cells.");
