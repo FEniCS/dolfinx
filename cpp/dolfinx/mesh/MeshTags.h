@@ -27,7 +27,7 @@ namespace dolfinx::mesh
 /// is a *sparse* data storage class; it allows tags to be associated
 /// with an arbitrary subset of mesh entities. An entity can have only
 /// one associated tag.
-/// @tparam Type
+/// @tparam T Type of the tag value associated with each entity.
 template <typename T>
 class MeshTags
 {
@@ -74,7 +74,7 @@ public:
   /// Destructor
   ~MeshTags() = default;
 
-  /// Move assignment
+  /// Copy assignment
   MeshTags& operator=(const MeshTags& tags) = default;
 
   /// Move assignment

@@ -3,6 +3,7 @@
 #include <dolfinx/common/Scatterer.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/utils.h>
+#include <format>
 #include <iterator>
 #include <vector>
 
@@ -59,9 +60,11 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   for (std::size_t dim = 0; dim < e_index.size(); ++dim)
   {
     if (topology->index_maps(dim).empty())
-      throw std::runtime_error(
-          "Missing entities of dimension " + std::to_string(dim)
-          + ", need to call create_entities(" + std::to_string(dim) + ")");
+    {
+      throw std::runtime_error(std::format(
+          "Missing entities of dimension {}, need to call create_entities({})",
+          dim, dim));
+    }
     index_maps.push_back(topology->index_maps(dim)[e_index[dim]]);
     new_v.push_back(std::vector<std::int64_t>(
         index_maps.back()->size_local() + index_maps.back()->num_ghosts()));
@@ -301,12 +304,12 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     geometry_cmaps.push_back(cm);
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, geometry_cmaps, mesh.comm(), new_x,
-      {new_x.size() / 3, 3}, partitioner, 2);
+      {new_x.size() / 3, 3}, partitioner, 2, 1);
 
   return new_mesh;
 }
 
-/// @cond Explicit instatiation for float and double
+/// @cond Explicit instantiation for float and double
 template mesh::Mesh<double>
 refinement::uniform_refine(const mesh::Mesh<double>& mesh,
                            const mesh::CellPartitionFunction&);

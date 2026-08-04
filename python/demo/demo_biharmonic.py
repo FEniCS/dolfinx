@@ -165,7 +165,7 @@ from dolfinx import default_real_type, default_scalar_type, fem, has_adios2, io,
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
 
-if np.issubdtype(default_real_type, np.float32):  # type: ignore
+if np.issubdtype(default_real_type, np.float32):
     print("float32 not yet supported for this demo.")
     exit(0)
 # -
@@ -204,7 +204,7 @@ V = fem.functionspace(msh, ("Lagrange", degree))
 #
 # Next, we locate the mesh facets that lie on the boundary
 # $\Gamma_D = \partial\Omega$.
-# We do this using using {py:func}`exterior_facet_indices
+# We do this using {py:func}`exterior_facet_indices
 # <dolfinx.mesh.exterior_facet_indices>` which returns all mesh boundary
 # facets (Note: if we are only interested in a subset of those, consider
 # {py:func}`locate_entities_boundary

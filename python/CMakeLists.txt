@@ -1,13 +1,6 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.26)
 
 project(dolfinx_nanobind LANGUAGES CXX)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-if(WIN32)
-  # Windows requires all symbols to be manually exported. This flag exports all
-  # symbols automatically, as in Unix.
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-endif(WIN32)
 
 find_package(
   Python
@@ -60,10 +53,14 @@ message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 if(CMAKE_BUILD_TYPE STREQUAL "Developer")
   # This enables warnings from DOLFINx headers even though they are a SYSTEM
   # dependency.
-  set_target_properties(dolfinx PROPERTIES SYSTEM OFF)
+  set_target_properties(dolfinx::dolfinx PROPERTIES SYSTEM OFF)
 endif()
 
-get_target_property(_dolfinx_defs dolfinx INTERFACE_COMPILE_DEFINITIONS)
+get_target_property(
+  _dolfinx_defs
+  dolfinx::dolfinx
+  INTERFACE_COMPILE_DEFINITIONS
+)
 if("HAS_SUPERLU_DIST" IN_LIST _dolfinx_defs)
   # SuperLU_DIST Python interface requires the superlu_defs.h header for int_t.
   find_package(PkgConfig)
@@ -95,7 +92,10 @@ nanobind_add_module(
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
 )
-target_include_directories(cpp PRIVATE ${SUPERLU_DIST_INCLUDE_DIRS})
+set_target_properties(cpp PROPERTIES CXX_EXTENSIONS OFF)
+if(TARGET PkgConfig::SUPERLU_DIST)
+  target_include_directories(cpp PRIVATE ${SUPERLU_DIST_INCLUDE_DIRS})
+endif()
 
 if(NANOBIND_SABI)
   # mpi4py and petsc4py use generated Cython headers so tell
@@ -108,65 +108,17 @@ if(NANOBIND_SABI)
   target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
 endif()
 
-# Check for some compiler flags
-include(CheckCXXCompilerFlag)
-
-# Add some strict compiler checks
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
-
-if(HAVE_PEDANTIC)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
-endif()
-
-# Debug flags
-check_cxx_compiler_flag(-g HAVE_DEBUG)
-if(HAVE_DEBUG)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -g)
-endif()
-
-# Optimisation
-check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
-if(HAVE_O2_OPTIMISATION)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS -O2)
-endif()
-
-# Enable C++ standard library debugging
-include(CheckCXXSymbolExists)
-
-check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
-check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
-
-if(LIBCPP)
-  list(
-    APPEND DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS
-    _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG
-  )
-endif()
-
-if(GLIBCXX)
-  list(APPEND DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS _GLIBCXX_ASSERTIONS)
-endif()
-
-# Turn off some checks in gcc12 and gcc13 due to false positives with
-# the fmt library
-if(
-  CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-  AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-  AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
-)
-  list(
-    APPEND DOLFINX_PY_CXX_DEVELOPER_FLAGS
-    -Wno-array-bounds;-Wno-stringop-overflow
-  )
-endif()
+include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
 
 target_compile_options(
   cpp
-  PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_FLAGS}>
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 target_compile_definitions(
   cpp
-  PRIVATE $<$<CONFIG:Developer>:${DOLFINX_PY_CXX_DEVELOPER_DEFINITIONS}>
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 target_compile_features(cpp PRIVATE cxx_std_20)
 
@@ -181,7 +133,7 @@ if(ENABLE_CLANG_TIDY)
 endif()
 
 # Add DOLFINx libraries
-target_link_libraries(cpp PRIVATE dolfinx)
+target_link_libraries(cpp PRIVATE dolfinx::dolfinx)
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
 if(WIN32)
@@ -233,7 +185,91 @@ endif()
 
 set_target_properties(
   cpp
-  PROPERTIES INSTALL_RPATH_USE_LINK_PATH ${DOLFINX_INSTALL_RPATH_USE_LINK_PATH}
+  PROPERTIES
+    INSTALL_RPATH_USE_LINK_PATH ${DOLFINX_INSTALL_RPATH_USE_LINK_PATH}
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
-install(TARGETS cpp DESTINATION dolfinx)
+install(TARGETS cpp LIBRARY DESTINATION dolfinx)
+
+# and the nanobind typing stubs.
+set(
+  NANOBIND_STUB_OUTPUTS
+  dolfinx/cpp/__init__.pyi
+  dolfinx/cpp/common.pyi
+  dolfinx/cpp/fem.pyi
+  dolfinx/cpp/fem/__init__.pyi
+  dolfinx/cpp/fem/petsc.pyi
+  dolfinx/cpp/geometry.pyi
+  dolfinx/cpp/graph.pyi
+  dolfinx/cpp/io.pyi
+  dolfinx/cpp/la.pyi
+  dolfinx/cpp/la/__init__.pyi
+  dolfinx/cpp/la/petsc.pyi
+  dolfinx/cpp/log.pyi
+  dolfinx/cpp/mesh.pyi
+  dolfinx/cpp/nls.pyi
+  dolfinx/cpp/nls/__init__.pyi
+  dolfinx/cpp/nls/petsc.pyi
+  dolfinx/cpp/refinement.pyi
+)
+
+if(WIN32)
+  # On Windows we cannot import dolfinx.cpp without installing the package
+  # alongside its external dlls. cpp is installed unconditionally above,
+  # which nanobind requires to have happened prior to nanobind_add_stub.
+  # nanobind automatically installs into ${CMAKE_INSTALL_PREFIX} in
+  # INSTALL_TIME mode.
+  # DEPENDS is redundant in INSTALL_TIME mode - cpp must be installed.
+  nanobind_add_stub(
+    cpp_stub
+    INSTALL_TIME
+    MODULE dolfinx.cpp
+    RECURSIVE
+    VERBOSE
+    PATTERN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx/wrappers/stub_patterns.txt
+    MARKER_FILE dolfinx/cpp/py.typed
+    OUTPUT ${NANOBIND_STUB_OUTPUTS}
+  )
+else()
+  # On UNIX-like systems we can import the cpp compiled module before
+  # installing and rely on dynamic linking at import time. Build it
+  # directly into a throwaway "dolfinx" package directory so that the
+  # module imports under its real name (dolfinx.cpp): otherwise
+  # nanobind's stubgen resolves submodule cross-references (e.g.
+  # dolfinx.cpp.la) against the bare top-level name "cpp", producing
+  # "import cpp.la" in the generated stubs, which does not exist as an
+  # importable module and silently resolves to Any under mypy. stubgen
+  # infers its output location from the imported module's __file__, so
+  # placing the build output under CMAKE_CURRENT_BINARY_DIR/dolfinx
+  # keeps that location matching the OUTPUT paths below (relative to
+  # CMAKE_CURRENT_BINARY_DIR). See nanobind's nanobind_add_stub docs
+  # for the import mechanism:
+  # https://nanobind.readthedocs.io/en/latest/api_cmake.html#command:nanobind_add_stub
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
+  file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/__init__.py)
+  set_target_properties(
+    cpp
+    PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx
+  )
+
+  nanobind_add_stub(
+    cpp_stub
+    MODULE dolfinx.cpp
+    PYTHON_PATH ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS cpp
+    RECURSIVE
+    VERBOSE
+    PATTERN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx/wrappers/stub_patterns.txt
+    MARKER_FILE dolfinx/cpp/py.typed
+    OUTPUT ${NANOBIND_STUB_OUTPUTS}
+  )
+
+  install(
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/cpp
+    DESTINATION dolfinx
+    FILES_MATCHING
+    PATTERN "*.pyi"
+    PATTERN "*.typed"
+  )
+endif()

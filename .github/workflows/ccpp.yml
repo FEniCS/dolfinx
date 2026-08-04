@@ -18,16 +18,16 @@ on:
 jobs:
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     name: Lint
     steps:
       - name: Checkout DOLFINx
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.12'
+          python-version: '3.14'
 
       - name: Load environment variables
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
@@ -61,7 +61,7 @@ jobs:
           clang-format --version
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
       - name: gersemi
-        run: gersemi --check cpp/CMakeLists.txt cpp/dolfinx/CMakeLists.txt python/CMakeLists.txt cpp/cmake/modules/*.cmake cpp/cmake/post-install/CMakeLists.txt cpp/cmake/templates/*.cmake.in
+        run: gersemi --check .
 
   ccpp-build:
     runs-on: ubuntu-24.04
@@ -87,7 +87,7 @@ jobs:
              libhdf5-mpi-dev liblapack-dev libparmetis-dev libpugixml-dev \
              libspdlog-dev libsuperlu-dist-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -97,11 +97,24 @@ jobs:
           pip install scikit-build-core setuptools
           python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 
-      - name: Install FEniCS Python components
+      - name: Install UFL
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+
+      # Split install ensures that basix.pc ends up in PKG_CONFIG_PATH for later pkg-config test
+      - name: Install Basix (C++)
+        run: |
+          git clone --branch ${{ env.basix_ref }} --single-branch https://github.com/${{ env.basix_repository }}.git
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-basix -S basix/cpp
+          cmake --build build-basix
+          sudo cmake --install build-basix
+          sudo ldconfig
+
+      - name: Install Basix (Python)
+        run: pip install --no-build-isolation ./basix/python
+
+      - name: Install FFCx
+        run: pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure, no rpath (C++)
         working-directory: cpp
@@ -124,6 +137,12 @@ jobs:
           sudo cmake --install .
           sudo ldconfig
 
+      - name: Run pkg-config test (C++)
+        working-directory: cpp/test/pkgconfig
+        run: |
+          make
+          make run
+
       - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
         run: cmake --build . --target test
@@ -138,7 +157,7 @@ jobs:
           mypy --config-file python/pyproject.toml -p dolfinx # package mode, type checks installed dolfinx (working around name collision in python/ directory)
           cd python/
           mypy test
-          #mypy demo # TODO: Enable this in future
+          mypy demo
 
       - name: Install gmsh and pyvista (and dependencies)
         run: |
@@ -159,7 +178,7 @@ jobs:
         run: mpirun -np 3 python -m pytest -m "not petsc4py and not adios2" python/test/unit
 
   ccpp-build-with-petsc:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [lint]
     strategy:
       matrix:
@@ -191,11 +210,23 @@ jobs:
           pip install scikit-build-core
           python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 
-      - name: Install FEniCS Python components
+      - name: Install UFL
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+
+      # Split install ensures that basix.pc ends up in PKG_CONFIG_PATH for later pkg-config test
+      - name: Install Basix (C++)
+        run: |
+          git clone --branch ${{ env.basix_ref }} --single-branch https://github.com/${{ env.basix_repository }}.git
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-basix -S basix/cpp
+          cmake --build build-basix
+          cmake --install build-basix
+
+      - name: Install Basix (Python)
+        run: pip install --no-build-isolation ./basix/python
+
+      - name: Install FFCx
+        run: pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure (C++)
         working-directory: cpp
@@ -205,6 +236,8 @@ jobs:
           --warn-uninitialized
           -G Ninja
           -DCMAKE_BUILD_TYPE=Developer
+          -DBUILD_TESTING=true
+          -DDOLFINX_BUILD_DEMOS=true
           -DDOLFINX_ENABLE_ADIOS2=true
           -DDOLFINX_ENABLE_KAHIP=true
           -DDOLFINX_ENABLE_PETSC=true
@@ -216,26 +249,18 @@ jobs:
         working-directory: cpp/build
         run: cmake --build . --target install
 
-      - name: Build tests (C++, standalone)
-        working-directory: cpp/test
+      - name: Run pkg-config test (C++)
+        working-directory: cpp/test/pkgconfig
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=Developer -GNinja
-          cmake --build build
+          export PKG_CONFIG_PATH=$PETSC_DIR/$PETSC_ARCH/lib/pkgconfig:$SLEPC_DIR/$PETSC_ARCH/lib/pkgconfig:$PKG_CONFIG_PATH
+          make
+          make run
 
-      - name: Run tests (C++, serial)
-        working-directory: cpp/test/build
-        run: ctest -V --output-on-failure -R unittests_np_1
-      - name: Run tests (C++, MPI, np=3)
-        working-directory: cpp/test/build
-        run: ctest -V --output-on-failure -R unittests_np_3
-
-      - name: Build and run C++ regression tests (serial and MPI (np=2))
-        run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
-          cmake --build build/demo
-          cd build/demo
-          ctest -V -R demo -R serial
-          ctest --output-on-failure -V -R demo -R mpi_2
+      - name: Run unit tests and demos via target (C++, serial and parallel)
+        working-directory: cpp/build
+        env:
+          CTEST_OUTPUT_ON_FAILURE: 1
+        run: cmake --build . --target test
 
       - name: Build Python interface
         run: |
@@ -278,7 +303,7 @@ jobs:
         run: mpirun -np 3 python -m pytest -m "petsc4py or adios2" python/test/unit/
 
   build-and-publish-docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [lint]
     container: "ghcr.io/fenics/test-env:current-openmpi"
     env:

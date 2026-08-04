@@ -10,7 +10,7 @@ Note:
     dependencies and must be explicitly imported.
 """
 
-from dolfinx.cpp.fem import _IntegralType as IntegralType
+from dolfinx.cpp.fem import IntegralType as IntegralType
 from dolfinx.cpp.fem import transpose_dofmap
 from dolfinx.fem.assemble import (
     apply_lifting,
@@ -21,7 +21,6 @@ from dolfinx.fem.assemble import (
     create_vector,
     pack_coefficients,
     pack_constants,
-    set_bc,
 )
 from dolfinx.fem.bcs import (
     DirichletBC,
@@ -102,6 +101,5 @@ __all__ = [
     "mixed_topology_form",
     "pack_coefficients",
     "pack_constants",
-    "set_bc",
     "transpose_dofmap",
 ]

@@ -7,7 +7,7 @@
 """Tools to extract data from Gmsh models."""
 
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -22,7 +22,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32 as _AdjacencyList_int32
 from dolfinx.fem import coordinate_element
-from dolfinx.graph import AdjacencyList, adjacencylist
+from dolfinx.graph import adjacencylist
 from dolfinx.io.utils import distribute_entity_data
 from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags_from_entities
 
@@ -146,7 +146,7 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
         degree,
         basix.LagrangeVariant.equispaced,
         shape=(gdim,),
-        dtype=dtype,  # type: ignore[arg-type]
+        dtype=dtype,
     )
     return ufl.Mesh(element)
 
@@ -278,7 +278,8 @@ def extract_geometry(model, name: str | None = None) -> npt.NDArray[np.float64]:
     # order as their unique node index. We therefore sort nodes in
     # geometry according to the unique index
     perm_sort = np.argsort(indices)
-    assert np.all(indices[perm_sort] == np.arange(len(indices)))
+    if not np.all(indices[perm_sort] == np.arange(len(indices))):
+        raise RuntimeError("Gmsh model node indices are not contiguous.")
     return points[perm_sort]
 
 
@@ -287,7 +288,9 @@ def model_to_mesh(
     comm: _MPI.Comm,
     rank: int,
     gdim: int = 3,
-    partitioner: Callable[[_MPI.Comm, int, int, _AdjacencyList_int32], _AdjacencyList_int32]
+    partitioner: Callable[
+        [_MPI.Comm, int, Sequence[CellType], Sequence[npt.NDArray[np.int64]]], _AdjacencyList_int32
+    ]
     | None = None,
     dtype=default_real_type,
     max_facet_to_cell_links: int = 2,
@@ -325,7 +328,8 @@ def model_to_mesh(
     """
     valid_mesh = None
     if comm.rank == rank:
-        assert model is not None, "Gmsh model is None on rank responsible for mesh creation."
+        if model is None:
+            raise ValueError("Gmsh model is None on rank responsible for mesh creation.")
         # Get mesh geometry and mesh topology for each element
         x = extract_geometry(model)
         topologies, physical_groups = extract_topology_and_markers(model)
@@ -333,7 +337,7 @@ def model_to_mesh(
 
         # Extract Gmsh entity (cell) id, topological dimension and number
         # of nodes which is used to create an appropriate coordinate
-        # element, and seperate higher topological entities from lower
+        # element, and separate higher topological entities from lower
         # topological entities (e.g. facets, ridges and peaks).
         num_unique_entities = len(topologies.keys())
         element_ids = np.zeros(num_unique_entities, dtype=np.int32)
@@ -416,7 +420,7 @@ def model_to_mesh(
         cell_connectivities.append(cell_connectivity)
         ufl_domains.append(ufl_domain)
 
-    # Create a distributed mesh, where mesh nodes are only destributed from
+    # Create a distributed mesh, where mesh nodes are only distributed from
     # the input rank
     if comm.rank != rank:
         x = np.empty([0, gdim], dtype=dtype)  # No nodes on other than root rank
@@ -437,10 +441,11 @@ def model_to_mesh(
         cpp_mesh = _cpp.mesh.create_mesh(
             comm,
             cell_connectivities,
-            cmaps,
+            cmaps,  # type: ignore[arg-type]
             x[:, :gdim].astype(dtype).copy(),
             partitioner,
             max_facet_to_cell_links,
+            1,
         )
         mesh = Mesh(cpp_mesh, None)
 
@@ -455,9 +460,8 @@ def model_to_mesh(
             partitioner,
             max_facet_to_cell_links=max_facet_to_cell_links,
         )
-    assert tdim == mesh.topology.dim, (
-        f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}"
-    )
+    if tdim != mesh.topology.dim:
+        raise RuntimeError(f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}")
 
     # Create MeshTags for all sub entities
     topology = mesh.topology
@@ -507,7 +511,10 @@ def read_from_msh(
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
-    partitioner: Callable[[_MPI.Comm, int, int, AdjacencyList], _AdjacencyList_int32] | None = None,
+    partitioner: Callable[
+        [_MPI.Comm, int, Sequence[CellType], Sequence[npt.NDArray[np.int64]]], _AdjacencyList_int32
+    ]
+    | None = None,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a mesh and cell facet markers.
 
@@ -530,12 +537,12 @@ def read_from_msh(
     """
     try:
         import gmsh
-    except ModuleNotFoundError:
+    except ModuleNotFoundError as err:
         # Python 3.11+ adds the add_note method to exceptions
         # e.add_note("Gmsh must be installed to import dolfinx.io.gmsh")
         raise ModuleNotFoundError(
             "No module named 'gmsh': dolfinx.io.gmsh.read_from_msh requires Gmsh.", name="gmsh"
-        )
+        ) from err
 
     if comm.rank == rank:
         gmsh.initialize()

@@ -120,4 +120,5 @@ def mixed_topology_mesh():
         geomx,
         part,
         max_cells_per_facet,
+        num_threads=1,
     )

@@ -6,7 +6,7 @@
 """Finite elements."""
 
 from functools import singledispatch
-from typing import Generic
+from typing import ClassVar, Generic
 
 import numpy as np
 import numpy.typing as npt
@@ -20,6 +20,12 @@ from dolfinx.typing import Real
 class CoordinateElement(Generic[Real]):
     """Coordinate element describing the geometry map for mesh cells."""
 
+    # Built-in geometry types. Public: extend with additional geometry
+    # dtypes as needed.
+    cpp_types: ClassVar[dict] = {
+        np.dtype(np.float32): _cpp.fem.CoordinateElement_float32,
+        np.dtype(np.float64): _cpp.fem.CoordinateElement_float64,
+    }
     _cpp_object: _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64
 
     def __init__(
@@ -78,7 +84,7 @@ class CoordinateElement(Generic[Real]):
         Returns:
             Physical coordinates of the points reference points ``X``.
         """
-        return self._cpp_object.push_forward(X, cell_geometry)
+        return self._cpp_object.push_forward(X, cell_geometry)  # type: ignore[arg-type,return-value]
 
     def pull_back(
         self,
@@ -106,7 +112,7 @@ class CoordinateElement(Generic[Real]):
         Returns:
             Reference coordinates of the physical points ``x``.
         """
-        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit)
+        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit)  # type: ignore[arg-type,return-value]
 
     @property
     def variant(self) -> int:
@@ -126,7 +132,7 @@ class CoordinateElement(Generic[Real]):
 
 @singledispatch
 def coordinate_element(
-    celltype: _cpp.mesh.CellType,
+    celltype: _cpp.mesh.CellType | basix.finite_element.FiniteElement,
     degree: int,
     variant=int(basix.LagrangeVariant.unset),
     dtype: npt.DTypeLike = np.float64,
@@ -144,16 +150,12 @@ def coordinate_element(
     Returns:
         A coordinate element.
     """
-    if np.issubdtype(dtype, np.float32):
-        return CoordinateElement(_cpp.fem.CoordinateElement_float32(celltype, degree, variant))
-    elif np.issubdtype(dtype, np.float64):
-        return CoordinateElement(_cpp.fem.CoordinateElement_float64(celltype, degree, variant))
-    else:
-        raise RuntimeError("Unsupported dtype.")
+    cpp_type = CoordinateElement.cpp_types[np.dtype(dtype)]
+    return CoordinateElement(cpp_type(celltype, degree, variant))
 
 
 @coordinate_element.register(basix.finite_element.FiniteElement)
-def _(e: basix.finite_element.FiniteElement) -> CoordinateElement:
+def _coordinate_element_from_basix(e: basix.finite_element.FiniteElement) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from a Basix finite element.
 
     Coordinate elements are typically used when creating meshes.
@@ -164,15 +166,19 @@ def _(e: basix.finite_element.FiniteElement) -> CoordinateElement:
     Returns:
         A coordinate element.
     """
-    try:
-        return CoordinateElement(_cpp.fem.CoordinateElement_float32(e._e))
-    except TypeError:
-        return CoordinateElement(_cpp.fem.CoordinateElement_float64(e._e))
+    cpp_type = CoordinateElement.cpp_types[e.dtype]
+    return CoordinateElement(cpp_type(e._e))
 
 
 class FiniteElement(Generic[Real]):
     """A finite element."""
 
+    # Built-in geometry types. Public: extend with additional geometry
+    # dtypes as needed.
+    cpp_types: ClassVar[dict] = {
+        np.dtype(np.float32): _cpp.fem.FiniteElement_float32,
+        np.dtype(np.float64): _cpp.fem.FiniteElement_float64,
+    }
     _cpp_object: _cpp.fem.FiniteElement_float32 | _cpp.fem.FiniteElement_float64
 
     def __init__(
@@ -197,7 +203,7 @@ class FiniteElement(Generic[Real]):
     @property
     def dtype(self) -> np.dtype:
         """Geometry type of the mesh that the space is defined on."""
-        return self._cpp_object.dtype
+        return np.dtype(self._cpp_object.dtype)
 
     @property
     def basix_element(self) -> basix.finite_element.FiniteElement:
@@ -236,7 +242,7 @@ class FiniteElement(Generic[Real]):
             positions. For other elements the points will typically be the
             quadrature points used to evaluate moment degrees of freedom.
         """
-        return self._cpp_object.interpolation_points()
+        return self._cpp_object.interpolation_points()  # type: ignore[return-value]
 
     @property
     def interpolation_ident(self) -> bool:
@@ -254,7 +260,7 @@ class FiniteElement(Generic[Real]):
     def space_dimension(self) -> int:
         """Dimension of the finite element function space.
 
-        This is the the number of degrees-of-freedom for the element.
+        This is the number of degrees-of-freedom for the element.
         For 'blocked' elements, this function returns the dimension of
         the full element rather than the dimension of the base element.
         """
@@ -302,7 +308,7 @@ class FiniteElement(Generic[Real]):
             cells. Please see `basix.numba_helpers` for performant
             versions.
         """
-        self._cpp_object.T_apply(x, cell_permutations, dim)
+        self._cpp_object.T_apply(x, cell_permutations, dim)  # type: ignore[arg-type]
 
     def Tt_apply(
         self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
@@ -316,7 +322,7 @@ class FiniteElement(Generic[Real]):
             cell_permutations: Permutation data for the cells
             dim: Number of columns in ``data``.
         """
-        self._cpp_object.Tt_apply(x, cell_permutations, dim)
+        self._cpp_object.Tt_apply(x, cell_permutations, dim)  # type: ignore[arg-type]
 
     def Tt_inv_apply(
         self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
@@ -330,7 +336,7 @@ class FiniteElement(Generic[Real]):
             cell_permutations: Permutation data for the cells
             dim: Number of columns in ``data``.
         """
-        self._cpp_object.Tt_inv_apply(x, cell_permutations, dim)
+        self._cpp_object.Tt_inv_apply(x, cell_permutations, dim)  # type: ignore[arg-type]
 
 
 def finiteelement(
@@ -346,12 +352,7 @@ def finiteelement(
             the selected element.
         FiniteElement_dtype: Geometry type of the element.
     """
-    if np.issubdtype(FiniteElement_dtype, np.float32):
-        CppElement = _cpp.fem.FiniteElement_float32
-    elif np.issubdtype(FiniteElement_dtype, np.float64):
-        CppElement = _cpp.fem.FiniteElement_float64
-    else:
-        raise ValueError(f"Unsupported dtype: {FiniteElement_dtype}")
+    CppElement = FiniteElement.cpp_types[np.dtype(FiniteElement_dtype)]
 
     if ufl_e.is_mixed:
         elements = [

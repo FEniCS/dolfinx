@@ -95,7 +95,8 @@ plotter.show()
       MPI_COMM_SELF, {{{0, 0}, {1, 1}}}, {1, 1}, mesh::CellType::triangle);
 
   // plaza requires the edges to be pre initialized!
-  mesh.topology()->create_entities(1, std::thread::hardware_concurrency());
+  mesh.topology()->create_entities(
+      1, std::max(1, static_cast<int>(std::thread::hardware_concurrency())));
 
   auto [mesh_fine, parent_cell, parent_facet] = refinement::refine(
       mesh, std::nullopt,

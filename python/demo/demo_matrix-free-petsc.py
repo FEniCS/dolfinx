@@ -59,7 +59,7 @@ import ufl
 # -
 
 # ## Matrix-free operator
-# Many interative methods, such as the conjugate gradient method, only
+# Many iterative methods, such as the conjugate gradient method, only
 # requires the action of the system matrix on a vector. Thus, one can
 # assemble a form of rank 1 with a given function replacing the trial
 # function and obtain this vector.
@@ -209,7 +209,7 @@ class MatrixFreeOperator:
                 dolfinx.fem.extract_function_spaces(self._compiled_diagonal), self._bcs
             )
             offset0, _ = self._vector.getAttr("_blocks")
-            for bcs, off0, off1 in zip(bcs0, offset0[:-1], offset0[1:], strict=True):  # type: ignore[assignment]
+            for bcs, off0, off1 in zip(bcs0, offset0[:-1], offset0[1:], strict=True):
                 v_array = self._vector.array_w[off0:off1]
                 x_array = X.array_r[off0:off1]
                 for bc in bcs:
@@ -249,7 +249,7 @@ class MatrixFreeOperator:
                 dolfinx.fem.extract_function_spaces(self._compiled_diagonal), self._bcs
             )
             offset0, _ = self._diagonal.getAttr("_blocks")
-            for bcs, off0 in zip(bcs0, offset0[:-1], strict=True):  # type: ignore[assignment]
+            for bcs, off0 in zip(bcs0, offset0[:-1], strict=True):
                 for bc in bcs:
                     di = bc.dof_indices()
                     odi = di[0][: di[1]]

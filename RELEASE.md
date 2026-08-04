@@ -135,26 +135,29 @@ Firedrake teams. The version number should be bumped as follows:
 Although lengthy, integration testing is highly effective at discovering issues
 and mistakes before they reach tagged versions.
 
-At each of the following links run the GitHub Action Workflow manually using
-the `release` branch in all fields, including the . *Only proceed to tagging
-once all tests pass.*
+First, update `.github/workflows/fenicsx-refs.env` in every repository to point
+at the `release` branches.
 
-Basix with FFCx: https://github.com/FEniCS/basix/actions/workflows/ffcx-tests.yml
+Then check:
 
-Basix with DOLFINx: https://github.com/FEniCS/basix/actions/workflows/dolfinx-tests.yml
-
-UFL with FEniCSx: https://github.com/FEniCS/ufl/actions/workflows/fenicsx-tests.yml
-
-FFCx with DOLFINx: https://github.com/FEniCS/ffcx/actions/workflows/dolfinx-tests.yml
-
-Full stack: https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml
+- [Basix with FFCx](https://github.com/FEniCS/basix/actions/workflows/ffcx-tests.yml)
+- [Basix with DOLFINx](https://github.com/FEniCS/basix/actions/workflows/dolfinx-tests.yml)
+- [UFL with FEniCSx](https://github.com/FEniCS/ufl/actions/workflows/fenicsx-tests.yml)
+- [FFCx with DOLFINx](https://github.com/FEniCS/ffcx/actions/workflows/dolfinx-tests.yml)
+- [Full stack](https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml)
 
 ## Tagging
 
-Make appropriate version tags in each repository. UFL does not use the `v` prefix.
+Make appropriate version tags e.g. `v0.12.0` in each repository in order: UFL,
+Basix, FFCx, DOLFINx. You must wait for UFL, Basix and FFCx to build and push
+documentation before making the tag for DOLFINx. UFL does not use the `v`
+prefix.
 
     git tag v0.5.0
     git push --tags origin
+
+If things go wrong, deleting and remaking tags is allowed on the same working
+day.
 
 ## Artifacts
 

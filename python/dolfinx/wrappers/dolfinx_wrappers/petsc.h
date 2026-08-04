@@ -84,9 +84,17 @@ void declare_petsc_discrete_operators(nb::module_& m)
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::discrete_curl<U, T>(
-            V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
+        try
+        {
+          MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
+          dolfinx::fem::discrete_curl<U, T>(
+              V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
+        }
+        catch (...)
+        {
+          MatDestroy(&A);
+          throw;
+        }
         return A;
       },
       nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));
@@ -124,11 +132,19 @@ void declare_petsc_discrete_operators(nb::module_& m)
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::discrete_gradient<T, U>(
-            *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
-            {*V1.element(), *V1.dofmap()},
-            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
+        try
+        {
+          MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
+          dolfinx::fem::discrete_gradient<T, U>(
+              *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
+              {*V1.element(), *V1.dofmap()},
+              dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
+        }
+        catch (...)
+        {
+          MatDestroy(&A);
+          throw;
+        }
         return A;
       },
       nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));
@@ -165,9 +181,17 @@ void declare_petsc_discrete_operators(nb::module_& m)
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::interpolation_matrix<T, U>(
-            V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES));
+        try
+        {
+          MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
+          dolfinx::fem::interpolation_matrix<T, U>(
+              V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES));
+        }
+        catch (...)
+        {
+          MatDestroy(&A);
+          throw;
+        }
         return A;
       },
       nb::rv_policy::take_ownership, nb::arg("V0"), nb::arg("V1"));

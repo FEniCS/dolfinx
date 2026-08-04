@@ -154,7 +154,7 @@ void test_matrix()
   md::mdspan<T, md::extents<std::size_t, 8, md::dynamic_extent>> Aref(
       Aref_data.data(), 8, A.index_map(1)->size_global());
 
-  auto to_global_col = [&](auto col)
+  auto to_global_col = [&A](auto col)
   {
     std::array<std::int64_t, 1> tmp;
     A.index_map(1)->local_to_global(std::vector<std::int32_t>{col}, tmp);

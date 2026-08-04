@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/utils.h>
 #include <vector>
