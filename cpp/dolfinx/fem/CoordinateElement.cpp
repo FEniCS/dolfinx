@@ -105,11 +105,12 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   // Allocate various components of working array
   const std::size_t required_size = pull_back_working_size(gdim);
   if (working_array.size() < required_size)
+  {
     throw std::runtime_error(
-        std::format("working_array is too small in pull_back_nonaffine, got "
-                    "{}. requires {}",
+        std::format("Working memory is too small for pull_back_nonaffine, "
+                    "got {}, need {}.",
                     working_array.size(), required_size));
-
+  }
   mdspan2_t<T> dphi(working_array.data(), tdim, num_xnodes);
   mdspan2_t<const T> Xk(working_array.data() + tdim * num_xnodes, 1, tdim);
   std::span<T> Xk_span(working_array.data() + tdim * num_xnodes, tdim);
