@@ -74,7 +74,7 @@ public:
   /// Destructor
   ~MeshTags() = default;
 
-  /// Move assignment
+  /// Copy assignment
   MeshTags& operator=(const MeshTags& tags) = default;
 
   /// Move assignment

@@ -14,6 +14,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <format>
 #include <map>
+#include <stdexcept>
 #include <string_view>
 #include <vector>
 
@@ -419,7 +420,11 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
   H5Dclose(dset_id);
 
   // Remove coordinates if gdim != 3
-  assert(gdim <= 3);
+  if (gdim > 3)
+  {
+    throw std::runtime_error("Geometric dimension must be less than or equal "
+                             "to 3.");
+  }
   std::vector<U> points_pruned((local_point_range[1] - local_point_range[0])
                                * gdim);
   for (std::int64_t i = 0; i < local_point_range[1] - local_point_range[0]; ++i)

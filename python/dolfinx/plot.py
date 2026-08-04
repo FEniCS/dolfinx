@@ -87,7 +87,7 @@ def vtk_mesh(msh: mesh.Mesh, dim: int | None = None, entities: npt.NDArray[np.in
 
 
 @vtk_mesh.register  # type: ignore[attr-defined]
-def _(V: fem.FunctionSpace, entities: npt.NDArray[np.int32] | None = None):  # type: ignore
+def _(V: fem.FunctionSpace, entities: npt.NDArray[np.int32] | None = None):
     """Create VTK mesh topology based on the degree-of-freedom coordinates.
 
     This function supports visualisation when the degree of the finite

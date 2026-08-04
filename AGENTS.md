@@ -17,8 +17,13 @@ disclosure process.
 
 ## C++ style
 
-- **Standard**: C++20. Use concepts (`std::floating_point T`,
-  `std::integral`, etc.) to constrain templates rather than SFINAE.
+- **Standard**: Modern C++20. Use concepts (`std::floating_point T`,
+  `std::integral`, `std::ranges` etc.) to constrain templates rather than
+  SFINAE. Don't use C-style casts. `const`-correctness is encouraged.
+  Consider using `constexpr` and `consteval`.
+- **Avoid overusing the `auto` keyword`**: The `auto` keyword should not be
+  used on simple-to-reason-about types, e.g. `std::int32_t` and
+  `std::vector<T>` as it reduces code readability.
 - **Formatting**: enforced by `.clang-format` (LLVM-derived, 2-space
   indent, 80-column limit, Allman braces). Always run `clang-format -i`
   on touched `.cpp`/`.h` files before considering a change done; CI
@@ -39,6 +44,11 @@ disclosure process.
   sorted (`clang-format`'s `SortIncludes`) — the paired header first
   (in `.cpp` files), then project (`<dolfinx/...>`) headers, then
   standard-library headers, alphabetically within each group.
+- **Include What You Use (IWYU)**: follow IWYU best practice down to
+  including 'trivial' headers such as `<cstdint>` and `<iterators>`
+  directly, rather than relying on transitive includes -- IWYU is
+  not currently enforced systematically via testing, so inspect the
+  modified files touched and make suggestions.
 - **Namespaces**: library code lives in `dolfinx::<module>` (e.g.
   `dolfinx::io::hdf5`). In `.cpp` files, prefer `using namespace
   dolfinx;` at the top and qualify definitions with the remaining
@@ -59,19 +69,106 @@ disclosure process.
   the actual parameter names — this is checked manually in review, not
   by tooling, so a rename must be applied to the declaration, the
   definition, and any doc comment together.
+- **Comments**: LLM-generated comments tend to be rather verbose;
+  after the first comment draft, compress comments to their essence
+  using concise technical language.
 - **Errors and invariants**: throw `std::runtime_error` with a
-  descriptive message for user-facing/API-boundary errors; use
-  `assert` for internal invariants that indicate a library bug, not
-  bad user input. Prefer `spdlog::debug`/`info`/`warn` for logging
+  descriptive message for user-facing/API-boundary errors when the
+  check is O(1). For more expensive single-line checks, use `assert`.
+  For more expensive multi-line checks, throw an exception but guard
+  the check so it only runs in debug builds (e.g. `#ifndef NDEBUG`).
+  `assert` itself is for internal invariants that indicate a library
+  bug, not bad user input. Do not add exceptions inside hot loops.
+  Prefer `spdlog::debug`/`info`/`warn` for logging
   over `std::cout`/`std::cerr`.
+- **Move/copy semantics**: Moving is preferred over copying, unless
+  the object is very lightweight. Many DOLFINx classes disable
+  copying; none disable moving. `std::move` is used systematically on
+  incoming `std::shared_ptr` to avoid unnecessary copies of
+  `std::shared_ptr` and also to avoid copies when returning with a
+  `std::pair{}`.
+- **Special member functions**: a class that declares any of the five
+  (copy constructor, move constructor, destructor, copy assignment,
+  move assignment) declares all five explicitly, `public`, as a
+  contiguous block immediately after the named constructors, in that
+  order — see `mesh/Mesh.h`, `fem/DofMap.h`, `common/Table.h`. Write
+  `= default` rather than relying on implicit generation; declaring
+  only some of the five silently suppresses the others.
+- **Deleting copies**: delete both copy operations for classes owning
+  an external handle (MPI communicator, PETSc/SLEPc object,
+  ADIOS2/HDF5 file) and for 'heavy' data classes where an accidental
+  deep copy is a performance bug (`common::IndexMap`,
+  `fem::FunctionSpace`, `fem::Function`). Classes that are cheap to
+  copy explicitly but should not be copied into an existing object
+  delete copy assignment only, keeping a defaulted copy constructor
+  (`mesh::Mesh`, `mesh::Topology`, `mesh::Geometry`).
+- **Never delete moves**: no class in the library deletes a move
+  operation. If a class caches `std::span`s or other pointers into its
+  own members, explain in a `@note` why moving remains valid instead
+  of disabling it (see the deleted copy constructor and defaulted move
+  constructor of `fem::Form`).
+- **Destructors**: `= default` unless a raw handle must be released
+  (`common::Comm`, `la::petsc::Vector`, `io::VTKFile`). Mark the
+  destructor `virtual` only when the class is actually used as a base
+  class.
+- **`noexcept`**: used on hand-written move operations of handle owners
+  (`common::Comm`, `la::petsc::*`); defaulted moves are left
+  unannotated as they are implicitly `noexcept`.
+- **Documenting special members**: the conventional wordings are
+  `/// Copy constructor`, `/// Move constructor`, `/// Destructor`,
+  `/// Copy assignment` and `/// Move assignment`; `@param` is
+  normally omitted. Deleted members use a non-Doxygen `//` comment
+  with `(deleted)` appended so they stay out of the generated
+  documentation.
+- **String formatting**: use `std::format` (`<format>`) to build
+  formatted/error strings rather than `printf`-style, `std::ostringstream`
+  concatenation, or the `fmt` library.
 - **Function pointers over lambdas**: when a free function's signature
   already matches a callback/`std::function` parameter exactly, pass
   the function directly (e.g. `graph::reorder_rcm`) rather than
   wrapping it in a trivial forwarding lambda.
+- **Lambdas**: no `[=]`/`[&]` — list captures explicitly, e.g.
+  `[&v]`. Capture by reference for lambdas invoked in
+  place; by value (cheap scalars, or
+  `[v = std::move(v)]` to move a container) for lambdas that escape the
+  scope, where a captured reference or `span` into a local dangles
+  silently. `[this]` only if the lambda cannot outlive the object.
+  Never capture a container or `shared_ptr` by value for convenience:
+  the copy happens at capture and again whenever the lambda or its
+  `std::function` is copied.
+  Prefer explicit parameter types over `auto` (`auto&&` in generic
+  code); add an explicit return type when the deduced one is non-obvious
+  or must not decay. Avoid `mutable`. Promote long or reused lambdas to
+  a free function in an anonymous namespace. A by-reference capture is
+  `const` only if the captured variable is, so declare read-only locals
+  `const`.
 - **Algorithms**: prefer `<algorithm>`/`<ranges>` (`std::ranges::...`)
   over hand-written loops where it doesn't hurt clarity or
   performance; flattened row-major storage is the default convention
   for multi-dimensional data passed as flat buffers.
+- **`std::distance`/`std::advance`/`std::next`/`std::prev` on a
+  generic, template-parameterized range**: these legacy `<iterator>`
+  algorithms dispatch on `std::iterator_traits<It>::iterator_category`,
+  not the C++20 iterator concepts. Views such as
+  `std::ranges::iota_view` satisfy `std::random_access_iterator` but
+  not the legacy `LegacyRandomAccessIterator` (`operator*` returns a
+  prvalue, not a reference), so their `iterator_category` degrades to
+  `input_iterator_tag` and `std::distance` silently falls back to an
+  O(n) count instead of an O(1) subtraction, turning an O(n) loop into
+  O(n²) in unoptimised (Debug) builds only. When indexing into a
+  generic range parameter inside a loop, use
+  `std::ranges::distance`/`std::ranges::advance`, which dispatch on
+  the C++20 concept and stay O(1) for these views, or track the index
+  with a plain counter incremented alongside the iterator.
+- **Windows**: Windows is continuously tested on GitHub with the
+  most important missing feature being the lack of C99 `_Complex`
+  support denoted by existence of `DOLFINX_NO_STDC_COMPLEX_KERNELS`
+  macro variable.
+- **PETSc support is optional**: If possible, tests should be
+  written without needing PETSc functionality and PETSc-related
+  functionality in the main library should be isolated. The test
+  suite include a simple conjugate-gradient solver for small
+  problems, for example. 
 
 ## Python style
 
@@ -88,7 +185,8 @@ disclosure process.
   pydocstyle rules (see `per-file-ignores`).
 - **Type hints**: required on the public API; checked with `mypy`
   (`python/pyproject.toml` `[tool.mypy]` config, run over `dolfinx`,
-  `test`, and `demo`).
+  `test`, and `demo`). PETSc-related type checking is disabled on a
+  per-line basis until upstream petsc4py type work is finished.
 - **File header**: same SPDX/copyright block as C++, adapted to `#`
   comments, followed by a module docstring.
 
@@ -97,19 +195,39 @@ disclosure process.
 - One file per C++ module (`fem.cpp`, `mesh.cpp`, `la.cpp`, ...),
   wired together from `dolfinx.cpp`.
 - Bind free functions with `m.def(...)`, giving named arguments via
-  `nb::arg("name")` matching the C++ parameter name.
+  `nb::arg("name")` matching the C++ parameter name. Check the
+  ordering matches as it's easy to make a mistake.
 - Wrap C++ types with `nb::class_<T>(m, "Name", "docstring")`, chaining
   `.def(...)`, `.def_prop_ro(...)`, `.def_ro(...)`.
 - These files are still C++: `clang-format` applies to them too (CI
   checks `python/dolfinx/wrappers` separately).
+- Do not use default argument values.
+- The nanobind wrappers are further wrapped into a pure-Python
+  interface which contains the user facing API. Users and developers
+  are discouraged from using `dolfinx.cpp` directly.
 
 ## CMake style
 
 - Formatted with `gersemi` (2-space indent, see `.gersemirc`); CI runs
   `gersemi --check .`.
 
+## Demos
+
+- C++ demos are written with Markdown comments for subsequent
+  postprocessing with jupytext and sphinx.
+- Python demos are written with light format and Markdown for
+  subsequent postprocessing with jupytext and sphinx.
+- Demo text should be checked for clarity, brevity, mathematical
+  correctness (e.g. missing definitions) and misalignment with the
+  presented solver code.
+
 ## Testing
 
+- **Developer vs Release build mode**: Both C++
+  `cmake ... -DCMAKE_BUILD_TYPE=Developer` and Python parts
+  `pip ... -Ccmake.build-type=Developer` must be built in Developer mode
+  which enables hardened debugging/correctness checks. Performance
+  profiling must be done on a build built with `Release` mode.
 - **C++**: Catch2 3, in `cpp/test/`. FFCx-generated forms are compiled
   as part of the test build (see `cpp/test/CMakeLists.txt`).
 - **Python**: `pytest`, in `python/test/`. Use `mpi4py.MPI` fixtures
@@ -124,6 +242,8 @@ disclosure process.
   compilation errors (the project builds with `-Werror`). Don't trust
   editor/clangd diagnostics alone — they're frequently noise from
   incomplete include paths, not real errors.
+- Python: To build the Python interface the C++ interface must be
+  `ninja install`ed.
 - Prefer `clang-format --dry-run --Werror` / `ruff check` / `ruff
   format --check` / `gersemi --check` locally to match exactly what CI
   enforces, rather than eyeballing style.

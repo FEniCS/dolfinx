@@ -97,11 +97,24 @@ jobs:
           pip install scikit-build-core setuptools
           python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 
-      - name: Install FEniCS Python components
+      - name: Install UFL
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+
+      # Split install ensures that basix.pc ends up in PKG_CONFIG_PATH for later pkg-config test
+      - name: Install Basix (C++)
+        run: |
+          git clone --branch ${{ env.basix_ref }} --single-branch https://github.com/${{ env.basix_repository }}.git
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-basix -S basix/cpp
+          cmake --build build-basix
+          sudo cmake --install build-basix
+          sudo ldconfig
+
+      - name: Install Basix (Python)
+        run: pip install --no-build-isolation ./basix/python
+
+      - name: Install FFCx
+        run: pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure, no rpath (C++)
         working-directory: cpp
@@ -123,6 +136,12 @@ jobs:
           cmake --build .
           sudo cmake --install .
           sudo ldconfig
+
+      - name: Run pkg-config test (C++)
+        working-directory: cpp/test/pkgconfig
+        run: |
+          make
+          make run
 
       - name: Run tests via target (C++, serial and parallel)
         working-directory: cpp/build
@@ -191,11 +210,23 @@ jobs:
           pip install scikit-build-core
           python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
 
-      - name: Install FEniCS Python components
+      - name: Install UFL
         run: |
           pip install git+https://github.com/${{ env.ufl_repository }}.git@${{ env.ufl_ref }}
-          pip install -Ccmake.build-type="Developer" --no-build-isolation git+https://github.com/${{ env.basix_repository }}.git@${{ env.basix_ref }}
-          pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
+
+      # Split install ensures that basix.pc ends up in PKG_CONFIG_PATH for later pkg-config test
+      - name: Install Basix (C++)
+        run: |
+          git clone --branch ${{ env.basix_ref }} --single-branch https://github.com/${{ env.basix_repository }}.git
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build-basix -S basix/cpp
+          cmake --build build-basix
+          cmake --install build-basix
+
+      - name: Install Basix (Python)
+        run: pip install --no-build-isolation ./basix/python
+
+      - name: Install FFCx
+        run: pip install --no-build-isolation git+https://github.com/${{ env.ffcx_repository }}.git@${{ env.ffcx_ref }}
 
       - name: Configure (C++)
         working-directory: cpp
@@ -205,6 +236,8 @@ jobs:
           --warn-uninitialized
           -G Ninja
           -DCMAKE_BUILD_TYPE=Developer
+          -DBUILD_TESTING=true
+          -DDOLFINX_BUILD_DEMOS=true
           -DDOLFINX_ENABLE_ADIOS2=true
           -DDOLFINX_ENABLE_KAHIP=true
           -DDOLFINX_ENABLE_PETSC=true
@@ -216,26 +249,18 @@ jobs:
         working-directory: cpp/build
         run: cmake --build . --target install
 
-      - name: Build tests (C++, standalone)
-        working-directory: cpp/test
+      - name: Run pkg-config test (C++)
+        working-directory: cpp/test/pkgconfig
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=Developer -GNinja
-          cmake --build build
+          export PKG_CONFIG_PATH=$PETSC_DIR/$PETSC_ARCH/lib/pkgconfig:$SLEPC_DIR/$PETSC_ARCH/lib/pkgconfig:$PKG_CONFIG_PATH
+          make
+          make run
 
-      - name: Run tests (C++, serial)
-        working-directory: cpp/test/build
-        run: ctest -V --output-on-failure -R unittests_np_1
-      - name: Run tests (C++, MPI, np=3)
-        working-directory: cpp/test/build
-        run: ctest -V --output-on-failure -R unittests_np_3
-
-      - name: Build and run C++ regression tests (serial and MPI (np=2))
-        run: |
-          cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
-          cmake --build build/demo
-          cd build/demo
-          ctest -V -R demo -R serial
-          ctest --output-on-failure -V -R demo -R mpi_2
+      - name: Run unit tests and demos via target (C++, serial and parallel)
+        working-directory: cpp/build
+        env:
+          CTEST_OUTPUT_ON_FAILURE: 1
+        run: cmake --build . --target test
 
       - name: Build Python interface
         run: |

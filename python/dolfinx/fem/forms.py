@@ -105,7 +105,7 @@ class Form(typing.Generic[Scalar]):
     @property
     def function_spaces(self) -> list[FunctionSpace]:
         """Function spaces on which this form is defined."""
-        return self._cpp_object.function_spaces
+        return self._cpp_object.function_spaces  # type: ignore[return-value]
 
     @property
     def dtype(self) -> np.dtype:
@@ -213,10 +213,10 @@ def get_integration_domains(
 def form_cpp_class(
     dtype: npt.DTypeLike,
 ) -> (
-    _cpp.fem.Form_float32
-    | _cpp.fem.Form_float64
-    | _cpp.fem.Form_complex64
-    | _cpp.fem.Form_complex128
+    type[_cpp.fem.Form_float32]
+    | type[_cpp.fem.Form_float64]
+    | type[_cpp.fem.Form_complex64]
+    | type[_cpp.fem.Form_complex128]
 ):
     """Wrapped C++ class of a variational form of a specific scalar type.
 
@@ -288,7 +288,8 @@ def mixed_topology_form(
 
     # Check that subdomain data for each integral type is the same
     for data in sd.get(domain).values():
-        assert all([d is data[0] for d in data if d is not None])
+        if not all(d is data[0] for d in data if d is not None):
+            raise ValueError("Subdomain data must be the same for each integral type.")
 
     mesh = domain.ufl_cargo()
     if mesh is None:
@@ -330,7 +331,7 @@ def mixed_topology_form(
 
 
 def form(
-    form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]],
+    form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]] | None,
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
@@ -340,7 +341,8 @@ def form(
     """Create a Form or list of Forms.
 
     Args:
-        form: A UFL form or iterable of UFL forms.
+        form: A UFL form or iterable of UFL forms. ``None`` is passed
+            through unchanged.
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
@@ -376,7 +378,8 @@ def form(
 
         # Check that subdomain data for each integral type is the same
         for data in sd.get(domain).values():
-            assert all([d is data[0] for d in data if d is not None])
+            if not all(d is data[0] for d in data if d is not None):
+                raise ValueError("Subdomain data must be the same for each integral type.")
 
         msh = domain.ufl_cargo()
         if msh is None:
@@ -497,7 +500,7 @@ def extract_function_spaces(
 @typing.overload
 def extract_function_spaces(
     forms: Sequence[Sequence[Form]], index: int = 0
-) -> list[list[FunctionSpace | None]]: ...
+) -> list[FunctionSpace | None]: ...
 
 
 def extract_function_spaces(forms, index: int = 0):
@@ -523,13 +526,15 @@ def extract_function_spaces(forms, index: int = 0):
         form: Form = _forms.tolist()
         return form.function_spaces[0] if form is not None else None
     elif _forms.ndim == 1:
-        assert index == 0, "Expected index=0 for 1D array of forms"
+        if index != 0:
+            raise ValueError("index must be 0 for a 1D array of forms.")
         for form in _forms:
-            if form is not None:
-                assert form.rank == 1, "Expected linear form"
-        return [form.function_spaces[0] if form is not None else None for form in forms]  # type: ignore[union-attr]
+            if form is not None and form.rank != 1:
+                raise ValueError("Expected a linear form.")
+        return [form.function_spaces[0] if form is not None else None for form in forms]
     elif _forms.ndim == 2:
-        assert index == 0 or index == 1, "Expected index=0 or index=1 for 2D array of forms"
+        if index not in (0, 1):
+            raise ValueError("index must be 0 or 1 for a 2D array of forms.")
         extract_spaces = np.vectorize(
             lambda form: form.function_spaces[index] if form is not None else None
         )
@@ -548,7 +553,8 @@ def extract_function_spaces(forms, index: int = 0):
                     if V0[row] is None and V[row, col] is not None:
                         V0[row] = V[row, col]
                     elif V0[row] is not None and V[row, col] is not None:
-                        assert V0[row] is V[row, col], "Cannot extract unique function spaces"
+                        if V0[row] is not V[row, col]:
+                            raise ValueError("Cannot extract unique function spaces.")
             return V0
 
         if index == 0:
@@ -589,17 +595,17 @@ def compile_form(
     p_ffcx = ffcx.get_options(form_compiler_options)
     p_jit = jit.get_options(jit_options)
     ufcx_form, module, code = jit.ffcx_jit(comm, form, p_ffcx, p_jit)
-    scalar_type: npt.DTypeLike = p_ffcx["scalar_type"]  # type: ignore [assignment]
+    scalar_type: npt.DTypeLike = typing.cast(npt.DTypeLike, p_ffcx["scalar_type"])
     return CompiledForm(form, ufcx_form, module, code, scalar_type)
 
 
 def form_cpp_creator(
     dtype: npt.DTypeLike,
 ) -> (
-    _cpp.fem.Form_float32
-    | _cpp.fem.Form_float64
-    | _cpp.fem.Form_complex64
-    | _cpp.fem.Form_complex128
+    typing.Callable[..., _cpp.fem.Form_float32]
+    | typing.Callable[..., _cpp.fem.Form_float64]
+    | typing.Callable[..., _cpp.fem.Form_complex64]
+    | typing.Callable[..., _cpp.fem.Form_complex128]
 ):
     """A wrapped C++ constructor for a form with a specified scalar type.
 
@@ -813,15 +819,27 @@ def derivative_block(
     """  # noqa: D301
     if isinstance(F, ufl.Form) and not F.arguments():
         if isinstance(u, Function):
-            return _derive_univariate_residual(F, u, du)  # type: ignore
+            if du is not None and not isinstance(du, ufl.Argument):
+                raise ValueError("du must be a ufl.Argument when u is a ufl.Function.")
+            return _derive_univariate_residual(F, u, du)
         elif isinstance(u, Sequence):
-            return _derive_block_residual(F, u, du)  # type: ignore
+            if du is not None and not isinstance(du, Sequence):
+                raise ValueError("du must be a sequence of ufl.Argument when u is a sequence.")
+            return _derive_block_residual(F, u, du)
         else:
             raise ValueError("u must be either a ufl.Function or a sequence of ufl.Function")
     elif isinstance(F, ufl.Form) and len(F.arguments()) == 1:
-        return _derive_univariate_jacobian(F, u, du)  # type: ignore[arg-type]
+        if not isinstance(u, Function):
+            raise ValueError("u must be a ufl.Function when F is a rank-one form.")
+        if du is not None and not isinstance(du, ufl.Argument):
+            raise ValueError("du must be a ufl.Argument when F is a rank-one form.")
+        return _derive_univariate_jacobian(F, u, du)
     elif isinstance(F, Sequence):
-        return _derive_block_jacobian(F, u, du)  # type: ignore
+        if not isinstance(u, Sequence):
+            raise ValueError("u must be a sequence of ufl.Function when F is a sequence.")
+        if du is not None and not isinstance(du, Sequence):
+            raise ValueError("du must be a sequence of ufl.Argument when F is a sequence.")
+        return _derive_block_jacobian(F, u, du)
     else:
         raise ValueError(
             "F must be either a UFL form (with rank zero or one), or a sequence of "

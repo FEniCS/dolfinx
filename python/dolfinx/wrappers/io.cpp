@@ -136,8 +136,6 @@ void io(nb::module_& m)
             return as_nbarray(std::move(_x), shape);
           },
           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
-      .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
-           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
            nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,

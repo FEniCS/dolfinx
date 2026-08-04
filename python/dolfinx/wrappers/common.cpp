@@ -19,6 +19,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/chrono.h>
+#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
@@ -168,7 +169,7 @@ void common(nb::module_& m)
                                  local);
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
-          nb::arg("global"));
+          nb::arg("global_index"));
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(

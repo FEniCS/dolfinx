@@ -32,6 +32,7 @@
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <span>
+#include <string>
 
 namespace nb = nanobind;
 
@@ -75,8 +76,9 @@ void mesh(nb::module_& m)
       .value("pyramid", dolfinx::mesh::CellType::pyramid)
       .value("prism", dolfinx::mesh::CellType::prism)
       .value("hexahedron", dolfinx::mesh::CellType::hexahedron)
-      .def_prop_ro("name", [](const nb::object& obj)
-                   { return nb::getattr(obj, "__name__"); });
+      .def_prop_ro(
+          "name", [](const nb::object& obj)
+          { return nb::cast<std::string>(nb::getattr(obj, "__name__")); });
 
   m.def("to_type", &dolfinx::mesh::to_type, nb::arg("cell"));
   m.def("to_string", &dolfinx::mesh::to_string, nb::arg("type"));

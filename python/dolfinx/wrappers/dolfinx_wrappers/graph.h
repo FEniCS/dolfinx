@@ -120,8 +120,15 @@ void declare_adjacency_list_init(nanobind::module_& m, std::string type)
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro("num_nodes", &dolfinx::graph::AdjacencyList<T, U>::num_nodes)
-      .def("__eq__", &dolfinx::graph::AdjacencyList<T, U>::operator==,
-           nb::is_operator())
+      .def("__eq__",
+           [](const dolfinx::graph::AdjacencyList<T, U>& self, nb::handle other)
+           {
+             return nb::isinstance<dolfinx::graph::AdjacencyList<T, U>>(other)
+                    and self
+                            == nb::cast<
+                                const dolfinx::graph::AdjacencyList<T, U>&>(
+                                other);
+           })
       .def("__repr__", &dolfinx::graph::AdjacencyList<T, U>::str)
       .def("__len__", &dolfinx::graph::AdjacencyList<T, U>::num_nodes);
 }
@@ -146,8 +153,15 @@ void declare_adjacency_list(nanobind::module_& m, std::string type)
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro("num_nodes", &dolfinx::graph::AdjacencyList<T, U>::num_nodes)
-      .def("__eq__", &dolfinx::graph::AdjacencyList<T, U>::operator==,
-           nb::is_operator())
+      .def("__eq__",
+           [](const dolfinx::graph::AdjacencyList<T, U>& self, nb::handle other)
+           {
+             return nb::isinstance<dolfinx::graph::AdjacencyList<T, U>>(other)
+                    and self
+                            == nb::cast<
+                                const dolfinx::graph::AdjacencyList<T, U>&>(
+                                other);
+           })
       .def("__len__", &dolfinx::graph::AdjacencyList<T, U>::num_nodes);
 }
 
