@@ -1105,8 +1105,8 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
               std::span<T> x_ref(working_array.data() + 2 * gdim * tdim, tdim);
               std::ranges::fill(x_ref, 0);
               std::array<std::size_t, 4> phi_shape = self.tabulate_shape(1, 1);
-              std::span<T> phi_b(working_array.data() + gdim * tdim
-                                     + tdim * gdim,
+              std::span<T> phi_b(working_array.data() + 2 * gdim * tdim
+                                     + tdim,
                                  std::reduce(phi_shape.begin(), phi_shape.end(),
                                              1, std::multiplies{}));
               cmdspan4_t phi(phi_b.data(), phi_shape);
