@@ -30,6 +30,7 @@ import os
 import pathlib
 import warnings
 from collections.abc import Sequence
+from typing import overload
 
 from petsc4py import PETSc
 
@@ -39,8 +40,6 @@ from dolfinx.log import LogLevel, log
 if not dolfinx.has_petsc4py:
     raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
-
-from typing import overload
 
 import numpy as np
 from numpy import typing as npt
