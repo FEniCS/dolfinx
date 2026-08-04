@@ -536,7 +536,7 @@ def read_from_msh(
 
     """
     try:
-        import gmsh
+        import gmsh  # type: ignore[import-untyped]
     except ModuleNotFoundError as err:
         # Python 3.11+ adds the add_note method to exceptions
         # e.add_note("Gmsh must be installed to import dolfinx.io.gmsh")

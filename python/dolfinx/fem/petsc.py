@@ -1538,7 +1538,7 @@ class NewtonSolverNonlinearProblem:
         F: ufl.form.Form,
         u: _Function,
         bcs: Sequence[DirichletBC] | None = None,
-        J: ufl.form.Form = None,
+        J: ufl.form.Form | None = None,
         form_compiler_options: dict | None = None,
         jit_options: dict | None = None,
     ):
@@ -1812,7 +1812,7 @@ class numba_utils:
     try:
         import petsc4py.PETSc as _PETSc
 
-        import llvmlite as _llvmlite
+        import llvmlite as _llvmlite  # type: ignore[import-untyped]
         import numba as _numba
 
         _llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
