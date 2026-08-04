@@ -461,7 +461,7 @@ def test_push_forward_pull_back(gdim: int, is_affine: bool):
         mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, ct)
     dtype = mesh.geometry.x.dtype
     basix_cell = mesh.basix_cell()
-    ref_point = create_lattice(basix_cell, 9, LatticeType.equispaced, exterior=True)
+    ref_point = create_lattice(basix_cell, 9, LatticeType.equispaced, exterior=True).astype(dtype)
 
     def warp(x):
         return np.array(

@@ -142,6 +142,9 @@ class CoordinateElement(Generic[Real]):
 
         Args:
             gdim: Geometrical dimension of input points
+
+        Returns:
+            Number of elements required in the working array for pull back.
         """
         return self._cpp_object.pull_back_working_size(gdim)
 

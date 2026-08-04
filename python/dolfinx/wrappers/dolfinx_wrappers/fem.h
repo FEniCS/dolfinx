@@ -27,6 +27,7 @@
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <format>
 #include <functional>
 #include <map>
 #include <memory>
@@ -46,6 +47,7 @@
 #include <nanobind/stl/vector.h>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <type_traits>
