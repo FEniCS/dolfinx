@@ -73,7 +73,7 @@
 from pathlib import Path
 
 from mpi4py import MPI
-from petsc4py.PETSc import ScalarType  # type: ignore
+from petsc4py.PETSc import ScalarType
 
 import numpy as np
 

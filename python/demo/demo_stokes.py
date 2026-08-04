@@ -169,7 +169,7 @@ V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # +
 # No-slip condition on boundaries where x = 0, x = 1, and y = 0
-noslip = np.zeros(gdim, dtype=PETSc.ScalarType)  # type: ignore
+noslip = np.zeros(gdim, dtype=PETSc.ScalarType)
 facets = locate_entities_boundary(msh, 1, noslip_boundary)
 bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
@@ -190,7 +190,7 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore
+f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore[operator]
 
 a_ufl = [
     [ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, ufl.inner(p, ufl.div(v)) * ufl.dx],
@@ -301,7 +301,9 @@ def nested_iterative_solver_low_level():
     # Create a nested matrix P to use as the preconditioner. The
     # top-left block of P is shared with the top-left block of A. The
     # bottom-right diagonal entry is assembled from the form a_p11:
-    P11 = assemble_matrix(a_p11, [])
+    # Even if the Dirichlet conditions are only enforced on the velocity
+    # space, we pass it to the pressure assembler for consistency.
+    P11 = assemble_matrix(a_p11, bcs=bcs)
     P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
     P.assemble()
 

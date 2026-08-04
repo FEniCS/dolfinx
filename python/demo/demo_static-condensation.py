@@ -68,7 +68,7 @@ from ffcx.codegeneration.numba.utils import ufcx_kernel_signature as ufcx_signat
 
 rtype = default_real_type
 dtype = default_scalar_type
-if np.issubdtype(rtype, np.float32):  # type: ignore
+if np.issubdtype(rtype, np.float32):
     print("float32 not yet supported for this demo.")
     exit(0)
 
@@ -91,8 +91,8 @@ infile.close()
 # corresponding function spaces. Note that the stress element is symmetric.
 
 gdim = msh.geometry.dim
-Se = element("DG", msh.basix_cell(), 1, shape=(gdim, gdim), symmetry=True, dtype=rtype)  # type: ignore
-Ue = element("Lagrange", msh.basix_cell(), 2, shape=(gdim,), dtype=rtype)  # type: ignore
+Se = element("DG", msh.basix_cell(), 1, shape=(gdim, gdim), symmetry=True, dtype=rtype)
+Ue = element("Lagrange", msh.basix_cell(), 2, shape=(gdim,), dtype=rtype)
 S = functionspace(msh, Se)
 U = functionspace(msh, Ue)
 
@@ -152,7 +152,7 @@ a10 = -ufl.inner(sigma, ufl.grad(v)) * ufl.dx
 a01 = -ufl.inner(sigma_u(u), tau) * ufl.dx
 
 f = ufl.as_vector([0.0, 1.0 / 16])
-b1 = form(-ufl.inner(f, v) * ds(1), dtype=dtype)  # type: ignore
+b1 = form(-ufl.inner(f, v) * ds(1), dtype=dtype)
 # -
 
 # To generate (C-code) and JIT compile the kernels, we use
@@ -161,14 +161,14 @@ b1 = form(-ufl.inner(f, v) * ds(1), dtype=dtype)  # type: ignore
 # getting the `tabulate_tensor_{dtype}` attribute of the compiled form.
 
 # +
-ufcx00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_options={"scalar_type": dtype})  # type: ignore
-kernel00 = getattr(ufcx00.form_integrals[0], f"tabulate_tensor_{np.dtype(dtype).name}")  # type: ignore
+ufcx00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_options={"scalar_type": dtype})
+kernel00 = getattr(ufcx00.form_integrals[0], f"tabulate_tensor_{np.dtype(dtype).name}")
 
-ufcx01, _, _ = ffcx_jit(msh.comm, a01, form_compiler_options={"scalar_type": dtype})  # type: ignore
-kernel01 = getattr(ufcx01.form_integrals[0], f"tabulate_tensor_{np.dtype(dtype).name}")  # type: ignore
+ufcx01, _, _ = ffcx_jit(msh.comm, a01, form_compiler_options={"scalar_type": dtype})
+kernel01 = getattr(ufcx01.form_integrals[0], f"tabulate_tensor_{np.dtype(dtype).name}")
 
-ufcx10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_options={"scalar_type": dtype})  # type: ignore
-kernel10 = getattr(ufcx10.form_integrals[0], f"tabulate_tensor_{np.dtype(dtype).name}")  # type: ignore
+ufcx10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_options={"scalar_type": dtype})
+kernel10 = getattr(ufcx10.form_integrals[0], f"tabulate_tensor_{np.dtype(dtype).name}")
 # -
 
 ffi = cffi.FFI()
@@ -241,11 +241,11 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL, cu
 # tabulation kernel. We specify the integration domains to be the
 # cells owned by the current process
 
-formtype = form_cpp_class(dtype)  # type: ignore
+formtype = form_cpp_class(dtype)
 cells = np.arange(msh.topology.index_map(msh.topology.dim).size_local)
 integrals = {IntegralType.cell: [(0, tabulate_A.address, cells, np.array([], dtype=np.int8))]}
 a_cond = Form(
-    formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, [], mesh=msh._cpp_object)
+    formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, [], mesh=msh._cpp_object)  # type: ignore
 )
 
 # Next, we pass the compiled kernel to the standard {py:func}`
@@ -261,7 +261,7 @@ A_cond.assemble()
 b = assemble_vector(b1)
 apply_lifting(b, [a_cond], bcs=[[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
-bc.set(b)
+bc.set(b.array_w)
 
 # We use a {py:class}`PETSc.KSP <petsc4py.PETSc.KSP>` solver to solve the
 # condensed linear system. The solution is stored in a
@@ -272,7 +272,7 @@ bc.set(b)
 # {py:meth}`vector <dolfinx.fem.Function.x>` attribute of the function.
 
 uc = Function(U, name="u_from_condensation")
-solver = PETSc.KSP().create(A_cond.getComm())  # type: ignore
+solver = PETSc.KSP().create(A_cond.getComm())
 solver.setOperators(A_cond)
 solver.solve(b, uc.x.petsc_vec)
 solver.destroy()

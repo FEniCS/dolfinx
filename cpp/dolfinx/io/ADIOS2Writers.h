@@ -652,7 +652,7 @@ public:
         // Write a single mesh for functions as they share finite
         // element
         std::tie(_x_id, _x_ghost) = std::visit(
-            [&](auto& u)
+            [this](auto& u)
             {
               spdlog::debug("ADIOS2: write_mesh_from_space");
               return impl_vtx::vtx_write_mesh_from_space(*_io, *_engine,
@@ -677,8 +677,8 @@ public:
     // Write function data for each function to file
     for (auto& v : _u)
     {
-      std::visit([&](auto& u) { impl_vtx::vtx_write_data(*_io, *_engine, *u); },
-                 v);
+      std::visit([this](auto& u)
+                 { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
     }
 
     _engine->EndStep();

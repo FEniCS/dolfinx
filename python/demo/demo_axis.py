@@ -33,6 +33,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
+from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
 
 try:
     from dolfinx.io import VTXWriter
@@ -52,7 +53,7 @@ except ModuleNotFoundError:
 
 # The time-harmonic Maxwell equation is complex-valued. PETSc must
 # therefore have been compiled with complex scalars.
-if not np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
+if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo can only be executed when PETSc using complex scalars.")
     exit(0)
 
@@ -452,7 +453,7 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = mesh.create_cell_partitioner(dolfinx.mesh.GhostMode.shared_facet, 2)  # type: ignore
+partitioner = _cell_partitioner(dolfinx.mesh.GhostMode.shared_facet, 2)
 mesh_data = io.gmsh.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
@@ -650,11 +651,11 @@ for m in m_list:
         + k0**2 * ufl.inner(eps_pml * Es_m, v_m) * rho * dPml
     )
     a, L = ufl.lhs(F), ufl.rhs(F)
-    sys = PETSc.Sys()  # type: ignore
+    petsc_sys = PETSc.Sys()
     use_superlu = PETSc.IntType == np.int64
-    if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
+    if petsc_sys.hasExternalPackage("mumps") and not use_superlu:
         mat_factor_backend = "mumps"
-    elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
+    elif petsc_sys.hasExternalPackage("superlu_dist"):
         mat_factor_backend = "superlu_dist"
     else:
         if mesh_data.mesh.comm.size > 1:
