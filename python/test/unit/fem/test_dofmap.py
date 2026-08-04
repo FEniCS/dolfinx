@@ -468,7 +468,7 @@ def test_push_forward_pull_back(gdim: int, is_affine: bool):
             [x[0] + 0.5 * x[1] * x[0], 2 * (x[0] + x[1]), 1.5 * x[2] + 0.8 * x[1] * x[0] * x[2]]
         )
 
-    # Warp mesh to make it truely non-affine
+    # Warp mesh to make it truly non-affine
     mesh.geometry.x[:] = warp(mesh.geometry.x.T).T
 
     # Push point forward
