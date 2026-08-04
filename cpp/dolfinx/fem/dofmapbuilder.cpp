@@ -709,11 +709,9 @@ fem::build_dofmap_data(
 }
 
 //-----------------------------------------------------------------------------
-fem::DofMap fem::build_real_element_dofmap(
-    const mesh::Topology& topology,
-    const std::vector<std::vector<std::vector<int>>>& entity_dofs,
-    const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
-    int value_size)
+fem::DofMap
+fem::build_real_element_dofmap(const mesh::Topology& topology,
+                               const fem::ElementDofLayout& dof_layout)
 {
   // We select the process that owns cell 0 to have all dofs and all other
   // processes ghost them
@@ -740,18 +738,6 @@ fem::DofMap fem::build_real_element_dofmap(
   auto imap = std::make_shared<const dolfinx::common::IndexMap>(
       topology.comm(), num_dofs, ghosts, owners);
 
-  // Create element dof layout (with sub elements based on value size)
-  std::vector<ElementDofLayout> sub_layouts;
-  sub_layouts.reserve(value_size);
-  for (int i = 0; i < value_size; ++i)
-  {
-    sub_layouts.emplace_back(1, entity_dofs, entity_closure_dofs,
-                             std::vector<int>{i},
-                             std::vector<ElementDofLayout>{});
-  }
-  dolfinx::fem::ElementDofLayout dof_layout(
-      value_size, entity_dofs, entity_closure_dofs, {}, sub_layouts);
-
   // Create dofmap array
   std::int32_t num_cells_on_process
       = topology.index_map(topology.dim())->size_local()
@@ -759,6 +745,7 @@ fem::DofMap fem::build_real_element_dofmap(
 
   std::vector<std::int32_t> dofmap(num_cells_on_process, 0);
   dofmap.reserve(1);
-  return dolfinx::fem::DofMap(dof_layout, imap, value_size, dofmap, value_size);
+  return dolfinx::fem::DofMap(dof_layout, imap, dof_layout.block_size(), dofmap,
+                              dof_layout.block_size());
 };
 //-----------------------------------------------------------------------------

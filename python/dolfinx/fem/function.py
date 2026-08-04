@@ -710,12 +710,8 @@ def functionspace(
             raise RuntimeError(
                 "Mismatch between number of sub elements and value shape of the element."
             )
-        cpp_dofmap = _cpp.fem.build_real_element_dofmap(
-            mesh.topology._cpp_object,
-            dolfinx_element.basix_element.entity_dofs,
-            dolfinx_element.basix_element.entity_closure_dofs,
-            num_components,
-        )
+        dof_layout = _cpp.fem.create_element_dof_layout(dolfinx_element._cpp_object, [])
+        cpp_dofmap = _cpp.fem.build_real_element_dofmap(mesh.topology._cpp_object, dof_layout)
     else:
         cpp_dofmap = _cpp.fem.create_dofmap(
             mesh.comm,
