@@ -226,7 +226,6 @@ def assemble_vector(
         | Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]
         | None
     ) = None,
-    kind: str | None = None,
 ) -> PETSc.Vec: ...
 
 
@@ -405,7 +404,6 @@ def assemble_matrix(
         | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
-    kind: str | Sequence[Sequence[str]] | None = None,
 ) -> PETSc.Mat: ...
 
 
