@@ -45,6 +45,7 @@
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
+#include <numeric>
 #include <ranges>
 #include <span>
 #include <stdexcept>
@@ -1047,7 +1048,8 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
             std::array<std::size_t, 4> phi_shape
                 = self.tabulate_shape(0, X.shape(0));
             std::vector<T> phi_b(std::reduce(phi_shape.begin(), phi_shape.end(),
-                                             1, std::multiplies{}));
+                                             (std::size_t)1,
+                                             std::multiplies{}));
             cmdspan4_t phi_full(phi_b.data(), phi_shape);
             self.tabulate(0, std::span(X.data(), X.size()), Xshape, phi_b);
             auto phi = md::submdspan(phi_full, 0, md::full_extent,
@@ -1107,7 +1109,8 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
               std::array<std::size_t, 4> phi_shape = self.tabulate_shape(1, 1);
               std::span<T> phi_b(working_array.data() + 2 * gdim * tdim + tdim,
                                  std::reduce(phi_shape.begin(), phi_shape.end(),
-                                             1, std::multiplies{}));
+                                             (std::size_t)1,
+                                             std::multiplies{}));
               cmdspan4_t phi(phi_b.data(), phi_shape);
 
               self.tabulate(1, x_ref, {1, tdim}, phi_b);
