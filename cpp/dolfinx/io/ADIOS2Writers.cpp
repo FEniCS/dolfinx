@@ -125,26 +125,4 @@ io::impl_vtx::create_vtk_schema(const std::vector<std::string>& point_data,
   return ss.str();
 }
 //-----------------------------------------------------------------------------
-std::string io::impl_vtx::read_vtk_schema(adios2::IO io,
-                                          const std::filesystem::path& filename)
-{
-  adios2::Engine reader = io.Open(filename, adios2::Mode::ReadRandomAccess);
-
-  adios2::Attribute<std::string> attr
-      = io.InquireAttribute<std::string>("vtk.xml");
-  if (!attr)
-  {
-    reader.Close();
-    throw std::runtime_error("Could not find vtk.xml attribute.");
-  }
-
-  std::vector<std::string> values = attr.Data();
-  reader.Close();
-
-  if (values.size() != 1)
-    throw std::runtime_error("Attribute vtk.xml not unique.");
-
-  return values.front();
-}
-//-----------------------------------------------------------------------------
 #endif

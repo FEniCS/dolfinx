@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cstdint>
 #ifdef HAS_ADIOS2
 
 #include "vtk_utils.h"
@@ -175,12 +176,6 @@ namespace impl_vtx
 /// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#saving-the-vtk-xml-data-model
 std::string create_vtk_schema(const std::vector<std::string>& point_data,
                               const std::vector<std::string>& cell_data);
-
-/// Read vtk scheme from file. Used to verify append mode compatibility.
-/// @param[in] io adios IO
-/// @param[in] path file path
-/// @returns vtk scheme
-std::string read_vtk_schema(adios2::IO io, const std::filesystem::path& path);
 
 /// Extract name of functions and split into real and imaginary component
 template <std::floating_point T>
@@ -428,7 +423,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable vertices = impl_adios2::define_variable<std::uint32_t>(
       io, "NumberOfNodes", {adios2::LocalValueDim});
   adios2::Variable elements = impl_adios2::define_variable<std::uint32_t>(
-      io, "NumberOfEntities", {adios2::LocalValueDim});
+      io, "NumberOfCells", {adios2::LocalValueDim});
 
   // Write mesh information to file
   spdlog::debug("vertices={}, elements={}, local_geom={}, local_cells={}",
@@ -493,15 +488,7 @@ public:
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {});
     if (mode == "a")
-    {
-      _engine->Close(); // TODO
-      if (impl_vtx::read_vtk_schema(*_io, filename) != vtk_scheme)
-        throw std::runtime_error("VTK scheme not compatible.");
-
-      // TODO
-      _engine = std::make_unique<adios2::Engine>(
-          _io->Open(filename, impl_adios2::mode(mode)));
-    }
+      check_appendable(filename, vtk_scheme);
     else
       impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
@@ -613,56 +600,10 @@ public:
 
     // Define VTK scheme attribute for set of functions
     auto [names, dg0_names] = impl_vtx::extract_function_names<T>(u);
-    std::string vtk_scheme;
-    vtk_scheme = impl_vtx::create_vtk_schema(names, dg0_names);
+    std::string vtk_scheme = impl_vtx::create_vtk_schema(names, dg0_names);
 
     if (mode == "a")
-    {
-      _engine->Close(); // TODO
-      if (impl_vtx::read_vtk_schema(*_io, filename) != vtk_scheme)
-        throw std::runtime_error("VTK scheme not compatible.");
-
-      if (_mesh_reuse_policy == VTXMeshPolicy::reuse)
-      {
-        auto io = *_io;
-        adios2::Engine reader
-            = io.Open(filename, adios2::Mode::ReadRandomAccess);
-
-        std::shared_ptr<const common::IndexMap> x_map
-            = _mesh->geometry().index_map();
-        std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
-        adios2::Variable<std::uint32_t> var
-            = io.template InquireVariable<std::uint32_t>("NumberOfNodes");
-        if (!var)
-        {
-          reader.Close();
-          throw std::runtime_error("Could not find NumberOfNodes attribute.");
-        }
-
-        std::size_t steps = var.Steps();
-        if (steps == 0)
-          throw std::runtime_error(
-              "Can not append to empty file."); // TODO: true?
-
-        var.SetStepSelection({steps - 1, 1}); // TODO
-        int rank = 0;
-        MPI_Comm_rank(_mesh->comm(), &rank);
-        var.SetBlockSelection(static_cast<std::size_t>(rank));
-
-        std::uint32_t stored_num_vertices = 0;
-        reader.Get(var, &stored_num_vertices, adios2::Mode::Sync);
-        reader.Close();
-
-        if (stored_num_vertices != num_vertices)
-          throw std::runtime_error("Mesh has changed, can not be reused.");
-
-        // TODO - same for NumberOfCells
-      }
-
-      // TODO
-      _engine = std::make_unique<adios2::Engine>(
-          _io->Open(filename, impl_adios2::mode(mode)));
-    }
+      check_appendable(filename, vtk_scheme);
     else
       impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
@@ -762,6 +703,98 @@ public:
     }
 
     _engine->EndStep();
+  }
+
+protected:
+  /// @brief Check wether the current file is compatible to be appended on.
+  /// @param[in] filename file
+  /// @param[in] vtk_scheme vtk scheme to be check against
+  void check_appendable(const std::filesystem::path& filename,
+                        std::string_view vtk_scheme)
+  {
+    // to read the previous steps we need to reopen with another file mode
+    _engine->Close();
+
+    adios2::Engine reader = _io->Open(filename, adios2::Mode::ReadRandomAccess);
+
+    // chekc vtk_scheme aligns
+    std::string read_vtk_schema;
+    {
+      // read vtk schema
+      adios2::Attribute<std::string> attr
+          = _io->InquireAttribute<std::string>("vtk.xml");
+      if (!attr)
+      {
+        reader.Close();
+        throw std::runtime_error("Could not find vtk.xml attribute.");
+      }
+
+      std::vector<std::string> values = attr.Data();
+      if (values.size() != 1)
+      {
+        reader.Close();
+        throw std::runtime_error("Attribute vtk.xml not unique.");
+      }
+      read_vtk_schema = values.front();
+    }
+
+    if (read_vtk_schema != vtk_scheme)
+    {
+      throw std::runtime_error("VTK scheme not compatible.");
+      reader.Close();
+    }
+
+    // check mesh aligns if reusing
+    if (_mesh_reuse_policy == VTXMeshPolicy::reuse)
+    {
+      auto read_var = [&](const std::string& name) -> std::uint32_t
+      {
+        adios2::Variable<std::uint32_t> var
+            = _io->template InquireVariable<std::uint32_t>(name);
+        if (!var)
+        {
+          reader.Close();
+          throw std::runtime_error("Could not find " + name + " variable.");
+        }
+
+        std::size_t steps = var.Steps();
+        if (steps == 0)
+        {
+          reader.Close();
+          throw std::runtime_error("Could not find " + name + " variable.");
+        }
+
+        var.SetStepSelection({steps - 1, 1});
+        int rank = 0;
+        MPI_Comm_rank(_mesh->comm(), &rank);
+        var.SetBlockSelection(static_cast<std::size_t>(rank));
+
+        std::uint32_t val = 0;
+        reader.Get(var, &val, adios2::Mode::Sync);
+        return val;
+      };
+
+      auto x_map = _mesh->geometry().index_map();
+      std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
+
+      auto tdim = _mesh->topology()->dim();
+      std::uint32_t num_cells
+          = _mesh->topology()->index_map(tdim)->size_local()
+            + _mesh->topology()->index_map(tdim)->num_ghosts();
+
+      if (read_var("NumberOfNodes") != num_vertices
+          or read_var("NumberOfCells") != num_cells)
+      {
+        reader.Close();
+        throw std::runtime_error("Mesh has changed, can not be reused.");
+      }
+    }
+
+    reader.Close();
+
+    // reopen file in append mode
+    _engine = std::make_unique<adios2::Engine>(
+        _io->Open(filename, impl_adios2::mode("a")));
   }
 
 private:
