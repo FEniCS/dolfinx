@@ -103,8 +103,8 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   assert(X.extent(1) == tdim);
 
   // Allocate various components of working array
-  const std::size_t required_size = pull_back_working_size(gdim);
-  if (working_array.size() < required_size)
+  if (std::size_t required_size = pull_back_working_size(gdim);
+      working_array.size() < required_size)
   {
     throw std::runtime_error(
         std::format("Working memory is too small for pull_back_nonaffine, "
@@ -115,13 +115,13 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   mdspan2_t<const T> Xk(working_array.data() + tdim * num_xnodes, 1, tdim);
   std::span<T> Xk_span(working_array.data() + tdim * num_xnodes, tdim);
 
-  std::span<T> dX(working_array.data() + (tdim * (num_xnodes + 1)), tdim);
-  std::span<T> xk(working_array.data() + (tdim * (num_xnodes + 2)), gdim);
+  std::span<T> dX(working_array.data() + tdim * (num_xnodes + 1), tdim);
+  std::span<T> xk(working_array.data() + tdim * (num_xnodes + 2), gdim);
   std::ranges::fill(xk, 0);
-  mdspan2_t<T> J(working_array.data() + ((tdim * (num_xnodes + 2)) + gdim),
-                 gdim, tdim);
-  mdspan2_t<T> K(working_array.data()
-                     + ((tdim * (num_xnodes + 2)) + gdim * (tdim + 1)),
+  mdspan2_t<T> J(working_array.data() + tdim * (num_xnodes + 2) + gdim, gdim,
+                 tdim);
+  mdspan2_t<T> K(working_array.data() + tdim * (num_xnodes + 2)
+                     + gdim * (tdim + 1),
                  tdim, gdim);
 
   using mdspan4_t = md::mdspan<T, md::dextents<std::size_t, 4>>;
@@ -131,8 +131,8 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   assert(bsize[1] == 1);        // Tabulating at one point at a time
   assert(bsize[2] == num_xnodes);
   assert(bsize[3] == 1); // Scalar component coordinate element
-  mdspan4_t basis(working_array.data()
-                      + ((tdim * (num_xnodes + 2)) + gdim * (2 * tdim + 1)),
+  mdspan4_t basis(working_array.data() + tdim * (num_xnodes + 2)
+                      + gdim * (2 * tdim + 1),
                   bsize);
   for (std::size_t p = 0; p < num_points; ++p)
   {
@@ -243,13 +243,10 @@ template <std::floating_point T>
 std::size_t CoordinateElement<T>::pull_back_working_size(std::size_t gdim) const
 {
   std::size_t tdim = dolfinx::mesh::cell_dim(cell_shape());
-
   if (is_affine())
     return tdim * (2 * gdim + 1) + (tdim + 1) * dim();
   else
-  {
     return tdim * (2 * gdim + 2 * dim() + 2) + gdim + dim();
-  }
 }
 //-----------------------------------------------------------------------------
 template class fem::CoordinateElement<float>;
