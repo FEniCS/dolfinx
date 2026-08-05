@@ -165,7 +165,7 @@ def test_symmetric(vs, ftype):
         return
     el = basix.ufl.real_element(mesh.basix_cell(), value_shape=vs, dtype=ftype, symmetry=True)
     V = dolfinx.fem.functionspace(mesh, el)
-    num_dofs = np.sum(vs[0] * (vs[0] + 1) / 2)
+    num_dofs = int(vs[0] * (vs[0] + 1) / 2)
     num_sub_elements = num_dofs if vs[0] > 1 else 0
     assert V.num_sub_spaces == num_sub_elements
     assert V.dofmap.index_map.size_global * V.dofmap.index_map_bs == num_dofs
