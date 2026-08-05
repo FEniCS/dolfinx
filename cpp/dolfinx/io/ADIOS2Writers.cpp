@@ -43,7 +43,7 @@ adios2::Mode impl_adios2::mode(std::string_view mode)
   if (mode == "a")
     return adios2::Mode::Append;
 
-  if (mode == "w")
+  else if (mode == "w")
     return adios2::Mode::Write;
 
   // unsupported adios2 modes:
