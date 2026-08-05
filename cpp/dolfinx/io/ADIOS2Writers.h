@@ -498,7 +498,8 @@ public:
         throw std::runtime_error("VTK scheme not compatible.");
 
       // TODO
-      _engine = std::make_unique<adios2::Engine>(_io->Open(filename, impl_adios2::mode(mode)));
+      _engine = std::make_unique<adios2::Engine>(
+          _io->Open(filename, impl_adios2::mode(mode)));
     }
     else
       impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
@@ -621,7 +622,8 @@ public:
         throw std::runtime_error("VTK scheme not compatible.");
 
       // TODO
-      _engine = std::make_unique<adios2::Engine>(_io->Open(filename, impl_adios2::mode(mode)));
+      _engine = std::make_unique<adios2::Engine>(
+          _io->Open(filename, impl_adios2::mode(mode)));
     }
     else
       impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
