@@ -63,9 +63,9 @@ dtype = PETSc.ScalarType
 # Note, for the pure PETSc use case the nullspace construction can be
 # shortened to
 # ```python
-#  coords = V.tabulate_dof_coordinates()[:V.dofmap.index_map.size_local,:]
-#  vec = PETSc.Vec().createWithArray(coords.ravel(), bsize=gdim, comm=comm)
-#  ns = PETSc.NullSpace().createRigidBody(vec)
+# coords = V.tabulate_dof_coordinates()[:V.dofmap.index_map.size_local,:]
+# vec = PETSc.Vec().createWithArray(coords.ravel(), bsize=gdim, comm=comm)
+# ns = PETSc.NullSpace().createRigidBody(vec)
 # ```
 
 
