@@ -301,7 +301,9 @@ def nested_iterative_solver_low_level():
     # Create a nested matrix P to use as the preconditioner. The
     # top-left block of P is shared with the top-left block of A. The
     # bottom-right diagonal entry is assembled from the form a_p11:
-    P11 = assemble_matrix(a_p11, [])
+    # Even if the Dirichlet conditions are only enforced on the velocity
+    # space, we pass it to the pressure assembler for consistency.
+    P11 = assemble_matrix(a_p11, bcs=bcs)
     P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
     P.assemble()
 

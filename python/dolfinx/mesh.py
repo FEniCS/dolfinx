@@ -87,10 +87,25 @@ __all__ = [
     "uniform_refine",
 ]
 
+PartitioningFunc = typing.Callable[
+    [_MPI.Comm, int, _cpp.graph.AdjacencyList_int64, bool],
+    _cpp.graph.AdjacencyList_int32,
+]
+
+
+@typing.overload
+def create_cell_partitioner(
+    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int | None
+) -> Callable: ...
+
+
+@typing.overload
+def create_cell_partitioner(mode: GhostMode, max_facet_to_cell_links: int | None) -> Callable: ...
+
 
 @singledispatch
 def create_cell_partitioner(
-    part: Callable | GhostMode, mode: GhostMode, max_facet_to_cell_links: int
+    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int | None
 ) -> Callable:
     """Create a function to partition a mesh.
 
@@ -110,9 +125,9 @@ def create_cell_partitioner(
     return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links)
 
 
-@create_cell_partitioner.register(GhostMode)
+@create_cell_partitioner.register(GhostMode)  # type: ignore[attr-defined]
 def _create_cell_partitioner_from_ghost_mode(
-    mode: GhostMode, max_facet_to_cell_links: int
+    mode: GhostMode, max_facet_to_cell_links: int | None
 ) -> Callable:
     """Create a function to partition a mesh.
 
@@ -838,7 +853,7 @@ def create_mesh(
     else:
         gdim = x.shape[1]
 
-    dtype = None
+    dtype: npt.DTypeLike | None = None
     if isinstance(e, ufl.domain.Mesh):
         # e is a UFL domain
         e_ufl = e.ufl_coordinate_element()
