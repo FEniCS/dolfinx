@@ -528,21 +528,17 @@ def form(
 
 @typing.overload
 def extract_function_spaces(forms: Form, index: int = 0) -> FunctionSpace | None: ...
-
-
 @typing.overload
 def extract_function_spaces(
     forms: Sequence[Form], index: int = 0
 ) -> list[FunctionSpace | None]: ...
-
-
 @typing.overload
 def extract_function_spaces(
     forms: Sequence[Sequence[Form]], index: int = 0
 ) -> list[FunctionSpace | None]: ...
-
-
-def extract_function_spaces(forms, index: int = 0):
+def extract_function_spaces(
+    forms: Form | Sequence[Form] | Sequence[Sequence[Form]], index: int = 0
+) -> FunctionSpace | list[FunctionSpace | None] | None:
     """Extract common function spaces from an array of forms.
 
     If ``forms`` is a list of linear forms, this function returns of list
@@ -570,7 +566,7 @@ def extract_function_spaces(forms, index: int = 0):
         for form in _forms:
             if form is not None and form.rank != 1:
                 raise ValueError("Expected a linear form.")
-        return [form.function_spaces[0] if form is not None else None for form in forms]
+        return [form.function_spaces[0] if form is not None else None for form in _forms]
     elif _forms.ndim == 2:
         if index not in (0, 1):
             raise ValueError("index must be 0 or 1 for a 2D array of forms.")
