@@ -181,3 +181,14 @@ def test_symmetric(vs, ftype):
     )
     values = expr.eval(mesh, cell).reshape(vs)
     np.testing.assert_allclose(values, values.T)
+
+    # Check that collapsing into the subspace gives the correct parent index
+    for i in range(V.num_sub_spaces):
+        subspace = V.sub(i)
+        sub, s_to_p = subspace.collapse()
+        assert s_to_p[0] == i
+        assert subspace.num_sub_spaces == 0
+        assert subspace.dofmap.index_map.size_global == 1
+        assert subspace.dofmap.index_map_bs == V.num_sub_spaces
+        assert sub.dofmap.index_map_bs == 1
+        assert sub.dofmap.index_map.size_global == 1
