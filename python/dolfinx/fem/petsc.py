@@ -28,6 +28,7 @@ import ctypes as _ctypes
 import functools
 import os
 import pathlib
+import typing
 import warnings
 from collections.abc import Sequence
 from typing import overload
@@ -769,7 +770,10 @@ def set_bc(
 # -- High-level interface for KSP ---------------------------------------
 
 
-class LinearProblem:
+_U = typing.TypeVar("_U", bound=_Function | Sequence[_Function])
+
+
+class LinearProblem(typing.Generic[_U]):
     """High-level class for solving linears problem using a PETSc KSP.
 
     Solves problems of the form
@@ -784,6 +788,38 @@ class LinearProblem:
         ``.destroy()`` on returned PETSc objects.
     """  # noqa: D301
 
+    @typing.overload
+    def __init__(
+        self: LinearProblem[_Function],
+        a: ufl.Form,
+        L: ufl.Form,
+        *,
+        petsc_options_prefix: str,
+        bcs: Sequence[DirichletBC] | None = None,
+        u: _Function | None = None,
+        P: ufl.Form | None = None,
+        kind: str | None = None,
+        petsc_options: dict | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        entity_maps: Sequence[_EntityMap] | None = None,
+    ) -> None: ...
+    @typing.overload
+    def __init__(
+        self: LinearProblem[Sequence[_Function]],
+        a: Sequence[Sequence[ufl.Form]],
+        L: Sequence[ufl.Form],
+        *,
+        petsc_options_prefix: str,
+        bcs: Sequence[DirichletBC] | None = None,
+        u: Sequence[_Function] | None = None,
+        P: Sequence[Sequence[ufl.Form]] | None = None,
+        kind: str | Sequence[Sequence[str]] | None = None,
+        petsc_options: dict | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        entity_maps: Sequence[_EntityMap] | None = None,
+    ) -> None: ...
     def __init__(
         self,
         a: ufl.Form | Sequence[Sequence[ufl.Form]],
@@ -969,7 +1005,7 @@ class LinearProblem:
             if (obj := getattr(self, name, None)) is not None:
                 obj.destroy()
 
-    def solve(self) -> _Function | Sequence[_Function]:
+    def solve(self) -> _U:
         """Solve the problem.
 
         This method updates the solution ``u`` function(s) stored in the
@@ -990,7 +1026,8 @@ class LinearProblem:
         self.A.assemble()
 
         # Assemble preconditioner
-        if self.P_mat is not None:
+        if self.preconditioner is not None:
+            assert self.P_mat is not None
             self.P_mat.zeroEntries()
             _assemble_matrix_petsc(self.P_mat, self.preconditioner, bcs=self.bcs)
             self.P_mat.assemble()
@@ -1046,7 +1083,7 @@ class LinearProblem:
         return self._a
 
     @property
-    def preconditioner(self) -> Form | Sequence[Sequence[Form]]:
+    def preconditioner(self) -> Form | Sequence[Sequence[Form]] | None:
         """The compiled bilinear form representing the preconditioner."""
         return self._preconditioner
 
@@ -1081,14 +1118,14 @@ class LinearProblem:
         return self._solver
 
     @property
-    def u(self) -> _Function | Sequence[_Function]:
+    def u(self) -> _U:
         """Solution function(s).
 
         Note:
             The function(s) do not share memory with the solution
             vector ``x``.
         """
-        return self._u
+        return self._u  # type: ignore[return-value]
 
 
 # -- High-level interface for SNES ---------------------------------------
@@ -1221,7 +1258,7 @@ def assemble_jacobian(
         P_mat.assemble()
 
 
-class NonlinearProblem:
+class NonlinearProblem(typing.Generic[_U]):
     """High-level class for solving nonlinear problems with PETSc SNES.
 
     Solves problems of the form
@@ -1241,7 +1278,40 @@ class NonlinearProblem:
     """  # noqa: D301
 
     _P_mat: PETSc.Mat | None
+    _preconditioner: Form | Sequence[Sequence[Form]] | None
 
+    @typing.overload
+    def __init__(
+        self: NonlinearProblem[_Function],
+        F: ufl.form.Form,
+        u: _Function,
+        *,
+        petsc_options_prefix: str,
+        bcs: Sequence[DirichletBC] | None = None,
+        J: ufl.form.Form | None = None,
+        P: ufl.form.Form | None = None,
+        kind: str | None = None,
+        petsc_options: dict | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        entity_maps: Sequence[_EntityMap] | None = None,
+    ) -> None: ...
+    @typing.overload
+    def __init__(
+        self: NonlinearProblem[Sequence[_Function]],
+        F: Sequence[ufl.form.Form],
+        u: Sequence[_Function],
+        *,
+        petsc_options_prefix: str,
+        bcs: Sequence[DirichletBC] | None = None,
+        J: Sequence[Sequence[ufl.form.Form]] | None = None,
+        P: Sequence[Sequence[ufl.form.Form]] | None = None,
+        kind: str | Sequence[Sequence[str]] | None = None,
+        petsc_options: dict | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        entity_maps: Sequence[_EntityMap] | None = None,
+    ) -> None: ...
     def __init__(
         self,
         F: ufl.form.Form | Sequence[ufl.form.Form],
@@ -1421,7 +1491,7 @@ class NonlinearProblem:
             )
             self.solver.getKSP().getPC().setFieldSplitIS(*fieldsplit_IS)
 
-    def solve(self) -> _Function | Sequence[_Function]:
+    def solve(self) -> _U:
         """Solve the problem.
 
         This method updates the solution ``u`` function(s) stored in the
@@ -1502,14 +1572,14 @@ class NonlinearProblem:
         return self._snes
 
     @property
-    def u(self) -> _Function | Sequence[_Function]:
+    def u(self) -> _U:
         """Solution function(s).
 
         Note:
             The function(s) do not share memory with the solution
             vector ``x``.
         """
-        return self._u
+        return self._u  # type: ignore[return-value]
 
 
 # -- Deprecated non-linear problem class for NewtonSolver -----------------
