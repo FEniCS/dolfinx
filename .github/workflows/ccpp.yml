@@ -263,12 +263,17 @@ jobs:
         run: cmake --build . --target test
 
       - name: Build Python interface
-        run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test,mypy]'
-          python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
+        run: >
+          pip install 'python/[test,mypy]'
+          --check-build-dependencies
+          --no-build-isolation
+          --config-settings=cmake.build-type="Developer"
+
+      - name: Check Python configuration
+        run: python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
       - name: Run mypy
-        run: | # numpy-typing-compat needs to be pinned tp latest numba compatible numpy version to avoid auto upgrade
+        run: |
           mypy --config-file python/pyproject.toml -p dolfinx --exclude superlu_dist.py
           cd python/
           mypy test
