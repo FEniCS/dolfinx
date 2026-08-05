@@ -85,12 +85,26 @@ void io(nb::module_& m)
         });
 
   // dolfinx::io::cell permutation functions
-  m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, nb::arg("type"),
-        nb::arg("num_nodes"),
-        "Permutation array to map from VTK to DOLFINx node ordering");
-  m.def("perm_gmsh", &dolfinx::io::cells::perm_gmsh, nb::arg("type"),
-        nb::arg("num_nodes"),
-        "Permutation array to map from Gmsh to DOLFINx node ordering");
+  m.def(
+      "perm_vtk",
+      [](dolfinx::mesh::CellType type, int num_nodes)
+      {
+        std::vector<std::uint16_t> perm
+            = dolfinx::io::cells::perm_vtk(type, num_nodes);
+        return dolfinx_wrappers::as_nbarray(std::move(perm));
+      },
+      nb::arg("type"), nb::arg("num_nodes"),
+      "Permutation array to map from VTK to DOLFINx node ordering");
+  m.def(
+      "perm_gmsh",
+      [](dolfinx::mesh::CellType type, int num_nodes)
+      {
+        std::vector<std::uint16_t> perm
+            = dolfinx::io::cells::perm_gmsh(type, num_nodes);
+        return dolfinx_wrappers::as_nbarray(std::move(perm));
+      },
+      nb::arg("type"), nb::arg("num_nodes"),
+      "Permutation array to map from Gmsh to DOLFINx node ordering");
 
   // dolfinx::io::XDMFFile
   nb::class_<dolfinx::io::XDMFFile> xdmf_file(m, "XDMFFile");
