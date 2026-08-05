@@ -854,20 +854,8 @@ class TestPETScAssemblers:
             pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
             ksp_u, ksp_p = pc.getFieldSplitSubKSP()
             ksp_u.setType("preonly")
-            pc_u = ksp_u.getPC()
-            pc_u.setType("lu")
-            use_superlu = PETSc.IntType == np.int64
-            if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
-                # Avoid a longstanding PETSc/MUMPS bug triggered by the
-                # default distributed dense RHS (ICNTL(20)=10) in parallel
-                # solves; must be set via the options database as
-                # MatSolve_MUMPS re-derives ICNTL(20) from it on every solve.
-                PETSc.Options()[f"{ksp_u.getOptionsPrefix()}mat_mumps_icntl_20"] = 0
-                pc_u.setFactorSolverType("mumps")
-            else:
-                pc_u.setFactorSolverType("superlu_dist")
+            ksp_u.getPC().setType("lu")
             ksp_p.setType("preonly")
-            ksp_p.getPC().setType("jacobi")
 
             def monitor(ksp, its, rnorm):
                 pass
@@ -904,16 +892,6 @@ class TestPETScAssemblers:
             ksp.setType("minres")
             pc = ksp.getPC()
             pc.setType("lu")
-            use_superlu = PETSc.IntType == np.int64
-            if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
-                # Avoid a longstanding PETSc/MUMPS bug triggered by the
-                # default distributed dense RHS (ICNTL(20)=10) in parallel
-                # solves; must be set via the options database as
-                # MatSolve_MUMPS re-derives ICNTL(20) from it on every solve.
-                PETSc.Options()["mat_mumps_icntl_20"] = 0
-                pc.setFactorSolverType("mumps")
-            else:
-                pc.setFactorSolverType("superlu_dist")
             ksp.setTolerances(rtol=1.0e-8, max_it=50)
             ksp.setFromOptions()
             x = A.createVecRight()
@@ -974,16 +952,6 @@ class TestPETScAssemblers:
             ksp.setType("minres")
             pc = ksp.getPC()
             pc.setType("lu")
-            use_superlu = PETSc.IntType == np.int64
-            if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
-                # Avoid a longstanding PETSc/MUMPS bug triggered by the
-                # default distributed dense RHS (ICNTL(20)=10) in parallel
-                # solves; must be set via the options database as
-                # MatSolve_MUMPS re-derives ICNTL(20) from it on every solve.
-                PETSc.Options()["mat_mumps_icntl_20"] = 0
-                pc.setFactorSolverType("mumps")
-            else:
-                pc.setFactorSolverType("superlu_dist")
 
             def monitor(ksp, its, rnorm):
                 # print("Num it, rnorm:", its, rnorm)
