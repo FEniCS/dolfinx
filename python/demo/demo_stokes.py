@@ -614,7 +614,6 @@ def mixed_direct():
     pc.setType("lu")
     use_superlu = PETSc.IntType == np.int64
     if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
-        PETSc.Options()["mat_mumps_icntl_20"] = 0
         pc.setFactorSolverType("mumps")
         pc.setFactorSetUpSolverType()
         pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
