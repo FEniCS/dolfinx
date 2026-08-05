@@ -127,8 +127,14 @@ void common(nb::module_& m)
       .def_prop_ro("size_local", &dolfinx::common::IndexMap::size_local)
       .def_prop_ro("size_global", &dolfinx::common::IndexMap::size_global)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
-      .def_prop_ro("local_range", &dolfinx::common::IndexMap::local_range,
-                   "Range of indices owned by this map")
+      .def_prop_ro(
+          "local_range",
+          [](const dolfinx::common::IndexMap& self)
+          {
+            std::array<std::int64_t, 2> range = self.local_range();
+            return std::make_pair(range[0], range[1]);
+          },
+          "Range of indices owned by this map")
       .def(
           "index_to_dest_ranks",
           [](const dolfinx::common::IndexMap& self, int tag)
