@@ -148,9 +148,14 @@ jobs:
         run: cmake --build . --target test
 
       - name: Build Python interface
-        run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" 'python/[test,mypy]'
-          python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
+        run: >
+          pip install  'python/[test,mypy]'
+          --check-build-dependencies
+          --no-build-isolation
+          --config-settings=cmake.build-type="Developer"
+
+      - name: Check Python configuration
+        run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
       - name: Run mypy
         run: |
@@ -340,8 +345,10 @@ jobs:
           cmake --install build
 
       - name: Build Python interface
-        run: |
-          pip install --check-build-dependencies --no-build-isolation 'python/[docs]'
+        run: >
+          pip install 'python/[docs]'
+          --check-build-dependencies
+          --no-build-isolation
 
       - name: Build C++ interface documentation
         run: |
