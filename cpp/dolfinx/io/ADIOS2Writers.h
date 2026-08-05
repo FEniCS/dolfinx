@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Jørgen S. Dokken and Garth N. Wells
+// Copyright (C) 2021-2026 Jørgen S. Dokken, Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -176,10 +176,10 @@ std::string create_vtk_schema(const std::vector<std::string>& point_data,
                               const std::vector<std::string>& cell_data);
 
 /// Read vtk scheme from file. Used to verify append mode compatibility.
-/// @param[in] comm MPI comm
+/// @param[in] io adios IO
 /// @param[in] path file path
 /// @returns vtk scheme
-std::string read_vtk_schema(MPI_Comm comm, const std::filesystem::path& path);
+std::string read_vtk_schema(adios2::IO io, const std::filesystem::path& path);
 
 /// Extract name of functions and split into real and imaginary component
 template <std::floating_point T>
@@ -491,9 +491,15 @@ public:
   {
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {});
-    if ((mode == "a")
-        && (impl_vtx::read_vtk_schema(comm, filename) != vtk_scheme))
-      throw std::runtime_error("VTK scheme not compatible.");
+    if (mode == "a")
+    {
+      _engine->Close(); // TODO
+      if (impl_vtx::read_vtk_schema(*_io, filename) != vtk_scheme)
+        throw std::runtime_error("VTK scheme not compatible.");
+
+      // TODO
+      _engine = std::make_unique<adios2::Engine>(_io->Open(filename, impl_adios2::mode(mode)));
+    }
     else
       impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
@@ -608,9 +614,15 @@ public:
     std::string vtk_scheme;
     vtk_scheme = impl_vtx::create_vtk_schema(names, dg0_names);
 
-    if ((mode == "a")
-        && (impl_vtx::read_vtk_schema(comm, filename) != vtk_scheme))
-      throw std::runtime_error("VTK scheme not compatible.");
+    if (mode == "a")
+    {
+      _engine->Close(); // TODO
+      if (impl_vtx::read_vtk_schema(*_io, filename) != vtk_scheme)
+        throw std::runtime_error("VTK scheme not compatible.");
+
+      // TODO
+      _engine = std::make_unique<adios2::Engine>(_io->Open(filename, impl_adios2::mode(mode)));
+    }
     else
       impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
