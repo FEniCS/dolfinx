@@ -38,6 +38,7 @@ from dolfinx import la
 from dolfinx.fem import (
     Expression,
     Function,
+    FunctionSpace,
     dirichletbc,
     form,
     functionspace,
@@ -50,13 +51,64 @@ from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_bounda
 dtype = PETSc.ScalarType
 # -
 
+# ## Create the operator near-nullspace
+#
+# Smooth aggregation algebraic multigrid solvers require the so-called
+# 'near-nullspace', which is the nullspace of the operator in the
+# absence of boundary conditions. The below function builds a
+# `PETSc.NullSpace` object for a 3D elasticity problem. The nullspace is
+# spanned by six vectors -- three translation modes and three rotation
+# modes.
+#
+# Note, for the pure PETSc use case the nullspace construction can be
+# shortened to
+# ```python
+#  coords = V.tabulate_dof_coordinates()[:V.dofmap.index_map.size_local,:]
+#  vec = PETSc.Vec().createWithArray(coords.ravel(), bsize=gdim, comm=comm)
+#  ns = PETSc.NullSpace().createRigidBody(vec)
+# ```
+
+def build_nullspace(V: FunctionSpace):
+    """Build PETSc nullspace for 3D elasticity."""
+    # Create vectors that will span the nullspace
+    bs = V.dofmap.index_map_bs
+    length0 = V.dofmap.index_map.size_local
+    basis = [la.vector(V.dofmap.index_map, bs=bs, dtype=dtype) for i in range(6)]
+    b = [b.array for b in basis]
+
+    # Get dof indices for each subspace (x, y and z dofs)
+    dofs = [V.sub(i).dofmap.list.flatten() for i in range(3)]
+
+    # Set the three translational rigid body modes
+    for i in range(3):
+        b[i][dofs[i]] = 1.0
+
+    # Set the three rotational rigid body modes
+    x = V.tabulate_dof_coordinates()
+    dofs_block = V.dofmap.list.flatten()
+    x0, x1, x2 = x[dofs_block, 0], x[dofs_block, 1], x[dofs_block, 2]
+    b[3][dofs[0]] = -x1
+    b[3][dofs[1]] = x0
+    b[4][dofs[0]] = x2
+    b[4][dofs[2]] = -x0
+    b[5][dofs[2]] = x1
+    b[5][dofs[1]] = -x2
+
+    la.orthonormalize(basis)
+
+    basis_petsc = [
+        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm) for x in b
+    ]
+    return PETSc.NullSpace().create(vectors=basis_petsc)
+
+
 # ## Problem definition
 
 # Create a {py:func}`box mesh<dolfinx.mesh.create_box>`:
 
 
 msh = create_box(
-    comm := MPI.COMM_WORLD,
+    MPI.COMM_WORLD,
     [np.array([0.0, 0.0, 0.0]), np.array([2.0, 1.0, 1.0])],
     (16, 16, 16),
     CellType.tetrahedron,
@@ -133,20 +185,9 @@ b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bc.set(b.array_w)
 # -
 
-# ### Create the operator near-nullspace
-#
-# Smooth aggregation algebraic multigrid solvers require the so-called
-# 'near-nullspace', which is the nullspace of the operator in the
-# absence of boundary conditions. `createRigidBody` builds a
-# `PETSc.NullSpace` object for a 3D elasticity problem. The nullspace is
-# spanned by six vectors -- three translation modes and three rotation
-# modes.
-#
 # Create the near-nullspace and attach it to the PETSc matrix:
 
-coords = V.tabulate_dof_coordinates()[: V.dofmap.index_map.size_local, :].ravel()
-coords_vec = PETSc.Vec().createWithArray(coords, bsize=gdim, comm=comm)
-ns = PETSc.NullSpace().createRigidBody(coords_vec)
+ns = build_nullspace(V)
 A.setNearNullSpace(ns)
 A.setOption(PETSc.Mat.Option.SPD, True)
 
