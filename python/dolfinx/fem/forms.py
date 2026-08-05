@@ -527,17 +527,17 @@ def form(
 
 
 @typing.overload
-def extract_function_spaces(forms: Form, index: int = 0) -> FunctionSpace | None: ...
+def extract_function_spaces(forms: Form, index: None = None) -> FunctionSpace | None: ...
 @typing.overload
 def extract_function_spaces(
-    forms: Sequence[Form], index: int = 0
+    forms: Sequence[Form], index: None = None
 ) -> list[FunctionSpace | None]: ...
 @typing.overload
 def extract_function_spaces(
     forms: Sequence[Sequence[Form]], index: int = 0
 ) -> list[FunctionSpace | None]: ...
 def extract_function_spaces(
-    forms: Form | Sequence[Form] | Sequence[Sequence[Form]], index: int = 0
+    forms: Form | Sequence[Form] | Sequence[Sequence[Form]], index: int | None = None
 ) -> FunctionSpace | list[FunctionSpace | None] | None:
     """Extract common function spaces from an array of forms.
 
@@ -552,19 +552,22 @@ def extract_function_spaces(
         index: For a 2D array of bilinear forms, selects whether the
             common test function space of each row (``index=0``) or
             the common trial function space of each column
-            (``index=1``) is extracted. Must be 0 for a 1D sequence
-            of linear forms, and is ignored for a single form.
+            (``index=1``) is extracted. Must be ``None`` (the
+            default) for a single form or a 1D sequence of linear
+            forms.
 
     Returns:
         List of function spaces.
     """
     _forms = np.array(forms)
     if _forms.ndim == 0:
+        if index is not None:
+            raise ValueError("index must be None for a single form.")
         form: Form = _forms.tolist()
         return form.function_spaces[0] if form is not None else None
     elif _forms.ndim == 1:
-        if index != 0:
-            raise ValueError("index must be 0 for a 1D array of forms.")
+        if index is not None:
+            raise ValueError("index must be None for a 1D array of forms.")
         for form in _forms:
             if form is not None and form.rank != 1:
                 raise ValueError("Expected a linear form.")
