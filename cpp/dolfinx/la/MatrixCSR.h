@@ -50,7 +50,8 @@ enum class BlockMode : int
                /// matrix has a block size of (1, 1).
 };
 
-/// @brief Distributed sparse matrix using compressed sparse row storage.
+/// @brief Distributed sparse matrix using compressed sparse row
+/// storage.
 ///
 /// @warning The class is experimental and subject to change.
 ///
@@ -901,6 +902,16 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
     impl::spmv<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
                        _bs[0], std::integral_constant<int, 1>{});
   }
+  else if (_bs[1] == 2)
+  {
+    impl::spmv<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                       _bs[0], std::integral_constant<int, 2>{});
+  }
+  else if (_bs[1] == 3)
+  {
+    impl::spmv<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                       _bs[0], std::integral_constant<int, 3>{});
+  }
   else
   {
     impl::spmv<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
@@ -916,6 +927,16 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
   {
     impl::spmv<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
                        _bs[0], std::integral_constant<int, 1>{});
+  }
+  else if (_bs[1] == 2)
+  {
+    impl::spmv<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                       _bs[0], std::integral_constant<int, 2>{});
+  }
+  else if (_bs[1] == 3)
+  {
+    impl::spmv<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                       _bs[0], std::integral_constant<int, 3>{});
   }
   else
   {
@@ -954,11 +975,22 @@ void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
     impl::spmvT<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
                         _bs[0], std::integral_constant<int, 1>{});
   }
+  else if (_bs[1] == 2)
+  {
+    impl::spmvT<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                        _bs[0], std::integral_constant<int, 2>{});
+  }
+  else if (_bs[1] == 3)
+  {
+    impl::spmvT<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                        _bs[0], std::integral_constant<int, 3>{});
+  }
   else
   {
     impl::spmvT<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
                         _bs[0], _bs[1]);
   }
+
   y.scatter_rev(std::plus<Scalar>{});
 
   if (_bs[1] == 1)
@@ -966,11 +998,20 @@ void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
     impl::spmvT<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
                         _bs[0], std::integral_constant<int, 1>{});
   }
+  else if (_bs[1] == 2)
+  {
+    impl::spmvT<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                        _bs[0], std::integral_constant<int, 2>{});
+  }
+  else if (_bs[1] == 3)
+  {
+    impl::spmvT<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                        _bs[0], std::integral_constant<int, 3>{});
+  }
   else
   {
     impl::spmvT<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
                         _bs[0], _bs[1]);
   }
 }
-
 } // namespace dolfinx::la
