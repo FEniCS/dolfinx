@@ -23,7 +23,7 @@ from dolfinx.cpp.io import (
 )
 from dolfinx.mesh import CellType, Mesh
 
-__all__ = ["read_mesh", "write_cell_data", "write_mesh", "write_point_data"]
+__all__ = ["cell_perm_array", "read_mesh", "write_cell_data", "write_mesh", "write_point_data"]
 
 
 def read_mesh(

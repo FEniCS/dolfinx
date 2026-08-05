@@ -101,7 +101,7 @@ void io(nb::module_& m)
       {
         std::vector<std::uint16_t> perm
             = dolfinx::io::cells::perm_gmsh(type, num_nodes);
-        return dolfinx_wrappers::as_nbarray(std::move(perm), {perm.size()});
+        return dolfinx_wrappers::as_nbarray(std::move(perm));
       },
       nb::arg("type"), nb::arg("num_nodes"),
       "Permutation array to map from Gmsh to DOLFINx node ordering");
