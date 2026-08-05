@@ -294,7 +294,7 @@ class TestVTX:
             cell_arrays = get_data_array_names(xml_cell_data)
             assert "q" in cell_arrays or ("q_imag" in cell_arrays and "q_real" in cell_arrays)
 
-    def test_append_compat_func(self, tempdir):
+    def test_append_compat_schema(self, tempdir):
         """Append raises for incomaptible functions."""
         from dolfinx.io import VTXWriter
 
