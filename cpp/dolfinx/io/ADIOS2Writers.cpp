@@ -56,7 +56,7 @@ adios2::Mode impl_adios2::mode(std::string_view mode)
   throw std::runtime_error("Invalid adios2 mode.");
 }
 //-----------------------------------------------------------------------------
-std::stringstream
+std::string
 io::impl_vtx::create_vtk_schema(const std::vector<std::string>& point_data,
                                 const std::vector<std::string>& cell_data)
 {
