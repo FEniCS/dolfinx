@@ -59,6 +59,15 @@ dtype = PETSc.ScalarType
 # `PETSc.NullSpace` object for a 3D elasticity problem. The nullspace is
 # spanned by six vectors -- three translation modes and three rotation
 # modes.
+#
+# Note, for the pure PETSc use case the nullspace construction can be
+# shortened to
+# ```python
+# coords = V.tabulate_dof_coordinates()[:V.dofmap.index_map.size_local,:]
+# coords = coords.ravel()
+# vec = PETSc.Vec().createWithArray(coords, bsize=gdim, comm=mesh.comm)
+# ns = PETSc.NullSpace().createRigidBody(vec)
+# ```
 
 
 def build_nullspace(V: FunctionSpace):
