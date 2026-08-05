@@ -49,6 +49,7 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_boundary
 
 dtype = PETSc.ScalarType
+comm = MPI.COMM_WORLD
 # -
 
 # ## Create the operator near-nullspace
@@ -109,7 +110,7 @@ def build_nullspace(V: FunctionSpace):
 
 
 msh = create_box(
-    MPI.COMM_WORLD,
+    comm,
     [np.array([0.0, 0.0, 0.0]), np.array([2.0, 1.0, 1.0])],
     (16, 16, 16),
     CellType.tetrahedron,
@@ -210,7 +211,7 @@ opts["mg_levels_pc_type"] = "jacobi"
 opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10
 
 # Create PETSc Krylov solver and turn convergence monitoring on
-solver = PETSc.KSP().create(msh.comm)
+solver = PETSc.KSP().create(comm)
 solver.setFromOptions()
 
 # Set matrix operator
@@ -259,12 +260,12 @@ sigma_vm_h.interpolate(sigma_vm_expr)
 # XDMF format files.
 
 # +
-with XDMFFile(msh.comm, "out_elasticity/displacements.xdmf", "w") as file:
+with XDMFFile(comm, "out_elasticity/displacements.xdmf", "w") as file:
     file.write_mesh(msh)
     file.write_function(uh)
 
 # Save solution to XDMF format
-with XDMFFile(msh.comm, "out_elasticity/von_mises_stress.xdmf", "w") as file:
+with XDMFFile(comm, "out_elasticity/von_mises_stress.xdmf", "w") as file:
     file.write_mesh(msh)
     file.write_function(sigma_vm_h)
 # -
@@ -276,7 +277,7 @@ with XDMFFile(msh.comm, "out_elasticity/von_mises_stress.xdmf", "w") as file:
 
 # +
 unorm = la.norm(uh.x)
-if msh.comm.rank == 0:
+if comm.rank == 0:
     print("Solution vector norm:", unorm)
 # -
 
