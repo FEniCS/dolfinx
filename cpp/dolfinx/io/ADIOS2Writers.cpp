@@ -126,7 +126,7 @@ io::impl_vtx::create_vtk_schema(const std::vector<std::string>& point_data,
 }
 //-----------------------------------------------------------------------------
 std::string io::impl_vtx::read_vtk_schema(MPI_Comm comm,
-                            const std::filesystem::path& filename)
+                                          const std::filesystem::path& filename)
 {
   adios2::ADIOS adios(comm);
   adios2::IO io = adios.DeclareIO("VTX schema reader");

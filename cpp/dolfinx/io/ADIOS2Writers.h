@@ -491,7 +491,8 @@ public:
   {
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {});
-    if ((mode == "a") && (impl_vtx::read_vtk_schema(comm, filename) != vtk_scheme))
+    if ((mode == "a")
+        && (impl_vtx::read_vtk_schema(comm, filename) != vtk_scheme))
       throw std::runtime_error("VTK scheme not compatible.");
     else
       impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
@@ -607,7 +608,8 @@ public:
     std::string vtk_scheme;
     vtk_scheme = impl_vtx::create_vtk_schema(names, dg0_names);
 
-    if ((mode == "a") && (impl_vtx::read_vtk_schema(comm, filename) != vtk_scheme))
+    if ((mode == "a")
+        && (impl_vtx::read_vtk_schema(comm, filename) != vtk_scheme))
       throw std::runtime_error("VTK scheme not compatible.");
     else
       impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
