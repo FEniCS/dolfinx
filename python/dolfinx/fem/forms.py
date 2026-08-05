@@ -549,9 +549,11 @@ def extract_function_spaces(
 
     Args:
         forms: A list of forms or a 2D array of forms.
-        index: Index of the function space to extract. If ``index=0``,
-            the test function spaces are extracted, if ``index=1`` the
-            trial function spaces are extracted.
+        index: For a 2D array of bilinear forms, selects whether the
+            common test function space of each row (``index=0``) or
+            the common trial function space of each column
+            (``index=1``) is extracted. Must be 0 for a 1D sequence
+            of linear forms, and is ignored for a single form.
 
     Returns:
         List of function spaces.
