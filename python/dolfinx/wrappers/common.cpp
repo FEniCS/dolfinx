@@ -140,7 +140,8 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self, int tag)
           {
             auto [data, offsets] = self.index_to_dest_ranks(tag);
-            return std::pair(std::move(data), std::move(offsets));
+            return std::pair{dolfinx_wrappers::as_nbarray(std::move(data)),
+                             dolfinx_wrappers::as_nbarray(std::move(offsets))};
           },
           nb::arg("tag"))
       .def_prop_ro(
