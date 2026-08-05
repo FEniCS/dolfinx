@@ -151,7 +151,7 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
     return ufl.Mesh(element)
 
 
-def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
+def cell_perm_array(cell_type: CellType, num_nodes: int) -> npt.NDArray[np.uint16]:
     """Array for permuting Gmsh ordering to DOLFINx ordering.
 
     Args:
