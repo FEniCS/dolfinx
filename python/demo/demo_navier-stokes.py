@@ -424,7 +424,7 @@ for _ in range(num_time_steps):
         u_vis.interpolate(u_h)
         with io.VTXWriter(msh.comm, "u.bp", "a", u_vis) as file:
             file.write(t)
-        with io.VTXWriter(msh.comm, "p.bp", "a", u_vis) as file:
+        with io.VTXWriter(msh.comm, "p.bp", "a", p_h) as file:
             file.write(t)
 
     # Update u_n
