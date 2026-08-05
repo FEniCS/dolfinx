@@ -68,6 +68,7 @@ dtype = PETSc.ScalarType
 #  ns = PETSc.NullSpace().createRigidBody(vec)
 # ```
 
+
 def build_nullspace(V: FunctionSpace):
     """Build PETSc nullspace for 3D elasticity."""
     # Create vectors that will span the nullspace
