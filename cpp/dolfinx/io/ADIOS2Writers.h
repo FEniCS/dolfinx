@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <string_view>
 #ifdef HAS_ADIOS2
 
 #include "vtk_utils.h"
@@ -17,6 +16,7 @@
 #include <cassert>
 #include <complex>
 #include <concepts>
+#include <cstddef>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -28,6 +28,7 @@
 #include <mpi.h>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <variant>
 #include <vector>
@@ -620,6 +621,43 @@ public:
       _engine->Close(); // TODO
       if (impl_vtx::read_vtk_schema(*_io, filename) != vtk_scheme)
         throw std::runtime_error("VTK scheme not compatible.");
+
+      if (_mesh_reuse_policy == VTXMeshPolicy::reuse)
+      {
+        auto io = *_io;
+        adios2::Engine reader
+            = io.Open(filename, adios2::Mode::ReadRandomAccess);
+
+        std::shared_ptr<const common::IndexMap> x_map
+            = _mesh->geometry().index_map();
+        std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
+        adios2::Variable<std::uint32_t> var
+            = io.template InquireVariable<std::uint32_t>("NumberOfNodes");
+        if (!var)
+        {
+          reader.Close();
+          throw std::runtime_error("Could not find NumberOfNodes attribute.");
+        }
+
+        std::size_t steps = var.Steps();
+        if (steps == 0)
+          throw std::runtime_error(
+              "Can not append to empty file."); // TODO: true?
+
+        var.SetStepSelection({steps - 1, 1}); // TODO
+        int rank = 0;
+        MPI_Comm_rank(_mesh->comm(), &rank);
+        var.SetBlockSelection(static_cast<std::size_t>(rank));
+
+        std::uint32_t stored_num_vertices = 0;
+        reader.Get(var, &stored_num_vertices, adios2::Mode::Sync);
+        reader.Close();
+
+        if (stored_num_vertices != num_vertices)
+          throw std::runtime_error("Mesh has changed, can not be reused.");
+
+        // TODO - same for NumberOfCells
+      }
 
       // TODO
       _engine = std::make_unique<adios2::Engine>(

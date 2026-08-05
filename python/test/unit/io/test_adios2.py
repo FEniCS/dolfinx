@@ -313,3 +313,28 @@ class TestVTX:
                 writer.write(0)
 
             assert "VTK scheme not compatible." in str(err)
+
+    def test_append_compat_mesh(self, tempdir):
+        """Append raises for incomaptible functions."""
+        from dolfinx.io import VTXMeshPolicy, VTXWriter
+
+        mesh = generate_mesh(3, False)
+        v = Function(functionspace(mesh, ("Lagrange", 1)), name="v")
+
+        mesh2 = generate_mesh(2, False)
+        v2 = Function(functionspace(mesh2, ("Lagrange", 1)), name="v")
+
+        filename = Path(tempdir, "v.bp")
+        with VTXWriter(mesh.comm, filename, "w", [v]) as writer:
+            writer.write(0)
+
+        with VTXWriter(mesh.comm, filename, "a", [v], mesh_policy=VTXMeshPolicy.reuse) as writer:
+            writer.write(0)
+
+        with pytest.raises(RuntimeError) as err:
+            with VTXWriter(
+                mesh.comm, filename, "a", [v2], mesh_policy=VTXMeshPolicy.reuse
+            ) as writer:
+                writer.write(0)
+
+            assert "Mesh has changed, can not be reused." in str(err)
