@@ -179,8 +179,10 @@ def test_symmetric(vs, ftype):
         if mesh.topology.index_map(mesh.topology.dim).size_local > 0
         else np.zeros(0, dtype=np.int32)
     )
-    values = expr.eval(mesh, cell).reshape(vs)
-    np.testing.assert_allclose(values, values.T)
+    values = expr.eval(mesh, cell)
+    if len(cell) > 0:
+        val_matrix = values.reshape(vs)
+        np.testing.assert_allclose(val_matrix, val_matrix.T)
 
     # Check that collapsing into the subspace gives the correct parent index
     for i in range(V.num_sub_spaces):
