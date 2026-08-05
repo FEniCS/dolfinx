@@ -175,6 +175,12 @@ namespace impl_vtx
 std::string create_vtk_schema(const std::vector<std::string>& point_data,
                               const std::vector<std::string>& cell_data);
 
+/// Read vtk scheme from file. Used to verify append mode compatibility.
+/// @param[in] comm MPI comm
+/// @param[in] path file path
+/// @returns vtk scheme
+std::string read_vtk_schema(MPI_Comm comm, const std::filesystem::path& path);
+
 /// Extract name of functions and split into real and imaginary component
 template <std::floating_point T>
 std::tuple<std::vector<std::string>, std::vector<std::string>>
@@ -485,7 +491,10 @@ public:
   {
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {});
-    impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
+    if ((mode == "a") && (impl_vtx::read_vtk_schema(comm, filename) != vtk_scheme))
+      throw std::runtime_error("VTK scheme not compatible.");
+    else
+      impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
   /// @brief Create a VTX writer for a list of fem::Functions.
@@ -598,7 +607,10 @@ public:
     std::string vtk_scheme;
     vtk_scheme = impl_vtx::create_vtk_schema(names, dg0_names);
 
-    impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
+    if ((mode == "a") && (impl_vtx::read_vtk_schema(comm, filename) != vtk_scheme))
+      throw std::runtime_error("VTK scheme not compatible.");
+    else
+      impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
   /// @brief Create a VTX writer for a list of fem::Functions using

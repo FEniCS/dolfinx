@@ -125,5 +125,52 @@ io::impl_vtx::create_vtk_schema(const std::vector<std::string>& point_data,
   return ss.str();
 }
 //-----------------------------------------------------------------------------
+std::string io::impl_vtx::read_vtk_schema(MPI_Comm comm,
+                            const std::filesystem::path& filename)
+{
+  adios2::ADIOS adios(comm);
+  adios2::IO io = adios.DeclareIO("VTX schema reader");
+  io.SetEngine("BPFile");
 
+  adios2::Engine reader;
+  std::string schema;
+
+  try
+  {
+    reader = io.Open(filename, adios2::Mode::ReadRandomAccess);
+
+    const adios2::Attribute<std::string> attribute
+        = io.InquireAttribute<std::string>("vtk.xml");
+
+    if (!attribute)
+    {
+      throw std::runtime_error(
+          "Existing ADIOS2 dataset '" + filename.string()
+          + "' does not contain the required string attribute 'vtk.xml'.");
+    }
+
+    const std::vector<std::string> values = attribute.Data();
+
+    if (values.size() != 1)
+    {
+      throw std::runtime_error(
+          "Attribute 'vtk.xml' in ADIOS2 dataset '" + filename.string()
+          + "' must contain exactly one string, but contains "
+          + std::to_string(values.size()) + ".");
+    }
+
+    schema = values.front();
+  }
+  catch (...)
+  {
+    if (reader)
+      reader.Close();
+
+    throw;
+  }
+
+  reader.Close();
+  return schema;
+}
+//-----------------------------------------------------------------------------
 #endif
