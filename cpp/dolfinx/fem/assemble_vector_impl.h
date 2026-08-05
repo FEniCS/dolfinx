@@ -238,7 +238,7 @@ void assemble_entities(
 /// @param[in] perms Facet permutation integer. Empty if facet
 /// permutations are not required.
 /// @param[in] be_b Buffer for local element vector. Size must be at
-/// least `2 * bs * dmap.map().extent(1)`.
+/// least `2 * bs * dmap.extent(1)`.
 /// @param[in] cdofs_b Buffer for local element geometry. Size must be
 /// at least `2 * 3 * x_dofmap.extent(1)`.
 template <typename V, std::floating_point U,

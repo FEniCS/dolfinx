@@ -212,17 +212,31 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
   }
 }
 
-/// @brief  Sparse matrix-vector product implementation.
-/// @tparam T
-/// @tparam BS1
-/// @param values
-/// @param row_begin
-/// @param row_end
-/// @param indices
-/// @param x
-/// @param y
-/// @param bs0
-/// @param bs1
+/// @brief Sparse matrix-vector product implementation.
+///
+/// Computes `y += A x` where A is given in CSR format.
+///
+/// @note The value block layout is row-major within each block: for
+/// block entry `j` the element at row-offset `k0` and column-offset `k1`
+/// is stored at `values[j * bs0 * bs1 + k0 * bs1 + k1]`.
+///
+/// @tparam T Scalar type of the matrix and vector entries.
+/// @param[in] values Nonzero values of A, stored block-row-major.
+/// Length: `nnz * bs0 * bs1`.
+/// @param[in] row_begin Start positions in `values`/`indices` for each
+/// row of A. Length: number of rows of A.
+/// @param[in] row_end End positions in `values`/`indices` for each row
+/// of A. Length: number of rows of A.
+/// @param[in] indices Column indices of each nonzero block entry of A.
+/// Length: `nnz`.
+/// @param[in] x Input vector, indexed by the *columns* of A.
+/// Length: `num_cols * bs1`.
+/// @param[in,out] y Output vector, indexed by the *rows* of A,
+/// accumulated into. Length: `num_rows * bs0`.
+/// @param[in] bs0 Row block size. Either a runtime `int` or a
+/// `std::integral_constant<int, N>`.
+/// @param[in] bs1 Column block size. Either a runtime `int` or a
+/// `std::integral_constant<int, N>`.
 template <typename T>
 void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
           std::span<const std::int64_t> row_end,
@@ -265,9 +279,7 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
 /// block entry `j` the element at row-offset `k0` and column-offset `k1`
 /// is stored at `values[j * bs0 * bs1 + k0 * bs1 + k1]`.
 ///
-/// @tparam T   Scalar type of the matrix and vector entries.
-/// @tparam BS1 Compile-time column block size.  Pass `-1` to use the
-///             runtime value `bs1` instead.
+/// @tparam T Scalar type of the matrix and vector entries.
 ///
 /// @param[in]  values    Nonzero values of A, stored block-row-major.
 ///                       Length: `nnz * bs0 * bs1`.
@@ -282,9 +294,10 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
 /// @param[in,out] y      Output vector, indexed by the *columns* of A,
 ///                       accumulated into.
 ///                       Length: `num_cols * bs1`.
-/// @param[in]  bs0       Row block size (runtime value).
-/// @param[in]  bs1       Column block size (runtime value, used when
-///                       `BS1 == -1`).
+/// @param[in]  bs0       Row block size. Either a runtime `int` or a
+///                       `std::integral_constant<int, N>`.
+/// @param[in]  bs1       Column block size. Either a runtime `int` or a
+///                       `std::integral_constant<int, N>`.
 template <typename T>
 void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
            std::span<const std::int64_t> row_end,
