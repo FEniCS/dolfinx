@@ -75,14 +75,14 @@ int main(int argc, char* argv[])
     assert(cell_map);
     auto cells = std::ranges::views::iota(0, cell_map->size_local()
                                                  + cell_map->num_ghosts());
+    // Tolerance and maximum number of iterations for nonaffine pullbacks
+    const double eps = 1.0e4 * std::numeric_limits<T>::epsilon();
+    int max_iter = 15;
     geometry::PointOwnershipData<T> interpolation_data
         = fem::create_interpolation_data(
             u_hex->function_space()->mesh()->geometry(),
             *u_hex->function_space()->element(),
-            *u_tet->function_space()->mesh(), cells, 1e-8);
-    // Tolerance and maximum number of iterations for nonaffine pullbacks
-    const double eps = 1.0e4 * std::numeric_limits<T>::epsilon();
-    int max_iter = 15;
+            *u_tet->function_space()->mesh(), cells, 1e-8, eps, max_iter);
     u_hex->interpolate(*u_tet, cells, eps, max_iter, interpolation_data);
 
 #ifdef HAS_ADIOS2
