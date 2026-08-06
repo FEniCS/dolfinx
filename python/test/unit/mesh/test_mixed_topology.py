@@ -32,10 +32,10 @@ from dolfinx.mesh import CellType, GhostMode, Mesh, Topology, create_unit_cube
 def test_mixed_topology_mesh(dtype):
     set_log_level(LogLevel.INFO)
 
-    cells = [[0, 1, 2, 1, 2, 3], [2, 3, 4, 5]]
-    orig_index = [[0, 1], [2]]
-    ghost_owners = [[], []]
-    boundary_vertices = []
+    cells = [np.array([0, 1, 2, 1, 2, 3]), np.array([2, 3, 4, 5])]
+    orig_index = [np.array([0, 1]), np.array([2])]
+    ghost_owners = [np.array([]), np.array([])]
+    boundary_vertices = np.array([])
 
     topology = Topology(
         create_topology(
@@ -98,10 +98,14 @@ def test_mixed_topology_mesh(dtype):
 
 def test_mixed_topology_mesh_3d():
     # Mesh = 2 tets, 1 prism, 1 hex, joined.
-    cells = [[0, 1, 2, 3, 1, 2, 3, 4], [2, 3, 4, 5, 6, 7], [3, 4, 6, 7, 8, 9, 10, 11]]
-    orig_index = [[0, 1], [2], [3]]
-    ghost_owners = [[], [], []]
-    boundary_vertices = []
+    cells = [
+        np.array([0, 1, 2, 3, 1, 2, 3, 4]),
+        np.array([2, 3, 4, 5, 6, 7]),
+        np.array([3, 4, 6, 7, 8, 9, 10, 11]),
+    ]
+    orig_index = [np.array([0, 1]), np.array([2]), np.array([3])]
+    ghost_owners = [np.array([]), np.array([]), np.array([])]
+    boundary_vertices = np.array([])
 
     topology = Topology(
         create_topology(
@@ -211,12 +215,12 @@ def test_parallel_mixed_mesh(dtype):
     tri = np.array([0, 1, 4, 0, 3, 4], dtype=np.int64)
     quad = np.array([1, 4, 2, 5], dtype=np.int64)
     # cells with global indexing
-    cells = [[t + 3 * rank for t in tri], [q + 3 * rank for q in quad]]
-    orig_index = [[3 * rank, 1 + 3 * rank], [2 + 3 * rank]]
+    cells = [np.array([t + 3 * rank for t in tri]), np.array([q + 3 * rank for q in quad])]
+    orig_index = [np.array([3 * rank, 1 + 3 * rank]), np.array([2 + 3 * rank])]
     # No ghosting
-    ghost_owners = [[], []]
+    ghost_owners = [np.array([]), np.array([])]
     # All vertices are on boundary
-    boundary_vertices = [3 * rank + i for i in range(6)]
+    boundary_vertices = np.array([3 * rank + i for i in range(6)])
 
     topology = create_topology(
         MPI.COMM_WORLD,
