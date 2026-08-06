@@ -649,8 +649,8 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
           return cell;
       }
     }
-    return -1;
   }
+  return -1;
 }
 
 /// @brief Compute closest mesh entity to a point.
