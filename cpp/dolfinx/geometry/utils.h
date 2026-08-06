@@ -902,10 +902,11 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   /// NOTE: Here we should loop over the cell types in the future
   std::size_t gdim = geometry.dim();
   auto cmap = geometry.cmaps().front();
+  const std::size_t num_dofs_g = cmap.dim();
   std::size_t scratch_size
       = cmap.is_affine()
-            ? 3 * cmap.dim()
-            : cmap.pull_back_working_size(gdim) + (gdim + 3) * cmap.dim();
+            ? 3 * num_dofs_g
+            : cmap.pull_back_working_size(gdim) + (gdim + 3) * num_dofs_g;
   std::vector<T> scratch_memory(scratch_size);
   for (std::size_t p = 0; p < received_points.size(); p += 3)
   {
@@ -984,7 +985,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   // The following code assumes single x_dofmap and should
   // be revised for multiple cell types in the future
   std::vector<T> squared_distances(received_points.size() / 3, -1);
-  std::vector<T> nodes(3 * cmap.dim());
+  std::vector<T> nodes(3 * num_dofs_g);
   for (std::size_t i = 0; i < dest_extrapolate.size(); i++)
   {
     if (dest_extrapolate[i] == 1)
@@ -999,7 +1000,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       for (auto cell : candidate_collisions.links(i))
       {
         auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-        for (std::size_t j = 0; j < cmap.dim(); ++j)
+        for (std::size_t j = 0; j < num_dofs_g; ++j)
         {
           const int pos = 3 * dofs[j];
           for (std::size_t k = 0; k < 3; ++k)
