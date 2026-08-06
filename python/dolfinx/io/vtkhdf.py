@@ -21,9 +21,9 @@ from dolfinx.cpp.io import (
     write_vtkhdf_data,
     write_vtkhdf_mesh,
 )
-from dolfinx.mesh import Mesh
+from dolfinx.mesh import CellType, Mesh
 
-__all__ = ["read_mesh", "write_cell_data", "write_mesh", "write_point_data"]
+__all__ = ["cell_perm_array", "read_mesh", "write_cell_data", "write_mesh", "write_point_data"]
 
 
 def read_mesh(
@@ -107,3 +107,17 @@ def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: f
         time: Timestamp.
     """
     write_vtkhdf_data("Cell", filename, mesh._cpp_object, data, time)  # type: ignore[call-overload]
+
+
+def cell_perm_array(cell_type: CellType, num_nodes: int) -> npt.NDArray[np.uint16]:
+    """Array for permuting VTK ordering to DOLFINx ordering.
+
+    Args:
+        cell_type: DOLFINx cell type.
+        num_nodes: Number of nodes in the cell.
+
+    Returns:
+        An array ``p`` such that ``a_dolfinx[i] = a_vtk[p[i]]``.
+
+    """
+    return _cpp.io.perm_vtk(cell_type, num_nodes)
