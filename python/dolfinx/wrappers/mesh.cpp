@@ -1,5 +1,5 @@
-// Copyright (C) 2017-2025 Chris N. Richardson, Garth N. Wells and Jørgen S.
-// Dokken
+// Copyright (C) 2017-2025 Chris N. Richardson, Garth N. Wells, Jørgen S. Dokken
+// and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,6 +9,7 @@
 #include "dolfinx_wrappers/MPICommWrapper.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/EntityMap.h>
@@ -328,19 +329,39 @@ void mesh(nb::module_& m)
       "create_topology",
       [](MPICommWrapper comm,
          const std::vector<dolfinx::mesh::CellType>& cell_type,
-         const std::vector<std::vector<std::int64_t>>& cells,
-         const std::vector<std::vector<std::int64_t>>& original_cell_index,
-         const std::vector<std::vector<int>>& ghost_owners,
-         const std::vector<std::int64_t>& boundary_vertices, int num_threads)
+         std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
+             cells,
+         std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
+             original_cell_index,
+         std::vector<nb::ndarray<const int, nb::ndim<1>, nb::c_contig>>
+             ghost_owners,
+         nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
+             boundary_vertices,
+
+         int num_threads)
       {
-        std::vector<std::span<const std::int64_t>> cells_span(cells.begin(),
-                                                              cells.end());
-        std::vector<std::span<const std::int64_t>> original_cell_index_span(
-            original_cell_index.begin(), original_cell_index.end());
-        std::vector<std::span<const int>> ghost_owners_span(
-            ghost_owners.begin(), ghost_owners.end());
+        auto to_vec_of_spans
+            = []<typename T>(
+                  const std::vector<nb::ndarray<T, nb::ndim<1>, nb::c_contig>>&
+                      vec)
+        {
+          std::vector<std::span<T>> vec_span;
+          vec_span.reserve(vec.size());
+          std::ranges::transform(
+              vec, std::back_inserter(vec_span),
+              [](auto& nd) { return std::span<T>(nd.data(), nd.size()); });
+          return vec_span;
+        };
+
+        std::vector<std::span<const std::int64_t>> cells_span
+            = to_vec_of_spans(cells);
+        std::vector<std::span<const std::int64_t>> original_cell_index_span
+            = to_vec_of_spans(original_cell_index);
+        std::vector<std::span<const int>> ghost_owners_span
+            = to_vec_of_spans(ghost_owners);
+
         std::span<const std::int64_t> boundary_vertices_span(
-            boundary_vertices.begin(), boundary_vertices.end());
+            boundary_vertices.data(), boundary_vertices.size());
         return dolfinx::mesh::create_topology(
             comm.get(), cell_type, cells_span, original_cell_index_span,
             ghost_owners_span, boundary_vertices_span, num_threads);
