@@ -283,7 +283,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 
   // Insert values received from neighborhood communicator in output
   // span
-  std::ranges::fill(recv_values, T(0));
+  std::ranges::fill(recv_values, T{0});
   for (std::size_t i = 0; i < comm_to_output.size(); i++)
   {
     auto vals = std::next(recv_values.begin(), comm_to_output[i]);
