@@ -70,7 +70,7 @@ public:
   /// @return Dimension of the coordinate element space.
   int dim() const;
 
-  /// @brief Variant of the element
+  /// @brief Variant of the element.
   basix::element::lagrange_variant variant() const;
 
   /// @brief Element hash.
@@ -78,12 +78,12 @@ public:
   /// This is the Basix element hash.
   std::uint64_t hash() const;
 
-  /// @brief Shape of array to fill when calling `tabulate`.
+  /// @brief Shape of array to fill when calling @ref tabulate.
   /// @param[in] nd The order of derivatives, up to and including, to
-  /// compute. Use 0 for the basis functions only
+  /// compute. Use 0 for the basis functions only.
   /// @param[in] num_points Number of points at which to evaluate the
   /// basis functions.
-  /// @return Shape of the array to be filled by `tabulate`, where (0)
+  /// @return Shape of the array to be filled by @ref tabulate, where (0)
   /// is derivative index, (1) is the point index, (2) is the basis
   /// function index and (3) is the basis function component.
   std::array<std::size_t, 4> tabulate_shape(std::size_t nd,
@@ -96,7 +96,7 @@ public:
   /// The shape of X is (number of points, geometric dimension).
   /// @param[in] shape The shape of `X`.
   /// @param[out] basis The array to fill with the basis function
-  /// values. The shape can be computed using `tabulate_shape`.
+  /// values. The shape can be computed using @ref tabulate_shape.
   void tabulate(int nd, std::span<const T> X, std::array<std::size_t, 2> shape,
                 std::span<T> basis) const;
 
@@ -106,7 +106,7 @@ public:
   /// ordered to be consistent with the entity's mesh orientation, where
   /// \f$P\f$ is a permutation matrix. This accounts for orientation
   /// discrepancies between the entity's cell and mesh orientation. All DOFs are
-  /// rotated and reflected together, unlike `permute`, which considered
+  /// rotated and reflected together, unlike @ref permute, which considered
   /// sub-entities independently.
   ///
   /// @param[in,out] d Indices associated with the reference element
@@ -123,12 +123,12 @@ public:
 
   /// Compute Jacobian for a cell with given geometry using the
   /// basis functions and first order derivatives.
-  /// @param[in] dphi Derivatives of the basis functions (shape=(tdim,
-  /// num geometry nodes))
-  /// @param[in] cell_geometry The cell nodes coordinates (shape=(num
-  /// geometry nodes, gdim))
-  /// @param[out] J The Jacobian. It must have shape=(gdim, tdim) and
-  /// must initialized to zero
+  /// @param[in] dphi Derivatives of the basis functions
+  /// (`shape=(tdim, num geometry nodes)`).
+  /// @param[in] cell_geometry The cell nodes coordinates
+  /// (`shape=(num geometry nodes, gdim)`).
+  /// @param[out] J The Jacobian. It must have `shape=(gdim, tdim)` and
+  /// must be initialized to zero.
   template <typename U, typename V, typename W>
   static void compute_jacobian(const U& dphi, const V& cell_geometry, W&& J)
   {
@@ -136,8 +136,8 @@ public:
   }
 
   /// @brief Compute the inverse of the Jacobian.
-  /// @param[in] J Jacobian (shape=(gdim, tdim)).
-  /// @param[out] K Inverse Jacobian (shape=(tdim, gdim)).
+  /// @param[in] J Jacobian (`shape=(gdim, tdim)`).
+  /// @param[out] K Inverse Jacobian (`shape=(tdim, gdim)`).
   template <typename U, typename V>
   static void compute_jacobian_inverse(const U& J, V&& K)
   {
@@ -150,7 +150,7 @@ public:
   }
 
   /// @brief Compute the determinant of the Jacobian.
-  /// @param[in] J Jacobian (shape=(gdim, tdim)).
+  /// @param[in] J Jacobian (`shape=(gdim, tdim)`).
   /// @param[in] w Working memory, required when gdim != tdim. Size
   /// must be at least 2 * gdim * tdim.
   /// @return Determinant of `J`.
@@ -183,7 +183,7 @@ public:
   /// Compute and return the dof layout
   ElementDofLayout create_dof_layout() const;
 
-  /// @brief Compute physical coordinates x for points X  in the
+  /// @brief Compute physical coordinates x for points X in the
   /// reference configuration.
   /// @param[in,out] x The physical coordinates of the reference points
   /// X (rank 2).
@@ -205,12 +205,12 @@ public:
   /// for an affine map. For the affine case, `x = J X + x0`, and this
   /// function computes `X = K(x -x0)` where `K = J^{-1}`.
   /// @param[out] X Reference coordinates to compute
-  /// (`shape=(num_points, tdim)`),
+  /// (`shape=(num_points, tdim)`).
   /// @param[in] K Inverse of the geometry Jacobian (`shape=(tdim,
   /// gdim)`).
   /// @param[in] x0 Physical coordinate of reference coordinate `X0=(0,
   /// 0, 0)`.
-  /// @param[in] x Physical coordinates (shape=(num_points, gdim)).
+  /// @param[in] x Physical coordinates (`shape=(num_points, gdim)`).
   template <typename U, typename V, typename W>
   static void pull_back_affine(U&& X, const V& K, std::array<T, 3> x0,
                                const W& x)
@@ -235,15 +235,16 @@ public:
 
   /// @brief Compute reference coordinates `X` for physical coordinates
   /// `x` for a non-affine map.
-  /// @param [in,out] X The reference coordinates to compute
-  /// (shape=`(num_points, tdim)`).
-  /// @param [in] x Physical coordinates (`shape=(num_points, gdim)`).
-  /// @param [in] cell_geometry Cell nodes coordinates (`shape=(num_xnodes,
+  /// @param[in,out] X The reference coordinates to compute
+  /// (`shape=(num_points, tdim)`).
+  /// @param[in] x Physical coordinates (`shape=(num_points, gdim)`).
+  /// @param[in] cell_geometry Cell nodes coordinates (`shape=(num_xnodes,
   /// gdim)`).
-  /// @param [in,out] working_array Working memory. Size must be at least
-  /// `tdim * (2 * gdim + 2 * num_xnodes + 2) + gdim + num_xnodes`.
-  /// @param [in] tol Tolerance for termination of Newton method.
-  /// @param [in] maxit Maximum number of Newton iterations
+  /// @param[in,out] working_array Working memory. Size must be at least
+  /// `tdim * (2 * gdim + 2 * num_xnodes + 2) + gdim + num_xnodes`, as
+  /// returned by @ref pull_back_working_size.
+  /// @param[in] tol Tolerance for termination of Newton method.
+  /// @param[in] maxit Maximum number of Newton iterations.
   /// @note If convergence is not achieved within `maxit`, the function
   /// throws a runtime error.
   void pull_back_nonaffine(mdspan2_t<T> X, mdspan2_t<const T> x,
@@ -251,15 +252,28 @@ public:
                            std::span<T> working_array, double tol,
                            int maxit) const;
 
-  /// @brief Compute the working array size required for pull back
-  /// @param [in] gdim Geometrical dimension of input points
-  /// @return Number of elements required in the working array for pull back
+  /// @brief Compute the working array size required for pull back.
+  /// @param[in] gdim Geometrical dimension of input points.
+  /// @return Number of elements required in the working array for pull
+  /// back.
+  /// @note For a non-affine coordinate map, this is the exact size
+  /// required by the `working_array` argument of `pull_back_nonaffine`.
+  /// For an affine map, it is the size of the (unrelated) scratch space
+  /// used internally to compute the Jacobian ahead of `pull_back_affine`.
   std::size_t pull_back_working_size(std::size_t gdim) const;
 
   /// @brief Permute a list of DOF numbers on a cell.
+  /// @param[in,out] dofs Indices associated with the reference element
+  /// degree-of-freedom (in). Indices associated with the physical
+  /// element degree-of-freedom (out).
+  /// @param[in] cell_perm Permutation info for the cell.
   void permute(std::span<std::int32_t> dofs, std::uint32_t cell_perm) const;
 
-  /// @brief Reverses a DOF permutation
+  /// @brief Reverses a DOF permutation.
+  /// @param[in,out] dofs Indices associated with the physical element
+  /// degree-of-freedom (in). Indices associated with the reference
+  /// element degree-of-freedom (out).
+  /// @param[in] cell_perm Permutation info for the cell.
   void permute_inv(std::span<std::int32_t> dofs, std::uint32_t cell_perm) const;
 
   /// @brief Indicates whether the geometry DOF numbers on each cell
@@ -269,8 +283,8 @@ public:
   /// subentity of the cell), this will be true.
   bool needs_dof_permutations() const;
 
-  /// Check is geometry map is affine
-  /// @return True is geometry map is affine
+  /// @brief Check if geometry map is affine.
+  /// @return True if geometry map is affine, false otherwise.
   bool is_affine() const noexcept { return _is_affine; }
 
 private:
