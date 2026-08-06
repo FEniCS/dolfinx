@@ -277,7 +277,8 @@ void declare_bbtree(nb::module_& m, const std::string& type)
         if (cells.has_value())
         {
           return dolfinx::geometry::determine_point_ownership<T>(
-              mesh, _p, padding, tol_pb, max_iter_pb, std::span(cells->data(), cells->size()));
+              mesh, _p, padding, tol_pb, max_iter_pb,
+              std::span(cells->data(), cells->size()));
         }
         else
         {
@@ -285,8 +286,8 @@ void declare_bbtree(nb::module_& m, const std::string& type)
               mesh, _p, padding, tol_pb, max_iter_pb, std::nullopt);
         }
       },
-      nb::arg("mesh"), nb::arg("points"), nb::arg("padding"),
-      nb::arg("tol_pb"), nb::arg("max_iter_pb"), nb::arg("cells").none(),
+      nb::arg("mesh"), nb::arg("points"), nb::arg("padding"), nb::arg("tol_pb"),
+      nb::arg("max_iter_pb"), nb::arg("cells").none(),
       "Compute point ownership data for mesh-points pair.");
 
   std::string pod_pyclass_name = "PointOwnershipData_" + type;

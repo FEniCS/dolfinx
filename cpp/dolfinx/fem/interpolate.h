@@ -1115,7 +1115,7 @@ template <std::floating_point T>
 geometry::PointOwnershipData<T> create_interpolation_data(
     const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
     const mesh::Mesh<T>& mesh1, mesh::CellRange auto&& cells, T padding,
-  T tol_pb, int maxit_pb)
+    T tol_pb, int maxit_pb)
 {
   // Collect all the points at which values are needed to define the
   // interpolating function
@@ -1129,8 +1129,8 @@ geometry::PointOwnershipData<T> create_interpolation_data(
       x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
-  return geometry::determine_point_ownership<T>(mesh1, x, padding, tol_pb, maxit_pb,
-                                                std::nullopt);
+  return geometry::determine_point_ownership<T>(mesh1, x, padding, tol_pb,
+                                                maxit_pb, std::nullopt);
 }
 
 template <dolfinx::scalar T, std::floating_point U>
