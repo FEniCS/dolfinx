@@ -907,7 +907,11 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     fine_mesh_cell_map = mesh1.topology.index_map(mesh1.topology.dim)
     num_cells_on_proc = fine_mesh_cell_map.size_local + fine_mesh_cell_map.num_ghosts
     cells = np.arange(num_cells_on_proc, dtype=np.int32)
-    interpolation_data = create_interpolation_data(V1, V0, cells, padding=padding)
+    tol_pb = 1e-6
+    maxit_pb = 15
+    interpolation_data = create_interpolation_data(
+        V1, V0, cells, padding=padding, tol_pb=tol_pb, max_iter_pb=maxit_pb
+    )
 
     # Interpolate 3D->2D
     u1 = Function(V1, dtype=xtype)
@@ -917,8 +921,8 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     u1._cpp_object.interpolate(
         u=u0._cpp_object,
         cells=cells,
-        tol=1e-6,
-        maxit=15,
+        tol=tol_pb,
+        maxit=maxit_pb,
         interpolation_data=interpolation_data._cpp_object,
     )
     u1.x.scatter_forward()
