@@ -531,6 +531,9 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 /// @param[in] tol_pb Tolerance for pull back of non-affine cells
 /// @param[in] max_iter_pb Maximum number of iterations for pull back of
 /// non-affine cells
+/// @param[in] scratch_memory Scratch memory for function. Affine cells require
+/// 3*num_nodes, while non-affine cells require (3+gdim)*num_nodes +
+/// cmap.pull_back_working_size(gdim).
 /// @param[in] cell_type_index Index of the cell type to use for non-affine
 /// pullback. Defaults to 0.
 /// @return Local cell index, -1 if not found.
@@ -539,6 +542,7 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
                                           std::span<const std::int32_t> cells,
                                           std::array<T, 3> point, T tol,
                                           T tol_pb, std::size_t max_iter_pb,
+                                          std::span<T> scratch_memory,
                                           std::size_t cell_type_index = 0)
 {
   if (cells.empty())
@@ -551,13 +555,12 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
   const fem::CoordinateElement<T>& cmap = geometry.cmaps()[cell_type_index];
   auto x_dofmap = geometry.dofmaps()[cell_type_index];
   const std::size_t num_nodes = x_dofmap.extent(1);
-  std::vector<T> coordinate_dofs(num_nodes * 3);
+  std::span<T> coordinate_dofs = scratch_memory.subspan(0, 3 * num_nodes);
   std::span<const T> geom_dofs = geometry.x();
 
   bool is_affine = cmap.is_affine();
   if (is_affine)
   {
-    std::vector<T> coordinate_dofs(num_nodes * 3);
     for (auto cell : cells)
     {
       auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
@@ -595,7 +598,10 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
         = mesh::cell_type_to_basix_type(mesh.topology()->cell_type());
 
     // Create buffer for non-affine pullback
-    std::vector<T> pull_back_scratch(cmap.pull_back_nonaffine_scratch_size());
+    std::span<T> coordinate_dofs_pullback
+        = scratch_memory.subspan(num_nodes * 3, num_nodes * gdim);
+    std::span<T> pull_back_scratch = scratch_memory.subspan(
+        (3 + gdim) * num_nodes, cmap.pull_back_working_size(gdim));
 
     // Pad data from basix to have 3 components so we can use GJK on it.
     const auto [_gdata, _gshape] = basix::cell::geometry<T>(basix_cell);
@@ -608,7 +614,6 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
       std::copy_n(std::next(_gdata.begin(), _gshape[1] * i), _gshape[1],
                   std::next(gdata.begin(), 3 * i));
     }
-    std::vector<T> coordinate_dofs_pullback(num_nodes * gdim);
     md::mdspan<T, md::dextents<std::size_t, 2>> cd_pb(
         coordinate_dofs_pullback.data(), num_nodes, gdim);
     for (auto cell : cells)
@@ -893,6 +898,15 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   const int rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> cell_indicator(received_points.size() / 3);
   std::vector<std::int32_t> closest_cells(received_points.size() / 3);
+
+  /// NOTE: Here we should loop over the cell types in the future
+  std::size_t gdim = geometry.dim();
+  auto cmap = geometry.cmaps().front();
+  std::size_t scratch_size
+      = cmap.is_affine()
+            ? 3 * cmap.dim()
+            : cmap.pull_back_working_size(gdim) + (gdim + 3) * cmap.dim();
+  std::vector<T> scratch_memory(scratch_size);
   for (std::size_t p = 0; p < received_points.size(); p += 3)
   {
     std::array<T, 3> point;
@@ -900,7 +914,9 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
     // Find first colliding cell among the cells with colliding bounding boxes
     const int colliding_cell = geometry::compute_first_colliding_cell(
         mesh, candidate_collisions.links(p / 3), point,
-        10 * std::numeric_limits<T>::epsilon(), tol_pb, max_iter_pb);
+        10 * std::numeric_limits<T>::epsilon(), tol_pb, max_iter_pb,
+        std::span(scratch_memory.data(), scratch_size),
+        0); // NOTE: Currently only looking at cell_types[0]
     // If a colliding cell is found, store the rank of the current process
     // which will be sent back to the owner of the point
     cell_indicator[p / 3] = (colliding_cell >= 0) ? rank : -1;
@@ -965,8 +981,10 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
                          dest_extrapolate.data(), recv_sizes.data(),
                          recv_offsets.data(), MPI_UINT8_T, forward_comm);
 
+  // The following code assumes single x_dofmap and should
+  // be revised for multiple cell types in the future
   std::vector<T> squared_distances(received_points.size() / 3, -1);
-
+  std::vector<T> nodes(3 * cmap.dim());
   for (std::size_t i = 0; i < dest_extrapolate.size(); i++)
   {
     if (dest_extrapolate[i] == 1)
@@ -981,8 +999,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       for (auto cell : candidate_collisions.links(i))
       {
         auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-        std::vector<T> nodes(3 * dofs.size());
-        for (std::size_t j = 0; j < dofs.size(); ++j)
+        for (std::size_t j = 0; j < cmap.dim(); ++j)
         {
           const int pos = 3 * dofs[j];
           for (std::size_t k = 0; k < 3; ++k)
