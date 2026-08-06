@@ -366,6 +366,10 @@ void mesh(nb::module_& m)
             comm.get(), cell_type, cells_span, original_cell_index_span,
             ghost_owners_span, boundary_vertices_span, num_threads);
       },
+      nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells").noconvert(),
+      nb::arg("original_cell_index").noconvert(),
+      nb::arg("ghost_owners").noconvert(),
+      nb::arg("boundary_vertices").noconvert(), nb::arg("num_threads"),
       "Create a Topology object.");
 
   m.def("compute_mixed_cell_pairs", &dolfinx::mesh::compute_mixed_cell_pairs);
