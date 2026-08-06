@@ -595,8 +595,7 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
         = mesh::cell_type_to_basix_type(mesh.topology()->cell_type());
 
     // Create buffer for non-affine pullback
-    std::vector<T> pull_back_scratch(tdim * (2 * gdim + 2 * num_nodes + 2)
-                                     + gdim + num_nodes);
+    std::vector<T> pull_back_scratch(cmap.pull_back_nonaffine_scratch_size());
 
     // Pad data from basix to have 3 components so we can use GJK on it.
     const auto [_gdata, _gshape] = basix::cell::geometry<T>(basix_cell);
