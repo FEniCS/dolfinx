@@ -531,8 +531,8 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 /// @param[in] tol_pb Tolerance for pull back of non-affine cells
 /// @param[in] max_iter_pb Maximum number of iterations for pull back of
 /// non-affine cells
-/// @param[in] cell_index Index of the cell type to use for non-affine pullback.
-/// Defaults to 0.
+/// @param[in] cell_type_index Index of the cell type to use for non-affine
+/// pullback. Defaults to 0.
 /// @return Local cell index, -1 if not found.
 template <std::floating_point T>
 std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
