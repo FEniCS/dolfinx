@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Linear algebra functionality."""
 
+from typing import Generic, TypeVar
+
 import numpy as np
 import numpy.typing as npt
 
@@ -12,6 +14,7 @@ import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
+from dolfinx.typing import Scalar
 
 __all__ = [
     "InsertMode",
@@ -26,7 +29,10 @@ __all__ = [
 ]
 
 
-class Vector:
+_T = TypeVar("_T", np.float32, np.float64, np.complex64, np.complex128, np.int8, np.int32, np.int64)
+
+
+class Vector(Generic[_T]):
     """Distributed vector object."""
 
     _cpp_object: (
@@ -79,9 +85,9 @@ class Vector:
         return self._cpp_object.bs
 
     @property
-    def array(self) -> np.ndarray:
+    def array(self) -> npt.NDArray[_T]:
         """Local representation of the vector."""
-        return self._cpp_object.array
+        return self._cpp_object.array  # type: ignore[return-value]
 
     @property
     def petsc_vec(self):
@@ -95,7 +101,8 @@ class Vector:
           When the object is destroyed it will destroy the underlying
           petsc4py vector automatically.
         """
-        assert dolfinx.has_petsc4py
+        if not dolfinx.has_petsc4py:
+            raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
         from dolfinx.la.petsc import create_vector_wrap
 
@@ -117,7 +124,7 @@ class Vector:
         self._cpp_object.scatter_reverse(mode)
 
 
-class MatrixCSR:
+class MatrixCSR(Generic[Scalar]):
     """Distributed compressed sparse row matrix."""
 
     _cpp_object: (
@@ -155,14 +162,43 @@ class MatrixCSR:
         """
         return self._cpp_object.index_map(i)
 
-    def mult(self, x: Vector, y: Vector) -> None:
-        """Compute ``y += Ax``.
+    def mult(self, x: Vector[Scalar], y: Vector[Scalar], transpose: bool = False) -> None:
+        """Compute ``y += Ax`` or ``y += A^T x``.
 
         Args:
             x: Input Vector
             y: Output Vector
+            transpose: if True, compute y += A^T x
         """
-        self._cpp_object.mult(x._cpp_object, y._cpp_object)
+        if transpose:
+            self._cpp_object.multT(x._cpp_object, y._cpp_object)  # type: ignore[arg-type]
+        else:
+            self._cpp_object.mult(x._cpp_object, y._cpp_object)  # type: ignore[arg-type]
+
+    def matmul(self, B):
+        """Compute matrix product ``A * B``, where `A` is this matrix.
+
+        Args:
+            B: Input Matrix to multiply by
+        """
+        if (
+            self.index_map(1).size_local != B.index_map(0).size_local
+            or self.index_map(1).size_global != B.index_map(0).size_global
+        ):
+            raise RuntimeError("Invalid matrix sizes for matmul.")
+        if (
+            self.block_size[0] != 1
+            or self.block_size[1] != 1
+            or B.block_size[0] != 1
+            or B.block_size[1] != 1
+        ):
+            raise RuntimeError("Block size not supported in matmul.")
+
+        return MatrixCSR(self._cpp_object.mult(B._cpp_object))
+
+    def transpose(self):
+        """Compute transpose matrix."""
+        return MatrixCSR(self._cpp_object.transpose())
 
     @property
     def block_size(self) -> list:
@@ -171,25 +207,25 @@ class MatrixCSR:
 
     def add(
         self,
-        x: npt.NDArray[np.floating],
+        x: npt.NDArray[Scalar],
         rows: npt.NDArray[np.int32],
         cols: npt.NDArray[np.int32],
         bs: int = 1,
     ) -> None:
         """Add a block of values in the matrix."""
-        self._cpp_object.add(x, rows, cols, bs)
+        self._cpp_object.add(x, rows, cols, bs)  # type: ignore[arg-type]
 
     def set(
         self,
-        x: npt.NDArray[np.floating],
+        x: npt.NDArray[Scalar],
         rows: npt.NDArray[np.int32],
         cols: npt.NDArray[np.int32],
         bs: int = 1,
     ) -> None:
         """Set a block of values in the matrix."""
-        self._cpp_object.set(x, rows, cols, bs)
+        self._cpp_object.set(x, rows, cols, bs)  # type: ignore[arg-type]
 
-    def set_value(self, x: np.floating) -> None:
+    def set_value(self, x: Scalar) -> None:
         """Set all non-zero entries to a value.
 
         Args:
@@ -201,7 +237,7 @@ class MatrixCSR:
         """Scatter and accumulate ghost values."""
         self._cpp_object.scatter_reverse()
 
-    def squared_norm(self) -> np.floating:
+    def squared_norm(self) -> float:
         """Compute the squared Frobenius norm.
 
         Note:
@@ -210,9 +246,9 @@ class MatrixCSR:
         return self._cpp_object.squared_norm()
 
     @property
-    def data(self) -> npt.NDArray[np.floating]:
+    def data(self) -> npt.NDArray[Scalar]:
         """Underlying matrix entry data."""
-        return self._cpp_object.data
+        return self._cpp_object.data  # type: ignore[return-value]
 
     @property
     def indices(self) -> npt.NDArray[np.int32]:
@@ -224,13 +260,13 @@ class MatrixCSR:
         """Local row pointers."""
         return self._cpp_object.indptr
 
-    def to_dense(self) -> npt.NDArray[np.floating]:
+    def to_dense(self) -> npt.NDArray[Scalar]:
         """Copy to a dense 2D array.
 
         Note:
             Typically used for debugging.
         """
-        return self._cpp_object.to_dense()
+        return self._cpp_object.to_dense()  # type: ignore[return-value]
 
     def to_scipy(self, ghosted: bool = False):
         """Convert to a SciPy CSR/BSR matrix. Data is shared.
@@ -289,6 +325,12 @@ def matrix_csr(
     Returns:
         A sparse matrix.
     """
+    ftype: (
+        type[_cpp.la.MatrixCSR_float32]
+        | type[_cpp.la.MatrixCSR_float64]
+        | type[_cpp.la.MatrixCSR_complex64]
+        | type[_cpp.la.MatrixCSR_complex128]
+    )
     if np.issubdtype(dtype, np.float32):
         ftype = _cpp.la.MatrixCSR_float32
     elif np.issubdtype(dtype, np.float64):
@@ -315,6 +357,15 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     Returns:
         A distributed vector.
     """
+    vtype: (
+        type[_cpp.la.Vector_float32]
+        | type[_cpp.la.Vector_float64]
+        | type[_cpp.la.Vector_complex64]
+        | type[_cpp.la.Vector_complex128]
+        | type[_cpp.la.Vector_int8]
+        | type[_cpp.la.Vector_int32]
+        | type[_cpp.la.Vector_int64]
+    )
     if np.issubdtype(dtype, np.float32):
         vtype = _cpp.la.Vector_float32
     elif np.issubdtype(dtype, np.float64):
@@ -335,17 +386,17 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     return Vector(vtype(map, bs))
 
 
-def orthonormalize(basis: list[Vector]):
+def orthonormalize(basis: list[Vector[_T]]) -> None:
     """Orthogonalise set of vectors in-place."""
-    _cpp.la.orthonormalize([x._cpp_object for x in basis])
+    _cpp.la.orthonormalize([x._cpp_object for x in basis])  # type: ignore[misc]
 
 
-def is_orthonormal(basis: list[Vector], eps: float = 1.0e-12) -> bool:
+def is_orthonormal(basis: list[Vector[_T]], eps: float = 1.0e-12) -> bool:
     """Check that list of vectors are orthonormal."""
-    return _cpp.la.is_orthonormal([x._cpp_object for x in basis], eps)
+    return _cpp.la.is_orthonormal([x._cpp_object for x in basis], eps)  # type: ignore[misc]
 
 
-def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
+def norm(x: Vector[_T], type: _cpp.la.Norm = _cpp.la.Norm.l2) -> float:
     """Compute a norm of the vector.
 
     Args:
@@ -355,4 +406,4 @@ def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
     Returns:
         Computed norm.
     """
-    return _cpp.la.norm(x._cpp_object, type)
+    return _cpp.la.norm(x._cpp_object, type)  # type: ignore[arg-type]

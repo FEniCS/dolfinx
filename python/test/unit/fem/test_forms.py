@@ -1,6 +1,6 @@
 """Tests for DOLFINx integration of various form operations."""
 
-# Copyright (C) 2021 Garth N. Wells
+# Copyright (C) 2021-2026 Garth N. Wells and Jose Fernandez
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -15,9 +15,20 @@ import basix
 import basix.ufl
 import dolfinx
 from dolfinx.fem import IntegralType, extract_function_spaces, form, functionspace
-from dolfinx.fem.forms import form_cpp_class
+from dolfinx.fem.forms import derivative_block, form_cpp_class
 from dolfinx.mesh import create_unit_square
-from ufl import Measure, SpatialCoordinate, TestFunction, TrialFunction, dx, inner
+from ufl import Form as ufl_form
+from ufl import (
+    Measure,
+    MixedFunctionSpace,
+    SpatialCoordinate,
+    TestFunction,
+    TestFunctions,
+    TrialFunction,
+    TrialFunctions,
+    dx,
+    inner,
+)
 
 
 def test_extract_forms():
@@ -36,13 +47,13 @@ def test_extract_forms():
     v3, u3 = TestFunction(V3), TrialFunction(V3)
 
     a = form([[inner(u0, v0) * dx, inner(u1, v1) * dx], [inner(u2, v2) * dx, inner(u3, v3) * dx]])
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         extract_function_spaces(a, 0)
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         extract_function_spaces(a, 1)
 
     a = form([[inner(u0, v0) * dx, inner(u2, v1) * dx], [inner(u0, v2) * dx, inner(u2, v2) * dx]])
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         extract_function_spaces(a, 0)
     Vc = extract_function_spaces(a, 1)
     assert Vc[0] is V0._cpp_object
@@ -52,7 +63,7 @@ def test_extract_forms():
     Vr = extract_function_spaces(a, 0)
     assert Vr[0] is V0._cpp_object
     assert Vr[1] is V1._cpp_object
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         extract_function_spaces(a, 1)
 
 
@@ -132,3 +143,56 @@ def test_multiple_measures_one_subdomain_data():
     J_local = dolfinx.fem.assemble_scalar(J)
     J_global = comm.allreduce(J_local, op=MPI.SUM)
     assert np.isclose(J_global, 1 / 3 + 1 / 2)
+
+
+def test_derivative_block():
+    """Test the function derivative_block."""
+    mesh = dolfinx.mesh.create_unit_interval(MPI.COMM_WORLD, 10)
+    V0 = functionspace(mesh, ("Lagrange", 1))
+    V1 = functionspace(mesh, ("Lagrange", 2))
+    V = MixedFunctionSpace(V0, V1)
+
+    f0, f1 = dolfinx.fem.Function(V0), dolfinx.fem.Function(V1)
+    v0, v1 = TestFunctions(V)
+    u0, u1 = TrialFunctions(V)
+
+    M = f0**2 * dx  # univariate functional
+
+    F = derivative_block(M, f0)
+    assert isinstance(F, ufl_form) and len(F.arguments()) == 1
+
+    F = derivative_block(M, f0, v0)
+    assert isinstance(F, ufl_form) and len(F.arguments()) == 1
+
+    J = derivative_block(F, f0)
+    assert isinstance(J, ufl_form) and len(J.arguments()) == 2
+
+    J = derivative_block(F, f0, u0)
+    assert isinstance(J, ufl_form) and len(J.arguments()) == 2
+
+    M_block = f0**2 * f1 * dx  # multivariate functional
+
+    F_block = derivative_block(M_block, [f0, f1])
+    assert all(isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F_block)
+
+    F_block = derivative_block(M_block, [f0, f1], [v0, v1])
+    assert all(isinstance(F_i, ufl_form) and len(F_i.arguments()) == 1 for F_i in F_block)
+
+    with pytest.raises(ValueError):
+        derivative_block(F_block, f0)  # second argument not a sequence
+
+    with pytest.raises(ValueError):
+        derivative_block(F_block, [f0, f1], [u0])  # third argument has wrong length
+
+    with pytest.raises(ValueError):
+        derivative_block(F_block, [f0, f1], u0)  # third argument not a sequence
+
+    J_block = derivative_block(F_block, [f0, f1])
+    assert all(
+        isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J_block for J_ij in J_i
+    )
+
+    J_block = derivative_block(F_block, [f0, f1], [u0, u1])
+    assert all(
+        isinstance(J_ij, ufl_form) and len(J_ij.arguments()) == 2 for J_i in J_block for J_ij in J_i
+    )

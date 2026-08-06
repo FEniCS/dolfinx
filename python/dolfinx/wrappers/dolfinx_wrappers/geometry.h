@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -18,13 +18,35 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/optional.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <type_traits>
 
 namespace dolfinx_wrappers
 {
+
+/// Number of points in an array assumed to hold 3D point coordinates,
+/// either as a single point (shape (3,)) or a list of points (shape
+/// (num_points, 3)). Throws if the array shape is not consistent with
+/// that assumption.
+template <typename T>
+std::size_t num_points_3d(const nb::ndarray<const T, nb::c_contig>& x,
+                          std::string_view name)
+{
+  if (x.ndim() == 1 and x.shape(0) == 3)
+    return 1;
+  else if (x.ndim() == 2 and x.shape(1) == 3)
+    return x.shape(0);
+  else
+  {
+    throw std::runtime_error(std::string(name)
+                             + " must have shape (3,) or (num_points, 3).");
+  }
+}
 
 /// Declare geometry-related objects (BoundingBoxTree, PointOwnershipData) and
 /// functions for a given scalar type
@@ -182,8 +204,8 @@ void declare_bbtree(nb::module_& m, const std::string& type)
       [](nb::ndarray<const T, nb::c_contig> p,
          nb::ndarray<const T, nb::c_contig> q)
       {
-        std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
-        std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
+        std::size_t p_s0 = num_points_3d(p, "p");
+        std::size_t q_s0 = num_points_3d(q, "q");
         std::span<const T> _p(p.data(), 3 * p_s0), _q(q.data(), 3 * q_s0);
         // Use double when T==float, and double_extended when T==double
         using U = std::conditional<
@@ -196,13 +218,45 @@ void declare_bbtree(nb::module_& m, const std::string& type)
       },
       nb::arg("p"), nb::arg("q"));
 
+  std::string gjks_name = "compute_distances_gjk_" + type;
+  m.def(
+      gjks_name.c_str(),
+      [](const std::vector<nb::ndarray<const T, nb::c_contig>>& bodies,
+         nb::ndarray<const T, nb::c_contig> q, int num_threads)
+      {
+        std::size_t q_s0 = num_points_3d(q, "q");
+        std::span<const T> _q(q.data(), 3 * q_s0);
+
+        std::vector<std::span<const T>> _bodies;
+        _bodies.reserve(bodies.size());
+
+        std::ranges::transform(
+            bodies, std::back_inserter(_bodies),
+            [](auto& body)
+            {
+              std::size_t body_s0 = num_points_3d(body, "body");
+              return std::span<const T>(body.data(), 3 * body_s0);
+            });
+
+        using U = typename std::conditional<
+            std::is_same_v<T, float>, double,
+            boost::multiprecision::cpp_bin_float_double_extended>::type;
+
+        std::vector<T> distances
+            = dolfinx::geometry::compute_distances_gjk<T, U>(_bodies, _q,
+                                                             num_threads);
+        return dolfinx_wrappers::as_nbarray(std::move(distances),
+                                            {distances.size() / 3, 3});
+      },
+      nb::arg("bodies"), nb::arg("q"), nb::arg("num_threads"));
+
   m.def(
       "squared_distance",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
          nb::ndarray<const T, nb::c_contig> points)
       {
-        std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+        std::size_t p_s0 = num_points_3d(points, "points");
         std::span<const T> _p(points.data(), 3 * p_s0);
         return dolfinx_wrappers::as_nbarray(
             dolfinx::geometry::squared_distance<T>(
@@ -217,7 +271,7 @@ void declare_bbtree(nb::module_& m, const std::string& type)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              cells)
       {
-        std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+        std::size_t p_s0 = num_points_3d(points, "points");
         std::span<const T> _p(points.data(), 3 * p_s0);
         if (cells.has_value())
         {

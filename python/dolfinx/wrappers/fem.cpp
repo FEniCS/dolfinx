@@ -52,13 +52,17 @@ void fem(nb::module_& m)
       {
         assert(topology.entity_types(topology.dim()).size() == 1);
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
-            comm.get(), topology, {layout},
-            [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
-            { return dolfinx::graph::reorder_gps(g); });
+            comm.get(), topology, {layout}, dolfinx::graph::reorder_rcm);
         return std::tuple(std::move(map), bs, std::move(dofmap));
       },
       nb::arg("comm"), nb::arg("topology"), nb::arg("layout"),
       "Build a dofmap on a mesh.");
+
+  m.def(
+      "build_real_element_dofmap", dolfinx::fem::build_real_element_dofmap,
+      nb::arg("topology"), nb::arg("layout"),
+      "Build a dofmap on a real element, i.e. a single constant dof shared by "
+      "all cells.");
   m.def(
       "transpose_dofmap",
       [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
@@ -138,7 +142,7 @@ void fem(nb::module_& m)
           },
           nb::rv_policy::reference_internal);
 
-  nb::enum_<dolfinx::fem::IntegralType>(m, "_IntegralType")
+  nb::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell, "cell integral")
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet,
              "exterior facet integral")
@@ -146,6 +150,11 @@ void fem(nb::module_& m)
              "exterior facet integral")
       .value("vertex", dolfinx::fem::IntegralType::vertex, "vertex integral")
       .value("ridge", dolfinx::fem::IntegralType::ridge, "ridge integral");
+
+  declare_constant<float>(m, "float32");
+  declare_constant<double>(m, "float64");
+  declare_constant<std::complex<float>>(m, "complex64");
+  declare_constant<std::complex<double>>(m, "complex128");
 
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");

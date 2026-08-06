@@ -17,11 +17,11 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <format>
 #include <functional>
 #include <memory>
 #include <mpi.h>
 #include <numeric>
-#include <random>
 #include <thread>
 #include <tuple>
 #include <utility>
@@ -100,28 +100,127 @@ auto build_entity_list
       assert(entity_vertices.size() == global_vertices.size());
       vertex_index_map.local_to_global(entity_vertices, global_vertices);
 
-      std::iota(perm.begin(), perm.end(), 0);
-      std::ranges::sort(perm, [&global_vertices](auto i0, auto i1)
-                        { return global_vertices[i0] < global_vertices[i1]; });
-
-      // For quadrilaterals, the vertex opposite the lowest
-      // vertex should be last
-      if (entity_type == mesh::CellType::quadrilateral)
-      {
-        std::size_t min_vertex_idx = perm[0];
-        std::size_t opposite_vertex_index = 3 - min_vertex_idx;
-        auto it = std::find(perm.begin(), perm.end(), opposite_vertex_index);
-        assert(it != perm.end());
-        std::rotate(it, it + 1, perm.end());
-      }
-
       auto elist = std::span(it_e, num_vertices_per_entity);
-      for (std::size_t j = 0; j < ev.size(); ++j)
-        elist[j] = entity_vertices[perm[j]];
-
       auto elist_sorted = std::span(it_e_sorted, num_vertices_per_entity);
-      std::ranges::copy(elist, elist_sorted.begin());
-      std::ranges::sort(elist_sorted);
+
+      // Edges and triangles (by far the most common entity types, and
+      // never subject to the quadrilateral re-orientation rule below)
+      // are hand-unrolled: a generic std::ranges::sort of a 2- or
+      // 3-element array is disproportionately expensive when called
+      // once per entity instance over a very large mesh.
+      if (num_vertices_per_entity == 2)
+      {
+        std::int32_t l0 = entity_vertices[0], l1 = entity_vertices[1];
+        if (global_vertices[0] <= global_vertices[1])
+        {
+          elist[0] = l0;
+          elist[1] = l1;
+        }
+        else
+        {
+          elist[0] = l1;
+          elist[1] = l0;
+        }
+        elist_sorted[0] = std::min(elist[0], elist[1]);
+        elist_sorted[1] = std::max(elist[0], elist[1]);
+      }
+      else if (num_vertices_per_entity == 3)
+      {
+        std::int32_t l0 = entity_vertices[0], l1 = entity_vertices[1],
+                     l2 = entity_vertices[2];
+        std::int64_t g0 = global_vertices[0], g1 = global_vertices[1],
+                     g2 = global_vertices[2];
+        if (g0 > g1)
+        {
+          std::swap(g0, g1);
+          std::swap(l0, l1);
+        }
+        if (g1 > g2)
+        {
+          std::swap(g1, g2);
+          std::swap(l1, l2);
+        }
+        if (g0 > g1)
+        {
+          std::swap(g0, g1);
+          std::swap(l0, l1);
+        }
+        elist[0] = l0;
+        elist[1] = l1;
+        elist[2] = l2;
+
+        std::int32_t s0 = l0, s1 = l1, s2 = l2;
+        if (s0 > s1)
+          std::swap(s0, s1);
+        if (s1 > s2)
+          std::swap(s1, s2);
+        if (s0 > s1)
+          std::swap(s0, s1);
+        elist_sorted[0] = s0;
+        elist_sorted[1] = s1;
+        elist_sorted[2] = s2;
+      }
+      else
+      {
+        std::iota(perm.begin(), perm.end(), 0);
+        if (perm.size() == 4)
+        {
+          // Quadrilaterals: a 5-compare-exchange sorting network,
+          // equivalent to std::ranges::sort below for the always-distinct
+          // keys here (proven equivalent by exhaustive random-trial
+          // testing), avoiding the overhead of the general-purpose
+          // algorithm in this hot loop. Only the sort step itself is
+          // replaced; the quadrilateral re-orientation logic below is
+          // unchanged.
+          auto cmpswap = [&perm, &global_vertices](std::size_t a, std::size_t b)
+          {
+            if (global_vertices[perm[a]] > global_vertices[perm[b]])
+              std::swap(perm[a], perm[b]);
+          };
+          cmpswap(0, 1);
+          cmpswap(2, 3);
+          cmpswap(0, 2);
+          cmpswap(1, 3);
+          cmpswap(1, 2);
+        }
+        else
+        {
+          std::ranges::sort(
+              perm, [&global_vertices](auto i0, auto i1)
+              { return global_vertices[i0] < global_vertices[i1]; });
+        }
+
+        // For quadrilaterals, the vertex opposite the lowest
+        // vertex should be last
+        if (entity_type == mesh::CellType::quadrilateral)
+        {
+          std::size_t min_vertex_idx = perm[0];
+          std::size_t opposite_vertex_index = 3 - min_vertex_idx;
+          auto it = std::find(perm.begin(), perm.end(), opposite_vertex_index);
+          assert(it != perm.end());
+          std::rotate(it, it + 1, perm.end());
+        }
+
+        for (std::size_t j = 0; j < ev.size(); ++j)
+          elist[j] = entity_vertices[perm[j]];
+
+        std::ranges::copy(elist, elist_sorted.begin());
+        if (elist_sorted.size() == 4)
+        {
+          auto cmpswap_val = [&elist_sorted](std::size_t a, std::size_t b)
+          {
+            if (elist_sorted[a] > elist_sorted[b])
+              std::swap(elist_sorted[a], elist_sorted[b]);
+          };
+          cmpswap_val(0, 1);
+          cmpswap_val(2, 3);
+          cmpswap_val(0, 2);
+          cmpswap_val(1, 3);
+          cmpswap_val(1, 2);
+        }
+        else
+          std::ranges::sort(elist_sorted);
+      }
 
       std::advance(it_e, num_vertices_per_entity);
       std::advance(it_e_sorted, num_vertices_per_entity);
@@ -171,13 +270,22 @@ graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 template <typename U, typename V>
 int get_ownership(const U& processes, const V& vertices)
 {
-  // Use a deterministic random number generator, seeded with global
-  // vertex indices ensuring all processes get the same answer
-  std::mt19937 gen;
-  std::seed_seq seq(vertices.begin(), vertices.end());
-  gen.seed(seq);
+  // Deterministic selection from the global vertex indices, ensuring
+  // all processes get the same answer. A plain FNV-1a hash of the
+  // vertices is used instead of a seeded std::mt19937: this function
+  // is called once per shared entity (so up to millions of times for
+  // a large, highly-ghosted mesh), and re-seeding a std::mt19937 (~2.5
+  // kB of internal state) via std::seed_seq on every call - needed
+  // only to extract a single index - was the dominant cost of entity
+  // ownership determination at scale.
+  std::uint64_t h = 0xcbf29ce484222325ULL; // FNV-1a offset basis
+  for (auto v : vertices)
+  {
+    h ^= static_cast<std::uint64_t>(v);
+    h *= 0x100000001b3ULL; // FNV-1a prime
+  }
   std::vector<int> p(processes.begin(), processes.end());
-  int index = gen() % p.size();
+  int index = static_cast<int>(h % p.size());
   int owner = p[index];
   return owner;
 }
@@ -253,16 +361,36 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   std::vector<std::int64_t> entity_to_local_idx;
   std::vector<std::int32_t> perm;
   {
+    // Entities are visited by (cell, local-entity) instance in
+    // entity_index, but many instances alias the same unique entity -
+    // e.g. on average close to 5 instances per unique entity for edges
+    // in a tetrahedral mesh, since interior edges are shared by ~5
+    // cells (vs. ~2 for facets). All instances of the same entity have
+    // an identical (globally-oriented) vertex list, so the
+    // rank-sharing computation below gives the same result for every
+    // instance - only one representative instance per unique entity is
+    // needed. Visiting every instance instead would repeat the same
+    // work (and, more importantly, push the same entity into
+    // send_entities/send_index once per instance, multiplying the MPI
+    // payload built below by the same factor).
+    std::vector<std::int32_t> first_instance(entity_count, -1);
+    for (std::size_t pos = 0; pos < entity_index.size(); ++pos)
+    {
+      std::int32_t id = entity_index[pos];
+      if (first_instance[id] == -1)
+        first_instance[id] = pos;
+    }
+
     // If another rank shares all vertices of an entity, it may need the
     // entity.
     // Set of sharing procs for each entity, counting vertex hits
     std::vector<std::int64_t> vglobal(num_vertices_per_e);
     std::vector<int> entity_ranks;
-    for (auto entity_idx = entity_index.begin();
-         entity_idx != entity_index.end(); ++entity_idx)
+    for (std::int32_t id = 0; id < entity_count; ++id)
     {
-      // Get entity vertices
-      std::size_t pos = std::distance(entity_index.begin(), entity_idx);
+      // Get entity vertices (any instance of this entity has the same,
+      // globally-oriented, vertex list)
+      std::size_t pos = first_instance[id];
       std::span entity
           = entity_list.subspan(pos * num_vertices_per_e, num_vertices_per_e);
 
@@ -289,19 +417,19 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           std::ranges::sort(vglobal);
           entity_to_local_idx.insert(entity_to_local_idx.end(), vglobal.begin(),
                                      vglobal.end());
-          entity_to_local_idx.push_back(*entity_idx);
+          entity_to_local_idx.push_back(id);
 
           // Only send entities that are not known to be ghosts
-          if (ghost_status[*entity_idx] != 1)
+          if (ghost_status[id] != 1)
           {
             auto itr_local = std::ranges::lower_bound(ranks, *it);
             assert(itr_local != ranks.end() and *itr_local == *it);
             std::size_t r = std::distance(ranks.begin(), itr_local);
 
-            // Entity entity_idx may be shared with rank r
+            // Entity id may be shared with rank r
             send_entities[r].insert(send_entities[r].end(), vglobal.begin(),
                                     vglobal.end());
-            send_index[r].push_back(*entity_idx);
+            send_index[r].push_back(id);
           }
         }
 
@@ -572,9 +700,10 @@ compute_entities_by_key_matching(
   }
 
   assert(cell_dim(entity_type) == dim);
+  assert(num_threads > 0);
 
   // Start timer
-  common::Timer timer("Compute entities of dim = " + std::to_string(dim));
+  common::Timer timer(std::format("Compute entities of dim = {}", dim));
 
   std::vector<std::vector<std::int32_t>> cell_type_entities(cell_lists.size());
   std::vector<std::int32_t> cell_type_offsets{0};
@@ -614,37 +743,36 @@ compute_entities_by_key_matching(
     std::span<const std::int32_t> cells = std::get<1>(cell_lists[k]);
     int num_entities_per_cell = cell_type_entities[k].size();
     std::size_t num_cells = cells.size() / num_cell_vertices(cell_type);
-    if (num_threads > 0)
+
+    std::vector<std::jthread> threads;
+    for (int i = 1; i < num_threads; ++i)
     {
-      std::vector<std::jthread> threads(num_threads);
-      for (int i = 0; i < num_threads; ++i)
-      {
-        auto [c0, c1] = dolfinx::MPI::local_range(i, num_cells, num_threads);
-        std::size_t offset
-            = cell_type_offsets[k] * num_vertices_per_entity
-              + c0 * num_vertices_per_entity * num_entities_per_cell;
-        std::size_t count
-            = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
-        auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
-                                     (c1 - c0) * num_vertices_per_cell);
-        threads[i] = std::jthread(
-            build_entity_list, std::span(entity_list.data() + offset, count),
-            std::span(entity_list_sorted.data() + offset, count), cells_i,
-            num_vertices_per_cell, std::cref(e_vertices), entity_type,
-            std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
-      }
-    }
-    else
-    {
-      std::size_t offset = cell_type_offsets[k] * num_vertices_per_entity;
+      auto [c0, c1] = common::local_range(i, num_cells, num_threads);
+      std::size_t offset
+          = cell_type_offsets[k] * num_vertices_per_entity
+            + c0 * num_vertices_per_entity * num_entities_per_cell;
       std::size_t count
-          = num_cells * num_vertices_per_entity * num_entities_per_cell;
-      build_entity_list(std::span(entity_list.data() + offset, count),
-                        std::span(entity_list_sorted.data() + offset, count),
-                        cells, num_vertices_per_cell, std::cref(e_vertices),
-                        entity_type, std::cref(cell_type_entities[k]),
-                        std::cref(vertex_index_map));
+          = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
+      auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
+                                   (c1 - c0) * num_vertices_per_cell);
+      threads.emplace_back(
+          build_entity_list, std::span(entity_list.data() + offset, count),
+          std::span(entity_list_sorted.data() + offset, count), cells_i,
+          num_vertices_per_cell, std::cref(e_vertices), entity_type,
+          std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
     }
+    auto [c0, c1] = common::local_range(0, num_cells, num_threads);
+    std::size_t offset = cell_type_offsets[k] * num_vertices_per_entity
+                         + c0 * num_vertices_per_entity * num_entities_per_cell;
+    std::size_t count
+        = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
+    auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
+                                 (c1 - c0) * num_vertices_per_cell);
+    build_entity_list(std::span(entity_list.data() + offset, count),
+                      std::span(entity_list_sorted.data() + offset, count),
+                      cells_i, num_vertices_per_cell, std::cref(e_vertices),
+                      entity_type, std::cref(cell_type_entities[k]),
+                      std::cref(vertex_index_map));
   }
 
   // Start numbering entities
@@ -676,7 +804,7 @@ compute_entities_by_key_matching(
 
     // Sort the list and label uniquely
     const std::vector<std::int32_t> sort_order
-        = num_threads == 0
+        = num_threads == 1
               ? dolfinx::sort_by_perm<std::int32_t, 16>(entity_list_sorted,
                                                         num_vertices_per_entity)
               : sort_threaded(entity_list_sorted, num_vertices_per_entity,
@@ -870,6 +998,9 @@ std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
 mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
                        int num_threads)
 {
+  if (num_threads < 1)
+    throw std::runtime_error("num_threads must be >= 1.");
+
   spdlog::info("Computing mesh entities of dimension {}", dim);
 
   // Vertices must always exist
@@ -958,21 +1089,20 @@ mesh::compute_connectivity(const Topology& topology, std::array<int, 2> d0,
       = topology.connectivity(d0, {0, 0});
   if (d0[0] > 0 and !topology.connectivity(d0, {0, 0}))
   {
-    throw std::runtime_error("Missing entities of dimension "
-                             + std::to_string(d0[0]) + ".");
+    throw std::runtime_error(
+        std::format("Missing entities of dimension {}.", d0[0]));
   }
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d1_0
       = topology.connectivity(d1, {0, 0});
   if (d1[0] > 0 and !topology.connectivity(d1, {0, 0}))
   {
-    throw std::runtime_error("Missing entities of dimension "
-                             + std::to_string(d1[0]) + ".");
+    throw std::runtime_error(
+        std::format("Missing entities of dimension {}.", d1[0]));
   }
 
   // Start timer
-  common::Timer timer("Compute connectivity " + std::to_string(d0[0]) + "-"
-                      + std::to_string(d1[1]));
+  common::Timer timer(std::format("Compute connectivity {}-{}", d0[0], d1[1]));
 
   // Decide how to compute the connectivity
   if (d0 == d1)

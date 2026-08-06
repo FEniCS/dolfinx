@@ -35,7 +35,7 @@ namespace dolfinx::fem
 /// facet/edge/vertex.
 ///
 /// @param[in] topology Mesh topology.
-/// @param[in] dofmap Dofmap that associated DOFs with cells.
+/// @param[in] dofmap Dofmap that associates DOFs with cells.
 /// @param[in] dim Topological dimension of mesh entities on which
 /// degrees-of-freedom will be located
 /// @param[in] entities Indices of mesh entities. All DOFs associated
@@ -107,11 +107,14 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
   // especially when we usually want the boundary dofs only. Add
   // interface that computes dofs coordinates only for specified cell.
 
-  assert(V.element());
-  if (V.element()->is_mixed())
+  for (std::size_t i = 0; i < V.mesh()->topology()->cell_types().size(); ++i)
   {
-    throw std::runtime_error(
-        "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+    assert(V.elements(i));
+    if (V.elements(i)->is_mixed())
+    {
+      throw std::runtime_error(
+          "Cannot locate dofs geometrically for mixed space. Use subspaces.");
+    }
   }
 
   // Compute dof coordinates
@@ -292,7 +295,7 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
-  /// @note The size of of `g` must be equal to the block size if `V`.
+  /// @note The size of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
   template <typename S, typename X>
@@ -317,7 +320,7 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
-  /// @note The size of of `g` must be equal to the block size if `V`.
+  /// @note The size of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
   template <typename X>
@@ -329,13 +332,15 @@ public:
   {
     assert(g);
     assert(V);
-    if (g->shape.size() != V->element()->value_shape().size())
+    assert(V->elements(0));
+    if (g->shape.size() != V->elements(0)->value_shape().size())
     {
       throw std::runtime_error(
           "Rank mismatch between Constant and function space in DirichletBC");
     }
 
-    if (g->value.size() != (std::size_t)_function_space->dofmap()->bs())
+    if (g->value.size()
+        != (std::size_t)_function_space->dofmaps().front()->bs())
     {
       throw std::runtime_error(
           "Creating a DirichletBC using a Constant is not supported when the "
@@ -343,17 +348,17 @@ public:
           "(sub-)space. Use a fem::Function to create the fem::DirichletBC.");
     }
 
-    if (!V->element()->interpolation_ident())
+    if (!V->elements(0)->interpolation_ident())
     {
       throw std::runtime_error(
           "Constant can be used only with point-evaluation elements");
     }
 
     // Unroll _dofs0 if dofmap block size > 1
-    if (const int bs = V->dofmap()->bs(); bs > 1)
+    if (const int bs = V->dofmaps().front()->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
 
-    _owned_indices0 = num_owned(*_function_space->dofmap(), _dofs0);
+    _owned_indices0 = num_owned(*_function_space->dofmaps().front(), _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -378,10 +383,10 @@ public:
     assert(_function_space);
 
     // Unroll _dofs0 if dofmap block size > 1
-    if (const int bs = _function_space->dofmap()->bs(); bs > 1)
+    if (const int bs = _function_space->dofmaps().front()->bs(); bs > 1)
       _dofs0 = unroll_dofs(_dofs0, bs);
 
-    _owned_indices0 = num_owned(*_function_space->dofmap(), _dofs0);
+    _owned_indices0 = num_owned(*_function_space->dofmaps().front(), _dofs0);
   }
 
   /// @brief Create a representation of a Dirichlet boundary condition
@@ -475,21 +480,24 @@ public:
   /// degrees-of-freedom, `x_bc` is the value of the boundary condition
   /// interpolated into the finite element space.
   ///
-  /// If `x` includes ghosted entries (entries available on the calling
-  /// rank but owned by another rank), ghosted entries constrained by a
-  /// Dirichlet condition will also be set.
+  /// `x` may hold only owned entries or also include ghosts (entries
+  /// available on the calling rank but owned by another rank); a
+  /// constrained degree-of-freedom beyond the end of `x` is silently
+  /// skipped, so an owned-only `x` sets only owned entries.
   ///
   /// @param[in,out] x Array to modify for Dirichlet boundary
-  /// conditions.
+  /// conditions. May include ghost entries.
   /// @param[in] x0 Optional array used in computing the value to set.
   /// If not provided it is treated as zero.
   /// @param[in] alpha Scaling to apply.
+  /// @note If `x0` is provided, it must be at least as long as `x`
+  /// (checked only in Debug builds).
   void set(std::span<T> x, std::optional<std::span<const T>> x0,
            T alpha = 1) const
   {
     // set_fn is a lambda which gets evaluated for every index in [0,
     // _dofs0.size()) and its result is assigned to x[_dofs0[i]].
-    auto apply = [&](std::invocable<std::int32_t> auto set_fn)
+    auto apply = [this, &x](std::invocable<std::int32_t> auto set_fn)
     {
       static_assert(
           std::is_same_v<std::invoke_result_t<decltype(set_fn), std::int32_t>,
@@ -545,7 +553,7 @@ public:
     {
       auto g = std::get<std::shared_ptr<const Constant<T>>>(_g);
       const std::vector<T>& value = g->value;
-      std::int32_t bs = _function_space->dofmap()->bs();
+      std::int32_t bs = _function_space->dofmaps().front()->bs();
       if (x0)
       {
         assert(x.size() <= x0->size());
@@ -580,11 +588,16 @@ public:
   /// unchanged.
   void mark_dofs(std::span<std::int8_t> markers) const
   {
-    for (std::int32_t idx : _dofs0)
+#ifndef NDEBUG
+    if (!_dofs0.empty()
+        and *std::ranges::max_element(_dofs0) >= (std::int32_t)markers.size())
     {
-      assert(idx < (std::int32_t)markers.size());
-      markers[idx] = true;
+      throw std::runtime_error("Marker array is too short for the boundary "
+                               "condition dofs.");
     }
+#endif
+    for (std::int32_t idx : _dofs0)
+      markers[idx] = true;
   }
 
 private:

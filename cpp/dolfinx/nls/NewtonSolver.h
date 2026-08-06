@@ -33,6 +33,8 @@ namespace nls::petsc
 /// with default update \f$x \leftarrow x - \Delta x\f$.
 ///
 /// It relies on PETSc for linear algebra backends.
+/// @deprecated The generic `NewtonSolver` will be removed in a future release.
+/// It is recommended to build your own Newton Solver, or use SNES from PETSc.
 class NewtonSolver
 {
 public:
@@ -40,20 +42,20 @@ public:
   /// @param[in] comm MPI communicator for the solver
   explicit NewtonSolver(MPI_Comm comm);
 
-  /// Move constructor
-  NewtonSolver(NewtonSolver&& solver) = default;
-
   // Copy constructor (deleted)
   NewtonSolver(const NewtonSolver& solver) = delete;
 
-  /// Move assignment constructor
-  NewtonSolver& operator=(NewtonSolver&& solver) = default;
-
-  // Assignment operator (deleted)
-  NewtonSolver& operator=(const NewtonSolver& solver) = delete;
+  /// Move constructor
+  NewtonSolver(NewtonSolver&& solver) = default;
 
   /// Destructor
   ~NewtonSolver();
+
+  // Copy assignment (deleted)
+  NewtonSolver& operator=(const NewtonSolver& solver) = delete;
+
+  /// Move assignment
+  NewtonSolver& operator=(NewtonSolver&& solver) = default;
 
   /// @brief Set the function for computing the residual \f$F(x) = 0\f$
   /// and the vector to assemble the residual into.

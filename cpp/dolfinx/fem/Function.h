@@ -55,9 +55,9 @@ public:
   /// @brief Create function on given function space.
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
-      : _function_space(V),
-        _x(std::make_shared<la::Vector<value_type>>(
-            V->dofmaps(0)->index_map, V->dofmaps(0)->index_map_bs()))
+      : _function_space(V), _x(std::make_shared<la::Vector<value_type>>(
+                                V->dofmaps().front()->index_map,
+                                V->dofmaps().front()->index_map_bs()))
   {
     if (!V->component().empty())
     {
@@ -128,11 +128,14 @@ public:
     // Copy values into new vector
     std::span<const value_type> x_old = _x->array();
     std::span<value_type> x_new = x->array();
-    for (std::size_t i = 0; i < map.size(); ++i)
+    for (auto mapj : map)
     {
-      assert((int)i < x_new.size());
-      assert(map[i] < x_old.size());
-      x_new[i] = x_old[map[i]];
+      for (std::size_t i = 0; i < mapj.size(); ++i)
+      {
+        assert(i < x_new.size());
+        assert(static_cast<std::size_t>(mapj[i]) < x_old.size());
+        x_new[i] = x_old[mapj[i]];
+      }
     }
 
     return Function(
@@ -161,7 +164,7 @@ public:
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
               md::mdspan<const geometry_type,
                          md::extents<std::size_t, 3, md::dynamic_extent>>)>& f,
-      CellRange auto&& cells)
+      mesh::CellRange auto&& cells)
   {
     assert(_function_space);
     assert(_function_space->element());
@@ -176,7 +179,7 @@ public:
 
     const auto [fx, fshape] = f(_x);
     assert(fshape.size() <= 2);
-    if (int vs = _function_space->element()->value_size();
+    if (std::size_t vs = _function_space->element()->value_size();
         vs == 1 and fshape.size() == 1)
     {
       // Check for scalar-valued functions
@@ -246,7 +249,7 @@ public:
   ///
   /// @pre `cells0` and `cells1` must have the same length.
   void interpolate(const Function<value_type, geometry_type>& u0,
-                   CellRange auto&& cells0, CellRange auto&& cells1)
+                   mesh::CellRange auto&& cells0, mesh::CellRange auto&& cells1)
   {
     fem::interpolate(*this, cells1, u0, cells0);
   }
@@ -258,7 +261,7 @@ public:
   /// @param[in] u Function to be interpolated.
   /// @param[in] cells Cells to interpolate from.
   void interpolate(const Function<value_type, geometry_type>& u,
-                   CellRange auto&& cells)
+                   mesh::CellRange auto&& cells)
   {
     fem::interpolate(*this, u, cells);
   }
@@ -294,7 +297,7 @@ public:
   ///
   /// @pre `cells0` `cells1` must have the same length.
   void interpolate(const Expression<value_type, geometry_type>& e0,
-                   CellRange auto&& cells0, CellRange auto&& cells1)
+                   mesh::CellRange auto&& cells0, mesh::CellRange auto&& cells1)
   {
     // Extract mesh
     const mesh::Mesh<geometry_type>* mesh0 = nullptr;
@@ -395,7 +398,7 @@ public:
   /// interpolate from if `e0` has Function coefficients. If no mesh can
   /// be associated with `e0` then the mesh associated with `this` is used.
   void interpolate(const Expression<value_type, geometry_type>& e0,
-                   CellRange auto&& cells)
+                   mesh::CellRange auto&& cells)
   {
     interpolate(e0, cells, cells);
   }
@@ -421,14 +424,18 @@ public:
   /// @param[in] u Function to be interpolated.
   /// @param[in] cells Cells in the mesh associated with `this` to
   /// interpolate into.
+  /// @param[in] tol Tolerance for convergence in Newton method for non-affine
+  /// pullbacks. If the mesh geometry is affine this argument is ignored.
+  /// @param[in] maxit Maximum number of Newton iterations in non-affine
+  /// pull-back. If the mesh geometry is affine this argument is ignored.
   /// @param[in] interpolation_data Data required for associating the
   /// interpolation points of `this` with cells in `u`. Can be computed
   /// with `fem::create_interpolation_data`.
   void interpolate(const Function<value_type, geometry_type>& u,
-                   CellRange auto&& cells,
+                   mesh::CellRange auto&& cells, double tol, int maxit,
                    const geometry::PointOwnershipData<U>& interpolation_data)
   {
-    fem::interpolate(*this, u, cells, interpolation_data);
+    fem::interpolate(*this, u, cells, tol, maxit, interpolation_data);
   }
 
   /// @brief Evaluate the Function at points.
@@ -443,9 +450,13 @@ public:
   /// points with a negative cell index. This argument must be passed
   /// with the correct size. Storage is row-major.
   /// @param[in] ushape Shape of `u`.
+  /// @param[in] tol Tolerance for convergence in Newton method for non-affine
+  /// pullbacks. If the mesh geometry is affine this argument is ignored.
+  /// @param[in] maxit Maximum number of Newton iterations in non-affine
+  /// pull-back. If the mesh geometry is affine this argument is ignored.
   void eval(std::span<const geometry_type> x, std::array<std::size_t, 2> xshape,
-            CellRange auto&& cells, std::span<value_type> u,
-            std::array<std::size_t, 2> ushape) const
+            mesh::CellRange auto&& cells, std::span<value_type> u,
+            std::array<std::size_t, 2> ushape, double tol, int maxit) const
   {
     if (cells.empty())
       return;
@@ -478,10 +489,11 @@ public:
     auto map = mesh->topology()->index_map(tdim);
 
     // Get coordinate map
-    const CoordinateElement<geometry_type>& cmap = mesh->geometry().cmap();
+    const CoordinateElement<geometry_type>& cmap
+        = mesh->geometry().cmaps().front();
 
     // Get geometry data
-    auto x_dofmap = mesh->geometry().dofmap();
+    auto x_dofmap = mesh->geometry().dofmaps().front();
     const std::size_t num_dofs_g = cmap.dim();
     auto x_g = mesh->geometry().x();
 
@@ -559,13 +571,10 @@ public:
     std::vector<geometry_type> detJ(xshape[0]);
     std::vector<geometry_type> det_scratch(2 * gdim * tdim);
 
-    // Scrach space for pull-back of point coordinates for non-affine cells.
-    std::vector<geometry_type> pull_back_scratch;
-    if (!cmap.is_affine())
-    {
-      pull_back_scratch.resize(tdim * (2 * gdim + 2 * num_dofs_g + 2) + gdim
-                               + num_dofs_g);
-    }
+    // Scratch space for pull-back of point coordinates for non-affine cells
+    std::vector<geometry_type> pull_back_scratch(
+        cmap.is_affine() ? 0 : cmap.pull_back_working_size(gdim));
+
     // Prepare geometry data in each cell
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
@@ -583,7 +592,7 @@ public:
           coord_dofs(i, j) = x_g[pos + j];
       }
 
-      std::size_t p = std::distance(cells.begin(), cell_it);
+      std::size_t p = std::ranges::distance(cells.begin(), cell_it);
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x[p * xshape[1] + j];
 
@@ -611,7 +620,8 @@ public:
       else
       {
         // Pull-back physical point xp to reference coordinate Xp
-        cmap.pull_back_nonaffine(Xp, xp, coord_dofs, pull_back_scratch);
+        cmap.pull_back_nonaffine(Xp, xp, coord_dofs, pull_back_scratch, tol,
+                                 maxit);
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
         CoordinateElement<geometry_type>::compute_jacobian(dphi, coord_dofs,
                                                            _J);
@@ -669,7 +679,7 @@ public:
 
       // Permute the reference basis function values to account for the
       // cell's orientation
-      std::size_t p = std::distance(cells.begin(), cell_it);
+      std::size_t p = std::ranges::distance(cells.begin(), cell_it);
       apply_dof_transformation(
           std::span(basis_derivatives_reference_values_b.data()
                         + p * num_basis_values,

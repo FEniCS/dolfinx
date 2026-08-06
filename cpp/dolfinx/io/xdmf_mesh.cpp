@@ -12,7 +12,10 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <pugixml.hpp>
+#include <stdexcept>
 #include <vector>
 
 using namespace dolfinx;
@@ -21,7 +24,7 @@ using namespace dolfinx::io;
 //-----------------------------------------------------------------------------
 template <std::floating_point U>
 void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  hid_t h5_id, const std::string& path_prefix,
+                                  hid_t h5_id, std::string_view path_prefix,
                                   const mesh::Topology& topology,
                                   const mesh::Geometry<U>& geometry, int dim,
                                   std::span<const std::int32_t> entities)
@@ -43,7 +46,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
       = mesh::cell_entity_type(cell_type, dim, 0);
 
   const fem::ElementDofLayout cmap_dof_layout
-      = geometry.cmap().create_dof_layout();
+      = geometry.cmaps().front().create_dof_layout();
 
   // Get number of nodes per entity
   const int num_nodes_per_entity
@@ -61,7 +64,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Pack topology data
   std::vector<std::int64_t> topology_data;
 
-  auto x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.dofmaps().front();
   auto map_g = geometry.index_map();
   assert(map_g);
   const std::int64_t offset_g = map_g->local_range()[0];
@@ -145,7 +148,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_entity;
 
   // Add topology DataItem node
-  const std::string h5_path = path_prefix + std::string("/topology");
+  const std::string h5_path = std::string(path_prefix) + "/topology";
   const std::vector<std::int64_t> shape
       = {num_entities_global, num_nodes_per_entity};
   const std::string number_type = "Int";
@@ -161,7 +164,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 //-----------------------------------------------------------------------------
 template <std::floating_point U>
 void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  hid_t h5_id, const std::string& path_prefix,
+                                  hid_t h5_id, std::string_view path_prefix,
                                   const mesh::Geometry<U>& geometry)
 {
   spdlog::info("Adding geometry data to node \"{}\"", xml_node.path('/'));
@@ -177,7 +180,8 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   int gdim = geometry.dim();
   pugi::xml_node geometry_node = xml_node.append_child("Geometry");
   assert(geometry_node);
-  assert(gdim > 0 and gdim <= 3);
+  if (gdim <= 0 or gdim > 3)
+    throw std::runtime_error("Geometric dimension must be 1, 2 or 3.");
   const std::string geometry_type = (gdim == 3) ? "XYZ" : "XY";
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
@@ -201,7 +205,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   }
 
   // Add geometry DataItem node
-  const std::string h5_path = path_prefix + std::string("/geometry");
+  const std::string h5_path = std::string(path_prefix) + "/geometry";
   const std::vector<std::int64_t> shape = {num_points, width};
 
   const std::int64_t num_local = num_points_local;
@@ -215,18 +219,19 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 //----------------------------------------------------------------------------
 template <std::floating_point U>
 void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                         const mesh::Mesh<U>& mesh, const std::string& name)
+                         const mesh::Mesh<U>& mesh,
+                         std::string_view path_prefix)
 {
   spdlog::info("Adding mesh to node \"{}\"", xml_node.path('/'));
 
   // Add grid node and attributes
   pugi::xml_node grid_node = xml_node.append_child("Grid");
   assert(grid_node);
-  grid_node.append_attribute("Name") = name.c_str();
+  grid_node.append_attribute("Name") = std::string(path_prefix).c_str();
   grid_node.append_attribute("GridType") = "Uniform";
 
   // Add topology node and attributes (including writing data)
-  const std::string path_prefix = "/Mesh/" + name;
+  const std::string full_path_prefix = std::format("/Mesh/{}", path_prefix);
   const int tdim = mesh.topology()->dim();
 
   // Prepare an array of active cells
@@ -237,19 +242,18 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   std::vector<std::int32_t> cells(num_cells);
   std::iota(cells.begin(), cells.end(), 0);
 
-  add_topology_data(comm, grid_node, h5_id, path_prefix, *mesh.topology(),
+  add_topology_data(comm, grid_node, h5_id, full_path_prefix, *mesh.topology(),
                     mesh.geometry(), tdim,
                     std::span<std::int32_t>(cells.data(), num_cells));
 
   // Add geometry node and attributes (including writing data)
-  add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
+  add_geometry_data(comm, grid_node, h5_id, full_path_prefix, mesh.geometry());
 }
 /// @cond
 template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, hid_t,
-                                  const mesh::Mesh<float>&, const std::string&);
+                                  const mesh::Mesh<float>&, std::string_view);
 template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, hid_t,
-                                  const mesh::Mesh<double>&,
-                                  const std::string&);
+                                  const mesh::Mesh<double>&, std::string_view);
 /// @endcond
 //----------------------------------------------------------------------------
 std::pair<std::variant<std::vector<float>, std::vector<double>>,
@@ -274,8 +278,9 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, hid_t h5_id,
   else
   {
     throw std::runtime_error(
-        "Cannot determine geometric dimension. GeometryType \"" + geometry_type
-        + "\" in XDMF file is unknown or unsupported");
+        std::format("Cannot determine geometric dimension. GeometryType \"{}\" "
+                    "in XDMF file is unknown or unsupported",
+                    geometry_type));
   }
 
   // Get number of points from Geometry dataitem node

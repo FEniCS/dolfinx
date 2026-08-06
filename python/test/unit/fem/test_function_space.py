@@ -177,7 +177,7 @@ def test_collapse(W, V):
 
         # Number of collapsed dofs in W numbering must agree with the number of dofs
         # of the collapsed space
-        assert Wi.dofmap.index_map.size_local + Wi.dofmap.index_map.num_ghosts == dofs.size
+        assert Wi.dofmap.index_map.size_local + Wi.dofmap.index_map.num_ghosts == dofs[0].size
 
     msh = W.mesh
     cell_imap = msh.topology.index_map(msh.topology.dim)
@@ -188,7 +188,7 @@ def test_collapse(W, V):
         for i, dof in enumerate(cell_dofs):
             for k in range(bs):
                 new_dof = Ws[k][0].dofmap.cell_dofs(c)[i]
-                new_to_old = Ws[k][1]
+                new_to_old = Ws[k][1][0]
                 assert dof * bs + k == new_to_old[new_dof]
 
     f0 = Function(Ws[0][0])

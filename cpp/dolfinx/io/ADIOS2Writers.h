@@ -65,20 +65,20 @@ protected:
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                std::string tag, std::string engine);
 
+  // Copy constructor (deleted)
+  ADIOS2Writer(const ADIOS2Writer&) = delete;
+
   /// @brief Move constructor
   ADIOS2Writer(ADIOS2Writer&& writer) = default;
-
-  /// @brief Copy constructor
-  ADIOS2Writer(const ADIOS2Writer&) = delete;
 
   /// @brief Destructor
   ~ADIOS2Writer();
 
+  // Copy assignment (deleted)
+  ADIOS2Writer& operator=(const ADIOS2Writer&) = delete;
+
   /// @brief Move assignment
   ADIOS2Writer& operator=(ADIOS2Writer&& writer) = default;
-
-  // Copy assignment
-  ADIOS2Writer& operator=(const ADIOS2Writer&) = delete;
 
 public:
   /// @brief  Close the file
@@ -164,8 +164,8 @@ namespace impl_vtx
 {
 /// Create VTK xml scheme to be interpreted by the VTX reader
 /// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#saving-the-vtk-xml-data-model
-std::stringstream create_vtk_schema(const std::vector<std::string>& point_data,
-                                    const std::vector<std::string>& cell_data);
+std::string create_vtk_schema(const std::vector<std::string>& point_data,
+                              const std::vector<std::string>& cell_data);
 
 /// Extract name of functions and split into real and imaginary component
 template <std::floating_point T>
@@ -183,15 +183,18 @@ extract_function_names(const typename adios2_writer::U<T>& u)
               using U = std::decay_t<decltype(v)>;
               using X = typename U::element_type;
 
-              if (impl::is_cellwise(*(v->function_space()->element())))
-                names = dg0_names;
+              // append function names either to dg0_names or names
+              auto& fnames
+                  = impl::is_cellwise(*(v->function_space()->element()))
+                        ? dg0_names
+                        : names;
 
               if constexpr (std::is_floating_point_v<typename X::value_type>)
-                names.push_back(v->name);
+                fnames.push_back(v->name);
               else
               {
-                names.push_back(v->name + impl_adios2::field_ext[0]);
-                names.push_back(v->name + impl_adios2::field_ext[1]);
+                fnames.push_back(v->name + impl_adios2::field_ext[0]);
+                fnames.push_back(v->name + impl_adios2::field_ext[1]);
               }
             },
             v);
@@ -310,8 +313,8 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
       io, "NumberOfNodes", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
-  auto [vtkcells, shape]
-      = io::extract_vtk_connectivity(geometry.dofmap(), topology->cell_type());
+  auto [vtkcells, shape] = io::extract_vtk_connectivity(
+      geometry.dofmaps().front(), topology->cell_type());
 
   // Add cell metadata
   int tdim = topology->dim();
@@ -410,7 +413,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable vertices = impl_adios2::define_variable<std::uint32_t>(
       io, "NumberOfNodes", {adios2::LocalValueDim});
   adios2::Variable elements = impl_adios2::define_variable<std::uint32_t>(
-      io, "NumberOfEntities", {adios2::LocalValueDim});
+      io, "NumberOfCells", {adios2::LocalValueDim});
 
   // Write mesh information to file
   spdlog::debug("vertices={}, elements={}, local_geom={}, local_cells={}",
@@ -471,7 +474,7 @@ public:
         _has_piecewise_constant(false)
   {
     // Define VTK scheme attribute for mesh
-    std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {}).str();
+    std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {});
     impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
@@ -580,7 +583,7 @@ public:
     // Define VTK scheme attribute for set of functions
     auto [names, dg0_names] = impl_vtx::extract_function_names<T>(u);
     std::string vtk_scheme;
-    vtk_scheme = impl_vtx::create_vtk_schema(names, dg0_names).str();
+    vtk_scheme = impl_vtx::create_vtk_schema(names, dg0_names);
 
     impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
@@ -606,7 +609,7 @@ public:
   {
   }
 
-  // Copy constructor
+  // Copy constructor (deleted)
   VTXWriter(const VTXWriter&) = delete;
 
   /// @brief Move constructor
@@ -615,11 +618,11 @@ public:
   /// @brief Destructor
   ~VTXWriter() = default;
 
+  // Copy assignment (deleted)
+  VTXWriter& operator=(const VTXWriter&) = delete;
+
   /// @brief Move assignment
   VTXWriter& operator=(VTXWriter&&) = default;
-
-  // Copy assignment
-  VTXWriter& operator=(const VTXWriter&) = delete;
 
   /// @brief Write data with a given time stamp.
   /// @param[in] t Time stamp to associate with output.
@@ -649,7 +652,7 @@ public:
         // Write a single mesh for functions as they share finite
         // element
         std::tie(_x_id, _x_ghost) = std::visit(
-            [&](auto& u)
+            [this](auto& u)
             {
               spdlog::debug("ADIOS2: write_mesh_from_space");
               return impl_vtx::vtx_write_mesh_from_space(*_io, *_engine,
@@ -674,8 +677,8 @@ public:
     // Write function data for each function to file
     for (auto& v : _u)
     {
-      std::visit([&](auto& u) { impl_vtx::vtx_write_data(*_io, *_engine, *u); },
-                 v);
+      std::visit([this](auto& u)
+                 { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
     }
 
     _engine->EndStep();

@@ -16,8 +16,8 @@
 #
 # ```{admonition} Download sources
 # :class: download
-# * {download}`Python script <./demo_poisson_matrix_free.py>`
-# * {download}`Jupyter notebook <./demo_poisson_matrix_free.ipynb>`
+# * {download}`Python script <./demo_poisson-matrix-free.py>`
+# * {download}`Jupyter notebook <./demo_poisson-matrix-free.ipynb>`
 # ```
 # This demo illustrates how to solve the Poisson equation using a
 # matrix-free conjugate gradient (CG) solver. In particular, it
@@ -41,10 +41,10 @@
 # reads:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
 #       u &= u_{\rm D} \; {\rm on} \ \partial\Omega.
-# \end{align}
+# \end{aligned}
 # $$
 #
 # The variational problem reads: Given a suitable function space satisfying
@@ -59,10 +59,10 @@
 # where the bilinear and linear formulations are
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # a(u, v) &:= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
 # L(v)    &:= \int_{\Omega} f v \, {\rm d} x,
-# \end{align}
+# \end{aligned}
 # $$
 #
 # respectively. In this demo we select:

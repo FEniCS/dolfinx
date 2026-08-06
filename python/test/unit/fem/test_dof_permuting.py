@@ -157,9 +157,9 @@ def test_dof_positions(cell_type, space_type):
 
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
-    coord_dofs = mesh.geometry.dofmap
+    coord_dofs = mesh.geometry.dofmaps[0]
     x_g = mesh.geometry.x
-    cmap = mesh.geometry.cmap
+    cmap = mesh.geometry.cmaps[0]
     tdim = mesh.topology.dim
 
     V = functionspace(mesh, space_type)
@@ -177,7 +177,7 @@ def test_dof_positions(cell_type, space_type):
             for i in range(entities_per_cell[entity_dim]):
                 entity_dofs_local += list(V.dofmap.dof_layout.entity_dofs(entity_dim, i))
             entity_dofs = [dofs[i] for i in entity_dofs_local]
-            for i, j in zip(entity_dofs, x[entity_dofs_local]):
+            for i, j in zip(entity_dofs, x[entity_dofs_local], strict=True):
                 if i in entities[entity_dim]:
                     assert np.allclose(j, entities[entity_dim][i], atol=1e-06)
                 else:
@@ -316,18 +316,18 @@ def test_evaluation(cell_type, space_type, space_order):
         for d in dofs:
             v = Function(V)
             v.x.array[:] = [1 if i == d else 0 for i in range(v.x.index_map.size_local)]
-            values0 = v.eval(eval_points, [0 for i in eval_points])
-            values1 = v.eval(eval_points, [1 for i in eval_points])
+            values0 = v.eval(eval_points, np.full(eval_points.shape[0], 0, dtype=np.int32))
+            values1 = v.eval(eval_points, np.full(eval_points.shape[0], 1, dtype=np.int32))
             if len(eval_points) == 1:
                 values0 = [values0]
                 values1 = [values1]
             if space_type in ["RT", "BDM", "RTCF", "NCF", "BDMCF", "AAF"]:
                 # Hdiv
-                for i, j in zip(values0, values1):
+                for i, j in zip(values0, values1, strict=True):
                     assert np.isclose(i[0], j[0], rtol=1.0e-5, atol=1.0e-3)
             elif space_type in ["N1curl", "N2curl", "RTCE", "NCE", "BDMCE", "AAE"]:
                 # Hcurl
-                for i, j in zip(values0, values1):
+                for i, j in zip(values0, values1, strict=True):
                     assert np.allclose(i[1:], j[1:], rtol=1.0e-4, atol=1.0e-2)
             else:
                 assert np.allclose(values0, values1, rtol=1.0e-6, atol=1.0e-4)

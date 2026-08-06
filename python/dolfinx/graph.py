@@ -5,26 +5,27 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Graph representations and operations on graphs."""
 
-from typing import Generic, TypeVar
+from typing import Generic
 
 import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import partitioner
+from dolfinx.typing import Index
 
 # Import graph partitioners, which may or may not be available
 # (dependent on build configuration)
 try:
-    from dolfinx.cpp.graph import partitioner_scotch  # noqa
+    from dolfinx.cpp.graph import partitioner_scotch  # type: ignore[attr-defined] # noqa
 except ImportError:
     pass
 try:
-    from dolfinx.cpp.graph import partitioner_parmetis  # noqa
+    from dolfinx.cpp.graph import partitioner_parmetis  # type: ignore[attr-defined] # noqa
 except ImportError:
     pass
 try:
-    from dolfinx.cpp.graph import partitioner_kahip  # noqa
+    from dolfinx.cpp.graph import partitioner_kahip  # type: ignore[attr-defined] # noqa
 except ImportError:
     pass
 
@@ -39,10 +40,7 @@ __all__ = [
 ]
 
 
-_T = TypeVar("_T", np.int32, np.int64)
-
-
-class AdjacencyList(Generic[_T]):
+class AdjacencyList(Generic[Index]):
     """Adjacency list representation of a graph."""
 
     _cpp_object: (
@@ -74,7 +72,7 @@ class AdjacencyList(Generic[_T]):
         """String representation of the adjacency list."""
         return self._cpp_object.__repr__()
 
-    def links(self, node: int) -> npt.NDArray[_T]:
+    def links(self, node: int) -> npt.NDArray[Index]:
         """Retrieve the links of a node.
 
         Note:
@@ -87,10 +85,10 @@ class AdjacencyList(Generic[_T]):
         Returns:
             Neighbors of the node.
         """
-        return self._cpp_object.links(node)
+        return self._cpp_object.links(node)  # type: ignore[union-attr,return-value]
 
     @property
-    def array(self) -> npt.NDArray[_T]:
+    def array(self) -> npt.NDArray[Index]:
         """Array representation of the adjacency list.
 
         Note:
@@ -100,7 +98,7 @@ class AdjacencyList(Generic[_T]):
         Returns:
             Flattened array representation of the adjacency list.
         """
-        return self._cpp_object.array
+        return self._cpp_object.array  # type: ignore[union-attr,return-value]
 
     @property
     def offsets(self) -> npt.NDArray[np.int32]:
@@ -118,12 +116,12 @@ class AdjacencyList(Generic[_T]):
         Returns:
             Number of nodes.
         """
-        return self._cpp_object.num_nodes
+        return self._cpp_object.num_nodes  # type: ignore[return-value]
 
 
 def adjacencylist(
-    data: npt.NDArray[_T], offsets: npt.NDArray[np.int32] | None = None
-) -> AdjacencyList[_T]:
+    data: npt.NDArray[Index], offsets: npt.NDArray[np.int32] | None = None
+) -> AdjacencyList[Index]:
     """Create an :class:`AdjacencyList` for `int32` or `int64` datasets.
 
     Args:
@@ -137,6 +135,7 @@ def adjacencylist(
     """
     # TODO: Switch to np.isdtype(data.dtype, np.int32) once numpy >= 2.0 is
     # enforced
+    cpp_t: type[_cpp.graph.AdjacencyList_int32] | type[_cpp.graph.AdjacencyList_int64]
     if data.dtype == np.int32:
         cpp_t = _cpp.graph.AdjacencyList_int32
     elif data.dtype == np.int64:
@@ -144,7 +143,7 @@ def adjacencylist(
     else:
         raise TypeError("Data type for adjacency list not supported.")
 
-    cpp_object = cpp_t(data, offsets) if offsets is not None else cpp_t(data)
+    cpp_object = cpp_t(data, offsets) if offsets is not None else cpp_t(data)  # type: ignore[arg-type]
     return AdjacencyList(cpp_object)
 
 
@@ -199,7 +198,10 @@ def comm_graph_data(
         `dict` holds edge data. The second list hold node data, where a
         node is a `(nodeID, dict)` tuple, where `dict` holds node data.
     """
-    return _cpp.graph.comm_graph_data(graph._cpp_object)
+    cpp_graph = graph._cpp_object
+    if not isinstance(cpp_graph, _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32):
+        raise TypeError("comm_graph_data requires a graph created by comm_graph().")
+    return _cpp.graph.comm_graph_data(cpp_graph)
 
 
 def comm_to_json(graph: AdjacencyList) -> str:
@@ -217,4 +219,7 @@ def comm_to_json(graph: AdjacencyList) -> str:
     Returns:
         A JSON string representing the communication graph.
     """
-    return _cpp.graph.comm_to_json(graph._cpp_object)
+    cpp_graph = graph._cpp_object
+    if not isinstance(cpp_graph, _cpp.graph.AdjacencyList_int_sizet_int8__int32_int32):
+        raise TypeError("comm_to_json requires a graph created by comm_graph().")
+    return _cpp.graph.comm_to_json(cpp_graph)

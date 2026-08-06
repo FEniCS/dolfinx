@@ -148,8 +148,7 @@ public:
     std::partial_sum(_sizes_local.begin(), _sizes_local.end(),
                      std::next(_displs_local.begin()));
 
-    assert((int)ghosts_sorted.size() == _displs_remote.back());
-    assert((int)ghosts_sorted.size() == _displs_remote.back());
+    assert(static_cast<int>(ghosts_sorted.size()) == _displs_remote.back());
 
     // Send ghost global indices to owning rank, and receive owned
     // indices that are ghosts on other ranks
@@ -173,7 +172,7 @@ public:
                       std::ref(_sizes_remote), std::ref(_displs_remote)})
       {
         std::ranges::transform(x.get(), x.get().begin(),
-                               [bs](auto e) { return e *= bs; });
+                               [bs](auto e) { return e * bs; });
       }
     }
 
@@ -344,9 +343,9 @@ public:
       return;
 
     int ierr = MPI_Ineighbor_alltoallv(
-        send_buffer, _sizes_remote.data(), _displs_remote.data(), MPI::mpi_t<T>,
-        recv_buffer, _sizes_local.data(), _displs_local.data(), MPI::mpi_t<T>,
-        _comm1.comm(), &request);
+        send_buffer, _sizes_remote.data(), _displs_remote.data(),
+        dolfinx::MPI::mpi_t<T>, recv_buffer, _sizes_local.data(),
+        _displs_local.data(), dolfinx::MPI::mpi_t<T>, _comm1.comm(), &request);
     dolfinx::MPI::check_error(_comm1.comm(), ierr);
   }
 
@@ -478,7 +477,7 @@ public:
   /// For a reverse scatter, if `send_buffer` is the send buffer, then
   /// `send_buffer` is packaged such that:
   ///
-  ///     auto& idx = scatterer.local_indices()
+  ///     auto& idx = scatterer.remote_indices()
   ///     std::vector<T> send_buffer(idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
   ///         send_buffer[i] = xg[idx[i]];
@@ -489,8 +488,11 @@ public:
   /// @brief Number of required `MPI_Request`s for point-to-point
   /// communication.
   ///
-  /// @return Numer of required MPI request handles.
-  std::size_t num_p2p_requests() { return _dest.size() + _src.size(); }
+  /// @return Number of required MPI request handles.
+  std::size_t num_p2p_requests() const noexcept
+  {
+    return _dest.size() + _src.size();
+  }
 
 private:
   // Communicator where the source ranks own the indices in the callers

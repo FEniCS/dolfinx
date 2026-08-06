@@ -12,4 +12,4 @@ Version: @DOLFINX_VERSION@
 Requires: @PKG_REQUIRES@
 Conflicts:
 Libs: @PKG_LINKFLAGS@ -L${libdir} -ldolfinx
-Cflags: @PKG_CXXFLAGS@ -DDOLFINX_VERSION=\"@DOLFINX_VERSION@\" ${definitions} -I${includedir} @PKG_INCLUDES@
+Cflags: @PKG_CXXFLAGS@ ${definitions} -I${includedir} @PKG_INCLUDES@
