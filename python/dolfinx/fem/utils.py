@@ -74,7 +74,7 @@ def create_interpolation_data(
     cells: npt.NDArray[np.int32],
     padding: float = 1e-14,
     tol_pb: float | None = None,
-    max_iter_pb: int = 15
+    max_iter_pb: int = 15,
 ) -> _PointOwnershipData:
     """Generate data for interpolating functions on different meshes.
 
@@ -86,7 +86,7 @@ def create_interpolation_data(
         padding: Absolute padding of bounding boxes of all entities on
             mesh_to.
         tol_pb: Tolerance for pull back of non-affine cells.
-            If ``None`` then a default value based on geometry dtype is used.
+            If ``None`` then a default based on geometry dtype is used.
         max_iter_pb: Maximum number of iterations for pull back of
             non-affine cells.
 
@@ -102,7 +102,9 @@ def create_interpolation_data(
             _cpp.mesh.Mesh_float32() as mesh1,
         ):
             return _PointOwnershipData(
-                _create_interpolation_data(geometry0, element0, mesh1, cells, padding, tol_pb, max_iter_pb)
+                _create_interpolation_data(
+                    geometry0, element0, mesh1, cells, padding, tol_pb, max_iter_pb
+                )
             )
         case (
             _cpp.mesh.Geometry_float64() as geometry0,
@@ -110,7 +112,9 @@ def create_interpolation_data(
             _cpp.mesh.Mesh_float64() as mesh1,
         ):
             return _PointOwnershipData(
-                _create_interpolation_data(geometry0, element0, mesh1, cells, padding, tol_pb, max_iter_pb)
+                _create_interpolation_data(
+                    geometry0, element0, mesh1, cells, padding, tol_pb, max_iter_pb
+                )
             )
         case _:
             raise TypeError(

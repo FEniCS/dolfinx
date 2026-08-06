@@ -350,7 +350,7 @@ def determine_point_ownership(
         cells: Cells to check for ownership
             If ``None`` then all cells are considered.
         tol_pb: Tolerance for pull back of non-affine cells.
-            If ``None`` then a default value based on geometry dtype is used.
+            If ``None`` then a default based on geometry dtype is used.
         max_iter_pb: Maximum number of iterations for pull back of
             non-affine cells.
 
@@ -368,5 +368,7 @@ def determine_point_ownership(
     """
     tol_pb = tol_pb if tol_pb is not None else 10 * np.finfo(mesh.geometry.x.dtype).eps
     return PointOwnershipData(
-        _cpp.geometry.determine_point_ownership(mesh._cpp_object, points, padding, cells, tol_pb, max_iter_pb)  # type: ignore[arg-type]
+        _cpp.geometry.determine_point_ownership(
+            mesh._cpp_object, points, padding, cells, tol_pb, max_iter_pb
+        )  # type: ignore[arg-type]
     )
