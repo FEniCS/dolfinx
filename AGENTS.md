@@ -58,6 +58,24 @@ disclosure process.
   for types/classes, private/protected data members prefixed with an
   underscore (`_dofmap`, `_index_map_bs`). Free functions and class
   methods both use `snake_case`.
+- **Integer types**: `std::int32_t` for process-local indices and
+  offsets, `std::int64_t` for global indices, `int` for MPI ranks,
+  counts and displacements, `std::size_t` for `.size()` results. The
+  32-bit local index is a deliberate commitment — a rank is not
+  expected to exceed 2^31 entities, and the narrow type halves index
+  array memory traffic — so local indices must not be silently widened
+  in storage or interfaces. Type a variable by the role of its value,
+  not by the expression that initialises it.
+- **Iterator distances**: store `std::distance` results, a signed
+  `difference_type`, in `std::size_t` when used as a container offset.
+  They are non-negative by construction here, and `-Wsign-compare` is
+  `-Werror`, so `std::ptrdiff_t` would force a cast at every
+  comparison against `.size()`.
+- **Narrowing conversions**: neither `-Wconversion` nor
+  `-Wshorten-64-to-32` is enabled, so implicit 64-to-32 narrowing is
+  legal and widespread. `static_cast` only where the narrowing is the
+  point — a public API returning a local index or count
+  (`IndexMap::size_local`, `IndexMap::num_ghosts`) — not elsewhere.
 - **Parameters**: pass read-only strings as `std::string_view`, not
   `const std::string&`. Use `std::span` for contiguous read-only array
   views, and `mdspan` for read-only multi-dimensional views. Reserve
