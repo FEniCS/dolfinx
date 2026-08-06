@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris N. Richardson, Garth N. Wells, Jørgen S. Dokken
+// Copyright (C) 2017-2026 Chris N. Richardson, Garth N. Wells, Jørgen S. Dokken
 // and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
