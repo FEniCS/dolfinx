@@ -330,6 +330,8 @@ def determine_point_ownership(
     points: npt.NDArray[Real],
     padding: float,
     cells: npt.NDArray[np.int32] | None = None,
+    tol_pb: float | None = None,
+    max_iter_pb: int = 15,
 ) -> PointOwnershipData[Real]:
     """Build point ownership data for a mesh-points pair.
 
@@ -347,6 +349,10 @@ def determine_point_ownership(
             surface of a cell in the mesh.
         cells: Cells to check for ownership
             If ``None`` then all cells are considered.
+        tol_pb: Tolerance for pull back of non-affine cells.
+            If ``None`` then a default value based on geometry dtype is used.
+        max_iter_pb: Maximum number of iterations for pull back of
+            non-affine cells.
 
     Returns:
         Point ownership data
@@ -360,6 +366,7 @@ def determine_point_ownership(
             by orders of magnitude. General advice is to use a padding on
             the scale of the cell size.
     """
+    tol_pb = tol_pb if tol_pb is not None else 10 * np.finfo(mesh.geometry.x.dtype).eps
     return PointOwnershipData(
-        _cpp.geometry.determine_point_ownership(mesh._cpp_object, points, padding, cells)  # type: ignore[arg-type]
+        _cpp.geometry.determine_point_ownership(mesh._cpp_object, points, padding, cells, tol_pb, max_iter_pb)  # type: ignore[arg-type]
     )
