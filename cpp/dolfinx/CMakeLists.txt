@@ -205,12 +205,15 @@ install(
 )
 
 if(INSTALL_RUNTIME_DEPENDENCIES AND WIN32)
+  # basix.dll isn't a vcpkg dependency, so VCPKG_APPLOCAL_DEPS never copies it
+  # anywhere the resolver searches. Skip resolving it (an unresolved dependency
+  # is a hard error) and install it directly instead.
   install(
     RUNTIME_DEPENDENCY_SET dependencies DESTINATION ${CMAKE_INSTALL_BINDIR}
-    PRE_EXCLUDE_REGEXES [[api-ms-win-.*]] [[ext-ms-.*]]
+    PRE_EXCLUDE_REGEXES [[api-ms-win-.*]] [[ext-ms-.*]] [[^basix\.dll$]]
     POST_EXCLUDE_REGEXES [[.*(\\|/)system32(\\|/).*\.dll]]
-    DIRECTORIES $<TARGET_FILE_DIR:Basix::basix> $<TARGET_FILE_DIR:hdf5::hdf5>
   )
+  install(FILES $<TARGET_FILE:Basix::basix> DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 # Generate DOLFINTargets.cmake

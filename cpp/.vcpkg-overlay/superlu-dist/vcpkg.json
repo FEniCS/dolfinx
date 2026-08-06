@@ -1,0 +1,24 @@
+{
+  "name": "superlu-dist",
+  "version": "9.2.1",
+  "description": "A general purpose library for the direct solution of large, sparse, nonsymmetric systems of linear equations on high performance distributed memory parallel machines",
+  "homepage": "https://github.com/xiaoyeli/superlu_dist",
+  "license": "BSD-3-Clause-LBNL",
+  "supports": "!uwp",
+  "dependencies": [
+    "lapack",
+    "mpi",
+    {
+      "name": "scotch",
+      "features": [
+        "metis",
+        "parmetis",
+        "ptscotch"
+      ]
+    },
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    }
+  ]
+}
