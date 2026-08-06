@@ -150,7 +150,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
           xk[j] += cell_geometry(i, j) * basis(0, 0, i, 0);
 
       // Compute Jacobian, its inverse and determinant
-      std::ranges::fill(J.data_handle(), J.data_handle() + J.size(), 0);
+      std::ranges::fill_n(J.data_handle(), J.size(), 0);
       for (std::size_t i = 0; i < tdim; ++i)
         for (std::size_t j = 0; j < basis.extent(2); ++j)
           dphi(i, j) = basis(i + 1, 0, j, 0);
