@@ -25,12 +25,12 @@ def test_dofmap_mixed_topology():
     tri = [0, 1, 4, 0, 3, 4]
     quad = [1, 4, 2, 5]
     # cells with global indexing
-    cells = [[t + 3 * rank for t in tri], [q + 3 * rank for q in quad]]
-    orig_index = [[3 * rank, 1 + 3 * rank], [2 + 3 * rank]]
+    cells = [np.array([t + 3 * rank for t in tri]), np.array([q + 3 * rank for q in quad])]
+    orig_index = [np.array([3 * rank, 1 + 3 * rank]), np.array([2 + 3 * rank])]
     # No ghosting
-    ghost_owners = [[], []]
+    ghost_owners = [np.array([]), np.array([])]
     # All vertices are on boundary
-    boundary_vertices = [3 * rank + i for i in range(6)]
+    boundary_vertices = np.array([3 * rank + i for i in range(6)])
 
     topology = create_topology(
         MPI.COMM_WORLD,
@@ -83,13 +83,13 @@ def test_dofmap_mixed_topology():
 
 def test_dofmap_prism_mesh():
     # Prism mesh
-    cells = [[0, 1, 2, 3, 4, 5]]
+    cells = [np.array([0, 1, 2, 3, 4, 5])]
     # cells with global indexing
-    orig_index = [[0, 1, 2, 3, 4, 5]]
+    orig_index = [np.array([0, 1, 2, 3, 4, 5])]
     # No ghosting
-    ghost_owners = [[]]
+    ghost_owners = [np.array([])]
     # All vertices are on boundary
-    boundary_vertices = [0, 1, 2, 3, 4, 5]
+    boundary_vertices = np.array([0, 1, 2, 3, 4, 5])
 
     topology = Topology(
         create_topology(
