@@ -705,12 +705,8 @@ def functionspace(
     dolfinx_element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
 
     if ufl_e.is_real:
-        cpp_dofmap = _cpp.fem.build_real_element_dofmap(
-            mesh.topology._cpp_object,
-            dolfinx_element.basix_element.entity_dofs,
-            dolfinx_element.basix_element.entity_closure_dofs,
-            int(np.prod(dolfinx_element.value_shape)),
-        )
+        dof_layout = _cpp.fem.create_element_dof_layout(dolfinx_element._cpp_object, [])
+        cpp_dofmap = _cpp.fem.build_real_element_dofmap(mesh.topology._cpp_object, dof_layout)
     else:
         cpp_dofmap = _cpp.fem.create_dofmap(
             mesh.comm,
