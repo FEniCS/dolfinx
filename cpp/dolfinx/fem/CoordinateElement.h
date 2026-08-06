@@ -257,9 +257,10 @@ public:
   /// @return Number of elements required in the working array for pull
   /// back.
   /// @note For a non-affine coordinate map, this is the exact size
-  /// required by the `working_array` argument of `pull_back_nonaffine`.
-  /// For an affine map, it is the size of the (unrelated) scratch space
-  /// used internally to compute the Jacobian ahead of `pull_back_affine`.
+  /// required by the `working_array` argument of @ref
+  /// pull_back_nonaffine. For an affine map, it is the size of the
+  /// (unrelated) scratch space used internally to compute the Jacobian
+  /// ahead of @ref pull_back_affine.
   std::size_t pull_back_working_size(std::size_t gdim) const;
 
   /// @brief Permute a list of DOF numbers on a cell.
