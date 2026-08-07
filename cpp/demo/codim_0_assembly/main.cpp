@@ -6,6 +6,7 @@
 // * Assemble a mixed formulation with function spaces defined on the sub mesh
 // and parent mesh
 
+#include "mesh/MeshTags.h"
 #include "mixed_codim0.h"
 #include <basix/finite-element.h>
 #include <cmath>
