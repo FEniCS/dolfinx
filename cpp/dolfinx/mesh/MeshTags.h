@@ -15,6 +15,7 @@
 #include <dolfinx/io/cells.h>
 #include <memory>
 #include <span>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -43,16 +44,17 @@ public:
   /// size must be equal to the size of `indices`.
   /// @param[in] name Name of the meshtags.
   /// @pre `indices` must be sorted and unique.
-  template <typename U, typename V>
+  template <typename U, typename V, typename S>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
                                    std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<T>>
+                 and std::is_convertible_v<std::remove_cvref_t<S>, std::string>
   MeshTags(std::shared_ptr<const Topology> topology, int dim, U&& indices,
-           V&& values, std::string name)
+           V&& values, S&& name)
       : _topology(std::move(topology)), _dim(dim),
         _indices(std::forward<U>(indices)), _values(std::forward<V>(values)),
-        _name(std::move(name))
+        _name(std::forward<S>(name))
   {
     if (_indices.size() != _values.size())
     {
@@ -170,6 +172,6 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
                       std::next(values_sorted.begin(), pos0));
 
   return MeshTags<T>(topology, dim, std::move(indices_sorted),
-                     std::move(values_sorted), std::move(name));
+                     std::move(values_sorted), std::forward<std::string>(name));
 }
 } // namespace dolfinx::mesh
