@@ -232,7 +232,7 @@ class Expression(Generic[Scalar]):
         )
         ffi = module.ffi
         self._cpp_object = create_expression(
-            ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
+            int(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression))),
             coeffs,
             constants,
             _entity_maps,

@@ -319,7 +319,10 @@ def mixed_topology_form(
 
     # TODO coeffs, constants, subdomains, entity_maps
     f = ftype(
-        [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)) for ufcx_form in ufcx_forms],
+        [
+            int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))
+            for ufcx_form in ufcx_forms
+        ],
         V,
         [],
         [],
@@ -471,7 +474,7 @@ def form(
             _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
 
         f = ftype(
-            [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
+            [int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))],
             V,
             coeffs,
             constants,
@@ -742,7 +745,7 @@ def create_form(
 
     ftype = form_cpp_creator(form.dtype)
     f = ftype(
-        form.module.ffi.cast("uintptr_t", form.module.ffi.addressof(form.ufcx_form)),
+        int(form.module.ffi.cast("uintptr_t", form.module.ffi.addressof(form.ufcx_form))),
         [fs._cpp_object for fs in V],
         coefficients,
         constants,
