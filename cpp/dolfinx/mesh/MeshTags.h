@@ -139,6 +139,7 @@ private:
 /// @param[in] entities Local vertex indices for tagged entities.
 /// @param[in] values Tag values for each entity in `entities`. The
 /// length of `values` must be equal to number of rows in `entities`.
+/// @param[in] name Name of the meshtags.
 /// @note Entities that do not exist on this rank are ignored.
 /// @warning `entities` must not contain duplicate entities.
 template <typename T>
