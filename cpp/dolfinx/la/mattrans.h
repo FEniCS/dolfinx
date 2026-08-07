@@ -6,16 +6,15 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cassert>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/matmul.h>
 #include <mpi.h>
-#include <spdlog/spdlog.h>
-
-#include <algorithm>
-#include <cassert>
 #include <numeric>
 #include <span>
+#include <spdlog/spdlog.h>
 #include <utility>
 #include <vector>
 
@@ -25,18 +24,18 @@ namespace impl
 {
 /// @brief Compute the local (diagonal-block) transpose of A.
 ///
-/// Iterates over owned rows of A and the owned-column entries within each
-/// row (indices [row_ptr[i], off_diag_offset[i])), building the transpose
-/// CSR in one bucket-fill pass.  The resulting column indices are original
-/// row indices (0-based local), so columns within every output row are
-/// already in ascending order.
+/// Iterates over owned rows of A and the owned-column entries within
+/// each row (indices [row_ptr[i], off_diag_offset[i])), building the
+/// transpose CSR in one bucket-fill pass.  The resulting column indices
+/// are original row indices (0-based local), so columns within every
+/// output row are already in ascending order.
 ///
 /// @param A MatrixCSR
 /// @tparam T Scalar type
-/// @tparam BS0 row block size, must match row block size of A, or use -1 for
-/// non-optimized
-/// @tparam BS1 col block size, must match col block size of A, or use -1 for
-/// non-optimized
+/// @tparam BS0 row block size, must match row block size of A, or use
+/// -1 for non-optimized
+/// @tparam BS1 col block size, must match col block size of A, or use
+/// -1 for non-optimized
 /// @return Tuple (cols, row_ptr, values) for the transposed diagonal block.
 template <typename T, int BS0 = -1, int BS1 = -1>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int64_t>, std::vector<T>>

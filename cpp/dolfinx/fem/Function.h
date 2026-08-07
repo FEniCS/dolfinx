@@ -52,20 +52,6 @@ public:
   /// Geometry type of the Mesh that the Function is defined on.
   using geometry_type = U;
 
-  /// @brief Create function on given function space.
-  /// @param[in] V The function space
-  explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
-      : _function_space(V), _x(std::make_shared<la::Vector<value_type>>(
-                                V->dofmaps().front()->index_map,
-                                V->dofmaps().front()->index_map_bs()))
-  {
-    if (!V->component().empty())
-    {
-      throw std::runtime_error("Cannot create Function from subspace. Consider "
-                               "collapsing the function space");
-    }
-  }
-
   /// @brief Create function on given function space with a given
   /// vector.
   ///
@@ -85,6 +71,21 @@ public:
     assert(V->dofmap());
     assert(V->dofmap()->index_map->size_global() * V->dofmap()->index_map_bs()
            <= _x->bs() * _x->index_map()->size_global());
+  }
+
+  /// @brief Create function on given function space.
+  ///
+  /// @param[in] V The function space.
+  explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
+      : Function(V, std::make_shared<la::Vector<value_type>>(
+                        V->dofmap()->index_map, V->dofmap()->index_map_bs(),
+                        V->scatterer()))
+  {
+    if (!V->component().empty())
+    {
+      throw std::runtime_error("Cannot create Function from subspace. Consider "
+                               "collapsing the function space");
+    }
   }
 
   // Copy constructor
@@ -123,7 +124,7 @@ public:
 
     // Create new vector
     auto x = std::make_shared<la::Vector<value_type>>(
-        V.dofmap()->index_map, V.dofmap()->index_map_bs());
+        V.dofmap()->index_map, V.dofmap()->index_map_bs(), V.scatterer());
 
     // Copy values into new vector
     std::span<const value_type> x_old = _x->array();
