@@ -938,6 +938,7 @@ def meshtags(
     dim: int,
     entities: npt.NDArray[np.int32],
     values: np.ndarray | int | float,
+    name: str = "mesh_tags",
 ) -> MeshTags:
     """Create mesh tags that associate data with a subset of mesh entities.
 
@@ -948,6 +949,7 @@ def meshtags(
             values with . The array must be sorted and must not contain
             duplicates.
         values: The corresponding value for each entity.
+        name: Name of the meshtags.
 
     Returns:
         A mesh tags object.
@@ -982,12 +984,16 @@ def meshtags(
         raise NotImplementedError(f"Type {values.dtype} not supported.")
 
     return MeshTags(
-        ftype(msh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values)
+        ftype(msh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values, name)
     )
 
 
 def meshtags_from_entities(
-    msh: Mesh, dim: int, entities: AdjacencyList, values: npt.NDArray[typing.Any]
+    msh: Mesh,
+    dim: int,
+    entities: AdjacencyList,
+    values: npt.NDArray[typing.Any],
+    name: str = "mesh_tags",
 ) -> MeshTags:
     """Create mesh tags that associate data with a subset of mesh entities.
 
@@ -999,6 +1005,7 @@ def meshtags_from_entities(
         entities: Entities to associated values with, with entities
             defined by their vertices.
         values: The corresponding value for each entity.
+        name: Name of the meshtags.
 
     Returns:
         A mesh tags object.
@@ -1015,7 +1022,7 @@ def meshtags_from_entities(
         values = np.full(entities.num_nodes, values, dtype=np.double)
     values = np.asarray(values)
     return MeshTags(
-        _cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities._cpp_object, values)  # type: ignore[arg-type]
+        _cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities._cpp_object, values, name)  # type: ignore[arg-type]
     )
 
 
