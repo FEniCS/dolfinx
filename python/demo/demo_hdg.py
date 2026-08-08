@@ -244,10 +244,10 @@ ksp.getPC().setFactorSolverType("superlu_dist")
 # Compute solution
 
 try:
-    x = create_vector([V, Vbar])
-    ksp.solve(b, x)
+    x_vec = create_vector([V, Vbar])
+    ksp.solve(b, x_vec)
     ksp.destroy()
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
+    x_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
     b.destroy()
 except PETSc.Error as e:
     if e.ierr == 92:  # type: ignore[attr-defined]
@@ -260,8 +260,8 @@ except PETSc.Error as e:
 # Create functions for the solution and update values
 
 u, ubar = fem.Function(V, name="u"), fem.Function(Vbar, name="ubar")
-assign(x, [u, ubar])  # type: ignore
-x.destroy()
+assign(x_vec, [u, ubar])  # type: ignore
+x_vec.destroy()
 
 # Write to file
 

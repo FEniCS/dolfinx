@@ -208,7 +208,7 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL, cu
         coords_,
         entity_local_index,
         permutation,
-        empty_void_pointer(),
+        empty_void_pointer(),  # type: ignore[call-arg]
     )
 
     A01 = np.zeros((Ssize, Usize), dtype=dtype)

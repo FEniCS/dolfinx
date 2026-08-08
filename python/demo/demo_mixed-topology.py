@@ -137,8 +137,7 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 dolfinx_elements = [
-    FiniteElement(_cpp.fem.FiniteElement_float64(e._e, None, False))  # type: ignore[arg-type]
-    for e in elements
+    FiniteElement(_cpp.fem.FiniteElement_float64(e._e, None, False)) for e in elements
 ]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
 dofmaps = create_dofmaps(

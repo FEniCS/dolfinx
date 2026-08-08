@@ -92,7 +92,7 @@ class MatrixFreeOperator:
     _vector: PETSc.Vec  # Temporary storage of action
 
     _vector_product: dolfinx.fem.Form | list[dolfinx.fem.Form]  # Compiled matrix-vector product
-    _compiled_diagonal: dolfinx.fem.Form | list[ufl.form.Form]  # Compiled diagonal form
+    _compiled_diagonal: dolfinx.fem.Form | list[dolfinx.fem.Form]  # Compiled diagonal form
 
     def __init__(
         self,
