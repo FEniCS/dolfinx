@@ -140,8 +140,6 @@ module = [
       "pyvista",
       "pyvistaqt",
       "networkx",
-      "basix",
-      "basix.*",
       "petsc4py",
       "petsc4py.*",
 ]
