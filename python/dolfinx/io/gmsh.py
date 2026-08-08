@@ -151,7 +151,7 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
     return ufl.Mesh(element)
 
 
-def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
+def cell_perm_array(cell_type: CellType, num_nodes: int) -> npt.NDArray[np.uint16]:
     """Array for permuting Gmsh ordering to DOLFINx ordering.
 
     Args:
@@ -306,12 +306,12 @@ def model_to_mesh(
         model: Gmsh model.
         comm: MPI communicator to use for mesh creation.
         rank: MPI rank that the Gmsh model is initialized on.
-        gdim: Geometrical dimension of the mesh.
+        gdim: Geometric dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
         dtype: Data-type used for the mesh coordinates
         max_facet_to_cell_links: Maximum number of cells a facet can
-                    be connected to.
+            be connected to.
 
     Returns:
         MeshData with mesh and tags of corresponding entities by
@@ -526,7 +526,7 @@ def read_from_msh(
         comm: MPI communicator to create the mesh on.
         rank: Rank of ``comm`` responsible for reading the ``.msh``
             file.
-        gdim: Geometric dimension of the mesh
+        gdim: Geometric dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
 
@@ -536,7 +536,7 @@ def read_from_msh(
 
     """
     try:
-        import gmsh
+        import gmsh  # type: ignore[import-untyped]
     except ModuleNotFoundError as err:
         # Python 3.11+ adds the add_note method to exceptions
         # e.add_note("Gmsh must be installed to import dolfinx.io.gmsh")

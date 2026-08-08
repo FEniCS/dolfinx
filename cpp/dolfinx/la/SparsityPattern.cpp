@@ -302,7 +302,7 @@ void SparsityPattern::finalize()
                            auto it = std::ranges::lower_bound(src0, owner);
                            assert(it != src0.end() and *it == owner);
                            return static_cast<int>(
-                               std::distance(src0.begin(), it));
+                               std::ranges::distance(src0.begin(), it));
                          });
 
   // Compute size of data to send to each process
@@ -428,8 +428,19 @@ void SparsityPattern::finalize()
   // Reserve the exact pre-dedup edge count
   _edges.reserve(cache_cols.size() + recv_cols_bucketed.size());
 
-  // Sort and remove duplicates per row, building CSR offsets as we
-  // go. Offsets are int64_t to avoid overflow.
+  // De-duplicate each row's raw (unsorted, repeats included) column
+  // list with a generation-stamped marker: last_seen[col] == i means
+  // col has already been recorded for row i. Rows are visited exactly
+  // once in increasing order, so the row index itself is the stamp --
+  // no reset between rows needed. This turns per-row de-duplication
+  // from O(m log m) (sort the raw, repeat-laden list) into
+  // O(m + k log k), where k <= m is the de-duplicated count: sorting
+  // only ever runs over the much smaller de-duplicated list.
+  const std::int32_t num_cols0
+      = local_size1 + static_cast<std::int32_t>(_col_ghosts.size());
+  std::vector<std::int32_t> last_seen(num_cols0, -1);
+
+  // Build CSR offsets as we go. Offsets are int64_t to avoid overflow.
   _off_diagonal_offsets.resize(num_rows0);
   _offsets.reserve(num_rows0 + 1);
   _offsets.push_back(0);
@@ -437,24 +448,34 @@ void SparsityPattern::finalize()
   for (std::int32_t i = 0; i < num_rows0; ++i)
   {
     row.clear();
-    row.insert(row.end(), cache_cols.begin() + cache_offsets[i],
-               cache_cols.begin() + cache_offsets[i + 1]);
+    for (std::int64_t k = cache_offsets[i]; k < cache_offsets[i + 1]; ++k)
+    {
+      if (std::int32_t c = cache_cols[k]; last_seen[c] != i)
+      {
+        last_seen[c] = i;
+        row.push_back(c);
+      }
+    }
     if (i < local_size0)
     {
-      row.insert(row.end(), recv_cols_bucketed.begin() + recv_offsets[i],
-                 recv_cols_bucketed.begin() + recv_offsets[i + 1]);
+      for (std::int64_t k = recv_offsets[i]; k < recv_offsets[i + 1]; ++k)
+      {
+        if (std::int32_t c = recv_cols_bucketed[k]; last_seen[c] != i)
+        {
+          last_seen[c] = i;
+          row.push_back(c);
+        }
+      }
     }
 
     std::ranges::sort(row);
-    auto it_end = std::ranges::unique(row).begin();
 
     // Find position of first "off-diagonal" column
-    _off_diagonal_offsets[i] = std::distance(
-        row.begin(),
-        std::ranges::lower_bound(row.begin(), it_end, local_size1));
+    _off_diagonal_offsets[i] = std::ranges::distance(
+        row.begin(), std::ranges::lower_bound(row, local_size1));
 
-    _edges.insert(_edges.end(), row.begin(), it_end);
-    _offsets.push_back(_offsets.back() + std::distance(row.begin(), it_end));
+    _edges.insert(_edges.end(), row.begin(), row.end());
+    _offsets.push_back(_offsets.back() + row.size());
   }
 
   _edges.shrink_to_fit();

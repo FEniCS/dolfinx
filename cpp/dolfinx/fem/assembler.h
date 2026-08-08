@@ -340,7 +340,8 @@ template <typename V,
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void apply_lifting(
     V&& b,
-    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
+    const std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>>&
+        a,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
@@ -391,7 +392,8 @@ template <typename V,
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void apply_lifting(
     V&& b,
-    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
+    const std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>>&
+        a,
     const std::vector<
         std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T alpha)
@@ -400,7 +402,7 @@ void apply_lifting(
       std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>>
       coeffs;
   std::vector<std::vector<T>> constants;
-  for (auto _a : a)
+  for (const auto& _a : a)
   {
     if (_a)
     {
