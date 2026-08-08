@@ -10,6 +10,7 @@
 #include "DirichletBC.h"
 #include "DofMap.h"
 #include "Form.h"
+#include "assemble_matrix_impl.h"
 #include "traits.h"
 #include "utils.h"
 #include <algorithm>
@@ -400,110 +401,16 @@ void lift_bc(V&& b, const Form<T, U>& a, auto bs0, auto bs1,
     }
   };
 
-  // Repurpose the assemble_matrix assembler to work on the vector b
-  // instead. Use LiftingMode=true so the kernel is only called on
-  // cells that have BC-constrained DOFs in the column space.
-  assemble_matrix<T, U, true>(lifting_fn, a, constants, coefficients, {},
-                              bc_markers1);
-}
-
-/// Modify b such that:
-///
-///   b <- b - alpha * A_j.(g_j - x0_j)
-///
-/// where j is a block (nest) row index. For a non-blocked problem j =
-/// 0. The boundary conditions bc1 are on the trial spaces V_j. The
-/// forms in [a] must have the same test space as L (from which b was
-/// built), but the trial space may differ. If x0 is not supplied, then
-/// it is treated as zero.
-///
-/// @param[in,out] b Array to be modified.
-/// @param[in] a Bilinear forms, where `a[j]` is the form that generates
-/// `A_j`.
-/// @param[in] constants Constants that appear in `a`.
-/// @param[in] coeffs Coefficients that appear in `a`.
-/// @param[in] bcs1 List of boundary conditions for each block, i.e.
-/// `bcs1[2]` are the boundary conditions applied to the columns of
-/// `a[2]`/ `x0[2]` block.
-/// @param[in] x0 Arrays used in the lifting.
-/// @param[in] alpha Scaling to apply.
-template <typename V, std::floating_point U,
-          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
-  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
-void apply_lifting(
-    V&& b,
-    const std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>>&
-        a,
-    const std::vector<std::span<const T>>& constants,
-    const std::vector<std::map<std::pair<IntegralType, int>,
-                               std::pair<std::span<const T>, int>>>& coeffs,
-    const std::vector<
-        std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
-    const std::vector<std::span<const T>>& x0, T alpha)
-{
-  if (!x0.empty() and x0.size() != a.size())
-  {
-    throw std::runtime_error(
-        "Mismatch in size between x0 and bilinear form in assembler.");
-  }
-
-  if (a.size() != bcs1.size())
-  {
-    throw std::runtime_error(
-        "Mismatch in size between a and bcs in assembler.");
-  }
-
-  // Reused across iterations so `assign` below can recycle the
-  // existing buffer instead of reallocating for every block.
-  std::vector<std::int8_t> bc_markers1;
-  std::vector<T> bc_values1;
-  for (std::size_t j = 0; j < a.size(); ++j)
-  {
-    if (a[j] and !bcs1[j].empty())
-    {
-      assert(a[j]->get().function_spaces().at(0));
-      auto V1 = a[j]->get().function_spaces()[1];
-      assert(V1);
-
-      const int bs0 = a[j]->get().function_spaces()[0]->dofmaps().front()->bs();
-      const int bs1 = V1->dofmaps().front()->bs();
-
-      std::span<const T> _x0;
-      if (!x0.empty())
-        _x0 = x0[j];
-
-      std::shared_ptr<const DofMap> dofmap = V1->dofmaps().front();
-      auto map1 = dofmap->index_map;
-      const int map_bs1 = dofmap->index_map_bs();
-      assert(map1);
-      const int crange = map_bs1 * (map1->size_local() + map1->num_ghosts());
-      bc_markers1.assign(crange, false);
-      bc_values1.assign(crange, 0);
-      for (auto& bc : bcs1[j])
-      {
-        bc.get().mark_dofs(bc_markers1);
-        bc.get().set(bc_values1, std::nullopt, 1);
-      }
-
-      if (bs0 == 1 and bs1 == 1)
-      {
-        lift_bc(b, a[j]->get(), std::integral_constant<int, 1>{},
-                std::integral_constant<int, 1>{}, constants[j], coeffs[j],
-                std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
-      }
-      else if (bs0 == 3 and bs1 == 3)
-      {
-        lift_bc(b, a[j]->get(), std::integral_constant<int, 3>{},
-                std::integral_constant<int, 3>{}, constants[j], coeffs[j],
-                std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
-      }
-      else
-      {
-        lift_bc(b, a[j]->get(), bs0, bs1, constants[j], coeffs[j],
-                std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
-      }
-    }
-  }
+  // Repurpose the dolfinx::fem::impl::assemble_matrix0 assembler to work on
+  // the vector b instead. Use LiftingMode=true so the kernel is only called
+  // on cells that have BC-constrained DOFs in the column space.
+  std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
+  assert(mesh);
+  std::span x = mesh->geometry().x();
+  md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x3(
+      x.data(), x.size() / 3, 3);
+  impl::assemble_matrix0<true>(lifting_fn, a, x3, constants, coefficients, {},
+                               bc_markers1);
 }
 
 /// @brief Assemble linear form into a vector.
@@ -555,7 +462,7 @@ void assemble_vector(
     std::span be_b(be_buffer);
     std::span cdofs_b(cdofs_buffer);
 
-    const fem::DofTransformKernel<T> auto P0
+    const fem::DofTransformKernel<T> auto& P0
         = element->template dof_transformation_fn<T>(doftransform::standard);
 
     std::span<const std::uint32_t> cell_info0;

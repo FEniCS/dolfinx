@@ -354,7 +354,70 @@ void apply_lifting(
     return;
 
   common::Timer t("[Apply lifting]");
-  impl::apply_lifting(b, a, constants, coeffs, bcs1, x0, alpha);
+
+  if (!x0.empty() and x0.size() != a.size())
+  {
+    throw std::runtime_error(
+        "Mismatch in size between x0 and bilinear form in assembler.");
+  }
+
+  if (a.size() != bcs1.size())
+  {
+    throw std::runtime_error(
+        "Mismatch in size between a and bcs in assembler.");
+  }
+
+  // Reused across iterations so `assign` below can recycle the
+  // existing buffer instead of reallocating for every block.
+  std::vector<std::int8_t> bc_markers1;
+  std::vector<T> bc_values1;
+  for (std::size_t j = 0; j < a.size(); ++j)
+  {
+    if (a[j] and !bcs1[j].empty())
+    {
+      assert(a[j]->get().function_spaces().at(0));
+      auto V1 = a[j]->get().function_spaces()[1];
+      assert(V1);
+
+      const int bs0 = a[j]->get().function_spaces()[0]->dofmaps().front()->bs();
+      const int bs1 = V1->dofmaps().front()->bs();
+
+      std::span<const T> _x0;
+      if (!x0.empty())
+        _x0 = x0[j];
+
+      std::shared_ptr<const DofMap> dofmap = V1->dofmaps().front();
+      auto map1 = dofmap->index_map;
+      const int map_bs1 = dofmap->index_map_bs();
+      assert(map1);
+      const int crange = map_bs1 * (map1->size_local() + map1->num_ghosts());
+      bc_markers1.assign(crange, false);
+      bc_values1.assign(crange, 0);
+      for (auto& bc : bcs1[j])
+      {
+        bc.get().mark_dofs(bc_markers1);
+        bc.get().set(bc_values1, std::nullopt, 1);
+      }
+
+      if (bs0 == 1 and bs1 == 1)
+      {
+        impl::lift_bc(b, a[j]->get(), std::integral_constant<int, 1>{},
+                      std::integral_constant<int, 1>{}, constants[j], coeffs[j],
+                      std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
+      }
+      else if (bs0 == 3 and bs1 == 3)
+      {
+        impl::lift_bc(b, a[j]->get(), std::integral_constant<int, 3>{},
+                      std::integral_constant<int, 3>{}, constants[j], coeffs[j],
+                      std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
+      }
+      else
+      {
+        impl::lift_bc(b, a[j]->get(), bs0, bs1, constants[j], coeffs[j],
+                      std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
+      }
+    }
+  }
 }
 
 /// @brief Modify the right-hand side vector to account for constraints
@@ -448,7 +511,7 @@ void apply_lifting(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     la::MatSet<T> auto mat_add, const Form<T, U>& a,
     std::span<const T> constants,
@@ -465,9 +528,8 @@ void assemble_matrix(
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
   std::span x = mesh->geometry().x();
-  impl::assemble_matrix<T, U, LiftingMode>(
-      mat_add, a, mdspanx3_t(x.data(), x.size() / 3, 3), constants,
-      coefficients, dof_marker0, dof_marker1);
+  impl::assemble_matrix0(mat_add, a, mdspanx3_t(x.data(), x.size() / 3, 3),
+                         constants, coefficients, dof_marker0, dof_marker1);
 }
 
 /// @brief Assemble bilinear form into a matrix
@@ -515,8 +577,8 @@ void assemble_matrix(
   }
 
   // Assemble
-  assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
-                  dof_marker1);
+  fem::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
+                       dof_marker1);
 }
 
 /// @brief Assemble bilinear form into a matrix.
@@ -562,9 +624,9 @@ void assemble_matrix(auto mat_add, const Form<T, U>& a,
   pack_coefficients(a, coefficients);
 
   // Assemble
-  assemble_matrix(mat_add, a, std::span(constants),
-                  make_coefficients_span(coefficients), dof_marker0,
-                  dof_marker1);
+  impl::assemble_matrix0(mat_add, a, std::span(constants),
+                         make_coefficients_span(coefficients), dof_marker0,
+                         dof_marker1);
 }
 
 /// @brief Sets a value to the diagonal of a matrix for specified rows.
