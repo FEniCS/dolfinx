@@ -40,6 +40,51 @@ class Form;
 template <std::floating_point T>
 class FunctionSpace;
 
+namespace impl
+{
+/// @brief Check that Dirichlet boundary conditions are supported for matrix
+/// assembly when test and trial spaces are distinct but share a dofmap.
+/// @param[in] a Bilinear form.
+/// @param[in] bcs Boundary conditions to check.
+/// @throws std::runtime_error If a boundary condition is applied to either
+/// space of a form whose distinct test and trial spaces share the same dofmap.
+template <dolfinx::scalar T, std::floating_point U>
+void check_bcs_for_dofmap_sharing_spaces(
+    const Form<T, U>& a,
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
+{
+  if (bcs.empty() or a.function_spaces().size() != 2)
+    return;
+
+  const auto& V0 = a.function_spaces().at(0);
+  const auto& V1 = a.function_spaces().at(1);
+  assert(V0);
+  assert(V1);
+  if (V0 == V1)
+    return;
+  if (V0->mesh() != V1->mesh())
+    return;
+  if (V0->dofmaps().size() != 1 or V1->dofmaps().size() != 1)
+    return;
+  if (V0->dofmap() != V1->dofmap())
+    return;
+  if (V0->element()->signature() != V1->element()->signature())
+    return;
+
+  for (auto& bc : bcs)
+  {
+    assert(bc.get().function_space());
+    if (V0->contains(*bc.get().function_space())
+        or V1->contains(*bc.get().function_space()))
+    {
+      throw std::runtime_error(
+          "DirichletBCs on distinct test and trial spaces that share a "
+          "dofmap are not supported by this matrix assembly function.");
+    }
+  }
+}
+} // namespace impl
+
 /// @brief Evaluate an Expression on cells or facets.
 ///
 /// This function accepts packed coefficient data, which allows it be
@@ -477,13 +522,19 @@ void assemble_matrix(
 /// @param[in] coefficients Coefficients that appear in `a`.
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 /// dofs the row and column are zeroed. The diagonal  entry is not set.
+/// @param[in] check_bcs Check that the boundary conditions are supported by
+/// this assembly function.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
-    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs)
+    const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs,
+    bool check_bcs = true)
 {
+  if (check_bcs)
+    impl::check_bcs_for_dofmap_sharing_spaces(a, bcs);
+
   // Index maps for dof ranges
   // NOTE: For mixed-topology meshes, there will be multiple DOF maps,
   // but the index maps are the same.
