@@ -196,7 +196,9 @@ class MatrixFreeOperator:
 
         dolfinx.fem.petsc.assemble_vector(self._vector, self._vector_product)
         dolfinx.la.petsc._ghost_update(
-            self._vector, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
+            self._vector,
+            PETSc.InsertMode.ADD,  # type: ignore[arg-type]
+            PETSc.ScatterMode.REVERSE,  # type: ignore[arg-type]
         )
 
         # Insert X at Dirichlet dofs
@@ -219,7 +221,9 @@ class MatrixFreeOperator:
                     odi = di[0][: di[1]]
                     v_array[odi] = x_array[odi]
         dolfinx.la.petsc._ghost_update(
-            self._vector, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD
+            self._vector,
+            PETSc.InsertMode.INSERT,  # type: ignore[arg-type]
+            PETSc.ScatterMode.FORWARD,  # type: ignore[arg-type]
         )
         Y.setArray(self._vector)
         Y.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
@@ -240,7 +244,7 @@ class MatrixFreeOperator:
         with self._diagonal.localForm() as loc:
             loc.set(0)
         dolfinx.fem.petsc.assemble_vector(self._diagonal, self._compiled_diagonal)
-        self._diagonal.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
+        self._diagonal.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
         if isinstance(self._compiled_diagonal, dolfinx.fem.Form):
             for bc in self._bcs:
                 di = bc.dof_indices()
@@ -256,7 +260,7 @@ class MatrixFreeOperator:
                     di = bc.dof_indices()
                     odi = di[0][: di[1]]
                     self._diagonal.array_w[off0 + odi] = 1
-        self._diagonal.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+        self._diagonal.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
         vec.setArray(self._diagonal)
 
 
@@ -391,7 +395,7 @@ def mixed_element(
     # Assemble RHS with boundary conditions
     b = dolfinx.fem.petsc.assemble_vector(dolfinx.fem.form(L))
     dolfinx.fem.petsc.apply_lifting(b, [dolfinx.fem.form(a)], [bcs])
-    b.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
     dolfinx.fem.petsc.set_bc(b, bcs)
 
     # Setup matrix free KSP
@@ -454,15 +458,15 @@ def mixed_function_space(
     b = dolfinx.fem.petsc.assemble_vector(L_compiled)
     bcs0 = dolfinx.fem.bcs_by_block(dolfinx.fem.extract_function_spaces(L_compiled), bcs)
     dolfinx.fem.petsc.apply_lifting(b, a_compiled, bcs0)
-    b.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
     dolfinx.fem.petsc.set_bc(b, bcs0)
-    b.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+    b.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
 
     # We define the matrix free KSP and solve the linear system
     ksp = create_matrix_free_ksp(a, bcs, "MixedFunctionSpace")
     wh = b.duplicate()
     ksp.solve(b, wh)
-    wh.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+    wh.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
 
     #  Assign solution to dolfinx functions
     uh = dolfinx.fem.Function(V)

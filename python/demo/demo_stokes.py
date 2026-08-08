@@ -326,7 +326,7 @@ def nested_iterative_solver_low_level():
     # Sum contributions for vector entries that are shared across
     # parallel processes
     for b_sub in b.getNestSubVecs():
-        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
 
     # Set Dirichlet boundary condition values in the RHS vector
     bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
@@ -420,7 +420,7 @@ def block_operators():
     b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
     bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
     apply_lifting(b, a, bcs=bcs1)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
     bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
     set_bc(b, bcs0)
 
@@ -600,7 +600,7 @@ def mixed_direct():
 
     bcs1 = bcs_by_block(extract_function_spaces([[a]], 1), bcs)
     apply_lifting(b, [a], bcs=bcs1)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
 
     # Set Dirichlet boundary condition values in the RHS
     for bc in bcs:

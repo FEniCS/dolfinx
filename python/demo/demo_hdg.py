@@ -229,7 +229,7 @@ A.assemble()
 b = assemble_vector(L_blocked)
 bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_blocked, 1), [bc])
 apply_lifting(b, a_blocked, bcs=bcs1)
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
 bcs0 = fem.bcs_by_block(extract_function_spaces(L_blocked), [bc])
 set_bc(b, bcs0)
 
@@ -247,7 +247,7 @@ try:
     x = create_vector([V, Vbar])
     ksp.solve(b, x)
     ksp.destroy()
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
     b.destroy()
 except PETSc.Error as e:
     if e.ierr == 92:  # type: ignore[attr-defined]
