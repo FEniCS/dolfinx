@@ -166,11 +166,10 @@ class MatrixFreeOperator:
         """
         # Move data into local working array
 
-        dolfinx.fem.petsc.assign(X, self._w)
+        dolfinx.fem.petsc.assign(X, self._w)  # type: ignore
 
         # Zero out any input from Dirichlet BCs
-        if isinstance(self._compiled_diagonal, dolfinx.fem.Form):
-            bcs0 = self._bcs
+        if isinstance(self._w, dolfinx.fem.Function):
             for bc in self._bcs:
                 di = bc.dof_indices()
                 odi = di[0][: di[1]]
@@ -178,6 +177,7 @@ class MatrixFreeOperator:
             self._w.x.scatter_forward()
 
         else:
+            assert isinstance(self._compiled_diagonal, list)
             bcs0 = dolfinx.fem.bcs_by_block(
                 dolfinx.fem.extract_function_spaces(self._compiled_diagonal), self._bcs
             )
@@ -198,18 +198,18 @@ class MatrixFreeOperator:
         )
 
         # Insert X at Dirichlet dofs
-        if isinstance(self._compiled_diagonal, dolfinx.fem.Form):
-            bcs0 = self._bcs
+        if isinstance(self._w, dolfinx.fem.Function):
             for bc in self._bcs:
                 di = bc.dof_indices()
                 odi = di[0][: di[1]]
                 self._vector.array_w[odi] = X.array_r[odi]
         else:
+            assert isinstance(self._compiled_diagonal, list)
             bcs0 = dolfinx.fem.bcs_by_block(
                 dolfinx.fem.extract_function_spaces(self._compiled_diagonal), self._bcs
             )
-            offset0, _ = self._vector.getAttr("_blocks")
-            for bcs, off0, off1 in zip(bcs0, offset0[:-1], offset0[1:], strict=True):
+            offset0, _ = self._vector.getAttr("_blocks")  # type: ignore
+            for bcs, off0, off1 in zip(bcs0, offset0[:-1], offset0[1:], strict=True):  # type: ignore[has-type]
                 v_array = self._vector.array_w[off0:off1]
                 x_array = X.array_r[off0:off1]
                 for bc in bcs:
@@ -248,8 +248,8 @@ class MatrixFreeOperator:
             bcs0 = dolfinx.fem.bcs_by_block(
                 dolfinx.fem.extract_function_spaces(self._compiled_diagonal), self._bcs
             )
-            offset0, _ = self._diagonal.getAttr("_blocks")
-            for bcs, off0 in zip(bcs0, offset0[:-1], strict=True):
+            offset0, _ = self._diagonal.getAttr("_blocks")  # type: ignore
+            for bcs, off0 in zip(bcs0, offset0[:-1], strict=True):  # type: ignore[has-type]
                 for bc in bcs:
                     di = bc.dof_indices()
                     odi = di[0][: di[1]]

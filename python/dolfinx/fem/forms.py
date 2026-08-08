@@ -451,7 +451,7 @@ def form(
         constants = [c._cpp_object for c in form.constants()]
 
         # Extract subdomain ids from ufcx_form
-        subdomain_ids = {type: [] for type in sd.get(domain).keys()}
+        subdomain_ids: dict[str, list[int]] = {type: [] for type in sd.get(domain).keys()}
         integral_offsets = [
             ufcx_form.form_integral_offsets[i] for i in range(len(IntegralType) + 1)
         ]

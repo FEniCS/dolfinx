@@ -80,7 +80,7 @@ def plot_scalar():
     subplotter.subplot(0, 0)
     subplotter.add_text("Scalar contour field", font_size=14, color="black", position="upper_edge")
     subplotter.add_mesh(grid, show_edges=True, show_scalar_bar=True)
-    subplotter.view_xy()
+    subplotter.view_xy()  # type: ignore[call-arg]
 
     subplotter.subplot(0, 1)
     subplotter.add_text("Warped function", position="upper_edge", font_size=14, color="black")
@@ -95,10 +95,10 @@ def plot_scalar():
         color="black",
         label_font_size=25,
     )
-    subplotter.set_position([-3, 2.6, 0.3])
-    subplotter.set_focus([3, -1, -0.15])
-    subplotter.set_viewup([0, 0, 1])
-    subplotter.add_mesh(warped, show_edges=True, scalar_bar_args=sargs)
+    subplotter.set_position([-3, 2.6, 0.3])  # type: ignore[arg-type]
+    subplotter.set_focus([3, -1, -0.15])  # type: ignore[arg-type]
+    subplotter.set_viewup([0, 0, 1])  # type: ignore[arg-type]
+    subplotter.add_mesh(warped, show_edges=True, scalar_bar_args=sargs)  # type: ignore[arg-type]
     if pyvista.OFF_SCREEN:
         subplotter.screenshot(
             out_folder / "2D_function_warp.png",
@@ -128,7 +128,7 @@ def plot_meshtags():
     # otherwise 0
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32))
-    cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
+    cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))  # type: ignore[arg-type]
 
     # Create VTK mesh
     cells, types, x = plot.vtk_mesh(msh)
@@ -144,7 +144,7 @@ def plot_meshtags():
     subplotter.subplot(0, 0)
     subplotter.add_text("Mesh with markers", font_size=14, color="black", position="upper_edge")
     subplotter.add_mesh(grid, show_edges=True, show_scalar_bar=False)
-    subplotter.view_xy()
+    subplotter.view_xy()  # type: ignore[call-arg]
 
     # We can visualize subsets of data, by creating a smaller topology
     # (set of cells). Here we create VTK mesh data for only cells with
@@ -188,7 +188,7 @@ def plot_higher_order():
     # it gets value 1, otherwise 0.
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32))
-    cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
+    cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))  # type: ignore[arg-type]
 
     # We start by interpolating a discontinuous function (discontinuous
     # between cells with different mesh tag values) into a degree 2
@@ -224,12 +224,12 @@ def plot_higher_order():
         color="black",
     )
     sargs = dict(height=0.1, width=0.8, vertical=False, position_x=0.1, position_y=0, color="black")
-    plotter.add_mesh(grid, show_edges=False, scalar_bar_args=sargs, line_width=0)
+    plotter.add_mesh(grid, show_edges=False, scalar_bar_args=sargs, line_width=0)  # type: ignore[arg-type]
     plotter.add_mesh(org_grid, color="white", style="wireframe", line_width=5)
     plotter.add_mesh(
         grid.copy(), style="points", point_size=15, render_points_as_spheres=True, line_width=0
     )
-    plotter.view_xy()
+    plotter.view_xy()  # type: ignore[call-arg]
     if pyvista.OFF_SCREEN:
         plotter.screenshot(
             out_folder / f"DG_{MPI.COMM_WORLD.rank}.png",
@@ -337,7 +337,7 @@ def plot_streamlines():
     plotter.add_mesh(grid, style="wireframe")
     plotter.add_mesh(glyphs)
     plotter.add_mesh(streamlines.tube(radius=0.001))
-    plotter.view_xy()
+    plotter.view_xy()  # type: ignore[call-arg]
     if pyvista.OFF_SCREEN:
         plotter.screenshot(
             out_folder / f"streamlines_{MPI.COMM_WORLD.rank}.png",

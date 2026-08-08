@@ -103,12 +103,20 @@ markers = [
 # Goal would be to make all of the below True long-term
 disallow_untyped_defs = false
 disallow_any_unimported = false
-no_implicit_optional = false
-check_untyped_defs = false
+no_implicit_optional = true
+check_untyped_defs = true
 warn_return_any = false
 warn_unused_ignores = false
 show_error_codes = true
 ignore_missing_imports = true
+
+# Test bodies are unannotated pytest functions exercising loose numpy/dtype
+# patterns; check_untyped_defs and no_implicit_optional are not enforced
+# there.
+[[tool.mypy.overrides]]
+module = ["conftest", "unit.*"]
+no_implicit_optional = false
+check_untyped_defs = false
 
 [tool.ruff]
 line-length = 100
@@ -127,7 +135,7 @@ select = [
       "NPY",    # numpy-specific rules
       "FLY",    # use f-string not static joins
       "NPY201", # numpy 2.x ruleset
-      "B905",   # zip-without-explicit-strict 
+      "B905",   # zip-without-explicit-strict
 ]
 ignore = ["RUF012"]
 allowed-confusables = ["σ", "ρ"]

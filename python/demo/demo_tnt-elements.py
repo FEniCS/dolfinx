@@ -183,8 +183,8 @@ def create_tnt_quad(degree):
     # Interpolation
     geometry = basix.geometry(basix.CellType.quadrilateral)
     topology = basix.topology(basix.CellType.quadrilateral)
-    x = [[], [], [], []]
-    M = [[], [], [], []]
+    x: list[list[np.ndarray]] = [[], [], [], []]
+    M: list[list[np.ndarray]] = [[], [], [], []]
 
     # Vertices
     for v in topology[0]:
