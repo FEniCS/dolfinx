@@ -38,12 +38,12 @@ dependencies = [
 [project.optional-dependencies]
 # llvmlite (numba) is not built for x86_64 on macOS or arm64 on Windows - advanced users can install manually.
 demo = [
-  "gmsh",
-  "networkx",
-  "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
-  "matplotlib",
-  "scipy",
-  "pyvista",
+      "gmsh",
+      "networkx",
+      "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
+      "matplotlib",
+      "scipy",
+      "pyvista",
 ]
 docs = [
       "breathe",
@@ -60,7 +60,9 @@ docs = [
 ]
 lint = ["ruff", "gersemi"]
 mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
-optional = ["numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')"]
+optional = [
+      "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
+]
 petsc4py = ["petsc4py"]
 test = [
       "matplotlib",
@@ -140,8 +142,6 @@ module = [
       "pyvista",
       "pyvistaqt",
       "networkx",
-      "petsc4py",
-      "petsc4py.*",
 ]
 ignore_missing_imports = true
 
@@ -154,35 +154,6 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["pyvista", "pyvistaqt"]
 follow_imports = "skip"
-
-# These modules expose ufl types (Form, Mesh, FunctionSpace, ...) in their
-# public API annotations. ufl/ffcx do ship a py.typed marker now, but an
-# editable dev install (setuptools' sys.meta_path-based finder) is invisible
-# to mypy's own static package resolution, so locally they still resolve as
-# Any via the ignore_missing_imports override above; disallow_any_unimported
-# is unsatisfiable there as a result. A non-editable install (e.g. CI's
-# `pip install git+...`) resolves them with real types, making this a no-op
-# there. dolfinx.la annotates a PETSc.Vec-typed attribute guarded by
-# `if TYPE_CHECKING`, which is unresolvable in builds without petsc4py
-# installed. demo_comm-pattern annotates parameters with networkx's
-# nx.DiGraph, which is untyped.
-[[tool.mypy.overrides]]
-module = [
-      "dolfinx.fem.function",
-      "dolfinx.fem.forms",
-      "dolfinx.fem.petsc",
-      "dolfinx.fem.problems",
-      "dolfinx.io.gmsh",
-      "dolfinx.la",
-      "dolfinx.mesh",
-      "demo_comm-pattern",
-      "demo_gmsh",
-      "demo_hdg",
-      "demo_matrix-free-petsc",
-      "demo_pml",
-      "demo_scattering-boundary-conditions",
-]
-disallow_any_unimported = false
 
 [tool.ruff]
 line-length = 100
@@ -227,8 +198,8 @@ convention = "google"
 [tool.ruff.lint.per-file-ignores]
 "demo*.py" = ["D100"] # undocumented-public-module
 "test*.py" = [
-    "D100",
-    "D103",  # undocumented-public-function
-    "D205"  # missing-blank-line-after-summary
+      "D100",
+      "D103", # undocumented-public-function
+      "D205", # missing-blank-line-after-summary
 ]
 "conf.py" = ["D100", "D103", "D205"]

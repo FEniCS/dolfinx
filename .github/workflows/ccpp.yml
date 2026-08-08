@@ -279,11 +279,10 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy -v --config-file python/pyproject.toml -p dolfinx
-          # cd python/
-          # # mypy test
-          # mypy dolfinx
-          # mypy demo
+          mypy --config-file python/pyproject.toml -p dolfinx
+          cd python/
+          mypy demo
+          mypy test
 
       - name: Run demos (Python, serial)
         run: |
