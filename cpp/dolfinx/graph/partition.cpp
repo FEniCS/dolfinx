@@ -12,6 +12,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/sort.h>
 #include <map>
 #include <memory>
 
@@ -75,7 +76,12 @@ graph::build::distribute(MPI_Comm comm,
                            [i, d0 = di.front()](auto d) -> std::array<int, 3>
                            { return {d, i, d0}; });
   }
-  std::ranges::sort(dest_to_index);
+
+  // Only grouping by destination rank is required (order within a group
+  // is irrelevant downstream), and the key is bounded by the
+  // communicator size, so a radix sort keyed on the destination rank
+  // alone is used rather than a full lexicographic sort.
+  dolfinx::radix_sort(dest_to_index, [](const auto& e) { return e[0]; });
 
   // Build list of unique dest ranks and count number of rows to send to
   // each dest (by neighbourhood rank)
@@ -259,7 +265,12 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
                            [i, d0 = di.front()](auto d) -> std::array<int, 3>
                            { return {d, i, d0}; });
   }
-  std::ranges::sort(dest_to_index);
+
+  // Only grouping by destination rank is required (order within a group
+  // is irrelevant downstream), and the key is bounded by the
+  // communicator size, so a radix sort keyed on the destination rank
+  // alone is used rather than a full lexicographic sort.
+  dolfinx::radix_sort(dest_to_index, [](const auto& e) { return e[0]; });
 
   // Build list of unique dest ranks and count number of rows to send to
   // each dest (by neighbourhood rank)
