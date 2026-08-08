@@ -106,7 +106,7 @@ disallow_any_unimported = false
 no_implicit_optional = true
 check_untyped_defs = true
 warn_return_any = false
-warn_unused_ignores = false
+warn_unused_ignores = true
 show_error_codes = true
 ignore_missing_imports = true
 

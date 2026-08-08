@@ -17,11 +17,11 @@ from dolfinx.typing import Index
 # Import graph partitioners, which may or may not be available
 # (dependent on build configuration)
 try:
-    from dolfinx.cpp.graph import partitioner_scotch  # type: ignore[attr-defined] # noqa
+    from dolfinx.cpp.graph import partitioner_scotch  # noqa
 except ImportError:
     pass
 try:
-    from dolfinx.cpp.graph import partitioner_parmetis  # type: ignore[attr-defined] # noqa
+    from dolfinx.cpp.graph import partitioner_parmetis  # noqa
 except ImportError:
     pass
 try:

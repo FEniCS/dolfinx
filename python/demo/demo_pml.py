@@ -826,7 +826,7 @@ err_sca = np.abs(q_sca_analyt - q_sca_fenics) / q_sca_analyt
 err_ext = np.abs(q_ext_analyt - q_ext_fenics) / q_ext_analyt
 
 # +
-par_print = PETSc.Sys.Print  # type: ignore
+par_print = PETSc.Sys.Print
 par_print(
     f"Analytical: Q_abs={q_abs_analyt:.6f}, Q_sca={q_sca_analyt:.6f}, Q_ext={q_ext_analyt:.6f}"
 )

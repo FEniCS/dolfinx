@@ -260,7 +260,7 @@ A_cond = assemble_matrix(a_cond, bcs=[bc])
 A_cond.assemble()
 b = assemble_vector(b1)
 apply_lifting(b, [a_cond], bcs=[[bc]])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 bc.set(b.array_w)  # type: ignore[arg-type]
 
 # We use a {py:class}`PETSc.KSP <petsc4py.PETSc.KSP>` solver to solve the

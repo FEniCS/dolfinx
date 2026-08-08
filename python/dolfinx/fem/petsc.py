@@ -229,7 +229,7 @@ def assemble_vector(
 ) -> PETSc.Vec: ...
 
 
-@functools.singledispatch  # type: ignore[attr-defined]
+@functools.singledispatch
 def assemble_vector(
     L: Form | Sequence[Form],
     constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
@@ -537,10 +537,10 @@ def _assemble_matrix_petsc(
                 raise ValueError(
                     "Cannot have a entire {'row' if index == 0 else 'column'} of a full of None"
                 )
-        is0 = _cpp.la.petsc.create_index_sets(  # type: ignore[attr-defined]
+        is0 = _cpp.la.petsc.create_index_sets(
             [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[0]]  # type: ignore
         )
-        is1 = _cpp.la.petsc.create_index_sets(  # type: ignore[attr-defined]
+        is1 = _cpp.la.petsc.create_index_sets(
             [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[1]]  # type: ignore
         )
 
@@ -696,8 +696,8 @@ def apply_lifting(
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
                         zip(a, offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True)
                     ):
-                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore[call-overload, arg-type]
-                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore[index, call-overload, assignment, arg-type]
+                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore[call-overload]
+                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore[index, call-overload, assignment]
                         const_ = [
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val
                             for val in const
@@ -753,7 +753,7 @@ def set_bc(
     elif b.getType() == PETSc.Vec.Type.NEST:
         _b = b.getNestSubVecs()
         x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()  # type: ignore
-        for b_sub, bc, x_sub in zip(_b, bcs, x0, strict=True):  # type: ignore[assignment, call-overload, arg-type]
+        for b_sub, bc, x_sub in zip(_b, bcs, x0, strict=True):  # type: ignore[call-overload]
             if not isinstance(bc, Sequence):
                 raise ValueError("Expected a sequence of DirichletBC for a nested vector.")
             set_bc(b_sub, bc, x_sub, alpha)
@@ -1046,8 +1046,8 @@ class LinearProblem(typing.Generic[_U]):
                 apply_lifting(self.b, a, bcs=bcs1)
                 dolfinx.la.petsc._ghost_update(
                     self.b,
-                    PETSc.InsertMode.ADD,  # type: ignore
-                    PETSc.ScatterMode.REVERSE,  # type: ignore
+                    PETSc.InsertMode.ADD,
+                    PETSc.ScatterMode.REVERSE,
                 )
                 bcs0 = _bcs_by_block(_extract_function_spaces(L), self.bcs)
                 dolfinx.fem.petsc.set_bc(self.b, bcs0)
@@ -1058,8 +1058,8 @@ class LinearProblem(typing.Generic[_U]):
                 apply_lifting(self.b, [a], bcs=[self.bcs])
                 dolfinx.la.petsc._ghost_update(
                     self.b,
-                    PETSc.InsertMode.ADD,  # type: ignore
-                    PETSc.ScatterMode.REVERSE,  # type: ignore
+                    PETSc.InsertMode.ADD,
+                    PETSc.ScatterMode.REVERSE,
                 )
                 for bc in self.bcs:
                     bc.set(self.b.array_w)
@@ -1068,7 +1068,7 @@ class LinearProblem(typing.Generic[_U]):
 
         # Solve linear system and update ghost values in the solution
         self.solver.solve(self.b, self.x)
-        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
         dolfinx.fem.petsc.assign(self.x, self.u)  # type: ignore
         return self.u
 
@@ -1171,7 +1171,7 @@ def assemble_residual(
             format of this argument.
     """
     # Update input vector before assigning
-    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
 
     # Assign the input vector to the unknowns
     assign(x, u)  # type: ignore
@@ -1194,15 +1194,15 @@ def assemble_residual(
             raise ValueError("Expected a sequence of forms for a block/nest residual.")
         bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)
         apply_lifting(b, jacobian, bcs=bcs1, x0=x, alpha=-1.0)  # type: ignore
-        dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
+        dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
         bcs0 = _bcs_by_block(_extract_function_spaces(residual), bcs)
         set_bc(b, bcs0, x0=x, alpha=-1.0)
     else:
         # Single form lifting
         apply_lifting(b, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)
-        dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
+        dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
         set_bc(b, bcs, x0=x, alpha=-1.0)
-    dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+    dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
 
 
 def assemble_jacobian(
@@ -1245,7 +1245,7 @@ def assemble_jacobian(
     """
     # Copy existing solution into the function used in the residual and
     # Jacobian
-    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
     assign(x, u)  # type: ignore
 
     # Assemble Jacobian
@@ -1398,7 +1398,7 @@ class NonlinearProblem(typing.Generic[_U]):
         )
 
         if J is None:
-            J = derivative_block(F, u)  # type: ignore
+            J = derivative_block(F, u)
 
         self._J = _create_form(
             J,
@@ -1512,7 +1512,7 @@ class NonlinearProblem(typing.Generic[_U]):
 
         # Solve problem
         self.solver.solve(None, self.x)
-        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
 
         # Copy solution back to function
         assign(self.x, self.u)  # type: ignore
@@ -1673,7 +1673,7 @@ class NewtonSolverNonlinearProblem:
         Args:
            x: The vector containing the latest solution.
         """
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def F(self, x: PETSc.Vec, b: PETSc.Vec) -> None:
         """Assemble the residual F into the vector b.
@@ -1689,10 +1689,10 @@ class NewtonSolverNonlinearProblem:
         # Apply boundary condition
         if self.bcs is not None:
             apply_lifting(b, [self._a], bcs=[self.bcs], x0=[x], alpha=-1.0)
-            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
             set_bc(b, self.bcs, x, -1.0)
         else:
-            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
+            b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     def J(self, x: PETSc.Vec, A: PETSc.Mat) -> None:
         """Assemble the Jacobian matrix.
@@ -2054,12 +2054,12 @@ class cffi_utils:
                                     """
         )
 
-        MatSetValuesLocal = _lib_cffi.MatSetValuesLocal  # type: ignore[attr-defined]
+        MatSetValuesLocal = _lib_cffi.MatSetValuesLocal
         """See PETSc `MatSetValuesLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesLocal>`_
         documentation."""
 
-        MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal  # type: ignore[attr-defined]
+        MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal
         """See PETSc `MatSetValuesBlockedLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
