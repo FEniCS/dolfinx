@@ -33,7 +33,7 @@ jobs:
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install linting tools
-        run: pip install clang-format gersemi mypy ruff
+        run: pip install clang-format gersemi ruff
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
@@ -143,27 +143,13 @@ jobs:
 
       - name: Build Python interface
         run: >
-          pip install  'python/[test,mypy]'
+          pip install  'python/[test]'
           --check-build-dependencies
           --no-build-isolation
           --config-settings=cmake.build-type="Developer"
 
       - name: Check Python configuration
         run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
-
-      - name: Run mypy
-        run: |
-          # package mode, type checks installed dolfinx (working around name
-          # collision in python/ directory); petsc.py/utils.py exclusions are
-          # for modules that require PETSc/ADIOS2, neither built in this job.
-          # `mypy test`/`mypy demo` are not run here: as directory targets
-          # (rather than -p package mode) they resolve `import dolfinx`
-          # against the source checkout rather than the installed package,
-          # and --exclude does not stop mypy from following imports into an
-          # excluded file, only from adding it as a discovery root, so the
-          # same PETSc/ADIOS2 errors resurface there. The with-PETSc job's
-          # `mypy demo` (a fully-featured build) covers demo correctness.
-          mypy --config-file python/pyproject.toml -p dolfinx --exclude 'fem/petsc\.py|la/petsc\.py|nls/petsc\.py|io/utils\.py'
 
       - name: Install gmsh and pyvista (and dependencies)
         run: |
@@ -278,13 +264,6 @@ jobs:
       - name: Check Python configuration
         run: python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
-      - name: Run mypy
-        run: |
-          mypy --config-file python/pyproject.toml -p dolfinx --exclude superlu_dist.py
-          cd python/
-          # mypy test
-          mypy demo
-
       - name: Numpy version
         run: python -c "import numpy; print(numpy.__version__)"
 
@@ -297,6 +276,14 @@ jobs:
         run: |
           apt-get install libegl1 libxrender1
           pip install pyvista
+
+      - name: Run mypy
+        run: |
+          # mypy --config-file python/pyproject.toml -p dolfinx --exclude superlu_dist.py
+          cd python/
+          # mypy test
+          mypy dolfinx
+          mypy demo
 
       - name: Run demos (Python, serial)
         run: |
