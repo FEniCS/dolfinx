@@ -89,7 +89,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// local element matrix.
 /// @param cdofs_b Buffer for local element geometry. Size must be at
 /// least `3 * x_dofmap.extent(1))`.
-template <bool LiftingMode = false, dolfinx::scalar T, std::floating_point U>
+template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -261,7 +261,7 @@ void assemble_cells_matrix(
 /// local element matrix.
 /// @param cdofs_b Buffer for local element geometry. Size must be at
 /// least `3 * x_dofmap.extent(1))`.
-template <bool LiftingMode = false, dolfinx::scalar T, std::floating_point U>
+template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_entities(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -439,7 +439,7 @@ void assemble_entities(
 /// @param Ae_block_b Buffer used to gather a single (test, trial) block
 /// of the local element matrix. Size must be at least `(bs0 *
 /// dmap0.map().extent(1)) * (bs1 * dmap1.map().extent(1))`.
-template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
+template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -827,7 +827,7 @@ void assemble_matrix(
       std::span facets0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
       std::span facets1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
-      impl::assemble_interior_facets<T, U, LiftingMode>(
+      impl::assemble_interior_facets<LiftingMode>(
           mat_set, x_dofmap, x,
           mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
           {*dofmap0, bs0,
