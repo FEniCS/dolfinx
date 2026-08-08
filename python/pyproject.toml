@@ -100,15 +100,74 @@ markers = [
 
 [tool.mypy]
 # Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
-# Goal would be to make all of the below True long-term
 disallow_untyped_defs = false
-disallow_any_unimported = false
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true
+ignore_missing_imports = false
+
+# Test bodies are unannotated pytest functions exercising loose numpy/dtype
+# patterns; check_untyped_defs and no_implicit_optional are not enforced
+# there.
+[[tool.mypy.overrides]]
+module = ["conftest", "unit.*"]
 no_implicit_optional = false
 check_untyped_defs = false
-warn_return_any = false
-warn_unused_ignores = false
-show_error_codes = true
+
+# Sister FEniCS projects (ufl, ffcx) ship no py.typed/stubs; gmsh, llvmlite,
+# pyamg, slepc4py, pyvista, pyvistaqt and networkx are untyped optional
+# dependencies; _cffi_kernelA is a JIT-generated CFFI extension module name
+# that can never be resolved statically. basix, petsc4py and dolfinx.cpp are
+# typed/resolvable when actually built (e.g. local dev), but the lightweight
+# CI lint job installs neither a matching-version basix wheel, a from-source
+# petsc4py build, nor the native dolfinx.cpp extension, so they fall back to
+# unresolved there.
+[[tool.mypy.overrides]]
+module = [
+      "ufl",
+      "ufl.*",
+      "ffcx",
+      "ffcx.*",
+      "gmsh",
+      "llvmlite",
+      "llvmlite.*",
+      "pyamg",
+      "slepc4py",
+      "slepc4py.*",
+      "pyvista",
+      "pyvistaqt",
+      "networkx",
+      "petsc4py",
+      "petsc4py.*",
+]
 ignore_missing_imports = true
+
+# These modules expose ufl types (Form, Mesh, FunctionSpace, ...) in their
+# public API annotations; disallow_any_unimported is unsatisfiable here while
+# ufl/ffcx ship no py.typed/stubs. dolfinx.la annotates a PETSc.Vec-typed
+# attribute guarded by `if TYPE_CHECKING`, which is unresolvable in builds
+# without petsc4py installed. demo_comm-pattern annotates parameters with
+# networkx's nx.DiGraph, which is untyped.
+[[tool.mypy.overrides]]
+module = [
+      "dolfinx.fem.function",
+      "dolfinx.fem.forms",
+      "dolfinx.fem.petsc",
+      "dolfinx.fem.problems",
+      "dolfinx.io.gmsh",
+      "dolfinx.la",
+      "dolfinx.mesh",
+      "demo_comm-pattern",
+      "demo_gmsh",
+      "demo_hdg",
+      "demo_matrix-free-petsc",
+      "demo_pml",
+      "demo_scattering-boundary-conditions",
+]
+disallow_any_unimported = false
 
 [tool.ruff]
 line-length = 100
@@ -127,7 +186,7 @@ select = [
       "NPY",    # numpy-specific rules
       "FLY",    # use f-string not static joins
       "NPY201", # numpy 2.x ruleset
-      "B905",   # zip-without-explicit-strict 
+      "B905",   # zip-without-explicit-strict
 ]
 ignore = ["RUF012"]
 allowed-confusables = ["σ", "ρ"]

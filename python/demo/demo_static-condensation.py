@@ -208,7 +208,7 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL, cu
         coords_,
         entity_local_index,
         permutation,
-        empty_void_pointer(),
+        empty_void_pointer(),  # type: ignore[call-arg]
     )
 
     A01 = np.zeros((Ssize, Usize), dtype=dtype)
@@ -260,8 +260,8 @@ A_cond = assemble_matrix(a_cond, bcs=[bc])
 A_cond.assemble()
 b = assemble_vector(b1)
 apply_lifting(b, [a_cond], bcs=[[bc]])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
-bc.set(b.array_w)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
+bc.set(b.array_w)  # type: ignore[arg-type]
 
 # We use a {py:class}`PETSc.KSP <petsc4py.PETSc.KSP>` solver to solve the
 # condensed linear system. The solution is stored in a
@@ -305,4 +305,4 @@ if len(cells) > 0:
 # Check the equality of displacement based and mixed condensed global
 # matrices, i.e. check that condensation is exact
 
-assert np.isclose((A - A_cond).norm(), 0.0)
+assert np.isclose((A - A_cond).norm(), 0.0)  # type: ignore[operator]

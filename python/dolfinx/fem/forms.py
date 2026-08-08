@@ -39,7 +39,15 @@ class Form(typing.Generic[Scalar]):
 
     # Matched-precision built-ins (geometry == real scalar part). Public:
     # extend with additional (scalar, geometry) dtype pairs as needed.
-    cpp_types: typing.ClassVar[dict] = {
+    cpp_types: typing.ClassVar[
+        dict[
+            tuple[np.dtype, np.dtype],
+            type[_cpp.fem.Form_float32]
+            | type[_cpp.fem.Form_float64]
+            | type[_cpp.fem.Form_complex64]
+            | type[_cpp.fem.Form_complex128],
+        ]
+    ] = {
         (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.Form_float32,
         (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.Form_float64,
         (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.Form_complex64,
@@ -451,7 +459,7 @@ def form(
         constants = [c._cpp_object for c in form.constants()]
 
         # Extract subdomain ids from ufcx_form
-        subdomain_ids = {type: [] for type in sd.get(domain).keys()}
+        subdomain_ids: dict[str, list[int]] = {type: [] for type in sd.get(domain).keys()}
         integral_offsets = [
             ufcx_form.form_integral_offsets[i] for i in range(len(IntegralType) + 1)
         ]
@@ -763,7 +771,7 @@ def _derive_univariate_residual(
 ) -> ufl.Form:
     if du is None:
         du = ufl.TestFunction(u.function_space)
-    return ufl.derivative(F, u, du)
+    return typing.cast(ufl.Form, ufl.derivative(F, u, du))
 
 
 def _derive_block_residual(
@@ -773,7 +781,7 @@ def _derive_block_residual(
 ) -> Sequence[ufl.Form]:
     if du is None:
         du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
-    return ufl.extract_blocks(ufl.derivative(F, u, du))
+    return typing.cast(Sequence[ufl.Form], ufl.extract_blocks(ufl.derivative(F, u, du)))
 
 
 def _derive_univariate_jacobian(
@@ -783,7 +791,7 @@ def _derive_univariate_jacobian(
 ) -> ufl.Form:
     if du is None:
         du = ufl.TrialFunction(u.function_space)
-    return ufl.derivative(F, u, du)
+    return typing.cast(ufl.Form, ufl.derivative(F, u, du))
 
 
 def _derive_block_jacobian(

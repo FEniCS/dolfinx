@@ -169,7 +169,7 @@ def assemble_scalar(
     if coeffs is None:
         coeffs = pack_coefficients(M)
 
-    return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)  # type: ignore[arg-type]
+    return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)
 
 
 # -- Vector assembly ------------------------------------------------------
@@ -262,7 +262,7 @@ def _assemble_vector_array(
     if coeffs is None:
         coeffs = pack_coefficients(L)
 
-    _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)  # type: ignore[arg-type]
+    _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)
     return b
 
 
@@ -478,4 +478,4 @@ def apply_lifting(
 
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
-    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)  # type: ignore[call-overload, arg-type]
+    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)  # type: ignore[arg-type]

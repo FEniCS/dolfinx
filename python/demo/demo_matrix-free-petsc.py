@@ -47,6 +47,8 @@
 # We start by importing the necessary modules
 
 # +
+import typing
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -90,7 +92,7 @@ class MatrixFreeOperator:
     _vector: PETSc.Vec  # Temporary storage of action
 
     _vector_product: dolfinx.fem.Form | list[dolfinx.fem.Form]  # Compiled matrix-vector product
-    _compiled_diagonal: dolfinx.fem.Form | list[ufl.form.Form]  # Compiled diagonal form
+    _compiled_diagonal: dolfinx.fem.Form | list[dolfinx.fem.Form]  # Compiled diagonal form
 
     def __init__(
         self,
@@ -166,11 +168,10 @@ class MatrixFreeOperator:
         """
         # Move data into local working array
 
-        dolfinx.fem.petsc.assign(X, self._w)
+        dolfinx.fem.petsc.assign(X, self._w)  # type: ignore
 
         # Zero out any input from Dirichlet BCs
-        if isinstance(self._compiled_diagonal, dolfinx.fem.Form):
-            bcs0 = self._bcs
+        if isinstance(self._w, dolfinx.fem.Function):
             for bc in self._bcs:
                 di = bc.dof_indices()
                 odi = di[0][: di[1]]
@@ -178,6 +179,7 @@ class MatrixFreeOperator:
             self._w.x.scatter_forward()
 
         else:
+            assert isinstance(self._compiled_diagonal, list)
             bcs0 = dolfinx.fem.bcs_by_block(
                 dolfinx.fem.extract_function_spaces(self._compiled_diagonal), self._bcs
             )
@@ -194,22 +196,24 @@ class MatrixFreeOperator:
 
         dolfinx.fem.petsc.assemble_vector(self._vector, self._vector_product)
         dolfinx.la.petsc._ghost_update(
-            self._vector, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE
+            self._vector,
+            PETSc.InsertMode.ADD,  # type: ignore[arg-type]
+            PETSc.ScatterMode.REVERSE,  # type: ignore[arg-type]
         )
 
         # Insert X at Dirichlet dofs
-        if isinstance(self._compiled_diagonal, dolfinx.fem.Form):
-            bcs0 = self._bcs
+        if isinstance(self._w, dolfinx.fem.Function):
             for bc in self._bcs:
                 di = bc.dof_indices()
                 odi = di[0][: di[1]]
                 self._vector.array_w[odi] = X.array_r[odi]
         else:
+            assert isinstance(self._compiled_diagonal, list)
             bcs0 = dolfinx.fem.bcs_by_block(
                 dolfinx.fem.extract_function_spaces(self._compiled_diagonal), self._bcs
             )
-            offset0, _ = self._vector.getAttr("_blocks")
-            for bcs, off0, off1 in zip(bcs0, offset0[:-1], offset0[1:], strict=True):
+            offset0, _ = self._vector.getAttr("_blocks")  # type: ignore
+            for bcs, off0, off1 in zip(bcs0, offset0[:-1], offset0[1:], strict=True):  # type: ignore[has-type]
                 v_array = self._vector.array_w[off0:off1]
                 x_array = X.array_r[off0:off1]
                 for bc in bcs:
@@ -217,7 +221,9 @@ class MatrixFreeOperator:
                     odi = di[0][: di[1]]
                     v_array[odi] = x_array[odi]
         dolfinx.la.petsc._ghost_update(
-            self._vector, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD
+            self._vector,
+            PETSc.InsertMode.INSERT,  # type: ignore[arg-type]
+            PETSc.ScatterMode.FORWARD,  # type: ignore[arg-type]
         )
         Y.setArray(self._vector)
         Y.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
@@ -238,7 +244,7 @@ class MatrixFreeOperator:
         with self._diagonal.localForm() as loc:
             loc.set(0)
         dolfinx.fem.petsc.assemble_vector(self._diagonal, self._compiled_diagonal)
-        self._diagonal.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
+        self._diagonal.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
         if isinstance(self._compiled_diagonal, dolfinx.fem.Form):
             for bc in self._bcs:
                 di = bc.dof_indices()
@@ -248,13 +254,13 @@ class MatrixFreeOperator:
             bcs0 = dolfinx.fem.bcs_by_block(
                 dolfinx.fem.extract_function_spaces(self._compiled_diagonal), self._bcs
             )
-            offset0, _ = self._diagonal.getAttr("_blocks")
-            for bcs, off0 in zip(bcs0, offset0[:-1], strict=True):
+            offset0, _ = self._diagonal.getAttr("_blocks")  # type: ignore
+            for bcs, off0 in zip(bcs0, offset0[:-1], strict=True):  # type: ignore[has-type]
                 for bc in bcs:
                     di = bc.dof_indices()
                     odi = di[0][: di[1]]
                     self._diagonal.array_w[off0 + odi] = 1
-        self._diagonal.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+        self._diagonal.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
         vec.setArray(self._diagonal)
 
 
@@ -280,9 +286,9 @@ def attach_matrix_free_operator(
     # Check if we have something from a mixed function space
     operator = MatrixFreeOperator(bilinear_form, bcs=bcs)
 
-    A = PETSc.Mat().create(ksp.getComm().tompi4py())
+    A = PETSc.Mat().create(ksp.getComm().tompi4py())  # type: ignore[arg-type]
     sizes = operator._diagonal.getSizes()
-    A.setSizes([sizes, sizes])
+    A.setSizes((sizes, sizes))  # type: ignore[arg-type]
 
     A.setType("python")
     A.setPythonContext(operator)
@@ -323,7 +329,7 @@ def extract_system(
     u_h, p_h = ufl.TrialFunctions(W)
     v, q = ufl.TestFunctions(W)
     residual = ufl.inner(u_h - f, v) * ufl.dx + ufl.inner(p_h - g, q) * ufl.dx
-    return ufl.system(residual)
+    return typing.cast(tuple[ufl.Form, ufl.Form], ufl.system(residual))
 
 
 # We also define a convenience function for creating the Krylov subspace
@@ -389,7 +395,7 @@ def mixed_element(
     # Assemble RHS with boundary conditions
     b = dolfinx.fem.petsc.assemble_vector(dolfinx.fem.form(L))
     dolfinx.fem.petsc.apply_lifting(b, [dolfinx.fem.form(a)], [bcs])
-    b.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
     dolfinx.fem.petsc.set_bc(b, bcs)
 
     # Setup matrix free KSP
@@ -452,20 +458,20 @@ def mixed_function_space(
     b = dolfinx.fem.petsc.assemble_vector(L_compiled)
     bcs0 = dolfinx.fem.bcs_by_block(dolfinx.fem.extract_function_spaces(L_compiled), bcs)
     dolfinx.fem.petsc.apply_lifting(b, a_compiled, bcs0)
-    b.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
     dolfinx.fem.petsc.set_bc(b, bcs0)
-    b.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+    b.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
 
     # We define the matrix free KSP and solve the linear system
     ksp = create_matrix_free_ksp(a, bcs, "MixedFunctionSpace")
     wh = b.duplicate()
     ksp.solve(b, wh)
-    wh.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)
+    wh.ghostUpdate(PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
 
     #  Assign solution to dolfinx functions
     uh = dolfinx.fem.Function(V)
     ph = dolfinx.fem.Function(Q)
-    dolfinx.fem.petsc.assign(wh, [uh, ph])
+    dolfinx.fem.petsc.assign(wh, [uh, ph])  # type: ignore
     return uh, ph
 
 
@@ -490,7 +496,7 @@ def compute_L2_error(uh: ufl.core.expr.Expr, u_ex: ufl.core.expr.Expr) -> float:
     """
     error = ufl.inner(uh - u_ex, uh - u_ex) * ufl.dx
     error = dolfinx.fem.assemble_scalar(dolfinx.fem.form(error))
-    return np.sqrt(mesh.comm.allreduce(error, op=MPI.SUM))
+    return typing.cast(float, np.sqrt(mesh.comm.allreduce(error, op=MPI.SUM)))
 
 
 error_u_me = compute_L2_error(u_me, f)

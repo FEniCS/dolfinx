@@ -147,7 +147,7 @@ dofmaps = create_dofmaps(
 )
 
 # Create C++ function space
-V_cpp = _cpp.fem.FunctionSpace_float64(  # type: ignore[call-overload]
+V_cpp = _cpp.fem.FunctionSpace_float64(
     mesh,
     [e._cpp_object for e in dolfinx_elements],  # type: ignore[misc]
     [dofmap._cpp_object for dofmap in dofmaps],

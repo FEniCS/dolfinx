@@ -225,13 +225,15 @@ class FiniteElement(Generic[Real]):
         return np.dtype(self._cpp_object.dtype)
 
     @property
-    def basix_element(self) -> basix.finite_element.FiniteElement:
+    def basix_element(
+        self,
+    ) -> basix._basixcpp.FiniteElement_float32 | basix._basixcpp.FiniteElement_float64:
         """Return underlying Basix C++ element (if it exists).
 
         Raises:
             Runtime error if Basix element does not exist.
         """
-        return self._cpp_object.basix_element
+        return self._cpp_object.basix_element  # type: ignore[no-any-return]
 
     @property
     def num_sub_elements(self) -> int:
@@ -375,7 +377,7 @@ def finiteelement(
 
     if ufl_e.is_mixed:
         elements = [
-            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object  # type: ignore
+            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object  # type: ignore[arg-type]
             for e in ufl_e.sub_elements
         ]
         return FiniteElement(CppElement(elements))
