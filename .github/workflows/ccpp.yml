@@ -158,8 +158,8 @@ jobs:
           # for modules that require PETSc/ADIOS2, neither built in this job
           mypy --config-file python/pyproject.toml -p dolfinx --exclude 'fem/petsc\.py|la/petsc\.py|nls/petsc\.py|io/utils\.py'
           cd python/
-          mypy test
-          mypy demo
+          mypy test --exclude 'fem/petsc\.py|la/petsc\.py|nls/petsc\.py|io/utils\.py'
+          mypy demo --exclude 'fem/petsc\.py|la/petsc\.py|nls/petsc\.py|io/utils\.py'
 
       - name: Install gmsh and pyvista (and dependencies)
         run: |
