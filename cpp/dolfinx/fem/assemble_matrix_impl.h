@@ -90,7 +90,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// @param cdofs_b Buffer for local element geometry. Size must be at
 /// least `3 * x_dofmap.extent(1))`.
 template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
-void assemble_cells_matrix(
+void assemble_cells_matrix<LiftingMode>(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     std::span<const std::int32_t> cells,
