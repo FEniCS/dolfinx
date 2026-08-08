@@ -51,10 +51,10 @@ public:
                                            std::vector<T>>
                  and std::is_convertible_v<std::remove_cvref_t<S>, std::string>
   MeshTags(std::shared_ptr<const Topology> topology, int dim, U&& indices,
-           V&& values, S&& name = "mesh_tags")
+           V&& values, std::string name = "mesh_tags")
       : _topology(std::move(topology)), _dim(dim),
         _indices(std::forward<U>(indices)), _values(std::forward<V>(values)),
-        _name(std::forward<S>(name))
+        _name(name)
   {
     if (_indices.size() != _values.size())
     {
@@ -146,7 +146,7 @@ template <typename T>
 MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
                             std::span<const T> values,
-                            std::string&& name = "mesh_tags")
+                            std::string name = "mesh_tags")
 {
   spdlog::info(
       "Building MeshTags object from tagged entities (defined by vertices).");
@@ -173,6 +173,6 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
                       std::next(values_sorted.begin(), pos0));
 
   return MeshTags<T>(topology, dim, std::move(indices_sorted),
-                     std::move(values_sorted), std::forward<std::string>(name));
+                     std::move(values_sorted), std::move(name));
 }
 } // namespace dolfinx::mesh
