@@ -129,7 +129,7 @@ private:
   // Values attached to entities
   std::vector<T> _values;
 
-  /// Name
+  // Name
   std::string _name;
 };
 
