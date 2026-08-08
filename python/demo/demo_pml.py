@@ -322,9 +322,7 @@ def curl_2d(a: fem.Function):
 # transformation in the following way:
 
 
-def pml_coordinates(  # type: ignore[no-any-unimported]
-    x: ufl.indexed.Indexed, alpha: float, k0: complex, l_dom: float, l_pml: float
-):
+def pml_coordinates(x: ufl.indexed.Indexed, alpha: float, k0: complex, l_dom: float, l_pml: float):
     """Apply PML coordinate transformation to point x."""
     return x + 1j * alpha / k0 * x * (ufl.algebra.Abs(x) - l_dom / 2) / (l_pml / 2 - l_dom / 2) ** 2
 
@@ -569,7 +567,7 @@ y_pml = ufl.as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 # +
 
 
-def create_eps_mu(  # type: ignore[no-any-unimported]
+def create_eps_mu(
     pml: ufl.tensors.ListTensor,
     eps_bkg: float | ufl.tensors.ListTensor,
     mu_bkg: float | ufl.tensors.ListTensor,
