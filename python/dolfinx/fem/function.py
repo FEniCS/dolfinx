@@ -686,7 +686,7 @@ def functionspace(  # type: ignore[no-any-unimported]
     # Create UFL element
     dtype = mesh.geometry.x.dtype
     try:
-        e = ElementMetaData(*element)  # type: ignore[misc]
+        e = ElementMetaData(*typing.cast(tuple, element))
         ufl_e = basix.ufl.element(
             e.family,
             mesh.basix_cell(),

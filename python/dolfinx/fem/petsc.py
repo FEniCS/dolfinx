@@ -1398,7 +1398,7 @@ class NonlinearProblem(typing.Generic[_U]):
         )
 
         if J is None:
-            J = derivative_block(F, u)  # type: ignore[arg-type]
+            J = typing.cast(typing.Any, derivative_block)(F, u)
 
         self._J = _create_form(
             J,
@@ -1534,7 +1534,7 @@ class NonlinearProblem(typing.Generic[_U]):
     @property
     def J(self) -> Form | Sequence[Sequence[Form]]:
         """The compiled Jacobian."""
-        return self._J
+        return typing.cast(Form | Sequence[Sequence[Form]], self._J)
 
     @property
     def preconditioner(self) -> Form | Sequence[Sequence[Form]] | None:

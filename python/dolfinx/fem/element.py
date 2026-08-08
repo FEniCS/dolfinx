@@ -6,7 +6,7 @@
 """Finite elements."""
 
 from functools import singledispatch
-from typing import ClassVar, Generic
+from typing import ClassVar, Generic, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -233,7 +233,10 @@ class FiniteElement(Generic[Real]):
         Raises:
             Runtime error if Basix element does not exist.
         """
-        return self._cpp_object.basix_element  # type: ignore[no-any-return]
+        return cast(
+            "basix._basixcpp.FiniteElement_float32 | basix._basixcpp.FiniteElement_float64",
+            self._cpp_object.basix_element,
+        )
 
     @property
     def num_sub_elements(self) -> int:
@@ -377,7 +380,9 @@ def finiteelement(
 
     if ufl_e.is_mixed:
         elements = [
-            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object  # type: ignore[arg-type]
+            finiteelement(
+                cell_type, cast(basix.ufl._ElementBase, e), FiniteElement_dtype
+            )._cpp_object
             for e in ufl_e.sub_elements
         ]
         return FiniteElement(CppElement(elements))
