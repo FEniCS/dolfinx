@@ -10,6 +10,8 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import basix.ufl
+import ufl
 from dolfinx.geometry import (
     bb_tree,
     compute_closest_entity,
@@ -26,6 +28,7 @@ from dolfinx.mesh import (
     compute_incident_entities,
     compute_midpoints,
     create_box,
+    create_mesh,
     create_unit_cube,
     create_unit_interval,
     create_unit_square,
@@ -615,3 +618,63 @@ def test_determine_point_ownership(dim, affine, dtype):
     right_cells = np.delete(cells_local, left_cells)
     np.testing.assert_allclose(subset_po.src_owner[right_cells], -1)
     assert len(subset_po.dest_cells) == len(left_cells)
+
+
+@pytest.mark.skip_in_parallel
+def test_nonaffine_point_ownership():
+    """Check that point ownership works for non-affine cells.
+
+    The test checks that a cell with a non-convex cell does not own a point that is outside
+    of the cell but within its convex hull.
+
+    3-----------7-----------2
+    |             __..--/.  |
+    |        _.-'     .     |
+    |      5'      .        |
+    8     /  x  .           4
+    |    /   .              |
+    |  /  .                 |
+    |/.                     |
+    0-----------6-----------1
+    """
+    x = np.array(
+        [
+            [0.0, 0.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [0.0, 1.0],
+            [1.0, 0.5],
+            [0.4, 0.55],
+            [0.5, 0.0],
+            [0.5, 1.0],
+            [0.0, 0.5],
+        ],
+        dtype=np.float64,
+    )
+    # cell 0 is convex, cell 1 is non-convex
+    cells = np.array([[0, 1, 2, 4, 5, 6], [0, 2, 3, 7, 8, 5]], dtype=np.int64)
+
+    coordinate_element = basix.ufl.element("Lagrange", "triangle", 2, shape=(x.shape[1],))
+    domain = ufl.Mesh(coordinate_element)
+
+    msh = create_mesh(MPI.COMM_WORLD, cells=cells, x=x, e=domain)
+
+    cell_indices = msh.topology.original_cell_index
+    midpoint = compute_midpoints(msh, msh.topology.dim, np.arange(cells.shape[0], dtype=np.int32))
+    # convex cell
+    convex_cell = np.flatnonzero(cell_indices == 0)[0]
+    assert midpoint[convex_cell][0] > 0.5
+    assert midpoint[convex_cell][1] < 0.5
+
+    # non-convex cell
+    non_convex_cell = np.flatnonzero(cell_indices == 1)[0]
+    assert midpoint[non_convex_cell][1] > 0.5
+    assert midpoint[non_convex_cell][0] < 0.5
+
+    # Point that lies within the convex cell
+    # It lies outside the non-convex cell but within its convex hull
+    point = np.array([[0.41, 0.52, 0.0]], dtype=msh.geometry.x.dtype)
+    ownership = determine_point_ownership(
+        msh, point, 0.0, np.arange(cells.shape[0], dtype=np.int32)
+    )
+    assert ownership.dest_cells[0] == convex_cell
