@@ -115,6 +115,9 @@ public:
   /// Return name
   const std::string& name() const { return _name; }
 
+  /// Set name
+  void name(std::string name) { _name = std::move(name); }
+
 private:
   // Associated topology
   std::shared_ptr<const Topology> _topology;

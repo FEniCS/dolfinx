@@ -102,7 +102,11 @@ void declare_meshtags(nb::module_& m, const std::string& type)
           })
       .def_prop_ro("dtype", [](const dolfinx::mesh::MeshTags<T>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; })
-      .def_prop_ro("name", &dolfinx::mesh::MeshTags<T>::name)
+      .def_prop_rw(
+          "name",
+          [](const dolfinx::mesh::MeshTags<T>& self) { return self.name(); },
+          [](dolfinx::mesh::MeshTags<T>& self, std::string name)
+          { self.name(name); })
       .def_prop_ro("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_prop_ro("topology", &dolfinx::mesh::MeshTags<T>::topology)
       .def_prop_ro(
