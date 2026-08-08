@@ -477,7 +477,7 @@ if have_pyvista:
     ]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
-    plotter.view_xy()  # type: ignore[call-arg]
+    plotter.view_xy()
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:

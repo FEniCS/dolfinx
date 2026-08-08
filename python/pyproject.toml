@@ -153,7 +153,8 @@ ignore_missing_imports = true
 # public API annotations; disallow_any_unimported is unsatisfiable here while
 # ufl/ffcx ship no py.typed/stubs. dolfinx.la annotates a PETSc.Vec-typed
 # attribute guarded by `if TYPE_CHECKING`, which is unresolvable in builds
-# without petsc4py installed.
+# without petsc4py installed. demo_comm-pattern annotates parameters with
+# networkx's nx.DiGraph, which is untyped.
 [[tool.mypy.overrides]]
 module = [
       "dolfinx.fem.function",
@@ -163,6 +164,7 @@ module = [
       "dolfinx.io.gmsh",
       "dolfinx.la",
       "dolfinx.mesh",
+      "demo_comm-pattern",
       "demo_gmsh",
       "demo_hdg",
       "demo_matrix-free-petsc",

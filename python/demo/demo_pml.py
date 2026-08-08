@@ -403,7 +403,7 @@ if have_pyvista:
     ]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
-    plotter.view_xy()  # type: ignore[call-arg]
+    plotter.view_xy()
     if not pyvista.OFF_SCREEN:
         plotter.show(interactive=True)
     else:
@@ -685,7 +685,7 @@ if have_pyvista:
     plotter = pyvista.Plotter()
     plotter.add_text("magnitude", font_size=12, color="black")
     plotter.add_mesh(V_grid.copy(), show_edges=True)
-    plotter.view_xy()  # type: ignore[call-arg]
+    plotter.view_xy()
     plotter.link_views()
 
     if not pyvista.OFF_SCREEN:
