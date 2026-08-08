@@ -128,12 +128,8 @@ void mesh(nb::module_& m)
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>& cells,
          std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
       {
-        std::vector<std::span<const std::int64_t>> cell_span(cells.size());
-        for (std::size_t i = 0; i < cells.size(); ++i)
-        {
-          cell_span[i]
-              = std::span<const std::int64_t>(cells[i].data(), cells[i].size());
-        }
+        std::vector<std::span<const std::int64_t>> cell_span
+            = vec_of_spans(cells);
         return dolfinx::mesh::build_dual_graph(
             comm.get(), cell_types, cell_span, max_facet_to_cell_links,
             num_threads);

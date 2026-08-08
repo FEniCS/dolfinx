@@ -217,7 +217,8 @@ void declare_assembly_functions(nanobind::module_& m)
       {
         std::vector<int> coffsets = e.coefficient_offsets();
         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
-            coefficients = e.coefficients();
+            coefficients
+            = e.coefficients();
         std::vector<T> coeffs(entities.shape(0) * coffsets.back());
         std::size_t cstride = coffsets.back();
         std::vector<std::reference_wrapper<const dolfinx::fem::Function<T, U>>>
@@ -549,15 +550,8 @@ void declare_assembly_functions(nanobind::module_& m)
             _a.push_back(std::nullopt);
         }
 
-        std::vector<std::span<const T>> _x0;
-        _x0.reserve(x0.size());
-        for (auto& x : x0)
-          _x0.emplace_back(x.data(), x.size());
-
-        std::vector<std::span<const T>> _constants;
-        std::ranges::transform(
-            constants, std::back_inserter(_constants),
-            [](auto& c) { return std::span<const T>(c.data(), c.size()); });
+        std::vector<std::span<const T>> _x0 = vec_of_spans(x0);
+        std::vector<std::span<const T>> _constants = vec_of_spans(constants);
 
         std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
                              std::pair<std::span<const T>, int>>>
