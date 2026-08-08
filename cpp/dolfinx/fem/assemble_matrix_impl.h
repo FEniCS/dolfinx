@@ -24,6 +24,15 @@
 
 namespace dolfinx::fem::impl
 {
+auto has_bc = [](auto& dofs, auto& bc, auto bs)
+{
+  for (auto dof : dofs)
+    for (int k = 0; k < bs; ++k)
+      if (bc[bs * dof + k])
+        return true;
+  return false;
+};
+
 /// @brief Typedef
 using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 
@@ -129,15 +138,6 @@ void assemble_cells_matrix(
     // In "LiftingMode" only execute kernel if there are BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [](auto& dofs1, auto& bc1, auto bs1)
-      {
-        for (auto dof : dofs1)
-          for (int k = 0; k < bs1; ++k)
-            if (bc1[bs1 * dof + k])
-              return true;
-        return false;
-      };
-
       if (!has_bc(dofs1, bc1, bs1))
         continue;
     }
@@ -317,20 +317,7 @@ void assemble_entities(
     // Check for BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [&dofs1, &bc1, &bs1]()
-      {
-        for (std::int32_t dof : dofs1)
-        {
-          for (int k = 0; k < bs1; ++k)
-          {
-            if (bc1[bs1 * dof + k])
-              return true;
-          }
-        }
-        return false;
-      };
-
-      if (!has_bc())
+      if (!has_bc(dofs1, bc1, bs1))
         continue;
     }
 
@@ -578,20 +565,7 @@ void assemble_interior_facets(
     // Check for BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [&dmapjoint1, &bc1, &bs1]()
-      {
-        for (std::int32_t dof : dmapjoint1)
-        {
-          for (int k = 0; k < bs1; ++k)
-          {
-            if (bc1[bs1 * dof + k])
-              return true;
-          }
-        }
-        return false;
-      };
-
-      if (!has_bc())
+      if (!has_bc(dmapjoint1, bc1, bs1))
         continue;
     }
 
@@ -636,7 +610,7 @@ void assemble_interior_facets(
       }
     }
 
-    // Don't clear rows/cols in LiftingMode
+    // Clear rows/cols if not in LiftingMode
     if constexpr (!LiftingMode)
     {
       // Zero rows and columns for BCs
@@ -655,6 +629,7 @@ void assemble_interior_facets(
           }
         }
       }
+
       if (!bc1.empty())
       {
         for (std::size_t j = 0; j < dmapjoint1.size(); ++j)
@@ -720,7 +695,7 @@ void assemble_interior_facets(
 /// @param bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
 template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
-void assemble_matrix0(
+void assemble_matrix(
     la::MatSet<T> auto mat_set, const Form<T, U>& a,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     std::span<const T> constants,

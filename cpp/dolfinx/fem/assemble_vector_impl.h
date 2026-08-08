@@ -401,16 +401,16 @@ void lift_bc(V&& b, const Form<T, U>& a, auto bs0, auto bs1,
     }
   };
 
-  // Use dolfinx::fem::impl::assemble_matrix0 assembler to work on the
+  // Use dolfinx::fem::impl::assemble_matrix assembler to work on the
   // vector b. With LiftingMode=true, the kernel is only called on cells
   // that have BC-constrained DOFs in the column space.
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
   std::span x = mesh->geometry().x();
-  md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x3(
+  md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> _x(
       x.data(), x.size() / 3, 3);
-  impl::assemble_matrix0<true>(lifting_fn, a, x3, constants, coefficients, {},
-                               bc_markers1);
+  impl::assemble_matrix<true>(lifting_fn, a, _x, constants, coefficients, {},
+                              bc_markers1);
 }
 
 /// @brief Assemble linear form into a vector.

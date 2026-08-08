@@ -527,9 +527,9 @@ void assemble_matrix(
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
   std::span x = mesh->geometry().x();
-  impl::assemble_matrix0<false>(
-      mat_add, a, mdspanx3_t(x.data(), x.size() / 3, 3), constants,
-      coefficients, dof_marker0, dof_marker1);
+  impl::assemble_matrix<false>(mat_add, a,
+                               mdspanx3_t(x.data(), x.size() / 3, 3), constants,
+                               coefficients, dof_marker0, dof_marker1);
 }
 
 /// @brief Assemble bilinear form into a matrix
@@ -624,9 +624,9 @@ void assemble_matrix(auto mat_add, const Form<T, U>& a,
   pack_coefficients(a, coefficients);
 
   // Assemble
-  impl::assemble_matrix0<false>(mat_add, a, std::span(constants),
-                                make_coefficients_span(coefficients),
-                                dof_marker0, dof_marker1);
+  impl::assemble_matrix<false>(mat_add, a, std::span(constants),
+                               make_coefficients_span(coefficients),
+                               dof_marker0, dof_marker1);
 }
 
 /// @brief Sets a value to the diagonal of a matrix for specified rows.
