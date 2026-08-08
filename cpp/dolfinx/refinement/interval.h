@@ -55,7 +55,8 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   // TODO: creation of sharing ranks in external function? Also same
   // code in use for plaza
   // Get sharing ranks for each cell
-  graph::AdjacencyList<int> cell_ranks = map_c->index_to_dest_ranks();
+  auto [_data, _offsets_g] = map_c->index_to_dest_ranks();
+  graph::AdjacencyList<int> cell_ranks(std::move(_data), std::move(_offsets_g));
 
   // Create unique list of ranks that share cells (owners of ghosts plus
   // ranks that ghost owned indices)
@@ -181,7 +182,6 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
 
   std::vector<std::int32_t> offsets(refined_cell_count + 1);
   std::ranges::generate(offsets, [i = 0]() mutable { return 2 * i++; });
-
   graph::AdjacencyList cell_adj(std::move(cell_topology), std::move(offsets));
 
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,

@@ -135,8 +135,15 @@ void common(nb::module_& m)
             return std::make_pair(range[0], range[1]);
           },
           "Range of indices owned by this map")
-      .def("index_to_dest_ranks",
-           &dolfinx::common::IndexMap::index_to_dest_ranks)
+      .def(
+          "index_to_dest_ranks",
+          [](const dolfinx::common::IndexMap& self, int tag)
+          {
+            auto [data, offsets] = self.index_to_dest_ranks(tag);
+            return std::pair{dolfinx_wrappers::as_nbarray(std::move(data)),
+                             dolfinx_wrappers::as_nbarray(std::move(offsets))};
+          },
+          nb::arg("tag"))
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)

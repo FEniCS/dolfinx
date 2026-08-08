@@ -12,7 +12,6 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/io/cells.h>
 #include <memory>
 #include <span>
 #include <utility>

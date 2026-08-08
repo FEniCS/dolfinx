@@ -336,7 +336,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   // Create a symmetric neighbor_comm from vertex_ranks
 
   // Get sharing ranks for each vertex
-  graph::AdjacencyList<int> vertex_ranks = vertex_map.index_to_dest_ranks();
+  auto [data, offsets] = vertex_map.index_to_dest_ranks();
+  graph::AdjacencyList<int> vertex_ranks(std::move(data), std::move(offsets));
 
   // Create unique list of ranks that share vertices (owners of)
   std::vector<int> ranks(vertex_ranks.array().begin(),
