@@ -340,25 +340,12 @@ void mesh(nb::module_& m)
 
          int num_threads)
       {
-        auto to_vec_of_spans
-            = []<typename T>(
-                  const std::vector<nb::ndarray<T, nb::ndim<1>, nb::c_contig>>&
-                      vec)
-        {
-          std::vector<std::span<T>> vec_span;
-          vec_span.reserve(vec.size());
-          std::ranges::transform(
-              vec, std::back_inserter(vec_span),
-              [](auto& nd) { return std::span<T>(nd.data(), nd.size()); });
-          return vec_span;
-        };
-
         std::vector<std::span<const std::int64_t>> cells_span
-            = to_vec_of_spans(cells);
+            = vec_of_spans(cells);
         std::vector<std::span<const std::int64_t>> original_cell_index_span
-            = to_vec_of_spans(original_cell_index);
+            = vec_of_spans(original_cell_index);
         std::vector<std::span<const int>> ghost_owners_span
-            = to_vec_of_spans(ghost_owners);
+            = vec_of_spans(ghost_owners);
 
         std::span<const std::int64_t> boundary_vertices_span(
             boundary_vertices.data(), boundary_vertices.size());
