@@ -27,6 +27,7 @@
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/mesh/EntityMap.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <format>
 #include <functional>
 #include <map>
 #include <memory>
@@ -44,8 +45,10 @@
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
+#include <numeric>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -1026,6 +1029,9 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
       .def_prop_ro("variant", [](const dolfinx::fem::CoordinateElement<T>& self)
                    { return static_cast<int>(self.variant()); })
       .def("hash", &dolfinx::fem::CoordinateElement<T>::hash)
+      .def("pull_back_working_size",
+           &dolfinx::fem::CoordinateElement<T>::pull_back_working_size,
+           nb::arg("gdim"))
       .def(
           "push_forward",
           [](const dolfinx::fem::CoordinateElement<T>& self,
@@ -1042,7 +1048,8 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
             std::array<std::size_t, 4> phi_shape
                 = self.tabulate_shape(0, X.shape(0));
             std::vector<T> phi_b(std::reduce(phi_shape.begin(), phi_shape.end(),
-                                             1, std::multiplies{}));
+                                             std::size_t{1},
+                                             std::multiplies{}));
             cmdspan4_t phi_full(phi_b.data(), phi_shape);
             self.tabulate(0, std::span(X.data(), X.size()), Xshape, phi_b);
             auto phi = md::submdspan(phi_full, 0, md::full_extent,
@@ -1063,7 +1070,8 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
           [](const dolfinx::fem::CoordinateElement<T>& self,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> x,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_geometry,
-             double tol, int maxit)
+             double tol, int maxit,
+             nb::ndarray<T, nb::ndim<1>, nb::c_contig> working_array)
           {
             std::size_t num_points = x.shape(0);
             std::size_t gdim = x.shape(1);
@@ -1081,19 +1089,31 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
             cmdspan2_t g(cell_geometry.data(), cell_geometry.shape(0),
                          cell_geometry.shape(1));
 
+            std::size_t working_size = self.pull_back_working_size(gdim);
+            if (working_array.size() < working_size)
+            {
+              throw std::runtime_error(
+                  std::format("Working memory is too small for pull_back, "
+                              "got {}, need {}.",
+                              working_array.size(), working_size));
+            }
             if (self.is_affine())
             {
-              std::vector<T> J_b(gdim * tdim);
+              std::span<T> J_b(working_array.data(), gdim * tdim);
+              std::ranges::fill(J_b, 0);
               mdspan2_t J(J_b.data(), gdim, tdim);
-              std::vector<T> K_b(tdim * gdim);
+              std::span<T> K_b(working_array.data() + gdim * tdim, tdim * gdim);
               mdspan2_t K(K_b.data(), tdim, gdim);
-
+              std::span<T> x_ref(working_array.data() + 2 * gdim * tdim, tdim);
+              std::ranges::fill(x_ref, 0);
               std::array<std::size_t, 4> phi_shape = self.tabulate_shape(1, 1);
-              std::vector<T> phi_b(std::reduce(
-                  phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+              std::span<T> phi_b(working_array.data() + 2 * gdim * tdim + tdim,
+                                 std::reduce(phi_shape.begin(), phi_shape.end(),
+                                             std::size_t{1},
+                                             std::multiplies{}));
               cmdspan4_t phi(phi_b.data(), phi_shape);
 
-              self.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi_b);
+              self.tabulate(1, x_ref, {1, tdim}, phi_b);
               auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), 0,
                                         md::full_extent, 0);
 
@@ -1105,13 +1125,17 @@ void declare_coordinate_element(nb::module_& m, const std::string& type)
               self.pull_back_affine(X, K, x0, _x);
             }
             else
-              self.pull_back_nonaffine(X, _x, g, tol, maxit);
-
+            {
+              self.pull_back_nonaffine(
+                  X, _x, g,
+                  std::span(working_array.data(), working_array.size()), tol,
+                  maxit);
+            }
             return dolfinx_wrappers::as_nbarray(std::move(Xb),
                                                 {num_points, tdim});
           },
           nb::arg("x"), nb::arg("cell_geometry"), nb::arg("tol"),
-          nb::arg("maxit"));
+          nb::arg("maxit"), nb::arg("working_array"));
 }
 
 template <typename T>
