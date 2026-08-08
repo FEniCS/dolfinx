@@ -337,12 +337,12 @@ void assemble_interior_facets(
   }
 }
 
-/// @brief Apply boundary condition lifting using the matrix assembler.
+/// Modify RHS vector to account for boundary condition such that:
 ///
-/// @tparam T Scalar type.
-/// @tparam U Geometry scalar type.
-/// @param[in,out] b Vector to modify.
-/// @param[in] a The bilinear form.
+/// b <- b - alpha * A.(x_bc - x0)
+///
+/// @param[in,out] b Vector to be modified.
+/// @param[in] a Bilinear form that generates A.
 /// @param[in] bs0 Block size for the test function dofmap, as
 /// `std::integral_constant<int, BS0>` if known at compile time, or a
 /// plain `int` for the runtime-determined value.
@@ -351,20 +351,21 @@ void assemble_interior_facets(
 /// plain `int` for the runtime-determined value.
 /// @param[in] constants Constants that appear in `a`.
 /// @param[in] coefficients Coefficients that appear in `a`.
-/// @param[in] bc_values1 The boundary condition values.
-/// @param[in] bc_markers1 Marker to identify which DOFs have boundary
-/// conditions applied.
-/// @param[in] x0 Vector used in the lifting.
+/// @param[in] bc_values1 Boundary condition 'values'.
+/// @param[in] bc_markers1 Indices (columns of A, rows of x) to
+/// which bcs belong.
+/// @param[in] x0 Array used in the lifting, typically a 'current
+/// solution' in a Newton method.
 /// @param[in] alpha Scaling to apply.
 template <dolfinx::scalar T, std::floating_point U, typename V>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
-void lift_bc_impl(
-    V&& b, const Form<T, U>& a, auto bs0, auto bs1,
-    std::span<const T> constants,
-    const std::map<std::pair<IntegralType, int>,
-                   std::pair<std::span<const T>, int>>& coefficients,
-    std::span<const T> bc_values1, std::span<const std::int8_t> bc_markers1,
-    std::span<const T> x0, T alpha)
+void lift_bc(V&& b, const Form<T, U>& a, auto bs0, auto bs1,
+             std::span<const T> constants,
+             const std::map<std::pair<IntegralType, int>,
+                            std::pair<std::span<const T>, int>>& coefficients,
+             std::span<const T> bc_values1,
+             std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
+             T alpha)
 {
   // Deduce runtime block sizes as fallback when compile-time sizes
   // not given. The block size of the dofmap and indexmap is the same
@@ -404,54 +405,6 @@ void lift_bc_impl(
   // cells that have BC-constrained DOFs in the column space.
   assemble_matrix<T, U, true>(lifting_fn, a, constants, coefficients, {},
                               bc_markers1);
-}
-
-/// Modify RHS vector to account for boundary condition such that:
-///
-/// b <- b - alpha * A.(x_bc - x0)
-///
-/// @param[in,out] b The vector to be modified
-/// @param[in] a The bilinear form that generates A
-/// @param[in] constants Constants that appear in `a`
-/// @param[in] coefficients Coefficients that appear in `a`
-/// @param[in] bc_values1 The boundary condition 'values'
-/// @param[in] bc_markers1 The indices (columns of A, rows of x) to
-/// which bcs belong
-/// @param[in] x0 The array used in the lifting, typically a 'current
-/// solution' in a Newton method
-/// @param[in] alpha Scaling to apply
-template <typename V, std::floating_point U,
-          dolfinx::scalar T = typename std::remove_cvref_t<V>::value_type>
-  requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
-void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
-             const std::map<std::pair<IntegralType, int>,
-                            std::pair<std::span<const T>, int>>& coefficients,
-             std::span<const T> bc_values1,
-             std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
-             T alpha)
-{
-  // Get dofmap for columns and rows of a
-  assert(a.function_spaces().at(0));
-  assert(a.function_spaces().at(1));
-  const int bs0 = a.function_spaces()[0]->dofmaps().front()->bs();
-  const int bs1 = a.function_spaces()[1]->dofmaps().front()->bs();
-  if (bs0 == 1 and bs1 == 1)
-  {
-    lift_bc_impl<T, U>(std::forward<V>(b), a, std::integral_constant<int, 1>{},
-                       std::integral_constant<int, 1>{}, constants,
-                       coefficients, bc_values1, bc_markers1, x0, alpha);
-  }
-  else if (bs0 == 3 and bs1 == 3)
-  {
-    lift_bc_impl<T, U>(std::forward<V>(b), a, std::integral_constant<int, 3>{},
-                       std::integral_constant<int, 3>{}, constants,
-                       coefficients, bc_values1, bc_markers1, x0, alpha);
-  }
-  else
-  {
-    lift_bc_impl<T, U>(std::forward<V>(b), a, bs0, bs1, constants, coefficients,
-                       bc_values1, bc_markers1, x0, alpha);
-  }
 }
 
 /// Modify b such that:
@@ -508,17 +461,20 @@ void apply_lifting(
     {
       assert(a[j]->get().function_spaces().at(0));
       auto V1 = a[j]->get().function_spaces()[1];
+      assert(V1);
+
+      const int bs0 = a[j]->get().function_spaces()[0]->dofmaps().front()->bs();
+      const int bs1 = V1->dofmaps().front()->bs();
 
       std::span<const T> _x0;
       if (!x0.empty())
         _x0 = x0[j];
 
-      assert(V1);
       std::shared_ptr<const DofMap> dofmap = V1->dofmaps().front();
       auto map1 = dofmap->index_map;
-      const int bs1 = dofmap->index_map_bs();
+      const int map_bs1 = dofmap->index_map_bs();
       assert(map1);
-      const int crange = bs1 * (map1->size_local() + map1->num_ghosts());
+      const int crange = map_bs1 * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
       bc_values1.assign(crange, 0);
       for (auto& bc : bcs1[j])
@@ -527,7 +483,7 @@ void apply_lifting(
         bc.get().set(bc_values1, std::nullopt, 1);
       }
 
-      lift_bc(b, a[j]->get(), constants[j], coeffs[j],
+      lift_bc(b, a[j]->get(), bs0, bs1, constants[j], coeffs[j],
               std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
     }
   }
