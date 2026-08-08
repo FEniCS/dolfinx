@@ -144,8 +144,6 @@ module = [
       "basix.*",
       "petsc4py",
       "petsc4py.*",
-      "dolfinx.cpp",
-      "dolfinx.cpp.*",
 ]
 ignore_missing_imports = true
 
