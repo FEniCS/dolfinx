@@ -323,7 +323,7 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
 
   pugi::xml_node grid_node = node.append_child("Grid");
   assert(grid_node);
-  grid_node.append_attribute("Name") = meshtags.name.c_str();
+  grid_node.append_attribute("Name") = meshtags.name().c_str();
   grid_node.append_attribute("GridType") = "Uniform";
 
   const std::string geo_ref_path = std::format("xpointer({})", geometry_xpath);
@@ -331,7 +331,7 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
   geo_ref_node.append_attribute("xpointer") = geo_ref_path.c_str();
   assert(geo_ref_node);
   xdmf_mesh::add_meshtags(_comm.comm(), meshtags, x, grid_node, _h5_id,
-                          meshtags.name);
+                          meshtags.name());
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_comm.comm()) == 0)
@@ -413,8 +413,7 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string_view name,
                                       num_vertices_per_entity);
   mesh::MeshTags meshtags = mesh::create_meshtags(
       mesh.topology(), mesh::cell_dim(cell_type), entities_adj,
-      std::span<const std::int32_t>(entities_values.second));
-  meshtags.name = name;
+      std::span<const std::int32_t>(entities_values.second), std::string(name));
 
   return meshtags;
 }
