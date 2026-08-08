@@ -5,7 +5,13 @@
 # list it here.
 [build-system]
 # scikit-build-core>=0.11 has SPDX license support PEP 639
-requires = ["scikit-build-core[pyproject]>=0.11", "nanobind>=2.5.0", "mpi4py"]
+# scikit-build-core>=1.0.0: editable installs need its PathFinder-based
+# module resolution. Older versions' editable redirect always fails to
+# import dolfinx.cpp, since the nanobind-generated dolfinx/cpp/*.pyi stub
+# directory sits alongside the compiled dolfinx/cpp.<ext> module and
+# confuses their file-vs-package classifier.
+# nanobind>=2.9.2 has working recursive stubgen
+requires = ["scikit-build-core>=1.0.0", "nanobind>=2.9.2", "mpi4py"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -30,10 +36,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# llvmlite (numba) is not built for x86_64 on macOS or arm64 on Windows - advanced users can install manually.
 demo = [
   "gmsh",
   "networkx",
-  "numba",
+  "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
   "matplotlib",
   "scipy",
   "pyvista",
@@ -53,7 +60,7 @@ docs = [
 ]
 lint = ["ruff", "gersemi"]
 mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
-optional = ["numba"]
+optional = ["numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')"]
 petsc4py = ["petsc4py"]
 test = [
       "matplotlib",

@@ -73,8 +73,8 @@ void test_scatter_fwd(int n)
     }
     CHECK((int)data_ghost.size() == n * num_ghosts);
     CHECK(std::ranges::all_of(
-        data_ghost,
-        [=](auto i) { return i == val * ((mpi_rank + 1) % mpi_size); }));
+        data_ghost, [&val, &mpi_rank, &mpi_size](auto i)
+        { return i == val * ((mpi_rank + 1) % mpi_size); }));
   }
 
   {

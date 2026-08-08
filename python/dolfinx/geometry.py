@@ -58,7 +58,7 @@ class PointOwnershipData(typing.Generic[Real]):
     @property
     def dest_points(self) -> npt.NDArray[Real]:
         """Points owned by current rank."""
-        return self._cpp_object.dest_points
+        return self._cpp_object.dest_points  # type: ignore[return-value]
 
     @property
     def dest_cells(self) -> npt.NDArray[np.int32]:
@@ -94,7 +94,7 @@ class BoundingBoxTree(typing.Generic[Real]):
             Rows `2*ibbox` and `2*ibbox+1` correspond to the lower
             and upper corners of bounding box `ibbox`, respectively.
         """
-        return self._cpp_object.bbox_coordinates
+        return self._cpp_object.bbox_coordinates  # type: ignore[return-value]
 
     def get_bbox(self, i) -> npt.NDArray[Real]:
         """Get lower and upper corners of the ith bounding box.
@@ -107,7 +107,7 @@ class BoundingBoxTree(typing.Generic[Real]):
             Shape is ``(2, 3)``,
 
         """
-        return self._cpp_object.get_bbox(i)
+        return self._cpp_object.get_bbox(i)  # type: ignore[return-value]
 
     def create_global_tree(self, comm) -> BoundingBoxTree[Real]:
         """Create a global bounding box tree."""
@@ -138,17 +138,17 @@ def bb_tree(
     if map is None:
         raise RuntimeError(f"Mesh entities of dimension {dim} have not been created.")
 
-    dtype = mesh.geometry.x.dtype
-    if np.issubdtype(dtype, np.float32):
+    cpp_mesh = mesh._cpp_object
+    if isinstance(cpp_mesh, _cpp.mesh.Mesh_float32):
         return BoundingBoxTree(
-            _cpp.geometry.BoundingBoxTree_float32(mesh._cpp_object, dim, padding, entities)
+            _cpp.geometry.BoundingBoxTree_float32(cpp_mesh, dim, padding, entities)
         )
-    elif np.issubdtype(dtype, np.float64):
+    elif isinstance(cpp_mesh, _cpp.mesh.Mesh_float64):
         return BoundingBoxTree(
-            _cpp.geometry.BoundingBoxTree_float64(mesh._cpp_object, dim, padding, entities)
+            _cpp.geometry.BoundingBoxTree_float64(cpp_mesh, dim, padding, entities)
         )
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise NotImplementedError(f"Type {mesh.geometry.x.dtype} not supported.")
 
 
 def compute_collisions_trees(
@@ -165,7 +165,7 @@ def compute_collisions_trees(
         is ``(num_collisions, 2)``.
 
     """
-    return _cpp.geometry.compute_collisions_trees(tree0._cpp_object, tree1._cpp_object)
+    return _cpp.geometry.compute_collisions_trees(tree0._cpp_object, tree1._cpp_object)  # type: ignore[arg-type]
 
 
 def compute_collisions_points(tree: BoundingBoxTree[Real], x: npt.NDArray[Real]) -> AdjacencyList:
@@ -183,7 +183,7 @@ def compute_collisions_points(tree: BoundingBoxTree[Real], x: npt.NDArray[Real])
        point.
 
     """
-    return AdjacencyList(_cpp.geometry.compute_collisions_points(tree._cpp_object, x))
+    return AdjacencyList(_cpp.geometry.compute_collisions_points(tree._cpp_object, x))  # type: ignore[arg-type]
 
 
 def compute_closest_entity(
@@ -208,7 +208,10 @@ def compute_closest_entity(
 
     """
     return _cpp.geometry.compute_closest_entity(
-        tree._cpp_object, midpoint_tree._cpp_object, mesh._cpp_object, points
+        tree._cpp_object,  # type: ignore[arg-type]
+        midpoint_tree._cpp_object,  # type: ignore[arg-type]
+        mesh._cpp_object,  # type: ignore[arg-type]
+        points,  # type: ignore[arg-type]
     )
 
 
@@ -245,7 +248,7 @@ def compute_colliding_cells(
 
     """
     return AdjacencyList(
-        _cpp.geometry.compute_colliding_cells(msh._cpp_object, candidates._cpp_object, x)
+        _cpp.geometry.compute_colliding_cells(msh._cpp_object, candidates._cpp_object, x)  # type: ignore[arg-type]
     )
 
 
@@ -268,7 +271,7 @@ def squared_distance(
         Squared shortest distance from ``points[i]`` to ``entities[i]``.
 
     """
-    return _cpp.geometry.squared_distance(mesh._cpp_object, dim, entities, points)
+    return _cpp.geometry.squared_distance(mesh._cpp_object, dim, entities, points)  # type: ignore[arg-type,return-value]
 
 
 def compute_distance_gjk(p: npt.NDArray[Real], q: npt.NDArray[Real]) -> npt.NDArray[Real]:
@@ -287,9 +290,9 @@ def compute_distance_gjk(p: npt.NDArray[Real], q: npt.NDArray[Real]) -> npt.NDAr
     if p.dtype != q.dtype:
         raise ValueError("p and q must have the same dtype.")
     if np.issubdtype(p.dtype, np.float32):
-        return _cpp.geometry.compute_distance_gjk_float32(p, q)
+        return _cpp.geometry.compute_distance_gjk_float32(p, q)  # type: ignore[arg-type,return-value]
     elif np.issubdtype(p.dtype, np.float64):
-        return _cpp.geometry.compute_distance_gjk_float64(p, q)
+        return _cpp.geometry.compute_distance_gjk_float64(p, q)  # type: ignore[arg-type,return-value]
     raise RuntimeError("Invalid dtype in compute_distance_gjk")
 
 
@@ -316,9 +319,9 @@ def compute_distances_gjk(
     if not all(p.dtype == q.dtype for p in bodies):
         raise ValueError("All bodies and q must have the same dtype.")
     if np.issubdtype(q.dtype, np.float32):
-        return _cpp.geometry.compute_distances_gjk_float32(bodies, q, num_threads)
+        return _cpp.geometry.compute_distances_gjk_float32(bodies, q, num_threads)  # type: ignore[arg-type,return-value]
     elif np.issubdtype(q.dtype, np.float64):
-        return _cpp.geometry.compute_distances_gjk_float64(bodies, q, num_threads)
+        return _cpp.geometry.compute_distances_gjk_float64(bodies, q, num_threads)  # type: ignore[arg-type,return-value]
     raise RuntimeError("Invalid dtype in compute_distances_gjk")
 
 
@@ -358,5 +361,5 @@ def determine_point_ownership(
             the scale of the cell size.
     """
     return PointOwnershipData(
-        _cpp.geometry.determine_point_ownership(mesh._cpp_object, points, padding, cells)
+        _cpp.geometry.determine_point_ownership(mesh._cpp_object, points, padding, cells)  # type: ignore[arg-type]
     )

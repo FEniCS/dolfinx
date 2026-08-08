@@ -22,12 +22,17 @@
 
 namespace dolfinx::fem::impl
 {
-/// Assemble functional over cells
+/// @brief Assemble functional over cells.
+///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of cells, so
+/// a per-call allocation would not be amortized. The buffer must be
+/// sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_cells(
     mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    std::span<const std::int32_t> cells, FEkernel<T, U> auto fn,
+    std::span<const std::int32_t> cells, const FEkernel<T, U> auto& fn,
     std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     std::span<std::type_identity_t<U>> cdofs_b)
@@ -65,6 +70,11 @@ T assemble_cells(
 /// However, entities may be attached to more than one cell. This function
 /// therefore computes 'one-sided' integrals, i.e. evaluates integrals as seen
 /// from cell used to define the entity.
+///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of entities,
+/// so a per-call allocation would not be amortized. The buffer must
+/// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_entities(
     mdspan2_t x_dofmap,
@@ -72,7 +82,7 @@ T assemble_entities(
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2>>
         entities,
-    FEkernel<T, U> auto fn, std::span<const T> constants,
+    const FEkernel<T, U> auto& fn, std::span<const T> constants,
     md::mdspan<const T, md::dextents<std::size_t, 2>> coeffs,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
     std::span<std::type_identity_t<U>> cdofs_b)
@@ -103,7 +113,12 @@ T assemble_entities(
   return value;
 }
 
-/// Assemble functional over interior facets
+/// @brief Assemble functional over interior facets.
+///
+/// @note This function must not perform any dynamic (heap) memory
+/// allocation. It may be called over only a small number of facets,
+/// so a per-call allocation would not be amortized. The buffer must
+/// be sized by the caller and passed in via `cdofs_b`.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_interior_facets(
     mdspan2_t x_dofmap,
@@ -111,7 +126,7 @@ T assemble_interior_facets(
     md::mdspan<const std::int32_t,
                md::extents<std::size_t, md::dynamic_extent, 2, 2>>
         facets,
-    FEkernel<T, U> auto fn, std::span<const T> constants,
+    const FEkernel<T, U> auto& fn, std::span<const T> constants,
     md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
                                     md::dynamic_extent>>
         coeffs,

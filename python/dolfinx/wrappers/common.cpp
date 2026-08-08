@@ -19,6 +19,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/chrono.h>
+#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
@@ -126,8 +127,14 @@ void common(nb::module_& m)
       .def_prop_ro("size_local", &dolfinx::common::IndexMap::size_local)
       .def_prop_ro("size_global", &dolfinx::common::IndexMap::size_global)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
-      .def_prop_ro("local_range", &dolfinx::common::IndexMap::local_range,
-                   "Range of indices owned by this map")
+      .def_prop_ro(
+          "local_range",
+          [](const dolfinx::common::IndexMap& self)
+          {
+            std::array<std::int64_t, 2> range = self.local_range();
+            return std::make_pair(range[0], range[1]);
+          },
+          "Range of indices owned by this map")
       .def("index_to_dest_ranks",
            &dolfinx::common::IndexMap::index_to_dest_ranks)
       .def_prop_ro(
@@ -168,7 +175,7 @@ void common(nb::module_& m)
                                  local);
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
-          nb::arg("global"));
+          nb::arg("global_index"));
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(

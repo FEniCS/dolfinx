@@ -14,15 +14,16 @@ import numpy.typing as npt
 
 import basix
 import ufl
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import (
     read_vtkhdf_mesh_float32,
     read_vtkhdf_mesh_float64,
     write_vtkhdf_data,
     write_vtkhdf_mesh,
 )
-from dolfinx.mesh import Mesh
+from dolfinx.mesh import CellType, Mesh
 
-__all__ = ["read_mesh", "write_cell_data", "write_mesh", "write_point_data"]
+__all__ = ["cell_perm_array", "read_mesh", "write_cell_data", "write_mesh", "write_point_data"]
 
 
 def read_mesh(
@@ -49,10 +50,11 @@ def read_mesh(
         max_facet_to_cell_links: Maximum number of cells that can be
             linked to a facet.
     """
+    mesh_cpp: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     if dtype == np.float64:
-        mesh_cpp = read_vtkhdf_mesh_float64(comm, filename, gdim, max_facet_to_cell_links)
+        mesh_cpp = read_vtkhdf_mesh_float64(comm, str(filename), gdim, max_facet_to_cell_links)
     elif dtype == np.float32:
-        mesh_cpp = read_vtkhdf_mesh_float32(comm, filename, gdim, max_facet_to_cell_links)
+        mesh_cpp = read_vtkhdf_mesh_float32(comm, str(filename), gdim, max_facet_to_cell_links)
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:
@@ -63,7 +65,11 @@ def read_mesh(
         variant = mesh_cpp.geometry.cmaps[0].variant
         domain = ufl.Mesh(
             basix.ufl.element(
-                "Lagrange", cell_types[0].name, cell_degree, variant, shape=(mesh_cpp.geometry.dim,)
+                "Lagrange",
+                cell_types[0].name,
+                cell_degree,
+                basix.LagrangeVariant(variant),
+                shape=(mesh_cpp.geometry.dim,),
             )
         )
     return Mesh(mesh_cpp, domain)
@@ -88,7 +94,7 @@ def write_point_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: 
         data: Data at the points of the mesh, local to each process.
         time: Timestamp.
     """
-    write_vtkhdf_data("Point", filename, mesh._cpp_object, data, time)
+    write_vtkhdf_data("Point", filename, mesh._cpp_object, data, time)  # type: ignore[call-overload]
 
 
 def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: float):
@@ -100,4 +106,18 @@ def write_cell_data(filename: str | Path, mesh: Mesh, data: npt.NDArray, time: f
         data: Data at the cells of the mesh, local to each process.
         time: Timestamp.
     """
-    write_vtkhdf_data("Cell", filename, mesh._cpp_object, data, time)
+    write_vtkhdf_data("Cell", filename, mesh._cpp_object, data, time)  # type: ignore[call-overload]
+
+
+def cell_perm_array(cell_type: CellType, num_nodes: int) -> npt.NDArray[np.uint16]:
+    """Array for permuting VTK ordering to DOLFINx ordering.
+
+    Args:
+        cell_type: DOLFINx cell type.
+        num_nodes: Number of nodes in the cell.
+
+    Returns:
+        An array ``p`` such that ``a_dolfinx[i] = a_vtk[p[i]]``.
+
+    """
+    return _cpp.io.perm_vtk(cell_type, num_nodes)
