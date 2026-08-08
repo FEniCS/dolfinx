@@ -110,9 +110,9 @@ warn_unused_ignores = false
 show_error_codes = true
 ignore_missing_imports = true
 
-[[tool.mypy.overrides]]
-module = "dolfinx.fem.petsc"
-ignore_errors = true
+# [[tool.mypy.overrides]]
+# module = "dolfinx.fem.petsc"
+# ignore_errors = true
 
 [tool.ruff]
 line-length = 100
