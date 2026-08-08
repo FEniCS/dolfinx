@@ -153,7 +153,10 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy --config-file python/pyproject.toml -p dolfinx # package mode, type checks installed dolfinx (working around name collision in python/ directory)
+          # package mode, type checks installed dolfinx (working around name
+          # collision in python/ directory); petsc.py/utils.py exclusions are
+          # for modules that require PETSc/ADIOS2, neither built in this job
+          mypy --config-file python/pyproject.toml -p dolfinx --exclude 'fem/petsc\.py|la/petsc\.py|nls/petsc\.py|io/utils\.py'
           cd python/
           mypy test
           mypy demo

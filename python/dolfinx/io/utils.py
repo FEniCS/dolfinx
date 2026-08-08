@@ -314,7 +314,7 @@ class XDMFFile:
             mesh_xpath: Path to mesh associated with the Function in the
                 XDMFFile.
         """
-        self._cpp_object.write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
+        self._cpp_object.write_function(u._cpp_object, t, mesh_xpath)
 
     def read_mesh(
         self,

@@ -148,7 +148,9 @@ ignore_missing_imports = true
 
 # These modules expose ufl types (Form, Mesh, FunctionSpace, ...) in their
 # public API annotations; disallow_any_unimported is unsatisfiable here while
-# ufl/ffcx ship no py.typed/stubs.
+# ufl/ffcx ship no py.typed/stubs. dolfinx.la annotates a PETSc.Vec-typed
+# attribute guarded by `if TYPE_CHECKING`, which is unresolvable in builds
+# without petsc4py installed.
 [[tool.mypy.overrides]]
 module = [
       "dolfinx.fem.function",
@@ -156,6 +158,7 @@ module = [
       "dolfinx.fem.petsc",
       "dolfinx.fem.problems",
       "dolfinx.io.gmsh",
+      "dolfinx.la",
       "dolfinx.mesh",
       "demo_gmsh",
       "demo_hdg",

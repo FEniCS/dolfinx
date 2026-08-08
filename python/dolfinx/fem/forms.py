@@ -771,7 +771,7 @@ def _derive_univariate_residual(
 ) -> ufl.Form:
     if du is None:
         du = ufl.TestFunction(u.function_space)
-    return ufl.derivative(F, u, du)
+    return typing.cast(ufl.Form, ufl.derivative(F, u, du))
 
 
 def _derive_block_residual(
@@ -791,7 +791,7 @@ def _derive_univariate_jacobian(
 ) -> ufl.Form:
     if du is None:
         du = ufl.TrialFunction(u.function_space)
-    return ufl.derivative(F, u, du)
+    return typing.cast(ufl.Form, ufl.derivative(F, u, du))
 
 
 def _derive_block_jacobian(

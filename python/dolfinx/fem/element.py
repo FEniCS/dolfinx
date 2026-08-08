@@ -233,7 +233,7 @@ class FiniteElement(Generic[Real]):
         Raises:
             Runtime error if Basix element does not exist.
         """
-        return self._cpp_object.basix_element
+        return self._cpp_object.basix_element  # type: ignore[no-any-return]
 
     @property
     def num_sub_elements(self) -> int:
@@ -377,7 +377,8 @@ def finiteelement(
 
     if ufl_e.is_mixed:
         elements = [
-            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object for e in ufl_e.sub_elements
+            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object  # type: ignore[arg-type]
+            for e in ufl_e.sub_elements
         ]
         return FiniteElement(CppElement(elements))
     elif ufl_e.is_quadrature:

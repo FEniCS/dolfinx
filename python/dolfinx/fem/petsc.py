@@ -1398,7 +1398,7 @@ class NonlinearProblem(typing.Generic[_U]):
         )
 
         if J is None:
-            J = derivative_block(F, u)
+            J = derivative_block(F, u)  # type: ignore[arg-type]
 
         self._J = _create_form(
             J,
