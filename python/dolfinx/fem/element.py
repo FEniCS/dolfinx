@@ -225,7 +225,9 @@ class FiniteElement(Generic[Real]):
         return np.dtype(self._cpp_object.dtype)
 
     @property
-    def basix_element(self) -> basix.finite_element.FiniteElement:
+    def basix_element(
+        self,
+    ) -> basix._basixcpp.FiniteElement_float32 | basix._basixcpp.FiniteElement_float64:
         """Return underlying Basix C++ element (if it exists).
 
         Raises:
