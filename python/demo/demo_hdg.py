@@ -53,7 +53,9 @@ from dolfinx.fem.petsc import (
 # domains for the facets of all cells in a mesh.
 
 
-def norm_L2(v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx) -> np.inexact:
+def norm_L2(  # type: ignore[no-any-unimported]
+    v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx
+) -> np.inexact:
     """Convenience function to compute the L2 norm of a UFL expression."""
     compiled_form = fem.form(ufl.inner(v, v) * measure)
     comm = compiled_form.mesh.comm

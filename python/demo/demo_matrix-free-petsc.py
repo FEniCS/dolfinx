@@ -94,7 +94,7 @@ class MatrixFreeOperator:
     _vector_product: dolfinx.fem.Form | list[dolfinx.fem.Form]  # Compiled matrix-vector product
     _compiled_diagonal: dolfinx.fem.Form | list[dolfinx.fem.Form]  # Compiled diagonal form
 
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self,
         bilinear_form: ufl.Form,
         bcs: list[dolfinx.fem.DirichletBC] | None = None,
@@ -271,7 +271,7 @@ class MatrixFreeOperator:
 # to a PETSc KSP object.
 
 
-def attach_matrix_free_operator(
+def attach_matrix_free_operator(  # type: ignore[no-any-unimported]
     ksp: PETSc.KSP,
     bilinear_form: ufl.Form,
     bcs: list[dolfinx.fem.DirichletBC] | None = None,
@@ -320,7 +320,7 @@ g = ufl.sin(3 * x[0]) * ufl.cos(4 * x[1])
 # linear forms from the weak formulation.
 
 
-def extract_system(
+def extract_system(  # type: ignore[no-any-unimported]
     W: dolfinx.fem.FunctionSpace | ufl.MixedFunctionSpace,
     f: ufl.core.expr.Expr,
     g: ufl.core.expr.Expr,
@@ -329,14 +329,16 @@ def extract_system(
     u_h, p_h = ufl.TrialFunctions(W)
     v, q = ufl.TestFunctions(W)
     residual = ufl.inner(u_h - f, v) * ufl.dx + ufl.inner(p_h - g, q) * ufl.dx
-    return typing.cast(tuple[ufl.Form, ufl.Form], ufl.system(residual))
+    return typing.cast(  # type: ignore[no-any-unimported]
+        tuple[ufl.Form, ufl.Form], ufl.system(residual)
+    )
 
 
 # We also define a convenience function for creating the Krylov subspace
 # solver and attaching the matrix free operator.
 
 
-def create_matrix_free_ksp(
+def create_matrix_free_ksp(  # type: ignore[no-any-unimported]
     a: ufl.Form,
     bcs: list[dolfinx.fem.DirichletBC],
     prefix: str,
@@ -364,7 +366,7 @@ def create_matrix_free_ksp(
 # `basix.ufl.mixed_element`.
 
 
-def mixed_element(
+def mixed_element(  # type: ignore[no-any-unimported]
     mesh: dolfinx.mesh.Mesh, f: ufl.core.expr.Expr, g: ufl.core.expr.Expr
 ) -> tuple[dolfinx.fem.Function, dolfinx.fem.Function]:
     """Blocked problem using a {py:class}`basix.ufl.mixed_element`."""
@@ -420,7 +422,7 @@ def mixed_element(
 # different meshes, such as submeshes of codimension 0 and 1.
 
 
-def mixed_function_space(
+def mixed_function_space(  # type: ignore[no-any-unimported]
     mesh: dolfinx.mesh.Mesh, f: ufl.core.expr.Expr, g: ufl.core.expr.Expr
 ) -> tuple[dolfinx.fem.Function, dolfinx.fem.Function]:
     """Blocked problem using a {py:class}`ufl.MixedFunctionSpace`."""
@@ -487,7 +489,9 @@ u_me, p_me = mixed_element(mesh, f, g)
 u_mfs, p_mfs = mixed_function_space(mesh, f, g)
 
 
-def compute_L2_error(uh: ufl.core.expr.Expr, u_ex: ufl.core.expr.Expr) -> float:
+def compute_L2_error(  # type: ignore[no-any-unimported]
+    uh: ufl.core.expr.Expr, u_ex: ufl.core.expr.Expr
+) -> float:
     """Compute the L2-error between two expressions.
 
     Args:
