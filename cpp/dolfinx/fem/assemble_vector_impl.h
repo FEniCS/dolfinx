@@ -341,10 +341,6 @@ void assemble_interior_facets(
 ///
 /// @tparam T Scalar type.
 /// @tparam U Geometry scalar type.
-/// @tparam BS0 Compile-time block size for test function dofmap. Use -1
-/// for runtime block size.
-/// @tparam BS1 Compile-time block size for trial function dofmap. Use -1
-/// for runtime block size.
 /// @param[in,out] b Vector to modify.
 /// @param[in] a The bilinear form.
 /// @param[in] bs0 Block size for the test function dofmap, as
