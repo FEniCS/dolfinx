@@ -68,6 +68,7 @@ def create_vector_wrap(x: Vector) -> PETSc.Vec:
     ghosts = index_map.ghosts.astype(PETSc.IntType)
     bs = x.block_size
     size = (index_map.size_local * bs, index_map.size_global * bs)
+
     return PETSc.Vec().createGhostWithArray(
         ghosts,  # type: ignore[arg-type]
         x.array,  # type: ignore[arg-type]
@@ -128,7 +129,7 @@ def create_vector(
         index_map, bs = maps[0]
         ghosts = index_map.ghosts.astype(PETSc.IntType)
         size = (index_map.size_local * bs, index_map.size_global * bs)
-        b = PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore[arg-type]
+        b = PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=index_map.comm)  # type: ignore
         if kind == PETSc.Vec.Type.MPI:
             _assign_block_data(maps, b)
         return b
@@ -179,6 +180,7 @@ def assign(
     """
     if x1.getType() == PETSc.Vec.Type().NEST:
         x1_nest = x1.getNestSubVecs()
+        assert isinstance(x0, Sequence)
         for _x0, _x1 in zip(x0, x1_nest, strict=True):
             with _x1.localForm() as x:
                 x.array_w[:] = _x0
@@ -191,12 +193,12 @@ def assign(
                     _x.array_w[start:end] = _x0
                     start = end
             else:
-                _x.array_w[:] = x0
+                _x.array_w[:] = x0  # type: ignore
 
 
 @assign.register
-def _(  # type: ignore[misc]
-    x0: PETSc.Vec,
+def _(
+    x0: PETSc.Vec,  # type: ignore[misc]
     x1: npt.NDArray[np.inexact] | Sequence[npt.NDArray[np.inexact]],
 ):
     """Assign PETSc vector ``x0`` values to (blocked) array(s) ``x1``.
