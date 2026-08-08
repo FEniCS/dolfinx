@@ -44,12 +44,11 @@ public:
   /// size must be equal to the size of `indices`.
   /// @param[in] name Name of the meshtags.
   /// @pre `indices` must be sorted and unique.
-  template <typename U, typename V, typename S = std::string>
+  template <typename U, typename V>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
                                    std::vector<std::int32_t>>
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<T>>
-                 and std::is_convertible_v<std::remove_cvref_t<S>, std::string>
   MeshTags(std::shared_ptr<const Topology> topology, int dim, U&& indices,
            V&& values, std::string name = "mesh_tags")
       : _topology(std::move(topology)), _dim(dim),
