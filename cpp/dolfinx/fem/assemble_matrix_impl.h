@@ -196,25 +196,25 @@ void assemble_cells_matrix(
   }
 }
 
-/// @brief Execute kernel over entities of codimension ≥ 1 and accumulate result
-/// in a matrix.
+/// @brief Execute kernel over entities of codimension ≥ 1 and
+/// accumulate result in a matrix.
 ///
-/// Each entity is represented by (i) a cell that the entity is attached to
-/// and (ii) the local index of the entity  with respect to the cell. The
-/// kernel is executed for each entity. The kernel can access data
-/// (e.g., coefficients, basis functions) associated with the attached cell.
-/// However, entities may be attached to more than one cell. This function
-/// therefore computes 'one-sided' integrals, i.e. evaluates integrals as seen
-/// from cell used to define the entity.
+/// Each entity is represented by (i) a cell that the entity is attached
+/// to and (ii) the local index of the entity  with respect to the cell.
+/// The kernel is executed for each entity. The kernel can access data
+/// (e.g., coefficients, basis functions) associated with the attached
+/// cell. However, entities may be attached to more than one cell. This
+/// function therefore computes 'one-sided' integrals, i.e. evaluates
+/// integrals as seen from cell used to define the entity.
 ///
 /// @note This function must not perform any dynamic (heap) memory
-/// allocation. It may be called over only a small number of
-/// entities, so a per-call allocation would not be amortized. Buffers
-/// must be sized by the caller and passed in via `Ab`/`cdofs_b`.
+/// allocation. It may be called over only a small number of entities,
+/// so a per-call allocation would not be amortized. Buffers must be
+/// sized by the caller and passed in via `Ab`/`cdofs_b`.
 ///
 /// @tparam T Matrix/form scalar type.
-/// @tparam LiftingMode If set true, only execute mat_set on cells with BCs in
-/// column space.
+/// @tparam LiftingMode If set true, only execute mat_set on cells with
+/// BCs in column space.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
@@ -358,6 +358,7 @@ void assemble_entities(
           }
         }
       }
+
       if (!bc1.empty())
       {
         for (std::size_t j = 0; j < num_dofs1; ++j)
