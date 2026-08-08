@@ -15,6 +15,7 @@
 #include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
+#include <dolfinx/common/local_range.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
@@ -25,6 +26,7 @@
 #include <optional>
 #include <ranges>
 #include <span>
+#include <thread>
 #include <vector>
 
 /// @file utils.h
@@ -408,11 +410,12 @@ std::vector<std::int64_t> extract_topology(CellType cell_type,
 /// @param[in] entities Indices (local to process) of entities to
 /// compute `h` for.
 /// @param[in] dim Topological dimension of the entities.
+/// @param[in] num_threads Number of threads to use. Must be >= 1.
 /// @returns Greatest distance between any two vertices, `h[i]`
 /// corresponds to the entity `entities[i]`.
 template <std::floating_point T>
 std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
-                 int dim)
+                 int dim, int num_threads = 1)
 {
   if (entities.empty())
     return std::vector<T>();
@@ -426,45 +429,67 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
   // Get the  geometry coordinate
   std::span<const T> x = mesh.geometry().x();
 
-  // Function to compute the length of (p0 - p1)
-  auto delta_norm = [](auto&& p0, auto&& p1)
+  // Compute maximum distance between any two vertices of entities in
+  // vertex_xdofs (shape (h.size(), num_xdofs_per_entity)), writing the
+  // result into h. This is thread-safe.
+  auto compute_h = [](std::span<const std::int32_t> vertex_xdofs,
+                      std::size_t num_xdofs_per_entity, std::span<const T> x,
+                      std::span<T> h)
   {
-    T norm = 0;
-    for (std::size_t i = 0; i < 3; ++i)
-      norm += (p0[i] - p1[i]) * (p0[i] - p1[i]);
-    return std::sqrt(norm);
-  };
-
-  // Compute greatest distance between any to vertices
-  assert(dim > 0);
-  std::vector<T> h(entities.size(), 0);
-  for (std::size_t e = 0; e < entities.size(); ++e)
-  {
-    // Get geometry 'dof' for each vertex of entity e
-    std::span<const std::int32_t> e_vertices(
-        vertex_xdofs.data() + e * xdof_shape[1], xdof_shape[1]);
-
-    // Compute maximum distance between any two vertices
-    for (std::size_t i = 0; i < e_vertices.size(); ++i)
+    auto delta_norm = [](auto&& p0, auto&& p1)
     {
-      std::span<const T, 3> p0(x.data() + 3 * e_vertices[i], 3);
-      for (std::size_t j = i + 1; j < e_vertices.size(); ++j)
+      T norm = 0;
+      for (std::size_t i = 0; i < 3; ++i)
+        norm += (p0[i] - p1[i]) * (p0[i] - p1[i]);
+      return std::sqrt(norm);
+    };
+
+    for (std::size_t e = 0; e < h.size(); ++e)
+    {
+      // Get geometry 'dof' for each vertex of entity e
+      std::span<const std::int32_t> e_vertices(
+          vertex_xdofs.data() + e * num_xdofs_per_entity, num_xdofs_per_entity);
+
+      // Compute maximum distance between any two vertices
+      for (std::size_t i = 0; i < e_vertices.size(); ++i)
       {
-        std::span<const T, 3> p1(x.data() + 3 * e_vertices[j], 3);
-        h[e] = std::max(h[e], delta_norm(p0, p1));
+        std::span<const T, 3> p0(x.data() + 3 * e_vertices[i], 3);
+        for (std::size_t j = i + 1; j < e_vertices.size(); ++j)
+        {
+          std::span<const T, 3> p1(x.data() + 3 * e_vertices[j], 3);
+          h[e] = std::max(h[e], delta_norm(p0, p1));
+        }
       }
     }
+  };
+
+  assert(dim > 0);
+  std::vector<T> h(entities.size(), 0);
+  std::vector<std::jthread> threads;
+  for (int t = 1; t < num_threads; ++t)
+  {
+    auto [e0, e1] = common::local_range(t, entities.size(), num_threads);
+    threads.emplace_back(compute_h,
+                         std::span(vertex_xdofs.data() + e0 * xdof_shape[1],
+                                   (e1 - e0) * xdof_shape[1]),
+                         xdof_shape[1], x, std::span(h.data() + e0, e1 - e0));
   }
+  auto [e0, e1] = common::local_range(0, entities.size(), num_threads);
+  compute_h(std::span(vertex_xdofs.data() + e0 * xdof_shape[1],
+                      (e1 - e0) * xdof_shape[1]),
+            xdof_shape[1], x, std::span(h.data() + e0, e1 - e0));
 
   return h;
 }
 
 /// @brief Compute normal to given cell (viewed as embedded in 3D).
+/// @param[in] num_threads Number of threads to use. Must be >= 1.
 /// @returns The entity normals. The shape is `(entities.size(), 3)` and
 /// the storage is row-major.
 template <std::floating_point T>
 std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
-                            std::span<const std::int32_t> entities)
+                            std::span<const std::int32_t> entities,
+                            int num_threads = 1)
 {
   if (entities.empty())
     return std::vector<T>();
@@ -485,90 +510,94 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
   const auto [geometry_entities, eshape]
       = entities_to_geometry(mesh, dim, entities, false);
 
-  std::vector<T> n(entities.size() * 3);
+  // Run f(geometry_entities_chunk, eshape1, x, n_chunk) across
+  // num_threads threads, where the chunks partition [0, entities.size())
+  auto run_threaded
+      = [&entities, &geometry_entities, &eshape, &x, num_threads](auto&& f)
+  {
+    std::vector<T> n(entities.size() * 3);
+    std::vector<std::jthread> threads;
+    for (int t = 1; t < num_threads; ++t)
+    {
+      auto [i0, i1] = common::local_range(t, entities.size(), num_threads);
+      threads.emplace_back(f,
+                           std::span(geometry_entities.data() + i0 * eshape[1],
+                                     (i1 - i0) * eshape[1]),
+                           eshape[1], x,
+                           std::span(n.data() + 3 * i0, 3 * (i1 - i0)));
+    }
+    auto [i0, i1] = common::local_range(0, entities.size(), num_threads);
+    f(std::span(geometry_entities.data() + i0 * eshape[1],
+                (i1 - i0) * eshape[1]),
+      eshape[1], x, std::span(n.data() + 3 * i0, 3 * (i1 - i0)));
+    return n;
+  };
+
   switch (type)
   {
   case CellType::interval:
   {
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D.");
-    for (std::size_t i = 0; i < entities.size(); ++i)
-    {
-      // Get the two vertices as points
-      std::array vertices{geometry_entities[i * eshape[1]],
-                          geometry_entities[i * eshape[1] + 1]};
-      std::array p = {std::span<const T, 3>(x.data() + 3 * vertices[0], 3),
-                      std::span<const T, 3>(x.data() + 3 * vertices[1], 3)};
+    return run_threaded(
+        [](std::span<const std::int32_t> geometry_entities, std::size_t eshape1,
+           std::span<const T> x, std::span<T> n)
+        {
+          for (std::size_t i = 0; i < n.size() / 3; ++i)
+          {
+            // Get the two vertices as points
+            std::array vertices{geometry_entities[i * eshape1],
+                                geometry_entities[i * eshape1 + 1]};
+            std::array p
+                = {std::span<const T, 3>(x.data() + 3 * vertices[0], 3),
+                   std::span<const T, 3>(x.data() + 3 * vertices[1], 3)};
 
-      // Define normal by rotating tangent counter-clockwise
-      std::array<T, 3> t;
-      std::ranges::transform(p[1], p[0], t.begin(),
-                             [](auto x, auto y) { return x - y; });
+            // Define normal by rotating tangent counter-clockwise
+            std::array<T, 3> t;
+            std::ranges::transform(p[1], p[0], t.begin(),
+                                   [](auto x, auto y) { return x - y; });
 
-      T norm = std::sqrt(t[0] * t[0] + t[1] * t[1]);
-      std::span<T, 3> ni(n.data() + 3 * i, 3);
-      ni[0] = -t[1] / norm;
-      ni[1] = t[0] / norm;
-      ni[2] = 0.0;
-    }
-    return n;
+            T norm = std::sqrt(t[0] * t[0] + t[1] * t[1]);
+            std::span<T, 3> ni(n.data() + 3 * i, 3);
+            ni[0] = -t[1] / norm;
+            ni[1] = t[0] / norm;
+            ni[2] = 0.0;
+          }
+        });
   }
   case CellType::triangle:
-  {
-    for (std::size_t i = 0; i < entities.size(); ++i)
-    {
-      // Get the three vertices as points
-      std::array vertices = {geometry_entities[i * eshape[1] + 0],
-                             geometry_entities[i * eshape[1] + 1],
-                             geometry_entities[i * eshape[1] + 2]};
-      std::array p = {std::span<const T, 3>(x.data() + 3 * vertices[0], 3),
-                      std::span<const T, 3>(x.data() + 3 * vertices[1], 3),
-                      std::span<const T, 3>(x.data() + 3 * vertices[2], 3)};
-
-      // Compute (p1 - p0) and (p2 - p0)
-      std::array<T, 3> dp1, dp2;
-      std::ranges::transform(p[1], p[0], dp1.begin(),
-                             [](auto x, auto y) { return x - y; });
-      std::ranges::transform(p[2], p[0], dp2.begin(),
-                             [](auto x, auto y) { return x - y; });
-
-      // Define cell normal via cross product of first two edges
-      std::array<T, 3> ni = math::cross(dp1, dp2);
-      T norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
-      std::ranges::transform(ni, std::next(n.begin(), 3 * i),
-                             [norm](auto x) { return x / norm; });
-    }
-
-    return n;
-  }
   case CellType::quadrilateral:
   {
-    // TODO: check
-    for (std::size_t i = 0; i < entities.size(); ++i)
-    {
-      // Get the three vertices as points
-      std::array vertices = {geometry_entities[i * eshape[1] + 0],
-                             geometry_entities[i * eshape[1] + 1],
-                             geometry_entities[i * eshape[1] + 2]};
-      std::array p = {std::span<const T, 3>(x.data() + 3 * vertices[0], 3),
-                      std::span<const T, 3>(x.data() + 3 * vertices[1], 3),
-                      std::span<const T, 3>(x.data() + 3 * vertices[2], 3)};
+    // TODO: check the quadrilateral case
+    return run_threaded(
+        [](std::span<const std::int32_t> geometry_entities, std::size_t eshape1,
+           std::span<const T> x, std::span<T> n)
+        {
+          for (std::size_t i = 0; i < n.size() / 3; ++i)
+          {
+            // Get the three vertices as points
+            std::array vertices = {geometry_entities[i * eshape1 + 0],
+                                   geometry_entities[i * eshape1 + 1],
+                                   geometry_entities[i * eshape1 + 2]};
+            std::array p
+                = {std::span<const T, 3>(x.data() + 3 * vertices[0], 3),
+                   std::span<const T, 3>(x.data() + 3 * vertices[1], 3),
+                   std::span<const T, 3>(x.data() + 3 * vertices[2], 3)};
 
-      // Compute (p1 - p0) and (p2 - p0)
-      std::array<T, 3> dp1, dp2;
-      std::ranges::transform(p[1], p[0], dp1.begin(),
-                             [](auto x, auto y) { return x - y; });
-      std::ranges::transform(p[2], p[0], dp2.begin(),
-                             [](auto x, auto y) { return x - y; });
+            // Compute (p1 - p0) and (p2 - p0)
+            std::array<T, 3> dp1, dp2;
+            std::ranges::transform(p[1], p[0], dp1.begin(),
+                                   [](auto x, auto y) { return x - y; });
+            std::ranges::transform(p[2], p[0], dp2.begin(),
+                                   [](auto x, auto y) { return x - y; });
 
-      // Define cell normal via cross product of first two edges
-      std::array<T, 3> ni = math::cross(dp1, dp2);
-      T norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
-      std::ranges::transform(ni, std::next(n.begin(), 3 * i),
-                             [norm](auto x) { return x / norm; });
-    }
-
-    return n;
+            // Define cell normal via cross product of first two edges
+            std::array<T, 3> ni = math::cross(dp1, dp2);
+            T norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
+            std::ranges::transform(ni, std::next(n.begin(), 3 * i),
+                                   [norm](auto x) { return x / norm; });
+          }
+        });
   }
   default:
     throw std::invalid_argument(
@@ -577,11 +606,13 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 }
 
 /// @brief Compute the midpoints for mesh entities of a given dimension.
+/// @param[in] num_threads Number of threads to use. Must be >= 1.
 /// @returns The entity midpoints. The shape is `(entities.size(), 3)`
 /// and the storage is row-major.
 template <std::floating_point T>
 std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
-                                 std::span<const std::int32_t> entities)
+                                 std::span<const std::int32_t> entities,
+                                 int num_threads = 1)
 {
   if (entities.empty())
     return std::vector<T>();
@@ -592,20 +623,42 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
   const auto [e_to_g, eshape]
       = entities_to_geometry(mesh, dim, entities, false);
 
-  std::vector<T> x_mid(entities.size() * 3, 0);
-  for (std::size_t e = 0; e < entities.size(); ++e)
+  // Compute midpoints of entities in e_to_g_chunk (shape
+  // (x_mid_chunk.size() / 3, num_xdofs_per_entity)), writing the result
+  // into x_mid_chunk. This is thread-safe.
+  auto compute_midpoints_chunk = [](std::span<const std::int32_t> e_to_g,
+                                    std::size_t num_xdofs_per_entity,
+                                    std::span<const T> x, std::span<T> x_mid)
   {
-    std::span<T, 3> p(x_mid.data() + 3 * e, 3);
-    std::span<const std::int32_t> rows(e_to_g.data() + e * eshape[1],
-                                       eshape[1]);
-    for (auto row : rows)
+    for (std::size_t e = 0; e < x_mid.size() / 3; ++e)
     {
-      std::span<const T, 3> xg(x.data() + 3 * row, 3);
-      std::ranges::transform(p, xg, p.begin(),
-                             [size = rows.size()](auto x, auto y)
-                             { return x + y / size; });
+      std::span<T, 3> p(x_mid.data() + 3 * e, 3);
+      std::span<const std::int32_t> rows(
+          e_to_g.data() + e * num_xdofs_per_entity, num_xdofs_per_entity);
+      for (auto row : rows)
+      {
+        std::span<const T, 3> xg(x.data() + 3 * row, 3);
+        std::ranges::transform(p, xg, p.begin(),
+                               [size = rows.size()](auto x, auto y)
+                               { return x + y / size; });
+      }
     }
+  };
+
+  std::vector<T> x_mid(entities.size() * 3, 0);
+  std::vector<std::jthread> threads;
+  for (int t = 1; t < num_threads; ++t)
+  {
+    auto [e0, e1] = common::local_range(t, entities.size(), num_threads);
+    threads.emplace_back(
+        compute_midpoints_chunk,
+        std::span(e_to_g.data() + e0 * eshape[1], (e1 - e0) * eshape[1]),
+        eshape[1], x, std::span(x_mid.data() + 3 * e0, 3 * (e1 - e0)));
   }
+  auto [e0, e1] = common::local_range(0, entities.size(), num_threads);
+  compute_midpoints_chunk(
+      std::span(e_to_g.data() + e0 * eshape[1], (e1 - e0) * eshape[1]),
+      eshape[1], x, std::span(x_mid.data() + 3 * e0, 3 * (e1 - e0)));
 
   return x_mid;
 }

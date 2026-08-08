@@ -376,33 +376,42 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "cell_normals",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
+         int num_threads)
       {
         std::vector<T> n = dolfinx::mesh::cell_normals(
-            mesh, dim, std::span(entities.data(), entities.size()));
+            mesh, dim, std::span(entities.data(), entities.size()),
+            num_threads);
         return as_nbarray(std::move(n), {n.size() / 3, 3});
       },
-      nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"));
+      nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"),
+      nb::arg("num_threads") = 1);
   m.def(
       "h",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
+         int num_threads)
       {
-        return as_nbarray(dolfinx::mesh::h(
-            mesh, std::span(entities.data(), entities.size()), dim));
+        return as_nbarray(
+            dolfinx::mesh::h(mesh, std::span(entities.data(), entities.size()),
+                             dim, num_threads));
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"),
+      nb::arg("num_threads") = 1,
       "Compute maximum distsance between any two vertices.");
   m.def(
       "compute_midpoints",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
+         int num_threads)
       {
         std::vector<T> x = dolfinx::mesh::compute_midpoints(
-            mesh, dim, std::span(entities.data(), entities.size()));
+            mesh, dim, std::span(entities.data(), entities.size()),
+            num_threads);
         return as_nbarray(std::move(x), {entities.size(), 3});
       },
-      nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"));
+      nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"),
+      nb::arg("num_threads") = 1);
 
   m.def(
       "locate_entities",
