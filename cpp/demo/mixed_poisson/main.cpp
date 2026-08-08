@@ -364,10 +364,10 @@ int main(int argc, char* argv[])
 
 #ifdef HAS_ADIOS2
     // Save solution in VTX format
-    io::VTXWriter<U> vtx_u(MPI_COMM_WORLD, "u.bp", {u_soln}, "bp4");
+    io::VTXWriter<U> vtx_u(MPI_COMM_WORLD, "u.bp", "w", {u_soln}, "bp4");
     vtx_u.write(0);
     // Save interpolated boundary condition
-    io::VTXWriter<U> vtx_u0(MPI_COMM_WORLD, "u0.bp", {u0}, "bp4");
+    io::VTXWriter<U> vtx_u0(MPI_COMM_WORLD, "u0.bp", "w", {u0}, "bp4");
     vtx_u0.write(0);
 #endif
   }

@@ -264,9 +264,9 @@ x.destroy()
 if dolfinx.has_adios2:
     from dolfinx.io import VTXWriter
 
-    with VTXWriter(msh.comm, "u.bp", u, "bp4") as f:
+    with VTXWriter(msh.comm, "u.bp", "w", u, "bp4") as f:
         f.write(0.0)
-    with VTXWriter(msh.comm, "ubar.bp", ubar, "bp4") as f:
+    with VTXWriter(msh.comm, "ubar.bp", "w", ubar, "bp4") as f:
         f.write(0.0)
 else:
     print("ADIOS2 required for VTX output")

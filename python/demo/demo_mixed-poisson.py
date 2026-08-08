@@ -352,7 +352,7 @@ assert converged_reason > 0, f"Krylov solver has not converged, reason: {converg
 if dolfinx.has_adios2:
     from dolfinx.io import VTXWriter
 
-    with VTXWriter(msh.comm, "output_mixed_poisson.bp", u) as f:
+    with VTXWriter(msh.comm, "output_mixed_poisson.bp", "w", u) as f:
         f.write(0.0)
 else:
     print("ADIOS2 required for VTX output.")
