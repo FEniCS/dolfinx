@@ -280,9 +280,9 @@ def attach_matrix_free_operator(
     # Check if we have something from a mixed function space
     operator = MatrixFreeOperator(bilinear_form, bcs=bcs)
 
-    A = PETSc.Mat().create(ksp.getComm().tompi4py())
+    A = PETSc.Mat().create(ksp.getComm().tompi4py())  # type: ignore[arg-type]
     sizes = operator._diagonal.getSizes()
-    A.setSizes([sizes, sizes])
+    A.setSizes((sizes, sizes))  # type: ignore[arg-type]
 
     A.setType("python")
     A.setPythonContext(operator)
@@ -465,7 +465,7 @@ def mixed_function_space(
     #  Assign solution to dolfinx functions
     uh = dolfinx.fem.Function(V)
     ph = dolfinx.fem.Function(Q)
-    dolfinx.fem.petsc.assign(wh, [uh, ph])
+    dolfinx.fem.petsc.assign(wh, [uh, ph])  # type: ignore
     return uh, ph
 
 

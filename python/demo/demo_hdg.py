@@ -180,7 +180,7 @@ a = (
 
 f = -ufl.div(c * ufl.grad(u_e(x)))  # Manufacture a source term
 L = ufl.inner(f, v) * dx_c
-L += ufl.inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f
+L += ufl.inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f  # type: ignore[operator]
 # -
 
 # Our bilinear form involves two domains (`msh` and `facet_mesh`). The
@@ -215,7 +215,7 @@ facet_mesh_boundary_facets = facet_mesh_emap.sub_topology_to_topology(
 
 facet_mesh.topology.create_connectivity(fdim, fdim)
 dofs = fem.locate_dofs_topological(Vbar, fdim, facet_mesh_boundary_facets)
-bc = fem.dirichletbc(dtype(0.0), dofs, Vbar)
+bc = fem.dirichletbc(dtype(0.0), dofs, Vbar)  # type: ignore[operator]
 
 # Assemble the matrix and vector
 
@@ -246,7 +246,7 @@ try:
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     b.destroy()
 except PETSc.Error as e:
-    if e.ierr == 92:
+    if e.ierr == 92:  # type: ignore[attr-defined]
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)
         exit(0)
@@ -256,7 +256,7 @@ except PETSc.Error as e:
 # Create functions for the solution and update values
 
 u, ubar = fem.Function(V, name="u"), fem.Function(Vbar, name="ubar")
-assign(x, [u, ubar])
+assign(x, [u, ubar])  # type: ignore
 x.destroy()
 
 # Write to file

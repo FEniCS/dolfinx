@@ -477,7 +477,7 @@ if have_pyvista:
     ]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
-    plotter.view_xy()
+    plotter.view_xy()  # type: ignore[call-arg]
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:
@@ -623,7 +623,7 @@ dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
 phi = np.pi / 4
 
 # Initialize phase term
-phase = fem.Constant(mesh_data.mesh, PETSc.ScalarType(np.exp(1j * 0 * phi)))
+phase = fem.Constant(mesh_data.mesh, PETSc.ScalarType(np.exp(1j * 0 * phi)))  # type: ignore[operator]
 # -
 
 # We now solve the problem:
@@ -675,7 +675,7 @@ for m in m_list:
     )
     Esh_m = problem.solve()
     assert isinstance(Esh_m, fem.Function)
-    assert problem.solver.getConvergedReason() > 0
+    assert problem.solver.getConvergedReason() > 0  # type: ignore[operator]
 
     # Scattered magnetic field
     Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)

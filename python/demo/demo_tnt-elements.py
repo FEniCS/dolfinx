@@ -282,7 +282,7 @@ def poisson_error(V: fem.FunctionSpace):
     uh = problem.solve()
     converged_reason = problem.solver.getConvergedReason()
     num_its = problem.solver.getIterationNumber()
-    assert converged_reason > 0, (
+    assert converged_reason > 0, (  # type: ignore[operator]
         f"Failed to converge, reason: {converged_reason}, iterations: {num_its}"
     )
 

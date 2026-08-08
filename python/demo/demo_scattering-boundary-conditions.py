@@ -464,7 +464,7 @@ if have_pyvista:
     ]
     grid.set_active_scalars("Marker")
     plotter.add_mesh(grid, show_edges=True)
-    plotter.view_xy()
+    plotter.view_xy()  # type: ignore[call-arg]
     if not pyvista.OFF_SCREEN:
         plotter.show()
     else:
@@ -640,7 +640,7 @@ problem = LinearProblem(
     petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
 )
 Esh = problem.solve()
-assert problem.solver.getConvergedReason() > 0
+assert problem.solver.getConvergedReason() > 0  # type: ignore[operator]
 
 # We save the solution as an [ADIOS2
 # bp](https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html)
@@ -681,7 +681,7 @@ if have_pyvista:
     plotter = pyvista.Plotter()
     plotter.add_text("magnitude", font_size=12, color="black")
     plotter.add_mesh(V_grid.copy(), show_edges=True)
-    plotter.view_xy()
+    plotter.view_xy()  # type: ignore[call-arg]
     plotter.link_views()
     if pyvista.OFF_SCREEN:
         plotter.screenshot(out_folder / "Esh.png", window_size=[800, 800])

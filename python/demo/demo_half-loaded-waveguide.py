@@ -488,7 +488,7 @@ for i, kz in vals:
 
             plotter = pyvista.Plotter()
             plotter.add_mesh(V_grid.copy(), show_edges=False)
-            plotter.view_xy()
+            plotter.view_xy()  # type: ignore[call-arg]
             plotter.link_views()
             if pyvista.OFF_SCREEN:
                 plotter.screenshot(out_folder / "Et.png", window_size=[400, 400])
@@ -502,7 +502,7 @@ for i, kz in vals:
             V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs[0]]
             plotter = pyvista.Plotter()
             plotter.add_mesh(V_grid.copy(), show_edges=False)
-            plotter.view_xy()
+            plotter.view_xy()  # type: ignore[call-arg]
             plotter.link_views()
             if pyvista.OFF_SCREEN:
                 plotter.screenshot(out_folder / "Ez.png", window_size=[400, 400])
