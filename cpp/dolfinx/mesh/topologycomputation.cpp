@@ -8,12 +8,14 @@
 #include "Topology.h"
 #include "cell_types.h"
 #include <algorithm>
+#include <atomic>
 #include <boost/sort/sort.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -845,6 +847,21 @@ compute_entities_by_key_matching(
   // 0 = entities that are only in ghost cells (i.e. definitely not
   // owned) 1 = entities with local ownership or ownership that needs
   // deciding
+  //
+  // An entity can be referenced from more than one cell, so indices in
+  // different threads' ranges can alias the same ghost_status entry.
+  // Every writer stores the same value, so an atomic (relaxed) store
+  // avoids the resulting data race without requiring a merge step.
+  auto tag_ghost_status = [](std::span<const std::int32_t> indices,
+                             std::span<std::int8_t> ghost_status)
+  {
+    for (std::int32_t idx : indices)
+    {
+      std::atomic_ref<std::int8_t>(ghost_status[idx])
+          .store(0, std::memory_order_relaxed);
+    }
+  };
+
   std::vector<std::int8_t> ghost_status(entity_count, 1);
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
@@ -854,14 +871,20 @@ compute_entities_by_key_matching(
     assert(std::size_t(cell_map.size_local() + cell_map.num_ghosts())
            == std::get<1>(cell_lists[k]).size()
                   / mesh::num_cell_vertices(std::get<0>(cell_lists[k])));
-    std::int32_t ghost_offset = cell_map.size_local();
-    int num_entities_per_cell = cell_type_entities[k].size();
-    std::size_t offset = cell_type_offsets[k];
-    for (std::int32_t i = 0; i < ghost_offset * num_entities_per_cell; ++i)
+    std::size_t num_indices = static_cast<std::size_t>(cell_map.size_local())
+                              * cell_type_entities[k].size();
+    std::span<const std::int32_t> indices(
+        entity_index.data() + cell_type_offsets[k], num_indices);
+
+    std::vector<std::jthread> threads;
+    for (int t = 1; t < num_threads; ++t)
     {
-      std::int32_t idx = entity_index[i + offset];
-      ghost_status[idx] = 0;
+      auto [i0, i1] = common::local_range(t, indices.size(), num_threads);
+      threads.emplace_back(tag_ghost_status, indices.subspan(i0, i1 - i0),
+                           std::span(ghost_status));
     }
+    auto [i0, i1] = common::local_range(0, indices.size(), num_threads);
+    tag_ghost_status(indices.subspan(i0, i1 - i0), ghost_status);
   }
 
   // Communicate with other processes to find out which entities are
