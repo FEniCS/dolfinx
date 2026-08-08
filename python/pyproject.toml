@@ -100,9 +100,8 @@ markers = [
 
 [tool.mypy]
 # Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
-# Goal would be to make all of the below True long-term
 disallow_untyped_defs = false
-disallow_any_unimported = false
+disallow_any_unimported = true
 no_implicit_optional = true
 check_untyped_defs = true
 warn_return_any = true
@@ -137,6 +136,25 @@ module = [
       "pyvistaqt",
 ]
 ignore_missing_imports = true
+
+# These modules expose ufl types (Form, Mesh, FunctionSpace, ...) in their
+# public API annotations; disallow_any_unimported is unsatisfiable here while
+# ufl/ffcx ship no py.typed/stubs.
+[[tool.mypy.overrides]]
+module = [
+      "dolfinx.fem.function",
+      "dolfinx.fem.forms",
+      "dolfinx.fem.petsc",
+      "dolfinx.fem.problems",
+      "dolfinx.io.gmsh",
+      "dolfinx.mesh",
+      "demo_gmsh",
+      "demo_hdg",
+      "demo_matrix-free-petsc",
+      "demo_pml",
+      "demo_scattering-boundary-conditions",
+]
+disallow_any_unimported = false
 
 [tool.ruff]
 line-length = 100
