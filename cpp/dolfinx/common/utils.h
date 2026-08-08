@@ -11,12 +11,10 @@
 #include <boost/functional/hash.hpp>
 #include <cstddef>
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <iterator>
 #include <mpi.h>
 #include <ranges>
 #include <stdexcept>
-#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -116,20 +114,4 @@ std::size_t hash_global(MPI_Comm comm, const T& x)
   return global_hash;
 }
 
-/// @brief Build communication graph data as a JSON string.
-///
-/// The data string can be decoded (loaded) to create a Python object
-/// from which a [NetworkX](https://networkx.org/) graph can be
-/// constructed.
-///
-/// See ::comm_graph for a description of the data.
-///
-/// @param[in] g Communication graph.
-/// @return JSON string representing the communication graph. Edge
-/// data is data volume (`weight`) and local/remote memory indicator
-/// (`local==1` is an edge to an shared memory process/rank, other
-/// wise the target node is a remote memory rank).
-std::string comm_to_json(
-    const graph::AdjacencyList<std::tuple<int, std::size_t, std::int8_t>,
-                               std::pair<std::int32_t, std::int32_t>>& g);
 } // namespace dolfinx::common

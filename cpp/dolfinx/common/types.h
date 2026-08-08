@@ -14,10 +14,10 @@
 
 namespace dolfinx
 {
-/// @private This concept is used to constrain the a template type to floating
-/// point real or complex types. Note that this concept is different to
-/// std::floating_point which does not include std::complex.
-
+/// @private This concept is used to constrain the a template type to
+/// floating point real or complex types. Note that this concept is
+/// different to std::floating_point which does not include
+/// std::complex.
 template <class T>
 struct is_custom_scalar : std::false_type
 {
