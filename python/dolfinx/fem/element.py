@@ -91,7 +91,7 @@ class CoordinateElement(Generic[Real]):
         x: npt.NDArray[Real],
         cell_geometry: npt.NDArray[Real],
         *,
-        tol: float = 1.0e-6,
+        tol: float | None = None,
         maxit: int = 15,
         working_array: npt.NDArray[Real] | None = None,
     ) -> npt.NDArray[Real]:
@@ -107,7 +107,10 @@ class CoordinateElement(Generic[Real]):
                 geometrical_dimension)``. They can be created by accessing
                 ``geometry.x[geometry.dofmaps[0].cell_dofs(i)]``,
             tol: Tolerance for convergence in Newton method for
-                nonaffine pullbacks.
+                nonaffine pullbacks. If not provided, it is set from
+                the square root of the machine epsilon of ``x``'s
+                dtype, since a fixed value tuned for ``float64`` is
+                often unreachable in ``float32`` arithmetic.
             maxit: Maximum number of Newton iterations for
                 nonaffine pullbacks.
             working_array: Working memory for the pull-back operation.
@@ -118,6 +121,8 @@ class CoordinateElement(Generic[Real]):
         Returns:
             Reference coordinates of the physical points ``x``.
         """
+        if tol is None:
+            tol = float(np.sqrt(np.finfo(x.dtype).eps))
         if working_array is None:
             working_array = np.zeros(self.pull_back_working_size(x.shape[1]), dtype=x.dtype)
         return self._cpp_object.pull_back(x, cell_geometry, tol, maxit, working_array)  # type: ignore[arg-type,return-value]
