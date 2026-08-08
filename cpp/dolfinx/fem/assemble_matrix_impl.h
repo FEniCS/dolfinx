@@ -34,9 +34,16 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// a per-call allocation would not be amortized. Buffers must be
 /// sized by the caller and passed in via `Ab`/`cdofs_b`.
 ///
+/// @tparam LiftingMode Selects between matrix assembly and Dirichlet
+/// lifting semantics for this kernel-execution loop (see
+/// fem::impl::lift_bc). When `false` (default): standard assembly --
+/// the element tensor's `bc0`-marked rows and `bc1`-marked columns are
+/// zeroed in-place before being passed to `mat_set`. When `true`: cells
+/// with no `bc1`-marked column dofs are skipped, since they cannot
+/// contribute a lifting term, and the unmodified element tensor
+/// (including BC-marked columns) is passed to `mat_set`.
 /// @tparam T Matrix/form scalar type.
-/// @tparam LiftingMode If set true, only execute mat_set on cells with BCs in
-/// column space.
+/// @tparam U Geometry type.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Degree-of-freedom map for the mesh geometry.
@@ -122,20 +129,16 @@ void assemble_cells_matrix(
     // In "LiftingMode" only execute kernel if there are BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [&dofs1, &bc1, &bs1]()
+      auto has_bc = [](auto& dofs1, auto& bc1, auto bs1)
       {
-        for (std::int32_t dof : dofs1)
-        {
+        for (auto dof : dofs1)
           for (int k = 0; k < bs1; ++k)
-          {
             if (bc1[bs1 * dof + k])
               return true;
-          }
-        }
         return false;
       };
 
-      if (!has_bc())
+      if (!has_bc(dofs1, bc1, bs1))
         continue;
     }
 
@@ -212,9 +215,16 @@ void assemble_cells_matrix(
 /// so a per-call allocation would not be amortized. Buffers must be
 /// sized by the caller and passed in via `Ab`/`cdofs_b`.
 ///
+/// @tparam LiftingMode Selects between matrix assembly and Dirichlet
+/// lifting semantics for this kernel-execution loop (see
+/// fem::impl::lift_bc). When `false` (default): standard assembly --
+/// the element tensor's `bc0`-marked rows and `bc1`-marked columns are
+/// zeroed in-place before being passed to `mat_set`. When `true`: cells
+/// with no `bc1`-marked column dofs are skipped, since they cannot
+/// contribute a lifting term, and the unmodified element tensor
+/// (including BC-marked columns) is passed to `mat_set`.
 /// @tparam T Matrix/form scalar type.
-/// @tparam LiftingMode If set true, only execute mat_set on cells with
-/// BCs in column space.
+/// @tparam U Geometry type.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
@@ -390,8 +400,15 @@ void assemble_entities(
 /// sized by the caller and passed in via `Ab`/`cdofs_b`/`dofs_b`.
 ///
 /// @tparam T Matrix/form scalar type.
-/// @tparam LiftingMode If set true, only execute mat_set on cells with BCs in
-/// column space.
+/// @tparam U Geometry type.
+/// @tparam LiftingMode Selects between matrix assembly and Dirichlet
+/// lifting semantics for this kernel-execution loop (see
+/// fem::impl::lift_bc). When `false` (default): standard assembly --
+/// the element tensor's `bc0`-marked rows and `bc1`-marked columns are
+/// zeroed in-place before being passed to `mat_set`. When `true`: cells
+/// with no `bc1`-marked column dofs are skipped, since they cannot
+/// contribute a lifting term, and the unmodified element tensor
+/// (including BC-marked columns) is passed to `mat_set`.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
@@ -680,10 +697,18 @@ void assemble_interior_facets(
 /// Markers (bc0 and bc1) can be empty if no Dirichlet conditions are
 /// applied.
 ///
+/// @tparam LiftingMode Selects between matrix assembly and Dirichlet
+/// lifting semantics (see fem::impl::lift_bc, which instantiates this
+/// function with `LiftingMode=true` to compute lifting contributions to
+/// a right-hand side vector rather than to assemble a matrix). When
+/// `false` (default): standard assembly -- the element tensor's
+/// `bc0`-marked rows and `bc1`-marked columns are zeroed in-place
+/// before being passed to `mat_set`. When `true`: cells with no
+/// `bc1`-marked column dofs are skipped, since they cannot contribute a
+/// lifting term, and the unmodified element tensor (including
+/// BC-marked columns) is passed to `mat_set`.
 /// @tparam T Scalar type.
 /// @tparam U Geometry type.
-/// @tparam LiftingMode. Set to true to call the kernel only on cells with BCs
-/// in bc1.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] a Bilinear form to assemble.
