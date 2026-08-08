@@ -11,6 +11,7 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <dolfinx/common/local_range.h>
 #include <dolfinx/mesh/utils.h>
 #include <format>
 #include <iterator>
@@ -18,6 +19,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace dolfinx::geometry
@@ -233,9 +235,11 @@ public:
   /// @param[in] entities List of entity indices (local to process) to
   /// compute the bounding box for. If `std::nullopt`, the bounding box tree is
   /// computed for all local entities (including ghosts) of the given `tdim`.
+  /// @param[in] num_threads Number of threads to use. Must be >= 1.
   BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim, double padding,
                   std::optional<std::span<const std::int32_t>> entities
-                  = std::nullopt)
+                  = std::nullopt,
+                  int num_threads = 1)
       : _tdim(tdim)
   {
     // Initialize entities of given dimension if they don't exist
@@ -263,17 +267,47 @@ public:
 
     mesh.topology_mutable()->create_connectivity(tdim, mesh.topology()->dim());
 
-    // Create bounding boxes for all mesh entities (leaves)
-    std::vector<std::pair<std::array<T, 6>, std::int32_t>> leaf_bboxes;
-    leaf_bboxes.reserve(entities_span.size());
-    for (std::int32_t e : entities_span)
+    // Compute a padded bounding box for each entity in `entities`,
+    // writing into the correspondingly-indexed slot of `leaf_bboxes`.
+    // This is thread-safe (read-only on `mesh`, disjoint writes to
+    // `leaf_bboxes`).
+    auto compute_leaf_bboxes
+        = [](const mesh::Mesh<T>& mesh, int tdim, double padding,
+             std::span<const std::int32_t> entities,
+             std::span<std::pair<std::array<T, 6>, std::int32_t>> leaf_bboxes)
     {
-      std::array<T, 6> b = impl_bb::compute_bbox_of_entity(mesh, tdim, e);
-      std::transform(b.cbegin(), std::next(b.cbegin(), 3), b.begin(),
-                     [padding](auto x) { return x - padding; });
-      std::transform(std::next(b.begin(), 3), b.end(), std::next(b.begin(), 3),
-                     [padding](auto x) { return x + padding; });
-      leaf_bboxes.emplace_back(b, e);
+      for (std::size_t i = 0; i < entities.size(); ++i)
+      {
+        std::int32_t e = entities[i];
+        std::array<T, 6> b = impl_bb::compute_bbox_of_entity(mesh, tdim, e);
+        std::transform(b.cbegin(), std::next(b.cbegin(), 3), b.begin(),
+                       [padding](auto x) { return x - padding; });
+        std::transform(std::next(b.begin(), 3), b.end(),
+                       std::next(b.begin(), 3),
+                       [padding](auto x) { return x + padding; });
+        leaf_bboxes[i] = {b, e};
+      }
+    };
+
+    // Create bounding boxes for all mesh entities (leaves)
+    std::vector<std::pair<std::array<T, 6>, std::int32_t>> leaf_bboxes(
+        entities_span.size());
+    {
+      // Scoped so that all threads have joined (and hence finished
+      // writing to leaf_bboxes) before it is read below.
+      std::vector<std::jthread> threads;
+      for (int t = 1; t < num_threads; ++t)
+      {
+        auto [i0, i1]
+            = common::local_range(t, entities_span.size(), num_threads);
+        threads.emplace_back(compute_leaf_bboxes, std::cref(mesh), tdim,
+                             padding, entities_span.subspan(i0, i1 - i0),
+                             std::span(leaf_bboxes).subspan(i0, i1 - i0));
+      }
+      auto [i0, i1] = common::local_range(0, entities_span.size(), num_threads);
+      compute_leaf_bboxes(mesh, tdim, padding,
+                          entities_span.subspan(i0, i1 - i0),
+                          std::span(leaf_bboxes).subspan(i0, i1 - i0));
     }
 
     // Recursively build the bounding box tree from the leaves

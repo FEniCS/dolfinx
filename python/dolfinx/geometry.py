@@ -120,6 +120,7 @@ def bb_tree(
     *,
     padding: float = 0.0,
     entities: npt.NDArray[np.int32] | None = None,
+    num_threads: int = 1,
 ) -> BoundingBoxTree[Real]:
     """Create a bounding box tree for use in collision detection.
 
@@ -129,6 +130,7 @@ def bb_tree(
         padding: Padding for each bounding box.
         entities: List of entity indices (local to process). If not
             supplied, all owned and ghosted entities are used.
+        num_threads: Number of threads to use. Must be >= 1.
 
     Returns:
         Bounding box tree.
@@ -141,11 +143,11 @@ def bb_tree(
     cpp_mesh = mesh._cpp_object
     if isinstance(cpp_mesh, _cpp.mesh.Mesh_float32):
         return BoundingBoxTree(
-            _cpp.geometry.BoundingBoxTree_float32(cpp_mesh, dim, padding, entities)
+            _cpp.geometry.BoundingBoxTree_float32(cpp_mesh, dim, padding, entities, num_threads)
         )
     elif isinstance(cpp_mesh, _cpp.mesh.Mesh_float64):
         return BoundingBoxTree(
-            _cpp.geometry.BoundingBoxTree_float64(cpp_mesh, dim, padding, entities)
+            _cpp.geometry.BoundingBoxTree_float64(cpp_mesh, dim, padding, entities, num_threads)
         )
     else:
         raise NotImplementedError(f"Type {mesh.geometry.x.dtype} not supported.")

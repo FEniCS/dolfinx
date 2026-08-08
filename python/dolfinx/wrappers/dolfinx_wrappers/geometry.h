@@ -65,7 +65,8 @@ void declare_bbtree(nb::module_& m, const std::string& type)
              const dolfinx::mesh::Mesh<T>& mesh, int dim, double padding,
              std::optional<
                  nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
-                 entities)
+                 entities,
+             int num_threads)
           {
             std::optional<std::span<const std::int32_t>> ents
                 = entities ? std::span<const std::int32_t>(
@@ -73,11 +74,11 @@ void declare_bbtree(nb::module_& m, const std::string& type)
                                  entities->data() + entities->size())
                            : std::optional<std::span<const std::int32_t>>(
                                  std::nullopt);
-            new (bbt)
-                dolfinx::geometry::BoundingBoxTree<T>(mesh, dim, padding, ents);
+            new (bbt) dolfinx::geometry::BoundingBoxTree<T>(mesh, dim, padding,
+                                                            ents, num_threads);
           },
           nb::arg("mesh"), nb::arg("dim"), nb::arg("padding"),
-          nb::arg("entities").none())
+          nb::arg("entities").none(), nb::arg("num_threads") = 1)
       .def_prop_ro("num_bboxes",
                    &dolfinx::geometry::BoundingBoxTree<T>::num_bboxes)
       .def_prop_ro(
