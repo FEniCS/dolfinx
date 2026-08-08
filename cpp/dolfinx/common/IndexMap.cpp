@@ -1016,7 +1016,8 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 //-----------------------------------------------------------------------------
 MPI_Comm IndexMap::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
-graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
+std::pair<std::vector<int>, std::vector<std::int32_t>>
+IndexMap::index_to_dest_ranks(int tag) const
 {
   const std::int64_t offset = _local_range[0];
 
@@ -1244,7 +1245,7 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
   std::ranges::transform(idx_to_rank, data.begin(),
                          [&dest](auto x) { return dest[x.second]; });
 
-  return graph::AdjacencyList(std::move(data), std::move(offsets));
+  return {std::move(data), std::move(offsets)};
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> IndexMap::shared_indices() const
