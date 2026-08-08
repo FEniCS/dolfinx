@@ -279,7 +279,7 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy -v --config-file python/pyproject.toml -p dolfinx --exclude superlu_dist.py
+          mypy -v --config-file python/pyproject.toml -p dolfinx
           # cd python/
           # # mypy test
           # mypy dolfinx
