@@ -137,13 +137,14 @@ T compute_squared_distance_bbox(std::span<const T, 6> b,
 {
   auto b0 = b.template subspan<0, 3>();
   auto b1 = b.template subspan<3, 3>();
-  return std::transform_reduce(x.begin(), x.end(), b0.begin(), 0, std::plus<>{},
+  return std::transform_reduce(x.begin(), x.end(), b0.begin(), 0.0,
+                               std::plus<>{},
                                [](auto x, auto b)
                                {
                                  auto dx = x - b;
                                  return dx > 0 ? 0 : dx * dx;
                                })
-         + std::transform_reduce(x.begin(), x.end(), b1.begin(), 0,
+         + std::transform_reduce(x.begin(), x.end(), b1.begin(), 0.0,
                                  std::plus<>{},
                                  [](auto x, auto b)
                                  {

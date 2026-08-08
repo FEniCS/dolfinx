@@ -206,7 +206,7 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 
     // Compute length of edge between vertex x0 and x1
     edge_length[e] = std::sqrt(std::transform_reduce(
-        x0.begin(), x0.end(), x1.begin(), 0, std::plus<>(),
+        x0.begin(), x0.end(), x1.begin(), 0.0, std::plus<>(),
         [](auto x0, auto x1) { return (x0 - x1) * (x0 - x1); }));
   }
 
@@ -222,7 +222,7 @@ face_long_edge(const mesh::Mesh<T>& mesh)
     auto face_edges = f_to_e->links(f);
 
     std::int32_t imax = 0;
-    T max_len = 0;
+    T max_len = 0.0;
     T min_len = std::numeric_limits<T>::max();
 
     for (int i = 0; i < 3; ++i)

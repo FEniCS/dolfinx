@@ -126,7 +126,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   std::vector<T> coordinate_dofs_b(num_dofs_g * gdim);
   mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
 
-  std::vector<T> coords(num_nodes * 3, 0);
+  std::vector<T> coords(num_nodes * 3, 0.0);
   std::array<std::size_t, 2> cshape = {num_nodes, 3};
   for (std::int32_t c = 0; c < num_cells; ++c)
   {

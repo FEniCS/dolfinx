@@ -581,7 +581,7 @@ void assemble_matrix(auto mat_add, const Form<T, U>& a,
 /// rows.
 template <dolfinx::scalar T>
 void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
-                  T diagonal = T{1})
+                  T diagonal = 1.0)
 {
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
@@ -610,7 +610,7 @@ template <dolfinx::scalar T, std::floating_point U>
 void set_diagonal(
     auto set_fn, const FunctionSpace<U>& V,
     const std::vector<std::reference_wrapper<const DirichletBC<T, U>>>& bcs,
-    T diagonal = T{1})
+    T diagonal = 1.0)
 {
   spdlog::debug("Set diagonal");
   for (auto& bc : bcs)
