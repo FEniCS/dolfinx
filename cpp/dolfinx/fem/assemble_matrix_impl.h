@@ -73,7 +73,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// local element matrix.
 /// @param cdofs_b Buffer for local element geometry. Size must be at
 /// least `3 * x_dofmap.extent(1))`.
-template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
+template <bool LiftingMode = false, dolfinx::scalar T, std::floating_point U>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -251,7 +251,7 @@ void assemble_cells_matrix(
 /// local element matrix.
 /// @param cdofs_b Buffer for local element geometry. Size must be at
 /// least `3 * x_dofmap.extent(1))`.
-template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
+template <bool LiftingMode = false, dolfinx::scalar T, std::floating_point U>
 void assemble_entities(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -319,6 +319,7 @@ void assemble_entities(
         }
         return false;
       };
+
       if (!has_bc())
         continue;
     }
@@ -430,6 +431,9 @@ void assemble_entities(
 /// least `2 * 3 * x_dofmap.extent(1))`.
 /// @param dofs_b Buffer for degrees-of-freedom. Size must be at least
 /// `2 * dmap0.map().extent(1) + 2 * dmap1.map().extent(1)`.
+/// @param Ae_block_b Buffer used to gather a single (test, trial) block
+/// of the local element matrix. Size must be at least `(bs0 *
+/// dmap0.map().extent(1)) * (bs1 * dmap1.map().extent(1))`.
 template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -455,7 +459,8 @@ void assemble_interior_facets(
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<T> Ab, std::span<U> cdofs_b, std::span<std::int32_t> dofs_b)
+    std::span<T> Ab, std::span<U> cdofs_b, std::span<std::int32_t> dofs_b,
+    std::span<T> Ae_block_b)
 {
   if (facets.empty())
     return;
@@ -489,15 +494,15 @@ void assemble_interior_facets(
   // domains) -- the sparsity pattern only holds entries for blocks
   // where both cells exist, so such blocks must be inserted
   // individually rather than as part of the full joint block.
-  std::vector<T> Ae_block;
-  auto insert_block = [&Ae_block, &Ae, &bs0, &bs1, &num_cols,
+  assert(Ae_block_b.size() >= dmap0_size * bs0 * dmap1_size * bs1);
+  auto insert_block = [&Ae_block_b, &Ae, &bs0, &bs1, &num_cols,
                        &mat_set](std::span<const std::int32_t> rdofs,
                                  std::span<const std::int32_t> cdofs,
                                  std::size_t row_offset, std::size_t col_offset)
   {
     if (rdofs.empty() or cdofs.empty())
       return;
-    Ae_block.resize(rdofs.size() * bs0 * cdofs.size() * bs1);
+    auto Ae_block = Ae_block_b.first(rdofs.size() * bs0 * cdofs.size() * bs1);
     for (std::size_t i = 0; i < rdofs.size() * bs0; ++i)
     {
       auto row
@@ -688,8 +693,8 @@ void assemble_interior_facets(
 /// applied.
 /// @param bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
-template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
-void assemble_matrix(
+template <bool LiftingMode = false, dolfinx::scalar T, std::floating_point U>
+void assemble_matrix0(
     la::MatSet<T> auto mat_set, const Form<T, U>& a,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
     std::span<const T> constants,
@@ -743,6 +748,7 @@ void assemble_matrix(
     std::size_t dmap0_size = dofmap0->map().extent(1);
     std::size_t dmap1_size = dofmap1->map().extent(1);
     std::vector<std::int32_t> dmap_b((2 * dmap0_size) + (2 * dmap1_size));
+    std::vector<T> Ae_block_b(dmap0_size * bs0 * dmap1_size * bs1);
 
     auto element0 = a.function_spaces().at(0)->elements(cell_type_idx);
     assert(element0);
@@ -775,7 +781,7 @@ void assemble_matrix(
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
-      impl::assemble_cells_matrix<T, U, LiftingMode>(
+      impl::assemble_cells_matrix<LiftingMode>(
           mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
           {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
           md::mdspan(coeffs.data(), cells.size(), cstride), constants,
@@ -831,7 +837,7 @@ void assemble_matrix(
           P1T, bc0, bc1, fn,
           mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride), constants,
           cell_info0, cell_info1, facet_perms, std::span(Ab),
-          std::span(cdofs_b), dmap_b);
+          std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
     }
 
     for (auto itg_type : {fem::IntegralType::exterior_facet,
@@ -866,7 +872,7 @@ void assemble_matrix(
         std::span e1 = a.domain_arg(itg_type, 1, i, 0);
         mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
         assert((entities.size() / 2) * cstride == coeffs.size());
-        impl::assemble_entities<T, U, LiftingMode>(
+        impl::assemble_entities<LiftingMode>(
             mat_set, x_dofmap, x, entities, {dofs0, bs0, entities0}, P0,
             {dofs1, bs1, entities1}, P1T, bc0, bc1, fn,
             md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
@@ -875,5 +881,4 @@ void assemble_matrix(
     }
   }
 }
-
 } // namespace dolfinx::fem::impl

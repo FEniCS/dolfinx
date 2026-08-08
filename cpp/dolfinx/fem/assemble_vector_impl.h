@@ -10,6 +10,7 @@
 #include "DirichletBC.h"
 #include "DofMap.h"
 #include "Form.h"
+#include "assemble_matrix_impl.h"
 #include "traits.h"
 #include "utils.h"
 #include <algorithm>
@@ -400,11 +401,16 @@ void lift_bc(V&& b, const Form<T, U>& a, auto bs0, auto bs1,
     }
   };
 
-  // Repurpose the assemble_matrix assembler to work on the vector b
-  // instead. Use LiftingMode=true so the kernel is only called on
-  // cells that have BC-constrained DOFs in the column space.
-  assemble_matrix<T, U, true>(lifting_fn, a, constants, coefficients, {},
-                              bc_markers1);
+  // Repurpose the dolfinx::fem::impl::assemble_matrix0 assembler to work on
+  // the vector b instead. Use LiftingMode=true so the kernel is only called
+  // on cells that have BC-constrained DOFs in the column space.
+  std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
+  assert(mesh);
+  std::span x = mesh->geometry().x();
+  md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x3(
+      x.data(), x.size() / 3, 3);
+  impl::assemble_matrix0<true>(lifting_fn, a, x3, constants, coefficients, {},
+                               bc_markers1);
 }
 
 /// @brief Assemble linear form into a vector.
@@ -456,7 +462,7 @@ void assemble_vector(
     std::span be_b(be_buffer);
     std::span cdofs_b(cdofs_buffer);
 
-    const fem::DofTransformKernel<T> auto P0
+    const fem::DofTransformKernel<T> auto& P0
         = element->template dof_transformation_fn<T>(doftransform::standard);
 
     std::span<const std::uint32_t> cell_info0;
