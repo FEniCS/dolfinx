@@ -31,8 +31,8 @@ namespace dolfinx::fem
 {
 template <dolfinx::scalar T, std::floating_point U>
 class DirichletBC;
-
 }
+
 namespace dolfinx::fem::impl
 {
 /// @cond
@@ -453,10 +453,12 @@ void apply_lifting(
         "Mismatch in size between a and bcs in assembler.");
   }
 
+  // Reused across iterations so `assign` below can recycle the
+  // existing buffer instead of reallocating for every block.
+  std::vector<std::int8_t> bc_markers1;
+  std::vector<T> bc_values1;
   for (std::size_t j = 0; j < a.size(); ++j)
   {
-    std::vector<std::int8_t> bc_markers1;
-    std::vector<T> bc_values1;
     if (a[j] and !bcs1[j].empty())
     {
       assert(a[j]->get().function_spaces().at(0));
@@ -483,8 +485,23 @@ void apply_lifting(
         bc.get().set(bc_values1, std::nullopt, 1);
       }
 
-      lift_bc(b, a[j]->get(), bs0, bs1, constants[j], coeffs[j],
-              std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
+      if (bs0 == 1 and bs1 == 1)
+      {
+        lift_bc(b, a[j]->get(), std::integral_constant<int, 1>{},
+                std::integral_constant<int, 1>{}, constants[j], coeffs[j],
+                std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
+      }
+      else if (bs0 == 3 and bs1 == 3)
+      {
+        lift_bc(b, a[j]->get(), std::integral_constant<int, 3>{},
+                std::integral_constant<int, 3>{}, constants[j], coeffs[j],
+                std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
+      }
+      else
+      {
+        lift_bc(b, a[j]->get(), bs0, bs1, constants[j], coeffs[j],
+                std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
+      }
     }
   }
 }
@@ -535,6 +552,8 @@ void assemble_vector(
     // sized for the worst case (interior facets, which touch two cells).
     std::vector<T> be_buffer(2 * bs * dofs.extent(1));
     std::vector<U> cdofs_buffer(2 * 3 * x_dofmap.extent(1));
+    std::span be_b(be_buffer);
+    std::span cdofs_b(cdofs_buffer);
 
     const fem::DofTransformKernel<T> auto P0
         = element->template dof_transformation_fn<T>(doftransform::standard);
@@ -560,7 +579,7 @@ void assemble_vector(
             P0, b, x_dofmap, x, cells,
             std::tuple{dofs, std::integral_constant<int, 1>{}, cells0}, fn,
             constants, md::mdspan(coeffs.data(), cells.size(), cstride),
-            cell_info0, std::span(be_buffer), std::span(cdofs_buffer));
+            cell_info0, be_b, cdofs_b);
       }
       else if (bs == 3)
       {
@@ -568,14 +587,14 @@ void assemble_vector(
             P0, b, x_dofmap, x, cells,
             std::tuple{dofs, std::integral_constant<int, 3>(), cells0}, fn,
             constants, md::mdspan(coeffs.data(), cells.size(), cstride),
-            cell_info0, std::span(be_buffer), std::span(cdofs_buffer));
+            cell_info0, be_b, cdofs_b);
       }
       else
       {
-        impl::assemble_cells(
-            P0, b, x_dofmap, x, cells, std::tuple{dofs, bs, cells0}, fn,
-            constants, md::mdspan(coeffs.data(), cells.size(), cstride),
-            cell_info0, std::span(be_buffer), std::span(cdofs_buffer));
+        impl::assemble_cells(P0, b, x_dofmap, x, cells,
+                             std::tuple{dofs, bs, cells0}, fn, constants,
+                             md::mdspan(coeffs.data(), cells.size(), cstride),
+                             cell_info0, be_b, cdofs_b);
       }
     }
 
@@ -595,16 +614,15 @@ void assemble_vector(
     using mdspanx2_t
         = md::mdspan<const std::int32_t,
                      md::extents<std::size_t, md::dynamic_extent, 2>>;
+    using mdspanx22_t
+        = md::mdspan<const std::int32_t,
+                     md::extents<std::size_t, md::dynamic_extent, 2, 2>>;
+    using mdspanx2x_t
+        = md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
+                                          md::dynamic_extent>>;
 
     for (int i = 0; i < L.num_integrals(IntegralType::interior_facet, 0); ++i)
     {
-      using mdspanx22_t
-          = md::mdspan<const std::int32_t,
-                       md::extents<std::size_t, md::dynamic_extent, 2, 2>>;
-      using mdspanx2x_t
-          = md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
-                                            md::dynamic_extent>>;
-
       auto fn = L.kernel(IntegralType::interior_facet, i, 0);
       assert(fn);
       auto& [coeffs, cstride]
@@ -622,8 +640,7 @@ void assemble_vector(
             std::tuple{dofs, std::integral_constant<int, 1>{}, facets1_mdspan},
             fn, constants,
             mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            cell_info0, facet_perms, std::span(be_buffer),
-            std::span(cdofs_buffer));
+            cell_info0, facet_perms, be_b, cdofs_b);
       }
       else if (bs == 3)
       {
@@ -632,8 +649,7 @@ void assemble_vector(
             std::tuple{dofs, std::integral_constant<int, 3>{}, facets1_mdspan},
             fn, constants,
             mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            cell_info0, facet_perms, std::span(be_buffer),
-            std::span(cdofs_buffer));
+            cell_info0, facet_perms, be_b, cdofs_b);
       }
       else
       {
@@ -641,8 +657,7 @@ void assemble_vector(
             P0, b, x_dofmap, x, facets_mdspan,
             std::tuple{dofs, bs, facets1_mdspan}, fn, constants,
             mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            cell_info0, facet_perms, std::span(be_buffer),
-            std::span(cdofs_buffer));
+            cell_info0, facet_perms, be_b, cdofs_b);
       }
     }
 
@@ -670,24 +685,22 @@ void assemble_vector(
               P0, b, x_dofmap, x, entities,
               std::tuple{dofs, std::integral_constant<int, 1>{}, entities1}, fn,
               constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
-              cell_info0, perms, std::span(be_buffer), std::span(cdofs_buffer));
+              cell_info0, perms, be_b, cdofs_b);
         }
         else if (bs == 3)
         {
           impl::assemble_entities(
               P0, b, x_dofmap, x, entities,
               std::tuple{dofs, std::integral_constant<int, 3>{}, entities1}, fn,
-              constants,
-              md::mdspan(coeffs.data(), entities.size() / 2, cstride),
-              cell_info0, perms, std::span(be_buffer), std::span(cdofs_buffer));
+              constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
+              cell_info0, perms, be_b, cdofs_b);
         }
         else
         {
           impl::assemble_entities(
               P0, b, x_dofmap, x, entities, std::tuple{dofs, bs, entities1}, fn,
-              constants,
-              md::mdspan(coeffs.data(), entities.size() / 2, cstride),
-              cell_info0, perms, std::span(be_buffer), std::span(cdofs_buffer));
+              constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
+              cell_info0, perms, be_b, cdofs_b);
         }
       }
     }
