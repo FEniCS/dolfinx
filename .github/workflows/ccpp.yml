@@ -155,11 +155,15 @@ jobs:
         run: |
           # package mode, type checks installed dolfinx (working around name
           # collision in python/ directory); petsc.py/utils.py exclusions are
-          # for modules that require PETSc/ADIOS2, neither built in this job
+          # for modules that require PETSc/ADIOS2, neither built in this job.
+          # `mypy test`/`mypy demo` are not run here: as directory targets
+          # (rather than -p package mode) they resolve `import dolfinx`
+          # against the source checkout rather than the installed package,
+          # and --exclude does not stop mypy from following imports into an
+          # excluded file, only from adding it as a discovery root, so the
+          # same PETSc/ADIOS2 errors resurface there. The with-PETSc job's
+          # `mypy demo` (a fully-featured build) covers demo correctness.
           mypy --config-file python/pyproject.toml -p dolfinx --exclude 'fem/petsc\.py|la/petsc\.py|nls/petsc\.py|io/utils\.py'
-          cd python/
-          mypy test --exclude 'fem/petsc\.py|la/petsc\.py|nls/petsc\.py|io/utils\.py'
-          mypy demo --exclude 'fem/petsc\.py|la/petsc\.py|nls/petsc\.py|io/utils\.py'
 
       - name: Install gmsh and pyvista (and dependencies)
         run: |
