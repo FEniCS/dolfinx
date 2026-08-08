@@ -145,6 +145,16 @@ module = [
 ]
 ignore_missing_imports = true
 
+# pyvista/pyvistaqt, when actually installed with their real stubs, wrap many
+# plotter methods (view_xy, set_position, ...) in a decorator whose stub loses
+# the "self" binding, so every call site sees a spurious "missing positional
+# argument" or argument-type error unrelated to dolfinx's own code. Skip
+# analysing their bodies so demos still get real Any-typed access without
+# tripping over this upstream stub gap.
+[[tool.mypy.overrides]]
+module = ["pyvista", "pyvistaqt"]
+follow_imports = "skip"
+
 # These modules expose ufl types (Form, Mesh, FunctionSpace, ...) in their
 # public API annotations; disallow_any_unimported is unsatisfiable here while
 # ufl/ffcx ship no py.typed/stubs. dolfinx.la annotates a PETSc.Vec-typed

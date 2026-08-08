@@ -34,6 +34,7 @@
 # efficient static condensation.
 
 # +
+import typing
 from pathlib import Path
 
 from mpi4py import MPI
@@ -61,10 +62,14 @@ from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
-from ffcx.codegeneration.numba.utils import empty_void_pointer
+from ffcx.codegeneration.numba.utils import empty_void_pointer as _empty_void_pointer
 from ffcx.codegeneration.numba.utils import ufcx_kernel_signature as ufcx_signature
 
 # -
+
+# `empty_void_pointer`'s stub signature is numba's `@intrinsic`
+# `typingctx`/`context` arguments, not its real, zero-argument call.
+empty_void_pointer = typing.cast(typing.Callable[[], typing.Any], _empty_void_pointer)
 
 rtype = default_real_type
 dtype = default_scalar_type
@@ -208,7 +213,7 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL, cu
         coords_,
         entity_local_index,
         permutation,
-        empty_void_pointer(),  # type: ignore[call-arg]
+        empty_void_pointer(),
     )
 
     A01 = np.zeros((Ssize, Usize), dtype=dtype)

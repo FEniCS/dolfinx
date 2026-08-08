@@ -350,7 +350,7 @@ class Geometry(typing.Generic[Real]):
             DeprecationWarning,
             stacklevel=2,
         )
-        return self._cpp_object.dofmaps[0]
+        return self.dofmaps[0]
 
     def index_map(self) -> _IndexMap:
         """Index map for the geometry points (nodes) distribution."""
