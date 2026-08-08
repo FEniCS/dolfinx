@@ -156,11 +156,16 @@ module = ["pyvista", "pyvistaqt"]
 follow_imports = "skip"
 
 # These modules expose ufl types (Form, Mesh, FunctionSpace, ...) in their
-# public API annotations; disallow_any_unimported is unsatisfiable here while
-# ufl/ffcx ship no py.typed/stubs. dolfinx.la annotates a PETSc.Vec-typed
-# attribute guarded by `if TYPE_CHECKING`, which is unresolvable in builds
-# without petsc4py installed. demo_comm-pattern annotates parameters with
-# networkx's nx.DiGraph, which is untyped.
+# public API annotations. ufl/ffcx do ship a py.typed marker now, but an
+# editable dev install (setuptools' sys.meta_path-based finder) is invisible
+# to mypy's own static package resolution, so locally they still resolve as
+# Any via the ignore_missing_imports override above; disallow_any_unimported
+# is unsatisfiable there as a result. A non-editable install (e.g. CI's
+# `pip install git+...`) resolves them with real types, making this a no-op
+# there. dolfinx.la annotates a PETSc.Vec-typed attribute guarded by
+# `if TYPE_CHECKING`, which is unresolvable in builds without petsc4py
+# installed. demo_comm-pattern annotates parameters with networkx's
+# nx.DiGraph, which is untyped.
 [[tool.mypy.overrides]]
 module = [
       "dolfinx.fem.function",
