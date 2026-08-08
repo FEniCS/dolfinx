@@ -804,7 +804,7 @@ public:
   void permute(std::span<std::int32_t> doflist,
                std::uint32_t cell_permutation) const;
 
-  /// @brief Perform the inverse of the operation applied by permute().
+  /// @brief Perform the inverse of the operation applied by @ref permute.
   ///
   /// Given an array \f$d\f$ that holds an integer associated with each
   /// degree-of-freedom and following the globally consistent physical
@@ -826,7 +826,7 @@ public:
   /// @brief Return a function that applies a degree-of-freedom
   /// permutation to some data.
   ///
-  /// The returned function can apply permute() to mixed-elements.
+  /// The returned function can apply @ref permute to mixed-elements.
   ///
   /// The signature of the returned function has three arguments:
   /// - [in,out] doflist The numbers of the DOFs, a span of length num_dofs

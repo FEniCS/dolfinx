@@ -306,12 +306,12 @@ def model_to_mesh(
         model: Gmsh model.
         comm: MPI communicator to use for mesh creation.
         rank: MPI rank that the Gmsh model is initialized on.
-        gdim: Geometrical dimension of the mesh.
+        gdim: Geometric dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
         dtype: Data-type used for the mesh coordinates
         max_facet_to_cell_links: Maximum number of cells a facet can
-                    be connected to.
+            be connected to.
 
     Returns:
         MeshData with mesh and tags of corresponding entities by
@@ -526,7 +526,7 @@ def read_from_msh(
         comm: MPI communicator to create the mesh on.
         rank: Rank of ``comm`` responsible for reading the ``.msh``
             file.
-        gdim: Geometric dimension of the mesh
+        gdim: Geometric dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
 
