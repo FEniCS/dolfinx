@@ -252,7 +252,7 @@ _ufl_to_dolfinx_domain = {
 }
 
 
-def mixed_topology_form(  # type: ignore[no-any-unimported]
+def mixed_topology_form(
     forms: Sequence[ufl.Form],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
@@ -342,7 +342,7 @@ def mixed_topology_form(  # type: ignore[no-any-unimported]
 
 
 @typing.overload
-def form(  # type: ignore[no-any-unimported]
+def form(
     form: Sequence[Sequence[ufl.Form]],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
@@ -351,7 +351,7 @@ def form(  # type: ignore[no-any-unimported]
     entity_maps: Sequence[_EntityMap] | None = None,
 ) -> list[list[Form]]: ...
 @typing.overload
-def form(  # type: ignore[no-any-unimported]
+def form(
     form: Sequence[ufl.Form],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
@@ -369,7 +369,7 @@ def form(
     entity_maps: Sequence[_EntityMap] | None = None,
 ) -> None: ...
 @typing.overload
-def form(  # type: ignore[no-any-unimported]
+def form(
     form: ufl.Form,
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
@@ -377,7 +377,7 @@ def form(  # type: ignore[no-any-unimported]
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
 ) -> Form: ...
-def form(  # type: ignore[no-any-unimported]
+def form(
     form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]] | None,
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
@@ -617,17 +617,17 @@ def extract_function_spaces(
 
 
 @dataclass
-class CompiledForm:  # type: ignore[no-any-unimported]
+class CompiledForm:
     """Compiled UFL form without associated DOLFINx data."""
 
-    ufl_form: ufl.Form  # type: ignore[no-any-unimported]  # The original ufl form
+    ufl_form: ufl.Form  # The original ufl form
     ufcx_form: typing.Any  # The compiled form
     module: typing.Any  #  The module
     code: str  # The source code
     dtype: npt.DTypeLike  # data type used for the `ufcx_form`
 
 
-def compile_form(  # type: ignore[no-any-unimported]
+def compile_form(
     comm: MPI.Intracomm,
     form: ufl.Form,
     form_compiler_options: dict | None = None,
@@ -682,7 +682,7 @@ def form_cpp_creator(
         raise NotImplementedError(f"Type {dtype} not supported.")
 
 
-def create_form(  # type: ignore[no-any-unimported]
+def create_form(
     form: CompiledForm,
     V: list[FunctionSpace],
     msh: Mesh,
@@ -764,39 +764,37 @@ def create_form(  # type: ignore[no-any-unimported]
     return Form(f, form.ufcx_form, form.code)
 
 
-def _derive_univariate_residual(  # type: ignore[no-any-unimported]
+def _derive_univariate_residual(
     F: ufl.Form,
     u: Function,
     du: ufl.Argument | None = None,
 ) -> ufl.Form:
     if du is None:
         du = ufl.TestFunction(u.function_space)
-    return typing.cast(ufl.Form, ufl.derivative(F, u, du))  # type: ignore[no-any-unimported]
+    return typing.cast(ufl.Form, ufl.derivative(F, u, du))
 
 
-def _derive_block_residual(  # type: ignore[no-any-unimported]
+def _derive_block_residual(
     F: ufl.Form,
     u: Sequence[Function],
     du: Sequence[ufl.Argument] | None = None,
 ) -> Sequence[ufl.Form]:
     if du is None:
         du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
-    return typing.cast(  # type: ignore[no-any-unimported]
-        Sequence[ufl.Form], ufl.extract_blocks(ufl.derivative(F, u, du))
-    )
+    return typing.cast(Sequence[ufl.Form], ufl.extract_blocks(ufl.derivative(F, u, du)))
 
 
-def _derive_univariate_jacobian(  # type: ignore[no-any-unimported]
+def _derive_univariate_jacobian(
     F: ufl.Form,
     u: Function,
     du: ufl.Argument | None = None,
 ) -> ufl.Form:
     if du is None:
         du = ufl.TrialFunction(u.function_space)
-    return typing.cast(ufl.Form, ufl.derivative(F, u, du))  # type: ignore[no-any-unimported]
+    return typing.cast(ufl.Form, ufl.derivative(F, u, du))
 
 
-def _derive_block_jacobian(  # type: ignore[no-any-unimported]
+def _derive_block_jacobian(
     F: Sequence[ufl.Form],
     u: Sequence[Function],
     du: Sequence[ufl.Argument] | None = None,
@@ -813,20 +811,18 @@ def _derive_block_jacobian(  # type: ignore[no-any-unimported]
 
 
 @typing.overload
-def derivative_block(  # type: ignore[no-any-unimported]
-    F: ufl.Form, u: Function, du: ufl.Argument | None = None
-) -> ufl.Form: ...
+def derivative_block(F: ufl.Form, u: Function, du: ufl.Argument | None = None) -> ufl.Form: ...
 @typing.overload
-def derivative_block(  # type: ignore[no-any-unimported]
+def derivative_block(
     F: Sequence[ufl.Form],
     u: Sequence[Function],
     du: Sequence[ufl.Argument] | None = None,
 ) -> Sequence[Sequence[ufl.Form]]: ...
 @typing.overload
-def derivative_block(  # type: ignore[no-any-unimported]
+def derivative_block(
     F: ufl.Form, u: Sequence[Function], du: Sequence[ufl.Argument] | None = None
 ) -> Sequence[ufl.Form]: ...
-def derivative_block(  # type: ignore[no-any-unimported]
+def derivative_block(
     F: ufl.Form | Sequence[ufl.Form],
     u: Function | Sequence[Function],
     du: ufl.Argument | Sequence[ufl.Argument] | None = None,
