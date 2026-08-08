@@ -15,6 +15,13 @@
 #include <petscistypes.h>
 #include <vector>
 
+#define CHECK_ERROR(NAME)                                                      \
+  do                                                                           \
+  {                                                                            \
+    if (ierr != 0)                                                             \
+      ::dolfinx::la::petsc::error(ierr, __FILE__, NAME);                       \
+  } while (0)
+
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
@@ -57,9 +64,7 @@ Vec fem::petsc::create_vector_block(
   PetscErrorCode ierr
       = VecCreateGhost(maps[0].first.get().comm(), local_size, PETSC_DETERMINE,
                        _ghosts.size(), _ghosts.data(), &x);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "VecCreateGhost");
-
+  CHECK_ERROR("VecCreateGhost");
   return x;
 }
 //-----------------------------------------------------------------------------
@@ -85,8 +90,7 @@ Vec fem::petsc::create_vector_nest(
   Vec y;
   PetscErrorCode ierr = VecCreateNest(vecs.front()->comm(), petsc_vecs.size(),
                                       nullptr, petsc_vecs.data(), &y);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "VecCreateNest");
+  CHECK_ERROR("VecCreateNest");
 
   return y;
 }
