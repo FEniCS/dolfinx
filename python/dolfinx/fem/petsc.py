@@ -789,7 +789,7 @@ class LinearProblem(typing.Generic[_U]):
     """  # noqa: D301
 
     @typing.overload
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self: LinearProblem[_Function],
         a: ufl.Form,
         L: ufl.Form,
@@ -805,7 +805,7 @@ class LinearProblem(typing.Generic[_U]):
         entity_maps: Sequence[_EntityMap] | None = None,
     ) -> None: ...
     @typing.overload
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self: LinearProblem[Sequence[_Function]],
         a: Sequence[Sequence[ufl.Form]],
         L: Sequence[ufl.Form],
@@ -820,7 +820,7 @@ class LinearProblem(typing.Generic[_U]):
         jit_options: dict | None = None,
         entity_maps: Sequence[_EntityMap] | None = None,
     ) -> None: ...
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self,
         a: ufl.Form | Sequence[Sequence[ufl.Form]],
         L: ufl.Form | Sequence[ufl.Form],
@@ -1281,7 +1281,7 @@ class NonlinearProblem(typing.Generic[_U]):
     _preconditioner: Form | Sequence[Sequence[Form]] | None
 
     @typing.overload
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self: NonlinearProblem[_Function],
         F: ufl.form.Form,
         u: _Function,
@@ -1297,7 +1297,7 @@ class NonlinearProblem(typing.Generic[_U]):
         entity_maps: Sequence[_EntityMap] | None = None,
     ) -> None: ...
     @typing.overload
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self: NonlinearProblem[Sequence[_Function]],
         F: Sequence[ufl.form.Form],
         u: Sequence[_Function],
@@ -1312,7 +1312,7 @@ class NonlinearProblem(typing.Generic[_U]):
         jit_options: dict | None = None,
         entity_maps: Sequence[_EntityMap] | None = None,
     ) -> None: ...
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self,
         F: ufl.form.Form | Sequence[ufl.form.Form],
         u: _Function | Sequence[_Function],
@@ -1603,7 +1603,7 @@ class NewtonSolverNonlinearProblem:
         ``dolfinx.fem.petsc.NonlinearProblem``.
     """  # noqa: D301
 
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self,
         F: ufl.form.Form,
         u: _Function,

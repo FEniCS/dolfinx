@@ -376,9 +376,9 @@ class Mesh(typing.Generic[Real]):
     _mesh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64
     _topology: Topology
     _geometry: Geometry[Real]
-    _ufl_domain: ufl.Mesh | None
+    _ufl_domain: ufl.Mesh | None  # type: ignore[no-any-unimported]
 
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self,
         msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64,
         domain: ufl.Mesh | None,
@@ -416,7 +416,7 @@ class Mesh(typing.Generic[Real]):
     def name(self, value):
         self._cpp_object.name = value
 
-    def ufl_cell(self) -> ufl.Cell:
+    def ufl_cell(self) -> ufl.Cell:  # type: ignore[no-any-unimported]
         """Return the UFL cell type.
 
         Note:
@@ -424,7 +424,7 @@ class Mesh(typing.Generic[Real]):
         """
         return ufl.Cell(self.topology.cell_name())
 
-    def ufl_domain(self) -> ufl.Mesh | None:
+    def ufl_domain(self) -> ufl.Mesh | None:  # type: ignore[no-any-unimported]
         """Return the ufl domain corresponding to the mesh.
 
         Returns:
@@ -827,7 +827,7 @@ def refine(
     return Mesh(mesh1, ufl_domain), parent_cell, parent_facet
 
 
-def create_mesh(
+def create_mesh(  # type: ignore[no-any-unimported]
     comm: _MPI.Comm,
     cells: npt.NDArray[np.int64],
     e: ufl.Mesh | basix.finite_element.FiniteElement | basix.ufl._BasixElement | _CoordinateElement,

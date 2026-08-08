@@ -44,7 +44,7 @@ class LinearProblem:
         DOLFINx must be built with SuperLU_DIST to use this class.
     """
 
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self,
         a: ufl.Form,
         L: ufl.Form,

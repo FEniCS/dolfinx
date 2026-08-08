@@ -119,7 +119,9 @@ class MeshData(typing.NamedTuple):
     physical_groups: dict[str, PhysicalGroup]
 
 
-def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
+def ufl_mesh(  # type: ignore[no-any-unimported]
+    gmsh_cell: int, gdim: int, dtype: npt.DTypeLike
+) -> ufl.Mesh:
     """Create UFL mesh from Gmsh cell identifier and geometric dimension.
 
     See https://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.

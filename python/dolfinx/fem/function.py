@@ -32,7 +32,7 @@ if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
 
 
-class Constant(ufl.Constant, Generic[Scalar]):
+class Constant(ufl.Constant, Generic[Scalar]):  # type: ignore[no-any-unimported]
     """A constant with respect to a domain."""
 
     # Built-in scalar types. Public: extend with additional scalar dtypes
@@ -121,7 +121,7 @@ class Expression(Generic[Scalar]):
         (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.create_expression_complex64,
         (np.dtype(np.complex128), np.dtype(np.float64)): _cpp.fem.create_expression_complex128,
     }
-    _ufl_expression: ufl.core.expr.Expr
+    _ufl_expression: ufl.core.expr.Expr  # type: ignore[no-any-unimported]
     _argument_space: FunctionSpace | None
     _cpp_object: (
         _cpp.fem.Expression_complex64
@@ -131,7 +131,7 @@ class Expression(Generic[Scalar]):
     )
     _code: str
 
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self,
         e: ufl.core.expr.Expr,
         X: np.ndarray,
@@ -316,7 +316,7 @@ class Expression(Generic[Scalar]):
         return self._cpp_object.X()
 
     @property
-    def ufl_expression(self) -> ufl.core.expr.Expr:
+    def ufl_expression(self) -> ufl.core.expr.Expr:  # type: ignore[no-any-unimported]
         """Original UFL Expression."""
         return self._ufl_expression
 
@@ -351,7 +351,7 @@ class Expression(Generic[Scalar]):
         return np.dtype(self._cpp_object.dtype)
 
 
-class Function(ufl.Coefficient, Generic[Scalar]):
+class Function(ufl.Coefficient, Generic[Scalar]):  # type: ignore[no-any-unimported]
     """A finite element function.
 
     A finite element function is represented by a function space
@@ -664,7 +664,7 @@ class ElementMetaData(typing.NamedTuple):
     symmetry: bool | None = None
 
 
-def functionspace(
+def functionspace(  # type: ignore[no-any-unimported]
     mesh: Mesh,
     element: (
         ufl.finiteelement.AbstractFiniteElement
@@ -723,7 +723,7 @@ def functionspace(
     return FunctionSpace(mesh, ufl_e, cppV)
 
 
-class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
+class FunctionSpace(ufl.FunctionSpace, Generic[Real]):  # type: ignore[no-any-unimported]
     """A space on which Functions (fields) can be defined."""
 
     # Built-in geometry types. Public: extend with additional geometry
@@ -735,7 +735,7 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
     _cpp_object: _cpp.fem.FunctionSpace_float32 | _cpp.fem.FunctionSpace_float64
     _mesh: Mesh[Real]
 
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self,
         mesh: Mesh[Real],
         element: ufl.finiteelement.AbstractFiniteElement,
@@ -834,7 +834,7 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
         """Comparison for inequality."""
         return super().__ne__(other) or self._cpp_object != other._cpp_object
 
-    def ufl_function_space(self) -> ufl.FunctionSpace:
+    def ufl_function_space(self) -> ufl.FunctionSpace:  # type: ignore[no-any-unimported]
         """UFL function space."""
         return self
 
