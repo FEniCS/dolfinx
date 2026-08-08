@@ -51,10 +51,7 @@ auto create_cell_partitioner_py(Functor&& p)
              const std::vector<dolfinx::mesh::CellType>& cell_types,
              std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb)
   {
-    std::vector<std::span<const std::int64_t>> cells;
-    std::ranges::transform(
-        cells_nb, std::back_inserter(cells), [](auto& c)
-        { return std::span<const std::int64_t>(c.data(), c.size()); });
+    std::vector<std::span<const std::int64_t>> cells = vec_of_spans(cells_nb);
     return p(comm.get(), n, cell_types, cells);
   };
 }
