@@ -5,11 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MPI.h"
+#include "log.h"
 #include "sort.h"
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <dolfinx/common/log.h>
 #include <iostream>
 #include <iterator>
 #include <span>
