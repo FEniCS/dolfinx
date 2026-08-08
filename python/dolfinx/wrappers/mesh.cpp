@@ -333,7 +333,6 @@ void mesh(nb::module_& m)
              ghost_owners,
          nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
              boundary_vertices,
-
          int num_threads)
       {
         std::vector<std::span<const std::int64_t>> cells_span
