@@ -441,7 +441,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   // Clamp values
   std::ranges::transform(
       basis_derivatives_reference0_b, basis_derivatives_reference0_b.begin(),
-      [atol = 1e-14](auto x) { return std::abs(x) < atol ? 0.0 : x; });
+      [atol = 1e-14](auto x) { return std::abs(x) < atol ? 0 : x; });
 
   // Create working arrays
   std::vector<U> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);
@@ -591,7 +591,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
           = md::submdspan(mapped_values, p, md::full_extent, md::full_extent);
       auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
       auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-      pull_back_fn1(_U, _u, _K, 1.0 / detJ[p], _J);
+      pull_back_fn1(_U, _u, _K, 1 / detJ[p], _J);
     }
 
     // Apply interpolation matrix to basis values of V0 at the
@@ -661,7 +661,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
         {
           for (std::size_t j = 0; j < space_dim0; ++j)
             for (int k = 0; k < row_bs; ++k)
-              A(i * row_bs + k, j) = 0.0;
+              A(i * row_bs + k, j) = 0;
         }
         row_added[r] = 1;
       }

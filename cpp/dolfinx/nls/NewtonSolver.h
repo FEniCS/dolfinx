@@ -172,7 +172,7 @@ public:
   bool error_on_nonconvergence = true;
 
   /// @brief Relaxation parameter.
-  double relaxation_parameter = 1.0;
+  double relaxation_parameter = 1;
 
 private:
   // Function for computing the residual vector. The first argument is

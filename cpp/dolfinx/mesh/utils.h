@@ -139,7 +139,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
   assert(v_to_c);
   auto c_to_v = topology->connectivity(tdim, 0);
   assert(c_to_v);
-  std::vector<T> x_vertices(3 * vertices.size(), -1.0);
+  std::vector<T> x_vertices(3 * vertices.size(), -1);
   std::vector<std::int32_t> vertex_to_pos(v_to_c->num_nodes(), -1);
   for (std::size_t i = 0; i < vertices.size(); ++i)
   {
@@ -509,7 +509,7 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
       std::span<T, 3> ni(n.data() + 3 * i, 3);
       ni[0] = -t[1] / norm;
       ni[1] = t[0] / norm;
-      ni[2] = 0.0;
+      ni[2] = 0;
     }
     return n;
   }
@@ -649,7 +649,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
 
   // Pack coordinates of vertices
   std::span<const T> x_nodes = mesh.geometry().x();
-  std::vector<T> x_vertices(3 * vertex_to_node.size(), 0.0);
+  std::vector<T> x_vertices(3 * vertex_to_node.size(), 0);
   for (std::size_t i = 0; i < vertex_to_node.size(); ++i)
   {
     std::int32_t pos = 3 * vertex_to_node[i];

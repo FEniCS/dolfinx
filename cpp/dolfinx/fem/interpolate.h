@@ -313,7 +313,7 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
     assert(data.extent(0) * data.extent(1) == Pi.extent(1));
     for (std::size_t i = 0; i < Pi.extent(0); ++i)
     {
-      coeffs[i] = 0.0;
+      coeffs[i] = 0;
       for (std::size_t k = 0; k < data.extent(1); ++k)
         for (std::size_t j = 0; j < data.extent(0); ++j)
           coeffs[i]
@@ -683,7 +683,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
           = md::submdspan(mapped_values0, i, md::full_extent, md::full_extent);
       auto _K = md::submdspan(K, i, md::full_extent, md::full_extent);
       auto _J = md::submdspan(J, i, md::full_extent, md::full_extent);
-      pull_back_fn1(_U, _u, _K, 1.0 / detJ[i], _J);
+      pull_back_fn1(_U, _u, _K, 1 / detJ[i], _J);
     }
 
     auto values
@@ -1060,7 +1060,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
         auto _U = md::submdspan(ref_data, i, md::full_extent, md::full_extent);
         auto _K = md::submdspan(K, i, md::full_extent, md::full_extent);
         auto _J = md::submdspan(J, i, md::full_extent, md::full_extent);
-        pull_back_fn(_U, _u, _K, 1.0 / detJ[i], _J);
+        pull_back_fn(_U, _u, _K, 1 / detJ[i], _J);
       }
 
       auto ref = md::submdspan(ref_data, md::full_extent, 0, md::full_extent);

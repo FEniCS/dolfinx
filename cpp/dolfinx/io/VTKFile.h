@@ -67,7 +67,7 @@ public:
   /// @param[in] mesh Mesh to write to file.
   /// @param[in] t Time parameter to associate with `mesh`.
   template <std::floating_point U>
-  void write(const mesh::Mesh<U>& mesh, double t = 0.0);
+  void write(const mesh::Mesh<U>& mesh, double t = 0);
 
   /// @brief Write finite elements function with an associated time
   /// step.

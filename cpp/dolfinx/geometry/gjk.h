@@ -91,21 +91,21 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
     {
       SPDLOG_DEBUG("GJK: line point A");
 
-      coordinates[0] = 1.0;
-      coordinates[1] = 0.0;
+      coordinates[0] = 1;
+      coordinates[1] = 0;
       return;
     }
     T mu = dot3(s1, s1) - dot3(s1, s0);
     if (mu < 0.0)
     {
       SPDLOG_DEBUG("GJK: line point B");
-      coordinates[0] = 0.0;
-      coordinates[1] = 1.0;
+      coordinates[0] = 0;
+      coordinates[1] = 1.;
       return;
     }
 
     SPDLOG_DEBUG("GJK line: AB");
-    T f1 = 1.0 / (lm + mu);
+    T f1 = 1 / (lm + mu);
     coordinates[0] = mu * f1;
     coordinates[1] = lm * f1;
     return;
@@ -126,9 +126,9 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
     if (d1 < 0.0 and d2 < 0.0)
     {
       SPDLOG_DEBUG("GJK: Point A");
-      coordinates[0] = 1.0;
-      coordinates[1] = 0.0;
-      coordinates[2] = 0.0;
+      coordinates[0] = 1;
+      coordinates[1] = 0;
+      coordinates[2] = 0;
       return;
     }
 
@@ -139,9 +139,9 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
     if (d3 < 0.0 and d4 < 0.0)
     {
       SPDLOG_DEBUG("GJK: Point B");
-      coordinates[0] = 0.0;
-      coordinates[1] = 1.0;
-      coordinates[2] = 0.0;
+      coordinates[0] = 0;
+      coordinates[1] = 1;
+      coordinates[2] = 0;
       return;
     }
 
@@ -151,9 +151,9 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
     if (d5 < 0.0 and d6 < 0.0)
     {
       SPDLOG_DEBUG("GJK: Point C");
-      coordinates[0] = 0.0;
-      coordinates[1] = 0.0;
-      coordinates[2] = 1.0;
+      coordinates[0] = 0;
+      coordinates[1] = 0;
+      coordinates[2] = 1;
       return;
     }
 
@@ -161,23 +161,23 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
     if (vc < 0.0 and d1 > 0.0 and d3 > 0.0)
     {
       SPDLOG_DEBUG("GJK: edge AB");
-      T f1 = 1.0 / (d1 + d3);
+      T f1 = 1 / (d1 + d3);
       T lm = d1 * f1;
       T mu = d3 * f1;
       coordinates[0] = mu;
       coordinates[1] = lm;
-      coordinates[2] = 0.0;
+      coordinates[2] = 0;
       return;
     }
     T vb = d1 * d5 - d5 * d2 + d2 * d6;
     if (vb < 0.0 and d2 > 0.0 and d5 > 0.0)
     {
       SPDLOG_DEBUG("GJK: edge AC");
-      T f1 = 1.0 / (d2 + d5);
+      T f1 = 1 / (d2 + d5);
       T lm = d2 * f1;
       T mu = d5 * f1;
       coordinates[0] = mu;
-      coordinates[1] = 0.0;
+      coordinates[1] = 0;
       coordinates[2] = lm;
       return;
     }
@@ -185,17 +185,17 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
     if (va < 0.0 and d4 > 0.0 and d6 > 0.0)
     {
       SPDLOG_DEBUG("GJK: edge BC");
-      T f1 = 1.0 / (d4 + d6);
+      T f1 = 1 / (d4 + d6);
       T lm = d4 * f1;
       T mu = d6 * f1;
-      coordinates[0] = 0.0;
+      coordinates[0] = 0;
       coordinates[1] = mu;
       coordinates[2] = lm;
       return;
     }
 
     SPDLOG_DEBUG("GJK: triangle ABC");
-    T f1 = 1.0 / (va + vb + vc);
+    T f1 = 1 / (va + vb + vc);
     coordinates[0] = va * f1;
     coordinates[1] = vb * f1;
     coordinates[2] = vc * f1;
@@ -205,7 +205,7 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
   {
     // Most complex case, where simplex is a tetrahedron, with 15 possible
     // outcomes (4 vertices, 6 edges, 4 facets and the interior).
-    std::ranges::fill(coordinates, 0.0);
+    std::ranges::fill(coordinates, 0);
 
     T d[4][4];
     for (int i = 0; i < 4; ++i)
@@ -226,7 +226,7 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
       if (out)
       {
         // Return if a vertex is closest
-        coordinates[i] = 1.0;
+        coordinates[i] = 1;
         return;
       }
     }
@@ -234,7 +234,7 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
     SPDLOG_DEBUG("Check for edges");
 
     // Check if an edge is closest
-    T v[6][2] = {{0.0}};
+    T v[6][2] = {{0}};
     int edges[6][2] = {{2, 3}, {1, 3}, {1, 2}, {0, 3}, {0, 2}, {0, 1}};
     for (int i = 0; i < 6; ++i)
     {
@@ -254,7 +254,7 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
           and d[j1][j0] >= 0.0)
       {
         // On an edge
-        T f1 = 1.0 / (d[j0][j1] + d[j1][j0]);
+        T f1 = 1 / (d[j0][j1] + d[j1][j0]);
         coordinates[j0] = f1 * d[j1][j0];
         coordinates[j1] = f1 * d[j0][j1];
         return;
@@ -275,29 +275,29 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
 
     if (w[0] < 0.0 and v[2][0] > 0.0 and v[4][0] > 0.0 and v[5][0] > 0.0)
     {
-      T f1 = 1.0 / (v[2][0] + v[4][0] + v[5][0]);
+      T f1 = 1 / (v[2][0] + v[4][0] + v[5][0]);
       coordinates[0] = v[2][0] * f1;
       coordinates[1] = v[4][0] * f1;
       coordinates[2] = v[5][0] * f1;
-      coordinates[3] = 0.0;
+      coordinates[3] = 0;
       return;
     }
 
     if (w[1] < 0.0 and v[1][0] > 0.0 and v[3][0] > 0.0 and v[5][1] > 0.0)
     {
-      T f1 = 1.0 / (v[1][0] + v[3][0] + v[5][1]);
+      T f1 = 1 / (v[1][0] + v[3][0] + v[5][1]);
       coordinates[0] = v[1][0] * f1;
       coordinates[1] = v[3][0] * f1;
-      coordinates[2] = 0.0;
+      coordinates[2] = 0;
       coordinates[3] = v[5][1] * f1;
       return;
     }
 
     if (w[2] < 0.0 and v[0][0] > 0.0 and v[3][1] > 0 and v[4][1] > 0.0)
     {
-      T f1 = 1.0 / (v[0][0] + v[3][1] + v[4][1]);
+      T f1 = 1 / (v[0][0] + v[3][1] + v[4][1]);
       coordinates[0] = v[0][0] * f1;
-      coordinates[1] = 0.0;
+      coordinates[1] = 0;
       coordinates[2] = v[3][1] * f1;
       coordinates[3] = v[4][1] * f1;
       return;
@@ -305,8 +305,8 @@ void nearest_simplex(const std::array<T, 12>& s, std::array<T, 4>& coordinates)
 
     if (w[3] < 0.0 and v[0][1] > 0.0 and v[1][1] > 0.0 and v[2][1] > 0.0)
     {
-      T f1 = 1.0 / (v[0][1] + v[1][1] + v[2][1]);
-      coordinates[0] = 0.0;
+      T f1 = 1 / (v[0][1] + v[1][1] + v[2][1]);
+      coordinates[0] = 0;
       coordinates[1] = v[0][1] * f1;
       coordinates[2] = v[1][1] * f1;
       coordinates[3] = v[2][1] * f1;
@@ -402,7 +402,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p0,
       // If U is double/float use std::sqrt
       // If U is a boost::multiprecision member use boost::multiprecision::sqrt
       using std::sqrt;
-      U inv_norm = U(1.0) / sqrt(x_norm2);
+      U inv_norm = U{1} / sqrt(x_norm2);
       x_k_normalized[0] *= inv_norm;
       x_k_normalized[1] *= inv_norm;
       x_k_normalized[2] *= inv_norm;
