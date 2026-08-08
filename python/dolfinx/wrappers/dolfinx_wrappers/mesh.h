@@ -89,18 +89,24 @@ void declare_meshtags(nb::module_& m, const std::string& type)
           [](dolfinx::mesh::MeshTags<T>* self,
              std::shared_ptr<const dolfinx::mesh::Topology> topology, int dim,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
-             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
+             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values,
+             std::string name)
           {
             std::vector<std::int32_t> indices_vec(
                 indices.data(), indices.data() + indices.size());
             std::vector<T> values_vec(values.data(),
                                       values.data() + values.size());
             new (self) dolfinx::mesh::MeshTags<T>(
-                topology, dim, std::move(indices_vec), std::move(values_vec));
+                topology, dim, std::move(indices_vec), std::move(values_vec),
+                std::move(name));
           })
       .def_prop_ro("dtype", [](const dolfinx::mesh::MeshTags<T>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; })
-      .def_rw("name", &dolfinx::mesh::MeshTags<T>::name)
+      .def_prop_rw(
+          "name",
+          [](const dolfinx::mesh::MeshTags<T>& self) { return self.name(); },
+          [](dolfinx::mesh::MeshTags<T>& self, std::string name)
+          { self.name(name); })
       .def_prop_ro("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_prop_ro("topology", &dolfinx::mesh::MeshTags<T>::topology)
       .def_prop_ro(
@@ -126,10 +132,12 @@ void declare_meshtags(nb::module_& m, const std::string& type)
   m.def("create_meshtags",
         [](std::shared_ptr<const dolfinx::mesh::Topology> topology, int dim,
            const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
-           nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
+           nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values,
+           std::string name)
         {
           return dolfinx::mesh::create_meshtags(
-              topology, dim, entities, std::span(values.data(), values.size()));
+              topology, dim, entities, std::span(values.data(), values.size()),
+              std::move(name));
         });
   std::string pyfunc_name = "transfer_meshtags_to_submesh_" + type;
   m.def(
