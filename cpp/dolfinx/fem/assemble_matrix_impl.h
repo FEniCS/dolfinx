@@ -719,7 +719,7 @@ void assemble_interior_facets(
 /// applied.
 /// @param bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
-template <bool LiftingMode = false, dolfinx::scalar T, std::floating_point U>
+template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_matrix0(
     la::MatSet<T> auto mat_set, const Form<T, U>& a,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,

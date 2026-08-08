@@ -401,9 +401,9 @@ void lift_bc(V&& b, const Form<T, U>& a, auto bs0, auto bs1,
     }
   };
 
-  // Repurpose the dolfinx::fem::impl::assemble_matrix0 assembler to work on
-  // the vector b instead. Use LiftingMode=true so the kernel is only called
-  // on cells that have BC-constrained DOFs in the column space.
+  // Use dolfinx::fem::impl::assemble_matrix0 assembler to work on the
+  // vector b. With LiftingMode=true, the kernel is only called on cells
+  // that have BC-constrained DOFs in the column space.
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
   std::span x = mesh->geometry().x();
