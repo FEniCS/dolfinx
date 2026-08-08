@@ -755,9 +755,9 @@ void assemble_matrix0(
     assert(element0);
     auto element1 = a.function_spaces().at(1)->elements(cell_type_idx);
     assert(element1);
-    const fem::DofTransformKernel<T> auto P0
+    const fem::DofTransformKernel<T> auto& P0
         = element0->template dof_transformation_fn<T>(doftransform::standard);
-    const fem::DofTransformKernel<T> auto P1T
+    const fem::DofTransformKernel<T> auto& P1T
         = element1->template dof_transformation_right_fn<T>(
             doftransform::transpose);
 
