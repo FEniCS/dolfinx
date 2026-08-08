@@ -120,7 +120,10 @@ check_untyped_defs = false
 # Sister FEniCS projects (ufl, ffcx) ship no py.typed/stubs; gmsh, llvmlite,
 # pyamg, slepc4py, pyvistaqt are untyped optional dependencies; _cffi_kernelA
 # is a JIT-generated CFFI extension module name that can never be resolved
-# statically.
+# statically. basix, petsc4py and dolfinx.cpp are typed/resolvable when
+# actually built (e.g. local dev), but the lightweight CI lint job installs
+# neither a matching-version basix wheel, a from-source petsc4py build, nor
+# the native dolfinx.cpp extension, so they fall back to unresolved there.
 [[tool.mypy.overrides]]
 module = [
       "ufl",
@@ -134,6 +137,12 @@ module = [
       "slepc4py",
       "slepc4py.*",
       "pyvistaqt",
+      "basix",
+      "basix.*",
+      "petsc4py",
+      "petsc4py.*",
+      "dolfinx.cpp",
+      "dolfinx.cpp.*",
 ]
 ignore_missing_imports = true
 
