@@ -15,7 +15,6 @@
 
 namespace dolfinx::fem
 {
-
 /// @brief DOF transform kernel concept.
 template <class U, class T>
 concept DofTransformKernel
@@ -84,5 +83,4 @@ concept DofMapPackFacets
     = DofMapPackBase<T> and requires(const std::remove_cvref_t<T>& t) {
         { std::get<2>(t)(0, 0, 0) } -> std::convertible_to<std::int32_t>;
       };
-
 } // namespace dolfinx::fem

@@ -201,11 +201,15 @@ void assemble_entities(
            &local_entity, &perm, nullptr);
     P0(be, cell_info0, cell0, 1);
 
-    // Add element vector to global vector
+    // Add to global vector
     auto dofs = md::submdspan(dmap, cell0, md::full_extent);
     for (std::size_t i = 0; i < dofs.size(); ++i)
+    {
+      std::int32_t dof = bs * dofs[i];
+      std::int32_t offset = bs * i;
       for (int k = 0; k < bs; ++k)
-        b[bs * dofs[i] + k] += be[bs * i + k];
+        b[dof + k] += be[offset + k];
+    }
   }
 }
 
@@ -317,11 +321,19 @@ void assemble_interior_facets(
 
     // Add element vector to global vector
     for (std::size_t i = 0; i < dmap0.size(); ++i)
+    {
+      std::int32_t dof = bs * dmap0[i];
+      std::int32_t offset = bs * i;
       for (int k = 0; k < bs; ++k)
-        b[bs * dmap0[i] + k] += be[bs * i + k];
+        b[dof + k] += be[offset + k];
+    }
     for (std::size_t i = 0; i < dmap1.size(); ++i)
+    {
+      std::int32_t dof = bs * dmap1[i];
+      std::int32_t offset = bs * (i + dmap_size);
       for (int k = 0; k < bs; ++k)
-        b[bs * dmap1[i] + k] += be[bs * (i + dmap_size) + k];
+        b[dof + k] += be[offset + k];
+    }
   }
 }
 
@@ -335,6 +347,12 @@ void assemble_interior_facets(
 /// for runtime block size.
 /// @param[in,out] b Vector to modify.
 /// @param[in] a The bilinear form.
+/// @param[in] bs0 Block size for the test function dofmap, as
+/// `std::integral_constant<int, BS0>` if known at compile time, or a
+/// plain `int` for the runtime-determined value.
+/// @param[in] bs1 Block size for the trial function dofmap, as
+/// `std::integral_constant<int, BS1>` if known at compile time, or a
+/// plain `int` for the runtime-determined value.
 /// @param[in] constants Constants that appear in `a`.
 /// @param[in] coefficients Coefficients that appear in `a`.
 /// @param[in] bc_values1 The boundary condition values.
@@ -342,31 +360,24 @@ void assemble_interior_facets(
 /// conditions applied.
 /// @param[in] x0 Vector used in the lifting.
 /// @param[in] alpha Scaling to apply.
-template <dolfinx::scalar T, std::floating_point U, int BS0 = -1, int BS1 = -1,
-          typename V>
+template <dolfinx::scalar T, std::floating_point U, typename V>
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void lift_bc_impl(
-    V&& b, const Form<T, U>& a, std::span<const T> constants,
+    V&& b, const Form<T, U>& a, auto bs0, auto bs1,
+    std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const T> bc_values1, std::span<const std::int8_t> bc_markers1,
     std::span<const T> x0, T alpha)
 {
-  // Deduce runtime block sizes as fallback when compile-time sizes not given.
-  // The block size of the dofmap and indexmap is the same on all
-  // sub-topologies.
-  const int bs0
-      = BS0 > 0 ? BS0 : a.function_spaces()[0]->dofmaps().front()->bs();
-  const int bs1
-      = BS1 > 0 ? BS1 : a.function_spaces()[1]->dofmaps().front()->bs();
+  // Deduce runtime block sizes as fallback when compile-time sizes
+  // not given. The block size of the dofmap and indexmap is the same
+  // on all sub-topologies.
+  assert(bs0 == a.function_spaces()[0]->dofmaps().front()->bs());
+  assert(bs1 == a.function_spaces()[1]->dofmaps().front()->bs());
 
-  // Default capture is required for bs0/bs1: when BS0/BS1 are
-  // compile-time constants they are constant-initialised and an
-  // explicit capture is rejected by -Wunused-lambda-capture
-  auto lifting_fn
-      = [=, &b, &bc_values1, &bc_markers1,
-         &x0](std::span<const std::int32_t> rows,
-              std::span<const std::int32_t> cols, std::span<const T> Ae)
+  auto lifting_fn = [bs0, bs1, alpha, &b, &bc_values1, &bc_markers1,
+                     &x0](auto rows, auto cols, auto Ae)
   {
     const std::size_t nc = cols.size() * bs1;
     for (std::size_t i = 0; i < cols.size(); ++i)
@@ -392,9 +403,9 @@ void lift_bc_impl(
     }
   };
 
-  // Repurpose the assemble_matrix assembler to work on the vector b instead.
-  // Use LiftingMode=true so the kernel is only called on cells that have
-  // BC-constrained DOFs in the column space.
+  // Repurpose the assemble_matrix assembler to work on the vector b
+  // instead. Use LiftingMode=true so the kernel is only called on
+  // cells that have BC-constrained DOFs in the column space.
   assemble_matrix<T, U, true>(lifting_fn, a, constants, coefficients, {},
                               bc_markers1);
 }
@@ -423,28 +434,26 @@ void lift_bc(V&& b, const Form<T, U>& a, std::span<const T> constants,
              std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
              T alpha)
 {
-
   // Get dofmap for columns and rows of a
   assert(a.function_spaces().at(0));
   assert(a.function_spaces().at(1));
   const int bs0 = a.function_spaces()[0]->dofmaps().front()->bs();
   const int bs1 = a.function_spaces()[1]->dofmaps().front()->bs();
-
-  spdlog::debug("lifting: bs0={}, bs1={}", bs0, bs1);
-
-  if (bs0 == 1 && bs1 == 1)
+  if (bs0 == 1 and bs1 == 1)
   {
-    lift_bc_impl<T, U, 1, 1>(std::forward<V>(b), a, constants, coefficients,
-                             bc_values1, bc_markers1, x0, alpha);
+    lift_bc_impl<T, U>(std::forward<V>(b), a, std::integral_constant<int, 1>{},
+                       std::integral_constant<int, 1>{}, constants,
+                       coefficients, bc_values1, bc_markers1, x0, alpha);
   }
-  else if (bs0 == 3 && bs1 == 3)
+  else if (bs0 == 3 and bs1 == 3)
   {
-    lift_bc_impl<T, U, 3, 3>(std::forward<V>(b), a, constants, coefficients,
-                             bc_values1, bc_markers1, x0, alpha);
+    lift_bc_impl<T, U>(std::forward<V>(b), a, std::integral_constant<int, 3>{},
+                       std::integral_constant<int, 3>{}, constants,
+                       coefficients, bc_values1, bc_markers1, x0, alpha);
   }
   else
   {
-    lift_bc_impl<T, U>(std::forward<V>(b), a, constants, coefficients,
+    lift_bc_impl<T, U>(std::forward<V>(b), a, bs0, bs1, constants, coefficients,
                        bc_values1, bc_markers1, x0, alpha);
   }
 }
@@ -474,7 +483,8 @@ template <typename V, std::floating_point U,
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void apply_lifting(
     V&& b,
-    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
+    const std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>>&
+        a,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
@@ -508,7 +518,7 @@ void apply_lifting(
         _x0 = x0[j];
 
       assert(V1);
-      const auto& dofmap = V1->dofmaps().front();
+      std::shared_ptr<const DofMap> dofmap = V1->dofmaps().front();
       auto map1 = dofmap->index_map;
       const int bs1 = dofmap->index_map_bs();
       assert(map1);
@@ -528,6 +538,7 @@ void apply_lifting(
 }
 
 /// @brief Assemble linear form into a vector.
+///
 /// @param[in,out] b Array to be accumulated into. It will not be zeroed
 /// before assembly.
 /// @param[in] L Linear forms to assemble into b.
