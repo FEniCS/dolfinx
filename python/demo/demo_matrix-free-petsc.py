@@ -47,6 +47,8 @@
 # We start by importing the necessary modules
 
 # +
+import typing
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -323,7 +325,7 @@ def extract_system(
     u_h, p_h = ufl.TrialFunctions(W)
     v, q = ufl.TestFunctions(W)
     residual = ufl.inner(u_h - f, v) * ufl.dx + ufl.inner(p_h - g, q) * ufl.dx
-    return ufl.system(residual)
+    return typing.cast(tuple[ufl.Form, ufl.Form], ufl.system(residual))
 
 
 # We also define a convenience function for creating the Krylov subspace
@@ -490,7 +492,7 @@ def compute_L2_error(uh: ufl.core.expr.Expr, u_ex: ufl.core.expr.Expr) -> float:
     """
     error = ufl.inner(uh - u_ex, uh - u_ex) * ufl.dx
     error = dolfinx.fem.assemble_scalar(dolfinx.fem.form(error))
-    return np.sqrt(mesh.comm.allreduce(error, op=MPI.SUM))
+    return typing.cast(float, np.sqrt(mesh.comm.allreduce(error, op=MPI.SUM)))
 
 
 error_u_me = compute_L2_error(u_me, f)

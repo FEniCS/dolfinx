@@ -289,7 +289,7 @@ def assemble_vector(
     """
     b = create_vector(_extract_function_spaces(L), kind=kind)  # type: ignore
     dolfinx.la.petsc._zero_vector(b)
-    return _assemble_vector_petsc(b, L, constants, coeffs)
+    return typing.cast(PETSc.Vec, _assemble_vector_petsc(b, L, constants, coeffs))
 
 
 @assemble_vector.register  # type: ignore[attr-defined]
@@ -1075,12 +1075,12 @@ class LinearProblem(typing.Generic[_U]):
     @property
     def L(self) -> Form | Sequence[Form]:
         """The compiled linear form representing the left-hand side."""
-        return self._L
+        return typing.cast(Form | Sequence[Form], self._L)
 
     @property
     def a(self) -> Form | Sequence[Sequence[Form]]:
         """The compiled bilinear form representing the right-hand side."""
-        return self._a
+        return typing.cast(Form | Sequence[Sequence[Form]], self._a)
 
     @property
     def preconditioner(self) -> Form | Sequence[Sequence[Form]] | None:
@@ -1529,7 +1529,7 @@ class NonlinearProblem(typing.Generic[_U]):
     @property
     def F(self) -> Form | Sequence[Form]:
         """The compiled residual."""
-        return self._F
+        return typing.cast(Form | Sequence[Form], self._F)
 
     @property
     def J(self) -> Form | Sequence[Sequence[Form]]:
@@ -1658,12 +1658,12 @@ class NewtonSolverNonlinearProblem:
     @property
     def L(self) -> Form:
         """The compiled linear form (the residual form)."""
-        return self._L
+        return typing.cast(Form, self._L)
 
     @property
     def a(self) -> Form:
         """The compiled bilinear form (the Jacobian form)."""
-        return self._a
+        return typing.cast(Form, self._a)
 
     def form(self, x: PETSc.Vec) -> None:
         """Function called before the residual or Jacobian is computed.

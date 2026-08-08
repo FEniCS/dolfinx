@@ -293,6 +293,8 @@ class XDMFFile:
         xpath: str = "/Xdmf/Domain",
     ) -> None:
         """Write mesh tags to file."""
+        if not isinstance(tags._cpp_object, _cpp.mesh.MeshTags_int32):
+            raise TypeError("XDMF meshtags can only be written for int32-valued MeshTags.")
         self._cpp_object.write_meshtags(tags._cpp_object, x._cpp_object, geometry_xpath, xpath)
 
     def write_function(

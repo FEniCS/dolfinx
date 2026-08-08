@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2024 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -199,19 +199,19 @@ void declare_mesh(nb::module_& m, std::string type)
                    "Geometric dimension")
       .def_prop_ro(
           "dofmaps",
-          [](nb::object self)
+          [](const dolfinx::mesh::Geometry<T>& self)
           {
-            auto& obj = nb::cast<dolfinx::mesh::Geometry<T>&>(self);
-            auto dms = obj.dofmaps();
-            nb::list result;
+            auto dms = self.dofmaps();
+            std::vector<nb::ndarray<const std::int32_t, nb::numpy>> result;
+            result.reserve(dms.size());
             for (auto& dm : dms)
             {
-              result.append(nb::ndarray<const std::int32_t, nb::numpy>(
-                  dm.data_handle(), {dm.extent(0), dm.extent(1)}, self));
+              result.push_back(nb::ndarray<const std::int32_t, nb::numpy>(
+                  dm.data_handle(), {dm.extent(0), dm.extent(1)}));
             }
             return result;
           },
-          "The geometry dofmaps")
+          nb::rv_policy::reference_internal, "The geometry dofmaps")
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_prop_ro(
           "x",

@@ -105,7 +105,7 @@ disallow_untyped_defs = false
 disallow_any_unimported = false
 no_implicit_optional = true
 check_untyped_defs = true
-warn_return_any = false
+warn_return_any = true
 warn_unused_ignores = true
 show_error_codes = true
 ignore_missing_imports = false
@@ -135,7 +135,6 @@ module = [
       "slepc4py",
       "slepc4py.*",
       "pyvistaqt",
-      "_cffi_kernelA",
 ]
 ignore_missing_imports = true
 

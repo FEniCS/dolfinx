@@ -24,6 +24,8 @@
 # - Assemble mixed systems with multiple, related meshes
 
 # +
+import typing
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -55,7 +57,9 @@ def norm_L2(v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx) -> np.inexact:
     """Convenience function to compute the L2 norm of a UFL expression."""
     compiled_form = fem.form(ufl.inner(v, v) * measure)
     comm = compiled_form.mesh.comm
-    return np.sqrt(comm.allreduce(fem.assemble_scalar(compiled_form), op=MPI.SUM))
+    return typing.cast(
+        np.inexact, np.sqrt(comm.allreduce(fem.assemble_scalar(compiled_form), op=MPI.SUM))
+    )
 
 
 # In DOLFINx, we represent integration domains over entities of
