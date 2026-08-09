@@ -385,7 +385,7 @@ void declare_mesh(nb::module_& m, std::string type)
         return as_nbarray(std::move(n), {n.size() / 3, 3});
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"),
-      nb::arg("num_threads") = 1);
+      nb::arg("num_threads"));
   m.def(
       "h",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
@@ -397,7 +397,7 @@ void declare_mesh(nb::module_& m, std::string type)
                              dim, num_threads));
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"),
-      nb::arg("num_threads") = 1,
+      nb::arg("num_threads"),
       "Compute maximum distsance between any two vertices.");
   m.def(
       "compute_midpoints",
@@ -411,7 +411,7 @@ void declare_mesh(nb::module_& m, std::string type)
         return as_nbarray(std::move(x), {entities.size(), 3});
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"),
-      nb::arg("num_threads") = 1);
+      nb::arg("num_threads"));
 
   m.def(
       "locate_entities",

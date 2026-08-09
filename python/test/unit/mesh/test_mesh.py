@@ -385,7 +385,7 @@ def test_cell_h_prism():
     mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
     cells = np.arange(num_cells, dtype=np.int32)
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, cells)
+    h = _cpp.mesh.h(mesh._cpp_object, tdim, cells, 1)
     assert np.allclose(h, np.sqrt(3 / (N**2)))
 
 
@@ -396,7 +396,7 @@ def test_facet_h(ct):
     left_facets = locate_entities_boundary(
         mesh, mesh.topology.dim - 1, lambda x: np.isclose(x[0], 0)
     )
-    h = _cpp.mesh.h(mesh._cpp_object, mesh.topology.dim - 1, left_facets)
+    h = _cpp.mesh.h(mesh._cpp_object, mesh.topology.dim - 1, left_facets, 1)
     assert np.allclose(h, np.sqrt(2 / (N**2)))
 
 
@@ -428,7 +428,7 @@ def test_hmin_hmax(_mesh, dtype, hmin, hmax):
     tdim = mesh.topology.dim
     mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells))
+    h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells), 1)
     assert h.min() == pytest.approx(hmin)
     assert h.max() == pytest.approx(hmax)
 
