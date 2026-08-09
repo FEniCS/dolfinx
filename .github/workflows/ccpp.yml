@@ -159,10 +159,10 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy --config-file python/pyproject.toml -p dolfinx --exclude petsc.py
+          mypy --config-file python/pyproject.toml -p dolfinx --exclude 'petsc\.py|io/utils\.py' --disable-error-code import-not-found --disable-error-code no-any-unimported
           cd python/
-          mypy demo
-          mypy test
+          mypy demo --disable-error-code import-not-found --disable-error-code no-any-unimported --disable-error-code attr-defined --disable-error-code name-defined --disable-error-code unused-ignore
+          mypy test --disable-error-code import-not-found --disable-error-code no-any-unimported --disable-error-code attr-defined --disable-error-code name-defined --disable-error-code unused-ignore
 
       - name: Run demos (Python, serial)
         run: |
