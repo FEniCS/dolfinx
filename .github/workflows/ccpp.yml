@@ -167,10 +167,12 @@ jobs:
 
       - name: mypy checks (no petsc4py)
         run: |
-          mypy --config-file python/pyproject.toml -p dolfinx --exclude 'petsc\.py|io/utils\.py' --disable-error-code import-not-found --disable-error-code no-any-unimported
+          DISABLE_FLAGS="--disable-error-code import-not-found --disable-error-code no-any-unimported"
+          mypy --config-file python/pyproject.toml -p dolfinx --exclude 'petsc\.py|io/utils\.py' $DISABLE_FLAGS
           cd python/
-          mypy demo --disable-error-code import-not-found --disable-error-code no-any-unimported --disable-error-code attr-defined --disable-error-code name-defined --disable-error-code unused-ignore
-          mypy test --disable-error-code import-not-found --disable-error-code no-any-unimported --disable-error-code attr-defined --disable-error-code name-defined --disable-error-code unused-ignore
+          DISABLE_FLAGS="$DISABLE_FLAGS --disable-error-code attr-defined --disable-error-code name-defined --disable-error-code unused-ignore"
+          mypy demo $DISABLE_FLAGS
+          mypy test $DISABLE_FLAGS
 
       - name: Run demos (Python, serial)
         run: |
