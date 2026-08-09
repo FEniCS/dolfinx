@@ -12,12 +12,12 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-import dolfinx
 import ufl
 from basix import LatticeType, create_lattice
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import functionspace
+from dolfinx.fem import functionspace, transpose_dofmap
+from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (
     CellType,
     create_mesh,
@@ -423,7 +423,7 @@ def test_higher_order_tetra_coordinate_map(order):
 @pytest.mark.skip_in_parallel
 def test_transpose_dofmap():
     dofmap = np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]], dtype=np.int32)
-    transpose = dolfinx.fem.transpose_dofmap(dofmap, 3)
+    transpose = transpose_dofmap(dofmap, 3)
     assert np.array_equal(transpose.array, [0, 2, 5, 8, 1, 4, 3, 7, 6])
 
 
@@ -441,7 +441,7 @@ def test_empty_rank_collapse():
         dests = np.full(len(topo[0]) // 2, comm.rank, dtype=np.int32)
         offsets = np.arange(len(topo[0]) // 2 + 1, dtype=np.int32)
         # TODO: can we improve on this interface? I.e. warp to do cpp type conversion automatically
-        return dolfinx.graph.adjacencylist(dests, offsets)._cpp_object
+        return adjacencylist(dests, offsets)._cpp_object
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, c_el, nodes, partitioner=self_partitioner)
 

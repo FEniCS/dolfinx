@@ -148,7 +148,7 @@ def test_mixed_topology_mesh_3d():
 
     # Tet -> quad
     with pytest.raises(RuntimeError):
-        t = topology.connectivity((3, 0), (2, qi))
+        topology.connectivity((3, 0), (2, qi))
     # Tet -> triangle
     t = topology.connectivity((3, 0), (2, ti))
     assert t.num_nodes == 2
@@ -169,7 +169,7 @@ def test_mixed_topology_mesh_3d():
     assert len(t.links(0)) == 6
     # Hex -> triangle
     with pytest.raises(RuntimeError):
-        t = topology.connectivity((3, 2), (2, ti))
+        topology.connectivity((3, 2), (2, ti))
 
     # Quad -> vertex
     t = topology.connectivity((2, qi), (0, 0))
