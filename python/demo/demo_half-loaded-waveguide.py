@@ -40,6 +40,7 @@
 # problem:
 
 # +
+import sys
 import typing
 from pathlib import Path
 
@@ -67,7 +68,7 @@ if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
     print("This solver fails with PETSc and 64-bit integers because of memory errors in MUMPS.")
     # Note: when PETSc.IntType == np.int32, superlu_dist is used
     # rather than MUMPS and does not trigger memory failures.
-    exit(0)
+    sys.exit(0)
 
 try:
     from dolfinx.io import VTXWriter

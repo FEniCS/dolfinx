@@ -92,6 +92,8 @@
 # The required modules are first imported:
 
 # +
+import sys
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -631,7 +633,7 @@ def mixed_direct():
         if e.ierr == 92:  # type: ignore[attr-defined]
             print("The required PETSc solver/preconditioner is not available. Exiting.")
             print(e)
-            exit(0)
+            sys.exit(0)
         else:
             raise e
 

@@ -1912,7 +1912,6 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
         comm, x[0] * v * ufl.dP, form_compiler_options={"scalar_type": dtype}
     )
     form = fem.create_form(compiled_form, [V], msh, subdomains, {}, {}, [])
-    expected_value_l = np.sum(msh.geometry.x[vertices, 0])
     expected_value_l = np.zeros(num_vertices, dtype=rdtype)
     expected_value_l[vertices] = msh.geometry.x[vertices, 0]
     value_l = fem.assemble_vector(form)
@@ -1952,7 +1951,6 @@ def test_ridge_integrals_rank1_2D(cell_type, ghost_mode, dtype):
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
-    msh = None
     msh = mesh.create_unit_square(
         comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
     )
