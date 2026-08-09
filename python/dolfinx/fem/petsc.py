@@ -753,10 +753,10 @@ def set_bc(
     elif b.getType() == PETSc.Vec.Type.NEST:
         _b = b.getNestSubVecs()
         x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()  # type: ignore
-        for b_sub, bc, x_sub in zip(_b, bcs, x0, strict=True):  # type: ignore[call-overload]
-            if not isinstance(bc, Sequence):
+        for b_sub, bc_block, x_sub in zip(_b, bcs, x0, strict=True):  # type: ignore[call-overload]
+            if not isinstance(bc_block, Sequence):
                 raise ValueError("Expected a sequence of DirichletBC for a nested vector.")
-            set_bc(b_sub, bc, x_sub, alpha)
+            set_bc(b_sub, bc_block, x_sub, alpha)
     else:  # block vector
         offset0, _ = b.getAttr("_blocks")  # type: ignore
         b_array = b.getArray(readonly=False)
