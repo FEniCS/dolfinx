@@ -245,7 +245,7 @@ try:
     ksp.destroy()
     x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     b.destroy()
-except PETSc.Error as e:  # type: ignore
+except PETSc.Error as e:
     if e.ierr == 92:
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)

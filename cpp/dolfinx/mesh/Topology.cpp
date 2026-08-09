@@ -723,20 +723,54 @@ std::vector<std::int32_t> convert_to_local_indexing(
     std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local,
     int num_threads)
 {
-  auto transform =
-      [](std::span<std::int32_t> data, std::span<const std::int64_t> g,
-         std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local)
+  // global_to_local is sorted with unique .first values (one entry per
+  // vertex). If it is also contiguous starting at 0 (always true with a
+  // single MPI rank), then position == .first, so .second can be read
+  // directly instead of via a binary-search lookup in this hot loop
+  // over every cell-vertex incidence.
+  const bool is_identity
+      = !global_to_local.empty() and global_to_local.front().first == 0
+        and global_to_local.back().first
+                == static_cast<std::int64_t>(global_to_local.size()) - 1;
+
+  auto transform
+      = [is_identity](std::span<std::int32_t> data,
+                      std::span<const std::int64_t> g,
+                      std::span<const std::pair<std::int64_t, std::int32_t>>
+                          global_to_local)
   {
-    std::transform(g.begin(), g.end(), data.begin(),
-                   [&global_to_local](auto i)
-                   {
-                     auto it = std::ranges::lower_bound(
-                         global_to_local, i, std::ranges::less(),
-                         [](auto& e) { return e.first; });
-                     assert(it != global_to_local.end());
-                     assert(it->first == i);
-                     return it->second;
-                   });
+    if (is_identity)
+    {
+      // Every value in g is guaranteed present in global_to_local by
+      // this function's precondition, so - given is_identity - always
+      // within bounds; the check is a defensive no-op fallback rather
+      // than something expected to trigger.
+      std::transform(g.begin(), g.end(), data.begin(),
+                     [&global_to_local](auto i) -> std::int32_t
+                     {
+                       if (std::size_t(i) < global_to_local.size())
+                         return global_to_local[i].second;
+                       auto it = std::ranges::lower_bound(
+                           global_to_local, i, std::ranges::less(),
+                           [](auto& e) { return e.first; });
+                       assert(it != global_to_local.end());
+                       assert(it->first == i);
+                       return it->second;
+                     });
+    }
+    else
+    {
+      std::transform(g.begin(), g.end(), data.begin(),
+                     [&global_to_local](auto i)
+                     {
+                       auto it = std::ranges::lower_bound(
+                           global_to_local, i, std::ranges::less(),
+                           [](auto& e) { return e.first; });
+                       assert(it != global_to_local.end());
+                       assert(it->first == i);
+                       return it->second;
+                     });
+    }
   };
 
   std::vector<std::int32_t> data(g.size());
@@ -1063,7 +1097,7 @@ void Topology::create_entity_permutations(int num_threads)
   // Create all mesh entities
   int tdim = this->dim();
   for (int d = 0; d < tdim; ++d)
-    create_entities(d);
+    create_entities(d, num_threads);
 
   auto [facet_permutations, cell_permutations]
       = mesh::compute_entity_permutations(*this, num_threads);
@@ -1170,17 +1204,51 @@ Topology mesh::create_topology(
   std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
   {
     common::Timer timer3("Topology: number owned vertices");
+
+    // `owned_vertices` is sorted and unique. If it is also contiguous
+    // starting at 0 (always true with a single MPI rank, since every
+    // vertex is then owned and unshared, and possible with more ranks
+    // too), its position for a given value is the value itself -
+    // avoiding a binary-search lookup in this hot loop over every
+    // cell-vertex incidence.
+    bool is_identity
+        = !owned_vertices.empty() and owned_vertices.front() == 0
+          and owned_vertices.back()
+                  == static_cast<std::int64_t>(owned_vertices.size()) - 1;
+
     std::int32_t v = 0;
-    for (std::span<const std::int64_t> cells_t : cells)
+    if (is_identity)
     {
-      for (auto vtx : cells_t)
+      // `cells` includes ghost cells, whose vertices may lie outside
+      // the (contiguous) owned range - membership in `owned_vertices`
+      // is then exactly the bounds check below, since `owned_vertices`
+      // is provably {0, ..., owned_vertices.size() - 1}.
+      const std::int64_t n = owned_vertices.size();
+      for (std::span<const std::int64_t> cells_t : cells)
       {
-        if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
-            it != owned_vertices.end() and *it == vtx)
+        for (auto vtx : cells_t)
         {
-          std::size_t pos = std::distance(owned_vertices.begin(), it);
-          if (local_vertex_indices[pos] < 0)
-            local_vertex_indices[pos] = v++;
+          if (vtx < n)
+          {
+            if (std::int32_t pos = vtx; local_vertex_indices[pos] < 0)
+              local_vertex_indices[pos] = v++;
+          }
+        }
+      }
+    }
+    else
+    {
+      for (std::span<const std::int64_t> cells_t : cells)
+      {
+        for (auto vtx : cells_t)
+        {
+          if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
+              it != owned_vertices.end() and *it == vtx)
+          {
+            std::size_t pos = std::distance(owned_vertices.begin(), it);
+            if (local_vertex_indices[pos] < 0)
+              local_vertex_indices[pos] = v++;
+          }
         }
       }
     }

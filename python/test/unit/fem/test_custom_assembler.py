@@ -10,13 +10,6 @@ import time
 
 from mpi4py import MPI
 
-try:
-    import numba
-
-    from ffcx.codegeneration.utils import get_void_pointer
-except ImportError:
-    pass
-
 import numpy as np
 import pytest
 
@@ -28,6 +21,8 @@ from dolfinx.mesh import create_unit_square
 cffi = pytest.importorskip("cffi")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 numba = pytest.importorskip("numba")
+
+from ffcx.codegeneration.numba.utils import get_void_pointer  # noqa: E402
 
 ffi = cffi.FFI()
 

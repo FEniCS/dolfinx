@@ -64,7 +64,7 @@ inline constexpr _unsigned_projection unsigned_projection{};
 /// @code
 /// std::array<std::int16_t, 3> a{2, 3, 1};
 /// std::array<std::int16_t, 3> i{0, 1, 2};
-/// dolfinx::radix_sort(i, [&](auto i){ return a[i]; }); // yields i = {2, 0,
+/// dolfinx::radix_sort(i, [&a](auto i){ return a[i]; }); // yields i = {2, 0,
 /// 1} and a[i] = {1, 2, 3};
 /// @endcode
 /// @tparam BITS The number of bits to sort at a time.
@@ -90,7 +90,7 @@ constexpr void radix_sort(R&& range, P proj = {})
 
   if constexpr (!std::is_same_v<uI, I>)
   {
-    radix_sort<_BITS>(std::forward<R>(range), [&](const T& e) -> uI
+    radix_sort<_BITS>(std::forward<R>(range), [&proj](const T& e) -> uI
                       { return unsigned_projection(proj(e)); });
     return;
   }
@@ -183,7 +183,7 @@ constexpr void radix_sort(R&& range, P proj = {})
 /// @pre `x.size()` must be a multiple of `shape1`.
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.
-template <typename T, int BITS = 8>
+template <typename T, int BITS = 16>
 std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
 {
   static_assert(std::is_integral_v<T>, "Integral required.");

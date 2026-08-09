@@ -972,8 +972,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// boundary for non-branching meshes).
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction
-create_cell_partitioner(mesh::GhostMode ghost_mode,
-                        const graph::partition_fn& partfn,
+create_cell_partitioner(mesh::GhostMode ghost_mode, graph::partition_fn partfn,
                         std::optional<std::int32_t> max_facet_to_cell_links);
 
 /// @brief Create a function that computes destination rank for mesh
@@ -1188,7 +1187,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                          [](auto& c) { return std::span(c); });
   Topology topology
       = create_topology(comm, celltypes, cells1_v_span, original_idx1_span,
-                        ghost_owners_span, boundary_v, 1);
+                        ghost_owners_span, boundary_v, num_threads);
 
   // Create connectivities required higher-order geometries for creating
   // a Geometry object
@@ -1619,7 +1618,7 @@ MeshTags<T> transfer_meshtags_to_submesh(
           // parent entity
           bool entity_matches = std::ranges::all_of(
               parent_vertices,
-              [&](auto p_v)
+              [&entity_vertices](auto p_v)
               {
                 // With C++23 this can use std::ranges::contains
                 return std::ranges::find(entity_vertices, p_v)
@@ -1656,8 +1655,7 @@ MeshTags<T> transfer_meshtags_to_submesh(
   filtered_indices.shrink_to_fit();
   filtered_values.shrink_to_fit();
   MeshTags<T> new_meshtag(submesh_topology, tag_dim, filtered_indices,
-                          filtered_values);
-  new_meshtag.name = tags.name;
+                          filtered_values, tags.name());
   return new_meshtag;
 }
 

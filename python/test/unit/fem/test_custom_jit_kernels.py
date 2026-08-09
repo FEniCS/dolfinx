@@ -15,7 +15,6 @@ import numpy as np
 import pytest
 
 import dolfinx
-import ffcx.codegeneration.utils
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la
 from dolfinx.common import list_timings
@@ -23,7 +22,7 @@ from dolfinx.fem import Form, Function, IntegralType, form_cpp_class, functionsp
 from dolfinx.mesh import create_unit_square
 
 numba = pytest.importorskip("numba")
-ufcx_signature = ffcx.codegeneration.utils.numba_ufcx_kernel_signature
+from ffcx.codegeneration.numba.utils import ufcx_kernel_signature as ufcx_signature  # noqa: E402
 
 sys.path.append(os.getcwd())
 
@@ -273,7 +272,7 @@ def test_cffi_assembly():
 
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
 
-    ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
+    ptrA = int(ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA")))
     active_coeffs = np.array([], dtype=np.int8)
     integrals = {IntegralType.cell: [(0, ptrA, cells, active_coeffs)]}
     a = Form(
@@ -282,7 +281,7 @@ def test_cffi_assembly():
         )
     )
 
-    ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
+    ptrL = int(ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL")))
     integrals = {IntegralType.cell: [(0, ptrL, cells, active_coeffs)]}
     L = Form(
         _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object)

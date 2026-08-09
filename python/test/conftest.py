@@ -25,7 +25,12 @@ def pytest_runtest_teardown(item):
     # NOTE: How are we sure that 'item' does not hold references to
     # temporaries and someone else does not hold a reference to 'item'?!
     # Well, it seems that it works...
-    gc.collect()
+    # Only the youngest generation is collected: the reference cycles left
+    # behind by a single test are created fresh each time and so are always
+    # in generation 0, and a full collection here is disproportionately
+    # expensive (measured ~170s of a ~700s full suite run) because it
+    # rescans the entire accumulated interpreter heap on every test.
+    gc.collect(0)
     comm = MPI.COMM_WORLD
     comm.Barrier()
 

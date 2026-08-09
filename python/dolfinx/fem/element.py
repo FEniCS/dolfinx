@@ -84,14 +84,16 @@ class CoordinateElement(Generic[Real]):
         Returns:
             Physical coordinates of the points reference points ``X``.
         """
-        return self._cpp_object.push_forward(X, cell_geometry)
+        return self._cpp_object.push_forward(X, cell_geometry)  # type: ignore[arg-type,return-value]
 
     def pull_back(
         self,
         x: npt.NDArray[Real],
         cell_geometry: npt.NDArray[Real],
-        tol: float = 1.0e-6,
+        *,
+        tol: float | None = None,
         maxit: int = 15,
+        working_array: npt.NDArray[Real] | None = None,
     ) -> npt.NDArray[Real]:
         """Pull points on the physical cell back to the reference cell.
 
@@ -105,14 +107,25 @@ class CoordinateElement(Generic[Real]):
                 geometrical_dimension)``. They can be created by accessing
                 ``geometry.x[geometry.dofmaps[0].cell_dofs(i)]``,
             tol: Tolerance for convergence in Newton method for
-                nonaffine pullbacks.
+                nonaffine pullbacks. If not provided, it is set from
+                the square root of the machine epsilon of ``x``'s
+                dtype, since a fixed value tuned for ``float64`` is
+                often unreachable in ``float32`` arithmetic.
             maxit: Maximum number of Newton iterations for
                 nonaffine pullbacks.
+            working_array: Working memory for the pull-back operation.
+                If not provided, a new array will be allocated. The size of
+                the working array can be computed using
+                :func:`pull_back_working_size`.
 
         Returns:
             Reference coordinates of the physical points ``x``.
         """
-        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit)
+        if tol is None:
+            tol = float(np.sqrt(np.finfo(x.dtype).eps))
+        if working_array is None:
+            working_array = np.zeros(self.pull_back_working_size(x.shape[1]), dtype=x.dtype)
+        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit, working_array)  # type: ignore[arg-type,return-value]
 
     @property
     def variant(self) -> int:
@@ -129,10 +142,21 @@ class CoordinateElement(Generic[Real]):
         """Polynomial degree of the coordinate element."""
         return self._cpp_object.degree
 
+    def pull_back_working_size(self, gdim: int) -> int:
+        """Compute the working array size required for pull back.
+
+        Args:
+            gdim: Geometrical dimension of input points
+
+        Returns:
+            Number of elements required in the working array for pull back.
+        """
+        return self._cpp_object.pull_back_working_size(gdim)
+
 
 @singledispatch
 def coordinate_element(
-    celltype: _cpp.mesh.CellType,
+    celltype: _cpp.mesh.CellType | basix.finite_element.FiniteElement,
     degree: int,
     variant=int(basix.LagrangeVariant.unset),
     dtype: npt.DTypeLike = np.float64,
@@ -155,7 +179,7 @@ def coordinate_element(
 
 
 @coordinate_element.register(basix.finite_element.FiniteElement)
-def _(e: basix.finite_element.FiniteElement) -> CoordinateElement:
+def _coordinate_element_from_basix(e: basix.finite_element.FiniteElement) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from a Basix finite element.
 
     Coordinate elements are typically used when creating meshes.
@@ -203,7 +227,7 @@ class FiniteElement(Generic[Real]):
     @property
     def dtype(self) -> np.dtype:
         """Geometry type of the mesh that the space is defined on."""
-        return self._cpp_object.dtype
+        return np.dtype(self._cpp_object.dtype)
 
     @property
     def basix_element(self) -> basix.finite_element.FiniteElement:
@@ -242,7 +266,7 @@ class FiniteElement(Generic[Real]):
             positions. For other elements the points will typically be the
             quadrature points used to evaluate moment degrees of freedom.
         """
-        return self._cpp_object.interpolation_points()
+        return self._cpp_object.interpolation_points()  # type: ignore[return-value]
 
     @property
     def interpolation_ident(self) -> bool:
@@ -308,7 +332,7 @@ class FiniteElement(Generic[Real]):
             cells. Please see `basix.numba_helpers` for performant
             versions.
         """
-        self._cpp_object.T_apply(x, cell_permutations, dim)
+        self._cpp_object.T_apply(x, cell_permutations, dim)  # type: ignore[arg-type]
 
     def Tt_apply(
         self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
@@ -322,7 +346,7 @@ class FiniteElement(Generic[Real]):
             cell_permutations: Permutation data for the cells
             dim: Number of columns in ``data``.
         """
-        self._cpp_object.Tt_apply(x, cell_permutations, dim)
+        self._cpp_object.Tt_apply(x, cell_permutations, dim)  # type: ignore[arg-type]
 
     def Tt_inv_apply(
         self, x: npt.NDArray[Real], cell_permutations: npt.NDArray[np.uint32], dim: int
@@ -336,7 +360,7 @@ class FiniteElement(Generic[Real]):
             cell_permutations: Permutation data for the cells
             dim: Number of columns in ``data``.
         """
-        self._cpp_object.Tt_inv_apply(x, cell_permutations, dim)
+        self._cpp_object.Tt_inv_apply(x, cell_permutations, dim)  # type: ignore[arg-type]
 
 
 def finiteelement(
