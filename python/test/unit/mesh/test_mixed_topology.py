@@ -76,7 +76,7 @@ def test_mixed_topology_mesh(dtype):
     assert entity_types[2][0] == CellType.triangle
     assert topology.connectivity((2, 0), (0, 0)).num_nodes == 2
 
-    # One quadrlilateral cell
+    # One quadrilateral cell
     assert entity_types[2][1] == CellType.quadrilateral
     assert topology.connectivity((2, 1), (0, 0)).num_nodes == 1
 
