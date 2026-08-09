@@ -96,10 +96,10 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
   //   auto part
   //       = mesh::create_cell_partitioner(ghost_mode,
   //       graph::scotch::partitioner());
-  mesh::CellPartitionFunction part
-      = [&](MPI_Comm /* comm */, int /* nparts */,
-            const std::vector<mesh::CellType>& /* cell_types */,
-            const std::vector<std::span<const std::int64_t>>& /* cells */)
+  mesh::CellPartitionFunction part =
+      [comm_size](MPI_Comm /* comm */, int /* nparts */,
+                  const std::vector<mesh::CellType>& /* cell_types */,
+                  const std::vector<std::span<const std::int64_t>>& /* cells */)
   {
     std::vector<std::vector<std::int32_t>> data;
     if (comm_size == 1)

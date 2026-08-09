@@ -105,23 +105,86 @@ disclosure process.
   must not skip a collective that other ranks still call, or the
   mismatch deadlocks. Validate/throw before entering a code path with
   collectives, not conditionally partway through it.
-- **Move/copy semantics**: Moving is preferred over copying, unless the
-  object is very lightweight. Many DOLFINx classes disable move
-  constructors. `std::move` is used systematically on incoming
-  `std::shared_ptr` to avoid unnecessary copies of `std::shared_ptr` and
-  also to avoid copies when returning with a `std::pair{}`.
+- **Move/copy semantics**: Moving is preferred over copying, unless
+  the object is very lightweight. Many DOLFINx classes disable
+  copying; none disable moving. `std::move` is used systematically on
+  incoming `std::shared_ptr` to avoid unnecessary copies of
+  `std::shared_ptr` and also to avoid copies when returning with a
+  `std::pair{}`.
+- **Special member functions**: a class that declares any of the five
+  (copy constructor, move constructor, destructor, copy assignment,
+  move assignment) declares all five explicitly, `public`, as a
+  contiguous block immediately after the named constructors, in that
+  order — see `mesh/Mesh.h`, `fem/DofMap.h`, `common/Table.h`. Write
+  `= default` rather than relying on implicit generation; declaring
+  only some of the five silently suppresses the others.
+- **Deleting copies**: delete both copy operations for classes owning
+  an external handle (MPI communicator, PETSc/SLEPc object,
+  ADIOS2/HDF5 file) and for 'heavy' data classes where an accidental
+  deep copy is a performance bug (`common::IndexMap`,
+  `fem::FunctionSpace`, `fem::Function`). Classes that are cheap to
+  copy explicitly but should not be copied into an existing object
+  delete copy assignment only, keeping a defaulted copy constructor
+  (`mesh::Mesh`, `mesh::Topology`, `mesh::Geometry`).
+- **Never delete moves**: no class in the library deletes a move
+  operation. If a class caches `std::span`s or other pointers into its
+  own members, explain in a `@note` why moving remains valid instead
+  of disabling it (see the deleted copy constructor and defaulted move
+  constructor of `fem::Form`).
+- **Destructors**: `= default` unless a raw handle must be released
+  (`common::Comm`, `la::petsc::Vector`, `io::VTKFile`). Mark the
+  destructor `virtual` only when the class is actually used as a base
+  class.
+- **`noexcept`**: used on hand-written move operations of handle owners
+  (`common::Comm`, `la::petsc::*`); defaulted moves are left
+  unannotated as they are implicitly `noexcept`.
+- **Documenting special members**: the conventional wordings are
+  `/// Copy constructor`, `/// Move constructor`, `/// Destructor`,
+  `/// Copy assignment` and `/// Move assignment`; `@param` is
+  normally omitted. Deleted members use a non-Doxygen `//` comment
+  with `(deleted)` appended so they stay out of the generated
+  documentation.
 - **String formatting**: use `std::format` (`<format>`) to build
   formatted/error strings rather than `printf`-style,
   `std::ostringstream` concatenation, or the `fmt` library.
 - **Function pointers over lambdas**: when a free function's signature
-  already matches a callback/`std::function` parameter exactly, pass the
-  function directly (e.g. `graph::reorder_rcm`) rather than wrapping it
-  in a trivial forwarding lambda.
+  already matches a callback/`std::function` parameter exactly, pass
+  the function directly (e.g. `graph::reorder_rcm`) rather than
+  wrapping it in a trivial forwarding lambda.
+- **Lambdas**: no `[=]`/`[&]` — list captures explicitly, e.g.
+  `[&v]`. Capture by reference for lambdas invoked in
+  place; by value (cheap scalars, or
+  `[v = std::move(v)]` to move a container) for lambdas that escape the
+  scope, where a captured reference or `span` into a local dangles
+  silently. `[this]` only if the lambda cannot outlive the object.
+  Never capture a container or `shared_ptr` by value for convenience:
+  the copy happens at capture and again whenever the lambda or its
+  `std::function` is copied.
+  Prefer explicit parameter types over `auto` (`auto&&` in generic
+  code); add an explicit return type when the deduced one is non-obvious
+  or must not decay. Avoid `mutable`. Promote long or reused lambdas to
+  a free function in an anonymous namespace. A by-reference capture is
+  `const` only if the captured variable is, so declare read-only locals
+  `const`.
 - **Algorithms**: prefer `std::ranges` algorithms (`std::ranges::...`)
   over both hand-written loops and their pre-ranges `<algorithm>`
   equivalents, where it doesn't hurt clarity or performance. Flattened
   row-major storage is the default convention for multi-dimensional
   data passed as flat buffers.
+- **`std::distance`/`std::advance`/`std::next`/`std::prev` on a
+  generic, template-parameterized range**: these legacy `<iterator>`
+  algorithms dispatch on `std::iterator_traits<It>::iterator_category`,
+  not the C++20 iterator concepts. Views such as
+  `std::ranges::iota_view` satisfy `std::random_access_iterator` but
+  not the legacy `LegacyRandomAccessIterator` (`operator*` returns a
+  prvalue, not a reference), so their `iterator_category` degrades to
+  `input_iterator_tag` and `std::distance` silently falls back to an
+  O(n) count instead of an O(1) subtraction, turning an O(n) loop into
+  O(n²) in unoptimised (Debug) builds only. When indexing into a
+  generic range parameter inside a loop, use
+  `std::ranges::distance`/`std::ranges::advance`, which dispatch on
+  the C++20 concept and stay O(1) for these views, or track the index
+  with a plain counter incremented alongside the iterator.
 - **Windows**: Windows is continuously tested on GitHub with the most
   important missing feature being the lack of C99 `_Complex` support
   denoted by existence of `DOLFINX_NO_STDC_COMPLEX_KERNELS` macro

@@ -226,7 +226,7 @@ compute_submap_indices(const IndexMap& imap,
         assert(idx >= 0);
         std::int32_t idx_local = idx - local_range[0];
         assert(idx_local >= 0);
-        assert(idx_local < local_range[1]);
+        assert(idx_local < local_range[1] - local_range[0]);
 
         // Check if index is included in the submap on this process. If
         // so, this process remains its owner in the submap. Otherwise,
@@ -549,22 +549,20 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   std::int32_t size_local = map.size_local();
   const auto it_owned_end = std::ranges::lower_bound(indices, size_local);
 
-  // Get global indices and owners for ghost indices
+  // Get global indices and owners for ghost indices. Store as (owner,
+  // global index) pairs and sort so that the send buffer is grouped by
+  // owning rank by construction, rather than relying on the global-index
+  // and owner arrays sorting into a mutually consistent order.
   std::size_t first_ghost_index = std::distance(indices.begin(), it_owned_end);
   std::int32_t num_ghost_indices = indices.size() - first_ghost_index;
-  std::vector<std::int64_t> global_indices(num_ghost_indices);
-  std::vector<int> ghost_owners(num_ghost_indices);
+  std::vector<std::pair<int, std::int64_t>> owner_to_global(num_ghost_indices);
   for (std::int32_t i = 0; i < num_ghost_indices; ++i)
   {
     std::int32_t idx = indices[first_ghost_index + i];
     std::int32_t pos = idx - size_local;
-    global_indices[i] = ghosts[pos];
-    ghost_owners[i] = owners[pos];
+    owner_to_global[i] = {owners[pos], ghosts[pos]};
   }
-
-  // Sort indices and owners
-  std::ranges::sort(global_indices);
-  std::ranges::sort(ghost_owners);
+  std::ranges::sort(owner_to_global);
 
   std::span dest = map.dest();
   std::span src = map.src();
@@ -572,12 +570,15 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   // Count number of ghost per destination
   std::vector<int> send_sizes(src.size(), 0);
   std::vector<int> send_disp(src.size() + 1, 0);
-  auto it = ghost_owners.begin();
+  auto it = owner_to_global.begin();
   for (std::size_t i = 0; i < src.size(); ++i)
   {
     int owner = src[i];
-    auto begin = std::find(it, ghost_owners.end(), owner);
-    auto end = std::upper_bound(begin, ghost_owners.end(), owner);
+    auto begin = std::ranges::find(it, owner_to_global.end(), owner,
+                                   &std::pair<int, std::int64_t>::first);
+    auto end = std::ranges::upper_bound(begin, owner_to_global.end(), owner,
+                                        std::ranges::less(),
+                                        &std::pair<int, std::int64_t>::first);
 
     // Count number of ghosts (if any)
     send_sizes[i] = std::distance(begin, end);
@@ -607,9 +608,13 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::next(recv_disp.begin()));
 
-  // Send ghost indices to owner, and receive owned indices
+  // Send ghost indices to owner, and receive owned indices. The send
+  // buffer is the global indices in owner-grouped order.
   std::vector<std::int64_t> recv_buffer(recv_disp.back());
-  std::vector<std::int64_t>& send_buffer = global_indices;
+  std::vector<std::int64_t> send_buffer;
+  send_buffer.reserve(owner_to_global.size());
+  std::ranges::transform(owner_to_global, std::back_inserter(send_buffer),
+                         [](auto x) { return x.second; });
   ierr = MPI_Neighbor_alltoallv(send_buffer.data(), send_sizes.data(),
                                 send_disp.data(), MPI_INT64_T,
                                 recv_buffer.data(), recv_sizes.data(),
@@ -867,7 +872,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size) : _comm(comm, true)
   // Send local size to sum reduction to get global size
   MPI_Request request;
   ierr = MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
-                        comm, &request);
+                        _comm.comm(), &request);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   ierr = MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
@@ -905,13 +910,13 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
   const std::int64_t local_size_tmp = local_size;
   MPI_Request request_scan;
   int ierr = MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM,
-                         comm, &request_scan);
+                         _comm.comm(), &request_scan);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   // Send local size to sum reduction to get global size
   MPI_Request request;
   ierr = MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
-                        comm, &request);
+                        _comm.comm(), &request);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   // Wait for MPI_Iexscan to complete (get offset)
@@ -929,11 +934,14 @@ std::array<std::int64_t, 2> IndexMap::local_range() const noexcept
   return _local_range;
 }
 //-----------------------------------------------------------------------------
-std::int32_t IndexMap::num_ghosts() const noexcept { return _ghosts.size(); }
+std::int32_t IndexMap::num_ghosts() const noexcept
+{
+  return static_cast<std::int32_t>(_ghosts.size());
+}
 //-----------------------------------------------------------------------------
 std::int32_t IndexMap::size_local() const noexcept
 {
-  return _local_range[1] - _local_range[0];
+  return static_cast<std::int32_t>(_local_range[1] - _local_range[0]);
 }
 //-----------------------------------------------------------------------------
 std::int64_t IndexMap::size_global() const noexcept { return _size_global; }
@@ -956,7 +964,7 @@ void IndexMap::local_to_global(std::span<const std::int32_t> local,
           return local_range + local;
         else
         {
-          assert((local - local_size) < (int)ghosts.size());
+          assert((local - local_size) < static_cast<int>(ghosts.size()));
           return ghosts[local - local_size];
         }
       });
@@ -1008,7 +1016,8 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 //-----------------------------------------------------------------------------
 MPI_Comm IndexMap::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
-graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
+std::pair<std::vector<int>, std::vector<std::int32_t>>
+IndexMap::index_to_dest_ranks(int tag) const
 {
   const std::int64_t offset = _local_range[0];
 
@@ -1138,7 +1147,7 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
         {
           for (auto r : ranks)
           {
-            assert(r0 < (int)dest_idx_to_rank.size());
+            assert(r0 < static_cast<int>(dest_idx_to_rank.size()));
             if (r0 != r)
             {
               dest_idx_to_rank[r0].push_back(n + offset);
@@ -1236,25 +1245,37 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks(int tag) const
   std::ranges::transform(idx_to_rank, data.begin(),
                          [&dest](auto x) { return dest[x.second]; });
 
-  return graph::AdjacencyList(std::move(data), std::move(offsets));
+  return {std::move(data), std::move(offsets)};
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> IndexMap::shared_indices() const
 {
-  // Each process gets a chunk of consecutive indices (global indices)
-  // Sorting the ghosts groups them by owner
-  std::vector<std::int64_t> send_buffer(_ghosts);
-  std::ranges::sort(send_buffer);
+  // Each process owns a chunk of consecutive global indices, so sorting
+  // (owner, ghost global index) pairs groups the ghosts by owning rank
+  // and orders them within each group. Packing the send buffer from a
+  // single sorted pair array avoids relying on the ghost and owner arrays
+  // sorting into a mutually consistent order.
+  std::vector<std::pair<int, std::int64_t>> owner_to_ghost;
+  owner_to_ghost.reserve(_ghosts.size());
+  std::ranges::transform(_ghosts, _owners, std::back_inserter(owner_to_ghost),
+                         [](auto idx, auto r) -> std::pair<int, std::int64_t>
+                         { return {r, idx}; });
+  std::ranges::sort(owner_to_ghost);
 
-  std::vector<int32_t> owners(_owners);
-  std::ranges::sort(owners);
+  std::vector<std::int64_t> send_buffer;
+  send_buffer.reserve(owner_to_ghost.size());
+  std::ranges::transform(owner_to_ghost, std::back_inserter(send_buffer),
+                         [](auto x) { return x.second; });
+
   std::vector<int> send_sizes, send_disp{0};
 
   // Count number of ghost per destination
-  auto it = owners.begin();
-  while (it != owners.end())
+  auto it = owner_to_ghost.begin();
+  while (it != owner_to_ghost.end())
   {
-    auto it1 = std::upper_bound(it, owners.end(), *it);
+    auto it1 = std::ranges::upper_bound(it, owner_to_ghost.end(), it->first,
+                                        std::ranges::less(),
+                                        &std::pair<int, std::int64_t>::first);
     send_sizes.push_back(std::distance(it, it1));
     send_disp.push_back(send_disp.back() + send_sizes.back());
 

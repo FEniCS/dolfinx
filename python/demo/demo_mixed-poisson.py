@@ -286,8 +286,8 @@ if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.compl
     pc_sigma.setHYPREType("ams")
 
     opts = PETSc.Options()
-    opts[f"{ksp_sigma.prefix}pc_hypre_ams_cycle_type"] = 7
-    opts[f"{ksp_sigma.prefix}pc_hypre_ams_relax_times"] = 2
+    opts[f"{ksp_sigma.prefix}pc_hypre_ams_cycle_type"] = 7  # type: ignore[index]
+    opts[f"{ksp_sigma.prefix}pc_hypre_ams_relax_times"] = 2  # type: ignore[index]
 
     # Construct and set the 'discrete gradient' operator, which maps
     # grad H1 -> H(curl), i.e. the gradient of a scalar Lagrange space
@@ -318,8 +318,8 @@ if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.compl
         # High-order elements generally converge less well than the
         # lowest-order case with algebraic multigrid, so we perform
         # extra work at the multigrid stage
-        opts[f"{ksp_sigma.prefix}pc_hypre_ams_tol"] = 1e-12
-        opts[f"{ksp_sigma.prefix}pc_hypre_ams_max_iter"] = 3
+        opts[f"{ksp_sigma.prefix}pc_hypre_ams_tol"] = 1e-12  # type: ignore[index]
+        opts[f"{ksp_sigma.prefix}pc_hypre_ams_max_iter"] = 3  # type: ignore[index]
 
     ksp_sigma.setFromOptions()
 else:
@@ -343,7 +343,7 @@ else:
 # +
 problem.solve()
 converged_reason = problem.solver.getConvergedReason()
-assert converged_reason > 0, f"Krylov solver has not converged, reason: {converged_reason}."
+assert converged_reason > 0, f"Krylov solver has not converged, reason: {converged_reason}."  # type: ignore[operator]
 # -
 
 # We save the solution `u` in VTX format:

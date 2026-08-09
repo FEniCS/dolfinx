@@ -458,9 +458,10 @@ public:
           dims.push_back(_sub_elements[i]->space_dimension());
         }
 
-        return [dims, sub_element_fns](std::span<U> data,
-                                       std::span<const std::uint32_t> cell_info,
-                                       std::int32_t cell, int block_size)
+        return [dims = std::move(dims),
+                sub_element_fns = std::move(sub_element_fns)](
+                   std::span<U> data, std::span<const std::uint32_t> cell_info,
+                   std::int32_t cell, int block_size)
         {
           std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_fns.size(); ++e)
@@ -480,9 +481,9 @@ public:
             sub_fn
             = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
         const int ebs = _bs;
-        return [ebs, sub_fn](std::span<U> data,
-                             std::span<const std::uint32_t> cell_info,
-                             std::int32_t cell, int data_block_size)
+        return [ebs, sub_fn = std::move(sub_fn)](
+                   std::span<U> data, std::span<const std::uint32_t> cell_info,
+                   std::int32_t cell, int data_block_size)
         { sub_fn(data, cell_info, cell, ebs * data_block_size); };
       }
     }
@@ -562,9 +563,10 @@ public:
           dims.push_back(_sub_elements[i]->space_dimension());
         }
 
-        return [dims, sub_element_fns](std::span<U> data,
-                                       std::span<const std::uint32_t> cell_info,
-                                       std::int32_t cell, int block_size)
+        return [dims = std::move(dims),
+                sub_element_fns = std::move(sub_element_fns)](
+                   std::span<U> data, std::span<const std::uint32_t> cell_info,
+                   std::int32_t cell, int block_size)
         {
           std::size_t offset = 0;
           for (std::size_t e = 0; e < sub_element_fns.size(); ++e)
@@ -586,9 +588,9 @@ public:
                            std::int32_t, int)>
             sub_fn
             = _sub_elements.front()->template dof_transformation_fn<U>(ttype);
-        return [this, sub_fn](std::span<U> data,
-                              std::span<const std::uint32_t> cell_info,
-                              std::int32_t cell, int data_block_size)
+        return [this, sub_fn = std::move(sub_fn)](
+                   std::span<U> data, std::span<const std::uint32_t> cell_info,
+                   std::int32_t cell, int data_block_size)
         {
           const int ebs = block_size();
           const std::size_t dof_count = data.size() / data_block_size;
@@ -802,7 +804,7 @@ public:
   void permute(std::span<std::int32_t> doflist,
                std::uint32_t cell_permutation) const;
 
-  /// @brief Perform the inverse of the operation applied by permute().
+  /// @brief Perform the inverse of the operation applied by @ref permute.
   ///
   /// Given an array \f$d\f$ that holds an integer associated with each
   /// degree-of-freedom and following the globally consistent physical
@@ -824,7 +826,7 @@ public:
   /// @brief Return a function that applies a degree-of-freedom
   /// permutation to some data.
   ///
-  /// The returned function can apply permute() to mixed-elements.
+  /// The returned function can apply @ref permute to mixed-elements.
   ///
   /// The signature of the returned function has three arguments:
   /// - [in,out] doflist The numbers of the DOFs, a span of length num_dofs

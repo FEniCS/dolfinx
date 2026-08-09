@@ -102,8 +102,8 @@ for j, v in enumerate(evals):
 # +
 geometry = basix.geometry(basix.CellType.quadrilateral)
 topology = basix.topology(basix.CellType.quadrilateral)
-x = [[], [], [], []]  # type: ignore [var-annotated]
-M = [[], [], [], []]  # type: ignore [var-annotated]
+x: list[list[np.ndarray]] = [[], [], [], []]
+M: list[list[np.ndarray]] = [[], [], [], []]
 
 for v in topology[0]:
     x[0].append(np.array(geometry[v]))
@@ -183,8 +183,8 @@ def create_tnt_quad(degree):
     # Interpolation
     geometry = basix.geometry(basix.CellType.quadrilateral)
     topology = basix.topology(basix.CellType.quadrilateral)
-    x = [[], [], [], []]
-    M = [[], [], [], []]
+    x: list[list[np.ndarray]] = [[], [], [], []]
+    M: list[list[np.ndarray]] = [[], [], [], []]
 
     # Vertices
     for v in topology[0]:
@@ -282,7 +282,7 @@ def poisson_error(V: fem.FunctionSpace):
     uh = problem.solve()
     converged_reason = problem.solver.getConvergedReason()
     num_its = problem.solver.getIterationNumber()
-    assert converged_reason > 0, (
+    assert converged_reason > 0, (  # type: ignore[operator]
         f"Failed to converge, reason: {converged_reason}, iterations: {num_its}"
     )
 

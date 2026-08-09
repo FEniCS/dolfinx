@@ -98,6 +98,18 @@ SparsityPattern::SparsityPattern(
 
   const std::int32_t num_rows_local_new = _index_maps[0]->size_local();
 
+  // Reserve the exact final cache size (sub-pattern cache sizes are
+  // already known, so this is a one-off reserve, not a per-call one)
+  {
+    std::size_t num_entries = 0;
+    for (std::size_t row = 0; row < patterns.size(); ++row)
+      for (std::size_t col = 0; col < patterns[row].size(); ++col)
+        if (const SparsityPattern* p = patterns[row][col]; p)
+          num_entries += p->_cache_rows.size() * bs[0][row] * bs[1][col];
+    _cache_rows.reserve(num_entries);
+    _cache_cols.reserve(num_entries);
+  }
+
   // Iterate over block rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
@@ -188,15 +200,6 @@ void SparsityPattern::insert(std::int32_t row, std::int32_t col)
   }
 
   assert(_index_maps[0]);
-  const std::int32_t max_row
-      = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
-
-  if (row > max_row or row < 0)
-  {
-    throw std::runtime_error(
-        "Cannot insert rows that do not exist in the IndexMap.");
-  }
-
   _cache_rows.push_back(row);
   _cache_cols.push_back(col);
 }
@@ -211,18 +214,13 @@ void SparsityPattern::insert(std::span<const std::int32_t> rows,
   }
 
   assert(_index_maps[0]);
-  const std::int32_t max_row
-      = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
 
-  _cache_rows.reserve(_cache_rows.size() + rows.size() * cols.size());
-  _cache_cols.reserve(_cache_cols.size() + rows.size() * cols.size());
+  // Note: no explicit reserve() here. reserve(n) allocates exactly n,
+  // not the amortised (e.g. doubled) capacity insert() itself would
+  // pick, so reserving to the current size on every call would turn
+  // the cache into an O(#insert calls^2) allocation pattern.
   for (std::int32_t row : rows)
   {
-    if (row > max_row or row < 0)
-    {
-      throw std::runtime_error(
-          "Cannot insert rows that do not exist in the IndexMap.");
-    }
     _cache_rows.insert(_cache_rows.end(), cols.size(), row);
     _cache_cols.insert(_cache_cols.end(), cols.begin(), cols.end());
   }
@@ -237,18 +235,6 @@ void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
   }
 
   assert(_index_maps[0]);
-  const std::int32_t max_row
-      = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts() - 1;
-
-  for (std::int32_t row : rows)
-  {
-    if (row > max_row or row < 0)
-    {
-      throw std::runtime_error(
-          "Cannot insert rows that do not exist in the IndexMap.");
-    }
-  }
-
   _cache_rows.insert(_cache_rows.end(), rows.begin(), rows.end());
   _cache_cols.insert(_cache_cols.end(), rows.begin(), rows.end());
 }
@@ -303,6 +289,11 @@ void SparsityPattern::finalize()
   const auto [cache_offsets, cache_cols]
       = bucket_by_row(_cache_rows, _cache_cols, num_rows0);
 
+  // Cache is now fully bucketed into cache_offsets/cache_cols; drop it
+  // early to reduce peak memory for the rest of finalize()
+  std::vector<std::int32_t>().swap(_cache_rows);
+  std::vector<std::int32_t>().swap(_cache_cols);
+
   // Neighbourhood rank of each ghost row's owner, looked up once
   std::vector<int> neighbour_rank(owners0.size());
   std::ranges::transform(owners0, neighbour_rank.begin(),
@@ -311,7 +302,7 @@ void SparsityPattern::finalize()
                            auto it = std::ranges::lower_bound(src0, owner);
                            assert(it != src0.end() and *it == owner);
                            return static_cast<int>(
-                               std::distance(src0.begin(), it));
+                               std::ranges::distance(src0.begin(), it));
                          });
 
   // Compute size of data to send to each process
@@ -392,9 +383,11 @@ void SparsityPattern::finalize()
     MPI_Comm_free(&comm);
   }
 
-  // Global to local map for ghost column indices
+  // Global to local map for ghost column indices. Reserve for the
+  // worst case where every received entry is a new ghost column, to
+  // avoid rehashing while the map is populated below.
   std::unordered_map<std::int64_t, std::int32_t> global_to_local;
-  global_to_local.reserve(_col_ghosts.size());
+  global_to_local.reserve(_col_ghosts.size() + ghost_data_in.size() / 3);
   std::int32_t local_i = local_size1;
   for (std::int64_t global_i : _col_ghosts)
     global_to_local.insert({global_i, local_i++});
@@ -435,8 +428,19 @@ void SparsityPattern::finalize()
   // Reserve the exact pre-dedup edge count
   _edges.reserve(cache_cols.size() + recv_cols_bucketed.size());
 
-  // Sort and remove duplicates per row, building CSR offsets as we
-  // go. Offsets are int64_t to avoid overflow.
+  // De-duplicate each row's raw (unsorted, repeats included) column
+  // list with a generation-stamped marker: last_seen[col] == i means
+  // col has already been recorded for row i. Rows are visited exactly
+  // once in increasing order, so the row index itself is the stamp --
+  // no reset between rows needed. This turns per-row de-duplication
+  // from O(m log m) (sort the raw, repeat-laden list) into
+  // O(m + k log k), where k <= m is the de-duplicated count: sorting
+  // only ever runs over the much smaller de-duplicated list.
+  const std::int32_t num_cols0
+      = local_size1 + static_cast<std::int32_t>(_col_ghosts.size());
+  std::vector<std::int32_t> last_seen(num_cols0, -1);
+
+  // Build CSR offsets as we go. Offsets are int64_t to avoid overflow.
   _off_diagonal_offsets.resize(num_rows0);
   _offsets.reserve(num_rows0 + 1);
   _offsets.push_back(0);
@@ -444,29 +448,35 @@ void SparsityPattern::finalize()
   for (std::int32_t i = 0; i < num_rows0; ++i)
   {
     row.clear();
-    row.insert(row.end(), cache_cols.begin() + cache_offsets[i],
-               cache_cols.begin() + cache_offsets[i + 1]);
+    for (std::int64_t k = cache_offsets[i]; k < cache_offsets[i + 1]; ++k)
+    {
+      if (std::int32_t c = cache_cols[k]; last_seen[c] != i)
+      {
+        last_seen[c] = i;
+        row.push_back(c);
+      }
+    }
     if (i < local_size0)
     {
-      row.insert(row.end(), recv_cols_bucketed.begin() + recv_offsets[i],
-                 recv_cols_bucketed.begin() + recv_offsets[i + 1]);
+      for (std::int64_t k = recv_offsets[i]; k < recv_offsets[i + 1]; ++k)
+      {
+        if (std::int32_t c = recv_cols_bucketed[k]; last_seen[c] != i)
+        {
+          last_seen[c] = i;
+          row.push_back(c);
+        }
+      }
     }
 
     std::ranges::sort(row);
-    auto it_end = std::ranges::unique(row).begin();
 
     // Find position of first "off-diagonal" column
-    _off_diagonal_offsets[i] = std::distance(
-        row.begin(),
-        std::ranges::lower_bound(row.begin(), it_end, local_size1));
+    _off_diagonal_offsets[i] = std::ranges::distance(
+        row.begin(), std::ranges::lower_bound(row, local_size1));
 
-    _edges.insert(_edges.end(), row.begin(), it_end);
-    _offsets.push_back(_offsets.back() + std::distance(row.begin(), it_end));
+    _edges.insert(_edges.end(), row.begin(), row.end());
+    _offsets.push_back(_offsets.back() + row.size());
   }
-
-  // Clear cache
-  std::vector<std::int32_t>().swap(_cache_rows);
-  std::vector<std::int32_t>().swap(_cache_cols);
 
   _edges.shrink_to_fit();
 

@@ -172,7 +172,7 @@ auto build_entity_list
           // algorithm in this hot loop. Only the sort step itself is
           // replaced; the quadrilateral re-orientation logic below is
           // unchanged.
-          auto cmpswap = [&](std::size_t a, std::size_t b)
+          auto cmpswap = [&perm, &global_vertices](std::size_t a, std::size_t b)
           {
             if (global_vertices[perm[a]] > global_vertices[perm[b]])
               std::swap(perm[a], perm[b]);
@@ -207,7 +207,7 @@ auto build_entity_list
         std::ranges::copy(elist, elist_sorted.begin());
         if (elist_sorted.size() == 4)
         {
-          auto cmpswap_val = [&](std::size_t a, std::size_t b)
+          auto cmpswap_val = [&elist_sorted](std::size_t a, std::size_t b)
           {
             if (elist_sorted[a] > elist_sorted[b])
               std::swap(elist_sorted[a], elist_sorted[b]);
@@ -336,7 +336,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   // Create a symmetric neighbor_comm from vertex_ranks
 
   // Get sharing ranks for each vertex
-  graph::AdjacencyList<int> vertex_ranks = vertex_map.index_to_dest_ranks();
+  auto [data, offsets] = vertex_map.index_to_dest_ranks();
+  graph::AdjacencyList<int> vertex_ranks(std::move(data), std::move(offsets));
 
   // Create unique list of ranks that share vertices (owners of)
   std::vector<int> ranks(vertex_ranks.array().begin(),

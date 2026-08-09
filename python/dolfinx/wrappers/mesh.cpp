@@ -1,5 +1,5 @@
-// Copyright (C) 2017-2025 Chris N. Richardson, Garth N. Wells and Jørgen S.
-// Dokken
+// Copyright (C) 2017-2026 Chris N. Richardson, Garth N. Wells, Jørgen S. Dokken
+// and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -9,6 +9,7 @@
 #include "dolfinx_wrappers/MPICommWrapper.h"
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/EntityMap.h>
@@ -32,6 +33,7 @@
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <span>
+#include <string>
 
 namespace nb = nanobind;
 
@@ -75,8 +77,9 @@ void mesh(nb::module_& m)
       .value("pyramid", dolfinx::mesh::CellType::pyramid)
       .value("prism", dolfinx::mesh::CellType::prism)
       .value("hexahedron", dolfinx::mesh::CellType::hexahedron)
-      .def_prop_ro("name", [](const nb::object& obj)
-                   { return nb::getattr(obj, "__name__"); });
+      .def_prop_ro(
+          "name", [](const nb::object& obj)
+          { return nb::cast<std::string>(nb::getattr(obj, "__name__")); });
 
   m.def("to_type", &dolfinx::mesh::to_type, nb::arg("cell"));
   m.def("to_string", &dolfinx::mesh::to_string, nb::arg("type"));
@@ -125,12 +128,8 @@ void mesh(nb::module_& m)
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>& cells,
          std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
       {
-        std::vector<std::span<const std::int64_t>> cell_span(cells.size());
-        for (std::size_t i = 0; i < cells.size(); ++i)
-        {
-          cell_span[i]
-              = std::span<const std::int64_t>(cells[i].data(), cells[i].size());
-        }
+        std::vector<std::span<const std::int64_t>> cell_span
+            = vec_of_spans(cells);
         return dolfinx::mesh::build_dual_graph(
             comm.get(), cell_types, cell_span, max_facet_to_cell_links,
             num_threads);
@@ -326,23 +325,33 @@ void mesh(nb::module_& m)
       "create_topology",
       [](MPICommWrapper comm,
          const std::vector<dolfinx::mesh::CellType>& cell_type,
-         const std::vector<std::vector<std::int64_t>>& cells,
-         const std::vector<std::vector<std::int64_t>>& original_cell_index,
-         const std::vector<std::vector<int>>& ghost_owners,
-         const std::vector<std::int64_t>& boundary_vertices, int num_threads)
+         std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
+             cells,
+         std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
+             original_cell_index,
+         std::vector<nb::ndarray<const int, nb::ndim<1>, nb::c_contig>>
+             ghost_owners,
+         nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
+             boundary_vertices,
+         int num_threads)
       {
-        std::vector<std::span<const std::int64_t>> cells_span(cells.begin(),
-                                                              cells.end());
-        std::vector<std::span<const std::int64_t>> original_cell_index_span(
-            original_cell_index.begin(), original_cell_index.end());
-        std::vector<std::span<const int>> ghost_owners_span(
-            ghost_owners.begin(), ghost_owners.end());
+        std::vector<std::span<const std::int64_t>> cells_span
+            = vec_of_spans(cells);
+        std::vector<std::span<const std::int64_t>> original_cell_index_span
+            = vec_of_spans(original_cell_index);
+        std::vector<std::span<const int>> ghost_owners_span
+            = vec_of_spans(ghost_owners);
+
         std::span<const std::int64_t> boundary_vertices_span(
-            boundary_vertices.begin(), boundary_vertices.end());
+            boundary_vertices.data(), boundary_vertices.size());
         return dolfinx::mesh::create_topology(
             comm.get(), cell_type, cells_span, original_cell_index_span,
             ghost_owners_span, boundary_vertices_span, num_threads);
       },
+      nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells").noconvert(),
+      nb::arg("original_cell_index").noconvert(),
+      nb::arg("ghost_owners").noconvert(),
+      nb::arg("boundary_vertices").noconvert(), nb::arg("num_threads"),
       "Create a Topology object.");
 
   m.def("compute_mixed_cell_pairs", &dolfinx::mesh::compute_mixed_cell_pairs);

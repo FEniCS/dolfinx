@@ -29,13 +29,6 @@ namespace dolfinx::fem
 template <dolfinx::scalar T, std::floating_point U>
 class Function;
 
-template <typename T>
-concept MDSpan = requires(T x, std::size_t idx) {
-  x(idx, idx);
-  { x.extent(0) } -> std::integral;
-  { x.extent(1) } -> std::integral;
-};
-
 /// @brief Compute the evaluation points in the physical space at which
 /// an expression should be computed to interpolate it in a finite
 /// element space.
@@ -99,7 +92,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
     }
 
     // Push forward coordinates (X -> x)
-    std::size_t offset = std::distance(cells.begin(), cell_it);
+    std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
       for (std::size_t j = 0; j < gdim; ++j)
@@ -290,7 +283,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 
   // Insert values received from neighborhood communicator in output
   // span
-  std::ranges::fill(recv_values, T(0));
+  std::ranges::fill(recv_values, T{0});
   for (std::size_t i = 0; i < comm_to_output.size(); i++)
   {
     auto vals = std::next(recv_values.begin(), comm_to_output[i]);
@@ -307,7 +300,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 /// f1(x0), f0(x1), f1(x1), ...).
 /// @param[out] coeffs Degrees of freedom to compute.
 /// @param[in] bs The block size.
-template <MDSpan U, MDSpan V, dolfinx::scalar T>
+template <dolfinx::MDSpanRank2 U, dolfinx::MDSpanRank2 V, dolfinx::scalar T>
 void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 {
   // Geometry (real) scalar type, taken from the interpolation operator Pi
@@ -760,7 +753,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
       std::size_t row = 0;
       std::size_t rowstart = 0;
       std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
-      std::size_t offset = std::distance(cells.begin(), cell_it);
+      std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
       for (int k = 0; k < element_bs; ++k)
       {
         if (k - rowstart > row)
@@ -798,7 +791,7 @@ void point_evaluation(const FiniteElement<U>& element, bool symmetric,
     // Loop over cells
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
-      std::size_t offset = std::distance(cells.begin(), cell_it);
+      std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
       std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
       for (int k = 0; k < element_bs; ++k)
       {
@@ -881,7 +874,7 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   std::vector<T> coeffs_b(num_scalar_dofs);
   for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
   {
-    std::size_t offset = std::distance(cells.begin(), cell_it);
+    std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
     std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
     for (int k = 0; k < element_bs; ++k)
     {
@@ -1046,7 +1039,7 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
       detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
     }
 
-    const std::size_t offset = std::distance(cells.begin(), cell_it);
+    const std::size_t offset = std::ranges::distance(cells.begin(), cell_it);
     std::span<const std::int32_t> dofs = dofmap.cell_dofs(*cell_it);
     for (int k = 0; k < element_bs; ++k)
     {

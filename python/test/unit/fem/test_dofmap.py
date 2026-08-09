@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2019 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
+# Copyright (C) 2009-2026 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -14,6 +14,7 @@ import pytest
 
 import dolfinx
 import ufl
+from basix import LatticeType, create_lattice
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
 from dolfinx.fem import functionspace
@@ -447,3 +448,68 @@ def test_empty_rank_collapse():
     V = functionspace(mesh, el)
     V_0, _ = V.sub(0).collapse()
     assert V.dofmap.index_map.size_local == V_0.dofmap.index_map.size_local
+
+
+@pytest.mark.parametrize("gdim", [2, 3])
+@pytest.mark.parametrize("is_affine", [True, False])
+def test_push_forward_pull_back(gdim: int, is_affine: bool):
+    if gdim == 2:
+        ct = CellType.triangle if is_affine else CellType.quadrilateral
+        mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, ct)
+    else:
+        ct = CellType.tetrahedron if is_affine else CellType.hexahedron
+        mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, ct)
+    dtype = mesh.geometry.x.dtype
+    basix_cell = mesh.basix_cell()
+    ref_point = create_lattice(basix_cell, 9, LatticeType.equispaced, exterior=True).astype(dtype)
+
+    def warp(x):
+        return np.array(
+            [x[0] + 0.5 * x[1] * x[0], 2 * (x[0] + x[1]), 1.5 * x[2] + 0.8 * x[1] * x[0] * x[2]]
+        )
+
+    # Warp mesh to make it truly non-affine
+    mesh.geometry.x[:] = warp(mesh.geometry.x.T).T
+
+    # Push point forward
+    num_cells_local = mesh.topology.index_map(mesh.topology.dim).size_local
+    scratch_size = mesh.geometry.cmaps[0].pull_back_working_size(gdim)
+    working_array = np.zeros(scratch_size, dtype=dtype)
+
+    for cell in range(num_cells_local):
+        # Push forward
+        cell_geometry = mesh.geometry.x[mesh.geometry.dofmaps[0][cell], :gdim]
+        x = mesh.geometry.cmaps[0].push_forward(
+            ref_point.reshape(ref_point.shape[0], gdim), cell_geometry
+        )
+        # Pull back
+        x_pullback = mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)
+        tol = np.sqrt(np.finfo(dtype).eps)
+        assert np.allclose(x_pullback, ref_point, rtol=tol, atol=tol)
+
+
+@pytest.mark.parametrize("gdim", [2, 3])
+@pytest.mark.parametrize("is_affine", [True, False])
+def test_undersized_working_array(gdim: int, is_affine: bool):
+    """Test that an error is raised when the working memory is too small."""
+    if gdim == 2:
+        ct = CellType.triangle if is_affine else CellType.quadrilateral
+        mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, ct)
+    else:
+        ct = CellType.tetrahedron if is_affine else CellType.hexahedron
+        mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, ct)
+
+    # Create a small working memory array
+    dtype = mesh.geometry.x.dtype
+    working_array = np.zeros(1, dtype=dtype)
+
+    # Try to pull back with insufficient working memory
+    ref_point = np.full((1, mesh.topology.dim), 0.0, dtype=dtype)
+    if mesh.topology.index_map(mesh.topology.dim).size_local > 0:
+        cell_geometry = mesh.geometry.x[mesh.geometry.dofmaps[0][0], :gdim]
+        x = mesh.geometry.cmaps[0].push_forward(
+            ref_point.reshape(ref_point.shape[0], gdim), cell_geometry
+        )
+        # Pull back
+        with pytest.raises(RuntimeError):
+            mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)

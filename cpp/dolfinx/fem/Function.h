@@ -571,6 +571,10 @@ public:
     std::vector<geometry_type> detJ(xshape[0]);
     std::vector<geometry_type> det_scratch(2 * gdim * tdim);
 
+    // Scratch space for pull-back of point coordinates for non-affine cells
+    std::vector<geometry_type> pull_back_scratch(
+        cmap.is_affine() ? 0 : cmap.pull_back_working_size(gdim));
+
     // Prepare geometry data in each cell
     for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
     {
@@ -588,7 +592,7 @@ public:
           coord_dofs(i, j) = x_g[pos + j];
       }
 
-      std::size_t p = std::distance(cells.begin(), cell_it);
+      std::size_t p = std::ranges::distance(cells.begin(), cell_it);
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x[p * xshape[1] + j];
 
@@ -616,7 +620,8 @@ public:
       else
       {
         // Pull-back physical point xp to reference coordinate Xp
-        cmap.pull_back_nonaffine(Xp, xp, coord_dofs, tol, maxit);
+        cmap.pull_back_nonaffine(Xp, xp, coord_dofs, pull_back_scratch, tol,
+                                 maxit);
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
         CoordinateElement<geometry_type>::compute_jacobian(dphi, coord_dofs,
                                                            _J);
@@ -674,7 +679,7 @@ public:
 
       // Permute the reference basis function values to account for the
       // cell's orientation
-      std::size_t p = std::distance(cells.begin(), cell_it);
+      std::size_t p = std::ranges::distance(cells.begin(), cell_it);
       apply_dof_transformation(
           std::span(basis_derivatives_reference_values_b.data()
                         + p * num_basis_values,

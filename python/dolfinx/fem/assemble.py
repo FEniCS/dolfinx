@@ -343,7 +343,7 @@ def _assemble_matrix_csr(
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
     """
-    bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
+    _bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
 
     if constants is None:
         constants = pack_constants(a)
@@ -351,12 +351,14 @@ def _assemble_matrix_csr(
     if coeffs is None:
         coeffs = pack_coefficients(a)
 
-    _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, bcs)
+    _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, _bcs)  # type: ignore[arg-type]
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
     if a.function_spaces[0] is a.function_spaces[1]:
-        _cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], bcs, diag)
+        typing.cast(typing.Any, _cpp.fem.insert_diagonal)(
+            A._cpp_object, a.function_spaces[0], _bcs, diag
+        )
     return A
 
 
@@ -478,4 +480,4 @@ def apply_lifting(
 
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
-    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)
+    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)  # type: ignore[arg-type]

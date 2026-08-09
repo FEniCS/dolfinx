@@ -22,6 +22,7 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 using namespace dolfinx;
@@ -99,10 +100,10 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
 }
 //------------------------------------------------------------------------------
 mesh::CellPartitionFunction mesh::create_cell_partitioner(
-    mesh::GhostMode ghost_mode, const graph::partition_fn& partfn,
+    mesh::GhostMode ghost_mode, graph::partition_fn partfn,
     std::optional<std::int32_t> max_facet_to_cell_links)
 {
-  return [partfn, ghost_mode, max_facet_to_cell_links](
+  return [partfn = std::move(partfn), ghost_mode, max_facet_to_cell_links](
              MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
              const std::vector<std::span<const std::int64_t>>& cells)
              -> graph::AdjacencyList<std::int32_t>

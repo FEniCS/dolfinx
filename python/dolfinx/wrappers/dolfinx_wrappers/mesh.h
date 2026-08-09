@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2024 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -51,10 +51,7 @@ auto create_cell_partitioner_py(Functor&& p)
              const std::vector<dolfinx::mesh::CellType>& cell_types,
              std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb)
   {
-    std::vector<std::span<const std::int64_t>> cells;
-    std::ranges::transform(
-        cells_nb, std::back_inserter(cells), [](auto& c)
-        { return std::span<const std::int64_t>(c.data(), c.size()); });
+    std::vector<std::span<const std::int64_t>> cells = vec_of_spans(cells_nb);
     return p(comm.get(), n, cell_types, cells);
   };
 }
@@ -89,18 +86,24 @@ void declare_meshtags(nb::module_& m, const std::string& type)
           [](dolfinx::mesh::MeshTags<T>* self,
              std::shared_ptr<const dolfinx::mesh::Topology> topology, int dim,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
-             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
+             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values,
+             std::string name)
           {
             std::vector<std::int32_t> indices_vec(
                 indices.data(), indices.data() + indices.size());
             std::vector<T> values_vec(values.data(),
                                       values.data() + values.size());
             new (self) dolfinx::mesh::MeshTags<T>(
-                topology, dim, std::move(indices_vec), std::move(values_vec));
+                topology, dim, std::move(indices_vec), std::move(values_vec),
+                std::move(name));
           })
       .def_prop_ro("dtype", [](const dolfinx::mesh::MeshTags<T>&)
                    { return dolfinx_wrappers::numpy_dtype_v<T>; })
-      .def_rw("name", &dolfinx::mesh::MeshTags<T>::name)
+      .def_prop_rw(
+          "name",
+          [](const dolfinx::mesh::MeshTags<T>& self) { return self.name(); },
+          [](dolfinx::mesh::MeshTags<T>& self, std::string name)
+          { self.name(name); })
       .def_prop_ro("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_prop_ro("topology", &dolfinx::mesh::MeshTags<T>::topology)
       .def_prop_ro(
@@ -126,10 +129,12 @@ void declare_meshtags(nb::module_& m, const std::string& type)
   m.def("create_meshtags",
         [](std::shared_ptr<const dolfinx::mesh::Topology> topology, int dim,
            const dolfinx::graph::AdjacencyList<std::int32_t>& entities,
-           nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
+           nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values,
+           std::string name)
         {
           return dolfinx::mesh::create_meshtags(
-              topology, dim, entities, std::span(values.data(), values.size()));
+              topology, dim, entities, std::span(values.data(), values.size()),
+              std::move(name));
         });
   std::string pyfunc_name = "transfer_meshtags_to_submesh_" + type;
   m.def(
@@ -199,19 +204,19 @@ void declare_mesh(nb::module_& m, std::string type)
                    "Geometric dimension")
       .def_prop_ro(
           "dofmaps",
-          [](nb::object self)
+          [](const dolfinx::mesh::Geometry<T>& self)
           {
-            auto& obj = nb::cast<dolfinx::mesh::Geometry<T>&>(self);
-            auto dms = obj.dofmaps();
-            nb::list result;
+            auto dms = self.dofmaps();
+            std::vector<nb::ndarray<const std::int32_t, nb::numpy>> result;
+            result.reserve(dms.size());
             for (auto& dm : dms)
             {
-              result.append(nb::ndarray<const std::int32_t, nb::numpy>(
-                  dm.data_handle(), {dm.extent(0), dm.extent(1)}, self));
+              result.push_back(nb::ndarray<const std::int32_t, nb::numpy>(
+                  dm.data_handle(), {dm.extent(0), dm.extent(1)}));
             }
             return result;
           },
-          "The geometry dofmaps")
+          nb::rv_policy::reference_internal, "The geometry dofmaps")
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_prop_ro(
           "x",

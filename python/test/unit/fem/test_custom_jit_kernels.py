@@ -268,11 +268,11 @@ def test_cffi_assembly():
         ffibuilder.compile(verbose=True)
 
     mesh.comm.Barrier()
-    from _cffi_kernelA import ffi, lib
+    from _cffi_kernelA import ffi, lib  # type: ignore[import-not-found]
 
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
 
-    ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
+    ptrA = int(ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA")))
     active_coeffs = np.array([], dtype=np.int8)
     integrals = {IntegralType.cell: [(0, ptrA, cells, active_coeffs)]}
     a = Form(
@@ -281,7 +281,7 @@ def test_cffi_assembly():
         )
     )
 
-    ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
+    ptrL = int(ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL")))
     integrals = {IntegralType.cell: [(0, ptrL, cells, active_coeffs)]}
     L = Form(
         _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object)

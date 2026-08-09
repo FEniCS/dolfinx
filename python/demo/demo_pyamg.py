@@ -55,7 +55,7 @@ if MPI.COMM_WORLD.size > 1:
 
 
 # +
-def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
+def poisson_problem(dtype: type[np.floating] | type[np.complexfloating], solver_type: str) -> None:
     """Solve a 3D Poisson problem using Ruge-Stuben algebraic multigrid.
 
     Args:
@@ -84,7 +84,7 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str) -> None:
 
     dofs = locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
-    bc = dirichletbc(value=dtype(0.0), dofs=dofs, V=V)  # type: ignore
+    bc = dirichletbc(value=dtype(0.0), dofs=dofs, V=V)
 
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     x = ufl.SpatialCoordinate(mesh)

@@ -585,8 +585,10 @@ FiniteElement<T>::dof_permutation_fn(bool inverse, bool scalar_element) const
         dims.push_back(_sub_elements[i]->space_dimension());
       }
 
-      return [dims, sub_element_functions](std::span<std::int32_t> doflist,
-                                           std::uint32_t cell_permutation)
+      return
+          [dims = std::move(dims),
+           sub_element_functions = std::move(sub_element_functions)](
+              std::span<std::int32_t> doflist, std::uint32_t cell_permutation)
       {
         std::size_t start = 0;
         for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
@@ -605,10 +607,10 @@ FiniteElement<T>::dof_permutation_fn(bool inverse, bool scalar_element) const
           = _sub_elements.front()->dof_permutation_fn(inverse);
       int dim = _sub_elements.front()->space_dimension();
       int bs = _bs;
-      return
-          [sub_element_function, bs, subdofs = std::vector<std::int32_t>(dim)](
-              std::span<std::int32_t> doflist,
-              std::uint32_t cell_permutation) mutable
+      return [sub_element_function = std::move(sub_element_function), bs,
+              subdofs = std::vector<std::int32_t>(dim)](
+                 std::span<std::int32_t> doflist,
+                 std::uint32_t cell_permutation) mutable
       {
         for (int k = 0; k < bs; ++k)
         {

@@ -663,7 +663,8 @@ void write_function(
       if (num_components < std::pow(3, rank))
         num_components = std::pow(3, rank);
 
-      auto add_field = [&](const std::string& name, int size)
+      auto add_field
+          = [&data_pnode, &num_components](const std::string& name, int size)
       {
         std::string type = std::format("Float{}", size);
         pugi::xml_node data_node = data_pnode.append_child("PDataArray");
