@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <boost/sort/sort.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/local_range.h>
 #include <dolfinx/common/log.h>
@@ -75,7 +76,14 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices,
                                        dest_to_index.end(), num_threads);
     }
     else
-      std::ranges::sort(dest_to_index);
+    {
+      // Grouping below depends only on the dest rank (element 0), so a
+      // radix sort keyed on that element alone (rather than a
+      // comparison sort of the whole pair) avoids comparisons against
+      // the position column, which never breaks a tie the grouping
+      // relies on.
+      dolfinx::radix_sort(dest_to_index, [](const auto& e) { return e[0]; });
+    }
   }
 
   // Build list of neighbour dest ranks and count number of indices to
@@ -725,26 +733,34 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 /// @param[in] num_local_nodes Number of nodes to retain in the graph.
 /// Typically used to trim ghost nodes.
 /// @param[in] global_to_local Sorted array of (global, local) indices.
+/// @param[in] global_to_local_map Hash map holding the same
+/// (global, local) pairs as `global_to_local`, for O(1)-average
+/// lookups in the non-identity case (built by the caller once and
+/// reused for every cell type / thread, rather than rebuilt here).
+/// Unused, and may be empty, when `global_to_local` is identity (the
+/// common single-rank case).
 std::vector<std::int32_t> convert_to_local_indexing(
     std::span<const std::int64_t> g,
     std::span<const std::pair<std::int64_t, std::int32_t>> global_to_local,
+    const boost::unordered_flat_map<std::int64_t, std::int32_t>&
+        global_to_local_map,
     int num_threads)
 {
   // global_to_local is sorted with unique .first values (one entry per
   // vertex). If it is also contiguous starting at 0 (always true with a
   // single MPI rank), then position == .first, so .second can be read
-  // directly instead of via a binary-search lookup in this hot loop
-  // over every cell-vertex incidence.
+  // directly instead of via a hash-map lookup in this hot loop over
+  // every cell-vertex incidence.
   const bool is_identity
       = !global_to_local.empty() and global_to_local.front().first == 0
         and global_to_local.back().first
                 == static_cast<std::int64_t>(global_to_local.size()) - 1;
 
   auto transform
-      = [is_identity](std::span<std::int32_t> data,
-                      std::span<const std::int64_t> g,
-                      std::span<const std::pair<std::int64_t, std::int32_t>>
-                          global_to_local)
+      = [is_identity, &global_to_local_map](
+            std::span<std::int32_t> data, std::span<const std::int64_t> g,
+            std::span<const std::pair<std::int64_t, std::int32_t>>
+                global_to_local)
   {
     if (is_identity)
     {
@@ -769,13 +785,10 @@ std::vector<std::int32_t> convert_to_local_indexing(
     else
     {
       std::ranges::transform(g, data.begin(),
-                             [&global_to_local](auto i)
+                             [&global_to_local_map](auto i)
                              {
-                               auto it = std::ranges::lower_bound(
-                                   global_to_local, i, std::ranges::less(),
-                                   [](auto& e) { return e.first; });
-                               assert(it != global_to_local.end());
-                               assert(it->first == i);
+                               auto it = global_to_local_map.find(i);
+                               assert(it != global_to_local_map.end());
                                return it->second;
                              });
     }
@@ -1245,14 +1258,25 @@ Topology mesh::create_topology(
     }
     else
     {
+      // Non-contiguous case (the common one for num_ranks > 1): a
+      // hash map from global vertex index to its position in
+      // `owned_vertices` turns each of the many millions of
+      // cell-vertex incidence lookups below into an O(1) average
+      // lookup, versus an O(log(owned_vertices.size())) binary search
+      // repeated for every incidence (most vertices are touched by
+      // several cells, so the same key is looked up many times).
+      boost::unordered_flat_map<std::int64_t, std::int32_t> vertex_to_pos;
+      vertex_to_pos.reserve(owned_vertices.size());
+      for (std::size_t i = 0; i < owned_vertices.size(); ++i)
+        vertex_to_pos.emplace(owned_vertices[i], static_cast<std::int32_t>(i));
+
       for (std::span<const std::int64_t> cells_t : cells)
       {
         for (auto vtx : cells_t)
         {
-          if (auto it = std::ranges::lower_bound(owned_vertices, vtx);
-              it != owned_vertices.end() and *it == vtx)
+          if (auto it = vertex_to_pos.find(vtx); it != vertex_to_pos.end())
           {
-            std::size_t pos = std::distance(owned_vertices.begin(), it);
+            std::int32_t pos = it->second;
             if (local_vertex_indices[pos] < 0)
               local_vertex_indices[pos] = v++;
           }
@@ -1308,6 +1332,40 @@ Topology mesh::create_topology(
   std::vector<int> ghost_vertex_owners;
   std::vector<std::int32_t> local_vertex_indices_unowned(
       unowned_vertices.size(), -1);
+
+  // Built once and kept in sync below rather than rebuilt-and-resorted
+  // after every round of unowned-vertex numbering: `.first` (the
+  // vertex's original global index) never changes once a vertex is
+  // placed in `owned_vertices`/`unowned_vertices`, so a later update to
+  // an unowned vertex's local index can patch its existing entry
+  // in-place (a lower_bound on the already-sorted array) instead of
+  // re-deriving and re-sorting the whole owned+unowned array again.
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices;
+  global_to_local_vertices.reserve(owned_vertices.size()
+                                   + unowned_vertices.size());
+  std::ranges::transform(
+      owned_vertices, local_vertex_indices,
+      std::back_inserter(global_to_local_vertices),
+      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t>
+      { return {idx0, idx1}; });
+  std::ranges::transform(
+      unowned_vertices, local_vertex_indices_unowned,
+      std::back_inserter(global_to_local_vertices),
+      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t>
+      { return {idx0, idx1}; });
+  std::ranges::sort(global_to_local_vertices);
+
+  auto patch_global_to_local = [&global_to_local_vertices](
+                                    std::int64_t idx_global,
+                                    std::int32_t idx_local)
+  {
+    auto it = std::ranges::lower_bound(global_to_local_vertices, idx_global,
+                                       std::ranges::less(),
+                                       [](auto& e) { return e.first; });
+    assert(it != global_to_local_vertices.end() and it->first == idx_global);
+    it->second = idx_local;
+  };
+
   {
     common::Timer timer6("Topology: 6");
 
@@ -1319,27 +1377,14 @@ Topology mesh::create_topology(
       assert(it != unowned_vertices.end() and *it == idx_global);
       std::size_t pos = std::distance(unowned_vertices.begin(), it);
       assert(local_vertex_indices_unowned[pos] < 0);
-      local_vertex_indices_unowned[pos] = v++;
+      local_vertex_indices_unowned[pos] = v;
+      patch_global_to_local(idx_global, v);
+      ++v;
       ghost_vertices.push_back(unowned_vertex_data[i + 1]); // New global index
       ghost_vertex_owners.push_back(unowned_vertex_data[i + 2]); // Owning rank
     }
 
     {
-      // TODO: avoid building global_to_local_vertices
-      std::vector<std::pair<std::int64_t, std::int32_t>>
-          global_to_local_vertices;
-      global_to_local_vertices.reserve(owned_vertices.size()
-                                       + unowned_vertices.size());
-      std::ranges::transform(
-          owned_vertices, local_vertex_indices,
-          std::back_inserter(global_to_local_vertices), [](auto idx0, auto idx1)
-          { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
-      std::ranges::transform(
-          unowned_vertices, local_vertex_indices_unowned,
-          std::back_inserter(global_to_local_vertices), [](auto idx0, auto idx1)
-          { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
-      std::ranges::sort(global_to_local_vertices);
-
       // Send (from the ghost cell owner) and receive global indices for
       // ghost vertices that are not on the process boundary. Data is
       // communicated via ghost cells. Note that the ghost cell owner
@@ -1369,7 +1414,9 @@ Topology mesh::create_topology(
           if (std::size_t pos = std::distance(unowned_vertices.begin(), it0);
               local_vertex_indices_unowned[pos] < 0)
           {
-            local_vertex_indices_unowned[pos] = v++;
+            local_vertex_indices_unowned[pos] = v;
+            patch_global_to_local(global_idx_old, v);
+            ++v;
             ghost_vertices.push_back(data[1]);
             ghost_vertex_owners.push_back(data[2]);
           }
@@ -1378,31 +1425,29 @@ Topology mesh::create_topology(
     }
   }
 
-  // TODO: avoid building global_to_local_vertices
-
-  // Convert input cell topology to local vertex indexing
-  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices;
-  global_to_local_vertices.reserve(owned_vertices.size()
-                                   + unowned_vertices.size());
-  std::ranges::transform(
-      owned_vertices, local_vertex_indices,
-      std::back_inserter(global_to_local_vertices),
-      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t>
-      { return {idx0, idx1}; });
-  std::ranges::transform(
-      unowned_vertices, local_vertex_indices_unowned,
-      std::back_inserter(global_to_local_vertices),
-      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t>
-      { return {idx0, idx1}; });
-  std::ranges::sort(global_to_local_vertices);
-
   common::Timer timer7("Topology: 7");
+
+  // Built once and shared across cell types/threads below. Skipped for
+  // the identity case (single rank): there, convert_to_local_indexing
+  // never consults the map, so building it would be pure overhead.
+  boost::unordered_flat_map<std::int64_t, std::int32_t> global_to_local_map;
+  if (!global_to_local_vertices.empty()
+      and (global_to_local_vertices.front().first != 0
+          or global_to_local_vertices.back().first
+                 != static_cast<std::int64_t>(global_to_local_vertices.size())
+                        - 1))
+  {
+    global_to_local_map.reserve(global_to_local_vertices.size());
+    for (auto& [idx_global, idx_local] : global_to_local_vertices)
+      global_to_local_map.emplace(idx_global, idx_local);
+  }
+
   std::vector<std::vector<std::int32_t>> _cells_local_idx;
   _cells_local_idx.reserve(cells.size());
   for (std::span<const std::int64_t> c : cells)
   {
-    _cells_local_idx.push_back(
-        convert_to_local_indexing(c, global_to_local_vertices, num_threads));
+    _cells_local_idx.push_back(convert_to_local_indexing(
+        c, global_to_local_vertices, global_to_local_map, num_threads));
   }
 
   timer7.stop();
