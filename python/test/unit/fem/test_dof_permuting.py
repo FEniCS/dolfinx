@@ -28,7 +28,7 @@ def randomly_ordered_mesh(cell_type):
     elif cell_type == "tetrahedron" or cell_type == "hexahedron":
         gdim = 3
     else:
-        raise ValueError(f"Unknown cell type: {cell_type}")
+        raise ValueError(f"Unsupported {cell_type=}")
 
     domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,), dtype=default_real_type))
     # Create a mesh
@@ -141,7 +141,7 @@ def randomly_ordered_mesh(cell_type):
                 np.ndarray((0, 3), dtype=default_real_type),
             )
         else:
-            raise ValueError(f"Unknown cell type: {cell_type}")
+            raise ValueError(f"Unsupported {cell_type=}")
 
 
 @pytest.mark.parametrize("space_type", [("P", 1), ("P", 2), ("P", 3), ("P", 4)])

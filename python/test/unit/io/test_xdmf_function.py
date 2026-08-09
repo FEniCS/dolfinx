@@ -35,7 +35,7 @@ def mesh_factory(tdim, n):
     elif tdim == 3:
         return create_unit_cube(MPI.COMM_WORLD, n, n, n)
     else:
-        raise ValueError(f"Unknown topological dimension: {tdim}")
+        raise ValueError(f"Unsupported {tdim=}")
 
 
 # --- Function

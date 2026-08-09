@@ -1950,7 +1950,6 @@ def test_ridge_integrals_rank1_2D(cell_type, ghost_mode, dtype):
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
-    msh = None
     msh = mesh.create_unit_square(
         comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
     )

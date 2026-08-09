@@ -33,7 +33,7 @@ def mesh_factory(tdim, n):
     elif tdim == 3:
         return create_unit_cube(MPI.COMM_WORLD, n, n, n)
     else:
-        raise ValueError(f"Unknown topological dimension: {tdim}")
+        raise ValueError(f"Unsupported {tdim=}")
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
