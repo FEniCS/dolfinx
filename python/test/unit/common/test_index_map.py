@@ -11,8 +11,8 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-import dolfinx
 from dolfinx import cpp as _cpp
+from dolfinx.common import IndexMap
 from dolfinx.mesh import GhostMode, create_unit_square
 
 
@@ -38,9 +38,7 @@ def test_sub_index_map():
     src_ranks = dest_ranks
 
     # Create index map
-    map = dolfinx.common.IndexMap(
-        comm, map_local_size, [dest_ranks, src_ranks], map_ghosts, src_ranks
-    )
+    map = IndexMap(comm, map_local_size, [dest_ranks, src_ranks], map_ghosts, src_ranks)
     assert map.size_global == map_local_size * comm.size
 
     # Build list for each rank of the first (myrank + myrank % 2) local
@@ -97,7 +95,7 @@ def test_index_map_ghost_lifetime():
         [local_size * dest[r] + r % local_size for r in range(len(dest))], dtype=np.int64
     )
     src = dest
-    map = dolfinx.common.IndexMap(comm, local_size, [dest, src], map_ghosts, src)
+    map = IndexMap(comm, local_size, [dest, src], map_ghosts, src)
     assert map.size_global == local_size * comm.size
 
     # Test global to local map
@@ -171,7 +169,7 @@ def test_create_submap_owner_change():
         owners = np.array([comm.rank - 1, comm.rank + 1], dtype=np.int32)
         submap_indices = np.array([0, 2, 3], dtype=np.int32)
 
-    imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners, 1)
+    imap = IndexMap(comm, local_size, ghosts, owners, 1)
     sub_imap, sub_imap_to_imap = _cpp.common.create_sub_index_map(imap, submap_indices, True)
 
     if comm.rank == 0:
@@ -236,7 +234,7 @@ def test_sub_index_map_multiple_possible_owners():
         submap_size_local_expected = 0
         submap_num_ghosts_expected = 0
 
-    imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners, 0)
+    imap = IndexMap(comm, local_size, ghosts, owners, 0)
 
     # Create a submap where both processes 0 and 1 include the index on process 2,
     # but process 2 does not include it
