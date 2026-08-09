@@ -393,7 +393,7 @@ void mesh(nb::module_& m)
       [](const dolfinx::mesh::Topology& t)
       {
         return dolfinx_wrappers::as_nbarray(
-            dolfinx::mesh::exterior_facet_indices(t));
+      nb::arg("topology"), nb::arg("entities"), nb::arg("d0"), nb::arg("d1"));
       },
       nb::arg("topology"));
   m.def(
