@@ -5,7 +5,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Linear algebra functionality."""
 
-from typing import Generic, TypeVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -15,6 +17,9 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 from dolfinx.typing import Scalar
+
+if TYPE_CHECKING:
+    from petsc4py import PETSc
 
 __all__ = [
     "InsertMode",
@@ -44,6 +49,7 @@ class Vector(Generic[_T]):
         | _cpp.la.Vector_int32
         | _cpp.la.Vector_int64
     )
+    _petsc_x: PETSc.Vec | None
 
     def __init__(
         self,
@@ -90,7 +96,7 @@ class Vector(Generic[_T]):
         return self._cpp_object.array  # type: ignore[return-value]
 
     @property
-    def petsc_vec(self):
+    def petsc_vec(self) -> PETSc.Vec:
         """PETSc vector holding the entries of the vector.
 
         Upon first call, this function creates a PETSc ``Vec`` object

@@ -350,7 +350,7 @@ class Geometry(typing.Generic[Real]):
             DeprecationWarning,
             stacklevel=2,
         )
-        return self._cpp_object.dofmaps[0]
+        return self.dofmaps[0]
 
     def index_map(self) -> _IndexMap:
         """Index map for the geometry points (nodes) distribution."""
@@ -437,7 +437,7 @@ class Mesh(typing.Generic[Real]):
 
     def basix_cell(self) -> basix.CellType:
         """Return the Basix cell type."""
-        return getattr(basix.CellType, self.topology.cell_name())
+        return typing.cast(basix.CellType, getattr(basix.CellType, self.topology.cell_name()))
 
     def h(self, dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[Real]:
         """Geometric size measure of cell entities.
@@ -467,7 +467,20 @@ class Mesh(typing.Generic[Real]):
 class MeshTags:
     """Mesh tags associate data (markers) with some mesh entities."""
 
-    def __init__(self, meshtags):
+    _cpp_object: (
+        _cpp.mesh.MeshTags_int8
+        | _cpp.mesh.MeshTags_int32
+        | _cpp.mesh.MeshTags_int64
+        | _cpp.mesh.MeshTags_float64
+    )
+
+    def __init__(
+        self,
+        meshtags: _cpp.mesh.MeshTags_int8
+        | _cpp.mesh.MeshTags_int32
+        | _cpp.mesh.MeshTags_int64
+        | _cpp.mesh.MeshTags_float64,
+    ):
         """Initialize tags from a C++ MeshTags object.
 
         Args:
@@ -722,6 +735,9 @@ def transfer_meshtag(
     Returns:
         Mesh tags on the refined mesh.
     """
+    if not isinstance(meshtag._cpp_object, _cpp.mesh.MeshTags_int32):
+        raise TypeError("transfer_meshtag only supports MeshTags with int32 values.")
+
     if meshtag.dim == meshtag.topology.dim:
         mt = _cpp.refinement.transfer_cell_meshtag(
             meshtag._cpp_object, msh1.topology._cpp_object, parent_cell
@@ -1431,7 +1447,7 @@ def transfer_meshtags_to_submesh(
             f"MeshTags with dtype {dtype} not supported for transfer to submesh."
         )
     cpp_tag = ftype(
-        entity_tag._cpp_object,
+        entity_tag._cpp_object,  # type: ignore[arg-type]
         submesh.topology._cpp_object,
         vertex_to_parent._cpp_object,
         cell_to_parent._cpp_object,

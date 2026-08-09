@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2025 Garth N. Wells, Nathan Sime and Jørgen S. Dokken
+# Copyright (C) 2018-2026 Garth N. Wells, Nathan Sime and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -229,7 +229,7 @@ def assemble_vector(
 ) -> PETSc.Vec: ...
 
 
-@functools.singledispatch  # type: ignore[attr-defined]
+@functools.singledispatch
 def assemble_vector(
     L: Form | Sequence[Form],
     constants: npt.NDArray | Sequence[npt.NDArray] | None = None,
@@ -289,7 +289,7 @@ def assemble_vector(
     """
     b = create_vector(_extract_function_spaces(L), kind=kind)  # type: ignore
     dolfinx.la.petsc._zero_vector(b)
-    return _assemble_vector_petsc(b, L, constants, coeffs)
+    return typing.cast(PETSc.Vec, _assemble_vector_petsc(b, L, constants, coeffs))
 
 
 @assemble_vector.register  # type: ignore[attr-defined]
@@ -537,10 +537,10 @@ def _assemble_matrix_petsc(
                 raise ValueError(
                     "Cannot have a entire {'row' if index == 0 else 'column'} of a full of None"
                 )
-        is0 = _cpp.la.petsc.create_index_sets(  # type: ignore[attr-defined]
+        is0 = _cpp.la.petsc.create_index_sets(
             [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[0]]  # type: ignore
         )
-        is1 = _cpp.la.petsc.create_index_sets(  # type: ignore[attr-defined]
+        is1 = _cpp.la.petsc.create_index_sets(
             [(Vsub.dofmaps[0].index_map, Vsub.dofmaps[0].index_map_bs) for Vsub in V[1]]  # type: ignore
         )
 
@@ -696,8 +696,8 @@ def apply_lifting(
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
                         zip(a, offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True)
                     ):
-                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore[call-overload, arg-type]
-                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore[index, call-overload, assignment, arg-type]
+                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore[call-overload]
+                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore[index, call-overload, assignment]
                         const_ = [
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val
                             for val in const
@@ -753,10 +753,10 @@ def set_bc(
     elif b.getType() == PETSc.Vec.Type.NEST:
         _b = b.getNestSubVecs()
         x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()  # type: ignore
-        for b_sub, bc, x_sub in zip(_b, bcs, x0, strict=True):  # type: ignore[assignment, call-overload, arg-type]
-            if not isinstance(bc, Sequence):
+        for b_sub, bc_block, x_sub in zip(_b, bcs, x0, strict=True):  # type: ignore[call-overload]
+            if not isinstance(bc_block, Sequence):
                 raise ValueError("Expected a sequence of DirichletBC for a nested vector.")
-            set_bc(b_sub, bc, x_sub, alpha)
+            set_bc(b_sub, bc_block, x_sub, alpha)
     else:  # block vector
         offset0, _ = b.getAttr("_blocks")  # type: ignore
         b_array = b.getArray(readonly=False)
@@ -1046,8 +1046,8 @@ class LinearProblem(typing.Generic[_U]):
                 apply_lifting(self.b, a, bcs=bcs1)
                 dolfinx.la.petsc._ghost_update(
                     self.b,
-                    PETSc.InsertMode.ADD,  # type: ignore
-                    PETSc.ScatterMode.REVERSE,  # type: ignore
+                    PETSc.InsertMode.ADD,  # type: ignore[arg-type]
+                    PETSc.ScatterMode.REVERSE,  # type: ignore[arg-type]
                 )
                 bcs0 = _bcs_by_block(_extract_function_spaces(L), self.bcs)
                 dolfinx.fem.petsc.set_bc(self.b, bcs0)
@@ -1058,8 +1058,8 @@ class LinearProblem(typing.Generic[_U]):
                 apply_lifting(self.b, [a], bcs=[self.bcs])
                 dolfinx.la.petsc._ghost_update(
                     self.b,
-                    PETSc.InsertMode.ADD,  # type: ignore
-                    PETSc.ScatterMode.REVERSE,  # type: ignore
+                    PETSc.InsertMode.ADD,  # type: ignore[arg-type]
+                    PETSc.ScatterMode.REVERSE,  # type: ignore[arg-type]
                 )
                 for bc in self.bcs:
                     bc.set(self.b.array_w)
@@ -1068,19 +1068,19 @@ class LinearProblem(typing.Generic[_U]):
 
         # Solve linear system and update ghost values in the solution
         self.solver.solve(self.b, self.x)
-        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
         dolfinx.fem.petsc.assign(self.x, self.u)  # type: ignore
         return self.u
 
     @property
     def L(self) -> Form | Sequence[Form]:
         """The compiled linear form representing the left-hand side."""
-        return self._L
+        return typing.cast(Form | Sequence[Form], self._L)
 
     @property
     def a(self) -> Form | Sequence[Sequence[Form]]:
         """The compiled bilinear form representing the right-hand side."""
-        return self._a
+        return typing.cast(Form | Sequence[Sequence[Form]], self._a)
 
     @property
     def preconditioner(self) -> Form | Sequence[Sequence[Form]] | None:
@@ -1171,7 +1171,7 @@ def assemble_residual(
             format of this argument.
     """
     # Update input vector before assigning
-    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
 
     # Assign the input vector to the unknowns
     assign(x, u)  # type: ignore
@@ -1194,15 +1194,15 @@ def assemble_residual(
             raise ValueError("Expected a sequence of forms for a block/nest residual.")
         bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)
         apply_lifting(b, jacobian, bcs=bcs1, x0=x, alpha=-1.0)  # type: ignore
-        dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
+        dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
         bcs0 = _bcs_by_block(_extract_function_spaces(residual), bcs)
         set_bc(b, bcs0, x0=x, alpha=-1.0)
     else:
         # Single form lifting
         apply_lifting(b, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)
-        dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore
+        dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
         set_bc(b, bcs, x0=x, alpha=-1.0)
-    dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+    dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
 
 
 def assemble_jacobian(
@@ -1245,7 +1245,7 @@ def assemble_jacobian(
     """
     # Copy existing solution into the function used in the residual and
     # Jacobian
-    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
     assign(x, u)  # type: ignore
 
     # Assemble Jacobian
@@ -1398,7 +1398,7 @@ class NonlinearProblem(typing.Generic[_U]):
         )
 
         if J is None:
-            J = derivative_block(F, u)  # type: ignore
+            J = typing.cast(typing.Any, derivative_block)(F, u)
 
         self._J = _create_form(
             J,
@@ -1512,7 +1512,7 @@ class NonlinearProblem(typing.Generic[_U]):
 
         # Solve problem
         self.solver.solve(None, self.x)
-        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore
+        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
 
         # Copy solution back to function
         assign(self.x, self.u)  # type: ignore
@@ -1529,12 +1529,12 @@ class NonlinearProblem(typing.Generic[_U]):
     @property
     def F(self) -> Form | Sequence[Form]:
         """The compiled residual."""
-        return self._F
+        return typing.cast(Form | Sequence[Form], self._F)
 
     @property
     def J(self) -> Form | Sequence[Sequence[Form]]:
         """The compiled Jacobian."""
-        return self._J
+        return typing.cast(Form | Sequence[Sequence[Form]], self._J)
 
     @property
     def preconditioner(self) -> Form | Sequence[Sequence[Form]] | None:
@@ -1658,12 +1658,12 @@ class NewtonSolverNonlinearProblem:
     @property
     def L(self) -> Form:
         """The compiled linear form (the residual form)."""
-        return self._L
+        return typing.cast(Form, self._L)
 
     @property
     def a(self) -> Form:
         """The compiled bilinear form (the Jacobian form)."""
-        return self._a
+        return typing.cast(Form, self._a)
 
     def form(self, x: PETSc.Vec) -> None:
         """Function called before the residual or Jacobian is computed.
@@ -1882,7 +1882,7 @@ class numba_utils:
     try:
         import petsc4py.PETSc as _PETSc
 
-        import llvmlite as _llvmlite  # type: ignore[import-untyped]
+        import llvmlite as _llvmlite
         import numba as _numba
 
         _llvmlite.binding.load_library_permanently(str(get_petsc_lib()))

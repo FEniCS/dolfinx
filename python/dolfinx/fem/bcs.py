@@ -280,7 +280,7 @@ def dirichletbc(
     if not isinstance(value, Function | Constant):
         value = Constant(V_used.mesh, value)
 
-    _value = value._cpp_object  # type: ignore[assignment]
+    _value = value._cpp_object
 
     if V is not None:
         try:

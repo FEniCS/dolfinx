@@ -134,7 +134,7 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 # {py:class}`DirichletBC <dolfinx.fem.DirichletBC>` class that
 # represents the boundary condition:
 
-bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
+bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)  # type: ignore[operator]
 
 # Next, the variational problem is defined:
 
