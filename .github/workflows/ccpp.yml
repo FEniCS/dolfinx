@@ -33,7 +33,7 @@ jobs:
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install linting tools
-        run: pip install clang-format gersemi ruff
+        run: pip install clang-format gersemi mypy ruff
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
@@ -56,6 +56,13 @@ jobs:
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
       - name: gersemi
         run: gersemi --check .
+      - name: Run mypy
+        run: |
+          cd python/
+          mypy dolfinx
+          mypy demo
+          mypy test
+
 
   ccpp-build:
     runs-on: ubuntu-24.04
