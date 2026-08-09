@@ -66,7 +66,8 @@ def test_tabulate_dofs(mesh_factory):
         assert len(np.intersect1d(dofs0, dofs1)) == 0
         assert len(np.intersect1d(dofs0, dofs2)) == 0
         assert len(np.intersect1d(dofs1, dofs2)) == 0
-        assert np.array_equal(np.append(dofs1, dofs2), dofs3)
+        combined_dofs = np.append(dofs1, dofs2)
+        assert np.array_equal(combined_dofs, dofs3)
 
 
 def test_entity_dofs(mesh):
@@ -227,7 +228,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
     view into the data; in particular test lifetime of data owner.
     """
-    V = functionspace(mesh, "P", 1)
+    V = functionspace(mesh, ("P", 1))
     dofmap = V.dofmap
     index_map = dofmap().index_map
 

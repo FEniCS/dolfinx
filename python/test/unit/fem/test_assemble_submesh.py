@@ -453,7 +453,7 @@ def test_disjoint_submeshes():
         switch = mapped_cell_1 > mapped_cell_0
         # Order restriction on one side
         ordered_integration_data = integration_data.reshape(-1, 4).copy()
-        if True in switch:
+        if switch.any():
             ordered_integration_data[switch, [0, 1, 2, 3]] = ordered_integration_data[
                 switch, [2, 3, 0, 1]
             ]

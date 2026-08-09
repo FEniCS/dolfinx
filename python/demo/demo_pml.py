@@ -41,7 +41,7 @@ try:
     from dolfinx.io import VTXWriter
 except ImportError:
     print("This demo requires DOLFINx to be configured with adios2.")
-    exit(0)
+    sys.exit(0)
 
 
 try:
@@ -58,7 +58,7 @@ except ModuleNotFoundError:
 
 if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
-    exit(0)
+    sys.exit(0)
 
 # # Mesh generation with GMSH
 # The mesh is made up by a central circle (the wire), and an external

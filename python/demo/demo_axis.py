@@ -55,7 +55,7 @@ except ModuleNotFoundError:
 # therefore have been compiled with complex scalars.
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo can only be executed when PETSc using complex scalars.")
-    exit(0)
+    sys.exit(0)
 
 # -
 
