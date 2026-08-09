@@ -178,13 +178,23 @@ constexpr void radix_sort(R&& range, P proj = {})
 /// @param[in] x The flattened 2D array to compute the permutation array
 /// for (row-major storage).
 /// @param[in] shape1 The number of columns of `x`.
+/// @param[in] ncols Number of leading columns of `x` (columns `0` to
+/// `ncols - 1`) to sort by; column `0` is the most significant. `0`
+/// (the default) sorts by all `shape1` columns. Pass a value less than
+/// `shape1` to exclude trailing payload columns (e.g. an attached
+/// index carried alongside the sort key) from the comparison entirely
+/// -- rows that agree on the leading `ncols` columns compare equal and
+/// keep their relative (stable) order, saving one radix-sort pass per
+/// excluded column.
 /// @return The permutation array such that `x[perm[i]] <= x[perm[i
-/// +1]]`.
+/// +1]]` when compared on the leading `ncols` columns.
 /// @pre `x.size()` must be a multiple of `shape1`.
+/// @pre `ncols <= shape1`.
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.
 template <typename T, int BITS = 16>
-std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
+std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1,
+                                        std::size_t ncols = 0)
 {
   static_assert(std::is_integral_v<T>, "Integral required.");
 
@@ -193,16 +203,20 @@ std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1)
 
   assert(shape1 > 0);
   assert(x.size() % shape1 == 0);
+  if (ncols == 0)
+    ncols = shape1;
+  assert(ncols <= shape1);
   const std::size_t shape0 = x.size() / shape1;
   std::vector<std::int32_t> perm(shape0);
   std::iota(perm.begin(), perm.end(), 0);
 
-  // Sort by each column, right to left. Col 0 has the most significant
-  // "digit".
+  // Sort by each of the leading `ncols` columns, right to left. Col 0
+  // has the most significant "digit"; any columns from `ncols` to
+  // `shape1 - 1` are excluded from the key.
   std::vector<T> column(shape0);
-  for (std::size_t i = 0; i < shape1; ++i)
+  for (std::size_t i = 0; i < ncols; ++i)
   {
-    std::size_t col = shape1 - 1 - i;
+    std::size_t col = ncols - 1 - i;
     for (std::size_t j = 0; j < shape0; ++j)
       column[j] = x[j * shape1 + col];
     radix_sort<BITS>(perm, [column = std::cref(column)](auto index)

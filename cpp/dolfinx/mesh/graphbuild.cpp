@@ -187,12 +187,14 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     }
     // A radix sort on the flattened data is used in place of a generic
     // comparison sort, as dest_to_index can have hundreds of thousands
-    // of entries for a large mesh.
+    // of entries for a large mesh. Sort by the dest-rank column (0)
+    // only -- grouping below only depends on dest rank, so sorting by
+    // the facet-position column (1) too would be a wasted second pass.
     std::span<const std::int32_t> flat(
         reinterpret_cast<const std::int32_t*>(dest_to_index.data()),
         2 * dest_to_index.size());
     std::vector<std::int32_t> perm
-        = dolfinx::sort_by_perm<std::int32_t, 16>(flat, 2);
+        = dolfinx::sort_by_perm<std::int32_t, 16>(flat, 2, 1);
     std::vector<std::array<std::int32_t, 2>> sorted(dest_to_index.size());
     for (std::size_t i = 0; i < perm.size(); ++i)
       sorted[i] = dest_to_index[perm[i]];
@@ -692,7 +694,12 @@ mesh::build_local_dual_graph(
         }
         else
           std::sort(facet_c.begin(), it);
-        std::fill(it, facet_c.end(), padding_value);
+        // Pad unused vertex columns only -- the trailing column is
+        // overwritten with the cell index immediately below, so
+        // including it here would be a write that's always clobbered
+        // (for a single cell type it's the common case: the fill range
+        // is then empty and this call is a no-op).
+        std::fill(it, std::prev(facet_c.end()), padding_value);
         facet_c.back() = c + cell_offset;
       }
     }
@@ -757,7 +764,13 @@ mesh::build_local_dual_graph(
   }
   else
   {
-    perm = dolfinx::sort_by_perm(std::span<const std::int64_t>(facets), shape1);
+    // Sort by the vertex columns only (`max_vertices_per_facet` of the
+    // `shape1` columns) -- the trailing column is the attached cell
+    // index, which the matching step below never compares on, so
+    // including it in the sort key would cost a wasted radix-sort pass
+    // over the whole facet array for no behavioural difference.
+    perm = dolfinx::sort_by_perm(std::span<const std::int64_t>(facets), shape1,
+                                 max_vertices_per_facet);
   }
 
   timer3.stop();
