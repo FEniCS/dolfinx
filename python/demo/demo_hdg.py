@@ -24,6 +24,7 @@
 # - Assemble mixed systems with multiple, related meshes
 
 # +
+import sys
 import typing
 
 from mpi4py import MPI
@@ -253,7 +254,7 @@ except PETSc.Error as e:
     if e.ierr == 92:  # type: ignore[attr-defined]
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)
-        exit(0)
+        sys.exit(0)
     else:
         raise e
 
