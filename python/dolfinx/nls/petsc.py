@@ -60,12 +60,12 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         self.setF(problem.F, self._b)
         self.set_form(problem.form)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destroy PETSc objects owned by the solver."""
         for obj in filter(lambda obj: obj is not None, (self._A, self._b)):
             obj.destroy()
 
-    def solve(self, u: fem.Function):  # type: ignore[override]
+    def solve(self, u: fem.Function) -> tuple[int, bool]:  # type: ignore[override]
         """Solve non-linear problem into function ``u``.
 
         Returns the number of iterations and if the solver converged.
@@ -84,7 +84,7 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         """Residual vector."""
         return self._b
 
-    def setP(self, P: types.FunctionType, Pmat: PETSc.Mat):  # type: ignore[override]
+    def setP(self, P: types.FunctionType, Pmat: PETSc.Mat) -> None:  # type: ignore[override]
         """Set the function for computing the preconditioner matrix.
 
         Args:

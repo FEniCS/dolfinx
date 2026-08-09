@@ -129,7 +129,15 @@ class DirichletBC(Generic[Scalar]):
         | _cpp.fem.DirichletBC_float64
     )
 
-    def __init__(self, bc, V: FunctionSpace, g: Function | Constant):
+    def __init__(
+        self,
+        bc: _cpp.fem.DirichletBC_complex64
+        | _cpp.fem.DirichletBC_complex128
+        | _cpp.fem.DirichletBC_float32
+        | _cpp.fem.DirichletBC_float64,
+        V: FunctionSpace,
+        g: Function | Constant,
+    ) -> None:
         """Initialise a Dirichlet boundary condition.
 
         Note:
@@ -304,12 +312,18 @@ def bcs_by_block(
     ``space[i]``.
     """
 
-    def _bc_space(V, bcs):
+    def _bc_space(
+        V: FunctionSpace, bcs: Iterable[DirichletBC[Scalar]]
+    ) -> list[DirichletBC[Scalar]]:
         """Return list of bcs that have the same space as V."""
         # V may be a wrapped FunctionSpace or a raw cpp FunctionSpace
         # (Form.function_spaces returns the latter), so normalise both
         # sides to cpp objects before calling the cpp-level contains().
         V_cpp = V._cpp_object if isinstance(V, FunctionSpace) else V
-        return [bc for bc in bcs if V_cpp.contains(bc.function_space._cpp_object)]
+        return [
+            bc
+            for bc in bcs
+            if V_cpp.contains(bc.function_space._cpp_object)  # type: ignore[arg-type]
+        ]
 
     return [_bc_space(V, bcs) if V is not None else [] for V in spaces]

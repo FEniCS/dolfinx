@@ -235,7 +235,7 @@ set_bc(b, bcs0)
 
 # Setup the solver
 
-ksp = PETSc.KSP().create(msh.comm)
+ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")

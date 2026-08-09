@@ -67,7 +67,7 @@ _cpp.common.init_logging(sys.argv)
 del _cpp, sys
 
 
-def get_include(user=False):
+def get_include(user: bool = False) -> str:
     import os
 
     d = os.path.dirname(__file__)

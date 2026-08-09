@@ -212,7 +212,7 @@ opts["mg_levels_pc_type"] = "jacobi"  # type: ignore[index]
 opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10  # type: ignore[index]
 
 # Create PETSc Krylov solver and turn convergence monitoring on
-solver = PETSc.KSP().create(msh.comm)
+solver = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
 solver.setFromOptions()
 
 # Set matrix operator

@@ -51,7 +51,7 @@ def create_sparsity_pattern(a: dolfinx.fem.forms.Form) -> SparsityPattern:
     return _create_sparsity_pattern(a._cpp_object)
 
 
-def build_sparsity_pattern(pattern: SparsityPattern, a: dolfinx.fem.forms.Form):
+def build_sparsity_pattern(pattern: SparsityPattern, a: dolfinx.fem.forms.Form) -> None:
     """Build a sparsity pattern from a bilinear form.
 
     Args:
@@ -204,7 +204,7 @@ def compute_integration_domains(
     integral_type: IntegralType,
     topology: dolfinx.mesh.Topology,
     entities: np.ndarray,
-):
+) -> npt.NDArray[np.int32]:
     """Determine compute integration entities.
 
     This function returns a list ``[(id, entities)]``. For cell

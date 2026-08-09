@@ -102,7 +102,7 @@ markers = [
 
 [tool.mypy]
 # Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
-disallow_untyped_defs = false
+disallow_untyped_defs = true
 disallow_any_unimported = true
 no_implicit_optional = true
 check_untyped_defs = true
@@ -115,9 +115,44 @@ ignore_missing_imports = false
 # patterns; check_untyped_defs and no_implicit_optional are not enforced
 # there.
 [[tool.mypy.overrides]]
-module = ["conftest", "unit.*"]
+module = ["conftest", "unit.*", "test"]
+disallow_untyped_defs = false
 no_implicit_optional = false
 check_untyped_defs = false
+
+# Demos are lightly typed by convention (see AGENTS.md) and exempt from the
+# stricter disallow_untyped_defs enforced on the library. mypy module
+# patterns only allow '*' as a whole dotted component (not as a "demo_*"
+# prefix match), so each demo module is listed explicitly.
+[[tool.mypy.overrides]]
+module = [
+      "demo_axis",
+      "demo_biharmonic",
+      "demo_cahn-hilliard",
+      "demo_comm-pattern",
+      "demo_elasticity",
+      "demo_gmsh",
+      "demo_half-loaded-waveguide",
+      "demo_hdg",
+      "demo_helmholtz",
+      "demo_interpolation-io",
+      "demo_lagrange-variants",
+      "demo_matrix-free-petsc",
+      "demo_mixed-poisson",
+      "demo_mixed-topology",
+      "demo_navier-stokes",
+      "demo_pml",
+      "demo_poisson-matrix-free",
+      "demo_poisson",
+      "demo_pyamg",
+      "demo_pyvista",
+      "demo_scattering-boundary-conditions",
+      "demo_static-condensation",
+      "demo_stokes",
+      "demo_tnt-elements",
+      "demo_types",
+]
+disallow_untyped_defs = false
 
 # Sister FEniCS projects (ufl, ffcx) ship no py.typed/stubs; gmsh, llvmlite,
 # pyamg, slepc4py, pyvista, pyvistaqt and networkx are untyped optional

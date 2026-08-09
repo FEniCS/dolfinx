@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import typing
 
+from mpi4py import MPI as _MPI
+
 import numpy as np
 import numpy.typing as npt
 
@@ -41,7 +43,11 @@ class PointOwnershipData(typing.Generic[Real]):
 
     _cpp_object: _cpp.geometry.PointOwnershipData_float32 | _cpp.geometry.PointOwnershipData_float64
 
-    def __init__(self, ownership_data):
+    def __init__(
+        self,
+        ownership_data: _cpp.geometry.PointOwnershipData_float32
+        | _cpp.geometry.PointOwnershipData_float64,
+    ) -> None:
         """Wrap a C++ PointOwnershipData."""
         self._cpp_object = ownership_data
 
@@ -71,7 +77,9 @@ class BoundingBoxTree(typing.Generic[Real]):
 
     _cpp_object: _cpp.geometry.BoundingBoxTree_float32 | _cpp.geometry.BoundingBoxTree_float64
 
-    def __init__(self, tree):
+    def __init__(
+        self, tree: _cpp.geometry.BoundingBoxTree_float32 | _cpp.geometry.BoundingBoxTree_float64
+    ) -> None:
         """Wrap a C++ BoundingBoxTree.
 
         Note:
@@ -96,7 +104,7 @@ class BoundingBoxTree(typing.Generic[Real]):
         """
         return self._cpp_object.bbox_coordinates  # type: ignore[return-value]
 
-    def get_bbox(self, i) -> npt.NDArray[Real]:
+    def get_bbox(self, i: int) -> npt.NDArray[Real]:
         """Get lower and upper corners of the ith bounding box.
 
         Args:
@@ -109,7 +117,7 @@ class BoundingBoxTree(typing.Generic[Real]):
         """
         return self._cpp_object.get_bbox(i)  # type: ignore[return-value]
 
-    def create_global_tree(self, comm) -> BoundingBoxTree[Real]:
+    def create_global_tree(self, comm: _MPI.Comm) -> BoundingBoxTree[Real]:
         """Create a global bounding box tree."""
         return BoundingBoxTree(self._cpp_object.create_global_tree(comm))
 
