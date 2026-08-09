@@ -7,6 +7,7 @@
 #include "partitioners.h"
 #include <algorithm>
 #include <cstdint>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -73,21 +74,26 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     }
   }
 
-  // Sort node_to_dest (lexicographically, by the 3 std::int64_t columns)
-  // and de-duplicate. A radix sort on the flattened data is used in
-  // place of a generic comparison sort, as node_to_dest can have tens of
-  // millions of entries for a large mesh.
+  // De-duplicate exact (dest, node1, partition) triples with a single
+  // hash-set pass -- O(1)-average per insert, no sort needed for
+  // dedup -- then sort only by the dest-rank column (0), which is all
+  // the grouping below depends on, rather than by all 3 columns (a
+  // radix sort on the flattened data is still used for that single
+  // column, as node_to_dest can have tens of millions of entries for a
+  // large mesh).
   {
+    boost::unordered_flat_set<std::array<std::int64_t, 3>> unique_set(
+        node_to_dest.begin(), node_to_dest.end());
+    node_to_dest.assign(unique_set.begin(), unique_set.end());
+
     std::span<const std::int64_t> flat(
         reinterpret_cast<const std::int64_t*>(node_to_dest.data()),
         3 * node_to_dest.size());
     std::vector<std::int32_t> perm
-        = dolfinx::sort_by_perm<std::int64_t, 16>(flat, 3);
+        = dolfinx::sort_by_perm<std::int64_t, 16>(flat, 3, 1);
     std::vector<std::array<std::int64_t, 3>> sorted(node_to_dest.size());
     for (std::size_t i = 0; i < perm.size(); ++i)
       sorted[i] = node_to_dest[perm[i]];
-    auto [unique_end, range_end] = std::ranges::unique(sorted);
-    sorted.erase(unique_end, range_end);
     node_to_dest = std::move(sorted);
   }
 
@@ -172,21 +178,25 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     local_node_to_dest.push_back({idx_local, d});
   }
 
-  // Sort local_node_to_dest (lexicographically, by the 2 int columns)
-  // and de-duplicate. As above, a radix sort on the flattened data is
-  // used in place of a generic comparison sort - this array is sized
-  // by the local node count plus received halo entries, and so can
-  // also have millions of entries for a large mesh.
+  // De-duplicate with a single hash-set pass, then sort only by the
+  // local-node-index column (0) -- the grouping below depends on that
+  // column alone. As above, a radix sort on the flattened data is used
+  // for that single column - this array is sized by the local node
+  // count plus received halo entries, and so can also have millions of
+  // entries for a large mesh.
   {
+    boost::unordered_flat_set<std::array<int, 2>> unique_set(
+        local_node_to_dest.begin(), local_node_to_dest.end());
+    local_node_to_dest.assign(unique_set.begin(), unique_set.end());
+
     std::span<const int> flat(
         reinterpret_cast<const int*>(local_node_to_dest.data()),
         2 * local_node_to_dest.size());
-    std::vector<std::int32_t> perm = dolfinx::sort_by_perm<int, 16>(flat, 2);
+    std::vector<std::int32_t> perm
+        = dolfinx::sort_by_perm<int, 16>(flat, 2, 1);
     std::vector<std::array<int, 2>> sorted(local_node_to_dest.size());
     for (std::size_t i = 0; i < perm.size(); ++i)
       sorted[i] = local_node_to_dest[perm[i]];
-    auto [unique_end, range_end] = std::ranges::unique(sorted);
-    sorted.erase(unique_end, range_end);
     local_node_to_dest = std::move(sorted);
   }
   // Compute offsets
