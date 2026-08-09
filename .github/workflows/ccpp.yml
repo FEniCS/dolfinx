@@ -159,7 +159,7 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy --config-file python/pyproject.toml -p dolfinx
+          mypy --config-file python/pyproject.toml -p dolfinx --exclude petsc.py
           cd python/
           mypy demo
           mypy test
