@@ -58,7 +58,6 @@ def run_scalar_test(mesh, V, degree, cg_solver):
     """
     dtype = mesh.geometry.x.dtype
     u, v = TrialFunction(V), TestFunction(V)
-    a = inner(grad(u), grad(v)) * dx
 
     # Get quadrature degree for bilinear form integrand (ignores effect of non-affine map)
     a = inner(grad(u), grad(v)) * dx(metadata={"quadrature_degree": -1})

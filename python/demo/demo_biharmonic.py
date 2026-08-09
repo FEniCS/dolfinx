@@ -154,6 +154,7 @@
 # We first import the modules and functions that the program uses:
 
 # +
+import sys
 from pathlib import Path
 
 from mpi4py import MPI
@@ -167,7 +168,7 @@ from dolfinx.mesh import CellType, GhostMode
 
 if np.issubdtype(default_real_type, np.float32):
     print("float32 not yet supported for this demo.")
-    exit(0)
+    sys.exit(0)
 # -
 
 
