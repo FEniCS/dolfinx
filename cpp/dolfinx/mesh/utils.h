@@ -1203,11 +1203,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
       spdlog::debug("Counting entity dofs, dim={}: {}", dim, dim_sum);
       if (dim_sum > 0)
-        topology.create_entities(dim);
+        topology.create_entities(dim, num_threads);
     }
 
     if (elements[i].needs_dof_permutations())
-      topology.create_entity_permutations();
+      topology.create_entity_permutations(num_threads);
   }
 
   // Build list of unique (global) node indices from cells1 and

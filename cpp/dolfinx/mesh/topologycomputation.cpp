@@ -811,32 +811,49 @@ compute_entities_by_key_matching(
               : sort_threaded(entity_list_sorted, num_vertices_per_entity,
                               num_threads);
 
-    std::vector<std::int32_t> entity(num_vertices_per_entity);
-    std::vector<std::int32_t> entity0(num_vertices_per_entity);
-    auto it = sort_order.begin();
-    while (it != sort_order.end())
+    // Mark, in parallel, which positions in sort_order start a new
+    // (unique) entity, i.e. differ from the preceding sorted entry.
+    // This comparison over the sorted permutation is the expensive
+    // part of numbering; the following scan to turn the marks into
+    // ids is comparison-free and left serial.
+    std::vector<std::uint8_t> new_entity(sort_order.size());
+    auto mark_new_entity
+        = [&entity_list_sorted, &sort_order, &new_entity,
+           num_vertices_per_entity](std::size_t i0, std::size_t i1)
     {
-      // First entity in new index range
-      std::size_t offset = (*it) * num_vertices_per_entity;
-      std::span e0(entity_list_sorted.data() + offset, num_vertices_per_entity);
+      for (std::size_t i = i0; i < i1; ++i)
+      {
+        if (i == 0)
+        {
+          new_entity[0] = 1;
+          continue;
+        }
+        auto e0 = std::next(entity_list_sorted.begin(),
+                            sort_order[i - 1] * num_vertices_per_entity);
+        auto e1 = std::next(entity_list_sorted.begin(),
+                            sort_order[i] * num_vertices_per_entity);
+        new_entity[i]
+            = !std::equal(e1, std::next(e1, num_vertices_per_entity), e0);
+      }
+    };
 
-      // Find iterator to next entity
-      auto it1 = std::find_if_not(
-          it, sort_order.end(),
-          [e0, &entity_list_sorted, num_vertices_per_entity](auto idx) -> bool
-          {
-            std::size_t offset = idx * num_vertices_per_entity;
-            return std::equal(e0.begin(), e0.end(),
-                              std::next(entity_list_sorted.begin(), offset));
-          });
+    {
+      std::vector<std::jthread> threads;
+      for (int i = 1; i < num_threads; ++i)
+      {
+        auto [i0, i1] = common::local_range(i, sort_order.size(), num_threads);
+        threads.emplace_back(mark_new_entity, i0, i1);
+      }
+      auto [i0, i1] = common::local_range(0, sort_order.size(), num_threads);
+      mark_new_entity(i0, i1);
+    }
 
-      // Set entity unique index
-      std::for_each(it, it1, [&entity_index, entity_count](auto idx)
-                    { entity_index[idx] = entity_count; });
-
-      // Advance iterator and increment entity
-      it = it1;
-      ++entity_count;
+    // Sequential scan: turn the run-start marks into unique entity
+    // ids and scatter them back to instance order via sort_order.
+    for (std::size_t i = 0; i < sort_order.size(); ++i)
+    {
+      entity_count += new_entity[i];
+      entity_index[sort_order[i]] = entity_count - 1;
     }
   }
 
