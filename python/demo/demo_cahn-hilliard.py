@@ -333,7 +333,7 @@ while t < T:
     t += dt
     _ = problem.solve()
     converged_reason = problem.solver.getConvergedReason()
-    assert converged_reason > 0
+    assert converged_reason > 0  # type: ignore[operator]
     num_iterations = problem.solver.getIterationNumber()
     print(f"Step {step}: {converged_reason=} {num_iterations=}")
     u0.x.array[:] = u.x.array
@@ -357,5 +357,5 @@ file.close()
 
 if have_pyvista:
     grid.point_data["c"] = u.x.array[dofs].real
-    screenshot = out_folder / "ch.png" if pv.OFF_SCREEN else None
+    screenshot = str(out_folder / "ch.png") if pv.OFF_SCREEN else None
     pv.plot(grid, show_edges=True, screenshot=screenshot)

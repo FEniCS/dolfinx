@@ -249,7 +249,8 @@ def nested_iterative_solver_high_level():
     # Set velocity part to zero and the pressure part to a non-zero
     # constant
     null_vecs = null_vec.getNestSubVecs()
-    null_vecs[0].set(0.0), null_vecs[1].set(1.0)
+    null_vecs[0].set(0.0)
+    null_vecs[1].set(1.0)
 
     # Normalize the vector that spans the nullspace, create a nullspace
     # object, and attach it to the matrix
@@ -258,14 +259,15 @@ def nested_iterative_solver_high_level():
     problem.A.setNullSpace(nsp)
 
     A00 = problem.A.getNestSubMatrix(0, 0)
-    A00.setOption(PETSc.Mat.Option.SPD, True)
+    A00.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
+    assert problem.P_mat is not None
     P00, P11 = problem.P_mat.getNestSubMatrix(0, 0), problem.P_mat.getNestSubMatrix(1, 1)
-    P00.setOption(PETSc.Mat.Option.SPD, True)
-    P11.setOption(PETSc.Mat.Option.SPD, True)
+    P00.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
+    P11.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
     u_h, p_h = problem.solve()
-    assert problem.solver.getConvergedReason() > 0
+    assert problem.solver.getConvergedReason() > 0  # type: ignore[operator]
     # Because left-hand side operator is only assembled during solve
     # we can only test the null space at this point.
     assert nsp.test(problem.A)
@@ -304,15 +306,15 @@ def nested_iterative_solver_low_level():
     # Even if the Dirichlet conditions are only enforced on the velocity
     # space, we pass it to the pressure assembler for consistency.
     P11 = assemble_matrix(a_p11, bcs=bcs)
-    P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
+    P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])  # type: ignore[list-item]
     P.assemble()
 
     A00 = A.getNestSubMatrix(0, 0)
-    A00.setOption(PETSc.Mat.Option.SPD, True)
+    A00.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
     P00, P11 = P.getNestSubMatrix(0, 0), P.getNestSubMatrix(1, 1)
-    P00.setOption(PETSc.Mat.Option.SPD, True)
-    P11.setOption(PETSc.Mat.Option.SPD, True)
+    P00.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
+    P11.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
     # Assemble right-hand side vector
     b = assemble_vector(L, kind="nest")
@@ -324,7 +326,7 @@ def nested_iterative_solver_low_level():
     # Sum contributions for vector entries that are shared across
     # parallel processes
     for b_sub in b.getNestSubVecs():
-        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
 
     # Set Dirichlet boundary condition values in the RHS vector
     bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
@@ -334,7 +336,8 @@ def nested_iterative_solver_low_level():
     # up to a constant)
     null_vec = create_vector(extract_function_spaces(L), "nest")
     null_vecs = null_vec.getNestSubVecs()
-    null_vecs[0].set(0.0), null_vecs[1].set(1.0)
+    null_vecs[0].set(0.0)
+    null_vecs[1].set(1.0)
     null_vec.normalize()
     nsp = PETSc.NullSpace().create(vectors=[null_vec])
     assert nsp.test(A)
@@ -347,7 +350,7 @@ def nested_iterative_solver_low_level():
     ksp.setType("minres")
     ksp.setTolerances(rtol=1e-9)
     ksp.getPC().setType("fieldsplit")
-    ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
+    ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)  # type: ignore[arg-type]
 
     # Define the matrix blocks in the preconditioner with the velocity
     # and pressure matrix index sets
@@ -417,7 +420,7 @@ def block_operators():
     b = assemble_vector(L, kind=PETSc.Vec.Type.MPI)
     bcs1 = bcs_by_block(extract_function_spaces(a, 1), bcs)
     apply_lifting(b, a, bcs=bcs1)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
     bcs0 = bcs_by_block(extract_function_spaces(L), bcs)
     set_bc(b, bcs0)
 
@@ -461,7 +464,7 @@ def block_iterative_solver():
     ksp.setTolerances(rtol=1e-9)
     ksp.setType("minres")
     ksp.getPC().setType("fieldsplit")
-    ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
+    ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)  # type: ignore[arg-type]
     ksp.getPC().setFieldSplitIS(("u", is_u), ("p", is_p))
 
     # Configure velocity and pressure sub-solvers
@@ -597,11 +600,11 @@ def mixed_direct():
 
     bcs1 = bcs_by_block(extract_function_spaces([[a]], 1), bcs)
     apply_lifting(b, [a], bcs=bcs1)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
 
     # Set Dirichlet boundary condition values in the RHS
     for bc in bcs:
-        bc.set(b.array_w)
+        bc.set(b.array_w)  # type: ignore[arg-type]
 
     # Create and configure solver
     ksp = PETSc.KSP().create(msh.comm)
@@ -625,7 +628,7 @@ def mixed_direct():
     try:
         ksp.solve(b, U.x.petsc_vec)
     except PETSc.Error as e:
-        if e.ierr == 92:
+        if e.ierr == 92:  # type: ignore[attr-defined]
             print("The required PETSc solver/preconditioner is not available. Exiting.")
             print(e)
             exit(0)

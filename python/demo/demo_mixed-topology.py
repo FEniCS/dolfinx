@@ -137,7 +137,12 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 dolfinx_elements = [
-    FiniteElement(_cpp.fem.FiniteElement_float64(e._e, None, False)) for e in elements
+    FiniteElement(
+        _cpp.fem.FiniteElement_float64(
+            typing.cast(basix._basixcpp.FiniteElement_float64, e._e), None, False
+        )
+    )
+    for e in elements
 ]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
 dofmaps = create_dofmaps(
@@ -147,7 +152,7 @@ dofmaps = create_dofmaps(
 )
 
 # Create C++ function space
-V_cpp = _cpp.fem.FunctionSpace_float64(  # type: ignore[call-overload]
+V_cpp = _cpp.fem.FunctionSpace_float64(
     mesh,
     [e._cpp_object for e in dolfinx_elements],  # type: ignore[misc]
     [dofmap._cpp_object for dofmap in dofmaps],

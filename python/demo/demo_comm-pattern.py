@@ -51,7 +51,7 @@ from dolfinx import fem, graph, mesh
 
 
 # +
-def plot_graph(G: nx.MultiGraph, egde_labels=False):
+def plot_graph(G: nx.DiGraph, egde_labels=False):  # type: ignore[no-any-unimported]
     """Plot the communication graph."""
     pos = nx.circular_layout(G)
     nx.draw_networkx_nodes(G, pos, alpha=0.75)
@@ -91,7 +91,7 @@ def plot_graph(G: nx.MultiGraph, egde_labels=False):
 
 
 # +
-def plot_bar(G: nx.MultiGraph):
+def plot_bar(G: nx.DiGraph):  # type: ignore[no-any-unimported]
     """Plot bars charts with the degree and weights.
 
     Degree is the number of 'out-edges' and the weights are the outward
@@ -185,13 +185,13 @@ if msh.comm.rank == 0:
     print("Test:", graph.comm_graph_data(comm_graph))
 
     # Create a NetworkX directed graph.
-    H = nx.DiGraph()
+    H: nx.DiGraph = nx.DiGraph()  # type: ignore[no-any-unimported]
     H.add_edges_from(adj_data)
     H.add_nodes_from(node_data)
 
     # Create graph with sorted nodes. This can be helpful for
     # visualisations.
-    G = nx.DiGraph()
+    G: nx.DiGraph = nx.DiGraph()  # type: ignore[no-any-unimported]
     G.add_nodes_from(sorted(H.nodes(data=True)))
     G.add_edges_from(H.edges(data=True))
 
@@ -210,7 +210,7 @@ if msh.comm.rank == 0:
 
     # Create graph with sorted nodes. This can be helpful for
     # visualisations.
-    G1 = nx.DiGraph()
+    G1: nx.DiGraph = nx.DiGraph()  # type: ignore[no-any-unimported]
     G1.add_nodes_from(sorted(H1.nodes(data=True)))
     G1.add_edges_from(H1.edges(data=True))
     print_stats(G1)
