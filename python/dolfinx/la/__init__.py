@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 import numpy as np
 import numpy.typing as npt
 
-import dolfinx
 from dolfinx import cpp as _cpp
+from dolfinx import has_petsc4py
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 from dolfinx.typing import Scalar
@@ -107,7 +107,7 @@ class Vector(Generic[_T]):
           When the object is destroyed it will destroy the underlying
           petsc4py vector automatically.
         """
-        if not dolfinx.has_petsc4py:
+        if not has_petsc4py:
             raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
         from dolfinx.la.petsc import create_vector_wrap

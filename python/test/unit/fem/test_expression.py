@@ -112,9 +112,9 @@ def test_rank1_hdiv(dtype):
             rows = dofmap0[i, :]
             cols = dofmap1[i, :]
             A_local = array_evaluated[i, :].reshape(len(rows), len(cols))
-            for i, row in enumerate(rows):
-                for j, col in enumerate(cols):
-                    A[row, col] = A_local[i, j]
+            for ii, row in enumerate(rows):
+                for jj, col in enumerate(cols):
+                    A[row, col] = A_local[ii, jj]
 
     dofmap_col = RT1.dofmap.list
     dofmap_row = vdP1.dofmap.list

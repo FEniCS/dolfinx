@@ -86,6 +86,8 @@ def unit_cell_points(cell_type, dtype):
             ],
             dtype=dtype,
         )
+    else:
+        raise ValueError(f"Unknown cell type: {cell_type}")
 
 
 def unit_cell(cell_type, dtype, random_order=True):

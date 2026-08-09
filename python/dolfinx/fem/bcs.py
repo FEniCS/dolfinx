@@ -18,20 +18,17 @@ from typing import ClassVar, Generic, overload
 import numpy as np
 import numpy.typing as npt
 
-import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.fem.function import Constant, Function, FunctionSpace
 from dolfinx.typing import Scalar
 
 
 @overload
-def locate_dofs_geometrical(V: dolfinx.fem.FunctionSpace, marker: Callable) -> np.ndarray: ...
+def locate_dofs_geometrical(V: FunctionSpace, marker: Callable) -> np.ndarray: ...
 @overload
+def locate_dofs_geometrical(V: Iterable[FunctionSpace], marker: Callable) -> list[np.ndarray]: ...
 def locate_dofs_geometrical(
-    V: Iterable[dolfinx.fem.FunctionSpace], marker: Callable
-) -> list[np.ndarray]: ...
-def locate_dofs_geometrical(
-    V: dolfinx.fem.FunctionSpace | Iterable[dolfinx.fem.FunctionSpace],
+    V: FunctionSpace | Iterable[FunctionSpace],
     marker: Callable,
 ) -> np.ndarray | list[np.ndarray]:
     """Locate degrees-of-freedom geometrically using a marker function.
@@ -62,20 +59,20 @@ def locate_dofs_geometrical(
 
 @overload
 def locate_dofs_topological(
-    V: dolfinx.fem.FunctionSpace,
+    V: FunctionSpace,
     entity_dim: int,
     entities: npt.NDArray[np.int32],
     remote: bool = True,
 ) -> np.ndarray: ...
 @overload
 def locate_dofs_topological(
-    V: Iterable[dolfinx.fem.FunctionSpace],
+    V: Iterable[FunctionSpace],
     entity_dim: int,
     entities: npt.NDArray[np.int32],
     remote: bool = True,
 ) -> list[np.ndarray]: ...
 def locate_dofs_topological(
-    V: dolfinx.fem.FunctionSpace | Iterable[dolfinx.fem.FunctionSpace],
+    V: FunctionSpace | Iterable[FunctionSpace],
     entity_dim: int,
     entities: npt.NDArray[np.int32],
     remote: bool = True,
@@ -155,7 +152,7 @@ class DirichletBC(Generic[Scalar]):
         return self._g
 
     @property
-    def function_space(self) -> dolfinx.fem.FunctionSpace:
+    def function_space(self) -> FunctionSpace:
         """Function space on which the boundary condition is defined."""
         return self._V
 
@@ -217,7 +214,7 @@ def dirichletbc(
     | float
     | complex,
     dofs: npt.NDArray[np.int32] | Sequence[npt.NDArray[np.int32]],
-    V: dolfinx.fem.FunctionSpace | None = None,
+    V: FunctionSpace | None = None,
 ) -> DirichletBC[Scalar]:
     """Representation of Dirichlet boundary condition.
 

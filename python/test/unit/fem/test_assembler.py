@@ -1131,7 +1131,6 @@ class TestPETScAssemblers:
             V2 = V.clone()
             u = Function(V)
             u.interpolate(lambda x: x[0] * x[1])
-            v = ufl.TestFunction(V)
             u2 = Function(V2)
             v2 = ufl.TestFunction(V2)
             c = Constant(mesh, PETSc.ScalarType(12.0))
@@ -1912,7 +1911,6 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
         comm, x[0] * v * ufl.dP, form_compiler_options={"scalar_type": dtype}
     )
     form = fem.create_form(compiled_form, [V], msh, subdomains, {}, {}, [])
-    expected_value_l = np.sum(msh.geometry.x[vertices, 0])
     expected_value_l = np.zeros(num_vertices, dtype=rdtype)
     expected_value_l[vertices] = msh.geometry.x[vertices, 0]
     value_l = fem.assemble_vector(form)
