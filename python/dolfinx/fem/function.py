@@ -825,7 +825,7 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
            `` True`` if ``V`` is contained in, or is the same as, this
            space.
         """
-        return self._cpp_object.contains(V._cpp_object)
+        return self._cpp_object.contains(V._cpp_object)  # type: ignore[arg-type]
 
     def __eq__(self, other: object) -> bool:
         """Comparison for equality."""
