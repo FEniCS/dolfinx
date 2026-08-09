@@ -371,7 +371,7 @@ void mesh(nb::module_& m)
       "Create default cell partitioner.");
   m.def(
       "create_cell_partitioner",
-      [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+      nb::arg("part"), nb::arg("mode"),
              MPICommWrapper comm, int nparts,
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
              bool ghosting)>& part,
