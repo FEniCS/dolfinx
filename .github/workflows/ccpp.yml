@@ -44,12 +44,6 @@ jobs:
           cd python/
           ruff check .
           ruff format --check .
-      - name: mypy checks
-        run: |
-          cd python/
-          mypy dolfinx
-          mypy demo
-          mypy test
       - name: clang-format C++ checks
         run: |
           cd cpp
@@ -62,6 +56,14 @@ jobs:
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
       - name: gersemi
         run: gersemi --check .
+      - name: mypy checks (no installed)
+        run: |
+          cd python/
+          MYPY_FLAGS="--ignore-missing-imports --disable-error-code no-any-unimported --disable-error-code unused-ignore --disable-error-code attr-defined --disable-error-code name-defined --disable-error-code no-any-return"
+          mypy $MYPY_FLAGS dolfinx
+          mypy $MYPY_FLAGS demo
+          mypy $MYPY_FLAGS test
+
 
   ccpp-build:
     runs-on: ubuntu-24.04
@@ -157,18 +159,20 @@ jobs:
       - name: Check Python configuration
         run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
-      - name: Run mypy
-        run: |
-          mypy --config-file python/pyproject.toml -p dolfinx # package mode, type checks installed dolfinx (working around name collision in python/ directory)
-          cd python/
-          mypy test
-          mypy demo
-
       - name: Install gmsh and pyvista (and dependencies)
         run: |
           sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
           sudo apt-get install libegl1
           pip install gmsh pyvista
+
+      - name: mypy checks (no petsc4py)
+        run: |
+          DISABLE_FLAGS="--disable-error-code import-not-found --disable-error-code no-any-unimported"
+          mypy --config-file python/pyproject.toml -p dolfinx --exclude 'petsc\.py|io/utils\.py' $DISABLE_FLAGS
+          cd python/
+          DISABLE_FLAGS="$DISABLE_FLAGS --disable-error-code attr-defined --disable-error-code name-defined --disable-error-code unused-ignore"
+          mypy demo $DISABLE_FLAGS
+          mypy test $DISABLE_FLAGS
 
       - name: Run demos (Python, serial)
         run: |
@@ -277,13 +281,6 @@ jobs:
       - name: Check Python configuration
         run: python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
-      - name: Run mypy
-        run: |
-          mypy --config-file python/pyproject.toml -p dolfinx --exclude superlu_dist.py
-          cd python/
-          mypy test
-        # mypy demo
-
       - name: Numpy version
         run: python -c "import numpy; print(numpy.__version__)"
 
@@ -296,6 +293,13 @@ jobs:
         run: |
           apt-get install libegl1 libxrender1
           pip install pyvista
+
+      - name: mypy checks (with petsc4py)
+        run: |
+          mypy --config-file python/pyproject.toml -p dolfinx --exclude superlu_dist.py
+          cd python/
+          mypy demo
+          mypy test
 
       - name: Run demos (Python, serial)
         run: |

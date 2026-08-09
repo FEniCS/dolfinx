@@ -640,7 +640,7 @@ problem = LinearProblem(
     petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
 )
 Esh = problem.solve()
-assert problem.solver.getConvergedReason() > 0
+assert problem.solver.getConvergedReason() > 0  # type: ignore[operator]
 
 # We save the solution as an [ADIOS2
 # bp](https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html)
