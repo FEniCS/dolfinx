@@ -483,6 +483,10 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
 }
 
 /// @brief Compute normal to given cell (viewed as embedded in 3D).
+/// @param[in] mesh Mesh that the entities belong to.
+/// @param[in] dim Topological dimension of the entities.
+/// @param[in] entities Indices (local to process) of entities to
+/// compute normals for.
 /// @param[in] num_threads Number of threads to use. Must be >= 1.
 /// @returns The entity normals. The shape is `(entities.size(), 3)` and
 /// the storage is row-major.
@@ -606,6 +610,10 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 }
 
 /// @brief Compute the midpoints for mesh entities of a given dimension.
+/// @param[in] mesh Mesh that the entities belong to.
+/// @param[in] dim Topological dimension of the entities.
+/// @param[in] entities Indices (local to process) of entities to
+/// compute midpoints for.
 /// @param[in] num_threads Number of threads to use. Must be >= 1.
 /// @returns The entity midpoints. The shape is `(entities.size(), 3)`
 /// and the storage is row-major.
