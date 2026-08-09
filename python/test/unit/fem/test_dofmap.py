@@ -227,7 +227,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
     view into the data; in particular test lifetime of data owner.
     """
-    V = functionspace(mesh, "P", 1)
+    V = functionspace(mesh, ("P", 1))
     dofmap = V.dofmap
     index_map = dofmap().index_map
 
