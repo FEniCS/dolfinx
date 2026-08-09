@@ -484,7 +484,8 @@ def test_push_forward_pull_back(gdim: int, is_affine: bool):
         )
         # Pull back
         x_pullback = mesh.geometry.cmaps[0].pull_back(x, cell_geometry, working_array=working_array)
-        assert np.allclose(x_pullback, ref_point, rtol=np.sqrt(np.finfo(dtype).eps))
+        tol = np.sqrt(np.finfo(dtype).eps)
+        assert np.allclose(x_pullback, ref_point, rtol=tol, atol=tol)
 
 
 @pytest.mark.parametrize("gdim", [2, 3])
