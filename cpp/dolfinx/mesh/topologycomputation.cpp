@@ -9,7 +9,7 @@
 #include "cell_types.h"
 #include <algorithm>
 #include <boost/sort/sort.hpp>
-#include <boost/unordered_map.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
@@ -946,8 +946,13 @@ graph::AdjacencyList<std::int32_t>
 compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
                  const graph::AdjacencyList<std::int32_t>& c_d1_0)
 {
-  // Make a map from the sorted edge vertices to the edge index
-  boost::unordered_map<std::array<std::int32_t, 2>, std::int32_t> edge_to_index;
+  // Make a map from the sorted edge vertices to the edge index. Built
+  // once, then read-only for the rest of this function, so an
+  // open-addressed map (no per-element allocation, no pointer-chasing
+  // between nodes) is a safe, strictly faster choice than a node-based
+  // map here -- see the equivalent swap made in Topology.cpp.
+  boost::unordered_flat_map<std::array<std::int32_t, 2>, std::int32_t>
+      edge_to_index;
   edge_to_index.reserve(c_d1_0.num_nodes());
 
   std::array<std::int32_t, 2> key;

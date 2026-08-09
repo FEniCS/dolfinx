@@ -341,7 +341,7 @@ dolfinx::MPI::impl::postoffice_plan(int size, int rank,
   for (std::int32_t i = 0; i < shape0_local; ++i)
   {
     std::size_t idx = i + rank_offset;
-    if (int dest = MPI::index_owner(size, idx, shape0); dest != rank)
+    if (int dest = dolfinx::MPI::index_owner(size, idx, shape0); dest != rank)
       dest_to_index.push_back({dest, i});
   }
 

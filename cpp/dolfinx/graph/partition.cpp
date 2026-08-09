@@ -9,11 +9,11 @@
 #include "partitioners.h"
 #include <algorithm>
 #include <boost/sort/sort.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
-#include <map>
 #include <memory>
 
 using namespace dolfinx;
@@ -420,7 +420,12 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   // Find out how many ghosts are on each neighboring process
   std::vector<int> ghost_index_count;
   std::vector<int> neighbors;
-  std::map<int, int> proc_to_neighbor;
+  // A tree map here costs a heap-allocating node lookup/insert on
+  // every one of potentially many millions of ghost ranks touched
+  // below, even though the map itself stays tiny (bounded by the
+  // number of distinct neighbour ranks); an open-addressed map avoids
+  // that per-element allocation and pointer-chasing.
+  boost::unordered_flat_map<int, int> proc_to_neighbor;
   for (int p : ghost_owners)
   {
     assert(p != dolfinx::MPI::rank(comm));
