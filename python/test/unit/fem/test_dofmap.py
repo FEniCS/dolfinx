@@ -66,7 +66,8 @@ def test_tabulate_dofs(mesh_factory):
         assert len(np.intersect1d(dofs0, dofs1)) == 0
         assert len(np.intersect1d(dofs0, dofs2)) == 0
         assert len(np.intersect1d(dofs1, dofs2)) == 0
-        assert np.array_equal(np.append(dofs1, dofs2), dofs3)
+        combined_dofs = np.append(dofs1, dofs2)
+        assert np.array_equal(combined_dofs, dofs3)
 
 
 def test_entity_dofs(mesh):
