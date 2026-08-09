@@ -371,7 +371,7 @@ def test_locate_entities(dtype):
         return np.isclose(x[2], 1.0)
 
     def front(x):
-        return np.isclose(x[1], 0.0)
+    # Should have no triangles at the front
 
     facet_types = mesh.topology.entity_types[fdim]
     quad_idx = facet_types.index(CellType.quadrilateral)
