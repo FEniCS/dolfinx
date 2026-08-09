@@ -402,7 +402,7 @@ def model_to_mesh(
             meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
         else:
             # Any other process than input rank does not have any entities
-            marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int32)
+            marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int64)
             entity_values = np.empty((0,), dtype=np.int32)
             meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
 
