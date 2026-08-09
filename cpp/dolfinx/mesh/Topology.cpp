@@ -167,7 +167,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices,
     {
       // Find iterator to next different global index
       auto it1 = std::ranges::find_if(it, indices_list.end(),
-                                      [idx0 = (*it)[0]](auto& idx)
+                                      [idx0 = it->front()](auto& idx)
                                       { return idx[0] != idx0; });
 
       // Number of times index is repeated
