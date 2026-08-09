@@ -129,7 +129,6 @@ def test_mixed_topology_mesh_3d():
 
     entity_types = topology.entity_types
     assert len(entity_types[0]) == 1
-
     topology.create_entities(1, dolfinx.hardware_concurrency())
     entity_types = topology.entity_types
     assert len(entity_types[1]) == 1
