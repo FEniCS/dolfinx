@@ -276,7 +276,6 @@ xdmf += """
 </Xdmf>
 """
 
-fd = open("mixed-mesh.xdmf", "w")
-fd.write(xdmf)
-fd.close()
+with open("mixed-mesh.xdmf", "w") as fd:
+    fd.write(xdmf)
 # -
