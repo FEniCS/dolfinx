@@ -558,6 +558,171 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
 //-----------------------------------------------------------------------------
+/// @brief Iterate over a sorted permutation of facets (defined by
+/// `perm`/`facets`/`shape1`) and, for each run of matching facets,
+/// record unmatched facets (candidates for a match on another rank)
+/// and dual graph edges between the cells that share a facet.
+///
+/// Single-threaded: comparison (finding the end of each run) and
+/// output-building are interleaved in one sweep over `facets`.
+/// Kept as its own function, rather than a `num_threads == 1` branch
+/// alongside match_facets_threaded, so the compiler can optimise this
+/// hot loop without the unrelated multi-threaded code path also live
+/// in the same function body.
+std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>,
+           std::vector<std::array<std::int32_t, 2>>>
+match_facets(std::span<const std::int32_t> perm,
+             std::span<const std::int64_t> facets, int shape1,
+             std::optional<std::int32_t> max_facet_to_cell_links)
+{
+  std::vector<std::int64_t> unmatched_facets;
+  std::vector<std::int32_t> local_cells;
+  std::vector<std::array<std::int32_t, 2>> edges;
+  for (auto it = perm.begin(); it != perm.end();)
+  {
+    std::size_t facet_index = *it;
+    std::span facet(facets.data() + facet_index * shape1, shape1);
+
+    // Find iterator to next facet different from f0 -> all facets in
+    // [it, it_next_facet) describe the same facet
+    auto matching_facets = std::ranges::subrange(
+        it, std::find_if_not(it, perm.end(),
+                             [facet, &facets, shape1](auto idx) -> bool
+                             {
+                               auto f1_it
+                                   = std::next(facets.begin(), idx * shape1);
+                               return std::equal(facet.begin(),
+                                                 std::prev(facet.end()), f1_it);
+                             }));
+
+    std::int32_t cell_count = matching_facets.size();
+    assert(cell_count >= 1);
+    if (!max_facet_to_cell_links or cell_count < *max_facet_to_cell_links)
+    {
+      // Store unmatched facets and the attached cell
+      for (std::int32_t i = 0; i < cell_count; i++)
+      {
+        unmatched_facets.insert(unmatched_facets.end(), facet.begin(),
+                                std::prev(facet.end()));
+        std::int32_t cell = facets[*std::next(it, i) * shape1 + (shape1 - 1)];
+        local_cells.push_back(cell);
+      }
+    }
+
+    // Add dual graph edges (one direction only, other direction is
+    // added later). In the range [it, it_next_facet), all
+    // combinations are added.
+    for (auto facet_a_it = it; facet_a_it != matching_facets.end();
+         ++facet_a_it)
+    {
+      std::span facet_a(facets.data() + *facet_a_it * shape1, shape1);
+      std::int32_t cell_a = facet_a.back();
+      for (auto facet_b_it = std::next(facet_a_it);
+           facet_b_it != matching_facets.end(); ++facet_b_it)
+      {
+        std::span facet_b(facets.data() + *facet_b_it * shape1, shape1);
+        std::int32_t cell_b = facet_b.back();
+        edges.push_back({cell_a, cell_b});
+      }
+    }
+
+    // Update iterator
+    it = matching_facets.end();
+  }
+
+  return {std::move(unmatched_facets), std::move(local_cells),
+          std::move(edges)};
+}
+//-----------------------------------------------------------------------------
+/// @brief Threaded counterpart to match_facets. Marks, in parallel,
+/// which entries in the sorted permutation start a new (distinct)
+/// facet key, i.e. differ from the preceding entry's vertex key -
+/// the expensive vertex-key comparison - then scans the marks
+/// (comparison-free, left serial) to build the same outputs as
+/// match_facets.
+std::tuple<std::vector<std::int64_t>, std::vector<std::int32_t>,
+           std::vector<std::array<std::int32_t, 2>>>
+match_facets_threaded(std::span<const std::int32_t> perm,
+                      std::span<const std::int64_t> facets, int shape1,
+                      std::optional<std::int32_t> max_facet_to_cell_links,
+                      int num_threads)
+{
+  std::vector<std::uint8_t> new_facet(perm.size());
+  auto mark_new_facet
+      = [&facets, &perm, &new_facet, shape1](std::size_t i0, std::size_t i1)
+  {
+    for (std::size_t i = i0; i < i1; ++i)
+    {
+      if (i == 0)
+      {
+        new_facet[0] = 1;
+        continue;
+      }
+      auto f0 = std::next(facets.begin(), perm[i - 1] * shape1);
+      auto f1 = std::next(facets.begin(), perm[i] * shape1);
+      new_facet[i] = !std::equal(f1, std::next(f1, shape1 - 1), f0);
+    }
+  };
+
+  {
+    std::vector<std::jthread> threads;
+    for (int i = 1; i < num_threads; ++i)
+    {
+      auto [i0, i1] = common::local_range(i, perm.size(), num_threads);
+      threads.emplace_back(mark_new_facet, i0, i1);
+    }
+    auto [i0, i1] = common::local_range(0, perm.size(), num_threads);
+    mark_new_facet(i0, i1);
+  }
+
+  std::vector<std::int64_t> unmatched_facets;
+  std::vector<std::int32_t> local_cells;
+  std::vector<std::array<std::int32_t, 2>> edges;
+  std::size_t i = 0;
+  while (i < perm.size())
+  {
+    // All facets in perm[i, i1) describe the same facet
+    std::size_t i1 = i + 1;
+    while (i1 < perm.size() and !new_facet[i1])
+      ++i1;
+
+    std::span facet(facets.data() + perm[i] * shape1, shape1);
+    std::int32_t cell_count = i1 - i;
+    assert(cell_count >= 1);
+    if (!max_facet_to_cell_links or cell_count < *max_facet_to_cell_links)
+    {
+      // Store unmatched facets and the attached cell
+      for (std::size_t k = i; k < i1; ++k)
+      {
+        unmatched_facets.insert(unmatched_facets.end(), facet.begin(),
+                                std::prev(facet.end()));
+        std::int32_t cell = facets[perm[k] * shape1 + (shape1 - 1)];
+        local_cells.push_back(cell);
+      }
+    }
+
+    // Add dual graph edges (one direction only, other direction is
+    // added later). In the range [i, i1), all combinations are
+    // added.
+    for (std::size_t a = i; a < i1; ++a)
+    {
+      std::span facet_a(facets.data() + perm[a] * shape1, shape1);
+      std::int32_t cell_a = facet_a.back();
+      for (std::size_t b = a + 1; b < i1; ++b)
+      {
+        std::span facet_b(facets.data() + perm[b] * shape1, shape1);
+        std::int32_t cell_b = facet_b.back();
+        edges.push_back({cell_a, cell_b});
+      }
+    }
+
+    i = i1;
+  }
+
+  return {std::move(unmatched_facets), std::move(local_cells),
+          std::move(edges)};
+}
+//-----------------------------------------------------------------------------
 } // namespace
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>, int,
@@ -745,20 +910,40 @@ mesh::build_local_dual_graph(
   {
     perm.resize(facets.size() / shape1, 0);
     std::iota(perm.begin(), perm.end(), 0);
+    // Compare only the leading max_vertices_per_facet columns (the
+    // attached-cell entry in the last column is not part of the sort
+    // key - see the num_threads == 1 branch below).
     boost::sort::block_indirect_sort(
         perm.begin(), perm.end(),
-        [facets = std::cref(facets), shape1](auto f0, auto f1)
+        [facets = std::cref(facets), shape1, max_vertices_per_facet](auto f0,
+                                                                     auto f1)
         {
           auto it0 = std::next(facets.get().begin(), f0 * shape1);
           auto it1 = std::next(facets.get().begin(), f1 * shape1);
-          return std::lexicographical_compare(it0, std::next(it0, shape1), it1,
-                                              std::next(it1, shape1));
+          return std::lexicographical_compare(
+              it0, std::next(it0, max_vertices_per_facet), it1,
+              std::next(it1, max_vertices_per_facet));
         },
         num_threads);
   }
   else
   {
-    perm = dolfinx::sort_by_perm(std::span<const std::int64_t>(facets), shape1);
+    // Facet rows are strided by shape1 (vertices plus a trailing
+    // attached-cell entry) but only the leading max_vertices_per_facet
+    // columns are the sort key - match_facets already only compares
+    // those columns when detecting matching facets. Extract them into
+    // a compact, contiguously-strided buffer before radix-sorting, to
+    // avoid a wasted extra radix pass over the attached-cell column
+    // (same technique already used for the non-local part of the dual
+    // graph, in compute_nonlocal_dual_graph).
+    const std::size_t num_facets = facets.size() / shape1;
+    std::vector<std::int64_t> facet_keys(num_facets * max_vertices_per_facet);
+    for (std::size_t f = 0; f < num_facets; ++f)
+    {
+      std::copy_n(std::next(facets.begin(), f * shape1), max_vertices_per_facet,
+                  std::next(facet_keys.begin(), f * max_vertices_per_facet));
+    }
+    perm = sort_by_perm<std::int64_t>(facet_keys, max_vertices_per_facet);
   }
 
   timer3.stop();
@@ -770,85 +955,17 @@ mesh::build_local_dual_graph(
   //    process.
   common::Timer timer4("Compute local part of mesh dual graph: 4");
 
-  std::vector<std::int64_t> unmatched_facets;
-  std::vector<std::int32_t> local_cells;
-  std::vector<std::array<std::int32_t, 2>> edges;
-  {
-    // Mark, in parallel, which entries in the sorted permutation start
-    // a new (distinct) facet key, i.e. differ from the preceding
-    // entry's vertex key. This vertex-key comparison is the expensive
-    // part of run detection; the scan below that turns the marks into
-    // matched/unmatched facet groups is comparison-free and left
-    // serial.
-    std::vector<std::uint8_t> new_facet(perm.size());
-    auto mark_new_facet
-        = [&facets, &perm, &new_facet, shape1](std::size_t i0, std::size_t i1)
-    {
-      for (std::size_t i = i0; i < i1; ++i)
-      {
-        if (i == 0)
-        {
-          new_facet[0] = 1;
-          continue;
-        }
-        auto f0 = std::next(facets.begin(), perm[i - 1] * shape1);
-        auto f1 = std::next(facets.begin(), perm[i] * shape1);
-        new_facet[i] = !std::equal(f1, std::next(f1, shape1 - 1), f0);
-      }
-    };
-
-    {
-      std::vector<std::jthread> threads;
-      for (int i = 1; i < num_threads; ++i)
-      {
-        auto [i0, i1] = common::local_range(i, perm.size(), num_threads);
-        threads.emplace_back(mark_new_facet, i0, i1);
-      }
-      auto [i0, i1] = common::local_range(0, perm.size(), num_threads);
-      mark_new_facet(i0, i1);
-    }
-
-    std::size_t i = 0;
-    while (i < perm.size())
-    {
-      // All facets in perm[i, i1) describe the same facet
-      std::size_t i1 = i + 1;
-      while (i1 < perm.size() and !new_facet[i1])
-        ++i1;
-
-      std::span facet(facets.data() + perm[i] * shape1, shape1);
-      std::int32_t cell_count = i1 - i;
-      assert(cell_count >= 1);
-      if (!max_facet_to_cell_links or cell_count < *max_facet_to_cell_links)
-      {
-        // Store unmatched facets and the attached cell
-        for (std::size_t k = i; k < i1; ++k)
-        {
-          unmatched_facets.insert(unmatched_facets.end(), facet.begin(),
-                                  std::prev(facet.end()));
-          std::int32_t cell = facets[perm[k] * shape1 + (shape1 - 1)];
-          local_cells.push_back(cell);
-        }
-      }
-
-      // Add dual graph edges (one direction only, other direction is
-      // added later). In the range [i, i1), all combinations are
-      // added.
-      for (std::size_t a = i; a < i1; ++a)
-      {
-        std::span facet_a(facets.data() + perm[a] * shape1, shape1);
-        std::int32_t cell_a = facet_a.back();
-        for (std::size_t b = a + 1; b < i1; ++b)
-        {
-          std::span facet_b(facets.data() + perm[b] * shape1, shape1);
-          std::int32_t cell_b = facet_b.back();
-          edges.push_back({cell_a, cell_b});
-        }
-      }
-
-      i = i1;
-    }
-  }
+  // match_facets and match_facets_threaded compute identical results;
+  // dispatching to a separate function per case (rather than an
+  // inline `num_threads == 1` branch) keeps the single-threaded hot
+  // loop free of the unrelated multi-threaded code path, which
+  // otherwise measurably pessimises it - see the two functions'
+  // docstrings.
+  auto [unmatched_facets, local_cells, edges]
+      = num_threads == 1
+            ? match_facets(perm, facets, shape1, max_facet_to_cell_links)
+            : match_facets_threaded(perm, facets, shape1,
+                                    max_facet_to_cell_links, num_threads);
 
   timer4.stop();
   timer4.flush();
