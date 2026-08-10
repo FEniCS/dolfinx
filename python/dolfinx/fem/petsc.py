@@ -1916,6 +1916,7 @@ class numba_utils:
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
     except ImportError:
+        # numba/llvmlite/petsc4py not installed; numba bindings unavailable
         pass
 
 
@@ -1975,6 +1976,7 @@ class ctypes_utils:
             _ctypes.c_int,
         ]
     except ImportError:
+        # petsc4py not installed; ctypes bindings unavailable
         pass
 
 
@@ -2019,6 +2021,7 @@ class cffi_utils:
         _cffi_support.register_type(_ffi.typeof("double _Complex"), _numba.types.complex128)
 
     except KeyError:
+        # complex types already registered with numba/cffi
         pass
     except ImportError:
         log(
@@ -2064,6 +2067,7 @@ class cffi_utils:
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
     except KeyError:
+        # PETSc scalar/index type has no corresponding C type in _CTYPES
         pass
     except ImportError:
         log(

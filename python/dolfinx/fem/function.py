@@ -11,7 +11,7 @@ from __future__ import annotations
 import typing
 from collections.abc import Callable, Sequence
 from functools import cached_property, singledispatch
-from typing import Generic
+from typing import Generic, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -837,7 +837,7 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
         _other = typing.cast("FunctionSpace", other)
         return super().__ne__(other) or self._cpp_object != _other._cpp_object
 
-    def ufl_function_space(self) -> ufl.FunctionSpace:
+    def ufl_function_space(self) -> Self:
         """UFL function space."""
         return self
 

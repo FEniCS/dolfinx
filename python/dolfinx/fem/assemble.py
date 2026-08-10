@@ -14,7 +14,6 @@ from collections.abc import Sequence
 import numpy as np
 import numpy.typing as npt
 
-import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
@@ -23,6 +22,7 @@ from dolfinx.fem import IntegralType
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.forms import Form
 from dolfinx.fem.function import FunctionSpace
+from dolfinx.fem.utils import create_sparsity_pattern
 
 
 @typing.overload
@@ -131,7 +131,7 @@ def create_matrix(a: Form, block_mode: la.BlockMode | None = None) -> la.MatrixC
     Returns:
         A sparse matrix that the form can be assembled into.
     """
-    sp = dolfinx.fem.create_sparsity_pattern(a)
+    sp = create_sparsity_pattern(a)
     sp.finalize()
     if block_mode is not None:
         return la.matrix_csr(sp, block_mode=block_mode, dtype=a.dtype)

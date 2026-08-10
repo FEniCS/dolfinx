@@ -18,12 +18,14 @@ try:
     from dolfinx.fem.petsc import ctypes_utils as petsc_ctypes
     from dolfinx.fem.petsc import numba_utils as petsc_numba
 except ImportError:
+    # petsc4py not installed; PETSc-dependent tests are skipped
     pass
 
 try:
     import numba
 
 except ImportError:
+    # numba not installed; numba-dependent tests are skipped
     pass
 
 import numpy as np

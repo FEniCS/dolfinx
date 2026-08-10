@@ -434,6 +434,7 @@ try:
     u_file.close()
     p_file.close()
 except NameError:
+    # u_file/p_file are only defined when has_adios2 is True
     pass
 # -
 

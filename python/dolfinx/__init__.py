@@ -22,9 +22,9 @@ try:
     from petsc4py import PETSc as _PETSc
 
     # Additional sanity check that DOLFINx was built with petsc4py support.
-    import dolfinx.common
+    from dolfinx.common import has_petsc4py
 
-    if not dolfinx.common.has_petsc4py:
+    if not has_petsc4py:
         raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
     # petsc4py's stub types these as numpy.dtype instances rather than

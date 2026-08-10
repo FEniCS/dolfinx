@@ -135,7 +135,7 @@ class Timer:
         """
         self._cpp_object = _cpp.common.Timer(name)
 
-    def __enter__(self) -> "Timer":
+    def __enter__(self) -> typing.Self:
         """Start timer."""
         self._cpp_object.start()
         return self
