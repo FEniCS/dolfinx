@@ -12,10 +12,10 @@ import numpy as np
 import pytest
 
 import basix
-import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import default_real_type, la
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type, default_scalar_type, la
 from dolfinx.fem import (
     Function,
     apply_lifting,
@@ -221,7 +221,7 @@ def test_petsc_curl_curl_eigenvalue(family, order):
     Solved using H(curl)-conforming finite element method.
     See https://www-users.cse.umn.edu/~arnold/papers/icm2002.pdf for details.
     """
-    if not dolfinx.cpp.common.has_petsc:
+    if not _cpp.common.has_petsc:
         return
 
     petsc4py = pytest.importorskip("petsc4py")  # noqa: F841
@@ -254,7 +254,7 @@ def test_petsc_curl_curl_eigenvalue(family, order):
     boundary_facets = exterior_facet_indices(mesh.topology)
     boundary_dofs = locate_dofs_topological(V, mesh.topology.dim - 1, boundary_facets)
 
-    zero_u = Function(V, dtype=dolfinx.default_scalar_type)
+    zero_u = Function(V, dtype=default_scalar_type)
     zero_u.x.array[:] = 0
     bcs = [dirichletbc(zero_u, boundary_dofs)]
 
@@ -600,7 +600,6 @@ def test_P_tp_built_in_mesh(family, degree, cell_type, datadir, cg_solver):
         mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type)
     elif cell_type == CellType.quadrilateral:
         mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, cell_type)
-    mesh = get_mesh(cell_type, datadir)
     V = functionspace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree, cg_solver)
 
@@ -657,7 +656,6 @@ def test_S_tp_built_in_mesh(family, degree, cell_type, datadir, cg_solver):
         mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, cell_type)
     elif cell_type == CellType.quadrilateral:
         mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, cell_type)
-    mesh = get_mesh(cell_type, datadir)
     V = functionspace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree // 2, cg_solver)
 

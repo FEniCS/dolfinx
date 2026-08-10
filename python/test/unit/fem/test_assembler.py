@@ -1131,7 +1131,6 @@ class TestPETScAssemblers:
             V2 = V.clone()
             u = Function(V)
             u.interpolate(lambda x: x[0] * x[1])
-            v = ufl.TestFunction(V)
             u2 = Function(V2)
             v2 = ufl.TestFunction(V2)
             c = Constant(mesh, PETSc.ScalarType(12.0))

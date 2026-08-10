@@ -15,20 +15,18 @@ from petsc4py import PETSc
 from dolfinx.fem.forms import extract_function_spaces
 
 if typing.TYPE_CHECKING:
-    import dolfinx
-
-    assert dolfinx.has_petsc4py
-
     from dolfinx.fem.petsc import NewtonSolverNonlinearProblem
 
 import types
 
 from dolfinx import cpp as _cpp
-from dolfinx import fem
+from dolfinx import fem, has_petsc4py
 from dolfinx.fem.petsc import (
     create_matrix,
     create_vector,
 )
+
+assert has_petsc4py
 
 __all__ = ["NewtonSolver"]
 

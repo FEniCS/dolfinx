@@ -28,7 +28,6 @@ import gmsh
 import numpy as np
 from scipy.special import jv, jvp
 
-import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, io, mesh, plot
@@ -453,7 +452,7 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = _cell_partitioner(dolfinx.mesh.GhostMode.shared_facet, 2)
+partitioner = _cell_partitioner(mesh.GhostMode.shared_facet, 2)
 mesh_data = io.gmsh.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
