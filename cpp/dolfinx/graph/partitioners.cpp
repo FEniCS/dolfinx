@@ -402,6 +402,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     if (err != 0)
       throw std::runtime_error("Error building SCOTCH graph");
     timer1.stop();
+    timer1.flush();
 
 // Check graph data for consistency
 #ifndef NDEBUG
@@ -445,19 +446,21 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       throw std::runtime_error("Error calling SCOTCH_stratDgraphMapBuild");
 
     // Count number of 'ghost' edges, i.e. an edge to a cell that does
-    // not belong to the caller
+    // not belong to the caller. A single hash-set pass over the (much
+    // larger) full edge array -- as used elsewhere in this file for
+    // the same de-duplicate-then-count shape -- avoids materialising
+    // and sorting a separate ghost-edges vector just to count distinct
+    // values.
     std::int32_t num_ghost_nodes = 0;
     {
       MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
       std::array<std::int64_t, 2> range
           = {offset_global, offset_global + num_owned};
-      std::vector<std::int64_t> ghost_edges;
-      std::copy_if(graph.array().begin(), graph.array().end(),
-                   std::back_inserter(ghost_edges),
-                   [range](auto e) { return e < range[0] or e >= range[1]; });
-      std::ranges::sort(ghost_edges);
-      auto it = std::ranges::unique(ghost_edges).begin();
-      num_ghost_nodes = std::distance(ghost_edges.begin(), it);
+      boost::unordered_flat_set<std::int64_t> ghost_nodes;
+      for (std::int64_t e : graph.array())
+        if (e < range[0] or e >= range[1])
+          ghost_nodes.insert(e);
+      num_ghost_nodes = ghost_nodes.size();
     }
 
     // Resize vector to hold node partition indices with enough extra
@@ -473,6 +476,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     if (err != 0)
       throw std::runtime_error("Error during SCOTCH partitioning");
     timer2.stop();
+    timer2.flush();
 
     // Data arrays for adjacency list, where the edges are the destination
     // ranks for each node
@@ -487,6 +491,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       if (err != 0)
         throw std::runtime_error("Error during SCOTCH halo exchange");
       timer3.stop();
+      timer3.flush();
 
       // Get SCOTCH's locally indexed graph
       common::Timer timer4("Get SCOTCH graph data");
@@ -495,6 +500,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
                         nullptr, nullptr, &edge_ghost_tab, nullptr, &comm);
       timer4.stop();
+      timer4.flush();
 
       // Iterate through SCOTCH's local compact graph to find partition
       // boundaries and save to map
@@ -517,6 +523,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
         }
       }
       timer5.stop();
+      timer5.flush();
 
       offsets.reserve(graph.num_nodes() + 1);
       for (std::int32_t i = 0; i < graph.num_nodes(); ++i)
