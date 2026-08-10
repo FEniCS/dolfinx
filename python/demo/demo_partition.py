@@ -76,6 +76,7 @@
 #   built with ghost cells, i.e. with `GhostMode.shared_facet`.
 
 # +
+import os
 import time
 
 from mpi4py import MPI
@@ -283,7 +284,16 @@ def partition_quality(msh) -> tuple[float, int]:
 
 # +
 comm = MPI.COMM_WORLD
-n = 24
+
+# Number of divisions in each direction of the cube, giving 6 n^3
+# tetrahedra. The effect of the input cell distribution on partitioning
+# cost is visible only on a large mesh, so `n` is large by default. It is
+# reduced when there is nothing to partition (a single rank), and in CI,
+# where the demo must run quickly. Set DEMO_PARTITION_N to override, e.g.
+# when running on few ranks.
+_small = comm.size == 1 or "CI" in os.environ or "GITHUB_ACTIONS" in os.environ
+n = int(os.environ.get("DEMO_PARTITION_N", 24 if _small else 128))
+
 cells0, x = cube_block(comm, n)
 cmap = coordinate_element(CellType.tetrahedron, 1)
 ghost_mode = GhostMode.shared_facet
