@@ -382,7 +382,7 @@ dolfinx::MPI::impl::postoffice_plan(int size, int rank,
                                       { return idx[0] != r; });
 
       // Store number of items for current rank
-      num_items_per_dest.push_back(std::distance(it, it1));
+      num_items_per_dest.push_back(std::ranges::distance(it, it1));
 
       // Map from local x index to local destination rank
       for (auto e = it; e != it1; ++e)

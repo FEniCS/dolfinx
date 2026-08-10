@@ -101,7 +101,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices,
                                       { return idx[0] != r; });
 
       // Store number of items for current rank
-      num_items_per_dest0.push_back(std::distance(it, it1));
+      num_items_per_dest0.push_back(std::ranges::distance(it, it1));
 
       // Advance iterator
       it = it1;
@@ -179,7 +179,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices,
                                       { return idx[0] != idx0; });
 
       // Number of times index is repeated
-      std::size_t num = std::distance(it, it1);
+      std::size_t num = std::ranges::distance(it, it1);
 
       // Pick an owner
       auto it_owner = it;
@@ -279,7 +279,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices,
     auto it = recv_buffer1.begin();
     while (it != recv_buffer1.end())
     {
-      std::size_t d = std::distance(recv_buffer1.begin(), it);
+      std::size_t d = std::ranges::distance(recv_buffer1.begin(), it);
       std::int64_t num_ranks = *it;
 
       std::span ranks(recv_buffer1.data() + d + 1, num_ranks);
@@ -451,7 +451,7 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
       std::int64_t idx_old = indices[i];
       auto local_it = std::ranges::lower_bound(global_indices, idx_old);
       assert(local_it != global_indices.end() and *local_it == idx_old);
-      std::size_t pos = std::distance(global_indices.begin(), local_it);
+      std::size_t pos = std::ranges::distance(global_indices.begin(), local_it);
       std::int64_t idx_new = local_indices[pos] + offset;
 
       // Owned and shared with these processes (starting from 1, 0 is
@@ -461,7 +461,7 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
         // Find rank on the neighborhood comm
         auto it = std::ranges::lower_bound(dest, ranks[j]);
         assert(it != dest.end() and *it == ranks[j]);
-        int neighbor = std::distance(dest.begin(), it);
+        int neighbor = std::ranges::distance(dest.begin(), it);
 
         // Add (old global vertex index, new  global vertex index, owner
         // rank (global))
@@ -604,7 +604,7 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
         auto it1 = std::ranges::find_if(it, owner_to_ghost.end(),
                                         [r = it->first](auto x)
                                         { return x.first != r; });
-        send_sizes.push_back(std::distance(it, it1));
+        send_sizes.push_back(std::ranges::distance(it, it1));
         send_disp.push_back(send_disp.back() + send_sizes.back());
         it = it1;
       }
@@ -1033,7 +1033,7 @@ bool Topology::create_entities(int dim, int num_threads)
   for (auto entity = this->entity_types(dim).begin();
        entity != this->entity_types(dim).end(); ++entity)
   {
-    int index = std::distance(this->entity_types(dim).begin(), entity);
+    int index = std::ranges::distance(this->entity_types(dim).begin(), entity);
 
     // Create local entities
     auto [cell_entity, entity_vertex, index_map, interprocess_entities]
@@ -1375,7 +1375,7 @@ Topology mesh::create_topology(
       std::int64_t idx_global = unowned_vertex_data[i];
       auto it = std::ranges::lower_bound(unowned_vertices, idx_global);
       assert(it != unowned_vertices.end() and *it == idx_global);
-      std::size_t pos = std::distance(unowned_vertices.begin(), it);
+      std::size_t pos = std::ranges::distance(unowned_vertices.begin(), it);
       assert(local_vertex_indices_unowned[pos] < 0);
       local_vertex_indices_unowned[pos] = v;
       patch_global_to_local(idx_global, v);
@@ -1411,7 +1411,7 @@ Topology mesh::create_topology(
         auto it0 = std::ranges::lower_bound(unowned_vertices, global_idx_old);
         if (it0 != unowned_vertices.end() and *it0 == global_idx_old)
         {
-          if (std::size_t pos = std::distance(unowned_vertices.begin(), it0);
+          if (std::size_t pos = std::ranges::distance(unowned_vertices.begin(), it0);
               local_vertex_indices_unowned[pos] < 0)
           {
             local_vertex_indices_unowned[pos] = v;
@@ -1692,7 +1692,7 @@ mesh::compute_mixed_cell_pairs(const Topology& topology, CellType facet_type)
         auto it = std::find(cf->links(c).begin(), cf->links(c).end(), f);
         assert(it != cf->links(c).end()
                && "Facet-cell and cell-facet connectivity are inconsistent.");
-        return std::distance(cf->links(c).begin(), it);
+        return std::ranges::distance(cf->links(c).begin(), it);
       };
 
       if (i == j)

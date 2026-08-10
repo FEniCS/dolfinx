@@ -118,7 +118,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
       auto cell_entities = c_to_e->links(c);
       auto it0 = std::find(cell_entities.begin(), cell_entities.end(), e);
       assert(it0 != cell_entities.end());
-      const int local_cell_entity = std::distance(cell_entities.begin(), it0);
+      const int local_cell_entity = std::ranges::distance(cell_entities.begin(), it0);
 
       // Get geometry dofs for the entity
       const std::vector<int>& entity_dofs_e = entity_dofs[local_cell_entity];

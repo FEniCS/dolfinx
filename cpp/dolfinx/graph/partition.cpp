@@ -98,7 +98,7 @@ graph::build::distribute(MPI_Comm comm,
                          [r = dest.back()](auto idx) { return idx[0] != r; });
 
       // Store number of items for current rank
-      num_items_per_dest.push_back(std::distance(it, it1));
+      num_items_per_dest.push_back(std::ranges::distance(it, it1));
 
       // Advance iterator
       it = it1;
@@ -287,7 +287,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
                          [r = dest.back()](auto& idx) { return idx[0] != r; });
 
       // Store number of items for current rank
-      num_items_per_dest.push_back(std::distance(it, it1));
+      num_items_per_dest.push_back(std::ranges::distance(it, it1));
 
       // Advance iterator
       it = it1;

@@ -74,6 +74,8 @@ inline constexpr _unsigned_projection unsigned_projection{};
 /// @tparam R Type of the range to sort.
 /// @param[in, out] range The range to sort.
 /// @param[in] proj Element projection.
+/// @note Stable: elements that compare equal under `proj` retain their
+/// relative order from the input range.
 template <int BITS = 8, typename P = std::identity,
           std::ranges::random_access_range R>
 constexpr void radix_sort(R&& range, P proj = {})
@@ -191,6 +193,8 @@ constexpr void radix_sort(R&& range, P proj = {})
 /// +1]]` when compared on the leading `ncols` columns.
 /// @pre `x.size()` must be a multiple of `shape1`.
 /// @pre `ncols <= shape1`.
+/// @note Stable: rows that compare equal on the leading `ncols` columns
+/// retain their relative order from the input.
 /// @note This function is suitable for small values of `shape1`. Each
 /// column of `x` is copied into an array that is then sorted.
 template <typename T, int BITS = 16>
@@ -239,6 +243,8 @@ std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1,
 /// @return Permutation array such that `x[k][perm[i]] <=
 /// x[k][perm[i + 1]]` for every column `k`.
 /// @pre All spans in `x` have equal length.
+/// @note Stable: rows that compare equal on every included column
+/// retain their relative order from the input.
 /// @note Columns are already contiguous, so (unlike the row-major
 /// overload) no column needs copying before it is sorted.
 template <typename T, int BITS = 16>

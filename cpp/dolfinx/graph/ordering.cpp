@@ -45,7 +45,7 @@ residual_graph_components(const graph::AdjacencyList<int>& graph,
   while (it != labelled.end())
   {
     r.clear();
-    r.push_back(std::distance(labelled.begin(), it));
+    r.push_back(std::ranges::distance(labelled.begin(), it));
     labelled[r.front()] = true;
 
     // Get connected component of graph starting from r[0]

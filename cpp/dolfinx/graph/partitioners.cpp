@@ -64,7 +64,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
       if (node1 < range0 or node1 >= range1)
       {
         auto it = std::ranges::upper_bound(node_disp, node1);
-        int remote_rank = std::distance(node_disp.begin(), it) - 1;
+        int remote_rank = std::ranges::distance(node_disp.begin(), it) - 1;
         node_to_dest.push_back(
             {remote_rank, node1, static_cast<std::int64_t>(part[node0])});
       }
@@ -111,7 +111,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
       auto it1
           = std::find_if(it, node_to_dest.end(), [r0 = dest.back()](auto& idx)
                          { return idx[0] != r0; });
-      send_sizes.push_back(2 * std::distance(it, it1));
+      send_sizes.push_back(2 * std::ranges::distance(it, it1));
       for (auto itx = it; itx != it1; ++itx)
       {
         send_buffer.push_back(itx->at(1));

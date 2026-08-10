@@ -267,7 +267,7 @@ graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
   {
     auto it1
         = std::find_if(it, data.end(), [e](auto x) { return x.first != e; });
-    offsets.push_back(offsets.back() + std::distance(it, it1));
+    offsets.push_back(offsets.back() + std::ranges::distance(it, it1));
     it = it1;
   }
 
@@ -426,7 +426,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       {
         auto it1 = std::find_if(it, entity_ranks.end(),
                                 [r0 = *it](auto r1) { return r1 != r0; });
-        if (std::distance(it, it1) == num_vertices_per_e)
+        if (std::ranges::distance(it, it1) == num_vertices_per_e)
         {
           vertex_map.local_to_global(entity, vglobal);
           std::ranges::sort(vglobal);
@@ -439,7 +439,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           {
             auto itr_local = std::ranges::lower_bound(ranks, *it);
             assert(itr_local != ranks.end() and *itr_local == *it);
-            std::size_t r = std::distance(ranks.begin(), itr_local);
+            std::size_t r = std::ranges::distance(ranks.begin(), itr_local);
 
             // Entity id may be shared with rank r
             send_entities[r].insert(send_entities[r].end(), vglobal.begin(),
@@ -1074,7 +1074,7 @@ mesh::compute_entities(const Topology& topology, int dim, CellType entity_type,
   {
     auto idx = std::ranges::find(topology.entity_types(dim), entity_type);
     assert(idx != topology.entity_types(dim).end());
-    int index = std::distance(topology.entity_types(dim).begin(), idx);
+    int index = std::ranges::distance(topology.entity_types(dim).begin(), idx);
     if (topology.connectivity({dim, index}, {0, 0}))
     {
       return {

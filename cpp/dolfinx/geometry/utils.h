@@ -101,7 +101,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       auto cell_entities = c_to_e->links(c);
       auto it0 = std::find(cell_entities.begin(), cell_entities.end(), index);
       assert(it0 != cell_entities.end());
-      const int local_cell_entity = std::distance(cell_entities.begin(), it0);
+      const int local_cell_entity = std::ranges::distance(cell_entities.begin(), it0);
 
       // Tabulate geometry dofs for the entity
       auto dofs = md::submdspan(x_dofmap, c, md::full_extent);
