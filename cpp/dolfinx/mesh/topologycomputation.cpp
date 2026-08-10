@@ -215,21 +215,26 @@ auto build_entity_list
           elist[j] = entity_vertices[perm[j]];
 
         std::ranges::copy(elist, elist_sorted.begin());
-        if (elist_sorted.size() == 4)
+
+        // No supported CellType has an entity with more than 4
+        // vertices, so `row_sorted_storage` (fixed-size, avoiding a
+        // heap allocation per entity) is sized accordingly -- guard
+        // against a future entity type silently overflowing it,
+        // rather than relying on the sorting network below to be
+        // reached only for size 4.
+        if (elist_sorted.size() != row_sorted_storage.size())
+          throw std::runtime_error("Unsupported entity vertex count.");
+
+        auto cmpswap_val = [&elist_sorted](std::size_t a, std::size_t b)
         {
-          auto cmpswap_val = [&elist_sorted](std::size_t a, std::size_t b)
-          {
-            if (elist_sorted[a] > elist_sorted[b])
-              std::swap(elist_sorted[a], elist_sorted[b]);
-          };
-          cmpswap_val(0, 1);
-          cmpswap_val(2, 3);
-          cmpswap_val(0, 2);
-          cmpswap_val(1, 3);
-          cmpswap_val(1, 2);
-        }
-        else
-          std::ranges::sort(elist_sorted);
+          if (elist_sorted[a] > elist_sorted[b])
+            std::swap(elist_sorted[a], elist_sorted[b]);
+        };
+        cmpswap_val(0, 1);
+        cmpswap_val(2, 3);
+        cmpswap_val(0, 2);
+        cmpswap_val(1, 3);
+        cmpswap_val(1, 2);
       }
 
       // Scatter the sorted key row out to its column-major positions.
