@@ -84,7 +84,7 @@ private:
       for (typename ScatterContainer::const_iterator idx = idx_first;
            idx != idx_last; ++idx)
       {
-        std::size_t d = std::distance(idx_first, idx);
+        std::size_t d = std::ranges::distance(idx_first, idx);
         *std::next(out_first, *idx) = *std::next(in_first, d);
       }
     };
@@ -106,7 +106,7 @@ private:
       for (typename ScatterContainer::const_iterator idx = idx_first;
            idx != idx_last; ++idx)
       {
-        std::size_t d = std::distance(idx_first, idx);
+        std::size_t d = std::ranges::distance(idx_first, idx);
         auto& out = *std::next(out_first, *idx);
         out = op(out, *std::next(in_first, d));
       }

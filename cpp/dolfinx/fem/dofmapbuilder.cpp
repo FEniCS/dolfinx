@@ -125,7 +125,8 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
     auto it = std::ranges::unique(edge_range).begin();
 
     graph_data.insert(graph_data.end(), range_begin, it);
-    graph_offsets[i + 1] = graph_offsets[i] + std::distance(range_begin, it);
+    graph_offsets[i + 1]
+        = graph_offsets[i] + std::ranges::distance(range_begin, it);
     current_offset += num_edges[i];
   }
 
@@ -194,7 +195,7 @@ build_basic_dofmaps(
           auto et_it = std::find(entity_types[d].begin(), entity_types[d].end(),
                                  mesh::cell_entity_type(cell_type, d, e));
           assert(et_it != entity_types[d].end());
-          int et_index = std::distance(entity_types[d].begin(), et_it);
+          int et_index = std::ranges::distance(entity_types[d].begin(), et_it);
 
           auto required_entity_it
               = std::find(required_dim_et.begin(), required_dim_et.end(),
@@ -222,8 +223,8 @@ build_basic_dofmaps(
           }
           else
           {
-            std::size_t k
-                = std::distance(required_dim_et.begin(), required_entity_it);
+            std::size_t k = std::ranges::distance(required_dim_et.begin(),
+                                                  required_entity_it);
             if (num_entity_dofs_et[k] != (int)entity_dofs_d[e].size())
               throw std::runtime_error("Incompatible elements detected.");
           }
@@ -620,7 +621,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     for (std::size_t j = 0; j < all_dofs_received[d].size(); j += 2)
     {
       const auto pos = std::ranges::upper_bound(disp_recv[d], j);
-      const int owner = std::distance(disp_recv[d].begin(), pos) - 1;
+      const int owner = std::ranges::distance(disp_recv[d].begin(), pos) - 1;
       global_old_new.push_back(
           {all_dofs_received[d][j], {all_dofs_received[d][j + 1], src[owner]}});
     }

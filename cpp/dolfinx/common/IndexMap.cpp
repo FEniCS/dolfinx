@@ -102,7 +102,8 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
     {
       auto it = std::ranges::lower_bound(src, owners[i]);
       assert(it != src.end() and *it == owners[i]);
-      if (std::size_t r = std::distance(src.begin(), it); include_ghost[i])
+      if (std::size_t r = std::ranges::distance(src.begin(), it);
+          include_ghost[i])
       {
         send_data[r].push_back(ghosts[i]);
         pos_to_ghost[r].push_back(i);
@@ -302,7 +303,7 @@ compute_submap_indices(const IndexMap& imap,
         new_owner_dest_ranks.erase(unique_end, range_end);
 
         std::size_t num_unique_dest_ranks
-            = std::distance(dest_begin, unique_end);
+            = std::ranges::distance(dest_begin, unique_end);
         new_owner_dest_ranks_sizes[i] = num_unique_dest_ranks;
         new_owner_dest_ranks_offsets[i + 1]
             = new_owner_dest_ranks_offsets[i] + num_unique_dest_ranks;
@@ -495,7 +496,8 @@ compute_submap_ghost_indices(std::span<const int> submap_src,
       // Could avoid search by creating look-up array
       auto it = std::ranges::lower_bound(submap_owned, idx);
       assert(it != submap_owned.end() and *it == idx);
-      std::size_t idx_local_submap = std::distance(submap_owned.begin(), it);
+      std::size_t idx_local_submap
+          = std::ranges::distance(submap_owned.begin(), it);
       send_gidx.push_back(idx_local_submap + submap_offset);
     }
   }
@@ -553,7 +555,8 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   // global index) pairs and sort so that the send buffer is grouped by
   // owning rank by construction, rather than relying on the global-index
   // and owner arrays sorting into a mutually consistent order.
-  std::size_t first_ghost_index = std::distance(indices.begin(), it_owned_end);
+  std::size_t first_ghost_index
+      = std::ranges::distance(indices.begin(), it_owned_end);
   std::int32_t num_ghost_indices = indices.size() - first_ghost_index;
   std::vector<std::pair<int, std::int64_t>> owner_to_global(num_ghost_indices);
   for (std::int32_t i = 0; i < num_ghost_indices; ++i)
@@ -581,7 +584,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
                                         &std::pair<int, std::int64_t>::first);
 
     // Count number of ghosts (if any)
-    send_sizes[i] = std::distance(begin, end);
+    send_sizes[i] = std::ranges::distance(begin, end);
     send_disp[i + 1] = send_disp[i] + send_sizes[i];
 
     if (begin != end)
@@ -725,7 +728,7 @@ common::stack_index_maps(
       {
         auto it = std::ranges::lower_bound(src, owners[i]);
         assert(it != src.end() and *it == owners[i]);
-        int r = std::distance(src.begin(), it);
+        int r = std::ranges::distance(src.begin(), it);
         ghost_by_rank[r].push_back(ghosts[i]);
         pos_to_ghost[r].push_back(i);
       }
@@ -1059,7 +1062,7 @@ IndexMap::index_to_dest_ranks(int tag) const
     {
       auto it1 = std::find_if(it, owner_to_ghost.end(),
                               [r = it->first](auto x) { return x.first != r; });
-      send_sizes.push_back(std::distance(it, it1));
+      send_sizes.push_back(std::ranges::distance(it, it1));
       send_disp.push_back(send_disp.back() + send_sizes.back());
       it = it1;
     }
@@ -1121,7 +1124,7 @@ IndexMap::index_to_dest_ranks(int tag) const
       {
         auto it1 = std::find_if(it, idx_to_rank.end(),
                                 [i](auto x) { return x.first != i; });
-        offsets.push_back(offsets.back() + std::distance(it, it1));
+        offsets.push_back(offsets.back() + std::ranges::distance(it, it1));
         it = it1;
       }
     }
@@ -1235,7 +1238,7 @@ IndexMap::index_to_dest_ranks(int tag) const
         auto it1
             = std::find_if(it, idxpos_to_rank.end(), [i](auto x)
                            { return x.first != static_cast<std::int32_t>(i); });
-        offsets.push_back(offsets.back() + std::distance(it, it1));
+        offsets.push_back(offsets.back() + std::ranges::distance(it, it1));
         it = it1;
       }
     }
@@ -1276,7 +1279,7 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
     auto it1 = std::ranges::upper_bound(it, owner_to_ghost.end(), it->first,
                                         std::ranges::less(),
                                         &std::pair<int, std::int64_t>::first);
-    send_sizes.push_back(std::distance(it, it1));
+    send_sizes.push_back(std::ranges::distance(it, it1));
     send_disp.push_back(send_disp.back() + send_sizes.back());
 
     // Advance iterator
@@ -1342,7 +1345,7 @@ std::vector<std::int32_t> IndexMap::weights_src() const
   {
     auto it = std::ranges::lower_bound(_src, r);
     assert(it != _src.end() and *it == r);
-    std::size_t pos = std::distance(_src.begin(), it);
+    std::size_t pos = std::ranges::distance(_src.begin(), it);
     assert(pos < weights.size());
     weights[pos] += 1;
   }
