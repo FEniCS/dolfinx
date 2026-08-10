@@ -336,7 +336,7 @@ jobs:
 
       - name: Update FEniCS Project simple503 repository
         run: |
-          python -m simple503 --base-url https://packages.fenicsproject.org/simple simple
+          python -m simple503 --base-url http://packages.fenicsproject.org/simple simple
 
       - name: Upload simple503 artifact
         uses: actions/upload-artifact@v7
@@ -367,7 +367,7 @@ jobs:
         run: find wheelhouse-artifacts/ -name "*.whl" -exec cp {} shared/ \;
 
       - name: Build simple503 repository
-        run: python -m simple503 --base-url https://packages.fenicsproject.org/simple-beta shared/
+        run: python -m simple503 --base-url http://packages.fenicsproject.org/simple-beta shared/
 
       - name: Upload combined repository artifact
         uses: actions/upload-artifact@v7
