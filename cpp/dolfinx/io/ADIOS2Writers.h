@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "common/MPI.h"
+#include <petsclog.h>
 #ifdef HAS_ADIOS2
 
 #include "vtk_utils.h"
@@ -785,8 +787,12 @@ protected:
           = _mesh->topology()->index_map(tdim)->size_local()
             + _mesh->topology()->index_map(tdim)->num_ghosts();
 
-      if (read_var("NumberOfNodes") != num_vertices
-          or read_var("NumberOfCells") != num_cells)
+      bool reusable = read_var("NumberOfNodes") == num_vertices
+                      and read_var("NumberOfCells") == num_cells;
+      MPI_Allreduce(&reusable, MPI_IN_PLACE, 1, dolfinx::MPI::mpi_t<bool>,
+                    MPI_LAND, _mesh->comm());
+
+      if (!reusable)
       {
         reader.Close();
         throw std::runtime_error("Mesh has changed, can not be reused.");
