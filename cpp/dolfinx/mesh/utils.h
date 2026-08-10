@@ -1655,8 +1655,7 @@ MeshTags<T> transfer_meshtags_to_submesh(
   filtered_indices.shrink_to_fit();
   filtered_values.shrink_to_fit();
   MeshTags<T> new_meshtag(submesh_topology, tag_dim, filtered_indices,
-                          filtered_values);
-  new_meshtag.name = tags.name;
+                          filtered_values, tags.name());
   return new_meshtag;
 }
 

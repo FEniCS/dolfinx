@@ -6,7 +6,7 @@
 """Finite elements."""
 
 from functools import singledispatch
-from typing import ClassVar, Generic
+from typing import ClassVar, Generic, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -90,8 +90,10 @@ class CoordinateElement(Generic[Real]):
         self,
         x: npt.NDArray[Real],
         cell_geometry: npt.NDArray[Real],
-        tol: float = 1.0e-6,
+        *,
+        tol: float | None = None,
         maxit: int = 15,
+        working_array: npt.NDArray[Real] | None = None,
     ) -> npt.NDArray[Real]:
         """Pull points on the physical cell back to the reference cell.
 
@@ -105,14 +107,25 @@ class CoordinateElement(Generic[Real]):
                 geometrical_dimension)``. They can be created by accessing
                 ``geometry.x[geometry.dofmaps[0].cell_dofs(i)]``,
             tol: Tolerance for convergence in Newton method for
-                nonaffine pullbacks.
+                nonaffine pullbacks. If not provided, it is set from
+                the square root of the machine epsilon of ``x``'s
+                dtype, since a fixed value tuned for ``float64`` is
+                often unreachable in ``float32`` arithmetic.
             maxit: Maximum number of Newton iterations for
                 nonaffine pullbacks.
+            working_array: Working memory for the pull-back operation.
+                If not provided, a new array will be allocated. The size of
+                the working array can be computed using
+                :func:`pull_back_working_size`.
 
         Returns:
             Reference coordinates of the physical points ``x``.
         """
-        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit)  # type: ignore[arg-type,return-value]
+        if tol is None:
+            tol = float(np.sqrt(np.finfo(x.dtype).eps))
+        if working_array is None:
+            working_array = np.zeros(self.pull_back_working_size(x.shape[1]), dtype=x.dtype)
+        return self._cpp_object.pull_back(x, cell_geometry, tol, maxit, working_array)  # type: ignore[arg-type,return-value]
 
     @property
     def variant(self) -> int:
@@ -128,6 +141,17 @@ class CoordinateElement(Generic[Real]):
     def degree(self) -> int:
         """Polynomial degree of the coordinate element."""
         return self._cpp_object.degree
+
+    def pull_back_working_size(self, gdim: int) -> int:
+        """Compute the working array size required for pull back.
+
+        Args:
+            gdim: Geometrical dimension of input points
+
+        Returns:
+            Number of elements required in the working array for pull back.
+        """
+        return self._cpp_object.pull_back_working_size(gdim)
 
 
 @singledispatch
@@ -206,13 +230,18 @@ class FiniteElement(Generic[Real]):
         return np.dtype(self._cpp_object.dtype)
 
     @property
-    def basix_element(self) -> basix.finite_element.FiniteElement:
+    def basix_element(
+        self,
+    ) -> basix._basixcpp.FiniteElement_float32 | basix._basixcpp.FiniteElement_float64:
         """Return underlying Basix C++ element (if it exists).
 
         Raises:
             Runtime error if Basix element does not exist.
         """
-        return self._cpp_object.basix_element
+        return cast(
+            "basix._basixcpp.FiniteElement_float32 | basix._basixcpp.FiniteElement_float64",
+            self._cpp_object.basix_element,
+        )
 
     @property
     def num_sub_elements(self) -> int:
@@ -356,7 +385,9 @@ def finiteelement(
 
     if ufl_e.is_mixed:
         elements = [
-            finiteelement(cell_type, e, FiniteElement_dtype)._cpp_object  # type: ignore
+            finiteelement(
+                cell_type, cast(basix.ufl._ElementBase, e), FiniteElement_dtype
+            )._cpp_object
             for e in ufl_e.sub_elements
         ]
         return FiniteElement(CppElement(elements))

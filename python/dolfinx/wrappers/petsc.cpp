@@ -87,10 +87,8 @@ void petsc_la_module(nb::module_& m)
          const std::vector<std::pair<
              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
-        std::vector<std::span<const PetscScalar>> _x_b;
-        std::ranges::transform(x_b, std::back_inserter(_x_b), [](auto& x)
-                               { return std::span(x.data(), x.size()); });
-
+        std::vector<std::span<const PetscScalar>> _x_b
+            = dolfinx_wrappers::vec_of_spans(x_b);
         auto _maps = to_index_map_refs(maps);
         dolfinx::la::petsc::scatter_local_vectors(x, _x_b, _maps);
       },

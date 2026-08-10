@@ -87,10 +87,25 @@ __all__ = [
     "uniform_refine",
 ]
 
+PartitioningFunc = typing.Callable[
+    [_MPI.Comm, int, _cpp.graph.AdjacencyList_int64, bool],
+    _cpp.graph.AdjacencyList_int32,
+]
+
+
+@typing.overload
+def create_cell_partitioner(
+    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int | None
+) -> Callable: ...
+
+
+@typing.overload
+def create_cell_partitioner(mode: GhostMode, max_facet_to_cell_links: int | None) -> Callable: ...
+
 
 @singledispatch
 def create_cell_partitioner(
-    part: Callable | GhostMode, mode: GhostMode, max_facet_to_cell_links: int
+    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int | None
 ) -> Callable:
     """Create a function to partition a mesh.
 
@@ -110,9 +125,9 @@ def create_cell_partitioner(
     return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links)
 
 
-@create_cell_partitioner.register(GhostMode)
+@create_cell_partitioner.register(GhostMode)  # type: ignore[attr-defined]
 def _create_cell_partitioner_from_ghost_mode(
-    mode: GhostMode, max_facet_to_cell_links: int
+    mode: GhostMode, max_facet_to_cell_links: int | None
 ) -> Callable:
     """Create a function to partition a mesh.
 
@@ -335,7 +350,7 @@ class Geometry(typing.Generic[Real]):
             DeprecationWarning,
             stacklevel=2,
         )
-        return self._cpp_object.dofmaps[0]
+        return self.dofmaps[0]
 
     def index_map(self) -> _IndexMap:
         """Index map for the geometry points (nodes) distribution."""
@@ -422,7 +437,7 @@ class Mesh(typing.Generic[Real]):
 
     def basix_cell(self) -> basix.CellType:
         """Return the Basix cell type."""
-        return getattr(basix.CellType, self.topology.cell_name())
+        return typing.cast(basix.CellType, getattr(basix.CellType, self.topology.cell_name()))
 
     def h(self, dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[Real]:
         """Geometric size measure of cell entities.
@@ -452,7 +467,20 @@ class Mesh(typing.Generic[Real]):
 class MeshTags:
     """Mesh tags associate data (markers) with some mesh entities."""
 
-    def __init__(self, meshtags):
+    _cpp_object: (
+        _cpp.mesh.MeshTags_int8
+        | _cpp.mesh.MeshTags_int32
+        | _cpp.mesh.MeshTags_int64
+        | _cpp.mesh.MeshTags_float64
+    )
+
+    def __init__(
+        self,
+        meshtags: _cpp.mesh.MeshTags_int8
+        | _cpp.mesh.MeshTags_int32
+        | _cpp.mesh.MeshTags_int64
+        | _cpp.mesh.MeshTags_float64,
+    ):
         """Initialize tags from a C++ MeshTags object.
 
         Args:
@@ -707,6 +735,9 @@ def transfer_meshtag(
     Returns:
         Mesh tags on the refined mesh.
     """
+    if not isinstance(meshtag._cpp_object, _cpp.mesh.MeshTags_int32):
+        raise TypeError("transfer_meshtag only supports MeshTags with int32 values.")
+
     if meshtag.dim == meshtag.topology.dim:
         mt = _cpp.refinement.transfer_cell_meshtag(
             meshtag._cpp_object, msh1.topology._cpp_object, parent_cell
@@ -838,7 +869,7 @@ def create_mesh(
     else:
         gdim = x.shape[1]
 
-    dtype = None
+    dtype: npt.DTypeLike | None = None
     if isinstance(e, ufl.domain.Mesh):
         # e is a UFL domain
         e_ufl = e.ufl_coordinate_element()
@@ -923,6 +954,7 @@ def meshtags(
     dim: int,
     entities: npt.NDArray[np.int32],
     values: np.ndarray | int | float,
+    name: str = "mesh_tags",
 ) -> MeshTags:
     """Create mesh tags that associate data with a subset of mesh entities.
 
@@ -933,6 +965,7 @@ def meshtags(
             values with . The array must be sorted and must not contain
             duplicates.
         values: The corresponding value for each entity.
+        name: Name of the meshtags.
 
     Returns:
         A mesh tags object.
@@ -967,12 +1000,16 @@ def meshtags(
         raise NotImplementedError(f"Type {values.dtype} not supported.")
 
     return MeshTags(
-        ftype(msh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values)
+        ftype(msh.topology._cpp_object, dim, np.asarray(entities, dtype=np.int32), values, name)
     )
 
 
 def meshtags_from_entities(
-    msh: Mesh, dim: int, entities: AdjacencyList, values: npt.NDArray[typing.Any]
+    msh: Mesh,
+    dim: int,
+    entities: AdjacencyList,
+    values: npt.NDArray[typing.Any],
+    name: str = "mesh_tags",
 ) -> MeshTags:
     """Create mesh tags that associate data with a subset of mesh entities.
 
@@ -984,6 +1021,7 @@ def meshtags_from_entities(
         entities: Entities to associated values with, with entities
             defined by their vertices.
         values: The corresponding value for each entity.
+        name: Name of the meshtags.
 
     Returns:
         A mesh tags object.
@@ -1000,7 +1038,7 @@ def meshtags_from_entities(
         values = np.full(entities.num_nodes, values, dtype=np.double)
     values = np.asarray(values)
     return MeshTags(
-        _cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities._cpp_object, values)  # type: ignore[arg-type]
+        _cpp.mesh.create_meshtags(msh.topology._cpp_object, dim, entities._cpp_object, values, name)  # type: ignore[arg-type]
     )
 
 
@@ -1409,7 +1447,7 @@ def transfer_meshtags_to_submesh(
             f"MeshTags with dtype {dtype} not supported for transfer to submesh."
         )
     cpp_tag = ftype(
-        entity_tag._cpp_object,
+        entity_tag._cpp_object,  # type: ignore[arg-type]
         submesh.topology._cpp_object,
         vertex_to_parent._cpp_object,
         cell_to_parent._cpp_object,

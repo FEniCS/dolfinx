@@ -151,7 +151,7 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
     return ufl.Mesh(element)
 
 
-def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
+def cell_perm_array(cell_type: CellType, num_nodes: int) -> npt.NDArray[np.uint16]:
     """Array for permuting Gmsh ordering to DOLFINx ordering.
 
     Args:
@@ -280,7 +280,7 @@ def extract_geometry(model, name: str | None = None) -> npt.NDArray[np.float64]:
     perm_sort = np.argsort(indices)
     if not np.all(indices[perm_sort] == np.arange(len(indices))):
         raise RuntimeError("Gmsh model node indices are not contiguous.")
-    return points[perm_sort]
+    return typing.cast(npt.NDArray[np.float64], points[perm_sort])
 
 
 def model_to_mesh(
@@ -306,12 +306,12 @@ def model_to_mesh(
         model: Gmsh model.
         comm: MPI communicator to use for mesh creation.
         rank: MPI rank that the Gmsh model is initialized on.
-        gdim: Geometrical dimension of the mesh.
+        gdim: Geometric dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
         dtype: Data-type used for the mesh coordinates
         max_facet_to_cell_links: Maximum number of cells a facet can
-                    be connected to.
+            be connected to.
 
     Returns:
         MeshData with mesh and tags of corresponding entities by
@@ -402,7 +402,7 @@ def model_to_mesh(
             meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
         else:
             # Any other process than input rank does not have any entities
-            marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int32)
+            marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int64)
             entity_values = np.empty((0,), dtype=np.int32)
             meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
 
@@ -526,7 +526,7 @@ def read_from_msh(
         comm: MPI communicator to create the mesh on.
         rank: Rank of ``comm`` responsible for reading the ``.msh``
             file.
-        gdim: Geometric dimension of the mesh
+        gdim: Geometric dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
 

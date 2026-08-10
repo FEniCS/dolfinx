@@ -14,7 +14,6 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la
 from dolfinx.common import list_timings
@@ -106,10 +105,10 @@ def test_numba_assembly(dtype):
     integrals = {IntegralType.cell: [(0, k1.address, cells, active_coeffs)]}
     L = Form(formtype([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object))
 
-    A = dolfinx.fem.assemble_matrix(a)
+    A = fem.assemble_matrix(a)
     A.scatter_reverse()
-    b = dolfinx.fem.assemble_vector(L)
-    b.scatter_reverse(dolfinx.la.InsertMode.add)
+    b = fem.assemble_vector(L)
+    b.scatter_reverse(la.InsertMode.add)
 
     Anorm = np.sqrt(A.squared_norm())
     bnorm = la.norm(b)
@@ -143,7 +142,7 @@ def test_coefficient(dtype):
         )
     )
 
-    b = dolfinx.fem.assemble_vector(L)
+    b = fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
     bnorm = la.norm(b)
     assert np.isclose(bnorm, 2.0 * 0.0739710713711999)
@@ -268,11 +267,11 @@ def test_cffi_assembly():
         ffibuilder.compile(verbose=True)
 
     mesh.comm.Barrier()
-    from _cffi_kernelA import ffi, lib
+    from _cffi_kernelA import ffi, lib  # type: ignore[import-not-found]
 
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
 
-    ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
+    ptrA = int(ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA")))
     active_coeffs = np.array([], dtype=np.int8)
     integrals = {IntegralType.cell: [(0, ptrA, cells, active_coeffs)]}
     a = Form(
@@ -281,7 +280,7 @@ def test_cffi_assembly():
         )
     )
 
-    ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
+    ptrL = int(ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL")))
     integrals = {IntegralType.cell: [(0, ptrL, cells, active_coeffs)]}
     L = Form(
         _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, [], mesh=mesh._cpp_object)

@@ -24,6 +24,15 @@
 
 namespace dolfinx::fem::impl
 {
+bool has_bc(auto& dofs, auto& bc, auto bs)
+{
+  for (auto dof : dofs)
+    for (int k = 0; k < bs; ++k)
+      if (bc[bs * dof + k])
+        return true;
+  return false;
+};
+
 /// @brief Typedef
 using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 
@@ -34,9 +43,16 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// a per-call allocation would not be amortized. Buffers must be
 /// sized by the caller and passed in via `Ab`/`cdofs_b`.
 ///
+/// @tparam LiftingMode Selects between matrix assembly and Dirichlet
+/// lifting semantics for this kernel-execution loop (see
+/// fem::impl::lift_bc). When `false` (default): standard assembly --
+/// the element tensor's `bc0`-marked rows and `bc1`-marked columns are
+/// zeroed in-place before being passed to `mat_set`. When `true`: cells
+/// with no `bc1`-marked column dofs are skipped, since they cannot
+/// contribute a lifting term, and the unmodified element tensor
+/// (including BC-marked columns) is passed to `mat_set`.
 /// @tparam T Matrix/form scalar type.
-/// @tparam LiftingMode If set true, only execute mat_set on cells with BCs in
-/// column space.
+/// @tparam U Geometry type.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Degree-of-freedom map for the mesh geometry.
@@ -73,7 +89,7 @@ using mdspan2_t = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>;
 /// local element matrix.
 /// @param cdofs_b Buffer for local element geometry. Size must be at
 /// least `3 * x_dofmap.extent(1))`.
-template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
+template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -122,20 +138,7 @@ void assemble_cells_matrix(
     // In "LiftingMode" only execute kernel if there are BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [&dofs1, &bc1, &bs1]()
-      {
-        for (std::int32_t dof : dofs1)
-        {
-          for (int k = 0; k < bs1; ++k)
-          {
-            if (bc1[bs1 * dof + k])
-              return true;
-          }
-        }
-        return false;
-      };
-
-      if (!has_bc())
+      if (!has_bc(dofs1, bc1, bs1))
         continue;
     }
 
@@ -212,9 +215,16 @@ void assemble_cells_matrix(
 /// so a per-call allocation would not be amortized. Buffers must be
 /// sized by the caller and passed in via `Ab`/`cdofs_b`.
 ///
+/// @tparam LiftingMode Selects between matrix assembly and Dirichlet
+/// lifting semantics for this kernel-execution loop (see
+/// fem::impl::lift_bc). When `false` (default): standard assembly --
+/// the element tensor's `bc0`-marked rows and `bc1`-marked columns are
+/// zeroed in-place before being passed to `mat_set`. When `true`: cells
+/// with no `bc1`-marked column dofs are skipped, since they cannot
+/// contribute a lifting term, and the unmodified element tensor
+/// (including BC-marked columns) is passed to `mat_set`.
 /// @tparam T Matrix/form scalar type.
-/// @tparam LiftingMode If set true, only execute mat_set on cells with
-/// BCs in column space.
+/// @tparam U Geometry type.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
@@ -252,7 +262,7 @@ void assemble_cells_matrix(
 /// local element matrix.
 /// @param cdofs_b Buffer for local element geometry. Size must be at
 /// least `3 * x_dofmap.extent(1))`.
-template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
+template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_entities(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -308,19 +318,7 @@ void assemble_entities(
     // Check for BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [&dofs1, &bc1, &bs1]()
-      {
-        for (std::int32_t dof : dofs1)
-        {
-          for (int k = 0; k < bs1; ++k)
-          {
-            if (bc1[bs1 * dof + k])
-              return true;
-          }
-        }
-        return false;
-      };
-      if (!has_bc())
+      if (!has_bc(dofs1, bc1, bs1))
         continue;
     }
 
@@ -358,6 +356,7 @@ void assemble_entities(
           }
         }
       }
+
       if (!bc1.empty())
       {
         for (std::size_t j = 0; j < num_dofs1; ++j)
@@ -389,8 +388,15 @@ void assemble_entities(
 /// sized by the caller and passed in via `Ab`/`cdofs_b`/`dofs_b`.
 ///
 /// @tparam T Matrix/form scalar type.
-/// @tparam LiftingMode If set true, only execute mat_set on cells with BCs in
-/// column space.
+/// @tparam U Geometry type.
+/// @tparam LiftingMode Selects between matrix assembly and Dirichlet
+/// lifting semantics for this kernel-execution loop (see
+/// fem::impl::lift_bc). When `false` (default): standard assembly --
+/// the element tensor's `bc0`-marked rows and `bc1`-marked columns are
+/// zeroed in-place before being passed to `mat_set`. When `true`: cells
+/// with no `bc1`-marked column dofs are skipped, since they cannot
+/// contribute a lifting term, and the unmodified element tensor
+/// (including BC-marked columns) is passed to `mat_set`.
 /// @param mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
@@ -431,7 +437,10 @@ void assemble_entities(
 /// least `2 * 3 * x_dofmap.extent(1))`.
 /// @param dofs_b Buffer for degrees-of-freedom. Size must be at least
 /// `2 * dmap0.map().extent(1) + 2 * dmap1.map().extent(1)`.
-template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
+/// @param Ae_block_b Buffer used to gather a single (test, trial) block
+/// of the local element matrix. Size must be at least `(bs0 *
+/// dmap0.map().extent(1)) * (bs1 * dmap1.map().extent(1))`.
+template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -456,7 +465,8 @@ void assemble_interior_facets(
     std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms,
-    std::span<T> Ab, std::span<U> cdofs_b, std::span<std::int32_t> dofs_b)
+    std::span<T> Ab, std::span<U> cdofs_b, std::span<std::int32_t> dofs_b,
+    std::span<T> Ae_block_b)
 {
   if (facets.empty())
     return;
@@ -490,15 +500,15 @@ void assemble_interior_facets(
   // domains) -- the sparsity pattern only holds entries for blocks
   // where both cells exist, so such blocks must be inserted
   // individually rather than as part of the full joint block.
-  std::vector<T> Ae_block;
-  auto insert_block = [&Ae_block, &Ae, &bs0, &bs1, &num_cols,
+  assert(Ae_block_b.size() >= dmap0_size * bs0 * dmap1_size * bs1);
+  auto insert_block = [&Ae_block_b, &Ae, &bs0, &bs1, &num_cols,
                        &mat_set](std::span<const std::int32_t> rdofs,
                                  std::span<const std::int32_t> cdofs,
                                  std::size_t row_offset, std::size_t col_offset)
   {
     if (rdofs.empty() or cdofs.empty())
       return;
-    Ae_block.resize(rdofs.size() * bs0 * cdofs.size() * bs1);
+    auto Ae_block = Ae_block_b.first(rdofs.size() * bs0 * cdofs.size() * bs1);
     for (std::size_t i = 0; i < rdofs.size() * bs0; ++i)
     {
       auto row
@@ -556,20 +566,7 @@ void assemble_interior_facets(
     // Check for BCs on column space
     if constexpr (LiftingMode)
     {
-      auto has_bc = [&dmapjoint1, &bc1, &bs1]()
-      {
-        for (std::int32_t dof : dmapjoint1)
-        {
-          for (int k = 0; k < bs1; ++k)
-          {
-            if (bc1[bs1 * dof + k])
-              return true;
-          }
-        }
-        return false;
-      };
-
-      if (!has_bc())
+      if (!has_bc(dmapjoint1, bc1, bs1))
         continue;
     }
 
@@ -614,7 +611,7 @@ void assemble_interior_facets(
       }
     }
 
-    // Don't clear rows/cols in LiftingMode
+    // Clear rows/cols if not in LiftingMode
     if constexpr (!LiftingMode)
     {
       // Zero rows and columns for BCs
@@ -633,6 +630,7 @@ void assemble_interior_facets(
           }
         }
       }
+
       if (!bc1.empty())
       {
         for (std::size_t j = 0; j < dmapjoint1.size(); ++j)
@@ -675,10 +673,18 @@ void assemble_interior_facets(
 /// Markers (bc0 and bc1) can be empty if no Dirichlet conditions are
 /// applied.
 ///
+/// @tparam LiftingMode Selects between matrix assembly and Dirichlet
+/// lifting semantics (see fem::impl::lift_bc, which instantiates this
+/// function with `LiftingMode=true` to compute lifting contributions to
+/// a right-hand side vector rather than to assemble a matrix). When
+/// `false` (default): standard assembly -- the element tensor's
+/// `bc0`-marked rows and `bc1`-marked columns are zeroed in-place
+/// before being passed to `mat_set`. When `true`: cells with no
+/// `bc1`-marked column dofs are skipped, since they cannot contribute a
+/// lifting term, and the unmodified element tensor (including
+/// BC-marked columns) is passed to `mat_set`.
 /// @tparam T Scalar type.
 /// @tparam U Geometry type.
-/// @tparam LiftingMode. Set to true to call the kernel only on cells with BCs
-/// in bc1.
 /// @param[in] mat_set Function that accumulates computed entries into a
 /// matrix.
 /// @param[in] a Bilinear form to assemble.
@@ -689,7 +695,7 @@ void assemble_interior_facets(
 /// applied.
 /// @param bc1 Marker for columns with Dirichlet boundary conditions
 /// applied.
-template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
+template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     la::MatSet<T> auto mat_set, const Form<T, U>& a,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
@@ -744,14 +750,15 @@ void assemble_matrix(
     std::size_t dmap0_size = dofmap0->map().extent(1);
     std::size_t dmap1_size = dofmap1->map().extent(1);
     std::vector<std::int32_t> dmap_b((2 * dmap0_size) + (2 * dmap1_size));
+    std::vector<T> Ae_block_b(dmap0_size * bs0 * dmap1_size * bs1);
 
     auto element0 = a.function_spaces().at(0)->elements(cell_type_idx);
     assert(element0);
     auto element1 = a.function_spaces().at(1)->elements(cell_type_idx);
     assert(element1);
-    const fem::DofTransformKernel<T> auto P0
+    const fem::DofTransformKernel<T> auto& P0
         = element0->template dof_transformation_fn<T>(doftransform::standard);
-    const fem::DofTransformKernel<T> auto P1T
+    const fem::DofTransformKernel<T> auto& P1T
         = element1->template dof_transformation_right_fn<T>(
             doftransform::transpose);
 
@@ -776,7 +783,7 @@ void assemble_matrix(
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
-      impl::assemble_cells_matrix<T, U, LiftingMode>(
+      impl::assemble_cells_matrix<LiftingMode>(
           mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
           {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
           md::mdspan(coeffs.data(), cells.size(), cstride), constants,
@@ -821,7 +828,7 @@ void assemble_matrix(
       std::span facets0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
       std::span facets1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
       assert((facets.size() / 4) * 2 * cstride == coeffs.size());
-      impl::assemble_interior_facets<T, U, LiftingMode>(
+      impl::assemble_interior_facets<LiftingMode>(
           mat_set, x_dofmap, x,
           mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
           {*dofmap0, bs0,
@@ -832,7 +839,7 @@ void assemble_matrix(
           P1T, bc0, bc1, fn,
           mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride), constants,
           cell_info0, cell_info1, facet_perms, std::span(Ab),
-          std::span(cdofs_b), dmap_b);
+          std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
     }
 
     for (auto itg_type : {fem::IntegralType::exterior_facet,
@@ -867,7 +874,7 @@ void assemble_matrix(
         std::span e1 = a.domain_arg(itg_type, 1, i, 0);
         mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
         assert((entities.size() / 2) * cstride == coeffs.size());
-        impl::assemble_entities<T, U, LiftingMode>(
+        impl::assemble_entities<LiftingMode>(
             mat_set, x_dofmap, x, entities, {dofs0, bs0, entities0}, P0,
             {dofs1, bs1, entities1}, P1T, bc0, bc1, fn,
             md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
@@ -876,5 +883,4 @@ void assemble_matrix(
     }
   }
 }
-
 } // namespace dolfinx::fem::impl

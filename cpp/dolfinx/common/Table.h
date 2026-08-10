@@ -16,7 +16,6 @@
 
 namespace dolfinx
 {
-
 /// @brief This class provides storage and pretty-printing for tables.
 ///
 /// Example usage:

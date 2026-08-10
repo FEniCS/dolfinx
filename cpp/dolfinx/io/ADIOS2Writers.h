@@ -413,7 +413,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable vertices = impl_adios2::define_variable<std::uint32_t>(
       io, "NumberOfNodes", {adios2::LocalValueDim});
   adios2::Variable elements = impl_adios2::define_variable<std::uint32_t>(
-      io, "NumberOfEntities", {adios2::LocalValueDim});
+      io, "NumberOfCells", {adios2::LocalValueDim});
 
   // Write mesh information to file
   spdlog::debug("vertices={}, elements={}, local_geom={}, local_cells={}",

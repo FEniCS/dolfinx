@@ -21,7 +21,6 @@
 
 namespace dolfinx::common
 {
-
 /// @brief A Scatterer supports the scattering and gathering of
 /// distributed data that is associated with a common::IndexMap, using
 /// MPI.

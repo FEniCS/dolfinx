@@ -34,6 +34,8 @@
 # efficient static condensation.
 
 # +
+import sys
+import typing
 from pathlib import Path
 
 from mpi4py import MPI
@@ -61,16 +63,20 @@ from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
-from ffcx.codegeneration.numba.utils import empty_void_pointer
+from ffcx.codegeneration.numba.utils import empty_void_pointer as _empty_void_pointer
 from ffcx.codegeneration.numba.utils import ufcx_kernel_signature as ufcx_signature
 
 # -
+
+# `empty_void_pointer`'s stub signature is numba's `@intrinsic`
+# `typingctx`/`context` arguments, not its real, zero-argument call.
+empty_void_pointer = typing.cast(typing.Callable[[], typing.Any], _empty_void_pointer)
 
 rtype = default_real_type
 dtype = default_scalar_type
 if np.issubdtype(rtype, np.float32):
     print("float32 not yet supported for this demo.")
-    exit(0)
+    sys.exit(0)
 
 # We start by reading in the Cook's mesh [cooks_tri_mesh.xdmf](
 # https://github.com/FEniCS/dolfinx/blob/main/python/demo/data/cooks_tri_mesh.xdmf)
@@ -178,7 +184,7 @@ if np.issubdtype(dtype, np.complexfloating):
             "CFFI 1.17.0 and 1.17.1 has a bug for complex type."
             "See https://github.com/FEniCS/dolfinx/pull/3635. Exiting."
         )
-        exit(0)
+        sys.exit(0)
     cffi_support.register_type(ffi.typeof("double _Complex"), numba.types.complex128)
 
 # Get local dofmap sizes for later local tensor tabulations
@@ -260,8 +266,8 @@ A_cond = assemble_matrix(a_cond, bcs=[bc])
 A_cond.assemble()
 b = assemble_vector(b1)
 apply_lifting(b, [a_cond], bcs=[[bc]])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
-bc.set(b.array_w)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
+bc.set(b.array_w)  # type: ignore[arg-type]
 
 # We use a {py:class}`PETSc.KSP <petsc4py.PETSc.KSP>` solver to solve the
 # condensed linear system. The solution is stored in a
@@ -305,4 +311,4 @@ if len(cells) > 0:
 # Check the equality of displacement based and mixed condensed global
 # matrices, i.e. check that condensation is exact
 
-assert np.isclose((A - A_cond).norm(), 0.0)
+assert np.isclose((A - A_cond).norm(), 0.0)  # type: ignore[operator]
