@@ -106,7 +106,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    CellPartitionFunction partitioner = nullptr,
-                   const CellReorderFunction& reorder_fn = graph::reorder_gps)
+                   const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   if (std::ranges::any_of(n, [](auto e) { return e < 1; }))
     throw std::runtime_error("At least one cell is required.");
@@ -154,7 +154,7 @@ template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
                    const CellPartitionFunction& partitioner = nullptr,
-                   const CellReorderFunction& reorder_fn = graph::reorder_gps)
+                   const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   return create_box<T>(comm, comm, p, n, celltype, partitioner, reorder_fn);
 }
@@ -184,7 +184,7 @@ create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                  std::array<std::int64_t, 2> n, CellType celltype,
                  CellPartitionFunction partitioner,
                  DiagonalType diagonal = DiagonalType::right, int gdim = 2,
-                 const CellReorderFunction& reorder_fn = graph::reorder_gps)
+                 const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   if (gdim < 2 || gdim > 3)
     throw std::runtime_error("2 <= gdim <= 3 for rectangle mesh.");
@@ -258,7 +258,7 @@ Mesh<T>
 create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
                 mesh::GhostMode ghost_mode = mesh::GhostMode::none,
                 CellPartitionFunction partitioner = nullptr, int gdim = 1,
-                const CellReorderFunction& reorder_fn = graph::reorder_gps)
+                const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   if (gdim < 1 || gdim > 3)
     throw std::runtime_error("1 <= gdim <= 3 for interval mesh.");
@@ -285,20 +285,20 @@ create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
     if (gdim == 1)
     {
       return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF,
-                         x1d, {npts, 1}, partitioner, 2, reorder_fn);
+                         x1d, {npts, 1}, partitioner, 2, 1, reorder_fn);
     }
     std::vector<T> x(npts * gdim, T(0));
     for (std::size_t i = 0; i < npts; i++)
       x[i * gdim] = x1d[i];
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
                        {npts, static_cast<std::size_t>(gdim)}, partitioner, 2,
-                       reorder_fn);
+                       1, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
                        std::vector<T>{}, {0, static_cast<std::size_t>(gdim)},
-                       partitioner, 2, reorder_fn);
+                       partitioner, 2, 1, reorder_fn);
   }
 }
 
@@ -356,7 +356,7 @@ std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
   }
 
   const std::int64_t n_points = (nx + 1) * (ny + 1) * (nz + 1);
-  const auto [range_begin, range_end] = dolfinx::common::local_range(
+  const auto [range_begin, range_end] = common::local_range(
       dolfinx::MPI::rank(comm), n_points, dolfinx::MPI::size(comm));
 
   std::vector<T> geom;
@@ -394,7 +394,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
     const auto [nx, ny, nz] = n;
     const std::int64_t n_cells = nx * ny * nz;
 
-    std::array range_c = dolfinx::common::local_range(
+    std::array range_c = common::local_range(
         dolfinx::MPI::rank(subcomm), n_cells, dolfinx::MPI::size(subcomm));
     cells.reserve(6 * (range_c[1] - range_c[0]) * 4);
 
@@ -422,7 +422,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner, 2, reorder_fn);
+                     {x.size() / 3, 3}, partitioner, 2, 1, reorder_fn);
 }
 
 template <std::floating_point T>
@@ -444,7 +444,7 @@ build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
     // Create cuboids
     const auto [nx, ny, nz] = n;
     const std::int64_t n_cells = nx * ny * nz;
-    std::array range_c = dolfinx::common::local_range(
+    std::array range_c = common::local_range(
         dolfinx::MPI::rank(subcomm), n_cells, dolfinx::MPI::size(subcomm));
     cells.reserve((range_c[1] - range_c[0]) * 8);
     for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
@@ -467,7 +467,7 @@ build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner, 2, reorder_fn);
+                     {x.size() / 3, 3}, partitioner, 2, 1, reorder_fn);
 }
 
 template <std::floating_point T>
@@ -488,8 +488,8 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
     const std::int64_t ny = n[1];
     const std::int64_t nz = n[2];
     const std::int64_t n_cells = nx * ny * nz;
-    std::array range_c = dolfinx::common::local_range(
-        dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
+    std::array range_c = common::local_range(dolfinx::MPI::rank(comm), n_cells,
+                                             dolfinx::MPI::size(comm));
     const std::int64_t cell_range = range_c[1] - range_c[0];
 
     // Create cuboids
@@ -515,7 +515,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   return create_mesh(comm, subcomm, cells, element, subcomm, x,
-                     {x.size() / 3, 3}, partitioner, 2, reorder_fn);
+                     {x.size() / 3, 3}, partitioner, 2, 1, reorder_fn);
 }
 
 template <std::floating_point T>
@@ -672,7 +672,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     if (gdim == 2)
     {
       return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                         {npts, 2}, partitioner, 2, reorder_fn);
+                         {npts, 2}, partitioner, 2, 1, reorder_fn);
     }
     std::vector<T> xg(npts * gdim, T(0));
     for (std::size_t i = 0; i < npts; i++)
@@ -682,13 +682,13 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     }
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, xg,
                        {npts, static_cast<std::size_t>(gdim)}, partitioner, 2,
-                       reorder_fn);
+                       1, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
                        std::vector<T>{}, {0, static_cast<std::size_t>(gdim)},
-                       partitioner, 2, reorder_fn);
+                       partitioner, 2, 1, reorder_fn);
   }
 }
 
@@ -738,7 +738,7 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     if (gdim == 2)
     {
       return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
-                         {npts, 2}, partitioner, 2, reorder_fn);
+                         {npts, 2}, partitioner, 2, 1, reorder_fn);
     }
     std::vector<T> xg(npts * gdim, T(0));
     for (std::size_t i = 0; i < npts; i++)
@@ -748,13 +748,13 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     }
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, xg,
                        {npts, static_cast<std::size_t>(gdim)}, partitioner, 2,
-                       reorder_fn);
+                       1, reorder_fn);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL,
                        std::vector<T>{}, {0, static_cast<std::size_t>(gdim)},
-                       partitioner, 2, reorder_fn);
+                       partitioner, 2, 1, reorder_fn);
   }
 }
 } // namespace impl

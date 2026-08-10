@@ -7,7 +7,7 @@
 """Tools to extract data from Gmsh models."""
 
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -22,7 +22,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32 as _AdjacencyList_int32
 from dolfinx.fem import coordinate_element
-from dolfinx.graph import AdjacencyList, adjacencylist
+from dolfinx.graph import adjacencylist
 from dolfinx.io.utils import distribute_entity_data
 from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags_from_entities
 
@@ -146,12 +146,12 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
         degree,
         basix.LagrangeVariant.equispaced,
         shape=(gdim,),
-        dtype=dtype,  # type: ignore[arg-type]
+        dtype=dtype,
     )
     return ufl.Mesh(element)
 
 
-def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
+def cell_perm_array(cell_type: CellType, num_nodes: int) -> npt.NDArray[np.uint16]:
     """Array for permuting Gmsh ordering to DOLFINx ordering.
 
     Args:
@@ -278,8 +278,9 @@ def extract_geometry(model, name: str | None = None) -> npt.NDArray[np.float64]:
     # order as their unique node index. We therefore sort nodes in
     # geometry according to the unique index
     perm_sort = np.argsort(indices)
-    assert np.all(indices[perm_sort] == np.arange(len(indices)))
-    return points[perm_sort]
+    if not np.all(indices[perm_sort] == np.arange(len(indices))):
+        raise RuntimeError("Gmsh model node indices are not contiguous.")
+    return typing.cast(npt.NDArray[np.float64], points[perm_sort])
 
 
 def model_to_mesh(
@@ -287,7 +288,9 @@ def model_to_mesh(
     comm: _MPI.Comm,
     rank: int,
     gdim: int = 3,
-    partitioner: Callable[[_MPI.Comm, int, int, _AdjacencyList_int32], _AdjacencyList_int32]
+    partitioner: Callable[
+        [_MPI.Comm, int, Sequence[CellType], Sequence[npt.NDArray[np.int64]]], _AdjacencyList_int32
+    ]
     | None = None,
     dtype=default_real_type,
     max_facet_to_cell_links: int = 2,
@@ -303,12 +306,12 @@ def model_to_mesh(
         model: Gmsh model.
         comm: MPI communicator to use for mesh creation.
         rank: MPI rank that the Gmsh model is initialized on.
-        gdim: Geometrical dimension of the mesh.
+        gdim: Geometric dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
         dtype: Data-type used for the mesh coordinates
         max_facet_to_cell_links: Maximum number of cells a facet can
-                    be connected to.
+            be connected to.
 
     Returns:
         MeshData with mesh and tags of corresponding entities by
@@ -325,7 +328,8 @@ def model_to_mesh(
     """
     valid_mesh = None
     if comm.rank == rank:
-        assert model is not None, "Gmsh model is None on rank responsible for mesh creation."
+        if model is None:
+            raise ValueError("Gmsh model is None on rank responsible for mesh creation.")
         # Get mesh geometry and mesh topology for each element
         x = extract_geometry(model)
         topologies, physical_groups = extract_topology_and_markers(model)
@@ -398,7 +402,7 @@ def model_to_mesh(
             meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
         else:
             # Any other process than input rank does not have any entities
-            marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int32)
+            marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int64)
             entity_values = np.empty((0,), dtype=np.int32)
             meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
 
@@ -437,10 +441,11 @@ def model_to_mesh(
         cpp_mesh = _cpp.mesh.create_mesh(
             comm,
             cell_connectivities,
-            cmaps,
+            cmaps,  # type: ignore[arg-type]
             x[:, :gdim].astype(dtype).copy(),
             partitioner,
             max_facet_to_cell_links,
+            1,
         )
         mesh = Mesh(cpp_mesh, None)
 
@@ -455,9 +460,8 @@ def model_to_mesh(
             partitioner,
             max_facet_to_cell_links=max_facet_to_cell_links,
         )
-    assert tdim == mesh.topology.dim, (
-        f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}"
-    )
+    if tdim != mesh.topology.dim:
+        raise RuntimeError(f"{mesh.topology.dim=} does not match Gmsh model dimension {tdim}")
 
     # Create MeshTags for all sub entities
     topology = mesh.topology
@@ -507,7 +511,10 @@ def read_from_msh(
     comm: _MPI.Comm,
     rank: int = 0,
     gdim: int = 3,
-    partitioner: Callable[[_MPI.Comm, int, int, AdjacencyList], _AdjacencyList_int32] | None = None,
+    partitioner: Callable[
+        [_MPI.Comm, int, Sequence[CellType], Sequence[npt.NDArray[np.int64]]], _AdjacencyList_int32
+    ]
+    | None = None,
 ) -> MeshData:
     """Read a Gmsh .msh file and return a mesh and cell facet markers.
 
@@ -519,7 +526,7 @@ def read_from_msh(
         comm: MPI communicator to create the mesh on.
         rank: Rank of ``comm`` responsible for reading the ``.msh``
             file.
-        gdim: Geometric dimension of the mesh
+        gdim: Geometric dimension of the mesh.
         partitioner: Function that computes the parallel
             distribution of cells across MPI ranks.
 

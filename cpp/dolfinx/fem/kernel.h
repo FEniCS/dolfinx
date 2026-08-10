@@ -34,6 +34,9 @@ using kernel_t = std::function<void(T*, const T*, const T*, const U*,
 template <dolfinx::scalar T, std::floating_point U = scalar_value_t<T>>
 constexpr kernel_t<T, U> extract_kernel(const ufcx_integral* integral)
 {
+  static_assert(std::is_same_v<U, scalar_value_t<T>>,
+                "UFCx kernels require geometry type U == scalar_value_t<T>.");
+
   if constexpr (std::is_same_v<T, float>)
     return integral->tabulate_tensor_float32;
   else if constexpr (std::is_same_v<T, double>)

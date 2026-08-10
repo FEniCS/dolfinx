@@ -478,7 +478,8 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
     throw std::runtime_error("Edges must be initialised");
 
   // Get sharing ranks for each edge
-  graph::AdjacencyList<int> edge_ranks = map_e->index_to_dest_ranks();
+  auto [_data, _offsets] = map_e->index_to_dest_ranks();
+  graph::AdjacencyList<int> edge_ranks(std::move(_data), std::move(_offsets));
 
   // Create unique list of ranks that share edges (owners of ghosts plus
   // ranks that ghost owned indices)

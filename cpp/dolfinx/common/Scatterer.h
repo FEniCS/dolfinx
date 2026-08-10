@@ -21,7 +21,6 @@
 
 namespace dolfinx::common
 {
-
 /// @brief A Scatterer supports the scattering and gathering of
 /// distributed data that is associated with a common::IndexMap, using
 /// MPI.
@@ -343,9 +342,9 @@ public:
       return;
 
     int ierr = MPI_Ineighbor_alltoallv(
-        send_buffer, _sizes_remote.data(), _displs_remote.data(), MPI::mpi_t<T>,
-        recv_buffer, _sizes_local.data(), _displs_local.data(), MPI::mpi_t<T>,
-        _comm1.comm(), &request);
+        send_buffer, _sizes_remote.data(), _displs_remote.data(),
+        dolfinx::MPI::mpi_t<T>, recv_buffer, _sizes_local.data(),
+        _displs_local.data(), dolfinx::MPI::mpi_t<T>, _comm1.comm(), &request);
     dolfinx::MPI::check_error(_comm1.comm(), ierr);
   }
 
@@ -477,7 +476,7 @@ public:
   /// For a reverse scatter, if `send_buffer` is the send buffer, then
   /// `send_buffer` is packaged such that:
   ///
-  ///     auto& idx = scatterer.local_indices()
+  ///     auto& idx = scatterer.remote_indices()
   ///     std::vector<T> send_buffer(idx.size())
   ///     for (std::size_t i = 0; i < idx.size(); ++i)
   ///         send_buffer[i] = xg[idx[i]];
@@ -489,7 +488,10 @@ public:
   /// communication.
   ///
   /// @return Number of required MPI request handles.
-  std::size_t num_p2p_requests() { return _dest.size() + _src.size(); }
+  std::size_t num_p2p_requests() const noexcept
+  {
+    return _dest.size() + _src.size();
+  }
 
 private:
   // Communicator where the source ranks own the indices in the callers

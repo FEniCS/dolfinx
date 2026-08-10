@@ -17,6 +17,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <iterator>
 #include <memory>
 #include <numeric>
@@ -213,10 +214,10 @@ build_basic_dofmaps(
                 and !topology.connectivity({int(D), int(i)},
                                            {int(d), int(et_index)}))
             {
-              throw std::runtime_error("Missing needed connectivity. Cell type:"
-                                       + std::to_string(i)
-                                       + "to dim:" + std::to_string(d)
-                                       + ", ent:" + std::to_string(et_index));
+              throw std::runtime_error(
+                  std::format("Missing needed connectivity. Cell type: {} to "
+                              "dim: {}, ent: {}",
+                              i, d, et_index));
             }
           }
           else
@@ -234,15 +235,14 @@ build_basic_dofmaps(
 #ifndef NDEBUG
   {
     // Debug output
-    std::stringstream s;
-    s << "Required entities:";
+    std::string s = "Required entities:";
     for (std::size_t i = 0; i < required_dim_et.size(); ++i)
     {
-      s << "(" << (int)required_dim_et[i].first << ", "
-        << (int)required_dim_et[i].second << ")=" << num_entity_dofs_et[i]
-        << " ";
+      std::format_to(std::back_inserter(s), "({}, {})={} ",
+                     (int)required_dim_et[i].first,
+                     (int)required_dim_et[i].second, num_entity_dofs_et[i]);
     }
-    spdlog::info("{}", s.str());
+    spdlog::info("{}", s);
   }
 #endif
 
@@ -272,6 +272,37 @@ build_basic_dofmaps(
         cell_entity_types[d].push_back(mesh::cell_entity_type(cell_type, d, e));
     }
 
+    // Precompute per-entity data (cell-invariant) once, avoiding a
+    // repeated connectivity map lookup per cell in the loop below
+    struct required_entity_data
+    {
+      std::size_t d;
+      std::int32_t local_offset;
+      int num_entity_dofs_expected;
+      const std::vector<std::vector<int>>* e_dofs_d;
+      const std::vector<mesh::CellType>* e_types;
+      mesh::CellType e_type;
+      std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity;
+    };
+    std::vector<required_entity_data> required_entities;
+    required_entities.reserve(required_dim_et.size());
+    for (std::size_t k = 0; k < required_dim_et.size(); ++k)
+    {
+      std::size_t d = required_dim_et[k].first;
+      std::size_t et = required_dim_et[k].second;
+
+      // Skip over undefined topology, e.g. quad facets of tetrahedra
+      auto c = d < D
+                   ? topology.connectivity({int(D), int(i)}, {int(d), int(et)})
+                   : nullptr;
+      if (d < D and !c)
+        continue;
+
+      required_entities.push_back(
+          {d, local_entity_offsets[k], num_entity_dofs_et[k], &entity_dofs[d],
+           &cell_entity_types[d], topology.entity_types(d)[et], c});
+    }
+
     std::int32_t dofmap_offset = 0;
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
@@ -281,40 +312,26 @@ build_basic_dofmaps(
       dofmap_offset += dofmap_width;
 
       // Iterate over required entities for this element, dimension and type
-      for (std::size_t k = 0; k < required_dim_et.size(); ++k)
+      for (const required_entity_data& re : required_entities)
       {
-        // Get dimension d and entity type et
-        std::size_t d = required_dim_et[k].first;
-        std::size_t et = required_dim_et[k].second;
-        mesh::CellType e_type = topology.entity_types(d)[et];
-
-        // Skip over undefined topology, e.g. quad facets of tetrahedra
-        if (d < D
-            and !topology.connectivity({int(D), int(i)}, {int(d), int(et)}))
-        {
-          continue;
-        }
-
         // Iterate over each entity of current dimension d and type et
         std::span<const std::int32_t> c_to_e
-            = d < D
-                  ? topology.connectivity({int(D), int(i)}, {int(d), int(et)})
-                        ->links(c)
-                  : std::span<const std::int32_t>(&c, 1);
+            = re.connectivity ? re.connectivity->links(c)
+                              : std::span<const std::int32_t>(&c, 1);
 
-        const std::vector<std::vector<int>>& e_dofs_d = entity_dofs[d];
-        const std::vector<mesh::CellType>& e_types = cell_entity_types[d];
+        const std::vector<std::vector<int>>& e_dofs_d = *re.e_dofs_d;
+        const std::vector<mesh::CellType>& e_types = *re.e_types;
         int w = 0;
         for (std::size_t e = 0; e < e_dofs_d.size(); ++e)
         {
           // Skip entities of wrong type (e.g. for facets of prism)
           // Use separate connectivity index 'w' which only advances for
           // correct entities
-          if (e_type == e_types[e])
+          if (re.e_type == e_types[e])
           {
             const std::vector<int>& e_dofs_d_e = e_dofs_d[e];
             std::size_t num_entity_dofs = e_dofs_d_e.size();
-            assert((int)num_entity_dofs == num_entity_dofs_et[k]);
+            assert((int)num_entity_dofs == re.num_entity_dofs_expected);
             std::int32_t e_index_local = c_to_e[w];
             ++w;
 
@@ -325,8 +342,8 @@ build_basic_dofmaps(
             for (std::size_t j = 0; j < num_entity_dofs; ++j)
             {
               int dof_local = e_dofs_d_e[j];
-              dofs_c[dof_local] = local_entity_offsets[k]
-                                  + num_entity_dofs * e_index_local + j;
+              dofs_c[dof_local]
+                  = re.local_offset + num_entity_dofs * e_index_local + j;
             }
           }
         }
@@ -692,11 +709,9 @@ fem::build_dofmap_data(
 }
 
 //-----------------------------------------------------------------------------
-fem::DofMap fem::build_real_element_dofmap(
-    const mesh::Topology& topology,
-    const std::vector<std::vector<std::vector<int>>>& entity_dofs,
-    const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
-    int value_size)
+fem::DofMap
+fem::build_real_element_dofmap(const mesh::Topology& topology,
+                               const fem::ElementDofLayout& dof_layout)
 {
   // We select the process that owns cell 0 to have all dofs and all other
   // processes ghost them
@@ -723,10 +738,6 @@ fem::DofMap fem::build_real_element_dofmap(
   auto imap = std::make_shared<const dolfinx::common::IndexMap>(
       topology.comm(), num_dofs, ghosts, owners);
 
-  // Create element dof layout
-  dolfinx::fem::ElementDofLayout dof_layout(value_size, entity_dofs,
-                                            entity_closure_dofs, {}, {});
-
   // Create dofmap array
   std::int32_t num_cells_on_process
       = topology.index_map(topology.dim())->size_local()
@@ -734,6 +745,7 @@ fem::DofMap fem::build_real_element_dofmap(
 
   std::vector<std::int32_t> dofmap(num_cells_on_process, 0);
   dofmap.reserve(1);
-  return dolfinx::fem::DofMap(dof_layout, imap, value_size, dofmap, value_size);
+  return dolfinx::fem::DofMap(dof_layout, imap, dof_layout.block_size(), dofmap,
+                              dof_layout.block_size());
 };
 //-----------------------------------------------------------------------------

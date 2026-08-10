@@ -9,14 +9,17 @@
 #include "Timer.h"
 #include "local_range.h"
 #include "log.h"
+#include "sort.h"
 #include "types.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <complex>
+#include <concepts>
 #include <cstdint>
+#include <iterator>
 #include <numeric>
-#include <set>
+#include <ranges>
 #include <span>
 #include <tuple>
 #include <type_traits>
@@ -30,10 +33,9 @@
 namespace dolfinx::MPI
 {
 /// MPI communication tags
-enum class tag : std::uint16_t
+enum class tag : int
 {
   consensus_pcx = 1200,
-  consensus_pex = 1201,
   consensus_nbx = 1202,
 };
 
@@ -129,6 +131,9 @@ constexpr int index_owner(int size, std::size_t index, std::size_t N)
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] edges Edges (ranks) from this rank (the caller).
+/// @pre `edges` must not contain duplicate ranks (a duplicate can
+/// leave a message unconsumed on the shared PCX tag, corrupting a
+/// later call).
 /// @return Ranks that have defined edges from them to this rank.
 std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
                                          std::span<const int> edges);
@@ -152,211 +157,239 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 ///
 /// @param[in] comm MPI communicator
 /// @param[in] edges Edges (ranks) from this rank (the caller).
+/// @pre `edges` must not contain duplicate ranks.
 /// @param[in] tag Tag used in non-blocking MPI calls. A tag can be
 /// required when this function is called a second time on some ranks
-/// before a previous call has completed on all other ranks. @return
-/// Ranks that have defined edges from them to this rank. @note An
-/// alternative to passing a tag is to ensure that there is an implicit
-/// or explicit barrier before and after the call to this function.
+/// before a previous call has completed on all other ranks.
+/// @return Ranks that have defined edges from them to this rank.
+/// @note An alternative to passing a tag is to ensure that there is
+/// an implicit or explicit barrier before and after the call to this
+/// function.
 std::vector<int>
 compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges,
                         int tag = static_cast<int>(tag::consensus_nbx));
 
-/// @brief Distribute row data to 'post office' ranks.
+/// @brief Determine incoming graph edges for two independent edge
+/// sets using a single, overlapped NBX consensus round.
 ///
-/// This function takes row-wise data that is distributed across
-/// processes. Data is not duplicated across ranks. The global index of
-/// a row is its local row position plus the offset for the calling
-/// process. The post office rank for a row is determined by applying
-/// dolfinx::MPI::index_owner to the global index, and the row is then
-/// sent to the post office rank. The function returns that row data for
-/// which the caller is the post office.
+/// Equivalent to calling MPI::compute_graph_edges_nbx independently
+/// for `edges0` and `edges1`, but runs both consensus rounds
+/// concurrently behind a single shared barrier rather than one after
+/// the other, halving the number of global barrier round-trips when
+/// the two edge sets can be computed without waiting on one another.
+///
+/// @note `tag0` and `tag1` must differ from one another, and from any
+/// tag used by another consensus round that may be in flight
+/// concurrently on `comm`.
+///
+/// @note Collective.
+///
+/// @param[in] comm MPI communicator
+/// @param[in] edges0 Edges (ranks) from this rank (the caller) for
+/// the first edge set.
+/// @param[in] tag0 Tag used for `edges0`'s messages.
+/// @param[in] edges1 Edges (ranks) from this rank (the caller) for
+/// the second edge set.
+/// @param[in] tag1 Tag used for `edges1`'s messages.
+/// @return Ranks with defined edges to this rank, for (0) `edges0`
+/// and (1) `edges1`.
+std::pair<std::vector<int>, std::vector<int>>
+compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges0, int tag0,
+                        std::span<const int> edges1, int tag1);
+
+/// @brief Send row data to its 'post office' rank.
+///
+/// `x` is a contiguous local block of a larger row-major array
+/// distributed over `comm`, with local row `i` at global index
+/// `rank_offset + i`. Each row is sent to its post office rank
+/// (dolfinx::MPI::index_owner applied to the row's global index and
+/// `shape[0]`), except rows for which the caller is itself the post
+/// office, which are left in place.
 ///
 /// @param[in] comm MPI communicator.
-/// @param[in] x Data to distribute (2D, row-major layout).
-/// @param[in] shape The global shape of `x`.
-/// @param[in] rank_offset The rank offset such that global index of
-/// local row `i` in `x` is `rank_offset + i`. It is usually computed
-/// using `MPI_Exscan`.
-/// @returns (0) local indices of my post office data and (1) the data
-/// (row-major). It **does not** include rows that are in `x`, i.e. rows
-/// for which the calling process is the post office.
-template <typename U>
-std::pair<std::vector<std::int32_t>,
-          std::vector<typename std::remove_reference_t<typename U::value_type>>>
+/// @param[in] x Local block of the array to distribute (row-major).
+/// @param[in] shape Global shape of the array, `{num_rows, num_cols}`.
+/// @param[in] rank_offset Global row index of local row 0 in `x`,
+/// usually computed with `MPI_Exscan`.
+/// @return (0) position of each received row within the caller's
+/// post-office partition of `[0, shape[0])`, and (1) the received row
+/// data (row-major). Rows for which the caller is itself the post
+/// office are not included.
+template <std::ranges::contiguous_range U>
+std::pair<std::vector<std::int32_t>, std::vector<std::ranges::range_value_t<U>>>
 distribute_to_postoffice(MPI_Comm comm, const U& x,
                          std::array<std::int64_t, 2> shape,
                          std::int64_t rank_offset);
 
-/// @brief Distribute rows of a rectangular data array from post office
-/// ranks to ranks where they are required.
+/// @brief Fetch rows of a distributed row-major array via their post
+/// office ranks.
 ///
-/// This function determines local neighborhoods for communication, and
-/// then using MPI neighbourhood collectives to exchange data. It is
-/// scalable if the neighborhoods are relatively small, i.e. each
-/// process communicated with a modest number of other processes.
+/// `x` is a contiguous local block of a larger row-major array
+/// distributed over `comm`, with local row `i` at global index
+/// `rank_offset + i`. For each global row index in `indices` (which
+/// may contain repeats), returns that row -- read directly from `x` if
+/// already local, otherwise requested from its post office rank via
+/// MPI neighbourhood collectives. Scalable provided each rank
+/// exchanges with only a modest number of others.
 ///
-/// @param[in] comm The MPI communicator.
-/// @param[in] indices Global indices of the data (row indices) required
-/// by calling process.
-/// @param[in] x Data (2D array, row-major) on calling process which may
-/// be distributed (by row). The global index for the `[0, ..., n)`
-/// local rows is assumed to be the local index plus the offset for this
-/// rank.
-/// @param[in] shape The global shape of `x`.
-/// @param[in] rank_offset The rank offset such that global index of
-/// local row `i` in `x` is `rank_offset + i`. It is usually computed
-/// using `MPI_Exscan` on `comm1` from MPI::distribute_data.
-/// @return The data for each index in `indices` (row-major storage).
-/// @pre `shape1 > 0`.
-template <typename U>
-std::vector<typename std::remove_reference_t<typename U::value_type>>
+/// @param[in] comm MPI communicator.
+/// @param[in] indices Global row indices required by the caller.
+/// @param[in] x Local block of the array to distribute (row-major).
+/// @param[in] shape Global shape of the array, `{num_rows, num_cols}`.
+/// @param[in] rank_offset Global row index of local row 0 in `x`
+/// (usually an exclusive scan of row counts over the communicator `x`
+/// is distributed across, which may differ from `comm`).
+/// @return The row for each entry of `indices`, in the same order
+/// (row-major storage).
+/// @pre `shape[1] > 0`.
+template <std::ranges::contiguous_range U>
+std::vector<std::ranges::range_value_t<U>>
 distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
                            const U& x, std::array<std::int64_t, 2> shape,
                            std::int64_t rank_offset);
 
-/// @brief Distribute rows of a rectangular data array to ranks where
-/// they are required (scalable version).
+/// @brief Distribute rows of a row-major array to the ranks that
+/// require them, via the post office pattern.
 ///
-/// This function determines local neighborhoods for communication, and
-/// then uses MPI neighbourhood collectives to exchange data. It is
-/// scalable if the neighborhoods are relatively small, i.e. each
-/// process communicated with a modest number of other processes.
+/// Scalable provided each rank exchanges with only a modest number of
+/// others.
 ///
-/// @param[in] comm0 Communicator to distribute data across.
-/// @param[in] indices Global indices of the data (row indices) required
-/// by the calling process.
-/// @param[in] comm1 Communicator across which x is distributed. Can be
+/// @param[in] comm0 Communicator over which `indices` are resolved and
+/// the result is returned.
+/// @param[in] indices Global row indices required by the calling rank.
+/// @param[in] comm1 Communicator across which `x` is distributed --
+/// typically `comm0` itself or a sub-communicator of it, and
 /// `MPI_COMM_NULL` on ranks where `x` is empty.
-/// @param[in] x Data (2D array, row-major) on calling process to be
-/// distributed (by row). The global index for the `[0, ..., n)` local
-/// rows is assumed to be the local index plus the offset for this rank
-/// on `comm1`.
-/// @param[in] shape1 The number of columns of the data array `x`.
-/// @return The data for each index in `indices` (row-major storage).
-/// @pre `shape1 > 0`
-template <typename U>
-std::vector<typename std::remove_reference_t<typename U::value_type>>
+/// @param[in] x Local block of rows to distribute (row-major); local
+/// row `i` has global index given by an exclusive scan of local row
+/// counts over `comm1`.
+/// @param[in] shape1 Number of columns of `x`.
+/// @return The row for each entry of `indices`, in the same order
+/// (row-major storage).
+/// @pre `shape1 > 0`.
+template <std::ranges::contiguous_range U>
+std::vector<std::ranges::range_value_t<U>>
 distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                 MPI_Comm comm1, const U& x, int shape1);
 
+/// @private Type-dependent `false` for use in a `static_assert` that
+/// should only fire when a template is actually instantiated (a bare
+/// `static_assert(false, ...)` would fire unconditionally).
 template <typename T>
 struct dependent_false : std::false_type
 {
 };
 
-/// MPI Type
-
-/// @brief Type trait for MPI type conversions.
+/// @private Map a C++ scalar type to its MPI_Datatype. New types are
+/// added here as another `else if constexpr` branch.
 template <typename T>
-struct mpi_type_mapping;
+MPI_Datatype mpi_datatype()
+{
+  if constexpr (std::same_as<T, float>)
+    return MPI_FLOAT;
+  else if constexpr (std::same_as<T, double>)
+    return MPI_DOUBLE;
+  else if constexpr (std::same_as<T, std::complex<float>>)
+    return MPI_C_FLOAT_COMPLEX;
+  else if constexpr (std::same_as<T, std::complex<double>>)
+    return MPI_C_DOUBLE_COMPLEX;
+  else if constexpr (std::same_as<T, std::int8_t>)
+    return MPI_INT8_T;
+  else if constexpr (std::same_as<T, std::int16_t>)
+    return MPI_INT16_T;
+  else if constexpr (std::same_as<T, std::int32_t>)
+    return MPI_INT32_T;
+  else if constexpr (std::same_as<T, std::int64_t>)
+    return MPI_INT64_T;
+  else if constexpr (std::same_as<T, std::uint8_t>)
+    return MPI_UINT8_T;
+  else if constexpr (std::same_as<T, std::uint16_t>)
+    return MPI_UINT16_T;
+  else if constexpr (std::same_as<T, std::uint32_t>)
+    return MPI_UINT32_T;
+  else if constexpr (std::same_as<T, std::uint64_t>)
+    return MPI_UINT64_T;
+  else
+    static_assert(dependent_false<T>::value,
+                  "No MPI datatype registered for this type.");
+}
 
 /// @brief Retrieves the MPI data type associated to the provided type.
 /// @tparam T cpp type to map
 template <typename T>
-MPI_Datatype mpi_t = mpi_type_mapping<T>::type;
-
-/// @brief Registers for cpp_t the corresponding mpi_t which can then be
-/// retrieved with mpi_t<cpp_t> from here on.
-#define MAP_TO_MPI_TYPE(cpp_t, mpi_t)                                          \
-  template <>                                                                  \
-  struct mpi_type_mapping<cpp_t>                                               \
-  {                                                                            \
-    static inline MPI_Datatype type = mpi_t;                                   \
-  };
-
-/// @defgroup MPI type mappings
-/// @{
-/// @cond
-MAP_TO_MPI_TYPE(float, MPI_FLOAT)
-MAP_TO_MPI_TYPE(double, MPI_DOUBLE)
-MAP_TO_MPI_TYPE(std::complex<float>, MPI_C_FLOAT_COMPLEX)
-MAP_TO_MPI_TYPE(std::complex<double>, MPI_C_DOUBLE_COMPLEX)
-MAP_TO_MPI_TYPE(std::int8_t, MPI_INT8_T)
-MAP_TO_MPI_TYPE(std::int16_t, MPI_INT16_T)
-MAP_TO_MPI_TYPE(std::int32_t, MPI_INT32_T)
-MAP_TO_MPI_TYPE(std::int64_t, MPI_INT64_T)
-MAP_TO_MPI_TYPE(std::uint8_t, MPI_UINT8_T)
-MAP_TO_MPI_TYPE(std::uint16_t, MPI_UINT16_T)
-MAP_TO_MPI_TYPE(std::uint32_t, MPI_UINT32_T)
-MAP_TO_MPI_TYPE(std::uint64_t, MPI_UINT64_T)
-/// @endcond
-/// @}
+MPI_Datatype mpi_t = mpi_datatype<T>();
 
 //---------------------------------------------------------------------------
-template <typename U>
-std::pair<std::vector<std::int32_t>,
-          std::vector<typename std::remove_reference_t<typename U::value_type>>>
-distribute_to_postoffice(MPI_Comm comm, const U& x,
-                         std::array<std::int64_t, 2> shape,
-                         std::int64_t rank_offset)
+namespace impl
 {
-  assert(rank_offset >= 0 or x.empty());
-  using T = typename std::remove_reference_t<typename U::value_type>;
+/// @private Local (non-communicating) part of distribute_to_postoffice.
+///
+/// For each local row of `x`, determines its post office (destination)
+/// rank by applying dolfinx::MPI::index_owner to the row's global
+/// index and `shape0`, skipping rows already owned by this rank (which
+/// never need to be sent anywhere). The remaining (destination,
+/// position) pairs are grouped by destination with a radix sort --
+/// this list can have hundreds of thousands of entries for a large
+/// mesh/problem, too many for a generic comparison sort -- producing
+/// the compact per-neighbour form (unique destination ranks, row
+/// count per destination, and a local-row-to-neighbour-rank map)
+/// that postoffice_exchange needs to drive MPI neighbourhood
+/// collectives without a further per-row lookup during packing.
+///
+/// Factored out of distribute_to_postoffice so distribute_from_postoffice
+/// can reuse the same planning step when it overlaps this push with
+/// the NBX round that resolves who is requesting data from it.
+///
+/// @param[in] size Number of ranks in the communicator `x` is
+/// distributed/required across.
+/// @param[in] rank Rank of the caller in that communicator.
+/// @param[in] shape0_local Number of local rows of `x` (before any
+/// post-office redistribution).
+/// @param[in] shape0 Global number of rows (row count summed over all
+/// ranks).
+/// @param[in] rank_offset Global row index of local row 0 in `x`.
+/// @return (0) unique destination ranks, (1) number of rows destined
+/// for each rank in (0), and (2) a map from local row index to
+/// position in (0), or -1 if the row is already owned by this rank.
+std::tuple<std::vector<int>, std::vector<std::int32_t>,
+           std::vector<std::int32_t>>
+postoffice_plan(int size, int rank, std::int32_t shape0_local,
+                std::int64_t shape0, std::int64_t rank_offset);
+
+/// @private Neighbourhood data exchange step of distribute_to_postoffice,
+/// given an already-resolved `src` (e.g. from a single or overlapped
+/// NBX consensus round).
+/// @param[in] comm MPI communicator.
+/// @param[in] x Local block of the array to distribute (row-major).
+/// @param[in] shape Global shape of the array, `{num_rows, num_cols}`.
+/// @param[in] rank_offset Global row index of local row 0 in `x`.
+/// @param[in] dest Destination (post office) ranks, from
+/// `postoffice_plan`.
+/// @param[in] num_items_per_dest0 Number of rows destined for each
+/// rank in `dest`, from `postoffice_plan`.
+/// @param[in] pos_to_neigh_rank Map from local row index to position
+/// in `dest`, from `postoffice_plan`.
+/// @param[in] src Ranks that will send this rank data, i.e. the
+/// incoming edges resolved from `dest` (e.g. via
+/// `compute_graph_edges_nbx`).
+/// @return (0) position of each received row within the caller's
+/// post-office partition of `[0, shape[0])`, and (1) the received row
+/// data (row-major).
+template <std::ranges::contiguous_range U>
+std::pair<std::vector<std::int32_t>, std::vector<std::ranges::range_value_t<U>>>
+postoffice_exchange(MPI_Comm comm, const U& x,
+                    std::array<std::int64_t, 2> shape, std::int64_t rank_offset,
+                    std::span<const int> dest,
+                    std::span<const std::int32_t> num_items_per_dest0,
+                    std::span<const std::int32_t> pos_to_neigh_rank,
+                    std::span<const int> src)
+{
+  using T = std::ranges::range_value_t<U>;
 
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
   assert(x.size() % shape[1] == 0);
   const std::int32_t shape0_local = x.size() / shape[1];
-
-  spdlog::debug("Sending data to post offices (distribute_to_postoffice)");
-
-  // Post office ranks will receive data from this rank
-  std::vector<int> row_to_dest(shape0_local);
-  for (std::int32_t i = 0; i < shape0_local; ++i)
-  {
-    int dest = MPI::index_owner(size, i + rank_offset, shape[0]);
-    row_to_dest[i] = dest;
-  }
-
-  // Build list of (dest, positions) for each row that doesn't belong to
-  // this rank, then sort
-  std::vector<std::array<std::int32_t, 2>> dest_to_index;
-  dest_to_index.reserve(shape0_local);
-  for (std::int32_t i = 0; i < shape0_local; ++i)
-  {
-    std::size_t idx = i + rank_offset;
-    if (int dest = MPI::index_owner(size, idx, shape[0]); dest != rank)
-      dest_to_index.push_back({dest, i});
-  }
-  std::ranges::sort(dest_to_index);
-
-  // Build list of neighbour src ranks and count number of items (rows
-  // of x) to receive from each src post office (by neighbourhood rank)
-  std::vector<int> dest;
-  std::vector<std::int32_t> num_items_per_dest,
-      pos_to_neigh_rank(shape0_local, -1);
-  {
-    auto it = dest_to_index.begin();
-    while (it != dest_to_index.end())
-    {
-      const int neigh_rank = dest.size();
-
-      // Store global rank
-      dest.push_back((*it)[0]);
-
-      // Find iterator to next global rank
-      auto it1
-          = std::find_if(it, dest_to_index.end(),
-                         [r = dest.back()](auto& idx) { return idx[0] != r; });
-
-      // Store number of items for current rank
-      num_items_per_dest.push_back(std::distance(it, it1));
-
-      // Map from local x index to local destination rank
-      for (auto e = it; e != it1; ++e)
-        pos_to_neigh_rank[(*e)[1]] = neigh_rank;
-
-      // Advance iterator
-      it = it1;
-    }
-  }
-
-  // Determine source ranks
-  const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
-  spdlog::info(
-      "Number of neighbourhood source ranks in distribute_to_postoffice: {}",
-      static_cast<int>(src.size()));
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm neigh_comm;
@@ -366,6 +399,8 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   dolfinx::MPI::check_error(comm, err);
 
   // Compute send displacements
+  std::vector<std::int32_t> num_items_per_dest(num_items_per_dest0.begin(),
+                                               num_items_per_dest0.end());
   std::vector<std::int32_t> send_disp{0};
   std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
                    std::back_inserter(send_disp));
@@ -425,25 +460,54 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   err = MPI_Comm_free(&neigh_comm);
   dolfinx::MPI::check_error(comm, err);
 
-  spdlog::debug("Completed send data to post offices.");
-
   // Convert to local indices
-  const std::int64_t r0 = dolfinx::common::local_range(rank, shape[0], size)[0];
+  const std::int64_t r0 = common::local_range(rank, shape[0], size)[0];
   std::vector<std::int32_t> index_local(recv_buffer_index.size());
   std::ranges::transform(recv_buffer_index, index_local.begin(),
-                         [r0](auto idx) { return idx - r0; });
+                         [r0](std::int64_t idx) { return idx - r0; });
 
   return {index_local, recv_buffer_data};
 }
+} // namespace impl
+
+template <std::ranges::contiguous_range U>
+std::pair<std::vector<std::int32_t>, std::vector<std::ranges::range_value_t<U>>>
+distribute_to_postoffice(MPI_Comm comm, const U& x,
+                         std::array<std::int64_t, 2> shape,
+                         std::int64_t rank_offset)
+{
+  assert(rank_offset >= 0 or x.empty());
+  assert(x.size() % shape[1] == 0);
+  const std::int32_t shape0_local = x.size() / shape[1];
+
+  spdlog::debug("Sending data to post offices (distribute_to_postoffice)");
+
+  const int size = dolfinx::MPI::size(comm);
+  const int rank = dolfinx::MPI::rank(comm);
+  auto [dest, num_items_per_dest, pos_to_neigh_rank]
+      = impl::postoffice_plan(size, rank, shape0_local, shape[0], rank_offset);
+
+  // Determine source ranks
+  const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
+  spdlog::info(
+      "Number of neighbourhood source ranks in distribute_to_postoffice: {}",
+      src.size());
+
+  auto result
+      = impl::postoffice_exchange(comm, x, shape, rank_offset, dest,
+                                  num_items_per_dest, pos_to_neigh_rank, src);
+  spdlog::debug("Completed send data to post offices.");
+  return result;
+}
 //---------------------------------------------------------------------------
-template <typename U>
-std::vector<typename std::remove_reference_t<typename U::value_type>>
+template <std::ranges::contiguous_range U>
+std::vector<std::ranges::range_value_t<U>>
 distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
                            const U& x, std::array<std::int64_t, 2> shape,
                            std::int64_t rank_offset)
 {
   assert(rank_offset >= 0 or x.empty());
-  using T = typename std::remove_reference_t<typename U::value_type>;
+  using T = std::ranges::range_value_t<U>;
 
   common::Timer timer("Distribute row-wise data (scalable)");
   assert(shape[1] > 0);
@@ -453,28 +517,43 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   assert(x.size() % shape[1] == 0);
   const std::int64_t shape0_local = x.size() / shape[1];
 
-  // 0. Send x data to/from post offices
+  // 0. Send x data to/from post offices, and 1. determine which post
+  //    office ranks hold the data I need (indices) -- these are
+  //    independent local computations, so the two NBX consensus
+  //    rounds they each need (below) are run concurrently in a single
+  //    overlapped round rather than back-to-back.
 
-  // Send receive x data to post office (only for rows that need to be
-  // communicated)
-  auto [post_indices, post_x] = dolfinx::MPI::distribute_to_postoffice(
-      comm, x, {shape[0], shape[1]}, rank_offset);
-  assert(post_indices.size() == post_x.size() / shape[1]);
+  auto [send_dest, num_items_per_send_dest, pos_to_neigh_rank]
+      = impl::postoffice_plan(size, rank, shape0_local, shape[0], rank_offset);
 
-  // 1. Send request to post office ranks for data
-
-  // Build list of (src, global index, global, index position) for each
-  // entry in 'indices' that doesn't belong to this rank, then sort
+  // Build (src, global index, position) for each entry in 'indices'
+  // not held locally, then sort. Locally-held entries are read
+  // directly below -- skipping them here avoids a wasted round trip.
   std::vector<std::tuple<int, std::int64_t, std::int32_t>> src_to_index;
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
-    std::size_t idx = indices[i];
+    std::int64_t idx = indices[i];
+    if (idx >= rank_offset and idx < rank_offset + shape0_local)
+      continue;
     if (int src = dolfinx::MPI::index_owner(size, idx, shape[0]); src != rank)
       src_to_index.push_back({src, idx, i});
   }
-  std::ranges::sort(src_to_index);
 
-  // Build list is neighbour src ranks and count number of items (rows
+  // Radix sort on the rank alone (not the full tuple) -- only
+  // grouping by rank matters below; order within a group doesn't.
+  {
+    std::vector<std::int32_t> perm(src_to_index.size());
+    std::iota(perm.begin(), perm.end(), 0);
+    dolfinx::radix_sort(perm, [&src_to_index](std::int32_t i)
+                        { return std::get<0>(src_to_index[i]); });
+    std::vector<std::tuple<int, std::int64_t, std::int32_t>> sorted(
+        src_to_index.size());
+    for (std::size_t i = 0; i < perm.size(); ++i)
+      sorted[i] = src_to_index[perm[i]];
+    src_to_index = std::move(sorted);
+  }
+
+  // Build list of neighbour src ranks and count number of items (rows
   // of x) to receive from each src post office (by neighbourhood rank)
   std::vector<std::int32_t> num_items_per_src;
   std::vector<int> src;
@@ -483,23 +562,32 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
     while (it != src_to_index.end())
     {
       src.push_back(std::get<0>(*it));
-      auto it1
-          = std::find_if(it, src_to_index.end(), [r = src.back()](auto& idx)
-                         { return std::get<0>(idx) != r; });
+      auto it1 = std::ranges::find_if(it, src_to_index.end(),
+                                      [r = src.back()](auto& idx)
+                                      { return std::get<0>(idx) != r; });
       num_items_per_src.push_back(std::distance(it, it1));
       it = it1;
     }
   }
 
-  // Determine 'delivery' destination ranks (ranks that want data from
-  // me)
-  const std::vector<int> dest
-      = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+  // Determine, in one overlapped NBX round, (0) the post office ranks
+  // that hold data for me to receive (post office send round) and (1)
+  // the 'delivery' destination ranks that want data from me (my
+  // request round)
+  auto [post_src, dest] = dolfinx::MPI::compute_graph_edges_nbx(
+      comm, send_dest, static_cast<int>(tag::consensus_nbx), src,
+      static_cast<int>(tag::consensus_nbx) + 1);
   spdlog::info(
       "Neighbourhood destination ranks from post office in "
       "distribute_data (rank, num dests, num dests/mpi_size): {}, {}, {}",
-      rank, static_cast<int>(dest.size()),
-      static_cast<double>(dest.size()) / size);
+      rank, dest.size(), static_cast<double>(dest.size()) / size);
+
+  // Send receive x data to post office (only for rows that need to be
+  // communicated)
+  auto [post_indices, post_x] = impl::postoffice_exchange(
+      comm, x, {shape[0], shape[1]}, rank_offset, send_dest,
+      num_items_per_send_dest, pos_to_neigh_rank, post_src);
+  assert(post_indices.size() == post_x.size() / shape[1]);
 
   // Create neighbourhood communicator for sending data to post offices
   // (src), and receiving data form my send my post office
@@ -527,7 +615,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
 
   // Pack my requested indices (global) in send buffer ready to send to
   // post offices
-  assert(send_disp.back() == (int)src_to_index.size());
+  assert(send_disp.back() == static_cast<int>(src_to_index.size()));
   std::vector<std::int64_t> send_buffer_index(src_to_index.size());
   std::ranges::transform(src_to_index, send_buffer_index.begin(),
                          [](auto x) { return std::get<1>(x); });
@@ -550,41 +638,35 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   // data that was already on this rank and was therefore was not
   // sent/received via a postoffice.
   const std::array<std::int64_t, 2> postoffice_range
-      = dolfinx::common::local_range(rank, shape[0], size);
+      = common::local_range(rank, shape[0], size);
   std::vector<std::int32_t> post_indices_map(
       postoffice_range[1] - postoffice_range[0], -1);
   for (std::size_t i = 0; i < post_indices.size(); ++i)
   {
-    assert(post_indices[i] < (int)post_indices_map.size());
+    assert(post_indices[i] < static_cast<int>(post_indices_map.size()));
     post_indices_map[post_indices[i]] = i;
   }
 
   // Build send buffer
   std::vector<T> send_buffer_data(shape[1] * recv_disp.back());
-  for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
+  for (std::int32_t i = 0; i < recv_disp.back(); ++i)
   {
-    int offset = recv_disp[p];
-    for (std::int32_t i = recv_disp[p]; i < recv_disp[p + 1]; ++i)
+    std::int64_t index = recv_buffer_index[i];
+    if (index >= rank_offset and index < (rank_offset + shape0_local))
     {
-      std::int64_t index = recv_buffer_index[i];
-      if (index >= rank_offset and index < (rank_offset + shape0_local))
-      {
-        // I already had this index before any communication
-        std::int32_t local_index = index - rank_offset;
-        std::copy_n(std::next(x.begin(), shape[1] * local_index), shape[1],
-                    std::next(send_buffer_data.begin(), shape[1] * offset));
-      }
-      else
-      {
-        // Take from my 'post bag'
-        auto local_index = index - postoffice_range[0];
-        std::int32_t pos = post_indices_map[local_index];
-        assert(pos != -1);
-        std::copy_n(std::next(post_x.begin(), shape[1] * pos), shape[1],
-                    std::next(send_buffer_data.begin(), shape[1] * offset));
-      }
-
-      ++offset;
+      // I already had this index before any communication
+      std::int32_t local_index = index - rank_offset;
+      std::copy_n(std::next(x.begin(), shape[1] * local_index), shape[1],
+                  std::next(send_buffer_data.begin(), shape[1] * i));
+    }
+    else
+    {
+      // Take from my 'post bag'
+      std::int64_t local_index = index - postoffice_range[0];
+      std::int32_t pos = post_indices_map[local_index];
+      assert(pos != -1);
+      std::copy_n(std::next(post_x.begin(), shape[1] * pos), shape[1],
+                  std::next(send_buffer_data.begin(), shape[1] * i));
     }
   }
 
@@ -621,38 +703,34 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
     if (index >= rank_offset and index < (rank_offset + shape0_local))
     {
       // Had data from the start in x
-      auto local_index = index - rank_offset;
+      std::int64_t local_index = index - rank_offset;
       std::copy_n(std::next(x.begin(), shape[1] * local_index), shape[1],
+                  std::next(x_new.begin(), shape[1] * i));
+    }
+    else if (std::int32_t pos = index_pos_to_buffer[i]; pos != -1)
+    {
+      // In my received post: index_pos_to_buffer[i] != -1 iff
+      // index_owner would say this rank isn't the owner -- avoids
+      // recomputing it.
+      std::copy_n(std::next(recv_buffer_data.begin(), shape[1] * pos), shape[1],
                   std::next(x_new.begin(), shape[1] * i));
     }
     else
     {
-      if (int src = dolfinx::MPI::index_owner(size, index, shape[0]);
-          src == rank)
-      {
-        // In my post office bag
-        auto local_index = index - postoffice_range[0];
-        std::int32_t pos = post_indices_map[local_index];
-        assert(pos != -1);
-        std::copy_n(std::next(post_x.begin(), shape[1] * pos), shape[1],
-                    std::next(x_new.begin(), shape[1] * i));
-      }
-      else
-      {
-        // In my received post
-        std::int32_t pos = index_pos_to_buffer[i];
-        assert(pos != -1);
-        std::copy_n(std::next(recv_buffer_data.begin(), shape[1] * pos),
-                    shape[1], std::next(x_new.begin(), shape[1] * i));
-      }
+      // In my post office bag
+      std::int64_t local_index = index - postoffice_range[0];
+      std::int32_t bag_pos = post_indices_map[local_index];
+      assert(bag_pos != -1);
+      std::copy_n(std::next(post_x.begin(), shape[1] * bag_pos), shape[1],
+                  std::next(x_new.begin(), shape[1] * i));
     }
   }
 
   return x_new;
 }
 //---------------------------------------------------------------------------
-template <typename U>
-std::vector<typename std::remove_reference_t<typename U::value_type>>
+template <std::ranges::contiguous_range U>
+std::vector<std::ranges::range_value_t<U>>
 distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                 MPI_Comm comm1, const U& x, int shape1)
 {
@@ -660,9 +738,9 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
   assert(x.size() % shape1 == 0);
   const std::int64_t shape0_local = x.size() / shape1;
 
-  int err;
   std::int64_t shape0 = 0;
-  err = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm0);
+  int err
+      = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm0);
   dolfinx::MPI::check_error(comm0, err);
 
   std::int64_t rank_offset = -1;
@@ -673,12 +751,8 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                      dolfinx::MPI::mpi_t<std::int64_t>, MPI_SUM, comm1);
     dolfinx::MPI::check_error(comm1, err);
   }
-  else
-  {
-    rank_offset = -1;
-    if (!x.empty())
-      throw std::runtime_error("Non-empty data on null MPI communicator");
-  }
+  else if (!x.empty())
+    throw std::runtime_error("Non-empty data on null MPI communicator");
 
   return distribute_from_postoffice(comm0, indices, x, {shape0, shape1},
                                     rank_offset);

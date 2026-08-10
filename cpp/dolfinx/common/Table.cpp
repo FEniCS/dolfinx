@@ -7,7 +7,9 @@
 #include "Table.h"
 #include "MPI.h"
 #include <array>
+#include <format>
 #include <functional>
+#include <iterator>
 #include <map>
 #include <sstream>
 #include <variant>
@@ -36,31 +38,31 @@ Table::Table(std::string title, bool right_justify)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Table::set(const std::string& row, const std::string& col,
+void Table::set(std::string_view row, std::string_view col,
                 std::variant<std::string, int, double> value)
 {
   // Add row
   if (std::find(_rows.begin(), _rows.end(), row) == _rows.end())
-    _rows.push_back(row);
+    _rows.emplace_back(row);
 
   // Add column
   if (std::find(_cols.begin(), _cols.end(), col) == _cols.end())
-    _cols.push_back(col);
+    _cols.emplace_back(col);
 
   // Store value
   std::pair<std::string, std::string> key(row, col);
   _values[key] = std::move(value);
 }
 //-----------------------------------------------------------------------------
-std::variant<std::string, int, double> Table::get(const std::string& row,
-                                                  const std::string& col) const
+std::variant<std::string, int, double> Table::get(std::string_view row,
+                                                  std::string_view col) const
 {
   std::pair<std::string, std::string> key(row, col);
   auto it = _values.find(key);
   if (it == _values.end())
   {
-    throw std::runtime_error("Missing table value for entry (\"" + row
-                             + "\", \"" + col + "\")");
+    throw std::runtime_error(
+        std::format(R"(Missing table value for entry ("{}", "{}"))", row, col));
   }
 
   return it->second;
@@ -199,7 +201,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
 //-----------------------------------------------------------------------------
 std::string Table::str() const
 {
-  std::stringstream s;
+  std::string s;
   std::vector<std::vector<std::string>> tvalues;
   std::vector<std::size_t> col_sizes;
 
@@ -227,56 +229,40 @@ std::string Table::str() const
     return "";
 
   // Write table
-  s << name;
-  for (std::size_t k = 0; k < col_sizes[0] - name.size(); k++)
-    s << " ";
-  s << "  |";
+  std::format_to(std::back_inserter(s), "{:<{}}  |", name, col_sizes[0]);
   for (std::size_t j = 0; j < _cols.size(); j++)
   {
     if (_right_justify)
     {
-      for (std::size_t k = 0; k < col_sizes[j + 1] - _cols[j].size(); k++)
-        s << " ";
-      s << "  " << _cols[j];
+      std::format_to(std::back_inserter(s), "  {:>{}}", _cols[j],
+                     col_sizes[j + 1]);
     }
     else
     {
-      s << "  " << _cols[j];
-      for (std::size_t k = 0; k < col_sizes[j + 1] - _cols[j].size(); k++)
-        s << " ";
+      std::format_to(std::back_inserter(s), "  {:<{}}", _cols[j],
+                     col_sizes[j + 1]);
     }
   }
-  s << "\n";
-  for (std::size_t k = 0; k < row_size; k++)
-    s << "-";
+  s += "\n" + std::string(row_size, '-');
   for (std::size_t i = 0; i < _rows.size(); i++)
   {
-    s << "\n";
-    s << _rows[i];
-    for (std::size_t k = 0; k < col_sizes[0] - _rows[i].size(); k++)
-      s << " ";
-    s << "  |";
+    std::format_to(std::back_inserter(s), "\n{:<{}}  |", _rows[i],
+                   col_sizes[0]);
     for (std::size_t j = 0; j < _cols.size(); j++)
     {
       if (_right_justify)
       {
-        for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size();
-             k++)
-        {
-          s << " ";
-        }
-        s << "  " << tvalues[i][j];
+        std::format_to(std::back_inserter(s), "  {:>{}}", tvalues[i][j],
+                       col_sizes[j + 1]);
       }
       else
       {
-        s << "  " << tvalues[i][j];
-        for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size();
-             k++)
-          s << " ";
+        std::format_to(std::back_inserter(s), "  {:<{}}", tvalues[i][j],
+                       col_sizes[j + 1]);
       }
     }
   }
 
-  return s.str();
+  return s;
 }
 //-----------------------------------------------------------------------------

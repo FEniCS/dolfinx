@@ -6,6 +6,7 @@
 
 import math
 import sys
+import typing
 
 from mpi4py import MPI
 
@@ -765,13 +766,13 @@ def test_mesh_create_cmap(dtype):
     assert msh.ufl_domain() is None
 
 
-avail_partitioners = []
+avail_partitioners: list[typing.Callable[..., dolfinx.mesh.PartitioningFunc]] = []
 if dolfinx.has_ptscotch:
-    avail_partitioners.append(dolfinx.cpp.graph.partitioner_scotch)
+    avail_partitioners.append(getattr(dolfinx.cpp.graph, "partitioner_scotch"))
 if dolfinx.has_kahip:
-    avail_partitioners.append(dolfinx.cpp.graph.partitioner_kahip)
+    avail_partitioners.append(getattr(dolfinx.cpp.graph, "partitioner_kahip"))
 if dolfinx.has_parmetis:
-    avail_partitioners.append(dolfinx.cpp.graph.partitioner_parmetis)
+    avail_partitioners.append(getattr(dolfinx.cpp.graph, "partitioner_parmetis"))
 
 
 @pytest.mark.parametrize("partitioner", avail_partitioners)

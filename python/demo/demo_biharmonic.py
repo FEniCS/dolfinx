@@ -154,6 +154,7 @@
 # We first import the modules and functions that the program uses:
 
 # +
+import sys
 from pathlib import Path
 
 from mpi4py import MPI
@@ -165,9 +166,9 @@ from dolfinx import default_real_type, default_scalar_type, fem, has_adios2, io,
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
 
-if np.issubdtype(default_real_type, np.float32):  # type: ignore
+if np.issubdtype(default_real_type, np.float32):
     print("float32 not yet supported for this demo.")
-    exit(0)
+    sys.exit(0)
 # -
 
 
@@ -309,7 +310,7 @@ problem = LinearProblem(
 uh = problem.solve()
 
 assert isinstance(uh, fem.Function)
-assert problem.solver.getConvergedReason() > 0
+assert problem.solver.getConvergedReason() > 0  # type: ignore[operator]
 # -
 
 # We compute the relative $L^2$-error between the computed

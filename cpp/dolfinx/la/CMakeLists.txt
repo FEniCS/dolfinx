@@ -16,9 +16,5 @@ set(
 
 target_sources(
   dolfinx
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPattern.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/superlu_dist.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/petsc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/slepc.cpp
+  PRIVATE SparsityPattern.cpp superlu_dist.cpp petsc.cpp slepc.cpp
 )

@@ -480,21 +480,24 @@ public:
   /// degrees-of-freedom, `x_bc` is the value of the boundary condition
   /// interpolated into the finite element space.
   ///
-  /// If `x` includes ghosted entries (entries available on the calling
-  /// rank but owned by another rank), ghosted entries constrained by a
-  /// Dirichlet condition will also be set.
+  /// `x` may hold only owned entries or also include ghosts (entries
+  /// available on the calling rank but owned by another rank); a
+  /// constrained degree-of-freedom beyond the end of `x` is silently
+  /// skipped, so an owned-only `x` sets only owned entries.
   ///
   /// @param[in,out] x Array to modify for Dirichlet boundary
-  /// conditions.
+  /// conditions. May include ghost entries.
   /// @param[in] x0 Optional array used in computing the value to set.
   /// If not provided it is treated as zero.
   /// @param[in] alpha Scaling to apply.
+  /// @note If `x0` is provided, it must be at least as long as `x`
+  /// (checked only in Debug builds).
   void set(std::span<T> x, std::optional<std::span<const T>> x0,
            T alpha = 1) const
   {
     // set_fn is a lambda which gets evaluated for every index in [0,
     // _dofs0.size()) and its result is assigned to x[_dofs0[i]].
-    auto apply = [&](std::invocable<std::int32_t> auto set_fn)
+    auto apply = [this, &x](std::invocable<std::int32_t> auto set_fn)
     {
       static_assert(
           std::is_same_v<std::invoke_result_t<decltype(set_fn), std::int32_t>,
@@ -585,11 +588,16 @@ public:
   /// unchanged.
   void mark_dofs(std::span<std::int8_t> markers) const
   {
-    for (std::int32_t idx : _dofs0)
+#ifndef NDEBUG
+    if (!_dofs0.empty()
+        and *std::ranges::max_element(_dofs0) >= (std::int32_t)markers.size())
     {
-      assert(idx < (std::int32_t)markers.size());
-      markers[idx] = true;
+      throw std::runtime_error("Marker array is too short for the boundary "
+                               "condition dofs.");
     }
+#endif
+    for (std::int32_t idx : _dofs0)
+      markers[idx] = true;
   }
 
 private:

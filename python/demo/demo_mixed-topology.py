@@ -26,6 +26,9 @@
 # ```
 
 # +
+import sys
+import typing
+
 from mpi4py import MPI
 
 import numpy as np
@@ -47,13 +50,14 @@ from dolfinx.fem import (
     mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
-from dolfinx.mesh import CellType, Mesh, Topology, create_cell_partitioner
+from dolfinx.mesh import CellType, Mesh, Topology
+from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
 
 # -
 
 if MPI.COMM_WORLD.size > 1:
     print("Not yet running in parallel")
-    exit(0)
+    sys.exit(0)
 
 
 # ## Create a mixed-topology mesh
@@ -110,9 +114,18 @@ geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
 
-part = create_cell_partitioner(GhostMode.none, 2)  # type: ignore
+part = _cell_partitioner(GhostMode.none, 2)
 mesh = create_mesh(
-    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part, 2
+    MPI.COMM_WORLD,
+    cells_np,
+    [
+        typing.cast(_cpp.fem.CoordinateElement_float64, hexahedron._cpp_object),
+        typing.cast(_cpp.fem.CoordinateElement_float64, prism._cpp_object),
+    ],
+    geomx,
+    part,
+    2,
+    1,
 )
 # -
 
@@ -125,7 +138,12 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 dolfinx_elements = [
-    FiniteElement(_cpp.fem.FiniteElement_float64(e._e, None, False)) for e in elements
+    FiniteElement(
+        _cpp.fem.FiniteElement_float64(
+            typing.cast(basix._basixcpp.FiniteElement_float64, e._e), None, False
+        )
+    )
+    for e in elements
 ]
 # NOTE: Both dofmaps have the same IndexMap, but different cell_dofs
 dofmaps = create_dofmaps(
@@ -136,7 +154,9 @@ dofmaps = create_dofmaps(
 
 # Create C++ function space
 V_cpp = _cpp.fem.FunctionSpace_float64(
-    mesh, [e._cpp_object for e in dolfinx_elements], [dofmap._cpp_object for dofmap in dofmaps]
+    mesh,
+    [e._cpp_object for e in dolfinx_elements],  # type: ignore[misc]
+    [dofmap._cpp_object for dofmap in dofmaps],
 )
 
 
@@ -146,8 +166,17 @@ def marker(x):
     return np.logical_or(np.isclose(x[2], 0.0), np.isclose(x[2], 1.0))
 
 
+# dirichletbc needs a function space that carries a UFL domain, to
+# associate one with the (uniform) boundary value. UFL does not yet
+# support mixed-topology domains (see the FIXME below), so wrap V_cpp
+# with an arbitrarily chosen cell type's domain/element -- neither is
+# used for anything beyond this association.
+domain = ufl.Mesh(basix.ufl.element("Lagrange", "hexahedron", 1, shape=(3,)))
+element = basix.ufl.wrap_element(elements[0])
+V = FunctionSpace(Mesh(mesh, domain), element, V_cpp)
+
 bcdofs = locate_dofs_geometrical(V_cpp, marker)
-bc = dirichletbc(value=0.0, dofs=bcdofs, V=V_cpp)
+bc = dirichletbc(value=0.0, dofs=bcdofs, V=V)
 
 # -
 
@@ -193,9 +222,9 @@ bc.set(b.array)
 A_scipy = A.to_scipy()
 b_scipy = b.array
 
-x = spsolve(A_scipy, b_scipy)
+x_scipy = spsolve(A_scipy, b_scipy)
 
-print(f"Solution vector norm {np.linalg.norm(x)}")
+print(f"Solution vector norm {np.linalg.norm(x_scipy)}")
 
 # Mixed-topology I/O
 # We manually build a ASCII XDMF file to store the mesh
@@ -235,8 +264,8 @@ for j in range(2):
           </DataItem>
         </Geometry>
         <Attribute Name="u" Center="Node" NumberType="float" Precision="8">
-          <DataItem Dimensions="{len(x)}" Format="XML">
-            {" ".join(str(val) for val in x)}
+          <DataItem Dimensions="{len(x_scipy)}" Format="XML">
+            {" ".join(str(val) for val in x_scipy)}
           </DataItem>
        </Attribute>
       </Grid>"""
@@ -247,7 +276,6 @@ xdmf += """
 </Xdmf>
 """
 
-fd = open("mixed-mesh.xdmf", "w")
-fd.write(xdmf)
-fd.close()
+with open("mixed-mesh.xdmf", "w") as fd:
+    fd.write(xdmf)
 # -

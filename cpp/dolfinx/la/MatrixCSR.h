@@ -50,7 +50,8 @@ enum class BlockMode : int
                /// matrix has a block size of (1, 1).
 };
 
-/// @brief Distributed sparse matrix using compressed sparse row storage.
+/// @brief Distributed sparse matrix using compressed sparse row
+/// storage.
 ///
 /// @warning The class is experimental and subject to change.
 ///
@@ -121,9 +122,9 @@ public:
           "Cannot insert blocks of different size than matrix block size");
     }
 
-    return [&](std::span<const std::int32_t> rows,
-               std::span<const std::int32_t> cols,
-               std::span<const value_type> data) -> int
+    return [this](std::span<const std::int32_t> rows,
+                  std::span<const std::int32_t> cols,
+                  std::span<const value_type> data) -> int
     {
       this->set<BS0, BS1>(data, rows, cols);
       return 0;
@@ -163,9 +164,9 @@ public:
           "Cannot insert blocks of different size than matrix block size");
     }
 
-    return [&](std::span<const std::int32_t> rows,
-               std::span<const std::int32_t> cols,
-               std::span<const value_type> data) -> int
+    return [this](std::span<const std::int32_t> rows,
+                  std::span<const std::int32_t> cols,
+                  std::span<const value_type> data) -> int
     {
       this->add<BS0, BS1>(data, rows, cols);
       return 0;
@@ -212,7 +213,12 @@ public:
   /// Examples of use for this constructor include copying a matrix to a
   /// different value type, or copying the matrix to a GPU.
   ///
-  /// @tparam Mat
+  /// @tparam Scalar0 Scalar type of the matrix being copied.
+  /// @tparam Container0 Data container type of the matrix being copied.
+  /// @tparam ColContainer0 Column index container type of the matrix
+  /// being copied.
+  /// @tparam RowPtrContainer0 Row pointer container type of the matrix
+  /// being copied.
   /// @param A Matrix to copy.
   template <typename Scalar0, typename Container0, typename ColContainer0,
             typename RowPtrContainer0>
@@ -347,7 +353,7 @@ public:
   {
     const std::size_t nrows = num_all_rows();
     const std::size_t ncols = _index_maps[1]->size_global();
-    std::vector<value_type> A(nrows * ncols * _bs[0] * _bs[1], 0.0);
+    std::vector<value_type> A(nrows * ncols * _bs[0] * _bs[1], value_type(0));
     for (std::size_t r = 0; r < nrows; ++r)
     {
       for (std::int32_t j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
@@ -893,13 +899,23 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
   // yi[0] += Ai[0] * xi[0]
   if (_bs[1] == 1)
   {
-    impl::spmv<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
-                          _bs[0], 1);
+    impl::spmv<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                       _bs[0], std::integral_constant<int, 1>{});
+  }
+  else if (_bs[1] == 2)
+  {
+    impl::spmv<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                       _bs[0], std::integral_constant<int, 2>{});
+  }
+  else if (_bs[1] == 3)
+  {
+    impl::spmv<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                       _bs[0], std::integral_constant<int, 3>{});
   }
   else
   {
-    impl::spmv<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
-                           _bs[0], _bs[1]);
+    impl::spmv<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                       _bs[0], _bs[1]);
   }
 
   // finalize ghost update
@@ -909,13 +925,23 @@ void MatrixCSR<Scalar, V, W, X>::mult(la::Vector<Scalar>& x,
   // yi[0] += Ai[1] * xi[1]
   if (_bs[1] == 1)
   {
-    impl::spmv<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
-                          _bs[0], 1);
+    impl::spmv<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                       _bs[0], std::integral_constant<int, 1>{});
+  }
+  else if (_bs[1] == 2)
+  {
+    impl::spmv<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                       _bs[0], std::integral_constant<int, 2>{});
+  }
+  else if (_bs[1] == 3)
+  {
+    impl::spmv<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                       _bs[0], std::integral_constant<int, 3>{});
   }
   else
   {
-    impl::spmv<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
-                           _bs[0], _bs[1]);
+    impl::spmv<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                       _bs[0], _bs[1]);
   }
 }
 
@@ -942,23 +968,50 @@ void MatrixCSR<Scalar, V, W, X>::multT(la::Vector<Scalar>& x,
   // Compute ghost region contribution and scatter back. Zero only the
   // ghost portion of y so the caller's owned values are preserved (multT
   // accumulates).
-  int ncolslocal = index_map(1)->size_local();
+  std::int32_t ncolslocal = index_map(1)->size_local();
   std::fill(std::next(_y.begin(), ncolslocal * _bs[1]), _y.end(), Scalar(0));
   if (_bs[1] == 1)
-    impl::spmvT<Scalar, 1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
-                           _bs[0], 1);
+  {
+    impl::spmvT<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                        _bs[0], std::integral_constant<int, 1>{});
+  }
+  else if (_bs[1] == 2)
+  {
+    impl::spmvT<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                        _bs[0], std::integral_constant<int, 2>{});
+  }
+  else if (_bs[1] == 3)
+  {
+    impl::spmvT<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                        _bs[0], std::integral_constant<int, 3>{});
+  }
   else
-    impl::spmvT<Scalar, -1>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
-                            _bs[0], _bs[1]);
+  {
+    impl::spmvT<Scalar>(Avalues, Aoff_diag_offset, Arow_end, Acols, _x, _y,
+                        _bs[0], _bs[1]);
+  }
 
   y.scatter_rev(std::plus<Scalar>{});
 
   if (_bs[1] == 1)
-    impl::spmvT<Scalar, 1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
-                           _bs[0], 1);
+  {
+    impl::spmvT<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                        _bs[0], std::integral_constant<int, 1>{});
+  }
+  else if (_bs[1] == 2)
+  {
+    impl::spmvT<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                        _bs[0], std::integral_constant<int, 2>{});
+  }
+  else if (_bs[1] == 3)
+  {
+    impl::spmvT<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                        _bs[0], std::integral_constant<int, 3>{});
+  }
   else
-    impl::spmvT<Scalar, -1>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x,
-                            _y, _bs[0], _bs[1]);
+  {
+    impl::spmvT<Scalar>(Avalues, Arow_begin, Aoff_diag_offset, Acols, _x, _y,
+                        _bs[0], _bs[1]);
+  }
 }
-
 } // namespace dolfinx::la

@@ -190,4 +190,86 @@ set_target_properties(
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
-install(TARGETS cpp DESTINATION dolfinx)
+install(TARGETS cpp LIBRARY DESTINATION dolfinx)
+
+# and the nanobind typing stubs.
+set(
+  NANOBIND_STUB_OUTPUTS
+  dolfinx/cpp/__init__.pyi
+  dolfinx/cpp/common.pyi
+  dolfinx/cpp/fem.pyi
+  dolfinx/cpp/fem/__init__.pyi
+  dolfinx/cpp/fem/petsc.pyi
+  dolfinx/cpp/geometry.pyi
+  dolfinx/cpp/graph.pyi
+  dolfinx/cpp/io.pyi
+  dolfinx/cpp/la.pyi
+  dolfinx/cpp/la/__init__.pyi
+  dolfinx/cpp/la/petsc.pyi
+  dolfinx/cpp/log.pyi
+  dolfinx/cpp/mesh.pyi
+  dolfinx/cpp/nls.pyi
+  dolfinx/cpp/nls/__init__.pyi
+  dolfinx/cpp/nls/petsc.pyi
+  dolfinx/cpp/refinement.pyi
+)
+
+if(WIN32)
+  # On Windows we cannot import dolfinx.cpp without installing the package
+  # alongside its external dlls. cpp is installed unconditionally above,
+  # which nanobind requires to have happened prior to nanobind_add_stub.
+  # nanobind automatically installs into ${CMAKE_INSTALL_PREFIX} in
+  # INSTALL_TIME mode.
+  # DEPENDS is redundant in INSTALL_TIME mode - cpp must be installed.
+  nanobind_add_stub(
+    cpp_stub
+    INSTALL_TIME
+    MODULE dolfinx.cpp
+    RECURSIVE
+    VERBOSE
+    PATTERN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx/wrappers/stub_patterns.txt
+    MARKER_FILE dolfinx/cpp/py.typed
+    OUTPUT ${NANOBIND_STUB_OUTPUTS}
+  )
+else()
+  # On UNIX-like systems we can import the cpp compiled module before
+  # installing and rely on dynamic linking at import time. Build it
+  # directly into a throwaway "dolfinx" package directory so that the
+  # module imports under its real name (dolfinx.cpp): otherwise
+  # nanobind's stubgen resolves submodule cross-references (e.g.
+  # dolfinx.cpp.la) against the bare top-level name "cpp", producing
+  # "import cpp.la" in the generated stubs, which does not exist as an
+  # importable module and silently resolves to Any under mypy. stubgen
+  # infers its output location from the imported module's __file__, so
+  # placing the build output under CMAKE_CURRENT_BINARY_DIR/dolfinx
+  # keeps that location matching the OUTPUT paths below (relative to
+  # CMAKE_CURRENT_BINARY_DIR). See nanobind's nanobind_add_stub docs
+  # for the import mechanism:
+  # https://nanobind.readthedocs.io/en/latest/api_cmake.html#command:nanobind_add_stub
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
+  file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/__init__.py)
+  set_target_properties(
+    cpp
+    PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx
+  )
+
+  nanobind_add_stub(
+    cpp_stub
+    MODULE dolfinx.cpp
+    PYTHON_PATH ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS cpp
+    RECURSIVE
+    VERBOSE
+    PATTERN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/dolfinx/wrappers/stub_patterns.txt
+    MARKER_FILE dolfinx/cpp/py.typed
+    OUTPUT ${NANOBIND_STUB_OUTPUTS}
+  )
+
+  install(
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dolfinx/cpp
+    DESTINATION dolfinx
+    FILES_MATCHING
+    PATTERN "*.pyi"
+    PATTERN "*.typed"
+  )
+endif()

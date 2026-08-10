@@ -1131,7 +1131,6 @@ class TestPETScAssemblers:
             V2 = V.clone()
             u = Function(V)
             u.interpolate(lambda x: x[0] * x[1])
-            v = ufl.TestFunction(V)
             u2 = Function(V2)
             v2 = ufl.TestFunction(V2)
             c = Constant(mesh, PETSc.ScalarType(12.0))
@@ -1189,6 +1188,7 @@ class TestPETScAssemblers:
 
         constants = pack_constants(J)
         coeffs = pack_coefficients(J)
+        tol = 100 * np.finfo(default_scalar_type()).eps
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
             A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1], kind=kind)
             A.assemble()
@@ -1198,11 +1198,11 @@ class TestPETScAssemblers:
                     for j in range(2):
                         Asub = A.getNestSubMatrix(i, j)
                         A0sub = A0.getNestSubMatrix(i, j)
-                        assert 0.0 == pytest.approx((Asub - A0sub).norm(), abs=1.0e-12)  # /NOSONAR
+                        assert 0.0 == pytest.approx((Asub - A0sub).norm(), abs=tol)  # /NOSONAR
                         Asub.destroy()
                         A0sub.destroy()
             else:
-                assert 0.0 == pytest.approx((A - A0).norm(), abs=1.0e-12)  # /NOSONAR
+                assert 0.0 == pytest.approx((A - A0).norm(), abs=tol)  # /NOSONAR
 
         # Change coefficients and constants
         if kind is None:
@@ -1911,7 +1911,6 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
         comm, x[0] * v * ufl.dP, form_compiler_options={"scalar_type": dtype}
     )
     form = fem.create_form(compiled_form, [V], msh, subdomains, {}, {}, [])
-    expected_value_l = np.sum(msh.geometry.x[vertices, 0])
     expected_value_l = np.zeros(num_vertices, dtype=rdtype)
     expected_value_l[vertices] = msh.geometry.x[vertices, 0]
     value_l = fem.assemble_vector(form)
@@ -1951,7 +1950,6 @@ def test_ridge_integrals_rank1_2D(cell_type, ghost_mode, dtype):
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
-    msh = None
     msh = mesh.create_unit_square(
         comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
     )

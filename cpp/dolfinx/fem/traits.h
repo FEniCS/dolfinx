@@ -10,11 +10,11 @@
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <span>
+#include <tuple>
 #include <type_traits>
 
 namespace dolfinx::fem
 {
-
 /// @brief DOF transform kernel concept.
 template <class U, class T>
 concept DofTransformKernel
@@ -25,10 +25,9 @@ concept DofTransformKernel
 ///
 /// Kernel functions that can be passed to an assembler for execution
 /// must satisfy this concept.
-template <class U, class T>
-concept FEkernel
-    = std::is_invocable_v<U, T*, const T*, const T*, const scalar_value_t<T>*,
-                          const int*, const std::uint8_t*, void*>;
+template <class U, class T, class G = dolfinx::scalar_value_t<T>>
+concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*, const G*,
+                                       const int*, const std::uint8_t*, void*>;
 
 /// @brief Concept for mdspan of rank 1 or 2.
 template <class T>
@@ -40,4 +39,48 @@ concept MDSpan2
           std::remove_cvref_t<T>,
           md::mdspan<const std::int32_t, md::dextents<std::size_t, 1>>>;
 
+/// @cond
+/// Common part of the `DofMapPack*` concepts: a 3-tuple whose (0)
+/// entry is the dofmap (a rank-2 `const std::int32_t` mdspan) and (1)
+/// entry is the block size, as a run-time `int` or a compile-time
+/// `std::integral_constant<int, N>`. The (2) entry (cell/entity
+/// indices) is constrained separately by each `DofMapPack*` concept,
+/// since its shape differs between the cell, entity and facet
+/// assembly kernels.
+template <class T>
+concept DofMapPackBase = requires(const std::remove_cvref_t<T>& t) {
+  requires std::tuple_size_v<std::remove_cvref_t<T>> == 3;
+  requires std::is_convertible_v<
+      std::remove_cvref_t<decltype(std::get<0>(t))>,
+      md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>>;
+  { std::get<1>(t) } -> std::convertible_to<int>;
+};
+/// @endcond
+
+/// @brief Concept for the degree-of-freedom map data passed to the
+/// cell assembly kernel, whose (2) entry is a flat, integer-indexable
+/// list of cell indices.
+template <class T>
+concept DofMapPackCells
+    = DofMapPackBase<T> and requires(const std::remove_cvref_t<T>& t) {
+        { std::get<2>(t)[0] } -> std::convertible_to<std::int32_t>;
+      };
+
+/// @brief Concept for the degree-of-freedom map data passed to the
+/// entity assembly kernel, whose (2) entry is indexed by (entity,
+/// local index).
+template <class T>
+concept DofMapPackEntities
+    = DofMapPackBase<T> and requires(const std::remove_cvref_t<T>& t) {
+        { std::get<2>(t)(0, 0) } -> std::convertible_to<std::int32_t>;
+      };
+
+/// @brief Concept for the degree-of-freedom map data passed to the
+/// interior facet assembly kernel, whose (2) entry is indexed by
+/// (facet, side, local index).
+template <class T>
+concept DofMapPackFacets
+    = DofMapPackBase<T> and requires(const std::remove_cvref_t<T>& t) {
+        { std::get<2>(t)(0, 0, 0) } -> std::convertible_to<std::int32_t>;
+      };
 } // namespace dolfinx::fem

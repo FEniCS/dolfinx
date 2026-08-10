@@ -98,17 +98,16 @@ from petsc4py import PETSc
 
 import numpy as np
 
-import dolfinx
 import ufl
 from basix.ufl import element
-from dolfinx import fem, mesh
+from dolfinx import default_real_type, default_scalar_type, fem, has_adios2, mesh
 from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.mesh import CellType, create_unit_square
 
 # Solution scalar (e.g., float32, complex128) and geometry (float32/64)
 # types
-dtype = dolfinx.default_scalar_type
-xdtype = dolfinx.default_real_type
+dtype = default_scalar_type
+xdtype = default_real_type
 # -
 
 # Create a two-dimensional mesh. The iterative solver constructed
@@ -286,8 +285,8 @@ if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.compl
     pc_sigma.setHYPREType("ams")
 
     opts = PETSc.Options()
-    opts[f"{ksp_sigma.prefix}pc_hypre_ams_cycle_type"] = 7
-    opts[f"{ksp_sigma.prefix}pc_hypre_ams_relax_times"] = 2
+    opts[f"{ksp_sigma.prefix}pc_hypre_ams_cycle_type"] = 7  # type: ignore[index]
+    opts[f"{ksp_sigma.prefix}pc_hypre_ams_relax_times"] = 2  # type: ignore[index]
 
     # Construct and set the 'discrete gradient' operator, which maps
     # grad H1 -> H(curl), i.e. the gradient of a scalar Lagrange space
@@ -318,8 +317,8 @@ if PETSc.Sys().hasExternalPackage("hypre") and not np.issubdtype(dtype, np.compl
         # High-order elements generally converge less well than the
         # lowest-order case with algebraic multigrid, so we perform
         # extra work at the multigrid stage
-        opts[f"{ksp_sigma.prefix}pc_hypre_ams_tol"] = 1e-12
-        opts[f"{ksp_sigma.prefix}pc_hypre_ams_max_iter"] = 3
+        opts[f"{ksp_sigma.prefix}pc_hypre_ams_tol"] = 1e-12  # type: ignore[index]
+        opts[f"{ksp_sigma.prefix}pc_hypre_ams_max_iter"] = 3  # type: ignore[index]
 
     ksp_sigma.setFromOptions()
 else:
@@ -343,13 +342,13 @@ else:
 # +
 problem.solve()
 converged_reason = problem.solver.getConvergedReason()
-assert converged_reason > 0, f"Krylov solver has not converged, reason: {converged_reason}."
+assert converged_reason > 0, f"Krylov solver has not converged, reason: {converged_reason}."  # type: ignore[operator]
 # -
 
 # We save the solution `u` in VTX format:
 
 # +
-if dolfinx.has_adios2:
+if has_adios2:
     from dolfinx.io import VTXWriter
 
     with VTXWriter(msh.comm, "output_mixed_poisson.bp", u) as f:

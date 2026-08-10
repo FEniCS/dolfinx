@@ -177,6 +177,8 @@
 
 
 # +
+import sys
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -188,7 +190,7 @@ from dolfinx.fem.petsc import LinearProblem
 
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
-    exit(0)
+    sys.exit(0)
 
 
 # -
@@ -242,7 +244,7 @@ def f_expr(x):
 
 # We define some simulation parameters
 
-n = 16
+n_el = 16
 num_time_steps = 25
 t_end = 10
 Re = 25  # Reynolds Number
@@ -254,7 +256,7 @@ k = 1  # Polynomial degree
 # interpolate into for artifact free visualisation.
 
 # +
-msh = mesh.create_unit_square(MPI.COMM_WORLD, n, n)
+msh = mesh.create_unit_square(MPI.COMM_WORLD, n_el, n_el)
 
 # Function spaces for the velocity and for the pressure
 V = fem.functionspace(msh, ("Raviart-Thomas", k + 1))
@@ -347,11 +349,11 @@ stokes_problem = LinearProblem(
 
 try:
     stokes_problem.solve()
-except PETSc.Error as e:  # type: ignore
-    if e.ierr == 92:
+except PETSc.Error as e:
+    if e.ierr == 92:  # type: ignore[attr-defined]
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)
-        exit(0)
+        sys.exit(0)
     else:
         raise e
 # -
@@ -413,7 +415,7 @@ navier_stokes_problem = LinearProblem(
 # We perform the time-stepping as a for-loop
 
 # +
-for n in range(num_time_steps):
+for _ in range(num_time_steps):
     t += delta_t.value
 
     navier_stokes_problem.solve()
@@ -432,6 +434,7 @@ try:
     u_file.close()
     p_file.close()
 except NameError:
+    # u_file/p_file are only defined when has_adios2 is True
     pass
 # -
 

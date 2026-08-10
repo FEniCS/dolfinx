@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Garth N. Wells
+// Copyright (C) 2021-2026 Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,10 +6,14 @@
 
 #pragma once
 
+#include <cassert>
 #include <concepts>
+#include <functional>
 #include <initializer_list>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <numeric>
+#include <span>
 #include <utility>
 
 namespace nb = nanobind;
@@ -31,11 +35,14 @@ template <typename V>
   requires std::movable<V>
 auto as_nbarray(V&& x, std::size_t ndim, const std::size_t* shape)
 {
-  using _V = std::decay_t<V>;
-  _V* ptr = new _V(std::forward<V>(x));
-  return nb::ndarray<typename _V::value_type, nb::numpy>(
+  using VDecay = std::decay_t<V>;
+  VDecay* ptr = new VDecay(std::forward<V>(x));
+  assert(
+      std::accumulate(shape, shape + ndim, std::size_t(1), std::multiplies<>())
+      == ptr->size());
+  return nb::ndarray<typename VDecay::value_type, nb::numpy>(
       ptr->data(), ndim, shape,
-      nb::capsule(ptr, [](void* p) noexcept { delete (_V*)p; }));
+      nb::capsule(ptr, [](void* p) noexcept { delete (VDecay*)p; }));
 }
 
 /// @brief Create a multi-dimensional `nb::ndarray` that shares data
@@ -87,6 +94,23 @@ template <typename V>
 auto as_nbarray(V&& x)
 {
   return as_nbarray(std::forward<V>(x), {x.size()});
+}
+
+/// @brief Convert a `std::vector<nb::ndarray>` to `std::vector<std::span>`.
+///
+/// This is used in the wrapper layer to convert lists of numpy arrays to the
+/// vector of spans used in the C++ interfaces.
+///
+/// @param[in] vec `std::vector` of `nd::array` to access as spans.
+/// @return Vector of spans to the underlying data.
+auto vec_of_spans(const auto& vec)
+{
+  using scalar_t = std::remove_cvref_t<decltype(vec)>::value_type::Scalar;
+  std::vector<std::span<scalar_t>> vec_span;
+  vec_span.reserve(vec.size());
+  for (auto& x : vec)
+    vec_span.emplace_back(x.data(), x.size());
+  return vec_span;
 }
 
 } // namespace dolfinx_wrappers
