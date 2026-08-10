@@ -811,3 +811,21 @@ def test_interior_interface():
     b_ref.scatter_reverse(la.InsertMode.add)
 
     assert np.isclose(la.norm(b), la.norm(b_ref))
+
+
+def test_mixed_zero_form_compile() -> None:
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    tdim = msh.topology.dim
+    submesh, entity_map, _, _ = create_submesh(
+        msh,
+        tdim,
+        np.arange(msh.topology.index_map(tdim).size_local, dtype=np.int32)[:-2],
+    )
+
+    V = fem.functionspace(msh, ("Lagrange", 1))
+    Q = fem.functionspace(submesh, ("Lagrange", 1))
+
+    u = ufl.TrialFunction(V)
+    v = ufl.TestFunction(Q)
+    a = ufl.ZeroBaseForm((u, v))
+    fem.form(a, entity_maps=[entity_map])
