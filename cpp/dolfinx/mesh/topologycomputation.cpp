@@ -438,20 +438,31 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       }
     }
 
-    auto range_by_index
-        = [&entity_to_local_idx, shape = num_vertices_per_e + 1](auto e)
+    // entity_to_local_idx is flattened rows of [vglobal..., id]. The
+    // trailing id column is never compared on below (the binary search
+    // in the received-entity matching loop only compares the leading
+    // num_vertices_per_e columns), and it is a function of vglobal
+    // alone, so excluding it from both the sort key and the
+    // uniqueness check is safe. This is the same shape as the
+    // radix-sort-by-perm replacement of a generic lexicographic
+    // comparison sort used elsewhere in mesh construction (see
+    // graphbuild.cpp, common/MPI.cpp): a plain std::ranges::sort here
+    // dominated this step's cost for the vertex/edge/facet-shaped
+    // rows this function handles.
+    perm = dolfinx::sort_by_perm<std::int64_t>(
+        std::span<const std::int64_t>(entity_to_local_idx),
+        num_vertices_per_e + 1, num_vertices_per_e);
+
+    auto range_by_key
+        = [&entity_to_local_idx, shape1 = num_vertices_per_e + 1,
+           ncols = num_vertices_per_e](auto e)
     {
-      auto begin = std::next(entity_to_local_idx.begin(), e * shape);
-      return std::ranges::subrange(begin, std::next(begin, shape));
+      auto begin = std::next(entity_to_local_idx.begin(), e * shape1);
+      return std::ranges::subrange(begin, std::next(begin, ncols));
     };
 
-    perm.resize(entity_to_local_idx.size() / (num_vertices_per_e + 1));
-    std::iota(perm.begin(), perm.end(), 0);
-    std::ranges::sort(perm, std::ranges::lexicographical_compare,
-                      range_by_index);
-
     auto [unique_end, range_end]
-        = std::ranges::unique(perm, std::ranges::equal, range_by_index);
+        = std::ranges::unique(perm, std::ranges::equal, range_by_key);
     perm.erase(unique_end, range_end);
   }
 
