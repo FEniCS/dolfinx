@@ -617,13 +617,13 @@ public:
   ///
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
-  /// @param[in] mode Mode to open file with
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
   /// element family and degree must be the same for all functions.
   /// @param[in] mesh_policy Controls if the mesh is written to file at
   /// the first time step only or is re-written (updated) at each time
   /// step.
+  /// @param[in] mode Mode to open file with
   /// @note This format supports arbitrary degree meshes.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             const typename adios2_writer::U<T>& u,
