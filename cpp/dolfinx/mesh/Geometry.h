@@ -9,6 +9,7 @@
 #include "Topology.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
+#include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -20,8 +21,10 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -47,7 +50,7 @@ public:
   /// @param[in] index_map Index map associated with the geometry
   /// degrees-of-freedom.
   /// @param[in] dofmaps The geometry (point) dofmaps for each cell type
-  /// in the mesh. For a cell of a given type, the dofmap  gives the
+  /// in the mesh. For a cell of a given type, the dofmap gives the
   /// position in the point array of each local geometry node of the
   /// cell. Each cell type has its own dofmap. Each dofmap uses
   /// row-major storage.
@@ -98,7 +101,7 @@ public:
   /// Destructor
   ~Geometry() = default;
 
-  /// Copy assignment
+  // Copy assignment (deleted)
   Geometry& operator=(const Geometry&) = delete;
 
   /// Move assignment
@@ -109,25 +112,33 @@ public:
 
   /// @brief DofMap for the geometry.
   /// @return A 2D array with shape `(num_cells, dofs_per_cell)`.
+  /// @deprecated Use dofmaps().front() instead.
+  [[deprecated("Use dofmaps().front() instead.")]]
   md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> dofmap() const
   {
     if (_dofmaps.size() != 1)
       throw std::runtime_error("Multiple dofmaps");
-    return this->dofmap(0);
+    std::size_t ndofs = _cmaps.front().dim();
+    return md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>(
+        _dofmaps.front().data(), _dofmaps.front().size() / ndofs, ndofs);
   }
 
-  /// @brief Degree-of-freedom map associated with the `i`th coordinate
+  /// @brief Degree-of-freedom map associated with each coordinate
   /// map element in the geometry.
-  /// @param[in] i Index of the requested degree-of-freedom map. The
-  /// degree-of-freedom map corresponds to the geometry element
-  /// `cmaps()[i]`.
-  /// @return A dofmap array, with shape `(num_cells, dofs_per_cell)`.
-  md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>
-  dofmap(std::size_t i) const
+  /// @return A list of dofmap arrays, each with shape `(num_cells,
+  /// dofs_per_cell)`.
+  std::vector<md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>>
+  dofmaps() const
   {
-    std::size_t ndofs = _cmaps.at(i).dim();
-    return md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>(
-        _dofmaps.at(i).data(), _dofmaps.at(i).size() / ndofs, ndofs);
+    std::vector<md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>>
+        dms(_dofmaps.size());
+    for (std::size_t i = 0; i < _dofmaps.size(); ++i)
+    {
+      std::size_t ndofs = _cmaps.at(i).dim();
+      dms[i] = md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>>(
+          _dofmaps.at(i).data(), _dofmaps.at(i).size() / ndofs, ndofs);
+    }
+    return dms;
   }
 
   /// @brief Index map for the geometry 'degrees-of-freedom'.
@@ -151,26 +162,11 @@ public:
   std::span<value_type> x() { return _x; }
 
   /// @brief The elements that describes the geometry map.
-  ///
-  /// The coordinate element `cmaps()[i]` corresponds to the
-  /// degree-of-freedom map `dofmap(i)`.
-  /// @param i The coordinate map to fetch
   /// @return The coordinate/geometry elements.
-  const fem::CoordinateElement<value_type>& cmap(std::optional<int> i
-                                                 = std::nullopt) const
+  const std::vector<fem::CoordinateElement<value_type>>& cmaps() const
   {
-    if (i.has_value())
-      return _cmaps.at(*i);
-    else if (_cmaps.size() > 1)
-      throw std::runtime_error("Multiple cmaps.");
-    return _cmaps.front();
+    return _cmaps;
   }
-
-  /// @brief Number of coordinate maps and dofmaps
-  /// (which must be the same) in the
-  /// geometry, when consisting of different cells.
-  /// @return Number of dofmaps and coordinate maps.
-  std::size_t num_maps() const { return _cmaps.size(); }
 
   /// @brief Global user indices.
   const std::vector<std::int64_t>& input_global_indices() const
@@ -219,18 +215,19 @@ Geometry(std::shared_ptr<const common::IndexMap>, U&&,
 /// @param[in] elements List of elements that defines the geometry map for
 /// each cell type.
 /// @param[in] nodes Geometry node global indices for cells on this
-/// process. @pre Must be sorted.
+/// process.
 /// @param[in] xdofs Geometry degree-of-freedom map (using global
 /// indices) for cells on this process. `nodes` is a sorted and unique
 /// list of the indices in `xdofs`.
 /// @param[in] x The node coordinates (row-major, with shape
 /// `(num_nodes, dim)`. The global index of each node is `i +
 /// rank_offset`, where `i` is the local row index in `x` and
-/// `rank_offset` is the sum of `x` rows on all processed with a lower
+/// `rank_offset` is the sum of `x` rows on all processes with a lower
 /// rank than the caller.
 /// @param[in] dim Geometric dimension (1, 2, or 3).
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data.
+/// @pre `nodes` must be sorted.
 /// @note Experimental new interface for multiple cmap/dofmap
 /// @return A mesh geometry.
 template <typename U>
@@ -260,8 +257,6 @@ create_geometry(const Topology& topology,
   for (auto& el : elements)
     dof_layouts.push_back(el.create_dof_layout());
 
-  spdlog::info("Got {} dof layouts", dof_layouts.size());
-
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmaps]
       = fem::build_dofmap_data(topology.index_maps(topology.dim())[0]->comm(),
@@ -284,24 +279,15 @@ create_geometry(const Topology& topology,
     }
   }
 
-  spdlog::info("Calling compute_local_to_global");
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cells, and pass to function to
   // compute local (dof) to local (position in coords) map from (i)
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
 
-  spdlog::info("xdofs.size = {}", xdofs.size());
   std::vector<std::int32_t> all_dofmaps;
-  std::stringstream s;
   for (auto q : dofmaps)
-  {
-    s << q.size() << " ";
     all_dofmaps.insert(all_dofmaps.end(), q.begin(), q.end());
-  }
-  spdlog::info("dofmap sizes = {}", s.str());
-  spdlog::info("all_dofmaps.size = {}", all_dofmaps.size());
-  spdlog::info("nodes.size = {}", nodes.size());
 
   const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
       graph::build::compute_local_to_global(xdofs, all_dofmaps), nodes);
@@ -321,8 +307,6 @@ create_geometry(const Topology& topology,
     std::copy_n(std::next(x.begin(), shape1 * l2l[i]), shape1,
                 std::next(xg.begin(), 3 * i));
   }
-
-  spdlog::info("Creating geometry with {} dofmaps", dof_layouts.size());
 
   return Geometry(dof_index_map, std::move(dofmaps), elements, std::move(xg),
                   dim, std::move(igi));

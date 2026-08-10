@@ -70,6 +70,11 @@ def superlu_dist_matrix(A: dolfinx.la.MatrixCSR[_T]) -> SuperLUDistMatrix[_T]:
         A SuperLU_DIST matrix.
     """
     dtype = A.data.dtype
+    stype: (
+        type[_cpp.la.SuperLUDistMatrix_float32]
+        | type[_cpp.la.SuperLUDistMatrix_float64]
+        | type[_cpp.la.SuperLUDistMatrix_complex128]
+    )
     if np.issubdtype(dtype, np.float32):
         stype = _cpp.la.SuperLUDistMatrix_float32
     elif np.issubdtype(dtype, np.float64):
@@ -78,7 +83,7 @@ def superlu_dist_matrix(A: dolfinx.la.MatrixCSR[_T]) -> SuperLUDistMatrix[_T]:
         stype = _cpp.la.SuperLUDistMatrix_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
-    return SuperLUDistMatrix(stype(A._cpp_object))
+    return SuperLUDistMatrix(stype(A._cpp_object))  # type: ignore[arg-type]
 
 
 class SuperLUDistSolver(Generic[_T]):
@@ -119,16 +124,16 @@ class SuperLUDistSolver(Generic[_T]):
         """
         self._cpp_object.set_option(name, value)
 
-    def set_A(self, A: SuperLUDistMatrix[_T]):
+    def set_A(self, A: SuperLUDistMatrix[_T], fact: str):
         """Set assembled left-hand side matrix.
-
-        For advanced use with SuperLU_DIST option `Factor` allowing use of
-        previously computed permutations when solving with new matrix A.
 
         Args:
             A: Assembled left-hand side matrix :math:`A`.
+            fact: One of ``"DOFACT"``, ``"SamePattern"``,
+                ``"SamePattern_SameRowPerm"``. See the SuperLU_DIST
+                documentation for the meaning of these values.
         """
-        self._cpp_object.set_A(A._cpp_object)
+        self._cpp_object.set_A(A._cpp_object, fact)  # type: ignore[arg-type]
 
     def solve(self, b: dolfinx.la.Vector[_T], u: dolfinx.la.Vector[_T]) -> int:
         """Solve linear system :math:`Au = b`.
@@ -159,7 +164,7 @@ class SuperLUDistSolver(Generic[_T]):
         Returns:
            SuperLU_DIST return integer from ``p*gssvx`` routine.
         """
-        return self._cpp_object.solve(b._cpp_object, u._cpp_object)
+        return self._cpp_object.solve(b._cpp_object, u._cpp_object)  # type: ignore[arg-type]
 
 
 def superlu_dist_solver(A: SuperLUDistMatrix[_T]) -> SuperLUDistSolver[_T]:
@@ -177,6 +182,11 @@ def superlu_dist_solver(A: SuperLUDistMatrix[_T]) -> SuperLUDistSolver[_T]:
         A SuperLU_DIST solver.
     """
     dtype = A.dtype
+    stype: (
+        type[_cpp.la.SuperLUDistSolver_float32]
+        | type[_cpp.la.SuperLUDistSolver_float64]
+        | type[_cpp.la.SuperLUDistSolver_complex128]
+    )
     if np.issubdtype(dtype, np.float32):
         stype = _cpp.la.SuperLUDistSolver_float32
     elif np.issubdtype(dtype, np.float64):
@@ -185,4 +195,4 @@ def superlu_dist_solver(A: SuperLUDistMatrix[_T]) -> SuperLUDistSolver[_T]:
         stype = _cpp.la.SuperLUDistSolver_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
-    return SuperLUDistSolver(stype(A._cpp_object))
+    return SuperLUDistSolver(stype(A._cpp_object))  # type: ignore[arg-type]

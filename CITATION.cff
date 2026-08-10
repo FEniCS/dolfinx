@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: "DOLFINx"
-version: 0.10.0
-date-released: 2025-10-19
+version: 0.11.0
+date-released: 2026-06-09
 url: "https://github.com/FEniCS/dolfinx"
 doi: "10.5281/zenodo.10047760"
 authors:
@@ -41,7 +41,7 @@ preferred-citation:
     - family-names: "Wells"
       given-names: "Garth N."
       orcid: "https://orcid.org/0000-0001-5291-7951"
-  doi: "10.5281/zenodo.10447666"
+  doi: "10.5281/zenodo.10447665"
   journal: "preprint"
   title: "DOLFINx: the next generation FEniCS problem solving environment"
-  year: 2023
+  year: 2025

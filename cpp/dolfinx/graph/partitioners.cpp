@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Garth N. Wells, Chris Richardson and Igor A. Baratta
+// Copyright (C) 2019-2026 Garth N. Wells, Chris Richardson and Igor A. Baratta
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,13 +6,17 @@
 
 #include "partitioners.h"
 #include <algorithm>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/sort.h>
+#include <format>
 #include <map>
 #include <numeric>
 #include <set>
+#include <span>
 #include <vector>
 
 #ifdef HAS_PTSCOTCH
@@ -51,6 +55,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
   // an edge ('node1'). Task is to let the owner of node1 know the extra
   // ranks that it needs to send node1 to.
   std::vector<std::array<std::int64_t, 3>> node_to_dest;
+  node_to_dest.reserve(graph.array().size());
   for (int node0 = 0; node0 < graph.num_nodes(); ++node0)
   {
     // Wherever 'node' goes to, so must the attached 'node1'
@@ -59,7 +64,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
       if (node1 < range0 or node1 >= range1)
       {
         auto it = std::ranges::upper_bound(node_disp, node1);
-        int remote_rank = std::distance(node_disp.begin(), it) - 1;
+        int remote_rank = std::ranges::distance(node_disp.begin(), it) - 1;
         node_to_dest.push_back(
             {remote_rank, node1, static_cast<std::int64_t>(part[node0])});
       }
@@ -69,9 +74,28 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     }
   }
 
-  std::ranges::sort(node_to_dest);
-  auto [unique_end, range_end] = std::ranges::unique(node_to_dest);
-  node_to_dest.erase(unique_end, range_end);
+  // De-duplicate exact (dest, node1, partition) triples with a single
+  // hash-set pass (O(1)-average per insert, no sort needed for dedup).
+  // Then sort only by the dest-rank column (0), which is all the
+  // grouping below depends on, rather than by all 3 columns; a radix
+  // sort on the flattened data is used for that single column, as
+  // node_to_dest can have tens of millions of entries for a large
+  // mesh.
+  {
+    boost::unordered_flat_set<std::array<std::int64_t, 3>> unique_set(
+        node_to_dest.begin(), node_to_dest.end());
+    node_to_dest.assign(unique_set.begin(), unique_set.end());
+
+    std::span<const std::int64_t> flat(
+        reinterpret_cast<const std::int64_t*>(node_to_dest.data()),
+        3 * node_to_dest.size());
+    std::vector<std::int32_t> perm
+        = dolfinx::sort_by_perm<std::int64_t, 16>(flat, 3, 1);
+    std::vector<std::array<std::int64_t, 3>> sorted(node_to_dest.size());
+    for (std::size_t i = 0; i < perm.size(); ++i)
+      sorted[i] = node_to_dest[perm[i]];
+    node_to_dest = std::move(sorted);
+  }
 
   // Build send data and buffer
   std::vector<int> dest, send_sizes;
@@ -87,7 +111,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
       auto it1
           = std::find_if(it, node_to_dest.end(), [r0 = dest.back()](auto& idx)
                          { return idx[0] != r0; });
-      send_sizes.push_back(2 * std::distance(it, it1));
+      send_sizes.push_back(2 * std::ranges::distance(it, it1));
       for (auto itx = it; itx != it1; ++itx)
       {
         send_buffer.push_back(itx->at(1));
@@ -154,10 +178,25 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     local_node_to_dest.push_back({idx_local, d});
   }
 
+  // De-duplicate with a single hash-set pass, then sort only by the
+  // local-node-index column (0) -- the grouping below depends on that
+  // column alone. As above, a radix sort on the flattened data is used
+  // for that single column -- this array is sized by the local node
+  // count plus received halo entries, and so can also have millions of
+  // entries for a large mesh.
   {
-    std::ranges::sort(local_node_to_dest);
-    auto [unique_end, range_end] = std::ranges::unique(local_node_to_dest);
-    local_node_to_dest.erase(unique_end, range_end);
+    boost::unordered_flat_set<std::array<int, 2>> unique_set(
+        local_node_to_dest.begin(), local_node_to_dest.end());
+    local_node_to_dest.assign(unique_set.begin(), unique_set.end());
+
+    std::span<const int> flat(
+        reinterpret_cast<const int*>(local_node_to_dest.data()),
+        2 * local_node_to_dest.size());
+    std::vector<std::int32_t> perm = dolfinx::sort_by_perm<int, 16>(flat, 2, 1);
+    std::vector<std::array<int, 2>> sorted(local_node_to_dest.size());
+    for (std::size_t i = 0; i < perm.size(); ++i)
+      sorted[i] = local_node_to_dest[perm[i]];
+    local_node_to_dest = std::move(sorted);
   }
   // Compute offsets
   std::vector<std::int32_t> offsets(graph.num_nodes() + 1, 0);
@@ -362,6 +401,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     if (err != 0)
       throw std::runtime_error("Error building SCOTCH graph");
     timer1.stop();
+    timer1.flush();
 
 // Check graph data for consistency
 #ifndef NDEBUG
@@ -405,19 +445,19 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       throw std::runtime_error("Error calling SCOTCH_stratDgraphMapBuild");
 
     // Count number of 'ghost' edges, i.e. an edge to a cell that does
-    // not belong to the caller
+    // not belong to the caller. A single hash-set pass over the (much
+    // larger) full edge array avoids materialising and sorting a
+    // separate ghost-edges vector just to count distinct values.
     std::int32_t num_ghost_nodes = 0;
     {
       MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
       std::array<std::int64_t, 2> range
           = {offset_global, offset_global + num_owned};
-      std::vector<std::int64_t> ghost_edges;
-      std::copy_if(graph.array().begin(), graph.array().end(),
-                   std::back_inserter(ghost_edges),
-                   [range](auto e) { return e < range[0] or e >= range[1]; });
-      std::ranges::sort(ghost_edges);
-      auto it = std::ranges::unique(ghost_edges).begin();
-      num_ghost_nodes = std::distance(ghost_edges.begin(), it);
+      boost::unordered_flat_set<std::int64_t> ghost_nodes;
+      for (std::int64_t e : graph.array())
+        if (e < range[0] or e >= range[1])
+          ghost_nodes.insert(e);
+      num_ghost_nodes = ghost_nodes.size();
     }
 
     // Resize vector to hold node partition indices with enough extra
@@ -433,6 +473,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     if (err != 0)
       throw std::runtime_error("Error during SCOTCH partitioning");
     timer2.stop();
+    timer2.flush();
 
     // Data arrays for adjacency list, where the edges are the destination
     // ranks for each node
@@ -447,6 +488,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       if (err != 0)
         throw std::runtime_error("Error during SCOTCH halo exchange");
       timer3.stop();
+      timer3.flush();
 
       // Get SCOTCH's locally indexed graph
       common::Timer timer4("Get SCOTCH graph data");
@@ -455,6 +497,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
                         nullptr, nullptr, &edge_ghost_tab, nullptr, &comm);
       timer4.stop();
+      timer4.flush();
 
       // Iterate through SCOTCH's local compact graph to find partition
       // boundaries and save to map
@@ -477,6 +520,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
         }
       }
       timer5.stop();
+      timer5.flush();
 
       offsets.reserve(graph.num_nodes() + 1);
       for (std::int32_t i = 0; i < graph.num_nodes(); ++i)
@@ -577,8 +621,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
           opts.data(), &edgecut, part.data(), &pcomm);
       if (err != METIS_OK)
       {
-        throw std::runtime_error("ParMETIS_V3_PartKway failed. Error code: "
-                                 + std::to_string(err));
+        throw std::runtime_error(
+            std::format("ParMETIS_V3_PartKway failed. Error code: {}", err));
       }
     }
 

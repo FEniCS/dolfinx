@@ -31,7 +31,6 @@ from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, i
 def run_scalar_test(V, degree, dtype, cg_solver, rtol=None):
     mesh = V.mesh
     u, v = TrialFunction(V), TestFunction(V)
-    a = inner(grad(u), grad(v)) * dx
 
     # Get quadrature degree for bilinear form integrand (ignores effect of non-affine map)
     a = inner(grad(u), grad(v)) * dx(metadata={"quadrature_degree": -1})

@@ -14,12 +14,16 @@ extern "C"
 #include <superlu_zdefs.h>
 }
 #include <algorithm>
+#include <array>
+#include <cmath>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/Vector.h>
 #include <initializer_list>
+#include <numeric>
 #include <ranges>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 using namespace dolfinx;
@@ -46,28 +50,102 @@ void SuperMatrixDeleter::operator()(
 //----------------------------------------------------------------------------
 namespace
 {
-template <typename...>
-constexpr bool always_false_v = false;
-
+// Expand MatrixCSR block column indices to flattened column indices.
 std::vector<int_t> col_indices(const auto& A)
 {
-  // Local number of non-zeros
-  std::int32_t m_loc = A.num_owned_rows();
-  std::int64_t nnz_loc = A.row_ptr().at(m_loc);
-
+  std::array<int, 2> bs = A.block_size();
+  std::int32_t m_loc_block = A.num_owned_rows();
+  std::int64_t nnz_loc_block = A.row_ptr().at(m_loc_block);
   std::vector global_indices(A.index_map(1)->global_indices());
-  std::vector<int_t> col_indices(nnz_loc);
-  std::transform(A.cols().begin(), std::next(A.cols().begin(), nnz_loc),
-                 col_indices.begin(), [&global_indices](auto idx) -> int_t
-                 { return global_indices[idx]; });
+
+  if (bs[0] == 1 and bs[1] == 1)
+  {
+    std::vector<int_t> col_indices(nnz_loc_block);
+    std::transform(A.cols().begin(), std::next(A.cols().begin(), nnz_loc_block),
+                   col_indices.begin(), [&global_indices](auto idx) -> int_t
+                   { return global_indices[idx]; });
+    return col_indices;
+  }
+
+  std::vector<int_t> col_indices(nnz_loc_block * bs[0] * bs[1]);
+  const auto& A_cols = A.cols();
+  const auto& A_rowptr = A.row_ptr();
+  std::int64_t pos = 0;
+  for (std::int32_t i = 0; i < m_loc_block; ++i)
+  {
+    for (int i0 = 0; i0 < bs[0]; ++i0)
+    {
+      for (std::int64_t j = A_rowptr[i]; j < A_rowptr[i + 1]; ++j)
+      {
+        int_t col_block = global_indices[A_cols[j]];
+        for (int i1 = 0; i1 < bs[1]; ++i1)
+          col_indices[pos++] = col_block * bs[1] + i1;
+      }
+    }
+  }
   return col_indices;
 }
 //----------------------------------------------------------------------------
+// Expand MatrixCSR block row pointer to flattened row pointer.
 std::vector<int_t> row_indices(const auto& A)
 {
-  return std::vector<int_t>(
-      A.row_ptr().begin(),
-      std::next(A.row_ptr().begin(), A.num_owned_rows() + 1));
+  std::array<int, 2> bs = A.block_size();
+  std::int32_t m_loc_block = A.num_owned_rows();
+  const auto& A_rowptr = A.row_ptr();
+
+  if (bs[0] == 1 and bs[1] == 1)
+  {
+    return std::vector<int_t>(A_rowptr.begin(),
+                              std::next(A_rowptr.begin(), m_loc_block + 1));
+  }
+
+  // Write the per-scalar-row entry counts into `flattened_rowptr[1:]`, with
+  // each block-row contributing `bs[0]` copies.
+  std::vector<int_t> flattened_rowptr(m_loc_block * bs[0] + 1);
+  flattened_rowptr[0] = A_rowptr[0] * bs[1];
+  for (std::int32_t i = 0; i < m_loc_block; ++i)
+  {
+    int_t delta = (A_rowptr[i + 1] - A_rowptr[i]) * bs[1];
+    std::fill_n(std::next(flattened_rowptr.begin(), 1 + i * bs[0]), bs[0],
+                delta);
+  }
+  std::inclusive_scan(std::next(flattened_rowptr.begin()),
+                      flattened_rowptr.end(),
+                      std::next(flattened_rowptr.begin()));
+  return flattened_rowptr;
+}
+//----------------------------------------------------------------------------
+// Expand MatrixCSR block values to flattened CSR layout.
+template <typename T>
+std::vector<T> matrix_values(const MatrixCSR<T>& A)
+{
+  std::array<int, 2> bs = A.block_size();
+  std::int32_t m_loc_block = A.num_owned_rows();
+  std::int64_t nnz_loc_block = A.row_ptr().at(m_loc_block);
+
+  if (bs[0] == 1 and bs[1] == 1)
+  {
+    return std::vector<T>(A.values().begin(),
+                          std::next(A.values().begin(), nnz_loc_block));
+  }
+
+  std::vector<T> flattened_values(nnz_loc_block * bs[0] * bs[1]);
+  const auto& A_values = A.values();
+  const auto& A_rowptr = A.row_ptr();
+  std::int64_t pos = 0;
+  for (std::int32_t i = 0; i < m_loc_block; ++i)
+  {
+    for (int i0 = 0; i0 < bs[0]; ++i0)
+    {
+      for (std::int64_t j = A_rowptr[i]; j < A_rowptr[i + 1]; ++j)
+      {
+        for (int i1 = 0; i1 < bs[1]; ++i1)
+          flattened_values[pos++]
+              = A_values[j * bs[0] * bs[1] + i0 * bs[1] + i1];
+      }
+    }
+  }
+  return flattened_values;
 }
 //----------------------------------------------------------------------------
 template <typename T>
@@ -78,17 +156,18 @@ create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
 
   auto map0 = A.index_map(0);
   auto map1 = A.index_map(1);
+  std::array<int, 2> bs = A.block_size();
 
-  // Global size
-  std::int64_t m = map0->size_global();
-  std::int64_t n = map1->size_global();
+  // Global size (scalar, after block expansion)
+  std::int64_t m = map0->size_global() * bs[0];
+  std::int64_t n = map1->size_global() * bs[1];
   if (m != n)
     throw std::runtime_error("Cannot solve non-square system");
 
-  // Number of local rows, first row and local number of non-zeros
-  std::int32_t m_loc = A.num_owned_rows();
-  std::int64_t first_row = map0->local_range().front();
-  std::int64_t nnz_loc = A.row_ptr().at(m_loc);
+  // Number of local rows, first row and local number of non-zeros.
+  std::int32_t m_loc = A.num_owned_rows() * bs[0];
+  std::int64_t first_row = map0->local_range().front() * bs[0];
+  std::int64_t nnz_loc = A.row_ptr().at(A.num_owned_rows()) * bs[0] * bs[1];
 
   // Check values fit into upper range of int_t.
   auto check = [](std::int64_t x)
@@ -128,7 +207,7 @@ create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
         rowptr.vec.data(), SLU_NR_loc, SLU_Z, SLU_GE);
   }
   else
-    static_assert(always_false_v<T>, "Invalid scalar type");
+    static_assert(dolfinx::la::impl::always_false_v<T>, "Invalid scalar type");
 
   spdlog::info("Finished create_supermatrix");
   return p;
@@ -137,7 +216,7 @@ create_supermatrix(const auto& A, auto& A_mat_values, auto& rowptr, auto& cols)
 //----------------------------------------------------------------------------
 template <typename T>
 SuperLUDistMatrix<T>::SuperLUDistMatrix(const MatrixCSR<T>& A)
-    : _comm(A.comm()), _matA_values(A.values()),
+    : _comm(A.comm()), _matA_values(matrix_values(A)),
       _cols(std::make_unique<SuperLUDistStructs::vec_int_t>(col_indices(A))),
       _rowptr(std::make_unique<SuperLUDistStructs::vec_int_t>(row_indices(A))),
       _supermatrix(create_supermatrix<T>(A, _matA_values, *_rowptr, *_cols))
@@ -322,8 +401,12 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
       _gridinfo(
           [comm = _superlu_matA->comm()]
           {
-            int nprow = dolfinx::MPI::size(comm);
-            int npcol = 1;
+            // Computes a balanced 2D process grid - see PETSc interface
+            int size = dolfinx::MPI::size(comm);
+            int nprow = static_cast<int>(std::sqrt(static_cast<double>(size)));
+            while (size % nprow != 0)
+              --nprow;
+            int npcol = size / nprow;
             std::unique_ptr<SuperLUDistStructs::gridinfo_t, GridInfoDeleter> p(
                 new SuperLUDistStructs::gridinfo_t, GridInfoDeleter{});
             superlu_gridinit(comm, nprow, npcol, p.get());
@@ -349,7 +432,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
               zScalePermstructInit(m, m, s.get());
             }
             else
-              static_assert(always_false_v<T>, "Invalid scalar type");
+              static_assert(impl::always_false_v<T>, "Invalid scalar type");
             return s;
           }()),
       _lustruct(
@@ -371,7 +454,7 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
               zLUstructInit(m, l.get());
             }
             else
-              static_assert(always_false_v<T>, "Invalid scalar type");
+              static_assert(impl::always_false_v<T>, "Invalid scalar type");
             return l;
           }()),
       _solvestruct(new typename map_t<T>::SOLVEstruct_t{},
@@ -381,52 +464,53 @@ SuperLUDistSolver<T>::SuperLUDistSolver(
 //----------------------------------------------------------------------------
 template <typename T>
 void SuperLUDistSolver<T>::set_options(
-    SuperLUDistStructs::superlu_dist_options_t options)
+    const SuperLUDistStructs::superlu_dist_options_t& options)
 {
-  _options = std::make_unique<SuperLUDistStructs::superlu_dist_options_t>(
-      std::move(options));
+  *_options = options;
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
+void SuperLUDistSolver<T>::set_option(std::string_view name,
+                                      std::string_view value)
 {
   spdlog::info("Attempting to set option {} to {}", name, value);
-  const std::map<std::string, std::reference_wrapper<yes_no_t>> map_bool
-      = {{"Equil", _options->Equil},
-         {"DiagInv", _options->DiagInv},
-         {"SymmetricMode", _options->SymmetricMode},
-         {"PivotGrowth", _options->PivotGrowth},
-         {"ConditionNumber", _options->ConditionNumber},
-         {"ReplaceTinyPivot", _options->ReplaceTinyPivot},
-         {"SolveInitialized", _options->SolveInitialized},
-         {"RefineInitialized", _options->RefineInitialized},
-         {"PrintStat", _options->PrintStat},
-         {"lookahead_etree", _options->lookahead_etree},
-         {"SymPattern", _options->SymPattern},
-         {"Use_TensorCore", _options->Use_TensorCore},
-         {"Algo3d", _options->Algo3d}};
 
-  // Search in map_bool first
-  auto it = map_bool.find(name);
-  if (it != map_bool.end())
+  // Boolean-valued options, keyed to their member in superlu_dist_options_t.
+  // Internal state flags managed by the solver (e.g. SolveInitialized,
+  // RefineInitialized) are deliberately excluded: setting them by hand can
+  // trigger cleanup of uninitialised SuperLU_DIST structures.
+  using bool_option_t = decltype(&::superlu_dist_options_t::Equil);
+  static constexpr std::array<std::pair<std::string_view, bool_option_t>, 11>
+      bool_options{
+          {{"Equil", &::superlu_dist_options_t::Equil},
+           {"DiagInv", &::superlu_dist_options_t::DiagInv},
+           {"SymmetricMode", &::superlu_dist_options_t::SymmetricMode},
+           {"PivotGrowth", &::superlu_dist_options_t::PivotGrowth},
+           {"ConditionNumber", &::superlu_dist_options_t::ConditionNumber},
+           {"ReplaceTinyPivot", &::superlu_dist_options_t::ReplaceTinyPivot},
+           {"PrintStat", &::superlu_dist_options_t::PrintStat},
+           {"lookahead_etree", &::superlu_dist_options_t::lookahead_etree},
+           {"SymPattern", &::superlu_dist_options_t::SymPattern},
+           {"Use_TensorCore", &::superlu_dist_options_t::Use_TensorCore},
+           {"Algo3d", &::superlu_dist_options_t::Algo3d}}};
+
+  // Search the boolean options first
+  if (auto it = std::ranges::find_if(bool_options, [name](const auto& e)
+                                     { return e.first == name; });
+      it != bool_options.end())
   {
+    yes_no_t& field = _options.get()->*(it->second);
     if (value == "YES")
-    {
-      spdlog::info("Set {} to YES", name);
-      it->second.get() = YES;
-      return;
-    }
+      field = YES;
     else if (value == "NO")
-    {
-      spdlog::info("Set {} to NO", name);
-      it->second.get() = NO;
-      return;
-    }
+      field = NO;
     else
     {
       throw std::runtime_error(
           "'Boolean' option values must be string 'YES' or 'NO'");
     }
+    spdlog::info("Set {} to {}", name, value);
+    return;
   }
 
   // Search some enum types
@@ -465,13 +549,80 @@ void SuperLUDistSolver<T>::set_option(std::string name, std::string value)
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A)
+SuperLUDistSolver<T>::~SuperLUDistSolver()
 {
-  _superlu_matA = A;
+  if (_factored)
+  {
+    int_t n = _superlu_matA->supermatrix()->ncol;
+    if constexpr (std::is_same_v<T, double>)
+      dDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+    else if constexpr (std::is_same_v<T, float>)
+      sDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+    else if constexpr (std::is_same_v<T, std::complex<double>>)
+      zDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+    else
+      static_assert(impl::always_false_v<T>, "Invalid scalar type");
+  }
 }
 //----------------------------------------------------------------------------
 template <typename T>
-int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
+void SuperLUDistSolver<T>::set_A(std::shared_ptr<const SuperLUDistMatrix<T>> A,
+                                 std::string_view fact)
+{
+  if (A->supermatrix()->nrow != _superlu_matA->supermatrix()->nrow
+      or A->supermatrix()->ncol != _superlu_matA->supermatrix()->ncol)
+  {
+    throw std::runtime_error(
+        "New matrix A has different size to the matrix used to construct the "
+        "solver.");
+  }
+
+  // The process grid is built from the original matrix's communicator and is
+  // reused, so the new matrix must live on a compatible communicator.
+  int comm_cmp;
+  MPI_Comm_compare(A->comm(), _superlu_matA->comm(), &comm_cmp);
+  if (comm_cmp != MPI_IDENT and comm_cmp != MPI_CONGRUENT)
+  {
+    throw std::runtime_error(
+        "New matrix A is defined on a different MPI communicator to the "
+        "matrix used to construct the solver.");
+  }
+  _superlu_matA = A;
+
+  // See pddistribute in SuperLU_DIST: on Fact=DOFACT or Fact=SamePattern
+  // pdgssvx overwrites LUstruct's internal pointers without freeing the
+  // previous arrays, so a prior factorisation must be released first.
+  // Fact=SamePattern_SameRowPerm reuses the existing arrays in place.
+  if (fact == "DOFACT" or fact == "SamePattern")
+  {
+    if (_factored)
+    {
+      int_t n = _superlu_matA->supermatrix()->ncol;
+      if constexpr (std::is_same_v<T, double>)
+        dDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+      else if constexpr (std::is_same_v<T, float>)
+        sDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+      else if constexpr (std::is_same_v<T, std::complex<double>>)
+        zDestroy_LU(n, _gridinfo.get(), _lustruct.get());
+      else
+        static_assert(impl::always_false_v<T>, "Invalid scalar type");
+      _factored = false;
+    }
+    _options->Fact = (fact == "DOFACT") ? DOFACT : SamePattern;
+  }
+  else if (fact == "SamePattern_SameRowPerm")
+  {
+    _options->Fact = SamePattern_SameRowPerm;
+  }
+  else
+  {
+    throw std::runtime_error("set_A fact must be one of 'DOFACT', "
+                             "'SamePattern', 'SamePattern_SameRowPerm'");
+  }
+}
+//----------------------------------------------------------------------------
+template <typename T>
+int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u)
 {
   common::Timer tsolve("SuperLU_DIST solve");
 
@@ -483,7 +634,8 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
     spdlog::warn("Extra call to solve with option Fact set to DOFACT. "
                  "This leads to incorrect results; try FACTORED.");
 
-  int_t m_loc = ((NRformat_loc*)(_superlu_matA->supermatrix()->Store))->m_loc;
+  int_t m_loc
+      = static_cast<NRformat_loc*>(_superlu_matA->supermatrix()->Store)->m_loc;
   // RHS
   int_t ldb = m_loc;
   // TODO: Support for multiple right-hand sides?
@@ -530,10 +682,16 @@ int SuperLUDistSolver<T>::solve(const la::Vector<T>& b, la::Vector<T>& u) const
             &stat, &info);
   }
   else
-    static_assert(always_false_v<T>, "Invalid scalar type");
+    static_assert(impl::always_false_v<T>, "Invalid scalar type");
 
   if (info != 0)
-    spdlog::info("SuperLU_DIST p*gssvx() error: {}", info);
+    spdlog::warn("SuperLU_DIST p*gssvx() returned info = {}", info);
+
+  // Record the factorisation so Destroy_LU is called on the LUstruct
+  // internals. info < 0 means an illegal argument, where pdgssvx returns
+  // before allocating anything.
+  if (info >= 0)
+    _factored = true;
 
   PStatPrint(_options.get(), &stat, _gridinfo.get());
   PStatFree(&stat);

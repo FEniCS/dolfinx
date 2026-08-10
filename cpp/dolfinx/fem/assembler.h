@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2025 Garth N. Wells
+// Copyright (C) 2018-2026 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -19,6 +19,7 @@
 #include <basix/mdspan.hpp>
 #include <cstdint>
 #include <dolfinx/common/types.h>
+#include <dolfinx/mesh/EntityMap.h>
 #include <memory>
 #include <optional>
 #include <span>
@@ -70,6 +71,12 @@ void tabulate_expression(
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
+  // Check that domain is the same as mesh of the expression
+  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
+  {
+    throw std::runtime_error(
+        "Expression was created on a different mesh. Cannot tabulate.");
+  }
   auto [X, Xshape] = e.X();
   impl::tabulate_expression(values, e.kernel(), Xshape, e.value_size(), coeffs,
                             constants, mesh, entities, element);
@@ -95,6 +102,13 @@ template <dolfinx::scalar T, std::floating_point U>
 void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
                          const mesh::Mesh<U>& mesh, fem::MDSpan2 auto entities)
 {
+  // Check that domain is the same as mesh of the expression
+  if (e.coordinate_element_hash() != mesh.geometry().cmaps().front().hash())
+  {
+    throw std::runtime_error(
+        "Expression was created on a different mesh. Cannot tabulate.");
+  }
+
   std::optional<
       std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
       element = std::nullopt;
@@ -115,12 +129,13 @@ void tabulate_expression(std::span<T> values, const fem::Expression<T, U>& e,
     std::vector<std::reference_wrapper<const Function<T, U>>> c;
     std::ranges::transform(coefficients, std::back_inserter(c),
                            [](auto c) -> const Function<T, U>& { return *c; });
-    fem::pack_coefficients(c, coffsets, entities, std::span(coeffs));
+    fem::pack_coefficients(c, mesh, entities, e.entity_maps(), coffsets,
+                           std::span(coeffs));
   }
   std::vector<T> constants = fem::pack_constants(e);
 
   tabulate_expression<T, U>(
-      values, e, md::mdspan(coeffs.data(), entities.size(), cstride),
+      values, e, md::mdspan(coeffs.data(), entities.extent(0), cstride),
       std::span<const T>(constants), mesh, entities, element);
 }
 
@@ -161,8 +176,7 @@ T assemble_scalar(
                    std::pair<std::span<const T>, int>>& coefficients)
 {
   using mdspanx3_t
-      = md::mdspan<const scalar_value_t<T>,
-                   md::extents<std::size_t, md::dynamic_extent, 3>>;
+      = md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>>;
 
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
@@ -175,20 +189,10 @@ T assemble_scalar(
   {
     // Geometry dofmap and data
     md::mdspan<const std::int32_t, md::dextents<std::size_t, 2>> x_dofmap
-        = mesh->geometry().dofmap(cell_type_idx);
-    if constexpr (std::is_same_v<U, scalar_value_t<T>>)
-    {
-      val += impl::assemble_scalar(M, x_dofmap,
-                                   mdspanx3_t(x.data(), x.size() / 3, 3),
-                                   constants, coefficients, cell_type_idx);
-    }
-    else
-    {
-      std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
-      val += impl::assemble_scalar(M, x_dofmap,
-                                   mdspanx3_t(_x.data(), _x.size() / 3, 3),
-                                   constants, coefficients, cell_type_idx);
-    }
+        = mesh->geometry().dofmaps().at(cell_type_idx);
+    val += impl::assemble_scalar(M, x_dofmap,
+                                 mdspanx3_t(x.data(), x.size() / 3, 3),
+                                 constants, coefficients, cell_type_idx);
   }
   return val;
 }
@@ -336,7 +340,8 @@ template <typename V,
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void apply_lifting(
     V&& b,
-    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
+    const std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>>&
+        a,
     const std::vector<std::span<const T>>& constants,
     const std::vector<std::map<std::pair<IntegralType, int>,
                                std::pair<std::span<const T>, int>>>& coeffs,
@@ -349,7 +354,70 @@ void apply_lifting(
     return;
 
   common::Timer t("[Apply lifting]");
-  impl::apply_lifting(b, a, constants, coeffs, bcs1, x0, alpha);
+
+  if (!x0.empty() and x0.size() != a.size())
+  {
+    throw std::runtime_error(
+        "Mismatch in size between x0 and bilinear form in assembler.");
+  }
+
+  if (a.size() != bcs1.size())
+  {
+    throw std::runtime_error(
+        "Mismatch in size between a and bcs in assembler.");
+  }
+
+  // Reused across iterations so `assign` below can recycle the
+  // existing buffer instead of reallocating for every block.
+  std::vector<std::int8_t> bc_markers1;
+  std::vector<T> bc_values1;
+  for (std::size_t j = 0; j < a.size(); ++j)
+  {
+    if (a[j] and !bcs1[j].empty())
+    {
+      assert(a[j]->get().function_spaces().at(0));
+      auto V1 = a[j]->get().function_spaces()[1];
+      assert(V1);
+
+      const int bs0 = a[j]->get().function_spaces()[0]->dofmaps().front()->bs();
+      const int bs1 = V1->dofmaps().front()->bs();
+
+      std::span<const T> _x0;
+      if (!x0.empty())
+        _x0 = x0[j];
+
+      std::shared_ptr<const DofMap> dofmap = V1->dofmaps().front();
+      auto map1 = dofmap->index_map;
+      const int map_bs1 = dofmap->index_map_bs();
+      assert(map1);
+      const int crange = map_bs1 * (map1->size_local() + map1->num_ghosts());
+      bc_markers1.assign(crange, false);
+      bc_values1.assign(crange, 0);
+      for (auto& bc : bcs1[j])
+      {
+        bc.get().mark_dofs(bc_markers1);
+        bc.get().set(bc_values1, std::nullopt, 1);
+      }
+
+      if (bs0 == 1 and bs1 == 1)
+      {
+        impl::lift_bc(b, a[j]->get(), std::integral_constant<int, 1>{},
+                      std::integral_constant<int, 1>{}, constants[j], coeffs[j],
+                      std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
+      }
+      else if (bs0 == 3 and bs1 == 3)
+      {
+        impl::lift_bc(b, a[j]->get(), std::integral_constant<int, 3>{},
+                      std::integral_constant<int, 3>{}, constants[j], coeffs[j],
+                      std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
+      }
+      else
+      {
+        impl::lift_bc(b, a[j]->get(), bs0, bs1, constants[j], coeffs[j],
+                      std::span<const T>(bc_values1), bc_markers1, _x0, alpha);
+      }
+    }
+  }
 }
 
 /// @brief Modify the right-hand side vector to account for constraints
@@ -387,7 +455,8 @@ template <typename V,
   requires std::is_same_v<typename std::remove_cvref_t<V>::value_type, T>
 void apply_lifting(
     V&& b,
-    std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>> a,
+    const std::vector<std::optional<std::reference_wrapper<const Form<T, U>>>>&
+        a,
     const std::vector<
         std::vector<std::reference_wrapper<const DirichletBC<T, U>>>>& bcs1,
     const std::vector<std::span<const T>>& x0, T alpha)
@@ -396,7 +465,7 @@ void apply_lifting(
       std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>>
       coeffs;
   std::vector<std::vector<T>> constants;
-  for (auto _a : a)
+  for (const auto& _a : a)
   {
     if (_a)
     {
@@ -431,7 +500,6 @@ void apply_lifting(
 /// replacing the mat_add function appropriately.
 /// @tparam T scalar type
 /// @tparam U geometry scalar type
-/// @tparam LiftingMode Set to true if applying a lifting kernel in mat_add.
 /// @param[in] mat_add The function for adding values into the matrix.
 /// @param[in] a The bilinear form to assemble.
 /// @param[in] constants Constants that appear in `a`.
@@ -442,7 +510,7 @@ void apply_lifting(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <dolfinx::scalar T, std::floating_point U, bool LiftingMode = false>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     la::MatSet<T> auto mat_add, const Form<T, U>& a,
     std::span<const T> constants,
@@ -454,25 +522,14 @@ void assemble_matrix(
 {
   common::Timer t_assm("[Assemble Matrix]");
   using mdspanx3_t
-      = md::mdspan<const scalar_value_t<T>,
-                   md::extents<std::size_t, md::dynamic_extent, 3>>;
+      = md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>>;
 
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
   std::span x = mesh->geometry().x();
-  if constexpr (std::is_same_v<U, scalar_value_t<T>>)
-  {
-    impl::assemble_matrix<T, U, LiftingMode>(
-        mat_add, a, mdspanx3_t(x.data(), x.size() / 3, 3), constants,
-        coefficients, dof_marker0, dof_marker1);
-  }
-  else
-  {
-    std::vector<scalar_value_t<T>> _x(x.begin(), x.end());
-    impl::assemble_matrix<T, U, LiftingMode>(
-        mat_add, a, mdspanx3_t(_x.data(), _x.size() / 3, 3), constants,
-        coefficients, dof_marker0, dof_marker1);
-  }
+  impl::assemble_matrix<false>(mat_add, a,
+                               mdspanx3_t(x.data(), x.size() / 3, 3), constants,
+                               coefficients, dof_marker0, dof_marker1);
 }
 
 /// @brief Assemble bilinear form into a matrix
@@ -492,10 +549,10 @@ void assemble_matrix(
   // Index maps for dof ranges
   // NOTE: For mixed-topology meshes, there will be multiple DOF maps,
   // but the index maps are the same.
-  auto map0 = a.function_spaces().at(0)->dofmaps(0)->index_map;
-  auto map1 = a.function_spaces().at(1)->dofmaps(0)->index_map;
-  auto bs0 = a.function_spaces().at(0)->dofmaps(0)->index_map_bs();
-  auto bs1 = a.function_spaces().at(1)->dofmaps(0)->index_map_bs();
+  auto map0 = a.function_spaces().at(0)->dofmaps().front()->index_map;
+  auto map1 = a.function_spaces().at(1)->dofmaps().front()->index_map;
+  auto bs0 = a.function_spaces().at(0)->dofmaps().front()->index_map_bs();
+  auto bs1 = a.function_spaces().at(1)->dofmaps().front()->index_map_bs();
 
   // Build dof markers
   std::vector<std::int8_t> dof_marker0, dof_marker1;
@@ -520,8 +577,8 @@ void assemble_matrix(
   }
 
   // Assemble
-  assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
-                  dof_marker1);
+  fem::assemble_matrix(mat_add, a, constants, coefficients, dof_marker0,
+                       dof_marker1);
 }
 
 /// @brief Assemble bilinear form into a matrix.
@@ -567,9 +624,9 @@ void assemble_matrix(auto mat_add, const Form<T, U>& a,
   pack_coefficients(a, coefficients);
 
   // Assemble
-  assemble_matrix(mat_add, a, std::span(constants),
-                  make_coefficients_span(coefficients), dof_marker0,
-                  dof_marker1);
+  impl::assemble_matrix<false>(mat_add, a, std::span(constants),
+                               make_coefficients_span(coefficients),
+                               dof_marker0, dof_marker1);
 }
 
 /// @brief Sets a value to the diagonal of a matrix for specified rows.

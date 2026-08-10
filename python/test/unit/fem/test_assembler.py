@@ -91,9 +91,10 @@ def test_assemble_functional_ds(mode, dtype):
 
 @dtype_parametrize
 def test_assemble_derivatives(dtype):
-    """This test checks the original_coefficient_positions, which may change
-    under differentiation (some coefficients and constants are
-    eliminated).
+    """Test the original_coefficient_positions.
+
+    Positions  may change under differentiation (some coefficients and
+    constants are eliminated.
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, dtype=dtype(0).real.dtype)
     Q = functionspace(mesh, ("Lagrange", 1))
@@ -345,9 +346,10 @@ class TestPETScAssemblers:
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_matrix_assembly_block(self, mode):
-        """Test assembly of block matrices and vectors into (a) monolithic
-        blocked structures, PETSc Nest structures, and monolithic
-        structures.
+        """Test assembly of block matrices and vectors.
+
+        Tests assembly into (a) monolithic blocked structures, PETSc
+        Nest structures, and monolithic structures.
         """
         from petsc4py import PETSc
 
@@ -488,9 +490,10 @@ class TestPETScAssemblers:
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_matrix_assembly_block_vector(self, mode):
-        """Test assembly of block matrices and vectors into (a) monolithic
-        blocked structures, PETSc Nest structures, and monolithic
-        structures.
+        """Test assembly of block matrices and vectors.
+
+        Tests assembly into (a) monolithic blocked structures, PETSc
+        Nest structures, and monolithic structures.
         """
         from petsc4py import PETSc
 
@@ -605,9 +608,7 @@ class TestPETScAssemblers:
 
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_assembly_solve_block(self, mode):
-        """Solve a two-field mass-matrix like problem with block matrix approaches
-        and test that solution is the same.
-        """
+        """Solve a two-field mass-matrix like problem with block matrix approaches."""
         from petsc4py import PETSc
 
         from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
@@ -1048,7 +1049,8 @@ class TestPETScAssemblers:
         assert isinstance(A, PETSc.Mat)
         assert A.isSymmetric(tol=1.0e-4)
         A.destroy()
-        # with boundary conditions
+
+        # With boundary conditions
         bcs = [bc(V0), bc(V1)]
         A = petsc_assemble_matrix(a, bcs=bcs)
         b = petsc_assemble_vector(L, kind=PETSc.Vec.Type.MPI)
@@ -1079,13 +1081,15 @@ class TestPETScAssemblers:
         L0 = inner(ufl.unit_vector(0, mesh.geometry.dim), ufl.avg(v0)) * dS
         L1 = inner(ufl.unit_matrix(1, 1, mesh.geometry.dim), ufl.avg(v1)) * dS
         L = form([L0, L1])
-        # without boundary conditions
+
+        # Without boundary conditions
         A = petsc_assemble_matrix(a)
         A.assemble()
         assert isinstance(A, PETSc.Mat)
         assert A.isSymmetric(tol=1.0e-4)
         A.destroy()
-        # with boundary conditions
+
+        # With boundary conditions
         bcs = [bc(V0), bc(V1)]
         A = petsc_assemble_matrix(a, bcs=bcs)
         b = petsc_assemble_vector(L, kind=PETSc.Vec.Type.MPI)
@@ -1127,7 +1131,6 @@ class TestPETScAssemblers:
             V2 = V.clone()
             u = Function(V)
             u.interpolate(lambda x: x[0] * x[1])
-            v = ufl.TestFunction(V)
             u2 = Function(V2)
             v2 = ufl.TestFunction(V2)
             c = Constant(mesh, PETSc.ScalarType(12.0))
@@ -1185,6 +1188,7 @@ class TestPETScAssemblers:
 
         constants = pack_constants(J)
         coeffs = pack_coefficients(J)
+        tol = 100 * np.finfo(default_scalar_type()).eps
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
             A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1], kind=kind)
             A.assemble()
@@ -1194,11 +1198,11 @@ class TestPETScAssemblers:
                     for j in range(2):
                         Asub = A.getNestSubMatrix(i, j)
                         A0sub = A0.getNestSubMatrix(i, j)
-                        assert 0.0 == pytest.approx((Asub - A0sub).norm(), abs=1.0e-12)  # /NOSONAR
+                        assert 0.0 == pytest.approx((Asub - A0sub).norm(), abs=tol)  # /NOSONAR
                         Asub.destroy()
                         A0sub.destroy()
             else:
-                assert 0.0 == pytest.approx((A - A0).norm(), abs=1.0e-12)  # /NOSONAR
+                assert 0.0 == pytest.approx((A - A0).norm(), abs=tol)  # /NOSONAR
 
         # Change coefficients and constants
         if kind is None:
@@ -1907,7 +1911,6 @@ def test_vertex_integral_rank_1(cell_type, ghost_mode, dtype):
         comm, x[0] * v * ufl.dP, form_compiler_options={"scalar_type": dtype}
     )
     form = fem.create_form(compiled_form, [V], msh, subdomains, {}, {}, [])
-    expected_value_l = np.sum(msh.geometry.x[vertices, 0])
     expected_value_l = np.zeros(num_vertices, dtype=rdtype)
     expected_value_l[vertices] = msh.geometry.x[vertices, 0]
     value_l = fem.assemble_vector(form)
@@ -1947,7 +1950,6 @@ def test_ridge_integrals_rank1_2D(cell_type, ghost_mode, dtype):
     comm = MPI.COMM_WORLD
     rdtype = np.real(dtype(0)).dtype
 
-    msh = None
     msh = mesh.create_unit_square(
         comm, 4, 4, cell_type=cell_type, ghost_mode=ghost_mode, dtype=rdtype
     )

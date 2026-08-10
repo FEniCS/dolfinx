@@ -19,7 +19,7 @@ Adjacency list builders
 Re-ordering
 -----------
 
-.. doxygenfunction:: dolfinx::graph::reorder_gps
+.. doxygenfunction:: dolfinx::graph::reorder_rcm
    :project: DOLFINx
 
 

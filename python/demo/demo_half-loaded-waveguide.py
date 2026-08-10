@@ -19,8 +19,8 @@
 #
 # ```{admonition} Download sources
 # :class: download
-# * {download}`Python script <./demo_half_loaded_waveguide.py>`
-# * {download}`Jupyter notebook <./demo_half_loaded_waveguide.ipynb>`
+# * {download}`Python script <./demo_half-loaded-waveguide.py>`
+# * {download}`Jupyter notebook <./demo_half-loaded-waveguide.ipynb>`
 # ```
 #
 # The demo shows how to:
@@ -40,6 +40,8 @@
 # problem:
 
 # +
+import sys
+import typing
 from pathlib import Path
 
 from mpi4py import MPI
@@ -66,7 +68,7 @@ if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
     print("This solver fails with PETSc and 64-bit integers because of memory errors in MUMPS.")
     # Note: when PETSc.IntType == np.int32, superlu_dist is used
     # rather than MUMPS and does not trigger memory failures.
-    exit(0)
+    sys.exit(0)
 
 try:
     from dolfinx.io import VTXWriter
@@ -127,14 +129,16 @@ except ImportError:
 
 def TMx_condition(
     kx_d: complex, kx_v: complex, eps_d: complex, eps_v: complex, d: float, h: float
-) -> float:
+) -> complex:
     """Transcendental equation for TMx modes."""
-    return kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d))
+    return typing.cast(
+        complex, kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d))
+    )
 
 
-def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> float:
+def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> complex:
     """Transcendental equation for TEx modes."""
-    return kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d))
+    return typing.cast(complex, kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d)))
 
 
 # Then, we can define the `verify_mode` function, to check whether a
@@ -205,11 +209,11 @@ eps.x.array[cells_d] = eps_d
 # waveguide wall:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # &\nabla \times \frac{1}{\mu_{r}} \nabla \times \mathbf{E}-k_{o}^{2}
 # \epsilon_{r} \mathbf{E}=0 \quad &\text { in } \Omega\\
 # &\hat{n}\times\mathbf{E} = 0 &\text { on } \Gamma
-# \end{align}
+# \end{aligned}
 # $$
 #
 # with $k_0$ and $\lambda_0 = 2\pi/k_0$ being the wavevector and the
@@ -232,10 +236,10 @@ eps.x.array[cells_d] = eps_d
 # the following substitution:
 #
 # $$
-# \begin{align}
+# \begin{aligned}
 # & \mathbf{e}_t = k_z\mathbf{E}_t\\
 # & e_z = -jE_z
-# \end{align}
+# \end{aligned}
 # $$
 #
 # The final weak form can be written as:

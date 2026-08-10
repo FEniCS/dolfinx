@@ -34,16 +34,17 @@ public:
                   std::array<std::shared_ptr<const common::IndexMap>, 2> maps,
                   std::array<int, 2> bs);
 
-  /// Create a new sparsity pattern by concatenating sub-patterns, e.g.
+  /// @brief Create a new sparsity pattern by concatenating sub-patterns,
+  /// e.g.
   /// pattern =[ pattern00 ][ pattern 01]
   ///          [ pattern10 ][ pattern 11]
   ///
   /// @param[in] comm Communicator that the pattern is defined on.
   /// @param[in] patterns Rectangular array of sparsity pattern. The
-  /// patterns must not be finalised. Null block are permitted/
+  /// patterns must not be finalised. Null blocks are permitted.
   /// @param[in] maps Pairs of (index map, block size) for each row
-  /// block (maps[0]) and column blocks (maps[1])/
-  /// @param[in] bs Block sizes for the sparsity pattern entries/
+  /// block (maps[0]) and column blocks (maps[1]).
+  /// @param[in] bs Block sizes for the sparsity pattern entries.
   SparsityPattern(
       MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>>& patterns,
@@ -91,7 +92,7 @@ public:
   /// entries
   void finalize();
 
-  /// @brief Index map for given dimension dimension. Returns the index
+  /// @brief Index map for given dimension. Returns the index
   /// map for rows and columns that will be set by the current MPI rank.
   /// @note After finalization, the column index map is updated to account for
   /// additional column entries from other processes.
@@ -99,12 +100,18 @@ public:
   /// @return The index map.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// @brief Global indices of non-zero columns on owned rows.
+  /// @brief Global column indices corresponding to the local column
+  /// indices used by SparsityPattern::graph.
+  ///
+  /// Entry `i` of the returned vector is the global index of local
+  /// column `i`: for `i` in the owned range this is every owned
+  /// column (whether or not it holds a non-zero entry), and for `i`
+  /// beyond the owned range it is the ghost column, i.e. a column
+  /// with at least one non-zero entry owned by another rank.
   ///
   /// @note The ghosts are computed only once SparsityPattern::finalize
   /// has been called.
-  /// @return Global index non-zero columns on this process, including
-  /// ghosts.
+  /// @return Global column indices on this process, including ghosts.
   std::vector<std::int64_t> column_indices() const;
 
   /// @brief Return index map block size for dimension dim
@@ -127,7 +134,7 @@ public:
   /// @brief Sparsity pattern graph after assembly. Uses local indices
   /// for the columns.
   /// @note Column global indices can be obtained from
-  /// SparsityPattern::column_index_map()
+  /// SparsityPattern::column_indices()
   /// @note Includes ghost rows
   /// @return Adjacency list edges and offsets
   std::pair<std::span<const std::int32_t>, std::span<const std::int64_t>>
@@ -157,8 +164,10 @@ private:
   // Owning process of ghost columns in owned rows
   std::vector<std::int32_t> _col_ghost_owners;
 
-  // Cache for unassembled entries on owned and unowned (ghost) rows
-  std::vector<std::vector<std::int32_t>> _row_cache;
+  // Cache of unassembled (row, column) entries on owned and unowned
+  // (ghost) rows, as parallel row/column arrays (row-major COO).
+  std::vector<std::int32_t> _cache_rows;
+  std::vector<std::int32_t> _cache_cols;
 
   // Sparsity pattern adjacency data (computed once pattern is
   // finalised). _edges holds the edges (connected dofs). The edges for

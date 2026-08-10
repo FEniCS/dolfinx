@@ -62,7 +62,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 
         # Remove possibility of unbound variables
         output = None
-        status = 1  # assume failure
+        status: int | None = 1  # assume failure
         error_msg = ""
 
         # Compile on rank 0

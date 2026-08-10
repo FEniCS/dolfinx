@@ -6,8 +6,10 @@
 
 #pragma once
 
+#include <concepts>
 #include <numeric>
 #include <span>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -15,6 +17,24 @@ namespace dolfinx::la
 {
 namespace impl
 {
+/// @cond
+template <typename T>
+struct is_integral_constant : std::false_type
+{
+};
+template <std::integral U, U N>
+struct is_integral_constant<std::integral_constant<U, N>> : std::true_type
+{
+};
+
+/// Concept for a block size argument: a run-time integral value or a
+/// compile-time `std::integral_constant<U, N>` for some integral type
+/// `U`.
+template <typename T>
+concept BlockSizeArg = std::integral<std::remove_cvref_t<T>>
+                       or is_integral_constant<std::remove_cvref_t<T>>::value;
+/// @endcond
+
 /// @brief Incorporate data into a CSR matrix.
 ///
 /// @tparam BS0 Row block size (of both matrix and data).
@@ -73,7 +93,7 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       if (it == cit1 or *it != xcols[c])
         throw std::runtime_error("Entry not in sparsity");
 
-      std::size_t d = std::distance(cols.begin(), it);
+      std::size_t d = std::ranges::distance(cols.begin(), it);
       std::size_t di = d * BS0 * BS1;
       std::size_t xi = c * BS1;
       assert(di < data.size());
@@ -141,7 +161,7 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
         if (it == cit1 or *it != xcols[c] * BS1)
           throw std::runtime_error("Entry not in sparsity");
 
-        std::size_t d = std::distance(cols.begin(), it);
+        std::size_t d = std::ranges::distance(cols.begin(), it);
         assert(d < data.size());
         std::size_t xi = c * BS1;
         for (int j = 0; j < BS1; ++j)
@@ -203,7 +223,7 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       if (it == cit1 or *it != cdiv.quot)
         throw std::runtime_error("Entry not in sparsity");
 
-      std::size_t d = std::distance(cols.begin(), it);
+      std::size_t d = std::ranges::distance(cols.begin(), it);
       std::size_t di = d * nbs + rdiv.rem * bs1 + cdiv.rem;
       assert(di < data.size());
       op(data[di], xr[c]);
@@ -211,49 +231,52 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
   }
 }
 
-/// @brief  Sparse matrix-vector product implementation.
-/// @tparam T
-/// @tparam BS1
-/// @param values
-/// @param row_begin
-/// @param row_end
-/// @param indices
-/// @param x
-/// @param y
-/// @param bs0
-/// @param bs1
-template <typename T, int BS1>
+/// @brief Sparse matrix-vector product implementation.
+///
+/// Computes `y += A x` where A is given in CSR format.
+///
+/// @note The value block layout is row-major within each block: for
+/// block entry `j` the element at row-offset `k0` and column-offset `k1`
+/// is stored at `values[j * bs0 * bs1 + k0 * bs1 + k1]`.
+///
+/// @tparam T Scalar type of the matrix and vector entries.
+/// @param[in] values Nonzero values of A, stored block-row-major.
+/// Length: `nnz * bs0 * bs1`.
+/// @param[in] row_begin Start positions in `values`/`indices` for each
+/// row of A. Length: number of rows of A.
+/// @param[in] row_end End positions in `values`/`indices` for each row
+/// of A. Length: number of rows of A.
+/// @param[in] indices Column indices of each nonzero block entry of A.
+/// Length: `nnz`.
+/// @param[in] x Input vector, indexed by the *columns* of A.
+/// Length: `num_cols * bs1`.
+/// @param[in,out] y Output vector, indexed by the *rows* of A,
+/// accumulated into. Length: `num_rows * bs0`.
+/// @param[in] bs0 Row block size. Either a runtime integral value or a
+/// `std::integral_constant<U, N>` for some integral type `U`.
+/// @param[in] bs1 Column block size. Either a runtime integral value
+/// or a `std::integral_constant<U, N>` for some integral type `U`.
+template <typename T>
 void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
           std::span<const std::int64_t> row_end,
           std::span<const std::int32_t> indices, std::span<const T> x,
-          std::span<T> y, int bs0, int bs1)
+          std::span<T> y, BlockSizeArg auto bs0, BlockSizeArg auto bs1)
 {
   assert(row_begin.size() == row_end.size());
   // Block layout: row-major within each block. The element at row-offset
   // k0 (∈ [0, bs0)) and column-offset k1 (∈ [0, bs1)) of block entry j
   // is stored at values[j * bs0 * bs1 + k0 * bs1 + k1].
-  for (int k0 = 0; k0 < bs0; ++k0)
+  for (decltype(+bs0) k0 = 0; k0 < bs0; ++k0)
   {
     for (std::size_t i = 0; i < row_begin.size(); i++)
     {
       T vi{0};
       for (std::int64_t j = row_begin[i]; j < row_end[i]; j++)
       {
-        if constexpr (BS1 == -1)
+        for (decltype(+bs1) k1 = 0; k1 < bs1; ++k1)
         {
-          for (int k1 = 0; k1 < bs1; ++k1)
-          {
-            vi += values[j * bs0 * bs1 + k0 * bs1 + k1]
-                  * x[indices[j] * bs1 + k1];
-          }
-        }
-        else
-        {
-          for (int k1 = 0; k1 < BS1; ++k1)
-          {
-            vi += values[j * bs0 * BS1 + k0 * BS1 + k1]
-                  * x[indices[j] * BS1 + k1];
-          }
+          vi += values[j * bs0 * bs1 + k0 * bs1 + k1]
+                * x[indices[j] * bs1 + k1];
         }
       }
 
@@ -272,60 +295,47 @@ void spmv(std::span<const T> values, std::span<const std::int64_t> row_begin,
 /// zero `y` before the first call if a fresh result is required.
 ///
 /// @note The value block layout is row-major within each block: for
-/// block entry `j` the element at row-offset `k0` and column-offset `k1`
-/// is stored at `values[j * bs0 * bs1 + k0 * bs1 + k1]`.
+/// block entry `j` the element at row-offset `k0` and column-offset
+/// `k1` is stored at `values[j * bs0 * bs1 + k0 * bs1 + k1]`.
 ///
-/// @tparam T   Scalar type of the matrix and vector entries.
-/// @tparam BS1 Compile-time column block size.  Pass `-1` to use the
-///             runtime value `bs1` instead.
+/// @tparam T Scalar type of the matrix and vector entries.
 ///
-/// @param[in]  values    Nonzero values of A, stored block-row-major.
-///                       Length: `nnz * bs0 * bs1`.
-/// @param[in]  row_begin Start positions in `values`/`indices` for each
-///                       row of A.  Length: number of rows of A.
-/// @param[in]  row_end   End positions in `values`/`indices` for each
-///                       row of A.  Length: number of rows of A.
-/// @param[in]  indices   Column indices of each nonzero block entry of A.
-///                       Length: `nnz`.
-/// @param[in]  x         Input vector, indexed by the *rows* of A.
-///                       Length: `num_rows * bs0`.
-/// @param[in,out] y      Output vector, indexed by the *columns* of A,
-///                       accumulated into.
-///                       Length: `num_cols * bs1`.
-/// @param[in]  bs0       Row block size (runtime value).
-/// @param[in]  bs1       Column block size (runtime value, used when
-///                       `BS1 == -1`).
-template <typename T, int BS1>
+/// @param[in] values Nonzero values of A, stored block-row-major.
+/// Length: `nnz * bs0 * bs1`.
+/// @param[in] row_begin Start positions in `values`/`indices` for each
+/// row of A.  Length: number of rows of A.
+/// @param[in] row_end End positions in `values`/`indices` for each row
+/// of A.  Length: number of rows of A.
+/// @param[in] indices Column indices of each nonzero block entry of A.
+/// Length: `nnz`.
+/// @param[in] x Input vector, indexed by the *rows* of A. Length:
+/// `num_rows * bs0`.
+/// @param[in,out] y Output vector, indexed by the *columns* of A,
+/// accumulated into. Length: `num_cols * bs1`.
+/// @param[in] bs0 Row block size. Either a runtime integral value or a
+/// `std::integral_constant<U, N>` for some integral type `U`.
+/// @param[in] bs1 Column block size. Either a runtime integral value
+/// or a `std::integral_constant<U, N>` for some integral type `U`.
+template <typename T>
 void spmvT(std::span<const T> values, std::span<const std::int64_t> row_begin,
            std::span<const std::int64_t> row_end,
            std::span<const std::int32_t> indices, std::span<const T> x,
-           std::span<T> y, int bs0, int bs1)
+           std::span<T> y, BlockSizeArg auto bs0, BlockSizeArg auto bs1)
 {
   assert(row_begin.size() == row_end.size());
 
   // Block layout: row-major within each block.
-  for (int k0 = 0; k0 < bs0; ++k0)
+  for (decltype(+bs0) k0 = 0; k0 < bs0; ++k0)
   {
     for (std::size_t i = 0; i < row_begin.size(); i++)
     {
       const T xval = x[i * bs0 + k0];
       for (std::int64_t j = row_begin[i]; j < row_end[i]; j++)
       {
-        if constexpr (BS1 == -1)
+        for (decltype(+bs1) k1 = 0; k1 < bs1; ++k1)
         {
-          for (int k1 = 0; k1 < bs1; ++k1)
-          {
-            y[indices[j] * bs1 + k1]
-                += values[j * bs0 * bs1 + k0 * bs1 + k1] * xval;
-          }
-        }
-        else
-        {
-          for (int k1 = 0; k1 < BS1; ++k1)
-          {
-            y[indices[j] * BS1 + k1]
-                += values[j * bs0 * BS1 + k0 * BS1 + k1] * xval;
-          }
+          y[indices[j] * bs1 + k1]
+              += values[j * bs0 * bs1 + k0 * bs1 + k1] * xval;
         }
       }
     }

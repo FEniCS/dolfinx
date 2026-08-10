@@ -10,13 +10,6 @@ import time
 
 from mpi4py import MPI
 
-try:
-    import numba
-
-    from ffcx.codegeneration.utils import get_void_pointer
-except ImportError:
-    pass
-
 import numpy as np
 import pytest
 
@@ -28,6 +21,8 @@ from dolfinx.mesh import create_unit_square
 cffi = pytest.importorskip("cffi")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 numba = pytest.importorskip("numba")
+
+from ffcx.codegeneration.numba.utils import get_void_pointer  # noqa: E402
 
 ffi = cffi.FFI()
 
@@ -121,8 +116,10 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
             marks=[
                 pytest.mark.xfail_win32_complex,
                 pytest.mark.skipif(
-                    cffi.__version_info__ > (1, 16, 99) and cffi.__version_info__ <= (2, 0, 0),
-                    reason="bug in cffi 1.17.0/1 and 2.0.0 for complex",
+                    cffi.__version_info__ >= (1, 17),
+                    reason="Numba cannot type CFFI complex arguments, see map_type in "
+                    "numba/core/typing/cffi_utils.py. From cffi 1.17 the complex ctypes "
+                    "are named _cffi_{float,double}_complex_t.",
                 ),
             ],
         ),
@@ -131,8 +128,10 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
             marks=[
                 pytest.mark.xfail_win32_complex,
                 pytest.mark.skipif(
-                    cffi.__version_info__ > (1, 16, 99) and cffi.__version_info__ <= (2, 0, 0),
-                    reason="bug in cffi 1.17.0/1 and 2.0.0 for complex",
+                    cffi.__version_info__ >= (1, 17),
+                    reason="Numba cannot type CFFI complex arguments, see map_type in "
+                    "numba/core/typing/cffi_utils.py. From cffi 1.17 the complex ctypes "
+                    "are named _cffi_{float,double}_complex_t.",
                 ),
             ],
         ),
@@ -144,7 +143,7 @@ def test_custom_mesh_loop_rank1(dtype):
 
     # Unpack mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    x_dofs = mesh.geometry.dofmap
+    x_dofs = mesh.geometry.dofmaps[0]
     x = mesh.geometry.x
     dofmap = V.dofmap.list
 

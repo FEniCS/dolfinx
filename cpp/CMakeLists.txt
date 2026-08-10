@@ -1,42 +1,45 @@
 # ------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFINx
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.26)
 
 if(POLICY CMP0167)
-  cmake_policy(SET CMP0167 NEW)  # Boost CONFIG mode
+  cmake_policy(SET CMP0167 NEW) # Boost CONFIG mode
 endif()
 if(POLICY CMP0144)
-  cmake_policy(SET CMP0144 NEW)  # https://cmake.org/cmake/help/latest/policy/CMP0144.html
+  cmake_policy(SET CMP0144 NEW) # https://cmake.org/cmake/help/latest/policy/CMP0144.html
 endif()
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.11.0.0")
+project(DOLFINX VERSION "0.12.0.0")
 
-set(DOXYGEN_DOLFINX_VERSION
-    ${DOLFINX_VERSION}
-    CACHE STRING "Version for Doxygen" FORCE
+set(
+  DOXYGEN_DOLFINX_VERSION
+  ${DOLFINX_VERSION}
+  CACHE STRING
+  "Version for Doxygen"
+  FORCE
 )
 
 # ------------------------------------------------------------------------------
-if(WIN32)
-  # Windows requires all symbols to be manually exported. This flag exports all
-  # symbols automatically, as in Unix.
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-endif()
 
 # ------------------------------------------------------------------------------
 # Get GIT changeset, if available
-find_program(GIT_FOUND git)
+find_package(Git QUIET)
 
 if(GIT_FOUND)
   # Get the commit hash of the working branch
   execute_process(
-    COMMAND git rev-parse HEAD
+    COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    RESULT_VARIABLE GIT_RESULT
     OUTPUT_VARIABLE GIT_COMMIT_HASH
     OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
   )
+  if(NOT GIT_RESULT EQUAL 0)
+    set(GIT_COMMIT_HASH "unknown")
+  endif()
 else()
   set(GIT_COMMIT_HASH "unknown")
 endif()
@@ -45,46 +48,60 @@ endif()
 # General configuration
 
 # Set location of our FindFoo.cmake modules
-set(CMAKE_MODULE_PATH ${DOLFINX_SOURCE_DIR}/cmake/modules)
+list(APPEND CMAKE_MODULE_PATH "${DOLFINX_SOURCE_DIR}/cmake/modules")
 
 # Make sure CMake uses the correct DOLFINConfig.cmake for tests and demos
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_BINARY_DIR}/dolfinx")
 
 # ------------------------------------------------------------------------------
 # Configurable options for how we want to build
 include(FeatureSummary)
+include(GNUInstallDirs)
 
 option(BUILD_SHARED_LIBS "Build DOLFINx with shared libraries." ON)
 add_feature_info(
-  BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFINx with shared libraries."
+  BUILD_SHARED_LIBS
+  BUILD_SHARED_LIBS
+  "Build DOLFINx with shared libraries."
 )
 
 # If libdolfinx links to a symbol contained in an external dll, that dll will be
 # installed alongside libdolfinx. This excludes system dlls included with
 # Windows.
-option(INSTALL_RUNTIME_DEPENDENCIES
-       "Include runtime dependencies in install (Windows-only)" OFF
+option(
+  INSTALL_RUNTIME_DEPENDENCIES
+  "Include runtime dependencies in install (Windows-only)"
+  OFF
 )
 add_feature_info(
-  INSTALL_RUNTIME_DEPENDENCIES INSTALL_RUNTIME_DEPENDENCIES
+  INSTALL_RUNTIME_DEPENDENCIES
+  INSTALL_RUNTIME_DEPENDENCIES
   "Include runtime dependencies in install (Windows-only)"
 )
 
-option(DOLFINX_SKIP_BUILD_TESTS
-       "Skip build tests for testing usability of dependency packages." OFF
+option(
+  DOLFINX_SKIP_BUILD_TESTS
+  "Skip build tests for testing usability of dependency packages."
+  OFF
 )
 add_feature_info(
-  DOLFINX_SKIP_BUILD_TESTS DOLFINX_SKIP_BUILD_TESTS
+  DOLFINX_SKIP_BUILD_TESTS
+  DOLFINX_SKIP_BUILD_TESTS
   "Skip build tests for testing usability of dependency packages."
 )
 
-# Add shared library paths so shared libs in non-system paths are found
-option(CMAKE_INSTALL_RPATH_USE_LINK_PATH
-       "Add paths to linker search and installed rpath." ON
+# Add all shared library paths to rpath so libs in non-system paths are found.
+# This is on by default because many users build against non-system paths.
+# Package builders may want to set this to FALSE.
+option(
+  DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+  "Add linker search paths to rpath of dolfinx target. Packagers may want to set FALSE."
+  TRUE
 )
 add_feature_info(
-  CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_PATH
-  "Add paths to linker search and installed rpath."
+  DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+  DOLFINX_INSTALL_RPATH_USE_LINK_PATH
+  "Add linker search paths to rpath of dolfinx target. Packagers may want to set to FALSE."
 )
 
 # Control Basix discovery
@@ -114,111 +131,97 @@ add_feature_info(
 # clang-tidy
 option(ENABLE_CLANG_TIDY "Run clang-tidy while building" OFF)
 add_feature_info(
-  ENABLE_CLANG_TIDY ENABLE_CLANG_TIDY "Run clang-tidy while building"
+  ENABLE_CLANG_TIDY
+  ENABLE_CLANG_TIDY
+  "Run clang-tidy while building"
 )
 
 # ------------------------------------------------------------------------------
 # Enable or disable optional packages
 
-if(DOLFINX_ENABLE_ADIOS2)
-  set(_REQUIRE_ADIOS2 TRUE CACHE BOOL "Is ADIOS2 REQUIRED?")
-else()
-  set(_REQUIRE_ADIOS2 FALSE CACHE BOOL "Is ADIOS2 REQUIRED?")
-endif()
-option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
+# Sets _REQUIRE_<X> TRUE if the user explicitly passed -DDOLFINX_ENABLE_<X>=ON
+# on the command line (cache type UNINITIALIZED), FALSE otherwise.
+function(dolfinx_enable_option name description)
+  get_property(_type CACHE ${name} PROPERTY TYPE)
+  if(_type STREQUAL "UNINITIALIZED")
+    set(_required TRUE)
+  else()
+    set(_required FALSE)
+  endif()
+  string(REPLACE "DOLFINX_ENABLE_" "_REQUIRE_" _require_var "${name}")
+  set(${_require_var} ${_required} CACHE BOOL "Is ${name} REQUIRED?" FORCE)
+  option(${name} "${description}" ON)
+endfunction()
+
+dolfinx_enable_option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2.")
 set_package_properties(
-  ADIOS2 PROPERTIES
-  TYPE OPTIONAL
-  DESCRIPTION "Adaptable Input/Output (I/O) System."
-  URL "https://adios2.readthedocs.io/en/latest/"
-  PURPOSE "IO, including in parallel"
+  ADIOS2
+  PROPERTIES
+    TYPE OPTIONAL
+    DESCRIPTION "Adaptable Input/Output (I/O) System."
+    URL "https://adios2.readthedocs.io/en/latest/"
+    PURPOSE "IO, including in parallel"
 )
 
-if(DOLFINX_ENABLE_PETSC)
-  set(_REQUIRE_PETSC TRUE CACHE BOOL "Is PETSc REQUIRED?")
-else()
-  set(_REQUIRE_PETSC FALSE CACHE BOOL "Is PETSc REQUIRED?")
-endif()
-
-option(DOLFINX_ENABLE_PETSC "Compile with support for PETSc." ON)
+dolfinx_enable_option(DOLFINX_ENABLE_PETSC "Compile with support for PETSc.")
 set_package_properties(
-  PETSc PROPERTIES
-  TYPE RECOMMENDED
-  DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation"
-  URL "https://petsc.org/"
-  PURPOSE "Linear and nonlinear solvers"
+  PETSc
+  PROPERTIES
+    TYPE RECOMMENDED
+    DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation"
+    URL "https://petsc.org/"
+    PURPOSE "Linear and nonlinear solvers"
 )
 
-if(DOLFINX_ENABLE_PARMETIS)
-  set(_REQUIRE_PARMETIS TRUE CACHE BOOL "Is Parmetis REQUIRED?")
-else()
-  set(_REQUIRE_PARMETIS FALSE CACHE BOOL "Is Parmetis REQUIRED?")
-endif()
-option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
+dolfinx_enable_option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS.")
 set_package_properties(
-  ParMETIS PROPERTIES
-  TYPE RECOMMENDED
-  DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
-  URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
-  PURPOSE "Parallel graph partitioning"
+  ParMETIS
+  PROPERTIES
+    TYPE RECOMMENDED
+    DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
+    URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
+    PURPOSE "Parallel graph partitioning"
 )
 
-if(DOLFINX_ENABLE_SCOTCH)
-  set(_REQUIRE_SCOTCH TRUE CACHE BOOL "Is SCOTCH REQUIRED?")
-else()
-  set(_REQUIRE_SCOTCH FALSE CACHE BOOL "Is SCOTCH REQUIRED?")
-endif()
-option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
+dolfinx_enable_option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH.")
 set_package_properties(
-  SCOTCH PROPERTIES
-  TYPE OPTIONAL
-  DESCRIPTION
-    "Programs and libraries for graph, mesh and hypergraph partitioning"
-  URL "https://www.labri.fr/perso/pelegrin/scotch"
-  PURPOSE "Parallel graph partitioning"
+  SCOTCH
+  PROPERTIES
+    TYPE OPTIONAL
+    DESCRIPTION
+      "Programs and libraries for graph, mesh and hypergraph partitioning"
+    URL "https://www.labri.fr/perso/pelegrin/scotch"
+    PURPOSE "Parallel graph partitioning"
 )
 
-if(DOLFINX_ENABLE_SLEPC)
-  set(_REQUIRE_SLEPC TRUE CACHE BOOL "Is SLEPc REQUIRED?")
-else()
-  set(_REQUIRE_SLEPC FALSE CACHE BOOL "Is SLEPc REQUIRED?")
-endif()
-option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
+dolfinx_enable_option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc.")
 set_package_properties(
-  SLEPc PROPERTIES
-  TYPE RECOMMENDED
-  DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
-  URL "http://slepc.upv.es/"
-  PURPOSE "Eigenvalue computation"
+  SLEPc
+  PROPERTIES
+    TYPE RECOMMENDED
+    DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
+    URL "http://slepc.upv.es/"
+    PURPOSE "Eigenvalue computation"
 )
 
-if(DOLFINX_ENABLE_KAHIP)
-  set(_REQUIRE_KAHIP TRUE CACHE BOOL "Is KaHIP REQUIRED?")
-else()
-  set(_REQUIRE_KAHIP FALSE CACHE BOOL "Is KaHIP REQUIRED?")
-endif()
-option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." ON)
+dolfinx_enable_option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP.")
 set_package_properties(
-  KaHIP PROPERTIES
-  TYPE OPTIONAL
-  DESCRIPTION "A family of graph partitioning programs"
-  URL "https://kahip.github.io/"
-  PURPOSE "Parallel graph partitioning"
+  KaHIP
+  PROPERTIES
+    TYPE OPTIONAL
+    DESCRIPTION "A family of graph partitioning programs"
+    URL "https://kahip.github.io/"
+    PURPOSE "Parallel graph partitioning"
 )
 
-if(DOLFINX_ENABLE_SUPERLU_DIST)
-  set(_REQUIRE_SUPERLU_DIST TRUE CACHE BOOL "Is SuperLU_DIST REQUIRED?")
-else()
-  set(_REQUIRE_SUPERLU_DIST FALSE CACHE BOOL "Is SuperLU_DIST REQUIRED?")
-endif()
-
-option(DOLFINX_ENABLE_SUPERLU_DIST "Compile with support for SuperLU_DIST." ON)
+dolfinx_enable_option(DOLFINX_ENABLE_SUPERLU_DIST "Compile with support for SuperLU_DIST.")
 set_package_properties(
-  SuperLU_DIST PROPERTIES
-  TYPE OPTIONAL
-  DESCRIPTION "Distributed direct LU Solver"
-  URL "https://portal.nersc.gov/project/sparse/superlu/"
-  PURPOSE "Linear Algebra Solver"
+  SuperLU_DIST
+  PROPERTIES
+    TYPE OPTIONAL
+    DESCRIPTION "Distributed direct LU Solver"
+    URL "https://portal.nersc.gov/project/sparse/superlu/"
+    PURPOSE "Linear Algebra Solver"
 )
 
 # ------------------------------------------------------------------------------
@@ -230,60 +233,16 @@ find_package(MPI 3 REQUIRED)
 
 # Default build type (can be overridden by user)
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE
-      "RelWithDebInfo"
-      CACHE
-        STRING
-        "Choose the type of build, options are: Debug Developer MinSizeRel Release RelWithDebInfo."
-        FORCE
+  set(
+    CMAKE_BUILD_TYPE
+    "RelWithDebInfo"
+    CACHE STRING
+    "Choose the type of build, options are: Debug Developer MinSizeRel Release RelWithDebInfo."
+    FORCE
   )
 endif()
 
-# Check for some compiler flags
-include(CheckCXXCompilerFlag)
-
-# Add some strict compiler checks
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
-
-if(HAVE_PEDANTIC)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
-endif()
-
-# Debug flags
-check_cxx_compiler_flag(-g HAVE_DEBUG)
-if(HAVE_DEBUG)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -g)
-endif()
-
-# Optimisation
-check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
-if(HAVE_O2_OPTIMISATION)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
-endif()
-
-# Enable C++ standard library debugging
-include(CheckCXXSymbolExists)
-
-check_cxx_symbol_exists(_LIBCPP_VERSION "version" LIBCPP)
-check_cxx_symbol_exists(__GLIBCXX__ "version" GLIBCXX)
-
-if(LIBCPP)
-  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG)
-endif()
-
-if(GLIBCXX)
-  list(APPEND DOLFINX_CXX_DEVELOPER_DEFINITIONS _GLIBCXX_ASSERTIONS)
-endif()
-
-# Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
-# library
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-   AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-   AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
-)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS
-         -Wno-array-bounds;-Wno-stringop-overflow)
-endif()
+include(DolfinxDeveloperCompilerFlags)
 
 # ------------------------------------------------------------------------------
 # Find required packages
@@ -296,16 +255,17 @@ if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
 
-if (DEFINED ENV{BOOST_USE_MULTITHREADED})
+if(DEFINED ENV{BOOST_USE_MULTITHREADED})
   set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 endif()
 set(Boost_VERBOSE TRUE)
 find_package(Boost 1.70 REQUIRED)
 set_package_properties(
-  Boost PROPERTIES
-  TYPE REQUIRED
-  DESCRIPTION "Boost C++ libraries"
-  URL "http://www.boost.org"
+  Boost
+  PROPERTIES
+    TYPE REQUIRED
+    DESCRIPTION "Boost C++ libraries"
+    URL "http://www.boost.org"
 )
 
 # Basix C++ files can be installed as a standalone C++ library, or in
@@ -322,33 +282,36 @@ if(DOLFINX_BASIX_PYTHON)
         ${Python3_EXECUTABLE} -c
         "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
       OUTPUT_VARIABLE BASIX_PY_DIR
-      RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
-      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_QUIET
+      OUTPUT_STRIP_TRAILING_WHITESPACE
     )
   endif()
 
   if(BASIX_PY_DIR)
     # Converts os native to cmake native path
     cmake_path(SET BASIX_PY_DIR "${BASIX_PY_DIR}")
+    cmake_path(GET BASIX_PY_DIR PARENT_PATH BASIX_PY_PARENT_DIR)
+
+    # These are nullops if the directories don't exist/contain nothing.
+    # Basix lib may be in . (e.g. manual combined pip install)
+    list(APPEND CMAKE_INSTALL_RPATH "${BASIX_PY_DIR}")
+    # Basix lib installed from cibuildwheel wheel may be in ../fenics_basix.libs
+    list(APPEND CMAKE_INSTALL_RPATH "${BASIX_PY_PARENT_DIR}/fenics_basix.libs")
+
     message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
-
-    # Basix installed from manylinux wheel requires rpath set
-    if(IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
-      set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
-    endif()
-
     list(APPEND CMAKE_PREFIX_PATH ${BASIX_PY_DIR})
   else()
     message(STATUS "No Basix hint was found.")
   endif()
 endif()
 
-find_package(Basix 0.11 REQUIRED CONFIG)
+find_package(Basix 0.12 REQUIRED CONFIG)
 set_package_properties(
-  basix PROPERTIES
-  TYPE REQUIRED
-  DESCRIPTION "FEniCS tabulation library"
-  URL "https://github.com/fenics/basix"
+  basix
+  PROPERTIES
+    TYPE REQUIRED
+    DESCRIPTION "FEniCS tabulation library"
+    URL "https://github.com/fenics/basix"
 )
 
 # Check for HDF5
@@ -356,18 +319,19 @@ set(HDF5_PREFER_PARALLEL TRUE)
 set(HDF5_FIND_DEBUG TRUE)
 find_package(HDF5 REQUIRED COMPONENTS C)
 # HDF5_IS_PARALLEL -> HDF5_PROVIDES_PARALLEL in HDF5@2.0.0
-if (NOT (HDF5_IS_PARALLEL OR HDF5_PROVIDES_PARALLEL))
+if(NOT (HDF5_IS_PARALLEL OR HDF5_PROVIDES_PARALLEL))
   message(
     FATAL_ERROR
-      "Found serial HDF5, MPI HDF5 build required. Try setting HDF5_DIR or HDF5_ROOT."
+    "Found serial HDF5, MPI HDF5 build required. Try setting HDF5_DIR or HDF5_ROOT."
   )
 endif()
 
 set_package_properties(
-  HDF5 PROPERTIES
-  TYPE REQUIRED
-  DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
-  URL "https://www.hdfgroup.org/HDF5"
+  HDF5
+  PROPERTIES
+    TYPE REQUIRED
+    DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
+    URL "https://www.hdfgroup.org/HDF5"
 )
 
 # Check for UFC
@@ -375,20 +339,49 @@ set_package_properties(
 # method UFCx was found.
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.11 REQUIRED CONFIG)
+  find_package(ufcx 0.12 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake) using Python
   # interpreter
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  find_package(UFCx 0.11 REQUIRED MODULE)
+  find_package(UFCx 0.12 REQUIRED MODULE)
 endif()
 
 set_package_properties(
-  UFCx PROPERTIES
-  TYPE REQUIRED
-  DESCRIPTION "Interface for form-compilers (part of FFCx)"
-  URL "https://github.com/fenics/ffcx"
+  UFCx
+  PROPERTIES
+    TYPE REQUIRED
+    DESCRIPTION "Interface for form-compilers (part of FFCx)"
+    URL "https://github.com/fenics/ffcx"
 )
+
+# Prepend <dir>/lib/pkgconfig (and <dir>/<arch>/lib/pkgconfig) to PKG_CONFIG_PATH.
+macro(dolfinx_prepend_pkgconfig_path dir_env_var)
+  block(SCOPE_FOR VARIABLES)
+    if(WIN32)
+      set(_sep ";")
+    else()
+      set(_sep ":")
+    endif()
+    if(DEFINED ENV{PKG_CONFIG_PATH})
+      set(_orig "$ENV{PKG_CONFIG_PATH}")
+    else()
+      set(_orig "")
+    endif()
+    if(DEFINED ENV{${dir_env_var}})
+      set(
+        ENV{PKG_CONFIG_PATH}
+        "$ENV{${dir_env_var}}/lib/pkgconfig${_sep}${_orig}"
+      )
+      if(DEFINED ENV{PETSC_ARCH})
+        set(
+          ENV{PKG_CONFIG_PATH}
+          "$ENV{${dir_env_var}}/$ENV{PETSC_ARCH}/lib/pkgconfig${_sep}$ENV{PKG_CONFIG_PATH}"
+        )
+      endif()
+    endif()
+  endblock()
+endmacro()
 
 # ------------------------------------------------------------------------------
 # Find optional packages
@@ -400,19 +393,7 @@ endif()
 
 if(DOLFINX_ENABLE_PETSC)
   find_package(PkgConfig REQUIRED)
-
-  if (DEFINED ENV{PKG_CONFIG_PATH})
-    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
-  else()
-    set(ENV_PKG_CONFIG_PATH "")
-  endif()
-
-  if(DEFINED ENV{PETSC_DIR})
-    set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/lib/pkgconfig:${ENV_PKG_CONFIG_PATH}")
-    if(DEFINED ENV{PETSC_ARCH})
-      set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-    endif()
-  endif()
+  dolfinx_prepend_pkgconfig_path(PETSC_DIR)
 
   if(_REQUIRE_PETSC)
     pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
@@ -422,7 +403,10 @@ if(DOLFINX_ENABLE_PETSC)
 
   # Setting for FeatureSummary
   if(PETSC_FOUND)
-    message(STATUS "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}")
+    message(
+      STATUS
+      "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}"
+    )
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND PETSc)
     list(APPEND CMAKE_PREFIX_PATH ${PETSC_PREFIX})
   else()
@@ -432,19 +416,7 @@ endif()
 
 if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   find_package(PkgConfig REQUIRED)
-
-  if (DEFINED ENV{PKG_CONFIG_PATH})
-    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
-  else()
-    set(ENV_PKG_CONFIG_PATH "")
-  endif()
-
-  if(DEFINED ENV{SLEPC_DIR})
-    set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/lib/pkgconfig:${ENV_PKG_CONFIG_PATH}")
-    if(DEFINED ENV{PETSC_ARCH})
-      set(ENV{PKG_CONFIG_PATH} "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-    endif()
-  endif()
+  dolfinx_prepend_pkgconfig_path(SLEPC_DIR)
 
   if(_REQUIRE_SLEPC)
     pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
@@ -454,13 +426,19 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
 
   # Setting for FeatureSummary
   if(SLEPC_FOUND)
-    message(STATUS "Found SLEPc version ${SLEPC_VERSION}, prefix: ${SLEPC_PREFIX}")
+    message(
+      STATUS
+      "Found SLEPc version ${SLEPC_VERSION}, prefix: ${SLEPC_PREFIX}"
+    )
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND SLEPc)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
   endif()
 elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
-  message(FATAL_ERROR "SLEPc required, but not configured because PETSc was not found.")
+  message(
+    FATAL_ERROR
+    "SLEPc required, but not configured because PETSc was not found."
+  )
 endif()
 
 # SCOTCH 7.0.1 was first version with ScotchConfig.cmake
@@ -471,9 +449,12 @@ elseif(DOLFINX_ENABLE_SCOTCH)
 endif()
 
 if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
-  message(STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH.")
+  message(
+    STATUS
+    "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH."
+  )
   set(SCOTCH_FOUND FALSE)
-  if(_REQUIRE_SCOTCH AND NOT SCOTCH_FOUND)
+  if(_REQUIRE_SCOTCH)
     message(FATAL_ERROR "SCOTCH requested, but not found.")
   endif()
 endif()
@@ -481,7 +462,7 @@ endif()
 if(SCOTCH_FOUND)
   message(
     STATUS
-      "Found PT-SCOTCH version ${SCOTCH_VERSION}, include dir: ${SCOTCH_INCLUDE_DIR}, lib dir: ${SCOTCH_LIBRARY_DIR}"
+    "Found PT-SCOTCH version ${SCOTCH_VERSION}, include dir: ${SCOTCH_INCLUDE_DIR}, lib dir: ${SCOTCH_LIBRARY_DIR}"
   )
 endif()
 
@@ -499,20 +480,8 @@ endif()
 
 if(DOLFINX_ENABLE_SUPERLU_DIST)
   find_package(PkgConfig REQUIRED)
-
-  if (DEFINED ENV{PKG_CONFIG_PATH})
-    set(ENV_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
-  else()
-    set(ENV_PKG_CONFIG_PATH})
-  endif()
-
   # If PETSc was built with SuperLU_DIST then pickup install there
-  if(DEFINED ENV{PETSC_DIR})
-    set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/lib/pkgconfig:${ENV_PKG_CONFIG_PATH}")
-    if(DEFINED ENV{PETSC_ARCH})
-      set(ENV{PKG_CONFIG_PATH} "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-    endif()
-  endif()
+  dolfinx_prepend_pkgconfig_path(PETSC_DIR)
 
   if(_REQUIRE_SUPERLU_DIST)
     pkg_search_module(SUPERLU_DIST REQUIRED IMPORTED_TARGET superlu_dist)
@@ -521,7 +490,10 @@ if(DOLFINX_ENABLE_SUPERLU_DIST)
   endif()
 
   if(SUPERLU_DIST_FOUND)
-    message(STATUS "Found SuperLU_DIST version ${SUPERLU_DIST_VERSION}, prefix: ${SUPERLU_DIST_PREFIX}")
+    message(
+      STATUS
+      "Found SuperLU_DIST version ${SUPERLU_DIST_VERSION}, prefix: ${SUPERLU_DIST_PREFIX}"
+    )
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND SuperLU_DIST)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SuperLU_DIST)
@@ -533,8 +505,11 @@ endif()
 feature_summary(WHAT ALL)
 
 # Check that at least one graph partitioner has been found
-if(NOT SCOTCH_FOUND AND NOT PARMETIS_FOUND AND NOT KAHIP_FOUND)
-  message(FATAL_ERROR "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required.")
+if(NOT SCOTCH_FOUND AND NOT ParMETIS_FOUND AND NOT KaHIP_FOUND)
+  message(
+    FATAL_ERROR
+    "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required."
+  )
 endif()
 
 # ------------------------------------------------------------------------------
@@ -545,8 +520,19 @@ add_subdirectory(dolfinx)
 # Unit testing
 option(BUILD_TESTING "Build DOLFINx unit tests and create test target." OFF)
 include(CTest)
-if (BUILD_TESTING)
+if(BUILD_TESTING)
   add_subdirectory(test)
+endif()
+
+# ------------------------------------------------------------------------------
+# Demos
+option(
+  DOLFINX_BUILD_DEMOS
+  "Build DOLFINx C++ demos and create demo test targets."
+  OFF
+)
+if(DOLFINX_BUILD_DEMOS)
+  add_subdirectory(demo)
 endif()
 
 # ------------------------------------------------------------------------------
@@ -563,7 +549,8 @@ endif()
 # Create and install dolfinx.conf file
 configure_file(
   ${DOLFINX_SOURCE_DIR}/cmake/templates/dolfinx.conf.in
-  ${CMAKE_BINARY_DIR}/dolfinx.conf @ONLY
+  ${CMAKE_BINARY_DIR}/dolfinx.conf
+  @ONLY
 )
 install(
   FILES ${CMAKE_BINARY_DIR}/dolfinx.conf
@@ -574,17 +561,14 @@ install(
 # ------------------------------------------------------------------------------
 # Install the demo source files
 install(
-  DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/demo
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/demo
   DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx
   FILES_MATCHING
   PATTERN "CMakeLists.txt"
-  PATTERN "*.h"
-  PATTERN "*.hpp"
-  PATTERN "*.c"
+  PATTERN "README.md"
   PATTERN "*.cpp"
   PATTERN "*.py"
-  PATTERN "*.xdmf"
-  PATTERN "*.h5"
+  # Guard against in-source build detritus, e.g. CMakeCXXCompilerId.cpp
   PATTERN "CMakeFiles" EXCLUDE
 )
 
@@ -592,12 +576,13 @@ install(
 # Add "make uninstall" target
 configure_file(
   "${DOLFINX_SOURCE_DIR}/cmake/templates/cmake_uninstall.cmake.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake" IMMEDIATE @ONLY
+  "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+  @ONLY
 )
 
 add_custom_target(
-  uninstall "${CMAKE_COMMAND}" -P
-            "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+  uninstall
+  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
 )
 
 # ------------------------------------------------------------------------------

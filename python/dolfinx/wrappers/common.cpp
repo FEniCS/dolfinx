@@ -19,6 +19,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/chrono.h>
+#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
@@ -26,6 +27,7 @@
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <utility>
@@ -125,10 +127,23 @@ void common(nb::module_& m)
       .def_prop_ro("size_local", &dolfinx::common::IndexMap::size_local)
       .def_prop_ro("size_global", &dolfinx::common::IndexMap::size_global)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
-      .def_prop_ro("local_range", &dolfinx::common::IndexMap::local_range,
-                   "Range of indices owned by this map")
-      .def("index_to_dest_ranks",
-           &dolfinx::common::IndexMap::index_to_dest_ranks)
+      .def_prop_ro(
+          "local_range",
+          [](const dolfinx::common::IndexMap& self)
+          {
+            std::array<std::int64_t, 2> range = self.local_range();
+            return std::make_pair(range[0], range[1]);
+          },
+          "Range of indices owned by this map")
+      .def(
+          "index_to_dest_ranks",
+          [](const dolfinx::common::IndexMap& self, int tag)
+          {
+            auto [data, offsets] = self.index_to_dest_ranks(tag);
+            return std::pair{dolfinx_wrappers::as_nbarray(std::move(data)),
+                             dolfinx_wrappers::as_nbarray(std::move(offsets))};
+          },
+          nb::arg("tag"))
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
@@ -167,12 +182,14 @@ void common(nb::module_& m)
                                  local);
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
-          nb::arg("global"));
+          nb::arg("global_index"));
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer<std::chrono::high_resolution_clock>>(
       m, "Timer", "Timer class")
-      .def(nb::init<std::optional<std::string>>(), nb::arg("task").none())
+      .def(nb::init<std::optional<std::string>>(), nb::arg("task").none(),
+           "Create and start timer. Elapsed time is optionally registered in "
+           "the logger when the Timer destructor is called.")
       .def("start",
            &dolfinx::common::Timer<std::chrono::high_resolution_clock>::start,
            "Start timer")
@@ -219,6 +236,12 @@ void common(nb::module_& m)
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
          bool allow_owner_change)
       {
+        const std::int32_t size = imap.size_local() + imap.num_ghosts();
+        for (std::size_t i = 0; i < indices.size(); ++i)
+        {
+          if (indices.data()[i] < 0 or indices.data()[i] >= size)
+            throw std::runtime_error("Index out of range in indices array.");
+        }
         auto [map, submap_to_map] = dolfinx::common::create_sub_index_map(
             imap, std::span(indices.data(), indices.size()),
             dolfinx::common::IndexMapOrder::any, allow_owner_change);

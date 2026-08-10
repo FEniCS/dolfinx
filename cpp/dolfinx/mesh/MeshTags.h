@@ -12,9 +12,9 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/io/cells.h>
 #include <memory>
 #include <span>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -27,7 +27,7 @@ namespace dolfinx::mesh
 /// is a *sparse* data storage class; it allows tags to be associated
 /// with an arbitrary subset of mesh entities. An entity can have only
 /// one associated tag.
-/// @tparam Type
+/// @tparam T Type of the tag value associated with each entity.
 template <typename T>
 class MeshTags
 {
@@ -41,6 +41,7 @@ public:
   /// process).
   /// @param[in] values List of values for each index in indices. The
   /// size must be equal to the size of `indices`.
+  /// @param[in] name Name of the meshtags.
   /// @pre `indices` must be sorted and unique.
   template <typename U, typename V>
     requires std::is_convertible_v<std::remove_cvref_t<U>,
@@ -48,9 +49,10 @@ public:
                  and std::is_convertible_v<std::remove_cvref_t<V>,
                                            std::vector<T>>
   MeshTags(std::shared_ptr<const Topology> topology, int dim, U&& indices,
-           V&& values)
+           V&& values, std::string name = "mesh_tags")
       : _topology(std::move(topology)), _dim(dim),
-        _indices(std::forward<U>(indices)), _values(std::forward<V>(values))
+        _indices(std::forward<U>(indices)), _values(std::forward<V>(values)),
+        _name(name)
   {
     if (_indices.size() != _values.size())
     {
@@ -74,7 +76,7 @@ public:
   /// Destructor
   ~MeshTags() = default;
 
-  /// Move assignment
+  /// Copy assignment
   MeshTags& operator=(const MeshTags& tags) = default;
 
   /// Move assignment
@@ -109,8 +111,11 @@ public:
   /// Return topology
   std::shared_ptr<const Topology> topology() const { return _topology; }
 
-  /// Name
-  std::string name = "mesh_tags";
+  /// Return name
+  const std::string& name() const { return _name; }
+
+  /// Set name
+  void name(std::string name) { _name = std::move(name); }
 
 private:
   // Associated topology
@@ -124,6 +129,9 @@ private:
 
   // Values attached to entities
   std::vector<T> _values;
+
+  // Name
+  std::string _name;
 };
 
 /// @brief Create MeshTags from arrays
@@ -132,12 +140,14 @@ private:
 /// @param[in] entities Local vertex indices for tagged entities.
 /// @param[in] values Tag values for each entity in `entities`. The
 /// length of `values` must be equal to number of rows in `entities`.
+/// @param[in] name Name of the meshtags.
 /// @note Entities that do not exist on this rank are ignored.
 /// @warning `entities` must not contain duplicate entities.
 template <typename T>
 MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
-                            std::span<const T> values)
+                            std::span<const T> values,
+                            std::string name = "mesh_tags")
 {
   spdlog::info(
       "Building MeshTags object from tagged entities (defined by vertices).");
@@ -158,12 +168,12 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
 
   // Remove any entities that were not found (these have an index of -1)
   auto it0 = std::ranges::lower_bound(indices_sorted, 0);
-  std::size_t pos0 = std::distance(indices_sorted.begin(), it0);
+  std::size_t pos0 = std::ranges::distance(indices_sorted.begin(), it0);
   indices_sorted.erase(indices_sorted.begin(), it0);
   values_sorted.erase(values_sorted.begin(),
                       std::next(values_sorted.begin(), pos0));
 
   return MeshTags<T>(topology, dim, std::move(indices_sorted),
-                     std::move(values_sorted));
+                     std::move(values_sorted), std::move(name));
 }
 } // namespace dolfinx::mesh

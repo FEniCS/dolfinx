@@ -47,13 +47,13 @@ def test_extract_forms():
     v3, u3 = TestFunction(V3), TrialFunction(V3)
 
     a = form([[inner(u0, v0) * dx, inner(u1, v1) * dx], [inner(u2, v2) * dx, inner(u3, v3) * dx]])
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         extract_function_spaces(a, 0)
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         extract_function_spaces(a, 1)
 
     a = form([[inner(u0, v0) * dx, inner(u2, v1) * dx], [inner(u0, v2) * dx, inner(u2, v2) * dx]])
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         extract_function_spaces(a, 0)
     Vc = extract_function_spaces(a, 1)
     assert Vc[0] is V0._cpp_object
@@ -63,7 +63,7 @@ def test_extract_forms():
     Vr = extract_function_spaces(a, 0)
     assert Vr[0] is V0._cpp_object
     assert Vr[1] is V1._cpp_object
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         extract_function_spaces(a, 1)
 
 
@@ -101,7 +101,7 @@ def test_incorrect_element():
     )
 
     f = ftype(
-        [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
+        [int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))],
         [space._cpp_object, space._cpp_object],
         [],
         [],
@@ -113,7 +113,7 @@ def test_incorrect_element():
 
     with pytest.raises(RuntimeError):
         f = ftype(
-            [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
+            [int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))],
             [incorrect_space._cpp_object, incorrect_space._cpp_object],
             [],
             [],

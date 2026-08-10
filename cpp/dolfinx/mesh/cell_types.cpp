@@ -7,8 +7,10 @@
 #include "cell_types.h"
 #include <algorithm>
 #include <basix/cell.h>
+#include <cassert>
 #include <cfloat>
 #include <cstdlib>
+#include <format>
 #include <stdexcept>
 
 using namespace dolfinx;
@@ -39,7 +41,7 @@ std::string mesh::to_string(CellType type)
   }
 }
 //-----------------------------------------------------------------------------
-mesh::CellType mesh::to_type(const std::string& cell)
+mesh::CellType mesh::to_type(std::string_view cell)
 {
   if (cell == "point")
     return CellType::point;
@@ -58,7 +60,7 @@ mesh::CellType mesh::to_type(const std::string& cell)
   else if (cell == "hexahedron")
     return CellType::hexahedron;
   else
-    throw std::runtime_error("Unknown cell type (" + cell + ")");
+    throw std::runtime_error(std::format("Unknown cell type ({})", cell));
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> mesh::get_entity_vertices(CellType type, int dim)

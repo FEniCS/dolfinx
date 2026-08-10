@@ -10,6 +10,8 @@
 
 #include <nanobind/nanobind.h>
 #include <petsc4py/petsc4py.h>
+#include <petscis.h>
+#include <petscksp.h>
 #include <petscmat.h>
 #include <petscvec.h>
 
@@ -61,8 +63,10 @@ namespace nb = nanobind;
         PetscObjectDereference((PetscObject)src);                              \
         return nb::handle(obj);                                                \
       }                                                                        \
-      else if (policy == rv_policy::automatic_reference                        \
-               or policy == rv_policy::reference)                              \
+      else if (policy == rv_policy::automatic                                  \
+               or policy == rv_policy::automatic_reference                     \
+               or policy == rv_policy::reference                               \
+               or policy == rv_policy::reference_internal)                     \
       {                                                                        \
         PyObject* obj = PyPetsc##P4PYTYPE##_New(src);                          \
         return nb::handle(obj);                                                \
@@ -78,7 +82,9 @@ namespace nb = nanobind;
 
 namespace nanobind::detail
 {
-PETSC_CASTER_MACRO(Mat, Mat, mat);
-PETSC_CASTER_MACRO(Vec, Vec, vec);
+PETSC_CASTER_MACRO(Mat, Mat, petsc4py.PETSc.Mat);
+PETSC_CASTER_MACRO(Vec, Vec, petsc4py.PETSc.Vec);
+PETSC_CASTER_MACRO(IS, IS, petsc4py.PETSc.IS);
+PETSC_CASTER_MACRO(KSP, KSP, petsc4py.PETSc.KSP);
 } // namespace nanobind::detail
 #endif

@@ -52,13 +52,13 @@ parametrize_cell_types = pytest.mark.parametrize(
 
 def random_point_in_reference(cell_type):
     if cell_type == CellType.interval:
-        return (random.random(), 0, 0)
+        return (random.random(),)
     elif cell_type == CellType.triangle:
         x, y = random.random(), random.random()
         # If point is outside cell, move it back inside
         if x + y > 1:
             x, y = 1 - x, 1 - y
-        return (x, y, 0)
+        return (x, y)
     elif cell_type == CellType.tetrahedron:
         x, y, z = random.random(), random.random(), random.random()
         # If point is outside cell, move it back inside
@@ -71,9 +71,11 @@ def random_point_in_reference(cell_type):
         return (x, y, z)
     elif cell_type == CellType.quadrilateral:
         x, y = random.random(), random.random()
-        return (x, y, 0)
+        return (x, y)
     elif cell_type == CellType.hexahedron:
         return (random.random(), random.random(), random.random())
+    else:
+        raise ValueError(f"Unsupported {cell_type=}")
 
 
 def random_point_in_cell(mesh):
@@ -97,7 +99,8 @@ def random_point_in_cell(mesh):
         axes = (mesh.geometry.x[1], mesh.geometry.x[2], mesh.geometry.x[4])
 
     return tuple(
-        origin[i] + sum((axis[i] - origin[i]) * p for axis, p in zip(axes, point)) for i in range(3)
+        origin[i] + sum((axis[i] - origin[i]) * p for axis, p in zip(axes, point, strict=True))
+        for i in range(3)
     )
 
 
@@ -232,7 +235,7 @@ def run_scalar_test(V, poly_order):
     points = np.asarray(points, dtype=default_real_type)
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
-    for p, val in zip(points, values):
+    for p, val in zip(points, values, strict=True):
         assert np.allclose(val, f(p), atol=1.0e-5)
 
 
@@ -263,7 +266,7 @@ def run_vector_test(V, poly_order):
     points = [random_point_in_cell(V.mesh) for count in range(5)]
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
-    for p, val in zip(points, values):
+    for p, val in zip(points, values, strict=True):
         assert np.allclose(val, f(p), atol=1.0e-5)
 
 
@@ -911,7 +914,15 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     # Interpolate 3D->2D
     u1 = Function(V1, dtype=xtype)
 
-    u1.interpolate_nonmatching(u0, cells, interpolation_data=interpolation_data)
+    # Pass by keyword to check each name binds the parameter it names;
+    # interpolate_nonmatching (used for 2D->3D below) passes positionally.
+    u1._cpp_object.interpolate(
+        u=u0._cpp_object,
+        cells=cells,
+        tol=1e-6,
+        maxit=15,
+        interpolation_data=interpolation_data._cpp_object,
+    )
     u1.x.scatter_forward()
 
     # Exact interpolation on 2D mesh
@@ -947,6 +958,18 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
         domain=mesh0, subdomain_data=facet_tag, subdomain_id=1
     )
     assert np.isclose(assemble_scalar(form(residual, dtype=xtype)), 0)
+
+
+def test_interpolate_mismatched_dtype_raises():
+    """Test that a Function of incompatible dtype reports the type error,
+    rather than being mistaken for a callable f(x).
+    """
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=np.float64)
+    V = functionspace(mesh, ("Lagrange", 1))
+    u = Function(V, dtype=np.float64)
+    v = Function(V, dtype=np.complex128)
+    with pytest.raises(TypeError):
+        u.interpolate(v)
 
 
 @pytest.mark.parametrize("xtype", [np.float64])

@@ -28,6 +28,7 @@
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <format>
 #include <numbers>
 #include <petscmat.h>
 #include <petscsys.h>
@@ -213,8 +214,8 @@ int main(int argc, char* argv[])
 
   // Set the logging thread name to show the process rank
   int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-  std::string fmt = "[%Y-%m-%d %H:%M:%S.%e] [RANK " + std::to_string(mpi_rank)
-                    + "] [%l] %v";
+  std::string fmt
+      = std::format("[%Y-%m-%d %H:%M:%S.%e] [RANK {}] [%l] %v", mpi_rank);
   spdlog::set_pattern(fmt);
   {
     // Inside the `main` function, we begin by defining a tetrahedral
@@ -228,7 +229,7 @@ int main(int argc, char* argv[])
     auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_box<U>(
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
         mesh::CellType::tetrahedron,
-        mesh::create_cell_partitioner(mesh::GhostMode::none)));
+        mesh::create_cell_partitioner(mesh::GhostMode::none, 2)));
 
     auto element = basix::create_element<U>(
         basix::element::family::P, basix::cell::type::tetrahedron, 1,
@@ -326,7 +327,7 @@ int main(int argc, char* argv[])
     // Compute Cauchy stress. Construct appropriate Basix element for
     // stress.
     fem::Expression sigma_expression = fem::create_expression<T, U>(
-        *expression_hyperelasticity_sigma, {{"u", u}}, {});
+        *expression_hyperelasticity_sigma, {{"u", u}}, {}, {});
 
     constexpr auto family = basix::element::family::P;
     auto cell_type

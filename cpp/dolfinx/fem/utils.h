@@ -31,6 +31,7 @@
 #include <format>
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <ranges>
 #include <set>
@@ -63,7 +64,7 @@ class Expression;
 
 namespace impl
 {
-/// Helper function to get an array of of (cell, local_facet) pairs
+/// Helper function to get an array of (cell, local_facet) pairs
 /// corresponding to a given facet index.
 /// @param[in] f Facet index
 /// @param[in] cells List of cells incident to the facet
@@ -84,7 +85,7 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
     auto cell_facets = c_to_f.links(cell);
     auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
     assert(facet_it != cell_facets.end());
-    int local_f = std::distance(cell_facets.begin(), facet_it);
+    int local_f = std::ranges::distance(cell_facets.begin(), facet_it);
     cell_local_facet_pairs[2 * c] = cell;
     cell_local_facet_pairs[2 * c + 1] = local_f;
   }
@@ -115,7 +116,7 @@ get_cell_entity_pairs(std::int32_t e, std::span<const std::int32_t> cells,
   auto cell_entities = c_to_e.links(cell);
   auto it = std::ranges::find(cell_entities, e);
   assert(it != cell_entities.end());
-  std::int32_t local_index = std::distance(cell_entities.begin(), it);
+  std::int32_t local_index = std::ranges::distance(cell_entities.begin(), it);
 
   return {cell, local_index};
 }
@@ -203,8 +204,8 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   // mixed-topology meshes, despite there being multiple DOF maps, the
   // index maps and block sizes are the same.
   std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
-      *a.function_spaces().at(0)->dofmaps(0),
-      *a.function_spaces().at(1)->dofmaps(0)};
+      *a.function_spaces().at(0)->dofmaps().front(),
+      *a.function_spaces().at(1)->dofmaps().front()};
 
   const std::array index_maps{dofmaps[0].get().index_map,
                               dofmaps[1].get().index_map};
@@ -263,8 +264,8 @@ void build_sparsity_pattern(la::SparsityPattern& pattern, const Form<T, U>& a)
   for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
-        *a.function_spaces().at(0)->dofmaps(cell_type_idx),
-        *a.function_spaces().at(1)->dofmaps(cell_type_idx)};
+        *a.function_spaces().at(0)->dofmaps().at(cell_type_idx),
+        *a.function_spaces().at(1)->dofmaps().at(cell_type_idx)};
 
     // Create and build sparsity pattern
     for (auto type : types)
@@ -531,12 +532,12 @@ Form<T, U> create_form_factory(
       = [&geo = mesh->geometry()](const ufcx_integral& integral,
                                   std::size_t cell_idx)
   {
-    if (integral.coordinate_element_hash != geo.cmap(cell_idx).hash())
+    if (integral.coordinate_element_hash != geo.cmaps().at(cell_idx).hash())
     {
-      throw std::runtime_error(
+      throw std::runtime_error(std::format(
           "Generated integral geometry element does not match mesh geometry: "
-          + std::to_string(integral.coordinate_element_hash) + ", "
-          + std::to_string(geo.cmap(cell_idx).hash()));
+          "{}, {}",
+          integral.coordinate_element_hash, geo.cmaps().at(cell_idx).hash()));
     }
   };
 
@@ -567,7 +568,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+        impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
         if (!k)
         {
           throw std::runtime_error(
@@ -647,7 +648,7 @@ Form<T, U> create_form_factory(
             active_coeffs.push_back(j);
         }
 
-        impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+        impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
         assert(k);
 
         // Build list of entities to assembler over
@@ -773,7 +774,7 @@ Form<T, U> create_form_factory(
               active_coeffs.push_back(j);
           }
 
-          impl::kernel_t<T, U> k = impl::extract_kernel<T>(integral);
+          impl::kernel_t<T, U> k = impl::extract_kernel<T, U>(integral);
 
           // Build list of entities to assembler over
           auto e_to_c = topology->connectivity(dim, tdim);
@@ -860,8 +861,8 @@ Form<T, U> create_form(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Form coefficient \"" + name
-                               + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Form coefficient \"{}\" not provided.", name));
     }
   }
 
@@ -872,7 +873,8 @@ Form<T, U> create_form(
     if (auto it = constants.find(name); it != constants.end())
       const_map.push_back(it->second);
     else
-      throw std::runtime_error("Form constant \"" + name + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Form constant \"{}\" not provided.", name));
   }
 
   return create_form_factory({ufcx_form}, spaces, coeff_map, const_map,
@@ -953,21 +955,10 @@ Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+    const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+        entity_maps,
     std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
 {
-  if (!coefficients.empty())
-  {
-    assert(coefficients.front());
-    assert(coefficients.front()->function_space());
-    std::shared_ptr<const mesh::Mesh<U>> mesh
-        = coefficients.front()->function_space()->mesh();
-    if (mesh->geometry().cmap().hash() != e.coordinate_element_hash)
-    {
-      throw std::runtime_error(
-          "Expression and mesh geometric maps do not match.");
-    }
-  }
-
   if (e.rank > 0 and !argument_space)
   {
     throw std::runtime_error("Expression has Argument but no Argument "
@@ -980,35 +971,33 @@ Expression<T, U> create_expression(
          static_cast<std::size_t>(e.entity_dimension)};
   std::vector<std::size_t> value_shape(e.value_shape,
                                        e.value_shape + e.num_components);
-  std::function<void(T*, const T*, const T*, const scalar_value_t<T>*,
-                     const int*, const std::uint8_t*, void*)>
+
+  static_assert(std::is_same_v<U, scalar_value_t<T>>,
+                "UFCx kernels require geometry type U == scalar_value_t<T>.");
+
+  using kptr_t = void (*)(T*, const T*, const T*, const U*, const int*,
+                          const std::uint8_t*, void*);
+  std::function<void(T*, const T*, const T*, const U*, const int*,
+                     const std::uint8_t*, void*)>
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
-    tabulate_tensor = e.tabulate_tensor_float32;
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_float32);
+  else if constexpr (std::is_same_v<T, double>)
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_float64);
 #ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, std::complex<float>>)
-  {
-    tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-        const unsigned char*, void*)>(e.tabulate_tensor_complex64);
-  }
-#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
-  else if constexpr (std::is_same_v<T, double>)
-    tabulate_tensor = e.tabulate_tensor_float64;
-#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_complex64);
   else if constexpr (std::is_same_v<T, std::complex<double>>)
-  {
-    tabulate_tensor = reinterpret_cast<void (*)(
-        T*, const T*, const T*, const scalar_value_t<T>*, const int*,
-        const unsigned char*, void*)>(e.tabulate_tensor_complex128);
-  }
+    tabulate_tensor = reinterpret_cast<kptr_t>(e.tabulate_tensor_complex128);
 #endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else
     throw std::runtime_error("Type not supported.");
 
   assert(tabulate_tensor);
+  std::uint64_t e_hash = e.coordinate_element_hash;
   return Expression(coefficients, constants, std::span<const U>(X), Xshape,
-                    tabulate_tensor, value_shape, argument_space);
+                    tabulate_tensor, value_shape, entity_maps, e_hash,
+                    argument_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and
@@ -1019,6 +1008,8 @@ Expression<T, U> create_expression(
     const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
+    const std::vector<std::reference_wrapper<const mesh::EntityMap>>&
+        entity_maps,
     std::shared_ptr<const FunctionSpace<U>> argument_space = nullptr)
 {
   // Place coefficients in appropriate order
@@ -1034,8 +1025,8 @@ Expression<T, U> create_expression(
       coeff_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Expression coefficient \"" + name
-                               + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Expression coefficient \"{}\" not provided.", name));
     }
   }
 
@@ -1052,12 +1043,83 @@ Expression<T, U> create_expression(
       const_map.push_back(it->second);
     else
     {
-      throw std::runtime_error("Expression constant \"" + name
-                               + "\" not provided.");
+      throw std::runtime_error(
+          std::format("Expression constant \"{}\" not provided.", name));
     }
   }
 
-  return create_expression(e, coeff_map, const_map, argument_space);
+  return create_expression(e, coeff_map, const_map, entity_maps,
+                           argument_space);
+}
+
+/// @brief Take an existing mesh and create a new mesh with its geometry
+/// interpolated into a new coordinate element.
+///
+/// The topology is shared between `mesh` and the returned mesh.
+///
+/// Useful for creating a higher-order mesh from a lower-order one for
+/// computation, or vice-versa, for IO.
+///
+/// @param[in] mesh Input mesh.
+/// @param[in] new_cmap Coordinate element for the new geometry.
+/// @param[in] reorder_fn Optional graph reordering function applied to
+/// the new geometry dofmap.
+/// @return A new mesh sharing the topology of `mesh` and with a
+/// geometry described by `new_cmap`.
+template <std::floating_point T>
+mesh::Mesh<T> interpolate_geometry(
+    std::shared_ptr<mesh::Mesh<T>> mesh, const CoordinateElement<T>& new_cmap,
+    const std::function<std::vector<int>(
+        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn = nullptr)
+{
+  assert(mesh);
+  const CoordinateElement<T>& old_cmap = mesh->geometry().cmaps().front();
+  if (new_cmap.cell_shape() != old_cmap.cell_shape())
+  {
+    throw std::runtime_error(
+        "Cell shape of new coordinate element must match input mesh.");
+  }
+
+  const int gdim = mesh->geometry().dim();
+
+  // Build a vector-valued Lagrange FiniteElement from the coordinate element.
+  basix::FiniteElement<T> b_element = basix::create_element<T>(
+      basix::element::family::P,
+      mesh::cell_type_to_basix_type(new_cmap.cell_shape()), new_cmap.degree(),
+      new_cmap.variant(), basix::element::dpc_variant::unset, false);
+  auto element = std::make_shared<const FiniteElement<T>>(
+      b_element, std::vector<std::size_t>{static_cast<std::size_t>(gdim)});
+
+  FunctionSpace<T> V = create_functionspace(mesh, element, reorder_fn);
+
+  // Tabulate physical coordinates of the new geometry dofs.
+  std::vector<T> x_new = V.tabulate_dof_coordinates(false);
+
+  // Pull the geometry dofmap and index map from V.
+  std::shared_ptr<const DofMap> dm = V.dofmap();
+  assert(dm);
+  std::shared_ptr<const common::IndexMap> new_imap = dm->index_map;
+  assert(new_imap);
+
+  auto map_view = dm->map();
+  std::vector<std::int32_t> dofmap_flat(
+      map_view.data_handle(), map_view.data_handle() + map_view.size());
+
+  // Build input_global_indices as the local-to-global of the new geometry
+  // dofs.
+  const std::int32_t num_nodes
+      = new_imap->size_local() + new_imap->num_ghosts();
+  std::vector<std::int32_t> local(num_nodes);
+  std::iota(local.begin(), local.end(), 0);
+  std::vector<std::int64_t> igi(num_nodes);
+  new_imap->local_to_global(local, igi);
+
+  mesh::Geometry<T> geometry(
+      new_imap, std::vector<std::vector<std::int32_t>>{std::move(dofmap_flat)},
+      std::vector<CoordinateElement<T>>{new_cmap}, std::move(x_new), gdim,
+      std::move(igi));
+
+  return mesh::Mesh<T>(mesh->comm(), mesh->topology(), std::move(geometry));
 }
 
 } // namespace dolfinx::fem

@@ -233,7 +233,7 @@ class TestVTX:
         writer.write(2)
         writer.close()
 
-        reuse_variables = ["NumberOfEntities", "NumberOfNodes", "connectivity", "geometry", "types"]
+        reuse_variables = ["NumberOfCells", "NumberOfNodes", "connectivity", "geometry", "types"]
         target_all = 3  # For all other variables the step count is number of writes
         target_mesh = 1 if reuse else 3
         # For mesh variables the step count is 1 if reuse else number of writes

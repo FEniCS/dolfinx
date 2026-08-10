@@ -18,12 +18,14 @@ try:
     from dolfinx.fem.petsc import ctypes_utils as petsc_ctypes
     from dolfinx.fem.petsc import numba_utils as petsc_numba
 except ImportError:
+    # petsc4py not installed; PETSc-dependent tests are skipped
     pass
 
 try:
     import numba
 
 except ImportError:
+    # numba not installed; numba-dependent tests are skipped
     pass
 
 import numpy as np
@@ -141,7 +143,7 @@ def test_custom_mesh_loop_petsc_rank2(set_vals, backend):
 
     # Unpack mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    x_dofs = mesh.geometry.dofmap
+    x_dofs = mesh.geometry.dofmaps[0]
     x = mesh.geometry.x
     dofmap = V.dofmap.list.astype(np.dtype(PETSc.IntType))
 

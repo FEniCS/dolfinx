@@ -11,12 +11,12 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-import dolfinx
-import dolfinx.graph
 import ufl
 from basix.ufl import element
+from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.cpp.mesh import cell_num_vertices
+from dolfinx.graph import partitioner
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (
     CellType,
@@ -27,7 +27,7 @@ from dolfinx.mesh import (
     create_mesh,
 )
 
-partitioners = [dolfinx.graph.partitioner()]
+partitioners: list = [partitioner()]
 try:
     from dolfinx.graph import partitioner_scotch
 
@@ -113,7 +113,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     def partitioner(*args):
         midpoints = np.mean(x_global[topo], axis=1)
         dest = np.floor(midpoints[:, 0] % mpi_comm.size).astype(np.int32)
-        return dolfinx.cpp.graph.AdjacencyList_int32(dest)
+        return _cpp.graph.AdjacencyList_int32(dest)
 
     new_mesh = create_mesh(mpi_comm, topo, domain, x, partitioner)
 
@@ -164,7 +164,7 @@ def test_asymmetric_partitioner():
 
         dests = np.array(dests, dtype=np.int32)
         offsets = np.array(offsets, dtype=np.int32)
-        return dolfinx.cpp.graph.AdjacencyList_int32(dests, offsets)
+        return _cpp.graph.AdjacencyList_int32(dests, offsets)
 
     new_mesh = create_mesh(mpi_comm, topo, domain, x, partitioner)
     if r == 0 and n > 1:

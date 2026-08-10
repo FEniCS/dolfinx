@@ -84,5 +84,5 @@ def create_dofmaps(
         for ``elements[i]``.
     """
     elements_cpp = [e._cpp_object for e in elements]
-    cpp_dofmaps = _create_dofmaps(comm, topology._cpp_object, elements_cpp)
+    cpp_dofmaps = _create_dofmaps(comm, topology._cpp_object, elements_cpp)  # type: ignore[arg-type]
     return [DofMap(cpp_object) for cpp_object in cpp_dofmaps]
