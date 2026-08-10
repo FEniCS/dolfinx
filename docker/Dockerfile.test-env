@@ -32,7 +32,7 @@ ARG OPENMPI_PATCH=10
 
 ########################################
 
-FROM ubuntu:24.04 AS dev-env
+FROM ubuntu:26.04 AS dev-env
 LABEL maintainer="FEniCS Steering Council <fenics-steering-council@googlegroups.com>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
