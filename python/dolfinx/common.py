@@ -7,6 +7,7 @@
 
 import datetime
 import functools
+from typing import Self
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (
@@ -131,7 +132,7 @@ class Timer:
         """
         self._cpp_object = _cpp.common.Timer(name)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """Start timer."""
         self._cpp_object.start()
         return self
