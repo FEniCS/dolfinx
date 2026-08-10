@@ -76,9 +76,12 @@
 #   built with ghost cells, i.e. with `GhostMode.shared_facet`.
 
 # +
+import time
+
 from mpi4py import MPI
 
 import numpy as np
+import numpy.typing as npt
 
 from dolfinx import graph, has_kahip, has_parmetis, has_ptscotch
 from dolfinx.fem import coordinate_element
@@ -98,8 +101,28 @@ from dolfinx.mesh import (
 # arbitrary block of the cells and of the geometry. Here the same
 # situation is created without a file: each rank builds the block of a
 # structured cube mesh of tetrahedra that corresponds to its slice of the
-# global cell range. Every cell appears on exactly one rank, and the
-# vertex indices are global, so the blocks together describe one mesh.
+# global cell range.
+#
+# The two returned arrays describe the mesh in different index spaces, and
+# understanding how they relate is the key to the input format:
+#
+# - `cells` holds, for each local cell, the **global** indices of its four
+#   vertices. 'Global' means an index into the global list of points, and
+#   the same point has the same index on every rank. Each cell appears on
+#   exactly one rank, so the local blocks together list every cell once.
+# - `x` holds the coordinates of the points that *this* rank supplies. The
+#   global index of a point is not stored: it is implied by position,
+#   being the row index plus the number of points held by all lower
+#   ranks. The local blocks together supply every point once.
+#
+# The two distributions are **independent**. Row `j` of `x` is not the
+# position of vertex `j` of the local cells, and a rank's cells will
+# generally refer to vertices whose coordinates are held by other ranks.
+# {py:func}`create_mesh <dolfinx.mesh.create_mesh>` resolves this: after
+# the partitioner has decided cell ownership, each rank fetches the
+# coordinates of the vertices it needs from whichever rank holds them. The
+# same applies to the geometric partitioners, which must fetch coordinates
+# before they can compute cell positions.
 
 
 def cube_block(comm: MPI.Comm, n: int):
@@ -107,15 +130,23 @@ def cube_block(comm: MPI.Comm, n: int):
 
     Each hexahedral cell of an ``n x n x n`` grid is split into six
     tetrahedra. Cells and points are shared out over the ranks of
-    ``comm`` in contiguous blocks.
+    ``comm`` in contiguous blocks, independently of each other.
 
     Args:
         comm: MPI communicator to distribute the mesh data over.
         n: Number of divisions in each direction.
 
     Returns:
-        Cell vertices (global indices) with shape ``(num_cells, 4)``, and
-        point coordinates with shape ``(num_points, 3)``.
+        Tuple of ``(cells, x)``, where ``cells`` has shape
+        ``(num_cells, 4)`` and row ``i`` holds the global indices of the
+        four vertices of local cell ``i``, and ``x`` has shape
+        ``(num_points, 3)`` and row ``j`` holds the coordinates of the
+        point with global index ``j + offset``, where ``offset`` is the
+        number of points held by all lower ranks.
+
+        The two are not aligned with one another: the vertex indices in
+        ``cells`` refer to the global point numbering, and the
+        corresponding coordinates are in general held by other ranks.
     """
     # Cells: this rank's slice of the n^3 hexahedra
     c0 = (n**3 * comm.rank) // comm.size
@@ -144,6 +175,62 @@ def cube_block(comm: MPI.Comm, n: int):
     x = np.stack([px, py, pz], axis=1).astype(np.float64) / n
 
     return np.ascontiguousarray(cells), np.ascontiguousarray(x)
+
+
+# ## Randomising the input distribution
+#
+# The blocks above are *locality preserving*: consecutive cells of the
+# structured grid are numbered consecutively, so a rank's block covers a
+# compact region of the cube. Input read from file may be far less
+# well behaved, with cells arriving in an order unrelated to their
+# position.
+#
+# This matters for partitioning cost. A graph partitioner coarsens the
+# dual graph, and coarsening is communication-bound when a cell's
+# neighbours are held by unrelated ranks. `GeomKway` exists for exactly
+# this case: it uses the space-filling curve to redistribute the graph
+# so that it has spatial locality, and only then applies k-way
+# partitioning.
+#
+# The function below moves a given fraction of each rank's cells to a
+# random rank, so the input distribution can be varied from fully
+# locality preserving (`fraction = 0`) to fully random
+# (`fraction = 1`). Only the cells are moved; the point distribution is
+# untouched, which the input format allows since the two are independent.
+
+
+def redistribute_cells(
+    comm: MPI.Comm, cells: npt.NDArray[np.int64], fraction: float, seed: int = 1
+) -> npt.NDArray[np.int64]:
+    """Move a fraction of the cells on each rank to a random rank.
+
+    The mesh described by the cells is unchanged: cells are only moved
+    between ranks, so every cell still appears exactly once.
+
+    Args:
+        comm: MPI communicator holding the cells.
+        cells: Local cells, with shape ``(num_cells, 4)``.
+        fraction: Fraction of the local cells to move to a rank chosen
+            uniformly at random, in ``[0, 1]``. Cells not selected stay
+            on the calling rank.
+        seed: Random number generator seed.
+
+    Returns:
+        The cells now held by the calling rank.
+    """
+    if fraction <= 0.0 or comm.size == 1:
+        return cells
+
+    # Choose a destination for each local cell. Each rank decides only
+    # for its own cells, so a per-rank generator gives a deterministic
+    # but independent choice on each.
+    rng = np.random.default_rng(seed + comm.rank)
+    dest = np.full(len(cells), comm.rank)
+    move = rng.random(len(cells)) < fraction
+    dest[move] = rng.integers(0, comm.size, np.count_nonzero(move))
+
+    recv = comm.alltoall([cells[dest == r] for r in range(comm.size)])
+    return np.ascontiguousarray(np.concatenate(recv), dtype=np.int64)
 
 
 # ## Partition quality
@@ -183,16 +270,21 @@ def partition_quality(msh) -> tuple[float, int]:
 
 # ## Creating a mesh with each partitioner
 #
-# The cell and geometry blocks and the coordinate element are the same in
-# each case; only the partitioner differs. Note that the geometric
-# partitioners are given the same coordinate array `x` that is passed to
+# The coordinate element is the same in each case; only the partitioner and
+# the input cell distribution differ. Note that the geometric partitioners
+# are given the same coordinate array `x` that is passed to
 # {py:func}`create_mesh <dolfinx.mesh.create_mesh>`, as they need the cell
 # positions to partition on.
+#
+# A mesh creation time is reported alongside the quality measures, since
+# the cost of partitioning is the reason to prefer a cheaper partitioner.
+# It is a wall-clock time for a small mesh, so treat it as indicative
+# only.
 
 # +
 comm = MPI.COMM_WORLD
 n = 24
-cells, x = cube_block(comm, n)
+cells0, x = cube_block(comm, n)
 cmap = coordinate_element(CellType.tetrahedron, 1)
 ghost_mode = GhostMode.shared_facet
 
@@ -224,14 +316,25 @@ partitioners["DOLFINx SFC"] = create_geometric_cell_partitioner(
 
 if comm.rank == 0:
     print(f"Mesh: {6 * n**3} tetrahedra on {comm.size} rank(s)")
-    print(f"{'Partitioner':<20}{'cells/rank':>12}{'imbalance':>12}{'edge cut':>12}")
 
-for name, partitioner in partitioners.items():
-    msh = create_mesh(comm, cells, cmap, x, partitioner=partitioner)
-    imbalance, cut = partition_quality(msh)
-    num_cells = msh.topology.index_map(msh.topology.dim).size_global
+# Repeat the comparison for input distributions ranging from fully
+# locality preserving to fully random
+for fraction in (0.0, 0.5, 1.0):
+    cells = redistribute_cells(comm, cells0, fraction)
     if comm.rank == 0:
-        print(f"{name:<20}{num_cells // comm.size:>12}{imbalance:>12.3f}{cut:>12}")
+        print(f"\nFraction of cells moved to a random rank: {fraction}")
+        print(f"{'Partitioner':<20}{'imbalance':>12}{'edge cut':>12}{'time (s)':>12}")
+
+    for name, partitioner in partitioners.items():
+        comm.Barrier()
+        t = time.perf_counter()
+        msh = create_mesh(comm, cells, cmap, x, partitioner=partitioner)
+        comm.Barrier()
+        elapsed = comm.allreduce(time.perf_counter() - t, MPI.MAX)
+
+        imbalance, cut = partition_quality(msh)
+        if comm.rank == 0:
+            print(f"{name:<20}{imbalance:>12.3f}{cut:>12}{elapsed:>12.3f}")
 # -
 
 # On a single rank there is nothing to partition: the imbalance is 1 and
@@ -263,3 +366,21 @@ for name, partitioner in partitioners.items():
 # nearly optimal cube-shaped parts and cut *fewer* facets than the graph
 # partitioners. Rank counts that are not a power of eight, such as the 12
 # above, are more representative.
+#
+# ## Effect of the input distribution
+#
+# Comparing the three tables shows that partition *quality* is largely
+# insensitive to how the input cells are spread over the ranks: each
+# partitioner reports much the same imbalance and edge cut whether the
+# input is locality preserving or fully random. This is expected, since
+# every partitioner sees the same mesh either way.
+#
+# The *cost* is not insensitive, and this is what `GeomKway` addresses.
+# With a random input distribution a cell's neighbours are held by
+# unrelated ranks, so the coarsening phase of a graph partitioner has to
+# communicate much more, whereas `GeomKway` first uses the space-filling
+# curve to restore locality. The mesh here is small and the reported time
+# covers all of mesh creation rather than partitioning alone, so only a
+# hint of this is visible; the gap between `Kway` and `GeomKway` widens
+# with the number of cells and of ranks. The curve-only partitioners are
+# almost unaffected, as they never look at the graph.
