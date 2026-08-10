@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <cstdint>
 #ifdef HAS_ADIOS2
 
 #include "vtk_utils.h"
@@ -471,9 +470,9 @@ public:
   ///
   /// @param[in] comm MPI communicator to open the file on.
   /// @param[in] filename Name of output file.
-  /// @param[in] mode Mode to open file with
-  /// @param[in] mesh Mesh to write.
-  /// @param[in] engine ADIOS2 engine type.
+/// @param[in] mesh Mesh to write.
+/// @param[in] engine ADIOS2 engine type.
+/// @param[in] mode Mode to open file with
   /// @note This format supports arbitrary degree meshes.
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps.
@@ -503,13 +502,17 @@ public:
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
   /// element family and degree, and degree-of-freedom map (up to the
-  /// blocksize) must be the same for all functions.
-  /// @param[in] engine ADIOS2 engine type.
-  /// @param[in] mesh_policy Controls if the mesh is written to file at
-  /// the first time step only or is re-written (updated) at each time
-  /// step.
-  /// @note This format supports arbitrary degree meshes.
-  VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
+/// @param[in] u List of functions. The functions must (1) share the
+/// same mesh and (2) be (discontinuous) Lagrange functions. The
+/// element family and degree, and degree-of-freedom map (up to the
+/// blocksize) must be the same for all functions.
+/// @param[in] engine ADIOS2 engine type.
+/// @param[in] mesh_policy Controls if the mesh is written to file at
+/// the first time step only or is re-written (updated) at each time
+/// step.
+/// @param[in] mode Mode to open file with
+/// @note This format supports arbitrary degree meshes.
+VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             const typename adios2_writer::U<T>& u, std::string engine,
             VTXMeshPolicy mesh_policy = VTXMeshPolicy::update,
             std::string mode = "w")
