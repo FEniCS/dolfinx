@@ -36,7 +36,8 @@ namespace scotch
 /// See PT-SCOTCH documentation for details.
 enum class strategy : std::uint8_t
 {
-  ///< SCOTCH default strategy
+  ///< SCOTCH's own default strategy, which is not the DOLFINx default
+  ///< (see ::partitioner)
   none,
   balance,
   quality,
@@ -47,12 +48,20 @@ enum class strategy : std::uint8_t
 
 /// @brief Create a graph partitioning function that uses PT-SCOTCH.
 ///
+/// @note The default strategy is strategy::speed rather than
+/// strategy::none (SCOTCH's own default). For a mesh dual graph,
+/// strategy::speed has been measured to be around 20% faster with no
+/// measurable change in the number of cut edges. Note also that
+/// strategy::quality is slower *and* cuts more edges than
+/// strategy::none for such graphs.
+///
 /// @param[in] strategy The SCOTCH strategy
 /// @param[in] imbalance The allowable imbalance (between 0 and 1). The
-/// smaller value the more balanced the partitioning must be.
+/// smaller value the more balanced the partitioning must be. Note that
+/// this does not affect the run time appreciably.
 /// @param[in] seed Random number generator seed
 /// @return A graph partitioning function
-graph::partition_fn partitioner(scotch::strategy strategy = strategy::none,
+graph::partition_fn partitioner(scotch::strategy strategy = strategy::speed,
                                 double imbalance = 0.025, int seed = 0);
 #endif
 

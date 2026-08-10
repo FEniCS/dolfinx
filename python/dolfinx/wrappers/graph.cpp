@@ -77,7 +77,7 @@ void graph(nb::module_& m)
             dolfinx::graph::scotch::partitioner(strategy, imbalance, seed));
       },
       nb::arg("imbalance") = 0.025, nb::arg("seed") = 0,
-      nb::arg("strategy") = dolfinx::graph::scotch::strategy::none,
+      nb::arg("strategy") = dolfinx::graph::scotch::strategy::speed,
       "SCOTCH graph partitioner");
 #endif
 #ifdef HAS_PARMETIS
