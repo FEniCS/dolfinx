@@ -185,7 +185,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     assert(topology.index_map(dim));
     auto it1 = std::ranges::lower_bound(entities,
                                         topology.index_map(dim)->size_local());
-    entities = entities.first(std::distance(entities.begin(), it1));
+    entities = entities.first(std::ranges::distance(entities.begin(), it1));
   }
 
   auto get_connectivities = [tdim, &topology](int entity_dim)
