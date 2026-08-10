@@ -6,10 +6,9 @@
 
 #pragma once
 
-#include "common/MPI.h"
-#include <petsclog.h>
 #ifdef HAS_ADIOS2
 
+#include "common/MPI.h"
 #include "vtk_utils.h"
 #include <adios2.h>
 #include <adios2/common/ADIOSTypes.h>
