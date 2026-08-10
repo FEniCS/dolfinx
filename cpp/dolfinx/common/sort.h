@@ -15,6 +15,7 @@
 #include <iterator>
 #include <limits>
 #include <numeric>
+#include <optional>
 #include <span>
 #include <type_traits>
 #include <utility>
@@ -179,13 +180,13 @@ constexpr void radix_sort(R&& range, P proj = {})
 /// for (row-major storage).
 /// @param[in] shape1 The number of columns of `x`.
 /// @param[in] ncols Number of leading columns of `x` (columns `0` to
-/// `ncols - 1`) to sort by; column `0` is the most significant. `0`
-/// (the default) sorts by all `shape1` columns. Pass a value less than
-/// `shape1` to exclude trailing payload columns (e.g. an attached
-/// index carried alongside the sort key) from the comparison entirely
-/// -- rows that agree on the leading `ncols` columns compare equal and
-/// keep their relative (stable) order, saving one radix-sort pass per
-/// excluded column.
+/// `ncols - 1`) to sort by; column `0` is the most significant.
+/// `std::nullopt` (the default) sorts by all `shape1` columns. Pass a
+/// value less than `shape1` to exclude trailing payload columns (e.g.
+/// an attached index carried alongside the sort key) from the
+/// comparison entirely -- rows that agree on the leading `ncols`
+/// columns compare equal and keep their relative (stable) order,
+/// saving one radix-sort pass per excluded column.
 /// @return The permutation array such that `x[perm[i]] <= x[perm[i
 /// +1]]` when compared on the leading `ncols` columns.
 /// @pre `x.size()` must be a multiple of `shape1`.
@@ -194,7 +195,8 @@ constexpr void radix_sort(R&& range, P proj = {})
 /// column of `x` is copied into an array that is then sorted.
 template <typename T, int BITS = 16>
 std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1,
-                                        std::size_t ncols = 0)
+                                       std::optional<std::size_t> ncols
+                                       = std::nullopt)
 {
   static_assert(std::is_integral_v<T>, "Integral required.");
 
@@ -203,26 +205,64 @@ std::vector<std::int32_t> sort_by_perm(std::span<const T> x, std::size_t shape1,
 
   assert(shape1 > 0);
   assert(x.size() % shape1 == 0);
-  if (ncols == 0)
-    ncols = shape1;
-  assert(ncols <= shape1);
+  std::size_t n = ncols.value_or(shape1);
+  assert(n <= shape1);
   const std::size_t shape0 = x.size() / shape1;
   std::vector<std::int32_t> perm(shape0);
   std::iota(perm.begin(), perm.end(), 0);
 
-  // Sort by each of the leading `ncols` columns, right to left. Col 0
-  // has the most significant "digit"; any columns from `ncols` to
-  // `shape1 - 1` are excluded from the key.
+  // Sort by each of the leading `n` columns, right to left. Col 0 has
+  // the most significant "digit"; any columns from `n` to `shape1 - 1`
+  // are excluded from the key.
   std::vector<T> column(shape0);
-  for (std::size_t i = 0; i < ncols; ++i)
+  for (std::size_t i = 0; i < n; ++i)
   {
-    std::size_t col = ncols - 1 - i;
+    std::size_t col = n - 1 - i;
     for (std::size_t j = 0; j < shape0; ++j)
       column[j] = x[j * shape1 + col];
     radix_sort<BITS>(perm, [column = std::cref(column)](auto index)
                      { return column.get()[index]; });
   }
 
+  return perm;
+}
+
+/// @brief Compute the permutation array that sorts a 2D array, stored
+/// column-major, by row. Overload of the row-major sort_by_perm()
+/// above, selected when `x` is passed as spans of columns rather than
+/// one flattened span.
+///
+/// @param[in] x Columns to sort by, most (`x[0]`) to least
+/// (`x.back()`) significant. To exclude a column from the sort key,
+/// omit it -- there is no separate `ncols` as in the row-major
+/// overload.
+/// @return Permutation array such that `x[k][perm[i]] <=
+/// x[k][perm[i + 1]]` for every column `k`.
+/// @pre All spans in `x` have equal length.
+/// @note Columns are already contiguous, so (unlike the row-major
+/// overload) no column needs copying before it is sorted.
+template <typename T, int BITS = 16>
+std::vector<std::int32_t> sort_by_perm(std::span<std::span<const T>> x)
+{
+  static_assert(std::is_integral_v<T>, "Integral required.");
+  if (x.empty())
+    return {};
+
+  std::size_t shape1 = x.size();
+  std::size_t shape0 = x.front().size();
+
+  std::vector<std::int32_t> perm(shape0);
+  std::iota(perm.begin(), perm.end(), 0);
+
+  // Each column is already its own contiguous span -- no copy needed,
+  // just index into `x` for the column itself.
+  for (std::size_t i = 0; i < shape1; ++i)
+  {
+    std::size_t col = shape1 - 1 - i;
+    assert(x[col].size() == shape0);
+    std::span<const T> column = x[col];
+    radix_sort<BITS>(perm, [column](auto index) { return column[index]; });
+  }
   return perm;
 }
 

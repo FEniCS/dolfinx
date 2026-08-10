@@ -43,6 +43,10 @@ namespace
 /// @param[in] c0 Starting cell index.
 /// @param[in] num_cells Number of cells to process.
 /// @param[in,out] entity_list
+/// @param[in] entity_offset Global index of the first entity this call
+/// writes into `entity_list_sorted`.
+/// @param[in,out] entity_list_sorted Sorted-key columns (column-major,
+/// one span per vertex), written at rows `entity_offset` onwards.
 /// @param[in] cells Cell-to-vertex connectivity.
 /// @param[in] e_vertices Entity-to-vertices, where
 /// `e_vertices.links(e)[i]` is the `i`th local (to the cell) vertex
@@ -51,8 +55,8 @@ namespace
 /// @param[in] cell_type_entities Indices of entities of type `entity_type`
 /// @param[in] vertex_index_map Index map for the vertices.
 auto build_entity_list
-    = [](std::span<std::int32_t> entity_list,
-         std::span<std::int32_t> entity_list_sorted,
+    = [](std::span<std::int32_t> entity_list, std::size_t entity_offset,
+         std::span<const std::span<std::int32_t>> entity_list_sorted,
          std::span<const std::int32_t> cells, std::size_t num_cell_vertices,
          const graph::AdjacencyList<std::int32_t>& e_vertices,
          mesh::CellType entity_type,
@@ -66,9 +70,14 @@ auto build_entity_list
   std::vector<std::int64_t> global_vertices(num_vertices_per_entity);
   std::vector<std::size_t> perm(num_vertices_per_entity);
 
+  // Scratch row for the sorted key -- computed exactly as before, then
+  // scattered out to entity_list_sorted's column-major storage once
+  // complete. 4 covers the largest supported entity (quadrilateral).
+  std::array<std::int32_t, 4> row_sorted_storage;
+
   // Iterate over cells
   auto it_e = entity_list.begin();
-  auto it_e_sorted = entity_list_sorted.begin();
+  std::size_t entity_idx = entity_offset;
   std::size_t num_cells = cells.size() / num_cell_vertices;
   for (std::size_t c = 0; c < num_cells; ++c)
   {
@@ -101,7 +110,8 @@ auto build_entity_list
       vertex_index_map.local_to_global(entity_vertices, global_vertices);
 
       auto elist = std::span(it_e, num_vertices_per_entity);
-      auto elist_sorted = std::span(it_e_sorted, num_vertices_per_entity);
+      auto elist_sorted
+          = std::span(row_sorted_storage.data(), num_vertices_per_entity);
 
       // Edges and triangles (by far the most common entity types, and
       // never subject to the quadrilateral re-orientation rule below)
@@ -222,8 +232,12 @@ auto build_entity_list
           std::ranges::sort(elist_sorted);
       }
 
+      // Scatter the sorted key row out to its column-major positions.
+      for (int k = 0; k < num_vertices_per_entity; ++k)
+        entity_list_sorted[k][entity_idx] = elist_sorted[k];
+
       std::advance(it_e, num_vertices_per_entity);
-      std::advance(it_e_sorted, num_vertices_per_entity);
+      ++entity_idx;
     }
   }
 };
@@ -737,8 +751,24 @@ compute_entities_by_key_matching(
   int num_vertices_per_entity = num_cell_vertices(entity_type);
   std::vector<std::int32_t> entity_list(cell_type_offsets.back()
                                         * num_vertices_per_entity);
-  std::vector<std::int32_t> entity_list_sorted(cell_type_offsets.back()
-                                               * num_vertices_per_entity);
+
+  // entity_list_sorted is a scratch array used only for sorting and
+  // matching entities below (entity_list, not this, is what carries
+  // vertex data forward afterwards) -- stored column-major, one span
+  // per vertex, so the sort needs no per-column extraction copy and
+  // the matching loop can compare a single column directly instead of
+  // via a contiguous row span.
+  std::vector<std::int32_t> entity_list_sorted_storage(
+      cell_type_offsets.back() * num_vertices_per_entity);
+  std::vector<std::span<std::int32_t>> entity_list_sorted(
+      num_vertices_per_entity);
+  for (int col = 0; col < num_vertices_per_entity; ++col)
+  {
+    entity_list_sorted[col] = std::span<std::int32_t>(
+        entity_list_sorted_storage.data() + col * cell_type_offsets.back(),
+        cell_type_offsets.back());
+  }
+
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
     // Get indices of desired entities within cell. Usually this will be
@@ -765,12 +795,15 @@ compute_entities_by_key_matching(
             + c0 * num_vertices_per_entity * num_entities_per_cell;
       std::size_t count
           = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
+      std::size_t entity_offset
+          = cell_type_offsets[k] + c0 * num_entities_per_cell;
       auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
                                    (c1 - c0) * num_vertices_per_cell);
       threads.emplace_back(
           build_entity_list, std::span(entity_list.data() + offset, count),
-          std::span(entity_list_sorted.data() + offset, count), cells_i,
-          num_vertices_per_cell, std::cref(e_vertices), entity_type,
+          entity_offset,
+          std::span<const std::span<std::int32_t>>(entity_list_sorted),
+          cells_i, num_vertices_per_cell, std::cref(e_vertices), entity_type,
           std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
     }
     auto [c0, c1] = common::local_range(0, num_cells, num_threads);
@@ -778,13 +811,15 @@ compute_entities_by_key_matching(
                          + c0 * num_vertices_per_entity * num_entities_per_cell;
     std::size_t count
         = (c1 - c0) * num_vertices_per_entity * num_entities_per_cell;
+    std::size_t entity_offset
+        = cell_type_offsets[k] + c0 * num_entities_per_cell;
     auto cells_i = cells.subspan(c0 * num_vertices_per_cell,
                                  (c1 - c0) * num_vertices_per_cell);
-    build_entity_list(std::span(entity_list.data() + offset, count),
-                      std::span(entity_list_sorted.data() + offset, count),
-                      cells_i, num_vertices_per_cell, std::cref(e_vertices),
-                      entity_type, std::cref(cell_type_entities[k]),
-                      std::cref(vertex_index_map));
+    build_entity_list(
+        std::span(entity_list.data() + offset, count), entity_offset,
+        std::span<const std::span<std::int32_t>>(entity_list_sorted), cells_i,
+        num_vertices_per_cell, std::cref(e_vertices), entity_type,
+        std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
   }
 
   // Start numbering entities
@@ -793,21 +828,22 @@ compute_entities_by_key_matching(
   {
     common::Timer timer("Compute entities by key matching: number entities");
 
-    auto sort_threaded = [](const auto& entity_list_sorted,
-                            int num_vertices_per_entity, int num_threads)
+    auto sort_threaded
+        = [](std::span<const std::span<std::int32_t>> cols, int num_threads)
     {
-      std::vector<std::int32_t> sort_order(
-          entity_list_sorted.size() / num_vertices_per_entity, 0);
+      std::size_t shape0 = cols.empty() ? 0 : cols.front().size();
+      std::vector<std::int32_t> sort_order(shape0, 0);
       std::iota(sort_order.begin(), sort_order.end(), 0);
       boost::sort::sample_sort(
           sort_order.begin(), sort_order.end(),
-          [facets = std::cref(entity_list_sorted),
-           shape1 = num_vertices_per_entity](auto f0, auto f1)
+          [cols](auto f0, auto f1)
           {
-            auto it0 = std::next(facets.get().begin(), f0 * shape1);
-            auto it1 = std::next(facets.get().begin(), f1 * shape1);
-            return std::lexicographical_compare(it0, std::next(it0, shape1),
-                                                it1, std::next(it1, shape1));
+            for (std::span<const std::int32_t> col : cols)
+            {
+              if (col[f0] != col[f1])
+                return col[f0] < col[f1];
+            }
+            return false;
           },
           num_threads);
 
@@ -815,30 +851,38 @@ compute_entities_by_key_matching(
     };
 
     // Sort the list and label uniquely
-    const std::vector<std::int32_t> sort_order
-        = num_threads == 1
-              ? dolfinx::sort_by_perm<std::int32_t, 16>(entity_list_sorted,
-                                                        num_vertices_per_entity)
-              : sort_threaded(entity_list_sorted, num_vertices_per_entity,
-                              num_threads);
+    const std::vector<std::int32_t> sort_order = [&]
+    {
+      if (num_threads == 1)
+      {
+        std::vector<std::span<const std::int32_t>> cols(
+            entity_list_sorted.begin(), entity_list_sorted.end());
+        return dolfinx::sort_by_perm(
+            std::span<std::span<const std::int32_t>>(cols));
+      }
+      else
+      {
+        return sort_threaded(
+            std::span<const std::span<std::int32_t>>(entity_list_sorted),
+            num_threads);
+      }
+    }();
 
-    std::vector<std::int32_t> entity(num_vertices_per_entity);
-    std::vector<std::int32_t> entity0(num_vertices_per_entity);
     auto it = sort_order.begin();
     while (it != sort_order.end())
     {
       // First entity in new index range
-      std::size_t offset = (*it) * num_vertices_per_entity;
-      std::span e0(entity_list_sorted.data() + offset, num_vertices_per_entity);
+      std::size_t idx0 = *it;
 
       // Find iterator to next entity
       auto it1 = std::find_if_not(
           it, sort_order.end(),
-          [e0, &entity_list_sorted, num_vertices_per_entity](auto idx) -> bool
+          [idx0, &entity_list_sorted, num_vertices_per_entity](auto idx) -> bool
           {
-            std::size_t offset = idx * num_vertices_per_entity;
-            return std::equal(e0.begin(), e0.end(),
-                              std::next(entity_list_sorted.begin(), offset));
+            for (int k = 0; k < num_vertices_per_entity; ++k)
+              if (entity_list_sorted[k][idx0] != entity_list_sorted[k][idx])
+                return false;
+            return true;
           });
 
       // Set entity unique index
