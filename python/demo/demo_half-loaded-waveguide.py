@@ -40,6 +40,8 @@
 # problem:
 
 # +
+import sys
+import typing
 from pathlib import Path
 
 from mpi4py import MPI
@@ -66,7 +68,7 @@ if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
     print("This solver fails with PETSc and 64-bit integers because of memory errors in MUMPS.")
     # Note: when PETSc.IntType == np.int32, superlu_dist is used
     # rather than MUMPS and does not trigger memory failures.
-    exit(0)
+    sys.exit(0)
 
 try:
     from dolfinx.io import VTXWriter
@@ -127,14 +129,16 @@ except ImportError:
 
 def TMx_condition(
     kx_d: complex, kx_v: complex, eps_d: complex, eps_v: complex, d: float, h: float
-) -> float:
+) -> complex:
     """Transcendental equation for TMx modes."""
-    return kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d))
+    return typing.cast(
+        complex, kx_d / eps_d * np.tan(kx_d * d) + kx_v / eps_v * np.tan(kx_v * (h - d))
+    )
 
 
-def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> float:
+def TEx_condition(kx_d: complex, kx_v: complex, d: float, h: float) -> complex:
     """Transcendental equation for TEx modes."""
-    return kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d))
+    return typing.cast(complex, kx_d / np.tan(kx_d * d) + kx_v / np.tan(kx_v * (h - d)))
 
 
 # Then, we can define the `verify_mode` function, to check whether a

@@ -74,6 +74,8 @@ def random_point_in_reference(cell_type):
         return (x, y)
     elif cell_type == CellType.hexahedron:
         return (random.random(), random.random(), random.random())
+    else:
+        raise ValueError(f"Unsupported {cell_type=}")
 
 
 def random_point_in_cell(mesh):

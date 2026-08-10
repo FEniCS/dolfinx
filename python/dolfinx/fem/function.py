@@ -11,7 +11,7 @@ from __future__ import annotations
 import typing
 from collections.abc import Callable, Sequence
 from functools import cached_property, singledispatch
-from typing import Generic
+from typing import Generic, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -232,7 +232,7 @@ class Expression(Generic[Scalar]):
         )
         ffi = module.ffi
         self._cpp_object = create_expression(
-            ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
+            int(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression))),
             coeffs,
             constants,
             _entity_maps,
@@ -686,7 +686,7 @@ def functionspace(
     # Create UFL element
     dtype = mesh.geometry.x.dtype
     try:
-        e = ElementMetaData(*element)  # type: ignore
+        e = ElementMetaData(*typing.cast(tuple, element))
         ufl_e = basix.ufl.element(
             e.family,
             mesh.basix_cell(),
@@ -834,7 +834,7 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
         """Comparison for inequality."""
         return super().__ne__(other) or self._cpp_object != other._cpp_object
 
-    def ufl_function_space(self) -> ufl.FunctionSpace:
+    def ufl_function_space(self) -> Self:
         """UFL function space."""
         return self
 

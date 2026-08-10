@@ -7,6 +7,7 @@
 """IO module for input data and post-processing file output."""
 
 from pathlib import Path
+from typing import Self
 
 from mpi4py import MPI as _MPI
 
@@ -28,7 +29,7 @@ __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute
 
 # VTXWriter requires ADIOS2
 if _cpp.common.has_adios2:
-    from dolfinx.cpp.io import VTXMeshPolicy  # type: ignore[attr-defined]
+    from dolfinx.cpp.io import VTXMeshPolicy
 
     __all__ = [*__all__, "VTXWriter", "VTXMeshPolicy"]
 
@@ -42,7 +43,7 @@ if _cpp.common.has_adios2:
         The files can be viewed using Paraview.
         """
 
-        _cpp_object: _cpp.io.VTXWriter_float32 | _cpp.io.VTXWriter_float64  # type: ignore[name-defined]
+        _cpp_object: _cpp.io.VTXWriter_float32 | _cpp.io.VTXWriter_float64
 
         def __init__(
             self,
@@ -84,9 +85,9 @@ if _cpp.common.has_adios2:
                 dtype = output[0].function_space.mesh.geometry.x.dtype
 
             if np.issubdtype(dtype, np.float32):
-                _vtxwriter = _cpp.io.VTXWriter_float32  # type: ignore[attr-defined]
+                _vtxwriter = _cpp.io.VTXWriter_float32
             elif np.issubdtype(dtype, np.float64):
-                _vtxwriter = _cpp.io.VTXWriter_float64  # type: ignore[attr-defined, assignment]
+                _vtxwriter = _cpp.io.VTXWriter_float64  # type: ignore[assignment]
             else:
                 raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
@@ -102,7 +103,7 @@ if _cpp.common.has_adios2:
                     comm, filename, mode, cpp_objects, engine, mesh_policy
                 )
 
-        def __enter__(self):
+        def __enter__(self) -> Self:
             """Enter context manager."""
             return self
 
@@ -139,7 +140,7 @@ class VTKFile:
         """
         self._cpp_object = _cpp.io.VTKFile(comm, filename, mode)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """Enter context manager."""
         return self
 
@@ -186,7 +187,7 @@ class XDMFFile:
         """
         self._cpp_object = _cpp.io.XDMFFile(comm, filename, file_mode, encoding)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """Enter context manager."""
         return self
 
@@ -298,6 +299,8 @@ class XDMFFile:
         xpath: str = "/Xdmf/Domain",
     ) -> None:
         """Write mesh tags to file."""
+        if not isinstance(tags._cpp_object, _cpp.mesh.MeshTags_int32):
+            raise TypeError("XDMF meshtags can only be written for int32-valued MeshTags.")
         self._cpp_object.write_meshtags(tags._cpp_object, x._cpp_object, geometry_xpath, xpath)
 
     def write_function(
@@ -317,7 +320,7 @@ class XDMFFile:
             mesh_xpath: Path to mesh associated with the Function in the
                 XDMFFile.
         """
-        self._cpp_object.write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)  # type: ignore[arg-type]
+        self._cpp_object.write_function(u._cpp_object, t, mesh_xpath)
 
     def read_mesh(
         self,

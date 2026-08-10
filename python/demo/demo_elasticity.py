@@ -99,7 +99,8 @@ def build_nullspace(V: FunctionSpace):
     la.orthonormalize(basis)
 
     basis_petsc = [
-        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm) for x in b
+        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm)  # type: ignore[arg-type]
+        for x in b
     ]
     return PETSc.NullSpace().create(vectors=basis_petsc)
 
@@ -183,7 +184,7 @@ A.assemble()
 # +
 b = assemble_vector(L)
 apply_lifting(b, [a], bcs=[[bc]])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
 bc.set(b.array_w)
 # -
 
@@ -191,7 +192,7 @@ bc.set(b.array_w)
 
 ns = build_nullspace(V)
 A.setNearNullSpace(ns)
-A.setOption(PETSc.Mat.Option.SPD, True)
+A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore[arg-type]
 
 # Set PETSc solver options, create a PETSc Krylov solver, and attach the
 # matrix `A` to the solver:
@@ -199,16 +200,16 @@ A.setOption(PETSc.Mat.Option.SPD, True)
 # +
 # Set solver options
 opts = PETSc.Options()
-opts["ksp_type"] = "cg"
-opts["ksp_rtol"] = 1.0e-8
-opts["pc_type"] = "gamg"
+opts["ksp_type"] = "cg"  # type: ignore[index]
+opts["ksp_rtol"] = 1.0e-8  # type: ignore[index]
+opts["pc_type"] = "gamg"  # type: ignore[index]
 
 # Use Chebyshev smoothing for multigrid
-opts["mg_levels_ksp_type"] = "chebyshev"
-opts["mg_levels_pc_type"] = "jacobi"
+opts["mg_levels_ksp_type"] = "chebyshev"  # type: ignore[index]
+opts["mg_levels_pc_type"] = "jacobi"  # type: ignore[index]
 
 # Improve estimate of eigenvalues for Chebyshev smoothing
-opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10
+opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10  # type: ignore[index]
 
 # Create PETSc Krylov solver and turn convergence monitoring on
 solver = PETSc.KSP().create(msh.comm)

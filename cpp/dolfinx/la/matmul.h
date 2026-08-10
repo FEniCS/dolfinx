@@ -146,7 +146,7 @@ fetch_ghost_rows(const dolfinx::la::MatrixCSR<T>& A,
   {
     auto it = std::lower_bound(src.begin(), src.end(), r);
     assert(it != src.end() && *it == r);
-    return static_cast<int>(std::distance(src.begin(), it));
+    return static_cast<int>(std::ranges::distance(src.begin(), it));
   };
   MPI_Comm neigh_comm_fwd;
   MPI_Comm neigh_comm_rev;

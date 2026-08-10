@@ -28,7 +28,6 @@ import gmsh
 import numpy as np
 from scipy.special import jv, jvp
 
-import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, io, mesh, plot
@@ -55,7 +54,7 @@ except ModuleNotFoundError:
 # therefore have been compiled with complex scalars.
 if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo can only be executed when PETSc using complex scalars.")
-    exit(0)
+    sys.exit(0)
 
 # -
 
@@ -453,7 +452,7 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = _cell_partitioner(dolfinx.mesh.GhostMode.shared_facet, 2)
+partitioner = _cell_partitioner(mesh.GhostMode.shared_facet, 2)
 mesh_data = io.gmsh.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"
 assert mesh_data.facet_tags is not None, "Facet tags are missing"
@@ -623,7 +622,7 @@ dS = ufl.Measure("dS", mesh_data.mesh, subdomain_data=mesh_data.facet_tags)
 phi = np.pi / 4
 
 # Initialize phase term
-phase = fem.Constant(mesh_data.mesh, PETSc.ScalarType(np.exp(1j * 0 * phi)))
+phase = fem.Constant(mesh_data.mesh, PETSc.ScalarType(np.exp(1j * 0 * phi)))  # type: ignore[operator]
 # -
 
 # We now solve the problem:
@@ -675,7 +674,7 @@ for m in m_list:
     )
     Esh_m = problem.solve()
     assert isinstance(Esh_m, fem.Function)
-    assert problem.solver.getConvergedReason() > 0
+    assert problem.solver.getConvergedReason() > 0  # type: ignore[operator]
 
     # Scattered magnetic field
     Hsh_m = -1j * curl_axis(Esh_m, m, rho) / (Z0 * k0)

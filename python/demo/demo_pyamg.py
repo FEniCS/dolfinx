@@ -45,12 +45,12 @@ try:
     import pyamg
 except ImportError:
     print("This demo requires pyamg.")
-    exit(0)
+    sys.exit(0)
 
 
 if MPI.COMM_WORLD.size > 1:
     print("This demo works only in serial.")
-    exit(0)
+    sys.exit(0)
 # -
 
 

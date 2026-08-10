@@ -62,7 +62,7 @@ if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
     print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
     # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
     # than MUMPS and does not trigger memory failures.
-    exit(0)
+    sys.exit(0)
 
 # -
 
@@ -256,7 +256,7 @@ def calculate_analytical_efficiencies(
 
 if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode.")
-    exit(0)
+    sys.exit(0)
 
 
 # Now, let's consider an infinite metallic wire immersed in a background
@@ -640,7 +640,7 @@ problem = LinearProblem(
     petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
 )
 Esh = problem.solve()
-assert problem.solver.getConvergedReason() > 0
+assert problem.solver.getConvergedReason() > 0  # type: ignore[operator]
 
 # We save the solution as an [ADIOS2
 # bp](https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html)

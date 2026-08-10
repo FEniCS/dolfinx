@@ -24,14 +24,16 @@
 # - Assemble mixed systems with multiple, related meshes
 
 # +
+import sys
+import typing
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
 import numpy as np
 
-import dolfinx
 import ufl
-from dolfinx import fem, mesh
+from dolfinx import fem, has_adios2, mesh
 from dolfinx.cpp.mesh import cell_num_entities
 from dolfinx.fem import extract_function_spaces
 from dolfinx.fem.petsc import (
@@ -55,7 +57,9 @@ def norm_L2(v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx) -> np.inexact:
     """Convenience function to compute the L2 norm of a UFL expression."""
     compiled_form = fem.form(ufl.inner(v, v) * measure)
     comm = compiled_form.mesh.comm
-    return np.sqrt(comm.allreduce(fem.assemble_scalar(compiled_form), op=MPI.SUM))
+    return typing.cast(
+        np.inexact, np.sqrt(comm.allreduce(fem.assemble_scalar(compiled_form), op=MPI.SUM))
+    )
 
 
 # In DOLFINx, we represent integration domains over entities of
@@ -67,7 +71,7 @@ def norm_L2(v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx) -> np.inexact:
 # there will be repeat entries, from the viewpoint of the connected cells).
 
 
-def compute_cell_boundary_facets(msh: dolfinx.mesh.Mesh) -> np.ndarray:
+def compute_cell_boundary_facets(msh: mesh.Mesh) -> np.ndarray:
     """Integration entities for integrals on boundaries of all cells.
 
     Parameters:
@@ -180,7 +184,7 @@ a = (
 
 f = -ufl.div(c * ufl.grad(u_e(x)))  # Manufacture a source term
 L = ufl.inner(f, v) * dx_c
-L += ufl.inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f
+L += ufl.inner(fem.Constant(facet_mesh, dtype(0.0)), vbar) * dx_f  # type: ignore[operator]
 # -
 
 # Our bilinear form involves two domains (`msh` and `facet_mesh`). The
@@ -196,8 +200,8 @@ entity_maps = [facet_mesh_emap]
 # Compile forms for the blocked system, using {py:func}`ufl.extract_blocks`
 # for the bilinear and linear forms.
 
-a_blocked = dolfinx.fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
-L_blocked = dolfinx.fem.form(ufl.extract_blocks(L))
+a_blocked = fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
+L_blocked = fem.form(ufl.extract_blocks(L))
 
 # Apply Dirichlet boundary conditions. We begin by locating the boundary
 # facets of msh.
@@ -215,7 +219,7 @@ facet_mesh_boundary_facets = facet_mesh_emap.sub_topology_to_topology(
 
 facet_mesh.topology.create_connectivity(fdim, fdim)
 dofs = fem.locate_dofs_topological(Vbar, fdim, facet_mesh_boundary_facets)
-bc = fem.dirichletbc(dtype(0.0), dofs, Vbar)
+bc = fem.dirichletbc(dtype(0.0), dofs, Vbar)  # type: ignore[operator]
 
 # Assemble the matrix and vector
 
@@ -225,7 +229,7 @@ A.assemble()
 b = assemble_vector(L_blocked)
 bcs1 = fem.bcs_by_block(fem.extract_function_spaces(a_blocked, 1), [bc])
 apply_lifting(b, a_blocked, bcs=bcs1)
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore[arg-type]
 bcs0 = fem.bcs_by_block(extract_function_spaces(L_blocked), [bc])
 set_bc(b, bcs0)
 
@@ -240,28 +244,28 @@ ksp.getPC().setFactorSolverType("superlu_dist")
 # Compute solution
 
 try:
-    x = create_vector([V, Vbar])
-    ksp.solve(b, x)
+    x_vec = create_vector([V, Vbar])
+    ksp.solve(b, x_vec)
     ksp.destroy()
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    x_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore[arg-type]
     b.destroy()
 except PETSc.Error as e:
-    if e.ierr == 92:
+    if e.ierr == 92:  # type: ignore[attr-defined]
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)
-        exit(0)
+        sys.exit(0)
     else:
         raise e
 
 # Create functions for the solution and update values
 
 u, ubar = fem.Function(V, name="u"), fem.Function(Vbar, name="ubar")
-assign(x, [u, ubar])
-x.destroy()
+assign(x_vec, [u, ubar])  # type: ignore
+x_vec.destroy()
 
 # Write to file
 
-if dolfinx.has_adios2:
+if has_adios2:
     from dolfinx.io import VTXWriter
 
     with VTXWriter(msh.comm, "u.bp", "w", u, "bp4") as f:

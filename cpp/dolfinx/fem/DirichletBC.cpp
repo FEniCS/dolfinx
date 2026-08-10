@@ -74,7 +74,8 @@ find_local_entity_index(const mesh::Topology& topology,
     auto entities_d = c_to_e->links(cell);
     auto it = std::ranges::find(entities_d, e);
     assert(it != entities_d.end());
-    std::size_t entity_local_index = std::distance(entities_d.begin(), it);
+    std::size_t entity_local_index
+        = std::ranges::distance(entities_d.begin(), it);
     entity_indices.emplace_back(cell, entity_local_index);
   }
 
@@ -161,7 +162,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 
   // Build map from ghost global index to local position
   // NOTE: Should we use map here or just one vector with ghosts and
-  // std::distance?
+  // std::ranges::distance?
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
   global_local_ghosts.reserve(ghosts.size());
   const std::int32_t local_size = range[1] - range[0];
