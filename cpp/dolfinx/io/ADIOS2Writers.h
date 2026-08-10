@@ -498,7 +498,6 @@ public:
   ///
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
-  /// @param[in] mode Mode to open file with
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
   /// element family and degree, and degree-of-freedom map (up to the
