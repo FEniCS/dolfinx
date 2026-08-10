@@ -369,9 +369,9 @@ t = 0.0
 if has_adios2:
     u_vis = fem.Function(W, name="u_init")
     u_vis.interpolate(u_h)
-    with io.VTXWriter(msh.comm, "u.bp", "w", u_vis) as file:
+    with io.VTXWriter(msh.comm, "u.bp", u_vis) as file:
         file.write(t)
-    with io.VTXWriter(msh.comm, "p.bp", "w", p_h) as file:
+    with io.VTXWriter(msh.comm, "p.bp", p_h) as file:
         file.write(t)
 else:
     print("File output requires ADIOS2.")
@@ -424,9 +424,9 @@ for _ in range(num_time_steps):
     # Write to file
     if has_adios2:
         u_vis.interpolate(u_h)
-        with io.VTXWriter(msh.comm, "u.bp", "a", u_vis) as file:
+        with io.VTXWriter(msh.comm, "u.bp", u_vis, mode="a") as file:
             file.write(t)
-        with io.VTXWriter(msh.comm, "p.bp", "a", p_h) as file:
+        with io.VTXWriter(msh.comm, "p.bp", p_h, mode="a") as file:
             file.write(t)
 
     # Update u_n

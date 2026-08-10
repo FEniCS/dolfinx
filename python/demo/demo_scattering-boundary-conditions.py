@@ -656,7 +656,7 @@ assert isinstance(Esh, fem.Function)
 Esh_dg.interpolate(Esh)
 
 if has_adios2:
-    with io.VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", "w", Esh_dg) as vtx:
+    with io.VTXWriter(mesh_data.mesh.comm, out_folder / "Esh.bp", Esh_dg) as vtx:
         vtx.write(0.0)
 else:
     print("VTXWriter is unavailable, Esh.bp will not be saved.")
@@ -698,7 +698,7 @@ E.x.array[:] = Eb.x.array[:] + Esh.x.array[:]
 E_dg = fem.Function(V_dg)
 E_dg.interpolate(E)
 if has_adios2:
-    with io.VTXWriter(mesh_data.mesh.comm, "E.bp", "w", E_dg) as vtx:
+    with io.VTXWriter(mesh_data.mesh.comm, "E.bp", E_dg) as vtx:
         vtx.write(0.0)
 else:
     print("VTXWriter is unavailable, E.bp will not be saved.")
