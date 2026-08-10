@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -41,20 +41,43 @@ void graph(nb::module_& m)
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&, bool)>;
+  using geom_partition_fn
+      = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+          MPICommWrapper, int,
+          const dolfinx::graph::AdjacencyList<std::int64_t>&,
+          nb::ndarray<const double, nb::ndim<2>, nb::c_contig>, bool)>;
   m.def(
       "partitioner", []() -> partition_fn
       { return create_partitioner_py(dolfinx::graph::partition_graph); },
       "Default graph partitioner");
 
+  m.def(
+      "geom_partitioner_sfc",
+      []() -> geom_partition_fn
+      {
+        return create_geom_partitioner_py(dolfinx::graph::sfc::partitioner());
+      },
+      "Space-filling curve geometric graph partitioner");
+
 #ifdef HAS_PTSCOTCH
+  nb::enum_<dolfinx::graph::scotch::strategy>(m, "SCOTCHStrategy")
+      .value("none", dolfinx::graph::scotch::strategy::none)
+      .value("balance", dolfinx::graph::scotch::strategy::balance)
+      .value("quality", dolfinx::graph::scotch::strategy::quality)
+      .value("safety", dolfinx::graph::scotch::strategy::safety)
+      .value("speed", dolfinx::graph::scotch::strategy::speed)
+      .value("scalability", dolfinx::graph::scotch::strategy::scalability);
+
   m.def(
       "partitioner_scotch",
-      [](double imbalance, int seed) -> partition_fn
+      [](double imbalance, int seed,
+         dolfinx::graph::scotch::strategy strategy) -> partition_fn
       {
-        return create_partitioner_py(dolfinx::graph::scotch::partitioner(
-            dolfinx::graph::scotch::strategy::none, imbalance, seed));
+        return create_partitioner_py(
+            dolfinx::graph::scotch::partitioner(strategy, imbalance, seed));
       },
       nb::arg("imbalance") = 0.025, nb::arg("seed") = 0,
+      nb::arg("strategy") = dolfinx::graph::scotch::strategy::none,
       "SCOTCH graph partitioner");
 #endif
 #ifdef HAS_PARMETIS
@@ -68,6 +91,22 @@ void graph(nb::module_& m)
       nb::arg("imbalance") = 1.02,
       nb::arg("options") = std ::array<int, 3>({1, 0, 5}),
       "ParMETIS graph partitioner");
+
+  nb::enum_<dolfinx::graph::parmetis::geom_method>(m, "ParMETISGeomMethod")
+      .value("kway", dolfinx::graph::parmetis::geom_method::kway)
+      .value("curve", dolfinx::graph::parmetis::geom_method::curve);
+
+  m.def(
+      "geom_partitioner_parmetis",
+      [](dolfinx::graph::parmetis::geom_method method, double imbalance,
+         std::array<int, 3> options) -> geom_partition_fn
+      {
+        return create_geom_partitioner_py(
+            dolfinx::graph::parmetis::geom_partitioner(method, imbalance,
+                                                       options));
+      },
+      nb::arg("method"), nb::arg("imbalance"), nb::arg("options"),
+      "ParMETIS geometric graph partitioner");
 #endif
 #ifdef HAS_KAHIP
   m.def(

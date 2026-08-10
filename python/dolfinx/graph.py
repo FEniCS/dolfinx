@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2024 Garth N. Wells and Paul T. Kühner
+# Copyright (C) 2021-2026 Garth N. Wells and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -11,7 +11,7 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.graph import partitioner
+from dolfinx.cpp.graph import geom_partitioner_sfc, partitioner
 from dolfinx.typing import Index
 
 # Import graph partitioners, which may or may not be available
@@ -29,6 +29,15 @@ _partitioner_kahip = getattr(_cpp.graph, "partitioner_kahip", None)
 if _partitioner_kahip is not None:
     partitioner_kahip = _partitioner_kahip
 
+# Geometric partitioners, i.e. partitioners that use the position of each
+# graph node. As above, availability depends on the build configuration.
+_geom_partitioner_parmetis = getattr(_cpp.graph, "geom_partitioner_parmetis", None)
+if _geom_partitioner_parmetis is not None:
+    geom_partitioner_parmetis = _geom_partitioner_parmetis
+_ParMETISGeomMethod = getattr(_cpp.graph, "ParMETISGeomMethod", None)
+if _ParMETISGeomMethod is not None:
+    ParMETISGeomMethod = _ParMETISGeomMethod
+
 
 __all__ = [
     "AdjacencyList",
@@ -36,6 +45,7 @@ __all__ = [
     "comm_graph",
     "comm_graph_data",
     "comm_to_json",
+    "geom_partitioner_sfc",
     "partitioner",
 ]
 

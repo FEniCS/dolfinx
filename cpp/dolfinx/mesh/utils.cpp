@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -58,6 +58,23 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
   return topology;
 }
 //-----------------------------------------------------------------------------
+bool mesh::is_vertex_dof_layout(CellType cell_type,
+                                const fem::ElementDofLayout& layout)
+{
+  const int num_vertices_per_cell = num_cell_vertices(cell_type);
+  if (layout.num_dofs() != num_vertices_per_cell)
+    return false;
+
+  for (int i = 0; i < num_vertices_per_cell; ++i)
+  {
+    const std::vector<int>& local_index = layout.entity_dofs(0, i);
+    if (local_index.size() != 1 or local_index.front() != i)
+      return false;
+  }
+
+  return true;
+}
+//-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology,
                                                        int facet_type_idx)
 {
@@ -101,18 +118,22 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
 //------------------------------------------------------------------------------
 mesh::CellPartitionFunction mesh::create_cell_partitioner(
     mesh::GhostMode ghost_mode, graph::partition_fn partfn,
-    std::optional<std::int32_t> max_facet_to_cell_links)
+    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
 {
-  return [partfn = std::move(partfn), ghost_mode, max_facet_to_cell_links](
-             MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
-             const std::vector<std::span<const std::int64_t>>& cells)
+  if (num_threads < 1)
+    throw std::runtime_error("num_threads must be >= 1.");
+
+  return [partfn = std::move(partfn), ghost_mode, max_facet_to_cell_links,
+          num_threads](MPI_Comm comm, int nparts,
+                       const std::vector<CellType>& cell_types,
+                       const std::vector<std::span<const std::int64_t>>& cells)
              -> graph::AdjacencyList<std::int32_t>
   {
     spdlog::info("Compute partition of cells across ranks");
 
     // Compute distributed dual graph (for the cells on this process)
-    graph::AdjacencyList dual_graph
-        = build_dual_graph(comm, cell_types, cells, max_facet_to_cell_links);
+    graph::AdjacencyList dual_graph = build_dual_graph(
+        comm, cell_types, cells, max_facet_to_cell_links, num_threads);
 
     // Just flag any kind of ghosting for now
     bool ghosting = (ghost_mode != GhostMode::none);
@@ -124,10 +145,10 @@ mesh::CellPartitionFunction mesh::create_cell_partitioner(
 //-----------------------------------------------------------------------------
 mesh::CellPartitionFunction mesh::create_cell_partitioner(
     mesh::GhostMode ghost_mode,
-    std::optional<std::int32_t> max_facet_to_cell_links)
+    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
 {
   return create_cell_partitioner(ghost_mode, &graph::partition_graph,
-                                 max_facet_to_cell_links);
+                                 max_facet_to_cell_links, num_threads);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>

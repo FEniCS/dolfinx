@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2023 Garth N. Wells and Igor A. Baratta
+// Copyright (C) 2020-2026 Garth N. Wells and Igor A. Baratta
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -75,6 +75,44 @@ namespace parmetis
 graph::partition_fn partitioner(double imbalance = 1.02,
                                 std::array<int, 3> options = {1, 0, 5});
 
+/// @brief ParMETIS partitioning methods that use node coordinates.
+enum class geom_method : std::uint8_t
+{
+  /// Space-filling curve ordering of the coordinates, used to
+  /// redistribute the graph before multilevel k-way partitioning
+  /// (`ParMETIS_V3_PartGeomKway`). The partition quality is comparable
+  /// to ::partitioner, and the redistribution makes the k-way phase
+  /// markedly cheaper when the input graph distribution does not
+  /// reflect the node positions.
+  kway,
+
+  /// Space-filling curve ordering of the coordinates only, with the
+  /// graph edges unused (`ParMETIS_V3_PartGeom`). Much cheaper than
+  /// ::kway, but cuts more edges.
+  curve
+};
+
+/// @brief Create a geometric graph partitioning function that uses
+/// ParMETIS.
+///
+/// @note ParMETIS fails (crashes) if an MPI rank has no part of the
+/// graph. If necessary, the communicator should be split to avoid this
+/// situation.
+///
+/// @note `geom_method::curve` partitions into one part per rank of the
+/// communicator, so `nparts` must equal the communicator size.
+///
+/// @param[in] method Partitioning method.
+/// @param[in] imbalance Imbalance tolerance (`geom_method::kway` only).
+/// See ParMETIS manual for details
+/// (https://github.com/KarypisLab/ParMETIS/blob/main/manual/manual.pdf).
+/// @param[in] options The ParMETIS options (`geom_method::kway` only).
+/// See ParMETIS manual for details.
+/// @return A geometric graph partitioning function.
+graph::geom_partition_fn
+geom_partitioner(geom_method method = geom_method::kway,
+                 double imbalance = 1.02,
+                 std::array<int, 3> options = {1, 0, 5});
 #endif
 } // namespace parmetis
 

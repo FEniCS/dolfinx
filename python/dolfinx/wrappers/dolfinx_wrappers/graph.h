@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -28,6 +28,25 @@ auto create_partitioner_py(Functor&& p_cpp)
                  const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
                  bool ghosting)
   { return p_cpp(comm.get(), nparts, local_graph, ghosting); };
+}
+
+/// Wrap a C++ geometric graph partitioner for use from Python. Node
+/// coordinates are passed as a 2D array of shape (num_nodes, gdim).
+template <typename Functor>
+auto create_geom_partitioner_py(Functor&& p_cpp)
+{
+  return
+      [p_cpp](
+          dolfinx_wrappers::MPICommWrapper comm, int nparts,
+          const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+          nanobind::ndarray<const double, nanobind::ndim<2>, nanobind::c_contig>
+              x,
+          bool ghosting)
+  {
+    return p_cpp(comm.get(), nparts, local_graph,
+                 std::span<const double>(x.data(), x.size()), x.shape(1),
+                 ghosting);
+  };
 }
 
 /// Declare AdjacencyList class with __init__ methods for a given type

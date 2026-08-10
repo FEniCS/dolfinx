@@ -11,9 +11,9 @@ import pytest
 from numpy import isclose
 
 import ufl
-from dolfinx.cpp.mesh import create_cell_partitioner
 from dolfinx.fem import assemble_matrix, form, functionspace
 from dolfinx.mesh import (
+    create_cell_partitioner,
     CellType,
     DiagonalType,
     GhostMode,

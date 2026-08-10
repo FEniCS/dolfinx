@@ -351,8 +351,11 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
     entity_count = *mx + 1;
   }
 
+  common::Timer timer_li("Entity local indexing");
+
   //---------
   // Create a symmetric neighbor_comm from vertex_ranks
+  common::Timer timer_li_nc("Entity local indexing: neighbourhood setup");
 
   // Get sharing ranks for each vertex
   auto [data, offsets] = vertex_map.index_to_dest_ranks();
@@ -370,11 +373,15 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       comm, ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
       ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbor_comm);
 
+  timer_li_nc.stop();
+  timer_li_nc.flush();
+
   std::vector<std::vector<std::int64_t>> send_entities(ranks.size());
   std::vector<std::vector<std::int32_t>> send_index(ranks.size());
 
   // Get all "possibly shared" entities, based on vertex sharing. Send
   // to other processes, and see if we get the same back.
+  common::Timer timer_li_cand("Entity local indexing: build candidates");
 
   // Map from entity (defined by global vertex indices) to local entity
   // index
@@ -478,9 +485,13 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
     perm.erase(unique_end, range_end);
   }
 
+  timer_li_cand.stop();
+  timer_li_cand.flush();
+
   // Get shared entities of this dimension, and also match up an index
   // for the received entities (from other processes) with the indices
   // of the sent entities (to other processes)
+  common::Timer timer_li_ex("Entity local indexing: candidate exchange");
 
   // Send/receive entities
   std::vector<std::int64_t> recv_data;
@@ -579,8 +590,12 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   const graph::AdjacencyList<int> shared_entities_v
       = create_adj_list(shared_entity_to_global_vertices_data, entity_count);
 
+  timer_li_ex.stop();
+  timer_li_ex.flush();
+
   //---------
   // Determine ownership of shared entities
+  common::Timer timer_li_own("Entity local indexing: ownership");
 
   std::vector<std::int32_t> local_index(entity_count, -1);
   std::vector<std::int32_t> interprocess_entities;
@@ -624,8 +639,12 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
                            [&local_index](auto i) { return local_index[i]; });
   }
 
+  timer_li_own.stop();
+  timer_li_own.flush();
+
   //---------
   // Communicate global indices to other processes
+  common::Timer timer_li_gi("Entity local indexing: global index exchange");
   std::vector<int> ghost_owners(entity_count - num_local, -1);
   std::vector<std::int64_t> ghost_indices(entity_count - num_local, -1);
   {
@@ -683,11 +702,17 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
            == ghost_indices.end());
   }
 
+  timer_li_gi.stop();
+  timer_li_gi.flush();
+
   // Create map from initial numbering to new local indices
+  common::Timer timer_li_rn("Entity local indexing: renumber");
   std::vector<std::int32_t> new_entity_index(entity_index.size());
   std::ranges::transform(entity_index, new_entity_index.begin(),
                          [&local_index](auto index)
                          { return local_index[index]; });
+  timer_li_rn.stop();
+  timer_li_rn.flush();
 
   common::IndexMap index_map(comm, num_local, ghost_indices, ghost_owners);
   return {std::move(new_entity_index), std::move(index_map),

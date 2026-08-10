@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Garth N. Wells
+// Copyright (C) 2020-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -31,6 +31,27 @@ namespace dolfinx::graph
 using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm, int, const AdjacencyList<std::int64_t>&, bool)>;
 
+/// @brief Signature of functions for computing the parallel partitioning
+/// of a distributed graph whose nodes have a position in space.
+///
+/// As ::partition_fn, with the addition of a coordinate for each node of
+/// the graph. Partitioners of this form can use the node positions
+/// instead of, or in addition to, the graph edges.
+///
+/// @param[in] comm MPI Communicator that the graph is distributed
+/// across.
+/// @param[in] nparts Number of partitions to divide graph nodes into.
+/// @param[in] local_graph Node connectivity graph.
+/// @param[in] x Node coordinates, row-major with `gdim` columns and one
+/// row per node of `local_graph`.
+/// @param[in] gdim Number of coordinate components per node.
+/// @param[in] ghosting Flag to enable ghosting of the output node
+/// distribution.
+/// @return Destination rank(s) for each input node.
+using geom_partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
+    MPI_Comm, int, const AdjacencyList<std::int64_t>&, std::span<const double>,
+    int, bool)>;
+
 /// @brief Partition graph across processes using the default graph
 /// partitioner.
 ///
@@ -44,6 +65,46 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 AdjacencyList<std::int32_t>
 partition_graph(MPI_Comm comm, int nparts,
                 const AdjacencyList<std::int64_t>& local_graph, bool ghosting);
+
+/// @brief Partition points into `nparts` groups of (approximately) equal
+/// size using a Morton space-filling curve (SFC).
+///
+/// Points are ordered by the Morton key of their position in the global
+/// bounding box, and the resulting order is cut into `nparts` equal
+/// pieces. Splitters are selected from a gathered sample of the keys, so
+/// the cost is linear in the number of local points plus one
+/// all-gather of the sample.
+///
+/// Compared to a graph partitioner, this is much cheaper (no graph is
+/// required and the cost is nearly independent of the number of ranks)
+/// and gives a near-perfect load balance, at the cost of a larger
+/// number of cut edges (typically tens of percent for a mesh dual
+/// graph).
+///
+/// @note Collective.
+///
+/// @param[in] comm MPI communicator that the points are distributed
+/// across.
+/// @param[in] nparts Number of partitions to divide the points into.
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point. Must be
+/// 1, 2 or 3.
+/// @return Partition index in `[0, nparts)` for each point.
+std::vector<int> partition_sfc(MPI_Comm comm, int nparts,
+                               std::span<const double> x, int gdim);
+
+/// Space-filling curve partitioner
+namespace sfc
+{
+/// @brief Create a geometric partitioning function that orders nodes on a
+/// Morton space-filling curve (see ::partition_sfc).
+///
+/// The graph edges are used only to determine ghost nodes, i.e. the
+/// partition itself is computed from the node coordinates alone.
+///
+/// @return A geometric graph partitioning function.
+graph::geom_partition_fn partitioner();
+} // namespace sfc
 
 /// Tools for distributed graphs
 ///

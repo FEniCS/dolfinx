@@ -20,9 +20,10 @@ from basix.ufl import element
 from dolfinx import cpp as _cpp
 from dolfinx import graph
 from dolfinx import mesh as _mesh
-from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
+from dolfinx.cpp.mesh import is_simplex
 from dolfinx.fem import assemble_scalar, coordinate_element, form
 from dolfinx.mesh import (
+    create_cell_partitioner,
     CellType,
     DiagonalType,
     GhostMode,

@@ -17,7 +17,6 @@ from dolfinx.cpp.mesh import (
     Mesh_float32,
     Mesh_float64,
     compute_mixed_cell_pairs,
-    create_cell_partitioner,
     create_geometry,
     create_mesh,
     create_topology,
@@ -25,7 +24,14 @@ from dolfinx.cpp.mesh import (
 )
 from dolfinx.fem import coordinate_element
 from dolfinx.log import LogLevel, set_log_level
-from dolfinx.mesh import CellType, GhostMode, Mesh, Topology, create_unit_cube
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    Mesh,
+    Topology,
+    create_cell_partitioner,
+    create_unit_cube,
+)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
