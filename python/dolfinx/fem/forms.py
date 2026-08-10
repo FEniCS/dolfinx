@@ -59,6 +59,7 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_float32
         | _cpp.fem.Form_float64
     )
+    _mesh: Mesh
     _code: str | list[str] | None
 
     def __init__(
@@ -67,6 +68,7 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_complex128
         | _cpp.fem.Form_float32
         | _cpp.fem.Form_float64,
+        msh: Mesh,
         ufcx_form=None,
         code: str | list[str] | None = None,
         module: types.ModuleType | list[types.ModuleType] | None = None,
@@ -81,13 +83,15 @@ class Form(typing.Generic[Scalar]):
 
         Args:
             form: Compiled form object.
+            msh: Mesh that form is defined on.
             ufcx_form: UFCx form.
             code: Form C++ code.
             module: CFFI module.
         """
+        self._cpp_object = form
+        self._mesh = msh
         self._code = code
         self._ufcx_form = ufcx_form
-        self._cpp_object = form
         self._module = module
 
     @property
@@ -226,13 +230,26 @@ def form_cpp_class(
     | type[_cpp.fem.Form_complex64]
     | type[_cpp.fem.Form_complex128]
 ):
-    """Wrapped C++ class of a variational form of a specific scalar type.
+    """Look up the wrapped C++ ``Form`` class for a given scalar type.
+
+    DOLFINx's C++ ``Form`` is templated on the scalar type and, for
+    complex scalars, on the geometry (coordinate) type. This resolves
+    ``dtype`` to the matching entry in :attr:`Form.cpp_types`, using
+    matched precision between the scalar and geometry types, e.g.
+    ``np.complex64`` maps to the class with ``np.float32`` geometry
+    and ``np.complex128`` to the class with ``np.float64`` geometry.
 
     Args:
-        dtype: Scalar type of the required form class.
+        dtype: Scalar type of the required form class, e.g.
+            ``np.float64`` or ``np.complex128``.
 
     Returns:
-        Wrapped C++ form class of the requested type.
+        Wrapped C++ form class matching ``dtype``.
+
+    Raises:
+        KeyError: If ``dtype`` is not one of the supported scalar
+            types (``np.float32``, ``np.float64``, ``np.complex64``,
+            ``np.complex128``).
 
     Note:
         This function is for advanced usage, typically when writing
@@ -299,13 +316,13 @@ def mixed_topology_form(
         if not all(d is data[0] for d in data if d is not None):
             raise ValueError("Subdomain data must be the same for each integral type.")
 
-    mesh = domain.ufl_cargo()
-    if mesh is None:
+    msh = domain.ufl_cargo()
+    if msh is None:
         raise RuntimeError("Expecting to find a Mesh in the form.")
-    comm = mesh.comm if jit_comm is None else jit_comm
+    comm = msh.comm if jit_comm is None else jit_comm
 
     # Geometry type is fixed by the mesh.
-    ftype = Form.cpp_types[np.dtype(dtype), mesh.geometry.x.dtype]
+    ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
 
     ufcx_forms = []
     modules = []
@@ -336,9 +353,9 @@ def mixed_topology_form(
         [],
         {},
         [],
-        mesh,
+        msh,
     )
-    return Form(f, ufcx_forms, codes, modules)
+    return Form(f, msh, ufcx_forms, codes, modules)
 
 
 @typing.overload
@@ -436,7 +453,7 @@ def form(
             raise RuntimeError("Expecting to find a Mesh in the form.")
         comm = msh.comm if jit_comm is None else jit_comm
 
-        # Geometry type is fixed by the mesh.
+        # Geometry type is fixed by the mesh
         ftype = Form.cpp_types[np.dtype(dtype), msh.geometry.x.dtype]
 
         ufcx_form, module, code = jit.ffcx_jit(
@@ -490,7 +507,7 @@ def form(
             _entity_maps,
             msh,
         )
-        return Form(f, ufcx_form, code, module)
+        return Form(f, msh, ufcx_form, code, module)
 
     def _zero_form(form):
         """Compile a single 'zero' UFL form.
@@ -513,7 +530,7 @@ def form(
             entity_maps=[],
             mesh=msh,
         )
-        return Form(f)
+        return Form(f, msh)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form.
@@ -761,7 +778,7 @@ def create_form(
         _entity_maps,
         msh._cpp_object,
     )
-    return Form(f, form.ufcx_form, form.code)
+    return Form(f, msh, form.ufcx_form, form.code)
 
 
 def _derive_univariate_residual(

@@ -701,6 +701,7 @@ def functionspace(
     # Check that element and mesh cell types match
     if ((domain := mesh.ufl_domain()) is None) or ufl_e.cell != domain.ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
+
     # Create DOLFINx objects
     dolfinx_element = finiteelement(mesh.topology.cell_type, ufl_e, dtype)
 
@@ -843,15 +844,15 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
         """Function space finite element."""
         return FiniteElement(self._cpp_object.element)
 
-    @property
+    @cached_property
     def dofmap(self) -> DofMap:
         """Degree-of-freedom map associated with the function space."""
         return DofMap(self._cpp_object.dofmap)
 
-    @property
+    @cached_property
     def dofmaps(self) -> list[DofMap]:
         """The geometry dofmaps, one per cell type."""
-        return [DofMap(_o) for _o in self._cpp_object.dofmaps]
+        return [DofMap(map) for map in self._cpp_object.dofmaps]
 
     @property
     def mesh(self) -> Mesh[Real]:
