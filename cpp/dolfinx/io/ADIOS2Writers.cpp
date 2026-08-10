@@ -18,8 +18,8 @@ using namespace dolfinx::io;
 
 //-----------------------------------------------------------------------------
 ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-                           adios2::Mode mode, std::string tag,
-                           std::string engine)
+                           std::string tag, std::string engine,
+                           adios2::Mode mode)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
       _io(std::make_unique<adios2::IO>(_adios->DeclareIO(std::move(tag))))
 {

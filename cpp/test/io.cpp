@@ -45,8 +45,8 @@ void test_vtx_reuse_mesh()
   auto v = std::make_shared<fem::Function<std::complex<T>>>(V);
 
   std::filesystem::path f = std::format("test_vtx_reuse_mesh{}.bp", sizeof(T));
-  io::VTXWriter<T> writer(mesh->comm(), f, "w", {u, v}, "BPFile",
-                          io::VTXMeshPolicy::reuse);
+  io::VTXWriter<T> writer(mesh->comm(), f, {u, v}, "BPFile",
+                          io::VTXMeshPolicy::reuse, "w");
   writer.write(0);
 
   std::ranges::fill(u->x()->array(), 1);
