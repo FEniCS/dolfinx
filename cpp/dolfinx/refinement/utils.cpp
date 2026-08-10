@@ -250,7 +250,8 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
     std::ranges::sort(pclinks);
     auto it_end = std::ranges::unique(pclinks).begin();
     facet_indices.insert(facet_indices.end(), pclinks.begin(), it_end);
-    tag_values.insert(tag_values.end(), std::ranges::distance(pclinks.begin(), it_end),
+    tag_values.insert(tag_values.end(),
+                      std::ranges::distance(pclinks.begin(), it_end),
                       values[i]);
   }
 

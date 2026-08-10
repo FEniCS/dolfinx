@@ -41,7 +41,7 @@ std::string get_counter(const pugi::xml_node& node, std::string_view name)
   const std::string nm(name);
   // Count number of entries
   const std::size_t n = std::ranges::distance(node.children(nm.c_str()).begin(),
-                                      node.children(nm.c_str()).end());
+                                              node.children(nm.c_str()).end());
 
   // Compute counter string
   constexpr int num_digits = 6;

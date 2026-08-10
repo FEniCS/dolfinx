@@ -511,26 +511,24 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
                                      num_threads);
 
     // Replace values in recv_data with new_index and send back
-    std::ranges::transform(recv_data, recv_data.begin(),
-                           [&old_to_new](auto r)
-                           {
-                             auto it = std::ranges::lower_bound(
-                                 old_to_new, r, std::ranges::less(),
-                                 [](auto e) { return e[0]; });
-                             assert(it != old_to_new.end() and it->front() == r);
-                             return (*it)[1];
-                           });
+    std::ranges::transform(
+        recv_data, recv_data.begin(),
+        [&old_to_new](auto r)
+        {
+          auto it = std::ranges::lower_bound(old_to_new, r, std::ranges::less(),
+                                             [](auto e) { return e[0]; });
+          assert(it != old_to_new.end() and it->front() == r);
+          return (*it)[1];
+        });
   }
   else
   {
     // Map from old (global) index to new (global) index. A hash map
-    // avoids both the sort and the O(log n) binary search that
-    // followed it, replacing them with a single O(1)-average lookup
-    // per entry of recv_data -- built once, `owned_indices.size()` can
-    // be in the millions (e.g. one entry per owned cell), while
-    // recv_data (only the ghost-boundary traffic) is typically far
-    // smaller, so this is the same "build once, many repeated point
-    // lookups" shape that favours a hash map over sort+binary-search.
+    // replaces the sort and O(log n) binary search with an
+    // O(1)-average lookup per entry of recv_data -- worth it since
+    // owned_indices (built once) can be in the millions, while
+    // recv_data (the ghost-boundary traffic, looked up repeatedly) is
+    // typically far smaller.
     boost::unordered_flat_map<std::int64_t, std::int64_t> old_to_new;
     old_to_new.reserve(owned_indices.size());
     std::int64_t new_idx = offset_local;

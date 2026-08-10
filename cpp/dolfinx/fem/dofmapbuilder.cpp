@@ -125,7 +125,8 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
     auto it = std::ranges::unique(edge_range).begin();
 
     graph_data.insert(graph_data.end(), range_begin, it);
-    graph_offsets[i + 1] = graph_offsets[i] + std::ranges::distance(range_begin, it);
+    graph_offsets[i + 1]
+        = graph_offsets[i] + std::ranges::distance(range_begin, it);
     current_offset += num_edges[i];
   }
 
@@ -222,8 +223,8 @@ build_basic_dofmaps(
           }
           else
           {
-            std::size_t k
-                = std::ranges::distance(required_dim_et.begin(), required_entity_it);
+            std::size_t k = std::ranges::distance(required_dim_et.begin(),
+                                                  required_entity_it);
             if (num_entity_dofs_et[k] != (int)entity_dofs_d[e].size())
               throw std::runtime_error("Incompatible elements detected.");
           }

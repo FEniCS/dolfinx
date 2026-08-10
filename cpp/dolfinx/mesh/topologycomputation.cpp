@@ -452,24 +452,17 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
       }
     }
 
-    // entity_to_local_idx is flattened rows of [vglobal..., id]. The
-    // trailing id column is never compared on below (the binary search
-    // in the received-entity matching loop only compares the leading
-    // num_vertices_per_e columns), and it is a function of vglobal
-    // alone, so excluding it from both the sort key and the
-    // uniqueness check is safe. This is the same shape as the
-    // radix-sort-by-perm replacement of a generic lexicographic
-    // comparison sort used elsewhere in mesh construction (see
-    // graphbuild.cpp, common/MPI.cpp): a plain std::ranges::sort here
-    // dominated this step's cost for the vertex/edge/facet-shaped
-    // rows this function handles.
+    // entity_to_local_idx rows are [vglobal..., id]; id depends only on
+    // vglobal, so excluding it from the sort key and uniqueness check
+    // below is safe. That lets a radix sort_by_perm on the leading
+    // num_vertices_per_e columns replace the previous, more costly
+    // generic lexicographical sort.
     perm = dolfinx::sort_by_perm<std::int64_t>(
         std::span<const std::int64_t>(entity_to_local_idx),
         num_vertices_per_e + 1, num_vertices_per_e);
 
-    auto range_by_key
-        = [&entity_to_local_idx, shape1 = num_vertices_per_e + 1,
-           ncols = num_vertices_per_e](auto e)
+    auto range_by_key = [&entity_to_local_idx, shape1 = num_vertices_per_e + 1,
+                         ncols = num_vertices_per_e](auto e)
     {
       auto begin = std::next(entity_to_local_idx.begin(), e * shape1);
       return std::ranges::subrange(begin, std::next(begin, ncols));
@@ -752,12 +745,11 @@ compute_entities_by_key_matching(
   std::vector<std::int32_t> entity_list(cell_type_offsets.back()
                                         * num_vertices_per_entity);
 
-  // entity_list_sorted is a scratch array used only for sorting and
-  // matching entities below (entity_list, not this, is what carries
-  // vertex data forward afterwards) -- stored column-major, one span
-  // per vertex, so the sort needs no per-column extraction copy and
-  // the matching loop can compare a single column directly instead of
-  // via a contiguous row span.
+  // Scratch array used only for sorting and matching entities below
+  // (entity_list, not this, carries vertex data forward afterwards).
+  // Stored column-major, one span per vertex, so the sort needs no
+  // per-column extraction copy and the matching loop below can compare
+  // a single column directly instead of via a contiguous row span.
   std::vector<std::int32_t> entity_list_sorted_storage(
       cell_type_offsets.back() * num_vertices_per_entity);
   std::vector<std::span<std::int32_t>> entity_list_sorted(
@@ -802,8 +794,8 @@ compute_entities_by_key_matching(
       threads.emplace_back(
           build_entity_list, std::span(entity_list.data() + offset, count),
           entity_offset,
-          std::span<const std::span<std::int32_t>>(entity_list_sorted),
-          cells_i, num_vertices_per_cell, std::cref(e_vertices), entity_type,
+          std::span<const std::span<std::int32_t>>(entity_list_sorted), cells_i,
+          num_vertices_per_cell, std::cref(e_vertices), entity_type,
           std::cref(cell_type_entities[k]), std::cref(vertex_index_map));
     }
     auto [c0, c1] = common::local_range(0, num_cells, num_threads);
@@ -1001,11 +993,9 @@ graph::AdjacencyList<std::int32_t>
 compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
                  const graph::AdjacencyList<std::int32_t>& c_d1_0)
 {
-  // Make a map from the sorted edge vertices to the edge index. Built
-  // once, then read-only for the rest of this function, so an
-  // open-addressed map (no per-element allocation, no pointer-chasing
-  // between nodes) is a safe, strictly faster choice than a node-based
-  // map here -- see the equivalent swap made in Topology.cpp.
+  // Map from sorted edge vertices to edge index. Built once and then
+  // read-only, so an open-addressed map (no per-element allocation, no
+  // pointer-chasing) is strictly faster than a node-based map here.
   boost::unordered_flat_map<std::array<std::int32_t, 2>, std::int32_t>
       edge_to_index;
   edge_to_index.reserve(c_d1_0.num_nodes());

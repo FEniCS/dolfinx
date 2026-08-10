@@ -632,14 +632,12 @@ mesh::build_local_dual_graph(
   // 2) Build a list of (all) facets, defined by sorted vertices, with
   //    the connected cell index after the vertices. For v_ij the j-th
   //    vertex of the i-th facet. The last index is the cell index (non
-  //    unique). Stored column-major (structure-of-arrays): `facets` is
-  //    one span per column, each of length facet_count, all backed by
-  //    a single contiguous allocation (`facets_storage`) so that
-  //    sorting by the leading max_vertices_per_facet columns (see the
-  //    column-major sort_by_perm overload below) needs no per-column
-  //    extraction copy -- unlike the row-major layout this replaced,
-  //    where each column had to be gathered out of the interleaved
-  //    rows before it could be sorted.
+  //    unique). Stored column-major (SoA): `facets` is one span per
+  //    column, backed by a single contiguous allocation
+  //    (`facets_storage`), so sorting the leading max_vertices_per_facet
+  //    columns (via the column-major sort_by_perm overload below) needs
+  //    no per-column extraction copy, unlike the row-major layout this
+  //    replaced.
   // facets[0] = [v_11, v_21, ..., v_n1]
   // facets[1] = [v_12, v_22, ..., v_n2]
   //                ⋮      ⋮  ⋱     ⋮
@@ -785,10 +783,8 @@ mesh::build_local_dual_graph(
   }
   else
   {
-    // Sort by the vertex columns only (`max_vertices_per_facet` of the
-    // `shape1` columns) -- the trailing column is the attached cell
-    // index, which the matching step below never compares on, so it's
-    // simply not included in the column list passed to the sort.
+    // Exclude the trailing cell-index column from the sort key, as
+    // above.
     std::vector<std::span<const std::int64_t>> sort_cols(
         facets.begin(), std::next(facets.begin(), max_vertices_per_facet));
     perm = dolfinx::sort_by_perm(std::span(sort_cols));

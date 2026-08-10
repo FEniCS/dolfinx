@@ -102,7 +102,8 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
     {
       auto it = std::ranges::lower_bound(src, owners[i]);
       assert(it != src.end() and *it == owners[i]);
-      if (std::size_t r = std::ranges::distance(src.begin(), it); include_ghost[i])
+      if (std::size_t r = std::ranges::distance(src.begin(), it);
+          include_ghost[i])
       {
         send_data[r].push_back(ghosts[i]);
         pos_to_ghost[r].push_back(i);
@@ -495,7 +496,8 @@ compute_submap_ghost_indices(std::span<const int> submap_src,
       // Could avoid search by creating look-up array
       auto it = std::ranges::lower_bound(submap_owned, idx);
       assert(it != submap_owned.end() and *it == idx);
-      std::size_t idx_local_submap = std::ranges::distance(submap_owned.begin(), it);
+      std::size_t idx_local_submap
+          = std::ranges::distance(submap_owned.begin(), it);
       send_gidx.push_back(idx_local_submap + submap_offset);
     }
   }
@@ -553,7 +555,8 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   // global index) pairs and sort so that the send buffer is grouped by
   // owning rank by construction, rather than relying on the global-index
   // and owner arrays sorting into a mutually consistent order.
-  std::size_t first_ghost_index = std::ranges::distance(indices.begin(), it_owned_end);
+  std::size_t first_ghost_index
+      = std::ranges::distance(indices.begin(), it_owned_end);
   std::int32_t num_ghost_indices = indices.size() - first_ghost_index;
   std::vector<std::pair<int, std::int64_t>> owner_to_global(num_ghost_indices);
   for (std::int32_t i = 0; i < num_ghost_indices; ++i)

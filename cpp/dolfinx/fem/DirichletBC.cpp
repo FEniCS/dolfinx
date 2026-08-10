@@ -74,7 +74,8 @@ find_local_entity_index(const mesh::Topology& topology,
     auto entities_d = c_to_e->links(cell);
     auto it = std::ranges::find(entities_d, e);
     assert(it != entities_d.end());
-    std::size_t entity_local_index = std::ranges::distance(entities_d.begin(), it);
+    std::size_t entity_local_index
+        = std::ranges::distance(entities_d.begin(), it);
     entity_indices.emplace_back(cell, entity_local_index);
   }
 

@@ -1333,13 +1333,11 @@ Topology mesh::create_topology(
   std::vector<std::int32_t> local_vertex_indices_unowned(
       unowned_vertices.size(), -1);
 
-  // Built once and kept in sync below rather than rebuilt-and-resorted
-  // after every round of unowned-vertex numbering: `.first` (the
-  // vertex's original global index) never changes once a vertex is
-  // placed in `owned_vertices`/`unowned_vertices`, so a later update to
-  // an unowned vertex's local index can patch its existing entry
-  // in-place (a lower_bound on the already-sorted array) instead of
-  // re-deriving and re-sorting the whole owned+unowned array again.
+  // Built once and patched in place below, rather than rebuilt and
+  // re-sorted after every round of unowned-vertex numbering: `.first`
+  // never changes once a vertex is placed here, so a local-index
+  // update only needs a lower_bound into the already-sorted array, not
+  // a full rebuild.
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices;
   global_to_local_vertices.reserve(owned_vertices.size()
                                    + unowned_vertices.size());
@@ -1355,8 +1353,8 @@ Topology mesh::create_topology(
       { return {idx0, idx1}; });
   std::ranges::sort(global_to_local_vertices);
 
-  auto patch_global_to_local = [&global_to_local_vertices](
-                                    std::int64_t idx_global,
+  auto patch_global_to_local
+      = [&global_to_local_vertices](std::int64_t idx_global,
                                     std::int32_t idx_local)
   {
     auto it = std::ranges::lower_bound(global_to_local_vertices, idx_global,
@@ -1411,7 +1409,8 @@ Topology mesh::create_topology(
         auto it0 = std::ranges::lower_bound(unowned_vertices, global_idx_old);
         if (it0 != unowned_vertices.end() and *it0 == global_idx_old)
         {
-          if (std::size_t pos = std::ranges::distance(unowned_vertices.begin(), it0);
+          if (std::size_t pos
+              = std::ranges::distance(unowned_vertices.begin(), it0);
               local_vertex_indices_unowned[pos] < 0)
           {
             local_vertex_indices_unowned[pos] = v;
@@ -1433,9 +1432,9 @@ Topology mesh::create_topology(
   boost::unordered_flat_map<std::int64_t, std::int32_t> global_to_local_map;
   if (!global_to_local_vertices.empty()
       and (global_to_local_vertices.front().first != 0
-          or global_to_local_vertices.back().first
-                 != static_cast<std::int64_t>(global_to_local_vertices.size())
-                        - 1))
+           or global_to_local_vertices.back().first
+                  != static_cast<std::int64_t>(global_to_local_vertices.size())
+                         - 1))
   {
     global_to_local_map.reserve(global_to_local_vertices.size());
     for (auto& [idx_global, idx_local] : global_to_local_vertices)

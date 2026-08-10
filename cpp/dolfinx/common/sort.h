@@ -186,9 +186,8 @@ constexpr void radix_sort(R&& range, P proj = {})
 /// `std::nullopt` (the default) sorts by all `shape1` columns. Pass a
 /// value less than `shape1` to exclude trailing payload columns (e.g.
 /// an attached index carried alongside the sort key) from the
-/// comparison entirely -- rows that agree on the leading `ncols`
-/// columns compare equal and keep their relative (stable) order,
-/// saving one radix-sort pass per excluded column.
+/// comparison entirely, saving one radix-sort pass per excluded
+/// column.
 /// @return The permutation array such that `x[perm[i]] <= x[perm[i
 /// +1]]` when compared on the leading `ncols` columns.
 /// @pre `x.size()` must be a multiple of `shape1`.

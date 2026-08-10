@@ -77,7 +77,8 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
           std::ranges::sort(cf);
           auto [last1, last2, it_last] = std::ranges::set_intersection(
               facet_table_2d[fpi], cf, set_output.begin());
-          num_common_vertices = std::ranges::distance(set_output.begin(), it_last);
+          num_common_vertices
+              = std::ranges::distance(set_output.begin(), it_last);
         }
         else
         {
@@ -87,7 +88,8 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
           std::ranges::sort(cf);
           auto [last1, last2, it_last] = std::ranges::set_intersection(
               facet_table_3d[fpi], cf, set_output.begin());
-          num_common_vertices = std::ranges::distance(set_output.begin(), it_last);
+          num_common_vertices
+              = std::ranges::distance(set_output.begin(), it_last);
         }
 
         if (num_common_vertices == tdim)
@@ -192,11 +194,13 @@ face_long_edge(const mesh::Mesh<T>& mesh)
     auto it0 = std::find(cell_vertices.begin(), cell_vertices.end(),
                          edge_vertices[0]);
     assert(it0 != cell_vertices.end());
-    const std::size_t local0 = std::ranges::distance(cell_vertices.begin(), it0);
+    const std::size_t local0
+        = std::ranges::distance(cell_vertices.begin(), it0);
     auto it1 = std::find(cell_vertices.begin(), cell_vertices.end(),
                          edge_vertices[1]);
     assert(it1 != cell_vertices.end());
-    const std::size_t local1 = std::ranges::distance(cell_vertices.begin(), it1);
+    const std::size_t local1
+        = std::ranges::distance(cell_vertices.begin(), it1);
 
     auto x_dofs = md::submdspan(x_dofmap, cells.front(), md::full_extent);
     std::span<const T, 3> x0(mesh.geometry().x().data() + 3 * x_dofs[local0],

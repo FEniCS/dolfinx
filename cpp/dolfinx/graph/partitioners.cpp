@@ -6,8 +6,8 @@
 
 #include "partitioners.h"
 #include <algorithm>
-#include <cstdint>
 #include <boost/unordered/unordered_flat_set.hpp>
+#include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -75,12 +75,12 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
   }
 
   // De-duplicate exact (dest, node1, partition) triples with a single
-  // hash-set pass -- O(1)-average per insert, no sort needed for
-  // dedup -- then sort only by the dest-rank column (0), which is all
-  // the grouping below depends on, rather than by all 3 columns (a
-  // radix sort on the flattened data is still used for that single
-  // column, as node_to_dest can have tens of millions of entries for a
-  // large mesh).
+  // hash-set pass (O(1)-average per insert, no sort needed for dedup).
+  // Then sort only by the dest-rank column (0), which is all the
+  // grouping below depends on, rather than by all 3 columns; a radix
+  // sort on the flattened data is used for that single column, as
+  // node_to_dest can have tens of millions of entries for a large
+  // mesh.
   {
     boost::unordered_flat_set<std::array<std::int64_t, 3>> unique_set(
         node_to_dest.begin(), node_to_dest.end());
@@ -181,7 +181,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
   // De-duplicate with a single hash-set pass, then sort only by the
   // local-node-index column (0) -- the grouping below depends on that
   // column alone. As above, a radix sort on the flattened data is used
-  // for that single column - this array is sized by the local node
+  // for that single column -- this array is sized by the local node
   // count plus received halo entries, and so can also have millions of
   // entries for a large mesh.
   {
@@ -192,8 +192,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     std::span<const int> flat(
         reinterpret_cast<const int*>(local_node_to_dest.data()),
         2 * local_node_to_dest.size());
-    std::vector<std::int32_t> perm
-        = dolfinx::sort_by_perm<int, 16>(flat, 2, 1);
+    std::vector<std::int32_t> perm = dolfinx::sort_by_perm<int, 16>(flat, 2, 1);
     std::vector<std::array<int, 2>> sorted(local_node_to_dest.size());
     for (std::size_t i = 0; i < perm.size(); ++i)
       sorted[i] = local_node_to_dest[perm[i]];
@@ -447,10 +446,8 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 
     // Count number of 'ghost' edges, i.e. an edge to a cell that does
     // not belong to the caller. A single hash-set pass over the (much
-    // larger) full edge array -- as used elsewhere in this file for
-    // the same de-duplicate-then-count shape -- avoids materialising
-    // and sorting a separate ghost-edges vector just to count distinct
-    // values.
+    // larger) full edge array avoids materialising and sorting a
+    // separate ghost-edges vector just to count distinct values.
     std::int32_t num_ghost_nodes = 0;
     {
       MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
