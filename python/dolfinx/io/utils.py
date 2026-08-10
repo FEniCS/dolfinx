@@ -92,7 +92,7 @@ if _cpp.common.has_adios2:
                 raise RuntimeError(f"VTXWriter does not support dtype={dtype}.")
 
             if isinstance(output, Mesh):
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine, mode)  # type: ignore[union-attr]
+                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine, mode)  # type: ignore[arg-type]
             else:
                 cpp_objects = (
                     [output._cpp_object]
@@ -100,7 +100,12 @@ if _cpp.common.has_adios2:
                     else [o._cpp_object for o in output]
                 )
                 self._cpp_object = _vtxwriter(
-                    comm, filename, cpp_objects, engine, mesh_policy, mode
+                    comm,
+                    filename,
+                    cpp_objects,  # type: ignore[arg-type]
+                    engine,
+                    mesh_policy,
+                    mode,
                 )
 
         def __enter__(self) -> Self:
