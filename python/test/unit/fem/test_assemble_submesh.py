@@ -828,4 +828,4 @@ def test_mixed_zero_form_compile() -> None:
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(Q)
     a = ufl.ZeroBaseForm((u, v))
-    fem.form(a, entity_maps=[entity_map])
+    fem.form(a, entity_maps=[entity_map])  # tpye: ignore
