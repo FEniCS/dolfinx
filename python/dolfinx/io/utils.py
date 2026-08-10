@@ -7,6 +7,7 @@
 """IO module for input data and post-processing file output."""
 
 from pathlib import Path
+from typing import Self
 
 from mpi4py import MPI as _MPI
 
@@ -97,7 +98,7 @@ if _cpp.common.has_adios2:
                 )
                 self._cpp_object = _vtxwriter(comm, filename, cpp_objects, engine, mesh_policy)  # type: ignore[arg-type]
 
-        def __enter__(self):
+        def __enter__(self) -> Self:
             """Enter context manager."""
             return self
 
@@ -134,7 +135,7 @@ class VTKFile:
         """
         self._cpp_object = _cpp.io.VTKFile(comm, filename, mode)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """Enter context manager."""
         return self
 
@@ -181,7 +182,7 @@ class XDMFFile:
         """
         self._cpp_object = _cpp.io.XDMFFile(comm, filename, file_mode, encoding)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """Enter context manager."""
         return self
 
