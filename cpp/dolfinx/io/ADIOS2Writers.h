@@ -502,9 +502,6 @@ public:
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
   /// element family and degree, and degree-of-freedom map (up to the
-  /// @param[in] u List of functions. The functions must (1) share the
-  /// same mesh and (2) be (discontinuous) Lagrange functions. The
-  /// element family and degree, and degree-of-freedom map (up to the
   /// blocksize) must be the same for all functions.
   /// @param[in] engine ADIOS2 engine type.
   /// @param[in] mesh_policy Controls if the mesh is written to file at
