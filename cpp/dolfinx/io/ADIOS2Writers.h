@@ -8,7 +8,6 @@
 
 #ifdef HAS_ADIOS2
 
-#include "common/MPI.h"
 #include "vtk_utils.h"
 #include <adios2.h>
 #include <adios2/common/ADIOSTypes.h>
@@ -19,6 +18,7 @@
 #include <concepts>
 #include <cstddef>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Function.h>
