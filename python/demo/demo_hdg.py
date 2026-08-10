@@ -24,6 +24,7 @@
 # - Assemble mixed systems with multiple, related meshes
 
 # +
+import sys
 import typing
 
 from mpi4py import MPI
@@ -31,9 +32,8 @@ from petsc4py import PETSc
 
 import numpy as np
 
-import dolfinx
 import ufl
-from dolfinx import fem, mesh
+from dolfinx import fem, has_adios2, mesh
 from dolfinx.cpp.mesh import cell_num_entities
 from dolfinx.fem import extract_function_spaces
 from dolfinx.fem.petsc import (
@@ -71,7 +71,7 @@ def norm_L2(v: ufl.core.expr.Expr, measure: ufl.Measure = ufl.dx) -> np.inexact:
 # there will be repeat entries, from the viewpoint of the connected cells).
 
 
-def compute_cell_boundary_facets(msh: dolfinx.mesh.Mesh) -> np.ndarray:
+def compute_cell_boundary_facets(msh: mesh.Mesh) -> np.ndarray:
     """Integration entities for integrals on boundaries of all cells.
 
     Parameters:
@@ -200,8 +200,8 @@ entity_maps = [facet_mesh_emap]
 # Compile forms for the blocked system, using {py:func}`ufl.extract_blocks`
 # for the bilinear and linear forms.
 
-a_blocked = dolfinx.fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
-L_blocked = dolfinx.fem.form(ufl.extract_blocks(L))
+a_blocked = fem.form(ufl.extract_blocks(a), entity_maps=entity_maps)
+L_blocked = fem.form(ufl.extract_blocks(L))
 
 # Apply Dirichlet boundary conditions. We begin by locating the boundary
 # facets of msh.
@@ -253,7 +253,7 @@ except PETSc.Error as e:
     if e.ierr == 92:  # type: ignore[attr-defined]
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)
-        exit(0)
+        sys.exit(0)
     else:
         raise e
 
@@ -265,7 +265,7 @@ x_vec.destroy()
 
 # Write to file
 
-if dolfinx.has_adios2:
+if has_adios2:
     from dolfinx.io import VTXWriter
 
     with VTXWriter(msh.comm, "u.bp", u, "bp4") as f:

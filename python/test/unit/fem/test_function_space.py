@@ -217,8 +217,6 @@ def test_argument_equality(mesh, V, V2, W, W2):
         assert not v2 == v3
         assert v != v3
         assert v2 != v3
-        assert v != v3
-        assert v2 != v3
 
         w = TF(W)
         w2 = TF(W2)
@@ -264,7 +262,7 @@ def test_basix_element(V, W, Q, V2):
 
     # Mixed spaces do not yet return a basix element
     with pytest.raises(RuntimeError):
-        e = Q.element.basix_element
+        Q.element.basix_element
 
 
 @pytest.mark.skip_in_parallel
