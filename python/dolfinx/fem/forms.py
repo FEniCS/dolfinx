@@ -420,6 +420,11 @@ def form(
 
     form_compiler_options["scalar_type"] = dtype
 
+    if entity_maps is None:
+        _entity_maps = []
+    else:
+        _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
+
     def _form(form):
         """Compile a single UFL form."""
         # Extract subdomain data from UFL form
@@ -476,11 +481,6 @@ def form(
             for (key, subdomain_data) in sd.get(domain).items()
         }
 
-        if entity_maps is None:
-            _entity_maps = []
-        else:
-            _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
-
         f = ftype(
             [int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))],
             V,
@@ -510,7 +510,7 @@ def form(
             coefficients=[],
             constants=[],
             need_permutation_data=False,
-            entity_maps=[],
+            entity_maps=_entity_maps,
             mesh=msh,
         )
         return Form(f)
