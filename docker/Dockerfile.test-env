@@ -197,6 +197,21 @@ RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.o
     cmake --install build-dir && \
     rm -rf /tmp/*
 
+# libocct-data-exchange-dev pulls in libocct-ivtk-dev (OCCT's VTK-based
+# inspector), which drags in libvtk9-dev -> mpi-default-dev ->
+# libopenmpi-dev, installing a full system OpenMPI alongside the
+# from-source MPICH built above. petsc4py's build later resolves the
+# generic "-lmpi" link flag to this system libmpi.so.40 instead of
+# MPICH's libmpi.so.12, so a process loading both ends up with two
+# ABI-incompatible MPI implementations and PetscInitialize segfaults.
+# GMSH is already built at this point, so purge the OpenMPI stack now;
+# apt cascades the removal through libocct-ivtk-dev/libvtk9-dev without
+# touching the OCCT/HDF5 runtime libraries GMSH and HDF5 actually link
+# against.
+RUN apt-get -y purge libopenmpi40 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 # GMSH installs python library in /usr/local/lib, see: https://gitlab.onelab.info/gmsh/gmsh/-/issues/1414
 ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 
