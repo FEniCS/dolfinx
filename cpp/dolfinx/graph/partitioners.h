@@ -84,6 +84,38 @@ namespace parmetis
 graph::partition_fn partitioner(double imbalance = 1.02,
                                 std::array<int, 3> options = {1, 0, 5});
 
+/// @brief Create a graph re-partitioning function that uses ParMETIS.
+///
+/// Unlike ::partitioner, which computes a partition from scratch, the
+/// returned function treats the *current* distribution of the graph as
+/// the current partition, i.e. the nodes held by a rank are taken to be
+/// currently assigned to that rank, and computes a new partition that
+/// balances the load while limiting how many nodes have to be moved.
+/// This is appropriate when a distributed mesh needs re-balancing, e.g.
+/// after non-uniform refinement, where re-partitioning from scratch
+/// would migrate almost every cell.
+///
+/// @note ParMETIS fails (crashes) if an MPI rank has no part of the
+/// graph. If necessary, the communicator should be split to avoid this
+/// situation.
+///
+/// @note The number of parts must equal the size of the communicator, as
+/// the current partition is taken from the data distribution.
+///
+/// @param[in] ipc2redist Ratio of the cost of inter-process
+/// communication (edge cut) to the cost of moving a node between ranks.
+/// A small value (e.g. 0.001) prioritises leaving nodes where they are,
+/// and a large value (e.g. 1000) prioritises the quality of the new
+/// partition. See ParMETIS manual for details
+/// (https://github.com/KarypisLab/ParMETIS/blob/main/manual/manual.pdf).
+/// @param[in] imbalance Imbalance tolerance.
+/// @param[in] options The ParMETIS options. See ParMETIS manual for
+/// details.
+/// @return A graph re-partitioning function.
+graph::partition_fn repartitioner(double ipc2redist = 1000.0,
+                                  double imbalance = 1.02,
+                                  std::array<int, 3> options = {1, 0, 5});
+
 /// @brief ParMETIS partitioning methods that use node coordinates.
 enum class geom_method : std::uint8_t
 {
