@@ -13,10 +13,10 @@ import basix
 import ufl
 from dolfinx.cpp.mesh import cell_num_vertices
 from dolfinx.mesh import (
-    create_cell_partitioner,
     CellType,
     GhostMode,
     compute_midpoints,
+    create_cell_partitioner,
     create_mesh,
     create_unit_cube,
     create_unit_square,

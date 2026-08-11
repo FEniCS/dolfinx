@@ -402,7 +402,7 @@ if has_ptscotch and comm.size > 1:
     sfc = partitioners["DOLFINx SFC"]
 
     def timed(cells, partitioner):
-        """Create a mesh, returning it with the elapsed and SCOTCH times."""
+        """Create a mesh, with the elapsed and the SCOTCH time."""
         comm.Barrier()
         t, t_scotch = time.perf_counter(), scotch_partitioner_time()
         msh = create_mesh(comm, cells, cmap, x, partitioner=partitioner)

@@ -23,11 +23,11 @@ from dolfinx import mesh as _mesh
 from dolfinx.cpp.mesh import is_simplex
 from dolfinx.fem import assemble_scalar, coordinate_element, form
 from dolfinx.mesh import (
-    create_cell_partitioner,
     CellType,
     DiagonalType,
     GhostMode,
     create_box,
+    create_cell_partitioner,
     create_interval,
     create_point_mesh,
     create_rectangle,

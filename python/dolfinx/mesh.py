@@ -93,8 +93,10 @@ PartitioningFunc = typing.Callable[
     _cpp.graph.AdjacencyList_int32,
 ]
 
+# Note: the coordinates are float64, matching the C++ interface, which
+# takes a span of double
 GeometricPartitioningFunc = typing.Callable[
-    [_MPI.Comm, int, _cpp.graph.AdjacencyList_int64, npt.NDArray[np.floating], bool],
+    [_MPI.Comm, int, _cpp.graph.AdjacencyList_int64, npt.NDArray[np.float64], bool],
     _cpp.graph.AdjacencyList_int32,
 ]
 

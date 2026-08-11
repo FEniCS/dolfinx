@@ -13,12 +13,12 @@ from numpy import isclose
 import ufl
 from dolfinx.fem import assemble_matrix, form, functionspace
 from dolfinx.mesh import (
-    create_cell_partitioner,
     CellType,
     DiagonalType,
     GhostMode,
     RefinementOption,
     compute_incident_entities,
+    create_cell_partitioner,
     create_unit_cube,
     create_unit_interval,
     create_unit_square,
