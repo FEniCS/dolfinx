@@ -11,7 +11,6 @@
 #include <array>
 #include <boost/sort/sort.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
-#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -120,9 +119,9 @@ std::uint64_t hilbert_key(std::array<std::uint32_t, 3> c, int gdim)
 /// @param[in] key Curve key for a point, given its quantised coordinates
 /// and `gdim`.
 /// @return Partition index in `[0, nparts)` for each point.
-template <std::floating_point T, typename K>
+template <typename K>
 std::vector<int> partition_by_curve(MPI_Comm comm, int nparts,
-                                    std::span<const T> x, int gdim, K key)
+                                    std::span<const double> x, int gdim, K key)
 {
   if (gdim < 1 or gdim > 3)
     throw std::runtime_error("Geometric dimension must be 1, 2 or 3.");
@@ -140,8 +139,8 @@ std::vector<int> partition_by_curve(MPI_Comm comm, int nparts,
 
   // Global bounding box of the points. Note: the reduction is over
   // {-min, max} so that a single MPI_MAX reduction suffices.
-  std::array<T, 6> extent;
-  extent.fill(std::numeric_limits<T>::lowest());
+  std::array<double, 6> extent;
+  extent.fill(std::numeric_limits<double>::lowest());
   for (std::size_t i = 0; i < num_points; ++i)
   {
     for (int d = 0; d < gdim; ++d)
@@ -151,9 +150,8 @@ std::vector<int> partition_by_curve(MPI_Comm comm, int nparts,
     }
   }
   {
-    std::array<T, 6> recv;
-    MPI_Allreduce(extent.data(), recv.data(), 6, dolfinx::MPI::mpi_t<T>,
-                  MPI_MAX, comm);
+    std::array<double, 6> recv;
+    MPI_Allreduce(extent.data(), recv.data(), 6, MPI_DOUBLE, MPI_MAX, comm);
     extent = recv;
   }
 
@@ -163,7 +161,7 @@ std::vector<int> partition_by_curve(MPI_Comm comm, int nparts,
   std::array<double, 3> scale = {0, 0, 0};
   for (int d = 0; d < gdim; ++d)
   {
-    const double width = double(extent[3 + d]) + double(extent[d]);
+    const double width = extent[3 + d] + extent[d];
     scale[d] = width > 0 ? range / width : 0;
   }
 
@@ -173,8 +171,8 @@ std::vector<int> partition_by_curve(MPI_Comm comm, int nparts,
     std::array<std::uint32_t, 3> c = {0, 0, 0};
     for (int d = 0; d < gdim; ++d)
     {
-      c[d] = static_cast<std::uint32_t>(
-          scale[d] * (double(x[gdim * i + d]) + double(extent[d])));
+      c[d] = static_cast<std::uint32_t>(scale[d]
+                                        * (x[gdim * i + d] + extent[d]));
     }
     keys[i] = key(c, gdim);
   }
@@ -247,11 +245,11 @@ std::vector<int> partition_by_curve(MPI_Comm comm, int nparts,
 /// @param[in] ghosting Flag to enable ghosting.
 /// @param[in] key Curve key for a point.
 /// @return Destination rank(s) for each point, owner first.
-template <std::floating_point T, typename K>
+template <typename K>
 graph::AdjacencyList<std::int32_t>
 partition_curve(MPI_Comm comm, int nparts,
                 const graph::AdjacencyList<std::int64_t>& graph,
-                std::span<const T> x, int gdim, bool ghosting, K key)
+                std::span<const double> x, int gdim, bool ghosting, K key)
 {
   if (static_cast<std::int64_t>(x.size())
       != static_cast<std::int64_t>(gdim) * graph.num_nodes())
@@ -276,42 +274,23 @@ partition_curve(MPI_Comm comm, int nparts,
 } // namespace
 
 //-----------------------------------------------------------------------------
-template <std::floating_point T>
-graph::AdjacencyList<std::int32_t> dolfinx::graph::partition_sfc_morton(
-    MPI_Comm comm, int nparts, const graph::AdjacencyList<std::int64_t>& graph,
-    std::span<const T> x, int gdim, bool ghosting)
+graph::AdjacencyList<std::int32_t>
+graph::partition_sfc_morton(MPI_Comm comm, int nparts,
+                            const graph::AdjacencyList<std::int64_t>& graph,
+                            std::span<const double> x, int gdim, bool ghosting)
 {
   common::Timer timer("Compute Morton SFC partition of points");
   return partition_curve(comm, nparts, graph, x, gdim, ghosting, morton_key);
 }
 //-----------------------------------------------------------------------------
-template <std::floating_point T>
-graph::AdjacencyList<std::int32_t> dolfinx::graph::partition_sfc_hilbert(
-    MPI_Comm comm, int nparts, const graph::AdjacencyList<std::int64_t>& graph,
-    std::span<const T> x, int gdim, bool ghosting)
+graph::AdjacencyList<std::int32_t>
+graph::partition_sfc_hilbert(MPI_Comm comm, int nparts,
+                             const graph::AdjacencyList<std::int64_t>& graph,
+                             std::span<const double> x, int gdim, bool ghosting)
 {
   common::Timer timer("Compute Hilbert SFC partition of points");
   return partition_curve(comm, nparts, graph, x, gdim, ghosting, hilbert_key);
 }
-//-----------------------------------------------------------------------------
-/// @cond
-template graph::AdjacencyList<std::int32_t>
-dolfinx::graph::partition_sfc_morton(MPI_Comm, int,
-                                     const graph::AdjacencyList<std::int64_t>&,
-                                     std::span<const float>, int, bool);
-template graph::AdjacencyList<std::int32_t>
-dolfinx::graph::partition_sfc_morton(MPI_Comm, int,
-                                     const graph::AdjacencyList<std::int64_t>&,
-                                     std::span<const double>, int, bool);
-template graph::AdjacencyList<std::int32_t>
-dolfinx::graph::partition_sfc_hilbert(MPI_Comm, int,
-                                      const graph::AdjacencyList<std::int64_t>&,
-                                      std::span<const float>, int, bool);
-template graph::AdjacencyList<std::int32_t>
-dolfinx::graph::partition_sfc_hilbert(MPI_Comm, int,
-                                      const graph::AdjacencyList<std::int64_t>&,
-                                      std::span<const double>, int, bool);
-/// @endcond
 //-----------------------------------------------------------------------------
 graph::geom_partition_fn graph::sfc::partitioner(sfc::curve curve)
 {

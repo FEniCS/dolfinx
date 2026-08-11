@@ -8,7 +8,6 @@
 
 #include "AdjacencyList.h"
 #include <algorithm>
-#include <concepts>
 #include <cstdint>
 #include <functional>
 #include <mpi.h>
@@ -44,10 +43,7 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 /// not sensitive to the precision of the positions, so there is nothing
 /// to be gained from partitioning single precision positions in single
 /// precision, and computing the keys in `double` removes any question of
-/// precision loss when positions are quantised. A caller that holds
-/// single precision coordinates and wants to avoid the conversion can use
-/// ::partition_sfc_morton or ::partition_sfc_hilbert directly, which are
-/// templated on the scalar type.
+/// precision loss when positions are quantised.
 ///
 /// @param[in] comm MPI Communicator that the graph is distributed
 /// across.
@@ -97,12 +93,6 @@ partition_graph(MPI_Comm comm, int nparts,
 ///
 /// @note Collective.
 ///
-/// @note The keys are computed in `double` whatever `T` is, so a single
-/// and a double precision call on the same positions give the same
-/// partition. `T` exists so that a caller holding single precision
-/// coordinates need not convert them; it does not change the result.
-/// Partitioners built on ::geom_partition_fn always pass `double`.
-///
 /// @param[in] comm MPI communicator that the points are distributed
 /// across.
 /// @param[in] nparts Number of partitions to divide the points into.
@@ -116,12 +106,10 @@ partition_graph(MPI_Comm comm, int nparts,
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution.
 /// @return Destination rank(s) for each point, the owning rank first.
-/// @tparam T Scalar type of the coordinates.
-template <std::floating_point T>
 AdjacencyList<std::int32_t>
 partition_sfc_morton(MPI_Comm comm, int nparts,
                      const AdjacencyList<std::int64_t>& local_graph,
-                     std::span<const T> x, int gdim, bool ghosting);
+                     std::span<const double> x, int gdim, bool ghosting);
 
 /// @brief Partition points into `nparts` groups of (approximately) equal
 /// size using a Hilbert space-filling curve.
@@ -135,9 +123,6 @@ partition_sfc_morton(MPI_Comm comm, int nparts,
 ///
 /// @note Collective.
 ///
-/// @note As ::partition_sfc_morton, `T` only saves the caller a
-/// conversion; it does not change the partition.
-///
 /// @param[in] comm MPI communicator that the points are distributed
 /// across.
 /// @param[in] nparts Number of partitions to divide the points into.
@@ -149,12 +134,10 @@ partition_sfc_morton(MPI_Comm comm, int nparts,
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution.
 /// @return Destination rank(s) for each point, the owning rank first.
-/// @tparam T Scalar type of the coordinates.
-template <std::floating_point T>
 AdjacencyList<std::int32_t>
 partition_sfc_hilbert(MPI_Comm comm, int nparts,
                       const AdjacencyList<std::int64_t>& local_graph,
-                      std::span<const T> x, int gdim, bool ghosting);
+                      std::span<const double> x, int gdim, bool ghosting);
 
 /// Space-filling curve partitioner
 namespace sfc

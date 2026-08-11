@@ -161,8 +161,8 @@ TEST_CASE("SFC point partition", "[partition_sfc]")
   }
   graph::AdjacencyList<std::int64_t> chain(edges, offsets);
 
-  for (auto partition : {&graph::partition_sfc_morton<double>,
-                         &graph::partition_sfc_hilbert<double>})
+  for (auto partition :
+       {&graph::partition_sfc_morton, &graph::partition_sfc_hilbert})
   {
     graph::AdjacencyList<std::int32_t> dest
         = partition(comm, size, chain, x, 1, false);
@@ -266,44 +266,7 @@ TEST_CASE("SFC curve properties", "[partition_sfc]")
   };
 
   // Successive points on a Hilbert curve are always neighbours in space.
-  // A Morton curve, in contrast, jumps. Both hold for either scalar type.
-  CHECK(max_step(curve_order(&graph::partition_sfc_hilbert<double>)) == 1);
-  CHECK(max_step(curve_order(&graph::partition_sfc_morton<double>)) > 1);
-
-  std::vector<float> xf(x.begin(), x.end());
-  auto curve_order_f = [&xf, &nograph, num_points](auto partition)
-  {
-    graph::AdjacencyList<std::int32_t> dest
-        = partition(MPI_COMM_SELF, num_points, nograph,
-                    std::span<const float>(xf), 3, false);
-    std::span<const std::int32_t> part = dest.array();
-    std::vector<int> order(num_points);
-    for (int i = 0; i < num_points; ++i)
-      order[part[i]] = i;
-    return order;
-  };
-  CHECK(max_step(curve_order_f(&graph::partition_sfc_hilbert<float>)) == 1);
-  CHECK(max_step(curve_order_f(&graph::partition_sfc_morton<float>)) > 1);
-
-  // The scalar type saves the caller a conversion, but does not change
-  // the partition: the keys are computed in double either way
-  for (int nparts : {2, 7, 64})
-  {
-    CHECK(graph::partition_sfc_hilbert<float>(MPI_COMM_SELF, nparts, nograph,
-                                              std::span<const float>(xf), 3,
-                                              false)
-              .array()
-          == graph::partition_sfc_hilbert<double>(
-                 MPI_COMM_SELF, nparts, nograph, std::span<const double>(x), 3,
-                 false)
-                 .array());
-    CHECK(graph::partition_sfc_morton<float>(MPI_COMM_SELF, nparts, nograph,
-                                             std::span<const float>(xf), 3,
-                                             false)
-              .array()
-          == graph::partition_sfc_morton<double>(MPI_COMM_SELF, nparts, nograph,
-                                                 std::span<const double>(x), 3,
-                                                 false)
-                 .array());
-  }
+  // A Morton curve, in contrast, jumps.
+  CHECK(max_step(curve_order(&graph::partition_sfc_hilbert)) == 1);
+  CHECK(max_step(curve_order(&graph::partition_sfc_morton)) > 1);
 }

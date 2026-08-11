@@ -113,10 +113,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
                          { return idx[0] != r0; });
       send_sizes.push_back(2 * std::ranges::distance(it, it1));
       for (auto itx = it; itx != it1; ++itx)
-      {
-        send_buffer.push_back(itx->at(1));
-        send_buffer.push_back(itx->at(2));
-      }
+        send_buffer.insert(send_buffer.end(), {itx->at(1), itx->at(2)});
 
       it = it1;
     }
