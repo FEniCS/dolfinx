@@ -199,7 +199,7 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology,
 /// of the mesh.
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 
-/// @brief Signature for the cell partitioning function. Function that
+/// @brief Signature for the cell partitioning function. Functions that
 /// implement this interface compute the destination rank for cells
 /// currently on this rank.
 ///
@@ -214,8 +214,14 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// globally, i.e. the maximum index across all processes can be greater
 /// than the number of vertices. High-order 'nodes', e.g. mid-side
 /// points, should not be included.
-/// @return Destination ranks for each cell on this process.
-/// @note Cells can have multiple destination ranks, when ghosted.
+/// @return Destination rank(s) for each cell on this process, the
+/// owning rank first. A cell has more than one destination rank only
+/// when it is ghosted. Nodes of the returned adjacency list are numbered
+/// by concatenating `cells` in order: if there are `n` cells of
+/// `cell_types[0]` and `m` cells of `cell_types[1]`, node `i` for `i <
+/// n` is the `i`th cell of `cell_types[0]`, node `i` for `n <= i < n +
+/// m` is the `(i - n)`th cell of `cell_types[1]`, and so on for further
+/// cell types.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
     const std::vector<std::span<const std::int64_t>>& cells)>;
