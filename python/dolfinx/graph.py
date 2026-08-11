@@ -7,6 +7,8 @@
 
 from typing import Generic
 
+from mpi4py import MPI as _MPI
+
 import numpy as np
 import numpy.typing as npt
 
@@ -46,6 +48,7 @@ __all__ = [
     "comm_graph",
     "comm_graph_data",
     "comm_to_json",
+    "distribute",
     "geom_partitioner_sfc",
     "partitioner",
 ]
@@ -156,6 +159,42 @@ def adjacencylist(
 
     cpp_object = cpp_t(data, offsets) if offsets is not None else cpp_t(data)  # type: ignore[arg-type]
     return AdjacencyList(cpp_object)
+
+
+def distribute(
+    comm: _MPI.Comm,
+    list: npt.NDArray[np.int64],
+    destinations: _cpp.graph.AdjacencyList_int32,
+) -> tuple[
+    npt.NDArray[np.int64], npt.NDArray[np.int32], npt.NDArray[np.int64], npt.NDArray[np.int32]
+]:
+    """Distribute rows of a fixed-degree array to destination ranks.
+
+    Uses a scalable neighbourhood exchange: the ranks to send to/receive
+    from are discovered with the NBX consensus algorithm rather than an
+    all-to-all over the whole communicator, so the communication
+    pattern stays sparse as the communicator grows. Determining the
+    neighbourhood this way is not free, though: it costs at least one
+    non-blocking consensus round.
+
+    Args:
+        comm: MPI communicator that ``list``/``destinations`` are
+            distributed across.
+        list: Rows to distribute, with shape ``(num_nodes, degree)``.
+            The global index of row ``i`` is assumed to be ``i`` plus
+            the number of rows owned by lower-ranked processes.
+        destinations: Destination rank(s) for the ith row of ``list``.
+            The first rank is the 'owner' of the row; any further ranks
+            receive it as a ghost.
+
+    Returns:
+        Tuple of (received rows, source rank of each received row,
+        original global index of each received row, owning rank of the
+        ghost rows). The last entry has one entry per ghost row -- the
+        trailing rows of the first entry -- not one entry per received
+        row.
+    """
+    return _cpp.graph.distribute(comm, np.ascontiguousarray(list, dtype=np.int64), destinations)
 
 
 def comm_graph(map: _cpp.common.IndexMap, root: int = 0) -> AdjacencyList:

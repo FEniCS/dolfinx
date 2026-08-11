@@ -375,12 +375,13 @@ for fraction in (0.0, 0.5, 1.0):
 #
 # The first stage only needs the redistributed *cells* to feed to the
 # second stage, not a mesh, so it calls the cell partitioner directly and
-# exchanges the cell-vertex rows itself, rather than going through
-# :func:`create_mesh`. This avoids paying for topology, geometry and
-# ghost cells for a mesh that would otherwise be discarded immediately.
-# Only the owning rank of each cell (the partitioner's first destination)
-# is used, so that each cell still appears exactly once, in the same
-# vertex numbering it started with.
+# exchanges the cell-vertex rows itself, using `graph.distribute`, rather
+# than going through :func:`create_mesh`. This avoids paying for
+# topology, geometry and ghost cells for a mesh that would otherwise be
+# discarded immediately, and `graph.distribute` scales better than an
+# all-to-all over the whole communicator. Since `sfc` below does not
+# ghost, every cell is sent to exactly one rank, so it still appears
+# exactly once, in the same vertex numbering it started with.
 
 
 def redistribute_by_partitioner(
@@ -403,9 +404,8 @@ def redistribute_by_partitioner(
         the input ``cells``.
     """
     dest = partitioner(comm, comm.size, [cell_type], [cells.reshape(-1)])
-    owner = dest.array[dest.offsets[:-1]]  # Owning rank is listed first
-    recv = comm.alltoall([cells[owner == r] for r in range(comm.size)])
-    return np.ascontiguousarray(np.concatenate(recv), dtype=np.int64)
+    recv, _, _, _ = graph.distribute(comm, cells, dest)
+    return recv
 
 
 def scotch_partitioner_time() -> float:
