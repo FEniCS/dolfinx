@@ -51,6 +51,18 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
   const std::int64_t range1 = node_disp[rank + 1];
   assert(static_cast<std::int32_t>(range1 - range0) == graph.num_nodes());
 
+  // Every node always goes to its own destination. Record this first, so
+  // that below an edge to a node1 already owned by this rank can be
+  // recorded directly as (local index, destination) -- no need to route
+  // it through the dedup/sort/exchange machinery below, which exists
+  // only to tell a *remote* rank about a destination it has no other way
+  // to learn.
+  std::vector<std::array<int, 2>> local_node_to_dest;
+  local_node_to_dest.reserve(part.size() + graph.array().size());
+  for (std::size_t i = 0; i < part.size(); ++i)
+    local_node_to_dest.push_back(
+        {static_cast<int>(i), static_cast<int>(part[i])});
+
   // Wherever an owned 'node' goes, so must the nodes connected to it by
   // an edge ('node1'). Task is to let the owner of node1 know the extra
   // ranks that it needs to send node1 to.
@@ -69,8 +81,10 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
             {remote_rank, node1, static_cast<std::int64_t>(part[node0])});
       }
       else
-        node_to_dest.push_back(
-            {rank, node1, static_cast<std::int64_t>(part[node0])});
+      {
+        local_node_to_dest.push_back(
+            {static_cast<int>(node1 - range0), static_cast<int>(part[node0])});
+      }
     }
   }
 
@@ -157,15 +171,11 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
                          neigh_comm);
   MPI_Comm_free(&neigh_comm);
 
-  // Prepare (local node index, destination rank) array. Add local data,
-  // then add the received data, and the make unique.
-  std::vector<std::array<int, 2>> local_node_to_dest;
-  local_node_to_dest.reserve(2 * part.size() + 2 * recv_buffer.size());
-  for (auto d : part)
-  {
-    local_node_to_dest.push_back(
-        {static_cast<int>(local_node_to_dest.size()), static_cast<int>(d)});
-  }
+  // Add the received (remote-originated) destinations to the local and
+  // locally-owned-edge destinations already recorded above, then make
+  // unique.
+  local_node_to_dest.reserve(local_node_to_dest.size()
+                             + recv_buffer.size() / 2);
   for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
   {
     std::int64_t idx = recv_buffer[i];
@@ -179,8 +189,8 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
   // local-node-index column (0) -- the grouping below depends on that
   // column alone. As above, a radix sort on the flattened data is used
   // for that single column -- this array is sized by the local node
-  // count plus received halo entries, and so can also have millions of
-  // entries for a large mesh.
+  // count plus local and received halo edges, and so can also have
+  // millions of entries for a large mesh.
   {
     boost::unordered_flat_set<std::array<int, 2>> unique_set(
         local_node_to_dest.begin(), local_node_to_dest.end());
