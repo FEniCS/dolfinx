@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2024 Joseph P. Dean, Jørgen S. Dokken
+# Copyright (C) 2022-2026 Joseph P. Dean, Jørgen S. Dokken and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -823,9 +823,17 @@ def test_mixed_zero_form_compile() -> None:
     )
 
     V = fem.functionspace(msh, ("Lagrange", 1))
-    Q = fem.functionspace(submesh, ("Lagrange", 1))
+    Q = fem.functionspace(submesh, ("Lagrange", 2))
 
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(Q)
     a = ufl.ZeroBaseForm((u, v))
-    fem.form(a, entity_maps=[entity_map])  # type: ignore
+    a_compiled = fem.form(a, entity_maps=[entity_map])  # type: ignore
+    for itg in fem.IntegralType.__members__.values():
+        assert a_compiled.num_integrals(itg, 0) == 0
+    A = fem.assemble_matrix(a_compiled)
+    A.scatter_reverse()
+
+    assert np.isclose(A.squared_norm(), 0.0)
+    assert A.index_map(0).size_global == V.dofmap.index_map.size_global
+    assert A.index_map(1).size_global == Q.dofmap.index_map.size_global
