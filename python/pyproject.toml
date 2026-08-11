@@ -190,6 +190,23 @@ ignore_missing_imports = true
 module = ["pyvista", "pyvistaqt"]
 follow_imports = "skip"
 
+[tool.pyrefly]
+replace-imports-with-any = [
+    "ufl",
+    "ufl.*",
+    "ffcx",
+    "ffcx.*",
+    "gmsh",
+    "llvmlite",
+    "llvmlite.*",
+    "pyamg",
+    "slepc4py",
+    "slepc4py.*",
+    "pyvista",
+    "pyvistaqt",
+    "networkx",
+]
+
 [tool.ruff]
 line-length = 100
 indent-width = 4
