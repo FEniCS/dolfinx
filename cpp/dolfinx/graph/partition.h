@@ -7,53 +7,94 @@
 #pragma once
 
 #include "AdjacencyList.h"
-#include <algorithm>
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <mpi.h>
 #include <optional>
 #include <span>
-#include <utility>
+#include <tuple>
 #include <vector>
-
-#include <iostream>
 
 namespace dolfinx::graph
 {
 /// @brief Signature of functions for computing the parallel
-/// partitioning of a distributed graph, optionally using a position in
-/// space for each node.
-///
-/// A partitioner may use the graph edges, node positions, or both, to
-/// decide which part a node belongs to; `local_graph` and `x` are
-/// therefore both optional, and it is up to a given implementation to
-/// require whichever of the two it actually needs (and throw if that
-/// one is not supplied). A caller that has both should generally supply
-/// both, even if it does not know which the chosen partitioner needs.
-///
-/// @note The coordinates, when supplied, are always `double`, whatever
-/// the scalar type of the data they were derived from. Which nodes end
-/// up in which part is not sensitive to the precision of the positions,
-/// so there is nothing to be gained from partitioning single precision
-/// positions in single precision, and computing the keys in `double`
-/// removes any question of precision loss when positions are quantised.
+/// partitioning of a distributed graph, using the graph edges alone.
 ///
 /// @param[in] comm MPI Communicator that the graph is distributed
 /// across.
 /// @param[in] nparts Number of partitions to divide graph nodes into.
-/// @param[in] local_graph Node connectivity graph, absent if the caller
-/// has none to offer.
-/// @param[in] x Node coordinates, row-major with `gdim` columns and one
-/// row per node, absent if the caller has none to offer.
-/// @param[in] gdim Number of coordinate components per node. Meaningless
-/// when `x` is not supplied.
+/// @param[in] local_graph Node connectivity graph.
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution.
 /// @return Destination rank(s) for each input node.
 using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
+    MPI_Comm, int, const AdjacencyList<std::int64_t>&, bool)>;
+
+/// @brief Signature of functions for computing the parallel
+/// partitioning of a distributed graph from the positions of its nodes
+/// in space, optionally also using the graph edges.
+///
+/// `local_graph` is optional since a purely geometric partitioner (e.g.
+/// a space-filling curve) does not need it to decide which part a node
+/// belongs to; it is up to a given implementation whether it requires
+/// `local_graph` regardless (and throws if it is not supplied), e.g.
+/// because it also uses the graph edges, or because ghosting has been
+/// requested and ghost destinations can only be computed from the
+/// edges. A caller that has the graph should generally supply it, even
+/// if it does not know whether the chosen partitioner needs it.
+///
+/// @note The coordinates are always `double`, whatever the scalar type
+/// of the data they were derived from. Which nodes end up in which part
+/// is not sensitive to the precision of the positions, so there is
+/// nothing to be gained from partitioning single precision positions in
+/// single precision, and computing the keys in `double` removes any
+/// question of precision loss when positions are quantised.
+///
+/// @param[in] comm MPI Communicator that the graph is distributed
+/// across.
+/// @param[in] nparts Number of partitions to divide graph nodes into.
+/// @param[in] local_graph Node connectivity graph. Absent if
+/// partitioner does not require it. Will raise an exception if the
+/// partitioner requires it and it is not supplied.
+/// @param[in] x Node coordinates, row-major with `gdim` columns and one
+/// row per node.
+/// @param[in] gdim Number of coordinate components per node.
+/// @param[in] ghosting Flag to enable ghosting of the output node
+/// distribution.
+/// @return Destination rank(s) for each input node.
+using geom_partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm, int,
     std::optional<std::reference_wrapper<const AdjacencyList<std::int64_t>>>,
-    std::optional<std::span<const double>>, int, bool)>;
+    std::span<const double>, int, bool)>;
+
+/// @brief Signature of functions for computing the parallel
+/// partitioning of a distributed graph using both its edges and the
+/// positions of its nodes in space.
+///
+/// Unlike ::geom_partition_fn, `local_graph` is not optional here: a
+/// hybrid partitioner (e.g. one that redistributes nodes along a
+/// space-filling curve and then applies graph partitioning to the
+/// result, as ParMETIS `GeomKway` does) uses the graph edges as part of
+/// the partitioning decision itself, not only to compute ghost
+/// destinations, so it always needs both inputs.
+///
+/// @note The coordinates are always `double`, for the same reason as
+/// ::geom_partition_fn.
+///
+/// @param[in] comm MPI Communicator that the graph is distributed
+/// across.
+/// @param[in] nparts Number of partitions to divide graph nodes into.
+/// @param[in] local_graph Node connectivity graph.
+/// @param[in] x Node coordinates, row-major with one row per node.
+/// `x.size() / local_graph.num_nodes()` gives the number of coordinate
+/// components per node.
+/// @param[in] ghosting Flag to enable ghosting of the output node
+/// distribution.
+/// @return Destination rank(s) for each input node.
+using hybrid_partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
+    MPI_Comm, int, const AdjacencyList<std::int64_t>&, std::span<const double>,
+    bool)>;
 
 /// @brief Partition graph across processes using the default graph
 /// partitioner.
@@ -69,102 +110,6 @@ AdjacencyList<std::int32_t>
 partition_graph(MPI_Comm comm, int nparts,
                 const AdjacencyList<std::int64_t>& local_graph, bool ghosting);
 
-/// @brief Partition points into `nparts` groups of (approximately) equal
-/// size using a Morton ('Z-order') space-filling curve.
-///
-/// Points are ordered by the Morton key of their position in the global
-/// bounding box, and the resulting order is cut into `nparts` equal
-/// pieces. Splitters are selected from a gathered sample of the keys, so
-/// the cost is linear in the number of local points plus one all-gather
-/// of the sample.
-///
-/// Compared to a graph partitioner, this is much cheaper (no graph is
-/// required and the cost is nearly independent of the number of ranks)
-/// and gives a near-perfect load balance, at the cost of a larger number
-/// of cut edges (typically tens of percent for a mesh dual graph).
-///
-/// A Morton curve jumps a long way in space each time a high bit of the
-/// key changes, so consecutive points on the curve are not always close
-/// together. ::partition_sfc_hilbert avoids this.
-///
-/// @note Collective.
-///
-/// @param[in] comm MPI communicator that the points are distributed
-/// across.
-/// @param[in] nparts Number of partitions to divide the points into.
-/// @param[in] local_graph Node connectivity graph, with one node per
-/// point. It is used only to determine ghost nodes, i.e. it has no
-/// influence on which part a point is assigned to, and is not read at
-/// all when `ghosting` is false.
-/// @param[in] x Point coordinates, row-major with `gdim` columns.
-/// @param[in] gdim Number of coordinate components per point. Must be
-/// 1, 2 or 3.
-/// @param[in] ghosting Flag to enable ghosting of the output node
-/// distribution.
-/// @return Destination rank(s) for each point, the owning rank first.
-AdjacencyList<std::int32_t>
-partition_sfc_morton(MPI_Comm comm, int nparts,
-                     const AdjacencyList<std::int64_t>& local_graph,
-                     std::span<const double> x, int gdim, bool ghosting);
-
-/// @brief Partition points into `nparts` groups of (approximately) equal
-/// size using a Hilbert space-filling curve.
-///
-/// As ::partition_sfc_morton, but points are ordered along a Hilbert
-/// curve. Successive points on a Hilbert curve are always neighbours in
-/// space, which a Morton curve does not guarantee, so the resulting
-/// partitions are more compact and cut fewer edges. Computing the curve
-/// index is more expensive than a Morton key, but in both cases the cost
-/// is dominated by the sampling and the search for each point's part.
-///
-/// @note Collective.
-///
-/// @param[in] comm MPI communicator that the points are distributed
-/// across.
-/// @param[in] nparts Number of partitions to divide the points into.
-/// @param[in] local_graph Node connectivity graph, with one node per
-/// point. See ::partition_sfc_morton.
-/// @param[in] x Point coordinates, row-major with `gdim` columns.
-/// @param[in] gdim Number of coordinate components per point. Must be
-/// 1, 2 or 3.
-/// @param[in] ghosting Flag to enable ghosting of the output node
-/// distribution.
-/// @return Destination rank(s) for each point, the owning rank first.
-AdjacencyList<std::int32_t>
-partition_sfc_hilbert(MPI_Comm comm, int nparts,
-                      const AdjacencyList<std::int64_t>& local_graph,
-                      std::span<const double> x, int gdim, bool ghosting);
-
-/// Space-filling curve partitioner
-namespace sfc
-{
-/// @brief Space-filling curves that nodes can be ordered along.
-enum class curve : std::uint8_t
-{
-  /// Morton ('Z-order') curve, see ::partition_sfc_morton
-  morton,
-
-  /// Hilbert curve, see ::partition_sfc_hilbert
-  hilbert
-};
-
-/// @brief Create a geometric partitioning function that orders nodes
-/// along a space-filling curve.
-///
-/// The graph edges are used only to determine ghost nodes, i.e. the
-/// partition itself is computed from the node coordinates alone.
-///
-/// @note The default is curve::hilbert. For the dual graph of a
-/// tetrahedral mesh on 20 ranks, it was measured to cut 10% fewer edges
-/// than curve::morton (457772 against 508750 for 12.6M cells), for a
-/// similar cost.
-///
-/// @param[in] curve Space-filling curve to order the nodes along.
-/// @return A geometric graph partitioning function. It requires `x` and
-/// ignores `local_graph` unless ghosting is requested.
-graph::partition_fn partitioner(sfc::curve curve = sfc::curve::hilbert);
-} // namespace sfc
-
 /// Tools for distributed graphs
 ///
 /// @todo Add a function that sends data to the 'owner'
@@ -172,40 +117,76 @@ namespace build
 {
 /// @brief Distribute adjacency list nodes to destination ranks.
 ///
-/// The global index of each node is assumed to be the local index plus
-/// the offset for this rank.
+/// The global index of the `i`th node (row) in `list` is assumed to be
+/// `i` plus the offset for this rank, i.e. the number of nodes owned by
+/// lower-ranked processes.
 ///
-/// @param[in] comm MPI Communicator
-/// @param[in] list The adjacency list to distribute
-/// @param[in] destinations Destination ranks for the ith node in the
-/// adjacency list. The first rank is the 'owner' of the node.
+/// @note Collective.
+///
+/// @note The neighbourhood communicator used for the exchange is built
+/// with MPI::compute_graph_edges_nbx, which uses the scalable NBX
+/// consensus algorithm to discover incoming edges from the outgoing
+/// edges alone, i.e. no arrays the size of the communicator are built
+/// and the communication pattern stays sparse. Determining the
+/// neighbourhood this way is not free, though: it costs one or more
+/// non-blocking consensus rounds, so calling this function repeatedly
+/// (e.g. once per cell type) has a real cost even though no large
+/// arrays are built.
+///
+/// @param[in] comm MPI Communicator that `list`/`destinations` are
+/// distributed across.
+/// @param[in] list The adjacency list to distribute.
+/// @param[in] destinations Destination rank(s) for the `i`th node in
+/// `list`. The first rank is the 'owner' of the node; any further ranks
+/// receive it as a ghost.
 /// @return
-/// 1. Received adjacency list for this process
-/// 2. Source ranks for each node in the adjacency list
-/// 3. Original global index for each node in the adjacency list
-/// 4. Owning rank of ghost nodes.
+/// 1. Received adjacency list for this process. Nodes owned by this
+///    process come first, followed by any ghost nodes.
+/// 2. Source rank of each node in (1), i.e. the rank it was sent from.
+/// 3. Original global index of each node in (1).
+/// 4. Owning rank of the ghost nodes among (1). This has one entry per
+///    ghost node -- the trailing entries of (1) -- not one entry per
+///    node of (1).
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
            const graph::AdjacencyList<std::int32_t>& destinations);
 
-/// @brief Distribute fixed size nodes to destination ranks.
+/// @brief Distribute rows of a fixed-degree array to destination ranks.
 ///
-/// The global index of each node is assumed to be the local index plus
-/// the offset for this rank.
+/// The global index of the `i`th row of `list` is assumed to be `i`
+/// plus the offset for this rank, i.e. the number of rows owned by
+/// lower-ranked processes.
 ///
-/// @param[in] comm MPI Communicator
-/// @param[in] list Constant degree (valency) adjacency list. The array
-/// shape is (num_nodes, degree). Storage is row-major.
+/// @note Collective.
+///
+/// @note The neighbourhood communicator used for the exchange is built
+/// with MPI::compute_graph_edges_nbx, which uses the scalable NBX
+/// consensus algorithm to discover incoming edges from the outgoing
+/// edges alone, i.e. no arrays the size of the communicator are built
+/// and the communication pattern stays sparse. Determining the
+/// neighbourhood this way is not free, though: it costs one or more
+/// non-blocking consensus rounds, so calling this function repeatedly
+/// (e.g. once per cell type) has a real cost even though no large
+/// arrays are built.
+///
+/// @param[in] comm MPI Communicator that `list`/`destinations` are
+/// distributed across.
+/// @param[in] list Constant degree (valency) data, flattened row-major
+/// with shape `shape`.
 /// @param[in] shape Shape `(num_nodes, degree)` of `list`.
-/// @param[in] destinations Destination ranks for the ith node (row) of
-/// `list`. The first rank is the 'owner' of the node.
+/// @param[in] destinations Destination rank(s) for the `i`th row of
+/// `list`. The first rank is the 'owner' of the row; any further ranks
+/// receive it as a ghost.
 /// @return
-/// 1. Received adjacency list on this process. The array shape is
-/// (num_nodes, degree). Storage is row-major.
-/// 2. Source rank for each received node.
-/// 3. Original global index for each received node.
-/// 4. Owning rank of ghost nodes.
+/// 1. Received rows for this process, flattened row-major with shape
+///    (num_nodes, degree). Rows owned by this process come first,
+///    followed by any ghost rows.
+/// 2. Source rank of each row in (1), i.e. the rank it was sent from.
+/// 3. Original global index of each row in (1).
+/// 4. Owning rank of the ghost rows among (1). This has one entry per
+///    ghost row -- the trailing rows of (1) -- not one entry per row
+///    of (1).
 std::tuple<std::vector<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, std::span<const std::int64_t> list,

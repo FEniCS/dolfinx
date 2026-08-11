@@ -16,11 +16,8 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
-#include <functional>
-#include <limits>
 #include <memory>
 #include <numeric>
-#include <optional>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -29,312 +26,108 @@ using namespace dolfinx;
 
 namespace
 {
-/// Number of bits per coordinate used to quantise positions before a
-/// space-filling curve key is computed. With three dimensions this gives
-/// a 63-bit key.
-constexpr int nbits = 21;
-
-/// @brief Interleave the low `nbits` bits of up to three coordinates into
-/// a Morton ('Z-order') curve key.
-std::uint64_t morton_key(std::array<std::uint32_t, 3> c, int /*gdim*/)
-{
-  // Spread the low bits of `v` out so that they occupy every third bit
-  // position
-  auto spread = [](std::uint64_t v) -> std::uint64_t
-  {
-    v &= 0x1fffff;
-    v = (v | v << 32) & 0x1f00000000ffff;
-    v = (v | v << 16) & 0x1f0000ff0000ff;
-    v = (v | v << 8) & 0x100f00f00f00f00f;
-    v = (v | v << 4) & 0x10c30c30c30c30c3;
-    v = (v | v << 2) & 0x1249249249249249;
-    return v;
-  };
-
-  return spread(c[0]) | (spread(c[1]) << 1) | (spread(c[2]) << 2);
-}
-
-/// @brief Distance along a Hilbert curve of a point with quantised
-/// coordinates.
+/// @brief Common setup shared by both graph::build::distribute
+/// overloads: work out which ranks to send to/receive from and start
+/// exchanging the item counts, ahead of the payload-specific packing
+/// and exchange each overload does for itself.
 ///
-/// Uses Skilling's algorithm to transform the coordinates in place into
-/// the 'transpose' of the Hilbert index (J. Skilling, Programming the
-/// Hilbert curve, AIP Conf. Proc. 707, 2004), then interleaves the
-/// transpose to give the index itself.
-///
-/// @param[in] c Quantised coordinates, each using the low `nbits` bits.
-/// @param[in] gdim Number of coordinate components. The curve is
-/// constructed in `gdim` dimensions, so that (unlike a Morton key) the
-/// unused components cannot break the ordering.
-/// @return Distance along the curve, using `gdim * nbits` bits.
-std::uint64_t hilbert_key(std::array<std::uint32_t, 3> c, int gdim)
+/// The size exchange (`request`) is left pending, rather than waited
+/// on here, so that the caller's (potentially expensive) send-buffer
+/// packing can overlap with it.
+struct DistributionPlan
 {
-  // Transform the coordinates to the Hilbert index transpose
-  const std::uint32_t m = std::uint32_t(1) << (nbits - 1);
-  for (std::uint32_t q = m; q > 1; q >>= 1)
+  /// (destination rank, local index, owning rank) triples for each
+  /// entry of `destinations`, one per outgoing edge, sorted by
+  /// destination rank.
+  std::vector<std::array<int, 3>> dest_to_index;
+  /// Unique destination ranks, i.e. the neighbourhood communicator's
+  /// out-edges.
+  std::vector<int> dest;
+  /// Number of rows sent to each entry of `dest`.
+  std::vector<std::int32_t> num_items_per_dest;
+  /// Send displacements into `dest_to_index`, size `dest.size() + 1`.
+  std::vector<std::int32_t> send_disp;
+  /// Source ranks, i.e. the neighbourhood communicator's in-edges.
+  std::vector<int> src;
+  /// Number of rows received from each entry of `src`. Filled once
+  /// `request` completes.
+  std::vector<int> num_items_recv;
+  /// Neighbourhood communicator. The caller must `MPI_Comm_free` it.
+  MPI_Comm neigh_comm;
+  /// Pending `MPI_Ineighbor_alltoall` for `num_items_recv`. The caller
+  /// must `MPI_Wait` it before reading `num_items_recv`.
+  MPI_Request request;
+};
+
+DistributionPlan compute_distribution_plan(
+    MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& destinations)
+{
+  DistributionPlan plan;
+
+  // Build (dest, index, owning rank) list and sort
+  plan.dest_to_index.reserve(destinations.array().size());
+  for (std::int32_t i = 0; i < destinations.num_nodes(); ++i)
   {
-    const std::uint32_t p = q - 1;
-    for (int i = 0; i < gdim; ++i)
+    auto di = destinations.links(i);
+    std::ranges::transform(di, std::back_inserter(plan.dest_to_index),
+                           [i, d0 = di.front()](auto d) -> std::array<int, 3>
+                           { return {d, i, d0}; });
+  }
+
+  // Only grouping by destination rank is required (order within a group
+  // is irrelevant downstream), and the key is bounded by the
+  // communicator size, so a radix sort keyed on the destination rank
+  // alone is used rather than a full lexicographic sort.
+  dolfinx::radix_sort(plan.dest_to_index, [](const auto& e) { return e[0]; });
+
+  // Build list of unique dest ranks and count number of rows to send to
+  // each dest (by neighbourhood rank)
+  {
+    auto it = plan.dest_to_index.begin();
+    while (it != plan.dest_to_index.end())
     {
-      if (c[i] & q)
-        c[0] ^= p; // Invert
-      else
-      {
-        // Exchange
-        const std::uint32_t t = (c[0] ^ c[i]) & p;
-        c[0] ^= t;
-        c[i] ^= t;
-      }
+      // Store global rank and find iterator to next global rank
+      plan.dest.push_back(it->front());
+      auto it1 = std::find_if(it, plan.dest_to_index.end(),
+                              [r = plan.dest.back()](auto& idx)
+                              { return idx[0] != r; });
+
+      // Store number of items for current rank
+      plan.num_items_per_dest.push_back(std::ranges::distance(it, it1));
+
+      // Advance iterator
+      it = it1;
     }
   }
 
-  // Gray encode
-  for (int i = 1; i < gdim; ++i)
-    c[i] ^= c[i - 1];
-  std::uint32_t t = 0;
-  for (std::uint32_t q = m; q > 1; q >>= 1)
-  {
-    if (c[gdim - 1] & q)
-      t ^= q - 1;
-  }
-  for (int i = 0; i < gdim; ++i)
-    c[i] ^= t;
+  // Determine source ranks. Sort ranks to make distribution
+  // deterministic.
+  plan.src = dolfinx::MPI::compute_graph_edges_nbx(comm, plan.dest);
+  std::ranges::sort(plan.src);
 
-  // Interleave the transpose, most significant bit of c[0] first
-  std::uint64_t key = 0;
-  for (int j = nbits - 1; j >= 0; --j)
-  {
-    for (int i = 0; i < gdim; ++i)
-      key = (key << 1) | ((c[i] >> j) & 1);
-  }
+  // Create neighbourhood communicator
+  MPI_Dist_graph_create_adjacent(
+      comm, plan.src.size(), plan.src.data(), MPI_UNWEIGHTED, plan.dest.size(),
+      plan.dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &plan.neigh_comm);
 
-  return key;
-}
+  // Send number of rows to receivers
+  plan.num_items_recv.resize(plan.src.size());
+  plan.num_items_per_dest.reserve(1);
+  plan.num_items_recv.reserve(1);
+  MPI_Ineighbor_alltoall(plan.num_items_per_dest.data(), 1, MPI_INT,
+                         plan.num_items_recv.data(), 1, MPI_INT,
+                         plan.neigh_comm, &plan.request);
 
-/// @brief Partition points into `nparts` groups of (approximately) equal
-/// size by their position along a space-filling curve.
-///
-/// @param[in] comm MPI communicator the points are distributed across.
-/// @param[in] nparts Number of partitions.
-/// @param[in] x Point coordinates, row-major with `gdim` columns.
-/// @param[in] gdim Number of coordinate components per point.
-/// @param[in] key Curve key for a point, given its quantised coordinates
-/// and `gdim`.
-/// @return Partition index in `[0, nparts)` for each point.
-template <typename K>
-std::vector<int> partition_by_curve(MPI_Comm comm, int nparts,
-                                    std::span<const double> x, int gdim, K key)
-{
-  if (gdim < 1 or gdim > 3)
-    throw std::runtime_error("Geometric dimension must be 1, 2 or 3.");
-  if (nparts < 1)
-    throw std::runtime_error("Number of partitions must be > 0.");
-  if (x.size() % gdim != 0)
-  {
-    throw std::runtime_error(
-        "Point coordinate array size is not a multiple of gdim.");
-  }
+  // Compute send displacements
+  plan.send_disp.resize(plan.num_items_per_dest.size() + 1, 0);
+  std::partial_sum(plan.num_items_per_dest.begin(),
+                   plan.num_items_per_dest.end(),
+                   std::next(plan.send_disp.begin()));
 
-  const std::size_t num_points = x.size() / gdim;
-  if (nparts == 1)
-    return std::vector<int>(num_points, 0);
-
-  // Global bounding box of the points. Note: the reduction is over
-  // {-min, max} so that a single MPI_MAX reduction suffices.
-  std::array<double, 6> extent;
-  extent.fill(std::numeric_limits<double>::lowest());
-  for (std::size_t i = 0; i < num_points; ++i)
-  {
-    for (int d = 0; d < gdim; ++d)
-    {
-      extent[d] = std::max(extent[d], -x[gdim * i + d]);
-      extent[3 + d] = std::max(extent[3 + d], x[gdim * i + d]);
-    }
-  }
-  {
-    std::array<double, 6> recv;
-    MPI_Allreduce(extent.data(), recv.data(), 6, MPI_DOUBLE, MPI_MAX, comm);
-    extent = recv;
-  }
-
-  // Curve key for each point, from its position in the bounding box
-  // scaled to the bit range of the key
-  constexpr double range = (1 << nbits) - 1;
-  std::array<double, 3> scale = {0, 0, 0};
-  for (int d = 0; d < gdim; ++d)
-  {
-    const double width = extent[3 + d] + extent[d];
-    scale[d] = width > 0 ? range / width : 0;
-  }
-
-  std::vector<std::uint64_t> keys(num_points);
-  for (std::size_t i = 0; i < num_points; ++i)
-  {
-    std::array<std::uint32_t, 3> c = {0, 0, 0};
-    for (int d = 0; d < gdim; ++d)
-    {
-      c[d] = static_cast<std::uint32_t>(scale[d]
-                                        * (x[gdim * i + d] + extent[d]));
-    }
-    keys[i] = key(c, gdim);
-  }
-
-  // Sample the local keys, over-sampling by a fixed factor per
-  // partition, and gather the samples on all ranks. Splitters taken at
-  // equal-count positions of the sorted sample then cut the global key
-  // order into `nparts` pieces of approximately equal size, without
-  // sorting the keys across ranks.
-  //
-  // Note: the local keys are sorted first so that the sample is a
-  // systematic sample of the local quantiles. Sampling the keys in their
-  // incoming order instead makes the sample a random one, whose much
-  // larger variance shows up directly as partition imbalance (measured:
-  // 7% versus under 1% for a mesh whose cells arrive in an order
-  // unrelated to their position).
-  std::vector<std::uint64_t> sample;
-  {
-    constexpr int oversample = 32;
-    std::vector<std::uint64_t> keys_sorted(keys);
-    dolfinx::radix_sort(keys_sorted);
-    const std::size_t n = std::min(
-        keys_sorted.size(), static_cast<std::size_t>(oversample) * nparts);
-    sample.resize(n);
-    for (std::size_t i = 0; i < n; ++i)
-      sample[i] = keys_sorted[(i * keys_sorted.size()) / n];
-  }
-
-  std::vector<std::uint64_t> sample_all;
-  {
-    const int size = dolfinx::MPI::size(comm);
-    int num_local = sample.size();
-    std::vector<int> counts(size), displs(size + 1, 0);
-    MPI_Allgather(&num_local, 1, MPI_INT, counts.data(), 1, MPI_INT, comm);
-    std::partial_sum(counts.begin(), counts.end(), std::next(displs.begin()));
-    sample_all.resize(displs.back());
-    MPI_Allgatherv(sample.data(), num_local, MPI_UINT64_T, sample_all.data(),
-                   counts.data(), displs.data(), MPI_UINT64_T, comm);
-    dolfinx::radix_sort(sample_all);
-  }
-
-  // Degenerate case: no points anywhere
-  if (sample_all.empty())
-    return std::vector<int>(num_points, 0);
-
-  std::vector<std::uint64_t> splitters(nparts - 1);
-  for (int p = 1; p < nparts; ++p)
-    splitters[p - 1] = sample_all[(sample_all.size() * p) / nparts];
-
-  std::vector<int> part(num_points);
-  std::ranges::transform(keys, part.begin(),
-                         [&splitters](std::uint64_t k)
-                         {
-                           return std::ranges::distance(
-                               splitters.begin(),
-                               std::ranges::upper_bound(splitters, k));
-                         });
-
-  return part;
-}
-/// @brief Partition points by their position along a space-filling curve
-/// and, if requested, add the destinations needed for ghosting.
-///
-/// @param[in] comm MPI communicator the points are distributed across.
-/// @param[in] nparts Number of partitions.
-/// @param[in] graph Node connectivity graph, one node per point. Used
-/// only to determine ghost nodes.
-/// @param[in] x Point coordinates, row-major with `gdim` columns.
-/// @param[in] gdim Number of coordinate components per point.
-/// @param[in] ghosting Flag to enable ghosting.
-/// @param[in] key Curve key for a point.
-/// @return Destination rank(s) for each point, owner first.
-template <typename K>
-graph::AdjacencyList<std::int32_t>
-partition_curve(MPI_Comm comm, int nparts,
-                const graph::AdjacencyList<std::int64_t>& graph,
-                std::span<const double> x, int gdim, bool ghosting, K key)
-{
-  if (static_cast<std::int64_t>(x.size())
-      != static_cast<std::int64_t>(gdim) * graph.num_nodes())
-  {
-    throw std::runtime_error(
-        "Number of coordinates does not match number of graph nodes.");
-  }
-
-  std::vector<int> part = partition_by_curve(comm, nparts, x, gdim, key);
-  if (!ghosting)
-    return dolfinx::graph::regular_adjacency_list(std::move(part), 1);
-
-  // Wherever a point goes, so must the points connected to it by an edge
-  std::vector<int> node_disp(dolfinx::MPI::size(comm) + 1, 0);
-  const int num_local = graph.num_nodes();
-  MPI_Allgather(&num_local, 1, MPI_INT, std::next(node_disp.data()), 1, MPI_INT,
-                comm);
-  std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
-  return dolfinx::graph::compute_destination_ranks(comm, graph, node_disp,
-                                                   part);
+  return plan;
 }
 } // namespace
 
-//-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-graph::partition_sfc_morton(MPI_Comm comm, int nparts,
-                            const graph::AdjacencyList<std::int64_t>& graph,
-                            std::span<const double> x, int gdim, bool ghosting)
-{
-  common::Timer timer("Compute Morton SFC partition of points");
-  return partition_curve(comm, nparts, graph, x, gdim, ghosting, morton_key);
-}
-//-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-graph::partition_sfc_hilbert(MPI_Comm comm, int nparts,
-                             const graph::AdjacencyList<std::int64_t>& graph,
-                             std::span<const double> x, int gdim, bool ghosting)
-{
-  common::Timer timer("Compute Hilbert SFC partition of points");
-  return partition_curve(comm, nparts, graph, x, gdim, ghosting, hilbert_key);
-}
-//-----------------------------------------------------------------------------
-graph::partition_fn graph::sfc::partitioner(sfc::curve curve)
-{
-  return
-      [curve](
-          MPI_Comm comm, int nparts,
-          std::optional<
-              std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
-              local_graph,
-          std::optional<std::span<const double>> x, int gdim, bool ghosting)
-  {
-    if (!x)
-    {
-      throw std::runtime_error(
-          "Space-filling curve partitioner requires point coordinates.");
-    }
-    if (ghosting and !local_graph)
-    {
-      throw std::runtime_error("Space-filling curve partitioner requires a "
-                               "graph to compute ghosts.");
-    }
-
-    auto call = [curve, comm, nparts, &x, gdim,
-                 ghosting](const graph::AdjacencyList<std::int64_t>& graph)
-    {
-      return (curve == sfc::curve::hilbert)
-                 ? graph::partition_sfc_hilbert(comm, nparts, graph, *x, gdim,
-                                                ghosting)
-                 : graph::partition_sfc_morton(comm, nparts, graph, *x, gdim,
-                                               ghosting);
-    };
-
-    if (local_graph)
-      return call(local_graph->get());
-
-    // local_graph is not read at all when ghosting is false, so a
-    // trivial placeholder of the right size stands in for it.
-    const graph::AdjacencyList<std::int64_t> trivial_graph(
-        static_cast<std::int32_t>(x->size() / gdim));
-    return call(trivial_graph);
-  };
-}
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
 graph::partition_graph(MPI_Comm comm, int nparts,
@@ -342,14 +135,11 @@ graph::partition_graph(MPI_Comm comm, int nparts,
                        bool ghosting)
 {
 #if HAS_PARMETIS
-  return graph::parmetis::partitioner()(comm, nparts, std::cref(local_graph),
-                                        std::nullopt, 0, ghosting);
+  return graph::parmetis::partitioner()(comm, nparts, local_graph, ghosting);
 #elif HAS_PTSCOTCH
-  return graph::scotch::partitioner()(comm, nparts, std::cref(local_graph),
-                                      std::nullopt, 0, ghosting);
+  return graph::scotch::partitioner()(comm, nparts, local_graph, ghosting);
 #elif HAS_KAHIP
-  return graph::kahip::partitioner()(comm, nparts, std::cref(local_graph),
-                                     std::nullopt, 0, ghosting);
+  return graph::kahip::partitioner()(comm, nparts, local_graph, ghosting);
 #else
 // Should never reach this point
 #endif
@@ -386,77 +176,16 @@ graph::build::distribute(MPI_Comm comm,
   // and node global index)
   const std::size_t buffer_shape1 = shape1 + 3;
 
-  // Build (dest, index, owning rank) list and sort
-  std::vector<std::array<int, 3>> dest_to_index;
-  dest_to_index.reserve(destinations.array().size());
-  for (std::int32_t i = 0; i < destinations.num_nodes(); ++i)
-  {
-    auto di = destinations.links(i);
-    std::ranges::transform(di, std::back_inserter(dest_to_index),
-                           [i, d0 = di.front()](auto d) -> std::array<int, 3>
-                           { return {d, i, d0}; });
-  }
-
-  // Only grouping by destination rank is required (order within a group
-  // is irrelevant downstream), and the key is bounded by the
-  // communicator size, so a radix sort keyed on the destination rank
-  // alone is used rather than a full lexicographic sort.
-  dolfinx::radix_sort(dest_to_index, [](const auto& e) { return e[0]; });
-
-  // Build list of unique dest ranks and count number of rows to send to
-  // each dest (by neighbourhood rank)
-  std::vector<int> dest;
-  std::vector<std::int32_t> num_items_per_dest;
-  {
-    auto it = dest_to_index.begin();
-    while (it != dest_to_index.end())
-    {
-      // Store global rank and find iterator to next global rank
-      dest.push_back(it->front());
-      auto it1
-          = std::find_if(it, dest_to_index.end(),
-                         [r = dest.back()](auto idx) { return idx[0] != r; });
-
-      // Store number of items for current rank
-      num_items_per_dest.push_back(std::ranges::distance(it, it1));
-
-      // Advance iterator
-      it = it1;
-    }
-  }
-
-  // Determine source ranks. Sort ranks to make distribution
-  // deterministic.
-  std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-  std::ranges::sort(src);
-
-  // Create neighbourhood communicator
-  MPI_Comm neigh_comm;
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm);
-
-  // Send number of nodes to receivers
-  std::vector<int> num_items_recv(src.size());
-  num_items_per_dest.reserve(1);
-  num_items_recv.reserve(1);
-  MPI_Request request_size;
-  MPI_Ineighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
-                         num_items_recv.data(), 1, MPI_INT, neigh_comm,
-                         &request_size);
-
-  // Compute send displacements
-  std::vector<std::int32_t> send_disp(num_items_per_dest.size() + 1, 0);
-  std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
-                   std::next(send_disp.begin()));
+  DistributionPlan plan = compute_distribution_plan(comm, destinations);
 
   // Pack send buffer
-  std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
+  std::vector<std::int64_t> send_buffer(buffer_shape1 * plan.send_disp.back(),
+                                        -1);
   {
-    assert(send_disp.back() == (std::int32_t)dest_to_index.size());
-    for (std::size_t i = 0; i < dest_to_index.size(); ++i)
+    assert(plan.send_disp.back() == (std::int32_t)plan.dest_to_index.size());
+    for (std::size_t i = 0; i < plan.dest_to_index.size(); ++i)
     {
-      std::array<int, 3> dest_data = dest_to_index[i];
+      std::array<int, 3> dest_data = plan.dest_to_index[i];
       const std::size_t pos = dest_data[1];
 
       std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
@@ -471,9 +200,9 @@ graph::build::distribute(MPI_Comm comm,
   }
 
   // Prepare receive displacement
-  MPI_Wait(&request_size, MPI_STATUS_IGNORE);
-  std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
-  std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
+  MPI_Wait(&plan.request, MPI_STATUS_IGNORE);
+  std::vector<std::int32_t> recv_disp(plan.num_items_recv.size() + 1, 0);
+  std::partial_sum(plan.num_items_recv.begin(), plan.num_items_recv.end(),
                    std::next(recv_disp.begin()));
 
   // Send/receive data facet
@@ -481,12 +210,12 @@ graph::build::distribute(MPI_Comm comm,
   MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
   MPI_Type_commit(&compound_type);
   std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
-                         send_disp.data(), compound_type, recv_buffer.data(),
-                         num_items_recv.data(), recv_disp.data(), compound_type,
-                         neigh_comm);
+  MPI_Neighbor_alltoallv(send_buffer.data(), plan.num_items_per_dest.data(),
+                         plan.send_disp.data(), compound_type,
+                         recv_buffer.data(), plan.num_items_recv.data(),
+                         recv_disp.data(), compound_type, plan.neigh_comm);
   MPI_Type_free(&compound_type);
-  MPI_Comm_free(&neigh_comm);
+  MPI_Comm_free(&plan.neigh_comm);
 
   // Unpack receive buffer
   std::vector<int> src_ranks, src_ranks1, ghost_index_owner;
@@ -506,7 +235,7 @@ graph::build::distribute(MPI_Comm comm,
   global_indices1.reserve(recv_disp.back());
   for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
   {
-    const int src_rank = src[p];
+    const int src_rank = plan.src[p];
     for (std::int32_t i = recv_disp[p]; i < recv_disp[p + 1]; ++i)
     {
       std::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
@@ -575,77 +304,16 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   // and node global index)
   const std::size_t buffer_shape1 = shape[1] + 2;
 
-  // Build (dest, index, owning rank) list and sort
-  std::vector<std::array<int, 3>> dest_to_index;
-  dest_to_index.reserve(destinations.array().size());
-  for (std::int32_t i = 0; i < destinations.num_nodes(); ++i)
-  {
-    auto di = destinations.links(i);
-    std::ranges::transform(di, std::back_inserter(dest_to_index),
-                           [i, d0 = di.front()](auto d) -> std::array<int, 3>
-                           { return {d, i, d0}; });
-  }
-
-  // Only grouping by destination rank is required (order within a group
-  // is irrelevant downstream), and the key is bounded by the
-  // communicator size, so a radix sort keyed on the destination rank
-  // alone is used rather than a full lexicographic sort.
-  dolfinx::radix_sort(dest_to_index, [](const auto& e) { return e[0]; });
-
-  // Build list of unique dest ranks and count number of rows to send to
-  // each dest (by neighbourhood rank)
-  std::vector<int> dest;
-  std::vector<std::int32_t> num_items_per_dest;
-  {
-    auto it = dest_to_index.begin();
-    while (it != dest_to_index.end())
-    {
-      // Store global rank and find iterator to next global rank
-      dest.push_back(it->front());
-      auto it1
-          = std::find_if(it, dest_to_index.end(),
-                         [r = dest.back()](auto& idx) { return idx[0] != r; });
-
-      // Store number of items for current rank
-      num_items_per_dest.push_back(std::ranges::distance(it, it1));
-
-      // Advance iterator
-      it = it1;
-    }
-  }
-
-  // Determine source ranks. Sort ranks to make distribution
-  // deterministic.
-  std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-  std::ranges::sort(src);
-
-  // Create neighbourhood communicator
-  MPI_Comm neigh_comm;
-  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
-                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neigh_comm);
-
-  // Send number of nodes to receivers
-  std::vector<int> num_items_recv(src.size());
-  num_items_per_dest.reserve(1);
-  num_items_recv.reserve(1);
-  MPI_Request request_size;
-  MPI_Ineighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
-                         num_items_recv.data(), 1, MPI_INT, neigh_comm,
-                         &request_size);
-
-  // Compute send displacements
-  std::vector<std::int32_t> send_disp(num_items_per_dest.size() + 1, 0);
-  std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
-                   std::next(send_disp.begin()));
+  DistributionPlan plan = compute_distribution_plan(comm, destinations);
 
   // Pack send buffer
-  std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
+  std::vector<std::int64_t> send_buffer(buffer_shape1 * plan.send_disp.back(),
+                                        -1);
   {
-    assert(send_disp.back() == (std::int32_t)dest_to_index.size());
-    for (std::size_t i = 0; i < dest_to_index.size(); ++i)
+    assert(plan.send_disp.back() == (std::int32_t)plan.dest_to_index.size());
+    for (std::size_t i = 0; i < plan.dest_to_index.size(); ++i)
     {
-      std::array<int, 3> dest_data = dest_to_index[i];
+      std::array<int, 3> dest_data = plan.dest_to_index[i];
       const std::size_t pos = dest_data[1];
 
       std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
@@ -659,9 +327,9 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   }
 
   // Prepare receive displacement
-  MPI_Wait(&request_size, MPI_STATUS_IGNORE);
-  std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
-  std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
+  MPI_Wait(&plan.request, MPI_STATUS_IGNORE);
+  std::vector<std::int32_t> recv_disp(plan.num_items_recv.size() + 1, 0);
+  std::partial_sum(plan.num_items_recv.begin(), plan.num_items_recv.end(),
                    std::next(recv_disp.begin()));
 
   // Send/receive data facet
@@ -669,12 +337,12 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
   MPI_Type_commit(&compound_type);
   std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
-                         send_disp.data(), compound_type, recv_buffer.data(),
-                         num_items_recv.data(), recv_disp.data(), compound_type,
-                         neigh_comm);
+  MPI_Neighbor_alltoallv(send_buffer.data(), plan.num_items_per_dest.data(),
+                         plan.send_disp.data(), compound_type,
+                         recv_buffer.data(), plan.num_items_recv.data(),
+                         recv_disp.data(), compound_type, plan.neigh_comm);
   MPI_Type_free(&compound_type);
-  MPI_Comm_free(&neigh_comm);
+  MPI_Comm_free(&plan.neigh_comm);
 
   spdlog::debug("Received {} data on {} [{}]", recv_disp.back(), rank,
                 shape[1]);
@@ -686,7 +354,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   std::vector<int> src_ranks, src_ranks1;
   for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
   {
-    int src_rank = src[p];
+    int src_rank = plan.src[p];
     for (std::int32_t q = recv_disp[p]; q < recv_disp[p + 1]; ++q)
     {
       std::span row(recv_buffer.data() + q * buffer_shape1, buffer_shape1);

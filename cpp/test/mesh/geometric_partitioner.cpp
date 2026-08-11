@@ -15,6 +15,7 @@
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/graph/partitioners.h>
+#include <dolfinx/graph/sfc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
@@ -119,16 +120,17 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
     CHECK(c1[4] * size <= 1.1 * c1[3] + size);
 
 #ifdef HAS_PARMETIS
-    for (graph::parmetis::geom_method method :
-         {graph::parmetis::geom_method::kway,
-          graph::parmetis::geom_method::curve})
-    {
-      std::array<std::int64_t, 5> c2
-          = counts(mesh::create_geometric_cell_partitioner(
-              gm, 2, 1, graph::parmetis::geom_partitioner(method)));
-      for (int d = 0; d < 4; ++d)
-        CHECK(c2[d] == c0[d]);
-    }
+    std::array<std::int64_t, 5> c2
+        = counts(mesh::create_hybrid_cell_partitioner(
+            gm, 2, 1, graph::parmetis::geom_partitioner_kway()));
+    for (int d = 0; d < 4; ++d)
+      CHECK(c2[d] == c0[d]);
+
+    std::array<std::int64_t, 5> c3
+        = counts(mesh::create_geometric_cell_partitioner(
+            gm, 2, 1, graph::parmetis::geom_partitioner()));
+    for (int d = 0; d < 4; ++d)
+      CHECK(c3[d] == c0[d]);
 #endif
   }
 }

@@ -13,6 +13,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
 #include <format>
+#include <functional>
 #include <map>
 #include <numeric>
 #include <optional>
@@ -52,18 +53,6 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
   const std::int64_t range1 = node_disp[rank + 1];
   assert(static_cast<std::int32_t>(range1 - range0) == graph.num_nodes());
 
-  // Every node always goes to its own destination. Record this first, so
-  // that below an edge to a node1 already owned by this rank can be
-  // recorded directly as (local index, destination) -- no need to route
-  // it through the dedup/sort/exchange machinery below, which exists
-  // only to tell a *remote* rank about a destination it has no other way
-  // to learn.
-  std::vector<std::array<int, 2>> local_node_to_dest;
-  local_node_to_dest.reserve(part.size() + graph.array().size());
-  for (std::size_t i = 0; i < part.size(); ++i)
-    local_node_to_dest.push_back(
-        {static_cast<int>(i), static_cast<int>(part[i])});
-
   // Wherever an owned 'node' goes, so must the nodes connected to it by
   // an edge ('node1'). Task is to let the owner of node1 know the extra
   // ranks that it needs to send node1 to.
@@ -82,10 +71,8 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
             {remote_rank, node1, static_cast<std::int64_t>(part[node0])});
       }
       else
-      {
-        local_node_to_dest.push_back(
-            {static_cast<int>(node1 - range0), static_cast<int>(part[node0])});
-      }
+        node_to_dest.push_back(
+            {rank, node1, static_cast<std::int64_t>(part[node0])});
     }
   }
 
@@ -128,7 +115,10 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
                          { return idx[0] != r0; });
       send_sizes.push_back(2 * std::ranges::distance(it, it1));
       for (auto itx = it; itx != it1; ++itx)
-        send_buffer.insert(send_buffer.end(), {itx->at(1), itx->at(2)});
+      {
+        send_buffer.push_back(itx->at(1));
+        send_buffer.push_back(itx->at(2));
+      }
 
       it = it1;
     }
@@ -172,11 +162,15 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
                          neigh_comm);
   MPI_Comm_free(&neigh_comm);
 
-  // Add the received (remote-originated) destinations to the local and
-  // locally-owned-edge destinations already recorded above, then make
-  // unique.
-  local_node_to_dest.reserve(local_node_to_dest.size()
-                             + recv_buffer.size() / 2);
+  // Prepare (local node index, destination rank) array. Add local data,
+  // then add the received data, and the make unique.
+  std::vector<std::array<int, 2>> local_node_to_dest;
+  local_node_to_dest.reserve(2 * part.size() + 2 * recv_buffer.size());
+  for (auto d : part)
+  {
+    local_node_to_dest.push_back(
+        {static_cast<int>(local_node_to_dest.size()), static_cast<int>(d)});
+  }
   for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
   {
     std::int64_t idx = recv_buffer[i];
@@ -190,8 +184,8 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
   // local-node-index column (0) -- the grouping below depends on that
   // column alone. As above, a radix sort on the flattened data is used
   // for that single column -- this array is sized by the local node
-  // count plus local and received halo edges, and so can also have
-  // millions of entries for a large mesh.
+  // count plus received halo entries, and so can also have millions of
+  // entries for a large mesh.
   {
     boost::unordered_flat_set<std::array<int, 2>> unique_set(
         local_node_to_dest.begin(), local_node_to_dest.end());
@@ -254,17 +248,10 @@ template graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
 graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                                                double imbalance, int seed)
 {
-  return [imbalance, strategy,
-          seed](MPI_Comm comm, int nparts,
-                std::optional<
-                    std::reference_wrapper<const AdjacencyList<std::int64_t>>>
-                    local_graph,
-                std::optional<std::span<const double>>, int, bool ghosting)
+  return [imbalance, strategy, seed](MPI_Comm comm, int nparts,
+                                     const AdjacencyList<std::int64_t>& graph,
+                                     bool ghosting)
   {
-    if (!local_graph)
-      throw std::runtime_error("SCOTCH partitioner requires a graph.");
-    const AdjacencyList<std::int64_t>& graph = local_graph->get();
-
     spdlog::info("Compute graph partition using PT-SCOTCH");
     common::Timer timer("Compute graph partition (SCOTCH)");
 
@@ -471,18 +458,10 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 graph::partition_fn graph::parmetis::partitioner(double imbalance,
                                                  std::array<int, 3> options)
 {
-  return
-      [imbalance, options](
-          MPI_Comm comm, idx_t nparts,
-          std::optional<
-              std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
-              local_graph,
-          std::optional<std::span<const double>>, int, bool ghosting)
+  return [imbalance, options](MPI_Comm comm, idx_t nparts,
+                              const graph::AdjacencyList<std::int64_t>& graph,
+                              bool ghosting)
   {
-    if (!local_graph)
-      throw std::runtime_error("ParMETIS partitioner requires a graph.");
-    const graph::AdjacencyList<std::int64_t>& graph = local_graph->get();
-
     spdlog::info("Compute graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS)");
 
@@ -569,18 +548,10 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
                                                    double imbalance,
                                                    std::array<int, 3> options)
 {
-  return
-      [ipc2redist, imbalance, options](
-          MPI_Comm comm, idx_t nparts,
-          std::optional<
-              std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
-              local_graph,
-          std::optional<std::span<const double>>, int, bool ghosting)
+  return [ipc2redist, imbalance, options](
+             MPI_Comm comm, idx_t nparts,
+             const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
   {
-    if (!local_graph)
-      throw std::runtime_error("ParMETIS repartitioner requires a graph.");
-    const graph::AdjacencyList<std::int64_t>& graph = local_graph->get();
-
     spdlog::info("Compute graph re-partition using ParMETIS");
     common::Timer timer("Compute graph re-partition (ParMETIS)");
 
@@ -670,31 +641,26 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
   };
 }
 //-----------------------------------------------------------------------------
-graph::partition_fn
-graph::parmetis::geom_partitioner(parmetis::geom_method method,
-                                  double imbalance, std::array<int, 3> options)
+graph::geom_partition_fn graph::parmetis::geom_partitioner()
 {
   return
-      [method, imbalance, options](
-          MPI_Comm comm, idx_t nparts,
-          std::optional<
-              std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
-              local_graph,
-          std::optional<std::span<const double>> x, int gdim, bool ghosting)
+      [](MPI_Comm comm, idx_t nparts,
+         std::optional<
+             std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
+             local_graph,
+         std::span<const double> x, int gdim, bool ghosting)
   {
-    if (!local_graph or !x)
-    {
-      throw std::runtime_error(
-          "ParMETIS geometric partitioner requires a graph and point "
-          "coordinates.");
-    }
-    const graph::AdjacencyList<std::int64_t>& graph = local_graph->get();
-
     spdlog::info("Compute geometric graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS geometric)");
 
-    if (static_cast<std::int64_t>(x->size())
-        != static_cast<std::int64_t>(gdim) * graph.num_nodes())
+    if (ghosting and !local_graph)
+    {
+      throw std::runtime_error(
+          "A graph is required to compute ghost destinations.");
+    }
+
+    const idx_t num_nodes = x.size() / gdim;
+    if (local_graph and num_nodes != local_graph->get().num_nodes())
     {
       throw std::runtime_error(
           "Number of coordinates does not match number of graph nodes.");
@@ -703,8 +669,7 @@ graph::parmetis::geom_partitioner(parmetis::geom_method method,
     if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
     {
       // Nothing to be partitioned
-      return regular_adjacency_list(
-          std::vector<std::int32_t>(graph.num_nodes(), 0), 1);
+      return regular_adjacency_list(std::vector<std::int32_t>(num_nodes, 0), 1);
     }
 
     // Note: ParMETIS fails (crashes) if a rank does not have any graph
@@ -713,66 +678,133 @@ graph::parmetis::geom_partitioner(parmetis::geom_method method,
     MPI_Comm pcomm = MPI_COMM_NULL;
     {
       int rank = dolfinx::MPI::rank(comm);
-      int color = graph.num_nodes() > 0 ? 1 : MPI_UNDEFINED;
+      int color = num_nodes > 0 ? 1 : MPI_UNDEFINED;
       int ierr = MPI_Comm_split(comm, color, rank, &pcomm);
       dolfinx::MPI::check_error(comm, ierr);
     }
 
-    std::vector<idx_t> part(graph.num_nodes());
+    std::vector<idx_t> part(num_nodes);
     std::vector<idx_t> node_disp;
     if (pcomm != MPI_COMM_NULL)
     {
       const int psize = dolfinx::MPI::size(pcomm);
-      const idx_t num_local_nodes = graph.num_nodes();
+      if (nparts != psize)
+      {
+        throw std::runtime_error(
+            "ParMETIS_V3_PartGeom partitions into one part per MPI rank, so "
+            "the number of parts must equal the communicator size.");
+      }
+
+      const idx_t num_local_nodes = num_nodes;
       node_disp = std::vector<idx_t>(psize + 1, 0);
       MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<idx_t>,
                     node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<idx_t>, pcomm);
       std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
 
       // ParMETIS requires its own scalar type for the coordinates
-      std::vector<real_t> xyz(x->begin(), x->end());
+      std::vector<real_t> xyz(x.begin(), x.end());
       idx_t ndims = gdim;
 
-      if (method == parmetis::geom_method::curve)
+      common::Timer timer1("ParMETIS: call ParMETIS_V3_PartGeom");
+      int err = ParMETIS_V3_PartGeom(node_disp.data(), &ndims, xyz.data(),
+                                     part.data(), &pcomm);
+      if (err != METIS_OK)
       {
-        if (nparts != psize)
-        {
-          throw std::runtime_error(
-              "ParMETIS_V3_PartGeom partitions into one part per MPI rank, so "
-              "the number of parts must equal the communicator size.");
-        }
-
-        common::Timer timer1("ParMETIS: call ParMETIS_V3_PartGeom");
-        int err = ParMETIS_V3_PartGeom(node_disp.data(), &ndims, xyz.data(),
-                                       part.data(), &pcomm);
-        if (err != METIS_OK)
-        {
-          throw std::runtime_error(
-              std::format("ParMETIS_V3_PartGeom failed. Error code: {}", err));
-        }
+        throw std::runtime_error(
+            std::format("ParMETIS_V3_PartGeom failed. Error code: {}", err));
       }
-      else
-      {
-        std::vector<idx_t> array(graph.array().begin(), graph.array().end());
-        std::vector<idx_t> offsets(graph.offsets().begin(),
-                                   graph.offsets().end());
-        std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
-        idx_t ncon = 1;
-        idx_t wgtflag(0), edgecut(0), numflag(0);
-        std::vector<real_t> tpwgts(ncon * nparts,
-                                   1.0 / static_cast<real_t>(nparts));
-        real_t ubvec = static_cast<real_t>(imbalance);
+    }
 
-        common::Timer timer1("ParMETIS: call ParMETIS_V3_PartGeomKway");
-        int err = ParMETIS_V3_PartGeomKway(
-            node_disp.data(), offsets.data(), array.data(), nullptr, nullptr,
-            &wgtflag, &numflag, &ndims, xyz.data(), &ncon, &nparts,
-            tpwgts.data(), &ubvec, opts.data(), &edgecut, part.data(), &pcomm);
-        if (err != METIS_OK)
-        {
-          throw std::runtime_error(std::format(
-              "ParMETIS_V3_PartGeomKway failed. Error code: {}", err));
-        }
+    if (ghosting and pcomm != MPI_COMM_NULL)
+    {
+      assert(local_graph);
+      graph::AdjacencyList<int> dest = graph::compute_destination_ranks(
+          pcomm, local_graph->get(), node_disp, part);
+      MPI_Comm_free(&pcomm);
+      return dest;
+    }
+    else
+    {
+      if (pcomm != MPI_COMM_NULL)
+        MPI_Comm_free(&pcomm);
+      return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
+                                    1);
+    }
+  };
+}
+//-----------------------------------------------------------------------------
+graph::hybrid_partition_fn
+graph::parmetis::geom_partitioner_kway(double imbalance,
+                                       std::array<int, 3> options)
+{
+  return [imbalance, options](MPI_Comm comm, idx_t nparts,
+                              const graph::AdjacencyList<std::int64_t>& graph,
+                              std::span<const double> x, bool ghosting)
+  {
+    spdlog::info("Compute geometric graph partition using ParMETIS");
+    common::Timer timer("Compute graph partition (ParMETIS geometric)");
+
+    const idx_t num_nodes = graph.num_nodes();
+    const idx_t gdim
+        = num_nodes > 0 ? static_cast<idx_t>(x.size()) / num_nodes : 0;
+    if (static_cast<std::int64_t>(x.size())
+        != static_cast<std::int64_t>(gdim) * num_nodes)
+    {
+      throw std::runtime_error(
+          "Number of coordinates does not match number of graph nodes.");
+    }
+
+    if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
+    {
+      // Nothing to be partitioned
+      return regular_adjacency_list(std::vector<std::int32_t>(num_nodes, 0), 1);
+    }
+
+    // Note: ParMETIS fails (crashes) if a rank does not have any graph
+    // data. Therefore we split the communicator such that ParMETIS
+    // partitioning happens only on ranks that have data.
+    MPI_Comm pcomm = MPI_COMM_NULL;
+    {
+      int rank = dolfinx::MPI::rank(comm);
+      int color = num_nodes > 0 ? 1 : MPI_UNDEFINED;
+      int ierr = MPI_Comm_split(comm, color, rank, &pcomm);
+      dolfinx::MPI::check_error(comm, ierr);
+    }
+
+    std::vector<idx_t> part(num_nodes);
+    std::vector<idx_t> node_disp;
+    if (pcomm != MPI_COMM_NULL)
+    {
+      const int psize = dolfinx::MPI::size(pcomm);
+      const idx_t num_local_nodes = num_nodes;
+      node_disp = std::vector<idx_t>(psize + 1, 0);
+      MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<idx_t>,
+                    node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<idx_t>, pcomm);
+      std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
+
+      // ParMETIS requires its own scalar type for the coordinates
+      std::vector<real_t> xyz(x.begin(), x.end());
+      idx_t ndims = gdim;
+
+      std::vector<idx_t> array(graph.array().begin(), graph.array().end());
+      std::vector<idx_t> offsets(graph.offsets().begin(),
+                                 graph.offsets().end());
+      std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
+      idx_t ncon = 1;
+      idx_t wgtflag(0), edgecut(0), numflag(0);
+      std::vector<real_t> tpwgts(ncon * nparts,
+                                 1.0 / static_cast<real_t>(nparts));
+      real_t ubvec = static_cast<real_t>(imbalance);
+
+      common::Timer timer1("ParMETIS: call ParMETIS_V3_PartGeomKway");
+      int err = ParMETIS_V3_PartGeomKway(
+          node_disp.data(), offsets.data(), array.data(), nullptr, nullptr,
+          &wgtflag, &numflag, &ndims, xyz.data(), &ncon, &nparts, tpwgts.data(),
+          &ubvec, opts.data(), &edgecut, part.data(), &pcomm);
+      if (err != METIS_OK)
+      {
+        throw std::runtime_error(std::format(
+            "ParMETIS_V3_PartGeomKway failed. Error code: {}", err));
       }
     }
 
@@ -802,18 +834,10 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
                                               double imbalance,
                                               bool suppress_output)
 {
-  return
-      [mode, seed, imbalance, suppress_output](
-          MPI_Comm comm, int nparts,
-          std::optional<
-              std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
-              local_graph,
-          std::optional<std::span<const double>>, int, bool ghosting)
+  return [mode, seed, imbalance, suppress_output](
+             MPI_Comm comm, int nparts,
+             const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
   {
-    if (!local_graph)
-      throw std::runtime_error("KaHIP partitioner requires a graph.");
-    const graph::AdjacencyList<std::int64_t>& graph = local_graph->get();
-
     spdlog::info("Compute graph partition using (parallel) KaHIP");
 
     // KaHIP integer type

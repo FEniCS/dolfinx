@@ -34,9 +34,9 @@ if _partitioner_kahip is not None:
 _geom_partitioner_parmetis = getattr(_cpp.graph, "geom_partitioner_parmetis", None)
 if _geom_partitioner_parmetis is not None:
     geom_partitioner_parmetis = _geom_partitioner_parmetis
-_ParMETISGeomMethod = getattr(_cpp.graph, "ParMETISGeomMethod", None)
-if _ParMETISGeomMethod is not None:
-    ParMETISGeomMethod = _ParMETISGeomMethod
+_geom_partitioner_parmetis_kway = getattr(_cpp.graph, "geom_partitioner_parmetis_kway", None)
+if _geom_partitioner_parmetis_kway is not None:
+    geom_partitioner_parmetis_kway = _geom_partitioner_parmetis_kway
 
 
 __all__ = [

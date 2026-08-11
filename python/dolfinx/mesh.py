@@ -65,6 +65,7 @@ __all__ = [
     "create_cell_partitioner",
     "create_geometric_cell_partitioner",
     "create_geometry",
+    "create_hybrid_cell_partitioner",
     "create_interval",
     "create_mesh",
     "create_point_mesh",
@@ -199,6 +200,52 @@ def create_geometric_cell_partitioner(
         Partitioning function.
     """
     return _cpp.mesh.create_geometric_cell_partitioner(
+        part,
+        mode,
+        comm,
+        np.ascontiguousarray(x, dtype=np.float64),
+        max_facet_to_cell_links,
+        num_threads,
+    )
+
+
+def create_hybrid_cell_partitioner(
+    part: GeometricPartitioningFunc,
+    mode: GhostMode,
+    comm: _MPI.Comm,
+    x: npt.NDArray[np.floating],
+    max_facet_to_cell_links: int | None = 2,
+    num_threads: int = 1,
+) -> Callable:
+    """Create a function to partition a mesh using a hybrid partitioner.
+
+    Unlike :func:`create_geometric_cell_partitioner`, the mesh dual graph
+    is always computed and passed to ``part`` along with the cell
+    positions, regardless of ``mode``. Use this for a partitioner that
+    needs the graph edges as part of the partitioning decision itself
+    (e.g. ParMETIS `GeomKway`, via
+    ``dolfinx.cpp.graph.geom_partitioner_parmetis_kway``), rather than
+    only to determine ghost cells.
+
+    Args:
+        part: Hybrid graph partitioning function.
+        mode: Ghosting mode to use.
+        comm: MPI communicator that ``x`` is distributed over. This must be
+            the communicator passed to :func:`create_mesh`.
+        x: Mesh geometry ('node' coordinates) with shape
+            ``(num_nodes, gdim)``. This must be the array passed to
+            :func:`create_mesh`. The data is copied.
+        max_facet_to_cell_links: Maximum number of cells connected to a
+            facet. Equal to 2 for non-branching manifold meshes. ``None``
+            corresponds to no upper bound on the number of possible
+            connections.
+        num_threads: Number of CPU threads to use when building the mesh
+            dual graph. Must be >= 1.
+
+    Return:
+        Partitioning function.
+    """
+    return _cpp.mesh.create_hybrid_cell_partitioner(
         part,
         mode,
         comm,

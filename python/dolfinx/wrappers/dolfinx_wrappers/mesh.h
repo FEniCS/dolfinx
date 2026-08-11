@@ -9,7 +9,6 @@
 #include "MPICommWrapper.h"
 #include "array.h"
 #include "numpy_dtype.h"
-#include <cassert>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -34,20 +33,15 @@ namespace nb = nanobind;
 
 namespace dolfinx_wrappers::part::impl
 {
-/// Wrap a Python graph partitioning function as a C++ function. The
-/// Python signature always requires the graph, so `local_graph` must be
-/// supplied.
+/// Wrap a Python graph partitioning function as a C++ function.
 template <typename Functor>
 auto create_partitioner_cpp(Functor&& p)
 {
   return [p](MPI_Comm comm, int nparts,
-             std::optional<std::reference_wrapper<
-                 const dolfinx::graph::AdjacencyList<std::int64_t>>>
-                 local_graph,
-             std::optional<std::span<const double>>, int, bool ghosting)
+             const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+             bool ghosting)
   {
-    assert(local_graph);
-    return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph->get(),
+    return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
              ghosting);
   };
 }

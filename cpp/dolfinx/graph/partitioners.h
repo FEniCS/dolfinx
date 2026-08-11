@@ -116,44 +116,50 @@ graph::partition_fn repartitioner(double ipc2redist = 1000.0,
                                   double imbalance = 1.02,
                                   std::array<int, 3> options = {1, 0, 5});
 
-/// @brief ParMETIS partitioning methods that use node coordinates.
-enum class geom_method : std::uint8_t
-{
-  /// Space-filling curve ordering of the coordinates, used to
-  /// redistribute the graph before multilevel k-way partitioning
-  /// (`ParMETIS_V3_PartGeomKway`). The partition quality is comparable
-  /// to ::partitioner, and the redistribution makes the k-way phase
-  /// markedly cheaper when the input graph distribution does not
-  /// reflect the node positions.
-  kway,
-
-  /// Space-filling curve ordering of the coordinates only, with the
-  /// graph edges unused (`ParMETIS_V3_PartGeom`). Much cheaper than
-  /// ::kway, but cuts more edges.
-  curve
-};
-
 /// @brief Create a geometric graph partitioning function that uses
-/// ParMETIS.
+/// ParMETIS to order the coordinates along a space-filling curve
+/// (`ParMETIS_V3_PartGeom`).
+///
+/// The graph edges are unused for partitioning, so this is much cheaper
+/// than ::geom_partitioner_kway, but cuts more edges.
 ///
 /// @note ParMETIS fails (crashes) if an MPI rank has no part of the
 /// graph. If necessary, the communicator should be split to avoid this
 /// situation.
 ///
-/// @note `geom_method::curve` partitions into one part per rank of the
-/// communicator, so `nparts` must equal the communicator size.
+/// @note This partitions into one part per rank of the communicator, so
+/// `nparts` must equal the communicator size.
 ///
-/// @param[in] method Partitioning method.
-/// @param[in] imbalance Imbalance tolerance (`geom_method::kway` only).
-/// See ParMETIS manual for details
+/// @return A geometric graph partitioning function. It requires `x`.
+/// `local_graph` is optional, unless ghosting is requested, in which
+/// case it is required.
+graph::geom_partition_fn geom_partitioner();
+
+/// @brief Create a geometric graph partitioning function that uses
+/// ParMETIS to order the coordinates along a space-filling curve,
+/// redistribute the graph accordingly, then apply multilevel k-way
+/// partitioning to the redistributed graph (`ParMETIS_V3_PartGeomKway`).
+///
+/// The partition quality is comparable to ::partitioner, and the
+/// space-filling curve redistribution makes the k-way phase markedly
+/// cheaper when the input graph distribution does not reflect the node
+/// positions.
+///
+/// @note ParMETIS fails (crashes) if an MPI rank has no part of the
+/// graph. If necessary, the communicator should be split to avoid this
+/// situation.
+///
+/// @param[in] imbalance Imbalance tolerance. See ParMETIS manual for
+/// details
 /// (https://github.com/KarypisLab/ParMETIS/blob/main/manual/manual.pdf).
-/// @param[in] options The ParMETIS options (`geom_method::kway` only).
-/// See ParMETIS manual for details.
-/// @return A geometric graph partitioning function. It requires both
-/// `local_graph` and `x`, for either method.
-graph::partition_fn geom_partitioner(geom_method method = geom_method::kway,
-                                     double imbalance = 1.02,
-                                     std::array<int, 3> options = {1, 0, 5});
+/// @param[in] options The ParMETIS options. See ParMETIS manual for
+/// details.
+/// @return A hybrid graph partitioning function. It requires both `x`
+/// and `local_graph`, since the graph edges are used as well as the
+/// coordinates.
+graph::hybrid_partition_fn geom_partitioner_kway(double imbalance = 1.02,
+                                                 std::array<int, 3> options
+                                                 = {1, 0, 5});
 #endif
 } // namespace parmetis
 

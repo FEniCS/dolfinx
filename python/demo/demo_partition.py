@@ -98,6 +98,7 @@ from dolfinx.mesh import (
     GhostMode,
     create_cell_partitioner,
     create_geometric_cell_partitioner,
+    create_hybrid_cell_partitioner,
     create_mesh,
 )
 
@@ -303,7 +304,8 @@ n = int(os.environ.get("DEMO_PARTITION_N", 24 if _small else 128))
 
 cells0, x = cube_block(comm, n)
 cmap = coordinate_element(CellType.tetrahedron, 1)
-ghost_mode = GhostMode.shared_facet
+# ghost_mode = GhostMode.shared_facet
+ghost_mode = GhostMode.none
 
 partitioners = {}
 
@@ -311,13 +313,12 @@ if has_parmetis:
     partitioners["ParMETIS Kway"] = create_cell_partitioner(
         graph.partitioner_parmetis(), ghost_mode, 2
     )
-    for label, method in [
-        ("ParMETIS GeomKway", graph.ParMETISGeomMethod.kway),
-        ("ParMETIS Geom", graph.ParMETISGeomMethod.curve),
-    ]:
-        partitioners[label] = create_geometric_cell_partitioner(
-            graph.geom_partitioner_parmetis(method, 1.02, [1, 0, 5]), ghost_mode, comm, x
-        )
+    partitioners["ParMETIS GeomKway"] = create_hybrid_cell_partitioner(
+        graph.geom_partitioner_parmetis_kway(1.02, [1, 0, 5]), ghost_mode, comm, x
+    )
+    partitioners["ParMETIS Geom"] = create_geometric_cell_partitioner(
+        graph.geom_partitioner_parmetis(), ghost_mode, comm, x
+    )
 
 if has_ptscotch:
     partitioners["PT-SCOTCH"] = create_cell_partitioner(graph.partitioner_scotch(), ghost_mode, 2)
@@ -372,30 +373,39 @@ for fraction in (0.0, 0.5, 1.0):
 # graph partitioner. It is shown here with PT-SCOTCH, which is the most
 # sensitive to the input distribution.
 #
-# The second stage needs the cells of the first-stage mesh expressed in
-# the original input vertex numbering, which the geometry's
-# `input_global_indices` provides. Only the owned cells are taken, so
-# that each cell still appears exactly once.
+# The first stage only needs the redistributed *cells* to feed to the
+# second stage, not a mesh, so it calls the cell partitioner directly and
+# exchanges the cell-vertex rows itself, rather than going through
+# :func:`create_mesh`. This avoids paying for topology, geometry and
+# ghost cells for a mesh that would otherwise be discarded immediately.
+# Only the owning rank of each cell (the partitioner's first destination)
+# is used, so that each cell still appears exactly once, in the same
+# vertex numbering it started with.
 
 
-def cells_in_input_numbering(msh) -> npt.NDArray[np.int64]:
-    """Owned cells of a mesh, as global indices in the input numbering.
-
-    The result can be passed back to :func:`create_mesh` with the
-    original geometry, giving a mesh with the same cells distributed as
-    ``msh`` has them.
+def redistribute_by_partitioner(
+    comm: MPI.Comm,
+    cell_type: CellType,
+    cells: npt.NDArray[np.int64],
+    partitioner,
+) -> npt.NDArray[np.int64]:
+    """Redistribute cells to the ranks a cell partitioner assigns them to.
 
     Args:
-        msh: Mesh to take the cells from. Must have a 'P1' geometry, so
-            that the geometry nodes are the cell vertices.
+        comm: MPI communicator the cells are distributed over.
+        cell_type: Cell type of ``cells``.
+        cells: Local cells, with shape ``(num_cells, num_vertices)``.
+        partitioner: Cell partitioning function, as passed to
+            :func:`create_mesh`.
 
     Returns:
-        Cell vertices with shape ``(num_owned_cells, num_vertices)``.
+        The cells assigned to this rank, in the same vertex numbering as
+        the input ``cells``.
     """
-    igi = msh.geometry.input_global_indices
-    dofmap = msh.geometry.dofmaps[0]
-    num_owned = msh.topology.index_map(msh.topology.dim).size_local
-    return np.ascontiguousarray(igi[dofmap[:num_owned]])
+    dest = partitioner(comm, comm.size, [cell_type], [cells.reshape(-1)])
+    owner = dest.array[dest.offsets[:-1]]  # Owning rank is listed first
+    recv = comm.alltoall([cells[owner == r] for r in range(comm.size)])
+    return np.ascontiguousarray(np.concatenate(recv), dtype=np.int64)
 
 
 def scotch_partitioner_time() -> float:
@@ -429,9 +439,15 @@ if has_ptscotch and comm.size > 1:
     # the comparison below stands on its own.
     msh1, t1, t1_scotch = timed(cells_random, scotch)
 
-    # Two stages: the curve first, then SCOTCH on its output
-    msh2a, t2a, _ = timed(cells_random, sfc)
-    msh2b, t2b, t2b_scotch = timed(cells_in_input_numbering(msh2a), scotch)
+    # Two stages: the curve first, then SCOTCH on its output. The first
+    # stage redistributes the cells alone (see redistribute_by_partitioner)
+    # since a full mesh from it would be thrown away immediately.
+    comm.Barrier()
+    t = time.perf_counter()
+    cells_sfc = redistribute_by_partitioner(comm, CellType.tetrahedron, cells_random, sfc)
+    comm.Barrier()
+    t2a = comm.allreduce(time.perf_counter() - t, MPI.MAX)
+    msh2b, t2b, t2b_scotch = timed(cells_sfc, scotch)
 
     if comm.rank == 0:
         print("\nPartitioning a randomly distributed mesh with PT-SCOTCH")

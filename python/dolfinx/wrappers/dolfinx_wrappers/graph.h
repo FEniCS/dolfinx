@@ -13,7 +13,6 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
 #include <nanobind/stl/function.h>
-#include <optional>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -23,18 +22,13 @@ namespace dolfinx_wrappers
 {
 
 /// Wrap a C++ graph partitioning function as a Python-ready function.
-/// The Python signature always requires the graph and never supplies
-/// coordinates.
 template <typename Functor>
 auto create_partitioner_py(Functor&& p_cpp)
 {
   return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
                  const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
                  bool ghosting)
-  {
-    return p_cpp(comm.get(), nparts, std::cref(local_graph), std::nullopt, 0,
-                 ghosting);
-  };
+  { return p_cpp(comm.get(), nparts, local_graph, ghosting); };
 }
 
 /// Wrap a C++ geometric graph partitioner for use from Python. Node
@@ -54,6 +48,26 @@ auto create_geom_partitioner_py(Functor&& p_cpp)
     return p_cpp(comm.get(), nparts, std::cref(local_graph),
                  std::span<const double>(x.data(), x.size()), x.shape(1),
                  ghosting);
+  };
+}
+
+/// Wrap a C++ hybrid graph partitioner for use from Python. As
+/// create_geom_partitioner_py, but the wrapped C++ functor's graph
+/// argument is required (not optional) and has no separate `gdim`
+/// parameter, matching dolfinx::graph::hybrid_partition_fn.
+template <typename Functor>
+auto create_hybrid_partitioner_py(Functor&& p_cpp)
+{
+  return
+      [p_cpp](
+          dolfinx_wrappers::MPICommWrapper comm, int nparts,
+          const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+          nanobind::ndarray<const double, nanobind::ndim<2>, nanobind::c_contig>
+              x,
+          bool ghosting)
+  {
+    return p_cpp(comm.get(), nparts, local_graph,
+                 std::span<const double>(x.data(), x.size()), ghosting);
   };
 }
 
