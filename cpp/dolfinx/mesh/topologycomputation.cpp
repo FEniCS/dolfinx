@@ -873,7 +873,8 @@ compute_entities_by_key_matching(
     };
 
     // Sort the list and label uniquely
-    const std::vector<std::int32_t> sort_order = [&]
+    const std::vector<std::int32_t> sort_order
+        = [num_threads, &entity_list_sorted, &sort_threaded]
     {
       if (num_threads == 1)
       {

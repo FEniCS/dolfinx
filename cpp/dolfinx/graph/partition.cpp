@@ -315,7 +315,8 @@ graph::partition_fn graph::sfc::partitioner(sfc::curve curve)
                                "graph to compute ghosts.");
     }
 
-    auto call = [&](const graph::AdjacencyList<std::int64_t>& graph)
+    auto call = [curve, comm, nparts, &x, gdim,
+                 ghosting](const graph::AdjacencyList<std::int64_t>& graph)
     {
       return (curve == sfc::curve::hilbert)
                  ? graph::partition_sfc_hilbert(comm, nparts, graph, *x, gdim,
