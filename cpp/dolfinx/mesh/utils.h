@@ -1133,7 +1133,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
   std::int32_t num_cell_types = cells.size();
 
-  // -- Partition topology across ranks of comm
+  // -- Partition cells across ranks of comm
   std::vector<std::vector<std::int64_t>> cells1(num_cell_types);
   std::vector<std::vector<std::int64_t>> original_idx1(num_cell_types);
   std::vector<std::vector<int>> ghost_owners(num_cell_types);
@@ -1178,9 +1178,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       std::vector<std::int32_t> data_i(
           std::next(dest.array().begin(), offsets_i.front()),
           std::next(dest.array().begin(), offsets_i.back()));
-      std::int32_t offset_0 = offsets_i.front();
-      std::ranges::for_each(offsets_i,
-                            [&offset_0](std::int32_t& j) { j -= offset_0; });
+      const std::int32_t offset_0 = offsets_i.front();
+      std::ranges::transform(offsets_i, offsets_i.begin(),
+                             [offset_0](std::int32_t j)
+                             { return j - offset_0; });
       graph::AdjacencyList<std::int32_t> dest_i(data_i, offsets_i);
       cell_offset += num_cells;
 
@@ -1193,9 +1194,13 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       spdlog::debug("Got {} cells from distribution", cells1[i].size());
     }
   }
-  else
+  else // No partitioning: keep cells on their current rank
   {
-    // No partitioning, construct a global index
+    // Count cells of each type on this rank. Each cell still needs a
+    // globally unique index (assigned below), even though it is not
+    // being redistributed, and the counts are needed first to size
+    // `original_idx1` and to determine this rank's share via the
+    // exclusive scan that follows.
     std::int64_t num_owned = 0;
     for (std::int32_t i = 0; i < num_cell_types; ++i)
     {
@@ -1210,7 +1215,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       num_owned += original_idx1[i].size();
     }
 
-    // Add on global offset
+    // Assign a globally unique index to each cell. `global_offset`
+    // starts as the number of cells owned by lower-ranked processes
+    // (from the exclusive scan), and is advanced by each cell type's
+    // count in turn so that the numbering is contiguous across cell
+    // types too.
     std::int64_t global_offset = 0;
     MPI_Exscan(&num_owned, &global_offset, 1, MPI_INT64_T, MPI_SUM, comm);
     for (std::int32_t i = 0; i < num_cell_types; ++i)
