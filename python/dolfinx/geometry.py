@@ -215,6 +215,7 @@ def compute_closest_entity(
         point if the bounding box tree is empty.
 
     """
+    # pyrefly: ignore[no-matching-overload]
     return _cpp.geometry.compute_closest_entity(
         tree._cpp_object,  # type: ignore[arg-type]
         midpoint_tree._cpp_object,  # type: ignore[arg-type]

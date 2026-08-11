@@ -907,6 +907,7 @@ def create_mesh(
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
+    # pyrefly: ignore[no-matching-overload]
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
         comm,
         cells,
@@ -1074,7 +1075,7 @@ def create_interval(
         An interval mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = _create_cell_partitioner_from_ghost_mode(ghost_mode, 2)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1159,7 +1160,7 @@ def create_rectangle(
         A mesh of a rectangle.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = _create_cell_partitioner_from_ghost_mode(ghost_mode, 2)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1269,7 +1270,7 @@ def create_box(
         A mesh of a box domain.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = _create_cell_partitioner_from_ghost_mode(ghost_mode, 2)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",

@@ -327,6 +327,11 @@ def model_to_mesh(
         creation for efficient access.
     """
     valid_mesh = None
+    # Only populated on ``rank``; the empty values are what the other
+    # ranks contribute to the collective calls below.
+    x: npt.NDArray[np.float64] = np.empty((0, 3), dtype=np.float64)
+    topologies: dict[int, TopologyDict] = {}
+    physical_groups: dict[str, PhysicalGroup] = {}
     if comm.rank == rank:
         if model is None:
             raise ValueError("Gmsh model is None on rank responsible for mesh creation.")
@@ -438,6 +443,7 @@ def model_to_mesh(
                 )._cpp_object
             )
         # The mixed topology constructor is not great at the moment
+        # pyrefly: ignore[no-matching-overload]
         cpp_mesh = _cpp.mesh.create_mesh(
             comm,
             cell_connectivities,

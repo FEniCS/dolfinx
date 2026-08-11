@@ -297,11 +297,15 @@ class Expression(Generic[Scalar]):
                 raise TypeError("Passed values array does not have correct dtype.")
 
         constants = _cpp.fem.pack_constants(self._cpp_object)
+        # The scalar type is only known at runtime, so no single generated
+        # overload accepts the union held here.
+        # pyrefly: ignore[no-matching-overload]
         coeffs = _cpp.fem.pack_coefficients(
             self._cpp_object,  # type: ignore[arg-type]
             mesh._cpp_object,  # type: ignore[arg-type]
             _entities,
         )
+        # pyrefly: ignore[no-matching-overload]
         _cpp.fem.tabulate_expression(
             values,  # type: ignore[arg-type]
             self._cpp_object,  # type: ignore[arg-type]
@@ -559,6 +563,7 @@ class Function(ufl.Coefficient, Generic[Scalar]):
         if isinstance(u0, Function | Expression | int) or not callable(u0):
             _interpolate(u0)
         else:
+            # pyrefly: ignore[no-matching-overload]
             x = _cpp.fem.interpolation_coords(
                 self._V.element._cpp_object,  # type: ignore[arg-type]
                 self._V.mesh.geometry._cpp_object,  # type: ignore[arg-type]

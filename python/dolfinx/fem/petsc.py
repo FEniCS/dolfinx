@@ -340,10 +340,10 @@ def _assemble_vector_petsc(
             raise ValueError(
                 "Must provide a sequence of coefficients when assembling a nest vector"
             )
-        constants = [None] * len(L) if constants is None else constants  # type: ignore[list-item]
-        coeffs = [None] * len(L) if coeffs is None else coeffs  # type: ignore[list-item]
+        _constants = [None] * len(L) if constants is None else constants
+        _coeffs = [None] * len(L) if coeffs is None else coeffs
         for b_sub, L_sub, const, coeff in zip(
-            b.getNestSubVecs(), L, constants, coeffs, strict=True
+            b.getNestSubVecs(), L, _constants, _coeffs, strict=True
         ):
             with b_sub.localForm() as b_local:
                 _assemble_vector_array(b_local.array_w, L_sub, const, coeff)
@@ -514,7 +514,7 @@ def _assemble_matrix_petsc(
                     Asub = A.getNestSubMatrix(i, j)
                     _assemble_matrix_petsc(Asub, a_block, bcs, diag, const, coeff)
                 elif i == j:
-                    for bc in bcs:
+                    for bc in bcs if bcs is not None else []:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
@@ -549,6 +549,7 @@ def _assemble_matrix_petsc(
             for j, a_sub in enumerate(a_row):
                 if a_sub is not None:
                     Asub = A.getLocalSubMatrix(is0[i], is1[j])
+                    # pyrefly: ignore[no-matching-overload]
                     _cpp.fem.petsc.assemble_matrix(
                         Asub,
                         a_sub._cpp_object,  # type: ignore[arg-type]
@@ -665,13 +666,13 @@ def apply_lifting(
     """
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()  # type: ignore[attr-defined]
-        constants = [pack_constants(forms) for forms in a] if constants is None else constants  # type: ignore[assignment]
-        coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
+        _constants = [pack_constants(forms) for forms in a] if constants is None else constants
+        _coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
         for b_sub, a_sub, const, coeff in zip(
             b.getNestSubVecs(),
             a,
-            constants,  # type: ignore[arg-type]
-            coeffs,
+            _constants,
+            _coeffs,
             strict=True,
         ):
             const_ = [np.array([], dtype=PETSc.ScalarType) if x is None else x for x in const]
@@ -1064,6 +1065,7 @@ class LinearProblem(typing.Generic[_U]):
                 for bc in self.bcs:
                     bc.set(self.b.array_w)
         else:
+            # pyrefly: ignore[bad-argument-type]
             dolfinx.la.petsc._ghost_update(self.b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)
 
         # Solve linear system and update ghost values in the solution

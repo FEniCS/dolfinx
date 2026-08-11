@@ -55,6 +55,8 @@ def read_mesh(
         mesh_cpp = read_vtkhdf_mesh_float64(comm, str(filename), gdim, max_facet_to_cell_links)
     elif dtype == np.float32:
         mesh_cpp = read_vtkhdf_mesh_float32(comm, str(filename), gdim, max_facet_to_cell_links)
+    else:
+        raise ValueError(f"Unsupported mesh geometry dtype: {dtype}")
 
     cell_types = mesh_cpp.topology.entity_types[-1]
     if len(cell_types) > 1:

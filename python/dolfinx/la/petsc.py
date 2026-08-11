@@ -196,6 +196,9 @@ def assign(
                 _x.array_w[:] = x0
 
 
+# `assign` is overloaded on assignment direction, not specialised, so the
+# registered type is absent from the base first-argument annotation.
+# pyrefly: ignore[bad-singledispatch-register]
 @assign.register
 def _(  # type: ignore[misc]
     x0: PETSc.Vec,

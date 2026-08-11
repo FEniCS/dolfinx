@@ -22,7 +22,7 @@ import ufl
 
 __all__ = ["ffcx_jit", "get_options", "mpi_jit_decorator"]
 
-DOLFINX_DEFAULT_JIT_OPTIONS = {
+DOLFINX_DEFAULT_JIT_OPTIONS: dict[str, tuple[Path | bool | int | list[str] | None, str]] = {
     "cache_dir": (
         os.getenv("XDG_CACHE_HOME", default=Path.home().joinpath(".cache")) / Path("fenics"),
         "Path for storing DOLFINx JIT cache. "
