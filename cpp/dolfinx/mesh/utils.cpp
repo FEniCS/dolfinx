@@ -291,53 +291,6 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   return mesh::exterior_facet_indices(topology, 0);
 }
 //------------------------------------------------------------------------------
-mesh::CellPartitionFunction mesh::create_cell_partitioner(
-    mesh::GhostMode ghost_mode, graph::partition_fn partfn,
-    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
-{
-  if (num_threads < 1)
-    throw std::runtime_error("num_threads must be >= 1.");
-
-  return [partfn = std::move(partfn), ghost_mode, max_facet_to_cell_links,
-          num_threads](MPI_Comm comm, int nparts,
-                       const std::vector<CellType>& cell_types,
-                       const std::vector<std::span<const std::int64_t>>& cells)
-             -> graph::AdjacencyList<std::int32_t>
-  {
-    spdlog::info("Compute partition of cells across ranks");
-
-    // Compute distributed dual graph (for the cells on this process)
-    graph::AdjacencyList dual_graph = build_dual_graph(
-        comm, cell_types, cells, max_facet_to_cell_links, num_threads);
-
-    // Just flag any kind of ghosting for now
-    bool ghosting = (ghost_mode != GhostMode::none);
-
-    // Compute partition
-    return partfn(comm, nparts, std::cref(dual_graph), std::nullopt, 0,
-                  ghosting);
-  };
-}
-//-----------------------------------------------------------------------------
-mesh::CellPartitionFunction mesh::create_cell_partitioner(
-    mesh::GhostMode ghost_mode,
-    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads)
-{
-  return create_cell_partitioner(
-      ghost_mode,
-      [](MPI_Comm comm, int nparts,
-         std::optional<
-             std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
-             local_graph,
-         std::optional<std::span<const double>>, int, bool ghosting)
-      {
-        assert(local_graph);
-        return graph::partition_graph(comm, nparts, local_graph->get(),
-                                      ghosting);
-      },
-      max_facet_to_cell_links, num_threads);
-}
-//-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 mesh::compute_incident_entities(const Topology& topology,
                                 std::span<const std::int32_t> entities, int d0,

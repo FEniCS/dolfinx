@@ -79,7 +79,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
 
   // Global entity counts for each entity dimension
   auto counts = [&cells, &x, xshape, &element,
-                 comm](const mesh::CellPartitionFunction& part)
+                 comm](const mesh::AnyCellPartitionFunction& part)
   {
     mesh::Mesh<double> mesh = mesh::create_mesh(
         comm, comm,
@@ -106,8 +106,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
     std::array<std::int64_t, 5> c0
         = counts(mesh::create_cell_partitioner(gm, 2));
     std::array<std::int64_t, 5> c1
-        = counts(mesh::create_geometric_cell_partitioner<double>(
-            gm, comm, std::span<const double>(x), xshape, 2));
+        = counts(mesh::create_geometric_cell_partitioner(gm, 2));
 
     // Global entity counts do not depend on the partitioner
     CHECK(c0[0] == (n + 1) * (n + 1) * (n + 1));
@@ -125,9 +124,8 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
           graph::parmetis::geom_method::curve})
     {
       std::array<std::int64_t, 5> c2
-          = counts(mesh::create_geometric_cell_partitioner<double>(
-              gm, comm, std::span<const double>(x), xshape, 2, 1,
-              graph::parmetis::geom_partitioner(method)));
+          = counts(mesh::create_geometric_cell_partitioner(
+              gm, 2, 1, graph::parmetis::geom_partitioner(method)));
       for (int d = 0; d < 4; ++d)
         CHECK(c2[d] == c0[d]);
     }

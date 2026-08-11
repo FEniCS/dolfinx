@@ -441,15 +441,38 @@ void mesh(nb::module_& m)
                       ghosting);
         };
 
+        // create_geometric_cell_partitioner now returns a
+        // GeometricCellPartitionFunction, which is called with cell
+        // centroids rather than the raw node coordinates. The centroids
+        // depend on which cells are local to this rank, so they cannot
+        // be computed until cell_types/cells are known here; commg/xs/
+        // xshape (the raw node coordinates) are captured to compute them
+        // at every call, mirroring create_mesh's own dispatch.
         return part::impl::create_cell_partitioner_py(
-            [xs, cpp_part
-                 = dolfinx::mesh::create_geometric_cell_partitioner<double>(
-                     mode, comm.get(), std::span<const double>(*xs), xshape,
-                     max_facet_to_cell_links, num_threads, std::move(partfn))](
+            [xs, xshape, commg = comm.get(),
+             cpp_part = dolfinx::mesh::create_geometric_cell_partitioner(
+                 mode, max_facet_to_cell_links, num_threads,
+                 std::move(partfn))](
                 MPI_Comm comm, int nparts,
                 const std::vector<dolfinx::mesh::CellType>& cell_types,
                 const std::vector<std::span<const std::int64_t>>& cells)
-            { return cpp_part(comm, nparts, cell_types, cells); });
+            {
+              const int gdim = static_cast<int>(xshape[1]);
+              std::vector<int> num_vertices_per_cell;
+              std::ranges::transform(
+                  cell_types, std::back_inserter(num_vertices_per_cell),
+                  [](dolfinx::mesh::CellType c)
+                  { return dolfinx::mesh::num_cell_vertices(c); });
+              std::vector<double> centroid
+                  = dolfinx::mesh::impl::compute_cell_centroids(
+                      comm, num_vertices_per_cell, cells, commg,
+                      std::span<const double>(*xs), gdim);
+              std::array<std::size_t, 2> cshape
+                  = {centroid.size() / static_cast<std::size_t>(gdim),
+                     static_cast<std::size_t>(gdim)};
+              return cpp_part(comm, nparts, cell_types, cells, commg,
+                              std::span<const double>(centroid), cshape);
+            });
       },
       nb::arg("part"), nb::arg("ghost_mode"), nb::arg("comm"),
       nb::arg("x").noconvert(), nb::arg("max_facet_to_cell_links").none(),
