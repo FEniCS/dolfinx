@@ -15,6 +15,7 @@
 #include <format>
 #include <map>
 #include <numeric>
+#include <optional>
 #include <set>
 #include <span>
 #include <vector>
@@ -253,10 +254,17 @@ template graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
 graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                                                double imbalance, int seed)
 {
-  return [imbalance, strategy, seed](MPI_Comm comm, int nparts,
-                                     const AdjacencyList<std::int64_t>& graph,
-                                     bool ghosting)
+  return [imbalance, strategy,
+          seed](MPI_Comm comm, int nparts,
+                std::optional<
+                    std::reference_wrapper<const AdjacencyList<std::int64_t>>>
+                    local_graph,
+                std::optional<std::span<const double>>, int, bool ghosting)
   {
+    if (!local_graph)
+      throw std::runtime_error("SCOTCH partitioner requires a graph.");
+    const AdjacencyList<std::int64_t>& graph = local_graph->get();
+
     spdlog::info("Compute graph partition using PT-SCOTCH");
     common::Timer timer("Compute graph partition (SCOTCH)");
 
@@ -463,10 +471,18 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 graph::partition_fn graph::parmetis::partitioner(double imbalance,
                                                  std::array<int, 3> options)
 {
-  return [imbalance, options](MPI_Comm comm, idx_t nparts,
-                              const graph::AdjacencyList<std::int64_t>& graph,
-                              bool ghosting)
+  return
+      [imbalance, options](
+          MPI_Comm comm, idx_t nparts,
+          std::optional<
+              std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
+              local_graph,
+          std::optional<std::span<const double>>, int, bool ghosting)
   {
+    if (!local_graph)
+      throw std::runtime_error("ParMETIS partitioner requires a graph.");
+    const graph::AdjacencyList<std::int64_t>& graph = local_graph->get();
+
     spdlog::info("Compute graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS)");
 
@@ -553,10 +569,18 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
                                                    double imbalance,
                                                    std::array<int, 3> options)
 {
-  return [ipc2redist, imbalance, options](
-             MPI_Comm comm, idx_t nparts,
-             const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
+  return
+      [ipc2redist, imbalance, options](
+          MPI_Comm comm, idx_t nparts,
+          std::optional<
+              std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
+              local_graph,
+          std::optional<std::span<const double>>, int, bool ghosting)
   {
+    if (!local_graph)
+      throw std::runtime_error("ParMETIS repartitioner requires a graph.");
+    const graph::AdjacencyList<std::int64_t>& graph = local_graph->get();
+
     spdlog::info("Compute graph re-partition using ParMETIS");
     common::Timer timer("Compute graph re-partition (ParMETIS)");
 
@@ -646,19 +670,30 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
   };
 }
 //-----------------------------------------------------------------------------
-graph::geom_partition_fn
+graph::partition_fn
 graph::parmetis::geom_partitioner(parmetis::geom_method method,
                                   double imbalance, std::array<int, 3> options)
 {
-  return [method, imbalance,
-          options](MPI_Comm comm, idx_t nparts,
-                   const graph::AdjacencyList<std::int64_t>& graph,
-                   std::span<const double> x, int gdim, bool ghosting)
+  return
+      [method, imbalance, options](
+          MPI_Comm comm, idx_t nparts,
+          std::optional<
+              std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
+              local_graph,
+          std::optional<std::span<const double>> x, int gdim, bool ghosting)
   {
+    if (!local_graph or !x)
+    {
+      throw std::runtime_error(
+          "ParMETIS geometric partitioner requires a graph and point "
+          "coordinates.");
+    }
+    const graph::AdjacencyList<std::int64_t>& graph = local_graph->get();
+
     spdlog::info("Compute geometric graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS geometric)");
 
-    if (static_cast<std::int64_t>(x.size())
+    if (static_cast<std::int64_t>(x->size())
         != static_cast<std::int64_t>(gdim) * graph.num_nodes())
     {
       throw std::runtime_error(
@@ -695,7 +730,7 @@ graph::parmetis::geom_partitioner(parmetis::geom_method method,
       std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
 
       // ParMETIS requires its own scalar type for the coordinates
-      std::vector<real_t> xyz(x.begin(), x.end());
+      std::vector<real_t> xyz(x->begin(), x->end());
       idx_t ndims = gdim;
 
       if (method == parmetis::geom_method::curve)
@@ -767,10 +802,18 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
                                               double imbalance,
                                               bool suppress_output)
 {
-  return [mode, seed, imbalance, suppress_output](
-             MPI_Comm comm, int nparts,
-             const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
+  return
+      [mode, seed, imbalance, suppress_output](
+          MPI_Comm comm, int nparts,
+          std::optional<
+              std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
+              local_graph,
+          std::optional<std::span<const double>>, int, bool ghosting)
   {
+    if (!local_graph)
+      throw std::runtime_error("KaHIP partitioner requires a graph.");
+    const graph::AdjacencyList<std::int64_t>& graph = local_graph->get();
+
     spdlog::info("Compute graph partition using (parallel) KaHIP");
 
     // KaHIP integer type

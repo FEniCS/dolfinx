@@ -6,12 +6,14 @@
 
 #include "dolfinx_wrappers/graph.h"
 #include "dolfinx_wrappers/caster_mpi.h"
+#include <cassert>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/graph/partitioners.h>
 #include <dolfinx/graph/utils.h>
+#include <functional>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
@@ -22,7 +24,9 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
+#include <optional>
 #include <ranges>
+#include <span>
 #include <vector>
 
 namespace nb = nanobind;
@@ -47,8 +51,21 @@ void graph(nb::module_& m)
           const dolfinx::graph::AdjacencyList<std::int64_t>&,
           nb::ndarray<const double, nb::ndim<2>, nb::c_contig>, bool)>;
   m.def(
-      "partitioner", []() -> partition_fn
-      { return create_partitioner_py(dolfinx::graph::partition_graph); },
+      "partitioner",
+      []() -> partition_fn
+      {
+        return create_partitioner_py(
+            [](MPI_Comm comm, int nparts,
+               std::optional<std::reference_wrapper<
+                   const dolfinx::graph::AdjacencyList<std::int64_t>>>
+                   local_graph,
+               std::optional<std::span<const double>>, int, bool ghosting)
+            {
+              assert(local_graph);
+              return dolfinx::graph::partition_graph(
+                  comm, nparts, local_graph->get(), ghosting);
+            });
+      },
       "Default graph partitioner");
 
   nb::enum_<dolfinx::graph::sfc::curve>(m, "SFCCurve")

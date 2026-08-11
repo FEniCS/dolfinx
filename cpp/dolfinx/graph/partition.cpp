@@ -16,9 +16,11 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -292,17 +294,44 @@ graph::partition_sfc_hilbert(MPI_Comm comm, int nparts,
   return partition_curve(comm, nparts, graph, x, gdim, ghosting, hilbert_key);
 }
 //-----------------------------------------------------------------------------
-graph::geom_partition_fn graph::sfc::partitioner(sfc::curve curve)
+graph::partition_fn graph::sfc::partitioner(sfc::curve curve)
 {
-  return [curve](MPI_Comm comm, int nparts,
-                 const graph::AdjacencyList<std::int64_t>& graph,
-                 std::span<const double> x, int gdim, bool ghosting)
+  return
+      [curve](
+          MPI_Comm comm, int nparts,
+          std::optional<
+              std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
+              local_graph,
+          std::optional<std::span<const double>> x, int gdim, bool ghosting)
   {
-    return (curve == sfc::curve::hilbert)
-               ? graph::partition_sfc_hilbert(comm, nparts, graph, x, gdim,
-                                              ghosting)
-               : graph::partition_sfc_morton(comm, nparts, graph, x, gdim,
-                                             ghosting);
+    if (!x)
+    {
+      throw std::runtime_error(
+          "Space-filling curve partitioner requires point coordinates.");
+    }
+    if (ghosting and !local_graph)
+    {
+      throw std::runtime_error("Space-filling curve partitioner requires a "
+                               "graph to compute ghosts.");
+    }
+
+    auto call = [&](const graph::AdjacencyList<std::int64_t>& graph)
+    {
+      return (curve == sfc::curve::hilbert)
+                 ? graph::partition_sfc_hilbert(comm, nparts, graph, *x, gdim,
+                                                ghosting)
+                 : graph::partition_sfc_morton(comm, nparts, graph, *x, gdim,
+                                               ghosting);
+    };
+
+    if (local_graph)
+      return call(local_graph->get());
+
+    // local_graph is not read at all when ghosting is false, so a
+    // trivial placeholder of the right size stands in for it.
+    const graph::AdjacencyList<std::int64_t> trivial_graph(
+        static_cast<std::int32_t>(x->size() / gdim));
+    return call(trivial_graph);
   };
 }
 //-----------------------------------------------------------------------------
@@ -312,11 +341,14 @@ graph::partition_graph(MPI_Comm comm, int nparts,
                        bool ghosting)
 {
 #if HAS_PARMETIS
-  return graph::parmetis::partitioner()(comm, nparts, local_graph, ghosting);
+  return graph::parmetis::partitioner()(comm, nparts, std::cref(local_graph),
+                                        std::nullopt, 0, ghosting);
 #elif HAS_PTSCOTCH
-  return graph::scotch::partitioner()(comm, nparts, local_graph, ghosting);
+  return graph::scotch::partitioner()(comm, nparts, std::cref(local_graph),
+                                      std::nullopt, 0, ghosting);
 #elif HAS_KAHIP
-  return graph::kahip::partitioner()(comm, nparts, local_graph, ghosting);
+  return graph::kahip::partitioner()(comm, nparts, std::cref(local_graph),
+                                     std::nullopt, 0, ghosting);
 #else
 // Should never reach this point
 #endif

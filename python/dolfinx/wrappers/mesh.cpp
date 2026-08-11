@@ -10,6 +10,7 @@
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
 #include <algorithm>
+#include <cassert>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/EntityMap.h>
@@ -20,6 +21,7 @@
 #include <dolfinx/mesh/graphbuild.h>
 #include <dolfinx/mesh/topologycomputation.h>
 #include <dolfinx/mesh/utils.h>
+#include <functional>
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -32,6 +34,7 @@
 #include <nanobind/stl/string_view.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
+#include <optional>
 #include <span>
 #include <string>
 
@@ -364,8 +367,18 @@ void mesh(nb::module_& m)
       {
         return part::impl::create_cell_partitioner_py(
             dolfinx::mesh::create_cell_partitioner(
-                mode, &dolfinx::graph::partition_graph, max_facet_to_cell_links,
-                num_threads));
+                mode,
+                [](MPI_Comm comm, int nparts,
+                   std::optional<std::reference_wrapper<
+                       const dolfinx::graph::AdjacencyList<std::int64_t>>>
+                       local_graph,
+                   std::optional<std::span<const double>>, int, bool ghosting)
+                {
+                  assert(local_graph);
+                  return dolfinx::graph::partition_graph(
+                      comm, nparts, local_graph->get(), ghosting);
+                },
+                max_facet_to_cell_links, num_threads));
       },
       nb::arg("mode"), nb::arg("max_facet_to_cell_links").none(),
       nb::arg("num_threads"), "Create default cell partitioner.");
@@ -408,17 +421,23 @@ void mesh(nb::module_& m)
         std::array<std::size_t, 2> xshape
             = {x.shape(0), x.ndim() == 1 ? 1 : x.shape(1)};
 
-        // Wrap the Python geometric graph partitioner as a C++ one
-        dolfinx::graph::geom_partition_fn partfn
+        // Wrap the Python geometric graph partitioner as a C++ one. The
+        // caller (create_geometric_cell_partitioner) always supplies both
+        // the graph and the coordinates.
+        dolfinx::graph::partition_fn partfn
             = [part](MPI_Comm comm, int nparts,
-                     const dolfinx::graph::AdjacencyList<std::int64_t>& graph,
-                     std::span<const double> x, int gdim, bool ghosting)
+                     std::optional<std::reference_wrapper<
+                         const dolfinx::graph::AdjacencyList<std::int64_t>>>
+                         local_graph,
+                     std::optional<std::span<const double>> x, int gdim,
+                     bool ghosting)
         {
-          std::size_t shape0 = gdim > 0 ? x.size() / gdim : 0;
+          assert(local_graph and x);
+          std::size_t shape0 = gdim > 0 ? x->size() / gdim : 0;
           std::size_t shape[2] = {shape0, static_cast<std::size_t>(gdim)};
-          return part(MPICommWrapper(comm), nparts, graph,
+          return part(MPICommWrapper(comm), nparts, local_graph->get(),
                       nb::ndarray<const double, nb::ndim<2>, nb::numpy>(
-                          x.data(), 2, shape, nb::handle()),
+                          x->data(), 2, shape, nb::handle()),
                       ghosting);
         };
 

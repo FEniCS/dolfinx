@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <functional>
 #include <mpi.h>
+#include <optional>
 #include <span>
 #include <utility>
 #include <vector>
@@ -20,44 +21,39 @@
 namespace dolfinx::graph
 {
 /// @brief Signature of functions for computing the parallel
-/// partitioning of a distributed graph.
-/// @param[in] comm MPI Communicator that the graph is distributed
-/// across
-/// @param[in] nparts Number of partitions to divide graph nodes into
-/// @param[in] local_graph Node connectivity graph
-/// @param[in] ghosting Flag to enable ghosting of the output node
-/// distribution
-/// @return Destination rank for each input node
-using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm, int, const AdjacencyList<std::int64_t>&, bool)>;
-
-/// @brief Signature of functions for computing the parallel partitioning
-/// of a distributed graph whose nodes have a position in space.
+/// partitioning of a distributed graph, optionally using a position in
+/// space for each node.
 ///
-/// As ::partition_fn, with the addition of a coordinate for each node of
-/// the graph. Partitioners of this form can use the node positions
-/// instead of, or in addition to, the graph edges.
+/// A partitioner may use the graph edges, node positions, or both, to
+/// decide which part a node belongs to; `local_graph` and `x` are
+/// therefore both optional, and it is up to a given implementation to
+/// require whichever of the two it actually needs (and throw if that
+/// one is not supplied). A caller that has both should generally supply
+/// both, even if it does not know which the chosen partitioner needs.
 ///
-/// @note The coordinates are always `double`, whatever the scalar type of
-/// the data they were derived from. Which nodes end up in which part is
-/// not sensitive to the precision of the positions, so there is nothing
-/// to be gained from partitioning single precision positions in single
-/// precision, and computing the keys in `double` removes any question of
-/// precision loss when positions are quantised.
+/// @note The coordinates, when supplied, are always `double`, whatever
+/// the scalar type of the data they were derived from. Which nodes end
+/// up in which part is not sensitive to the precision of the positions,
+/// so there is nothing to be gained from partitioning single precision
+/// positions in single precision, and computing the keys in `double`
+/// removes any question of precision loss when positions are quantised.
 ///
 /// @param[in] comm MPI Communicator that the graph is distributed
 /// across.
 /// @param[in] nparts Number of partitions to divide graph nodes into.
-/// @param[in] local_graph Node connectivity graph.
+/// @param[in] local_graph Node connectivity graph, absent if the caller
+/// has none to offer.
 /// @param[in] x Node coordinates, row-major with `gdim` columns and one
-/// row per node of `local_graph`.
-/// @param[in] gdim Number of coordinate components per node.
+/// row per node, absent if the caller has none to offer.
+/// @param[in] gdim Number of coordinate components per node. Meaningless
+/// when `x` is not supplied.
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution.
 /// @return Destination rank(s) for each input node.
-using geom_partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm, int, const AdjacencyList<std::int64_t>&, std::span<const double>,
-    int, bool)>;
+using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
+    MPI_Comm, int,
+    std::optional<std::reference_wrapper<const AdjacencyList<std::int64_t>>>,
+    std::optional<std::span<const double>>, int, bool)>;
 
 /// @brief Partition graph across processes using the default graph
 /// partitioner.
@@ -164,8 +160,9 @@ enum class curve : std::uint8_t
 /// similar cost.
 ///
 /// @param[in] curve Space-filling curve to order the nodes along.
-/// @return A geometric graph partitioning function.
-graph::geom_partition_fn partitioner(sfc::curve curve = sfc::curve::hilbert);
+/// @return A geometric graph partitioning function. It requires `x` and
+/// ignores `local_graph` unless ghosting is requested.
+graph::partition_fn partitioner(sfc::curve curve = sfc::curve::hilbert);
 } // namespace sfc
 
 /// Tools for distributed graphs

@@ -149,11 +149,11 @@ enum class geom_method : std::uint8_t
 /// (https://github.com/KarypisLab/ParMETIS/blob/main/manual/manual.pdf).
 /// @param[in] options The ParMETIS options (`geom_method::kway` only).
 /// See ParMETIS manual for details.
-/// @return A geometric graph partitioning function.
-graph::geom_partition_fn
-geom_partitioner(geom_method method = geom_method::kway,
-                 double imbalance = 1.02,
-                 std::array<int, 3> options = {1, 0, 5});
+/// @return A geometric graph partitioning function. It requires both
+/// `local_graph` and `x`, for either method.
+graph::partition_fn geom_partitioner(geom_method method = geom_method::kway,
+                                     double imbalance = 1.02,
+                                     std::array<int, 3> options = {1, 0, 5});
 #endif
 } // namespace parmetis
 
