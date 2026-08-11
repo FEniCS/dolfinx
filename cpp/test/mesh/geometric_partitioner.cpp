@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <catch2/catch_test_macros.hpp>
+#include <cmath>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/CoordinateElement.h>
@@ -140,29 +141,169 @@ TEST_CASE("SFC point partition", "[partition_sfc]")
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
 
-  // Points on a line, distributed in blocks
+  // Points on a line, distributed in blocks, connected as a chain so that
+  // there is something to ghost
   constexpr int num_points = 100;
   std::vector<double> x(num_points);
   for (int i = 0; i < num_points; ++i)
     x[i] = (num_points * rank + i) / static_cast<double>(num_points * size);
 
-  std::vector<int> part = graph::partition_sfc(comm, size, x, 1);
-  REQUIRE(part.size() == num_points);
-  CHECK(
-      std::ranges::all_of(part, [size](int p) { return p >= 0 and p < size; }));
+  std::vector<std::int64_t> edges;
+  std::vector<std::int32_t> offsets{0};
+  for (int i = 0; i < num_points; ++i)
+  {
+    const std::int64_t global = num_points * rank + i;
+    if (global > 0)
+      edges.push_back(global - 1);
+    if (global + 1 < num_points * size)
+      edges.push_back(global + 1);
+    offsets.push_back(edges.size());
+  }
+  graph::AdjacencyList<std::int64_t> chain(edges, offsets);
 
-  // Partition sizes are (approximately) equal
-  std::vector<std::int64_t> count(size, 0), total(size, 0);
-  for (int p : part)
-    ++count[p];
-  MPI_Allreduce(count.data(), total.data(), size, MPI_INT64_T, MPI_SUM, comm);
-  const std::int64_t mx = *std::ranges::max_element(total);
-  CHECK(mx <= 1.2 * num_points + 1);
+  for (auto partition : {&graph::partition_sfc_morton<double>,
+                         &graph::partition_sfc_hilbert<double>})
+  {
+    graph::AdjacencyList<std::int32_t> dest
+        = partition(comm, size, chain, x, 1, false);
+    REQUIRE(dest.num_nodes() == num_points);
 
-  // Points are assigned in space-filling-curve (here, sorted) order
-  CHECK(std::ranges::is_sorted(part));
+    // Without ghosting there is exactly one destination per point
+    CHECK(dest.array().size() == std::size_t(num_points));
+    std::span<const std::int32_t> part = dest.array();
+    CHECK(std::ranges::all_of(part,
+                              [size](int p) { return p >= 0 and p < size; }));
 
-  // A single partition holds everything
-  std::vector<int> part1 = graph::partition_sfc(comm, 1, x, 1);
-  CHECK(std::ranges::all_of(part1, [](int p) { return p == 0; }));
+    // Partition sizes are (approximately) equal
+    std::vector<std::int64_t> count(size, 0), total(size, 0);
+    for (int p : part)
+      ++count[p];
+    MPI_Allreduce(count.data(), total.data(), size, MPI_INT64_T, MPI_SUM, comm);
+    const std::int64_t mx = *std::ranges::max_element(total);
+    CHECK(mx <= 1.2 * num_points + 1);
+
+    // Points are assigned in space-filling-curve order, which in one
+    // dimension is sorted order for both curves
+    CHECK(std::ranges::is_sorted(part));
+
+    // With ghosting, the owner comes first and a point may have further
+    // destinations, but never fewer
+    graph::AdjacencyList<std::int32_t> dest_g
+        = partition(comm, size, chain, x, 1, true);
+    REQUIRE(dest_g.num_nodes() == num_points);
+    CHECK(dest_g.array().size() >= dest.array().size());
+    for (std::int32_t i = 0; i < dest_g.num_nodes(); ++i)
+    {
+      CHECK(dest_g.num_links(i) >= 1);
+      CHECK(dest_g.links(i).front() == dest.links(i).front());
+    }
+
+    // Ghosting is only required where the chain crosses a part boundary,
+    // so most points have a single destination
+    CHECK(dest_g.array().size() < 2 * dest.array().size());
+
+    // A single partition holds everything
+    graph::AdjacencyList<std::int32_t> part1
+        = partition(comm, 1, chain, x, 1, false);
+    CHECK(std::ranges::all_of(part1.array(), [](int p) { return p == 0; }));
+  }
+}
+
+TEST_CASE("SFC curve properties", "[partition_sfc]")
+{
+  // With one part per point, a point's part index is its position along
+  // the curve, so the traversal order can be checked directly. Uses
+  // MPI_COMM_SELF, so that every rank tests the curve on the whole grid.
+  constexpr int k = 8;
+  std::vector<double> x;
+  std::vector<std::array<int, 3>> grid;
+  for (int i = 0; i < k; ++i)
+  {
+    for (int j = 0; j < k; ++j)
+    {
+      for (int l = 0; l < k; ++l)
+      {
+        x.insert(x.end(), {double(i), double(j), double(l)});
+        grid.push_back({i, j, l});
+      }
+    }
+  }
+  const int num_points = grid.size();
+
+  // No edges: the curve order does not depend on the graph
+  graph::AdjacencyList<std::int64_t> nograph(num_points);
+
+  auto curve_order = [&x, &nograph, num_points](auto partition)
+  {
+    graph::AdjacencyList<std::int32_t> dest
+        = partition(MPI_COMM_SELF, num_points, nograph, x, 3, false);
+    std::span<const std::int32_t> part = dest.array();
+
+    // The part indices must be a permutation of [0, num_points), i.e.
+    // the curve visits every point exactly once
+    std::vector<int> sorted(part.begin(), part.end());
+    std::ranges::sort(sorted);
+    for (int i = 0; i < num_points; ++i)
+      REQUIRE(sorted[i] == i);
+
+    std::vector<int> order(num_points);
+    for (int i = 0; i < num_points; ++i)
+      order[part[i]] = i;
+    return order;
+  };
+
+  // Largest step in grid units between successive points on the curve
+  auto max_step = [&grid](const std::vector<int>& order)
+  {
+    int step = 0;
+    for (std::size_t p = 0; p + 1 < order.size(); ++p)
+    {
+      std::array<int, 3> a = grid[order[p]], b = grid[order[p + 1]];
+      step = std::max(step, std::abs(a[0] - b[0]) + std::abs(a[1] - b[1])
+                                + std::abs(a[2] - b[2]));
+    }
+    return step;
+  };
+
+  // Successive points on a Hilbert curve are always neighbours in space.
+  // A Morton curve, in contrast, jumps. Both hold for either scalar type.
+  CHECK(max_step(curve_order(&graph::partition_sfc_hilbert<double>)) == 1);
+  CHECK(max_step(curve_order(&graph::partition_sfc_morton<double>)) > 1);
+
+  std::vector<float> xf(x.begin(), x.end());
+  auto curve_order_f = [&xf, &nograph, num_points](auto partition)
+  {
+    graph::AdjacencyList<std::int32_t> dest
+        = partition(MPI_COMM_SELF, num_points, nograph,
+                    std::span<const float>(xf), 3, false);
+    std::span<const std::int32_t> part = dest.array();
+    std::vector<int> order(num_points);
+    for (int i = 0; i < num_points; ++i)
+      order[part[i]] = i;
+    return order;
+  };
+  CHECK(max_step(curve_order_f(&graph::partition_sfc_hilbert<float>)) == 1);
+  CHECK(max_step(curve_order_f(&graph::partition_sfc_morton<float>)) > 1);
+
+  // The scalar type saves the caller a conversion, but does not change
+  // the partition: the keys are computed in double either way
+  for (int nparts : {2, 7, 64})
+  {
+    CHECK(graph::partition_sfc_hilbert<float>(MPI_COMM_SELF, nparts, nograph,
+                                              std::span<const float>(xf), 3,
+                                              false)
+              .array()
+          == graph::partition_sfc_hilbert<double>(
+                 MPI_COMM_SELF, nparts, nograph, std::span<const double>(x), 3,
+                 false)
+                 .array());
+    CHECK(graph::partition_sfc_morton<float>(MPI_COMM_SELF, nparts, nograph,
+                                             std::span<const float>(xf), 3,
+                                             false)
+              .array()
+          == graph::partition_sfc_morton<double>(MPI_COMM_SELF, nparts, nograph,
+                                                 std::span<const double>(x), 3,
+                                                 false)
+                 .array());
+  }
 }

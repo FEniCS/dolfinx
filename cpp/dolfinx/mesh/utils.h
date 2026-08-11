@@ -1048,7 +1048,7 @@ create_cell_partitioner(mesh::GhostMode ghost_mode,
 
 /// @brief Create a function that computes the destination rank for mesh
 /// cells on this rank from the position of the cell 'centroids' on a
-/// space-filling curve (see graph::partition_sfc).
+/// space-filling curve (see graph::sfc::partitioner).
 ///
 /// Unlike ::create_cell_partitioner, no graph partitioner is used. This
 /// is markedly cheaper -- the cost is nearly independent of the number
@@ -1079,7 +1079,8 @@ create_cell_partitioner(mesh::GhostMode ghost_mode,
 /// dual graph (cell ghosting only). Must be >= 1.
 /// @param[in] partfn Geometric graph partitioner to apply to the cell
 /// centroids. Defaults to the space-filling curve partitioner,
-/// graph::sfc::partitioner.
+/// graph::sfc::partitioner. Centroids are passed as `double` whatever
+/// the mesh scalar type is, see graph::geom_partition_fn.
 /// @return Function that computes the destination ranks for each cell.
 template <std::floating_point T>
 CellPartitionFunction create_geometric_cell_partitioner(

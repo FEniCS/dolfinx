@@ -51,13 +51,18 @@ void graph(nb::module_& m)
       { return create_partitioner_py(dolfinx::graph::partition_graph); },
       "Default graph partitioner");
 
+  nb::enum_<dolfinx::graph::sfc::curve>(m, "SFCCurve")
+      .value("morton", dolfinx::graph::sfc::curve::morton)
+      .value("hilbert", dolfinx::graph::sfc::curve::hilbert);
+
   m.def(
       "geom_partitioner_sfc",
-      []() -> geom_partition_fn
+      [](dolfinx::graph::sfc::curve curve) -> geom_partition_fn
       {
-        return create_geom_partitioner_py(dolfinx::graph::sfc::partitioner());
+        return create_geom_partitioner_py(
+            dolfinx::graph::sfc::partitioner(curve));
       },
-      "Space-filling curve geometric graph partitioner");
+      nb::arg("curve"), "Space-filling curve geometric graph partitioner");
 
 #ifdef HAS_PTSCOTCH
   nb::enum_<dolfinx::graph::scotch::strategy>(m, "SCOTCHStrategy")

@@ -11,6 +11,7 @@
 #include <array>
 #include <boost/sort/sort.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
+#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -27,12 +28,17 @@ using namespace dolfinx;
 
 namespace
 {
-/// @brief Interleave the low 21 bits of up to three coordinates into a
-/// 63-bit Morton ('Z-order') key.
-std::uint64_t morton_key(std::array<std::uint32_t, 3> c)
+/// Number of bits per coordinate used to quantise positions before a
+/// space-filling curve key is computed. With three dimensions this gives
+/// a 63-bit key.
+constexpr int nbits = 21;
+
+/// @brief Interleave the low `nbits` bits of up to three coordinates into
+/// a Morton ('Z-order') curve key.
+std::uint64_t morton_key(std::array<std::uint32_t, 3> c, int /*gdim*/)
 {
-  // Spread the 21 low bits of `v` out so that they occupy every third
-  // bit position
+  // Spread the low bits of `v` out so that they occupy every third bit
+  // position
   auto spread = [](std::uint64_t v) -> std::uint64_t
   {
     v &= 0x1fffff;
@@ -46,14 +52,78 @@ std::uint64_t morton_key(std::array<std::uint32_t, 3> c)
 
   return spread(c[0]) | (spread(c[1]) << 1) | (spread(c[2]) << 2);
 }
-} // namespace
 
-//-----------------------------------------------------------------------------
-std::vector<int> graph::partition_sfc(MPI_Comm comm, int nparts,
-                                      std::span<const double> x, int gdim)
+/// @brief Distance along a Hilbert curve of a point with quantised
+/// coordinates.
+///
+/// Uses Skilling's algorithm to transform the coordinates in place into
+/// the 'transpose' of the Hilbert index (J. Skilling, Programming the
+/// Hilbert curve, AIP Conf. Proc. 707, 2004), then interleaves the
+/// transpose to give the index itself.
+///
+/// @param[in] c Quantised coordinates, each using the low `nbits` bits.
+/// @param[in] gdim Number of coordinate components. The curve is
+/// constructed in `gdim` dimensions, so that (unlike a Morton key) the
+/// unused components cannot break the ordering.
+/// @return Distance along the curve, using `gdim * nbits` bits.
+std::uint64_t hilbert_key(std::array<std::uint32_t, 3> c, int gdim)
 {
-  common::Timer timer("Compute SFC partition of points");
+  // Transform the coordinates to the Hilbert index transpose
+  const std::uint32_t m = std::uint32_t(1) << (nbits - 1);
+  for (std::uint32_t q = m; q > 1; q >>= 1)
+  {
+    const std::uint32_t p = q - 1;
+    for (int i = 0; i < gdim; ++i)
+    {
+      if (c[i] & q)
+        c[0] ^= p; // Invert
+      else
+      {
+        // Exchange
+        const std::uint32_t t = (c[0] ^ c[i]) & p;
+        c[0] ^= t;
+        c[i] ^= t;
+      }
+    }
+  }
 
+  // Gray encode
+  for (int i = 1; i < gdim; ++i)
+    c[i] ^= c[i - 1];
+  std::uint32_t t = 0;
+  for (std::uint32_t q = m; q > 1; q >>= 1)
+  {
+    if (c[gdim - 1] & q)
+      t ^= q - 1;
+  }
+  for (int i = 0; i < gdim; ++i)
+    c[i] ^= t;
+
+  // Interleave the transpose, most significant bit of c[0] first
+  std::uint64_t key = 0;
+  for (int j = nbits - 1; j >= 0; --j)
+  {
+    for (int i = 0; i < gdim; ++i)
+      key = (key << 1) | ((c[i] >> j) & 1);
+  }
+
+  return key;
+}
+
+/// @brief Partition points into `nparts` groups of (approximately) equal
+/// size by their position along a space-filling curve.
+///
+/// @param[in] comm MPI communicator the points are distributed across.
+/// @param[in] nparts Number of partitions.
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @param[in] key Curve key for a point, given its quantised coordinates
+/// and `gdim`.
+/// @return Partition index in `[0, nparts)` for each point.
+template <std::floating_point T, typename K>
+std::vector<int> partition_by_curve(MPI_Comm comm, int nparts,
+                                    std::span<const T> x, int gdim, K key)
+{
   if (gdim < 1 or gdim > 3)
     throw std::runtime_error("Geometric dimension must be 1, 2 or 3.");
   if (nparts < 1)
@@ -70,8 +140,8 @@ std::vector<int> graph::partition_sfc(MPI_Comm comm, int nparts,
 
   // Global bounding box of the points. Note: the reduction is over
   // {-min, max} so that a single MPI_MAX reduction suffices.
-  std::array<double, 6> extent;
-  extent.fill(std::numeric_limits<double>::lowest());
+  std::array<T, 6> extent;
+  extent.fill(std::numeric_limits<T>::lowest());
   for (std::size_t i = 0; i < num_points; ++i)
   {
     for (int d = 0; d < gdim; ++d)
@@ -81,18 +151,19 @@ std::vector<int> graph::partition_sfc(MPI_Comm comm, int nparts,
     }
   }
   {
-    std::array<double, 6> recv;
-    MPI_Allreduce(extent.data(), recv.data(), 6, MPI_DOUBLE, MPI_MAX, comm);
+    std::array<T, 6> recv;
+    MPI_Allreduce(extent.data(), recv.data(), 6, dolfinx::MPI::mpi_t<T>,
+                  MPI_MAX, comm);
     extent = recv;
   }
 
-  // Morton key for each point, from its position in the bounding box
-  // scaled to the 21-bit range of the key
-  constexpr double range = (1 << 21) - 1;
+  // Curve key for each point, from its position in the bounding box
+  // scaled to the bit range of the key
+  constexpr double range = (1 << nbits) - 1;
   std::array<double, 3> scale = {0, 0, 0};
   for (int d = 0; d < gdim; ++d)
   {
-    double width = extent[3 + d] + extent[d];
+    const double width = double(extent[3 + d]) + double(extent[d]);
     scale[d] = width > 0 ? range / width : 0;
   }
 
@@ -102,10 +173,10 @@ std::vector<int> graph::partition_sfc(MPI_Comm comm, int nparts,
     std::array<std::uint32_t, 3> c = {0, 0, 0};
     for (int d = 0; d < gdim; ++d)
     {
-      c[d] = static_cast<std::uint32_t>(scale[d]
-                                        * (x[gdim * i + d] + extent[d]));
+      c[d] = static_cast<std::uint32_t>(
+          scale[d] * (double(x[gdim * i + d]) + double(extent[d])));
     }
-    keys[i] = morton_key(c);
+    keys[i] = key(c, gdim);
   }
 
   // Sample the local keys, over-sampling by a fixed factor per
@@ -155,39 +226,104 @@ std::vector<int> graph::partition_sfc(MPI_Comm comm, int nparts,
 
   std::vector<int> part(num_points);
   std::ranges::transform(keys, part.begin(),
-                         [&splitters](std::uint64_t key)
+                         [&splitters](std::uint64_t k)
                          {
                            return std::ranges::distance(
                                splitters.begin(),
-                               std::ranges::upper_bound(splitters, key));
+                               std::ranges::upper_bound(splitters, k));
                          });
 
   return part;
 }
-//-----------------------------------------------------------------------------
-graph::geom_partition_fn graph::sfc::partitioner()
+/// @brief Partition points by their position along a space-filling curve
+/// and, if requested, add the destinations needed for ghosting.
+///
+/// @param[in] comm MPI communicator the points are distributed across.
+/// @param[in] nparts Number of partitions.
+/// @param[in] graph Node connectivity graph, one node per point. Used
+/// only to determine ghost nodes.
+/// @param[in] x Point coordinates, row-major with `gdim` columns.
+/// @param[in] gdim Number of coordinate components per point.
+/// @param[in] ghosting Flag to enable ghosting.
+/// @param[in] key Curve key for a point.
+/// @return Destination rank(s) for each point, owner first.
+template <std::floating_point T, typename K>
+graph::AdjacencyList<std::int32_t>
+partition_curve(MPI_Comm comm, int nparts,
+                const graph::AdjacencyList<std::int64_t>& graph,
+                std::span<const T> x, int gdim, bool ghosting, K key)
 {
-  return [](MPI_Comm comm, int nparts,
-            const graph::AdjacencyList<std::int64_t>& graph,
-            std::span<const double> x, int gdim, bool ghosting)
+  if (static_cast<std::int64_t>(x.size())
+      != static_cast<std::int64_t>(gdim) * graph.num_nodes())
   {
-    if (static_cast<std::int64_t>(x.size())
-        != static_cast<std::int64_t>(gdim) * graph.num_nodes())
-    {
-      throw std::runtime_error(
-          "Number of coordinates does not match number of graph nodes.");
-    }
+    throw std::runtime_error(
+        "Number of coordinates does not match number of graph nodes.");
+  }
 
-    std::vector<int> part = graph::partition_sfc(comm, nparts, x, gdim);
-    if (!ghosting)
-      return graph::regular_adjacency_list(std::move(part), 1);
+  std::vector<int> part = partition_by_curve(comm, nparts, x, gdim, key);
+  if (!ghosting)
+    return dolfinx::graph::regular_adjacency_list(std::move(part), 1);
 
-    std::vector<int> node_disp(dolfinx::MPI::size(comm) + 1, 0);
-    const int num_local = graph.num_nodes();
-    MPI_Allgather(&num_local, 1, MPI_INT, std::next(node_disp.data()), 1,
-                  MPI_INT, comm);
-    std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
-    return graph::compute_destination_ranks(comm, graph, node_disp, part);
+  // Wherever a point goes, so must the points connected to it by an edge
+  std::vector<int> node_disp(dolfinx::MPI::size(comm) + 1, 0);
+  const int num_local = graph.num_nodes();
+  MPI_Allgather(&num_local, 1, MPI_INT, std::next(node_disp.data()), 1, MPI_INT,
+                comm);
+  std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
+  return dolfinx::graph::compute_destination_ranks(comm, graph, node_disp,
+                                                   part);
+}
+} // namespace
+
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+graph::AdjacencyList<std::int32_t> dolfinx::graph::partition_sfc_morton(
+    MPI_Comm comm, int nparts, const graph::AdjacencyList<std::int64_t>& graph,
+    std::span<const T> x, int gdim, bool ghosting)
+{
+  common::Timer timer("Compute Morton SFC partition of points");
+  return partition_curve(comm, nparts, graph, x, gdim, ghosting, morton_key);
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+graph::AdjacencyList<std::int32_t> dolfinx::graph::partition_sfc_hilbert(
+    MPI_Comm comm, int nparts, const graph::AdjacencyList<std::int64_t>& graph,
+    std::span<const T> x, int gdim, bool ghosting)
+{
+  common::Timer timer("Compute Hilbert SFC partition of points");
+  return partition_curve(comm, nparts, graph, x, gdim, ghosting, hilbert_key);
+}
+//-----------------------------------------------------------------------------
+/// @cond
+template graph::AdjacencyList<std::int32_t>
+dolfinx::graph::partition_sfc_morton(MPI_Comm, int,
+                                     const graph::AdjacencyList<std::int64_t>&,
+                                     std::span<const float>, int, bool);
+template graph::AdjacencyList<std::int32_t>
+dolfinx::graph::partition_sfc_morton(MPI_Comm, int,
+                                     const graph::AdjacencyList<std::int64_t>&,
+                                     std::span<const double>, int, bool);
+template graph::AdjacencyList<std::int32_t>
+dolfinx::graph::partition_sfc_hilbert(MPI_Comm, int,
+                                      const graph::AdjacencyList<std::int64_t>&,
+                                      std::span<const float>, int, bool);
+template graph::AdjacencyList<std::int32_t>
+dolfinx::graph::partition_sfc_hilbert(MPI_Comm, int,
+                                      const graph::AdjacencyList<std::int64_t>&,
+                                      std::span<const double>, int, bool);
+/// @endcond
+//-----------------------------------------------------------------------------
+graph::geom_partition_fn graph::sfc::partitioner(sfc::curve curve)
+{
+  return [curve](MPI_Comm comm, int nparts,
+                 const graph::AdjacencyList<std::int64_t>& graph,
+                 std::span<const double> x, int gdim, bool ghosting)
+  {
+    return (curve == sfc::curve::hilbert)
+               ? graph::partition_sfc_hilbert(comm, nparts, graph, x, gdim,
+                                              ghosting)
+               : graph::partition_sfc_morton(comm, nparts, graph, x, gdim,
+                                             ghosting);
   };
 }
 //-----------------------------------------------------------------------------

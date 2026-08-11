@@ -52,8 +52,15 @@
 #
 #   ParMETIS provides two: `GeomKway`, which uses the space-filling curve
 #   to redistribute the graph and then applies k-way partitioning to it,
-#   and `Geom`, which uses the curve alone. DOLFINx also provides its own
-#   curve partitioner that requires no external library.
+#   and `Geom`, which uses the curve alone.
+#
+#   DOLFINx provides curve partitioners that require no external library,
+#   for two curves. A **Morton** ('Z-order') curve is cheap to evaluate,
+#   but jumps a long way in space whenever a high bit of the key changes,
+#   so consecutive cells on the curve are not always neighbours. A
+#   **Hilbert** curve has no such jumps: successive points on it are
+#   always neighbours, which gives more compact partitions and a smaller
+#   edge cut.
 #
 # Which of ParMETIS, PT-SCOTCH and KaHIP are present depends on the build,
 # so the demo checks {py:data}`dolfinx.has_parmetis`,
@@ -318,11 +325,15 @@ if has_ptscotch:
 if has_kahip:
     partitioners["KaHIP"] = create_cell_partitioner(graph.partitioner_kahip(), ghost_mode, 2)
 
-# The space-filling curve partitioner is built into DOLFINx, so it is
+# The space-filling curve partitioners are built into DOLFINx, so they are
 # always available
-partitioners["DOLFINx SFC"] = create_geometric_cell_partitioner(
-    graph.geom_partitioner_sfc(), ghost_mode, comm, x
-)
+for label, curve in [
+    ("SFC Morton", graph.SFCCurve.morton),
+    ("SFC Hilbert", graph.SFCCurve.hilbert),
+]:
+    partitioners[label] = create_geometric_cell_partitioner(
+        graph.geom_partitioner_sfc(curve), ghost_mode, comm, x
+    )
 
 if comm.rank == 0:
     print(f"Mesh: {6 * n**3} tetrahedra on {comm.size} rank(s)")
@@ -399,7 +410,7 @@ def scotch_partitioner_time() -> float:
 if has_ptscotch and comm.size > 1:
     cells_random = redistribute_cells(comm, cells0, 1.0)
     scotch = partitioners["PT-SCOTCH"]
-    sfc = partitioners["DOLFINx SFC"]
+    sfc = partitioners["SFC Hilbert"]
 
     def timed(cells, partitioner):
         """Create a mesh, with the elapsed and the SCOTCH time."""

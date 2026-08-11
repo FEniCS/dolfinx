@@ -11,7 +11,7 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.graph import geom_partitioner_sfc, partitioner
+from dolfinx.cpp.graph import SFCCurve, geom_partitioner_sfc, partitioner
 from dolfinx.typing import Index
 
 # Import graph partitioners, which may or may not be available
@@ -41,6 +41,7 @@ if _ParMETISGeomMethod is not None:
 
 __all__ = [
     "AdjacencyList",
+    "SFCCurve",
     "adjacencylist",
     "comm_graph",
     "comm_graph_data",
