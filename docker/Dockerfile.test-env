@@ -32,7 +32,7 @@ ARG OPENMPI_PATCH=10
 
 ########################################
 
-FROM ubuntu:24.04 AS dev-env
+FROM ubuntu:26.04 AS dev-env
 LABEL maintainer="FEniCS Steering Council <fenics-steering-council@googlegroups.com>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
@@ -269,10 +269,15 @@ RUN apt-get -qq update && \
     --with-precision=double && \
     make PETSC_ARCH=linux-gnu-real64-32 ${MAKEFLAGS} all && \
     # Complex128, 32-bit int
+    # HYPRE's LOBPCG multivector interpreter (src/multivector/multivector.c)
+    # passes a HYPRE_Real* where its own function-pointer type expects
+    # HYPRE_Complex*; GCC >=14 promotes -Wincompatible-pointer-types to an
+    # error by default (unlike GCC 13 on ubuntu:24.04), so complex PETSc
+    # builds of --download-hypre need it downgraded back to a warning.
     ./configure \
     PETSC_ARCH=linux-gnu-complex128-32 \
-    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS} -Wno-error=incompatible-pointer-types" \
+    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS} -Wno-error=incompatible-pointer-types" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
@@ -311,10 +316,12 @@ RUN apt-get -qq update && \
     --with-precision=double && \
     make PETSC_ARCH=linux-gnu-real64-64 ${MAKEFLAGS} all && \
     # Complex128, 64-bit int
+    # See the complex128-32 block above for why -Wno-error=incompatible-pointer-types
+    # is needed here (HYPRE's LOBPCG multivector interpreter type mismatch).
     ./configure \
     PETSC_ARCH=linux-gnu-complex128-64 \
-    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS} -Wno-error=incompatible-pointer-types" \
+    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS} -Wno-error=incompatible-pointer-types" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
