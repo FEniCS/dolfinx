@@ -1013,15 +1013,15 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 }
 
 /// @brief Create a function that computes destination rank for mesh
-/// cells on this rank by applying the default graph partitioner to the
-/// dual graph of the mesh.
+/// cells on this rank by applying `partfn` to the dual graph of the
+/// mesh.
 ///
-/// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
+/// @param[in] ghost_mode Ghost mode of the created mesh.
 /// @param[in] partfn Partitioning function for distributing cells
 /// across MPI ranks.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet needs to be connected to to be considered *matched* (not on
-/// boundary for non-branching meshes).
+/// facet must be connected to for it to be considered *matched* (not
+/// on boundary for non-branching meshes).
 /// @param[in] num_threads Number of threads to use when building the
 /// dual graph. Must be >= 1.
 /// @return Function that computes the destination ranks for each cell.
@@ -1034,10 +1034,10 @@ create_cell_partitioner(mesh::GhostMode ghost_mode, graph::partition_fn partfn,
 /// cells on this rank by applying the default graph partitioner to the
 /// dual graph of the mesh.
 ///
-/// @param[in] ghost_mode ghost mode of the created mesh, defaults to none
+/// @param[in] ghost_mode Ghost mode of the created mesh.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet needs to be connected to to be considered *matched* (not on
-/// boundary for non-branching meshes).
+/// facet must be connected to for it to be considered *matched* (not
+/// on boundary for non-branching meshes).
 /// @param[in] num_threads Number of threads to use when building the
 /// dual graph. Must be >= 1.
 /// @return Function that computes the destination ranks for each cell.
