@@ -84,7 +84,7 @@ from mpi4py import MPI
 import numpy as np
 import numpy.typing as npt
 
-from dolfinx import graph, has_kahip, has_parmetis, has_ptscotch
+from dolfinx import common, graph, has_kahip, has_parmetis, has_ptscotch
 from dolfinx.fem import coordinate_element
 from dolfinx.mesh import (
     CellType,
@@ -345,6 +345,96 @@ for fraction in (0.0, 0.5, 1.0):
         imbalance, cut = partition_quality(msh)
         if comm.rank == 0:
             print(f"{name:<20}{imbalance:>12.3f}{cut:>12}{elapsed:>12.3f}")
+# -
+
+# ## Two-stage partitioning
+#
+# A graph partitioner is much more expensive on a randomly distributed
+# input, because its coarsening phase has to communicate with unrelated
+# ranks (see above). The space-filling curve partitioner does not care
+# about the input distribution at all, which suggests a two-stage scheme:
+# first partition with the curve, which cheaply gives the cells spatial
+# locality, then re-partition the result with the graph partitioner, which
+# now runs on a well-distributed input.
+#
+# This is the same idea as ParMETIS `GeomKway`, but applied around any
+# graph partitioner. It is shown here with PT-SCOTCH, which is the most
+# sensitive to the input distribution.
+#
+# The second stage needs the cells of the first-stage mesh expressed in
+# the original input vertex numbering, which the geometry's
+# `input_global_indices` provides. Only the owned cells are taken, so
+# that each cell still appears exactly once.
+
+
+def cells_in_input_numbering(msh) -> npt.NDArray[np.int64]:
+    """Owned cells of a mesh, as global indices in the input numbering.
+
+    The result can be passed back to :func:`create_mesh` with the
+    original geometry, giving a mesh with the same cells distributed as
+    ``msh`` has them.
+
+    Args:
+        msh: Mesh to take the cells from. Must have a 'P1' geometry, so
+            that the geometry nodes are the cell vertices.
+
+    Returns:
+        Cell vertices with shape ``(num_owned_cells, num_vertices)``.
+    """
+    igi = msh.geometry.input_global_indices
+    dofmap = msh.geometry.dofmaps[0]
+    num_owned = msh.topology.index_map(msh.topology.dim).size_local
+    return np.ascontiguousarray(igi[dofmap[:num_owned]])
+
+
+def scotch_partitioner_time() -> float:
+    """Cumulative time spent in the SCOTCH partitioner on this rank."""
+    try:
+        return common.timing("Compute graph partition (SCOTCH)")[1].total_seconds()
+    except RuntimeError:
+        return 0.0
+
+
+# +
+if has_ptscotch and comm.size > 1:
+    cells_random = redistribute_cells(comm, cells0, 1.0)
+    scotch = partitioners["PT-SCOTCH"]
+    sfc = partitioners["DOLFINx SFC"]
+
+    def timed(cells, partitioner):
+        """Create a mesh, returning it with the elapsed and SCOTCH times."""
+        comm.Barrier()
+        t, t_scotch = time.perf_counter(), scotch_partitioner_time()
+        msh = create_mesh(comm, cells, cmap, x, partitioner=partitioner)
+        comm.Barrier()
+        return (
+            msh,
+            comm.allreduce(time.perf_counter() - t, MPI.MAX),
+            comm.allreduce(scotch_partitioner_time() - t_scotch, MPI.MAX),
+        )
+
+    # One stage: SCOTCH on the randomly distributed input. This repeats
+    # the fraction = 1.0 row of the sweep above, deliberately, so that
+    # the comparison below stands on its own.
+    msh1, t1, t1_scotch = timed(cells_random, scotch)
+
+    # Two stages: the curve first, then SCOTCH on its output
+    msh2a, t2a, _ = timed(cells_random, sfc)
+    msh2b, t2b, t2b_scotch = timed(cells_in_input_numbering(msh2a), scotch)
+
+    if comm.rank == 0:
+        print("\nPartitioning a randomly distributed mesh with PT-SCOTCH")
+        header = f"{'Route':<28}{'imbalance':>12}{'edge cut':>12}"
+        print(header + f"{'total (s)':>12}{'SCOTCH (s)':>12}")
+
+    imb1, cut1 = partition_quality(msh1)
+    imb2, cut2 = partition_quality(msh2b)
+    if comm.rank == 0:
+        print(f"{'SCOTCH alone':<28}{imb1:>12.3f}{cut1:>12}{t1:>12.3f}{t1_scotch:>12.3f}")
+        row = f"{'SFC, then SCOTCH':<28}{imb2:>12.3f}{cut2:>12}"
+        print(row + f"{t2a + t2b:>12.3f}{t2b_scotch:>12.3f}")
+        print(f"{'  stage 1 (SFC)':<28}{'':>12}{'':>12}{t2a:>12.3f}")
+        print(f"{'  stage 2 (SCOTCH)':<28}{'':>12}{'':>12}{t2b:>12.3f}")
 # -
 
 # On a single rank there is nothing to partition: the imbalance is 1 and
