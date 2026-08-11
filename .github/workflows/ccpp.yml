@@ -33,7 +33,7 @@ jobs:
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install linting tools
-        run: pip install clang-format gersemi mypy ruff
+        run: pip install clang-format gersemi mypy pyrefly ruff ty
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
@@ -64,6 +64,16 @@ jobs:
           mypy $MYPY_FLAGS demo
           mypy $MYPY_FLAGS test
 
+      - name: ty checks (not installed, non-blocking)
+        continue-on-error: true
+        run: |
+          cd python/
+          ty check dolfinx demo test
+      - name: pyrefly checks (not installed, non-blocking)
+        continue-on-error: true
+        run: |
+          cd python/
+          pyrefly check dolfinx demo test
 
   ccpp-build:
     runs-on: ubuntu-24.04
