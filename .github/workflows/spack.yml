@@ -44,7 +44,7 @@ jobs:
       - name: Set up Spack
         uses: spack/setup-spack@main
         with:
-          spack_ref: v1.1.1
+          spack_ref: v1.1.2
           color: true
           path: spack-src
       - name: Add Spack package repository

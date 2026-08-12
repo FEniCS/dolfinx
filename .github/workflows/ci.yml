@@ -20,7 +20,7 @@ env:
 jobs:
   ci-spack-build:
     runs-on: ubuntu-26.04
-    container: ubuntu:24.04
+    container: ubuntu:26.04
     permissions:
       packages: write
 
