@@ -165,11 +165,7 @@ jobs:
           spack -e py add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
             ^petsc+mpi+mumps+superlu-dist+hypre ^adios2~libcatalyst~fortran
           spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer
-          # NOTE: freetype@2.13.3 works around a raster overflow bug in
-          # freetype@2.14.2 (2026-07) triggered by savefig() in some demos.
-          # Re-check and drop once a fixed freetype (2.14.3+) lands in the
-          # spack-packages recipe.
-          spack -e py add py-gmsh ^gmsh~med~fltk+external ^opencascade~draw py-pyamg py-matplotlib ^freetype@2.13.3 \
+          spack -e py add py-gmsh ^gmsh~med~fltk+external ^opencascade~draw py-pyamg py-matplotlib \
             py-networkx \
             py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
             py-pytest py-pytest-xdist py-scipy py-pyvista
