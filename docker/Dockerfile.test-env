@@ -136,6 +136,19 @@ RUN apt-get -qq update && \
     rm -rf /tmp/*
 
 # Install MPI
+# ./configure for both MPICH and OpenMPI auto-detects and links against
+# whatever optional system libraries happen to be present at this point
+# (e.g. PMIx for OpenMPI, or ibverbs/libnl for MPICH's InfiniBand
+# support) -- on Ubuntu 26.04 these are transitively pulled in by
+# libocct-data-exchange-dev's new libocct-ivtk-dev -> libvtk9-dev ->
+# mpi-default-dev dependency chain (see the OpenMPI purge step below).
+# Once that chain is purged/autoremoved later in this Dockerfile, any
+# such library not explicitly kept becomes an orphan and gets swept
+# away, breaking the from-source mpicc with a missing-shared-library
+# error that resurfaces downstream as SLEPc's opaque "Unable to link
+# with PETSc". Pin whatever libmpi.so actually links against as
+# manually-installed right now, before anything later has a chance to
+# autoremove it.
 RUN if [ "$MPI" = "mpich" ]; then \
     wget https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
     tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
@@ -150,6 +163,8 @@ RUN if [ "$MPI" = "mpich" ]; then \
     make -j${BUILD_NP} install; \
     fi && \
     ldconfig && \
+    ldd /usr/local/lib/libmpi.so | awk '{print $3}' | grep '^/' | \
+    xargs -r dpkg -S 2>/dev/null | cut -d: -f1 | sort -u | xargs -r apt-mark manual && \
     rm -rf /tmp/*
 
 ENV VIRTUAL_ENV=/dolfinx-env
@@ -207,16 +222,11 @@ RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.o
 # GMSH is already built at this point, so purge the OpenMPI stack now;
 # apt cascades the removal through libocct-ivtk-dev/libvtk9-dev without
 # touching the OCCT/HDF5 runtime libraries GMSH and HDF5 actually link
-# against.
-# Purging libopenmpi40 orphans libpmix2t64 (nothing else depends on it)
-# without removing it outright. For the openmpi MPI variant, the
-# from-source OpenMPI built above auto-detected and rpath-linked this
-# same system PMIx, so it is a genuine runtime dependency, not cruft.
-# Pin it as manually-installed so the later "apt-get -y autoremove" in
-# the PETSc install step (below) doesn't sweep it away and break mpicc
-# before the SLEPc build runs.
+# against. Any library the from-source MPI genuinely needs (PMIx,
+# ibverbs, libnl, ...) was already pinned manually-installed in the
+# "Install MPI" step above, so it survives this purge and the later
+# autoremove in the PETSc install step.
 RUN apt-get -y purge libopenmpi40 && \
-    apt-mark manual libpmix2t64 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
