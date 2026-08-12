@@ -39,7 +39,8 @@ jobs:
         uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
         with:
           spack_ref: v1.2.2
-          packages_ref: v2026.06.0
+          packages_ref: d342cee94fb90fb020776c8bd8500b54a19c63cf
+          # packages_ref: v2026.06.0
 
       - name: Get FEniCS Spack packages
         uses: actions/checkout@v7
