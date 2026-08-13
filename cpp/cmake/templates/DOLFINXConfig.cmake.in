@@ -29,9 +29,9 @@ find_package(Boost 1.70 REQUIRED)
 
 # CONFIG mode is explicit, otherwise the FindUFCx.cmake installed alongside this
 # file is picked up as Findufcx.cmake on case-insensitive filesystems.
-if(@ufcx_FOUND@)
+if("@ufcx_FOUND@")
   find_dependency(ufcx CONFIG)
-elseif(@UFCx_FOUND@)
+elseif("@UFCx_FOUND@")
   # Path is removed again so that consumers do not inherit a module directory
   # containing FindUFCx.cmake.
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
@@ -40,7 +40,7 @@ elseif(@UFCx_FOUND@)
 endif()
 
 # Basix
-if(@DOLFINX_BASIX_PYTHON@)
+if("@DOLFINX_BASIX_PYTHON@")
   find_package(Python3 COMPONENTS Interpreter QUIET)
 
   if(Python3_Interpreter_FOUND)
@@ -83,7 +83,7 @@ if(NOT TARGET hdf5::hdf5)
   endif()
 endif()
 
-if(@PETSC_FOUND@)
+if("@PETSC_FOUND@")
   if(NOT TARGET PkgConfig::PETSC)
     find_package(PkgConfig REQUIRED)
     set(
@@ -94,7 +94,7 @@ if(@PETSC_FOUND@)
   endif()
 endif()
 
-if(@SLEPC_FOUND@)
+if("@SLEPC_FOUND@")
   if(NOT TARGET PkgConfig::SLEPC)
     find_package(PkgConfig REQUIRED)
     set(
@@ -113,7 +113,7 @@ if(@SLEPC_FOUND@)
   endif()
 endif()
 
-if(@ADIOS2_FOUND@)
+if("@ADIOS2_FOUND@")
   find_dependency(
     ADIOS2
     2.8.1
