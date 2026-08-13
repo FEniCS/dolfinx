@@ -165,10 +165,20 @@ jobs:
           spack -e py add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
             ^petsc+mpi+mumps+superlu-dist+hypre ^adios2~libcatalyst~fortran
           spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer
+          # mesa@25.0.5 (the Spack recipe's preferred version) fails to
+          # build on Ubuntu 26.04's glibc: its bundled C11 threads
+          # polyfill (src/c11/threads.h) redeclares 'once_flag'/
+          # 'call_once' without checking whether glibc already provides
+          # them, which now conflicts. Fixed upstream between
+          # mesa-25.2.0 and mesa-25.3.0 (guarded with '#ifndef
+          # __once_flag_defined') -- pull that tag directly via Spack's
+          # git-version syntax since the pinned packages_ref only lists
+          # 25.0.5. Re-check and drop once a fixed mesa release gets a
+          # sha256 entry in the Spack recipe.
           spack -e py add py-gmsh ^gmsh~med~fltk+external ^opencascade~draw py-pyamg py-matplotlib \
             py-networkx \
             py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
-            py-pytest py-pytest-xdist py-scipy py-pyvista
+            py-pytest py-pytest-xdist py-scipy py-pyvista ^mesa@git.mesa-25.3.0=25.3.0
           spack -e py concretize -j 4
           spack -e py install -j 4 --use-buildcache auto
 
