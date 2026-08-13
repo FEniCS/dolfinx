@@ -347,7 +347,7 @@ def nested_iterative_solver_low_level():
 
     # Create a MINRES Krylov solver and a block-diagonal preconditioner
     # using PETSc's additive fieldsplit preconditioner
-    ksp = PETSc.KSP().create(msh.comm)
+    ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
     ksp.setOperators(A, P)
     ksp.setType("minres")
     ksp.setTolerances(rtol=1e-9)
@@ -455,13 +455,21 @@ def block_iterative_solver():
     offset_u = V_map.local_range[0] * V.dofmap.index_map_bs + Q_map.local_range[0]
     offset_p = offset_u + V_map.size_local * V.dofmap.index_map_bs
     is_u = PETSc.IS().createStride(
-        V_map.size_local * V.dofmap.index_map_bs, offset_u, 1, comm=msh.comm
+        V_map.size_local * V.dofmap.index_map_bs,
+        offset_u,
+        1,
+        comm=msh.comm,  # type: ignore[arg-type]
     )
-    is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=msh.comm)
+    is_p = PETSc.IS().createStride(
+        Q_map.size_local,
+        offset_p,
+        1,
+        comm=msh.comm,  # type: ignore[arg-type]
+    )
 
     # Create a MINRES Krylov solver and a block-diagonal preconditioner
     # using PETSc's additive fieldsplit preconditioner
-    ksp = PETSc.KSP().create(msh.comm)
+    ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
     ksp.setOperators(A, P)
     ksp.setTolerances(rtol=1e-9)
     ksp.setType("minres")
@@ -517,7 +525,7 @@ def block_direct_solver():
     A, _, b = block_operators()
 
     # Create a solver
-    ksp = PETSc.KSP().create(msh.comm)
+    ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
     ksp.setOperators(A)
     ksp.setType("preonly")
 
@@ -609,7 +617,7 @@ def mixed_direct():
         bc.set(b.array_w)  # type: ignore[arg-type]
 
     # Create and configure solver
-    ksp = PETSc.KSP().create(msh.comm)
+    ksp = PETSc.KSP().create(msh.comm)  # type: ignore[arg-type]
     ksp.setOperators(A)
     ksp.setType("preonly")
 

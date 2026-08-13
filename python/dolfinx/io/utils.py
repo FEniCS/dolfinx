@@ -7,6 +7,7 @@
 """IO module for input data and post-processing file output."""
 
 from pathlib import Path
+from types import TracebackType
 from typing import Self
 
 from mpi4py import MPI as _MPI
@@ -102,15 +103,20 @@ if _cpp.common.has_adios2:
             """Enter context manager."""
             return self
 
-        def __exit__(self, exception_type, exception_value, traceback):
+        def __exit__(
+            self,
+            exception_type: type[BaseException] | None,
+            exception_value: BaseException | None,
+            traceback: TracebackType | None,
+        ) -> None:
             """Exit context manager and close file."""
             self.close()
 
-        def write(self, t: float):
+        def write(self, t: float) -> None:
             """Write data to file for a given time."""
             self._cpp_object.write(t)
 
-        def close(self):
+        def close(self) -> None:
             """Close the VTX file."""
             self._cpp_object.close()
 
@@ -139,11 +145,16 @@ class VTKFile:
         """Enter context manager."""
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(
+        self,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Exit context manager and close file."""
         self.close()
 
-    def close(self):
+    def close(self) -> None:
         """Close the VTK file."""
         self._cpp_object.close()
 
@@ -186,11 +197,16 @@ class XDMFFile:
         """Enter context manager."""
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(
+        self,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Exit context manager and close file."""
         self.close()
 
-    def close(self):
+    def close(self) -> None:
         """Close the XDMF file."""
         self._cpp_object.close()
 
@@ -299,8 +315,11 @@ class XDMFFile:
         self._cpp_object.write_meshtags(tags._cpp_object, x._cpp_object, geometry_xpath, xpath)
 
     def write_function(
-        self, u: Function, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"
-    ):
+        self,
+        u: Function,
+        t: float = 0.0,
+        mesh_xpath: str = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]",
+    ) -> None:
         """Write function to file for a given time.
 
         Note:
@@ -319,9 +338,9 @@ class XDMFFile:
 
     def read_mesh(
         self,
-        ghost_mode=GhostMode.shared_facet,
-        name="mesh",
-        xpath="/Xdmf/Domain",
+        ghost_mode: GhostMode = GhostMode.shared_facet,
+        name: str = "mesh",
+        xpath: str = "/Xdmf/Domain",
         max_facet_to_cell_links: int = 2,
     ) -> Mesh:
         """Read mesh data from file.

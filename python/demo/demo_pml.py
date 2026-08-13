@@ -635,7 +635,7 @@ if sys.hasExternalPackage("mumps") and not use_superlu:  # type: ignore
 elif sys.hasExternalPackage("superlu_dist"):  # type: ignore
     mat_factor_backend = "superlu_dist"
 else:
-    if mesh_data.mesh.comm > 1:
+    if mesh_data.mesh.comm.size > 1:
         raise RuntimeError("This demo requires a parallel LU solver.")
     else:
         mat_factor_backend = "petsc"
