@@ -47,7 +47,8 @@ jobs:
         uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
         with:
           spack_ref: v1.2.2
-          packages_ref: v2026.06.0
+          packages_ref: d342cee94fb90fb020776c8bd8500b54a19c63cf
+          # packages_ref: v2026.06.0
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v7
@@ -62,7 +63,7 @@ jobs:
           spack -e py add mpi petsc+mpi+shared+mumps+superlu-dist slepc parmetis pkgconfig \
             hdf5+mpi boost pugixml spdlog
           spack -e py add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py \
-            py-scikit-build-core+pyproject py-setuptools py-cffi
+            py-scikit-build-core@1+pyproject py-setuptools py-cffi
           spack -e py add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
           # NOTE: freetype@2.13.3 works around a raster overflow bug in
           # freetype@2.14.2 (2026-07). Re-check and drop once a fixed
@@ -146,12 +147,6 @@ jobs:
       - name: Build Python interface (editable install)
         run: |
           spack env activate py
-          # The Spack recipe pinned by packages_ref above only goes up to
-          # py-scikit-build-core@0.12.2, whose editable install support
-          # predates the fix this project's build-system requirement now
-          # depends on (see python/pyproject.toml) -- fetch a newer one
-          # from PyPI for this step.
-          pip install --upgrade "scikit-build-core>=1.0.0"
           pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Developer --config-settings=build-dir="build" -e 'dolfinx-src/python/'
         shell: spack-bash {0}
 
