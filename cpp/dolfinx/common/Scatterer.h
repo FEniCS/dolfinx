@@ -122,7 +122,7 @@ public:
     for (std::size_t i = 0; i < _src.size(); i++)
     {
       auto upper = std::upper_bound(begin, owners_sorted.end(), _src[i]);
-      std::size_t num_ind = std::distance(begin, upper);
+      std::size_t num_ind = std::ranges::distance(begin, upper);
       _displs_remote[i + 1] = _displs_remote[i] + num_ind;
       _sizes_remote[i] = num_ind;
       begin = upper;

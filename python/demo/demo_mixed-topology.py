@@ -26,6 +26,7 @@
 # ```
 
 # +
+import sys
 import typing
 
 from mpi4py import MPI
@@ -56,7 +57,7 @@ from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_parti
 
 if MPI.COMM_WORLD.size > 1:
     print("Not yet running in parallel")
-    exit(0)
+    sys.exit(0)
 
 
 # ## Create a mixed-topology mesh
@@ -275,7 +276,6 @@ xdmf += """
 </Xdmf>
 """
 
-fd = open("mixed-mesh.xdmf", "w")
-fd.write(xdmf)
-fd.close()
+with open("mixed-mesh.xdmf", "w") as fd:
+    fd.write(xdmf)
 # -

@@ -728,7 +728,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityType& p, BlockMode mode)
   {
     auto it = std::ranges::lower_bound(src_ranks, r);
     assert(it != src_ranks.end() and *it == r);
-    std::size_t pos = std::distance(src_ranks.begin(), it);
+    std::size_t pos = std::ranges::distance(src_ranks.begin(), it);
     _ghost_row_to_rank.push_back(pos);
   }
 
@@ -842,7 +842,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityType& p, BlockMode mode)
     auto cit = std::lower_bound(cit0, cit1, local_col);
     assert(cit != cit1);
     assert(*cit == local_col);
-    std::size_t d = std::distance(_cols.begin(), cit);
+    std::size_t d = std::ranges::distance(_cols.begin(), cit);
     _unpack_pos.push_back(d);
   }
 

@@ -663,10 +663,9 @@ public:
 
     // Size of tensor for symmetric elements, unused in non-symmetric
     // case, but placed outside the loop for pre-computation.
-    int matrix_size;
+    int matrix_size = 0;
     if (element->symmetric())
     {
-      matrix_size = 0;
       while (matrix_size * matrix_size < (int)ushape[1])
         ++matrix_size;
     }

@@ -9,6 +9,7 @@
 #include "Topology.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
+#include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -19,12 +20,11 @@
 #include <dolfinx/fem/dofmapbuilder.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
-#include <format>
 #include <functional>
 #include <iterator>
 #include <memory>
 #include <span>
-#include <string>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -50,7 +50,7 @@ public:
   /// @param[in] index_map Index map associated with the geometry
   /// degrees-of-freedom.
   /// @param[in] dofmaps The geometry (point) dofmaps for each cell type
-  /// in the mesh. For a cell of a given type, the dofmap  gives the
+  /// in the mesh. For a cell of a given type, the dofmap gives the
   /// position in the point array of each local geometry node of the
   /// cell. Each cell type has its own dofmap. Each dofmap uses
   /// row-major storage.
@@ -101,7 +101,7 @@ public:
   /// Destructor
   ~Geometry() = default;
 
-  /// Copy assignment
+  // Copy assignment (deleted)
   Geometry& operator=(const Geometry&) = delete;
 
   /// Move assignment
@@ -215,18 +215,19 @@ Geometry(std::shared_ptr<const common::IndexMap>, U&&,
 /// @param[in] elements List of elements that defines the geometry map for
 /// each cell type.
 /// @param[in] nodes Geometry node global indices for cells on this
-/// process. @pre Must be sorted.
+/// process.
 /// @param[in] xdofs Geometry degree-of-freedom map (using global
 /// indices) for cells on this process. `nodes` is a sorted and unique
 /// list of the indices in `xdofs`.
 /// @param[in] x The node coordinates (row-major, with shape
 /// `(num_nodes, dim)`. The global index of each node is `i +
 /// rank_offset`, where `i` is the local row index in `x` and
-/// `rank_offset` is the sum of `x` rows on all processed with a lower
+/// `rank_offset` is the sum of `x` rows on all processes with a lower
 /// rank than the caller.
 /// @param[in] dim Geometric dimension (1, 2, or 3).
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data.
+/// @pre `nodes` must be sorted.
 /// @note Experimental new interface for multiple cmap/dofmap
 /// @return A mesh geometry.
 template <typename U>
@@ -256,8 +257,6 @@ create_geometry(const Topology& topology,
   for (auto& el : elements)
     dof_layouts.push_back(el.create_dof_layout());
 
-  spdlog::info("Got {} dof layouts", dof_layouts.size());
-
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmaps]
       = fem::build_dofmap_data(topology.index_maps(topology.dim())[0]->comm(),
@@ -280,24 +279,15 @@ create_geometry(const Topology& topology,
     }
   }
 
-  spdlog::info("Calling compute_local_to_global");
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cells, and pass to function to
   // compute local (dof) to local (position in coords) map from (i)
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
 
-  spdlog::info("xdofs.size = {}", xdofs.size());
   std::vector<std::int32_t> all_dofmaps;
-  std::string s;
   for (auto q : dofmaps)
-  {
-    std::format_to(std::back_inserter(s), "{} ", q.size());
     all_dofmaps.insert(all_dofmaps.end(), q.begin(), q.end());
-  }
-  spdlog::info("dofmap sizes = {}", s);
-  spdlog::info("all_dofmaps.size = {}", all_dofmaps.size());
-  spdlog::info("nodes.size = {}", nodes.size());
 
   const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
       graph::build::compute_local_to_global(xdofs, all_dofmaps), nodes);
@@ -317,8 +307,6 @@ create_geometry(const Topology& topology,
     std::copy_n(std::next(x.begin(), shape1 * l2l[i]), shape1,
                 std::next(xg.begin(), 3 * i));
   }
-
-  spdlog::info("Creating geometry with {} dofmaps", dof_layouts.size());
 
   return Geometry(dof_index_map, std::move(dofmaps), elements, std::move(xg),
                   dim, std::move(igi));

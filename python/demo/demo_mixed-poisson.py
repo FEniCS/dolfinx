@@ -98,17 +98,16 @@ from petsc4py import PETSc
 
 import numpy as np
 
-import dolfinx
 import ufl
 from basix.ufl import element
-from dolfinx import fem, mesh
+from dolfinx import default_real_type, default_scalar_type, fem, has_adios2, mesh
 from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.mesh import CellType, create_unit_square
 
 # Solution scalar (e.g., float32, complex128) and geometry (float32/64)
 # types
-dtype = dolfinx.default_scalar_type
-xdtype = dolfinx.default_real_type
+dtype = default_scalar_type
+xdtype = default_real_type
 # -
 
 # Create a two-dimensional mesh. The iterative solver constructed
@@ -349,7 +348,7 @@ assert converged_reason > 0, f"Krylov solver has not converged, reason: {converg
 # We save the solution `u` in VTX format:
 
 # +
-if dolfinx.has_adios2:
+if has_adios2:
     from dolfinx.io import VTXWriter
 
     with VTXWriter(msh.comm, "output_mixed_poisson.bp", u) as f:

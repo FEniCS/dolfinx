@@ -682,8 +682,9 @@ def apply_lifting(
                 if x0 is not None:
                     offset0, offset1 = x0.getAttr("_blocks")  # type: ignore[attr-defined]
                     xl = stack.enter_context(x0.localForm())  # type: ignore[attr-defined]
+                    xl_r = xl.array_r
                     xlocal = [
-                        np.concatenate((xl[off0:off1], xl[offg0:offg1]))
+                        np.concatenate((xl_r[off0:off1], xl_r[offg0:offg1]))
                         for (off0, off1, offg0, offg1) in zip(
                             offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True
                         )
@@ -702,7 +703,8 @@ def apply_lifting(
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val
                             for val in const
                         ]
-                        bx_ = np.concatenate((b_l[off0:off1], b_l[offg0:offg1]))
+                        b_l_r = b_l.array_r
+                        bx_ = np.concatenate((b_l_r[off0:off1], b_l_r[offg0:offg1]))
                         _apply_lifting(bx_, a_, bcs, xlocal, float(alpha), const_, coeff)  # type: ignore[arg-type]
                         size = off1 - off0
                         b_l.array_w[off0:off1] = bx_[:size]
@@ -1916,6 +1918,7 @@ class numba_utils:
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
     except ImportError:
+        # numba/llvmlite/petsc4py not installed; numba bindings unavailable
         pass
 
 
@@ -1975,6 +1978,7 @@ class ctypes_utils:
             _ctypes.c_int,
         ]
     except ImportError:
+        # petsc4py not installed; ctypes bindings unavailable
         pass
 
 
@@ -2019,6 +2023,7 @@ class cffi_utils:
         _cffi_support.register_type(_ffi.typeof("double _Complex"), _numba.types.complex128)
 
     except KeyError:
+        # complex types already registered with numba/cffi
         pass
     except ImportError:
         log(
@@ -2064,6 +2069,7 @@ class cffi_utils:
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
     except KeyError:
+        # PETSc scalar/index type has no corresponding C type in _CTYPES
         pass
     except ImportError:
         log(

@@ -191,7 +191,7 @@ dolfinx::la::MatrixCSR<T> transpose(const dolfinx::la::MatrixCSR<T>& A)
   {
     auto it = std::lower_bound(src.begin(), src.end(), r);
     assert(it != src.end() && *it == r);
-    return static_cast<int>(std::distance(src.begin(), it));
+    return static_cast<int>(std::ranges::distance(src.begin(), it));
   };
   std::vector<int> ghost_col_owners(col_map_A->owners().size());
   std::transform(col_map_A->owners().begin(), col_map_A->owners().end(),

@@ -29,7 +29,6 @@ import gmsh
 import numpy as np
 from scipy.special import h2vp, hankel2, jv, jvp
 
-import dolfinx
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
@@ -41,7 +40,7 @@ try:
     from dolfinx.io import VTXWriter
 except ImportError:
     print("This demo requires DOLFINx to be configured with adios2.")
-    exit(0)
+    sys.exit(0)
 
 
 try:
@@ -58,7 +57,7 @@ except ModuleNotFoundError:
 
 if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
-    exit(0)
+    sys.exit(0)
 
 # # Mesh generation with GMSH
 # The mesh is made up by a central circle (the wire), and an external
@@ -376,7 +375,7 @@ if MPI.COMM_WORLD.rank == 0:
         pml_tag,
     )
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = _cell_partitioner(dolfinx.mesh.GhostMode.shared_facet, 2)
+partitioner = _cell_partitioner(mesh.GhostMode.shared_facet, 2)
 
 mesh_data = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2, partitioner=partitioner)
 assert mesh_data.cell_tags is not None, "Cell tags are missing"

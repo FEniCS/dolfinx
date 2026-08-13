@@ -152,7 +152,8 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     auto cell_vertices = c_to_v->links(c);
     auto it = std::ranges::find(cell_vertices, v);
     assert(it != cell_vertices.end());
-    const std::size_t local_pos = std::distance(cell_vertices.begin(), it);
+    const std::size_t local_pos
+        = std::ranges::distance(cell_vertices.begin(), it);
 
     auto dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t j = 0; j < 3; ++j)
@@ -328,53 +329,77 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
     }
     else
     {
-      // Pack 'unmatched' facets for all cell types into single array
-      // (facets0)
-      std::vector<std::int64_t> facets0;
-      facets0.reserve(std::accumulate(facets.begin(), facets.end(),
-                                      std::size_t(0), [](std::size_t x, auto& y)
-                                      { return x + y.first.size(); }));
+      // Pack 'unmatched' facets for all cell types into a single
+      // column-major array (facets0): column j holds vertex j across
+      // all facets, so the multi-column sort_by_perm() overload can
+      // operate directly on contiguous per-column data.
+      std::size_t num_facets = std::accumulate(
+          facets.begin(), facets.end(), std::size_t(0),
+          [](std::size_t x, auto& y)
+          { return x + (y.second > 0 ? y.first.size() / y.second : 0); });
       int max_v = std::ranges::max_element(facets, [](auto& a, auto& b)
                                            { return a.second < b.second; })
                       ->second;
-      for (const auto& [v_data, num_v] : facets)
+
+      std::vector<std::int64_t> facets0_b(max_v * num_facets, -1);
+      std::vector<std::span<std::int64_t>> facets0(max_v);
+      for (int j = 0; j < max_v; ++j)
+        facets0[j] = std::span(facets0_b.data() + j * num_facets, num_facets);
+
       {
-        for (auto it = v_data.begin(); it != v_data.end(); it += num_v)
+        std::size_t row = 0;
+        for (const auto& [v_data, num_v] : facets)
         {
-          facets0.insert(facets0.end(), it, std::next(it, num_v));
-          facets0.insert(facets0.end(), max_v - num_v, -1);
+          for (auto it = v_data.begin(); it != v_data.end(); it += num_v, ++row)
+            for (int j = 0; j < num_v; ++j)
+              facets0[j][row] = *std::next(it, j);
         }
       }
 
       // Compute row permutation
+      std::vector<std::span<const std::int64_t>> facets0_view(facets0.begin(),
+                                                              facets0.end());
       const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
-          std::span<const std::int64_t>(facets0), max_v);
+          std::span<std::span<const std::int64_t>>(facets0_view));
 
       // For facets in facets0 that appear only once, store the facet
       // vertices
       std::vector<std::int64_t> vertices;
       // TODO: allocate memory for vertices
+
+      // Number of leading valid (non -1 padding) vertices in row
+      auto trim_len = [&facets0, max_v](std::int32_t row)
+      {
+        int n = max_v;
+        while (n > 0 and facets0[n - 1][row] < 0)
+          --n;
+        return n;
+      };
+
       auto it = perm.begin();
       while (it != perm.end())
       {
-        // Find iterator to next facet different from f and trim any  -1
-        // padding
-        std::span _f(facets0.data() + (*it) * max_v, max_v);
-        auto end = std::find_if(_f.rbegin(), _f.rend(),
-                                [](auto a) { return a >= 0; });
-        auto f = _f.first(std::distance(end, _f.rend()));
+        std::int32_t row0 = *it;
+        int n = trim_len(row0);
 
-        auto it1 = std::find_if_not(
-            it, perm.end(),
-            [f, max_v, it0 = facets0.begin()](auto p) -> bool
-            {
-              return std::equal(f.begin(), f.end(), std::next(it0, p * max_v));
-            });
+        // Find iterator to next facet whose leading n vertices differ
+        // from row0
+        auto it1 = std::find_if_not(it, perm.end(),
+                                    [&facets0, row0, n](std::int32_t row)
+                                    {
+                                      for (int j = 0; j < n; ++j)
+                                        if (facets0[j][row] != facets0[j][row0])
+                                          return false;
+                                      return true;
+                                    });
 
-        // If no repeated facet found, insert f vertices
-        if (std::distance(it, it1) == 1)
-          vertices.insert(vertices.end(), f.begin(), f.end());
-        else if (std::distance(it, it1) > 2)
+        // If no repeated facet found, insert row0 vertices
+        if (std::ranges::distance(it, it1) == 1)
+        {
+          for (int j = 0; j < n; ++j)
+            vertices.push_back(facets0[j][row0]);
+        }
+        else if (std::ranges::distance(it, it1) > 2)
           throw std::runtime_error("More than two matching facets found.");
 
         // Advance iterator
@@ -1008,7 +1033,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     std::span<const std::int32_t> cell_entities = c_to_e->links(c);
     auto it = std::find(cell_entities.begin(), cell_entities.end(), e);
     assert(it != cell_entities.end());
-    std::size_t local_entity = std::distance(cell_entities.begin(), it);
+    std::size_t local_entity = std::ranges::distance(cell_entities.begin(), it);
 
     // Cell sub-entities must be permuted so that their local
     // orientation agrees with their global orientation

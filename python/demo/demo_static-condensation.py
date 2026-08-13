@@ -34,6 +34,7 @@
 # efficient static condensation.
 
 # +
+import sys
 import typing
 from pathlib import Path
 
@@ -75,7 +76,7 @@ rtype = default_real_type
 dtype = default_scalar_type
 if np.issubdtype(rtype, np.float32):
     print("float32 not yet supported for this demo.")
-    exit(0)
+    sys.exit(0)
 
 # We start by reading in the Cook's mesh [cooks_tri_mesh.xdmf](
 # https://github.com/FEniCS/dolfinx/blob/main/python/demo/data/cooks_tri_mesh.xdmf)
@@ -183,7 +184,7 @@ if np.issubdtype(dtype, np.complexfloating):
             "CFFI 1.17.0 and 1.17.1 has a bug for complex type."
             "See https://github.com/FEniCS/dolfinx/pull/3635. Exiting."
         )
-        exit(0)
+        sys.exit(0)
     cffi_support.register_type(ffi.typeof("double _Complex"), numba.types.complex128)
 
 # Get local dofmap sizes for later local tensor tabulations
