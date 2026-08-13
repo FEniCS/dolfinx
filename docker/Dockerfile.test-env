@@ -146,9 +146,12 @@ RUN apt-get -qq update && \
 # such library not explicitly kept becomes an orphan and gets swept
 # away, breaking the from-source mpicc with a missing-shared-library
 # error that resurfaces downstream as SLEPc's opaque "Unable to link
-# with PETSc". Pin whatever libmpi.so actually links against as
-# manually-installed right now, before anything later has a chance to
-# autoremove it.
+# with PETSc". Pin whatever the from-source install actually links
+# against as manually-installed right now, before anything later has a
+# chance to autoremove it. Scan all of /usr/local, not just libmpi.so:
+# OpenMPI's launcher stack (libprrte, prterun) additionally needs
+# libnl-3, which libmpi.so alone does not pull in, and losing it breaks
+# mpirun rather than mpicc.
 RUN if [ "$MPI" = "mpich" ]; then \
     wget https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
     tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
@@ -163,8 +166,9 @@ RUN if [ "$MPI" = "mpich" ]; then \
     make -j${BUILD_NP} install; \
     fi && \
     ldconfig && \
-    ldd /usr/local/lib/libmpi.so | awk '{print $3}' | grep '^/' | \
-    xargs -r dpkg -S 2>/dev/null | cut -d: -f1 | sort -u | xargs -r apt-mark manual && \
+    ldd /usr/local/lib/*.so* /usr/local/bin/* 2>/dev/null | awk '{print $3}' | \
+    grep '^/' | sort -u | xargs -r dpkg -S 2>/dev/null | cut -d: -f1 | sort -u | \
+    xargs -r apt-mark manual && \
     rm -rf /tmp/*
 
 ENV VIRTUAL_ENV=/dolfinx-env
@@ -222,11 +226,17 @@ RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.o
 # GMSH is already built at this point, so purge the OpenMPI stack now;
 # apt cascades the removal through libocct-ivtk-dev/libvtk9-dev without
 # touching the OCCT/HDF5 runtime libraries GMSH and HDF5 actually link
-# against. Any library the from-source MPI genuinely needs (PMIx,
+# against. Dropping the -dev packages does orphan those runtime
+# libraries, so pin whatever the from-source GMSH links against as
+# manually-installed here -- otherwise the autoremove in the PETSc step
+# below sweeps them and "import gmsh" fails on a missing
+# libTKXCAF.so. Any library the from-source MPI genuinely needs (PMIx,
 # ibverbs, libnl, ...) was already pinned manually-installed in the
 # "Install MPI" step above, so it survives this purge and the later
 # autoremove in the PETSc install step.
 RUN apt-get -y purge libopenmpi40 && \
+    ldd /usr/local/lib/libgmsh.so | awk '{print $3}' | grep '^/' | \
+    xargs -r dpkg -S 2>/dev/null | cut -d: -f1 | sort -u | xargs -r apt-mark manual && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
