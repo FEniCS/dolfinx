@@ -682,8 +682,9 @@ def apply_lifting(
                 if x0 is not None:
                     offset0, offset1 = x0.getAttr("_blocks")  # type: ignore[attr-defined]
                     xl = stack.enter_context(x0.localForm())  # type: ignore[attr-defined]
+                    xl_r = xl.array_r
                     xlocal = [
-                        np.concatenate((xl.array_r[off0:off1], xl.array_r[offg0:offg1]))
+                        np.concatenate((xl_r[off0:off1], xl_r[offg0:offg1]))
                         for (off0, off1, offg0, offg1) in zip(
                             offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True
                         )
@@ -702,7 +703,8 @@ def apply_lifting(
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val
                             for val in const
                         ]
-                        bx_ = np.concatenate((b_l.array_r[off0:off1], b_l.array_r[offg0:offg1]))
+                        b_l_r = b_l.array_r
+                        bx_ = np.concatenate((b_l_r[off0:off1], b_l_r[offg0:offg1]))
                         _apply_lifting(bx_, a_, bcs, xlocal, float(alpha), const_, coeff)  # type: ignore[arg-type]
                         size = off1 - off0
                         b_l.array_w[off0:off1] = bx_[:size]
