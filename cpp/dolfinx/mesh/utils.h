@@ -417,6 +417,9 @@ template <std::floating_point T>
 std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
                  int dim, int num_threads = 1)
 {
+  if (num_threads < 1)
+    throw std::runtime_error("Number of threads must be >= 1");
+
   if (entities.empty())
     return std::vector<T>();
   if (dim == 0)
@@ -495,6 +498,9 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
                             std::span<const std::int32_t> entities,
                             int num_threads = 1)
 {
+  if (num_threads < 1)
+    throw std::runtime_error("Number of threads must be >= 1");
+
   if (entities.empty())
     return std::vector<T>();
 
@@ -559,7 +565,7 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
             // Define normal by rotating tangent counter-clockwise
             std::array<T, 3> t;
             std::ranges::transform(p[1], p[0], t.begin(),
-                                   [](auto x, auto y) { return x - y; });
+                                   [](T x, T y) -> T { return x - y; });
 
             T norm = std::sqrt(t[0] * t[0] + t[1] * t[1]);
             std::span<T, 3> ni(n.data() + 3 * i, 3);
@@ -591,15 +597,15 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
             // Compute (p1 - p0) and (p2 - p0)
             std::array<T, 3> dp1, dp2;
             std::ranges::transform(p[1], p[0], dp1.begin(),
-                                   [](auto x, auto y) { return x - y; });
+                                   [](T x, T y) -> T { return x - y; });
             std::ranges::transform(p[2], p[0], dp2.begin(),
-                                   [](auto x, auto y) { return x - y; });
+                                   [](T x, T y) -> T { return x - y; });
 
             // Define cell normal via cross product of first two edges
             std::array<T, 3> ni = math::cross(dp1, dp2);
             T norm = std::sqrt(ni[0] * ni[0] + ni[1] * ni[1] + ni[2] * ni[2]);
             std::ranges::transform(ni, std::next(n.begin(), 3 * i),
-                                   [norm](auto x) { return x / norm; });
+                                   [norm](T x) -> T { return x / norm; });
           }
         });
   }
@@ -622,6 +628,9 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
                                  std::span<const std::int32_t> entities,
                                  int num_threads = 1)
 {
+  if (num_threads < 1)
+    throw std::runtime_error("Number of threads must be >= 1");
+
   if (entities.empty())
     return std::vector<T>();
 
@@ -647,8 +656,8 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
       {
         std::span<const T, 3> xg(x.data() + 3 * row, 3);
         std::ranges::transform(p, xg, p.begin(),
-                               [size = rows.size()](auto x, auto y)
-                               { return x + y / size; });
+                               [size = static_cast<T>(rows.size())](
+                                   T x, T y) -> T { return x + y / size; });
       }
     }
   };
