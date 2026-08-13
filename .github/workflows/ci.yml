@@ -168,7 +168,7 @@ jobs:
           spack -e py add py-gmsh ^gmsh~med~fltk+external ^opencascade~draw py-pyamg py-matplotlib \
             py-networkx \
             py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
-            py-pytest py-pytest-xdist py-scipy py-pyvista
+            py-pytest py-pytest-xdist py-scipy py-pyvista ^mesa~llvm
           spack -e py concretize -j 4
           spack -e py install -j 4 --use-buildcache auto
 
