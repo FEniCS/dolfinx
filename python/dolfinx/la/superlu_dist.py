@@ -39,7 +39,14 @@ class SuperLUDistMatrix(Generic[_T]):
         | _cpp.la.SuperLUDistMatrix_complex128
     )
 
-    def __init__(self, matrix):
+    def __init__(
+        self,
+        matrix: (
+            _cpp.la.SuperLUDistMatrix_float32
+            | _cpp.la.SuperLUDistMatrix_float64
+            | _cpp.la.SuperLUDistMatrix_complex128
+        ),
+    ):
         """Create a SuperLU_DIST matrix.
 
         Args:
@@ -95,7 +102,14 @@ class SuperLUDistSolver(Generic[_T]):
         | _cpp.la.SuperLUDistSolver_complex128
     )
 
-    def __init__(self, solver):
+    def __init__(
+        self,
+        solver: (
+            _cpp.la.SuperLUDistSolver_float32
+            | _cpp.la.SuperLUDistSolver_float64
+            | _cpp.la.SuperLUDistSolver_complex128
+        ),
+    ):
         """Create a SuperLU_DIST solver.
 
         Args:
@@ -108,7 +122,7 @@ class SuperLUDistSolver(Generic[_T]):
         """
         self._cpp_object = solver
 
-    def set_option(self, name: str, value: str):
+    def set_option(self, name: str, value: str) -> None:
         """Set SuperLU_DIST option for solve.
 
         See SuperLU_DIST User's Guide for option names and values.
@@ -124,7 +138,7 @@ class SuperLUDistSolver(Generic[_T]):
         """
         self._cpp_object.set_option(name, value)
 
-    def set_A(self, A: SuperLUDistMatrix[_T], fact: str):
+    def set_A(self, A: SuperLUDistMatrix[_T], fact: str) -> None:
         """Set assembled left-hand side matrix.
 
         Args:

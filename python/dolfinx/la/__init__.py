@@ -21,6 +21,8 @@ from dolfinx.typing import Scalar
 if TYPE_CHECKING:
     from petsc4py import PETSc
 
+    from scipy import sparse as _sparse
+
 __all__ = [
     "InsertMode",
     "MatrixCSR",
@@ -75,7 +77,7 @@ class Vector(Generic[_T]):
         self._cpp_object = x
         self._petsc_x = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Delete the PETSc vector if it was created."""
         if self._petsc_x is not None:
             self._petsc_x.destroy()
@@ -181,7 +183,7 @@ class MatrixCSR(Generic[Scalar]):
         else:
             self._cpp_object.mult(x._cpp_object, y._cpp_object)  # type: ignore[arg-type]
 
-    def matmul(self, B):
+    def matmul(self, B: MatrixCSR[Scalar]) -> MatrixCSR[Scalar]:
         """Compute matrix product ``A * B``, where `A` is this matrix.
 
         Args:
@@ -200,9 +202,9 @@ class MatrixCSR(Generic[Scalar]):
         ):
             raise RuntimeError("Block size not supported in matmul.")
 
-        return MatrixCSR(self._cpp_object.mult(B._cpp_object))
+        return MatrixCSR(self._cpp_object.mult(B._cpp_object))  # type: ignore[arg-type]
 
-    def transpose(self):
+    def transpose(self) -> MatrixCSR[Scalar]:
         """Compute transpose matrix."""
         return MatrixCSR(self._cpp_object.transpose())
 
@@ -274,7 +276,7 @@ class MatrixCSR(Generic[Scalar]):
         """
         return self._cpp_object.to_dense()  # type: ignore[return-value]
 
-    def to_scipy(self, ghosted: bool = False):
+    def to_scipy(self, ghosted: bool = False) -> _sparse.csr_matrix | _sparse.bsr_matrix:
         """Convert to a SciPy CSR/BSR matrix. Data is shared.
 
         Note:
@@ -316,7 +318,9 @@ class MatrixCSR(Generic[Scalar]):
 
 
 def matrix_csr(
-    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype: npt.DTypeLike = np.float64
+    sp: _cpp.la.SparsityPattern,
+    block_mode: BlockMode = BlockMode.compact,
+    dtype: npt.DTypeLike = np.float64,
 ) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
@@ -351,7 +355,7 @@ def matrix_csr(
     return MatrixCSR(ftype(sp, block_mode))
 
 
-def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
+def vector(map: IndexMap, bs: int = 1, dtype: npt.DTypeLike = np.float64) -> Vector:
     """Create a distributed vector.
 
     Args:

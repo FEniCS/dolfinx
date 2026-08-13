@@ -296,11 +296,11 @@ class Topology:
             )
 
     @property
-    def comm(self):
+    def comm(self) -> _MPI.Comm:
         """Return the MPI communicator associated with the topology."""
         return self._cpp_object.comm
 
-    def create_connectivity(self, d0: int, d1: int):
+    def create_connectivity(self, d0: int, d1: int) -> None:
         """Build entity connectivity ``d0 -> d1``.
 
         Args:
@@ -322,7 +322,7 @@ class Topology:
         """
         return self._cpp_object.create_entities(dim, num_threads)
 
-    def create_entity_permutations(self, num_threads: int = 1):
+    def create_entity_permutations(self, num_threads: int = 1) -> None:
         """Compute entity permutations and reflections.
 
         Args:
@@ -441,7 +441,7 @@ class Geometry(typing.Generic[Real]):
         return self.cmaps[0]
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         """Dimension of the Euclidean coordinate system."""
         return self._cpp_object.dim
 
@@ -514,17 +514,17 @@ class Mesh(typing.Generic[Real]):
             self._ufl_domain._ufl_cargo = self._cpp_object
 
     @property
-    def comm(self):
+    def comm(self) -> _MPI.Comm:
         """MPI communicator associated with the mesh."""
         return self._cpp_object.comm
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Name of the mesh."""
         return self._cpp_object.name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str) -> None:
         self._cpp_object.name = value
 
     def ufl_cell(self) -> ufl.Cell:
@@ -629,7 +629,7 @@ class MeshTags:
         return self._cpp_object.indices
 
     @property
-    def values(self):
+    def values(self) -> npt.NDArray[np.int8 | np.int32 | np.int64 | np.float64]:
         """Values associated with tagged mesh entities."""
         return self._cpp_object.values
 
@@ -639,10 +639,10 @@ class MeshTags:
         return self._cpp_object.name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str) -> None:
         self._cpp_object.name = value
 
-    def find(self, value) -> npt.NDArray[np.int32]:
+    def find(self, value: int | float) -> npt.NDArray[np.int32]:
         """Get a list of all entity indices with a given value.
 
         Args:
@@ -651,13 +651,13 @@ class MeshTags:
         Returns:
             Indices of entities with tag ``value``.
         """
-        return self._cpp_object.find(value)
+        return self._cpp_object.find(value)  # type: ignore[arg-type]
 
 
 class EntityMap:
     """Bidirectional map between entities in two topologies."""
 
-    def __init__(self, entity_map):
+    def __init__(self, entity_map: _cpp.mesh.EntityMap):
         """Initialise an entity map from a C++ `EntityMap` object.
 
         Note:
@@ -671,7 +671,9 @@ class EntityMap:
         self._topology = Topology(self._cpp_object.topology)
         self._sub_topology = Topology(self._cpp_object.sub_topology)
 
-    def sub_topology_to_topology(self, entities, inverse):
+    def sub_topology_to_topology(
+        self, entities: npt.NDArray[np.int32], inverse: bool
+    ) -> npt.NDArray[np.int32]:
         """Map entities between the sub-topology and the parent topology.
 
         If `inverse` is False, this function maps a list of
@@ -701,17 +703,17 @@ class EntityMap:
         return self._cpp_object.sub_topology_to_topology(entities, inverse)
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         """Topological dimension of the entities."""
         return self._cpp_object.dim
 
     @property
-    def topology(self):
+    def topology(self) -> Topology:
         """The topology."""
         return self._topology
 
     @property
-    def sub_topology(self):
+    def sub_topology(self) -> Topology:
         """The sub-topology."""
         return self._sub_topology
 
@@ -764,7 +766,9 @@ def compute_incident_entities(
     return _cpp.mesh.compute_incident_entities(topology._cpp_object, entities, d0, d1)
 
 
-def compute_midpoints(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
+def compute_midpoints(
+    msh: Mesh[Real], dim: int, entities: npt.NDArray[np.int32]
+) -> npt.NDArray[Real]:
     """Compute the midpoints of a set of mesh entities.
 
     Args:
@@ -775,7 +779,7 @@ def compute_midpoints(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
     Returns:
         Midpoints of the entities, shape ``(num_entities, 3)``.
     """
-    return _cpp.mesh.compute_midpoints(msh._cpp_object, dim, entities)
+    return _cpp.mesh.compute_midpoints(msh._cpp_object, dim, entities)  # type: ignore[return-value]
 
 
 def locate_entities(msh: Mesh, dim: int, marker: Callable) -> np.ndarray:
@@ -1158,8 +1162,8 @@ def create_interval(
     nx: int,
     points: npt.ArrayLike,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: Callable | None = None,
     gdim: int = 1,
 ) -> Mesh:
     """Create an interval mesh.
@@ -1207,8 +1211,8 @@ def create_unit_interval(
     comm: _MPI.Comm,
     nx: int,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: Callable | None = None,
     gdim: int = 1,
 ) -> Mesh:
     """Create a mesh on the unit interval.
@@ -1237,10 +1241,10 @@ def create_rectangle(
     comm: _MPI.Comm,
     points: npt.ArrayLike,
     n: Sequence[int],
-    cell_type=CellType.triangle,
+    cell_type: CellType = CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: Callable | None = None,
     diagonal: DiagonalType = DiagonalType.right,
     gdim: int = 2,
 ) -> Mesh:
@@ -1308,10 +1312,10 @@ def create_unit_square(
     comm: _MPI.Comm,
     nx: int,
     ny: int,
-    cell_type=CellType.triangle,
+    cell_type: CellType = CellType.triangle,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: Callable | None = None,
     diagonal: DiagonalType = DiagonalType.right,
     gdim: int = 2,
 ) -> Mesh:
@@ -1353,10 +1357,10 @@ def create_box(
     comm: _MPI.Comm,
     points: list[npt.ArrayLike],
     n: Sequence[int],
-    cell_type=CellType.tetrahedron,
+    cell_type: CellType = CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: Callable | None = None,
 ) -> Mesh:
     """Create a box mesh.
 
@@ -1403,10 +1407,10 @@ def create_unit_cube(
     nx: int,
     ny: int,
     nz: int,
-    cell_type=CellType.tetrahedron,
+    cell_type: CellType = CellType.tetrahedron,
     dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
+    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: Callable | None = None,
 ) -> Mesh:
     """Create a mesh of a unit cube.
 
@@ -1438,7 +1442,7 @@ def create_unit_cube(
 
 
 def entities_to_geometry(
-    msh: Mesh, dim: int, entities: npt.NDArray[np.int32], permute=False
+    msh: Mesh, dim: int, entities: npt.NDArray[np.int32], permute: bool = False
 ) -> npt.NDArray[np.int32]:
     """Geometric DOFs associated with the closure of given mesh entities.
 
