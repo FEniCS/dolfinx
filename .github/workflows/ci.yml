@@ -108,8 +108,14 @@ jobs:
           spack -e cxx add py-fenics-ufl@main commit=$UFL_SHA
           spack -e cxx add fenics-ufcx@main commit=$FFCX_SHA
           spack -e cxx add py-fenics-ffcx@main commit=$FFCX_SHA
+          # NOTE: adios2~sz drops the SZ2 compression dependency. 'sz'
+          # installs its own unversioned libzstd.so, which interposes on the
+          # real zstd once libdolfinx is loaded; a ZSTD_DCtx then gets
+          # allocated in one zstd and freed in the other. This segfaults
+          # Mesa's llvmpipe shader disk cache, so any PyVista render
+          # following 'import dolfinx' crashes (see 'Run Python demos').
           spack -e cxx add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
-            ^petsc+mpi+mumps+superlu-dist+hypre ^adios2~libcatalyst~fortran
+            ^petsc+mpi+mumps+superlu-dist+hypre ^adios2~libcatalyst~fortran~sz
           spack -e cxx add catch2 ninja
           spack -e cxx concretize -j 4
           spack -e cxx install -j 4 --use-buildcache auto
@@ -162,13 +168,16 @@ jobs:
           spack -e py add py-fenics-ufl@main commit=$UFL_SHA
           spack -e py add fenics-ufcx@main commit=$FFCX_SHA
           spack -e py add py-fenics-ffcx@main commit=$FFCX_SHA
+          # NOTE: see the 'Build library (C++)' step for why adios2~sz is
+          # required -- without it the PyVista demos segfault.
           spack -e py add fenics-dolfinx@main+petsc+slepc+adios2 commit=${{ github.sha }} build_type=Developer partitioners=parmetis \
-            ^petsc+mpi+mumps+superlu-dist+hypre ^adios2~libcatalyst~fortran
+            ^petsc+mpi+mumps+superlu-dist+hypre ^adios2~libcatalyst~fortran~sz
           spack -e py add py-fenics-dolfinx@main+petsc4py+slepc4py commit=${{ github.sha }} build_type=Developer
           spack -e py add py-gmsh ^gmsh~med~fltk+external ^opencascade~draw py-pyamg py-matplotlib \
             py-networkx \
             py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
-            py-pytest py-pytest-xdist py-scipy py-pyvista ^mesa~llvm
+            py-pytest py-pytest-xdist py-scipy \
+            "py-pyvista ^[virtuals=gl] osmesa"
           spack -e py concretize -j 4
           spack -e py install -j 4 --use-buildcache auto
 
