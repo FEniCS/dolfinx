@@ -254,11 +254,13 @@ jobs:
                       print(cell, family, degree, flush=True)
                       basix.ufl.element(family, cell, degree)
           EOF
-          gdb -q -batch -ex "handle SIGPIPE nostop noprint pass" -ex run \
+          gdb -q -batch -ex "set auto-load safe-path /" -ex "set disable-randomization off" \
+            -ex "handle SIGPIPE nostop noprint pass" -ex run \
             -ex "thread apply all bt full" -ex "info frame" -ex "info registers" \
             --args python /tmp/mk_elements.py || true
           # Then the crashing tests themselves, serially (no xdist).
-          gdb -q -batch -ex "handle SIGPIPE nostop noprint pass" -ex run \
+          gdb -q -batch -ex "set auto-load safe-path /" -ex "set disable-randomization off" \
+            -ex "handle SIGPIPE nostop noprint pass" -ex run \
             -ex "thread apply all bt full" -ex "info frame" -ex "info registers" \
             --args python -m pytest -x -p no:cacheprovider -m "not petsc4py" \
             dolfinx-src/python/test/unit/fem/test_discrete_operators.py \
