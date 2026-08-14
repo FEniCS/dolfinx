@@ -85,6 +85,7 @@
 # +
 import os
 import time
+from collections.abc import Callable
 
 from mpi4py import MPI
 
@@ -96,6 +97,7 @@ from dolfinx.fem import coordinate_element
 from dolfinx.mesh import (
     CellType,
     GhostMode,
+    Mesh,
     create_cell_partitioner,
     create_geometric_cell_partitioner,
     create_hybrid_cell_partitioner,
@@ -134,7 +136,7 @@ from dolfinx.mesh import (
 # before they can compute cell positions.
 
 
-def cube_block(comm: MPI.Comm, n: int):
+def cube_block(comm: MPI.Comm, n: int) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]]:
     """Local block of the cells and points of a unit cube of tetrahedra.
 
     Each hexahedral cell of an ``n x n x n`` grid is split into six
@@ -251,7 +253,7 @@ def redistribute_cells(
 # facet once.
 
 
-def partition_quality(msh) -> tuple[float, int]:
+def partition_quality(msh: Mesh) -> tuple[float, int]:
     """Compute the imbalance and edge cut of a mesh partition.
 
     Args:
@@ -388,7 +390,7 @@ def redistribute_by_partitioner(
     comm: MPI.Comm,
     cell_type: CellType,
     cells: npt.NDArray[np.int64],
-    partitioner,
+    partitioner: Callable,
 ) -> npt.NDArray[np.int64]:
     """Redistribute cells to the ranks a cell partitioner assigns them to.
 
@@ -422,7 +424,7 @@ if has_ptscotch and comm.size > 1:
     scotch = partitioners["PT-SCOTCH"]
     sfc = partitioners["SFC Hilbert"]
 
-    def timed(cells, partitioner):
+    def timed(cells: npt.NDArray[np.int64], partitioner: Callable) -> tuple[Mesh, float, float]:
         """Create a mesh, with the elapsed and the SCOTCH time."""
         comm.Barrier()
         t, t_scotch = time.perf_counter(), scotch_partitioner_time()
