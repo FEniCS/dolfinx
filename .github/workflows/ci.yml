@@ -227,15 +227,15 @@ jobs:
           python -m pytest -n=auto --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
           mpiexec -np 3 python -m pytest --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
 
-      # TEMPORARY DIAGNOSTIC (remove once the crash is understood).
-      # The Python unit tests segfault intermittently -- on 0-3 of the 9
-      # matrix legs, with the affected legs varying run to run -- inside
-      # basix element creation for high-degree hexahedral H(curl)/H(div)
-      # elements, since the move to the ubuntu:26.04 container (gcc 15.2).
-      # Python's faulthandler names only 'create_element', so re-run the
-      # affected tests serially under gdb to get the native frames. Guarded
-      # on 'failure()' so it runs on exactly the legs that crashed.
-      - name: Native backtrace for segfaulting element creation
+      # TEMPORARY DIAGNOSTIC (remove once the crash stays away).
+      # Creating a high-degree hexahedral H(curl) element segfaulted on a
+      # varying subset of the matrix legs: 'rip' null, with BLAS packing
+      # buffers and leading dimensions still in registers, i.e. a call
+      # through an unpopulated OpenBLAS dispatch entry. The env config now
+      # pins the kernel set ('openblas~dynamic_dispatch'); if a leg still
+      # crashes, this identifies the runner and the detected core type.
+      # Guarded on 'failure()', so it costs nothing on a green leg.
+      - name: Diagnose segfaulting element creation
         if: failure()
         continue-on-error: true
         shell: spack-bash {0}
@@ -243,30 +243,43 @@ jobs:
           apt-get install -y gdb
           spack env activate ci
           spack load gcc
-          echo "stack limit: $(ulimit -s) kB"
-          # Cheap sweep first: creates the elements that crash, nothing else.
-          cat > /tmp/mk_elements.py <<'EOF'
-          import basix.ufl
-          for cell in ["hexahedron", "tetrahedron"]:
-              for family in ["Nedelec 1st kind H(curl)", "Nedelec 2nd kind H(curl)",
-                             "Raviart-Thomas", "Brezzi-Douglas-Marini", "Lagrange"]:
-                  for degree in range(1, 6):
-                      print(cell, family, degree, flush=True)
-                      basix.ufl.element(family, cell, degree)
+          echo "== CPU =="
+          lscpu | grep -E "Model name|^Flags" | cut -c1-240
+          cat > /tmp/probe_maps.py <<'EOF'
+          import basix.ufl  # noqa: F401
+          libs = {ln.split()[-1] for ln in open("/proc/self/maps") if "blas" in ln.lower()}
+          print(*sorted(libs), sep="\n")
           EOF
+          echo "== BLAS libraries mapped alongside basix =="
+          python /tmp/probe_maps.py || true
+          echo "== unresolved symbols in the basix extension =="
+          ldd -r $(python -c "import basix._basixcpp as m; print(m.__file__)") 2>&1 \
+            | grep -iE "undefined|not found" | head -20 || echo "none"
+          cat > /tmp/repro.py <<'EOF'
+          import basix.ufl
+          basix.ufl.element("Nedelec 1st kind H(curl)", "hexahedron", 4)
+          print("element created")
+          EOF
+          echo "== repro, with OpenBLAS core detection =="
+          OPENBLAS_VERBOSE=2 python /tmp/repro.py || true
+          echo "== repro, dispatch pinned to Haswell =="
+          OPENBLAS_CORETYPE=Haswell python /tmp/repro.py || true
+          echo "== repro, eager symbol binding =="
+          LD_BIND_NOW=1 python /tmp/repro.py || true
+          # 'bt' is useless once rip is null, so walk the stack by hand:
+          # gdb symbolises the return addresses still sitting on it.
+          echo "== repro under gdb =="
           gdb -q -batch -ex "set auto-load safe-path /" -ex "set disable-randomization off" \
             -ex "handle SIGPIPE nostop noprint pass" -ex run \
-            -ex "thread apply all bt full" -ex "info frame" -ex "info registers" \
-            --args python /tmp/mk_elements.py || true
-          # Then the crashing tests themselves, serially (no xdist).
+            -ex "bt" -ex "x/64a \$rsp" -ex "info sharedlibrary" -ex "info registers" \
+            --args python /tmp/repro.py || true
+          # Fallback, in case the one-liner above does not reproduce.
+          echo "== affected tests serially under gdb =="
           gdb -q -batch -ex "set auto-load safe-path /" -ex "set disable-randomization off" \
             -ex "handle SIGPIPE nostop noprint pass" -ex run \
-            -ex "thread apply all bt full" -ex "info frame" -ex "info registers" \
+            -ex "bt" -ex "x/64a \$rsp" -ex "info registers" \
             --args python -m pytest -x -p no:cacheprovider -m "not petsc4py" \
-            dolfinx-src/python/test/unit/fem/test_discrete_operators.py \
-            dolfinx-src/python/test/unit/fem/test_dof_permuting.py \
-            dolfinx-src/python/test/unit/fem/test_fem_pipeline.py \
-            dolfinx-src/python/test/unit/fem/test_interpolation.py || true
+            dolfinx-src/python/test/unit/fem/test_discrete_operators.py || true
 
       # The test tools are environment roots, so '--only dependencies'
       # skips them and they need naming explicitly. Only the final push
