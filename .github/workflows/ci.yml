@@ -215,13 +215,56 @@ jobs:
           python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
           python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
 
+      # NOTE: the marker expression is written '!matrix.petsc && X || Y'
+      # rather than 'matrix.petsc && Y || X'. GitHub expressions treat the
+      # empty string as false, so the latter form falls through to X on
+      # every leg and silently skips the petsc4py tests everywhere.
       - name: Run Python unit tests (serial and MPI)
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
-          python -m pytest -n=auto --durations=50 ${{ matrix.petsc && '' || '-m "not petsc4py"' }} dolfinx-src/python/test/unit/
-          mpiexec -np 3 python -m pytest --durations=50 ${{ matrix.petsc && '' || '-m "not petsc4py"' }} dolfinx-src/python/test/unit/
+          python -m pytest -n=auto --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
+          mpiexec -np 3 python -m pytest --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
+
+      # TEMPORARY DIAGNOSTIC (remove once the crash is understood).
+      # The Python unit tests segfault intermittently -- on 0-3 of the 9
+      # matrix legs, with the affected legs varying run to run -- inside
+      # basix element creation for high-degree hexahedral H(curl)/H(div)
+      # elements, since the move to the ubuntu:26.04 container (gcc 15.2).
+      # Python's faulthandler names only 'create_element', so re-run the
+      # affected tests serially under gdb to get the native frames. Guarded
+      # on 'failure()' so it runs on exactly the legs that crashed.
+      - name: Native backtrace for segfaulting element creation
+        if: failure()
+        continue-on-error: true
+        shell: spack-bash {0}
+        run: |
+          apt-get install -y gdb
+          spack env activate ci
+          spack load gcc
+          echo "stack limit: $(ulimit -s) kB"
+          # Cheap sweep first: creates the elements that crash, nothing else.
+          cat > /tmp/mk_elements.py <<'EOF'
+          import basix.ufl
+          for cell in ["hexahedron", "tetrahedron"]:
+              for family in ["Nedelec 1st kind H(curl)", "Nedelec 2nd kind H(curl)",
+                             "Raviart-Thomas", "Brezzi-Douglas-Marini", "Lagrange"]:
+                  for degree in range(1, 6):
+                      print(cell, family, degree, flush=True)
+                      basix.ufl.element(family, cell, degree)
+          EOF
+          gdb -q -batch -ex "handle SIGPIPE nostop noprint pass" -ex run \
+            -ex "thread apply all bt full" -ex "info frame" -ex "info registers" \
+            --args python /tmp/mk_elements.py || true
+          # Then the crashing tests themselves, serially (no xdist).
+          gdb -q -batch -ex "handle SIGPIPE nostop noprint pass" -ex run \
+            -ex "thread apply all bt full" -ex "info frame" -ex "info registers" \
+            --args python -m pytest -x -p no:cacheprovider -m "not petsc4py" \
+            dolfinx-src/python/test/unit/fem/test_discrete_operators.py \
+            dolfinx-src/python/test/unit/fem/test_dof_permuting.py \
+            dolfinx-src/python/test/unit/fem/test_fem_pipeline.py \
+            dolfinx-src/python/test/unit/fem/test_interpolation.py || true
 
       # The test tools are environment roots, so '--only dependencies'
       # skips them and they need naming explicitly. Only the final push
