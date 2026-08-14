@@ -226,6 +226,85 @@ jobs:
       # The test tools are environment roots, so '--only dependencies'
       # skips them and they need naming explicitly. Only the final push
       # rebuilds the index, which is the expensive part.
+      # Delete remote entries this run does not need and that were
+      # pushed over three months ago. Guarded to a single matrix leg so
+      # the nine jobs do not prune the shared cache concurrently, and run
+      # after the pushes so nothing from this run is a candidate.
+      #
+      # Anything pushed recently is kept regardless of whether this leg
+      # needs it -- that is what makes a single leg's keeplist safe, since
+      # the other legs push their own artifacts on every run.
+      #
+      # 'spack buildcache prune' cannot be used here: it rejects oci://
+      # mirrors ("Unrecognized URL scheme: oci"), so deletion goes through
+      # the GitHub Packages API. Only tagged '<spec>.spack' manifests are
+      # deleted; untagged versions are layer blobs that manifests share,
+      # so removing them directly could corrupt entries that are still in
+      # use.
+      - name: Prune stale packages from cache
+        if: ${{ matrix.mpi == 'openmpi' && matrix.petsc && matrix.scalar == 'float64' && matrix.index == 'int32' && !cancelled() }}
+        env:
+          # Set to 'false' to actually delete; a dry run only logs.
+          PRUNE_DRY_RUN: "true"
+          # Deletion is one API call per package, so cap each run and let
+          # the backlog drain over several runs.
+          PRUNE_MAX_DELETIONS: "500"
+        run: |
+          spack -e ci find --format "{hash}" > /tmp/keeplist.txt
+          python3 - <<'EOF'
+          import datetime, json, os, re, urllib.error, urllib.request
+
+          owner = os.environ["GITHUB_REPOSITORY"].split("/")[0]
+          token = os.environ["GITHUB_TOKEN"]
+          dry_run = os.environ.get("PRUNE_DRY_RUN", "true") == "true"
+          max_deletions = int(os.environ.get("PRUNE_MAX_DELETIONS", "500"))
+          cutoff = (datetime.datetime.now(datetime.timezone.utc)
+                    - datetime.timedelta(days=91)).isoformat()
+          keep = {line.strip() for line in open("/tmp/keeplist.txt") if line.strip()}
+          base = (f"https://api.github.com/orgs/{owner}/packages/container/"
+                  "dolfinx-spack-buildcache/versions")
+          headers = {"Authorization": f"Bearer {token}",
+                     "Accept": "application/vnd.github+json"}
+
+          def call(url, method="GET"):
+              req = urllib.request.Request(url, headers=headers, method=method)
+              return urllib.request.urlopen(req)
+
+          stale, kept_recent, kept_needed = [], 0, 0
+          # Versions come back newest first; everything after the first one
+          # older than the cutoff is a deletion candidate.
+          for page in range(1, 200):
+              versions = json.load(call(f"{base}?per_page=100&page={page}"))
+              if not versions:
+                  break
+              for v in versions:
+                  tags = v["metadata"]["container"]["tags"]
+                  hashes = [m.group(1) for m in
+                            (re.search(r"-([a-z0-9]{32})\.spack$", t) for t in tags) if m]
+                  if not hashes:          # index.spack, or an untagged blob
+                      continue
+                  if v["created_at"] >= cutoff:
+                      kept_recent += 1
+                  elif keep.intersection(hashes):
+                      kept_needed += 1
+                  else:
+                      stale.append((v["id"], tags[0]))
+
+          print(f"kept {kept_recent} recent, {kept_needed} still needed, "
+                f"{len(stale)} stale")
+          if len(stale) > max_deletions:
+              print(f"capping this run at {max_deletions} deletions")
+          for version_id, tag in stale[:max_deletions]:
+              if dry_run:
+                  print(f"would delete {tag}")
+                  continue
+              try:
+                  call(f"{base}/{version_id}", method="DELETE")
+                  print(f"deleted {tag}")
+              except urllib.error.HTTPError as e:
+                  print(f"could not delete {tag}: {e.code} {e.reason}")
+          EOF
+
       - name: Push test packages to cache and update index
         run: |
           spack -e ci buildcache push --base-image ubuntu:26.04 --allow-missing --update-index local-buildcache \
