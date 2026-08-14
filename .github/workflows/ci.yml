@@ -227,20 +227,23 @@ jobs:
           python -m pytest -n=auto --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
           mpiexec -np 3 python -m pytest --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
 
-      # TEMPORARY DIAGNOSTIC (remove once the crash stays away).
-      # Creating a high-degree hexahedral H(curl) element segfaulted on a
-      # varying subset of the matrix legs: 'rip' null, with BLAS packing
-      # buffers and leading dimensions still in registers, i.e. a call
-      # through an unpopulated OpenBLAS dispatch entry. The env config now
-      # pins the kernel set ('openblas~dynamic_dispatch'); if a leg still
-      # crashes, this identifies the runner and the detected core type.
+      # TEMPORARY DIAGNOSTIC (remove once the crash is understood).
+      # Creating a high-degree hexahedral H(curl) element segfaults with
+      # 'rip' null on a varying subset of the matrix legs. Pinning the
+      # OpenBLAS kernel set ('openblas~dynamic_dispatch') did not help: the
+      # crash reproduced on an AMD EPYC 9V74 runner with a non-dispatching
+      # OpenBLAS whose compiled-in core ('Core: Zen') matched the CPU, and
+      # under OPENBLAS_CORETYPE and LD_BIND_NOW alike. So this now asks the
+      # question that ordering settles: whether the faulting call is a BLAS
+      # call at all. It breaks on the BLAS entry points to print each call
+      # site, and re-runs against the reference BLAS.
       # Guarded on 'failure()', so it costs nothing on a green leg.
       - name: Diagnose segfaulting element creation
         if: failure()
         continue-on-error: true
         shell: spack-bash {0}
         run: |
-          apt-get install -y gdb
+          apt-get install -y gdb libblas3 liblapack3
           spack env activate ci
           spack load gcc
           echo "== CPU =="
@@ -262,17 +265,36 @@ jobs:
           EOF
           echo "== repro, with OpenBLAS core detection =="
           OPENBLAS_VERBOSE=2 python /tmp/repro.py || true
-          echo "== repro, dispatch pinned to Haswell =="
-          OPENBLAS_CORETYPE=Haswell python /tmp/repro.py || true
-          echo "== repro, eager symbol binding =="
-          LD_BIND_NOW=1 python /tmp/repro.py || true
-          # 'bt' is useless once rip is null, so walk the stack by hand:
-          # gdb symbolises the return addresses still sitting on it.
-          echo "== repro under gdb =="
-          gdb -q -batch -ex "set auto-load safe-path /" -ex "set disable-randomization off" \
-            -ex "handle SIGPIPE nostop noprint pass" -ex run \
-            -ex "bt" -ex "x/64a \$rsp" -ex "info sharedlibrary" -ex "info registers" \
-            --args python /tmp/repro.py || true
+          # If the reference BLAS survives what OpenBLAS does not, the fault
+          # is in the BLAS; if both crash, the BLAS is a bystander.
+          echo "== repro, against the reference BLAS =="
+          LD_PRELOAD=/usr/lib/x86_64-linux-gnu/liblapack.so.3:/usr/lib/x86_64-linux-gnu/libblas.so.3 \
+            python /tmp/repro.py || true
+          # Each BLAS entry prints its caller, so the last line before the
+          # crash is the call site -- 'bt' cannot give it once rip is null.
+          cat > /tmp/gdb.cmds <<'EOF'
+          set auto-load safe-path /
+          set disable-randomization off
+          set pagination off
+          set breakpoint pending on
+          break dgemm_
+          break dgesv_
+          break dgetrf_
+          break dgetri_
+          break dsyevd_
+          commands
+          silent
+          frame 1
+          continue
+          end
+          run
+          echo \n== CRASH ==\n
+          bt
+          x/512a $sp
+          info registers
+          EOF
+          echo "== repro under gdb, tracing BLAS call sites =="
+          gdb -q -batch -x /tmp/gdb.cmds --args python /tmp/repro.py 2>&1 | tail -120 || true
           # Fallback, in case the one-liner above does not reproduce.
           echo "== affected tests serially under gdb =="
           gdb -q -batch -ex "set auto-load safe-path /" -ex "set disable-randomization off" \
