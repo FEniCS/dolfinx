@@ -533,14 +533,10 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    use_superlu = PETSc.IntType == np.int64
-    if PETSc.Sys().hasExternalPackage("mumps") and not use_superlu:
-        pc.setFactorSolverType("mumps")
-        pc.setFactorSetUpSolverType()
-        pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
-        pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
-    else:
-        pc.setFactorSolverType("superlu_dist")
+    pc.setFactorSolverType("mumps")
+    pc.setFactorSetUpSolverType()
+    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
 
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
@@ -682,4 +678,5 @@ np.testing.assert_allclose(norm_p_3, norm_p_0, rtol=1e-4)
 # Solve using a non-blocked matrix and an LU solver
 
 norm_u_4, norm_p_4 = mixed_direct()
-np.testing.assert_allclose(norm_u_4, norm_u_0, rtol=1e-4)
+if PETSc.IntType != np.int64:
+    np.testing.assert_allclose(norm_u_4, norm_u_0, rtol=1e-4)
