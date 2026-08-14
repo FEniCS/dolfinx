@@ -418,8 +418,8 @@ def assemble_matrix(
         | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
-    kind=None,
-):
+    kind: str | Sequence[Sequence[str]] | None = None,
+) -> PETSc.Mat:
     """Assemble a bilinear form into a matrix.
 
     The following cases are supported:
@@ -1000,7 +1000,7 @@ class LinearProblem(typing.Generic[_U]):
             )
             self.solver.getPC().setFieldSplitIS(*fieldsplit_IS)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destroy internally held PETSc objects."""
         # __init__ may have raised before all attributes were set
         for name in ("_solver", "_A", "_b", "_x", "_P_mat"):
@@ -1142,7 +1142,7 @@ def assemble_residual(
     jacobian: Form | Sequence[Sequence[Form]],
     bcs: Sequence[DirichletBC],
     _blocks: tuple[tuple[int, int, int], ...] | None = None,
-):
+) -> None:
     """Assemble the residual at ``x`` into the vector ``b``.
 
     A function conforming to the interface expected by ``SNES.setFunction``
@@ -1216,7 +1216,7 @@ def assemble_jacobian(
     jacobian: Form | Sequence[Sequence[Form]],
     preconditioner: Form | Sequence[Sequence[Form]] | None,
     bcs: Sequence[DirichletBC],
-):
+) -> None:
     """Assemble the Jacobian and preconditioner matrices.
 
     A function conforming to the interface expected by
@@ -1521,7 +1521,7 @@ class NonlinearProblem(typing.Generic[_U]):
 
         return self.u
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destroy PETSc objects created internally."""
         # __init__ may have raised before all attributes were set
         for name in ("_snes", "_A", "_b", "_x", "_P_mat"):
@@ -1768,7 +1768,7 @@ def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:
 
 
 @functools.singledispatch
-def assign(u: _Function | Sequence[_Function], x: PETSc.Vec):
+def assign(u: _Function | Sequence[_Function], x: PETSc.Vec) -> None:
     """Assign :class:`Function` degrees-of-freedom to a vector.
 
     Assigns degree-of-freedom values in ``u``, which is possibly a
@@ -1797,7 +1797,7 @@ def assign(u: _Function | Sequence[_Function], x: PETSc.Vec):
 
 
 @assign.register
-def _(x: PETSc.Vec, u: _Function | Sequence[_Function]):  # type: ignore[misc]
+def _(x: PETSc.Vec, u: _Function | Sequence[_Function]) -> None:  # type: ignore[misc]
     """Assign vector entries to :class:`Function` degrees-of-freedom.
 
     Assigns values in ``x`` to the degrees-of-freedom of ``u``, which is
