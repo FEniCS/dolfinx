@@ -245,6 +245,31 @@ class MatrixCSR(Generic[Scalar]):
         """Scatter and accumulate ghost values."""
         self._cpp_object.scatter_reverse()
 
+    def eliminate_zeros(self, tol: float = 0) -> None:
+        """Remove explicitly-stored entries that are within a tolerance.
+
+        This compacts the underlying storage: entries with
+        ``abs(value) <= tol`` are dropped, and the column indices and
+        row pointers are updated accordingly. Entries with
+        ``abs(value) > tol`` are left untouched.
+
+        Note:
+            This is a terminal, finalizing operation. It can reduce the
+            matrix's sparsity, which invalidates the precomputed
+            communication pattern used to accumulate ghost row
+            contributions. After calling this, the matrix can no longer
+            be modified: further calls to :meth:`add`, :meth:`set`, or
+            :meth:`scatter_reverse` will raise a ``RuntimeError``. Only
+            call this once, after the matrix is fully assembled (i.e.
+            after the final :meth:`scatter_reverse`).
+
+        Args:
+            tol: Entries with magnitude less than or equal to ``tol``
+                are removed from storage. Defaults to removing only
+                exact zeros.
+        """
+        self._cpp_object.eliminate_zeros(self.data.dtype.type(tol))
+
     def squared_norm(self) -> float:
         """Compute the squared Frobenius norm.
 
