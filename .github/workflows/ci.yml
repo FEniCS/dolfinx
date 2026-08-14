@@ -243,7 +243,7 @@ jobs:
         continue-on-error: true
         shell: spack-bash {0}
         run: |
-          apt-get install -y gdb libblas3 liblapack3
+          apt-get install -y gdb valgrind libblas3 liblapack3
           spack env activate ci
           spack load gcc
           echo "== CPU =="
@@ -258,6 +258,11 @@ jobs:
           echo "== unresolved symbols in the basix extension =="
           ldd -r $(python -c "import basix._basixcpp as m; print(m.__file__)") 2>&1 \
             | grep -iE "undefined|not found" | head -20 || echo "none"
+          # libbasix is what calls the BLAS; the extension above only wraps it.
+          echo "== libbasix: BLAS linkage and unresolved symbols =="
+          LIBBASIX=$(spack location -i fenics-basix)/lib/libbasix.so
+          ldd "$LIBBASIX" | grep -iE "blas|lapack" || echo "no BLAS in DT_NEEDED"
+          ldd -r "$LIBBASIX" 2>&1 | grep -iE "undefined|not found" | head -20 || echo "none"
           cat > /tmp/repro.py <<'EOF'
           import basix.ufl
           basix.ufl.element("Nedelec 1st kind H(curl)", "hexahedron", 4)
@@ -295,6 +300,14 @@ jobs:
           EOF
           echo "== repro under gdb, tracing BLAS call sites =="
           gdb -q -batch -x /tmp/gdb.cmds --args python /tmp/repro.py 2>&1 | tail -120 || true
+          # A jump to address zero leaves no return address on the stack, so
+          # no unwinder can name the caller -- 'x/512a $sp' came back all
+          # zeros. Valgrind tracks the call chain itself, so it reports the
+          # jump ('Jump to the invalid address ... at 0x0: ??? by 0x...')
+          # together with the frames that led there.
+          echo "== repro under valgrind =="
+          valgrind --error-limit=no --num-callers=30 --trace-children=yes \
+            python /tmp/repro.py 2>&1 | tail -60 || true
           # Fallback, in case the one-liner above does not reproduce.
           echo "== affected tests serially under gdb =="
           gdb -q -batch -ex "set auto-load safe-path /" -ex "set disable-randomization off" \
