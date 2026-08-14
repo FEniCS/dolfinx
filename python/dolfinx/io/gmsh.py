@@ -166,7 +166,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> npt.NDArray[np.uint1
 
 
 def extract_topology_and_markers(
-    model, name: str | None = None
+    model: typing.Any, name: str | None = None
 ) -> tuple[dict[int, TopologyDict], dict[str, PhysicalGroup]]:
     """Extract entities with a physical marker in the Gmsh model.
 
@@ -248,7 +248,7 @@ def extract_topology_and_markers(
     return topologies, physical_groups
 
 
-def extract_geometry(model, name: str | None = None) -> npt.NDArray[np.float64]:
+def extract_geometry(model: typing.Any, name: str | None = None) -> npt.NDArray[np.float64]:
     """Extract the mesh geometry from a Gmsh model.
 
     Returns an array of shape ``(num_nodes, 3)``, where the i-th row
@@ -280,11 +280,11 @@ def extract_geometry(model, name: str | None = None) -> npt.NDArray[np.float64]:
     perm_sort = np.argsort(indices)
     if not np.all(indices[perm_sort] == np.arange(len(indices))):
         raise RuntimeError("Gmsh model node indices are not contiguous.")
-    return points[perm_sort]
+    return typing.cast(npt.NDArray[np.float64], points[perm_sort])
 
 
 def model_to_mesh(
-    model,
+    model: typing.Any,
     comm: _MPI.Comm,
     rank: int,
     gdim: int = 3,
@@ -292,7 +292,7 @@ def model_to_mesh(
         [_MPI.Comm, int, Sequence[CellType], Sequence[npt.NDArray[np.int64]]], _AdjacencyList_int32
     ]
     | None = None,
-    dtype=default_real_type,
+    dtype: npt.DTypeLike = default_real_type,
     max_facet_to_cell_links: int = 2,
 ) -> MeshData:
     """Create a Mesh from a Gmsh model.
@@ -402,7 +402,7 @@ def model_to_mesh(
             meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
         else:
             # Any other process than input rank does not have any entities
-            marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int32)
+            marked_entities = np.empty((0, num_nodes_per_element[position]), dtype=np.int64)
             entity_values = np.empty((0,), dtype=np.int32)
             meshtags[codim].append((gmsh_entity_id, marked_entities, entity_values))
 

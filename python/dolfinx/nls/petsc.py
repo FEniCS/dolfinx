@@ -15,25 +15,23 @@ from petsc4py import PETSc
 from dolfinx.fem.forms import extract_function_spaces
 
 if typing.TYPE_CHECKING:
-    import dolfinx
-
-    assert dolfinx.has_petsc4py
-
     from dolfinx.fem.petsc import NewtonSolverNonlinearProblem
 
 import types
 
 from dolfinx import cpp as _cpp
-from dolfinx import fem
+from dolfinx import fem, has_petsc4py
 from dolfinx.fem.petsc import (
     create_matrix,
     create_vector,
 )
 
+assert has_petsc4py
+
 __all__ = ["NewtonSolver"]
 
 
-class NewtonSolver(_cpp.nls.petsc.NewtonSolver):  # type: ignore[name-defined]
+class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
     """Newton solver for non-linear problems.
 
     Deprecated.
@@ -60,12 +58,12 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):  # type: ignore[name-defined]
         self.setF(problem.F, self._b)
         self.set_form(problem.form)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destroy PETSc objects owned by the solver."""
         for obj in filter(lambda obj: obj is not None, (self._A, self._b)):
             obj.destroy()
 
-    def solve(self, u: fem.Function):  # type: ignore[override]
+    def solve(self, u: fem.Function) -> tuple[int, bool]:  # type: ignore[override]
         """Solve non-linear problem into function ``u``.
 
         Returns the number of iterations and if the solver converged.
@@ -84,7 +82,7 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):  # type: ignore[name-defined]
         """Residual vector."""
         return self._b
 
-    def setP(self, P: types.FunctionType, Pmat: PETSc.Mat):  # type: ignore[override]
+    def setP(self, P: types.FunctionType, Pmat: PETSc.Mat) -> None:  # type: ignore[override]
         """Set the function for computing the preconditioner matrix.
 
         Args:

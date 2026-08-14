@@ -97,7 +97,8 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
       auto it = std::find(entity_layout.begin(), entity_layout.end(),
                           cell_vertex_dofs[i]);
       if (it != entity_layout.end())
-        entity_vertex_dofs.push_back(std::distance(entity_layout.begin(), it));
+        entity_vertex_dofs.push_back(
+            std::ranges::distance(entity_layout.begin(), it));
     }
 
     const std::size_t num_vert_per_e = mesh::cell_num_entities(
@@ -160,7 +161,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
         auto it1
             = std::find_if(it, perm.end(), [&dest0, r = dest.back()](auto idx)
                            { return dest0[idx] != r; });
-        num_items_send.push_back(std::distance(it, it1));
+        num_items_send.push_back(std::ranges::distance(it, it1));
         it = it1;
       }
     }
@@ -262,7 +263,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
         auto it1
             = std::find_if(it, dest_to_index.end(), [r = dest.back()](auto idx)
                            { return idx.first != r; });
-        num_items_send.push_back(std::distance(it, it1));
+        num_items_send.push_back(std::ranges::distance(it, it1));
         it = it1;
       }
     }

@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2024 Joseph P. Dean, Jørgen S. Dokken
+# Copyright (C) 2022-2026 Joseph P. Dean, Jørgen S. Dokken and Paul T. Kühner
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -453,7 +453,7 @@ def test_disjoint_submeshes():
         switch = mapped_cell_1 > mapped_cell_0
         # Order restriction on one side
         ordered_integration_data = integration_data.reshape(-1, 4).copy()
-        if True in switch:
+        if switch.any():
             ordered_integration_data[switch, [0, 1, 2, 3]] = ordered_integration_data[
                 switch, [2, 3, 0, 1]
             ]
@@ -811,3 +811,29 @@ def test_interior_interface():
     b_ref.scatter_reverse(la.InsertMode.add)
 
     assert np.isclose(la.norm(b), la.norm(b_ref))
+
+
+def test_mixed_zero_form_compile() -> None:
+    msh = create_unit_square(MPI.COMM_WORLD, 3, 3)
+    tdim = msh.topology.dim
+    submesh, entity_map, _, _ = create_submesh(
+        msh,
+        tdim,
+        np.arange(msh.topology.index_map(tdim).size_local, dtype=np.int32)[:-2],
+    )
+
+    V = fem.functionspace(msh, ("Lagrange", 1))
+    Q = fem.functionspace(submesh, ("Lagrange", 2))
+
+    u = ufl.TrialFunction(V)
+    v = ufl.TestFunction(Q)
+    a = ufl.ZeroBaseForm((u, v))
+    a_compiled = fem.form(a, entity_maps=[entity_map])  # type: ignore
+    for itg in fem.IntegralType.__members__.values():
+        assert a_compiled.num_integrals(itg, 0) == 0
+    A = fem.assemble_matrix(a_compiled)
+    A.scatter_reverse()
+
+    assert np.isclose(A.squared_norm(), 0.0)
+    assert A.index_map(0).size_global == V.dofmap.index_map.size_global
+    assert A.index_map(1).size_global == Q.dofmap.index_map.size_global

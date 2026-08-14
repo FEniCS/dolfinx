@@ -9,11 +9,10 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
-import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import form, functionspace
+from dolfinx.fem import Function, assemble_matrix, form, functionspace
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
 
 
@@ -40,7 +39,7 @@ def test_mixed_element(rank, family, cell, degree):
         v = ufl.TestFunction(U)
         a = form(ufl.inner(u, v) * ufl.dx)
 
-        A = dolfinx.fem.assemble_matrix(a)
+        A = assemble_matrix(a)
         A.scatter_reverse()
         norms.append(A.squared_norm())
 
@@ -58,7 +57,7 @@ def test_vector_element():
     U = functionspace(mesh, ("P", 2, (gdim,)))
     u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
     a = form(ufl.inner(u, v) * ufl.dx)
-    A = dolfinx.fem.assemble_matrix(a)
+    A = assemble_matrix(a)
     A.scatter_reverse()
 
     with pytest.raises(ValueError):
@@ -68,7 +67,7 @@ def test_vector_element():
         U = functionspace(mesh, ("RT", 2, (gdim + 1,)))
         u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
         a = form(ufl.inner(u, v) * ufl.dx)
-        A = dolfinx.fem.assemble_matrix(a)
+        A = assemble_matrix(a)
         A.scatter_reverse()
 
 
@@ -87,14 +86,14 @@ def test_element_product(d1, d2):
     u = ufl.TrialFunction(W)
     v = ufl.TestFunction(W)
     a = form(ufl.inner(u[0], v[0]) * ufl.dx)
-    A = dolfinx.fem.assemble_matrix(a)
+    A = assemble_matrix(a)
     A.scatter_reverse()
 
     W = functionspace(mesh, P3)
     u = ufl.TrialFunction(W)
     v = ufl.TestFunction(W)
     a = form(ufl.inner(u[0], v[0]) * ufl.dx)
-    B = dolfinx.fem.assemble_matrix(a)
+    B = assemble_matrix(a)
     B.scatter_reverse()
 
     assert np.isclose(A.squared_norm(), B.squared_norm())
@@ -103,20 +102,20 @@ def test_element_product(d1, d2):
 @pytest.mark.parametrize("rtype", [np.float32, np.float64])
 def test_single_element_in_mixed_element(rtype):
     """Check that a mixed element with a single element is equivalent to a single element."""
-    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 3, dtype=rtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 3, dtype=rtype)
     el = element("Lagrange", mesh.basix_cell(), 3, dtype=rtype)
     me = mixed_element([el])
-    V = dolfinx.fem.functionspace(mesh, me)
+    V = functionspace(mesh, me)
     assert V.num_sub_spaces == 1
-    W = dolfinx.fem.functionspace(mesh, el)
+    W = functionspace(mesh, el)
     np.testing.assert_allclose(W.dofmap.list, V.dofmap.list)
 
     def f(x):
         return x[0] ** 2 + x[1] ** 2
 
-    u = dolfinx.fem.Function(V, dtype=rtype)
+    u = Function(V, dtype=rtype)
     u.sub(0).interpolate(f)
-    w = dolfinx.fem.Function(W, dtype=rtype)
+    w = Function(W, dtype=rtype)
     w.interpolate(f)
     np.testing.assert_allclose(u.x.array, w.x.array)
 

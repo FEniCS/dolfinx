@@ -39,7 +39,15 @@ class Form(typing.Generic[Scalar]):
 
     # Matched-precision built-ins (geometry == real scalar part). Public:
     # extend with additional (scalar, geometry) dtype pairs as needed.
-    cpp_types: typing.ClassVar[dict] = {
+    cpp_types: typing.ClassVar[
+        dict[
+            tuple[np.dtype, np.dtype],
+            type[_cpp.fem.Form_float32]
+            | type[_cpp.fem.Form_float64]
+            | type[_cpp.fem.Form_complex64]
+            | type[_cpp.fem.Form_complex128],
+        ]
+    ] = {
         (np.dtype(np.float32), np.dtype(np.float32)): _cpp.fem.Form_float32,
         (np.dtype(np.float64), np.dtype(np.float64)): _cpp.fem.Form_float64,
         (np.dtype(np.complex64), np.dtype(np.float32)): _cpp.fem.Form_complex64,
@@ -59,7 +67,7 @@ class Form(typing.Generic[Scalar]):
         | _cpp.fem.Form_complex128
         | _cpp.fem.Form_float32
         | _cpp.fem.Form_float64,
-        ufcx_form=None,
+        ufcx_form: typing.Any = None,
         code: str | list[str] | None = None,
         module: types.ModuleType | list[types.ModuleType] | None = None,
     ):
@@ -83,7 +91,7 @@ class Form(typing.Generic[Scalar]):
         self._module = module
 
     @property
-    def ufcx_form(self):
+    def ufcx_form(self) -> typing.Any:
         """The compiled ufcx_form object."""
         return self._ufcx_form
 
@@ -118,7 +126,7 @@ class Form(typing.Generic[Scalar]):
         return self._cpp_object.mesh
 
     @property
-    def integral_types(self):
+    def integral_types(self) -> set[IntegralType]:
         """Integral types in the form."""
         return self._cpp_object.integral_types
 
@@ -251,7 +259,7 @@ def mixed_topology_form(
     jit_options: dict | None = None,
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
-):
+) -> Form:
     """Create a mixed-topology from an array of Forms.
 
     # FIXME: This function is a temporary hack for mixed-topology
@@ -319,7 +327,10 @@ def mixed_topology_form(
 
     # TODO coeffs, constants, subdomains, entity_maps
     f = ftype(
-        [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)) for ufcx_form in ufcx_forms],
+        [
+            int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))
+            for ufcx_form in ufcx_forms
+        ],
         V,
         [],
         [],
@@ -373,7 +384,7 @@ def form(
     jit_options: dict | None = None,
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
-):
+) -> Form | list[Form] | list[list[Form]] | None:
     """Create a Form or list of Forms.
 
     Args:
@@ -409,7 +420,12 @@ def form(
 
     form_compiler_options["scalar_type"] = dtype
 
-    def _form(form):
+    if entity_maps is None:
+        _entity_maps = []
+    else:
+        _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
+
+    def _form(form: ufl.Form) -> Form:
         """Compile a single UFL form."""
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
@@ -448,7 +464,7 @@ def form(
         constants = [c._cpp_object for c in form.constants()]
 
         # Extract subdomain ids from ufcx_form
-        subdomain_ids = {type: [] for type in sd.get(domain).keys()}
+        subdomain_ids: dict[str, list[int]] = {type: [] for type in sd.get(domain).keys()}
         integral_offsets = [
             ufcx_form.form_integral_offsets[i] for i in range(len(IntegralType) + 1)
         ]
@@ -465,13 +481,8 @@ def form(
             for (key, subdomain_data) in sd.get(domain).items()
         }
 
-        if entity_maps is None:
-            _entity_maps = []
-        else:
-            _entity_maps = [entity_map._cpp_object for entity_map in entity_maps]
-
         f = ftype(
-            [module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form))],
+            [int(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)))],
             V,
             coeffs,
             constants,
@@ -481,7 +492,7 @@ def form(
         )
         return Form(f, ufcx_form, code, module)
 
-    def _zero_form(form):
+    def _zero_form(form: ufl.ZeroBaseForm) -> Form:
         """Compile a single 'zero' UFL form.
 
         I.e. a form with no integrals.
@@ -499,12 +510,14 @@ def form(
             coefficients=[],
             constants=[],
             need_permutation_data=False,
-            entity_maps=[],
+            entity_maps=_entity_maps,
             mesh=msh,
         )
         return Form(f)
 
-    def _create_form(form):
+    def _create_form(
+        form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]] | None,
+    ) -> typing.Any:
         """Recursively convert ufl.Forms to dolfinx.fem.Form.
 
         Args:
@@ -523,7 +536,7 @@ def form(
         else:
             return form
 
-    return _create_form(form)
+    return typing.cast("Form | list[Form] | list[list[Form]] | None", _create_form(form))
 
 
 @typing.overload
@@ -580,7 +593,7 @@ def extract_function_spaces(
         )
         V = extract_spaces(_forms)
 
-        def unique_spaces(V):
+        def unique_spaces(V: npt.NDArray[np.object_]) -> npt.NDArray[np.object_]:
             # Pick spaces from first column
             V0 = V[:, 0]
 
@@ -742,7 +755,7 @@ def create_form(
 
     ftype = form_cpp_creator(form.dtype)
     f = ftype(
-        form.module.ffi.cast("uintptr_t", form.module.ffi.addressof(form.ufcx_form)),
+        int(form.module.ffi.cast("uintptr_t", form.module.ffi.addressof(form.ufcx_form))),
         [fs._cpp_object for fs in V],
         coefficients,
         constants,
@@ -760,7 +773,7 @@ def _derive_univariate_residual(
 ) -> ufl.Form:
     if du is None:
         du = ufl.TestFunction(u.function_space)
-    return ufl.derivative(F, u, du)
+    return typing.cast(ufl.Form, ufl.derivative(F, u, du))
 
 
 def _derive_block_residual(
@@ -770,7 +783,7 @@ def _derive_block_residual(
 ) -> Sequence[ufl.Form]:
     if du is None:
         du = ufl.TestFunctions(ufl.MixedFunctionSpace(*(u_i.function_space for u_i in u)))
-    return ufl.extract_blocks(ufl.derivative(F, u, du))
+    return typing.cast(Sequence[ufl.Form], ufl.extract_blocks(ufl.derivative(F, u, du)))
 
 
 def _derive_univariate_jacobian(
@@ -780,7 +793,7 @@ def _derive_univariate_jacobian(
 ) -> ufl.Form:
     if du is None:
         du = ufl.TrialFunction(u.function_space)
-    return ufl.derivative(F, u, du)
+    return typing.cast(ufl.Form, ufl.derivative(F, u, du))
 
 
 def _derive_block_jacobian(

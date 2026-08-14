@@ -14,7 +14,6 @@ from collections.abc import Sequence
 import numpy as np
 import numpy.typing as npt
 
-import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
@@ -23,6 +22,7 @@ from dolfinx.fem import IntegralType
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.forms import Form
 from dolfinx.fem.function import FunctionSpace
+from dolfinx.fem.utils import create_sparsity_pattern
 
 
 @typing.overload
@@ -33,7 +33,9 @@ def pack_constants(form: Form) -> npt.NDArray: ...
 def pack_constants(form: Sequence[Form]) -> list[npt.NDArray]: ...
 
 
-def pack_constants(form):
+def pack_constants(
+    form: Form | Sequence[Form] | None,
+) -> npt.NDArray | list[npt.NDArray] | None:
     """Pack form constants for use in assembly.
 
     Pack the 'constants' that appear in forms. The packed constants can
@@ -69,7 +71,11 @@ def pack_coefficients(
 ) -> list[dict[tuple[IntegralType, int], npt.NDArray]]: ...
 
 
-def pack_coefficients(form):
+def pack_coefficients(
+    form: Form | Sequence[Form] | None,
+) -> (
+    dict[tuple[IntegralType, int], npt.NDArray] | list[dict[tuple[IntegralType, int], npt.NDArray]]
+):
     """Pack form coefficients for use in assembly.
 
     Pack the ``coefficients`` that appear in forms. The packed
@@ -125,7 +131,7 @@ def create_matrix(a: Form, block_mode: la.BlockMode | None = None) -> la.MatrixC
     Returns:
         A sparse matrix that the form can be assembled into.
     """
-    sp = dolfinx.fem.create_sparsity_pattern(a)
+    sp = create_sparsity_pattern(a)
     sp.finalize()
     if block_mode is not None:
         return la.matrix_csr(sp, block_mode=block_mode, dtype=a.dtype)
@@ -169,7 +175,7 @@ def assemble_scalar(
     if coeffs is None:
         coeffs = pack_coefficients(M)
 
-    return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)  # type: ignore[arg-type]
+    return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)
 
 
 # -- Vector assembly ------------------------------------------------------
@@ -262,7 +268,7 @@ def _assemble_vector_array(
     if coeffs is None:
         coeffs = pack_coefficients(L)
 
-    _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)  # type: ignore[arg-type]
+    _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)
     return b
 
 
@@ -356,7 +362,9 @@ def _assemble_matrix_csr(
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
     if a.function_spaces[0] is a.function_spaces[1]:
-        _cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], _bcs, diag)  # type: ignore[call-overload]
+        typing.cast(typing.Any, _cpp.fem.insert_diagonal)(
+            A._cpp_object, a.function_spaces[0], _bcs, diag
+        )
     return A
 
 
@@ -478,4 +486,4 @@ def apply_lifting(
 
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
-    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)  # type: ignore[call-overload, arg-type]
+    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, alpha)  # type: ignore[arg-type]

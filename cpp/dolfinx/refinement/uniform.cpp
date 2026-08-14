@@ -44,7 +44,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   if (auto it = std::find(entity_types[2].begin(), entity_types[2].end(),
                           mesh::CellType::quadrilateral);
       it != entity_types[2].end())
-    e_index.push_back(std::distance(entity_types[2].begin(), it));
+    e_index.push_back(std::ranges::distance(entity_types[2].begin(), it));
 
   if (tdim == 3)
   {
@@ -52,7 +52,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     if (auto it = std::find(cell_entity_types.begin(), cell_entity_types.end(),
                             mesh::CellType::hexahedron);
         it != entity_types[3].end())
-      e_index.push_back(std::distance(cell_entity_types.begin(), it));
+      e_index.push_back(std::ranges::distance(cell_entity_types.begin(), it));
   }
 
   // Add up all local vertices, edges, quad facets and hex cells.
@@ -176,7 +176,7 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   auto it = std::find(cell_entity_types.begin(), cell_entity_types.end(),
                       mesh::CellType::tetrahedron);
   if (it != cell_entity_types.end())
-    ktet = std::distance(cell_entity_types.begin(), it);
+    ktet = std::ranges::distance(cell_entity_types.begin(), it);
   // Topology for tetrahedra which arise from pyramid subdivision
   std::array<int, 16> pyr_to_tet_list
       = {5, 13, 7, 9, 6, 13, 11, 7, 10, 13, 12, 11, 8, 13, 9, 12};

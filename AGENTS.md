@@ -18,10 +18,10 @@ disclosure process.
 ## C++ style
 
 - **Standard**: Modern C++20. Use concepts (`std::floating_point T`,
-  `std::integral`, `std::ranges` etc.) to constrain templates rather than
-  SFINAE. Don't use C-style casts. `const`-correctness is encouraged.
-  Consider using `constexpr` and `consteval`.
-- **Avoid overusing the `auto` keyword`**: The `auto` keyword should not be
+  `std::integral`, `std::ranges` etc.) to constrain templates rather
+  than SFINAE. Don't use C-style casts. `const`-correctness is
+  encouraged. Consider using `constexpr` and `consteval`.
+- **Avoid overusing the `auto` keyword**: The `auto` keyword should not be
   used on simple-to-reason-about types, e.g. `std::int32_t` and
   `std::vector<T>` as it reduces code readability.
 - **Formatting**: enforced by `.clang-format` (LLVM-derived, 2-space
@@ -47,8 +47,8 @@ disclosure process.
 - **Include What You Use (IWYU)**: follow IWYU best practice down to
   including 'trivial' headers such as `<cstdint>` and `<iterators>`
   directly, rather than relying on transitive includes -- IWYU is
-  not currently enforced systematically via testing, so inspect the
-  modified files touched and make suggestions.
+  not currently enforced systematically via testing, so check touched
+  files for missed opportunities and suggest fixes.
 - **Namespaces**: library code lives in `dolfinx::<module>` (e.g.
   `dolfinx::io::hdf5`). In `.cpp` files, prefer `using namespace
   dolfinx;` at the top and qualify definitions with the remaining
@@ -56,8 +56,25 @@ disclosure process.
   qualifying every symbol.
 - **Naming**: `snake_case` for functions and variables, `PascalCase`
   for types/classes, private/protected data members prefixed with an
-  underscore (`_dofmap`, `_index_map_bs`). Free functions and class
-  methods both use `snake_case`.
+  underscore (`_dofmap`, `_index_map_bs`).
+- **Integer types**: `std::int32_t` for process-local indices and local
+  offsets, `std::int64_t` for global indices and global offsets, `int`
+  for MPI ranks, counts and displacements, `std::size_t` for `.size()`
+  results. The 32-bit local index is a deliberate commitment — a rank is
+  not expected to exceed 2^31 entities, and the narrow type halves index
+  array memory traffic — so local indices must not be silently widened
+  in storage or interfaces. Type a variable by the role of its value,
+  not by the expression that initialises it.
+- **Iterator distances**: store `std::distance` results, a signed
+  `difference_type`, in `std::size_t` when used as a container offset.
+  They are non-negative by construction here, and `-Wsign-compare` is
+  `-Werror`, so `std::ptrdiff_t` would force a cast at every
+  comparison against `.size()`.
+- **Narrowing conversions**: neither `-Wconversion` nor
+  `-Wshorten-64-to-32` is enabled, so implicit 64-to-32 narrowing is
+  legal and widespread. `static_cast` only where the narrowing is the
+  point — a public API returning a local index or count
+  (`IndexMap::size_local`, `IndexMap::num_ghosts`) — not elsewhere.
 - **Parameters**: pass read-only strings as `std::string_view`, not
   `const std::string&`. Use `std::span` for contiguous read-only array
   views, and `mdspan` for read-only multi-dimensional views. Reserve
@@ -69,18 +86,25 @@ disclosure process.
   the actual parameter names — this is checked manually in review, not
   by tooling, so a rename must be applied to the declaration, the
   definition, and any doc comment together.
-- **Comments**: LLM-generated comments tend to be rather verbose;
-  after the first comment draft, compress comments to their essence
-  using concise technical language.
-- **Errors and invariants**: throw `std::runtime_error` with a
-  descriptive message for user-facing/API-boundary errors when the
-  check is O(1). For more expensive single-line checks, use `assert`.
-  For more expensive multi-line checks, throw an exception but guard
-  the check so it only runs in debug builds (e.g. `#ifndef NDEBUG`).
-  `assert` itself is for internal invariants that indicate a library
-  bug, not bad user input. Do not add exceptions inside hot loops.
-  Prefer `spdlog::debug`/`info`/`warn` for logging
-  over `std::cout`/`std::cerr`.
+- **Comments**: LLM-generated comments tend to be rather verbose; after
+  the first comment draft, compress comments to their essence using
+  concise technical language.
+- **Errors and invariants**: For user-facing/API-boundary errors, throw
+  `std::runtime_error` with a descriptive message — unconditionally when
+  the check is O(1), or guarded behind `#ifndef NDEBUG` when the check is
+  more expensive, so it's skipped in release builds. For internal
+  invariants that indicate a library bug rather than bad user input, use
+  `assert` when the check fits in a single expression, or a
+  `#ifndef NDEBUG`-guarded block with an explicit throw/abort when it
+  needs multiple statements. Do not add exceptions inside hot loops.
+  Prefer `spdlog::debug`/`info`/`warn` for logging over
+  `std::cout`/`std::cerr`.
+- **MPI collectives**: collective operations (`MPI_Allreduce`,
+  neighbourhood collectives, etc.) must be reached by every rank in the
+  communicator — an error path, early return, or exception on one rank
+  must not skip a collective that other ranks still call, or the
+  mismatch deadlocks. Validate/throw before entering a code path with
+  collectives, not conditionally partway through it.
 - **Move/copy semantics**: Moving is preferred over copying, unless
   the object is very lightweight. Many DOLFINx classes disable
   copying; none disable moving. `std::move` is used systematically on
@@ -121,8 +145,8 @@ disclosure process.
   with `(deleted)` appended so they stay out of the generated
   documentation.
 - **String formatting**: use `std::format` (`<format>`) to build
-  formatted/error strings rather than `printf`-style, `std::ostringstream`
-  concatenation, or the `fmt` library.
+  formatted/error strings rather than `printf`-style,
+  `std::ostringstream` concatenation, or the `fmt` library.
 - **Function pointers over lambdas**: when a free function's signature
   already matches a callback/`std::function` parameter exactly, pass
   the function directly (e.g. `graph::reorder_rcm`) rather than
@@ -142,10 +166,11 @@ disclosure process.
   a free function in an anonymous namespace. A by-reference capture is
   `const` only if the captured variable is, so declare read-only locals
   `const`.
-- **Algorithms**: prefer `<algorithm>`/`<ranges>` (`std::ranges::...`)
-  over hand-written loops where it doesn't hurt clarity or
-  performance; flattened row-major storage is the default convention
-  for multi-dimensional data passed as flat buffers.
+- **Algorithms**: prefer `std::ranges` algorithms (`std::ranges::...`)
+  over both hand-written loops and their pre-ranges `<algorithm>`
+  equivalents, where it doesn't hurt clarity or performance. Flattened
+  row-major storage is the default convention for multi-dimensional
+  data passed as flat buffers.
 - **`std::distance`/`std::advance`/`std::next`/`std::prev` on a
   generic, template-parameterized range**: these legacy `<iterator>`
   algorithms dispatch on `std::iterator_traits<It>::iterator_category`,
@@ -160,15 +185,16 @@ disclosure process.
   `std::ranges::distance`/`std::ranges::advance`, which dispatch on
   the C++20 concept and stay O(1) for these views, or track the index
   with a plain counter incremented alongside the iterator.
-- **Windows**: Windows is continuously tested on GitHub with the
-  most important missing feature being the lack of C99 `_Complex`
-  support denoted by existence of `DOLFINX_NO_STDC_COMPLEX_KERNELS`
-  macro variable.
-- **PETSc support is optional**: If possible, tests should be
-  written without needing PETSc functionality and PETSc-related
-  functionality in the main library should be isolated. The test
-  suite include a simple conjugate-gradient solver for small
-  problems, for example. 
+- **Windows**: Windows is continuously tested on GitHub with the most
+  important missing feature being the lack of C99 `_Complex` support
+  denoted by existence of `DOLFINX_NO_STDC_COMPLEX_KERNELS` macro
+  variable.
+- **PETSc support is optional**: Tests should avoid depending on PETSc
+  unless the functionality under test is PETSc-specific; PETSc-related
+  functionality in the main library should be isolated so it can be
+  excluded from non-PETSc builds. For example, the test suite includes a
+  simple conjugate-gradient solver for small problems rather than
+  depending on a PETSc `KSP` solver.
 
 ## Python style
 
@@ -201,7 +227,9 @@ disclosure process.
   `.def(...)`, `.def_prop_ro(...)`, `.def_ro(...)`.
 - These files are still C++: `clang-format` applies to them too (CI
   checks `python/dolfinx/wrappers` separately).
-- Do not use default argument values.
+- Do not give bound arguments Python-visible default values
+  (`nb::arg("x") = value`) in the C++ nanobind wrapping code — defaults
+  belong in the pure-Python layer.
 - The nanobind wrappers are further wrapped into a pure-Python
   interface which contains the user facing API. Users and developers
   are discouraged from using `dolfinx.cpp` directly.

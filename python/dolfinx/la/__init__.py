@@ -5,7 +5,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Linear algebra functionality."""
 
-from typing import Generic, TypeVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -15,6 +17,11 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 from dolfinx.typing import Scalar
+
+if TYPE_CHECKING:
+    from petsc4py import PETSc
+
+    from scipy import sparse as _sparse
 
 __all__ = [
     "InsertMode",
@@ -44,6 +51,7 @@ class Vector(Generic[_T]):
         | _cpp.la.Vector_int32
         | _cpp.la.Vector_int64
     )
+    _petsc_x: PETSc.Vec | None
 
     def __init__(
         self,
@@ -69,7 +77,7 @@ class Vector(Generic[_T]):
         self._cpp_object = x
         self._petsc_x = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Delete the PETSc vector if it was created."""
         if self._petsc_x is not None:
             self._petsc_x.destroy()
@@ -90,7 +98,7 @@ class Vector(Generic[_T]):
         return self._cpp_object.array  # type: ignore[return-value]
 
     @property
-    def petsc_vec(self):
+    def petsc_vec(self) -> PETSc.Vec:
         """PETSc vector holding the entries of the vector.
 
         Upon first call, this function creates a PETSc ``Vec`` object
@@ -175,7 +183,7 @@ class MatrixCSR(Generic[Scalar]):
         else:
             self._cpp_object.mult(x._cpp_object, y._cpp_object)  # type: ignore[arg-type]
 
-    def matmul(self, B):
+    def matmul(self, B: MatrixCSR[Scalar]) -> MatrixCSR[Scalar]:
         """Compute matrix product ``A * B``, where `A` is this matrix.
 
         Args:
@@ -194,9 +202,9 @@ class MatrixCSR(Generic[Scalar]):
         ):
             raise RuntimeError("Block size not supported in matmul.")
 
-        return MatrixCSR(self._cpp_object.mult(B._cpp_object))
+        return MatrixCSR(self._cpp_object.mult(B._cpp_object))  # type: ignore[arg-type]
 
-    def transpose(self):
+    def transpose(self) -> MatrixCSR[Scalar]:
         """Compute transpose matrix."""
         return MatrixCSR(self._cpp_object.transpose())
 
@@ -268,7 +276,7 @@ class MatrixCSR(Generic[Scalar]):
         """
         return self._cpp_object.to_dense()  # type: ignore[return-value]
 
-    def to_scipy(self, ghosted: bool = False):
+    def to_scipy(self, ghosted: bool = False) -> _sparse.csr_matrix | _sparse.bsr_matrix:
         """Convert to a SciPy CSR/BSR matrix. Data is shared.
 
         Note:
@@ -310,7 +318,9 @@ class MatrixCSR(Generic[Scalar]):
 
 
 def matrix_csr(
-    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype: npt.DTypeLike = np.float64
+    sp: _cpp.la.SparsityPattern,
+    block_mode: BlockMode = BlockMode.compact,
+    dtype: npt.DTypeLike = np.float64,
 ) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
@@ -345,7 +355,7 @@ def matrix_csr(
     return MatrixCSR(ftype(sp, block_mode))
 
 
-def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
+def vector(map: IndexMap, bs: int = 1, dtype: npt.DTypeLike = np.float64) -> Vector:
     """Create a distributed vector.
 
     Args:

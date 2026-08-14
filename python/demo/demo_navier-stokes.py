@@ -177,6 +177,8 @@
 
 
 # +
+import sys
+
 from mpi4py import MPI
 from petsc4py import PETSc
 
@@ -188,7 +190,7 @@ from dolfinx.fem.petsc import LinearProblem
 
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
-    exit(0)
+    sys.exit(0)
 
 
 # -
@@ -348,10 +350,10 @@ stokes_problem = LinearProblem(
 try:
     stokes_problem.solve()
 except PETSc.Error as e:
-    if e.ierr == 92:
+    if e.ierr == 92:  # type: ignore[attr-defined]
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)
-        exit(0)
+        sys.exit(0)
     else:
         raise e
 # -
@@ -414,7 +416,7 @@ navier_stokes_problem = LinearProblem(
 
 # +
 for _ in range(num_time_steps):
-    t += delta_t.value
+    t += float(delta_t.value)
 
     navier_stokes_problem.solve()
     p_h.x.array[:] -= domain_average(msh, p_h)
@@ -432,6 +434,7 @@ try:
     u_file.close()
     p_file.close()
 except NameError:
+    # u_file/p_file are only defined when has_adios2 is True
     pass
 # -
 

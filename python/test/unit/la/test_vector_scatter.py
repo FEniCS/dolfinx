@@ -38,7 +38,6 @@ def test_scatter_forward(e):
 
     # Fill local array with the mpi rank
     u.x.array.fill(MPI.COMM_WORLD.rank)
-    w0 = u.x.array.copy()
     u.x.scatter_forward()
 
     # Now the ghosts should have the value of the rank of the owning

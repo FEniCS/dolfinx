@@ -32,7 +32,7 @@ ARG OPENMPI_PATCH=10
 
 ########################################
 
-FROM ubuntu:24.04 AS dev-env
+FROM ubuntu:26.04 AS dev-env
 LABEL maintainer="FEniCS Steering Council <fenics-steering-council@googlegroups.com>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
@@ -136,6 +136,22 @@ RUN apt-get -qq update && \
     rm -rf /tmp/*
 
 # Install MPI
+# ./configure for both MPICH and OpenMPI auto-detects and links against
+# whatever optional system libraries happen to be present at this point
+# (e.g. PMIx for OpenMPI, or ibverbs/libnl for MPICH's InfiniBand
+# support) -- on Ubuntu 26.04 these are transitively pulled in by
+# libocct-data-exchange-dev's new libocct-ivtk-dev -> libvtk9-dev ->
+# mpi-default-dev dependency chain (see the OpenMPI purge step below).
+# Once that chain is purged/autoremoved later in this Dockerfile, any
+# such library not explicitly kept becomes an orphan and gets swept
+# away, breaking the from-source mpicc with a missing-shared-library
+# error that resurfaces downstream as SLEPc's opaque "Unable to link
+# with PETSc". Pin whatever the from-source install actually links
+# against as manually-installed right now, before anything later has a
+# chance to autoremove it. Scan all of /usr/local, not just libmpi.so:
+# OpenMPI's launcher stack (libprrte, prterun) additionally needs
+# libnl-3, which libmpi.so alone does not pull in, and losing it breaks
+# mpirun rather than mpicc.
 RUN if [ "$MPI" = "mpich" ]; then \
     wget https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
     tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
@@ -150,6 +166,9 @@ RUN if [ "$MPI" = "mpich" ]; then \
     make -j${BUILD_NP} install; \
     fi && \
     ldconfig && \
+    ldd /usr/local/lib/*.so* /usr/local/bin/* 2>/dev/null | awk '{print $3}' | \
+    grep '^/' | sort -u | xargs -r dpkg -S 2>/dev/null | cut -d: -f1 | sort -u | \
+    xargs -r apt-mark manual && \
     rm -rf /tmp/*
 
 ENV VIRTUAL_ENV=/dolfinx-env
@@ -196,6 +215,30 @@ RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.o
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
+
+# libocct-data-exchange-dev pulls in libocct-ivtk-dev (OCCT's VTK-based
+# inspector), which drags in libvtk9-dev -> mpi-default-dev ->
+# libopenmpi-dev, installing a full system OpenMPI alongside the
+# from-source MPICH built above. petsc4py's build later resolves the
+# generic "-lmpi" link flag to this system libmpi.so.40 instead of
+# MPICH's libmpi.so.12, so a process loading both ends up with two
+# ABI-incompatible MPI implementations and PetscInitialize segfaults.
+# GMSH is already built at this point, so purge the OpenMPI stack now;
+# apt cascades the removal through libocct-ivtk-dev/libvtk9-dev without
+# touching the OCCT/HDF5 runtime libraries GMSH and HDF5 actually link
+# against. Dropping the -dev packages does orphan those runtime
+# libraries, so pin whatever the from-source GMSH links against as
+# manually-installed here -- otherwise the autoremove in the PETSc step
+# below sweeps them and "import gmsh" fails on a missing
+# libTKXCAF.so. Any library the from-source MPI genuinely needs (PMIx,
+# ibverbs, libnl, ...) was already pinned manually-installed in the
+# "Install MPI" step above, so it survives this purge and the later
+# autoremove in the PETSc install step.
+RUN apt-get -y purge libopenmpi40 && \
+    ldd /usr/local/lib/libgmsh.so | awk '{print $3}' | grep '^/' | \
+    xargs -r dpkg -S 2>/dev/null | cut -d: -f1 | sort -u | xargs -r apt-mark manual && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # GMSH installs python library in /usr/local/lib, see: https://gitlab.onelab.info/gmsh/gmsh/-/issues/1414
 ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
@@ -269,10 +312,15 @@ RUN apt-get -qq update && \
     --with-precision=double && \
     make PETSC_ARCH=linux-gnu-real64-32 ${MAKEFLAGS} all && \
     # Complex128, 32-bit int
+    # HYPRE's LOBPCG multivector interpreter (src/multivector/multivector.c)
+    # passes a HYPRE_Real* where its own function-pointer type expects
+    # HYPRE_Complex*; GCC >=14 promotes -Wincompatible-pointer-types to an
+    # error by default (unlike GCC 13 on ubuntu:24.04), so complex PETSc
+    # builds of --download-hypre need it downgraded back to a warning.
     ./configure \
     PETSC_ARCH=linux-gnu-complex128-32 \
-    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS} -Wno-error=incompatible-pointer-types" \
+    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS} -Wno-error=incompatible-pointer-types" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --with-64-bit-indices=no \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
@@ -311,10 +359,12 @@ RUN apt-get -qq update && \
     --with-precision=double && \
     make PETSC_ARCH=linux-gnu-real64-64 ${MAKEFLAGS} all && \
     # Complex128, 64-bit int
+    # See the complex128-32 block above for why -Wno-error=incompatible-pointer-types
+    # is needed here (HYPRE's LOBPCG multivector interpreter type mismatch).
     ./configure \
     PETSC_ARCH=linux-gnu-complex128-64 \
-    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
+    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS} -Wno-error=incompatible-pointer-types" \
+    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS} -Wno-error=incompatible-pointer-types" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --with-64-bit-indices=yes \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \

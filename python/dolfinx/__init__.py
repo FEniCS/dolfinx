@@ -11,6 +11,8 @@ import sys
 # Template placeholder for injecting Windows dll directories in CI
 # WINDOWSDLL
 
+import typing as _typing
+
 import numpy as _np
 
 default_scalar_type: type[_np.floating | _np.complexfloating]
@@ -20,13 +22,17 @@ try:
     from petsc4py import PETSc as _PETSc
 
     # Additional sanity check that DOLFINx was built with petsc4py support.
-    import dolfinx.common
+    from dolfinx.common import has_petsc4py
 
-    if not dolfinx.common.has_petsc4py:
+    if not has_petsc4py:
         raise RuntimeError("DOLFINx has not been built with petsc4py support.")
 
-    default_scalar_type = _PETSc.ScalarType  # type: ignore
-    default_real_type = _PETSc.RealType  # type: ignore
+    # petsc4py's stub types these as numpy.dtype instances rather than
+    # the type objects they actually are at runtime.
+    default_scalar_type = _typing.cast(
+        "type[_np.floating | _np.complexfloating]", _PETSc.ScalarType
+    )
+    default_real_type = _typing.cast("type[_np.floating]", _PETSc.RealType)
 except ImportError:
     default_scalar_type = _np.float64
     default_real_type = _np.float64
@@ -61,7 +67,7 @@ _cpp.common.init_logging(sys.argv)
 del _cpp, sys
 
 
-def get_include(user=False):
+def get_include(user: bool = False) -> str:
     import os
 
     d = os.path.dirname(__file__)
