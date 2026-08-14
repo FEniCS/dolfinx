@@ -158,7 +158,7 @@ class CoordinateElement(Generic[Real]):
 def coordinate_element(
     celltype: _cpp.mesh.CellType | basix.finite_element.FiniteElement,
     degree: int,
-    variant=int(basix.LagrangeVariant.unset),
+    variant: int = int(basix.LagrangeVariant.unset),
     dtype: npt.DTypeLike = np.float64,
 ) -> CoordinateElement:
     """Create a Lagrange CoordinateElement from element metadata.
@@ -220,9 +220,10 @@ class FiniteElement(Generic[Real]):
         """
         self._cpp_object = cpp_object
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """Check equality with another finite element."""
-        return self._cpp_object == other._cpp_object
+        _other = cast("FiniteElement", other)
+        return self._cpp_object == _other._cpp_object
 
     @property
     def dtype(self) -> np.dtype:
