@@ -13,6 +13,34 @@ spack:
     all:
       require:
       - target=x86_64_v3
+    # Use the reference BLAS/LAPACK rather than OpenBLAS.
+    #
+    # OpenBLAS 0.3.34 built by the container's gcc 15.2 faults in its Zen
+    # kernels: on an AMD EPYC 9V74 runner the dispatcher selects
+    # 'Core: Zen' and the first large dgemm of high-degree hexahedral
+    # H(curl) element creation jumps to address zero. The same binary
+    # selects 'Core: Haswell' on an Intel host and is fine, and valgrind
+    # reports no memory error, so the fault is a miscompilation of those
+    # kernels rather than a bug in the caller. netlib-lapack is the
+    # implementation the crash was bisected against: LD_PRELOADing it on
+    # the affected runner builds the element that OpenBLAS dies on.
+    #
+    # It is also the only provider that survives this toolchain. Building
+    # OpenBLAS with gcc 13 is not an option -- the concretizer resolves
+    # one compiler for most of the DAG, and mixing gcc 13 with cached
+    # gcc 15 C++ libraries fails to link ('undefined reference to
+    # __cxa_call_terminate' from llvm) -- and BLIS/libflame does not
+    # build either, as libflame 5.2.0's f2c output is rejected by gcc
+    # 15's C23 default ('too many arguments to function').
+    #
+    # The cost is speed: this is unblocked reference code with no tuned
+    # kernels. Revisit when OpenBLAS is fixed for gcc 15.
+    blas:
+      require:
+      - netlib-lapack
+    lapack:
+      require:
+      - netlib-lapack
     # Use the container's mesa instead of building one. mesa@25.0.5 (the
     # newest version the pinned packages_ref knows) does not compile
     # against Ubuntu 26.04's glibc -- its bundled C11 threads polyfill

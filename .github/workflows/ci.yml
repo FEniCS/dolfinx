@@ -239,16 +239,18 @@ jobs:
           python -m pytest -n=auto --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
           mpiexec -np 3 python -m pytest --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
 
-      # TEMPORARY DIAGNOSTIC (remove once the crash is understood).
+      # TEMPORARY DIAGNOSTIC (remove once the crash stays away).
       # Creating a high-degree hexahedral H(curl) element segfaults with
-      # 'rip' null on a varying subset of the matrix legs. Pinning the
-      # OpenBLAS kernel set ('openblas~dynamic_dispatch') did not help: the
-      # crash reproduced on an AMD EPYC 9V74 runner with a non-dispatching
-      # OpenBLAS whose compiled-in core ('Core: Zen') matched the CPU, and
-      # under OPENBLAS_CORETYPE and LD_BIND_NOW alike. So this now asks the
-      # question that ordering settles: whether the faulting call is a BLAS
-      # call at all. It breaks on the BLAS entry points to print each call
-      # site, and re-runs against the reference BLAS.
+      # 'rip' null on a varying subset of the matrix legs, always on an AMD
+      # EPYC 9V74 runner. This step established where the fault is: the
+      # same element builds fine on the same machine when LD_PRELOAD
+      # supplies the reference BLAS, and valgrind reports no memory error
+      # anywhere in the construction -- so the fault is in OpenBLAS, not in
+      # basix. See the blas/lapack entry in the env config for the
+      # mechanism, and for why the reference BLAS is now used instead.
+      #
+      # It stays until a run confirms the fix on an affected runner, since
+      # only such a run can tell 'fixed' from 'did not land on an EPYC leg'.
       # Guarded on 'failure()', so it costs nothing on a green leg.
       - name: Diagnose segfaulting element creation
         if: failure()
