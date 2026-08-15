@@ -232,23 +232,26 @@ jobs:
         shell: spack-bash {0}
         run: |
           spack env activate ci
-          # Installed with pip rather than added to the environment: mypy
-          # is a check on the sources, not a dependency of the build, and
-          # this keeps it off the concretized DAG and the build cache.
-          # '--user' because the environment's view is spack-managed, and
-          # both pip and mypy are invoked as modules: the environment
-          # provides 'python' but no 'pip' executable on PATH, and pip's
-          # --user script directory is not on PATH either.
-          python -m pip install --user mypy
-          # Echo the version, so an install failure is distinguishable
-          # from mypy running and reporting errors -- this step is
-          # expected to report errors.
-          python -m mypy --version
+          # mypy checks the sources; it is not a dependency of the build,
+          # so keep it off the concretized DAG and out of the build cache.
+          # The environment's python has no pip -- spack builds it without
+          # one -- so install into a throwaway venv made with the
+          # container's python, and point mypy at the environment's
+          # interpreter with '--python-executable' so it resolves dolfinx,
+          # petsc4py and the rest from there.
+          apt-get install -y --no-install-recommends python3-venv
+          python3 -m venv /tmp/mypy-venv
+          /tmp/mypy-venv/bin/pip install --quiet mypy
+          # Echo the version: this step is expected to report type errors,
+          # so a broken install must not look the same as a working one.
+          /tmp/mypy-venv/bin/mypy --version
+          ENV_PYTHON=$(command -v python)
+          MYPY="/tmp/mypy-venv/bin/mypy --python-executable $ENV_PYTHON"
           DISABLE_FLAGS="--disable-error-code import-not-found --disable-error-code no-any-unimported"
           cd dolfinx-src/python
-          python -m mypy --config-file pyproject.toml -p dolfinx $DISABLE_FLAGS
-          python -m mypy demo $DISABLE_FLAGS
-          python -m mypy test $DISABLE_FLAGS
+          $MYPY --config-file pyproject.toml -p dolfinx $DISABLE_FLAGS
+          $MYPY demo $DISABLE_FLAGS
+          $MYPY test $DISABLE_FLAGS
 
       - name: Set default DOLFINx JIT options
         run: |
