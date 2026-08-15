@@ -214,17 +214,14 @@ jobs:
           spack env activate ci
           python -c "import dolfinx; assert dolfinx.has_petsc is ${{ matrix.petsc && 'True' || 'False' }}, dolfinx.has_petsc"
 
-      # EXPECTED TO FAIL. mypy runs in ccpp.yml only in a build without
-      # PETSc, where it excludes 'fem/petsc.py' and 'io/utils.py' because
-      # they need petsc4py. Those modules are therefore type-checked
-      # nowhere. This leg has petsc4py, gmsh and pyvista installed, so it
-      # can check them -- and doing so currently reports about 45 errors,
-      # concentrated in la/superlu_dist.py, mesh.py and io/utils.py.
+      # mypy runs in ccpp.yml only in a build without PETSc, where it
+      # excludes 'fem/petsc.py' and 'io/utils.py' because they need
+      # petsc4py. Those modules are therefore type-checked nowhere. This
+      # leg has petsc4py, gmsh and pyvista installed, so it checks them.
       #
-      # The step is here to make that visible rather than to gate merges;
-      # remove the errors, then this becomes a real check. The two
-      # disabled codes are the accepted limitation recorded in AGENTS.md:
-      # petsc4py ships no stubs, so every signature touching it is 'Any'.
+      # The two disabled codes are the accepted limitation recorded in
+      # AGENTS.md: petsc4py ships no stubs, so every signature touching it
+      # degrades to 'Any'.
       #
       # One leg only: the result does not vary with the scalar type.
       - name: mypy checks (with petsc4py)
@@ -241,7 +238,11 @@ jobs:
           # petsc4py and the rest from there.
           apt-get install -y --no-install-recommends python3-venv
           python3 -m venv /tmp/mypy-venv
-          /tmp/mypy-venv/bin/pip install --quiet mypy
+          # scipy-stubs and types-cffi: without them mypy reports
+          # 'Library stubs not installed' for scipy and cffi, and the
+          # '# type: ignore[attr-defined]' comments on the cffi lib
+          # attributes in fem/petsc.py then look unused.
+          /tmp/mypy-venv/bin/pip install --quiet mypy scipy-stubs types-cffi
           # Echo the version: this step is expected to report type errors,
           # so a broken install must not look the same as a working one.
           /tmp/mypy-venv/bin/mypy --version
