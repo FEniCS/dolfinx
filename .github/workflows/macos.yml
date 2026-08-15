@@ -134,7 +134,6 @@ jobs:
       - name: Run mypy (petsc4py + superlu_dist)
         run: |
           mypy --config-file python/pyproject.toml -p dolfinx
-          mypy -p dolfinx
           mypy python/test
           mypy python/demo
 
