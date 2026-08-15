@@ -6,6 +6,7 @@
 """Unit tests for dofmap construction."""
 
 import random
+import sys
 
 from mpi4py import MPI
 
@@ -188,7 +189,7 @@ def test_dof_positions(cell_type, space_type):
                     entities[entity_dim][i] = j
 
 
-def random_evaluation_mesh(cell_type):
+def random_evaluation_mesh(cell_type, dtype=default_real_type):
     random.seed(6)
 
     if cell_type == "triangle" or cell_type == "quadrilateral":
@@ -196,22 +197,20 @@ def random_evaluation_mesh(cell_type):
     elif cell_type == "tetrahedron" or cell_type == "hexahedron":
         gdim = 3
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,), dtype=default_real_type))
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,), dtype=dtype))
     if cell_type == "triangle":
-        temp_points = np.array(
-            [[-1.0, -1.0], [0.0, 0.0], [1.0, 0.0], [0.0, 1.0]], dtype=default_real_type
-        )
+        temp_points = np.array([[-1.0, -1.0], [0.0, 0.0], [1.0, 0.0], [0.0, 1.0]], dtype=dtype)
         temp_cells = [[0, 1, 3], [1, 2, 3]]
     elif cell_type == "quadrilateral":
         temp_points = np.array(
             [[-1.0, -1.0], [0.0, 0.0], [1.0, 0.0], [-1.0, 1.0], [0.0, 1.0], [2.0, 2.0]],
-            dtype=default_real_type,
+            dtype=dtype,
         )
         temp_cells = [[0, 1, 3, 4], [1, 2, 4, 5]]
     elif cell_type == "tetrahedron":
         temp_points = np.array(
             [[-1.0, 0.0, -1.0], [0.0, 0.0, 0.0], [1.0, 0.0, 1.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
-            dtype=default_real_type,
+            dtype=dtype,
         )
         temp_cells = [[0, 1, 3, 4], [1, 2, 3, 4]]
     elif cell_type == "hexahedron":
@@ -230,13 +229,13 @@ def random_evaluation_mesh(cell_type):
                 [0.0, 1.0, 1.0],
                 [1.0, 1.0, 2.0],
             ],
-            dtype=default_real_type,
+            dtype=dtype,
         )
         temp_cells = [[0, 1, 3, 4, 6, 7, 9, 10], [1, 2, 4, 5, 7, 8, 10, 11]]
 
     order = [i for i, j in enumerate(temp_points)]
     random.shuffle(order)
-    points = np.zeros(temp_points.shape, dtype=default_real_type)
+    points = np.zeros(temp_points.shape, dtype=dtype)
     for i, j in enumerate(order):
         points[j] = temp_points[i]
 
@@ -345,13 +344,44 @@ def test_evaluation(cell_type, space_type, space_order):
     + [("hexahedron", s) for s in ["Q", "S", "NCE", "NCF", "AAE", "AAF"]],
 )
 @pytest.mark.parametrize("space_order", range(1, 4))
-def test_integral(cell_type, space_type, space_order):
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
+def test_integral(cell_type, space_type, space_order, dtype):
     if cell_type == "hexahedron" and space_order >= 3:
         pytest.skip("Skipping expensive test on hexahedron")
 
+    xdtype = dtype(0).real.dtype
+    # The form integrates a jump that is zero by construction, so the
+    # result is compared against an exact zero: rtol does nothing and
+    # atol carries the check. Size it from the working precision --
+    # 1e-6 is below the rounding a mesh-wide assembly accumulates in
+    # single precision.
+    atol = max(1.0e-6, 500 * np.finfo(dtype).eps)
+
     random.seed(4)
     for repeat in range(10):
-        mesh = random_evaluation_mesh(cell_type)
+        mesh = random_evaluation_mesh(cell_type, dtype=xdtype)
         V = functionspace(mesh, (space_type, space_order))
         gdim = mesh.geometry.dim
         Vvec = functionspace(mesh, ("P", 1, (gdim,)))
@@ -359,7 +389,7 @@ def test_integral(cell_type, space_type, space_order):
 
         tdim = mesh.topology.dim
         for d in dofs:
-            v = Function(V)
+            v = Function(V, dtype=dtype)
             v.x.array[:] = [1 if i == d else 0 for i, _ in enumerate(v.x.array[:])]
             if space_type in ["RT", "BDM", "RTCF", "NCF", "BDMCF", "AAF"]:
                 # Hdiv
@@ -368,7 +398,7 @@ def test_integral(cell_type, space_type, space_order):
                     values[0] = [1 for i in values[0]]
                     return values
 
-                n = Function(Vvec)
+                n = Function(Vvec, dtype=dtype)
                 n.interpolate(normal)
                 _form = ufl.inner(ufl.jump(v), n) * ufl.dS
             elif space_type in ["N1curl", "N2curl", "RTCE", "NCE", "BDMCE", "AAE"]:
@@ -378,7 +408,7 @@ def test_integral(cell_type, space_type, space_order):
                     values[1] = [1 for i in values[1]]
                     return values
 
-                t = Function(Vvec)
+                t = Function(Vvec, dtype=dtype)
                 t.interpolate(tangent)
                 _form = ufl.inner(ufl.jump(v), t) * ufl.dS
                 if tdim == 3:
@@ -388,18 +418,13 @@ def test_integral(cell_type, space_type, space_order):
                         values[2] = [1 for i in values[2]]
                         return values
 
-                    t2 = Function(Vvec)
+                    t2 = Function(Vvec, dtype=dtype)
                     t2.interpolate(tangent2)
                     _form += ufl.inner(ufl.jump(v), t2) * ufl.dS
             else:
                 _form = ufl.jump(v) * ufl.dS
 
-            value = assemble_scalar(form(_form))
-            # The exact value is zero, so rtol does nothing and atol
-            # carries the check. Scale it with the working precision:
-            # assembling over the mesh accumulates rounding well past a
-            # fixed 1e-6 in single precision.
-            atol = max(1.0e-6, 500 * np.finfo(default_real_type).eps)
+            value = assemble_scalar(form(_form, dtype=dtype))
             assert np.isclose(value, 0.0, rtol=1.0e-6, atol=atol)
 
 
