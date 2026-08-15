@@ -222,8 +222,9 @@ class FiniteElement(Generic[Real]):
 
     def __eq__(self, other: object) -> bool:
         """Check equality with another finite element."""
-        _other = cast("FiniteElement", other)
-        return self._cpp_object == _other._cpp_object
+        if not isinstance(other, FiniteElement):
+            return NotImplemented
+        return self._cpp_object == other._cpp_object
 
     @property
     def dtype(self) -> np.dtype:
