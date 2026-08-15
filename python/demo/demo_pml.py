@@ -224,7 +224,10 @@ def compute_a(nu: int, m: complex, alpha: float) -> complex:
 
     a_nu_num = J_nu_alpha * J_nu_malpha_p - m * J_nu_malpha * J_nu_alpha_p
     a_nu_den = H_nu_alpha * J_nu_malpha_p - m * J_nu_malpha * H_nu_alpha_p
-    return a_nu_num / a_nu_den
+    # scipy.special is untyped, so the quotient is Any; convert to match
+    # the declared return type. The callers take real parts and moduli of
+    # it, for which a Python complex behaves the same as a numpy scalar.
+    return complex(a_nu_num / a_nu_den)
 
 
 def calculate_analytical_efficiencies(
