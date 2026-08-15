@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-26.04
     container: ubuntu:26.04
     permissions:
+      contents: read
       packages: write
     strategy:
       fail-fast: false
@@ -65,7 +66,7 @@ jobs:
       - name: Install Spack requirements
         run: |
           apt-get -y update
-          apt-get install -y file bzip2 ca-certificates g++ gcc gfortran git gzip \
+          apt-get install -y --no-install-recommends file bzip2 ca-certificates g++ gcc gfortran git gzip \
             libgl-dev libosmesa6-dev lsb-release patch python3 tar unzip xz-utils zstd
 
       - name: Set up Spack
@@ -75,11 +76,14 @@ jobs:
           packages_ref: d342cee94fb90fb020776c8bd8500b54a19c63cf
           # packages_ref: v2026.06.0
 
+      # Pinned, like spack itself and its packages repo above: an unpinned
+      # 'main' changes what CI builds with no commit here, which makes a
+      # failure impossible to attribute. Bump deliberately.
       - name: Get FEniCS Spack packages
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: fenics/spack-fenics
-          ref: main
+          ref: 05ea6cd78f5fde9c580fe29cb6dbb040d05f74ee # main, 2026-08-12
           path: spack-fenics
 
       # Add FEniCS Spack packages on top of the upstream Spack packages
@@ -88,7 +92,7 @@ jobs:
           spack repo add --name fenics $GITHUB_WORKSPACE/spack-fenics/spack_repo/fenics
 
       - name: Get DOLFINx code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: dolfinx-src
 
@@ -96,19 +100,19 @@ jobs:
         run: cat dolfinx-src/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Get UFL code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ env.ufl_repository }}
           ref: ${{ env.ufl_ref }}
           path: ufl-src
       - name: Get FFCx code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ env.ffcx_repository }}
           ref: ${{ env.ffcx_ref }}
           path: ffcx-src
       - name: Get Basix code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ env.basix_repository }}
           ref: ${{ env.basix_ref }}
@@ -156,16 +160,24 @@ jobs:
             py-pytest py-pytest-xdist py-scipy \
             "py-pyvista ^[virtuals=gl] osmesa"
           spack -e ci add catch2 ninja
-          spack -e ci concretize -j 4
-          spack -e ci install -j 4 --use-buildcache auto
+          spack -e ci concretize -j $(nproc)
+          spack -e ci install -j $(nproc) --use-buildcache auto
 
       # Pushed before the test steps so the artifacts are cached even if a
       # later step fails. The index is rebuilt by the final push.
+      #
+      # Both pushes are skipped for pull requests from forks: those run
+      # with a read-only GITHUB_TOKEN whatever 'permissions' asks for, so
+      # the push would 401 as soon as it had anything to upload, failing a
+      # contributor's job on a step that tests nothing. Reads are
+      # anonymous, so their builds still take from the cache.
       - name: Push packages to cache
+        if: >-
+          ${{ !cancelled() && (github.event_name != 'pull_request'
+          || github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
           spack -e ci buildcache push --base-image ubuntu:26.04 --only dependencies \
             --with-build-dependencies --allow-missing local-buildcache
-        if: ${{ !cancelled() }}
 
       - name: Build and run C++ unit tests (serial and MPI)
         shell: spack-bash {0}
@@ -175,8 +187,8 @@ jobs:
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
           cmake --build build/test
           cd build/test
-          ctest -V --output-on-failure -R unittests_np_1
-          ctest -V --output-on-failure -R unittests_np_3
+          ctest --output-on-failure -R unittests_np_1
+          ctest --output-on-failure -R unittests_np_3
 
       # Skipped without PETSc: several demo CMakeLists reference
       # PETSC_INCLUDE_DIRS unconditionally, which --warn-uninitialized
@@ -191,8 +203,8 @@ jobs:
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
           cmake --build build/demo
           cd build/demo
-          ctest -V --output-on-failure -R "demo_.*_np_1"
-          ctest -V --output-on-failure -R "demo_.*_np_2"
+          ctest --output-on-failure -R "demo_.*_np_1"
+          ctest --output-on-failure -R "demo_.*_np_2"
 
       # Guard against a mis-specified variant silently building PETSc into
       # the PETSc-free leg, which would make it test nothing new.
@@ -215,19 +227,25 @@ jobs:
           python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
           python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
 
+      # NOTE: the marker expression is written '!matrix.petsc && X || Y'
+      # rather than 'matrix.petsc && Y || X'. GitHub expressions treat the
+      # empty string as false, so the latter form falls through to X on
+      # every leg and silently skips the petsc4py tests everywhere.
       - name: Run Python unit tests (serial and MPI)
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
-          python -m pytest -n=auto --durations=50 ${{ matrix.petsc && '' || '-m "not petsc4py"' }} dolfinx-src/python/test/unit/
-          mpiexec -np 3 python -m pytest --durations=50 ${{ matrix.petsc && '' || '-m "not petsc4py"' }} dolfinx-src/python/test/unit/
+          python -m pytest -n=auto --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
+          mpiexec -np 3 python -m pytest --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
 
       # The test tools are environment roots, so '--only dependencies'
       # skips them and they need naming explicitly. Only the final push
       # rebuilds the index, which is the expensive part.
       - name: Push test packages to cache and update index
+        if: >-
+          ${{ !cancelled() && (github.event_name != 'pull_request'
+          || github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
           spack -e ci buildcache push --base-image ubuntu:26.04 --allow-missing --update-index local-buildcache \
             py-gmsh py-matplotlib py-networkx py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
-        if: ${{ !cancelled() }}
