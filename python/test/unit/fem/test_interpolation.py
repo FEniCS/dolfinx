@@ -440,10 +440,6 @@ def test_mixed_interpolation():
 @pytest.mark.parametrize("order2", [2, 3, 4])
 def test_interpolation_nedelec(order1, order2, dtype):
     xdtype = dtype(0).real.dtype
-    # The assembled quantity is a squared L2 error, so its size scales
-    # with eps**2 rather than eps. The existing constant is kept as a
-    # floor, so the double-precision check is unchanged.
-    tol = max(1.0e-10, 1.0e6 * np.finfo(dtype).eps ** 2)
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xdtype)
     V = functionspace(mesh, ("N1curl", order1))
     V1 = functionspace(mesh, ("N1curl", order2))
@@ -454,7 +450,7 @@ def test_interpolation_nedelec(order1, order2, dtype):
     u.interpolate(lambda x: x)
     v.interpolate(u)
     assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
-        0, abs=tol
+        0, abs=1.0e-10
     )
 
     # The target expression is also contained in N2curl space of any
@@ -463,7 +459,7 @@ def test_interpolation_nedelec(order1, order2, dtype):
     w = Function(V2, dtype=dtype)
     w.interpolate(u)
     assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx, dtype=dtype)) == pytest.approx(
-        0, abs=tol
+        0, abs=1.0e-10
     )
 
 
@@ -494,10 +490,6 @@ def test_interpolation_nedelec(order1, order2, dtype):
 @pytest.mark.parametrize("order", [1, 2, 3])
 def test_interpolation_dg_to_n1curl(tdim, order, dtype):
     xdtype = dtype(0).real.dtype
-    # The assembled quantity is a squared L2 error, so its size scales
-    # with eps**2 rather than eps. The existing constant is kept as a
-    # floor, so the double-precision check is unchanged.
-    tol = max(1.0e-8, 1.0e6 * np.finfo(dtype).eps ** 2)
     if tdim == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=xdtype)
     else:
@@ -508,7 +500,7 @@ def test_interpolation_dg_to_n1curl(tdim, order, dtype):
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
     assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
-        0.0, abs=tol
+        0.0, abs=1.0e-8
     )
 
 
@@ -539,10 +531,6 @@ def test_interpolation_dg_to_n1curl(tdim, order, dtype):
 @pytest.mark.parametrize("order", [1, 2, 3])
 def test_interpolation_n1curl_to_dg(tdim, order, dtype):
     xdtype = dtype(0).real.dtype
-    # The assembled quantity is a squared L2 error, so its size scales
-    # with eps**2 rather than eps. The existing constant is kept as a
-    # floor, so the double-precision check is unchanged.
-    tol = max(1.0e-10, 1.0e6 * np.finfo(dtype).eps ** 2)
     if tdim == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=xdtype)
     else:
@@ -553,7 +541,7 @@ def test_interpolation_n1curl_to_dg(tdim, order, dtype):
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
     assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
-        0.0, abs=tol
+        0.0, abs=1.0e-10
     )
 
 
@@ -584,10 +572,6 @@ def test_interpolation_n1curl_to_dg(tdim, order, dtype):
 @pytest.mark.parametrize("order", [1, 2, 3])
 def test_interpolation_n2curl_to_bdm(tdim, order, dtype):
     xdtype = dtype(0).real.dtype
-    # The assembled quantity is a squared L2 error, so its size scales
-    # with eps**2 rather than eps. The existing constant is kept as a
-    # floor, so the double-precision check is unchanged.
-    tol = max(1.0e-10, 1.0e6 * np.finfo(dtype).eps ** 2)
     if tdim == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=xdtype)
     else:
@@ -598,7 +582,7 @@ def test_interpolation_n2curl_to_bdm(tdim, order, dtype):
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
     assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
-        0.0, abs=tol
+        0.0, abs=1.0e-10
     )
 
 
@@ -629,10 +613,6 @@ def test_interpolation_n2curl_to_bdm(tdim, order, dtype):
 @pytest.mark.parametrize("order2", [1, 2, 3])
 def test_interpolation_p2p(order1, order2, dtype):
     xdtype = dtype(0).real.dtype
-    # The assembled quantity is a squared L2 error, so its size scales
-    # with eps**2 rather than eps. The existing constant is kept as a
-    # floor, so the double-precision check is unchanged.
-    tol = max(1.0e-10, 1.0e6 * np.finfo(dtype).eps ** 2)
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xdtype)
     V = functionspace(mesh, ("Lagrange", order1))
     V1 = functionspace(mesh, ("Lagrange", order2))
@@ -640,14 +620,14 @@ def test_interpolation_p2p(order1, order2, dtype):
     u.interpolate(lambda x: x[0])
     v.interpolate(u)
     assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
-        0.0, abs=tol
+        0.0, abs=1.0e-10
     )
 
     DG = functionspace(mesh, ("DG", order2))
     w = Function(DG, dtype=dtype)
     w.interpolate(u)
     assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx, dtype=dtype)) == pytest.approx(
-        0.0, abs=tol
+        0.0, abs=1.0e-10
     )
 
 

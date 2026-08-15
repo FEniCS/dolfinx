@@ -372,11 +372,7 @@ def test_integral(cell_type, space_type, space_order, dtype):
         pytest.skip("Skipping expensive test on hexahedron")
 
     xdtype = dtype(0).real.dtype
-    # The form integrates a jump that is zero by construction, so the
-    # result is compared against an exact zero: rtol does nothing and
-    # atol carries the check. Size it from the working precision --
-    # 1e-6 is below the rounding a mesh-wide assembly accumulates in
-    # single precision.
+    # Compared against an exact zero, so atol carries the check.
     atol = max(1.0e-6, 500 * np.finfo(dtype).eps)
 
     random.seed(4)

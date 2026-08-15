@@ -1424,14 +1424,14 @@ class TestPETScAssemblers:
         for row in range(2):
             A_sub = A2.getNestSubMatrix(row, 0)
             assert A_sub.getSize() == A0.getSize()
-            # Mat.equal is exact. The nest and monolithic paths visit
-            # cells in the same order but accumulate off-process
-            # contributions separately, so in parallel the two agree only
-            # to rounding -- compare against eps * ||A0|| instead.
+            # Mat.equal is exact, but the nest and monolithic paths
+            # accumulate off-process contributions separately, so in
+            # parallel they agree only to rounding.
+            inf = PETSc.NormType.INFINITY
             D = A_sub.copy()
-            D.axpy(-1.0, A0, structure=PETSc.Mat.Structure.DIFFERENT_NONZERO_PATTERN)
-            tol = max(1.0e-12, 100 * np.finfo(PETSc.ScalarType).eps * A0.norm())
-            assert D.norm() == pytest.approx(0.0, abs=tol)
+            D.axpy(-1.0, A0, structure=PETSc.Mat.Structure.SAME_NONZERO_PATTERN)
+            tol = max(1.0e-12, 100 * np.finfo(PETSc.ScalarType).eps * A0.norm(inf))
+            assert D.norm(inf) == pytest.approx(0.0, abs=tol)
             D.destroy()
 
         A0.destroy(), A1.destroy(), A2.destroy()

@@ -214,16 +214,10 @@ jobs:
           spack env activate ci
           python -c "import dolfinx; assert dolfinx.has_petsc is ${{ matrix.petsc && 'True' || 'False' }}, dolfinx.has_petsc"
 
-      # mypy runs in ccpp.yml only in a build without PETSc, where it
-      # excludes 'fem/petsc.py' and 'io/utils.py' because they need
-      # petsc4py. Those modules are therefore type-checked nowhere. This
-      # leg has petsc4py, gmsh and pyvista installed, so it checks them.
-      #
-      # The two disabled codes are the accepted limitation recorded in
-      # AGENTS.md: petsc4py ships no stubs, so every signature touching it
-      # degrades to 'Any'.
-      #
-      # One leg only: the result does not vary with the scalar type.
+      # ccpp.yml runs mypy only in a build without PETSc, which excludes
+      # the modules needing petsc4py. This leg has petsc4py, gmsh and
+      # pyvista, so it checks them, on the project config alone. One leg
+      # only: the result does not vary with the scalar type.
       - name: mypy checks (with petsc4py)
         if: ${{ matrix.petsc && matrix.mpi == 'openmpi' && matrix.scalar == 'float64' && matrix.index == 'int32' }}
         shell: spack-bash {0}

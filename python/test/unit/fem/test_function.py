@@ -126,10 +126,7 @@ def test_eval(dtype):
     cell = compute_colliding_cells(mesh, cell_candidates, x0).array
     assert len(cell) > 0
     first_cell = cell[0]
-    # The two evaluations are the same expression through different
-    # spaces, so they agree to a few ulp; size the check from the working
-    # precision rather than fixing it at 1e-15, which is meaningless in
-    # single precision.
+    # The same expression through two spaces: agrees to a few ulp.
     tol = max(1.0e-15, 10 * np.finfo(dtype).eps)
     assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=tol, atol=tol)
 
@@ -171,10 +168,7 @@ def test_eval_manifold(dtype):
     Q = functionspace(mesh, ("Lagrange", 1))
     u = Function(Q, dtype=dtype)
     u.interpolate(lambda x: x[0] + x[1])
-    # The evaluation is exact in real arithmetic, so the check is against
-    # the rounding of the interpolation and the point evaluation. numpy's
-    # default rtol of 1e-5 leaves only about ten times the single
-    # precision error, so size it from the working precision.
+    # Exact in real arithmetic; absorbs interpolation and evaluation rounding.
     rtol = max(1.0e-5, 1000 * np.finfo(dtype).eps)
     assert np.isclose(u.eval([0.75, 0.25, 0.5], 0)[0], 1.0, rtol=rtol)
 
@@ -337,7 +331,5 @@ def test_interpolation_function(dtype):
     Vh = functionspace(mesh, ("Lagrange", 1))
     uh = Function(Vh, dtype=dtype)
     uh.interpolate(u)
-    # Interpolating a constant between identical spaces is exact in real
-    # arithmetic, so this only has to absorb the rounding of the dual
-    # evaluation.
+    # Exact in real arithmetic; absorbs the dual evaluation rounding.
     assert np.allclose(uh.x.array, 1, rtol=max(1.0e-5, 100 * np.finfo(dtype).eps))

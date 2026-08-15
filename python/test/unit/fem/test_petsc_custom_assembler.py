@@ -158,9 +158,7 @@ def test_custom_mesh_loop_petsc_rank2(set_vals, backend):
         print(f"Time (Numba/{backend}, pass {i}): {end - start}")
         A1.assemble()
     # The two assemblies differ only in summation order, so the residual
-    # scales with the matrix norm and the working precision. A fixed 1e-9
-    # sits below that in single precision: eps * ||A|| is ~2e-9 for this
-    # mass matrix, which is the size of the difference actually seen.
+    # scales with eps * ||A||.
     tol = max(1.0e-9, 10 * np.finfo(PETSc.ScalarType).eps * A0.norm())
     assert (A1 - A0).norm() == pytest.approx(0.0, abs=tol)
 

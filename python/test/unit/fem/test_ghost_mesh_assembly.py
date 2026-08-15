@@ -116,9 +116,7 @@ def test_ghost_mesh_dS_assembly(mode, dS, dtype):
     A.scatter_reverse()
     assert isinstance(A, la.MatrixCSR)
 
-    # Check that the norms are the same for all three modes. The
-    # reference value is exact in double; in single precision a
-    # mesh-wide facet assembly accumulates well past a fixed 1e-12.
+    # Check that the norms are the same for all three modes.
     abs_tol = max(1.0e-12, 100 * np.finfo(dtype).eps)
     normA = np.sqrt(A.squared_norm())
     assert normA == pytest.approx(2.1834054713561906, rel=1.0e-5, abs=abs_tol)
