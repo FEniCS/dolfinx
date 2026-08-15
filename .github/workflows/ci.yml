@@ -215,32 +215,61 @@ jobs:
           python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
           python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
 
+      # NOTE: the marker expression is written '!matrix.petsc && X || Y'
+      # rather than 'matrix.petsc && Y || X'. GitHub expressions treat the
+      # empty string as false, so the latter form falls through to X on
+      # every leg and silently skips the petsc4py tests everywhere.
+      - name: Run Python unit tests (serial and MPI)
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          spack load gcc
+          python -m pytest -n=auto --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
+          mpiexec -np 3 python -m pytest --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
+
+      # TEMPORARY DIAGNOSTIC (remove once the crash is understood).
+      # Creating a high-degree hexahedral H(curl) element segfaults with
+      # 'rip' null on a varying subset of the matrix legs. The steps below
+      # run that reproducer, not the test suite: 'rip' being null is what
+      # hides the call site, and a debugger says more about it than a
+      # re-run does. valgrind in particular cannot be pointed at the suite
+      # -- its 20-50x slowdown turns an 8 minute run into a job timeout.
+      # Guarded on 'failure()', so a green leg pays nothing for them.
       - name: Install debugging tools
+        if: failure()
+        continue-on-error: true
         run: |
-          sudo apt-get update && sudo apt-get install -y gdb valgrind
+          apt-get -y update
+          apt-get install -y gdb valgrind
 
-      - name: Run Python unit tests (serial) under gdb
+      - name: Diagnose segfaulting element creation (gdb)
+        if: failure()
+        continue-on-error: true
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
-          python -m pytest -n=0 --durations=50 -x \
-            ${{ matrix.petsc && '' || '-m "not petsc4py"' }} \
-            dolfinx-src/python/test/unit/ || \
-          gdb --batch -ex run -ex "thread apply all bt full" \
-            --args python -m pytest -n=0 --durations=50 -x \
-            ${{ matrix.petsc && '' || '-m "not petsc4py"' }} \
-            dolfinx-src/python/test/unit/
+          cat > /tmp/repro.py <<'EOF'
+          import basix.ufl
+          basix.ufl.element("Nedelec 1st kind H(curl)", "hexahedron", 4)
+          print("element created")
+          EOF
+          gdb --batch -ex run -ex "thread apply all bt full" -ex "info registers" \
+            --args python /tmp/repro.py
 
-      - name: Run Python unit tests (MPI) under valgrind
+      # PYTHONMALLOC=malloc puts allocations through valgrind's
+      # interceptors; CPython's own pool allocator hides them. Leak
+      # checking is off -- an invalid read/write before the jump is what
+      # is being looked for, not leaks.
+      - name: Diagnose segfaulting element creation (valgrind)
+        if: failure()
+        continue-on-error: true
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
-          mpiexec -np 3 valgrind --leak-check=full --track-origins=yes \
-            python -m pytest --durations=50 -x \
-            ${{ matrix.petsc && '' || '-m "not petsc4py"' }} \
-            dolfinx-src/python/test/unit/
+          PYTHONMALLOC=malloc valgrind --leak-check=no --track-origins=yes \
+            --error-limit=no python /tmp/repro.py
 
       # The test tools are environment roots, so '--only dependencies'
       # skips them and they need naming explicitly. Only the final push
