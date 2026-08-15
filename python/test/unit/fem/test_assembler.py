@@ -1394,6 +1394,8 @@ class TestPETScAssemblers:
     @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
     def test_matrix_assembly_rectangular(self, mode):
         """Test assembly of block rectangular block matrices."""
+        from petsc4py import PETSc
+
         from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
 
         msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
@@ -1421,7 +1423,16 @@ class TestPETScAssemblers:
         assert A1.norm() == pytest.approx(np.sqrt(2) * A0.norm(), rel=1.0e-6, abs=1.0e-6)
         for row in range(2):
             A_sub = A2.getNestSubMatrix(row, 0)
-            assert A_sub.equal(A0)
+            assert A_sub.getSize() == A0.getSize()
+            # Mat.equal is exact. The nest and monolithic paths visit
+            # cells in the same order but accumulate off-process
+            # contributions separately, so in parallel the two agree only
+            # to rounding -- compare against eps * ||A0|| instead.
+            D = A_sub.copy()
+            D.axpy(-1.0, A0, structure=PETSc.Mat.Structure.DIFFERENT_NONZERO_PATTERN)
+            tol = max(1.0e-12, 100 * np.finfo(PETSc.ScalarType).eps * A0.norm())
+            assert D.norm() == pytest.approx(0.0, abs=tol)
+            D.destroy()
 
         A0.destroy(), A1.destroy(), A2.destroy()
 
