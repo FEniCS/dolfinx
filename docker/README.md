@@ -8,19 +8,19 @@ they are built into, and how they are built.
 This Dockerfile describes a complete development and testing environment for
 DOLFINx based on Ubuntu. It does not contain the FEniCS components.
 
-The following images are produced and pushed to both `docker.io/fenicsproject`
-and `ghcr.io/fenics` and are used in our testing infrastructure:
+The following image is produced and pushed to both `docker.io/fenicsproject`
+and `ghcr.io/fenics` and is used in our testing infrastructure:
 
-* `test-env:current-mpich` - MPICH, debugging on. Used on CircleCI.
-* `test-env:current-openmpi` - OpenMPI, debugging on. Used on GitHub Actions.
+* `test-env:current` - OpenMPI, debugging on. Used on GitHub Actions.
 
-The following images are pushed to both `docker.io/dolfinx` and
+The following image is pushed to both `docker.io/dolfinx` and
 `ghcr.io/fenics/dolfinx` and can be used by end-users to build FEniCS from
 source:
 
-* `dev-env:current-mpich` -  MPICH, debugging off.
-* `dev-env:current-openmpi` - OpenMPI, debugging off.
-* `dev-env:current` - Points at `dev-env:current-mpich`.
+* `dev-env:current` - OpenMPI, debugging off.
+
+Both images use Ubuntu's default system MPI (`mpi-default-dev`, which
+resolves to OpenMPI) and system parallel HDF5.
 
 A build must be triggered manually via GitHub Actions to update the `:current-*`
 tags. All images are multi-architecture (x86-64 and ARM64).
