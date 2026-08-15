@@ -155,7 +155,7 @@ jobs:
             ${{ matrix.petsc_dep }} ^adios2~libcatalyst~fortran~sz
           spack -e ci add py-fenics-dolfinx@main${{ matrix.petsc && '+petsc4py+slepc4py' || '~petsc4py~slepc4py' }} commit=${{ github.sha }} build_type=Developer
           spack -e ci add py-gmsh ^gmsh~med~fltk+external ^opencascade~draw py-pyamg py-matplotlib \
-            py-networkx \
+            py-mypy py-networkx \
             py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
             py-pytest py-pytest-xdist py-scipy \
             "py-pyvista ^[virtuals=gl] osmesa"
@@ -213,6 +213,30 @@ jobs:
         run: |
           spack env activate ci
           python -c "import dolfinx; assert dolfinx.has_petsc is ${{ matrix.petsc && 'True' || 'False' }}, dolfinx.has_petsc"
+
+      # EXPECTED TO FAIL. mypy runs in ccpp.yml only in a build without
+      # PETSc, where it excludes 'fem/petsc.py' and 'io/utils.py' because
+      # they need petsc4py. Those modules are therefore type-checked
+      # nowhere. This leg has petsc4py, gmsh and pyvista installed, so it
+      # can check them -- and doing so currently reports about 45 errors,
+      # concentrated in la/superlu_dist.py, mesh.py and io/utils.py.
+      #
+      # The step is here to make that visible rather than to gate merges;
+      # remove the errors, then this becomes a real check. The two
+      # disabled codes are the accepted limitation recorded in AGENTS.md:
+      # petsc4py ships no stubs, so every signature touching it is 'Any'.
+      #
+      # One leg only: the result does not vary with the scalar type.
+      - name: mypy checks (with petsc4py)
+        if: ${{ matrix.petsc && matrix.mpi == 'openmpi' && matrix.scalar == 'float64' && matrix.index == 'int32' }}
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          DISABLE_FLAGS="--disable-error-code import-not-found --disable-error-code no-any-unimported"
+          cd dolfinx-src/python
+          mypy --config-file pyproject.toml -p dolfinx $DISABLE_FLAGS
+          mypy demo $DISABLE_FLAGS
+          mypy test $DISABLE_FLAGS
 
       - name: Set default DOLFINx JIT options
         run: |
