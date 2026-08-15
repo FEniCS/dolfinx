@@ -2059,12 +2059,12 @@ class cffi_utils:
                                     """
         )
 
-        MatSetValuesLocal = _lib_cffi.MatSetValuesLocal  # type: ignore[attr-defined]
+        MatSetValuesLocal = _lib_cffi.MatSetValuesLocal
         """See PETSc `MatSetValuesLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesLocal>`_
         documentation."""
 
-        MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal  # type: ignore[attr-defined]
+        MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal
         """See PETSc `MatSetValuesBlockedLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""

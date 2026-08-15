@@ -10,6 +10,13 @@ on:
       - main
   workflow_dispatch:
 
+# Cancel superseded runs: a new commit on a pull request makes the
+# previous run's result irrelevant. Pushes to 'main' and 'release' are
+# left to finish, since they populate caches and publish artefacts.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   GITHUB_USER: ${{ github.actor }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -83,7 +90,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: fenics/spack-fenics
-          ref: 05ea6cd78f5fde9c580fe29cb6dbb040d05f74ee # main, 2026-08-12
+          ref: 55b14e0301eb64d4adc86c213046824f2b17e20c # main, 2026-08-15
           path: spack-fenics
 
       # Add FEniCS Spack packages on top of the upstream Spack packages
@@ -141,7 +148,7 @@ jobs:
         run: |
           # Ensure build provenance by adding manually and providing git sha
           spack -e ci add fenics-basix@main commit=$BASIX_SHA build_type=Developer
-          spack -e ci add py-fenics-basix@main commit=$BASIX_SHA
+          spack -e ci add py-fenics-basix@main commit=$BASIX_SHA build_type=Developer
           spack -e ci add py-fenics-ufl@main commit=$UFL_SHA
           spack -e ci add fenics-ufcx@main commit=$FFCX_SHA
           spack -e ci add py-fenics-ffcx@main commit=$FFCX_SHA
@@ -213,6 +220,33 @@ jobs:
         run: |
           spack env activate ci
           python -c "import dolfinx; assert dolfinx.has_petsc is ${{ matrix.petsc && 'True' || 'False' }}, dolfinx.has_petsc"
+
+      # ccpp.yml runs mypy only in a build without PETSc, which excludes
+      # the modules needing petsc4py. This leg has petsc4py, gmsh and
+      # pyvista, so it checks them, on the project config alone. One leg
+      # only: the result does not vary with the scalar type.
+      - name: mypy checks (with petsc4py)
+        if: ${{ matrix.petsc && matrix.mpi == 'openmpi' && matrix.scalar == 'float64' && matrix.index == 'int32' }}
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          # mypy checks the sources, so keep it out of the environment and
+          # the build cache. The environment's python has no pip, hence the
+          # venv; '--python-executable' points mypy back at it to resolve
+          # dolfinx, petsc4py and the rest.
+          apt-get install -y --no-install-recommends python3-venv
+          python3 -m venv /tmp/mypy-venv
+          /tmp/mypy-venv/bin/pip install --quiet mypy
+          # Distinguishes a broken install from mypy reporting errors.
+          /tmp/mypy-venv/bin/mypy --version
+          ENV_PYTHON=$(command -v python)
+          MYPY="/tmp/mypy-venv/bin/mypy --python-executable $ENV_PYTHON"
+          # No --disable-error-code: unlike the other mypy invocations in
+          # CI, this one can import everything it checks.
+          cd dolfinx-src/python
+          $MYPY --config-file pyproject.toml -p dolfinx
+          $MYPY demo
+          $MYPY test
 
       - name: Set default DOLFINx JIT options
         run: |

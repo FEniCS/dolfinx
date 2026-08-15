@@ -16,6 +16,13 @@ on:
     - cron: "0 2 * * WED"
   workflow_dispatch: ~
 
+# Cancel superseded runs: a new commit on a pull request makes the
+# previous run's result irrelevant. Pushes to 'main' and 'release' are
+# left to finish, since they populate caches and publish artefacts.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   UCX_TLS: tcp  # Use TCP only, avoiding InfiniBand/MANA
 

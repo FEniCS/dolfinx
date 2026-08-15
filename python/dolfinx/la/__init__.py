@@ -276,7 +276,9 @@ class MatrixCSR(Generic[Scalar]):
         """
         return self._cpp_object.to_dense()  # type: ignore[return-value]
 
-    def to_scipy(self, ghosted: bool = False) -> _sparse.csr_matrix | _sparse.bsr_matrix:
+    def to_scipy(  # type: ignore[no-any-unimported]
+        self, ghosted: bool = False
+    ) -> _sparse.csr_matrix | _sparse.bsr_matrix:
         """Convert to a SciPy CSR/BSR matrix. Data is shared.
 
         Note:
