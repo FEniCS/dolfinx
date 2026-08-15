@@ -111,24 +111,6 @@ warn_unused_ignores = true
 show_error_codes = true
 ignore_missing_imports = false
 
-# scipy and cffi ship no type information, and no stub packages are
-# installed in the environments CI checks in: the Spack legs run mypy
-# against the environment's interpreter, which has no pip, so stubs cannot
-# be added to it. Treat the two as untyped rather than reporting every use
-# of them.
-[[tool.mypy.overrides]]
-module = ["scipy.*", "cffi", "cffi.*", "_cffi_backend"]
-ignore_missing_imports = true
-
-# Consequences of the above, kept as narrow as the module list allows:
-# 'dolfinx.la' returns a scipy sparse matrix, whose type is therefore Any,
-# and the '# type: ignore[attr-defined]' comments on the cffi lib
-# attributes in 'dolfinx.fem.petsc' read as unused while cffi is untyped.
-[[tool.mypy.overrides]]
-module = ["dolfinx.la", "dolfinx.fem.petsc"]
-disallow_any_unimported = false
-warn_unused_ignores = false
-
 # Test bodies are unannotated pytest functions exercising loose numpy/dtype
 # patterns; check_untyped_defs and no_implicit_optional are not enforced
 # there.
@@ -195,6 +177,10 @@ module = [
       "pyvista",
       "pyvistaqt",
       "networkx",
+      "scipy.*",
+      "cffi",
+      "cffi.*",
+      "_cffi_backend",
 ]
 ignore_missing_imports = true
 
