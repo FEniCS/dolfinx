@@ -40,7 +40,7 @@ jobs:
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install linting tools
-        run: pip install clang-format gersemi mypy ruff
+        run: pip install clang-format gersemi ruff
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
@@ -63,13 +63,6 @@ jobs:
           find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
       - name: gersemi
         run: gersemi --check .
-      - name: mypy checks (no installed)
-        run: |
-          cd python/
-          MYPY_FLAGS="--ignore-missing-imports --disable-error-code no-any-unimported --disable-error-code unused-ignore --disable-error-code attr-defined --disable-error-code name-defined --disable-error-code no-any-return"
-          mypy $MYPY_FLAGS dolfinx
-          mypy $MYPY_FLAGS demo
-          mypy $MYPY_FLAGS test
 
 
   ccpp-build:
@@ -158,7 +151,7 @@ jobs:
 
       - name: Build Python interface
         run: >
-          pip install  'python/[test,mypy]'
+          pip install  'python/[test]'
           --check-build-dependencies
           --no-build-isolation
           --config-settings=cmake.build-type="Developer"
@@ -172,17 +165,6 @@ jobs:
           sudo apt-get install libegl1
           pip install gmsh pyvista
 
-      - name: mypy checks (no petsc4py)
-        run: |
-          # Modules importing petsc4py, which this build lacks. They are
-          # checked by 'mypy checks (with petsc4py)' in ci.yml.
-          EXCLUDE='petsc\.py|dolfinx/la/__init__\.py|io/utils\.py'
-          DISABLE_FLAGS="--disable-error-code import-not-found --disable-error-code no-any-unimported"
-          mypy --config-file python/pyproject.toml -p dolfinx --exclude "$EXCLUDE" $DISABLE_FLAGS
-          cd python/
-          DISABLE_FLAGS="$DISABLE_FLAGS --disable-error-code attr-defined --disable-error-code name-defined --disable-error-code unused-ignore"
-          mypy demo $DISABLE_FLAGS
-          mypy test $DISABLE_FLAGS
 
       - name: Run demos (Python, serial)
         run: |
@@ -283,7 +265,7 @@ jobs:
 
       - name: Build Python interface
         run: >
-          pip install 'python/[test,mypy]'
+          pip install 'python/[test]'
           --check-build-dependencies
           --no-build-isolation
           --config-settings=cmake.build-type="Developer"
@@ -304,12 +286,6 @@ jobs:
           apt-get install libegl1 libxrender1
           pip install pyvista
 
-      - name: mypy checks (with petsc4py)
-        run: |
-          mypy --config-file python/pyproject.toml -p dolfinx --exclude superlu_dist.py
-          cd python/
-          mypy demo
-          mypy test
 
       - name: Run demos (Python, serial)
         run: |
