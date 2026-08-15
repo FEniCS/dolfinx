@@ -66,7 +66,7 @@ jobs:
       - name: Install Spack requirements
         run: |
           apt-get -y update
-          apt-get install -y file bzip2 ca-certificates g++ gcc gfortran git gzip \
+          apt-get install -y --no-install-recommends file bzip2 ca-certificates g++ gcc gfortran git gzip \
             libgl-dev libosmesa6-dev lsb-release patch python3 tar unzip xz-utils zstd
 
       - name: Set up Spack
@@ -165,11 +165,19 @@ jobs:
 
       # Pushed before the test steps so the artifacts are cached even if a
       # later step fails. The index is rebuilt by the final push.
+      #
+      # Both pushes are skipped for pull requests from forks: those run
+      # with a read-only GITHUB_TOKEN whatever 'permissions' asks for, so
+      # the push would 401 as soon as it had anything to upload, failing a
+      # contributor's job on a step that tests nothing. Reads are
+      # anonymous, so their builds still take from the cache.
       - name: Push packages to cache
+        if: >-
+          ${{ !cancelled() && (github.event_name != 'pull_request'
+          || github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
           spack -e ci buildcache push --base-image ubuntu:26.04 --only dependencies \
             --with-build-dependencies --allow-missing local-buildcache
-        if: ${{ !cancelled() }}
 
       - name: Build and run C++ unit tests (serial and MPI)
         shell: spack-bash {0}
@@ -179,8 +187,8 @@ jobs:
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S dolfinx-src/cpp/test/
           cmake --build build/test
           cd build/test
-          ctest -V --output-on-failure -R unittests_np_1
-          ctest -V --output-on-failure -R unittests_np_3
+          ctest --output-on-failure -R unittests_np_1
+          ctest --output-on-failure -R unittests_np_3
 
       # Skipped without PETSc: several demo CMakeLists reference
       # PETSC_INCLUDE_DIRS unconditionally, which --warn-uninitialized
@@ -195,8 +203,8 @@ jobs:
           cmake -Werror=dev --warn-uninitialized -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S dolfinx-src/cpp/demo/
           cmake --build build/demo
           cd build/demo
-          ctest -V --output-on-failure -R "demo_.*_np_1"
-          ctest -V --output-on-failure -R "demo_.*_np_2"
+          ctest --output-on-failure -R "demo_.*_np_1"
+          ctest --output-on-failure -R "demo_.*_np_2"
 
       # Guard against a mis-specified variant silently building PETSc into
       # the PETSc-free leg, which would make it test nothing new.
@@ -235,7 +243,9 @@ jobs:
       # skips them and they need naming explicitly. Only the final push
       # rebuilds the index, which is the expensive part.
       - name: Push test packages to cache and update index
+        if: >-
+          ${{ !cancelled() && (github.event_name != 'pull_request'
+          || github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
           spack -e ci buildcache push --base-image ubuntu:26.04 --allow-missing --update-index local-buildcache \
             py-gmsh py-matplotlib py-networkx py-numba py-pytest py-pytest-xdist py-scipy py-pyvista
-        if: ${{ !cancelled() }}
