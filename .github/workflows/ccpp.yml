@@ -167,11 +167,8 @@ jobs:
 
       - name: mypy checks (no petsc4py)
         run: |
-          # Modules importing petsc4py, which this build does not have:
-          # every '*petsc.py' (fem, la and nls), plus 'dolfinx.la' itself
-          # and 'dolfinx.io.utils'. They are checked by the 'mypy checks
-          # (with petsc4py)' step in ci.yml, in an environment that can
-          # import them.
+          # Modules importing petsc4py, which this build lacks. They are
+          # checked by 'mypy checks (with petsc4py)' in ci.yml.
           EXCLUDE='petsc\.py|dolfinx/la/__init__\.py|io/utils\.py'
           DISABLE_FLAGS="--disable-error-code import-not-found --disable-error-code no-any-unimported"
           mypy --config-file python/pyproject.toml -p dolfinx --exclude "$EXCLUDE" $DISABLE_FLAGS

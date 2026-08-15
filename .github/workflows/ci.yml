@@ -223,25 +223,19 @@ jobs:
         shell: spack-bash {0}
         run: |
           spack env activate ci
-          # mypy checks the sources; it is not a dependency of the build,
-          # so keep it off the concretized DAG and out of the build cache.
-          # The environment's python has no pip -- spack builds it without
-          # one -- so install into a throwaway venv made with the
-          # container's python, and point mypy at the environment's
-          # interpreter with '--python-executable' so it resolves dolfinx,
-          # petsc4py and the rest from there.
+          # mypy checks the sources, so keep it out of the environment and
+          # the build cache. The environment's python has no pip, hence the
+          # venv; '--python-executable' points mypy back at it to resolve
+          # dolfinx, petsc4py and the rest.
           apt-get install -y --no-install-recommends python3-venv
           python3 -m venv /tmp/mypy-venv
           /tmp/mypy-venv/bin/pip install --quiet mypy
-          # Echo the version: this step is expected to report type errors,
-          # so a broken install must not look the same as a working one.
+          # Distinguishes a broken install from mypy reporting errors.
           /tmp/mypy-venv/bin/mypy --version
           ENV_PYTHON=$(command -v python)
           MYPY="/tmp/mypy-venv/bin/mypy --python-executable $ENV_PYTHON"
-          # No --disable-error-code: the other mypy invocations in CI pass
-          # those because they check code they cannot import. This one has
-          # petsc4py, gmsh and pyvista installed, so it runs against the
-          # project config alone.
+          # No --disable-error-code: unlike the other mypy invocations in
+          # CI, this one can import everything it checks.
           cd dolfinx-src/python
           $MYPY --config-file pyproject.toml -p dolfinx
           $MYPY demo

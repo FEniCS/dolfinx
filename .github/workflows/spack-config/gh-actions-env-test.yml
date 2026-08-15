@@ -13,13 +13,10 @@ spack:
     all:
       require:
       - target=x86_64_v3
-    # OpenBLAS 0.3.34 built by the container's gcc 15.2 faults in its Zen
-    # kernels: high-degree hexahedral H(curl) element creation jumps to
-    # address zero on an AMD EPYC runner, while the same binary picks
-    # 'Core: Haswell' on Intel and is fine. netlib-lapack is the
-    # implementation the crash was bisected against. Revisit when
-    # OpenBLAS is fixed for gcc 15; see PR #4414 for the alternatives
-    # that do not build under this toolchain.
+    # OpenBLAS 0.3.34 built by gcc 15.2 faults in its Zen kernels: on an
+    # AMD EPYC runner, high-degree hexahedral H(curl) element creation
+    # jumps to address zero. Revisit when OpenBLAS is fixed for gcc 15;
+    # PR #4414 records the alternatives that do not build here.
     blas:
       require:
       - netlib-lapack

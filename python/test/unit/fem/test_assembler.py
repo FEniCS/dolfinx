@@ -1424,9 +1424,8 @@ class TestPETScAssemblers:
         for row in range(2):
             A_sub = A2.getNestSubMatrix(row, 0)
             assert A_sub.getSize() == A0.getSize()
-            # Mat.equal is exact, but the nest and monolithic paths
-            # accumulate off-process contributions separately, so in
-            # parallel they agree only to rounding.
+            # Mat.equal is exact, but in parallel the nest and monolithic
+            # paths accumulate off-process contributions separately.
             inf = PETSc.NormType.INFINITY
             D = A_sub.copy()
             D.axpy(-1.0, A0, structure=PETSc.Mat.Structure.SAME_NONZERO_PATTERN)
