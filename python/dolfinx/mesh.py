@@ -1570,7 +1570,7 @@ def transfer_meshtags_to_submesh(
     return MeshTags(cpp_tag)
 
 
-def create_point_mesh(comm: _MPI.Intracomm, points: npt.NDArray[np.float32 | np.float64]) -> Mesh:
+def create_point_mesh(comm: _MPI.Comm, points: npt.NDArray[np.float32 | np.float64]) -> Mesh:
     """Create a mesh consisting of points only.
 
     Note:
