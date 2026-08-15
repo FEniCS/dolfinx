@@ -235,9 +235,11 @@ jobs:
           # Installed with pip rather than added to the environment: mypy
           # is a check on the sources, not a dependency of the build, and
           # this keeps it off the concretized DAG and the build cache.
-          # '--user' because the environment's view is spack-managed;
-          # invoke it as a module so PATH does not matter.
-          pip install --user mypy
+          # '--user' because the environment's view is spack-managed, and
+          # both pip and mypy are invoked as modules: the environment
+          # provides 'python' but no 'pip' executable on PATH, and pip's
+          # --user script directory is not on PATH either.
+          python -m pip install --user mypy
           # Echo the version, so an install failure is distinguishable
           # from mypy running and reporting errors -- this step is
           # expected to report errors.
