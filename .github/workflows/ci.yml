@@ -83,7 +83,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: fenics/spack-fenics
-          ref: 05ea6cd78f5fde9c580fe29cb6dbb040d05f74ee # main, 2026-08-12
+          ref: 55b14e0301eb64d4adc86c213046824f2b17e20c # main, 2026-08-15
           path: spack-fenics
 
       # Add FEniCS Spack packages on top of the upstream Spack packages
@@ -141,7 +141,7 @@ jobs:
         run: |
           # Ensure build provenance by adding manually and providing git sha
           spack -e ci add fenics-basix@main commit=$BASIX_SHA build_type=Developer
-          spack -e ci add py-fenics-basix@main commit=$BASIX_SHA
+          spack -e ci add py-fenics-basix@main commit=$BASIX_SHA build_type=Developer
           spack -e ci add py-fenics-ufl@main commit=$UFL_SHA
           spack -e ci add fenics-ufcx@main commit=$FFCX_SHA
           spack -e ci add py-fenics-ffcx@main commit=$FFCX_SHA
