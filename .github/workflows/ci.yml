@@ -218,10 +218,20 @@ jobs:
       - name: Run Python unit tests (serial and MPI)
         shell: spack-bash {0}
         run: |
-          spack env activate ci
-          spack load gcc
-          python -m pytest -n=auto --durations=50 ${{ matrix.petsc && '' || '-m "not petsc4py"' }} dolfinx-src/python/test/unit/
-          mpiexec -np 3 python -m pytest --durations=50 ${{ matrix.petsc && '' || '-m "not petsc4py"' }} dolfinx-src/python/test/unit/
+           spack env activate ci
+           spack load gcc
+           echo "::group::Run Python unit tests under gdb"
+           gdb --batch -ex "run" -ex "bt" --args python -m pytest -n=auto --durations=50 ${{ matrix.petsc && '' || '-m "not petsc4py"' }} dolfinx-src/python/test/unit/ || true
+           echo "::endgroup::"
+           echo "::group::Run Python unit tests under valgrind"
+           valgrind --leak-check=full --track-origins=yes python -m pytest -n=auto --durations=50 ${{ matrix.petsc && '' || '-m "not petsc4py"' }} dolfinx-src/python/test/unit/ || true
+           echo "::endgroup::"
+           echo "::group::Run MPI Python unit tests under gdb"
+           gdb --batch -ex "run" -ex "bt" --args mpiexec -np 3 python -m pytest --durations=50 ${{ matrix.petsc && '' || '-m "not petsc4py"' }} dolfinx-src/python/test/unit/ || true
+           echo "::endgroup::"
+           echo "::group::Run MPI Python unit tests under valgrind"
+           valgrind --leak-check=full --track-origins=yes mpiexec -np 3 python -m pytest --durations=50 ${{ matrix.petsc && '' || '-m "not petsc4py"' }} dolfinx-src/python/test/unit/ || true
+           echo "::endgroup::"
 
       # The test tools are environment roots, so '--only dependencies'
       # skips them and they need naming explicitly. Only the final push
