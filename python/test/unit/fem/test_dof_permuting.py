@@ -395,7 +395,12 @@ def test_integral(cell_type, space_type, space_order):
                 _form = ufl.jump(v) * ufl.dS
 
             value = assemble_scalar(form(_form))
-            assert np.isclose(value, 0.0, rtol=1.0e-6, atol=1.0e-6)
+            # The exact value is zero, so rtol does nothing and atol
+            # carries the check. Scale it with the working precision:
+            # assembling over the mesh accumulates rounding well past a
+            # fixed 1e-6 in single precision.
+            atol = max(1.0e-6, 500 * np.finfo(default_real_type).eps)
+            assert np.isclose(value, 0.0, rtol=1.0e-6, atol=atol)
 
 
 @pytest.mark.parametrize(

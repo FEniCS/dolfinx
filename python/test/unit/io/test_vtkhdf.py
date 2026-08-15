@@ -163,13 +163,20 @@ def test_read_write_higher_order_mesh(order):
     mesh = read_mesh(comm, filename)
 
     # Compare surface and volume metrics
+    # numpy's default rtol of 1e-5 is barely above the rounding of a
+    # quadrature over a curved mesh in single precision -- the observed
+    # difference is 1.0e-5 relative -- so scale the comparison with the
+    # working precision, with enough headroom that it is not decided by
+    # the summation order of the BLAS underneath.
+    rtol = max(1.0e-5, 1000 * np.finfo(mesh.geometry.x.dtype).eps)
+
     volume_form = dolfinx.fem.form(1 * ufl.dx(domain=mesh), dtype=mesh.geometry.x.dtype)
     volume = comm.allreduce(dolfinx.fem.assemble_scalar(volume_form), op=MPI.SUM)
-    assert np.isclose(ref_volume, volume)
+    assert np.isclose(ref_volume, volume, rtol=rtol)
 
     surface_form = dolfinx.fem.form(1 * ufl.ds(domain=mesh), dtype=mesh.geometry.x.dtype)
     surface = comm.allreduce(dolfinx.fem.assemble_scalar(surface_form), op=MPI.SUM)
-    assert np.isclose(ref_surface, surface)
+    assert np.isclose(ref_surface, surface, rtol=rtol)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
