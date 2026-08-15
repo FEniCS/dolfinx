@@ -6,6 +6,7 @@
 """Unit tests for the Function class."""
 
 import importlib
+import sys
 
 from mpi4py import MPI
 
@@ -60,10 +61,40 @@ def test_copy(V):
     assert not np.allclose(u.x.array, v.x.array)
 
 
-def test_eval(V, W, Q, mesh):
-    u1 = Function(V)
-    u2 = Function(W)
-    u3 = Function(Q)
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
+def test_eval(dtype):
+    xdtype = dtype(0).real.dtype
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=xdtype)
+    gdim = mesh.geometry.dim
+    V = functionspace(mesh, ("Lagrange", 1))
+    W = functionspace(mesh, ("Lagrange", 1, (gdim,)))
+    Q = functionspace(mesh, ("Lagrange", 1, (gdim, gdim)))
+
+    u1 = Function(V, dtype=dtype)
+    u2 = Function(W, dtype=dtype)
+    u3 = Function(Q, dtype=dtype)
 
     def e2(x):
         values = np.empty((3, x.shape[1]))
@@ -95,7 +126,12 @@ def test_eval(V, W, Q, mesh):
     cell = compute_colliding_cells(mesh, cell_candidates, x0).array
     assert len(cell) > 0
     first_cell = cell[0]
-    assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
+    # The two evaluations are the same expression through different
+    # spaces, so they agree to a few ulp; size the check from the working
+    # precision rather than fixing it at 1e-15, which is meaningless in
+    # single precision.
+    tol = max(1.0e-15, 10 * np.finfo(dtype).eps)
+    assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=tol, atol=tol)
 
 
 @pytest.mark.skip_in_parallel
