@@ -6,6 +6,7 @@
 """Test that interpolation is done correctly."""
 
 import random
+import sys
 
 from mpi4py import MPI
 
@@ -413,89 +414,241 @@ def test_mixed_interpolation():
 
 
 @pytest.mark.parametrize("order1", [2, 3, 4])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
 @pytest.mark.parametrize("order2", [2, 3, 4])
-def test_interpolation_nedelec(order1, order2):
-    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+def test_interpolation_nedelec(order1, order2, dtype):
+    xdtype = dtype(0).real.dtype
+    # The assembled quantity is a squared L2 error, so its size scales
+    # with eps**2 rather than eps. The existing constant is kept as a
+    # floor, so the double-precision check is unchanged.
+    tol = max(1.0e-10, 1.0e6 * np.finfo(dtype).eps ** 2)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xdtype)
     V = functionspace(mesh, ("N1curl", order1))
     V1 = functionspace(mesh, ("N1curl", order2))
-    u, v = Function(V), Function(V1)
+    u, v = Function(V, dtype=dtype), Function(V1, dtype=dtype)
 
     # The expression "lambda x: x" is contained in the N1curl function
     # space for order > 1
     u.interpolate(lambda x: x)
     v.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0, abs=1.0e-10)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0, abs=tol
+    )
 
     # The target expression is also contained in N2curl space of any
     # order
     V2 = functionspace(mesh, ("N2curl", 1))
-    w = Function(V2)
+    w = Function(V2, dtype=dtype)
     w.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx)) == pytest.approx(0, abs=1.0e-10)
+    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0, abs=tol
+    )
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_interpolation_dg_to_n1curl(tdim, order):
+def test_interpolation_dg_to_n1curl(tdim, order, dtype):
+    xdtype = dtype(0).real.dtype
+    # The assembled quantity is a squared L2 error, so its size scales
+    # with eps**2 rather than eps. The existing constant is kept as a
+    # floor, so the double-precision check is unchanged.
+    tol = max(1.0e-8, 1.0e6 * np.finfo(dtype).eps ** 2)
     if tdim == 2:
-        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=xdtype)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xdtype)
     V = functionspace(mesh, ("DG", order, (tdim,)))
     V1 = functionspace(mesh, ("N1curl", order + 1))
-    u, v = Function(V), Function(V1)
+    u, v = Function(V, dtype=dtype), Function(V1, dtype=dtype)
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0, abs=1.0e-8)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0.0, abs=tol
+    )
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_interpolation_n1curl_to_dg(tdim, order):
+def test_interpolation_n1curl_to_dg(tdim, order, dtype):
+    xdtype = dtype(0).real.dtype
+    # The assembled quantity is a squared L2 error, so its size scales
+    # with eps**2 rather than eps. The existing constant is kept as a
+    # floor, so the double-precision check is unchanged.
+    tol = max(1.0e-10, 1.0e6 * np.finfo(dtype).eps ** 2)
     if tdim == 2:
-        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=xdtype)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xdtype)
     V = functionspace(mesh, ("N1curl", order + 1))
     V1 = functionspace(mesh, ("DG", order, (tdim,)))
-    u, v = Function(V), Function(V1)
+    u, v = Function(V, dtype=dtype), Function(V1, dtype=dtype)
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0, abs=1e-10)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0.0, abs=tol
+    )
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_interpolation_n2curl_to_bdm(tdim, order):
+def test_interpolation_n2curl_to_bdm(tdim, order, dtype):
+    xdtype = dtype(0).real.dtype
+    # The assembled quantity is a squared L2 error, so its size scales
+    # with eps**2 rather than eps. The existing constant is kept as a
+    # floor, so the double-precision check is unchanged.
+    tol = max(1.0e-10, 1.0e6 * np.finfo(dtype).eps ** 2)
     if tdim == 2:
-        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=xdtype)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xdtype)
     V = functionspace(mesh, ("N2curl", order))
     V1 = functionspace(mesh, ("BDM", order))
-    u, v = Function(V), Function(V1)
+    u, v = Function(V, dtype=dtype), Function(V1, dtype=dtype)
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(
-        0.0, abs=1.0e-10
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0.0, abs=tol
     )
 
 
 @pytest.mark.parametrize("order1", [1, 2, 3, 4, 5])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        pytest.param(
+            np.complex64,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+        np.float64,
+        pytest.param(
+            np.complex128,
+            marks=pytest.mark.xfail(
+                sys.platform.startswith("win32"),
+                raises=NotImplementedError,
+                reason="missing _Complex",
+            ),
+        ),
+    ],
+)
 @pytest.mark.parametrize("order2", [1, 2, 3])
-def test_interpolation_p2p(order1, order2):
-    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+def test_interpolation_p2p(order1, order2, dtype):
+    xdtype = dtype(0).real.dtype
+    # The assembled quantity is a squared L2 error, so its size scales
+    # with eps**2 rather than eps. The existing constant is kept as a
+    # floor, so the double-precision check is unchanged.
+    tol = max(1.0e-10, 1.0e6 * np.finfo(dtype).eps ** 2)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=xdtype)
     V = functionspace(mesh, ("Lagrange", order1))
     V1 = functionspace(mesh, ("Lagrange", order2))
-    u, v = Function(V), Function(V1)
+    u, v = Function(V, dtype=dtype), Function(V1, dtype=dtype)
     u.interpolate(lambda x: x[0])
     v.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0, abs=1e-10)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0.0, abs=tol
+    )
 
     DG = functionspace(mesh, ("DG", order2))
-    w = Function(DG)
+    w = Function(DG, dtype=dtype)
     w.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx)) == pytest.approx(0.0, abs=1e-10)
+    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx, dtype=dtype)) == pytest.approx(
+        0.0, abs=tol
+    )
 
 
 @pytest.mark.parametrize("order1", [1, 2, 3])
