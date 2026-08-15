@@ -244,19 +244,14 @@ jobs:
           /tmp/mypy-venv/bin/mypy --version
           ENV_PYTHON=$(command -v python)
           MYPY="/tmp/mypy-venv/bin/mypy --python-executable $ENV_PYTHON"
-          # import-untyped and unused-ignore: scipy and cffi ship no stubs
-          # in this environment, and installing stub packages into the venv
-          # does not help -- '--python-executable' makes mypy resolve every
-          # third-party package, stubs included, from the environment's
-          # interpreter, which has no pip to install them into. The two
-          # 'unused' ignores are a consequence: they sit on cffi lib
-          # attributes and read as unused only because cffi is untyped.
-          DISABLE_FLAGS="--disable-error-code import-not-found --disable-error-code no-any-unimported"
-          DISABLE_FLAGS="$DISABLE_FLAGS --disable-error-code import-untyped --disable-error-code unused-ignore"
+          # No --disable-error-code: the other mypy invocations in CI pass
+          # those because they check code they cannot import. This one has
+          # petsc4py, gmsh and pyvista installed, so it runs against the
+          # project config alone.
           cd dolfinx-src/python
-          $MYPY --config-file pyproject.toml -p dolfinx $DISABLE_FLAGS
-          $MYPY demo $DISABLE_FLAGS
-          $MYPY test $DISABLE_FLAGS
+          $MYPY --config-file pyproject.toml -p dolfinx
+          $MYPY demo
+          $MYPY test
 
       - name: Set default DOLFINx JIT options
         run: |
