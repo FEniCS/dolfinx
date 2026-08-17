@@ -177,6 +177,10 @@ module = [
       "pyvista",
       "pyvistaqt",
       "networkx",
+      "scipy.*",
+      "cffi",
+      "cffi.*",
+      "_cffi_backend",
 ]
 ignore_missing_imports = true
 

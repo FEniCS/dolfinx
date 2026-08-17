@@ -230,7 +230,7 @@ def compute_a(nu: int, m: complex, alpha: float) -> complex:
 
     a_nu_num = J_nu_alpha * J_nu_malpha_p - m * J_nu_malpha * J_nu_alpha_p
     a_nu_den = H_nu_alpha * J_nu_malpha_p - m * J_nu_malpha * H_nu_alpha_p
-    return a_nu_num / a_nu_den
+    return complex(a_nu_num / a_nu_den)
 
 
 def calculate_analytical_efficiencies(
