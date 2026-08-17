@@ -1,0 +1,46 @@
+{
+  "name": "scotch",
+  "version": "7.0.12",
+  "description": "Scotch: a software package for graph and mesh/hypergraph partitioning, graph clustering, and sparse matrix ordering",
+  "homepage": "https://gitlab.inria.fr/scotch/scotch",
+  "license": null,
+  "supports": "!arm & !uwp & !android & !osx",
+  "dependencies": [
+    "bzip2",
+    "liblzma",
+    "pthread",
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    },
+    "zlib"
+  ],
+  "features": {
+    "metis": {
+      "description": "Build the libScotchMeTiS METIS compatibility library"
+    },
+    "parmetis": {
+      "description": "Build the libPTScotchParMeTiS ParMETIS compatibility library",
+      "dependencies": [
+        {
+          "name": "scotch",
+          "default-features": false,
+          "features": [
+            "metis",
+            "ptscotch"
+          ]
+        }
+      ]
+    },
+    "ptscotch": {
+      "description": "Build PT-Scotch",
+      "dependencies": [
+        "mpi"
+      ]
+    }
+  }
+}
