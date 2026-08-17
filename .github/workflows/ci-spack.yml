@@ -54,8 +54,9 @@ jobs:
         uses: spack/setup-spack@16b756799ede8b28951287f89bcd3fdb32ec1ca3 # v3.0.0
         with:
           spack_ref: v1.2.2
-          packages_ref: d342cee94fb90fb020776c8bd8500b54a19c63cf
-          # packages_ref: v2026.06.0
+          # spack-packages 'develop' at 2026-08-17. Bumping re-solves the
+          # graph and can invalidate cached binaries; warm the cache first.
+          packages_ref: 1ccf95574922e2a7f7ef0351bd67758ad4634b7a
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v7
@@ -72,11 +73,8 @@ jobs:
           spack -e py add python py-nanobind py-numpy py-mpi4py py-petsc4py py-slepc4py \
             py-scikit-build-core@1+pyproject py-setuptools py-cffi
           spack -e py add py-pip cmake catch2 py-pytest py-pytest-xdist ninja
-          # NOTE: freetype@2.13.3 works around a raster overflow bug in
-          # freetype@2.14.2 (2026-07). Re-check and drop once a fixed
-          # freetype (2.14.3+) lands in the spack-packages recipe.
           spack -e py add openblas
-          spack -e py add py-gmsh ^gmsh~fltk~med~mmg+external ^opencascade~draw py-pyvista ^mesa~llvm ^freetype@2.13.3 \
+          spack -e py add py-gmsh ^gmsh~fltk~med~mmg+external ^opencascade~draw py-pyvista ^mesa~llvm \
             py-networkx py-matplotlib py-pyamg py-numba  ^llvm~clang~lldb~lld~offload~libomptarget~polly targets=x86 \
             py-scipy
           # gmsh's compiled library dlopens libGLU.so.1 and several X11
@@ -95,7 +93,7 @@ jobs:
         run: spack -e py add intel-oneapi-compilers
 
       - name: Install Spack packages
-        run: spack -e py install -j 4 --use-buildcache auto
+        run: spack -e py install -j $(nproc) --use-buildcache auto
 
       - name: Push packages to Spack cache and update index
         env:
