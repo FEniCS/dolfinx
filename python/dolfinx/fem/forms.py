@@ -195,15 +195,18 @@ def get_integration_domains(
 
             # Special handling for exterior facets, compared to other
             # one-sided entity integrals
-            if integral_type is IntegralType.exterior_facet:
-                exterior_facets = _cpp.mesh.exterior_facet_indices(subdomain.topology)
+            exterior_facets = (
+                _cpp.mesh.exterior_facet_indices(subdomain.topology)
+                if integral_type is IntegralType.exterior_facet
+                else None
+            )
 
             # Compute integration domains only for each subdomain id in
             # the integrals. If a process has no integral entities,
             # insert an empty array.
             for id in subdomain_ids:
                 entities = subdomain.find(id)
-                if integral_type is IntegralType.exterior_facet:
+                if exterior_facets is not None:
                     # Compute intersection of tag an exterior facets
                     entities = np.intersect1d(entities, exterior_facets)
 
