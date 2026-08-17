@@ -613,7 +613,7 @@ public:
 
     // True if every entry of the block starting at block index j is
     // within tolerance of zero, i.e. the whole block can be dropped.
-    auto is_zero_block = [&](std::int64_t j)
+    auto is_zero_block = [&_data, bs2, tol](std::int64_t j)
     {
       return std::all_of(std::next(_data.begin(), j * bs2),
                           std::next(_data.begin(), (j + 1) * bs2),
