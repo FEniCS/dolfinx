@@ -40,7 +40,7 @@ jobs:
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install linting tools
-        run: pip install --group python/pyproject.toml:lint clang-format
+        run: pip install --group python/pyproject.toml:lint
       - name: ruff .py files in C++ code
         run: |
           cd cpp/

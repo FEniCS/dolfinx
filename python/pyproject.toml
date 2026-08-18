@@ -73,7 +73,7 @@ docs = [
       "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
 ]
-lint = ["ruff", "gersemi"]
+lint = ["ruff", "gersemi", "clang-format"]
 ci = [
       "pytest-xdist",
       "mypy",
