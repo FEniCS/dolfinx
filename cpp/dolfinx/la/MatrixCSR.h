@@ -616,8 +616,9 @@ public:
     auto is_zero_block = [this, bs2, tol](std::int64_t j)
     {
       return std::all_of(std::next(_data.begin(), j * bs2),
-                          std::next(_data.begin(), (j + 1) * bs2),
-                          [tol](value_type x) { return std::abs(x) <= std::abs(tol); });
+                         std::next(_data.begin(), (j + 1) * bs2),
+                         [tol](value_type x)
+                         { return std::abs(x) <= std::abs(tol); });
     };
 
     std::int64_t ptr_out = 0;
