@@ -545,14 +545,14 @@ def form(
 def extract_function_spaces(forms: Form, index: None = None) -> FunctionSpace | None: ...
 @typing.overload
 def extract_function_spaces(
-    forms: Sequence[Form], index: None = None
+    forms: Sequence[Form | None], index: None = None
 ) -> list[FunctionSpace | None]: ...
 @typing.overload
 def extract_function_spaces(
-    forms: Sequence[Sequence[Form]], index: int = 0
+    forms: Sequence[Sequence[Form | None]], index: int = 0
 ) -> list[FunctionSpace | None]: ...
 def extract_function_spaces(
-    forms: Form | Sequence[Form] | Sequence[Sequence[Form]], index: int | None = None
+    forms: Form | Sequence[Form | None] | Sequence[Sequence[Form | None]], index: int | None = None
 ) -> FunctionSpace | list[FunctionSpace | None] | None:
     """Extract common function spaces from an array of forms.
 

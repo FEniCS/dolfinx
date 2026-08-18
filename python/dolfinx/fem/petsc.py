@@ -665,12 +665,12 @@ def apply_lifting(
     """
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()  # type: ignore[attr-defined]
-        constants = [pack_constants(forms) for forms in a] if constants is None else constants  # type: ignore[assignment]
+        constants = [pack_constants(forms) for forms in a] if constants is None else constants
         coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
         for b_sub, a_sub, const, coeff in zip(
             b.getNestSubVecs(),
             a,
-            constants,  # type: ignore[arg-type]
+            constants,
             coeffs,
             strict=True,
         ):

@@ -26,15 +26,19 @@ from dolfinx.fem.utils import create_sparsity_pattern
 
 
 @typing.overload
+def pack_constants(form: None) -> None: ...
+
+
+@typing.overload
 def pack_constants(form: Form) -> npt.NDArray: ...
 
 
 @typing.overload
-def pack_constants(form: Sequence[Form]) -> list[npt.NDArray]: ...
+def pack_constants(form: Sequence[Form | None]) -> list[npt.NDArray]: ...
 
 
 def pack_constants(
-    form: Form | Sequence[Form] | None,
+    form: Form | Sequence[Form | None] | None,
 ) -> npt.NDArray | list[npt.NDArray] | None:
     """Pack form constants for use in assembly.
 
@@ -67,12 +71,12 @@ def pack_coefficients(form: Form | None) -> dict[tuple[IntegralType, int], npt.N
 
 @typing.overload
 def pack_coefficients(
-    form: Sequence[Form],
+    form: Sequence[Form | None],
 ) -> list[dict[tuple[IntegralType, int], npt.NDArray]]: ...
 
 
 def pack_coefficients(
-    form: Form | Sequence[Form] | None,
+    form: Form | Sequence[Form | None] | None,
 ) -> (
     dict[tuple[IntegralType, int], npt.NDArray] | list[dict[tuple[IntegralType, int], npt.NDArray]]
 ):
