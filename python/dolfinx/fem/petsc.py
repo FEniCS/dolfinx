@@ -381,7 +381,7 @@ def _assemble_vector_petsc(
 # -- Matrix assembly ------------------------------------------------------
 @overload
 def assemble_matrix(
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1.0,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
@@ -395,7 +395,7 @@ def assemble_matrix(
 @overload
 def assemble_matrix(
     A: PETSc.Mat,
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1.0,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
@@ -409,7 +409,7 @@ def assemble_matrix(
 
 @functools.singledispatch
 def assemble_matrix(
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
@@ -478,7 +478,7 @@ def assemble_matrix(
 @assemble_matrix.register  # type: ignore[attr-defined]
 def _assemble_matrix_petsc(
     A: PETSc.Mat,
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
@@ -599,7 +599,7 @@ def _assemble_matrix_petsc(
 
 def apply_lifting(
     b: PETSc.Vec,
-    a: Sequence[Form] | Sequence[Sequence[Form]],
+    a: Sequence[Form] | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | Sequence[Sequence[DirichletBC]] | None,
     x0: Sequence[PETSc.Vec] | None = None,
     alpha: float = 1,
