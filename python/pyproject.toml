@@ -46,6 +46,7 @@ optional = [
       "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
 ]
 petsc4py = ["petsc4py"]
+typing = ["types-cffi", "types-setuptools", "scipy-stubs"]
 
 [dependency-groups]
 # Keep in sync with [build-system].requires above (petsc4py is an
@@ -73,15 +74,15 @@ docs = [
       "fenics-dolfinx[demo]",
 ]
 lint = ["ruff", "gersemi"]
-mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
 ci = [
       "pytest-xdist",
+      "mypy",
       { include-group = "build" },
       { include-group = "docs" },
       { include-group = "lint" },
-      { include-group = "mypy" },
       { include-group = "test" },
       "fenics-dolfinx[optional]",
+      "fenics-dolfinx[typing]",
 ]
 
 [tool.scikit-build]

@@ -20,9 +20,10 @@ Note that Developer mode is significantly stricter than CMake's default Debug mo
 
 # Type checking with mypy
 
-1. Install DOLFINx Python with the `mypy` dependency group, e.g.:
+1. Install DOLFINx Python with the `typing` extra, plus `mypy` itself
+   (or any other type checker), e.g.:
 
-       pip install --group mypy .
+       pip install mypy '.[typing]'
 
 2. Check with mypy, e.g.:
 
