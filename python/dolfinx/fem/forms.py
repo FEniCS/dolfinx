@@ -343,24 +343,6 @@ def mixed_topology_form(
 
 @typing.overload
 def form(
-    form: Sequence[Sequence[ufl.Form]],
-    dtype: npt.DTypeLike = default_scalar_type,
-    form_compiler_options: dict | None = None,
-    jit_options: dict | None = None,
-    jit_comm: MPI.Intracomm | None = None,
-    entity_maps: Sequence[_EntityMap] | None = None,
-) -> list[list[Form]]: ...
-@typing.overload
-def form(
-    form: Sequence[ufl.Form],
-    dtype: npt.DTypeLike = default_scalar_type,
-    form_compiler_options: dict | None = None,
-    jit_options: dict | None = None,
-    jit_comm: MPI.Intracomm | None = None,
-    entity_maps: Sequence[_EntityMap] | None = None,
-) -> list[Form]: ...
-@typing.overload
-def form(
     form: None,
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
@@ -377,14 +359,32 @@ def form(
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
 ) -> Form: ...
+@typing.overload
 def form(
-    form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]] | None,
+    form: Sequence[ufl.Form | None],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
-) -> Form | list[Form] | list[list[Form]] | None:
+) -> list[Form]: ...
+@typing.overload
+def form(
+    form: Sequence[Sequence[ufl.Form | None]],
+    dtype: npt.DTypeLike = default_scalar_type,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    jit_comm: MPI.Intracomm | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
+) -> list[list[Form]]: ...
+def form(
+    form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
+    dtype: npt.DTypeLike = default_scalar_type,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    jit_comm: MPI.Intracomm | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
+) -> Form | list[Form | None] | list[list[Form | None]] | None:
     """Create a Form or list of Forms.
 
     Args:
