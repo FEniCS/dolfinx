@@ -268,7 +268,7 @@ class MatrixCSR(Generic[Scalar]):
                 are removed from storage. Defaults to removing only
                 exact zeros.
         """
-        self._cpp_object.eliminate_zeros(self.data.dtype.type(tol))
+        self._cpp_object.eliminate_zeros(self.data.dtype.type(tol))  # type: ignore[arg-type]
 
     def squared_norm(self) -> float:
         """Compute the squared Frobenius norm.
