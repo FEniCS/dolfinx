@@ -367,7 +367,7 @@ def form(
     jit_options: dict | None = None,
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
-) -> list[Form]: ...
+) -> list[Form | None]: ...
 @typing.overload
 def form(
     form: Sequence[Sequence[ufl.Form | None]],
@@ -376,7 +376,7 @@ def form(
     jit_options: dict | None = None,
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
-) -> list[list[Form]]: ...
+) -> list[list[Form | None]]: ...
 def form(
     form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
     dtype: npt.DTypeLike = default_scalar_type,
