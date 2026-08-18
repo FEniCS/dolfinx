@@ -513,7 +513,7 @@ def _assemble_matrix_petsc(
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
                     _assemble_matrix_petsc(Asub, a_block, bcs, diag, const, coeff)
-                elif i == j:
+                elif i == j and bcs is not None:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
@@ -666,9 +666,10 @@ def apply_lifting(
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()  # type: ignore[attr-defined]
         if constants is None:
-            constants = [pack_constants(forms) for forms in a]
+            constants = [pack_constants(forms) for forms in a]  # type: ignore
         if coeffs is None:
-            coeffs = [pack_coefficients(forms) for forms in a]
+            coeffs = [pack_coefficients(forms) for forms in a]  # type: ignore
+        assert coeffs is not None
         for b_sub, a_sub, const, coeff in zip(
             b.getNestSubVecs(),
             a,
@@ -699,8 +700,8 @@ def apply_lifting(
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
                         zip(a, offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True)
                     ):
-                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore[call-overload]
-                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore[index, call-overload, assignment]
+                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore
+                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore
                         const_ = [
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val
                             for val in const

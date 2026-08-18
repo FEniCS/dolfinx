@@ -60,7 +60,7 @@ def pack_constants(
     if form is None:
         return None
     elif isinstance(form, Sequence):
-        return list(map(pack_constants, form))
+        return list(map(pack_constants, form))  # type: ignore
     else:
         return _pack_constants(form._cpp_object)
 
