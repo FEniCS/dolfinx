@@ -559,11 +559,11 @@ def _assemble_matrix_petsc(
                     )
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
                 elif i == j:
-                    for bc in _bcs:
+                    for bc in _bcs:  # type: ignore
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0].contains(bc.function_space):  # type: ignore
+                        if row_forms[0].function_spaces[0].contains(bc.function_space):
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
                                 " and have DirichletBC applied."
@@ -673,7 +673,7 @@ def apply_lifting(
         for b_sub, a_sub, const, coeff in zip(
             b.getNestSubVecs(),
             a,
-            constants,
+            constants,  # type: ignore
             coeffs,
             strict=True,
         ):
