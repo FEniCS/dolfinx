@@ -1085,7 +1085,7 @@ class LinearProblem(typing.Generic[_U]):
         return typing.cast(Form | Sequence[Sequence[Form]], self._a)
 
     @property
-    def preconditioner(self) -> Form | Sequence[Sequence[Form]] | None:
+    def preconditioner(self) -> Form | Sequence[Sequence[Form | None]] | None:
         """The compiled bilinear form representing the preconditioner."""
         return self._preconditioner
 

@@ -536,7 +536,9 @@ def form(
         else:
             return form
 
-    return typing.cast("Form | list[Form] | list[list[Form]] | None", _create_form(form))
+    return typing.cast(
+        "Form | list[Form | None] | list[list[Form | None]] | None", _create_form(form)
+    )
 
 
 @typing.overload
