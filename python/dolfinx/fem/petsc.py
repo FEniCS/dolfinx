@@ -153,7 +153,7 @@ def create_vector(
 
 
 def create_matrix(
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     kind: str | Sequence[Sequence[str]] | None = None,
 ) -> PETSc.Mat:
     """Create a matrix compatible with a sequence of bilinear forms.
@@ -1280,7 +1280,7 @@ class NonlinearProblem(typing.Generic[_U]):
     """  # noqa: D301
 
     _P_mat: PETSc.Mat | None
-    _preconditioner: Form | Sequence[Sequence[Form]] | None
+    _preconditioner: Form | Sequence[Sequence[Form | None]] | None
 
     @typing.overload
     def __init__(

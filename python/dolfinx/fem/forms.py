@@ -516,7 +516,7 @@ def form(
         return Form(f)
 
     def _create_form(
-        form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]] | None,
+        form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
     ) -> typing.Any:
         """Recursively convert ufl.Forms to dolfinx.fem.Form.
 
