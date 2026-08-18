@@ -277,6 +277,11 @@ def test_eliminate_zeros_tolerance(dtype):
     sp = create_test_sparsity(6, 1)
     mat = matrix_csr(sp, dtype=dtype)
 
+    # ``to_dense()`` indexes columns *globally*, so on more than one rank
+    # this rank's local columns 4 and 5 are offset by its column range
+    # start -- only rank 0 has that offset equal to zero.
+    col0 = mat.index_map(1).local_range[0]
+
     # The sparsity pattern from create_test_sparsity(6, 1) has exactly four
     # explicit entries: (2, 4), (2, 5), (3, 4), (3, 5). Populate them with
     # values straddling a tolerance of 1.0: an exact zero, a value below
@@ -298,13 +303,13 @@ def test_eliminate_zeros_tolerance(dtype):
     # the exact zero, the below-tolerance value, and the boundary value
     # (== tol, not > tol) must all be dropped from storage.
     assert nnz_after == 1
-    assert A_after[2, 4] == 0
-    assert A_after[2, 5] == 0
-    assert A_after[3, 4] == 0
-    assert np.isclose(A_after[3, 5], above)
+    assert A_after[2, col0 + 4] == 0
+    assert A_after[2, col0 + 5] == 0
+    assert A_after[3, col0 + 4] == 0
+    assert np.isclose(A_after[3, col0 + 5], above)
 
     # Values above tolerance are left completely untouched.
-    assert A_after[3, 5] == A_before[3, 5]
+    assert A_after[3, col0 + 5] == A_before[3, col0 + 5]
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
@@ -321,6 +326,11 @@ def test_eliminate_zeros_default_tolerance(dtype):
     sp = create_test_sparsity(6, 1)
     mat = matrix_csr(sp, dtype=dtype)
 
+    # ``to_dense()`` indexes columns *globally*, so on more than one rank
+    # this rank's local columns 4 and 5 are offset by its column range
+    # start -- only rank 0 has that offset equal to zero.
+    col0 = mat.index_map(1).local_range[0]
+
     tiny = dtype(1e-6)
     mat.add(np.array([0.0, tiny, 10.0, 40.0], dtype=dtype), np.array([1]), np.array([2]), 2)
 
@@ -331,10 +341,10 @@ def test_eliminate_zeros_default_tolerance(dtype):
     assert int(mat.indptr[-1]) == 3  # only the exact zero is dropped
 
     A = mat.to_dense()
-    assert A[2, 4] == 0
-    assert np.isclose(A[2, 5], tiny)
-    assert np.isclose(A[3, 4], 10.0)
-    assert np.isclose(A[3, 5], 40.0)
+    assert A[2, col0 + 4] == 0
+    assert np.isclose(A[2, col0 + 5], tiny)
+    assert np.isclose(A[3, col0 + 4], 10.0)
+    assert np.isclose(A[3, col0 + 5], 40.0)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
