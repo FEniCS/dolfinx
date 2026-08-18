@@ -150,7 +150,7 @@ jobs:
 
       - name: Build Python interface
         run: >
-          pip install --group python/pyproject.toml:test 'python/'
+          pip install --group python/pyproject.toml:test 'python/[demo]'
           --check-build-dependencies
           --no-build-isolation
           --config-settings=cmake.build-type="Developer"
@@ -158,11 +158,10 @@ jobs:
       - name: Check Python configuration
         run: python -c "from mpi4py import MPI; import dolfinx; assert not dolfinx.has_petsc; assert not dolfinx.has_petsc4py; assert dolfinx.has_superlu_dist"
 
-      - name: Install gmsh and pyvista (and dependencies)
+      - name: Install system dependencies for gmsh and pyvista
         run: |
           sudo apt-get install libglu1-mesa libgl1 libxrender1 libxcursor1 libxft2 libxinerama1
           sudo apt-get install libegl1
-          pip install gmsh pyvista
 
 
       - name: Run demos (Python, serial)
