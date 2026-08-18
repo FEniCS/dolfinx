@@ -45,6 +45,23 @@ demo = [
       "scipy",
       "pyvista",
 ]
+optional = [
+      "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
+]
+petsc4py = ["petsc4py"]
+
+[dependency-groups]
+# Keep in sync with [build-system].requires above (petsc4py is an
+# optional build dependency and is intentionally excluded).
+build = ["scikit-build-core>=1.0.0", "nanobind>=2.9.2", "mpi4py"]
+test = [
+      "matplotlib",
+      "networkx",
+      "packaging",
+      "pytest>=9.0.0",
+      "scipy",
+      "fenics-dolfinx[optional]",
+]
 docs = [
       "breathe",
       "jupytext",
@@ -60,26 +77,14 @@ docs = [
 ]
 lint = ["ruff", "gersemi"]
 mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
-optional = [
-      "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
-]
-petsc4py = ["petsc4py"]
-test = [
-      "matplotlib",
-      "networkx",
-      "packaging",
-      "pytest>=9.0.0",
-      "scipy",
-      "fenics-dolfinx[optional]",
-]
 ci = [
       "pytest-xdist",
-      "fenics-dolfinx[build]",
-      "fenics-dolfinx[docs]",
-      "fenics-dolfinx[lint]",
-      "fenics-dolfinx[mypy]",
+      { include-group = "build" },
+      { include-group = "docs" },
+      { include-group = "lint" },
+      { include-group = "mypy" },
+      { include-group = "test" },
       "fenics-dolfinx[optional]",
-      "fenics-dolfinx[test]",
 ]
 
 [tool.scikit-build]

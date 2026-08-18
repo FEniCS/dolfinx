@@ -40,7 +40,7 @@ jobs:
         run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install linting tools
-        run: pip install clang-format gersemi ruff
+        run: pip install --group python/pyproject.toml:lint clang-format
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
@@ -96,8 +96,7 @@ jobs:
       - name: Install Python build dependencies
         working-directory: python
         run: |
-          pip install scikit-build-core setuptools
-          python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
+          pip install --group pyproject.toml:build setuptools
 
       - name: Install UFL
         run: |
@@ -151,7 +150,7 @@ jobs:
 
       - name: Build Python interface
         run: >
-          pip install  'python/[test]'
+          pip install --group python/pyproject.toml:test 'python/'
           --check-build-dependencies
           --no-build-isolation
           --config-settings=cmake.build-type="Developer"
@@ -208,8 +207,7 @@ jobs:
       - name: Install Python build dependencies
         working-directory: python
         run: |
-          pip install scikit-build-core
-          python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
+          pip install --group pyproject.toml:build
 
       - name: Install UFL
         run: |
@@ -265,7 +263,7 @@ jobs:
 
       - name: Build Python interface
         run: >
-          pip install 'python/[test]'
+          pip install --group python/pyproject.toml:test 'python/'
           --check-build-dependencies
           --no-build-isolation
           --config-settings=cmake.build-type="Developer"
@@ -319,8 +317,7 @@ jobs:
       - name: Install Python build dependencies
         working-directory: python
         run: |
-          pip install scikit-build-core setuptools
-          python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install
+          pip install --group pyproject.toml:build setuptools
 
       - name: Install FEniCS Python components
         run: |
@@ -336,7 +333,7 @@ jobs:
 
       - name: Build Python interface
         run: >
-          pip install 'python/[docs]'
+          pip install --group python/pyproject.toml:docs 'python/'
           --check-build-dependencies
           --no-build-isolation
 
