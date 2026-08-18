@@ -518,7 +518,7 @@ def _assemble_matrix_petsc(
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0].contains(bc.function_space._cpp_object):
+                        if row_forms[0].function_spaces[0].contains(bc.function_space._cpp_object):  # type: ignore
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
                                 " and have DirichletBC applied."
@@ -563,7 +563,7 @@ def _assemble_matrix_petsc(
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0].contains(bc.function_space):
+                        if row_forms[0].function_spaces[0].contains(bc.function_space):  # type: ignore
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
                                 " and have DirichletBC applied."
@@ -599,7 +599,7 @@ def _assemble_matrix_petsc(
 
 def apply_lifting(
     b: PETSc.Vec,
-    a: Sequence[Form] | Sequence[Sequence[Form | None]],
+    a: Sequence[Form | None] | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | Sequence[Sequence[DirichletBC]] | None,
     x0: Sequence[PETSc.Vec] | None = None,
     alpha: float = 1,
@@ -665,8 +665,10 @@ def apply_lifting(
     """
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()  # type: ignore[attr-defined]
-        constants = [pack_constants(forms) for forms in a] if constants is None else constants
-        coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
+        if constants is None:
+            constants = [pack_constants(forms) for forms in a]
+        if coeffs is None:
+            coeffs = [pack_coefficients(forms) for forms in a]
         for b_sub, a_sub, const, coeff in zip(
             b.getNestSubVecs(),
             a,
