@@ -1539,7 +1539,7 @@ class NonlinearProblem(typing.Generic[_U]):
         return typing.cast(Form | Sequence[Sequence[Form]], self._J)
 
     @property
-    def preconditioner(self) -> Form | Sequence[Sequence[Form]] | None:
+    def preconditioner(self) -> Form | Sequence[Sequence[Form | None]] | None:
         """The compiled preconditioner."""
         return self._preconditioner
 
