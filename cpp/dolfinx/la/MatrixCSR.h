@@ -197,7 +197,7 @@ public:
   /// is expanded for every entry in the block, and the block size of
   /// the matrix is set to `(1, 1)`.
   template <SparsityImplementation T>
-  MatrixCSR(const T& p, BlockMode mode = BlockMode::compact);
+  explicit MatrixCSR(const T& p, BlockMode mode = BlockMode::compact);
 
   /// Move constructor
   /// @todo Check handling of MPI_Request

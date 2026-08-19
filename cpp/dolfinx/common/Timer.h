@@ -47,7 +47,8 @@ public:
   /// @param[in] task Name used to registered the elapsed time in the
   /// logger. If no name is set, the elapsed time is not registered in
   /// the logger.
-  Timer(std::optional<std::string> task = std::nullopt) : _task(std::move(task))
+  explicit Timer(std::optional<std::string> task = std::nullopt)
+      : _task(std::move(task))
   {
   }
 

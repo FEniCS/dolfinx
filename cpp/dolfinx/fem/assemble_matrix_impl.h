@@ -229,8 +229,9 @@ void assemble_cells_matrix(
 /// matrix.
 /// @param[in] x_dofmap Dofmap for the mesh geometry.
 /// @param[in] x Mesh geometry (coordinates).
-/// @param[in] entities Integration entities (in the integration domain mesh) to
-/// execute the kernel over. These are pairs (cell, local entity index)
+/// @param[in] entities Integration entities (in the integration domain
+/// mesh) to execute the kernel over. These are pairs (cell, local
+/// entity index)
 /// @param[in] dofmap0 Test function (row) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.

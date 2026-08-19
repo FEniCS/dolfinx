@@ -288,7 +288,8 @@ public:
   /// Constructor
   /// @param[in] points Cloud of points, with associated
   /// point identifier index, to build the bounding box tree around
-  BoundingBoxTree(std::vector<std::pair<std::array<T, 3>, std::int32_t>> points)
+  explicit BoundingBoxTree(
+      std::vector<std::pair<std::array<T, 3>, std::int32_t>> points)
       : _tdim(0)
   {
     // Recursively build the bounding box tree from the leaves
