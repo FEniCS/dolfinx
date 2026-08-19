@@ -343,24 +343,6 @@ def mixed_topology_form(
 
 @typing.overload
 def form(
-    form: Sequence[Sequence[ufl.Form]],
-    dtype: npt.DTypeLike = default_scalar_type,
-    form_compiler_options: dict | None = None,
-    jit_options: dict | None = None,
-    jit_comm: MPI.Intracomm | None = None,
-    entity_maps: Sequence[_EntityMap] | None = None,
-) -> list[list[Form]]: ...
-@typing.overload
-def form(
-    form: Sequence[ufl.Form],
-    dtype: npt.DTypeLike = default_scalar_type,
-    form_compiler_options: dict | None = None,
-    jit_options: dict | None = None,
-    jit_comm: MPI.Intracomm | None = None,
-    entity_maps: Sequence[_EntityMap] | None = None,
-) -> list[Form]: ...
-@typing.overload
-def form(
     form: None,
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
@@ -377,14 +359,32 @@ def form(
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
 ) -> Form: ...
+@typing.overload
 def form(
-    form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]] | None,
+    form: Sequence[ufl.Form | None],
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: dict | None = None,
     jit_options: dict | None = None,
     jit_comm: MPI.Intracomm | None = None,
     entity_maps: Sequence[_EntityMap] | None = None,
-) -> Form | list[Form] | list[list[Form]] | None:
+) -> list[Form | None]: ...
+@typing.overload
+def form(
+    form: Sequence[Sequence[ufl.Form | None]],
+    dtype: npt.DTypeLike = default_scalar_type,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    jit_comm: MPI.Intracomm | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
+) -> list[list[Form | None]]: ...
+def form(
+    form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
+    dtype: npt.DTypeLike = default_scalar_type,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
+    jit_comm: MPI.Intracomm | None = None,
+    entity_maps: Sequence[_EntityMap] | None = None,
+) -> Form | list[Form | None] | list[list[Form | None]] | None:
     """Create a Form or list of Forms.
 
     Args:
@@ -516,7 +516,7 @@ def form(
         return Form(f)
 
     def _create_form(
-        form: ufl.Form | Sequence[ufl.Form] | Sequence[Sequence[ufl.Form]] | None,
+        form: ufl.Form | Sequence[ufl.Form | None] | Sequence[Sequence[ufl.Form | None]] | None,
     ) -> typing.Any:
         """Recursively convert ufl.Forms to dolfinx.fem.Form.
 
@@ -536,21 +536,23 @@ def form(
         else:
             return form
 
-    return typing.cast("Form | list[Form] | list[list[Form]] | None", _create_form(form))
+    return typing.cast(
+        "Form | list[Form | None] | list[list[Form | None]] | None", _create_form(form)
+    )
 
 
 @typing.overload
 def extract_function_spaces(forms: Form, index: None = None) -> FunctionSpace | None: ...
 @typing.overload
 def extract_function_spaces(
-    forms: Sequence[Form], index: None = None
+    forms: Sequence[Form | None], index: None = None
 ) -> list[FunctionSpace | None]: ...
 @typing.overload
 def extract_function_spaces(
-    forms: Sequence[Sequence[Form]], index: int = 0
+    forms: Sequence[Sequence[Form | None]], index: int = 0
 ) -> list[FunctionSpace | None]: ...
 def extract_function_spaces(
-    forms: Form | Sequence[Form] | Sequence[Sequence[Form]], index: int | None = None
+    forms: Form | Sequence[Form | None] | Sequence[Sequence[Form | None]], index: int | None = None
 ) -> FunctionSpace | list[FunctionSpace | None] | None:
     """Extract common function spaces from an array of forms.
 
