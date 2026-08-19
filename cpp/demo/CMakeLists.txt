@@ -19,6 +19,15 @@ macro(add_demo_subdirectory subdir)
   endif()
 endmacro(add_demo_subdirectory)
 
+# The JIT demo runs FFCx and a C compiler when it is executed, rather than
+# when it is built. It is off by default because it makes the C++ demos
+# depend on a Python environment at run time, and because it uses dlopen.
+option(
+  DOLFINX_ENABLE_JIT_DEMO
+  "Build the demo that compiles UFL forms at run time (POSIX only)."
+  OFF
+)
+
 # Add demos
 add_demo_subdirectory(biharmonic)
 add_demo_subdirectory(codim_0_assembly)
@@ -29,6 +38,9 @@ add_demo_subdirectory(interpolation_different_meshes)
 add_demo_subdirectory(mixed_poisson)
 add_demo_subdirectory(poisson)
 add_demo_subdirectory(poisson_matrix_free)
+if(DOLFINX_ENABLE_JIT_DEMO AND NOT WIN32)
+  add_demo_subdirectory(poisson_jit)
+endif()
 
 # Target to build all demos, e.g. `ninja demos`
 add_custom_target(demos DEPENDS ${DEMO_TARGETS})
