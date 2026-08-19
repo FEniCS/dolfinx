@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Garth N. Wells and Jørgen S. Dokken
+// Copyright (C) 2019-2026 Garth N. Wells and Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,9 +10,11 @@
 #include "gjk.h"
 #include <algorithm>
 #include <array>
+#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
 #include <deque>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <map>
@@ -508,6 +510,16 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 /// to collide with the point is returned. If no collision is detected,
 /// -1 is returned.
 ///
+/// For affine cells, the GJK algorithm is used to compute the distance
+/// between the point and the convex hull of the cell in physical space.
+/// For non-affine cells, the point is first pulled back to the reference
+/// element and the GJK algorithm is used to compute the distance between
+/// the point and the
+//// convex hull of the cell in reference space.
+/// This is because for non-affine cells, the convex hull in physical space can
+/// be a poor approximation of the cell geometry, and can lead to false
+/// positives when checking for collisions.
+///
 /// @note `cells` can for instance be found by using
 /// geometry::compute_collisions between a bounding box tree for the
 /// cells of the mesh and the point.
@@ -517,21 +529,39 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 /// @param[in] point The point (`shape=(3,)`).
 /// @param[in] tol Tolerance for accepting a collision (in the squared
 /// distance).
+/// @param[in] tol_pb Tolerance for pull back of non-affine cells
+/// @param[in] max_iter_pb Maximum number of iterations for pull back of
+/// non-affine cells
+/// @param[in] scratch_memory Scratch memory for function. Affine cells require
+/// 3*num_nodes, while non-affine cells require (3+gdim)*num_nodes +
+/// cmap.pull_back_working_size(gdim).
+/// @param[in] cell_type_index Index of the cell type to use for non-affine
+/// pullback. Defaults to 0.
 /// @return Local cell index, -1 if not found.
 template <std::floating_point T>
 std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
                                           std::span<const std::int32_t> cells,
-                                          std::array<T, 3> point, T tol)
+                                          std::array<T, 3> point, T tol,
+                                          T tol_pb, std::size_t max_iter_pb,
+                                          std::span<T> scratch_memory,
+                                          std::size_t cell_type_index = 0)
 {
   if (cells.empty())
     return -1;
-  else
+
+  const mesh::Geometry<T>& geometry = mesh.geometry();
+  if (cell_type_index >= geometry.cmaps().size())
+    throw std::runtime_error("Cell type index is out of bounds for the number "
+                             "of cell types in the mesh.");
+  const fem::CoordinateElement<T>& cmap = geometry.cmaps()[cell_type_index];
+  auto x_dofmap = geometry.dofmaps()[cell_type_index];
+  const std::size_t num_nodes = x_dofmap.extent(1);
+  std::span<T> coordinate_dofs = scratch_memory.subspan(0, 3 * num_nodes);
+  std::span<const T> geom_dofs = geometry.x();
+
+  bool is_affine = cmap.is_affine();
+  if (is_affine)
   {
-    const mesh::Geometry<T>& geometry = mesh.geometry();
-    std::span<const T> geom_dofs = geometry.x();
-    auto x_dofmap = geometry.dofmaps().front();
-    const std::size_t num_nodes = x_dofmap.extent(1);
-    std::vector<T> coordinate_dofs(num_nodes * 3);
     for (auto cell : cells)
     {
       auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
@@ -548,9 +578,84 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
       if (d2 < tol)
         return cell;
     }
-
-    return -1;
   }
+  else
+  {
+    // For non-affine cells, we first check if the point is within the
+    // convex hull of the cell in physical space with GJK. If it is, we
+    // pull back the point to the reference element and check if it is
+    // within the convex hull of the cell in reference space.
+
+    const std::size_t gdim = geometry.dim();
+    const std::size_t tdim = mesh.topology()->dim();
+    std::array<T, 3> Xb{0}; // Default initialize as 0
+    md::mdspan<T, md::extents<std::size_t, 1, md::dynamic_extent>> X(Xb.data(),
+                                                                     1, tdim);
+    md::mdspan<T, md::extents<std::size_t, 1, md::dynamic_extent>> x(
+        point.data(), 1, gdim);
+
+    // reference data for non-affine pullback
+    basix::cell::type basix_cell
+        = mesh::cell_type_to_basix_type(mesh.topology()->cell_type());
+
+    // Create buffer for non-affine pullback
+    std::span<T> coordinate_dofs_pullback
+        = scratch_memory.subspan(num_nodes * 3, num_nodes * gdim);
+    std::span<T> pull_back_scratch = scratch_memory.subspan(
+        (3 + gdim) * num_nodes, cmap.pull_back_working_size(gdim));
+
+    // Pad data from basix to have 3 components so we can use GJK on it.
+    const auto [_gdata, _gshape] = basix::cell::geometry<T>(basix_cell);
+    std::size_t num_vertices_per_cell = mesh::cell_num_entities(
+        mesh.topology()->cell_types()[cell_type_index], 0);
+    std::vector<T> gdata(3 * num_vertices_per_cell, 0);
+    assert(_gshape[0] == num_vertices_per_cell);
+    for (std::size_t i = 0; i < num_vertices_per_cell; ++i)
+    {
+      std::copy_n(std::next(_gdata.begin(), _gshape[1] * i), _gshape[1],
+                  std::next(gdata.begin(), 3 * i));
+    }
+    md::mdspan<T, md::dextents<std::size_t, 2>> cd_pb(
+        coordinate_dofs_pullback.data(), num_nodes, gdim);
+    for (auto cell : cells)
+    {
+      for (std::size_t i = 0; i < num_nodes; ++i)
+      {
+        auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
+        std::copy_n(std::next(geom_dofs.begin(), 3 * dofs[i]), 3,
+                    std::next(coordinate_dofs.begin(), 3 * i));
+      }
+
+      std::array<T, 3> shortest_vector
+          = compute_distance_gjk<T>(coordinate_dofs, point);
+      T d2 = std::reduce(shortest_vector.begin(), shortest_vector.end(), T(0),
+                         [](auto d, auto e) { return d + e * e; });
+      if (d2 < tol)
+      {
+
+        // Pull back to reference element and check if the point is actually
+        // inside the cell or only inside convex hull
+        for (std::size_t i = 0; i < num_nodes; ++i)
+        {
+          // coordinate dofs from (n, 3) to (n, gdim) buffer.
+          // NOTE: with C++23 this can be done with md layout views
+          std::copy_n(std::next(coordinate_dofs.begin(), 3 * i), gdim,
+                      std::next(coordinate_dofs_pullback.begin(), gdim * i));
+        }
+
+        cmap.pull_back_nonaffine(X, x, cd_pb, pull_back_scratch, tol_pb,
+                                 max_iter_pb);
+        std::array<T, 3> shortest_vector_pullback
+            = compute_distance_gjk<T>(gdata, Xb);
+        T d2_pullback = std::reduce(shortest_vector_pullback.begin(),
+                                    shortest_vector_pullback.end(), T(0),
+                                    [](auto d, auto e) { return d + e * e; });
+        if (d2_pullback < tol)
+          return cell;
+      }
+    }
+  }
+  return -1;
 }
 
 /// @brief Compute closest mesh entity to a point.
@@ -665,10 +770,13 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// @param[in] points Points to check for collision (`shape=(num_points,
 /// 3)`). Storage is row-major.
 /// @param[in] cells Cells to check for ownership
-/// @param[in] padding Amount of absolute padding of bounding boxes of the mesh.
-/// Each bounding box of the mesh is padded with this amount, to increase
-/// the number of candidates, avoiding rounding errors in determining the owner
-/// of a point if the point is on the surface of a cell in the mesh.
+/// @param[in] padding Amount of absolute padding of bounding boxes of the
+/// mesh. Each bounding box of the mesh is padded with this amount, to
+/// increase the number of candidates, avoiding rounding errors in determining
+/// the owner of a point if the point is on the surface of a cell in the mesh.
+/// @param[in] tol_pb Tolerance for pull back of non-affine cells
+/// @param[in] max_iter_pb Maximum number of iterations for pull back of
+/// non-affine
 /// @return Point ownership data.
 ///
 /// @note `dest_owner` is sorted
@@ -682,7 +790,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 template <std::floating_point T>
 PointOwnershipData<T>
 determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
-                          T padding,
+                          T padding, T tol_pb, std::size_t max_iter_pb,
                           std::optional<std::span<const std::int32_t>> cells)
 {
   MPI_Comm comm = mesh.comm();
@@ -791,6 +899,16 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   const int rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> cell_indicator(received_points.size() / 3);
   std::vector<std::int32_t> closest_cells(received_points.size() / 3);
+
+  /// NOTE: Here we should loop over the cell types in the future
+  std::size_t gdim = geometry.dim();
+  auto cmap = geometry.cmaps().front();
+  const std::size_t num_dofs_g = cmap.dim();
+  std::size_t scratch_size
+      = cmap.is_affine()
+            ? 3 * num_dofs_g
+            : cmap.pull_back_working_size(gdim) + (gdim + 3) * num_dofs_g;
+  std::vector<T> scratch_memory(scratch_size);
   for (std::size_t p = 0; p < received_points.size(); p += 3)
   {
     std::array<T, 3> point;
@@ -798,12 +916,14 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
     // Find first colliding cell among the cells with colliding bounding boxes
     const int colliding_cell = geometry::compute_first_colliding_cell(
         mesh, candidate_collisions.links(p / 3), point,
-        10 * std::numeric_limits<T>::epsilon());
-    // If a collding cell is found, store the rank of the current process
+        10 * std::numeric_limits<T>::epsilon(), tol_pb, max_iter_pb,
+        std::span(scratch_memory.data(), scratch_size),
+        0); // NOTE: Currently only looking at cell_types[0]
+    // If a colliding cell is found, store the rank of the current process
     // which will be sent back to the owner of the point
     cell_indicator[p / 3] = (colliding_cell >= 0) ? rank : -1;
-    // Store the cell index for lookup once the owning processes has determined
-    // the ownership of the point
+    // Store the cell index for lookup once the owning processes has
+    // determined the ownership of the point
     closest_cells[p / 3] = colliding_cell;
   }
 
@@ -863,8 +983,10 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
                          dest_extrapolate.data(), recv_sizes.data(),
                          recv_offsets.data(), MPI_UINT8_T, forward_comm);
 
+  // The following code assumes single x_dofmap and should
+  // be revised for multiple cell types in the future
   std::vector<T> squared_distances(received_points.size() / 3, -1);
-
+  std::vector<T> nodes(3 * num_dofs_g);
   for (std::size_t i = 0; i < dest_extrapolate.size(); i++)
   {
     if (dest_extrapolate[i] == 1)
@@ -879,8 +1001,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       for (auto cell : candidate_collisions.links(i))
       {
         auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-        std::vector<T> nodes(3 * dofs.size());
-        for (std::size_t j = 0; j < dofs.size(); ++j)
+        for (std::size_t j = 0; j < num_dofs_g; ++j)
         {
           const int pos = 3 * dofs[j];
           for (std::size_t k = 0; k < 3; ++k)
@@ -903,7 +1024,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   std::swap(recv_sizes, send_sizes);
   std::swap(recv_offsets, send_offsets);
 
-  // Get distances from closest entity of points that were on the other process
+  // Get distances from closest entity of points that were on the other
+  // process
   std::vector<T> recv_distances(recv_offsets.back());
   MPI_Neighbor_alltoallv(
       squared_distances.data(), send_sizes.data(), send_offsets.data(),
