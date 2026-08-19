@@ -25,7 +25,7 @@ if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
 endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
-find_package(Boost 1.70 REQUIRED)
+find_package(Boost 1.81 REQUIRED)
 
 # CONFIG mode is explicit, otherwise the FindUFCx.cmake installed alongside this
 # file is picked up as Findufcx.cmake on case-insensitive filesystems.
