@@ -41,11 +41,22 @@ endif()
 # build this demo.
 set(JIT_C_FLAGS "-O2 -shared -fPIC -std=c17")
 
+# Boost.Process spawns FFCx and the C compiler; Boost.DLL loads the result.
+# Unlike the library, this demo needs compiled Boost: Boost.Process links
+# Filesystem, Atomic, Context and DateTime. BOOST_*_USE_STD_FS keep both
+# libraries' own interfaces on std::filesystem.
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW) # Boost CONFIG mode
+endif()
+find_package(Boost 1.81 REQUIRED COMPONENTS process)
+
 add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx::dolfinx ${CMAKE_DL_LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE dolfinx::dolfinx Boost::process)
 target_compile_definitions(
   ${PROJECT_NAME}
   PRIVATE
+    BOOST_DLL_USE_STD_FS
+    BOOST_PROCESS_USE_STD_FS
     JIT_PYTHON_EXECUTABLE="${Python3_EXECUTABLE}"
     JIT_FFCX_VERSION="${JIT_FFCX_VERSION}"
     JIT_UFCX_INCLUDE_DIR="${JIT_UFCX_INCLUDE_DIR}"

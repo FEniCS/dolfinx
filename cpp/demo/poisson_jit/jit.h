@@ -6,34 +6,40 @@
 
 #pragma once
 
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/read.hpp>
+#include <boost/asio/readable_pipe.hpp>
+#include <boost/dll/shared_library.hpp>
+#include <boost/dll/shared_library_load_mode.hpp>
+#include <boost/process.hpp>
+#include <boost/system/error_code.hpp>
 #include <complex>
 #include <cstdint>
 #include <cstdlib>
-#include <dlfcn.h>
 #include <filesystem>
 #include <format>
 #include <fstream>
 #include <mpi.h>
+#include <ranges>
 #include <span>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <sys/wait.h>
 #include <type_traits>
 #include <ufcx.h>
-#include <unistd.h>
 #include <vector>
 
 /// @brief Just-in-time compilation of UFL forms for the C++ interface.
 ///
 /// A prototype of the mechanism used by the Python interface, expressed
 /// entirely in terms of a C++ caller: UFL source held as a string is
-/// passed to FFCx and a C compiler in a subprocess, and the resulting
-/// shared library is loaded and searched for the `ufcx_form` symbols
-/// that fem::create_form consumes.
+/// passed to FFCx and a C compiler with Boost.Process, and the resulting
+/// shared library is loaded with Boost.DLL and searched for the
+/// `ufcx_form` symbols that fem::create_form consumes.
 ///
-/// POSIX only. FFCx-generated C carries no `__declspec(dllexport)`, so
+/// Both libraries are portable, but the demo is restricted to POSIX
+/// because FFCx-generated C carries no `__declspec(dllexport)`, so
 /// nothing is exported from a DLL built by MSVC; Windows support needs
 /// a generated module definition file.
 namespace dolfinx_demo::jit
@@ -68,21 +74,69 @@ inline std::filesystem::path cache_dir()
   return std::filesystem::path(home) / ".cache" / "fenics";
 }
 
-/// Run a shell command, appending its output to @p log.
-inline void run(const std::string& command, const std::filesystem::path& log)
+/// Split a space-separated list of compiler flags into arguments. The
+/// input is a build-time constant, so no quoting or escaping is
+/// supported.
+inline std::vector<std::string> split(std::string_view flags)
 {
-  spdlog::debug("JIT: system() enter: {}", command);
-  const std::string redirected
-      = std::format("{} >> \"{}\" 2>&1", command, log.string());
-  const int status = std::system(redirected.c_str());
-  spdlog::debug("JIT: system() returned {}", status);
-  if (status != 0)
+  std::vector<std::string> args;
+  for (const auto& arg : std::views::split(flags, ' '))
+    if (!std::ranges::empty(arg))
+      args.emplace_back(std::ranges::begin(arg), std::ranges::end(arg));
+  return args;
+}
+
+/// @brief Run @p exe with @p args, capturing its output.
+///
+/// No shell is involved, so arguments need no quoting and paths
+/// containing spaces or shell metacharacters are passed through
+/// unaltered.
+///
+/// @throws std::runtime_error if the process exits non-zero, with its
+/// captured output included in the message.
+inline void run(const std::filesystem::path& exe,
+                const std::vector<std::string>& args)
+{
+  namespace bp = boost::process;
+  std::string display = exe.string();
+  for (const std::string& arg : args)
+    display += " " + arg;
+  spdlog::debug("JIT: running {}", display);
+
+  // stdout and stderr need separate pipes: binding one pipe to both
+  // replaces the first binding
+  boost::asio::io_context ctx;
+  boost::asio::readable_pipe out(ctx);
+  boost::asio::readable_pipe err(ctx);
+  bp::process proc(ctx, exe, args, bp::process_stdio{{}, out, err});
+
+  // Drain both pipes before waiting, or a child that fills one blocks.
+  // The reads are asynchronous so that they go through the asio reactor,
+  // which resumes on EINTR; a blocking read fails when a signal arrives.
+  std::string output, errors;
+  boost::system::error_code out_ec, err_ec;
+  boost::asio::async_read(out, boost::asio::dynamic_buffer(output),
+                          [&out_ec](const boost::system::error_code& e,
+                                    std::size_t) { out_ec = e; });
+  boost::asio::async_read(err, boost::asio::dynamic_buffer(errors),
+                          [&err_ec](const boost::system::error_code& e,
+                                    std::size_t) { err_ec = e; });
+  ctx.run();
+  for (const boost::system::error_code& ec : {out_ec, err_ec})
   {
-    // std::system returns a wait(2) status, not an exit code
-    const int code = WIFEXITED(status) ? WEXITSTATUS(status) : status;
-    throw std::runtime_error(std::format(
-        "JIT command exited with status {}:\n  {}\nOutput was written to {}",
-        code, command, log.string()));
+    if (ec and ec != boost::asio::error::eof)
+    {
+      throw std::runtime_error(std::format("Could not read output of {}: {}",
+                                           exe.string(), ec.message()));
+    }
+  }
+
+  const int code = proc.wait();
+  spdlog::debug("JIT: {} exited with code {}", exe.string(), code);
+  if (code != 0)
+  {
+    throw std::runtime_error(std::format("{} exited with code {}:\n{}{}",
+                                         exe.string(), code, output, errors));
   }
 }
 
@@ -92,14 +146,12 @@ inline void build(std::string_view ufl, std::string_view scalar_type,
                   const std::string& key, const std::filesystem::path& library)
 {
   const std::filesystem::path cache = library.parent_path();
-  const std::filesystem::path log = cache / std::format("{}.log", key);
-  std::filesystem::remove(log);
 
   // Generate into a private directory and rename the finished library
   // into place, so that a concurrent job sharing the cache never
   // observes a partial build
   const std::filesystem::path tmp
-      = cache / std::format("tmp-{}-{}", key, getpid());
+      = cache / std::format("tmp-{}-{}", key, boost::process::current_pid());
   std::filesystem::create_directories(tmp);
 
   const std::filesystem::path source = tmp / std::format("{}.py", key);
@@ -113,17 +165,17 @@ inline void build(std::string_view ufl, std::string_view scalar_type,
 
   // `-n` fixes the prefix of the alias symbols FFCx emits for each named
   // UFL object, giving symbols that the caller can predict from `key`
-  run(std::format(
-          R"("{}" -m ffcx -i "{}" -n {} -o {} -d "{}" --scalar_type={})",
-          JIT_PYTHON_EXECUTABLE, source.string(), key, key, tmp.string(),
-          scalar_type),
-      log);
+  run(JIT_PYTHON_EXECUTABLE,
+      {"-m", "ffcx", "-i", source.string(), "-n", key, "-o", key, "-d",
+       tmp.string(), std::format("--scalar_type={}", scalar_type)});
 
   const std::filesystem::path object = tmp / std::format("{}.so", key);
-  run(std::format(R"("{}" {} -I"{}" -o "{}" "{}" -lm)", JIT_C_COMPILER,
-                  JIT_C_FLAGS, JIT_UFCX_INCLUDE_DIR, object.string(),
-                  (tmp / std::format("{}.c", key)).string()),
-      log);
+  std::vector<std::string> cc_args = split(JIT_C_FLAGS);
+  cc_args.insert(cc_args.end(),
+                 {std::format("-I{}", JIT_UFCX_INCLUDE_DIR), "-o",
+                  object.string(), (tmp / std::format("{}.c", key)).string(),
+                  "-lm"});
+  run(JIT_C_COMPILER, cc_args);
 
   std::filesystem::rename(object, library);
   std::filesystem::remove_all(tmp);
@@ -225,17 +277,15 @@ inline std::vector<ufcx_form*> compile_forms(MPI_Comm comm,
   // rank opens it
   spdlog::debug("JIT[{}]: entering Barrier", rank);
   MPI_Barrier(comm);
-  spdlog::debug("JIT[{}]: past Barrier, dlopen", rank);
+  spdlog::debug("JIT[{}]: past Barrier, loading library", rank);
 
-  static std::vector<void*> handles;
-  void* handle = dlopen(library.c_str(), RTLD_NOW | RTLD_LOCAL);
-  if (!handle)
-  {
-    throw std::runtime_error(std::format("Could not load JIT-compiled library "
-                                         "{}: {}",
-                                         library.string(), dlerror()));
-  }
-  handles.push_back(handle);
+  // Never unloaded: fem::Form stores the kernel pointers rather than
+  // copying the code
+  static std::vector<boost::dll::shared_library> libraries;
+  libraries.emplace_back(library.string(),
+                         boost::dll::load_mode::rtld_now
+                             | boost::dll::load_mode::rtld_local);
+  const boost::dll::shared_library& lib = libraries.back();
 
   std::vector<ufcx_form*> forms;
   forms.reserve(names.size());
@@ -244,15 +294,14 @@ inline std::vector<ufcx_form*> compile_forms(MPI_Comm comm,
     // FFCx emits `ufcx_form* form_<prefix>_<name>`, a pointer to the
     // form object, aliasing the signature-named object itself
     const std::string symbol = std::format("form_{}_{}", key, name);
-    void* address = dlsym(handle, symbol.c_str());
-    if (!address)
+    if (!lib.has(symbol))
     {
       throw std::runtime_error(
           std::format("UFL source defines no form '{}' (symbol '{}' not found "
                       "in {})",
                       name, symbol, library.string()));
     }
-    forms.push_back(*reinterpret_cast<ufcx_form**>(address));
+    forms.push_back(lib.get<ufcx_form*>(symbol));
   }
 
   spdlog::debug("JIT[{}]: resolved {} form(s)", rank, forms.size());
