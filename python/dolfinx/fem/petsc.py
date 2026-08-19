@@ -670,10 +670,11 @@ def apply_lifting(
         if coeffs is None:
             coeffs = [pack_coefficients(forms) for forms in a]  # type: ignore
         assert coeffs is not None
+        assert constants is not None
         for b_sub, a_sub, const, coeff in zip(
             b.getNestSubVecs(),
             a,
-            constants,  # type: ignore
+            constants,
             coeffs,
             strict=True,
         ):
