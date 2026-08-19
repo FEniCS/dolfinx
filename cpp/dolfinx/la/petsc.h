@@ -297,8 +297,9 @@ protected:
 class Matrix : public Operator
 {
 public:
-  /// Return a function with an interface for adding or inserting values
-  /// into the matrix A (calls MatSetValuesLocal)
+  /// @brief Return a function with an interface for adding or inserting
+  /// values into the matrix A (calls MatSetValuesLocal).
+  ///
   /// @param[in] A The matrix to set values in
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static auto set_fn(Mat A, InsertMode mode)
@@ -364,10 +365,12 @@ public:
     };
   }
 
-  /// Return a function with an interface for adding or inserting blocked
-  /// values to the matrix A using non-blocked insertion (calls
-  /// MatSetValuesLocal). Internally it expands the blocked indices into
-  /// non-blocked arrays.
+  /// @brief Return a function with an interface for adding or inserting
+  /// blocked values to the matrix A using non-blocked insertion (calls
+  /// MatSetValuesLocal).
+  ///
+  /// Internally it expands the blocked indices into non-blocked arrays.
+  ///
   /// @param[in] A The matrix to set values in
   /// @param[in] bs0 Block size for the matrix rows
   /// @param[in] bs1 Block size for the matrix columns
