@@ -174,11 +174,8 @@ jobs:
             dnf -y install git hdf5-mpich-devel make \
               mpich-devel ninja-build openblas-devel pugixml-devel spdlog-devel &&
             curl -L https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz | tar -xz &&
-            cmake -G Ninja -S boost_1_87_0/ -B boost-build-dir/ \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DBOOST_INCLUDE_LIBRARIES="unordered;sort;uuid;lexical_cast;algorithm;container_hash;multiprecision" &&
-            cmake --build boost-build-dir/ &&
-            cmake --install boost-build-dir/ &&
+            (cd boost_1_87_0/ && ./bootstrap.sh --prefix=/usr/local &&
+              ./b2 -d0 --prefix=/usr/local --with-headers install) &&
             ln -s /usr/include/mpich-$(arch) /usr/lib64/mpich/include &&
             mkdir -p scotch && curl -L https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.12/scotch-v7.0.12.tar.bz2 | tar -xj --strip-components=1 -C scotch &&
             cmake -G Ninja -S scotch/ -B scotch-build-dir/ \
