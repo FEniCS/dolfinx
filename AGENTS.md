@@ -262,6 +262,13 @@ disclosure process.
   for parallel-aware tests where relevant.
 - Run the relevant formatter/linter and the affected test suite before
   calling a change done — don't rely on CI to catch formatting.
+- Dependency groups (`build`, `docs`, `lint`, `test`, `ci` in
+  `python/pyproject.toml`) use PEP 735 syntax and require `pip >= 25.1`
+  (or another PEP 735-compliant build frontend) for the `--group` flag.
+  `demo`, `optional`, `petsc4py`, and `typing` remain real
+  `[project.optional-dependencies]` extras since they are user-facing
+  runtime features, or (in the case of `test`) are installed against
+  built wheels where dependency groups are unavailable.
 
 ## Verifying changes locally
 

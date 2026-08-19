@@ -237,7 +237,10 @@ jobs:
           # dolfinx, petsc4py and the rest.
           apt-get install -y --no-install-recommends python3-venv
           python3 -m venv /tmp/mypy-venv
-          /tmp/mypy-venv/bin/pip install --quiet mypy
+          # types-cffi, types-setuptools and scipy-stubs mirror the `typing`
+          # extra in python/pyproject.toml; installed by name rather than via
+          # '.[typing]' to avoid triggering a full DOLFINx build in this venv.
+          /tmp/mypy-venv/bin/pip install --quiet mypy types-cffi types-setuptools scipy-stubs
           # Distinguishes a broken install from mypy reporting errors.
           /tmp/mypy-venv/bin/mypy --version
           ENV_PYTHON=$(command -v python)
