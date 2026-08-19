@@ -14,6 +14,7 @@
 #include <complex>
 #include <cstdint>
 #include <dolfinx/la/slepc.h>
+#include <limits>
 #include <petscmat.h>
 #include <slepceps.h>
 #include <stdexcept>
@@ -23,6 +24,12 @@ using namespace dolfinx;
 
 namespace
 {
+/// Relative tolerance on computed eigenvalues. Both test matrices are
+/// normal, so the eigenvalue error is bounded by the residual the
+/// solver stops at, which is looser in single precision.
+constexpr double eig_rtol
+    = std::numeric_limits<PetscReal>::epsilon() < 1e-10 ? 1e-8 : 1e-5;
+
 /// Create a distributed diagonal matrix with entries 1, 2, ..., N, so
 /// that the spectrum is known exactly.
 Mat create_diagonal_matrix(PetscInt N)
@@ -115,10 +122,11 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     for (std::int64_t i = 0; i < 3; ++i)
     {
       std::complex<PetscReal> l = solver.get_eigenvalue(i);
-      CHECK_THAT(static_cast<double>(l.real()),
-                 Catch::Matchers::WithinAbs(static_cast<double>(N - i), 1e-8));
+      CHECK_THAT(
+          static_cast<double>(l.real()),
+          Catch::Matchers::WithinRel(static_cast<double>(N - i), eig_rtol));
       CHECK_THAT(static_cast<double>(l.imag()),
-                 Catch::Matchers::WithinAbs(0.0, 1e-8));
+                 Catch::Matchers::WithinAbs(0.0, 1e-12));
     }
 
     SECTION("Eigenpair matches eigenvalue")
@@ -130,7 +138,7 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
       PetscScalar lr = 0, lc = 0;
       solver.get_eigenpair(lr, lc, r, c, 0);
       CHECK_THAT(static_cast<double>(PetscRealPart(lr)),
-                 Catch::Matchers::WithinAbs(static_cast<double>(N), 1e-8));
+                 Catch::Matchers::WithinRel(static_cast<double>(N), eig_rtol));
 
       VecDestroy(&r);
       VecDestroy(&c);
@@ -172,9 +180,9 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     for (std::complex<PetscReal> l : {l0, l1})
     {
       CHECK_THAT(static_cast<double>(l.real()),
-                 Catch::Matchers::WithinAbs(expected, 1e-8));
+                 Catch::Matchers::WithinRel(expected, eig_rtol));
       CHECK_THAT(std::abs(static_cast<double>(l.imag())),
-                 Catch::Matchers::WithinAbs(expected, 1e-8));
+                 Catch::Matchers::WithinRel(expected, eig_rtol));
     }
 
     // A conjugate pair, so the imaginary parts have opposite signs
@@ -187,7 +195,7 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
 #ifdef PETSC_USE_COMPLEX
       // Eigenvalue held entirely in lr, and lc set to zero
       CHECK_THAT(std::abs(static_cast<double>(PetscImaginaryPart(lr))),
-                 Catch::Matchers::WithinAbs(expected, 1e-8));
+                 Catch::Matchers::WithinRel(expected, eig_rtol));
       CHECK_THAT(static_cast<double>(PetscRealPart(lc)),
                  Catch::Matchers::WithinAbs(0.0, 1e-12));
       CHECK_THAT(static_cast<double>(PetscImaginaryPart(lc)),
@@ -195,9 +203,9 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
 #else
       // Real scalars split the pair across lr and lc
       CHECK_THAT(static_cast<double>(lr),
-                 Catch::Matchers::WithinAbs(expected, 1e-8));
+                 Catch::Matchers::WithinRel(expected, eig_rtol));
       CHECK_THAT(std::abs(static_cast<double>(lc)),
-                 Catch::Matchers::WithinAbs(expected, 1e-8));
+                 Catch::Matchers::WithinRel(expected, eig_rtol));
 #endif
     }
 
