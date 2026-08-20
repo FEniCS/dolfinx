@@ -68,10 +68,11 @@ ENV OPENBLAS_NUM_THREADS=1 \
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
-    apt-get -y install \
+    apt-get -y install --no-install-recommends \
     cmake \
     g++ \
     gfortran \
+    libadios2-mpi-c++-dev \
     libboost-dev \
     libhdf5-mpi-dev \
     liblapack-dev \

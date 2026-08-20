@@ -11,7 +11,7 @@ DOLFINx based on Ubuntu. It does not contain the FEniCS components.
 The following image is produced and pushed to both `docker.io/fenicsproject`
 and `ghcr.io/fenics` and is used in our testing infrastructure:
 
-* `test-env:current` - OpenMPI, debugging on. Used on GitHub Actions.
+* `test-env:current`
 
 The following image is pushed to both `docker.io/dolfinx` and
 `ghcr.io/fenics/dolfinx` and can be used by end-users to build FEniCS from
@@ -50,15 +50,3 @@ Actions with a specific set of FEniCSx git tags to produce versioned images
 e.g. `:v0.6.0-r1`.
 
 A special tag `:stable` points at the latest versioned image.
-
-## `Dockerfile.oneapi`
-
-This Dockerfile describes a complete development and testing environment for
-DOLFINx based on Ubuntu with the Intel OneAPI development tools installed. It
-does not contain the FEniCS components.
-
-A build of this `Dockerfile` produces an image at
-`docker.io/fenicsproject/test-env:current-oneapi` which is used on GitHub
-Actions for testing. This image is x86-64 only.
-
-A build must be triggered manually via GitHub Actions to update the image.
