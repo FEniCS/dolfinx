@@ -65,6 +65,15 @@ void assemble_jacobian(const Vec x, Mat J)
   MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);
 }
 
+// Reference count of a PETSc object
+template <typename O>
+PetscInt ref_count(O obj)
+{
+  PetscInt count = 0;
+  PetscObjectGetReference(reinterpret_cast<PetscObject>(obj), &count);
+  return count;
+}
+
 // Check that all entries of x are the positive root sqrt(2)
 void check_solution(const Vec x)
 {
@@ -232,12 +241,59 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     PetscOptionsClearValue(nullptr, "-max_it_snes_max_it");
   }
 
+  SECTION("Reference counting")
+  {
+    const PetscInt b_count = ref_count(b), J_count = ref_count(J);
+    {
+      nls::petsc::NonlinearProblem problem(comm);
+      problem.set_F(assemble_residual, b);
+
+      // One reference held by the problem, one by the SNES
+      CHECK(ref_count(b) == b_count + 2);
+
+      // Re-setting with the same vector must not accumulate references
+      problem.set_F(assemble_residual, b);
+      CHECK(ref_count(b) == b_count + 2);
+
+      // With no preconditioner matrix the Jacobian is used for both, so
+      // it is referenced twice by the problem and twice by the SNES
+      problem.set_J([](const Vec x, Mat Jmat, Mat)
+                    { assemble_jacobian(x, Jmat); }, J);
+      CHECK(ref_count(J) == J_count + 4);
+    }
+
+    // Destroying the problem releases every reference it took
+    CHECK(ref_count(b) == b_count);
+    CHECK(ref_count(J) == J_count);
+  }
+
+  SECTION("Reference counting with a preconditioner matrix")
+  {
+    Mat P;
+    MatCreateAIJ(comm, local_size, local_size, PETSC_DETERMINE, PETSC_DETERMINE,
+                 1, nullptr, 0, nullptr, &P);
+    const PetscInt J_count = ref_count(J), P_count = ref_count(P);
+    {
+      nls::petsc::NonlinearProblem problem(comm);
+      problem.set_J([](const Vec x, Mat Jmat, Mat)
+                    { assemble_jacobian(x, Jmat); }, J, P);
+      CHECK(ref_count(J) == J_count + 2);
+      CHECK(ref_count(P) == P_count + 2);
+    }
+    CHECK(ref_count(J) == J_count);
+    CHECK(ref_count(P) == P_count);
+
+    MatDestroy(&P);
+  }
+
   SECTION("Wrap an existing SNES")
   {
     SNES snes;
     SNESCreate(comm, &snes);
+    const PetscInt snes_count = ref_count(snes);
     {
       nls::petsc::NonlinearProblem problem(snes, true);
+      CHECK(ref_count(snes) == snes_count + 1);
       problem.set_F(assemble_residual, b);
       problem.set_J([](const Vec x, Mat Jmat, Mat)
                     { assemble_jacobian(x, Jmat); }, J);
@@ -245,9 +301,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
       check_solution(x);
     }
 
-    // The problem held its own reference, so snes is still valid
-    PetscObjectReference((PetscObject)snes);
-    PetscObjectDereference((PetscObject)snes);
+    // The problem released its reference, so snes is still valid
+    CHECK(ref_count(snes) == snes_count);
     SNESDestroy(&snes);
   }
 
