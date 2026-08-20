@@ -109,6 +109,9 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     problem.set_J([](const Vec x, Mat Jmat, Mat)
                   { assemble_jacobian(x, Jmat); }, J);
 
+    // PETSc reports an unset prefix as a null pointer, not ""
+    CHECK(problem.get_options_prefix().empty());
+
     problem.set_options_prefix("test_snes_");
     CHECK(problem.get_options_prefix() == "test_snes_");
     problem.set_from_options();

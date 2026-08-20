@@ -209,7 +209,8 @@ std::string nls::petsc::NonlinearProblem::get_options_prefix() const
   const char* prefix = nullptr;
   PetscErrorCode ierr = SNESGetOptionsPrefix(_snes, &prefix);
   CHECK_ERROR("SNESGetOptionsPrefix");
-  return std::string(prefix);
+  // PETSc reports an unset prefix as a null pointer
+  return prefix ? std::string(prefix) : std::string();
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::NonlinearProblem::set_from_options() const

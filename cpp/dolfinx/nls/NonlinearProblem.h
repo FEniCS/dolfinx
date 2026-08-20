@@ -80,6 +80,9 @@ public:
   /// @brief Set the function for computing the residual \f$F(x)\f$, and
   /// the vector that defines its layout.
   ///
+  /// A residual defined by a fem::Form can be assembled with
+  /// fem::petsc::assemble_residual.
+  ///
   /// @note `F` must assemble into the vector it is passed, which is not
   /// always `b`. A line search, for instance, evaluates the residual in
   /// a work vector duplicated from `b`.
@@ -94,6 +97,9 @@ public:
 
   /// @brief Set the function for computing the Jacobian
   /// \f$J := dF/dx\f$, and the matrices that define its layout.
+  ///
+  /// A Jacobian defined by a fem::Form can be assembled with
+  /// fem::petsc::assemble_jacobian.
   ///
   /// @note As for set_F, `J` must assemble into the matrices it is
   /// passed rather than into `Jmat` and `Pmat` directly.
