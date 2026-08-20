@@ -74,14 +74,15 @@ PetscInt ref_count(O obj)
   return count;
 }
 
-// Check that all entries of x are the positive root sqrt(2)
-void check_solution(const Vec x)
+// Check that all entries of x are `root`, by default the positive root
+// sqrt(2)
+void check_solution(const Vec x, double root = std::sqrt(2.0))
 {
   const PetscScalar* _x;
   VecGetArrayRead(x, &_x);
   std::span<const PetscScalar> xs(_x, local_size);
   for (PetscScalar xi : xs)
-    CHECK(std::abs(PetscRealPart(xi) - std::sqrt(2.0)) < 1e-6);
+    CHECK(std::abs(PetscRealPart(xi) - root) < 1e-6);
   VecRestoreArrayRead(x, &_x);
 }
 } // namespace
@@ -131,16 +132,67 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     problem.set_J([](const Vec x, Mat Jmat, Mat)
                   { assemble_jacobian(x, Jmat); }, J);
 
+    // The update hook is reached through a container composed on the
+    // SNES rather than a context pointer, so it exercises a second
+    // route back to the problem
+    std::vector<int> steps;
+    problem.set_update([&steps](int step) { steps.push_back(step); });
+
     // The SNES callback context points at the problem, so the callbacks
     // must survive a move
     nls::petsc::NonlinearProblem moved(std::move(problem));
-    moved.solve(x);
+    int num_it = moved.solve(x);
     check_solution(x);
+    CHECK(steps.size() == std::size_t(num_it));
 
     nls::petsc::NonlinearProblem assigned(comm);
     assigned = std::move(moved);
+
+    // Re-register the hook on the moved-to problem, recording into a
+    // different vector. A moved-from callable is left in a valid but
+    // unspecified state, and remains callable on some implementations,
+    // so only a distinct target shows which problem the callback
+    // actually reached.
+    std::vector<int> assigned_steps;
+    assigned.set_update([&assigned_steps](int step)
+                        { assigned_steps.push_back(step); });
+
     VecSet(x, PetscScalar(1));
-    assigned.solve(x);
+    steps.clear();
+    num_it = assigned.solve(x);
+    check_solution(x);
+    CHECK(assigned_steps.size() == std::size_t(num_it));
+    CHECK(steps.empty());
+  }
+
+  SECTION("Initial guess")
+  {
+    nls::petsc::NonlinearProblem problem(comm);
+    problem.set_F(assemble_residual, b);
+    problem.set_J([](const Vec x, Mat Jmat, Mat)
+                  { assemble_jacobian(x, Jmat); }, J);
+
+    // Newton from a negative guess converges to the negative root, so
+    // the vector passed to solve is used as the starting point
+    VecSet(x, PetscScalar(-1));
+    problem.solve(x);
+    check_solution(x, -std::sqrt(2.0));
+  }
+
+  SECTION("Repeated solves")
+  {
+    nls::petsc::NonlinearProblem problem(comm);
+    problem.set_F(assemble_residual, b);
+    problem.set_J([](const Vec x, Mat Jmat, Mat)
+                  { assemble_jacobian(x, Jmat); }, J);
+
+    problem.solve(x);
+    check_solution(x);
+
+    // A problem that has converged can be solved again
+    VecSet(x, PetscScalar(5));
+    int num_it = problem.solve(x);
+    CHECK(num_it > 0);
     check_solution(x);
   }
 
@@ -219,6 +271,61 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     catch (const std::runtime_error& e)
     {
       CHECK(std::string(e.what()) == "Residual failed");
+    }
+
+    VecDestroy(&b_local);
+    VecDestroy(&x_local);
+  }
+
+  SECTION("Exception in the Jacobian callback")
+  {
+    // As above, the problem and its vectors are dead after the throw
+    Vec x_local, b_local;
+    VecDuplicate(x, &x_local);
+    VecDuplicate(b, &b_local);
+    VecSet(x_local, PetscScalar(1));
+
+    nls::petsc::NonlinearProblem problem(comm);
+    problem.set_F(assemble_residual, b_local);
+    problem.set_J([](const Vec, Mat, Mat)
+                  { throw std::runtime_error("Jacobian failed"); }, J);
+
+    try
+    {
+      problem.solve(x_local);
+      FAIL("Expected the callback exception to be re-thrown.");
+    }
+    catch (const std::runtime_error& e)
+    {
+      CHECK(std::string(e.what()) == "Jacobian failed");
+    }
+
+    VecDestroy(&b_local);
+    VecDestroy(&x_local);
+  }
+
+  SECTION("Exception in the update hook")
+  {
+    // As above, the problem and its vectors are dead after the throw
+    Vec x_local, b_local;
+    VecDuplicate(x, &x_local);
+    VecDuplicate(b, &b_local);
+    VecSet(x_local, PetscScalar(1));
+
+    nls::petsc::NonlinearProblem problem(comm);
+    problem.set_F(assemble_residual, b_local);
+    problem.set_J([](const Vec x, Mat Jmat, Mat)
+                  { assemble_jacobian(x, Jmat); }, J);
+    problem.set_update([](int) { throw std::runtime_error("Update failed"); });
+
+    try
+    {
+      problem.solve(x_local);
+      FAIL("Expected the callback exception to be re-thrown.");
+    }
+    catch (const std::runtime_error& e)
+    {
+      CHECK(std::string(e.what()) == "Update failed");
     }
 
     VecDestroy(&b_local);
