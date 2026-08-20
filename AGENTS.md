@@ -65,6 +65,12 @@ disclosure process.
   array memory traffic — so local indices must not be silently widened
   in storage or interfaces. Type a variable by the role of its value,
   not by the expression that initialises it.
+- **PETSc/SLEPc index types**: in the thin `la::petsc`/`la::slepc`
+  wrappers, an index or count passed straight through to a PETSc/SLEPc
+  call is `PetscInt`, matching the `PetscScalar`/`Mat`/`Vec` already in
+  those signatures. The fixed-width types above are for
+  DOLFINx-meaningful quantities, such as the sizes and ranges returned
+  by `petsc::Vector`.
 - **Iterator distances**: store `std::distance` results, a signed
   `difference_type`, in `std::size_t` when used as a container offset.
   They are non-negative by construction here, and `-Wsign-compare` is
