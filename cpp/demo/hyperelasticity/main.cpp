@@ -19,7 +19,6 @@
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/la/Vector.h>
@@ -28,6 +27,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/nls/NonlinearProblem.h>
 #include <format>
+#include <functional>
 #include <memory>
 #include <numbers>
 #include <petscmat.h>
@@ -39,83 +39,6 @@
 using namespace dolfinx;
 using T = PetscScalar;
 using U = typename dolfinx::scalar_value_t<T>;
-
-// The residual and Jacobian assembly are handed to
-// {cpp:class}`nls::petsc::NonlinearProblem
-// <dolfinx::nls::petsc::NonlinearProblem>`, which drives a PETSc SNES.
-// The class below owns the data the two callbacks assemble into, and
-// the solution function `u` that the forms are evaluated at.
-
-/// Hyperelastic problem class
-class HyperElasticProblem
-{
-public:
-  /// Constructor
-  HyperElasticProblem(fem::Form<T>& L, fem::Form<T>& J,
-                      const std::vector<fem::DirichletBC<T>>& bcs,
-                      std::shared_ptr<fem::Function<T>> u)
-      : _l(L), _j(J), _bcs(bcs.begin(), bcs.end()), _u_fn(u),
-        _b(la::petsc::create_vector(
-               *L.function_spaces()[0]->dofmap()->index_map,
-               L.function_spaces()[0]->dofmap()->index_map_bs()),
-           false),
-        _matJ(la::petsc::Matrix(fem::petsc::create_matrix(J, "aij"), false)),
-        _u(la::petsc::create_vector_wrap(*u->x()), false),
-        _problem(L.function_spaces()[0]->dofmap()->index_map->comm())
-  {
-    // Attach the assembly callbacks and the data that defines their
-    // layout. The callbacks assemble into the vector and matrix they
-    // are passed, which are not always those registered here.
-    // Capturing `this` is safe as the solver is a member, so the
-    // callbacks cannot outlive the problem.
-    _problem.set_F(
-        [this](const Vec x, Vec b)
-        { fem::petsc::assemble_residual(b, x, _l, _j, _bcs, *_u_fn); },
-        _b.vec());
-    _problem.set_J(
-        [this](const Vec x, Mat Jmat, Mat)
-        { fem::petsc::assemble_jacobian(Jmat, nullptr, x, _j, _bcs, *_u_fn); },
-        _matJ.mat());
-    _problem.set_options_prefix("hyperelasticity_");
-    _problem.set_from_options();
-  }
-
-  /// @brief Solve the nonlinear problem, updating the solution function
-  /// `u` that the problem was created with.
-  /// @return Number of Newton iterations.
-  int solve()
-  {
-    int iterations = _problem.solve(_u.vec());
-    VecGhostUpdateBegin(_u.vec(), INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(_u.vec(), INSERT_VALUES, SCATTER_FORWARD);
-    return iterations;
-  }
-
-  /// @brief Get the underlying PETSc SNES object, e.g. to set
-  /// tolerances or query the convergence reason.
-  /// @return The PETSc SNES object.
-  SNES snes() const { return _problem.snes(); }
-
-private:
-  fem::Form<T>& _l;
-  fem::Form<T>& _j;
-  std::vector<std::reference_wrapper<const fem::DirichletBC<T>>> _bcs;
-
-  // Solution function that the forms are evaluated at
-  std::shared_ptr<fem::Function<T>> _u_fn;
-
-  // Residual vector
-  la::petsc::Vector _b;
-
-  // Jacobian matrix
-  la::petsc::Matrix _matJ;
-
-  // Solution vector, sharing data with the solution function
-  la::petsc::Vector _u;
-
-  // Nonlinear solver
-  nls::petsc::NonlinearProblem _problem;
-};
 
 int main(int argc, char* argv[])
 {
@@ -238,8 +161,34 @@ int main(int argc, char* argv[])
     la::petsc::options::set("hyperelasticity_snes_atol", tol);
     la::petsc::options::set("hyperelasticity_snes_error_if_not_converged");
 
-    HyperElasticProblem problem(L, a, bcs, u);
-    int niter = problem.solve();
+    // Create the Jacobian matrix, the residual vector, and a vector
+    // that shares data with the solution function `u`. The first two
+    // define the layout of the objects that the solver passes to the
+    // assembly callbacks; the last holds the initial guess on entry to
+    // the solve, and the solution on return.
+    la::petsc::Matrix A(fem::petsc::create_matrix(a, "aij"), false);
+    la::petsc::Vector b(la::petsc::create_vector(*V->dofmap()->index_map,
+                                                 V->dofmap()->index_map_bs()),
+                        false);
+    la::petsc::Vector x(la::petsc::create_vector_wrap(*u->x()), false);
+    std::vector<std::reference_wrapper<const fem::DirichletBC<T>>> bcs_ref(
+        bcs.begin(), bcs.end());
+
+    // Create the solver, and attach the residual and Jacobian assembly
+    nls::petsc::NonlinearProblem problem(mesh->comm());
+    problem.set_F([&L, &a, &bcs_ref, &u](const Vec x, Vec b)
+                  { fem::petsc::assemble_residual(b, x, L, a, bcs_ref, *u); },
+                  b.vec());
+    problem.set_J(
+        [&a, &bcs_ref, &u](const Vec x, Mat Jmat, Mat)
+        { fem::petsc::assemble_jacobian(Jmat, nullptr, x, a, bcs_ref, *u); },
+        A.mat());
+    problem.set_options_prefix("hyperelasticity_");
+    problem.set_from_options();
+
+    int niter = problem.solve(x.vec());
+    VecGhostUpdateBegin(x.vec(), INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(x.vec(), INSERT_VALUES, SCATTER_FORWARD);
 
     // The SNES object is available for anything the problem does not
     // wrap, here the total number of linear solver iterations
