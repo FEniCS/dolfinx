@@ -11,7 +11,7 @@ DOLFINx based on Ubuntu. It does not contain the FEniCS components.
 The following image is produced and pushed to both `docker.io/fenicsproject`
 and `ghcr.io/fenics` and is used in our testing infrastructure:
 
-* `test-env:current`
+* `test-env:current` - Debugging on. Used on GitHub Actions.
 
 The following image is pushed to both `docker.io/dolfinx` and
 `ghcr.io/fenics/dolfinx` and can be used by end-users to build FEniCS from
