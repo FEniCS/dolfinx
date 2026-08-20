@@ -77,8 +77,9 @@ public:
   void solve();
 
   /// @brief Get the ith eigenvalue.
-  /// @param[in] i Index of the eigenvalue, in
-  /// `[0, get_number_converged())`.
+  /// @param[in] i Index of the eigenvalue, in `[0, nconv)`, where
+  /// `nconv` is the number of converged eigenpairs reported by
+  /// `EPSGetConverged(eps(), &nconv)`.
   /// @return The eigenvalue.
   std::complex<PetscReal> get_eigenvalue(PetscInt i) const;
 
@@ -87,18 +88,14 @@ public:
   /// @param[out] lc Imaginary part of the eigenvalue.
   /// @param[out] r Real part of the eigenvector.
   /// @param[out] c Imaginary part of the eigenvector.
-  /// @param[in] i Index of the eigenpair, in
-  /// `[0, get_number_converged())`.
+  /// @param[in] i Index of the eigenpair, in `[0, nconv)`, where
+  /// `nconv` is the number of converged eigenpairs reported by
+  /// `EPSGetConverged(eps(), &nconv)`.
   /// @note For a complex PETSc scalar type the eigenvalue and
   /// eigenvector are held entirely in `lr` and `r`, and `lc` and `c`
   /// are set to zero.
   void get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r, Vec c,
                      PetscInt i) const;
-
-  /// @brief Get the number of converged eigenvalues.
-  /// @return Number of converged eigenpairs available from
-  /// get_eigenvalue and get_eigenpair.
-  PetscInt get_number_converged() const;
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database

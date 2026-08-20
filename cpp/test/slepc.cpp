@@ -114,7 +114,8 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
 
     solver.solve();
 
-    const PetscInt nconv = solver.get_number_converged();
+    PetscInt nconv = 0;
+    EPSGetConverged(solver.eps(), &nconv);
     REQUIRE(nconv >= 3);
 
     // Spectrum is {1, ..., N}, so the three largest are N, N-1, N-2
@@ -143,6 +144,8 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
       VecDestroy(&c);
     }
 
+    // SLEPc rejects these itself; the point is that the return code is
+    // checked, so they throw rather than leaving the outputs untouched
     SECTION("Out-of-range indices throw rather than return garbage")
     {
       PetscScalar lr = 0, lc = 0;
@@ -169,7 +172,9 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     EPSSetDimensions(solver.eps(), 2, PETSC_DETERMINE, PETSC_DETERMINE);
 
     solver.solve();
-    REQUIRE(solver.get_number_converged() >= 2);
+    PetscInt nconv = 0;
+    EPSGetConverged(solver.eps(), &nconv);
+    REQUIRE(nconv >= 2);
 
     // get_eigenvalue is independent of the PETSc scalar type: the pair
     // of largest magnitude is num_blocks(1 +/- i) in both real and
@@ -214,8 +219,8 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
 
   SECTION("Solving before setting operators throws")
   {
-    // Collective-safe: every rank evaluates the same condition and
-    // throws before entering any collective
+    // EPSSetUp raises the error on the EPS communicator, so every rank
+    // throws
     la::SLEPcEigenSolver solver(MPI_COMM_WORLD);
     CHECK_THROWS_AS(solver.solve(), std::runtime_error);
   }

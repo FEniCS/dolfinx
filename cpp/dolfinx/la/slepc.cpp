@@ -10,7 +10,6 @@
 #include "petsc.h"
 #include <cassert>
 #include <dolfinx/common/log.h>
-#include <format>
 #include <stdexcept>
 #include <utility>
 
@@ -75,15 +74,9 @@ void SLEPcEigenSolver::solve()
 {
   assert(_eps);
 
-  // EPSGetOperators returns a null Mat if no operators have been set
-  Mat A = nullptr;
-  PetscErrorCode ierr = EPSGetOperators(_eps, &A, nullptr);
-  CHECK_ERROR("EPSGetOperators");
-  if (!A)
-    throw std::runtime_error("Operators must be set before calling solve");
-
-  // Solve eigenvalue problem
-  ierr = EPSSolve(_eps);
+  // Solve eigenvalue problem. EPSSetUp errors if no operators have been
+  // set
+  PetscErrorCode ierr = EPSSolve(_eps);
   CHECK_ERROR("EPSSolve");
 
   // Check for convergence
@@ -108,20 +101,10 @@ void SLEPcEigenSolver::solve()
 std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(PetscInt i) const
 {
   assert(_eps);
-  if (i < 0)
-    throw std::runtime_error("Requested eigenvalue index cannot be negative");
 
-  // Get number of computed values
-  PetscInt num_computed_eigenvalues;
-  PetscErrorCode ierr = EPSGetConverged(_eps, &num_computed_eigenvalues);
-  CHECK_ERROR("EPSGetConverged");
-
-  if (i >= num_computed_eigenvalues)
-  {
-    throw std::runtime_error(
-        std::format("Requested eigenvalue ({}) has not been computed", i));
-  }
-
+  // EPSGetEigenvalue checks that the problem has been solved and that i
+  // is in range
+  PetscErrorCode ierr;
 #ifdef PETSC_USE_COMPLEX
   PetscScalar l;
   ierr = EPSGetEigenvalue(_eps, i, &l, nullptr);
@@ -139,31 +122,11 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
                                      Vec c, PetscInt i) const
 {
   assert(_eps);
-  if (i < 0)
-    throw std::runtime_error("Requested eigenpair index cannot be negative");
 
-  // Get number of computed eigenvectors/values
-  PetscInt num_computed_eigenvalues;
-  PetscErrorCode ierr = EPSGetConverged(_eps, &num_computed_eigenvalues);
-  CHECK_ERROR("EPSGetConverged");
-
-  if (i >= num_computed_eigenvalues)
-  {
-    throw std::runtime_error(
-        std::format("Requested eigenpair ({}) has not been computed", i));
-  }
-
-  ierr = EPSGetEigenpair(_eps, i, &lr, &lc, r, c);
+  // EPSGetEigenpair checks that the problem has been solved and that i
+  // is in range
+  PetscErrorCode ierr = EPSGetEigenpair(_eps, i, &lr, &lc, r, c);
   CHECK_ERROR("EPSGetEigenpair");
-}
-//-----------------------------------------------------------------------------
-PetscInt SLEPcEigenSolver::get_number_converged() const
-{
-  assert(_eps);
-  PetscInt num_conv;
-  PetscErrorCode ierr = EPSGetConverged(_eps, &num_conv);
-  CHECK_ERROR("EPSGetConverged");
-  return num_conv;
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_options_prefix(std::string_view options_prefix)
