@@ -11,4 +11,5 @@ namespace dolfinx::nls
 
 #ifdef HAS_PETSC
 #include <dolfinx/nls/NewtonSolver.h>
+#include <dolfinx/nls/NonlinearProblem.h>
 #endif

@@ -51,6 +51,7 @@ add_executable(
   mesh/refinement/option.cpp
   mesh/refinement/rectangle.cpp
   mesh/refinement/mark.cpp
+  nls/nonlinearproblem.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/expr.c
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
