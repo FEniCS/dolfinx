@@ -201,7 +201,7 @@ jobs:
             cmake -G Ninja -S dolfinx/cpp -B dolfinx-build-dir/ \
               -DPython3_EXECUTABLE=$(which python) \
               -DCMAKE_PREFIX_PATH=/usr/lib64/mpich \
-              -DCMAKE_BUILD_TYPE=RelWithDebug \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               -DDOLFINX_ENABLE_SUPERLU_DIST=ON \
               -DDOLFINX_ENABLE_SCOTCH=ON \
               -DDOLFINX_ENABLE_PARMETIS=OFF &&
@@ -240,7 +240,7 @@ jobs:
               -DDOLFINX_ENABLE_SCOTCH=ON \
               -DDOLFINX_ENABLE_PARMETIS=OFF \
               -DDOLFINX_ENABLE_SUPERLU_DIST=ON \
-              -DCMAKE_BUILD_TYPE=RelWithDebug &&
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo &&
             cmake --build $GITHUB_WORKSPACE/dolfinx-build-dir/ &&
             sudo cmake --install dolfinx-build-dir/
           # As of 6/26 DOLFINx uses std::jthread which is only officially
