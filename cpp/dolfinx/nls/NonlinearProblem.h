@@ -48,10 +48,16 @@ public:
   explicit NonlinearProblem(MPI_Comm comm);
 
   /// @brief Create a solver wrapper of a PETSc SNES object.
+  ///
+  /// @note The callbacks registered on `snes` hold a pointer to the
+  /// problem, which is not reference counted. Using `snes` once the
+  /// problem has been destroyed is undefined.
+  ///
   /// @param[in] snes PETSc SNES object. It should already have been
   /// created.
   /// @param[in] inc_ref_count Increment the reference count on `snes`
-  /// if true.
+  /// if true, so that it outlives a caller that destroys their own
+  /// reference.
   NonlinearProblem(SNES snes, bool inc_ref_count);
 
   // Copy constructor (deleted)
