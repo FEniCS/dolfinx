@@ -248,21 +248,26 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
       nls::petsc::NonlinearProblem problem(comm);
       problem.set_F(assemble_residual, b);
 
-      // One reference held by the problem, one by the SNES
+      // +2: set_F references the vector, and SNESSetFunction takes a
+      // reference of its own
       CHECK(ref_count(b) == b_count + 2);
 
-      // Re-setting with the same vector must not accumulate references
+      // Unchanged: set_F references the new vector before releasing the
+      // one it held, so passing the same vector twice is a no-op rather
+      // than a release
       problem.set_F(assemble_residual, b);
       CHECK(ref_count(b) == b_count + 2);
 
-      // With no preconditioner matrix the Jacobian is used for both, so
-      // it is referenced twice by the problem and twice by the SNES
+      // +4: with no preconditioner matrix given, the Jacobian is used as
+      // its own preconditioner, so it is passed twice to set_J and twice
+      // to SNESSetJacobian, each of which references both arguments
       problem.set_J([](const Vec x, Mat Jmat, Mat)
                     { assemble_jacobian(x, Jmat); }, J);
       CHECK(ref_count(J) == J_count + 4);
     }
 
-    // Destroying the problem releases every reference it took
+    // Back to baseline: the destructor releases the references the
+    // problem took, and SNESDestroy those the SNES took
     CHECK(ref_count(b) == b_count);
     CHECK(ref_count(J) == J_count);
   }
@@ -275,6 +280,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     const PetscInt J_count = ref_count(J), P_count = ref_count(P);
     {
       nls::petsc::NonlinearProblem problem(comm);
+      // +2 each: the two matrices are distinct, so each is referenced
+      // once by the problem and once by the SNES
       problem.set_J([](const Vec x, Mat Jmat, Mat)
                     { assemble_jacobian(x, Jmat); }, J, P);
       CHECK(ref_count(J) == J_count + 2);
@@ -292,6 +299,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     SNESCreate(comm, &snes);
     const PetscInt snes_count = ref_count(snes);
     {
+      // +1: inc_ref_count, so the SNES cannot be destroyed while the
+      // problem is using it
       nls::petsc::NonlinearProblem problem(snes, true);
       CHECK(ref_count(snes) == snes_count + 1);
       problem.set_F(assemble_residual, b);
