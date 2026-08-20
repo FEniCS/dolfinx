@@ -25,7 +25,7 @@
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <dolfinx/nls/NonlinearProblem.h>
+#include <dolfinx/nls/SNESSolver.h>
 #include <format>
 #include <functional>
 #include <memory>
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
            fem::DirichletBC<T>(u_rotation, bdofs_right)};
 
     // Configure the solver through the PETSc options database. The
-    // options are read when the problem is created, under the prefix it
+    // options are read when the solver is created, under the prefix it
     // sets on its SNES object. The Newton update is solved for with a
     // direct LU solver, and a failure to converge raises an error
     // rather than being reported by the return value.
@@ -175,25 +175,25 @@ int main(int argc, char* argv[])
         bcs.begin(), bcs.end());
 
     // Create the solver, and attach the residual and Jacobian assembly
-    nls::petsc::NonlinearProblem problem(mesh->comm());
-    problem.set_F([&L, &a, &bcs_ref, &u](const Vec x, Vec b)
-                  { fem::petsc::assemble_residual(b, x, L, a, bcs_ref, *u); },
-                  b.vec());
-    problem.set_J(
+    nls::petsc::SNESSolver solver(mesh->comm());
+    solver.set_F([&L, &a, &bcs_ref, &u](const Vec x, Vec b)
+                 { fem::petsc::assemble_residual(b, x, L, a, bcs_ref, *u); },
+                 b.vec());
+    solver.set_J(
         [&a, &bcs_ref, &u](const Vec x, Mat Jmat, Mat)
         { fem::petsc::assemble_jacobian(Jmat, nullptr, x, a, bcs_ref, *u); },
         A.mat());
-    problem.set_options_prefix("hyperelasticity_");
-    problem.set_from_options();
+    solver.set_options_prefix("hyperelasticity_");
+    solver.set_from_options();
 
-    int niter = problem.solve(x.vec());
+    int niter = solver.solve(x.vec());
     VecGhostUpdateBegin(x.vec(), INSERT_VALUES, SCATTER_FORWARD);
     VecGhostUpdateEnd(x.vec(), INSERT_VALUES, SCATTER_FORWARD);
 
-    // The SNES object is available for anything the problem does not
+    // The SNES object is available for anything the solver does not
     // wrap, here the total number of linear solver iterations
     PetscInt lin_iter = 0;
-    SNESGetLinearSolveIterations(problem.snes(), &lin_iter);
+    SNESGetLinearSolveIterations(solver.snes(), &lin_iter);
     std::cout << "Number of Newton iterations: " << niter << std::endl;
     std::cout << "Number of linear solver iterations: " << lin_iter
               << std::endl;

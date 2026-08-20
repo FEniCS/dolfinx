@@ -6,7 +6,7 @@
 
 #ifdef HAS_PETSC
 
-#include "NonlinearProblem.h"
+#include "SNESSolver.h"
 #include <cassert>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -21,9 +21,9 @@ using namespace dolfinx;
 
 namespace
 {
-// Name under which the owning NonlinearProblem is composed on the SNES
+// Name under which the owning SNESSolver is composed on the SNES
 // object, for callbacks that take no context argument
-constexpr const char* ctx_name = "dolfinx_nonlinear_problem";
+constexpr const char* ctx_name = "dolfinx_snes_solver";
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -37,15 +37,14 @@ constexpr const char* ctx_name = "dolfinx_nonlinear_problem";
   } while (0)
 
 //-----------------------------------------------------------------------------
-nls::petsc::NonlinearProblem::NonlinearProblem(MPI_Comm comm) : _snes(nullptr)
+nls::petsc::SNESSolver::SNESSolver(MPI_Comm comm) : _snes(nullptr)
 {
   PetscErrorCode ierr = SNESCreate(comm, &_snes);
   CHECK_ERROR("SNESCreate");
   set_callbacks();
 }
 //-----------------------------------------------------------------------------
-nls::petsc::NonlinearProblem::NonlinearProblem(SNES snes, bool inc_ref_count)
-    : _snes(snes)
+nls::petsc::SNESSolver::SNESSolver(SNES snes, bool inc_ref_count) : _snes(snes)
 {
   assert(_snes);
   if (inc_ref_count)
@@ -58,20 +57,19 @@ nls::petsc::NonlinearProblem::NonlinearProblem(SNES snes, bool inc_ref_count)
   set_callbacks();
 }
 //-----------------------------------------------------------------------------
-nls::petsc::NonlinearProblem::NonlinearProblem(
-    NonlinearProblem&& problem) noexcept
-    : _fnF(std::move(problem._fnF)), _fnJ(std::move(problem._fnJ)),
-      _fnupdate(std::move(problem._fnupdate)),
-      _exception(std::exchange(problem._exception, nullptr)),
-      _b(std::exchange(problem._b, nullptr)),
-      _matJ(std::exchange(problem._matJ, nullptr)),
-      _matP(std::exchange(problem._matP, nullptr)),
-      _snes(std::exchange(problem._snes, nullptr))
+nls::petsc::SNESSolver::SNESSolver(SNESSolver&& solver) noexcept
+    : _fnF(std::move(solver._fnF)), _fnJ(std::move(solver._fnJ)),
+      _fnupdate(std::move(solver._fnupdate)),
+      _exception(std::exchange(solver._exception, nullptr)),
+      _b(std::exchange(solver._b, nullptr)),
+      _matJ(std::exchange(solver._matJ, nullptr)),
+      _matP(std::exchange(solver._matP, nullptr)),
+      _snes(std::exchange(solver._snes, nullptr))
 {
   set_callbacks();
 }
 //-----------------------------------------------------------------------------
-nls::petsc::NonlinearProblem::~NonlinearProblem()
+nls::petsc::SNESSolver::~SNESSolver()
 {
   if (_b)
     VecDestroy(&_b);
@@ -83,26 +81,25 @@ nls::petsc::NonlinearProblem::~NonlinearProblem()
     SNESDestroy(&_snes);
 }
 //-----------------------------------------------------------------------------
-nls::petsc::NonlinearProblem&
-nls::petsc::NonlinearProblem::operator=(NonlinearProblem&& problem) noexcept
+nls::petsc::SNESSolver&
+nls::petsc::SNESSolver::operator=(SNESSolver&& solver) noexcept
 {
-  std::swap(_fnF, problem._fnF);
-  std::swap(_fnJ, problem._fnJ);
-  std::swap(_fnupdate, problem._fnupdate);
-  std::swap(_exception, problem._exception);
-  std::swap(_b, problem._b);
-  std::swap(_matJ, problem._matJ);
-  std::swap(_matP, problem._matP);
-  std::swap(_snes, problem._snes);
+  std::swap(_fnF, solver._fnF);
+  std::swap(_fnJ, solver._fnJ);
+  std::swap(_fnupdate, solver._fnupdate);
+  std::swap(_exception, solver._exception);
+  std::swap(_b, solver._b);
+  std::swap(_matJ, solver._matJ);
+  std::swap(_matP, solver._matP);
+  std::swap(_snes, solver._snes);
 
   set_callbacks();
-  problem.set_callbacks();
+  solver.set_callbacks();
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::NonlinearProblem::set_F(std::function<void(const Vec, Vec)> F,
-                                         Vec b)
+void nls::petsc::SNESSolver::set_F(std::function<void(const Vec, Vec)> F, Vec b)
 {
   assert(_snes);
   assert(b);
@@ -118,8 +115,8 @@ void nls::petsc::NonlinearProblem::set_F(std::function<void(const Vec, Vec)> F,
   CHECK_ERROR("SNESSetFunction");
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::NonlinearProblem::set_J(
-    std::function<void(const Vec, Mat, Mat)> J, Mat Jmat, Mat Pmat)
+void nls::petsc::SNESSolver::set_J(std::function<void(const Vec, Mat, Mat)> J,
+                                   Mat Jmat, Mat Pmat)
 {
   assert(_snes);
   assert(Jmat);
@@ -145,7 +142,7 @@ void nls::petsc::NonlinearProblem::set_J(
   CHECK_ERROR("SNESSetJacobian");
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::NonlinearProblem::set_update(std::function<void(int)> update)
+void nls::petsc::SNESSolver::set_update(std::function<void(int)> update)
 {
   assert(_snes);
   _fnupdate = std::move(update);
@@ -153,7 +150,7 @@ void nls::petsc::NonlinearProblem::set_update(std::function<void(int)> update)
   CHECK_ERROR("SNESSetUpdate");
 }
 //-----------------------------------------------------------------------------
-int nls::petsc::NonlinearProblem::solve(Vec x)
+int nls::petsc::SNESSolver::solve(Vec x)
 {
   common::Timer timer("PETSc SNES solver");
   assert(_snes);
@@ -194,8 +191,7 @@ int nls::petsc::NonlinearProblem::solve(Vec x)
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::NonlinearProblem::set_options_prefix(
-    std::string_view options_prefix)
+void nls::petsc::SNESSolver::set_options_prefix(std::string_view options_prefix)
 {
   assert(_snes);
   PetscErrorCode ierr
@@ -203,7 +199,7 @@ void nls::petsc::NonlinearProblem::set_options_prefix(
   CHECK_ERROR("SNESSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
-std::string nls::petsc::NonlinearProblem::get_options_prefix() const
+std::string nls::petsc::SNESSolver::get_options_prefix() const
 {
   assert(_snes);
   const char* prefix = nullptr;
@@ -213,53 +209,51 @@ std::string nls::petsc::NonlinearProblem::get_options_prefix() const
   return prefix ? std::string(prefix) : std::string();
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::NonlinearProblem::set_from_options() const
+void nls::petsc::SNESSolver::set_from_options() const
 {
   assert(_snes);
   PetscErrorCode ierr = SNESSetFromOptions(_snes);
   CHECK_ERROR("SNESSetFromOptions");
 }
 //-----------------------------------------------------------------------------
-SNES nls::petsc::NonlinearProblem::snes() const { return _snes; }
+SNES nls::petsc::SNESSolver::snes() const { return _snes; }
 //-----------------------------------------------------------------------------
-PetscErrorCode nls::petsc::NonlinearProblem::residual(SNES, Vec x, Vec b,
-                                                      void* ctx)
+PetscErrorCode nls::petsc::SNESSolver::residual(SNES, Vec x, Vec b, void* ctx)
 {
-  NonlinearProblem* problem = static_cast<NonlinearProblem*>(ctx);
-  assert(problem->_fnF);
+  SNESSolver* solver = static_cast<SNESSolver*>(ctx);
+  assert(solver->_fnF);
   try
   {
-    problem->_fnF(x, b);
+    solver->_fnF(x, b);
   }
   catch (...)
   {
-    return problem->store_exception();
+    return solver->store_exception();
   }
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode nls::petsc::NonlinearProblem::jacobian(SNES, Vec x, Mat Jmat,
-                                                      Mat Pmat, void* ctx)
+PetscErrorCode nls::petsc::SNESSolver::jacobian(SNES, Vec x, Mat Jmat, Mat Pmat,
+                                                void* ctx)
 {
-  NonlinearProblem* problem = static_cast<NonlinearProblem*>(ctx);
-  assert(problem->_fnJ);
+  SNESSolver* solver = static_cast<SNESSolver*>(ctx);
+  assert(solver->_fnJ);
   try
   {
-    problem->_fnJ(x, Jmat, Pmat);
+    solver->_fnJ(x, Jmat, Pmat);
   }
   catch (...)
   {
-    return problem->store_exception();
+    return solver->store_exception();
   }
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode nls::petsc::NonlinearProblem::update_step(SNES snes,
-                                                         PetscInt step)
+PetscErrorCode nls::petsc::SNESSolver::update_step(SNES snes, PetscInt step)
 {
-  // SNESSetUpdate takes no context argument, so recover the problem
+  // SNESSetUpdate takes no context argument, so recover the solver
   // from the container composed on the SNES object. Errors are returned
   // rather than thrown, as this is called from PETSc.
   PetscContainer container = nullptr;
@@ -270,26 +264,25 @@ PetscErrorCode nls::petsc::NonlinearProblem::update_step(SNES snes,
     return ierr;
   assert(container);
 
-  NonlinearProblem* problem = nullptr;
-  ierr
-      = PetscContainerGetPointer(container, reinterpret_cast<void**>(&problem));
+  SNESSolver* solver = nullptr;
+  ierr = PetscContainerGetPointer(container, reinterpret_cast<void**>(&solver));
   if (ierr != 0)
     return ierr;
 
-  assert(problem->_fnupdate);
+  assert(solver->_fnupdate);
   try
   {
-    problem->_fnupdate(step);
+    solver->_fnupdate(step);
   }
   catch (...)
   {
-    return problem->store_exception();
+    return solver->store_exception();
   }
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode nls::petsc::NonlinearProblem::store_exception()
+PetscErrorCode nls::petsc::SNESSolver::store_exception()
 {
   _exception = std::current_exception();
   try
@@ -308,7 +301,7 @@ PetscErrorCode nls::petsc::NonlinearProblem::store_exception()
   return PETSC_ERR_LIB;
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::NonlinearProblem::set_callbacks()
+void nls::petsc::SNESSolver::set_callbacks()
 {
   if (!_snes)
     return;

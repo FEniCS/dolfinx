@@ -32,50 +32,50 @@ namespace dolfinx::nls::petsc
 ///
 /// Example:
 /// @code
-/// nls::petsc::NonlinearProblem problem(mesh.comm());
-/// problem.set_F([&](const Vec x, Vec b) { assemble_residual(x, b); }, b);
-/// problem.set_J([&](const Vec x, Mat A, Mat) { assemble_jacobian(x, A); },
+/// nls::petsc::SNESSolver solver(mesh.comm());
+/// solver.set_F([&](const Vec x, Vec b) { assemble_residual(x, b); }, b);
+/// solver.set_J([&](const Vec x, Mat A, Mat) { assemble_jacobian(x, A); },
 ///               A);
-/// problem.set_options_prefix("my_problem_");
-/// problem.set_from_options();
-/// problem.solve(x);
+/// solver.set_options_prefix("my_problem_");
+/// solver.set_from_options();
+/// solver.solve(x);
 /// @endcode
-class NonlinearProblem
+class SNESSolver
 {
 public:
   /// @brief Create a nonlinear solver.
   /// @param[in] comm MPI communicator for the solver.
-  explicit NonlinearProblem(MPI_Comm comm);
+  explicit SNESSolver(MPI_Comm comm);
 
   /// @brief Create a solver wrapper of a PETSc SNES object.
   ///
   /// @note The callbacks registered on `snes` hold a pointer to the
-  /// problem, which is not reference counted. Using `snes` once the
-  /// problem has been destroyed is undefined.
+  /// solver, which is not reference counted. Using `snes` once the
+  /// solver has been destroyed is undefined.
   ///
   /// @param[in] snes PETSc SNES object. It should already have been
   /// created.
   /// @param[in] inc_ref_count Increment the reference count on `snes`
   /// if true, so that it outlives a caller that destroys their own
   /// reference.
-  NonlinearProblem(SNES snes, bool inc_ref_count);
+  SNESSolver(SNES snes, bool inc_ref_count);
 
   // Copy constructor (deleted)
-  NonlinearProblem(const NonlinearProblem& problem) = delete;
+  SNESSolver(const SNESSolver& solver) = delete;
 
   /// Move constructor
   /// @note The `SNES` callback context is a pointer to the owning
-  /// problem, so moving re-registers the callbacks.
-  NonlinearProblem(NonlinearProblem&& problem) noexcept;
+  /// solver, so moving re-registers the callbacks.
+  SNESSolver(SNESSolver&& solver) noexcept;
 
   /// Destructor
-  ~NonlinearProblem();
+  ~SNESSolver();
 
   // Copy assignment (deleted)
-  NonlinearProblem& operator=(const NonlinearProblem& problem) = delete;
+  SNESSolver& operator=(const SNESSolver& solver) = delete;
 
   /// Move assignment
-  NonlinearProblem& operator=(NonlinearProblem&& problem) noexcept;
+  SNESSolver& operator=(SNESSolver&& solver) noexcept;
 
   /// @brief Set the function for computing the residual \f$F(x)\f$, and
   /// the vector that defines its layout.
@@ -132,7 +132,7 @@ public:
   /// be thrown on all ranks, otherwise ranks that continue the solve
   /// deadlock on a collective operation. PETSc unwinds the aborted
   /// solve without restoring its state, e.g. `x` is left locked for
-  /// read-only access, so neither this problem nor the vectors and
+  /// read-only access, so neither this solver nor the vectors and
   /// matrices it holds can be used again.
   ///
   /// @param[in,out] x Solution vector, holding the initial guess on
@@ -156,18 +156,18 @@ public:
 
   /// @brief Get the wrapped PETSc SNES object, e.g. to configure the
   /// line search or the Krylov solver used for each iteration.
-  /// @return The PETSc SNES object. The problem retains ownership.
+  /// @return The PETSc SNES object. The solver retains ownership.
   SNES snes() const;
 
 private:
   // Callbacks passed to SNESSetFunction/SNESSetJacobian. The context
-  // pointer is the owning NonlinearProblem.
+  // pointer is the owning SNESSolver.
   static PetscErrorCode residual(SNES snes, Vec x, Vec b, void* ctx);
   static PetscErrorCode jacobian(SNES snes, Vec x, Mat Jmat, Mat Pmat,
                                  void* ctx);
 
   // Callback passed to SNESSetUpdate. It takes no context argument, so
-  // the owning NonlinearProblem is recovered from the SNES object.
+  // the owning SNESSolver is recovered from the SNES object.
   static PetscErrorCode update_step(SNES snes, PetscInt step);
 
   // Store an in-flight exception and stop the solve. Called by the
@@ -176,7 +176,7 @@ private:
   PetscErrorCode store_exception();
 
   // Register the callbacks that have been set, and attach this as the
-  // context that the callbacks recover the problem from
+  // context that the callbacks recover the solver from
   void set_callbacks();
 
   // Function for computing the residual vector

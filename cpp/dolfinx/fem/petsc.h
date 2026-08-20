@@ -688,9 +688,9 @@ void assemble_operator(
 /// `b`, with Dirichlet conditions applied.
 ///
 /// Intended as the body of the residual callback of
-/// nls::petsc::NonlinearProblem, e.g.
+/// nls::petsc::SNESSolver, e.g.
 /// @code
-/// problem.set_F([&](const Vec x, Vec b)
+/// solver.set_F([&](const Vec x, Vec b)
 ///               { assemble_residual(b, x, F, J, bcs, u); }, b);
 /// @endcode
 ///
@@ -755,9 +755,9 @@ void assemble_residual(
 /// `Jmat`, and a preconditioner into `Pmat`.
 ///
 /// Intended as the body of the Jacobian callback of
-/// nls::petsc::NonlinearProblem, e.g.
+/// nls::petsc::SNESSolver, e.g.
 /// @code
-/// problem.set_J([&](const Vec x, Mat Jmat, Mat Pmat)
+/// solver.set_J([&](const Vec x, Mat Jmat, Mat Pmat)
 ///               { assemble_jacobian(Jmat, Pmat, x, J, nullptr, bcs, u); },
 ///               A);
 /// @endcode
