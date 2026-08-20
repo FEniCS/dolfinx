@@ -87,7 +87,7 @@ ci = [
 
 [tool.scikit-build]
 wheel.packages = ["dolfinx"]
-sdist.exclude = ["*.cpp"]
+wheel.exclude = ["*.cpp"]
 cmake.build-type = "Release"
 
 [tool.scikit-build.cmake.define]
