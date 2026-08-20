@@ -71,24 +71,36 @@ public:
   /// Move assignment
   NonlinearProblem& operator=(NonlinearProblem&& problem) noexcept;
 
-  /// @brief Set the function for computing the residual \f$F(x)\f$ and
-  /// the vector to assemble it into.
-  /// @param[in] F Function to assemble the residual at `x` into `b`. It
-  /// is responsible for any required ghost update of `x`.
-  /// @param[in] b Vector to assemble the residual into. A reference is
-  /// held, so the caller can destroy their own reference.
+  /// @brief Set the function for computing the residual \f$F(x)\f$, and
+  /// the vector that defines its layout.
+  ///
+  /// @note `F` must assemble into the vector it is passed, which is not
+  /// always `b`. A line search, for instance, evaluates the residual in
+  /// a work vector duplicated from `b`.
+  ///
+  /// @param[in] F Function to assemble the residual at `x` into the
+  /// vector it is passed. It is responsible for zeroing that vector,
+  /// and for any required ghost update of `x`.
+  /// @param[in] b Vector that the solver duplicates to create the
+  /// vectors passed to `F`. A reference is held, so the caller can
+  /// destroy their own reference.
   void set_F(std::function<void(const Vec x, Vec b)> F, Vec b);
 
   /// @brief Set the function for computing the Jacobian
-  /// \f$J := dF/dx\f$ and the matrices to assemble it into.
-  /// @param[in] J Function to assemble the Jacobian at `x` into `Jmat`
-  /// and the preconditioner into `Pmat`. It is responsible for
-  /// finalising assembly.
-  /// @param[in] Jmat Matrix to assemble the Jacobian into.
-  /// @param[in] Pmat Matrix to assemble the preconditioner into. If
-  /// `nullptr`, `Jmat` is used, and `J` should assemble into `Jmat`
-  /// only. A reference to each matrix is held, so the caller can
-  /// destroy their own references.
+  /// \f$J := dF/dx\f$, and the matrices that define its layout.
+  ///
+  /// @note As for set_F, `J` must assemble into the matrices it is
+  /// passed rather than into `Jmat` and `Pmat` directly.
+  ///
+  /// @param[in] J Function to assemble the Jacobian at `x` into the
+  /// first matrix it is passed and the preconditioner into the second.
+  /// It is responsible for zeroing them and for finalising assembly.
+  /// @param[in] Jmat Matrix defining the layout of the Jacobian.
+  /// @param[in] Pmat Matrix defining the layout of the preconditioner.
+  /// If `nullptr`, `Jmat` is used, the two matrices passed to `J` are
+  /// the same, and `J` should assemble the Jacobian only. A reference
+  /// to each matrix is held, so the caller can destroy their own
+  /// references.
   void set_J(std::function<void(const Vec x, Mat Jmat, Mat Pmat)> J, Mat Jmat,
              Mat Pmat = nullptr);
 
