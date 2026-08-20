@@ -54,7 +54,7 @@ public:
   HyperElasticProblem(fem::Form<T>& L, fem::Form<T>& J,
                       const std::vector<fem::DirichletBC<T>>& bcs,
                       std::shared_ptr<fem::Function<T>> u)
-      : _l(L), _j(J), _bcs(bcs.begin(), bcs.end()),
+      : _l(L), _j(J), _bcs(bcs.begin(), bcs.end()), _u_fn(u),
         _b(la::petsc::create_vector(
                *L.function_spaces()[0]->dofmap()->index_map,
                L.function_spaces()[0]->dofmap()->index_map_bs()),
@@ -63,14 +63,19 @@ public:
         _u(la::petsc::create_vector_wrap(*u->x()), false),
         _problem(L.function_spaces()[0]->dofmap()->index_map->comm())
   {
-    // Attach the assembly callbacks and the data they assemble into.
+    // Attach the assembly callbacks and the data that defines their
+    // layout. The callbacks assemble into the vector and matrix they
+    // are passed, which are not always those registered here.
     // Capturing `this` is safe as the solver is a member, so the
-    // callbacks cannot outlive the problem. `this->` is needed as the
-    // constructor parameter J shadows the member function of the same
-    // name.
-    _problem.set_F([this](const Vec x, Vec b) { this->F(x, b); }, _b.vec());
-    _problem.set_J([this](const Vec x, Mat A, Mat) { this->J(x, A); },
-                   _matJ.mat());
+    // callbacks cannot outlive the problem.
+    _problem.set_F(
+        [this](const Vec x, Vec b)
+        { fem::petsc::assemble_residual(b, x, _l, _j, _bcs, *_u_fn); },
+        _b.vec());
+    _problem.set_J(
+        [this](const Vec x, Mat Jmat, Mat)
+        { fem::petsc::assemble_jacobian(Jmat, nullptr, x, _j, _bcs, *_u_fn); },
+        _matJ.mat());
     _problem.set_options_prefix("hyperelasticity_");
     _problem.set_from_options();
   }
@@ -91,48 +96,13 @@ public:
   /// @return The PETSc SNES object.
   SNES snes() const { return _problem.snes(); }
 
-  /// Assemble the residual F at the current point x into b
-  void F(const Vec x, Vec b)
-  {
-    // Copy the current iterate into the solution function that the
-    // forms are evaluated at
-    VecCopy(x, _u.vec());
-    VecGhostUpdateBegin(_u.vec(), INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(_u.vec(), INSERT_VALUES, SCATTER_FORWARD);
-
-    // Zero and assemble into the vector that the solver passes in. It
-    // is not necessarily the vector registered with set_F, as the line
-    // search evaluates the residual in a work vector of its own.
-    Vec b_local;
-    VecGhostGetLocalForm(b, &b_local);
-    VecZeroEntries(b_local);
-    VecGhostRestoreLocalForm(b, &b_local);
-    fem::petsc::assemble_vector(b, _l);
-    VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
-    VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
-
-    // Set bcs
-    fem::petsc::set_bc(b, _bcs, x, -1);
-  }
-
-  /// Compute J = F' at current point x
-  void J(const Vec, Mat A)
-  {
-    MatZeroEntries(A);
-    fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), _j,
-                         _bcs);
-    MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
-    MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
-    fem::set_diagonal(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
-                      *_j.function_spaces()[0], _bcs);
-    MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-  }
-
 private:
   fem::Form<T>& _l;
   fem::Form<T>& _j;
   std::vector<std::reference_wrapper<const fem::DirichletBC<T>>> _bcs;
+
+  // Solution function that the forms are evaluated at
+  std::shared_ptr<fem::Function<T>> _u_fn;
 
   // Residual vector
   la::petsc::Vector _b;

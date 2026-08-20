@@ -9,12 +9,14 @@
 #ifdef HAS_PETSC
 
 #include "Form.h"
+#include "Function.h"
 #include "assembler.h"
 #include "utils.h"
 #include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/la/petsc.h>
+#include <format>
 #include <functional>
 #include <map>
 #include <memory>
@@ -610,6 +612,178 @@ void set_bc(Vec b,
   }
   ierr = VecRestoreArray(b, &array);
   CHECK_ERROR("VecRestoreArray");
+}
+
+// -- Nonlinear problem assembly ---------------------------------------------
+
+namespace impl
+{
+/// @brief Copy a vector into the degrees-of-freedom of a function.
+/// @param[in] x Vector to copy from. Must be ghosted, with up-to-date
+/// ghost values.
+/// @param[out] u Function to copy into.
+template <std::floating_point T>
+void assign(const Vec x, Function<PetscScalar, T>& u)
+{
+  Vec x_local = nullptr;
+  PetscErrorCode ierr = VecGhostGetLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostGetLocalForm");
+  PetscInt n = 0;
+  ierr = VecGetSize(x_local, &n);
+  CHECK_ERROR("VecGetSize");
+
+  std::span<PetscScalar> _u = u.x()->array();
+  if (static_cast<std::size_t>(n) != _u.size())
+  {
+    throw std::runtime_error(std::format(
+        "Vector has {} local entries, function has {}.", n, _u.size()));
+  }
+
+  const PetscScalar* array = nullptr;
+  ierr = VecGetArrayRead(x_local, &array);
+  CHECK_ERROR("VecGetArrayRead");
+  std::ranges::copy(std::span<const PetscScalar>(array, n), _u.begin());
+  ierr = VecRestoreArrayRead(x_local, &array);
+  CHECK_ERROR("VecRestoreArrayRead");
+  ierr = VecGhostRestoreLocalForm(x, &x_local);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
+}
+
+/// @brief Zero `A`, assemble `a` into it with `bcs` applied, set the
+/// unit diagonal on rows constrained by `bcs`, and finalise assembly.
+/// @param[out] A Matrix to assemble into.
+/// @param[in] a Bilinear form to assemble.
+/// @param[in] bcs Dirichlet boundary conditions.
+template <std::floating_point T>
+void assemble_operator(
+    Mat A, const Form<PetscScalar, T>& a,
+    const std::vector<
+        std::reference_wrapper<const DirichletBC<PetscScalar, T>>>& bcs)
+{
+  PetscErrorCode ierr = MatZeroEntries(A);
+  CHECK_ERROR("MatZeroEntries");
+  fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a, bcs);
+  ierr = MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
+  CHECK_ERROR("MatAssemblyBegin");
+  ierr = MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
+  CHECK_ERROR("MatAssemblyEnd");
+  fem::set_diagonal(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
+                    *a.function_spaces()[0], bcs);
+  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  CHECK_ERROR("MatAssemblyBegin");
+  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+  CHECK_ERROR("MatAssemblyEnd");
+}
+} // namespace impl
+
+/// @brief Assemble the residual \f$F(x)\f$ of a nonlinear problem into
+/// `b`, with Dirichlet conditions applied.
+///
+/// Intended as the body of the residual callback of
+/// nls::petsc::NonlinearProblem, e.g.
+/// @code
+/// problem.set_F([&](const Vec x, Vec b)
+///               { assemble_residual(b, x, F, J, bcs, u); }, b);
+/// @endcode
+///
+/// Entries of `b` constrained by `bcs` are set to `x - g`, so that a
+/// Newton update drives `x` to the boundary condition value `g`.
+///
+/// @param[out] b Vector to assemble into. Zeroed first, and its ghost
+/// values are updated on return.
+/// @param[in] x Point at which to evaluate the residual. Must be
+/// ghosted. Its ghost values are updated before use.
+/// @param[in] F Residual form.
+/// @param[in] J Jacobian form, used to lift `bcs`.
+/// @param[in] bcs Dirichlet boundary conditions.
+/// @param[out] u Function that `F` and `J` are evaluated at. Set to
+/// `x`.
+template <std::floating_point T>
+void assemble_residual(
+    Vec b, const Vec x, const Form<PetscScalar, T>& F,
+    const Form<PetscScalar, T>& J,
+    const std::vector<
+        std::reference_wrapper<const DirichletBC<PetscScalar, T>>>& bcs,
+    Function<PetscScalar, T>& u)
+{
+  PetscErrorCode ierr = VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+  CHECK_ERROR("VecGhostUpdateBegin");
+  ierr = VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+  CHECK_ERROR("VecGhostUpdateEnd");
+  impl::assign(x, u);
+
+  // Zero the local form, as assembly accumulates into ghost entries
+  Vec b_local = nullptr;
+  ierr = VecGhostGetLocalForm(b, &b_local);
+  CHECK_ERROR("VecGhostGetLocalForm");
+  ierr = VecZeroEntries(b_local);
+  CHECK_ERROR("VecZeroEntries");
+  ierr = VecGhostRestoreLocalForm(b, &b_local);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
+
+  assemble_vector(b, F);
+
+  std::vector<std::optional<std::reference_wrapper<const Form<PetscScalar, T>>>>
+      a{J};
+  std::vector<
+      std::vector<std::reference_wrapper<const DirichletBC<PetscScalar, T>>>>
+      bcs1{bcs};
+  apply_lifting(b, a, bcs1, std::vector<Vec>{x}, -1);
+
+  ierr = VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
+  CHECK_ERROR("VecGhostUpdateBegin");
+  ierr = VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
+  CHECK_ERROR("VecGhostUpdateEnd");
+
+  set_bc(b, bcs, x, -1);
+
+  ierr = VecGhostUpdateBegin(b, INSERT_VALUES, SCATTER_FORWARD);
+  CHECK_ERROR("VecGhostUpdateBegin");
+  ierr = VecGhostUpdateEnd(b, INSERT_VALUES, SCATTER_FORWARD);
+  CHECK_ERROR("VecGhostUpdateEnd");
+}
+
+/// @brief Assemble the Jacobian \f$dF/dx\f$ of a nonlinear problem into
+/// `Jmat`, and a preconditioner into `Pmat`.
+///
+/// Intended as the body of the Jacobian callback of
+/// nls::petsc::NonlinearProblem, e.g.
+/// @code
+/// problem.set_J([&](const Vec x, Mat Jmat, Mat Pmat)
+///               { assemble_jacobian(Jmat, Pmat, x, J, nullptr, bcs, u); },
+///               A);
+/// @endcode
+///
+/// Rows and columns constrained by `bcs` are zeroed with a unit
+/// diagonal, matching the residual assembled by assemble_residual.
+///
+/// @param[out] Jmat Matrix to assemble the Jacobian into. Zeroed first.
+/// @param[out] Pmat Matrix to assemble the preconditioner into. Zeroed
+/// first. Unused, and may be `nullptr`, if `P` is not given.
+/// @param[in] x Point at which to evaluate the Jacobian. Must be
+/// ghosted. Its ghost values are updated before use.
+/// @param[in] J Jacobian form.
+/// @param[in] bcs Dirichlet boundary conditions.
+/// @param[out] u Function that `J` and `P` are evaluated at. Set to
+/// `x`.
+/// @param[in] P Preconditioner form. If not given, `Pmat` is left
+/// alone and PETSc preconditions with the Jacobian.
+template <std::floating_point T>
+void assemble_jacobian(
+    Mat Jmat, Mat Pmat, const Vec x, const Form<PetscScalar, T>& J,
+    const std::vector<
+        std::reference_wrapper<const DirichletBC<PetscScalar, T>>>& bcs,
+    Function<PetscScalar, T>& u, const Form<PetscScalar, T>* P = nullptr)
+{
+  PetscErrorCode ierr = VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+  CHECK_ERROR("VecGhostUpdateBegin");
+  ierr = VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+  CHECK_ERROR("VecGhostUpdateEnd");
+  impl::assign(x, u);
+
+  impl::assemble_operator(Jmat, J, bcs);
+  if (P)
+    impl::assemble_operator(Pmat, *P, bcs);
 }
 
 #undef CHECK_ERROR
