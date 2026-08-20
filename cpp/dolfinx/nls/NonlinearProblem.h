@@ -8,10 +8,12 @@
 
 #ifdef HAS_PETSC
 
+#include <exception>
 #include <functional>
 #include <mpi.h>
 #include <petscmat.h>
 #include <petscsnes.h>
+#include <petscsystypes.h>
 #include <petscvec.h>
 #include <string>
 #include <string_view>
@@ -24,6 +26,9 @@ namespace dolfinx::nls::petsc
 /// reference to the assembled-into vector and matrices. Configuration
 /// of the solve is left to the user, via the options database or the
 /// `SNES` object returned by snes().
+///
+/// An exception thrown by a callback aborts the solve and is re-thrown
+/// by solve().
 ///
 /// Example:
 /// @code
@@ -87,16 +92,29 @@ public:
   void set_J(std::function<void(const Vec x, Mat Jmat, Mat Pmat)> J, Mat Jmat,
              Mat Pmat = nullptr);
 
+  /// @brief Set a function called before each nonlinear iteration, e.g.
+  /// to update a time- or step-dependent term.
+  /// @param[in] update Function called with the index of the iteration
+  /// that is about to be taken.
+  void set_update(std::function<void(int step)> update);
+
   /// @brief Solve \f$F(x) = 0\f$.
   ///
   /// Non-convergence is not treated as an error (a warning is logged);
   /// use snes() and `SNESGetConvergedReason`, or the
   /// `-snes_error_if_not_converged` option, if it matters.
   ///
+  /// @note An exception thrown by a callback is re-thrown here. It must
+  /// be thrown on all ranks, otherwise ranks that continue the solve
+  /// deadlock on a collective operation. PETSc unwinds the aborted
+  /// solve without restoring its state, e.g. `x` is left locked for
+  /// read-only access, so neither this problem nor the vectors and
+  /// matrices it holds can be used again.
+  ///
   /// @param[in,out] x Solution vector, holding the initial guess on
   /// entry.
   /// @return Number of nonlinear iterations performed.
-  int solve(Vec x) const;
+  int solve(Vec x);
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
@@ -119,7 +137,17 @@ private:
   static PetscErrorCode jacobian(SNES snes, Vec x, Mat Jmat, Mat Pmat,
                                  void* ctx);
 
-  // Register the callbacks that have been set, with this as context
+  // Callback passed to SNESSetUpdate. It takes no context argument, so
+  // the owning NonlinearProblem is recovered from the SNES object.
+  static PetscErrorCode update_step(SNES snes, PetscInt step);
+
+  // Store an in-flight exception and stop the solve. Called by the
+  // callbacks, from where an exception cannot be propagated through the
+  // PETSc C frames.
+  PetscErrorCode store_exception();
+
+  // Register the callbacks that have been set, and attach this as the
+  // context that the callbacks recover the problem from
   void set_callbacks();
 
   // Function for computing the residual vector
@@ -127,6 +155,12 @@ private:
 
   // Function for computing the Jacobian and preconditioner matrices
   std::function<void(const Vec x, Mat Jmat, Mat Pmat)> _fnJ;
+
+  // Function called before each nonlinear iteration
+  std::function<void(int step)> _fnupdate;
+
+  // Exception thrown by a callback during a solve, re-thrown by solve
+  std::exception_ptr _exception;
 
   // Residual vector
   Vec _b = nullptr;

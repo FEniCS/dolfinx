@@ -18,8 +18,10 @@
 #include <petscsys.h>
 #include <petscvec.h>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 using namespace dolfinx;
 
@@ -128,6 +130,106 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     VecSet(x, PetscScalar(1));
     assigned.solve(x);
     check_solution(x);
+  }
+
+  SECTION("Separate preconditioner matrix")
+  {
+    Mat P;
+    MatCreateAIJ(comm, local_size, local_size, PETSC_DETERMINE, PETSC_DETERMINE,
+                 1, nullptr, 0, nullptr, &P);
+
+    nls::petsc::NonlinearProblem problem(comm);
+    problem.set_F(assemble_residual, b);
+    problem.set_J(
+        [](const Vec x, Mat Jmat, Mat Pmat)
+        {
+          assemble_jacobian(x, Jmat);
+          assemble_jacobian(x, Pmat);
+        },
+        J, P);
+    problem.solve(x);
+    check_solution(x);
+
+    Mat Jmat_snes, Pmat_snes;
+    SNESGetJacobian(problem.snes(), &Jmat_snes, &Pmat_snes, nullptr, nullptr);
+    CHECK(Jmat_snes == J);
+    CHECK(Pmat_snes == P);
+
+    // The preconditioner matrix was assembled into, not left at zero
+    PetscReal norm;
+    MatNorm(P, NORM_FROBENIUS, &norm);
+    CHECK(norm > 0.0);
+
+    MatDestroy(&P);
+  }
+
+  SECTION("Update hook")
+  {
+    nls::petsc::NonlinearProblem problem(comm);
+    problem.set_F(assemble_residual, b);
+    problem.set_J([](const Vec x, Mat Jmat, Mat)
+                  { assemble_jacobian(x, Jmat); }, J);
+
+    std::vector<int> steps;
+    problem.set_update([&steps](int step) { steps.push_back(step); });
+
+    int num_it = problem.solve(x);
+    check_solution(x);
+
+    // The hook runs once at the start of each iteration
+    REQUIRE(steps.size() == std::size_t(num_it));
+    for (std::size_t i = 0; i < steps.size(); ++i)
+      CHECK(steps[i] == int(i));
+  }
+
+  SECTION("Exception in a callback")
+  {
+    // PETSc does not restore its state when an aborted solve unwinds,
+    // so the problem and the vectors it holds are dead afterwards. Use
+    // vectors local to this section.
+    Vec x_local, b_local;
+    VecDuplicate(x, &x_local);
+    VecDuplicate(b, &b_local);
+    VecSet(x_local, PetscScalar(1));
+
+    nls::petsc::NonlinearProblem problem(comm);
+    problem.set_F([](const Vec, Vec)
+                  { throw std::runtime_error("Residual failed"); }, b_local);
+    problem.set_J([](const Vec x, Mat Jmat, Mat)
+                  { assemble_jacobian(x, Jmat); }, J);
+
+    // The exception from the callback is re-thrown, not a PETSc error
+    try
+    {
+      problem.solve(x_local);
+      FAIL("Expected the callback exception to be re-thrown.");
+    }
+    catch (const std::runtime_error& e)
+    {
+      CHECK(std::string(e.what()) == "Residual failed");
+    }
+
+    VecDestroy(&b_local);
+    VecDestroy(&x_local);
+  }
+
+  SECTION("Non-convergence is not an error")
+  {
+    PetscOptionsSetValue(nullptr, "-max_it_snes_max_it", "1");
+
+    nls::petsc::NonlinearProblem problem(comm);
+    problem.set_F(assemble_residual, b);
+    problem.set_J([](const Vec x, Mat Jmat, Mat)
+                  { assemble_jacobian(x, Jmat); }, J);
+    problem.set_options_prefix("max_it_");
+    problem.set_from_options();
+
+    CHECK_NOTHROW(problem.solve(x));
+    SNESConvergedReason reason;
+    SNESGetConvergedReason(problem.snes(), &reason);
+    CHECK(reason == SNES_DIVERGED_MAX_IT);
+
+    PetscOptionsClearValue(nullptr, "-max_it_snes_max_it");
   }
 
   SECTION("Wrap an existing SNES")
