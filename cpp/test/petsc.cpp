@@ -75,7 +75,7 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
     MatCreateVecs(A, &x, &b);
     VecSet(b, 1.0);
 
-    int num_it = solver.solve(x, b, false);
+    PetscInt num_it = solver.solve(x, b, false);
     CHECK(num_it >= 0);
 
     // A is the identity, so x == b

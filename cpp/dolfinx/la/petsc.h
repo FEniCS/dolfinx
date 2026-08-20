@@ -509,7 +509,7 @@ public:
   /// = b if transpose is true). Non-convergence is not treated as an
   /// error by this function (a warning is logged); use ksp() and
   /// KSPGetConvergedReason to check the outcome if required.
-  int solve(Vec x, const Vec b, bool transpose = false) const;
+  PetscInt solve(Vec x, const Vec b, bool transpose = false) const;
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
