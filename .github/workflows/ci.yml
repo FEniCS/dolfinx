@@ -40,13 +40,6 @@ jobs:
       # optional-PETSc code paths and needs only one MPI.
       matrix:
         include:
-          # PETSc solver sets mirror the per-arch '--download-' packages in
-          # docker/Dockerfile.test-env, so this workflow and ccpp.yml build
-          # PETSc the same way. Two of those packages have no Spack variant
-          # in petsc: 'spai' (real64-32) and serial 'superlu' (all int32
-          # arches); everything else matches. Note the pattern the
-          # Dockerfile encodes: hypre is double-precision only, SuperLU_DIST
-          # has no single-precision complex, and the int64 arches drop metis.
           - {mpi: openmpi, petsc: true, scalar: float32, index: int32,
              petsc_dep: "^petsc+mpi+metis+mumps+ptscotch+scalapack+superlu-dist~hypre~suite-sparse~double~complex~int64"}
           - {mpi: openmpi, petsc: true, scalar: float64, index: int32,
