@@ -663,12 +663,20 @@ void assemble_operator(
   PetscErrorCode ierr = MatZeroEntries(A);
   CHECK_ERROR("MatZeroEntries");
   fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a, bcs);
-  ierr = MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
-  CHECK_ERROR("MatAssemblyBegin");
-  ierr = MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
-  CHECK_ERROR("MatAssemblyEnd");
-  fem::set_diagonal(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
-                    *a.function_spaces()[0], bcs);
+
+  // The unit diagonal is only meaningful when the rows and columns are
+  // indexed by the same space
+  if (a.function_spaces()[0] == a.function_spaces()[1])
+  {
+    // Flush to switch from adding to inserting
+    ierr = MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
+    CHECK_ERROR("MatAssemblyBegin");
+    ierr = MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
+    CHECK_ERROR("MatAssemblyEnd");
+    fem::set_diagonal(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
+                      *a.function_spaces()[0], bcs);
+  }
+
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   CHECK_ERROR("MatAssemblyBegin");
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
