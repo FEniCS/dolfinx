@@ -153,7 +153,7 @@ def create_vector(
 
 
 def create_matrix(
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     kind: str | Sequence[Sequence[str]] | None = None,
 ) -> PETSc.Mat:
     """Create a matrix compatible with a sequence of bilinear forms.
@@ -381,7 +381,7 @@ def _assemble_vector_petsc(
 # -- Matrix assembly ------------------------------------------------------
 @overload
 def assemble_matrix(
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1.0,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
@@ -395,7 +395,7 @@ def assemble_matrix(
 @overload
 def assemble_matrix(
     A: PETSc.Mat,
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1.0,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
@@ -409,7 +409,7 @@ def assemble_matrix(
 
 @functools.singledispatch
 def assemble_matrix(
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
@@ -478,7 +478,7 @@ def assemble_matrix(
 @assemble_matrix.register  # type: ignore[attr-defined]
 def _assemble_matrix_petsc(
     A: PETSc.Mat,
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
@@ -513,12 +513,12 @@ def _assemble_matrix_petsc(
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
                     _assemble_matrix_petsc(Asub, a_block, bcs, diag, const, coeff)
-                elif i == j:
+                elif i == j and bcs is not None:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0].contains(bc.function_space._cpp_object):
+                        if row_forms[0].function_spaces[0].contains(bc.function_space._cpp_object):  # type: ignore
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
                                 " and have DirichletBC applied."
@@ -559,7 +559,7 @@ def _assemble_matrix_petsc(
                     )
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
                 elif i == j:
-                    for bc in _bcs:
+                    for bc in _bcs:  # type: ignore
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
@@ -599,7 +599,7 @@ def _assemble_matrix_petsc(
 
 def apply_lifting(
     b: PETSc.Vec,
-    a: Sequence[Form] | Sequence[Sequence[Form]],
+    a: Sequence[Form | None] | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | Sequence[Sequence[DirichletBC]] | None,
     x0: Sequence[PETSc.Vec] | None = None,
     alpha: float = 1,
@@ -665,12 +665,16 @@ def apply_lifting(
     """
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()  # type: ignore[attr-defined]
-        constants = [pack_constants(forms) for forms in a] if constants is None else constants  # type: ignore[assignment]
-        coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
+        if constants is None:
+            constants = [pack_constants(forms) for forms in a]  # type: ignore
+        if coeffs is None:
+            coeffs = [pack_coefficients(forms) for forms in a]  # type: ignore
+        assert coeffs is not None
+        assert constants is not None
         for b_sub, a_sub, const, coeff in zip(
             b.getNestSubVecs(),
             a,
-            constants,  # type: ignore[arg-type]
+            constants,
             coeffs,
             strict=True,
         ):
@@ -697,8 +701,8 @@ def apply_lifting(
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
                         zip(a, offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True)
                     ):
-                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore[call-overload]
-                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore[index, call-overload, assignment]
+                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore
+                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore
                         const_ = [
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val
                             for val in const
@@ -1085,7 +1089,7 @@ class LinearProblem(typing.Generic[_U]):
         return typing.cast(Form | Sequence[Sequence[Form]], self._a)
 
     @property
-    def preconditioner(self) -> Form | Sequence[Sequence[Form]] | None:
+    def preconditioner(self) -> Form | Sequence[Sequence[Form | None]] | None:
         """The compiled bilinear form representing the preconditioner."""
         return self._preconditioner
 
@@ -1280,7 +1284,7 @@ class NonlinearProblem(typing.Generic[_U]):
     """  # noqa: D301
 
     _P_mat: PETSc.Mat | None
-    _preconditioner: Form | Sequence[Sequence[Form]] | None
+    _preconditioner: Form | Sequence[Sequence[Form | None]] | None
 
     @typing.overload
     def __init__(
@@ -1539,7 +1543,7 @@ class NonlinearProblem(typing.Generic[_U]):
         return typing.cast(Form | Sequence[Sequence[Form]], self._J)
 
     @property
-    def preconditioner(self) -> Form | Sequence[Sequence[Form]] | None:
+    def preconditioner(self) -> Form | Sequence[Sequence[Form | None]] | None:
         """The compiled preconditioner."""
         return self._preconditioner
 
