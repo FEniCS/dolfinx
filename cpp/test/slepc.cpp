@@ -12,7 +12,6 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cmath>
 #include <complex>
-#include <cstdint>
 #include <dolfinx/la/slepc.h>
 #include <limits>
 #include <petscmat.h>
@@ -111,15 +110,15 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     // which Krylov methods recover first
     EPSSetProblemType(solver.eps(), EPS_HEP);
     EPSSetWhichEigenpairs(solver.eps(), EPS_LARGEST_MAGNITUDE);
+    EPSSetDimensions(solver.eps(), 3, PETSC_DETERMINE, PETSC_DETERMINE);
 
-    solver.solve(3);
+    solver.solve();
 
-    const std::int64_t nconv = solver.get_number_converged();
+    const PetscInt nconv = solver.get_number_converged();
     REQUIRE(nconv >= 3);
-    CHECK(solver.get_iteration_number() > 0);
 
     // Spectrum is {1, ..., N}, so the three largest are N, N-1, N-2
-    for (std::int64_t i = 0; i < 3; ++i)
+    for (PetscInt i = 0; i < 3; ++i)
     {
       std::complex<PetscReal> l = solver.get_eigenvalue(i);
       CHECK_THAT(
@@ -167,8 +166,9 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
 
     EPSSetProblemType(solver.eps(), EPS_NHEP);
     EPSSetWhichEigenpairs(solver.eps(), EPS_LARGEST_MAGNITUDE);
+    EPSSetDimensions(solver.eps(), 2, PETSC_DETERMINE, PETSC_DETERMINE);
 
-    solver.solve(2);
+    solver.solve();
     REQUIRE(solver.get_number_converged() >= 2);
 
     // get_eigenvalue is independent of the PETSc scalar type: the pair
@@ -212,22 +212,10 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     MatDestroy(&A);
   }
 
-  SECTION("Requesting a non-positive number of eigenpairs throws")
-  {
-    Mat A = create_diagonal_matrix(N);
-    la::SLEPcEigenSolver solver(MPI_COMM_WORLD);
-    solver.set_operators(A, nullptr);
-
-    // Collective-safe: every rank evaluates the same condition and
-    // throws before entering any collective
-    CHECK_THROWS_AS(solver.solve(0), std::runtime_error);
-    CHECK_THROWS_AS(solver.solve(-1), std::runtime_error);
-
-    MatDestroy(&A);
-  }
-
   SECTION("Solving before setting operators throws")
   {
+    // Collective-safe: every rank evaluates the same condition and
+    // throws before entering any collective
     la::SLEPcEigenSolver solver(MPI_COMM_WORLD);
     CHECK_THROWS_AS(solver.solve(), std::runtime_error);
   }

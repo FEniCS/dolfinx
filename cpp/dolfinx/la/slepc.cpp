@@ -73,46 +73,14 @@ void SLEPcEigenSolver::set_operators(const Mat A, const Mat B)
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()
 {
-  // Get operators
   assert(_eps);
+
+  // EPSGetOperators returns a null Mat if no operators have been set
   Mat A = nullptr;
   PetscErrorCode ierr = EPSGetOperators(_eps, &A, nullptr);
   CHECK_ERROR("EPSGetOperators");
   if (!A)
     throw std::runtime_error("Operators must be set before calling solve");
-
-  PetscInt m(0), n(0);
-  ierr = MatGetSize(A, &m, &n);
-  CHECK_ERROR("MatGetSize");
-  solve(n);
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::solve(std::int64_t n)
-{
-  if (n <= 0)
-    throw std::runtime_error("Number of requested eigenpairs must be > 0");
-
-  assert(_eps);
-  PetscErrorCode ierr;
-
-#ifndef NDEBUG
-  // Get operators
-  Mat A = nullptr;
-  ierr = EPSGetOperators(_eps, &A, nullptr);
-  CHECK_ERROR("EPSGetOperators");
-  if (!A)
-    throw std::runtime_error("Operators must be set before calling solve");
-
-  PetscInt _m(0), _n(0);
-  ierr = MatGetSize(A, &_m, &_n);
-  CHECK_ERROR("MatGetSize");
-  assert(n <= _n);
-#endif
-
-  // Set number of eigenpairs to compute
-  ierr = EPSSetDimensions(_eps, static_cast<PetscInt>(n), PETSC_DECIDE,
-                          PETSC_DECIDE);
-  CHECK_ERROR("EPSSetDimensions");
 
   // Solve eigenvalue problem
   ierr = EPSSolve(_eps);
@@ -137,7 +105,7 @@ void SLEPcEigenSolver::solve(std::int64_t n)
                eps_type ? eps_type : "unknown", num_iterations);
 }
 //-----------------------------------------------------------------------------
-std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(std::int64_t i) const
+std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(PetscInt i) const
 {
   assert(_eps);
   if (i < 0)
@@ -154,22 +122,21 @@ std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(std::int64_t i) const
         std::format("Requested eigenvalue ({}) has not been computed", i));
   }
 
-  const PetscInt ii = static_cast<PetscInt>(i);
 #ifdef PETSC_USE_COMPLEX
   PetscScalar l;
-  ierr = EPSGetEigenvalue(_eps, ii, &l, nullptr);
+  ierr = EPSGetEigenvalue(_eps, i, &l, nullptr);
   CHECK_ERROR("EPSGetEigenvalue");
   return l;
 #else
   PetscScalar lr, li;
-  ierr = EPSGetEigenvalue(_eps, ii, &lr, &li);
+  ierr = EPSGetEigenvalue(_eps, i, &lr, &li);
   CHECK_ERROR("EPSGetEigenvalue");
   return std::complex<PetscReal>(lr, li);
 #endif
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
-                                     Vec c, std::int64_t i) const
+                                     Vec c, PetscInt i) const
 {
   assert(_eps);
   if (i < 0)
@@ -186,11 +153,11 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
         std::format("Requested eigenpair ({}) has not been computed", i));
   }
 
-  ierr = EPSGetEigenpair(_eps, static_cast<PetscInt>(i), &lr, &lc, r, c);
+  ierr = EPSGetEigenpair(_eps, i, &lr, &lc, r, c);
   CHECK_ERROR("EPSGetEigenpair");
 }
 //-----------------------------------------------------------------------------
-std::int64_t SLEPcEigenSolver::get_number_converged() const
+PetscInt SLEPcEigenSolver::get_number_converged() const
 {
   assert(_eps);
   PetscInt num_conv;
@@ -221,15 +188,6 @@ void SLEPcEigenSolver::set_from_options() const
   assert(_eps);
   PetscErrorCode ierr = EPSSetFromOptions(_eps);
   CHECK_ERROR("EPSSetFromOptions");
-}
-//-----------------------------------------------------------------------------
-int SLEPcEigenSolver::get_iteration_number() const
-{
-  assert(_eps);
-  PetscInt num_iter;
-  PetscErrorCode ierr = EPSGetIterationNumber(_eps, &num_iter);
-  CHECK_ERROR("EPSGetIterationNumber");
-  return num_iter;
 }
 //-----------------------------------------------------------------------------
 EPS SLEPcEigenSolver::eps() const { return _eps; }

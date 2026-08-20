@@ -9,7 +9,6 @@
 #ifdef HAS_SLEPC
 
 #include <complex>
-#include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <petscmat.h>
 #include <petscvec.h>
@@ -62,24 +61,26 @@ public:
   /// `nullptr` for a standard eigenvalue problem.
   void set_operators(const Mat A, const Mat B);
 
-  /// @brief Compute all eigenpairs of \f$A\f$ (solve
-  /// \f$A x = \lambda x\f$).
-  /// @note Requests as many eigenpairs as the global dimension of
-  /// \f$A\f$. Prefer solve(std::int64_t) with the number of
-  /// eigenpairs actually required.
+  /// @brief Solve the eigenvalue problem \f$A x = \lambda x\f$ (or
+  /// \f$A x = \lambda B x\f$).
+  /// @note The number of eigenpairs to compute, and every other solver
+  /// setting, is applied to the EPS object returned by eps(). SLEPc
+  /// sizes its working subspace from the requested number, which
+  /// defaults to one, e.g.
+  /// @code
+  /// SLEPcEigenSolver solver(comm);
+  /// solver.set_operators(A, nullptr);
+  /// EPSSetDimensions(solver.eps(), 5, PETSC_DETERMINE, PETSC_DETERMINE);
+  /// EPSSetWhichEigenpairs(solver.eps(), EPS_SMALLEST_REAL);
+  /// solver.solve();
+  /// @endcode
   void solve();
-
-  /// @brief Compute the `n` first eigenpairs of \f$A\f$ (solve
-  /// \f$A x = \lambda x\f$).
-  /// @param[in] n Number of eigenpairs to compute. Must be greater
-  /// than zero and at most the global dimension of \f$A\f$.
-  void solve(std::int64_t n);
 
   /// @brief Get the ith eigenvalue.
   /// @param[in] i Index of the eigenvalue, in
   /// `[0, get_number_converged())`.
   /// @return The eigenvalue.
-  std::complex<PetscReal> get_eigenvalue(std::int64_t i) const;
+  std::complex<PetscReal> get_eigenvalue(PetscInt i) const;
 
   /// @brief Get the ith eigenpair.
   /// @param[out] lr Real part of the eigenvalue.
@@ -92,16 +93,12 @@ public:
   /// eigenvector are held entirely in `lr` and `r`, and `lc` and `c`
   /// are set to zero.
   void get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r, Vec c,
-                     std::int64_t i) const;
-
-  /// @brief Get the number of iterations used by the solver.
-  /// @return Iteration count of the last solve.
-  int get_iteration_number() const;
+                     PetscInt i) const;
 
   /// @brief Get the number of converged eigenvalues.
   /// @return Number of converged eigenpairs available from
   /// get_eigenvalue and get_eigenpair.
-  std::int64_t get_number_converged() const;
+  PetscInt get_number_converged() const;
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
@@ -112,8 +109,8 @@ public:
   std::string get_options_prefix() const;
 
   /// @brief Set options from the PETSc options database.
-  /// @note Call after set_options_prefix and any settings the database
-  /// should override. `-eps_nev` has no effect; solve sets it.
+  /// @note Call after set_options_prefix and after any settings the
+  /// database should override.
   void set_from_options() const;
 
   /// Return SLEPc EPS pointer
