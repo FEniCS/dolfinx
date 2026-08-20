@@ -116,18 +116,23 @@ public:
   /// @return Number of nonlinear iterations performed.
   int solve(Vec x);
 
-  /// Sets the prefix used by PETSc when searching the PETSc options
-  /// database
+  /// @brief Set the prefix used by PETSc when searching the PETSc
+  /// options database.
+  /// @param[in] options_prefix Prefix to set. Conventionally ends with
+  /// `_`.
   void set_options_prefix(std::string_view options_prefix);
 
-  /// Returns the prefix used by PETSc when searching the PETSc options
-  /// database
+  /// @brief Get the prefix used by PETSc when searching the PETSc
+  /// options database.
+  /// @return The options prefix.
   std::string get_options_prefix() const;
 
-  /// Set options from PETSc options database
+  /// @brief Set options from the PETSc options database.
   void set_from_options() const;
 
-  /// Return PETSc SNES pointer
+  /// @brief Get the wrapped PETSc SNES object, e.g. to configure the
+  /// line search or the Krylov solver used for each iteration.
+  /// @return The PETSc SNES object. The problem retains ownership.
   SNES snes() const;
 
 private:

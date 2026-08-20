@@ -27,11 +27,20 @@ constexpr const char* ctx_name = "dolfinx_nonlinear_problem";
 } // namespace
 
 //-----------------------------------------------------------------------------
+// Check a PETSc error code and throw a descriptive exception if it is
+// non-zero. Expects a local `PetscErrorCode ierr` in scope.
+#define CHECK_ERROR(NAME)                                                      \
+  do                                                                           \
+  {                                                                            \
+    if (ierr != 0)                                                             \
+      la::petsc::error(ierr, __FILE__, NAME);                                  \
+  } while (0)
+
+//-----------------------------------------------------------------------------
 nls::petsc::NonlinearProblem::NonlinearProblem(MPI_Comm comm) : _snes(nullptr)
 {
   PetscErrorCode ierr = SNESCreate(comm, &_snes);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "SNESCreate");
+  CHECK_ERROR("SNESCreate");
   set_callbacks();
 }
 //-----------------------------------------------------------------------------
@@ -41,9 +50,9 @@ nls::petsc::NonlinearProblem::NonlinearProblem(SNES snes, bool inc_ref_count)
   assert(_snes);
   if (inc_ref_count)
   {
-    PetscErrorCode ierr = PetscObjectReference((PetscObject)_snes);
-    if (ierr != 0)
-      la::petsc::error(ierr, __FILE__, "PetscObjectReference");
+    PetscErrorCode ierr
+        = PetscObjectReference(reinterpret_cast<PetscObject>(_snes));
+    CHECK_ERROR("PetscObjectReference");
   }
 
   set_callbacks();
@@ -99,16 +108,14 @@ void nls::petsc::NonlinearProblem::set_F(std::function<void(const Vec, Vec)> F,
   assert(b);
   _fnF = std::move(F);
 
-  PetscErrorCode ierr = PetscObjectReference((PetscObject)b);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "PetscObjectReference");
+  PetscErrorCode ierr = PetscObjectReference(reinterpret_cast<PetscObject>(b));
+  CHECK_ERROR("PetscObjectReference");
   if (_b)
     VecDestroy(&_b);
   _b = b;
 
   ierr = SNESSetFunction(_snes, _b, residual, this);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "SNESSetFunction");
+  CHECK_ERROR("SNESSetFunction");
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::NonlinearProblem::set_J(
@@ -121,12 +128,11 @@ void nls::petsc::NonlinearProblem::set_J(
   if (!Pmat)
     Pmat = Jmat;
 
-  PetscErrorCode ierr = PetscObjectReference((PetscObject)Jmat);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "PetscObjectReference");
-  ierr = PetscObjectReference((PetscObject)Pmat);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "PetscObjectReference");
+  PetscErrorCode ierr
+      = PetscObjectReference(reinterpret_cast<PetscObject>(Jmat));
+  CHECK_ERROR("PetscObjectReference");
+  ierr = PetscObjectReference(reinterpret_cast<PetscObject>(Pmat));
+  CHECK_ERROR("PetscObjectReference");
 
   if (_matJ)
     MatDestroy(&_matJ);
@@ -136,8 +142,7 @@ void nls::petsc::NonlinearProblem::set_J(
   _matP = Pmat;
 
   ierr = SNESSetJacobian(_snes, _matJ, _matP, jacobian, this);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "SNESSetJacobian");
+  CHECK_ERROR("SNESSetJacobian");
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::NonlinearProblem::set_update(std::function<void(int)> update)
@@ -145,8 +150,7 @@ void nls::petsc::NonlinearProblem::set_update(std::function<void(int)> update)
   assert(_snes);
   _fnupdate = std::move(update);
   PetscErrorCode ierr = SNESSetUpdate(_snes, update_step);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "SNESSetUpdate");
+  CHECK_ERROR("SNESSetUpdate");
 }
 //-----------------------------------------------------------------------------
 int nls::petsc::NonlinearProblem::solve(Vec x)
@@ -164,13 +168,11 @@ int nls::petsc::NonlinearProblem::solve(Vec x)
   if (_exception)
     std::rethrow_exception(std::exchange(_exception, nullptr));
 
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "SNESSolve");
+  CHECK_ERROR("SNESSolve");
 
   PetscInt num_iterations = 0;
   ierr = SNESGetIterationNumber(_snes, &num_iterations);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "SNESGetIterationNumber");
+  CHECK_ERROR("SNESGetIterationNumber");
 
   // Check if the solution converged and warn if not. Note: this does
   // not throw on non-convergence -- the caller is responsible for
@@ -178,14 +180,12 @@ int nls::petsc::NonlinearProblem::solve(Vec x)
   // its use case.
   SNESConvergedReason reason;
   ierr = SNESGetConvergedReason(_snes, &reason);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "SNESGetConvergedReason");
+  CHECK_ERROR("SNESGetConvergedReason");
   if (reason < 0)
   {
     const char* reason_str;
     ierr = SNESGetConvergedReasonString(_snes, &reason_str);
-    if (ierr != 0)
-      la::petsc::error(ierr, __FILE__, "SNESGetConvergedReasonString");
+    CHECK_ERROR("SNESGetConvergedReasonString");
     spdlog::warn("PETSc SNES solver did not converge in {} iterations "
                  "(PETSc reason: {}).",
                  num_iterations, reason_str);
@@ -200,8 +200,7 @@ void nls::petsc::NonlinearProblem::set_options_prefix(
   assert(_snes);
   PetscErrorCode ierr
       = SNESSetOptionsPrefix(_snes, std::string(options_prefix).c_str());
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "SNESSetOptionsPrefix");
+  CHECK_ERROR("SNESSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string nls::petsc::NonlinearProblem::get_options_prefix() const
@@ -209,8 +208,7 @@ std::string nls::petsc::NonlinearProblem::get_options_prefix() const
   assert(_snes);
   const char* prefix = nullptr;
   PetscErrorCode ierr = SNESGetOptionsPrefix(_snes, &prefix);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "SNESGetOptionsPrefix");
+  CHECK_ERROR("SNESGetOptionsPrefix");
   return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
@@ -218,8 +216,7 @@ void nls::petsc::NonlinearProblem::set_from_options() const
 {
   assert(_snes);
   PetscErrorCode ierr = SNESSetFromOptions(_snes);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "SNESSetFromOptions");
+  CHECK_ERROR("SNESSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 SNES nls::petsc::NonlinearProblem::snes() const { return _snes; }
@@ -262,16 +259,19 @@ PetscErrorCode nls::petsc::NonlinearProblem::update_step(SNES snes,
                                                          PetscInt step)
 {
   // SNESSetUpdate takes no context argument, so recover the problem
-  // from the container composed on the SNES object
+  // from the container composed on the SNES object. Errors are returned
+  // rather than thrown, as this is called from PETSc.
   PetscContainer container = nullptr;
   PetscErrorCode ierr
-      = PetscObjectQuery((PetscObject)snes, ctx_name, (PetscObject*)&container);
+      = PetscObjectQuery(reinterpret_cast<PetscObject>(snes), ctx_name,
+                         reinterpret_cast<PetscObject*>(&container));
   if (ierr != 0)
     return ierr;
   assert(container);
 
   NonlinearProblem* problem = nullptr;
-  ierr = PetscContainerGetPointer(container, (void**)&problem);
+  ierr
+      = PetscContainerGetPointer(container, reinterpret_cast<void**>(&problem));
   if (ierr != 0)
     return ierr;
 
@@ -316,40 +316,33 @@ void nls::petsc::NonlinearProblem::set_callbacks()
   // argument. Composing replaces any previously attached container, and
   // the SNES object holds the only reference to it.
   PetscContainer container = nullptr;
-  PetscErrorCode ierr
-      = PetscContainerCreate(PetscObjectComm((PetscObject)_snes), &container);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "PetscContainerCreate");
+  PetscErrorCode ierr = PetscContainerCreate(
+      PetscObjectComm(reinterpret_cast<PetscObject>(_snes)), &container);
+  CHECK_ERROR("PetscContainerCreate");
   ierr = PetscContainerSetPointer(container, this);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "PetscContainerSetPointer");
-  ierr = PetscObjectCompose((PetscObject)_snes, ctx_name,
-                            (PetscObject)container);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "PetscObjectCompose");
+  CHECK_ERROR("PetscContainerSetPointer");
+  ierr = PetscObjectCompose(reinterpret_cast<PetscObject>(_snes), ctx_name,
+                            reinterpret_cast<PetscObject>(container));
+  CHECK_ERROR("PetscObjectCompose");
   ierr = PetscContainerDestroy(&container);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "PetscContainerDestroy");
+  CHECK_ERROR("PetscContainerDestroy");
 
   if (_fnF)
   {
     ierr = SNESSetFunction(_snes, _b, residual, this);
-    if (ierr != 0)
-      la::petsc::error(ierr, __FILE__, "SNESSetFunction");
+    CHECK_ERROR("SNESSetFunction");
   }
 
   if (_fnJ)
   {
     ierr = SNESSetJacobian(_snes, _matJ, _matP, jacobian, this);
-    if (ierr != 0)
-      la::petsc::error(ierr, __FILE__, "SNESSetJacobian");
+    CHECK_ERROR("SNESSetJacobian");
   }
 
   if (_fnupdate)
   {
     ierr = SNESSetUpdate(_snes, update_step);
-    if (ierr != 0)
-      la::petsc::error(ierr, __FILE__, "SNESSetUpdate");
+    CHECK_ERROR("SNESSetUpdate");
   }
 }
 //-----------------------------------------------------------------------------
