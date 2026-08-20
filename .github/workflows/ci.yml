@@ -1,4 +1,4 @@
-name: CI (with Spack)
+name: CI (Spack-based)
 
 on:
   # Uncomment the below 'push' to trigger on push
@@ -25,8 +25,8 @@ env:
   PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
 jobs:
-  ci-spack-build:
-    name: ci-spack-build (${{ matrix.mpi }}${{ matrix.petsc && format(', petsc {0}/{1}', matrix.scalar, matrix.index) || ', no petsc' }})
+  ci-build:
+    name: ci-build (${{ matrix.mpi }}${{ matrix.petsc && format(', petsc {0}/{1}', matrix.scalar, matrix.index) || ', no petsc' }})
     runs-on: ubuntu-26.04
     container: ubuntu:26.04
     permissions:

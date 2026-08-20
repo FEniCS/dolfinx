@@ -277,7 +277,6 @@ jobs:
           apt-get install libegl1 libxrender1
           pip install pyvista
 
-
       - name: Run demos (Python, serial)
         run: |
           pip install pytest-xdist
