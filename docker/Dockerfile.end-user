@@ -67,12 +67,11 @@ ONBUILD COPY dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.js
 # CMake build type for DOLFINx C++ build. See CMake documentation.
 ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
 
-# Using pip install `.[test]` with --no-dependencies and --no-build-isolation
-# does not install necessary packages, hence install build and optional
-# dependencies manually here.
+# --no-build-isolation means build dependencies (the `build` dependency
+# group in pyproject.toml) are not installed automatically; also install
+# the packages needed for testing and optional features here.
 ONBUILD RUN cd dolfinx/python && \
-            pip install --no-cache-dir scikit-build-core && \
-            python -m scikit_build_core.build requires | python -c "import sys, json; print(' '.join(json.load(sys.stdin)))" | xargs pip install --no-cache-dir && \
+            pip install --no-cache-dir --group pyproject.toml:build && \
             pip install --no-cache-dir pyamg pytest scipy matplotlib numba # test + optional set
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/

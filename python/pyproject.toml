@@ -4,13 +4,10 @@
 # NOTE: petsc4py is an optional build dependency, therefore we don't
 # list it here.
 [build-system]
-# scikit-build-core>=0.11 has SPDX license support PEP 639
+# scikit-build-core>=0.11 has SPDX license support PEP 639.
 # scikit-build-core>=1.0.0: editable installs need its PathFinder-based
-# module resolution. Older versions' editable redirect always fails to
-# import dolfinx.cpp, since the nanobind-generated dolfinx/cpp/*.pyi stub
-# directory sits alongside the compiled dolfinx/cpp.<ext> module and
-# confuses their file-vs-package classifier.
-# nanobind>=2.9.2 has working recursive stubgen
+# module resolution, required for nanobind-stubgen `import dolfinx.cpp`.
+# nanobind>=2.9.2 has working recursive stubgen.
 requires = ["scikit-build-core>=1.0.0", "nanobind>=2.9.2", "mpi4py"]
 build-backend = "scikit_build_core.build"
 
@@ -45,6 +42,24 @@ demo = [
       "scipy",
       "pyvista",
 ]
+optional = [
+      "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
+]
+petsc4py = ["petsc4py"]
+typing = ["types-cffi", "types-setuptools", "scipy-stubs"]
+
+[dependency-groups]
+# Keep in sync with [build-system].requires above (petsc4py is an
+# optional build dependency and is intentionally excluded).
+build = ["scikit-build-core>=1.0.0", "nanobind>=2.9.2", "mpi4py"]
+test = [
+      "matplotlib",
+      "networkx",
+      "packaging",
+      "pytest>=9.0.0",
+      "scipy",
+      "fenics-dolfinx[optional]",
+]
 docs = [
       "breathe",
       "jupytext",
@@ -58,28 +73,16 @@ docs = [
       "sphinxcontrib-bibtex",
       "fenics-dolfinx[demo]",
 ]
-lint = ["ruff", "gersemi"]
-mypy = ["mypy", "types-cffi", "types-setuptools", "scipy-stubs"]
-optional = [
-      "numba; (sys_platform != 'darwin' or platform_machine != 'x86_64') and (sys_platform != 'win32' or platform_machine != 'ARM64')",
-]
-petsc4py = ["petsc4py"]
-test = [
-      "matplotlib",
-      "networkx",
-      "packaging",
-      "pytest>=9.0.0",
-      "scipy",
-      "fenics-dolfinx[optional]",
-]
+lint = ["ruff", "gersemi", "clang-format"]
 ci = [
       "pytest-xdist",
-      "fenics-dolfinx[build]",
-      "fenics-dolfinx[docs]",
-      "fenics-dolfinx[lint]",
-      "fenics-dolfinx[mypy]",
+      "mypy",
+      { include-group = "build" },
+      { include-group = "docs" },
+      { include-group = "lint" },
+      { include-group = "test" },
       "fenics-dolfinx[optional]",
-      "fenics-dolfinx[test]",
+      "fenics-dolfinx[typing]",
 ]
 
 [tool.scikit-build]
@@ -177,6 +180,10 @@ module = [
       "pyvista",
       "pyvistaqt",
       "networkx",
+      "scipy.*",
+      "cffi",
+      "cffi.*",
+      "_cffi_backend",
 ]
 ignore_missing_imports = true
 
