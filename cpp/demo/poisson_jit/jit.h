@@ -6,6 +6,11 @@
 
 #pragma once
 
+#ifdef JIT_EMBED_PYTHON
+// Python.h sets feature-test macros and must precede the standard headers
+#include <Python.h>
+#endif
+
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/read.hpp>
 #include <boost/asio/readable_pipe.hpp>
@@ -140,6 +145,135 @@ inline void run(const std::filesystem::path& exe,
   }
 }
 
+#ifdef JIT_EMBED_PYTHON
+/// Format the active Python exception the way the interpreter would
+/// print it. The GIL must be held.
+inline std::string python_error()
+{
+  PyObject *type = nullptr, *value = nullptr, *traceback = nullptr;
+  PyErr_Fetch(&type, &value, &traceback);
+  PyErr_NormalizeException(&type, &value, &traceback);
+
+  std::string message = "Python raised an exception, with no traceback.";
+  if (PyObject* module = PyImport_ImportModule("traceback"))
+  {
+    PyObject* lines = PyObject_CallMethod(
+        module, "format_exception", "OOO", type ? type : Py_None,
+        value ? value : Py_None, traceback ? traceback : Py_None);
+    if (lines)
+    {
+      PyObject* separator = PyUnicode_FromString("");
+      if (PyObject* joined = PyUnicode_Join(separator, lines))
+      {
+        message = PyUnicode_AsUTF8(joined);
+        Py_DECREF(joined);
+      }
+      Py_XDECREF(separator);
+      Py_DECREF(lines);
+    }
+    else
+      PyErr_Clear();
+    Py_DECREF(module);
+  }
+  else
+    PyErr_Clear();
+
+  Py_XDECREF(type);
+  Py_XDECREF(value);
+  Py_XDECREF(traceback);
+  return message;
+}
+
+/// @brief Start the interpreter, once per process.
+///
+/// Never finalised: finalisation would have to be ordered against
+/// MPI_Finalize and PetscFinalize, and the process is about to exit. An
+/// interpreter that is already running, as when this code is reached
+/// from the Python interface, is adopted rather than replaced.
+inline void start_interpreter()
+{
+  static const bool started = []
+  {
+    if (Py_IsInitialized())
+      return true;
+
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    // Naming the interpreter that owns FFCx is what makes its virtual
+    // environment, and so its site-packages, visible here
+    PyStatus status = PyConfig_SetBytesString(&config, &config.program_name,
+                                              JIT_PYTHON_EXECUTABLE);
+    if (!PyStatus_Exception(status))
+      status = Py_InitializeFromConfig(&config);
+    PyConfig_Clear(&config);
+
+    if (PyStatus_Exception(status))
+    {
+      throw std::runtime_error(
+          std::format("Could not start the Python interpreter ({}): {}",
+                      JIT_PYTHON_EXECUTABLE,
+                      status.err_msg ? status.err_msg : "unknown error"));
+    }
+    return true;
+  }();
+  (void)started;
+}
+
+/// @brief Run FFCx in this process, with the arguments its command line
+/// takes.
+///
+/// @throws std::runtime_error carrying the Python traceback.
+inline void run_ffcx(const std::vector<std::string>& args)
+{
+  start_interpreter();
+
+  std::string display;
+  for (const std::string& arg : args)
+    display += arg + " ";
+  spdlog::debug("JIT: ffcx {}", display);
+
+  // Collect any error while the GIL is held, and throw once it is not
+  std::string error;
+  const PyGILState_STATE gil = PyGILState_Ensure();
+  if (PyObject* module = PyImport_ImportModule("ffcx.main"))
+  {
+    if (PyObject* main = PyObject_GetAttrString(module, "main"))
+    {
+      PyObject* argv = PyList_New(0);
+      for (const std::string& arg : args)
+      {
+        PyObject* item = PyUnicode_FromString(arg.c_str());
+        PyList_Append(argv, item);
+        Py_DECREF(item);
+      }
+
+      PyObject* result = PyObject_CallOneArg(main, argv);
+      if (!result)
+        error = python_error();
+      else
+      {
+        if (long code = PyLong_AsLong(result); code != 0)
+          error = std::format("FFCx returned {}.", code);
+        Py_DECREF(result);
+      }
+
+      Py_DECREF(argv);
+      Py_DECREF(main);
+    }
+    else
+      error = python_error();
+    Py_DECREF(module);
+  }
+  else
+    error = python_error();
+  PyGILState_Release(gil);
+
+  if (!error.empty())
+    throw std::runtime_error(std::format("FFCx failed:\n{}", error));
+}
+#endif
+
 /// Generate C from @p ufl with FFCx and compile it into a shared library
 /// at @p library. Not collective: called on one rank only.
 inline void build(std::string_view ufl, std::string_view scalar_type,
@@ -165,9 +299,23 @@ inline void build(std::string_view ufl, std::string_view scalar_type,
 
   // `-n` fixes the prefix of the alias symbols FFCx emits for each named
   // UFL object, giving symbols that the caller can predict from `key`
-  run(JIT_PYTHON_EXECUTABLE,
-      {"-m", "ffcx", "-i", source.string(), "-n", key, "-o", key, "-d",
-       tmp.string(), std::format("--scalar_type={}", scalar_type)});
+  const std::vector<std::string> ffcx_args
+      = {"-i",
+         source.string(),
+         "-n",
+         key,
+         "-o",
+         key,
+         "-d",
+         tmp.string(),
+         std::format("--scalar_type={}", scalar_type)};
+#ifdef JIT_EMBED_PYTHON
+  run_ffcx(ffcx_args);
+#else
+  std::vector<std::string> argv = {"-m", "ffcx"};
+  argv.insert(argv.end(), ffcx_args.begin(), ffcx_args.end());
+  run(JIT_PYTHON_EXECUTABLE, argv);
+#endif
 
   const std::filesystem::path object = tmp / std::format("{}.so", key);
   std::vector<std::string> cc_args = split(JIT_C_FLAGS);

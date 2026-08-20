@@ -15,10 +15,23 @@ if(PROJECT_IS_TOP_LEVEL)
   include(CTest) # enables testing
 endif()
 
+# Run FFCx in an embedded interpreter rather than a subprocess. The
+# interpreter must be the one that owns FFCx, so Development.Embed is
+# resolved against the same Python3_EXECUTABLE used below.
+option(
+  DOLFINX_JIT_DEMO_EMBED_PYTHON
+  "Call FFCx through an embedded Python interpreter."
+  OFF
+)
+
 # The forms are compiled when the demo runs, not when it is built, so the
 # demo needs to know at run time which Python and C compiler to invoke and
 # where ufcx.h lives. Ask the Python FFCx module, as FindUFCx.cmake does.
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
+if(DOLFINX_JIT_DEMO_EMBED_PYTHON)
+  find_package(Python3 COMPONENTS Interpreter Development.Embed REQUIRED)
+else()
+  find_package(Python3 COMPONENTS Interpreter REQUIRED)
+endif()
 execute_process(
   COMMAND
     ${Python3_EXECUTABLE} -c
@@ -63,6 +76,11 @@ target_compile_definitions(
     JIT_C_COMPILER="${CMAKE_C_COMPILER}"
     JIT_C_FLAGS="${JIT_C_FLAGS}"
 )
+
+if(DOLFINX_JIT_DEMO_EMBED_PYTHON)
+  target_link_libraries(${PROJECT_NAME} PRIVATE Python3::Python)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE JIT_EMBED_PYTHON)
+endif()
 
 # Set C++20 standard
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
