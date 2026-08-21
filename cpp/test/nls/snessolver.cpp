@@ -10,6 +10,7 @@
 
 #ifdef HAS_PETSC
 
+#include <array>
 #include <cmath>
 #include <dolfinx/nls/SNESSolver.h>
 #include <mpi.h>
@@ -65,6 +66,45 @@ void assemble_jacobian(const Vec x, Mat J)
   MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);
 }
 
+// Residual of two decoupled blocks, f(x_i)_j = x_ij^2 - (2 + i), whose
+// positive roots are sqrt(2) and sqrt(3)
+void assemble_residual_nest(const Vec x, Vec b)
+{
+  PetscInt n = 0;
+  Vec *x_sub = nullptr, *b_sub = nullptr;
+  VecNestGetSubVecs(x, &n, &x_sub);
+  VecNestGetSubVecs(b, &n, &b_sub);
+  for (PetscInt i = 0; i < n; ++i)
+  {
+    const PetscScalar* _x;
+    VecGetArrayRead(x_sub[i], &_x);
+    PetscScalar* _b;
+    VecGetArray(b_sub[i], &_b);
+    std::span<const PetscScalar> xs(_x, local_size);
+    std::span<PetscScalar> bs(_b, local_size);
+    for (PetscInt j = 0; j < local_size; ++j)
+      bs[j] = xs[j] * xs[j] - PetscScalar(2 + i);
+    VecRestoreArray(b_sub[i], &_b);
+    VecRestoreArrayRead(x_sub[i], &_x);
+  }
+}
+
+// Block-diagonal Jacobian of the decoupled blocks
+void assemble_jacobian_nest(const Vec x, Mat J)
+{
+  PetscInt n = 0;
+  Vec* x_sub = nullptr;
+  VecNestGetSubVecs(x, &n, &x_sub);
+  for (PetscInt i = 0; i < n; ++i)
+  {
+    Mat J_sub = nullptr;
+    MatNestGetSubMat(J, i, i, &J_sub);
+    assemble_jacobian(x_sub[i], J_sub);
+  }
+  MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);
+}
+
 // Reference count of a PETSc object
 template <typename O>
 PetscInt ref_count(O obj)
@@ -87,7 +127,7 @@ void check_solution(const Vec x, double root = std::sqrt(2.0))
 }
 } // namespace
 
-TEST_CASE("Solve nonlinear solver with SNES", "[nls_snes]")
+TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 {
   int argc = 0;
   char** argv = nullptr;
@@ -349,6 +389,78 @@ TEST_CASE("Solve nonlinear solver with SNES", "[nls_snes]")
     CHECK(reason == SNES_DIVERGED_MAX_IT);
 
     PetscOptionsClearValue(nullptr, "-max_it_snes_max_it");
+  }
+
+  SECTION("Nest matrices and vectors")
+  {
+    // Two decoupled blocks with different roots, so that a mix-up
+    // between them would show up in the solution
+    std::array<Vec, 2> x_sub, b_sub;
+    std::array<Mat, 2> J_sub;
+    for (std::size_t i = 0; i < 2; ++i)
+    {
+      VecCreateMPI(comm, local_size, PETSC_DETERMINE, &x_sub[i]);
+      VecDuplicate(x_sub[i], &b_sub[i]);
+      VecSet(x_sub[i], PetscScalar(1));
+      MatCreateAIJ(comm, local_size, local_size, PETSC_DETERMINE,
+                   PETSC_DETERMINE, 1, nullptr, 0, nullptr, &J_sub[i]);
+    }
+
+    Vec x_nest, b_nest;
+    VecCreateNest(comm, 2, nullptr, x_sub.data(), &x_nest);
+    VecCreateNest(comm, 2, nullptr, b_sub.data(), &b_nest);
+
+    std::array<Mat, 4> blocks{J_sub[0], nullptr, nullptr, J_sub[1]};
+    Mat J_nest;
+    MatCreateNest(comm, 2, nullptr, 2, nullptr, blocks.data(), &J_nest);
+
+    // A nest matrix cannot be factored directly, so precondition the
+    // blocks separately. PETSc takes the splits from the nest.
+    PetscOptionsSetValue(nullptr, "-nest_ksp_type", "gmres");
+    PetscOptionsSetValue(nullptr, "-nest_pc_type", "fieldsplit");
+    PetscOptionsSetValue(nullptr, "-nest_fieldsplit_ksp_type", "preonly");
+    PetscOptionsSetValue(nullptr, "-nest_fieldsplit_pc_type", "jacobi");
+
+    // The solver holds Vec and Mat, so nest objects pass through it
+    // untouched
+    nls::petsc::SNESSolver solver(comm);
+    solver.set_F(assemble_residual_nest, b_nest);
+    solver.set_J([](const Vec x, Mat Jmat, Mat)
+                 { assemble_jacobian_nest(x, Jmat); }, J_nest);
+    solver.set_options_prefix("nest_");
+    solver.set_from_options();
+
+    int num_it = solver.solve(x_nest);
+    CHECK(num_it > 0);
+
+    // The solver did not substitute anything for the nest matrix
+    Mat Jmat_snes;
+    SNESGetJacobian(solver.snes(), &Jmat_snes, nullptr, nullptr, nullptr);
+    CHECK(Jmat_snes == J_nest);
+    SNESConvergedReason reason;
+    SNESGetConvergedReason(solver.snes(), &reason);
+    CHECK(reason > 0);
+
+    // The nest shares its sub-vectors, so the solution is visible there
+    check_solution(x_sub[0], std::sqrt(2.0));
+    check_solution(x_sub[1], std::sqrt(3.0));
+
+    for (const char* opt :
+         {"-nest_ksp_type", "-nest_pc_type", "-nest_fieldsplit_ksp_type",
+          "-nest_fieldsplit_pc_type"})
+    {
+      PetscOptionsClearValue(nullptr, opt);
+    }
+
+    MatDestroy(&J_nest);
+    VecDestroy(&b_nest);
+    VecDestroy(&x_nest);
+    for (std::size_t i = 0; i < 2; ++i)
+    {
+      MatDestroy(&J_sub[i]);
+      VecDestroy(&b_sub[i]);
+      VecDestroy(&x_sub[i]);
+    }
   }
 
   SECTION("Reference counting")
