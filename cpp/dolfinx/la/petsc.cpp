@@ -451,9 +451,14 @@ petsc::Vector::Vector(const common::IndexMap& map, int bs)
 //-----------------------------------------------------------------------------
 petsc::Vector::Vector(Vec x, bool inc_ref_count) : _x(x)
 {
-  assert(x);
+  if (!_x)
+    throw std::runtime_error("PETSc Vec must be initialised before wrapping");
+
   if (inc_ref_count)
-    PetscObjectReference((PetscObject)_x);
+  {
+    PetscErrorCode ierr = PetscObjectReference((PetscObject)_x);
+    CHECK_ERROR("PetscObjectReference");
+  }
 }
 //-----------------------------------------------------------------------------
 petsc::Vector::Vector(Vector&& v) noexcept : _x(std::exchange(v._x, nullptr)) {}
@@ -546,9 +551,14 @@ Vec petsc::Vector::vec() const { return _x; }
 //-----------------------------------------------------------------------------
 petsc::Operator::Operator(Mat A, bool inc_ref_count) : _matA(A)
 {
-  assert(A);
+  if (!_matA)
+    throw std::runtime_error("PETSc Mat must be initialised before wrapping");
+
   if (inc_ref_count)
-    PetscObjectReference((PetscObject)_matA);
+  {
+    PetscErrorCode ierr = PetscObjectReference((PetscObject)_matA);
+    CHECK_ERROR("PetscObjectReference");
+  }
 }
 //-----------------------------------------------------------------------------
 petsc::Operator::Operator(Operator&& A) noexcept
@@ -697,12 +707,13 @@ petsc::KrylovSolver::KrylovSolver(MPI_Comm comm) : _ksp(nullptr)
 //-----------------------------------------------------------------------------
 petsc::KrylovSolver::KrylovSolver(KSP ksp, bool inc_ref_count) : _ksp(ksp)
 {
-  assert(_ksp);
+  if (!_ksp)
+    throw std::runtime_error("PETSc KSP must be initialised before wrapping");
+
   if (inc_ref_count)
   {
     PetscErrorCode ierr = PetscObjectReference((PetscObject)_ksp);
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "PetscObjectReference");
+    CHECK_ERROR("PetscObjectReference");
   }
 }
 //-----------------------------------------------------------------------------
@@ -736,41 +747,34 @@ void petsc::KrylovSolver::set_operators(const Mat A, const Mat P)
     petsc::error(ierr, __FILE__, "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
-int petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
+PetscInt petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
 {
   common::Timer timer("PETSc Krylov solver");
+  assert(_ksp);
   assert(x);
   assert(b);
 
-  // Get PETSc operators
-  Mat _A, _P;
-  KSPGetOperators(_ksp, &_A, &_P);
-  assert(_A);
-
   PetscErrorCode ierr;
 
-  // Solve linear system
+  // Solve linear system. With no operator set, PCGetOperators creates an
+  // untyped Mat and setup fails on it, so KSPSolve errors rather than
+  // silently solving
   spdlog::info("PETSc Krylov solver starting to solve system.");
-
-  // Solve system
   if (!transpose)
   {
     ierr = KSPSolve(_ksp, b, x);
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "KSPSolve");
+    CHECK_ERROR("KSPSolve");
   }
   else
   {
     ierr = KSPSolveTranspose(_ksp, b, x);
-    if (ierr != 0)
-      petsc::error(ierr, __FILE__, "KSPSolve");
+    CHECK_ERROR("KSPSolveTranspose");
   }
 
   // Get the number of iterations
   PetscInt num_iterations = 0;
   ierr = KSPGetIterationNumber(_ksp, &num_iterations);
-  if (ierr != 0)
-    petsc::error(ierr, __FILE__, "KSPGetIterationNumber");
+  CHECK_ERROR("KSPGetIterationNumber");
 
   // Check if the solution converged and warn if not. Note: this does
   // not throw on non-convergence -- the caller is responsible for
