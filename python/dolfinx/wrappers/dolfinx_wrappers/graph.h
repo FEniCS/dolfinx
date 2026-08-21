@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,6 +8,7 @@
 
 #include "MPICommWrapper.h"
 #include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
@@ -20,7 +21,7 @@
 namespace dolfinx_wrappers
 {
 
-/// Wrap a C++ graph partitioning function as a Python-ready function
+/// Wrap a C++ graph partitioning function as a Python-ready function.
 template <typename Functor>
 auto create_partitioner_py(Functor&& p_cpp)
 {
@@ -28,6 +29,46 @@ auto create_partitioner_py(Functor&& p_cpp)
                  const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
                  bool ghosting)
   { return p_cpp(comm.get(), nparts, local_graph, ghosting); };
+}
+
+/// Wrap a C++ geometric graph partitioner for use from Python. Node
+/// coordinates are passed as a 2D array of shape (num_nodes, gdim). The
+/// Python signature always requires both the graph and coordinates.
+template <typename Functor>
+auto create_geom_partitioner_py(Functor&& p_cpp)
+{
+  return
+      [p_cpp](
+          dolfinx_wrappers::MPICommWrapper comm, int nparts,
+          const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+          nanobind::ndarray<const double, nanobind::ndim<2>, nanobind::c_contig>
+              x,
+          bool ghosting)
+  {
+    return p_cpp(comm.get(), nparts, std::cref(local_graph),
+                 std::span<const double>(x.data(), x.size()), x.shape(1),
+                 ghosting);
+  };
+}
+
+/// Wrap a C++ hybrid graph partitioner for use from Python. As
+/// create_geom_partitioner_py, but the wrapped C++ functor's graph
+/// argument is required (not optional) and has no separate `gdim`
+/// parameter, matching dolfinx::graph::hybrid_partition_fn.
+template <typename Functor>
+auto create_hybrid_partitioner_py(Functor&& p_cpp)
+{
+  return
+      [p_cpp](
+          dolfinx_wrappers::MPICommWrapper comm, int nparts,
+          const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+          nanobind::ndarray<const double, nanobind::ndim<2>, nanobind::c_contig>
+              x,
+          bool ghosting)
+  {
+    return p_cpp(comm.get(), nparts, local_graph,
+                 std::span<const double>(x.data(), x.size()), ghosting);
+  };
 }
 
 /// Declare AdjacencyList class with __init__ methods for a given type

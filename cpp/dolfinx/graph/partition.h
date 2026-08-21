@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Garth N. Wells
+// Copyright (C) 2020-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -7,29 +7,94 @@
 #pragma once
 
 #include "AdjacencyList.h"
-#include <algorithm>
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <mpi.h>
+#include <optional>
 #include <span>
-#include <utility>
+#include <tuple>
 #include <vector>
-
-#include <iostream>
 
 namespace dolfinx::graph
 {
 /// @brief Signature of functions for computing the parallel
-/// partitioning of a distributed graph.
+/// partitioning of a distributed graph, using the graph edges alone.
+///
 /// @param[in] comm MPI Communicator that the graph is distributed
-/// across
-/// @param[in] nparts Number of partitions to divide graph nodes into
-/// @param[in] local_graph Node connectivity graph
+/// across.
+/// @param[in] nparts Number of partitions to divide graph nodes into.
+/// @param[in] local_graph Node connectivity graph.
 /// @param[in] ghosting Flag to enable ghosting of the output node
-/// distribution
-/// @return Destination rank for each input node
+/// distribution.
+/// @return Destination rank(s) for each input node.
 using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm, int, const AdjacencyList<std::int64_t>&, bool)>;
+
+/// @brief Signature of functions for computing the parallel
+/// partitioning of a distributed graph from the positions of its nodes
+/// in space, optionally also using the graph edges.
+///
+/// `local_graph` is optional since a purely geometric partitioner (e.g.
+/// a space-filling curve) does not need it to decide which part a node
+/// belongs to; it is up to a given implementation whether it requires
+/// `local_graph` regardless (and throws if it is not supplied), e.g.
+/// because it also uses the graph edges, or because ghosting has been
+/// requested and ghost destinations can only be computed from the
+/// edges. A caller that has the graph should generally supply it, even
+/// if it does not know whether the chosen partitioner needs it.
+///
+/// @note The coordinates are always `double`, whatever the scalar type
+/// of the data they were derived from. Which nodes end up in which part
+/// is not sensitive to the precision of the positions, so there is
+/// nothing to be gained from partitioning single precision positions in
+/// single precision, and computing the keys in `double` removes any
+/// question of precision loss when positions are quantised.
+///
+/// @param[in] comm MPI Communicator that the graph is distributed
+/// across.
+/// @param[in] nparts Number of partitions to divide graph nodes into.
+/// @param[in] local_graph Node connectivity graph. Absent if
+/// partitioner does not require it. Will raise an exception if the
+/// partitioner requires it and it is not supplied.
+/// @param[in] x Node coordinates, row-major with `gdim` columns and one
+/// row per node.
+/// @param[in] gdim Number of coordinate components per node.
+/// @param[in] ghosting Flag to enable ghosting of the output node
+/// distribution.
+/// @return Destination rank(s) for each input node.
+using geom_partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
+    MPI_Comm, int,
+    std::optional<std::reference_wrapper<const AdjacencyList<std::int64_t>>>,
+    std::span<const double>, int, bool)>;
+
+/// @brief Signature of functions for computing the parallel
+/// partitioning of a distributed graph using both its edges and the
+/// positions of its nodes in space.
+///
+/// Unlike ::geom_partition_fn, `local_graph` is not optional here: a
+/// hybrid partitioner (e.g. one that redistributes nodes along a
+/// space-filling curve and then applies graph partitioning to the
+/// result, as ParMETIS `GeomKway` does) uses the graph edges as part of
+/// the partitioning decision itself, not only to compute ghost
+/// destinations, so it always needs both inputs.
+///
+/// @note The coordinates are always `double`, for the same reason as
+/// ::geom_partition_fn.
+///
+/// @param[in] comm MPI Communicator that the graph is distributed
+/// across.
+/// @param[in] nparts Number of partitions to divide graph nodes into.
+/// @param[in] local_graph Node connectivity graph.
+/// @param[in] x Node coordinates, row-major with one row per node.
+/// `x.size() / local_graph.num_nodes()` gives the number of coordinate
+/// components per node.
+/// @param[in] ghosting Flag to enable ghosting of the output node
+/// distribution.
+/// @return Destination rank(s) for each input node.
+using hybrid_partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
+    MPI_Comm, int, const AdjacencyList<std::int64_t>&, std::span<const double>,
+    bool)>;
 
 /// @brief Partition graph across processes using the default graph
 /// partitioner.
@@ -52,40 +117,76 @@ namespace build
 {
 /// @brief Distribute adjacency list nodes to destination ranks.
 ///
-/// The global index of each node is assumed to be the local index plus
-/// the offset for this rank.
+/// The global index of the `i`th node (row) in `list` is assumed to be
+/// `i` plus the offset for this rank, i.e. the number of nodes owned by
+/// lower-ranked processes.
 ///
-/// @param[in] comm MPI Communicator
-/// @param[in] list The adjacency list to distribute
-/// @param[in] destinations Destination ranks for the ith node in the
-/// adjacency list. The first rank is the 'owner' of the node.
+/// @note Collective.
+///
+/// @note The neighbourhood communicator used for the exchange is built
+/// with MPI::compute_graph_edges_nbx, which uses the scalable NBX
+/// consensus algorithm to discover incoming edges from the outgoing
+/// edges alone, i.e. no arrays the size of the communicator are built
+/// and the communication pattern stays sparse. Determining the
+/// neighbourhood this way is not free, though: it costs one or more
+/// non-blocking consensus rounds, so calling this function repeatedly
+/// (e.g. once per cell type) has a real cost even though no large
+/// arrays are built.
+///
+/// @param[in] comm MPI Communicator that `list`/`destinations` are
+/// distributed across.
+/// @param[in] list The adjacency list to distribute.
+/// @param[in] destinations Destination rank(s) for the `i`th node in
+/// `list`. The first rank is the 'owner' of the node; any further ranks
+/// receive it as a ghost.
 /// @return
-/// 1. Received adjacency list for this process
-/// 2. Source ranks for each node in the adjacency list
-/// 3. Original global index for each node in the adjacency list
-/// 4. Owning rank of ghost nodes.
+/// 1. Received adjacency list for this process. Nodes owned by this
+///    process come first, followed by any ghost nodes.
+/// 2. Source rank of each node in (1), i.e. the rank it was sent from.
+/// 3. Original global index of each node in (1).
+/// 4. Owning rank of the ghost nodes among (1). This has one entry per
+///    ghost node -- the trailing entries of (1) -- not one entry per
+///    node of (1).
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
            const graph::AdjacencyList<std::int32_t>& destinations);
 
-/// @brief Distribute fixed size nodes to destination ranks.
+/// @brief Distribute rows of a fixed-degree array to destination ranks.
 ///
-/// The global index of each node is assumed to be the local index plus
-/// the offset for this rank.
+/// The global index of the `i`th row of `list` is assumed to be `i`
+/// plus the offset for this rank, i.e. the number of rows owned by
+/// lower-ranked processes.
 ///
-/// @param[in] comm MPI Communicator
-/// @param[in] list Constant degree (valency) adjacency list. The array
-/// shape is (num_nodes, degree). Storage is row-major.
+/// @note Collective.
+///
+/// @note The neighbourhood communicator used for the exchange is built
+/// with MPI::compute_graph_edges_nbx, which uses the scalable NBX
+/// consensus algorithm to discover incoming edges from the outgoing
+/// edges alone, i.e. no arrays the size of the communicator are built
+/// and the communication pattern stays sparse. Determining the
+/// neighbourhood this way is not free, though: it costs one or more
+/// non-blocking consensus rounds, so calling this function repeatedly
+/// (e.g. once per cell type) has a real cost even though no large
+/// arrays are built.
+///
+/// @param[in] comm MPI Communicator that `list`/`destinations` are
+/// distributed across.
+/// @param[in] list Constant degree (valency) data, flattened row-major
+/// with shape `shape`.
 /// @param[in] shape Shape `(num_nodes, degree)` of `list`.
-/// @param[in] destinations Destination ranks for the ith node (row) of
-/// `list`. The first rank is the 'owner' of the node.
+/// @param[in] destinations Destination rank(s) for the `i`th row of
+/// `list`. The first rank is the 'owner' of the row; any further ranks
+/// receive it as a ghost.
 /// @return
-/// 1. Received adjacency list on this process. The array shape is
-/// (num_nodes, degree). Storage is row-major.
-/// 2. Source rank for each received node.
-/// 3. Original global index for each received node.
-/// 4. Owning rank of ghost nodes.
+/// 1. Received rows for this process, flattened row-major with shape
+///    (num_nodes, degree). Rows owned by this process come first,
+///    followed by any ghost rows.
+/// 2. Source rank of each row in (1), i.e. the rank it was sent from.
+/// 3. Original global index of each row in (1).
+/// 4. Owning rank of the ghost rows among (1). This has one entry per
+///    ghost row -- the trailing rows of (1) -- not one entry per row
+///    of (1).
 std::tuple<std::vector<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>, std::vector<int>>
 distribute(MPI_Comm comm, std::span<const std::int64_t> list,

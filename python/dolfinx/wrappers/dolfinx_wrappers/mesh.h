@@ -18,19 +18,22 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
+#include <functional>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
+#include <optional>
 #include <ranges>
+#include <span>
 
 namespace nb = nanobind;
 
 namespace dolfinx_wrappers::part::impl
 {
-/// Wrap a Python graph partitioning function as a C++ function
+/// Wrap a Python graph partitioning function as a C++ function.
 template <typename Functor>
 auto create_partitioner_cpp(Functor&& p)
 {

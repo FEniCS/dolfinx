@@ -8,6 +8,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.h
   ${CMAKE_CURRENT_SOURCE_DIR}/generation.h
   ${CMAKE_CURRENT_SOURCE_DIR}/graphbuild.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/partition.h
   ${CMAKE_CURRENT_SOURCE_DIR}/permutationcomputation.h
   ${CMAKE_CURRENT_SOURCE_DIR}/topologycomputation.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
@@ -22,6 +23,7 @@ target_sources(
     EntityMap.cpp
     cell_types.cpp
     graphbuild.cpp
+    partition.cpp
     permutationcomputation.cpp
     topologycomputation.cpp
     utils.cpp

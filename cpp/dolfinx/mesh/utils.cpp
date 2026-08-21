@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2026 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -19,6 +19,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
 #include <format>
+#include <functional>
 #include <optional>
 #include <span>
 #include <stdexcept>
@@ -27,6 +28,180 @@
 
 using namespace dolfinx;
 
+//-----------------------------------------------------------------------------
+std::vector<std::int64_t>
+mesh::impl::reorder_cells(const CellReorderFunction& reorder_fn,
+                          std::optional<std::int32_t> max_facet_to_cell_links,
+                          const std::vector<CellType>& celltypes,
+                          const std::vector<fem::ElementDofLayout>& doflayouts,
+                          const std::vector<std::vector<int>>& ghost_owners,
+                          std::vector<std::vector<std::int64_t>>& cells,
+                          std::vector<std::span<std::int64_t>>& cells_v,
+                          std::vector<std::vector<std::int64_t>>& original_idx,
+                          int num_threads)
+{
+  // Build local dual graph for owned cells to (i) get list of vertices
+  // on the process boundary and (ii) apply re-ordering to cells for
+  // locality
+
+  spdlog::info("Build local dual graphs, re-order cells, and compute process "
+               "boundary vertices.");
+
+  // Unmatched facets (process boundary candidates) per cell type: the
+  // flattened, row-major vertex data and the row width (number of
+  // vertices per facet), which can differ between cell types.
+  std::vector<std::pair<std::vector<std::int64_t>, int>> facets;
+
+  // Build lists of cells (by cell type) that excludes ghosts
+  std::vector<std::span<const std::int64_t>> cells1_v_local;
+  for (std::size_t i = 0; i < celltypes.size(); ++i)
+  {
+    int num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
+    std::size_t num_owned_cells
+        = cells_v[i].size() / num_cell_vertices - ghost_owners[i].size();
+    cells1_v_local.emplace_back(cells_v[i].data(),
+                                num_owned_cells * num_cell_vertices);
+
+    // Build local dual graph for cell type
+    auto [graph, unmatched_facets, max_v, _facet_attached_cells]
+        = build_local_dual_graph(std::vector{celltypes[i]},
+                                 std::vector{cells1_v_local.back()},
+                                 max_facet_to_cell_links, num_threads);
+
+    // Store unmatched_facets for current cell type
+    facets.emplace_back(std::move(unmatched_facets), max_v);
+
+    // Compute re-ordering of graph
+    const std::vector<std::int32_t> remap = reorder_fn(graph);
+
+    // Update 'original' indices
+    const std::vector<std::int64_t>& orig_idx = original_idx[i];
+    std::vector<std::int64_t> _original_idx(orig_idx.size());
+    std::copy_n(orig_idx.rbegin(), ghost_owners[i].size(),
+                _original_idx.rbegin());
+    {
+      for (std::size_t j = 0; j < remap.size(); ++j)
+        _original_idx[remap[j]] = orig_idx[j];
+    }
+    original_idx[i] = _original_idx;
+
+    // Reorder cells. `cells_v[i]` aliases `cells[i]` for 'P1
+    // geometry', where the two reorderings are the same operation on
+    // the same buffer.
+    impl::reorder_list(
+        std::span(cells_v[i].data(), remap.size() * num_cell_vertices), remap);
+    if (cells_v[i].data() != cells[i].data())
+    {
+      impl::reorder_list(
+          std::span(cells[i].data(), remap.size() * doflayouts[i].num_dofs()),
+          remap);
+    }
+  }
+
+  // Build list of boundary vertices from unmatched facets across all
+  // cell
+  if (facets.size() == 1) // Optimisation for single cell type
+  {
+    std::vector<std::int64_t>& vertices = facets.front().first;
+
+    // Remove duplicated vertex indices
+    std::ranges::sort(vertices);
+    auto [unique_end, range_end] = std::ranges::unique(vertices);
+    vertices.erase(unique_end, range_end);
+
+    // Remove -1 if it appears as first entity. This can happen in
+    // mixed topology meshes where '-1' is used to pad facet data when
+    // cells facets have differing numbers of vertices.
+    if (!vertices.empty() and vertices.front() == -1)
+      vertices.erase(vertices.begin());
+
+    return vertices;
+  }
+  else
+  {
+    // Pack 'unmatched' facets for all cell types into a single
+    // column-major array (facets0): column j holds vertex j across
+    // all facets, so the multi-column sort_by_perm() overload can
+    // operate directly on contiguous per-column data.
+    std::size_t num_facets = std::accumulate(
+        facets.begin(), facets.end(), std::size_t(0), [](std::size_t x, auto& y)
+        { return x + (y.second > 0 ? y.first.size() / y.second : 0); });
+    int max_v = std::ranges::max_element(facets, [](auto& a, auto& b)
+                                         { return a.second < b.second; })
+                    ->second;
+
+    std::vector<std::int64_t> facets0_b(max_v * num_facets, -1);
+    std::vector<std::span<std::int64_t>> facets0(max_v);
+    for (int j = 0; j < max_v; ++j)
+      facets0[j] = std::span(facets0_b.data() + j * num_facets, num_facets);
+
+    {
+      std::size_t row = 0;
+      for (const auto& [v_data, num_v] : facets)
+      {
+        for (auto it = v_data.begin(); it != v_data.end(); it += num_v, ++row)
+          for (int j = 0; j < num_v; ++j)
+            facets0[j][row] = *std::next(it, j);
+      }
+    }
+
+    // Compute row permutation
+    std::vector<std::span<const std::int64_t>> facets0_view(facets0.begin(),
+                                                            facets0.end());
+    const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
+        std::span<std::span<const std::int64_t>>(facets0_view));
+
+    // For facets in facets0 that appear only once, store the facet
+    // vertices
+    std::vector<std::int64_t> vertices;
+
+    // Number of leading valid (non -1 padding) vertices in row
+    auto trim_len = [&facets0, max_v](std::int32_t row)
+    {
+      int n = max_v;
+      while (n > 0 and facets0[n - 1][row] < 0)
+        --n;
+      return n;
+    };
+
+    auto it = perm.begin();
+    while (it != perm.end())
+    {
+      std::int32_t row0 = *it;
+      int n = trim_len(row0);
+
+      // Find iterator to next facet whose leading n vertices differ
+      // from row0
+      auto it1 = std::find_if_not(it, perm.end(),
+                                  [&facets0, row0, n](std::int32_t row)
+                                  {
+                                    for (int j = 0; j < n; ++j)
+                                      if (facets0[j][row] != facets0[j][row0])
+                                        return false;
+                                    return true;
+                                  });
+
+      // If no repeated facet found, insert row0 vertices
+      if (std::ranges::distance(it, it1) == 1)
+      {
+        for (int j = 0; j < n; ++j)
+          vertices.push_back(facets0[j][row0]);
+      }
+      else if (std::ranges::distance(it, it1) > 2)
+        throw std::runtime_error("More than two matching facets found.");
+
+      // Advance iterator
+      it = it1;
+    }
+
+    // Remove duplicate indices
+    std::ranges::sort(vertices);
+    auto [unique_end, range_end] = std::ranges::unique(vertices);
+    vertices.erase(unique_end, range_end);
+
+    return vertices;
+  }
+}
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
 mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
@@ -56,6 +231,23 @@ mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
   }
 
   return topology;
+}
+//-----------------------------------------------------------------------------
+bool mesh::is_vertex_dof_layout(CellType cell_type,
+                                const fem::ElementDofLayout& layout)
+{
+  const int num_vertices_per_cell = num_cell_vertices(cell_type);
+  if (layout.num_dofs() != num_vertices_per_cell)
+    return false;
+
+  for (int i = 0; i < num_vertices_per_cell; ++i)
+  {
+    const std::vector<int>& local_index = layout.entity_dofs(0, i);
+    if (local_index.size() != 1 or local_index.front() != i)
+      return false;
+  }
+
+  return true;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology,
@@ -99,37 +291,6 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
   return mesh::exterior_facet_indices(topology, 0);
 }
 //------------------------------------------------------------------------------
-mesh::CellPartitionFunction mesh::create_cell_partitioner(
-    mesh::GhostMode ghost_mode, graph::partition_fn partfn,
-    std::optional<std::int32_t> max_facet_to_cell_links)
-{
-  return [partfn = std::move(partfn), ghost_mode, max_facet_to_cell_links](
-             MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
-             const std::vector<std::span<const std::int64_t>>& cells)
-             -> graph::AdjacencyList<std::int32_t>
-  {
-    spdlog::info("Compute partition of cells across ranks");
-
-    // Compute distributed dual graph (for the cells on this process)
-    graph::AdjacencyList dual_graph
-        = build_dual_graph(comm, cell_types, cells, max_facet_to_cell_links);
-
-    // Just flag any kind of ghosting for now
-    bool ghosting = (ghost_mode != GhostMode::none);
-
-    // Compute partition
-    return partfn(comm, nparts, dual_graph, ghosting);
-  };
-}
-//-----------------------------------------------------------------------------
-mesh::CellPartitionFunction mesh::create_cell_partitioner(
-    mesh::GhostMode ghost_mode,
-    std::optional<std::int32_t> max_facet_to_cell_links)
-{
-  return create_cell_partitioner(ghost_mode, &graph::partition_graph,
-                                 max_facet_to_cell_links);
-}
-//-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 mesh::compute_incident_entities(const Topology& topology,
                                 std::span<const std::int32_t> entities, int d0,

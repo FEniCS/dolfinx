@@ -63,7 +63,9 @@ __all__ = [
     "compute_midpoints",
     "create_box",
     "create_cell_partitioner",
+    "create_geometric_cell_partitioner",
     "create_geometry",
+    "create_hybrid_cell_partitioner",
     "create_interval",
     "create_mesh",
     "create_point_mesh",
@@ -92,20 +94,35 @@ PartitioningFunc = typing.Callable[
     _cpp.graph.AdjacencyList_int32,
 ]
 
+# Note: the coordinates are float64, matching the C++ interface, which
+# takes a span of double
+GeometricPartitioningFunc = typing.Callable[
+    [_MPI.Comm, int, _cpp.graph.AdjacencyList_int64, npt.NDArray[np.float64], bool],
+    _cpp.graph.AdjacencyList_int32,
+]
+
 
 @typing.overload
 def create_cell_partitioner(
-    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int | None
+    part: PartitioningFunc,
+    mode: GhostMode,
+    max_facet_to_cell_links: int | None,
+    num_threads: int = 1,
 ) -> Callable: ...
 
 
 @typing.overload
-def create_cell_partitioner(mode: GhostMode, max_facet_to_cell_links: int | None) -> Callable: ...
+def create_cell_partitioner(
+    mode: GhostMode, max_facet_to_cell_links: int | None, num_threads: int = 1
+) -> Callable: ...
 
 
 @singledispatch
 def create_cell_partitioner(
-    part: PartitioningFunc, mode: GhostMode, max_facet_to_cell_links: int | None
+    part: PartitioningFunc,
+    mode: GhostMode,
+    max_facet_to_cell_links: int | None,
+    num_threads: int = 1,
 ) -> Callable:
     """Create a function to partition a mesh.
 
@@ -116,18 +133,20 @@ def create_cell_partitioner(
             facet. Equal to 2 for non-branching manifold meshes.
             ``None`` corresponds to no upper bound on the number of
             possible connections.
+        num_threads: Number of CPU threads to use when building the mesh
+            dual graph. Must be >= 1.
 
     Return:
         Partitioning function.
     """
     if isinstance(part, GhostMode):
         raise TypeError("Expected a partition function, not a GhostMode.")
-    return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links)
+    return _cpp.mesh.create_cell_partitioner(part, mode, max_facet_to_cell_links, num_threads)
 
 
 @create_cell_partitioner.register(GhostMode)  # type: ignore[attr-defined]
 def _create_cell_partitioner_from_ghost_mode(
-    mode: GhostMode, max_facet_to_cell_links: int | None
+    mode: GhostMode, max_facet_to_cell_links: int | None, num_threads: int = 1
 ) -> Callable:
     """Create a function to partition a mesh.
 
@@ -137,11 +156,103 @@ def _create_cell_partitioner_from_ghost_mode(
             facet. Equal to 2 for non-branching manifold meshes.
             ``None`` corresponds to no upper bound on the number of
             possible connections.
+        num_threads: Number of CPU threads to use when building the mesh
+            dual graph. Must be >= 1.
 
     Return:
         Partitioning function.
     """
-    return _cpp.mesh.create_cell_partitioner(mode, max_facet_to_cell_links)
+    return _cpp.mesh.create_cell_partitioner(mode, max_facet_to_cell_links, num_threads)
+
+
+def create_geometric_cell_partitioner(
+    part: GeometricPartitioningFunc,
+    mode: GhostMode,
+    comm: _MPI.Comm,
+    x: npt.NDArray[np.floating],
+    max_facet_to_cell_links: int | None = 2,
+    num_threads: int = 1,
+) -> Callable:
+    """Create a function to partition a mesh using cell positions.
+
+    The returned partitioner computes a coordinate for each cell (the mean
+    of its vertex positions) and passes it to ``part`` along with the mesh
+    dual graph. This allows partitioners that use cell positions, rather
+    than only the graph edges, to be used by :func:`create_mesh`.
+
+    Args:
+        part: Geometric graph partitioning function, e.g. from
+            ``dolfinx.cpp.graph.geom_partitioner_sfc``.
+        mode: Ghosting mode to use.
+        comm: MPI communicator that ``x`` is distributed over. This must be
+            the communicator passed to :func:`create_mesh`.
+        x: Mesh geometry ('node' coordinates) with shape
+            ``(num_nodes, gdim)``. This must be the array passed to
+            :func:`create_mesh`. The data is copied.
+        max_facet_to_cell_links: Maximum number of cells connected to a
+            facet. Equal to 2 for non-branching manifold meshes. ``None``
+            corresponds to no upper bound on the number of possible
+            connections.
+        num_threads: Number of CPU threads to use when building the mesh
+            dual graph. Must be >= 1.
+
+    Return:
+        Partitioning function.
+    """
+    return _cpp.mesh.create_geometric_cell_partitioner(
+        part,
+        mode,
+        comm,
+        np.ascontiguousarray(x, dtype=np.float64),
+        max_facet_to_cell_links,
+        num_threads,
+    )
+
+
+def create_hybrid_cell_partitioner(
+    part: GeometricPartitioningFunc,
+    mode: GhostMode,
+    comm: _MPI.Comm,
+    x: npt.NDArray[np.floating],
+    max_facet_to_cell_links: int | None = 2,
+    num_threads: int = 1,
+) -> Callable:
+    """Create a function to partition a mesh using a hybrid partitioner.
+
+    Unlike :func:`create_geometric_cell_partitioner`, the mesh dual graph
+    is always computed and passed to ``part`` along with the cell
+    positions, regardless of ``mode``. Use this for a partitioner that
+    needs the graph edges as part of the partitioning decision itself
+    (e.g. ParMETIS `GeomKway`, via
+    ``dolfinx.cpp.graph.geom_partitioner_parmetis_kway``), rather than
+    only to determine ghost cells.
+
+    Args:
+        part: Hybrid graph partitioning function.
+        mode: Ghosting mode to use.
+        comm: MPI communicator that ``x`` is distributed over. This must be
+            the communicator passed to :func:`create_mesh`.
+        x: Mesh geometry ('node' coordinates) with shape
+            ``(num_nodes, gdim)``. This must be the array passed to
+            :func:`create_mesh`. The data is copied.
+        max_facet_to_cell_links: Maximum number of cells connected to a
+            facet. Equal to 2 for non-branching manifold meshes. ``None``
+            corresponds to no upper bound on the number of possible
+            connections.
+        num_threads: Number of CPU threads to use when building the mesh
+            dual graph. Must be >= 1.
+
+    Return:
+        Partitioning function.
+    """
+    return _cpp.mesh.create_hybrid_cell_partitioner(
+        part,
+        mode,
+        comm,
+        np.ascontiguousarray(x, dtype=np.float64),
+        max_facet_to_cell_links,
+        num_threads,
+    )
 
 
 class Topology:
@@ -1074,7 +1185,7 @@ def create_interval(
         An interval mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2, 1)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1159,7 +1270,7 @@ def create_rectangle(
         A mesh of a rectangle.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2, 1)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1269,7 +1380,7 @@ def create_box(
         A mesh of a box domain.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2)
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode, 2, 1)
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",

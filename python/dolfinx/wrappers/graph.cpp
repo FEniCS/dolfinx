@@ -1,17 +1,20 @@
-// Copyright (C) 2017-2025 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "dolfinx_wrappers/graph.h"
+#include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/caster_mpi.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/graph/partitioners.h>
+#include <dolfinx/graph/sfc.h>
 #include <dolfinx/graph/utils.h>
+#include <functional>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
@@ -23,6 +26,7 @@
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <ranges>
+#include <span>
 #include <vector>
 
 namespace nb = nanobind;
@@ -41,20 +45,48 @@ void graph(nb::module_& m)
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&, bool)>;
+  using geom_partition_fn
+      = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+          MPICommWrapper, int,
+          const dolfinx::graph::AdjacencyList<std::int64_t>&,
+          nb::ndarray<const double, nb::ndim<2>, nb::c_contig>, bool)>;
   m.def(
       "partitioner", []() -> partition_fn
       { return create_partitioner_py(dolfinx::graph::partition_graph); },
       "Default graph partitioner");
 
+  nb::enum_<dolfinx::graph::sfc::curve>(m, "SFCCurve")
+      .value("morton", dolfinx::graph::sfc::curve::morton)
+      .value("hilbert", dolfinx::graph::sfc::curve::hilbert);
+
+  m.def(
+      "geom_partitioner_sfc",
+      [](dolfinx::graph::sfc::curve curve) -> geom_partition_fn
+      {
+        return create_geom_partitioner_py(
+            dolfinx::graph::sfc::partitioner(curve));
+      },
+      nb::arg("curve"), "Space-filling curve geometric graph partitioner");
+
 #ifdef HAS_PTSCOTCH
+  nb::enum_<dolfinx::graph::scotch::strategy>(m, "SCOTCHStrategy")
+      .value("none", dolfinx::graph::scotch::strategy::none)
+      .value("balance", dolfinx::graph::scotch::strategy::balance)
+      .value("quality", dolfinx::graph::scotch::strategy::quality)
+      .value("safety", dolfinx::graph::scotch::strategy::safety)
+      .value("speed", dolfinx::graph::scotch::strategy::speed)
+      .value("scalability", dolfinx::graph::scotch::strategy::scalability);
+
   m.def(
       "partitioner_scotch",
-      [](double imbalance, int seed) -> partition_fn
+      [](double imbalance, int seed,
+         dolfinx::graph::scotch::strategy strategy) -> partition_fn
       {
-        return create_partitioner_py(dolfinx::graph::scotch::partitioner(
-            dolfinx::graph::scotch::strategy::none, imbalance, seed));
+        return create_partitioner_py(
+            dolfinx::graph::scotch::partitioner(strategy, imbalance, seed));
       },
       nb::arg("imbalance") = 0.025, nb::arg("seed") = 0,
+      nb::arg("strategy") = dolfinx::graph::scotch::strategy::speed,
       "SCOTCH graph partitioner");
 #endif
 #ifdef HAS_PARMETIS
@@ -68,6 +100,28 @@ void graph(nb::module_& m)
       nb::arg("imbalance") = 1.02,
       nb::arg("options") = std ::array<int, 3>({1, 0, 5}),
       "ParMETIS graph partitioner");
+
+  m.def(
+      "geom_partitioner_parmetis",
+      []() -> geom_partition_fn
+      {
+        return create_geom_partitioner_py(
+            dolfinx::graph::parmetis::geom_partitioner());
+      },
+      "ParMETIS geometric (space-filling curve) graph partitioner");
+
+  m.def(
+      "geom_partitioner_parmetis_kway",
+      [](double imbalance, std::array<int, 3> options) -> geom_partition_fn
+      {
+        return create_hybrid_partitioner_py(
+            dolfinx::graph::parmetis::geom_partitioner_kway(imbalance,
+                                                            options));
+      },
+      nb::arg("imbalance") = 1.02,
+      nb::arg("options") = std ::array<int, 3>({1, 0, 5}),
+      "ParMETIS geometric (space-filling curve redistribution followed by "
+      "k-way) graph partitioner");
 #endif
 #ifdef HAS_KAHIP
   m.def(
@@ -83,6 +137,34 @@ void graph(nb::module_& m)
 #endif
 
   m.def("reorder_rcm", &dolfinx::graph::reorder_rcm, nb::arg("graph"));
+
+  m.def(
+      "distribute",
+      [](const MPICommWrapper comm,
+         nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> list,
+         const dolfinx::graph::AdjacencyList<std::int32_t>& destinations)
+      {
+        std::size_t shape1 = list.shape(1);
+        auto [recv, src, orig_idx, ghost_owners]
+            = dolfinx::graph::build::distribute(
+                comm.get(),
+                std::span<const std::int64_t>(list.data(), list.size()),
+                {static_cast<std::size_t>(list.shape(0)), shape1},
+                destinations);
+        std::size_t num_recv = shape1 > 0 ? recv.size() / shape1 : 0;
+        return std::make_tuple(as_nbarray(std::move(recv), {num_recv, shape1}),
+                               as_nbarray(std::move(src)),
+                               as_nbarray(std::move(orig_idx)),
+                               as_nbarray(std::move(ghost_owners)));
+      },
+      nb::arg("comm"), nb::arg("list"), nb::arg("destinations"),
+      "Distribute rows of a fixed-degree array (e.g. mesh cells, shape "
+      "(num_nodes, degree)) to destination ranks, using a scalable "
+      "neighbourhood exchange. `destinations` gives the destination "
+      "rank(s) for each row (the owner first, then any ghost "
+      "destinations), as returned by a cell/graph partitioner. Returns "
+      "(received rows, source rank per received row, original global "
+      "index per received row, owning rank of ghost rows).");
 
   m.def(
       "comm_graph", [](const dolfinx::common::IndexMap& map, int root)
