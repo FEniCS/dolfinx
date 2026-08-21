@@ -157,7 +157,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     CHECK(solver.get_options_prefix() == "test_snes_");
     solver.set_from_options();
 
-    int num_it = solver.solve(x);
+    PetscInt num_it = solver.solve(x);
     CHECK(num_it > 0);
     SNESConvergedReason reason;
     SNESGetConvergedReason(solver.snes(), &reason);
@@ -175,13 +175,13 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // The update hook has no context of its own and recovers the
     // solver from the residual callback, so it exercises a second route
     // back to the solver
-    std::vector<int> steps;
-    solver.set_update([&steps](int step) { steps.push_back(step); });
+    std::vector<PetscInt> steps;
+    solver.set_update([&steps](PetscInt step) { steps.push_back(step); });
 
     // The SNES callback context points at the solver, so the callbacks
     // must survive a move
     nls::petsc::SNESSolver moved(std::move(solver));
-    int num_it = moved.solve(x);
+    PetscInt num_it = moved.solve(x);
     check_solution(x);
     CHECK(steps.size() == std::size_t(num_it));
 
@@ -193,8 +193,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // unspecified state, and remains callable on some implementations,
     // so only a distinct target shows which solver the callback
     // actually reached.
-    std::vector<int> assigned_steps;
-    assigned.set_update([&assigned_steps](int step)
+    std::vector<PetscInt> assigned_steps;
+    assigned.set_update([&assigned_steps](PetscInt step)
                         { assigned_steps.push_back(step); });
 
     VecSet(x, PetscScalar(1));
@@ -231,7 +231,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     // A solver that has converged can be solved again
     VecSet(x, PetscScalar(5));
-    int num_it = solver.solve(x);
+    PetscInt num_it = solver.solve(x);
     CHECK(num_it > 0);
     check_solution(x);
   }
@@ -274,16 +274,16 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
                  J);
 
-    std::vector<int> steps;
-    solver.set_update([&steps](int step) { steps.push_back(step); });
+    std::vector<PetscInt> steps;
+    solver.set_update([&steps](PetscInt step) { steps.push_back(step); });
 
-    int num_it = solver.solve(x);
+    PetscInt num_it = solver.solve(x);
     check_solution(x);
 
     // The hook runs once at the start of each iteration
     REQUIRE(steps.size() == std::size_t(num_it));
     for (std::size_t i = 0; i < steps.size(); ++i)
-      CHECK(steps[i] == int(i));
+      CHECK(steps[i] == PetscInt(i));
   }
 
   SECTION("Exception in a callback")
@@ -356,7 +356,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_F(assemble_residual, b_local);
     solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
                  J);
-    solver.set_update([](int) { throw std::runtime_error("Update failed"); });
+    solver.set_update([](PetscInt)
+                      { throw std::runtime_error("Update failed"); });
 
     try
     {
@@ -398,8 +399,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
                  J);
 
-    std::vector<int> steps;
-    solver.set_update([&steps](int step) { steps.push_back(step); });
+    std::vector<PetscInt> steps;
+    solver.set_update([&steps](PetscInt step) { steps.push_back(step); });
 
     // Callbacks recover the solver from the SNES, so bypassing solve()
     // works, including the update hook
@@ -450,7 +451,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_options_prefix("nest_");
     solver.set_from_options();
 
-    int num_it = solver.solve(x_nest);
+    PetscInt num_it = solver.solve(x_nest);
     CHECK(num_it > 0);
 
     // The solver did not substitute anything for the nest matrix

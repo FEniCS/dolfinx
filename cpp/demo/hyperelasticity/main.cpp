@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
     solver.set_options_prefix("hyperelasticity_");
     solver.set_from_options();
 
-    int niter = solver.solve(u_vec.vec());
+    PetscInt niter = solver.solve(u_vec.vec());
     VecGhostUpdateBegin(u_vec.vec(), INSERT_VALUES, SCATTER_FORWARD);
     VecGhostUpdateEnd(u_vec.vec(), INSERT_VALUES, SCATTER_FORWARD);
 

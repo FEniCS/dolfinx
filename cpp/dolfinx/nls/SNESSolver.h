@@ -120,7 +120,7 @@ public:
   /// to update a time- or step-dependent term.
   /// @param[in] update Function called with the index of the iteration
   /// that is about to be taken.
-  void set_update(std::function<void(int step)> update);
+  void set_update(std::function<void(PetscInt step)> update);
 
   /// @brief Solve \f$F(x) = 0\f$.
   ///
@@ -135,7 +135,7 @@ public:
   /// @param[in,out] x Solution vector, holding the initial guess on
   /// entry.
   /// @return Number of nonlinear iterations performed.
-  int solve(Vec x);
+  PetscInt solve(Vec x);
 
   /// @brief Set the prefix used by PETSc when searching the PETSc
   /// options database.
@@ -184,7 +184,7 @@ private:
   std::function<void(const Vec x, Mat Jmat, Mat Pmat)> _fnJ;
 
   // Function called before each nonlinear iteration
-  std::function<void(int step)> _fnupdate;
+  std::function<void(PetscInt step)> _fnupdate;
 
   // Exception thrown by a callback during a solve, re-thrown by solve
   std::exception_ptr _exception;

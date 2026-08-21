@@ -137,7 +137,7 @@ void nls::petsc::SNESSolver::set_J(std::function<void(const Vec, Mat, Mat)> J,
   CHECK_ERROR("SNESSetJacobian");
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::SNESSolver::set_update(std::function<void(int)> update)
+void nls::petsc::SNESSolver::set_update(std::function<void(PetscInt)> update)
 {
   assert(_snes);
   _fnupdate = std::move(update);
@@ -145,7 +145,7 @@ void nls::petsc::SNESSolver::set_update(std::function<void(int)> update)
   CHECK_ERROR("SNESSetUpdate");
 }
 //-----------------------------------------------------------------------------
-int nls::petsc::SNESSolver::solve(Vec x)
+PetscInt nls::petsc::SNESSolver::solve(Vec x)
 {
   common::Timer timer("PETSc SNES solver");
   assert(_snes);
