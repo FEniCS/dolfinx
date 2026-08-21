@@ -531,7 +531,7 @@ std::string petsc::Vector::get_options_prefix() const
   const char* prefix = nullptr;
   PetscErrorCode ierr = VecGetOptionsPrefix(_x, &prefix);
   CHECK_ERROR("VecGetOptionsPrefix");
-  return std::string(prefix);
+  return prefix ? std::string(prefix) : std::string();
 }
 //-----------------------------------------------------------------------------
 void petsc::Vector::set_from_options()
@@ -677,7 +677,7 @@ std::string petsc::Matrix::get_options_prefix() const
   assert(_matA);
   const char* prefix = nullptr;
   MatGetOptionsPrefix(_matA, &prefix);
-  return std::string(prefix);
+  return prefix ? std::string(prefix) : std::string();
 }
 //-----------------------------------------------------------------------------
 void petsc::Matrix::set_from_options()
@@ -811,7 +811,7 @@ std::string petsc::KrylovSolver::get_options_prefix() const
   PetscErrorCode ierr = KSPGetOptionsPrefix(_ksp, &prefix);
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "KSPGetOptionsPrefix");
-  return std::string(prefix);
+  return prefix ? std::string(prefix) : std::string();
 }
 //-----------------------------------------------------------------------------
 void petsc::KrylovSolver::set_from_options() const
