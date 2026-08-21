@@ -149,18 +149,6 @@ int main(int argc, char* argv[])
         = {fem::DirichletBC<T>(std::vector<T>{0, 0, 0}, bdofs_left, V),
            fem::DirichletBC<T>(u_rotation, bdofs_right)};
 
-    // Configure the solver through the PETSc options database. The
-    // options are read when the solver is created, under the prefix it
-    // sets on its SNES object. The Newton update is solved for with a
-    // direct LU solver, and a failure to converge raises an error
-    // rather than being reported by the return value.
-    const U tol = 10 * std::numeric_limits<U>::epsilon();
-    la::petsc::options::set("hyperelasticity_ksp_type", "preonly");
-    la::petsc::options::set("hyperelasticity_pc_type", "lu");
-    la::petsc::options::set("hyperelasticity_snes_rtol", tol);
-    la::petsc::options::set("hyperelasticity_snes_atol", tol);
-    la::petsc::options::set("hyperelasticity_snes_error_if_not_converged");
-
     // `A_layout` and `b_layout` set the layout of the Jacobian and
     // residual that the solver works with. `u_vec` shares data with the
     // degrees-of-freedom of `u`, and holds the initial guess on entry
@@ -187,6 +175,17 @@ int main(int argc, char* argv[])
         [&a, &bcs_ref, &u](const Vec x, Mat Jmat, Mat)
         { fem::petsc::assemble_jacobian(x, Jmat, nullptr, a, bcs_ref, *u); },
         A_layout.mat());
+
+    // Begin configuring the solver through the PETSc options database.  The
+    // Newton update is solved for with a direct LU solver, and a failure to
+    // converge raises an error rather than being reported by the return value.
+    const U tol = 10 * std::numeric_limits<U>::epsilon();
+    la::petsc::options::set("hyperelasticity_ksp_type", "preonly");
+    la::petsc::options::set("hyperelasticity_pc_type", "lu");
+    la::petsc::options::set("hyperelasticity_snes_rtol", tol);
+    la::petsc::options::set("hyperelasticity_snes_atol", tol);
+    la::petsc::options::set("hyperelasticity_snes_error_if_not_converged");
+
     solver.set_options_prefix("hyperelasticity_");
     solver.set_from_options();
 
