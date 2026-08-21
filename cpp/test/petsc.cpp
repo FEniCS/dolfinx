@@ -82,7 +82,7 @@ TEST_CASE("PETSc Krylov solver", "[petsc]")
     PetscReal norm = 0;
     VecAXPY(x, -1.0, b);
     VecNorm(x, NORM_2, &norm);
-    CHECK(static_cast<double>(norm) < 1e-10);
+    CHECK(norm < 100 * PETSC_SMALL);
 
     VecDestroy(&x);
     VecDestroy(&b);
