@@ -22,10 +22,9 @@ namespace dolfinx::nls::petsc
 {
 /// @brief Solver for nonlinear systems \f$F(x) = 0\f$ using PETSc SNES.
 ///
-/// Adapts C++ callables to the SNES callback interface and holds a
-/// reference to the assembled-into vector and matrices. Configuration
-/// of the solve is left to the user, via the options database or the
-/// `SNES` object returned by snes().
+/// Adapts C++ callables to the SNES callback interface and handles
+/// memory management. Configuration of the solve is left to the user,
+/// via the options database or the `SNES` object returned by snes().
 ///
 /// An exception thrown by a callback aborts the solve and is re-thrown
 /// by solve().
@@ -90,7 +89,7 @@ public:
   /// @param[in] F Function to assemble the residual at `x` into the
   /// vector it is passed. It is responsible for zeroing that vector,
   /// and for any required ghost update of `x`.
-  /// @param[in] b Vector that the solver duplicates to create the
+  /// @param[in] b Vector that the solver may duplicate to create the
   /// vectors passed to `F`. A reference is held, so the caller can
   /// destroy their own reference.
   void set_F(std::function<void(const Vec x, Vec b)> F, Vec b);
@@ -101,12 +100,13 @@ public:
   /// A Jacobian defined by a fem::Form can be assembled with
   /// fem::petsc::assemble_jacobian.
   ///
-  /// @note As for set_F, `J` must assemble into the matrices it is
-  /// passed rather than into `Jmat` and `Pmat` directly.
+  /// @note `J` must assemble into the matrices it is passed rather
+  /// than into `Jmat` and `Pmat` directly.
   ///
   /// @param[in] J Function to assemble the Jacobian at `x` into the
   /// first matrix it is passed and the preconditioner into the second.
-  /// It is responsible for zeroing them and for finalising assembly.
+  /// It is responsible for zeroing the matrices it assembles into and
+  /// for finalising assembly.
   /// @param[in] Jmat Matrix defining the layout of the Jacobian.
   /// @param[in] Pmat Matrix defining the layout of the preconditioner.
   /// If `nullptr`, `Jmat` is used, the two matrices passed to `J` are
@@ -126,14 +126,11 @@ public:
   ///
   /// Non-convergence is not treated as an error (a warning is logged);
   /// use snes() and `SNESGetConvergedReason`, or the
-  /// `-snes_error_if_not_converged` option, if it matters.
+  /// `-snes_error_if_not_converged` option.
   ///
-  /// @note An exception thrown by a callback is re-thrown here. It must
-  /// be thrown on all ranks, otherwise ranks that continue the solve
-  /// deadlock on a collective operation. PETSc unwinds the aborted
-  /// solve without restoring its state, e.g. `x` is left locked for
-  /// read-only access, so neither this solver nor the vectors and
-  /// matrices it holds can be used again.
+  /// @note An exception thrown by a callback is re-thrown here. The
+  /// callback must throw on all ranks. A solver that throws an
+  /// exception must not be used again.
   ///
   /// @param[in,out] x Solution vector, holding the initial guess on
   /// entry.
@@ -172,7 +169,7 @@ private:
   static PetscErrorCode update_step(SNES snes, PetscInt step);
 
   // Store an in-flight exception and stop the solve. Called by the
-  // callbacks, from where an exception cannot be propagated through the
+  // callbacks, because C++ exceptions cannot be propagated through the
   // PETSc C frames.
   PetscErrorCode store_exception();
 

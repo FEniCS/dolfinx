@@ -167,7 +167,7 @@ int nls::petsc::SNESSolver::solve(Vec x)
   // Check if the solution converged and warn if not. Note: this does
   // not throw on non-convergence -- the caller is responsible for
   // checking the convergence reason (via snes()) if this matters for
-  // its use case.
+  // their use case.
   SNESConvergedReason reason;
   ierr = SNESGetConvergedReason(_snes, &reason);
   CHECK_ERROR("SNESGetConvergedReason");
