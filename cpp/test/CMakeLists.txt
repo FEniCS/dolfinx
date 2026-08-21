@@ -37,6 +37,7 @@ add_executable(
   vector.cpp
   matrix.cpp
   petsc.cpp
+  slepc.cpp
   io.cpp
   common/CIFailure.cpp
   common/sub_systems_manager.cpp
