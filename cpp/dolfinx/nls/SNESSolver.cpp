@@ -92,44 +92,46 @@ nls::petsc::SNESSolver::operator=(SNESSolver&& solver) noexcept
   return *this;
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::SNESSolver::set_F(std::function<void(const Vec, Vec)> F, Vec b)
+void nls::petsc::SNESSolver::set_F(std::function<void(const Vec, Vec)> F,
+                                   Vec b_layout)
 {
   assert(_snes);
-  assert(b);
+  assert(b_layout);
   _fnF = std::move(F);
 
-  PetscErrorCode ierr = PetscObjectReference(reinterpret_cast<PetscObject>(b));
+  PetscErrorCode ierr
+      = PetscObjectReference(reinterpret_cast<PetscObject>(b_layout));
   CHECK_ERROR("PetscObjectReference");
   if (_b)
     VecDestroy(&_b);
-  _b = b;
+  _b = b_layout;
 
   ierr = SNESSetFunction(_snes, _b, residual, this);
   CHECK_ERROR("SNESSetFunction");
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::SNESSolver::set_J(std::function<void(const Vec, Mat, Mat)> J,
-                                   Mat Jmat, Mat Pmat)
+                                   Mat J_layout, Mat P_layout)
 {
   assert(_snes);
-  assert(Jmat);
+  assert(J_layout);
   _fnJ = std::move(J);
 
-  if (!Pmat)
-    Pmat = Jmat;
+  if (!P_layout)
+    P_layout = J_layout;
 
   PetscErrorCode ierr
-      = PetscObjectReference(reinterpret_cast<PetscObject>(Jmat));
+      = PetscObjectReference(reinterpret_cast<PetscObject>(J_layout));
   CHECK_ERROR("PetscObjectReference");
-  ierr = PetscObjectReference(reinterpret_cast<PetscObject>(Pmat));
+  ierr = PetscObjectReference(reinterpret_cast<PetscObject>(P_layout));
   CHECK_ERROR("PetscObjectReference");
 
   if (_matJ)
     MatDestroy(&_matJ);
   if (_matP)
     MatDestroy(&_matP);
-  _matJ = Jmat;
-  _matP = Pmat;
+  _matJ = J_layout;
+  _matP = P_layout;
 
   ierr = SNESSetJacobian(_snes, _matJ, _matP, jacobian, this);
   CHECK_ERROR("SNESSetJacobian");

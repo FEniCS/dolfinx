@@ -82,17 +82,17 @@ public:
   /// A residual defined by a fem::Form can be assembled with
   /// fem::petsc::assemble_residual.
   ///
-  /// @note `F` must assemble into the vector it is passed, which is not
-  /// always `b`. A line search, for instance, evaluates the residual in
-  /// a work vector duplicated from `b`.
+  /// @note `F` must assemble into the `b` it is passed, which is not
+  /// always `b_layout`. A line search, for instance, evaluates the
+  /// residual in a work vector duplicated from `b_layout`.
   ///
-  /// @param[in] F Function to assemble the residual at `x` into the
-  /// vector it is passed. It is responsible for zeroing that vector,
-  /// and for any required ghost update of `x`.
-  /// @param[in] b Vector that the solver may duplicate to create the
-  /// vectors passed to `F`. A reference is held, so the caller can
+  /// @param[in] F Function to assemble the residual at `x` into the `b`
+  /// it is passed. It is responsible for zeroing that vector, and for
+  /// any required ghost update of `x`.
+  /// @param[in] b_layout Vector that the solver may duplicate to create
+  /// the vectors passed to `F`. A reference is held, so the caller can
   /// destroy their own reference.
-  void set_F(std::function<void(const Vec x, Vec b)> F, Vec b);
+  void set_F(std::function<void(const Vec x, Vec b)> F, Vec b_layout);
 
   /// @brief Set the function for computing the Jacobian
   /// \f$J := dF/dx\f$, and the matrices that define its layout.
@@ -100,21 +100,21 @@ public:
   /// A Jacobian defined by a fem::Form can be assembled with
   /// fem::petsc::assemble_jacobian.
   ///
-  /// @note `J` must assemble into the matrices it is passed rather
-  /// than into `Jmat` and `Pmat` directly.
+  /// @note `J` must assemble into the `Jmat` and `Pmat` it is passed,
+  /// which are not always `J_layout` and `P_layout`.
   ///
   /// @param[in] J Function to assemble the Jacobian at `x` into the
-  /// first matrix it is passed and the preconditioner into the second.
-  /// It is responsible for zeroing the matrices it assembles into and
-  /// for finalising assembly.
-  /// @param[in] Jmat Matrix defining the layout of the Jacobian.
-  /// @param[in] Pmat Matrix defining the layout of the preconditioner.
-  /// If `nullptr`, `Jmat` is used, the two matrices passed to `J` are
-  /// the same, and `J` should assemble the Jacobian only. A reference
-  /// to each matrix is held, so the caller can destroy their own
-  /// references.
-  void set_J(std::function<void(const Vec x, Mat Jmat, Mat Pmat)> J, Mat Jmat,
-             Mat Pmat = nullptr);
+  /// `Jmat` it is passed, and the preconditioner into the `Pmat` it is
+  /// passed. It is responsible for zeroing the matrices it assembles
+  /// into and for finalising assembly.
+  /// @param[in] J_layout Matrix defining the layout of the Jacobian.
+  /// @param[in] P_layout Matrix defining the layout of the
+  /// preconditioner. If `nullptr`, `J_layout` is used, the two matrices
+  /// passed to `J` are the same, and `J` should assemble the Jacobian
+  /// only. A reference to each matrix is held, so the caller can
+  /// destroy their own references.
+  void set_J(std::function<void(const Vec x, Mat Jmat, Mat Pmat)> J,
+             Mat J_layout, Mat P_layout = nullptr);
 
   /// @brief Set a function called before each nonlinear iteration, e.g.
   /// to update a time- or step-dependent term.
