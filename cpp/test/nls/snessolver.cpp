@@ -38,35 +38,35 @@ constexpr PetscInt local_size = 2;
 void assemble_residual(const Vec x, Vec b)
 {
   const PetscScalar* _x;
-  VecGetArrayRead(x, &_x);
+  CHECK(VecGetArrayRead(x, &_x) == 0);
   PetscScalar* _b;
-  VecGetArray(b, &_b);
+  CHECK(VecGetArray(b, &_b) == 0);
   std::span<const PetscScalar> xs(_x, local_size);
   std::span<PetscScalar> bs(_b, local_size);
   for (PetscInt i = 0; i < local_size; ++i)
     bs[i] = xs[i] * xs[i] - PetscScalar(2);
-  VecRestoreArray(b, &_b);
-  VecRestoreArrayRead(x, &_x);
+  CHECK(VecRestoreArray(b, &_b) == 0);
+  CHECK(VecRestoreArrayRead(x, &_x) == 0);
 }
 
 // Jacobian df/dx = diag(2 x_i)
 void assemble_jacobian(const Vec x, Mat J)
 {
   PetscInt r0, r1;
-  VecGetOwnershipRange(x, &r0, &r1);
+  CHECK(VecGetOwnershipRange(x, &r0, &r1) == 0);
   const PetscScalar* _x;
-  VecGetArrayRead(x, &_x);
+  CHECK(VecGetArrayRead(x, &_x) == 0);
   std::span<const PetscScalar> xs(_x, local_size);
-  MatZeroEntries(J);
+  CHECK(MatZeroEntries(J) == 0);
   for (PetscInt i = 0; i < local_size; ++i)
   {
     PetscInt row = r0 + i;
     PetscScalar v = PetscScalar(2) * xs[i];
-    MatSetValues(J, 1, &row, 1, &row, &v, INSERT_VALUES);
+    CHECK(MatSetValues(J, 1, &row, 1, &row, &v, INSERT_VALUES) == 0);
   }
-  VecRestoreArrayRead(x, &_x);
-  MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);
+  CHECK(VecRestoreArrayRead(x, &_x) == 0);
+  CHECK(MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY) == 0);
+  CHECK(MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY) == 0);
 }
 
 // Residual of two decoupled blocks, f(x_i)_j = x_ij^2 - (2 + i), whose
@@ -75,20 +75,20 @@ void assemble_residual_nest(const Vec x, Vec b)
 {
   PetscInt n = 0;
   Vec *x_sub = nullptr, *b_sub = nullptr;
-  VecNestGetSubVecs(x, &n, &x_sub);
-  VecNestGetSubVecs(b, &n, &b_sub);
+  CHECK(VecNestGetSubVecs(x, &n, &x_sub) == 0);
+  CHECK(VecNestGetSubVecs(b, &n, &b_sub) == 0);
   for (PetscInt i = 0; i < n; ++i)
   {
     const PetscScalar* _x;
-    VecGetArrayRead(x_sub[i], &_x);
+    CHECK(VecGetArrayRead(x_sub[i], &_x) == 0);
     PetscScalar* _b;
-    VecGetArray(b_sub[i], &_b);
+    CHECK(VecGetArray(b_sub[i], &_b) == 0);
     std::span<const PetscScalar> xs(_x, local_size);
     std::span<PetscScalar> bs(_b, local_size);
     for (PetscInt j = 0; j < local_size; ++j)
       bs[j] = xs[j] * xs[j] - PetscScalar(2 + i);
-    VecRestoreArray(b_sub[i], &_b);
-    VecRestoreArrayRead(x_sub[i], &_x);
+    CHECK(VecRestoreArray(b_sub[i], &_b) == 0);
+    CHECK(VecRestoreArrayRead(x_sub[i], &_x) == 0);
   }
 }
 
@@ -97,15 +97,15 @@ void assemble_jacobian_nest(const Vec x, Mat J)
 {
   PetscInt n = 0;
   Vec* x_sub = nullptr;
-  VecNestGetSubVecs(x, &n, &x_sub);
+  CHECK(VecNestGetSubVecs(x, &n, &x_sub) == 0);
   for (PetscInt i = 0; i < n; ++i)
   {
     Mat J_sub = nullptr;
-    MatNestGetSubMat(J, i, i, &J_sub);
+    CHECK(MatNestGetSubMat(J, i, i, &J_sub) == 0);
     assemble_jacobian(x_sub[i], J_sub);
   }
-  MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);
+  CHECK(MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY) == 0);
+  CHECK(MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY) == 0);
 }
 
 // Reference count of a PETSc object
@@ -113,7 +113,8 @@ template <typename O>
 PetscInt ref_count(O obj)
 {
   PetscInt count = 0;
-  PetscObjectGetReference(reinterpret_cast<PetscObject>(obj), &count);
+  CHECK(PetscObjectGetReference(reinterpret_cast<PetscObject>(obj), &count)
+        == 0);
   return count;
 }
 
@@ -127,21 +128,21 @@ void check_solution(const Vec x, SNES snes, double root = std::sqrt(2.0))
   // by round-off, and above so that a solve stopping far from the root
   // fails rather than widening its own tolerance.
   PetscReal fnorm = 0;
-  SNESGetFunctionNorm(snes, &fnorm);
+  CHECK(SNESGetFunctionNorm(snes, &fnorm) == 0);
   const double round_off
       = 8 * std::numeric_limits<PetscReal>::epsilon() * std::abs(root);
   const double tol = std::clamp(
       static_cast<double>(fnorm) / (2 * std::abs(root)), round_off, 1e-3);
 
   const PetscScalar* _x;
-  VecGetArrayRead(x, &_x);
+  CHECK(VecGetArrayRead(x, &_x) == 0);
   std::span<const PetscScalar> xs(_x, local_size);
   for (PetscScalar xi : xs)
   {
     CHECK_THAT(static_cast<double>(PetscRealPart(xi)),
                Catch::Matchers::WithinAbs(root, tol));
   }
-  VecRestoreArrayRead(x, &_x);
+  CHECK(VecRestoreArrayRead(x, &_x) == 0);
 }
 } // namespace
 
@@ -149,17 +150,18 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 {
   int argc = 0;
   char** argv = nullptr;
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
+  REQUIRE(PetscInitialize(&argc, &argv, nullptr, nullptr) == 0);
 
   MPI_Comm comm = MPI_COMM_WORLD;
   Vec x, b;
-  VecCreateMPI(comm, local_size, PETSC_DETERMINE, &x);
-  VecDuplicate(x, &b);
-  VecSet(x, PetscScalar(1));
+  CHECK(VecCreateMPI(comm, local_size, PETSC_DETERMINE, &x) == 0);
+  CHECK(VecDuplicate(x, &b) == 0);
+  CHECK(VecSet(x, PetscScalar(1)) == 0);
 
   Mat J;
-  MatCreateAIJ(comm, local_size, local_size, PETSC_DETERMINE, PETSC_DETERMINE,
-               1, nullptr, 0, nullptr, &J);
+  CHECK(MatCreateAIJ(comm, local_size, local_size, PETSC_DETERMINE,
+                     PETSC_DETERMINE, 1, nullptr, 0, nullptr, &J)
+        == 0);
 
   SECTION("Solve")
   {
@@ -178,7 +180,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     PetscInt num_it = solver.solve(x);
     CHECK(num_it > 0);
     SNESConvergedReason reason;
-    SNESGetConvergedReason(solver.snes(), &reason);
+    CHECK(SNESGetConvergedReason(solver.snes(), &reason) == 0);
     CHECK(reason > 0);
     check_solution(x, solver.snes());
   }
@@ -215,7 +217,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     assigned.set_update([&assigned_steps](PetscInt step)
                         { assigned_steps.push_back(step); });
 
-    VecSet(x, PetscScalar(1));
+    CHECK(VecSet(x, PetscScalar(1)) == 0);
     steps.clear();
     num_it = assigned.solve(x);
     check_solution(x, assigned.snes());
@@ -232,7 +234,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     // Newton from a negative guess converges to the negative root, so
     // the vector passed to solve is used as the starting point
-    VecSet(x, PetscScalar(-1));
+    CHECK(VecSet(x, PetscScalar(-1)) == 0);
     solver.solve(x);
     check_solution(x, solver.snes(), -std::sqrt(2.0));
   }
@@ -248,7 +250,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     check_solution(x, solver.snes());
 
     // A solver that has converged can be solved again
-    VecSet(x, PetscScalar(5));
+    CHECK(VecSet(x, PetscScalar(5)) == 0);
     PetscInt num_it = solver.solve(x);
     CHECK(num_it > 0);
     check_solution(x, solver.snes());
@@ -257,8 +259,9 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
   SECTION("Separate preconditioner matrix")
   {
     Mat P;
-    MatCreateAIJ(comm, local_size, local_size, PETSC_DETERMINE, PETSC_DETERMINE,
-                 1, nullptr, 0, nullptr, &P);
+    CHECK(MatCreateAIJ(comm, local_size, local_size, PETSC_DETERMINE,
+                       PETSC_DETERMINE, 1, nullptr, 0, nullptr, &P)
+          == 0);
 
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b);
@@ -273,16 +276,18 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     check_solution(x, solver.snes());
 
     Mat Jmat_snes, Pmat_snes;
-    SNESGetJacobian(solver.snes(), &Jmat_snes, &Pmat_snes, nullptr, nullptr);
+    CHECK(
+        SNESGetJacobian(solver.snes(), &Jmat_snes, &Pmat_snes, nullptr, nullptr)
+        == 0);
     CHECK(Jmat_snes == J);
     CHECK(Pmat_snes == P);
 
     // The preconditioner matrix was assembled into, not left at zero
     PetscReal norm;
-    MatNorm(P, NORM_FROBENIUS, &norm);
+    CHECK(MatNorm(P, NORM_FROBENIUS, &norm) == 0);
     CHECK(norm > 0.0);
 
-    MatDestroy(&P);
+    CHECK(MatDestroy(&P) == 0);
   }
 
   SECTION("Update hook")
@@ -310,9 +315,9 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // so the solver and the vectors it holds are dead afterwards. Use
     // vectors local to this section.
     Vec x_local, b_local;
-    VecDuplicate(x, &x_local);
-    VecDuplicate(b, &b_local);
-    VecSet(x_local, PetscScalar(1));
+    CHECK(VecDuplicate(x, &x_local) == 0);
+    CHECK(VecDuplicate(b, &b_local) == 0);
+    CHECK(VecSet(x_local, PetscScalar(1)) == 0);
 
     nls::petsc::SNESSolver solver(comm);
     solver.set_F([](const Vec, Vec)
@@ -331,17 +336,17 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
       CHECK(std::string(e.what()) == "Residual failed");
     }
 
-    VecDestroy(&b_local);
-    VecDestroy(&x_local);
+    CHECK(VecDestroy(&b_local) == 0);
+    CHECK(VecDestroy(&x_local) == 0);
   }
 
   SECTION("Exception in the Jacobian callback")
   {
     // As above, the solver and its vectors are dead after the throw
     Vec x_local, b_local;
-    VecDuplicate(x, &x_local);
-    VecDuplicate(b, &b_local);
-    VecSet(x_local, PetscScalar(1));
+    CHECK(VecDuplicate(x, &x_local) == 0);
+    CHECK(VecDuplicate(b, &b_local) == 0);
+    CHECK(VecSet(x_local, PetscScalar(1)) == 0);
 
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b_local);
@@ -358,17 +363,17 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
       CHECK(std::string(e.what()) == "Jacobian failed");
     }
 
-    VecDestroy(&b_local);
-    VecDestroy(&x_local);
+    CHECK(VecDestroy(&b_local) == 0);
+    CHECK(VecDestroy(&x_local) == 0);
   }
 
   SECTION("Exception in the update hook")
   {
     // As above, the solver and its vectors are dead after the throw
     Vec x_local, b_local;
-    VecDuplicate(x, &x_local);
-    VecDuplicate(b, &b_local);
-    VecSet(x_local, PetscScalar(1));
+    CHECK(VecDuplicate(x, &x_local) == 0);
+    CHECK(VecDuplicate(b, &b_local) == 0);
+    CHECK(VecSet(x_local, PetscScalar(1)) == 0);
 
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b_local);
@@ -387,13 +392,13 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
       CHECK(std::string(e.what()) == "Update failed");
     }
 
-    VecDestroy(&b_local);
-    VecDestroy(&x_local);
+    CHECK(VecDestroy(&b_local) == 0);
+    CHECK(VecDestroy(&x_local) == 0);
   }
 
   SECTION("Non-convergence is not an error")
   {
-    PetscOptionsSetValue(nullptr, "-max_it_snes_max_it", "1");
+    CHECK(PetscOptionsSetValue(nullptr, "-max_it_snes_max_it", "1") == 0);
 
     nls::petsc::SNESSolver solver(comm);
     solver.set_F(assemble_residual, b);
@@ -404,10 +409,10 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     CHECK_NOTHROW(solver.solve(x));
     SNESConvergedReason reason;
-    SNESGetConvergedReason(solver.snes(), &reason);
+    CHECK(SNESGetConvergedReason(solver.snes(), &reason) == 0);
     CHECK(reason == SNES_DIVERGED_MAX_IT);
 
-    PetscOptionsClearValue(nullptr, "-max_it_snes_max_it");
+    CHECK(PetscOptionsClearValue(nullptr, "-max_it_snes_max_it") == 0);
   }
 
   SECTION("Solve through the SNES object")
@@ -422,11 +427,11 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     // Callbacks recover the solver from the SNES, so bypassing solve()
     // works, including the update hook
-    SNESSolve(solver.snes(), nullptr, x);
+    CHECK(SNESSolve(solver.snes(), nullptr, x) == 0);
     check_solution(x, solver.snes());
 
     PetscInt num_it = 0;
-    SNESGetIterationNumber(solver.snes(), &num_it);
+    CHECK(SNESGetIterationNumber(solver.snes(), &num_it) == 0);
     CHECK(steps.size() == std::size_t(num_it));
   }
 
@@ -438,27 +443,31 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     std::array<Mat, 2> J_sub;
     for (std::size_t i = 0; i < 2; ++i)
     {
-      VecCreateMPI(comm, local_size, PETSC_DETERMINE, &x_sub[i]);
-      VecDuplicate(x_sub[i], &b_sub[i]);
-      VecSet(x_sub[i], PetscScalar(1));
-      MatCreateAIJ(comm, local_size, local_size, PETSC_DETERMINE,
-                   PETSC_DETERMINE, 1, nullptr, 0, nullptr, &J_sub[i]);
+      CHECK(VecCreateMPI(comm, local_size, PETSC_DETERMINE, &x_sub[i]) == 0);
+      CHECK(VecDuplicate(x_sub[i], &b_sub[i]) == 0);
+      CHECK(VecSet(x_sub[i], PetscScalar(1)) == 0);
+      CHECK(MatCreateAIJ(comm, local_size, local_size, PETSC_DETERMINE,
+                         PETSC_DETERMINE, 1, nullptr, 0, nullptr, &J_sub[i])
+            == 0);
     }
 
     Vec x_nest, b_nest;
-    VecCreateNest(comm, 2, nullptr, x_sub.data(), &x_nest);
-    VecCreateNest(comm, 2, nullptr, b_sub.data(), &b_nest);
+    CHECK(VecCreateNest(comm, 2, nullptr, x_sub.data(), &x_nest) == 0);
+    CHECK(VecCreateNest(comm, 2, nullptr, b_sub.data(), &b_nest) == 0);
 
     std::array<Mat, 4> blocks{J_sub[0], nullptr, nullptr, J_sub[1]};
     Mat J_nest;
-    MatCreateNest(comm, 2, nullptr, 2, nullptr, blocks.data(), &J_nest);
+    CHECK(MatCreateNest(comm, 2, nullptr, 2, nullptr, blocks.data(), &J_nest)
+          == 0);
 
     // A nest matrix cannot be factored directly, so precondition the
     // blocks separately. PETSc takes the splits from the nest.
-    PetscOptionsSetValue(nullptr, "-nest_ksp_type", "gmres");
-    PetscOptionsSetValue(nullptr, "-nest_pc_type", "fieldsplit");
-    PetscOptionsSetValue(nullptr, "-nest_fieldsplit_ksp_type", "preonly");
-    PetscOptionsSetValue(nullptr, "-nest_fieldsplit_pc_type", "jacobi");
+    CHECK(PetscOptionsSetValue(nullptr, "-nest_ksp_type", "gmres") == 0);
+    CHECK(PetscOptionsSetValue(nullptr, "-nest_pc_type", "fieldsplit") == 0);
+    CHECK(PetscOptionsSetValue(nullptr, "-nest_fieldsplit_ksp_type", "preonly")
+          == 0);
+    CHECK(PetscOptionsSetValue(nullptr, "-nest_fieldsplit_pc_type", "jacobi")
+          == 0);
 
     // The solver holds Vec and Mat, so nest objects pass through it
     // untouched
@@ -474,10 +483,11 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     // The solver did not substitute anything for the nest matrix
     Mat Jmat_snes;
-    SNESGetJacobian(solver.snes(), &Jmat_snes, nullptr, nullptr, nullptr);
+    CHECK(SNESGetJacobian(solver.snes(), &Jmat_snes, nullptr, nullptr, nullptr)
+          == 0);
     CHECK(Jmat_snes == J_nest);
     SNESConvergedReason reason;
-    SNESGetConvergedReason(solver.snes(), &reason);
+    CHECK(SNESGetConvergedReason(solver.snes(), &reason) == 0);
     CHECK(reason > 0);
 
     // The nest shares its sub-vectors, so the solution is visible there
@@ -488,17 +498,17 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
          {"-nest_ksp_type", "-nest_pc_type", "-nest_fieldsplit_ksp_type",
           "-nest_fieldsplit_pc_type"})
     {
-      PetscOptionsClearValue(nullptr, opt);
+      CHECK(PetscOptionsClearValue(nullptr, opt) == 0);
     }
 
-    MatDestroy(&J_nest);
-    VecDestroy(&b_nest);
-    VecDestroy(&x_nest);
+    CHECK(MatDestroy(&J_nest) == 0);
+    CHECK(VecDestroy(&b_nest) == 0);
+    CHECK(VecDestroy(&x_nest) == 0);
     for (std::size_t i = 0; i < 2; ++i)
     {
-      MatDestroy(&J_sub[i]);
-      VecDestroy(&b_sub[i]);
-      VecDestroy(&x_sub[i]);
+      CHECK(MatDestroy(&J_sub[i]) == 0);
+      CHECK(VecDestroy(&b_sub[i]) == 0);
+      CHECK(VecDestroy(&x_sub[i]) == 0);
     }
   }
 
@@ -536,8 +546,9 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
   SECTION("Reference counting with a preconditioner matrix")
   {
     Mat P;
-    MatCreateAIJ(comm, local_size, local_size, PETSC_DETERMINE, PETSC_DETERMINE,
-                 1, nullptr, 0, nullptr, &P);
+    CHECK(MatCreateAIJ(comm, local_size, local_size, PETSC_DETERMINE,
+                       PETSC_DETERMINE, 1, nullptr, 0, nullptr, &P)
+          == 0);
     const PetscInt J_count = ref_count(J), P_count = ref_count(P);
     {
       nls::petsc::SNESSolver solver(comm);
@@ -551,13 +562,13 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     CHECK(ref_count(J) == J_count);
     CHECK(ref_count(P) == P_count);
 
-    MatDestroy(&P);
+    CHECK(MatDestroy(&P) == 0);
   }
 
   SECTION("Wrap an existing SNES")
   {
     SNES snes;
-    SNESCreate(comm, &snes);
+    CHECK(SNESCreate(comm, &snes) == 0);
     const PetscInt snes_count = ref_count(snes);
     {
       // +1: inc_ref_count, so the SNES cannot be destroyed while the
@@ -573,12 +584,12 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     // The solver released its reference, so snes is still valid
     CHECK(ref_count(snes) == snes_count);
-    SNESDestroy(&snes);
+    CHECK(SNESDestroy(&snes) == 0);
   }
 
-  MatDestroy(&J);
-  VecDestroy(&b);
-  VecDestroy(&x);
+  CHECK(MatDestroy(&J) == 0);
+  CHECK(VecDestroy(&b) == 0);
+  CHECK(VecDestroy(&x) == 0);
 }
 
 #endif
