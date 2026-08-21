@@ -152,11 +152,13 @@ int nls::petsc::SNESSolver::solve(Vec x)
   assert(x);
 
   spdlog::info("PETSc SNES solver starting to solve system.");
+
+  // Discard an exception from a solve that bypassed this one
   _exception = nullptr;
   PetscErrorCode ierr = SNESSolve(_snes, nullptr, x);
 
-  // A callback that threw aborted the solve, so re-throw before
-  // reporting the PETSc error it returned in its place
+  // A callback cannot throw through PETSc, so it stored its exception
+  // and returned an error code. Re-throw in place of that code.
   if (_exception)
     std::rethrow_exception(std::exchange(_exception, nullptr));
 
@@ -285,6 +287,10 @@ PetscErrorCode nls::petsc::SNESSolver::update_step(SNES snes, PetscInt step)
 PetscErrorCode nls::petsc::SNESSolver::store_exception()
 {
   _exception = std::current_exception();
+
+  // Re-throw and catch to read the message, the only way to inspect an
+  // exception_ptr. Logging matters when the caller ran SNESSolve
+  // directly, as nothing then re-throws.
   try
   {
     std::rethrow_exception(_exception);
@@ -295,6 +301,7 @@ PetscErrorCode nls::petsc::SNESSolver::store_exception()
   }
   catch (...)
   {
+    // An exception_ptr need not hold a std::exception
     spdlog::error("Unknown exception raised in a SNES callback.");
   }
 
