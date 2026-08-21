@@ -182,7 +182,7 @@ jobs:
     strategy:
       matrix:
         petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex64-32, linux-gnu-complex128-32, linux-gnu-real64-64]
-    container: "ghcr.io/fenics/test-env:current-openmpi"
+    container: "ghcr.io/fenics/test-env:current"
     env:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -292,7 +292,7 @@ jobs:
   build-and-publish-docs:
     runs-on: ubuntu-26.04
     needs: [lint]
-    container: "ghcr.io/fenics/test-env:current-openmpi"
+    container: "ghcr.io/fenics/test-env:current"
     env:
       PETSC_ARCH: linux-gnu-real64-32
       OMPI_ALLOW_RUN_AS_ROOT: 1
