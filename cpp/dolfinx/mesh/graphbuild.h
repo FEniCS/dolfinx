@@ -102,6 +102,8 @@ graph::AdjacencyList<std::int64_t>
 build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                  const std::vector<std::span<const std::int64_t>>& cells,
                  std::optional<std::int32_t> max_facet_to_cell_links,
+                 std::function<void(std::vector<std::int64_t>&)> facet_intercept
+                 = nullptr,
                  int num_threads = 1);
 
 } // namespace dolfinx::mesh

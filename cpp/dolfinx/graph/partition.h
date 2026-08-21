@@ -25,11 +25,13 @@ namespace dolfinx::graph
 /// across
 /// @param[in] nparts Number of partitions to divide graph nodes into
 /// @param[in] local_graph Node connectivity graph
+/// @param[in] node_weights Node weights
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution
 /// @return Destination rank for each input node
 using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm, int, const AdjacencyList<std::int64_t>&, bool)>;
+    MPI_Comm, int, const AdjacencyList<std::int64_t>&, std::span<std::int32_t>,
+    std::span<std::int32_t>, bool)>;
 
 /// @brief Partition graph across processes using the default graph
 /// partitioner.
@@ -38,12 +40,15 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 /// across.
 /// @param[in] nparts Number of partitions to divide graph nodes into.
 /// @param[in] local_graph Node connectivity graph.
+/// @param[in] node_weights Node weights.
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution.
 /// @return Destination rank for each input node.
 AdjacencyList<std::int32_t>
 partition_graph(MPI_Comm comm, int nparts,
-                const AdjacencyList<std::int64_t>& local_graph, bool ghosting);
+                const AdjacencyList<std::int64_t>& local_graph,
+                std::span<std::int32_t> node_weights,
+                std::span<std::int32_t> edge_weights, bool ghosting);
 
 /// Tools for distributed graphs
 ///
