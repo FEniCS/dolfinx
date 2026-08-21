@@ -7,12 +7,15 @@
 // Unit tests for nls::petsc::SNESSolver
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #ifdef HAS_PETSC
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <dolfinx/nls/SNESSolver.h>
+#include <limits>
 #include <mpi.h>
 #include <petscmat.h>
 #include <petscsnes.h>
@@ -115,14 +118,29 @@ PetscInt ref_count(O obj)
 }
 
 // Check that all entries of x are `root`, by default the positive root
-// sqrt(2)
-void check_solution(const Vec x, double root = std::sqrt(2.0))
+// sqrt(2), to the accuracy the solver stopped at rather than to a fixed
+// tolerance, which would depend on the precision PETSc was built with
+void check_solution(const Vec x, SNES snes, double root = std::sqrt(2.0))
 {
+  // For f(x) = x^2 - c, |x - root| <= |f(x)| / |f'(root)|, and the
+  // residual norm over all entries bounds each |f(x_i)|. Clamped below
+  // by round-off, and above so that a solve stopping far from the root
+  // fails rather than widening its own tolerance.
+  PetscReal fnorm = 0;
+  SNESGetFunctionNorm(snes, &fnorm);
+  const double round_off
+      = 8 * std::numeric_limits<PetscReal>::epsilon() * std::abs(root);
+  const double tol = std::clamp(
+      static_cast<double>(fnorm) / (2 * std::abs(root)), round_off, 1e-3);
+
   const PetscScalar* _x;
   VecGetArrayRead(x, &_x);
   std::span<const PetscScalar> xs(_x, local_size);
   for (PetscScalar xi : xs)
-    CHECK(std::abs(PetscRealPart(xi) - root) < 1e-6);
+  {
+    CHECK_THAT(static_cast<double>(PetscRealPart(xi)),
+               Catch::Matchers::WithinAbs(root, tol));
+  }
   VecRestoreArrayRead(x, &_x);
 }
 } // namespace
@@ -162,7 +180,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     SNESConvergedReason reason;
     SNESGetConvergedReason(solver.snes(), &reason);
     CHECK(reason > 0);
-    check_solution(x);
+    check_solution(x, solver.snes());
   }
 
   SECTION("Solve after move")
@@ -182,7 +200,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // must survive a move
     nls::petsc::SNESSolver moved(std::move(solver));
     PetscInt num_it = moved.solve(x);
-    check_solution(x);
+    check_solution(x, moved.snes());
     CHECK(steps.size() == std::size_t(num_it));
 
     nls::petsc::SNESSolver assigned(comm);
@@ -200,7 +218,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     VecSet(x, PetscScalar(1));
     steps.clear();
     num_it = assigned.solve(x);
-    check_solution(x);
+    check_solution(x, assigned.snes());
     CHECK(assigned_steps.size() == std::size_t(num_it));
     CHECK(steps.empty());
   }
@@ -216,7 +234,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // the vector passed to solve is used as the starting point
     VecSet(x, PetscScalar(-1));
     solver.solve(x);
-    check_solution(x, -std::sqrt(2.0));
+    check_solution(x, solver.snes(), -std::sqrt(2.0));
   }
 
   SECTION("Repeated solves")
@@ -227,13 +245,13 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
                  J);
 
     solver.solve(x);
-    check_solution(x);
+    check_solution(x, solver.snes());
 
     // A solver that has converged can be solved again
     VecSet(x, PetscScalar(5));
     PetscInt num_it = solver.solve(x);
     CHECK(num_it > 0);
-    check_solution(x);
+    check_solution(x, solver.snes());
   }
 
   SECTION("Separate preconditioner matrix")
@@ -252,7 +270,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
         },
         J, P);
     solver.solve(x);
-    check_solution(x);
+    check_solution(x, solver.snes());
 
     Mat Jmat_snes, Pmat_snes;
     SNESGetJacobian(solver.snes(), &Jmat_snes, &Pmat_snes, nullptr, nullptr);
@@ -278,7 +296,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_update([&steps](PetscInt step) { steps.push_back(step); });
 
     PetscInt num_it = solver.solve(x);
-    check_solution(x);
+    check_solution(x, solver.snes());
 
     // The hook runs once at the start of each iteration
     REQUIRE(steps.size() == std::size_t(num_it));
@@ -405,7 +423,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // Callbacks recover the solver from the SNES, so bypassing solve()
     // works, including the update hook
     SNESSolve(solver.snes(), nullptr, x);
-    check_solution(x);
+    check_solution(x, solver.snes());
 
     PetscInt num_it = 0;
     SNESGetIterationNumber(solver.snes(), &num_it);
@@ -463,8 +481,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     CHECK(reason > 0);
 
     // The nest shares its sub-vectors, so the solution is visible there
-    check_solution(x_sub[0], std::sqrt(2.0));
-    check_solution(x_sub[1], std::sqrt(3.0));
+    check_solution(x_sub[0], solver.snes(), std::sqrt(2.0));
+    check_solution(x_sub[1], solver.snes(), std::sqrt(3.0));
 
     for (const char* opt :
          {"-nest_ksp_type", "-nest_pc_type", "-nest_fieldsplit_ksp_type",
@@ -550,7 +568,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
       solver.set_J([](const Vec x, Mat Jmat, Mat)
                    { assemble_jacobian(x, Jmat); }, J);
       solver.solve(x);
-      check_solution(x);
+      check_solution(x, solver.snes());
     }
 
     // The solver released its reference, so snes is still valid

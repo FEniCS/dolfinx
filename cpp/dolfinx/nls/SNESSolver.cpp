@@ -92,7 +92,7 @@ nls::petsc::SNESSolver::operator=(SNESSolver&& solver) noexcept
   return *this;
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::SNESSolver::set_F(std::function<void(const Vec, Vec)> F,
+void nls::petsc::SNESSolver::set_F(std::function<void(const Vec x, Vec b)> F,
                                    Vec b_layout)
 {
   assert(_snes);
@@ -110,8 +110,9 @@ void nls::petsc::SNESSolver::set_F(std::function<void(const Vec, Vec)> F,
   CHECK_ERROR("SNESSetFunction");
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::SNESSolver::set_J(std::function<void(const Vec, Mat, Mat)> J,
-                                   Mat J_layout, Mat P_layout)
+void nls::petsc::SNESSolver::set_J(
+    std::function<void(const Vec x, Mat Jmat, Mat Pmat)> J, Mat J_layout,
+    Mat P_layout)
 {
   assert(_snes);
   assert(J_layout);
@@ -137,7 +138,8 @@ void nls::petsc::SNESSolver::set_J(std::function<void(const Vec, Mat, Mat)> J,
   CHECK_ERROR("SNESSetJacobian");
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::SNESSolver::set_update(std::function<void(PetscInt)> update)
+void nls::petsc::SNESSolver::set_update(
+    std::function<void(PetscInt step)> update)
 {
   assert(_snes);
   _fnupdate = std::move(update);
