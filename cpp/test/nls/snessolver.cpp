@@ -172,9 +172,9 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
                  J);
 
-    // The update hook is reached through a container composed on the
-    // SNES rather than a context pointer, so it exercises a second
-    // route back to the solver
+    // The update hook has no context of its own and recovers the
+    // solver from the residual callback, so it exercises a second route
+    // back to the solver
     std::vector<int> steps;
     solver.set_update([&steps](int step) { steps.push_back(step); });
 
@@ -389,6 +389,26 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     CHECK(reason == SNES_DIVERGED_MAX_IT);
 
     PetscOptionsClearValue(nullptr, "-max_it_snes_max_it");
+  }
+
+  SECTION("Solve through the SNES object")
+  {
+    nls::petsc::SNESSolver solver(comm);
+    solver.set_F(assemble_residual, b);
+    solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
+                 J);
+
+    std::vector<int> steps;
+    solver.set_update([&steps](int step) { steps.push_back(step); });
+
+    // Callbacks recover the solver from the SNES, so bypassing solve()
+    // works, including the update hook
+    SNESSolve(solver.snes(), nullptr, x);
+    check_solution(x);
+
+    PetscInt num_it = 0;
+    SNESGetIterationNumber(solver.snes(), &num_it);
+    CHECK(steps.size() == std::size_t(num_it));
   }
 
   SECTION("Nest matrices and vectors")

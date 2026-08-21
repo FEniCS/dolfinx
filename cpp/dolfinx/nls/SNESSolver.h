@@ -167,7 +167,8 @@ private:
                                  void* ctx);
 
   // Callback passed to SNESSetUpdate. It takes no context argument, so
-  // the owning SNESSolver is recovered from the SNES object.
+  // the owning SNESSolver is recovered from the context that set_F
+  // registered on the SNES object.
   static PetscErrorCode update_step(SNES snes, PetscInt step);
 
   // Store an in-flight exception and stop the solve. Called by the

@@ -19,13 +19,6 @@
 
 using namespace dolfinx;
 
-namespace
-{
-// Name under which the owning SNESSolver is composed on the SNES
-// object, for callbacks that take no context argument
-constexpr const char* ctx_name = "dolfinx_snes_solver";
-} // namespace
-
 //-----------------------------------------------------------------------------
 // Check a PETSc error code and throw a descriptive exception if it is
 // non-zero. Expects a local `PetscErrorCode ierr` in scope.
@@ -253,21 +246,26 @@ PetscErrorCode nls::petsc::SNESSolver::jacobian(SNES, Vec x, Mat Jmat, Mat Pmat,
 //-----------------------------------------------------------------------------
 PetscErrorCode nls::petsc::SNESSolver::update_step(SNES snes, PetscInt step)
 {
-  // SNESSetUpdate takes no context argument, so recover the solver
-  // from the container composed on the SNES object. Errors are returned
+  // SNESSetUpdate takes no context argument, so recover the solver from
+  // the context registered with SNESSetFunction. Errors are returned
   // rather than thrown, as this is called from PETSc.
-  PetscContainer container = nullptr;
-  PetscErrorCode ierr
-      = PetscObjectQuery(reinterpret_cast<PetscObject>(snes), ctx_name,
-                         reinterpret_cast<PetscObject*>(&container));
+  decltype(&residual) fn = nullptr;
+  void* ctx = nullptr;
+  PetscErrorCode ierr = SNESGetFunction(snes, nullptr, &fn, &ctx);
   if (ierr != 0)
     return ierr;
-  assert(container);
 
-  SNESSolver* solver = nullptr;
-  ierr = PetscContainerGetPointer(container, reinterpret_cast<void**>(&solver));
-  if (ierr != 0)
-    return ierr;
+  // The context is this class's only if the residual callback is, which
+  // it is not if the caller set their own on a wrapped SNES
+  if (fn != residual)
+  {
+    spdlog::error("SNES residual function was not set by SNESSolver, so the "
+                  "solver cannot be recovered in the update hook.");
+    return PETSC_ERR_ARG_WRONGSTATE;
+  }
+
+  SNESSolver* solver = static_cast<SNESSolver*>(ctx);
+  assert(solver);
 
   assert(solver->_fnupdate);
   try
@@ -306,21 +304,7 @@ void nls::petsc::SNESSolver::set_callbacks()
   if (!_snes)
     return;
 
-  // Attach this as the context for callbacks that take no context
-  // argument. Composing replaces any previously attached container, and
-  // the SNES object holds the only reference to it.
-  PetscContainer container = nullptr;
-  PetscErrorCode ierr = PetscContainerCreate(
-      PetscObjectComm(reinterpret_cast<PetscObject>(_snes)), &container);
-  CHECK_ERROR("PetscContainerCreate");
-  ierr = PetscContainerSetPointer(container, this);
-  CHECK_ERROR("PetscContainerSetPointer");
-  ierr = PetscObjectCompose(reinterpret_cast<PetscObject>(_snes), ctx_name,
-                            reinterpret_cast<PetscObject>(container));
-  CHECK_ERROR("PetscObjectCompose");
-  ierr = PetscContainerDestroy(&container);
-  CHECK_ERROR("PetscContainerDestroy");
-
+  PetscErrorCode ierr = 0;
   if (_fnF)
   {
     ierr = SNESSetFunction(_snes, _b, residual, this);
