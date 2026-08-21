@@ -456,7 +456,8 @@ petsc::Vector::Vector(Vec x, bool inc_ref_count) : _x(x)
 
   if (inc_ref_count)
   {
-    PetscErrorCode ierr = PetscObjectReference(reinterpret_cast<PetscObject>(_x));
+    PetscErrorCode ierr
+        = PetscObjectReference(reinterpret_cast<PetscObject>(_x));
     CHECK_ERROR("PetscObjectReference");
   }
 }
@@ -557,7 +558,8 @@ petsc::Operator::Operator(Mat A, bool inc_ref_count) : _matA(A)
 
   if (inc_ref_count)
   {
-    PetscErrorCode ierr = PetscObjectReference(reinterpret_cast<PetscObject>(_matA));
+    PetscErrorCode ierr
+        = PetscObjectReference(reinterpret_cast<PetscObject>(_matA));
     CHECK_ERROR("PetscObjectReference");
   }
 }
@@ -713,7 +715,8 @@ petsc::KrylovSolver::KrylovSolver(KSP ksp, bool inc_ref_count) : _ksp(ksp)
 
   if (inc_ref_count)
   {
-    PetscErrorCode ierr = PetscObjectReference(reinterpret_cast<PetscObject>(_ksp));
+    PetscErrorCode ierr
+        = PetscObjectReference(reinterpret_cast<PetscObject>(_ksp));
     CHECK_ERROR("PetscObjectReference");
   }
 }
