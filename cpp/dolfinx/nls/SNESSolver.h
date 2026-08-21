@@ -192,8 +192,11 @@ private:
   // Residual vector
   Vec _b = nullptr;
 
-  // Jacobian and preconditioner matrices
-  Mat _matJ = nullptr, _matP = nullptr;
+  // Jacobian matrix
+  Mat _matJ = nullptr;
+
+  // Preconditioner matrix
+  Mat _matP = nullptr;
 
   // PETSc solver pointer
   SNES _snes;
