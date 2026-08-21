@@ -161,34 +161,38 @@ int main(int argc, char* argv[])
     la::petsc::options::set("hyperelasticity_snes_atol", tol);
     la::petsc::options::set("hyperelasticity_snes_error_if_not_converged");
 
-    // Create the Jacobian matrix, the residual vector, and a vector
-    // that shares data with the solution function `u`. The first two
-    // define the layout of the objects that the solver passes to the
-    // assembly callbacks; the last holds the initial guess on entry to
-    // the solve, and the solution on return.
-    la::petsc::Matrix A(fem::petsc::create_matrix(a, "aij"), false);
-    la::petsc::Vector b(la::petsc::create_vector(*V->dofmap()->index_map,
-                                                 V->dofmap()->index_map_bs()),
-                        false);
-    la::petsc::Vector x(la::petsc::create_vector_wrap(*u->x()), false);
+    // `A_layout` and `b_layout` set the layout of the Jacobian and
+    // residual that the solver works with. `u_vec` shares data with the
+    // degrees-of-freedom of `u`, and holds the initial guess on entry
+    // to the solve and the solution on return.
+    la::petsc::Matrix A_layout(fem::petsc::create_matrix(a, "aij"), false);
+    la::petsc::Vector b_layout(
+        la::petsc::create_vector(*V->dofmap()->index_map,
+                                 V->dofmap()->index_map_bs()),
+        false);
+    la::petsc::Vector u_vec(la::petsc::create_vector_wrap(*u->x()), false);
     std::vector<std::reference_wrapper<const fem::DirichletBC<T>>> bcs_ref(
         bcs.begin(), bcs.end());
 
-    // Create the solver, and attach the residual and Jacobian assembly
+    // Create the solver, and attach the residual and Jacobian assembly.
+    // Each callback assembles at the point `x` into the `b` or `Jmat`
+    // it is passed, which may or may not be `b_layout.vec()` or
+    // `A_layout.mat()`: a line search, for instance, evaluates the
+    // residual in a work vector duplicated from `b_layout.vec()`.
     nls::petsc::SNESSolver solver(mesh->comm());
     solver.set_F([&L, &a, &bcs_ref, &u](const Vec x, Vec b)
                  { fem::petsc::assemble_residual(b, x, L, a, bcs_ref, *u); },
-                 b.vec());
+                 b_layout.vec());
     solver.set_J(
         [&a, &bcs_ref, &u](const Vec x, Mat Jmat, Mat)
         { fem::petsc::assemble_jacobian(Jmat, nullptr, x, a, bcs_ref, *u); },
-        A.mat());
+        A_layout.mat());
     solver.set_options_prefix("hyperelasticity_");
     solver.set_from_options();
 
-    int niter = solver.solve(x.vec());
-    VecGhostUpdateBegin(x.vec(), INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(x.vec(), INSERT_VALUES, SCATTER_FORWARD);
+    int niter = solver.solve(u_vec.vec());
+    VecGhostUpdateBegin(u_vec.vec(), INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(u_vec.vec(), INSERT_VALUES, SCATTER_FORWARD);
 
     // The SNES object is available for anything the solver does not
     // wrap, here the total number of linear solver iterations
