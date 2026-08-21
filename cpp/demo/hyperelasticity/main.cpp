@@ -181,11 +181,11 @@ int main(int argc, char* argv[])
     // residual in a work vector duplicated from `b_layout.vec()`.
     nls::petsc::SNESSolver solver(mesh->comm());
     solver.set_F([&L, &a, &bcs_ref, &u](const Vec x, Vec b)
-                 { fem::petsc::assemble_residual(b, x, L, a, bcs_ref, *u); },
+                 { fem::petsc::assemble_residual(x, b, L, a, bcs_ref, *u); },
                  b_layout.vec());
     solver.set_J(
         [&a, &bcs_ref, &u](const Vec x, Mat Jmat, Mat)
-        { fem::petsc::assemble_jacobian(Jmat, nullptr, x, a, bcs_ref, *u); },
+        { fem::petsc::assemble_jacobian(x, Jmat, nullptr, a, bcs_ref, *u); },
         A_layout.mat());
     solver.set_options_prefix("hyperelasticity_");
     solver.set_from_options();

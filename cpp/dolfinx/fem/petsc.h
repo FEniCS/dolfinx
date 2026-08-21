@@ -688,22 +688,22 @@ void assemble_operator(
 /// `b`, with Dirichlet conditions applied.
 ///
 /// Intended as the body of the residual callback of
-/// nls::petsc::SNESSolver, which passes the vector to assemble into and
-/// the point to evaluate at:
+/// nls::petsc::SNESSolver, which passes the point to evaluate at `x`
+/// and the vector to assemble into `b`:
 /// @code
 /// solver.set_F([&](const Vec x, Vec b)
-///              { assemble_residual(b, x, F, J, bcs, u); }, b_layout);
+///              { assemble_residual(x, b, F, J, bcs, u); }, b_layout);
 /// @endcode
 ///
 /// Entries of `b` constrained by `bcs` are set to `x - g`, so that a
 /// Newton update drives `x` to the boundary condition value `g`.
 ///
-/// @param[out] b Vector to assemble into, which is the one the solver
-/// passed to the callback and not necessarily the one registered with
-/// set_F. Zeroed first, and its ghost values are updated on return.
 /// @param[in] x Point at which to evaluate the residual, e.g. a line
 /// search trial point. Must be ghosted. Its ghost values are updated
 /// before use.
+/// @param[out] b Vector to assemble into, which is the one the solver
+/// passed to the callback and not necessarily the one registered with
+/// set_F. Zeroed first, and its ghost values are updated on return.
 /// @param[in] F Residual form.
 /// @param[in] J Jacobian form, used to lift `bcs`.
 /// @param[in] bcs Dirichlet boundary conditions.
@@ -711,7 +711,7 @@ void assemble_operator(
 /// degrees-of-freedom are set to `x` before assembly.
 template <std::floating_point T>
 void assemble_residual(
-    Vec b, const Vec x, const Form<PetscScalar, T>& F,
+    const Vec x, Vec b, const Form<PetscScalar, T>& F,
     const Form<PetscScalar, T>& J,
     const std::vector<
         std::reference_wrapper<const DirichletBC<PetscScalar, T>>>& bcs,
@@ -758,11 +758,11 @@ void assemble_residual(
 /// `Jmat`, and a preconditioner into `Pmat`.
 ///
 /// Intended as the body of the Jacobian callback of
-/// nls::petsc::SNESSolver, which passes the matrices to assemble into
-/// and the point to evaluate at:
+/// nls::petsc::SNESSolver, which passes the point to evaluate at `x`
+/// and the matrices to assemble into `Jmat` and `Pmat`:
 /// @code
 /// solver.set_J([&](const Vec x, Mat Jmat, Mat Pmat)
-///              { assemble_jacobian(Jmat, Pmat, x, J, bcs, u); },
+///              { assemble_jacobian(x, Jmat, Pmat, J, bcs, u); },
 ///              A_layout);
 /// @endcode
 ///
@@ -771,14 +771,14 @@ void assemble_residual(
 /// the constrained rows, matching the residual assembled by
 /// assemble_residual.
 ///
+/// @param[in] x Point at which to evaluate the Jacobian, e.g. a line
+/// search trial point. Must be ghosted. Its ghost values are updated
+/// before use.
 /// @param[out] Jmat Matrix to assemble the Jacobian into, which is the
 /// one the solver passed to the callback and not necessarily the one
 /// registered with set_J. Zeroed first.
 /// @param[out] Pmat Matrix to assemble the preconditioner into. Zeroed
 /// first. Unused, and may be `nullptr`, if `P` is not given.
-/// @param[in] x Point at which to evaluate the Jacobian, e.g. a line
-/// search trial point. Must be ghosted. Its ghost values are updated
-/// before use.
 /// @param[in] J Jacobian form.
 /// @param[in] bcs Dirichlet boundary conditions.
 /// @param[out] u Function that `J` and `P` hold as a coefficient. Its
@@ -787,7 +787,7 @@ void assemble_residual(
 /// alone and PETSc preconditions with the Jacobian.
 template <std::floating_point T>
 void assemble_jacobian(
-    Mat Jmat, Mat Pmat, const Vec x, const Form<PetscScalar, T>& J,
+    const Vec x, Mat Jmat, Mat Pmat, const Form<PetscScalar, T>& J,
     const std::vector<
         std::reference_wrapper<const DirichletBC<PetscScalar, T>>>& bcs,
     Function<PetscScalar, T>& u, const Form<PetscScalar, T>* P = nullptr)
