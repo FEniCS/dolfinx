@@ -36,6 +36,7 @@ add_executable(
   graph.cpp
   vector.cpp
   matrix.cpp
+  petsc.cpp
   slepc.cpp
   io.cpp
   common/CIFailure.cpp
