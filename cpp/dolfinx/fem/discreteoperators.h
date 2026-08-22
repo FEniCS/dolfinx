@@ -133,12 +133,6 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   auto dofmap1 = V1.dofmap();
   assert(dofmap1);
 
-  // Get dof transformation operators
-  auto apply_dof_transformation0
-      = e0->template dof_transformation_fn<T>(doftransform::standard, false);
-  auto apply_inverse_dof_transform1 = e1->template dof_transformation_fn<U>(
-      doftransform::inverse_transpose, false);
-
   // Get sizes of elements
   const std::size_t space_dim0 = e0->space_dimension();
   const std::size_t space_dim1 = e1->space_dimension();
@@ -180,71 +174,88 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
 
   std::vector<U> Ab(space_dim0 * space_dim1);
 
-  // Iterate over mesh and interpolate on each cell
-  assert(mesh->topology()->index_map(gdim));
-  for (std::int32_t c = 0; c < mesh->topology()->index_map(gdim)->size_local();
-       ++c)
-  {
-    // TODO: re-order loops and/or re-pack Phi0 to allow a simple flat
-    // copy?
-
-    // Copy (d)Phi0 (on reference) and apply DOF transformation
-    // Phi0:  (deriv, pt_idx, phi (dof), comp)
-    // dPhi0: (pt_idx, phi (dov), deriv, comp)
-    for (std::size_t p = 0; p < Phi0.extent(1); ++p)           // point
-      for (std::size_t phi = 0; phi < Phi0.extent(2); ++phi)   // phi_i
-        for (std::size_t d = 0; d < Phi0.extent(3); ++d)       // Comp. of phi
-          for (std::size_t dx = 0; dx < dPhi0.extent(2); ++dx) // dx
-            dPhi0(p, phi, dx, d) = Phi0(dx + 1, p, phi, d);
-
-    for (std::size_t p = 0; p < dPhi0.extent(0); ++p) // point
-    {
-      // Size: num_phi * num_derivs * num_components
-      std::size_t size = dPhi0.extent(1) * dPhi0.extent(2) * dPhi0.extent(3);
-      std::size_t offset = p * size; // Offset for point p
-
-      // Shape: (num_phi , (value_size * num_derivs))
-      if (apply_dof_transformation0)
+  // Iterate over mesh and interpolate on each cell, using whichever of
+  // DirectDofTransform{,Right} or the generic std::function-based
+  // closures applies for e0/e1 -- see
+  // FiniteElement::with_dof_transformation_fn for the rationale.
+  e0->template with_dof_transformation_fn<T, doftransform::standard>(
+      [&](const auto& apply_dof_transformation0)
       {
-        apply_dof_transformation0(std::span(dPhi0.data_handle() + offset, size),
-                                  cell_info, c,
-                                  dPhi0.extent(2) * dPhi0.extent(3));
-      }
-    }
+        e1->template with_dof_transformation_fn<
+            U, doftransform::inverse_transpose>(
+            [&](const auto& apply_inverse_dof_transform1)
+            {
+              assert(mesh->topology()->index_map(gdim));
+              for (std::int32_t c = 0;
+                   c < mesh->topology()->index_map(gdim)->size_local(); ++c)
+              {
+                // TODO: re-order loops and/or re-pack Phi0 to allow a simple
+                // flat copy?
 
-    // Compute curl
-    // dPhi0: (pt_idx, phi_idx, deriv, comp)
-    // curl: (pt_idx, phi_idx, comp)
-    for (std::size_t p = 0; p < curl.extent(0); ++p) // point
-    {
-      for (std::size_t i = 0; i < curl.extent(1); ++i) // phi_i
-      {
-        curl(p, i, 0) = dPhi0(p, i, 1, 2) - dPhi0(p, i, 2, 1);
-        curl(p, i, 1) = dPhi0(p, i, 2, 0) - dPhi0(p, i, 0, 2);
-        curl(p, i, 2) = dPhi0(p, i, 0, 1) - dPhi0(p, i, 1, 0);
-      }
-    }
+                // Copy (d)Phi0 (on reference) and apply DOF transformation
+                // Phi0:  (deriv, pt_idx, phi (dof), comp)
+                // dPhi0: (pt_idx, phi (dov), deriv, comp)
+                for (std::size_t p = 0; p < Phi0.extent(1); ++p) // point
+                  for (std::size_t phi = 0; phi < Phi0.extent(2);
+                       ++phi) // phi_i
+                    for (std::size_t d = 0; d < Phi0.extent(3);
+                         ++d) // Comp. of phi
+                      for (std::size_t dx = 0; dx < dPhi0.extent(2); ++dx) // dx
+                        dPhi0(p, phi, dx, d) = Phi0(dx + 1, p, phi, d);
 
-    // Apply interpolation matrix to basis derivative values of V0 at
-    // the interpolation points of V1. Pi_1 does not depend on the
-    // basis function index i, so all space_dim0 applications are
-    // combined into a single loop nest (rather than calling
-    // interpolation_apply once per basis function) so that each row
-    // of Pi_1 is read from memory once instead of space_dim0 times.
-    std::ranges::fill(Ab, U(0));
-    for (std::size_t j = 0; j < space_dim1; ++j)         // V1 dof
-      for (std::size_t k = 0; k < curl.extent(2); ++k)   // component
-        for (std::size_t p = 0; p < curl.extent(0); ++p) // point
-        {
-          T pi_val = Pi_1(j, k * curl.extent(0) + p);
-          for (std::size_t i = 0; i < space_dim0; ++i) // V0 basis function
-            Ab[space_dim0 * j + i] += static_cast<U>(pi_val * curl(p, i, k));
-        }
+                for (std::size_t p = 0; p < dPhi0.extent(0); ++p) // point
+                {
+                  // Size: num_phi * num_derivs * num_components
+                  std::size_t size
+                      = dPhi0.extent(1) * dPhi0.extent(2) * dPhi0.extent(3);
+                  std::size_t offset = p * size; // Offset for point p
 
-    if (apply_inverse_dof_transform1)
-      apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
-    mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
-  }
+                  // Shape: (num_phi , (value_size * num_derivs))
+                  if (apply_dof_transformation0)
+                  {
+                    apply_dof_transformation0(
+                        std::span(dPhi0.data_handle() + offset, size),
+                        cell_info, c, dPhi0.extent(2) * dPhi0.extent(3));
+                  }
+                }
+
+                // Compute curl
+                // dPhi0: (pt_idx, phi_idx, deriv, comp)
+                // curl: (pt_idx, phi_idx, comp)
+                for (std::size_t p = 0; p < curl.extent(0); ++p) // point
+                {
+                  for (std::size_t i = 0; i < curl.extent(1); ++i) // phi_i
+                  {
+                    curl(p, i, 0) = dPhi0(p, i, 1, 2) - dPhi0(p, i, 2, 1);
+                    curl(p, i, 1) = dPhi0(p, i, 2, 0) - dPhi0(p, i, 0, 2);
+                    curl(p, i, 2) = dPhi0(p, i, 0, 1) - dPhi0(p, i, 1, 0);
+                  }
+                }
+
+                // Apply interpolation matrix to basis derivative values of V0
+                // at the interpolation points of V1. Pi_1 does not depend on
+                // the basis function index i, so all space_dim0 applications
+                // are combined into a single loop nest (rather than calling
+                // interpolation_apply once per basis function) so that each row
+                // of Pi_1 is read from memory once instead of space_dim0 times.
+                std::ranges::fill(Ab, U(0));
+                for (std::size_t j = 0; j < space_dim1; ++j)       // V1 dof
+                  for (std::size_t k = 0; k < curl.extent(2); ++k) // component
+                    for (std::size_t p = 0; p < curl.extent(0); ++p) // point
+                    {
+                      T pi_val = Pi_1(j, k * curl.extent(0) + p);
+                      for (std::size_t i = 0; i < space_dim0;
+                           ++i) // V0 basis function
+                        Ab[space_dim0 * j + i]
+                            += static_cast<U>(pi_val * curl(p, i, k));
+                    }
+
+                if (apply_inverse_dof_transform1)
+                  apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
+                mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
+              }
+            });
+      });
 }
 
 /// @brief Assemble a discrete gradient operator.
@@ -321,10 +332,6 @@ void discrete_gradient(mesh::Topology& topology,
       phi0_b.data() + phi0.extent(3) * phi0.extent(2) * phi0.extent(1),
       tdim * phi0.extent(1), phi0.extent(2));
 
-  // Get inverse DOF transform function
-  auto apply_inverse_dof_transform = e1.template dof_transformation_fn<T>(
-      doftransform::inverse_transpose, false);
-
   // Generate cell permutations
   topology.create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
@@ -342,18 +349,24 @@ void discrete_gradient(mesh::Topology& topology,
     math::dot(_Pi, dphi_reshaped, A);
   }
 
-  // Insert local interpolation matrix for each cell
-  auto cell_map = topology.index_map(tdim);
-  assert(cell_map);
-  std::int32_t num_cells = cell_map->size_local();
-  std::vector<T> Ae(Ab.size());
-  for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    std::ranges::copy(Ab, Ae.begin());
-    if (apply_inverse_dof_transform)
-      apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
-    mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
-  }
+  // Insert local interpolation matrix for each cell, using whichever of
+  // DirectDofTransform or the generic std::function-based closure
+  // applies for e1 -- see FiniteElement::with_dof_transformation_fn.
+  e1.template with_dof_transformation_fn<T, doftransform::inverse_transpose>(
+      [&](const auto& apply_inverse_dof_transform)
+      {
+        auto cell_map = topology.index_map(tdim);
+        assert(cell_map);
+        std::int32_t num_cells = cell_map->size_local();
+        std::vector<T> Ae(Ab.size());
+        for (std::int32_t c = 0; c < num_cells; ++c)
+        {
+          std::ranges::copy(Ab, Ae.begin());
+          if (apply_inverse_dof_transform)
+            apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
+          mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
+        }
+      });
 }
 
 /// @brief Assemble an interpolation operator matrix.
@@ -402,13 +415,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   auto dofmap1 = V1.dofmap();
   assert(dofmap1);
 
-  // Get block sizes and dof transformation operators
+  // Get block sizes
   const int bs0 = e0->block_size();
   const int bs1 = e1->block_size();
-  auto apply_dof_transformation0
-      = e0->template dof_transformation_fn<U>(doftransform::standard, false);
-  auto apply_inverse_dof_transform1 = e1->template dof_transformation_fn<T>(
-      doftransform::inverse_transpose, false);
 
   // Get sizes of elements
   const std::size_t space_dim0 = e0->space_dimension();
@@ -507,176 +516,207 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
       = dofmap1->index_map->num_ghosts() * dofmap1->index_map_bs() / row_bs;
   std::vector<std::int8_t> row_added(num_owned_rows + num_ghosted_rows, 0);
 
-  for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    // Get cell geometry (coordinate dofs)
-    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-    {
-      for (int j = 0; j < gdim; ++j)
-        coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
-    }
-
-    // Compute Jacobians and reference points for current cell. For an
-    // affine map the Jacobian (and hence its inverse and determinant)
-    // is constant over the cell, so it is computed once and broadcast
-    // to the remaining interpolation points rather than being
-    // recomputed Xshape[0] times.
-    std::ranges::fill(J_b, 0);
-    if (cmap.is_affine() and Xshape[0] > 0)
-    {
-      auto dphi
-          = md::submdspan(phi, std::pair(1, tdim + 1), 0, md::full_extent, 0);
-      auto _J = md::submdspan(J, 0, md::full_extent, md::full_extent);
-      cmap.compute_jacobian(dphi, coord_dofs, _J);
-      auto _K = md::submdspan(K, 0, md::full_extent, md::full_extent);
-      cmap.compute_jacobian_inverse(_J, _K);
-      detJ[0] = cmap.compute_jacobian_determinant(_J, det_scratch);
-      for (std::size_t p = 1; p < Xshape[0]; ++p)
+  // Use whichever of DirectDofTransform{,Right} or the generic
+  // std::function-based closures applies for e0/e1 -- see
+  // FiniteElement::with_dof_transformation_fn for the rationale.
+  e0->template with_dof_transformation_fn<U, doftransform::standard>(
+      [&](const auto& apply_dof_transformation0)
       {
-        std::copy_n(J_b.begin(), gdim * tdim, J_b.begin() + p * gdim * tdim);
-        std::copy_n(K_b.begin(), tdim * gdim, K_b.begin() + p * tdim * gdim);
-        detJ[p] = detJ[0];
-      }
-    }
-    else
-    {
-      for (std::size_t p = 0; p < Xshape[0]; ++p)
-      {
-        auto dphi
-            = md::submdspan(phi, std::pair(1, tdim + 1), p, md::full_extent, 0);
-        auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-        cmap.compute_jacobian(dphi, coord_dofs, _J);
-        auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-        cmap.compute_jacobian_inverse(_J, _K);
-        detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
-      }
-    }
-
-    // Copy evaluated basis on reference (a fresh copy is needed each
-    // cell as DOF transformations below are applied in place), and
-    // push forward to physical element. The source and destination
-    // have identical memory layout (the leading, unit-length
-    // derivative axis of basis_derivatives_reference0 is a no-op for
-    // indexing purposes), so a flat copy is used instead of an
-    // element-by-element mdspan loop.
-    std::ranges::copy(basis_derivatives_reference0_b,
-                      basis_reference0_b.begin());
-    if (apply_dof_transformation0)
-    {
-      for (std::size_t p = 0; p < Xshape[0]; ++p)
-      {
-        apply_dof_transformation0(std::span(basis_reference0.data_handle()
-                                                + p * dim0 * value_size_ref0,
-                                            dim0 * value_size_ref0),
-                                  cell_info, c, value_size_ref0);
-      }
-    }
-
-    for (std::size_t p = 0; p < basis0.extent(0); ++p)
-    {
-      auto _u = md::submdspan(basis0, p, md::full_extent, md::full_extent);
-      auto _U = md::submdspan(basis_reference0, p, md::full_extent,
-                              md::full_extent);
-      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-      push_forward_fn0(_u, _U, _J, detJ[p], _K);
-    }
-
-    // Unroll basis function for input space for block size
-    for (std::size_t p = 0; p < Xshape[0]; ++p)
-      for (std::size_t i = 0; i < dim0; ++i)
-        for (std::size_t j = 0; j < value_size0; ++j)
-          for (int k = 0; k < bs0; ++k)
-            basis_values(p, i * bs0 + k, j * bs0 + k) = basis0(p, i, j);
-
-    // Pull back the physical values to the reference of output space
-    for (std::size_t p = 0; p < basis_values.extent(0); ++p)
-    {
-      auto _u
-          = md::submdspan(basis_values, p, md::full_extent, md::full_extent);
-      auto _U
-          = md::submdspan(mapped_values, p, md::full_extent, md::full_extent);
-      auto _K = md::submdspan(K, p, md::full_extent, md::full_extent);
-      auto _J = md::submdspan(J, p, md::full_extent, md::full_extent);
-      pull_back_fn1(_U, _u, _K, 1.0 / detJ[p], _J);
-    }
-
-    // Apply interpolation matrix to basis values of V0 at the
-    // interpolation points of V1
-    if (interpolation_ident)
-    {
-      md::mdspan<T, md::dextents<std::size_t, 3>> A(
-          Ab.data(), Xshape[0], V1.element()->value_size(), space_dim0);
-      for (std::size_t i = 0; i < mapped_values.extent(0); ++i)
-        for (std::size_t j = 0; j < mapped_values.extent(1); ++j)
-          for (std::size_t k = 0; k < mapped_values.extent(2); ++k)
-            A(i, k, j) = mapped_values(i, j, k);
-    }
-    else
-    {
-      // Apply interpolation matrix to basis values of V0 at the
-      // interpolation points of V1. Pi_1 does not depend on the basis
-      // function index i, so all space_dim0 applications are combined
-      // into a single loop nest (rather than calling
-      // interpolation_apply once per basis function) so that each row
-      // of Pi_1 is read from memory once instead of space_dim0 times.
-      // This mirrors the two cases handled by interpolation_apply
-      // (interpolate.h): bs1 == 1 (columns of Pi_1 fold the point and
-      // component indices together) and bs1 != 1 (each block/component
-      // is handled by a separate outer loop, columns of Pi_1 index
-      // points only).
-      std::ranges::fill(Ab, T(0));
-      std::size_t num_pts = mapped_values.extent(0);
-      if (bs1 == 1)
-      {
-        for (std::size_t idof = 0; idof < Pi_1.extent(0); ++idof)
-          for (std::size_t k = 0; k < mapped_values.extent(2); ++k)
-            for (std::size_t p = 0; p < num_pts; ++p)
+        e1->template with_dof_transformation_fn<
+            T, doftransform::inverse_transpose>(
+            [&](const auto& apply_inverse_dof_transform1)
             {
-              U pi_val = Pi_1(idof, k * num_pts + p);
-              for (std::size_t i = 0; i < space_dim0; ++i) // V0 basis fn
-                Ab[space_dim0 * idof + i]
-                    += static_cast<T>(pi_val * mapped_values(p, i, k));
-            }
-      }
-      else
-      {
-        for (std::size_t idof = 0; idof < Pi_1.extent(0); ++idof)
-          for (int k = 0; k < bs1; ++k)
-            for (std::size_t p = 0; p < num_pts; ++p)
-            {
-              U pi_val = Pi_1(idof, p);
-              for (std::size_t i = 0; i < space_dim0; ++i) // V0 basis fn
-                Ab[space_dim0 * (bs1 * idof + k) + i]
-                    += static_cast<T>(pi_val * mapped_values(p, i, k));
-            }
-      }
-    }
+              for (std::int32_t c = 0; c < num_cells; ++c)
+              {
+                // Get cell geometry (coordinate dofs)
+                auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
+                for (std::size_t i = 0; i < x_dofs.size(); ++i)
+                {
+                  for (int j = 0; j < gdim; ++j)
+                    coord_dofs(i, j) = x_g[3 * x_dofs[i] + j];
+                }
 
-    if (apply_inverse_dof_transform1)
-      apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
+                // Compute Jacobians and reference points for current cell. For
+                // an affine map the Jacobian (and hence its inverse and
+                // determinant) is constant over the cell, so it is computed
+                // once and broadcast to the remaining interpolation points
+                // rather than being recomputed Xshape[0] times.
+                std::ranges::fill(J_b, 0);
+                if (cmap.is_affine() and Xshape[0] > 0)
+                {
+                  auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), 0,
+                                            md::full_extent, 0);
+                  auto _J
+                      = md::submdspan(J, 0, md::full_extent, md::full_extent);
+                  cmap.compute_jacobian(dphi, coord_dofs, _J);
+                  auto _K
+                      = md::submdspan(K, 0, md::full_extent, md::full_extent);
+                  cmap.compute_jacobian_inverse(_J, _K);
+                  detJ[0] = cmap.compute_jacobian_determinant(_J, det_scratch);
+                  for (std::size_t p = 1; p < Xshape[0]; ++p)
+                  {
+                    std::copy_n(J_b.begin(), gdim * tdim,
+                                J_b.begin() + p * gdim * tdim);
+                    std::copy_n(K_b.begin(), tdim * gdim,
+                                K_b.begin() + p * tdim * gdim);
+                    detJ[p] = detJ[0];
+                  }
+                }
+                else
+                {
+                  for (std::size_t p = 0; p < Xshape[0]; ++p)
+                  {
+                    auto dphi = md::submdspan(phi, std::pair(1, tdim + 1), p,
+                                              md::full_extent, 0);
+                    auto _J
+                        = md::submdspan(J, p, md::full_extent, md::full_extent);
+                    cmap.compute_jacobian(dphi, coord_dofs, _J);
+                    auto _K
+                        = md::submdspan(K, p, md::full_extent, md::full_extent);
+                    cmap.compute_jacobian_inverse(_J, _K);
+                    detJ[p]
+                        = cmap.compute_jacobian_determinant(_J, det_scratch);
+                  }
+                }
 
-    // Zero out all rows that have already been added on this process
-    // and only add owned rows
-    {
-      md::mdspan<T, md::dextents<std::size_t, 2>> A(Ab.data(), space_dim1,
-                                                    space_dim0);
-      auto row_dofs = dofmap1->cell_dofs(c);
-      for (std::size_t i = 0; i < row_dofs.size(); ++i)
-      {
-        std::int32_t r = row_dofs[i];
-        if (r >= num_owned_rows || row_added[r])
-        {
-          for (std::size_t j = 0; j < space_dim0; ++j)
-            for (int k = 0; k < row_bs; ++k)
-              A(i * row_bs + k, j) = 0.0;
-        }
-        row_added[r] = 1;
-      }
-    }
-    mat_add(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
-  }
+                // Copy evaluated basis on reference (a fresh copy is needed
+                // each cell as DOF transformations below are applied in place),
+                // and push forward to physical element. The source and
+                // destination have identical memory layout (the leading,
+                // unit-length derivative axis of basis_derivatives_reference0
+                // is a no-op for indexing purposes), so a flat copy is used
+                // instead of an element-by-element mdspan loop.
+                std::ranges::copy(basis_derivatives_reference0_b,
+                                  basis_reference0_b.begin());
+                if (apply_dof_transformation0)
+                {
+                  for (std::size_t p = 0; p < Xshape[0]; ++p)
+                  {
+                    apply_dof_transformation0(
+                        std::span(basis_reference0.data_handle()
+                                      + p * dim0 * value_size_ref0,
+                                  dim0 * value_size_ref0),
+                        cell_info, c, value_size_ref0);
+                  }
+                }
+
+                for (std::size_t p = 0; p < basis0.extent(0); ++p)
+                {
+                  auto _u = md::submdspan(basis0, p, md::full_extent,
+                                          md::full_extent);
+                  auto _U = md::submdspan(basis_reference0, p, md::full_extent,
+                                          md::full_extent);
+                  auto _K
+                      = md::submdspan(K, p, md::full_extent, md::full_extent);
+                  auto _J
+                      = md::submdspan(J, p, md::full_extent, md::full_extent);
+                  push_forward_fn0(_u, _U, _J, detJ[p], _K);
+                }
+
+                // Unroll basis function for input space for block size
+                for (std::size_t p = 0; p < Xshape[0]; ++p)
+                  for (std::size_t i = 0; i < dim0; ++i)
+                    for (std::size_t j = 0; j < value_size0; ++j)
+                      for (int k = 0; k < bs0; ++k)
+                        basis_values(p, i * bs0 + k, j * bs0 + k)
+                            = basis0(p, i, j);
+
+                // Pull back the physical values to the reference of output
+                // space
+                for (std::size_t p = 0; p < basis_values.extent(0); ++p)
+                {
+                  auto _u = md::submdspan(basis_values, p, md::full_extent,
+                                          md::full_extent);
+                  auto _U = md::submdspan(mapped_values, p, md::full_extent,
+                                          md::full_extent);
+                  auto _K
+                      = md::submdspan(K, p, md::full_extent, md::full_extent);
+                  auto _J
+                      = md::submdspan(J, p, md::full_extent, md::full_extent);
+                  pull_back_fn1(_U, _u, _K, 1.0 / detJ[p], _J);
+                }
+
+                // Apply interpolation matrix to basis values of V0 at the
+                // interpolation points of V1
+                if (interpolation_ident)
+                {
+                  md::mdspan<T, md::dextents<std::size_t, 3>> A(
+                      Ab.data(), Xshape[0], V1.element()->value_size(),
+                      space_dim0);
+                  for (std::size_t i = 0; i < mapped_values.extent(0); ++i)
+                    for (std::size_t j = 0; j < mapped_values.extent(1); ++j)
+                      for (std::size_t k = 0; k < mapped_values.extent(2); ++k)
+                        A(i, k, j) = mapped_values(i, j, k);
+                }
+                else
+                {
+                  // Apply interpolation matrix to basis values of V0 at the
+                  // interpolation points of V1. Pi_1 does not depend on the
+                  // basis function index i, so all space_dim0 applications are
+                  // combined into a single loop nest (rather than calling
+                  // interpolation_apply once per basis function) so that each
+                  // row of Pi_1 is read from memory once instead of space_dim0
+                  // times. This mirrors the two cases handled by
+                  // interpolation_apply (interpolate.h): bs1 == 1 (columns of
+                  // Pi_1 fold the point and component indices together) and bs1
+                  // != 1 (each block/component is handled by a separate outer
+                  // loop, columns of Pi_1 index points only).
+                  std::ranges::fill(Ab, T(0));
+                  std::size_t num_pts = mapped_values.extent(0);
+                  if (bs1 == 1)
+                  {
+                    for (std::size_t idof = 0; idof < Pi_1.extent(0); ++idof)
+                      for (std::size_t k = 0; k < mapped_values.extent(2); ++k)
+                        for (std::size_t p = 0; p < num_pts; ++p)
+                        {
+                          U pi_val = Pi_1(idof, k * num_pts + p);
+                          for (std::size_t i = 0; i < space_dim0;
+                               ++i) // V0 basis fn
+                            Ab[space_dim0 * idof + i] += static_cast<T>(
+                                pi_val * mapped_values(p, i, k));
+                        }
+                  }
+                  else
+                  {
+                    for (std::size_t idof = 0; idof < Pi_1.extent(0); ++idof)
+                      for (int k = 0; k < bs1; ++k)
+                        for (std::size_t p = 0; p < num_pts; ++p)
+                        {
+                          U pi_val = Pi_1(idof, p);
+                          for (std::size_t i = 0; i < space_dim0;
+                               ++i) // V0 basis fn
+                            Ab[space_dim0 * (bs1 * idof + k) + i]
+                                += static_cast<T>(pi_val
+                                                  * mapped_values(p, i, k));
+                        }
+                  }
+                }
+
+                if (apply_inverse_dof_transform1)
+                  apply_inverse_dof_transform1(Ab, cell_info, c, space_dim0);
+
+                // Zero out all rows that have already been added on this
+                // process and only add owned rows
+                {
+                  md::mdspan<T, md::dextents<std::size_t, 2>> A(
+                      Ab.data(), space_dim1, space_dim0);
+                  auto row_dofs = dofmap1->cell_dofs(c);
+                  for (std::size_t i = 0; i < row_dofs.size(); ++i)
+                  {
+                    std::int32_t r = row_dofs[i];
+                    if (r >= num_owned_rows || row_added[r])
+                    {
+                      for (std::size_t j = 0; j < space_dim0; ++j)
+                        for (int k = 0; k < row_bs; ++k)
+                          A(i * row_bs + k, j) = 0.0;
+                    }
+                    row_added[r] = 1;
+                  }
+                }
+                mat_add(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ab);
+              }
+            });
+      });
 }
 
 } // namespace dolfinx::fem

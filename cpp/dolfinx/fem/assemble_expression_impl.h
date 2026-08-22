@@ -162,18 +162,11 @@ void tabulate_expression(
         std::pair<std::reference_wrapper<const FiniteElement<U>>, std::size_t>>
         element)
 {
-  std::function<void(std::span<T>, std::span<const std::uint32_t>, std::int32_t,
-                     int)>
-      post_dof_transform
-      = [](std::span<T>, std::span<const std::uint32_t>, std::int32_t, int)
-  {
-    // Do nothing
-  };
-
   std::shared_ptr<const mesh::Topology> topology = mesh.topology();
   assert(topology);
   std::size_t num_argument_dofs = 1;
   std::span<const std::uint32_t> cell_info;
+  bool needs_transform = false;
   if (element)
   {
     num_argument_dofs = element->second;
@@ -181,27 +174,49 @@ void tabulate_expression(
     {
       mesh.topology_mutable()->create_entity_permutations();
       cell_info = std::span(topology->get_cell_permutation_info());
-      post_dof_transform
-          = element->first.get().template dof_transformation_right_fn<T>(
-              doftransform::transpose);
+      needs_transform = true;
     }
   }
-  // An expression has no notion of requiring a facet permutation.
-  md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
-  if constexpr (entities.rank() == 2)
+
+  // Instantiated for whichever of DirectDofTransformRight (element
+  // eligible, see FiniteElement::is_direct_transform_eligible), the
+  // generic std::function-based closure, or a plain no-op (no element,
+  // or no transformation needed) applies -- see
+  // FiniteElement::with_dof_transformation_right_fn for the rationale.
+  auto run = [&](const auto& post_dof_transform)
   {
-    mesh::CellType cell_type = mesh.topology()->cell_types()[0];
-    int num_facets_per_cell
-        = mesh::cell_num_entities(cell_type, mesh.topology()->dim() - 1);
-    mesh.topology_mutable()->create_entity_permutations();
-    const std::vector<std::uint8_t>& p
-        = mesh.topology()->get_facet_permutations();
-    facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
-                             num_facets_per_cell);
+    // An expression has no notion of requiring a facet permutation.
+    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
+    if constexpr (entities.rank() == 2)
+    {
+      mesh::CellType cell_type = mesh.topology()->cell_types()[0];
+      int num_facets_per_cell
+          = mesh::cell_num_entities(cell_type, mesh.topology()->dim() - 1);
+      mesh.topology_mutable()->create_entity_permutations();
+      const std::vector<std::uint8_t>& p
+          = mesh.topology()->get_facet_permutations();
+      facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
+                               num_facets_per_cell);
+    }
+    tabulate_expression<T, U>(values, fn, Xshape, value_size, num_argument_dofs,
+                              mesh.geometry().dofmaps().front(),
+                              mesh.geometry().x(), coeffs, constants, entities,
+                              cell_info, post_dof_transform, facet_perms);
+  };
+
+  if (needs_transform)
+  {
+    element->first.get()
+        .template with_dof_transformation_right_fn<T, doftransform::transpose>(
+            [&](const auto& post_dof_transform) { run(post_dof_transform); });
   }
-  tabulate_expression<T, U>(values, fn, Xshape, value_size, num_argument_dofs,
-                            mesh.geometry().dofmaps().front(),
-                            mesh.geometry().x(), coeffs, constants, entities,
-                            cell_info, post_dof_transform, facet_perms);
+  else
+  {
+    run(
+        [](std::span<T>, std::span<const std::uint32_t>, std::int32_t, int)
+        {
+          // Do nothing
+        });
+  }
 }
 } // namespace dolfinx::fem::impl

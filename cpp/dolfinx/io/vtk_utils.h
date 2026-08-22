@@ -100,11 +100,6 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
-  // Transformation from reference element basis function data to
-  // conforming element basis function
-  auto apply_dof_transformation
-      = element->template dof_transformation_fn<T>(fem::doftransform::standard);
-
   using mdspan2_t = md::mdspan<T, md::dextents<std::size_t, 2>>;
   using cmdspan4_t = md::mdspan<T, md::dextents<std::size_t, 4>>;
 
@@ -128,30 +123,39 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
 
   std::vector<T> coords(num_nodes * 3, 0.0);
   std::array<std::size_t, 2> cshape = {num_nodes, 3};
-  for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    // Extract cell geometry
-    for (std::size_t i = 0; i < dofmap_x.extent(1); ++i)
-      for (std::size_t j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g[3 * dofmap_x(c, i) + j];
+  // Transformation from reference element basis function data to
+  // conforming element basis function. Use whichever of
+  // DirectDofTransform or the generic std::function-based closure
+  // applies -- see FiniteElement::with_dof_transformation_fn.
+  element->template with_dof_transformation_fn<T, fem::doftransform::standard>(
+      [&](const auto& apply_dof_transformation)
+      {
+        for (std::int32_t c = 0; c < num_cells; ++c)
+        {
+          // Extract cell geometry
+          for (std::size_t i = 0; i < dofmap_x.extent(1); ++i)
+            for (std::size_t j = 0; j < gdim; ++j)
+              coordinate_dofs(i, j) = x_g[3 * dofmap_x(c, i) + j];
 
-    // Tabulate dof coordinates on cell
-    cmap.push_forward(x, coordinate_dofs, phi);
-    if (apply_dof_transformation)
-    {
-      apply_dof_transformation(
-          x_b, std::span(cell_info.data(), cell_info.size()), c, x.extent(1));
-    }
+          // Tabulate dof coordinates on cell
+          cmap.push_forward(x, coordinate_dofs, phi);
+          if (apply_dof_transformation)
+          {
+            apply_dof_transformation(
+                x_b, std::span(cell_info.data(), cell_info.size()), c,
+                x.extent(1));
+          }
 
-    // Copy dof coordinates into vector
-    auto dofs = dofmap->cell_dofs(c);
-    for (std::size_t i = 0; i < dofs.size(); ++i)
-    {
-      std::int32_t dof = dofs[i];
-      for (std::size_t j = 0; j < gdim; ++j)
-        coords[3 * dof + j] = x(i, j);
-    }
-  }
+          // Copy dof coordinates into vector
+          auto dofs = dofmap->cell_dofs(c);
+          for (std::size_t i = 0; i < dofs.size(); ++i)
+          {
+            std::int32_t dof = dofs[i];
+            for (std::size_t j = 0; j < gdim; ++j)
+              coords[3 * dof + j] = x(i, j);
+          }
+        }
+      });
 
   // Original point IDs
   std::vector<std::int64_t> x_id(num_nodes);

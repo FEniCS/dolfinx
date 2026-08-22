@@ -758,12 +758,6 @@ void assemble_matrix(
     assert(element0);
     auto element1 = a.function_spaces().at(1)->elements(cell_type_idx);
     assert(element1);
-    const fem::DofTransformKernel<T> auto& P0
-        = element0->template dof_transformation_fn<T>(doftransform::standard);
-    const fem::DofTransformKernel<T> auto& P1T
-        = element1->template dof_transformation_right_fn<T>(
-            doftransform::transpose);
-
     std::span<const std::uint32_t> cell_info0;
     std::span<const std::uint32_t> cell_info1;
     if (element0->needs_dof_transformations()
@@ -776,112 +770,142 @@ void assemble_matrix(
       cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
     }
 
-    for (int i = 0; i < a.num_integrals(IntegralType::cell, cell_type_idx); ++i)
+    // Instantiated for whichever of DirectDofTransform{,Right} (both
+    // element0 and element1 eligible, see
+    // FiniteElement::is_direct_transform_eligible) or the generic
+    // std::function-based closures (otherwise) applies -- see
+    // FiniteElement::with_dof_transformation_fn for the rationale.
+    auto run_integrals = [&](const auto& P0, const auto& P1T)
     {
-      auto fn = a.kernel(IntegralType::cell, i, cell_type_idx);
-      assert(fn);
-      std::span cells = a.domain(IntegralType::cell, i, cell_type_idx);
-      std::span cells0 = a.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
-      std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
-      auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-      assert(cells.size() * cstride == coeffs.size());
-      impl::assemble_cells_matrix<LiftingMode>(
-          mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
-          {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
-          md::mdspan(coeffs.data(), cells.size(), cstride), constants,
-          cell_info0, cell_info1, std::span(Ab), std::span(cdofs_b));
-    }
-
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
-    if (a.needs_facet_permutations())
-    {
-      mesh::CellType cell_type = mesh->topology()->cell_types()[cell_type_idx];
-      int num_facets_per_cell
-          = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
-      mesh->topology_mutable()->create_entity_permutations();
-      const std::vector<std::uint8_t>& p
-          = mesh->topology()->get_facet_permutations();
-      facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
-                               num_facets_per_cell);
-    }
-
-    for (int i = 0;
-         i < a.num_integrals(IntegralType::interior_facet, cell_type_idx); ++i)
-    {
-      if (num_cell_types > 1)
+      for (int i = 0; i < a.num_integrals(IntegralType::cell, cell_type_idx);
+           ++i)
       {
-        throw std::runtime_error("Interior facet integrals with mixed "
-                                 "topology aren't supported yet");
+        auto fn = a.kernel(IntegralType::cell, i, cell_type_idx);
+        assert(fn);
+        std::span cells = a.domain(IntegralType::cell, i, cell_type_idx);
+        std::span cells0
+            = a.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
+        std::span cells1
+            = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
+        auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+        assert(cells.size() * cstride == coeffs.size());
+        impl::assemble_cells_matrix<LiftingMode>(
+            mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
+            {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
+            md::mdspan(coeffs.data(), cells.size(), cstride), constants,
+            cell_info0, cell_info1, std::span(Ab), std::span(cdofs_b));
       }
 
-      using mdspanx22_t
-          = md::mdspan<const std::int32_t,
-                       md::extents<std::size_t, md::dynamic_extent, 2, 2>>;
-      using mdspanx2x_t
-          = md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
-                                            md::dynamic_extent>>;
+      md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
+      if (a.needs_facet_permutations())
+      {
+        mesh::CellType cell_type
+            = mesh->topology()->cell_types()[cell_type_idx];
+        int num_facets_per_cell
+            = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
+        mesh->topology_mutable()->create_entity_permutations();
+        const std::vector<std::uint8_t>& p
+            = mesh->topology()->get_facet_permutations();
+        facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
+                                 num_facets_per_cell);
+      }
 
-      auto fn = a.kernel(IntegralType::interior_facet, i, 0);
-      assert(fn);
-      auto& [coeffs, cstride]
-          = coefficients.at({IntegralType::interior_facet, i});
-
-      std::span facets = a.domain(IntegralType::interior_facet, i, 0);
-      std::span facets0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
-      std::span facets1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
-      assert((facets.size() / 4) * 2 * cstride == coeffs.size());
-      impl::assemble_interior_facets<LiftingMode>(
-          mat_set, x_dofmap, x,
-          mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
-          {*dofmap0, bs0,
-           mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
-          P0,
-          {*dofmap1, bs1,
-           mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
-          P1T, bc0, bc1, fn,
-          mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride), constants,
-          cell_info0, cell_info1, facet_perms, std::span(Ab),
-          std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
-    }
-
-    for (auto itg_type : {fem::IntegralType::exterior_facet,
-                          fem::IntegralType::vertex, fem::IntegralType::ridge})
-    {
-      md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
-          = itg_type == fem::IntegralType::exterior_facet
-                ? facet_perms
-                : md::mdspan<const std::uint8_t,
-                             md::dextents<std::size_t, 2>>{};
-
-      for (int i = 0; i < a.num_integrals(itg_type, cell_type_idx); ++i)
+      for (int i = 0;
+           i < a.num_integrals(IntegralType::interior_facet, cell_type_idx);
+           ++i)
       {
         if (num_cell_types > 1)
         {
-          throw std::runtime_error("Exterior facet integrals with mixed "
+          throw std::runtime_error("Interior facet integrals with mixed "
                                    "topology aren't supported yet");
         }
 
-        using mdspanx2_t
+        using mdspanx22_t
             = md::mdspan<const std::int32_t,
-                         md::extents<std::size_t, md::dynamic_extent, 2>>;
+                         md::extents<std::size_t, md::dynamic_extent, 2, 2>>;
+        using mdspanx2x_t
+            = md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent,
+                                              2, md::dynamic_extent>>;
 
-        auto fn = a.kernel(itg_type, i, 0);
+        auto fn = a.kernel(IntegralType::interior_facet, i, 0);
         assert(fn);
-        auto& [coeffs, cstride] = coefficients.at({itg_type, i});
+        auto& [coeffs, cstride]
+            = coefficients.at({IntegralType::interior_facet, i});
 
-        std::span e = a.domain(itg_type, i, 0);
-        mdspanx2_t entities(e.data(), e.size() / 2, 2);
-        std::span e0 = a.domain_arg(itg_type, 0, i, 0);
-        mdspanx2_t entities0(e0.data(), e0.size() / 2, 2);
-        std::span e1 = a.domain_arg(itg_type, 1, i, 0);
-        mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
-        assert((entities.size() / 2) * cstride == coeffs.size());
-        impl::assemble_entities<LiftingMode>(
-            mat_set, x_dofmap, x, entities, {dofs0, bs0, entities0}, P0,
-            {dofs1, bs1, entities1}, P1T, bc0, bc1, fn,
-            md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
-            cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b));
+        std::span facets = a.domain(IntegralType::interior_facet, i, 0);
+        std::span facets0 = a.domain_arg(IntegralType::interior_facet, 0, i, 0);
+        std::span facets1 = a.domain_arg(IntegralType::interior_facet, 1, i, 0);
+        assert((facets.size() / 4) * 2 * cstride == coeffs.size());
+        impl::assemble_interior_facets<LiftingMode>(
+            mat_set, x_dofmap, x,
+            mdspanx22_t(facets.data(), facets.size() / 4, 2, 2),
+            {*dofmap0, bs0,
+             mdspanx22_t(facets0.data(), facets0.size() / 4, 2, 2)},
+            P0,
+            {*dofmap1, bs1,
+             mdspanx22_t(facets1.data(), facets1.size() / 4, 2, 2)},
+            P1T, bc0, bc1, fn,
+            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
+            constants, cell_info0, cell_info1, facet_perms, std::span(Ab),
+            std::span(cdofs_b), dmap_b, std::span(Ae_block_b));
       }
+
+      for (auto itg_type :
+           {fem::IntegralType::exterior_facet, fem::IntegralType::vertex,
+            fem::IntegralType::ridge})
+      {
+        md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
+            = itg_type == fem::IntegralType::exterior_facet
+                  ? facet_perms
+                  : md::mdspan<const std::uint8_t,
+                               md::dextents<std::size_t, 2>>{};
+
+        for (int i = 0; i < a.num_integrals(itg_type, cell_type_idx); ++i)
+        {
+          if (num_cell_types > 1)
+          {
+            throw std::runtime_error("Exterior facet integrals with mixed "
+                                     "topology aren't supported yet");
+          }
+
+          using mdspanx2_t
+              = md::mdspan<const std::int32_t,
+                           md::extents<std::size_t, md::dynamic_extent, 2>>;
+
+          auto fn = a.kernel(itg_type, i, 0);
+          assert(fn);
+          auto& [coeffs, cstride] = coefficients.at({itg_type, i});
+
+          std::span e = a.domain(itg_type, i, 0);
+          mdspanx2_t entities(e.data(), e.size() / 2, 2);
+          std::span e0 = a.domain_arg(itg_type, 0, i, 0);
+          mdspanx2_t entities0(e0.data(), e0.size() / 2, 2);
+          std::span e1 = a.domain_arg(itg_type, 1, i, 0);
+          mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
+          assert((entities.size() / 2) * cstride == coeffs.size());
+          impl::assemble_entities<LiftingMode>(
+              mat_set, x_dofmap, x, entities, {dofs0, bs0, entities0}, P0,
+              {dofs1, bs1, entities1}, P1T, bc0, bc1, fn,
+              md::mdspan(coeffs.data(), entities.extent(0), cstride), constants,
+              cell_info0, cell_info1, perms, std::span(Ab), std::span(cdofs_b));
+        }
+      }
+    };
+
+    if (element0->is_direct_transform_eligible()
+        and element1->is_direct_transform_eligible())
+    {
+      DirectDofTransform<U, doftransform::standard> P0(*element0);
+      DirectDofTransformRight<U, doftransform::transpose> P1T(*element1);
+      run_integrals(P0, P1T);
+    }
+    else
+    {
+      auto P0
+          = element0->template dof_transformation_fn<T>(doftransform::standard);
+      auto P1T = element1->template dof_transformation_right_fn<T>(
+          doftransform::transpose);
+      run_integrals(P0, P1T);
     }
   }
 }

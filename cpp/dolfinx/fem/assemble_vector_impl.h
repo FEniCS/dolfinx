@@ -464,9 +464,6 @@ void assemble_vector(
     std::span be_b(be_buffer);
     std::span cdofs_b(cdofs_buffer);
 
-    const fem::DofTransformKernel<T> auto& P0
-        = element->template dof_transformation_fn<T>(doftransform::standard);
-
     std::span<const std::uint32_t> cell_info0;
     if (element->needs_dof_transformations() or L.needs_facet_permutations())
     {
@@ -474,145 +471,165 @@ void assemble_vector(
       cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
     }
 
-    for (int i = 0; i < L.num_integrals(IntegralType::cell, 0); ++i)
-    {
-      auto fn = L.kernel(IntegralType::cell, i, cell_type_idx);
-      assert(fn);
-      std::span cells = L.domain(IntegralType::cell, i, cell_type_idx);
-      std::span cells0 = L.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
-      auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-      assert(cells.size() * cstride == coeffs.size());
-      if (bs == 1)
-      {
-        impl::assemble_cells(
-            P0, b, x_dofmap, x, cells,
-            std::tuple{dofs, std::integral_constant<int, 1>{}, cells0}, fn,
-            constants, md::mdspan(coeffs.data(), cells.size(), cstride),
-            cell_info0, be_b, cdofs_b);
-      }
-      else if (bs == 3)
-      {
-        impl::assemble_cells(
-            P0, b, x_dofmap, x, cells,
-            std::tuple{dofs, std::integral_constant<int, 3>(), cells0}, fn,
-            constants, md::mdspan(coeffs.data(), cells.size(), cstride),
-            cell_info0, be_b, cdofs_b);
-      }
-      else
-      {
-        impl::assemble_cells(P0, b, x_dofmap, x, cells,
-                             std::tuple{dofs, bs, cells0}, fn, constants,
-                             md::mdspan(coeffs.data(), cells.size(), cstride),
-                             cell_info0, be_b, cdofs_b);
-      }
-    }
-
-    md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
-    if (L.needs_facet_permutations())
-    {
-      mesh::CellType cell_type = mesh->topology()->cell_types()[cell_type_idx];
-      int num_facets_per_cell
-          = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
-      mesh->topology_mutable()->create_entity_permutations();
-      const std::vector<std::uint8_t>& p
-          = mesh->topology()->get_facet_permutations();
-      facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
-                               num_facets_per_cell);
-    }
-
-    using mdspanx2_t
-        = md::mdspan<const std::int32_t,
-                     md::extents<std::size_t, md::dynamic_extent, 2>>;
-    using mdspanx22_t
-        = md::mdspan<const std::int32_t,
-                     md::extents<std::size_t, md::dynamic_extent, 2, 2>>;
-    using mdspanx2x_t
-        = md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent, 2,
-                                          md::dynamic_extent>>;
-
-    for (int i = 0; i < L.num_integrals(IntegralType::interior_facet, 0); ++i)
-    {
-      auto fn = L.kernel(IntegralType::interior_facet, i, 0);
-      assert(fn);
-      auto& [coeffs, cstride]
-          = coefficients.at({IntegralType::interior_facet, i});
-      std::span facets = L.domain(IntegralType::interior_facet, i, 0);
-      std::span facets1 = L.domain_arg(IntegralType::interior_facet, 0, i, 0);
-      assert((facets.size() / 4) * 2 * cstride == coeffs.size());
-
-      mdspanx22_t facets_mdspan(facets.data(), facets.size() / 4, 2, 2);
-      mdspanx22_t facets1_mdspan(facets1.data(), facets1.size() / 4, 2, 2);
-      if (bs == 1)
-      {
-        impl::assemble_interior_facets(
-            P0, b, x_dofmap, x, facets_mdspan,
-            std::tuple{dofs, std::integral_constant<int, 1>{}, facets1_mdspan},
-            fn, constants,
-            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            cell_info0, facet_perms, be_b, cdofs_b);
-      }
-      else if (bs == 3)
-      {
-        impl::assemble_interior_facets(
-            P0, b, x_dofmap, x, facets_mdspan,
-            std::tuple{dofs, std::integral_constant<int, 3>{}, facets1_mdspan},
-            fn, constants,
-            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            cell_info0, facet_perms, be_b, cdofs_b);
-      }
-      else
-      {
-        impl::assemble_interior_facets(
-            P0, b, x_dofmap, x, facets_mdspan,
-            std::tuple{dofs, bs, facets1_mdspan}, fn, constants,
-            mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
-            cell_info0, facet_perms, be_b, cdofs_b);
-      }
-    }
-
-    for (auto itg_type : {fem::IntegralType::exterior_facet,
-                          fem::IntegralType::vertex, fem::IntegralType::ridge})
-    {
-      md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
-          = (itg_type == fem::IntegralType::exterior_facet)
-                ? facet_perms
-                : md::mdspan<const std::uint8_t,
-                             md::dextents<std::size_t, 2>>{};
-      for (int i = 0; i < L.num_integrals(itg_type, 0); ++i)
-      {
-        auto fn = L.kernel(itg_type, i, 0);
-        assert(fn);
-        auto& [coeffs, cstride] = coefficients.at({itg_type, i});
-        std::span e = L.domain(itg_type, i, 0);
-        mdspanx2_t entities(e.data(), e.size() / 2, 2);
-        std::span e1 = L.domain_arg(itg_type, 0, i, 0);
-        mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
-        assert((entities.size() / 2) * cstride == coeffs.size());
-        if (bs == 1)
+    element->template with_dof_transformation_fn<T, doftransform::standard>(
+        [&](const auto& P0)
         {
-          impl::assemble_entities(
-              P0, b, x_dofmap, x, entities,
-              std::tuple{dofs, std::integral_constant<int, 1>{}, entities1}, fn,
-              constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
-              cell_info0, perms, be_b, cdofs_b);
-        }
-        else if (bs == 3)
-        {
-          impl::assemble_entities(
-              P0, b, x_dofmap, x, entities,
-              std::tuple{dofs, std::integral_constant<int, 3>{}, entities1}, fn,
-              constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
-              cell_info0, perms, be_b, cdofs_b);
-        }
-        else
-        {
-          impl::assemble_entities(
-              P0, b, x_dofmap, x, entities, std::tuple{dofs, bs, entities1}, fn,
-              constants, md::mdspan(coeffs.data(), entities.extent(0), cstride),
-              cell_info0, perms, be_b, cdofs_b);
-        }
-      }
-    }
+          for (int i = 0; i < L.num_integrals(IntegralType::cell, 0); ++i)
+          {
+            auto fn = L.kernel(IntegralType::cell, i, cell_type_idx);
+            assert(fn);
+            std::span cells = L.domain(IntegralType::cell, i, cell_type_idx);
+            std::span cells0
+                = L.domain_arg(IntegralType::cell, 0, i, cell_type_idx);
+            auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+            assert(cells.size() * cstride == coeffs.size());
+            if (bs == 1)
+            {
+              impl::assemble_cells(
+                  P0, b, x_dofmap, x, cells,
+                  std::tuple{dofs, std::integral_constant<int, 1>{}, cells0},
+                  fn, constants,
+                  md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0,
+                  be_b, cdofs_b);
+            }
+            else if (bs == 3)
+            {
+              impl::assemble_cells(
+                  P0, b, x_dofmap, x, cells,
+                  std::tuple{dofs, std::integral_constant<int, 3>(), cells0},
+                  fn, constants,
+                  md::mdspan(coeffs.data(), cells.size(), cstride), cell_info0,
+                  be_b, cdofs_b);
+            }
+            else
+            {
+              impl::assemble_cells(
+                  P0, b, x_dofmap, x, cells, std::tuple{dofs, bs, cells0}, fn,
+                  constants, md::mdspan(coeffs.data(), cells.size(), cstride),
+                  cell_info0, be_b, cdofs_b);
+            }
+          }
+
+          md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>>
+              facet_perms;
+          if (L.needs_facet_permutations())
+          {
+            mesh::CellType cell_type
+                = mesh->topology()->cell_types()[cell_type_idx];
+            int num_facets_per_cell = mesh::cell_num_entities(
+                cell_type, mesh->topology()->dim() - 1);
+            mesh->topology_mutable()->create_entity_permutations();
+            const std::vector<std::uint8_t>& p
+                = mesh->topology()->get_facet_permutations();
+            facet_perms = md::mdspan(p.data(), p.size() / num_facets_per_cell,
+                                     num_facets_per_cell);
+          }
+
+          using mdspanx2_t
+              = md::mdspan<const std::int32_t,
+                           md::extents<std::size_t, md::dynamic_extent, 2>>;
+          using mdspanx22_t
+              = md::mdspan<const std::int32_t,
+                           md::extents<std::size_t, md::dynamic_extent, 2, 2>>;
+          using mdspanx2x_t
+              = md::mdspan<const T, md::extents<std::size_t, md::dynamic_extent,
+                                                2, md::dynamic_extent>>;
+
+          for (int i = 0; i < L.num_integrals(IntegralType::interior_facet, 0);
+               ++i)
+          {
+            auto fn = L.kernel(IntegralType::interior_facet, i, 0);
+            assert(fn);
+            auto& [coeffs, cstride]
+                = coefficients.at({IntegralType::interior_facet, i});
+            std::span facets = L.domain(IntegralType::interior_facet, i, 0);
+            std::span facets1
+                = L.domain_arg(IntegralType::interior_facet, 0, i, 0);
+            assert((facets.size() / 4) * 2 * cstride == coeffs.size());
+
+            mdspanx22_t facets_mdspan(facets.data(), facets.size() / 4, 2, 2);
+            mdspanx22_t facets1_mdspan(facets1.data(), facets1.size() / 4, 2,
+                                       2);
+            if (bs == 1)
+            {
+              impl::assemble_interior_facets(
+                  P0, b, x_dofmap, x, facets_mdspan,
+                  std::tuple{dofs, std::integral_constant<int, 1>{},
+                             facets1_mdspan},
+                  fn, constants,
+                  mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
+                  cell_info0, facet_perms, be_b, cdofs_b);
+            }
+            else if (bs == 3)
+            {
+              impl::assemble_interior_facets(
+                  P0, b, x_dofmap, x, facets_mdspan,
+                  std::tuple{dofs, std::integral_constant<int, 3>{},
+                             facets1_mdspan},
+                  fn, constants,
+                  mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
+                  cell_info0, facet_perms, be_b, cdofs_b);
+            }
+            else
+            {
+              impl::assemble_interior_facets(
+                  P0, b, x_dofmap, x, facets_mdspan,
+                  std::tuple{dofs, bs, facets1_mdspan}, fn, constants,
+                  mdspanx2x_t(coeffs.data(), facets.size() / 4, 2, cstride),
+                  cell_info0, facet_perms, be_b, cdofs_b);
+            }
+          }
+
+          for (auto itg_type :
+               {fem::IntegralType::exterior_facet, fem::IntegralType::vertex,
+                fem::IntegralType::ridge})
+          {
+            md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> perms
+                = (itg_type == fem::IntegralType::exterior_facet)
+                      ? facet_perms
+                      : md::mdspan<const std::uint8_t,
+                                   md::dextents<std::size_t, 2>>{};
+            for (int i = 0; i < L.num_integrals(itg_type, 0); ++i)
+            {
+              auto fn = L.kernel(itg_type, i, 0);
+              assert(fn);
+              auto& [coeffs, cstride] = coefficients.at({itg_type, i});
+              std::span e = L.domain(itg_type, i, 0);
+              mdspanx2_t entities(e.data(), e.size() / 2, 2);
+              std::span e1 = L.domain_arg(itg_type, 0, i, 0);
+              mdspanx2_t entities1(e1.data(), e1.size() / 2, 2);
+              assert((entities.size() / 2) * cstride == coeffs.size());
+              if (bs == 1)
+              {
+                impl::assemble_entities(
+                    P0, b, x_dofmap, x, entities,
+                    std::tuple{dofs, std::integral_constant<int, 1>{},
+                               entities1},
+                    fn, constants,
+                    md::mdspan(coeffs.data(), entities.extent(0), cstride),
+                    cell_info0, perms, be_b, cdofs_b);
+              }
+              else if (bs == 3)
+              {
+                impl::assemble_entities(
+                    P0, b, x_dofmap, x, entities,
+                    std::tuple{dofs, std::integral_constant<int, 3>{},
+                               entities1},
+                    fn, constants,
+                    md::mdspan(coeffs.data(), entities.extent(0), cstride),
+                    cell_info0, perms, be_b, cdofs_b);
+              }
+              else
+              {
+                impl::assemble_entities(
+                    P0, b, x_dofmap, x, entities,
+                    std::tuple{dofs, bs, entities1}, fn, constants,
+                    md::mdspan(coeffs.data(), entities.extent(0), cstride),
+                    cell_info0, perms, be_b, cdofs_b);
+              }
+            }
+          }
+        });
   }
 }
 
