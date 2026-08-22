@@ -184,11 +184,11 @@ void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh<double> XDMFFile::read_mesh(
-    const fem::CoordinateElement<double>& element, mesh::GhostMode mode,
-    std::string_view name, std::string_view xpath,
-    std::function<void(std::vector<std::int64_t>&)> facet_intercept,
-    std::optional<std::int32_t> max_facet_to_cell_links) const
+mesh::Mesh<double>
+XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
+                    mesh::GhostMode mode, std::string_view name,
+                    std::string_view xpath,
+                    std::optional<std::int32_t> max_facet_to_cell_links) const
 {
   // Read mesh data
   auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);
@@ -221,12 +221,8 @@ mesh::Mesh<double> XDMFFile::read_mesh(
 
   // Create mesh
   const std::vector<double>& _x = std::get<std::vector<double>>(x);
-  // mesh::Mesh<double> mesh = mesh::create_mesh(
-  //    _comm.comm(), cells, element, _x, xshape, mode,
-  //    max_facet_to_cell_links);
-
   auto part = create_cell_partitioner(mode, dolfinx::graph::partition_graph,
-                                      facet_intercept, max_facet_to_cell_links);
+                                      max_facet_to_cell_links);
   mesh::Mesh<double> mesh = mesh::create_mesh(
       _comm.comm(), _comm.comm(), cells, cell_weights, {element}, _comm.comm(),
       _x, xshape, part, max_facet_to_cell_links, 1);

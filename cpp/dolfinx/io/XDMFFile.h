@@ -111,8 +111,6 @@ public:
   mesh::Mesh<double>
   read_mesh(const fem::CoordinateElement<double>& element, mesh::GhostMode mode,
             std::string_view name, std::string_view xpath = "/Xdmf/Domain",
-            std::function<void(std::vector<std::int64_t>&)> facet_intercept
-            = nullptr,
             std::optional<std::int32_t> max_facet_to_cell_links = 2) const;
 
   /// Read Topology data for Mesh

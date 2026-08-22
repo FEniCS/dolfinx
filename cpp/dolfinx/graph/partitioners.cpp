@@ -351,8 +351,8 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 {
   return [imbalance, strategy, seed](MPI_Comm comm, int nparts,
                                      const AdjacencyList<std::int64_t>& graph,
-                                     std::span<std::int32_t> node_weights,
-                                     std::span<std::int32_t> edge_weights,
+                                     std::span<const std::int32_t> node_weights,
+                                     std::span<const std::int32_t> edge_weights,
                                      bool ghosting)
   {
     spdlog::info("Compute graph partition using PT-SCOTCH");
@@ -568,8 +568,9 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
   return
       [imbalance, options](MPI_Comm comm, idx_t nparts,
                            const graph::AdjacencyList<std::int64_t>& graph,
-                           std::span<std::int32_t> node_weights,
-                           std::span<std::int32_t> edge_weights, bool ghosting)
+                           std::span<const std::int32_t> node_weights,
+                           std::span<const std::int32_t> edge_weights,
+                           bool ghosting)
   {
     spdlog::info("Compute graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS)");

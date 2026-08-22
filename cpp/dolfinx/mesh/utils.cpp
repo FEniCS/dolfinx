@@ -101,22 +101,20 @@ std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
 //------------------------------------------------------------------------------
 mesh::CellPartitionFunction mesh::create_cell_partitioner(
     mesh::GhostMode ghost_mode, graph::partition_fn partfn,
-    std::function<void(std::vector<std::int64_t>&)> facet_intercept,
     std::optional<std::int32_t> max_facet_to_cell_links)
 {
-  return [partfn = std::move(partfn), facet_intercept, ghost_mode,
-          max_facet_to_cell_links](
+  return [partfn = std::move(partfn), ghost_mode, max_facet_to_cell_links](
              MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
              const std::vector<std::span<const std::int64_t>>& cells,
-             std::span<std::int32_t> cell_weights,
-             std::span<std::int32_t> edge_weights)
+             std::span<const std::int32_t> cell_weights,
+             std::span<const std::int32_t> edge_weights)
              -> graph::AdjacencyList<std::int32_t>
   {
     spdlog::info("Compute partition of cells across ranks");
 
     // Compute distributed dual graph (for the cells on this process)
-    graph::AdjacencyList dual_graph = build_dual_graph(
-        comm, cell_types, cells, max_facet_to_cell_links, facet_intercept);
+    graph::AdjacencyList dual_graph
+        = build_dual_graph(comm, cell_types, cells, max_facet_to_cell_links);
 
     // Just flag any kind of ghosting for now
     bool ghosting = (ghost_mode != GhostMode::none);
@@ -131,7 +129,7 @@ mesh::CellPartitionFunction mesh::create_cell_partitioner(
     mesh::GhostMode ghost_mode,
     std::optional<std::int32_t> max_facet_to_cell_links)
 {
-  return create_cell_partitioner(ghost_mode, &graph::partition_graph, nullptr,
+  return create_cell_partitioner(ghost_mode, &graph::partition_graph,
                                  max_facet_to_cell_links);
 }
 //-----------------------------------------------------------------------------

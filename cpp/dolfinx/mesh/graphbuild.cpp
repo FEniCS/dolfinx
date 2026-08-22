@@ -893,12 +893,11 @@ mesh::build_local_dual_graph(
           std::move(local_cells)};
 }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int64_t> mesh::build_dual_graph(
-    MPI_Comm comm, std::span<const CellType> celltypes,
-    const std::vector<std::span<const std::int64_t>>& cells,
-    std::optional<std::int32_t> max_facet_to_cell_links,
-    std::function<void(std::vector<std::int64_t>&)> facet_intercept,
-    int num_threads)
+graph::AdjacencyList<std::int64_t>
+mesh::build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
+                       const std::vector<std::span<const std::int64_t>>& cells,
+                       std::optional<std::int32_t> max_facet_to_cell_links,
+                       int num_threads)
 {
   spdlog::info("Building mesh dual graph");
 
@@ -906,11 +905,6 @@ graph::AdjacencyList<std::int64_t> mesh::build_dual_graph(
   // are connections by facet)
   auto [local_graph, facets, shape1, fcells] = mesh::build_local_dual_graph(
       celltypes, cells, max_facet_to_cell_links, num_threads);
-
-  // Run custom function to change certain exterior facets before sending to the
-  // nonlocal dual graph computation.
-  if (facet_intercept)
-    facet_intercept(facets);
 
   // Extend with nonlocal edges and convert to global indices
   graph::AdjacencyList graph

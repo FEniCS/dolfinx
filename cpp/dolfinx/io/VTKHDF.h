@@ -467,12 +467,13 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
       });
 
   auto part = create_cell_partitioner(mesh::GhostMode::none,
-                                      dolfinx::graph::partition_graph, nullptr,
+                                      dolfinx::graph::partition_graph,
                                       max_facet_to_cell_links);
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());
-  return mesh::create_mesh(comm, comm, cells_span, coordinate_elements, comm,
-                           points_pruned, {(std::size_t)x_shape[0], gdim}, part,
-                           max_facet_to_cell_links, 1);
+  return mesh::create_mesh(comm, comm, cells_span,
+                           std::span<const std::int32_t>(), coordinate_elements,
+                           comm, points_pruned, {(std::size_t)x_shape[0], gdim},
+                           part, max_facet_to_cell_links, 1);
 }
 } // namespace dolfinx::io::VTKHDF

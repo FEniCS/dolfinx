@@ -213,8 +213,8 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
     const std::vector<std::span<const std::int64_t>>& cells,
-    std::span<std::int32_t> cell_weights,
-    std::span<std::int32_t> edge_weights)>;
+    std::span<const std::int32_t> cell_weights,
+    std::span<const std::int32_t> edge_weights)>;
 
 /// @brief Function that reorders (locally) cells that
 /// are owned by this process. It takes the local mesh dual graph as an
@@ -998,10 +998,9 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 /// facet needs to be connected to to be considered *matched* (not on
 /// boundary for non-branching meshes).
 /// @return Function that computes the destination ranks for each cell.
-CellPartitionFunction create_cell_partitioner(
-    mesh::GhostMode ghost_mode, graph::partition_fn partfn,
-    std::function<void(std::vector<std::int64_t>&)> facet_intercept,
-    std::optional<std::int32_t> max_facet_to_cell_links);
+CellPartitionFunction
+create_cell_partitioner(mesh::GhostMode ghost_mode, graph::partition_fn partfn,
+                        std::optional<std::int32_t> max_facet_to_cell_links);
 
 /// @brief Create a function that computes destination rank for mesh
 /// cells on this rank by applying the default graph partitioner to the
@@ -1077,7 +1076,7 @@ template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt,
     std::vector<std::span<const std::int64_t>> cells,
-    std::span<std::int32_t> cell_weights,
+    std::span<const std::int32_t> cell_weights,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
@@ -1306,7 +1305,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt, std::span<const std::int64_t> cells,
-    std::span<std::int32_t> cell_weights,
+    std::span<const std::int32_t> cell_weights,
     const fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,

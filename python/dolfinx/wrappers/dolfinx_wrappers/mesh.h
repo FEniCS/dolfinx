@@ -36,10 +36,15 @@ auto create_partitioner_cpp(Functor&& p)
 {
   return [p](MPI_Comm comm, int nparts,
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-             bool ghosting)
+             std::span<const std::int32_t> node_weights,
+             std::span<const std::int32_t> edge_weights, bool ghosting)
   {
+    nb::ndarray<const std::int32_t, nb::numpy> node_weights_nb(
+        node_weights.data(), {node_weights.size()});
+    nb::ndarray<const std::int32_t, nb::numpy> edge_weights_nb(
+        edge_weights.data(), {edge_weights.size()});
     return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
-             ghosting);
+             node_weights_nb, edge_weights_nb, ghosting);
   };
 }
 
@@ -49,10 +54,17 @@ auto create_cell_partitioner_py(Functor&& p)
 {
   return [p](dolfinx_wrappers::MPICommWrapper comm, int n,
              const std::vector<dolfinx::mesh::CellType>& cell_types,
-             std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb)
+             std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb,
+             nb::ndarray<const std::int32_t, nb::numpy> cell_weights,
+             nb::ndarray<const std::int32_t, nb::numpy> edge_weights)
   {
     std::vector<std::span<const std::int64_t>> cells = vec_of_spans(cells_nb);
-    return p(comm.get(), n, cell_types, cells);
+    std::span<const std::int32_t> cell_weights_span(cell_weights.data(),
+                                                     cell_weights.size());
+    std::span<const std::int32_t> edge_weights_span(edge_weights.data(),
+                                                     edge_weights.size());
+    return p(comm.get(), n, cell_types, cells, cell_weights_span,
+             edge_weights_span);
   };
 }
 
@@ -60,12 +72,15 @@ using PythonCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         dolfinx_wrappers::MPICommWrapper, int,
         const std::vector<dolfinx::mesh::CellType>&,
-        std::vector<nb::ndarray<const std::int64_t, nb::numpy>>)>;
+        std::vector<nb::ndarray<const std::int64_t, nb::numpy>>,
+        nb::ndarray<const std::int32_t, nb::numpy>,
+        nb::ndarray<const std::int32_t, nb::numpy>)>;
 
 using CppCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         MPI_Comm, int, const std::vector<dolfinx::mesh::CellType>& q,
-        const std::vector<std::span<const std::int64_t>>&)>;
+        const std::vector<std::span<const std::int64_t>>&,
+        std::span<const std::int32_t>, std::span<const std::int32_t>)>;
 
 /// Wrap a Python cell graph partitioning function as a C++ function
 CppCellPartitionFunction
@@ -329,10 +344,10 @@ void declare_mesh(nb::module_& m, std::string type)
             { return std::span<const std::int64_t>(c.data(), c.size()); });
 
         return dolfinx::mesh::create_mesh(
-            comm.get(), comm.get(), cells, elements, comm.get(),
-            std::span(x.data(), x.size()), {x.shape(0), shape1},
-            part::impl::create_cell_partitioner_cpp(p), max_facet_to_cell_links,
-            num_threads);
+            comm.get(), comm.get(), cells, std::span<const std::int32_t>(),
+            elements, comm.get(), std::span(x.data(), x.size()),
+            {x.shape(0), shape1}, part::impl::create_cell_partitioner_cpp(p),
+            max_facet_to_cell_links, num_threads);
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("elements"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
@@ -351,9 +366,10 @@ void declare_mesh(nb::module_& m, std::string type)
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
         return dolfinx::mesh::create_mesh(
             comm.get(), comm.get(), std::span(cells.data(), cells.size()),
-            element, comm.get(), std::span(x.data(), x.size()),
-            {x.shape(0), shape1}, part::impl::create_cell_partitioner_cpp(p),
-            max_facet_to_cell_links, num_threads);
+            std::span<const std::int32_t>(), element, comm.get(),
+            std::span(x.data(), x.size()), {x.shape(0), shape1},
+            part::impl::create_cell_partitioner_cpp(p), max_facet_to_cell_links,
+            num_threads);
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
