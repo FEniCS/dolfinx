@@ -137,8 +137,11 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
-    apply_dof_transformation(x_b, std::span(cell_info.data(), cell_info.size()),
-                             c, x.extent(1));
+    if (apply_dof_transformation)
+    {
+      apply_dof_transformation(
+          x_b, std::span(cell_info.data(), cell_info.size()), c, x.extent(1));
+    }
 
     // Copy dof coordinates into vector
     auto dofs = dofmap->cell_dofs(c);

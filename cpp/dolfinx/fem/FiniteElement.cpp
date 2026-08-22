@@ -32,6 +32,7 @@ std::vector<std::shared_ptr<const FiniteElement<T>>>
 _build_element_list(std::vector<BasixElementData<T>> elements)
 {
   std::vector<std::shared_ptr<const FiniteElement<T>>> _e;
+  _e.reserve(elements.size());
   std::ranges::transform(elements, std::back_inserter(_e),
                          [](auto& data)
                          {
@@ -203,8 +204,8 @@ FiniteElement<T>::FiniteElement(
     {
       for (std::size_t j = 0; j < _entity_dofs[i].size(); ++j)
       {
-        std::vector<int> sub_ed = e->entity_dofs()[i][j];
-        std::vector<int> sub_ecd = e->entity_closure_dofs()[i][j];
+        const std::vector<int>& sub_ed = e->entity_dofs()[i][j];
+        const std::vector<int>& sub_ecd = e->entity_closure_dofs()[i][j];
         for (auto k : sub_ed)
         {
           for (std::size_t b = 0; b < sub_bs; ++b)
@@ -282,7 +283,7 @@ mesh::CellType FiniteElement<T>::cell_type() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-std::string FiniteElement<T>::signature() const noexcept
+const std::string& FiniteElement<T>::signature() const noexcept
 {
   return _signature;
 }
@@ -578,6 +579,8 @@ FiniteElement<T>::dof_permutation_fn(bool inverse, bool scalar_element) const
       std::vector<std::function<void(std::span<std::int32_t>, std::uint32_t)>>
           sub_element_functions;
       std::vector<int> dims;
+      sub_element_functions.reserve(_sub_elements.size());
+      dims.reserve(_sub_elements.size());
       for (std::size_t i = 0; i < _sub_elements.size(); ++i)
       {
         sub_element_functions.push_back(

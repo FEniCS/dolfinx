@@ -99,7 +99,8 @@ void pack_impl(std::span<T> coeffs, std::int32_t cell, int bs,
     }
   }
 
-  transform(coeffs, cell_info, cell, 1);
+  if (transform)
+    transform(coeffs, cell_info, cell, 1);
 }
 
 /// @brief Pack a single coefficient for a set of active entities.
