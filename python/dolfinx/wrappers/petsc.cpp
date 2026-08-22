@@ -60,8 +60,8 @@ to_index_map_refs(const std::vector<std::pair<U, int>>& maps)
 bool unit_block_size(Mat A)
 {
   PetscInt bs0 = -1, bs1 = -1;
-  if (PetscErrorCode ierr = MatGetBlockSizes(A, &bs0, &bs1); ierr != 0)
-    dolfinx::la::petsc::error(ierr, __FILE__, "MatGetBlockSizes");
+  PetscErrorCode ierr = MatGetBlockSizes(A, &bs0, &bs1);
+  dolfinx::la::petsc::check(ierr, "MatGetBlockSizes");
   return bs0 == 1 and bs1 == 1;
 }
 
