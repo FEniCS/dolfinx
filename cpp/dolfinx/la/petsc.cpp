@@ -456,7 +456,8 @@ petsc::Vector::Vector(Vec x, bool inc_ref_count) : _x(x)
 
   if (inc_ref_count)
   {
-    PetscErrorCode ierr = PetscObjectReference((PetscObject)_x);
+    PetscErrorCode ierr
+        = PetscObjectReference(reinterpret_cast<PetscObject>(_x));
     CHECK_ERROR("PetscObjectReference");
   }
 }
@@ -517,7 +518,8 @@ MPI_Comm petsc::Vector::comm() const
 {
   assert(_x);
   MPI_Comm mpi_comm = MPI_COMM_NULL;
-  PetscErrorCode ierr = PetscObjectGetComm((PetscObject)(_x), &mpi_comm);
+  PetscErrorCode ierr
+      = PetscObjectGetComm(reinterpret_cast<PetscObject>(_x), &mpi_comm);
   CHECK_ERROR("PetscObjectGetComm");
   return mpi_comm;
 }
@@ -556,7 +558,8 @@ petsc::Operator::Operator(Mat A, bool inc_ref_count) : _matA(A)
 
   if (inc_ref_count)
   {
-    PetscErrorCode ierr = PetscObjectReference((PetscObject)_matA);
+    PetscErrorCode ierr
+        = PetscObjectReference(reinterpret_cast<PetscObject>(_matA));
     CHECK_ERROR("PetscObjectReference");
   }
 }
@@ -712,7 +715,8 @@ petsc::KrylovSolver::KrylovSolver(KSP ksp, bool inc_ref_count) : _ksp(ksp)
 
   if (inc_ref_count)
   {
-    PetscErrorCode ierr = PetscObjectReference((PetscObject)_ksp);
+    PetscErrorCode ierr
+        = PetscObjectReference(reinterpret_cast<PetscObject>(_ksp));
     CHECK_ERROR("PetscObjectReference");
   }
 }
@@ -747,7 +751,7 @@ void petsc::KrylovSolver::set_operators(const Mat A, const Mat P)
     petsc::error(ierr, __FILE__, "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
-PetscInt petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
+PetscInt petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose)
 {
   common::Timer timer("PETSc Krylov solver");
   assert(_ksp);
