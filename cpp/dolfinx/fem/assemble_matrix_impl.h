@@ -592,7 +592,7 @@ void assemble_interior_facets(
     // Only apply transformation when cells exist
     if (P0 and cells0[0] >= 0)
       P0(Ae, cell_info0, cells0[0], num_cols);
-    if (P1T and cells0[1] >= 0)
+    if (P0 and cells0[1] >= 0)
     {
       std::span sub_Ae0(Ae.data() + bs0 * dmap0_size * num_cols,
                         bs0 * dmap0_size * num_cols);
@@ -601,7 +601,7 @@ void assemble_interior_facets(
     if (P1T and cells1[0] >= 0)
       P1T(Ae, cell_info1, cells1[0], num_rows);
 
-    if (cells1[1] >= 0)
+    if (P1T and cells1[1] >= 0)
     {
       for (std::size_t row = 0; row < num_rows; ++row)
       {

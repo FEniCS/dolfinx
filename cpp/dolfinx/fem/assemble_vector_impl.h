@@ -314,9 +314,9 @@ void assemble_interior_facets(
     kernel(be.data(), &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
            local_facet.data(), perm.data(), nullptr);
 
-    if (cells0[0] >= 0)
+    if (P0 and cells0[0] >= 0)
       P0(be, cell_info0, cells0[0], 1);
-    if (cells0[1] >= 0)
+    if (P0 and cells0[1] >= 0)
     {
       std::span sub_be(be.data() + bs * dmap_size, bs * dmap_size);
       P0(sub_be, cell_info0, cells0[1], 1);

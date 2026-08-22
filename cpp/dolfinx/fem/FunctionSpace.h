@@ -332,8 +332,12 @@ public:
 
         // Tabulate dof coordinates on cell
         cmap.push_forward(x, coordinate_dofs, phi);
-        apply_dof_transformation(
-            x_b, std::span(cell_info.data(), cell_info.size()), c, x.extent(1));
+        if (apply_dof_transformation)
+        {
+          apply_dof_transformation(
+              x_b, std::span(cell_info.data(), cell_info.size()), c,
+              x.extent(1));
+        }
 
         // Get cell dofmap
         auto dofs = _dofmaps[i]->cell_dofs(c);
