@@ -19,6 +19,7 @@
 #include <petscmat.h>
 #include <petscoptions.h>
 #include <petscvec.h>
+#include <source_location>
 #include <span>
 #include <string>
 #include <string_view>
@@ -37,9 +38,29 @@ enum class Norm : std::int8_t;
 /// @brief PETSc linear algebra functions
 namespace petsc
 {
-/// Print error message for PETSc calls that return an error
-void error(PetscErrorCode error_code, std::string_view filename,
-           std::string_view petsc_function);
+/// @brief Print error message for a PETSc call that returned an error
+/// and throw a std::runtime_error.
+/// @param[in] error_code PETSc error code
+/// @param[in] petsc_function Name of the PETSc function that returned
+/// `error_code`
+/// @param[in] loc Call site of the failed PETSc call (captured
+/// automatically; do not pass explicitly)
+void error(PetscErrorCode error_code, std::string_view petsc_function,
+           std::source_location loc = std::source_location::current());
+
+/// @brief Throw a std::runtime_error via error() if `ierr` indicates a
+/// PETSc call failed.
+/// @param[in] ierr PETSc error code returned by `petsc_function`
+/// @param[in] petsc_function Name of the PETSc function that returned
+/// `ierr`
+/// @param[in] loc Call site of the failed PETSc call (captured
+/// automatically; do not pass explicitly)
+inline void check(PetscErrorCode ierr, std::string_view petsc_function,
+                  std::source_location loc = std::source_location::current())
+{
+  if (ierr != 0)
+    error(ierr, petsc_function, loc);
+}
 
 /// Create PETSc vectors from the local data. The data is copied into
 /// the PETSc vectors and is not shared. Each vector's global size is
@@ -160,8 +181,7 @@ void set(std::string option, const T& value)
   PetscErrorCode ierr;
   ierr = PetscOptionsSetValue(nullptr, option.c_str(),
                               std::format("{}", value).c_str());
-  if (ierr != 0)
-    petsc::error(ierr, __FILE__, "PetscOptionsSetValue");
+  petsc::check(ierr, "PetscOptionsSetValue");
 }
 
 /// Clear a PETSc option
@@ -329,8 +349,7 @@ public:
 #endif
 
 #ifndef NDEBUG
-      if (ierr != 0)
-        petsc::error(ierr, __FILE__, "MatSetValuesLocal");
+      petsc::check(ierr, "MatSetValuesLocal");
 #endif
       return ierr;
     };
@@ -363,8 +382,7 @@ public:
 #endif
 
 #ifndef NDEBUG
-      if (ierr != 0)
-        petsc::error(ierr, __FILE__, "MatSetValuesBlockedLocal");
+      petsc::check(ierr, "MatSetValuesBlockedLocal");
 #endif
       return ierr;
     };
@@ -402,8 +420,7 @@ public:
       ierr = MatSetValuesLocal(A, cache0.size(), cache0.data(), cache1.size(),
                                cache1.data(), vals.data(), mode);
 #ifndef NDEBUG
-      if (ierr != 0)
-        petsc::error(ierr, __FILE__, "MatSetValuesLocal");
+      petsc::check(ierr, "MatSetValuesLocal");
 #endif
       return ierr;
     };

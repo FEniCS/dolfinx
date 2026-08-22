@@ -57,8 +57,7 @@ Vec fem::petsc::create_vector_block(
   PetscErrorCode ierr
       = VecCreateGhost(maps[0].first.get().comm(), local_size, PETSC_DETERMINE,
                        _ghosts.size(), _ghosts.data(), &x);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "VecCreateGhost");
+  la::petsc::check(ierr, "VecCreateGhost");
 
   return x;
 }
@@ -85,8 +84,7 @@ Vec fem::petsc::create_vector_nest(
   Vec y;
   PetscErrorCode ierr = VecCreateNest(vecs.front()->comm(), petsc_vecs.size(),
                                       nullptr, petsc_vecs.data(), &y);
-  if (ierr != 0)
-    la::petsc::error(ierr, __FILE__, "VecCreateNest");
+  la::petsc::check(ierr, "VecCreateNest");
 
   return y;
 }

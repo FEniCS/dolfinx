@@ -20,20 +20,10 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-// Check a PETSc error code and throw a descriptive exception if it is
-// non-zero. Expects a local `PetscErrorCode ierr` in scope.
-#define CHECK_ERROR(NAME)                                                      \
-  do                                                                           \
-  {                                                                            \
-    if (ierr != 0)                                                             \
-      la::petsc::error(ierr, __FILE__, NAME);                                  \
-  } while (0)
-
-//-----------------------------------------------------------------------------
 nls::petsc::SNESSolver::SNESSolver(MPI_Comm comm) : _snes(nullptr)
 {
   PetscErrorCode ierr = SNESCreate(comm, &_snes);
-  CHECK_ERROR("SNESCreate");
+  la::petsc::check(ierr, "SNESCreate");
   set_callbacks();
 }
 //-----------------------------------------------------------------------------
@@ -44,7 +34,7 @@ nls::petsc::SNESSolver::SNESSolver(SNES snes, bool inc_ref_count) : _snes(snes)
   {
     PetscErrorCode ierr
         = PetscObjectReference(reinterpret_cast<PetscObject>(_snes));
-    CHECK_ERROR("PetscObjectReference");
+    la::petsc::check(ierr, "PetscObjectReference");
   }
 
   set_callbacks();
@@ -101,13 +91,13 @@ void nls::petsc::SNESSolver::set_F(std::function<void(const Vec x, Vec b)> F,
 
   PetscErrorCode ierr
       = PetscObjectReference(reinterpret_cast<PetscObject>(b_layout));
-  CHECK_ERROR("PetscObjectReference");
+  la::petsc::check(ierr, "PetscObjectReference");
   if (_b)
     VecDestroy(&_b);
   _b = b_layout;
 
   ierr = SNESSetFunction(_snes, _b, residual, this);
-  CHECK_ERROR("SNESSetFunction");
+  la::petsc::check(ierr, "SNESSetFunction");
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::SNESSolver::set_J(
@@ -123,9 +113,9 @@ void nls::petsc::SNESSolver::set_J(
 
   PetscErrorCode ierr
       = PetscObjectReference(reinterpret_cast<PetscObject>(J_layout));
-  CHECK_ERROR("PetscObjectReference");
+  la::petsc::check(ierr, "PetscObjectReference");
   ierr = PetscObjectReference(reinterpret_cast<PetscObject>(P_layout));
-  CHECK_ERROR("PetscObjectReference");
+  la::petsc::check(ierr, "PetscObjectReference");
 
   if (_matJ)
     MatDestroy(&_matJ);
@@ -135,7 +125,7 @@ void nls::petsc::SNESSolver::set_J(
   _matP = P_layout;
 
   ierr = SNESSetJacobian(_snes, _matJ, _matP, jacobian, this);
-  CHECK_ERROR("SNESSetJacobian");
+  la::petsc::check(ierr, "SNESSetJacobian");
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::SNESSolver::set_update(
@@ -144,7 +134,7 @@ void nls::petsc::SNESSolver::set_update(
   assert(_snes);
   _fnupdate = std::move(update);
   PetscErrorCode ierr = SNESSetUpdate(_snes, update_step);
-  CHECK_ERROR("SNESSetUpdate");
+  la::petsc::check(ierr, "SNESSetUpdate");
 }
 //-----------------------------------------------------------------------------
 PetscInt nls::petsc::SNESSolver::solve(Vec x)
@@ -164,11 +154,11 @@ PetscInt nls::petsc::SNESSolver::solve(Vec x)
   if (_exception)
     std::rethrow_exception(std::exchange(_exception, nullptr));
 
-  CHECK_ERROR("SNESSolve");
+  la::petsc::check(ierr, "SNESSolve");
 
   PetscInt num_iterations = 0;
   ierr = SNESGetIterationNumber(_snes, &num_iterations);
-  CHECK_ERROR("SNESGetIterationNumber");
+  la::petsc::check(ierr, "SNESGetIterationNumber");
 
   // Check if the solution converged and warn if not. Note: this does
   // not throw on non-convergence -- the caller is responsible for
@@ -176,12 +166,12 @@ PetscInt nls::petsc::SNESSolver::solve(Vec x)
   // their use case.
   SNESConvergedReason reason;
   ierr = SNESGetConvergedReason(_snes, &reason);
-  CHECK_ERROR("SNESGetConvergedReason");
+  la::petsc::check(ierr, "SNESGetConvergedReason");
   if (reason < 0)
   {
     const char* reason_str;
     ierr = SNESGetConvergedReasonString(_snes, &reason_str);
-    CHECK_ERROR("SNESGetConvergedReasonString");
+    la::petsc::check(ierr, "SNESGetConvergedReasonString");
     spdlog::warn("PETSc SNES solver did not converge in {} iterations "
                  "(PETSc reason: {}).",
                  num_iterations, reason_str);
@@ -195,7 +185,7 @@ void nls::petsc::SNESSolver::set_options_prefix(std::string_view options_prefix)
   assert(_snes);
   PetscErrorCode ierr
       = SNESSetOptionsPrefix(_snes, std::string(options_prefix).c_str());
-  CHECK_ERROR("SNESSetOptionsPrefix");
+  la::petsc::check(ierr, "SNESSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string nls::petsc::SNESSolver::get_options_prefix() const
@@ -203,7 +193,7 @@ std::string nls::petsc::SNESSolver::get_options_prefix() const
   assert(_snes);
   const char* prefix = nullptr;
   PetscErrorCode ierr = SNESGetOptionsPrefix(_snes, &prefix);
-  CHECK_ERROR("SNESGetOptionsPrefix");
+  la::petsc::check(ierr, "SNESGetOptionsPrefix");
   // PETSc reports an unset prefix as a null pointer
   return prefix ? std::string(prefix) : std::string();
 }
@@ -212,7 +202,7 @@ void nls::petsc::SNESSolver::set_from_options() const
 {
   assert(_snes);
   PetscErrorCode ierr = SNESSetFromOptions(_snes);
-  CHECK_ERROR("SNESSetFromOptions");
+  la::petsc::check(ierr, "SNESSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 SNES nls::petsc::SNESSolver::snes() const { return _snes; }
@@ -319,19 +309,19 @@ void nls::petsc::SNESSolver::set_callbacks()
   if (_fnF)
   {
     ierr = SNESSetFunction(_snes, _b, residual, this);
-    CHECK_ERROR("SNESSetFunction");
+    la::petsc::check(ierr, "SNESSetFunction");
   }
 
   if (_fnJ)
   {
     ierr = SNESSetJacobian(_snes, _matJ, _matP, jacobian, this);
-    CHECK_ERROR("SNESSetJacobian");
+    la::petsc::check(ierr, "SNESSetJacobian");
   }
 
   if (_fnupdate)
   {
     ierr = SNESSetUpdate(_snes, update_step);
-    CHECK_ERROR("SNESSetUpdate");
+    la::petsc::check(ierr, "SNESSetUpdate");
   }
 }
 //-----------------------------------------------------------------------------
