@@ -10,7 +10,6 @@
 #include "petsc.h"
 #include "SparsityPattern.h"
 #include "Vector.h"
-#include "utils.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -531,7 +530,14 @@ void petsc::Vector::set_from_options()
 Vec petsc::Vector::vec() const { return _x; }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-petsc::Operator::Operator(Mat A, bool inc_ref_count) : _matA(A)
+petsc::Matrix::Matrix(MPI_Comm comm, const SparsityPattern& sp,
+                      std::optional<std::string_view> type)
+    : _matA(petsc::create_matrix(comm, sp, type))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+petsc::Matrix::Matrix(Mat A, bool inc_ref_count) : _matA(A)
 {
   if (!_matA)
     throw std::runtime_error("PETSc Mat must be initialised before wrapping");
@@ -543,12 +549,12 @@ petsc::Operator::Operator(Mat A, bool inc_ref_count) : _matA(A)
   }
 }
 //-----------------------------------------------------------------------------
-petsc::Operator::Operator(Operator&& A) noexcept
+petsc::Matrix::Matrix(Matrix&& A) noexcept
     : _matA(std::exchange(A._matA, nullptr))
 {
 }
 //-----------------------------------------------------------------------------
-petsc::Operator::~Operator()
+petsc::Matrix::~Matrix()
 {
   // Decrease reference count (PETSc will destroy object once reference
   // counts reached zero)
@@ -556,13 +562,13 @@ petsc::Operator::~Operator()
     MatDestroy(&_matA);
 }
 //-----------------------------------------------------------------------------
-petsc::Operator& petsc::Operator::operator=(Operator&& A) noexcept
+petsc::Matrix& petsc::Matrix::operator=(Matrix&& A) noexcept
 {
   std::swap(_matA, A._matA);
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> petsc::Operator::size() const
+std::array<std::int64_t, 2> petsc::Matrix::size() const
 {
   assert(_matA);
   PetscInt m(0), n(0);
@@ -571,7 +577,7 @@ std::array<std::int64_t, 2> petsc::Operator::size() const
   return {{m, n}};
 }
 //-----------------------------------------------------------------------------
-Vec petsc::Operator::create_vector(std::size_t dim) const
+Vec petsc::Matrix::create_vector(std::size_t dim) const
 {
   assert(_matA);
   PetscErrorCode ierr;
@@ -598,59 +604,7 @@ Vec petsc::Operator::create_vector(std::size_t dim) const
   return x;
 }
 //-----------------------------------------------------------------------------
-Mat petsc::Operator::mat() const { return _matA; }
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-petsc::Matrix::Matrix(MPI_Comm comm, const SparsityPattern& sp,
-                      std::optional<std::string_view> type)
-    : Operator(petsc::create_matrix(comm, sp, type), false)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-petsc::Matrix::Matrix(Mat A, bool inc_ref_count) : Operator(A, inc_ref_count)
-{
-  // Reference count to A is incremented in base class
-}
-//-----------------------------------------------------------------------------
-double petsc::Matrix::norm(Norm norm_type) const
-{
-  assert(_matA);
-  PetscErrorCode ierr;
-  PetscReal value = 0;
-  switch (norm_type)
-  {
-  case Norm::l1:
-    ierr = MatNorm(_matA, NORM_1, &value);
-    break;
-  case Norm::linf:
-    ierr = MatNorm(_matA, NORM_INFINITY, &value);
-    break;
-  case Norm::frobenius:
-    ierr = MatNorm(_matA, NORM_FROBENIUS, &value);
-    break;
-  default:
-    throw std::runtime_error("Unknown PETSc Mat norm type");
-  }
-
-  CHECK_ERROR("MatNorm");
-  return value;
-}
-//-----------------------------------------------------------------------------
-void petsc::Matrix::apply(AssemblyType type)
-{
-  common::Timer timer("Apply (PETScMatrix)");
-
-  assert(_matA);
-  PetscErrorCode ierr;
-  MatAssemblyType petsc_type = MAT_FINAL_ASSEMBLY;
-  if (type == AssemblyType::FLUSH)
-    petsc_type = MAT_FLUSH_ASSEMBLY;
-  ierr = MatAssemblyBegin(_matA, petsc_type);
-  CHECK_ERROR("MatAssemblyBegin");
-  ierr = MatAssemblyEnd(_matA, petsc_type);
-  CHECK_ERROR("MatAssemblyEnd");
-}
+Mat petsc::Matrix::mat() const { return _matA; }
 //-----------------------------------------------------------------------------
 void petsc::Matrix::set_options_prefix(std::string_view options_prefix)
 {

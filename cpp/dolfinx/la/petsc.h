@@ -32,7 +32,6 @@ class IndexMap;
 namespace dolfinx::la
 {
 class SparsityPattern;
-enum class Norm : std::int8_t;
 
 /// @brief PETSc linear algebra functions
 namespace petsc
@@ -247,59 +246,12 @@ private:
   Vec _x;
 };
 
-/// This class is a base class for matrices that can be used in
-/// petsc::KrylovSolver.
-class Operator
-{
-public:
-  /// @brief Create operator wrapper of a PETSc Mat object.
-  /// @param[in] A PETSc Mat object, which must already have been
-  /// created. The reference count of `A` is always decreased when this
-  /// Operator is destroyed.
-  /// @param[in] inc_ref_count True if the reference count of `A` should
-  /// be incremented.
-  Operator(Mat A, bool inc_ref_count);
-
-  // Copy constructor (deleted)
-  Operator(const Operator& A) = delete;
-
-  /// Move constructor
-  Operator(Operator&& A) noexcept;
-
-  /// Destructor
-  virtual ~Operator();
-
-  /// Assignment operator (deleted)
-  Operator& operator=(const Operator& A) = delete;
-
-  /// Move assignment operator
-  Operator& operator=(Operator&& A) noexcept;
-
-  /// Return number of rows and columns (num_rows, num_cols). PETSc
-  /// returns -1 if size has not been set.
-  std::array<std::int64_t, 2> size() const;
-
-  /// Initialize vector to be compatible with the matrix-vector product
-  /// y = Ax. In the parallel case, size and layout are both important.
-  ///
-  /// @param[in] dim The dimension (axis): dim = 0 --> z = y, dim = 1
-  /// --> z = x
-  Vec create_vector(std::size_t dim) const;
-
-  /// Return PETSc Mat pointer
-  Mat mat() const;
-
-protected:
-  // PETSc Mat pointer
-  Mat _matA;
-};
-
 /// It is a simple wrapper for a PETSc matrix pointer (Mat). Its main
 /// purpose is to assist memory management of PETSc Mat objects.
 ///
 /// For advanced usage, access the PETSc Mat pointer using the function
 /// mat() and use the standard PETSc interface.
-class Matrix : public Operator
+class Matrix
 {
 public:
   /// @brief Return a function with an interface for adding or inserting
@@ -413,45 +365,43 @@ public:
   Matrix(MPI_Comm comm, const SparsityPattern& sp,
          std::optional<std::string_view> type = std::nullopt);
 
-  /// Create holder of a PETSc Mat object/pointer. The Mat A object
-  /// should already be created. If inc_ref_count is true, the reference
-  /// counter of the Mat will be increased. The Mat reference count will
-  /// always be decreased upon destruction of the petsc::Matrix.
+  /// @brief Create holder of a PETSc Mat object/pointer. The Mat A object
+  /// should already be created.
+  /// @param[in] A PETSc Mat object, which must already have been
+  /// created. The reference count of `A` is always decreased when this
+  /// Matrix is destroyed.
+  /// @param[in] inc_ref_count True if the reference count of `A` should
+  /// be incremented.
   Matrix(Mat A, bool inc_ref_count);
 
   // Copy constructor (deleted)
   Matrix(const Matrix& A) = delete;
 
-  /// Move constructor (falls through to base class move constructor)
-  Matrix(Matrix&& A) = default;
+  /// Move constructor
+  Matrix(Matrix&& A) noexcept;
 
   /// Destructor
-  ~Matrix() = default;
+  ~Matrix();
 
   /// Assignment operator (deleted)
   Matrix& operator=(const Matrix& A) = delete;
 
   /// Move assignment operator
-  Matrix& operator=(Matrix&& A) = default;
+  Matrix& operator=(Matrix&& A) noexcept;
 
-  /// Assembly type
-  ///   FINAL - corresponds to PETSc MAT_FINAL_ASSEMBLY
-  ///   FLUSH - corresponds to PETSc MAT_FLUSH_ASSEMBLY
-  enum class AssemblyType : std::int8_t
-  {
-    FINAL,
-    FLUSH
-  };
+  /// Return number of rows and columns (num_rows, num_cols). PETSc
+  /// returns -1 if size has not been set.
+  std::array<std::int64_t, 2> size() const;
 
-  /// Finalize assembly of tensor. The following values are recognized
-  /// for the mode parameter:
-  /// @param type
-  ///   FINAL    - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
-  ///   FLUSH  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
-  void apply(AssemblyType type);
+  /// Initialize vector to be compatible with the matrix-vector product
+  /// y = Ax. In the parallel case, size and layout are both important.
+  ///
+  /// @param[in] dim The dimension (axis): dim = 0 --> z = y, dim = 1
+  /// --> z = x
+  Vec create_vector(std::size_t dim) const;
 
-  /// Return norm of matrix
-  double norm(Norm norm_type) const;
+  /// Return PETSc Mat pointer
+  Mat mat() const;
 
   //--- Special PETSc Functions ---
 
@@ -465,6 +415,10 @@ public:
 
   /// Call PETSc function MatSetFromOptions on the PETSc Mat object
   void set_from_options();
+
+private:
+  // PETSc Mat pointer
+  Mat _matA;
 };
 
 /// This class implements Krylov methods for linear systems of the form
