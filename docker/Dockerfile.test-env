@@ -15,6 +15,7 @@
 ARG DOXYGEN_VERSION=1_17_0
 ARG GMSH_VERSION=4_15_2
 ARG KAHIP_VERSION=3.25
+ARG OCCT_VERSION=7_9_3
 # NOTE: The NumPy version (https://pypi.org/project/numpy/#history)
 # should be pinned to the most recent NumPy release that is supported by
 # the most recent Numba release, see
@@ -33,6 +34,7 @@ LABEL description="FEniCS testing and development environment with PETSc real, c
 ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
 ARG KAHIP_VERSION
+ARG OCCT_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG SPDLOG_VERSION
@@ -61,8 +63,12 @@ ENV OPENBLAS_NUM_THREADS=1 \
 # - First set of packages are required to build and run FEniCS.
 # - Second set of packages are recommended and/or required to build
 #   documentation or tests.
-# - Third set of packages are required to build the OpenCASCADE CAD
-#   kernel used by gmsh (built headless, without its FLTK/OpenGL GUI).
+# NOTE: OpenCASCADE (OCCT), the CAD kernel used by gmsh, is built from
+# source below rather than installed via apt: Ubuntu's
+# libocct-data-exchange-dev unconditionally pulls in the full
+# libvtk9-dev toolchain, which gmsh's headless build doesn't need.
+# libx11-dev below is OCCT's own dependency (Xlib.h headers only, no
+# runtime GUI), not related to gmsh's GUI, which stays disabled.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -88,12 +94,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     git \
     graphviz \
     libeigen3-dev \
+    libx11-dev \
     valgrind \
     wget && \
-    #
-    apt-get -y install --no-install-recommends \
-    libocct-foundation-dev \
-    libocct-data-exchange-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -137,11 +140,43 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
     cmake --install build-dir && \
     rm -rf /tmp/*
 
+# Install OpenCASCADE (OCCT), the CAD kernel used by gmsh, from source,
+# headless: only the FoundationClasses/ModelingData/ModelingAlgorithms/
+# DataExchange modules gmsh needs for STEP/IGES/meshing are built;
+# Visualization, ApplicationFramework and Draw are disabled, and
+# FreeType is turned off explicitly (DataExchange still probes for it
+# otherwise). TKService, a DataExchange dependency, still needs
+# Xlib.h (libx11-dev) even with Visualization off, but nothing beyond
+# the header is used headless. Installs headers under
+# include/opencascade to match gmsh's find_path() search. ldconfig is
+# required since a manual cmake --install doesn't trigger the postinst
+# hook that updates the linker cache for an apt package.
+RUN git clone -b V${OCCT_VERSION} --single-branch --depth 1 https://github.com/Open-Cascade-SAS/OCCT.git && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_LIBRARY_TYPE=Shared \
+    -DBUILD_MODULE_ApplicationFramework=OFF \
+    -DBUILD_MODULE_DataExchange=ON \
+    -DBUILD_MODULE_Draw=OFF \
+    -DBUILD_MODULE_FoundationClasses=ON \
+    -DBUILD_MODULE_ModelingAlgorithms=ON \
+    -DBUILD_MODULE_ModelingData=ON \
+    -DBUILD_MODULE_Visualization=OFF \
+    -DINSTALL_DIR_INCLUDE=include/opencascade \
+    -DINSTALL_TEST_CASES=OFF \
+    -DUSE_FREETYPE=OFF \
+    -DUSE_TBB=OFF \
+    -B build-dir -S OCCT && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    ldconfig && \
+    rm -rf /tmp/*
+
 # Install GMSH, headless (no FLTK/OpenGL GUI, meshing/OCC/Python API only)
 RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.onelab.info/gmsh/gmsh.git && \
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1 -DENABLE_OPENMP=1 -DENABLE_FLTK=0 -B build-dir -S gmsh && \
     cmake --build build-dir && \
     cmake --install build-dir && \
+    ldconfig && \
     rm -rf /tmp/*
 
 # GMSH installs python library in /usr/local/lib, see: https://gitlab.onelab.info/gmsh/gmsh/-/issues/1414
