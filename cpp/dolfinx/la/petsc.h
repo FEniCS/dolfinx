@@ -252,7 +252,12 @@ private:
 class Operator
 {
 public:
-  /// Constructor
+  /// @brief Create operator wrapper of a PETSc Mat object.
+  /// @param[in] A PETSc Mat object, which must already have been
+  /// created. The reference count of `A` is always decreased when this
+  /// Operator is destroyed.
+  /// @param[in] inc_ref_count True if the reference count of `A` should
+  /// be incremented.
   Operator(Mat A, bool inc_ref_count);
 
   // Copy constructor (deleted)
@@ -297,8 +302,9 @@ protected:
 class Matrix : public Operator
 {
 public:
-  /// Return a function with an interface for adding or inserting values
-  /// into the matrix A (calls MatSetValuesLocal)
+  /// @brief Return a function with an interface for adding or inserting
+  /// values into the matrix A (calls MatSetValuesLocal).
+  ///
   /// @param[in] A The matrix to set values in
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static auto set_fn(Mat A, InsertMode mode)
@@ -364,10 +370,12 @@ public:
     };
   }
 
-  /// Return a function with an interface for adding or inserting blocked
-  /// values to the matrix A using non-blocked insertion (calls
-  /// MatSetValuesLocal). Internally it expands the blocked indices into
-  /// non-blocked arrays.
+  /// @brief Return a function with an interface for adding or inserting
+  /// blocked values to the matrix A using non-blocked insertion (calls
+  /// MatSetValuesLocal).
+  ///
+  /// Internally it expands the blocked indices into non-blocked arrays.
+  ///
   /// @param[in] A The matrix to set values in
   /// @param[in] bs0 Block size for the matrix rows
   /// @param[in] bs1 Block size for the matrix columns
@@ -464,13 +472,16 @@ public:
 class KrylovSolver
 {
 public:
-  /// Create Krylov solver for a particular method and named
-  /// preconditioner
+  /// @brief Create a Krylov solver.
+  /// @param[in] comm MPI communicator.
   explicit KrylovSolver(MPI_Comm comm);
 
-  /// Create solver wrapper of a PETSc KSP object
-  /// @param[in] ksp The PETSc KSP object. It should already have been created
-  /// @param[in] inc_ref_count Increment the reference count on `ksp` if true
+  /// @brief Create solver wrapper of a PETSc KSP object.
+  /// @param[in] ksp PETSc KSP object, which must already have been
+  /// created. The reference count of `ksp` is always decreased when this
+  /// KrylovSolver is destroyed.
+  /// @param[in] inc_ref_count True if the reference count of `ksp`
+  /// should be incremented.
   KrylovSolver(KSP ksp, bool inc_ref_count);
 
   // Copy constructor (deleted)
@@ -498,7 +509,7 @@ public:
   /// = b if transpose is true). Non-convergence is not treated as an
   /// error by this function (a warning is logged); use ksp() and
   /// KSPGetConvergedReason to check the outcome if required.
-  int solve(Vec x, const Vec b, bool transpose = false) const;
+  PetscInt solve(Vec x, const Vec b, bool transpose = false) const;
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
