@@ -105,7 +105,8 @@ void assemble_cells(
     std::ranges::fill(be, 0);
     kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs_b.data(),
            nullptr, nullptr, nullptr);
-    P0(be, cell_info0, c0, 1);
+    if (P0)
+      P0(be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = md::submdspan(dmap, c0, md::full_extent);
@@ -200,7 +201,8 @@ void assemble_entities(
     std::ranges::fill(be, 0);
     kernel(be.data(), &coeffs(f, 0), constants.data(), cdofs_b.data(),
            &local_entity, &perm, nullptr);
-    P0(be, cell_info0, cell0, 1);
+    if (P0)
+      P0(be, cell_info0, cell0, 1);
 
     // Add to global vector
     auto dofs = md::submdspan(dmap, cell0, md::full_extent);

@@ -435,13 +435,7 @@ public:
   dof_transformation_fn(doftransform ttype, bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
-    {
-      // If no permutation needed, return function that does nothing
-      return [](std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)
-      {
-        // Do nothing
-      };
-    }
+      return nullptr;
 
     if (!_sub_elements.empty())
     {
@@ -541,13 +535,7 @@ public:
                               bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
-    {
-      // If no permutation needed, return function that does nothing
-      return [](std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)
-      {
-        // Do nothing
-      };
-    }
+      return nullptr;
     else if (!_sub_elements.empty())
     {
       if (!_reference_value_shape) // Mixed element
