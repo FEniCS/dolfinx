@@ -12,7 +12,6 @@
 #    docker build --target dev-env --file dolfinx/docker/Dockerfile.test-env --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
 
-ARG DOXYGEN_VERSION=1_17_0
 ARG GMSH_VERSION=4_15_2
 ARG KAHIP_VERSION=3.25
 ARG OCCT_VERSION=7_9_3
@@ -23,7 +22,6 @@ ARG OCCT_VERSION=7_9_3
 ARG NUMPY_VERSION=2.4.6
 ARG PETSC_VERSION=3.25.4
 ARG SLEPC_VERSION=3.25.1
-ARG SPDLOG_VERSION=1.17.0
 
 ########################################
 
@@ -31,13 +29,11 @@ FROM ubuntu:26.04 AS dev-env
 LABEL maintainer="FEniCS Steering Council <fenics-steering-council@googlegroups.com>"
 LABEL description="FEniCS testing and development environment with PETSc real and complex, 32-bit modes"
 
-ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
 ARG KAHIP_VERSION
 ARG OCCT_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
-ARG SPDLOG_VERSION
 ARG NUMPY_VERSION
 
 # The following ARGS are used in the dev-env layer.
@@ -71,6 +67,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install --no-install-recommends \
     cmake \
+    doxygen \
     g++ \
     gfortran \
     libadios2-mpi-c++-dev \
@@ -79,6 +76,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     liblapack-dev \
     libopenblas-dev \
     libpugixml-dev \
+    libspdlog-dev \
     make \
     mpi-default-dev \
     ninja-build \
@@ -95,29 +93,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Install spdlog from source - Ubuntu version is incompatible with CUDA 12.
-RUN wget -nc --quiet https://github.com/gabime/spdlog/archive/refs/tags/v${SPDLOG_VERSION}.tar.gz && \
-    tar xfz v${SPDLOG_VERSION}.tar.gz && \
-    cd spdlog-${SPDLOG_VERSION} && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_BUILD_SHARED=ON -DSPDLOG_BUILD_PIC=ON -B build-dir . && \
-    cmake --build build-dir && \
-    cmake --install build-dir && \
-    rm -rf /tmp/*
-
-# Install Doxygen
-RUN apt-get -qq update && \
-    apt-get -y install bison flex && \
-    wget -nc --quiet https://github.com/doxygen/doxygen/archive/refs/tags/Release_${DOXYGEN_VERSION}.tar.gz && \
-    tar xfz Release_${DOXYGEN_VERSION}.tar.gz && \
-    cd doxygen-Release_${DOXYGEN_VERSION} && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir . && \
-    cmake --build build-dir && \
-    cmake --install build-dir && \
-    apt-get -y purge bison flex && \
-    apt-get -y autoremove && \
-    apt-get clean && \
-    rm -rf /tmp/*
 
 ENV VIRTUAL_ENV=/dolfinx-env
 ENV PATH=/dolfinx-env/bin:$PATH
