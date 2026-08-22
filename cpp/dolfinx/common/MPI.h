@@ -285,7 +285,9 @@ struct dependent_false : std::false_type
 template <typename T>
 MPI_Datatype mpi_datatype()
 {
-  if constexpr (std::same_as<T, float>)
+  if constexpr (std::same_as<T, bool>)
+    return MPI_C_BOOL;
+  else if constexpr (std::same_as<T, float>)
     return MPI_FLOAT;
   else if constexpr (std::same_as<T, double>)
     return MPI_DOUBLE;
