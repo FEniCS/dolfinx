@@ -149,9 +149,12 @@ WORKDIR /root
 
 RUN pip install --no-cache-dir jupyter jupyterlab
 
-# pyvista dependencies from apt
+# pyvista dependencies from apt. libgl1 alone is only the GL loader,
+# with no rendering backend behind it: there is no X server/EGL in
+# this container, so VTK's off-screen render window needs
+# libosmesa6 (Mesa's software-only OSMesa backend) or it segfaults.
 RUN apt-get -qq update && \
-    apt-get -y install --no-install-recommends libgl1 && \
+    apt-get -y install --no-install-recommends libgl1 libosmesa6 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

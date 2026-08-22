@@ -29,7 +29,7 @@ ARG SPDLOG_VERSION=1.17.0
 
 FROM ubuntu:26.04 AS dev-env
 LABEL maintainer="FEniCS Steering Council <fenics-steering-council@googlegroups.com>"
-LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
+LABEL description="FEniCS testing and development environment with PETSc real and complex, 32-bit modes"
 
 ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
@@ -51,7 +51,7 @@ ARG BUILD_NP=4
 
 # PETSc/SLEPc configurations to build, as PETSC_ARCH names understood by
 # petsc4py/slepc4py's colon-separated PETSC_ARCH install syntax.
-ARG PETSC_ARCHS="linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64"
+ARG PETSC_ARCHS="linux-gnu-real64-32:linux-gnu-complex128-32"
 
 WORKDIR /tmp
 
@@ -82,6 +82,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     liblapack-dev \
     libopenblas-dev \
     libpugixml-dev \
+    make \
     mpi-default-dev \
     ninja-build \
     pkg-config \
@@ -93,9 +94,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     catch2 \
     git \
     graphviz \
-    libeigen3-dev \
     libx11-dev \
-    valgrind \
     wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -129,7 +128,10 @@ RUN python3 -m venv ${VIRTUAL_ENV}
 
 # Install Python packages (via pip)
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir cython numpy==${NUMPY_VERSION} && \
+    # Cython 3.3 tightened pointer-indexing type checks in a way that
+    # breaks petsc4py 3.25.4's generated Cython source (PC.pyx); pin
+    # below that until petsc4py catches up.
+    pip install --no-cache-dir "cython<3.3" numpy==${NUMPY_VERSION} && \
     pip install --no-cache-dir mpi4py
 
 # Install KaHIP
@@ -238,26 +240,6 @@ RUN apt-get -qq update && \
     --with-scalar-type=complex \
     --with-precision=double && \
     make PETSC_ARCH=linux-gnu-complex128-32 -j${BUILD_NP} all && \
-    # Real64, 64-bit int
-    ./configure \
-    PETSC_ARCH=linux-gnu-real64-64 \
-    --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
-    --with-64-bit-indices=yes \
-    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
-    --with-fortran-bindings=no \
-    --with-shared-libraries \
-    --download-hypre \
-    --download-mumps-avoid-mpi-in-place \
-    --download-mumps \
-    --download-ptscotch \
-    --download-scalapack \
-    --download-suitesparse \
-    --download-superlu_dist \
-    --with-scalar-type=real \
-    --with-precision=double && \
-    make PETSC_ARCH=linux-gnu-real64-64 -j${BUILD_NP} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
     PETSC_ARCH=${PETSC_ARCHS} pip -v install --no-cache-dir --no-build-isolation . && \
@@ -285,9 +267,6 @@ RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git 
     ./configure && \
     make && \
     export PETSC_ARCH=linux-gnu-complex128-32 && \
-    ./configure && \
-    make && \
-    export PETSC_ARCH=linux-gnu-real64-64 && \
     ./configure && \
     make && \
     # Install slepc4py
