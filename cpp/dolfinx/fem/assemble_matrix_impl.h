@@ -111,7 +111,6 @@ void assemble_cells_matrix(
   const auto [dmap0, bs0, cells0] = dofmap0;
   const auto [dmap1, bs1, cells1] = dofmap1;
 
-  // Iterate over active cells
   std::size_t num_dofs0 = dmap0.extent(1);
   std::size_t num_dofs1 = dmap1.extent(1);
   std::size_t ndim0 = bs0 * num_dofs0;
@@ -120,6 +119,11 @@ void assemble_cells_matrix(
   assert(Ab.size() >= ndim0 * ndim1);
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
   auto Ae = Ab.first(ndim0 * ndim1);
+
+  const U* x_ptr = x.data_handle();
+  const std::int32_t gdim = x.extent(1);
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
+  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
 
   // Iterate over active cells
   assert(cells0.size() == cells.size());
@@ -143,9 +147,15 @@ void assemble_cells_matrix(
     }
 
     // Get cell coordinates/geometry
-    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
+    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+    {
+      std::size_t offset = x_dofmap_ptr[cell * num_x_dofs_cell + i] * gdim;
+      const U* x_ptr_g = x_ptr + offset;
+      for (std::size_t j = 0; j < gdim; ++j)
+      {
+        cdofs_b[3 * i + j] = x_ptr_g[j];
+      }
+    }
 
     // Tabulate tensor
     std::ranges::fill(Ae, 0);
