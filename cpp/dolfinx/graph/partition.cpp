@@ -22,13 +22,19 @@ using namespace dolfinx;
 graph::AdjacencyList<std::int32_t>
 graph::partition_graph(MPI_Comm comm, int nparts,
                        const AdjacencyList<std::int64_t>& local_graph,
+                       std::span<const std::int32_t> node_weights,
+                       std::span<const std::int32_t> edge_weights,
                        bool ghosting)
 {
 #if HAS_PARMETIS
-  return graph::parmetis::partitioner()(comm, nparts, local_graph, ghosting);
+  return graph::parmetis::partitioner()(comm, nparts, local_graph, node_weights,
+                                        edge_weights, ghosting);
 #elif HAS_PTSCOTCH
-  return graph::scotch::partitioner()(comm, nparts, local_graph, ghosting);
+  return graph::scotch::partitioner()(comm, nparts, local_graph, node_weights,
+                                      edge_weights, ghosting);
 #elif HAS_KAHIP
+  if (!node_weights.empty() or !edge_weights.empty())
+    spdlog::warn("KaHIP does not support node or edge weights");
   return graph::kahip::partitioner()(comm, nparts, local_graph, ghosting);
 #else
 // Should never reach this point

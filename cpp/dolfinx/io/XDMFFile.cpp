@@ -194,10 +194,39 @@ XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
   auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);
   auto [x, xshape] = XDMFFile::read_geometry_data(name, xpath);
 
+  std::vector<std::int32_t> cell_weights;
+  if (_h5_id)
+  {
+    std::string cwname = "/Mesh/mesh/cell_weights";
+    if (io::hdf5::has_dataset(_h5_id, cwname))
+    {
+      std::cout << "Has dataset cell_weights\n";
+
+      // Get data shape from HDF5 file
+      const std::vector shape_hdf5
+          = io::hdf5::get_dataset_shape(_h5_id, cwname);
+      auto range
+          = common::local_range(dolfinx::MPI::rank(_comm.comm()), shape_hdf5[0],
+                                dolfinx::MPI::size(_comm.comm()));
+
+      // read_dataset() needs an open *dataset* identifier, not the file
+      // identifier -- open it here and close it once we're done
+      hid_t dset_id = io::hdf5::open_dataset(_h5_id, cwname);
+      cell_weights = io::hdf5::read_dataset<std::int32_t>(dset_id, range, true);
+      H5Dclose(dset_id);
+      std::cout << "Read cell weights (" << cell_weights.size() << ")\n";
+      std::cout << "Cells (" << cells.size() / 4 << ")\n";
+    }
+  }
+
   // Create mesh
   const std::vector<double>& _x = std::get<std::vector<double>>(x);
+  auto part = create_cell_partitioner(mode, dolfinx::graph::partition_graph,
+                                      max_facet_to_cell_links);
   mesh::Mesh<double> mesh = mesh::create_mesh(
-      _comm.comm(), cells, element, _x, xshape, mode, max_facet_to_cell_links);
+      _comm.comm(), _comm.comm(), cells, cell_weights, {element}, _comm.comm(),
+      _x, xshape, part, max_facet_to_cell_links, 1);
+
   mesh.name = name;
   return mesh;
 }

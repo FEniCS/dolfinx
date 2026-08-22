@@ -212,7 +212,9 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// @note Cells can have multiple destination ranks, when ghosted.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
-    const std::vector<std::span<const std::int64_t>>& cells)>;
+    const std::vector<std::span<const std::int64_t>>& cells,
+    std::span<const std::int32_t> cell_weights,
+    std::span<const std::int32_t> edge_weights)>;
 
 /// @brief Function that reorders (locally) cells that
 /// are owned by this process. It takes the local mesh dual graph as an
@@ -1074,6 +1076,7 @@ template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt,
     std::vector<std::span<const std::int64_t>> cells,
+    std::span<const std::int32_t> cell_weights,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
@@ -1118,7 +1121,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         t[i] = extract_topology(celltypes[i], doflayouts[i], cells[i]);
         tspan[i] = std::span(t[i]);
       }
-      dest = partitioner(commt, size, celltypes, tspan);
+      std::vector<std::int32_t> edge_weights;
+      dest = partitioner(commt, size, celltypes, tspan, cell_weights,
+                         edge_weights);
     }
 
     std::int32_t cell_offset = 0;
@@ -1300,6 +1305,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt, std::span<const std::int64_t> cells,
+    std::span<const std::int32_t> cell_weights,
     const fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
@@ -1307,9 +1313,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
     const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
-  return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
-                     commg, x, xshape, partitioner, max_facet_to_cell_links,
-                     num_threads, reorder_fn);
+  return create_mesh(comm, commt, std::vector{cells}, cell_weights,
+                     std::vector{element}, commg, x, xshape, partitioner,
+                     max_facet_to_cell_links, num_threads, reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
