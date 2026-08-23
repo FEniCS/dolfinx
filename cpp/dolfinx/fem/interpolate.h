@@ -22,6 +22,7 @@
 #include <numeric>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <vector>
 
 namespace dolfinx::fem
@@ -418,7 +419,7 @@ void interpolate_same_map(Function<T, U>& u1, mesh::CellRange auto&& cells1,
   // Iterate over mesh and interpolate on each cell
   using X = U; // geometry (real) type, independent of the value scalar T
   if (cells0.size() != cells1.size())
-    throw std::runtime_error("Length of cells0 and cells1 must match.");
+    throw std::invalid_argument("Length of cells0 and cells1 must match.");
   for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
        cell0_it != cells0.end() and cell1_it != cells1.end();
        ++cell0_it, ++cell1_it)
@@ -599,7 +600,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1,
   std::span<const T> array0 = u0.x()->array();
   std::span<T> array1 = u1.x()->array();
   if (cells0.size() != cells1.size())
-    throw std::runtime_error("Length of cells0 and cells1 must match.");
+    throw std::invalid_argument("Length of cells0 and cells1 must match.");
   for (auto cell0_it = cells0.begin(), cell1_it = cells1.begin();
        cell0_it != cells0.end() and cell1_it != cells1.end();
        ++cell0_it, ++cell1_it)
@@ -844,7 +845,8 @@ void identity_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   // e.g. not Piola mapped
 
   if (symmetric)
-    throw std::runtime_error("Interpolation into this element not supported.");
+    throw std::invalid_argument(
+        "Interpolation into this element not supported.");
 
   const int element_bs = element.block_size();
   const int num_scalar_dofs = element.space_dimension() / element_bs;
@@ -927,7 +929,8 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
                              const mesh::Mesh<U>& mesh, std::span<T> coeffs)
 {
   if (symmetric)
-    throw std::runtime_error("Interpolation into this element not supported.");
+    throw std::invalid_argument(
+        "Interpolation into this element not supported.");
 
   const int gdim = mesh.geometry().dim();
   assert(mesh.topology());
@@ -947,12 +950,12 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
   const auto [X, Xshape] = element.interpolation_points();
   if (X.empty())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Interpolation into this space is not yet supported.");
   }
 
   if (_f.extent(1) != cells.size() * Xshape[0])
-    throw std::runtime_error("Interpolation data has the wrong shape.");
+    throw std::invalid_argument("Interpolation data has the wrong shape.");
 
   // Get coordinate map
   const CoordinateElement<U>& cmap = mesh.geometry().cmaps().front();
@@ -1141,8 +1144,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   if (int num_sub = element->num_sub_elements();
       num_sub > 0 and num_sub != element_bs)
   {
-    throw std::runtime_error("Cannot directly interpolate a mixed space. "
-                             "Interpolate into subspaces.");
+    throw std::invalid_argument("Cannot directly interpolate a mixed space. "
+                                "Interpolate into subspaces.");
   }
 
   // Get mesh
@@ -1154,7 +1157,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
           != (std::size_t)u.function_space()->elements(index)->value_size()
       or f.size() != fshape[0] * fshape[1])
   {
-    throw std::runtime_error("Interpolation data has the wrong shape/size.");
+    throw std::invalid_argument("Interpolation data has the wrong shape/size.");
   }
 
   spdlog::debug("Check for dof transformation");
@@ -1228,8 +1231,8 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
     MPI_Comm_compare(comm, mesh0->comm(), &result);
     if (result == MPI_UNEQUAL)
     {
-      throw std::runtime_error("Interpolation on different meshes is only "
-                               "supported on the same communicator.");
+      throw std::invalid_argument("Interpolation on different meshes is only "
+                                  "supported on the same communicator.");
     }
   }
 
@@ -1295,7 +1298,7 @@ void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
                  const Function<T, U>& u0, mesh::CellRange auto&& cells0)
 {
   if (cells0.size() != cells1.size())
-    throw std::runtime_error("Length of cell lists do not match.");
+    throw std::invalid_argument("Length of cell lists do not match.");
 
   auto V1 = u1.function_space();
   assert(V1);
@@ -1309,7 +1312,7 @@ void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
   assert(e1);
   if (!std::ranges::equal(e0->value_shape(), e1->value_shape()))
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Interpolation: elements have different value dimensions");
   }
 
@@ -1317,7 +1320,7 @@ void interpolate(Function<T, U>& u1, mesh::CellRange auto&& cells1,
   {
     // Same element and same mesh
     if (e1->block_size() != e0->block_size())
-      throw std::runtime_error("Mismatch in element block size.");
+      throw std::invalid_argument("Mismatch in element block size.");
 
     // Get dofmaps
     std::shared_ptr<const DofMap> dofmap0 = V0->dofmap();
@@ -1381,7 +1384,7 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
   if (u1.function_space()->mesh() == u0.function_space()->mesh())
     interpolate<T, U>(u1, cells, u0, cells);
   else
-    throw std::runtime_error("Meshes do no match.");
+    throw std::invalid_argument("Meshes do no match.");
 }
 
 /// @brief Interpolate from one finite element Function to another

@@ -18,6 +18,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <span>
+#include <stdexcept>
 #include <vector>
 
 namespace dolfinx::fem
@@ -91,13 +92,13 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   assert(mesh);
   assert(V1.mesh());
   if (mesh != V1.mesh())
-    throw std::runtime_error("Meshes must be the same.");
+    throw std::invalid_argument("Meshes must be the same.");
 
   if (mesh->geometry().dim() != 3)
-    throw std::runtime_error("Geometric must be equal to 3..");
+    throw std::invalid_argument("Geometric must be equal to 3..");
   if (mesh->geometry().dim() != mesh->topology()->dim())
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Geometric and topological dimensions must be equal.");
   }
   constexpr int gdim = 3;
@@ -107,7 +108,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   assert(e0);
   if (e0->map_type() != basix::maps::type::covariantPiola)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Finite element for parent space must be covariant Piola.");
   }
 
@@ -115,7 +116,7 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   assert(e1);
   if (e1->map_type() != basix::maps::type::contravariantPiola)
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Finite element for target space must be contracovariant Piola.");
   }
 
@@ -143,9 +144,9 @@ void discrete_curl(const FunctionSpace<T>& V0, const FunctionSpace<T>& V1,
   const std::size_t space_dim0 = e0->space_dimension();
   const std::size_t space_dim1 = e1->space_dimension();
   if (e0->reference_value_size() != 3)
-    throw std::runtime_error("Value size for parent space should be 3.");
+    throw std::invalid_argument("Value size for parent space should be 3.");
   if (e1->reference_value_size() != 3)
-    throw std::runtime_error("Value size for target space should be 3.");
+    throw std::invalid_argument("Value size for target space should be 3.");
 
   // Get the V1 reference interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
@@ -289,16 +290,16 @@ void discrete_gradient(mesh::Topology& topology,
 
   // Check elements
   if (e0.map_type() != basix::maps::type::identity)
-    throw std::runtime_error("Wrong finite element space for V0.");
+    throw std::invalid_argument("Wrong finite element space for V0.");
   if (e0.block_size() != 1)
-    throw std::runtime_error("Block size is greater than 1 for V0.");
+    throw std::invalid_argument("Block size is greater than 1 for V0.");
   if (e0.reference_value_size() != 1)
-    throw std::runtime_error("Wrong value size for V0.");
+    throw std::invalid_argument("Wrong value size for V0.");
 
   if (e1.map_type() != basix::maps::type::covariantPiola)
-    throw std::runtime_error("Wrong finite element space for V1.");
+    throw std::invalid_argument("Wrong finite element space for V1.");
   if (e1.block_size() != 1)
-    throw std::runtime_error("Block size is greater than 1 for V1.");
+    throw std::invalid_argument("Block size is greater than 1 for V1.");
 
   // Get V1 (H(curl)) space interpolation points
   const auto [X, Xshape] = e1.interpolation_points();

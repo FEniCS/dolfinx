@@ -19,6 +19,7 @@
 #include <functional>
 #include <iterator>
 #include <span>
+#include <stdexcept>
 #include <tuple>
 #include <vector>
 
@@ -807,8 +808,8 @@ void assemble_matrix(
     {
       if (num_cell_types > 1)
       {
-        throw std::runtime_error("Interior facet integrals with mixed "
-                                 "topology aren't supported yet");
+        throw std::invalid_argument("Interior facet integrals with mixed "
+                                    "topology aren't supported yet");
       }
 
       using mdspanx22_t
@@ -854,8 +855,8 @@ void assemble_matrix(
       {
         if (num_cell_types > 1)
         {
-          throw std::runtime_error("Exterior facet integrals with mixed "
-                                   "topology aren't supported yet");
+          throw std::invalid_argument("Exterior facet integrals with mixed "
+                                      "topology aren't supported yet");
         }
 
         using mdspanx2_t

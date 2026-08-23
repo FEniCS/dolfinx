@@ -169,7 +169,7 @@ public:
         _needs_facet_permutations(needs_facet_permutations)
   {
     if (!_mesh)
-      throw std::runtime_error("Form Mesh is null.");
+      throw std::invalid_argument("Form Mesh is null.");
 
     // `_mesh` is fixed for the remainder of construction, so its
     // topology and dimension are fetched once and reused below rather
@@ -193,7 +193,7 @@ public:
 
       if (it == entity_maps.end())
       {
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Incompatible mesh. argument entity_maps must be provided.");
       }
       return *it;
@@ -233,7 +233,7 @@ public:
         }
       }
       else
-        throw std::runtime_error("Codimension > 1 not supported.");
+        throw std::invalid_argument("Codimension > 1 not supported.");
 
       // Map from entity indices in `this->mesh()` to the corresponding
       // cell indices in the argument/coefficient mesh
@@ -292,7 +292,7 @@ public:
                                       inverse);
           }
           else
-            throw std::runtime_error("Integral type not supported.");
+            throw std::invalid_argument("Integral type not supported.");
 
           vdata.insert({key, std::move(e)});
         }
@@ -331,7 +331,7 @@ public:
                                       inverse);
           }
           else
-            throw std::runtime_error("Integral type not supported.");
+            throw std::invalid_argument("Integral type not supported.");
           _cdata.insert({{type, idx, c}, std::move(e)});
         }
       }
@@ -391,7 +391,7 @@ public:
   {
     auto it = _integrals.find({type, idx, kernel_idx});
     if (it == _integrals.end())
-      throw std::runtime_error("Requested integral kernel not found.");
+      throw std::out_of_range("Requested integral kernel not found.");
     return it->second.kernel;
   }
 
@@ -427,7 +427,7 @@ public:
                                      return t == type and idx_ == idx;
                                    });
     if (it == _integrals.end())
-      throw std::runtime_error("Could not find active coefficient list.");
+      throw std::out_of_range("Could not find active coefficient list.");
     return it->second.coeffs;
   }
 
@@ -496,7 +496,7 @@ public:
   {
     auto it = _integrals.find({type, idx, kernel_idx});
     if (it == _integrals.end())
-      throw std::runtime_error("Requested domain not found.");
+      throw std::out_of_range("Requested domain not found.");
     return it->second.entities;
   }
 
@@ -540,7 +540,7 @@ public:
   {
     auto it = _edata.at(rank).find({type, idx, kernel_idx});
     if (it == _edata.at(rank).end())
-      throw std::runtime_error("Requested domain for argument not found.");
+      throw std::out_of_range("Requested domain for argument not found.");
 
     return std::visit([](const auto& v) -> std::span<const std::int32_t>
                       { return v; }, it->second);
@@ -565,7 +565,7 @@ public:
   {
     auto it = _cdata.find({type, idx, c});
     if (it == _cdata.end())
-      throw std::runtime_error("No domain for requested integral.");
+      throw std::out_of_range("No domain for requested integral.");
     return std::visit([](const auto& v) -> std::span<const std::int32_t>
                       { return v; }, it->second);
   }

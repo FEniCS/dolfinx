@@ -14,6 +14,7 @@
 #include <format>
 #include <functional>
 #include <numeric>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -51,22 +52,23 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
   // Check that a sub system has been specified
   if (component.empty())
   {
-    throw std::runtime_error("Cannot extract subsystem of finite element. No "
-                             "system was specified");
+    throw std::invalid_argument(
+        "Cannot extract subsystem of finite element. No "
+        "system was specified");
   }
 
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
   {
-    throw std::runtime_error("Cannot extract subsystem of finite element. "
-                             "There are no subsystems.");
+    throw std::invalid_argument("Cannot extract subsystem of finite element. "
+                                "There are no subsystems.");
   }
 
   // Check the number of available sub systems
   if (component[0] >= finite_element.num_sub_elements())
   {
-    throw std::runtime_error("Cannot extract subsystem of finite element. "
-                             "Requested subsystem out of range.");
+    throw std::invalid_argument("Cannot extract subsystem of finite element. "
+                                "Requested subsystem out of range.");
   }
 
   // Get sub system
@@ -91,7 +93,7 @@ int _compute_block_size(std::optional<std::vector<std::size_t>> value_shape,
     if (value_shape->size() != 2
         or (value_shape->front() != value_shape->back()))
     {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Symmetric elements require square rank-2 value shape.");
     }
 
@@ -130,8 +132,9 @@ FiniteElement<T>::FiniteElement(
 {
   if (value_shape and !element.value_shape().empty())
   {
-    throw std::runtime_error("Blocked finite elements can be constructed only "
-                             "from scalar base elements.");
+    throw std::invalid_argument(
+        "Blocked finite elements can be constructed only "
+        "from scalar base elements.");
   }
 
   if (value_shape)
@@ -416,8 +419,8 @@ const basix::FiniteElement<T>& FiniteElement<T>::basix_element() const
     return *_element;
   else
   {
-    throw std::runtime_error("No Basix element available. "
-                             "Maybe this is a mixed element?");
+    throw std::invalid_argument("No Basix element available. "
+                                "Maybe this is a mixed element?");
   }
 }
 //-----------------------------------------------------------------------------
@@ -428,8 +431,8 @@ basix::maps::type FiniteElement<T>::map_type() const
     return _element->map_type();
   else
   {
-    throw std::runtime_error("Cannot element map type - no Basix element "
-                             "available. Maybe this is a mixed element?");
+    throw std::invalid_argument("Cannot element map type - no Basix element "
+                                "available. Maybe this is a mixed element?");
   }
 }
 //-----------------------------------------------------------------------------
@@ -469,9 +472,9 @@ FiniteElement<T>::interpolation_points() const
   {
     if (!_element)
     {
-      throw std::runtime_error(
-          "Cannot get interpolation points - no Basix element available. Maybe "
-          "this is a mixed element?");
+      throw std::invalid_argument(
+          "Cannot get interpolation points - no Basix element available. "
+          "Maybe this is a mixed element?");
     }
 
     return _element->points();
@@ -499,8 +502,8 @@ FiniteElement<T>::create_interpolation_operator(const FiniteElement& from) const
   assert(from._element);
   if (_element->map_type() != from._element->map_type())
   {
-    throw std::runtime_error("Interpolation between elements with different "
-                             "maps is not supported.");
+    throw std::invalid_argument("Interpolation between elements with different "
+                                "maps is not supported.");
   }
 
   if (_bs == 1 or from._bs == 1)
@@ -530,7 +533,7 @@ FiniteElement<T>::create_interpolation_operator(const FiniteElement& from) const
   }
   else
   {
-    throw std::runtime_error(
+    throw std::invalid_argument(
         "Interpolation for element combination is not supported.");
   }
 }
