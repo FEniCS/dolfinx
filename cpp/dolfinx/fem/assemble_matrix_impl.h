@@ -148,7 +148,7 @@ void assemble_cells_matrix(
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
     // Tabulate tensor
-    std::ranges::fill(Ae, 0);
+    std::ranges::fill(Ae, T{0});
     kernel(Ae.data(), &coeffs(c, 0), constants.data(), cdofs_b.data(), nullptr,
            nullptr, nullptr);
 
