@@ -149,11 +149,10 @@ void assemble_cells_matrix(
     // Get cell coordinates/geometry
     for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
     {
-      std::size_t offset_x = 3 * i;
-      std::size_t offset = x_dofmap_ptr[cell * num_x_dofs_cell + i] * gdim;
-      const U* x_ptr_g = x_ptr + offset;
+      const U* _cdofs_b = cdofs_b.data() + 3 * i;
+      const U* _x_ptr = x_ptr + x_dofmap_ptr[cell * num_x_dofs_cell + i] * gdim;
       for (std::size_t j = 0; j < gdim; ++j)
-        cdofs_b[offset_x + j] = x_ptr_g[j];
+        _cdofs_b[j] = _x_ptr[j];
     }
 
     // Tabulate tensor
