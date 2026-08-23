@@ -149,7 +149,7 @@ void assemble_cells_matrix(
     // Get cell coordinates/geometry
     for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
     {
-      const U* _cdofs_b = cdofs_b.data() + 3 * i;
+      U* _cdofs_b = cdofs_b.data() + 3 * i;
       const U* _x_ptr = x_ptr + x_dofmap_ptr[cell * num_x_dofs_cell + i] * gdim;
       for (std::size_t j = 0; j < gdim; ++j)
         _cdofs_b[j] = _x_ptr[j];
