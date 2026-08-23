@@ -550,7 +550,7 @@ void apply_lifting(
 
 // FIXME: Move these function elsewhere?
 
-/// Entries in `b` that are constrained by a Dirichlet boundary
+/// @brief Entries in `b` that are constrained by a Dirichlet boundary
 /// conditions are set to `alpha * (x_bc - x0)`, where `x_bc` is the
 /// (interpolated) boundary condition value.
 ///

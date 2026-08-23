@@ -61,10 +61,10 @@ inline void check(PetscErrorCode ierr, std::string_view petsc_function,
     error(ierr, petsc_function, loc);
 }
 
-/// Create PETSc vectors from the local data. The data is copied into
-/// the PETSc vectors and is not shared. Each vector's global size is
-/// determined by summing the corresponding local size across all
-/// ranks in `comm`.
+/// @brief Create PETSc vectors from the local data. The data is
+/// copied into the PETSc vectors and is not shared. Each vector's
+/// global size is determined by summing the corresponding local size
+/// across all ranks in `comm`.
 /// @note Caller is responsible for destroying the returned object
 /// @param[in] comm The MPI communicator
 /// @param[in] x The vector data owned by the calling rank
@@ -73,14 +73,15 @@ std::vector<Vec>
 create_vectors(MPI_Comm comm,
                const std::vector<std::span<const PetscScalar>>& x);
 
-/// Create a ghosted PETSc Vec
+/// @brief Create a ghosted PETSc Vec.
 /// @note Caller is responsible for destroying the returned object
 /// @param[in] map The index map describing the parallel layout (by block)
 /// @param[in] bs The block size
 /// @returns A PETSc Vec
 Vec create_vector(const common::IndexMap& map, int bs);
 
-/// Create a ghosted PETSc Vec from a local range and ghost indices
+/// @brief Create a ghosted PETSc Vec from a local range and ghost
+/// indices.
 /// @note Caller is responsible for freeing the returned object
 /// @param[in] comm The MPI communicator
 /// @param[in] range The local ownership range (by blocks)
@@ -91,7 +92,7 @@ Vec create_vector(const common::IndexMap& map, int bs);
 Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
                   std::span<const std::int64_t> ghosts, int bs);
 
-/// Create a PETSc Vec that wraps the data in an array
+/// @brief Create a PETSc Vec that wraps the data in an array.
 /// @param[in] map The index map that describes the parallel layout of
 /// the distributed vector (by block)
 /// @param[in] bs Block size
@@ -104,7 +105,7 @@ Vec create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 Vec create_vector_wrap(const common::IndexMap& map, int bs,
                        std::span<const PetscScalar> x);
 
-/// Create a PETSc Vec that wraps the data in an array
+/// @brief Create a PETSc Vec that wraps the data in an array.
 /// @param[in] x The vector to be wrapped
 /// @return A PETSc Vec object that shares the data in @p x
 template <class V>
@@ -142,7 +143,7 @@ void scatter_local_vectors(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
-/// Create a PETSc Mat. Caller is responsible for destroying the
+/// @brief Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
 /// @param[in] comm The MPI communicator
 /// @param[in] sp The sparsity pattern that determines the layout and
@@ -152,9 +153,9 @@ void scatter_local_vectors(
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
                   std::optional<std::string_view> type = std::nullopt);
 
-/// Create PETSc MatNullSpace. Caller is responsible for destruction
-/// returned object.
-/// @param [in] comm The MPI communicator
+/// @brief Create PETSc MatNullSpace. Caller is responsible for
+/// destruction returned object.
+/// @param[in] comm The MPI communicator
 /// @param[in] basis The nullspace basis vectors
 /// @return A PETSc nullspace object
 MatNullSpace create_nullspace(MPI_Comm comm, std::span<const Vec> basis);
@@ -198,7 +199,7 @@ void clear();
 class Vector
 {
 public:
-  /// Create a vector
+  /// @brief Create a vector.
   /// @note Collective
   /// @param[in] map Index map describing the parallel layout
   /// @param[in] bs the block size
@@ -210,10 +211,10 @@ public:
   /// Move constructor
   Vector(Vector&& x) noexcept;
 
-  /// Create holder of a PETSc Vec object/pointer. The Vec x object
-  /// should already be created. If inc_ref_count is true, the reference
-  /// counter of the Vec object will be increased. The Vec reference
-  /// count will always be decreased upon destruction of the
+  /// @brief Create holder of a PETSc Vec object/pointer. The Vec x
+  /// object should already be created. If inc_ref_count is true, the
+  /// reference counter of the Vec object will be increased. The Vec
+  /// reference count will always be decreased upon destruction of the
   /// PETScVector.
   ///
   /// @note Collective
@@ -232,7 +233,7 @@ public:
   /// Move Assignment operator
   Vector& operator=(Vector&& x) noexcept;
 
-  /// Create a copy of the vector
+  /// @brief Create a copy of the vector.
   /// @note Collective
   Vector copy() const;
 
@@ -307,9 +308,9 @@ public:
     };
   }
 
-  /// Return a function with an interface for adding or inserting values
-  /// into the matrix A using blocked indices
-  /// (calls MatSetValuesBlockedLocal)
+  /// @brief Return a function with an interface for adding or
+  /// inserting values into the matrix A using blocked indices (calls
+  /// MatSetValuesBlockedLocal).
   /// @param[in] A The matrix to set values in
   /// @param[in] mode The PETSc insert mode (ADD_VALUES, INSERT_VALUES, ...)
   static auto set_block_fn(Mat A, InsertMode mode)
@@ -400,7 +401,7 @@ public:
   /// Destructor
   ~Matrix();
 
-  /// Assignment operator (deleted)
+  // Assignment operator (deleted)
   Matrix& operator=(const Matrix& A) = delete;
 
   /// Move assignment operator
@@ -410,8 +411,9 @@ public:
   /// returns -1 if size has not been set.
   std::array<std::int64_t, 2> size() const;
 
-  /// Initialize vector to be compatible with the matrix-vector product
-  /// y = Ax. In the parallel case, size and layout are both important.
+  /// @brief Initialize vector to be compatible with the matrix-vector
+  /// product y = Ax. In the parallel case, size and layout are both
+  /// important.
   ///
   /// @param[in] dim The dimension (axis): dim = 0 --> z = y, dim = 1
   /// --> z = x
