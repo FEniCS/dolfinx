@@ -93,10 +93,9 @@ template <bool LiftingMode, dolfinx::scalar T, std::floating_point U>
 void assemble_cells_matrix(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     md::mdspan<const U, md::extents<std::size_t, md::dynamic_extent, 3>> x,
-    std::span<const std::int32_t> cells,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    std::span<const std::int32_t> cells, const DofMapPackCells auto& dofmap0,
     const fem::DofTransformKernel<T> auto& P0,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    const DofMapPackCells auto& dofmap1,
     const fem::DofTransformKernel<T> auto& P1T,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
     const FEkernel<T, U> auto& kernel,
@@ -115,6 +114,7 @@ void assemble_cells_matrix(
   std::size_t num_dofs1 = dmap1.extent(1);
   std::size_t ndim0 = bs0 * num_dofs0;
   std::size_t ndim1 = bs1 * num_dofs1;
+  std::size_t ncoeffs = coeffs.extent(1);
 
   assert(Ab.size() >= ndim0 * ndim1);
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
@@ -149,18 +149,17 @@ void assemble_cells_matrix(
     // Get cell coordinates/geometry
     for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
     {
+      std::size_t offset_x = 3 * i;
       std::size_t offset = x_dofmap_ptr[cell * num_x_dofs_cell + i] * gdim;
       const U* x_ptr_g = x_ptr + offset;
       for (std::size_t j = 0; j < gdim; ++j)
-      {
-        cdofs_b[3 * i + j] = x_ptr_g[j];
-      }
+        cdofs_b[offset_x + j] = x_ptr_g[j];
     }
 
     // Tabulate tensor
-    std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), &coeffs(c, 0), constants.data(), cdofs_b.data(), nullptr,
-           nullptr, nullptr);
+    std::ranges::fill(Ae, T{0});
+    kernel(Ae.data(), coeffs.data_handle() + c * ncoeffs, constants.data(),
+           cdofs_b.data(), nullptr, nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
     P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
@@ -792,11 +791,42 @@ void assemble_matrix(
       std::span cells1 = a.domain_arg(IntegralType::cell, 1, i, cell_type_idx);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
       assert(cells.size() * cstride == coeffs.size());
-      impl::assemble_cells_matrix<LiftingMode>(
-          mat_set, x_dofmap, x, cells, {dofs0, bs0, cells0}, P0,
-          {dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
-          md::mdspan(coeffs.data(), cells.size(), cstride), constants,
-          cell_info0, cell_info1, std::span(Ab), std::span(cdofs_b));
+      if (bs0 == 1 and bs1 == 1)
+      {
+        impl::assemble_cells_matrix<LiftingMode>(
+            mat_set, x_dofmap, x, cells, std::tuple{dofs0, bs0, cells0}, P0,
+            std::tuple{dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
+            md::mdspan(coeffs.data(), cells.size(), cstride), constants,
+            cell_info0, cell_info1, std::span(Ab), std::span(cdofs_b));
+      }
+      else if (bs0 == 1 and bs1 == 1)
+      {
+        impl::assemble_cells_matrix<LiftingMode>(
+            mat_set, x_dofmap, x, cells,
+            std::tuple{dofs0, std::integral_constant<int, 1>(), cells0}, P0,
+            std::tuple{dofs1, std::integral_constant<int, 1>(), cells1}, P1T,
+            bc0, bc1, fn, md::mdspan(coeffs.data(), cells.size(), cstride),
+            constants, cell_info0, cell_info1, std::span(Ab),
+            std::span(cdofs_b));
+      }
+      else if (bs0 == 3 and bs1 == 3)
+      {
+        impl::assemble_cells_matrix<LiftingMode>(
+            mat_set, x_dofmap, x, cells,
+            std::tuple{dofs0, std::integral_constant<int, 3>(), cells0}, P0,
+            std::tuple{dofs1, std::integral_constant<int, 3>(), cells1}, P1T,
+            bc0, bc1, fn, md::mdspan(coeffs.data(), cells.size(), cstride),
+            constants, cell_info0, cell_info1, std::span(Ab),
+            std::span(cdofs_b));
+      }
+      else
+      {
+        impl::assemble_cells_matrix<LiftingMode>(
+            mat_set, x_dofmap, x, cells, std::tuple{dofs0, bs0, cells0}, P0,
+            std::tuple{dofs1, bs1, cells1}, P1T, bc0, bc1, fn,
+            md::mdspan(coeffs.data(), cells.size(), cstride), constants,
+            cell_info0, cell_info1, std::span(Ab), std::span(cdofs_b));
+      }
     }
 
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
