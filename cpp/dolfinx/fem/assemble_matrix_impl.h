@@ -800,27 +800,21 @@ void assemble_matrix(
         {
           impl::assemble_cells_matrix<LiftingMode>(
               mat_set, x_dofmap, x, cells,
-              std::tuple{dofs0, std::integral_constant<std::size_t, 1>{},
-                         cells0},
-              P0,
-              std::tuple{dofs1, std::integral_constant<std::size_t, 1>{},
-                         cells1},
-              P1T, bc0, bc1, fn,
-              md::mdspan(coeffs.data(), cells.size(), cstride), constants,
-              cell_info0, cell_info1, std::span(Ab), std::span(cdofs_b));
+              std::tuple{dofs0, std::integral_constant<int, 1>{}, cells0}, P0,
+              std::tuple{dofs1, std::integral_constant<int, 1>{}, cells1}, P1T,
+              bc0, bc1, fn, md::mdspan(coeffs.data(), cells.size(), cstride),
+              constants, cell_info0, cell_info1, std::span(Ab),
+              std::span(cdofs_b));
         }
         else if (bs0 == 3 and bs1 == 3)
         {
           impl::assemble_cells_matrix<LiftingMode>(
               mat_set, x_dofmap, x, cells,
-              std::tuple{dofs0, std::integral_constant<std::size_t, 3>{},
-                         cells0},
-              P0,
-              std::tuple{dofs1, std::integral_constant<std::size_t, 3>{},
-                         cells1},
-              P1T, bc0, bc1, fn,
-              md::mdspan(coeffs.data(), cells.size(), cstride), constants,
-              cell_info0, cell_info1, std::span(Ab), std::span(cdofs_b));
+              std::tuple{dofs0, std::integral_constant<int, 3>{}, cells0}, P0,
+              std::tuple{dofs1, std::integral_constant<int, 3>{}, cells1}, P1T,
+              bc0, bc1, fn, md::mdspan(coeffs.data(), cells.size(), cstride),
+              constants, cell_info0, cell_info1, std::span(Ab),
+              std::span(cdofs_b));
         }
         else
         {
