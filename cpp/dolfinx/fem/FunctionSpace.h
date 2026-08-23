@@ -317,50 +317,52 @@ public:
           = md::submdspan(phi_full, 0, md::full_extent, md::full_extent, 0);
 
       // TODO: Check transform
+      //
       // Basis function reference-to-conforming transformation function.
-      // Use whichever of DirectDofTransform or the generic
-      // std::function-based closure applies -- see
-      // FiniteElement::with_dof_transformation_fn for the rationale.
-      _elements[i]
-          ->template with_dof_transformation_fn<geometry_type,
-                                                doftransform::standard>(
-              [&](const auto& apply_dof_transformation)
-              {
-                for (int c = 0; c < num_cells; ++c)
-                {
-                  // Extract cell geometry 'dofs'
-                  auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
-                  for (std::size_t j = 0; j < x_dofs.size(); ++j)
-                    for (std::size_t k = 0; k < gdim; ++k)
-                      coordinate_dofs(j, k) = x_g[3 * x_dofs[j] + k];
+      // Unlike the assembly/interpolation loops in fem/*.h,
+      // with_dof_transformation_fn is not used here: this function is
+      // only reachable for elements with interpolation_ident() (point
+      // evaluation, e.g. Lagrange), which never need a DOF
+      // transformation, so the DirectDofTransform branch would be dead
+      // code and its wrapping only adds overhead to this loop.
+      auto apply_dof_transformation
+          = _elements[i]->template dof_transformation_fn<geometry_type>(
+              doftransform::standard);
 
-                  // Tabulate dof coordinates on cell
-                  cmap.push_forward(x, coordinate_dofs, phi);
-                  if (apply_dof_transformation)
-                  {
-                    apply_dof_transformation(
-                        x_b, std::span(cell_info.data(), cell_info.size()), c,
-                        x.extent(1));
-                  }
+      for (int c = 0; c < num_cells; ++c)
+      {
+        // Extract cell geometry 'dofs'
+        auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
+        for (std::size_t j = 0; j < x_dofs.size(); ++j)
+          for (std::size_t k = 0; k < gdim; ++k)
+            coordinate_dofs(j, k) = x_g[3 * x_dofs[j] + k];
 
-                  // Get cell dofmap
-                  auto dofs = _dofmaps[i]->cell_dofs(c);
+        // Tabulate dof coordinates on cell
+        cmap.push_forward(x, coordinate_dofs, phi);
+        if (apply_dof_transformation)
+        {
+          apply_dof_transformation(
+              x_b, std::span(cell_info.data(), cell_info.size()), c,
+              x.extent(1));
+        }
 
-                  // Copy dof coordinates into vector
-                  if (!transpose)
-                  {
-                    for (std::size_t j = 0; j < dofs.size(); ++j)
-                      for (std::size_t k = 0; k < gdim; ++k)
-                        coords[dofs[j] * 3 + k] = x(j, k);
-                  }
-                  else
-                  {
-                    for (std::size_t j = 0; j < dofs.size(); ++j)
-                      for (std::size_t k = 0; k < gdim; ++k)
-                        coords[k * num_dofs + dofs[j]] = x(j, k);
-                  }
-                }
-              });
+        // Get cell dofmap
+        auto dofs = _dofmaps[i]->cell_dofs(c);
+
+        // Copy dof coordinates into vector
+        if (!transpose)
+        {
+          for (std::size_t j = 0; j < dofs.size(); ++j)
+            for (std::size_t k = 0; k < gdim; ++k)
+              coords[dofs[j] * 3 + k] = x(j, k);
+        }
+        else
+        {
+          for (std::size_t j = 0; j < dofs.size(); ++j)
+            for (std::size_t k = 0; k < gdim; ++k)
+              coords[k * num_dofs + dofs[j]] = x(j, k);
+        }
+      }
     }
 
     return coords;
