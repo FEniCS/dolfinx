@@ -96,9 +96,13 @@ disclosure process.
   the first comment draft, compress comments to their essence using
   concise technical language.
 - **Errors and invariants**: For user-facing/API-boundary errors, throw
-  `std::runtime_error` with a descriptive message — unconditionally when
-  the check is O(1), or guarded behind `#ifndef NDEBUG` when the check is
-  more expensive, so it's skipped in release builds. For internal
+  `std::invalid_argument` for a bad argument or violated parameter
+  precondition, `std::out_of_range` for an index/lookup-key failure, and
+  `std::runtime_error` for other runtime/state/IO/MPI failures. Do not
+  introduce a custom exception hierarchy. Use a descriptive message —
+  unconditionally when the check is O(1), or guarded behind
+  `#ifndef NDEBUG` when the check is more expensive, so it's skipped in
+  release builds. For internal
   invariants that indicate a library bug rather than bad user input, use
   `assert` when the check fits in a single expression, or a
   `#ifndef NDEBUG`-guarded block with an explicit throw/abort when it
