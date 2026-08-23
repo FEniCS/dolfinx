@@ -89,6 +89,11 @@ void assemble_cells(
   assert(be_b.size() >= bs * dmap.extent(1));
   auto be = be_b.first(bs * dmap.extent(1));
 
+  const U* x_ptr = x.data_handle();
+  const std::int32_t gdim = x.extent(1);
+  const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
+  const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
@@ -97,9 +102,13 @@ void assemble_cells(
     std::int32_t c0 = cells0[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
-    for (std::size_t i = 0; i < x_dofs.size(); ++i)
-      std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
+    for (std::int32_t i = 0; i < num_x_dofs_cell; ++i)
+    {
+      U* _cdofs_b = cdofs_b.data() + 3 * i;
+      const U* _x_ptr = x_ptr + x_dofmap_ptr[c * num_x_dofs_cell + i] * gdim;
+      for (std::size_t j = 0; j < gdim; ++j)
+        _cdofs_b[j] = _x_ptr[j];
+    }
 
     // Tabulate vector for cell
     std::ranges::fill(be, 0);
