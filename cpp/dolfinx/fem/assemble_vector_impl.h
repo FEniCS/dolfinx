@@ -105,7 +105,7 @@ void assemble_cells(
     std::ranges::fill(be, 0);
     kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs_b.data(),
            nullptr, nullptr, nullptr);
-    if (P0)
+    if (is_transform_set(P0))
       P0(be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
@@ -201,7 +201,7 @@ void assemble_entities(
     std::ranges::fill(be, 0);
     kernel(be.data(), &coeffs(f, 0), constants.data(), cdofs_b.data(),
            &local_entity, &perm, nullptr);
-    if (P0)
+    if (is_transform_set(P0))
       P0(be, cell_info0, cell0, 1);
 
     // Add to global vector

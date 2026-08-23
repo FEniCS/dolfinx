@@ -17,6 +17,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -187,7 +188,7 @@ void tabulate_expression(
   {
     // An expression has no notion of requiring a facet permutation.
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
-    if constexpr (entities.rank() == 2)
+    if constexpr (std::remove_cvref_t<decltype(entities)>::rank() == 2)
     {
       mesh::CellType cell_type = mesh.topology()->cell_types()[0];
       int num_facets_per_cell

@@ -153,9 +153,9 @@ void assemble_cells_matrix(
            nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
-    if (P0)
+    if (is_transform_set(P0))
       P0(Ae, cell_info0, cell0, ndim1); // B = P0 \tilde{A}
-    if (P1T)
+    if (is_transform_set(P1T))
       P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
     // In lifting mode only BC dofs are assembled, while in standard mode these
@@ -335,9 +335,9 @@ void assemble_entities(
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), &coeffs(f, 0), constants.data(), cdofs_b.data(),
            &local_entity, &perm, nullptr);
-    if (P0)
+    if (is_transform_set(P0))
       P0(Ae, cell_info0, cell0, ndim1);
-    if (P1T)
+    if (is_transform_set(P1T))
       P1T(Ae, cell_info1, cell1, ndim0);
 
     // Don't clear rows/cols in LiftingMode
