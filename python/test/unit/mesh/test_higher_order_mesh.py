@@ -440,8 +440,6 @@ def test_triangle_mesh_vtk(order, dtype):
 @pytest.mark.parametrize("order", range(1, 5))
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tetrahedron_mesh_vtk(order, dtype):
-    if order > 3:
-        pytest.xfail("VTK permutation for order > 3 tetrahedra not implemented in DOLFINx.")
     points = []
     points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
     for k in range(1, order):
@@ -594,8 +592,6 @@ def test_quadrilateral_mesh_vtk(order, dtype):
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_hexahedron_mesh_vtk(order, dtype):
-    if order > 2:
-        pytest.xfail("VTK permutation for order > 2 hexahedra not implemented in DOLFINx.")
     random.seed(13)
 
     points = []

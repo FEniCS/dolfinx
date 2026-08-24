@@ -12,12 +12,19 @@ on:
   workflow_dispatch:
 
 
+# Cancel superseded runs: a new commit on a pull request makes the
+# previous run's result irrelevant. Pushes to 'main' and 'release' are
+# left to finish, since they populate caches and publish artefacts.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   sonarcloud-build:
     name: Build
     runs-on: ubuntu-26.04
     if: (github.event.pull_request.head.repo.full_name == github.repository) || github.ref_name == 'main'
-    container: fenicsproject/test-env:current-mpich
+    container: fenicsproject/test-env:current
     env:
       SONAR_SCANNER_VERSION:
         7.2.0.5079 # Find the latest version at:

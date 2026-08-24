@@ -13,6 +13,16 @@ spack:
     all:
       require:
       - target=x86_64_v3
+    # OpenBLAS 0.3.34 built by gcc 15.2 faults in its Zen kernels: on an
+    # AMD EPYC runner, high-degree hexahedral H(curl) element creation
+    # jumps to address zero. Revisit when OpenBLAS is fixed for gcc 15;
+    # PR #4414 records the alternatives that do not build here.
+    blas:
+      require:
+      - netlib-lapack
+    lapack:
+      require:
+      - netlib-lapack
     # Use the container's mesa instead of building one. mesa@25.0.5 (the
     # newest version the pinned packages_ref knows) does not compile
     # against Ubuntu 26.04's glibc -- its bundled C11 threads polyfill
@@ -28,7 +38,7 @@ spack:
 
   mirrors:
     local-buildcache:
-      url: oci://ghcr.io/fenics/dolfinx-spack-buildcache
+      url: oci://ghcr.io/fenics/spack-buildcache
       binary: true
       signed: false
       access_pair:
