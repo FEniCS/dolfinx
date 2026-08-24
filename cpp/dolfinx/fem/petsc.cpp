@@ -54,10 +54,10 @@ Vec fem::petsc::create_vector_block(
   std::int32_t local_size = range[1] - range[0];
   std::vector<PetscInt> _ghosts(ghosts.begin(), ghosts.end());
   Vec x = nullptr;
-  PetscErrorCode ierr
-      = VecCreateGhost(maps[0].first.get().comm(), local_size, PETSC_DETERMINE,
-                       _ghosts.size(), _ghosts.data(), &x);
-  common::petsc::check(ierr, "VecCreateGhost");
+  common::petsc::check(VecCreateGhost(maps[0].first.get().comm(), local_size,
+                                      PETSC_DETERMINE, _ghosts.size(),
+                                      _ghosts.data(), &x),
+                       "VecCreateGhost");
 
   return x;
 }
@@ -82,9 +82,9 @@ Vec fem::petsc::create_vector_nest(
   // vecs (and the Vec objects they own) can be safely destroyed once
   // this function returns.
   Vec y;
-  PetscErrorCode ierr = VecCreateNest(vecs.front()->comm(), petsc_vecs.size(),
-                                      nullptr, petsc_vecs.data(), &y);
-  common::petsc::check(ierr, "VecCreateNest");
+  common::petsc::check(VecCreateNest(vecs.front()->comm(), petsc_vecs.size(),
+                                     nullptr, petsc_vecs.data(), &y),
+                       "VecCreateNest");
 
   return y;
 }

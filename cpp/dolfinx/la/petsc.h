@@ -154,10 +154,9 @@ void set(std::string option, const T& value)
   if (option[0] != '-')
     option = '-' + option;
 
-  PetscErrorCode ierr;
-  ierr = PetscOptionsSetValue(nullptr, option.c_str(),
-                              std::format("{}", value).c_str());
-  common::petsc::check(ierr, "PetscOptionsSetValue");
+  common::petsc::check(PetscOptionsSetValue(nullptr, option.c_str(),
+                                            std::format("{}", value).c_str()),
+                       "PetscOptionsSetValue");
 }
 
 /// Clear a PETSc option
