@@ -55,7 +55,7 @@ def test_discrete_curl_gdim_raises(cell):
     E0 = element("N1curl", msh.basix_cell(), 2, dtype=np.float64)
     E1 = element("RT", msh.basix_cell(), 2, dtype=np.float64)
     V0, V1 = functionspace(msh, E0), functionspace(msh, E1)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         discrete_curl(V0, V1)
 
 
@@ -86,7 +86,7 @@ def test_discrete_curl_map_raises(elements):
         MPI.COMM_WORLD, 3, 3, 3, cell_type=CellType.tetrahedron, dtype=np.float64
     )
     V0, V1 = functionspace(msh, elements[0]), functionspace(msh, elements[1])
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         discrete_curl(V0, V1)
 
 

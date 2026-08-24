@@ -168,7 +168,7 @@ def test_clone(W):
 
 
 def test_collapse(W, V):
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         Function(W.sub(1))
 
     Ws = [W.sub(i).collapse() for i in range(W.num_sub_spaces)]
@@ -261,7 +261,7 @@ def test_basix_element(V, W, Q, V2):
         )
 
     # Mixed spaces do not yet return a basix element
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         Q.element.basix_element
 
 
