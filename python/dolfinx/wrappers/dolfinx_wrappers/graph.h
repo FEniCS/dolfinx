@@ -35,11 +35,11 @@ auto create_partitioner_py(Functor&& p_cpp)
                  bool ghosting)
   {
     std::span<const std::int32_t> node_weights_span(node_weights.data(),
-                                                     node_weights.size());
+                                                    node_weights.size());
     std::span<const std::int32_t> edge_weights_span(edge_weights.data(),
-                                                     edge_weights.size());
+                                                    edge_weights.size());
     return p_cpp(comm.get(), nparts, local_graph, node_weights_span,
-                edge_weights_span, ghosting);
+                 edge_weights_span, ghosting);
   };
 }
 

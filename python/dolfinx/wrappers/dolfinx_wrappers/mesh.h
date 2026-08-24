@@ -60,9 +60,9 @@ auto create_cell_partitioner_py(Functor&& p)
   {
     std::vector<std::span<const std::int64_t>> cells = vec_of_spans(cells_nb);
     std::span<const std::int32_t> cell_weights_span(cell_weights.data(),
-                                                     cell_weights.size());
+                                                    cell_weights.size());
     std::span<const std::int32_t> edge_weights_span(edge_weights.data(),
-                                                     edge_weights.size());
+                                                    edge_weights.size());
     return p(comm.get(), n, cell_types, cells, cell_weights_span,
              edge_weights_span);
   };
