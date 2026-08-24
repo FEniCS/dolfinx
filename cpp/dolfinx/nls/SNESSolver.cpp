@@ -31,8 +31,9 @@ nls::petsc::SNESSolver::SNESSolver(SNES snes, bool inc_ref_count) : _snes(snes)
   assert(_snes);
   if (inc_ref_count)
   {
-    common::petsc::check(PetscObjectReference((PetscObject)_snes),
-                         "PetscObjectReference");
+    common::petsc::check(
+        PetscObjectReference(reinterpret_cast<PetscObject>(_snes)),
+        "PetscObjectReference");
   }
 
   set_callbacks();
@@ -87,8 +88,9 @@ void nls::petsc::SNESSolver::set_F(std::function<void(const Vec x, Vec b)> F,
   assert(b_layout);
   _fnF = std::move(F);
 
-  common::petsc::check(PetscObjectReference((PetscObject)b_layout),
-                       "PetscObjectReference");
+  common::petsc::check(
+      PetscObjectReference(reinterpret_cast<PetscObject>(b_layout)),
+      "PetscObjectReference");
   if (_b)
     VecDestroy(&_b);
   _b = b_layout;
@@ -108,10 +110,12 @@ void nls::petsc::SNESSolver::set_J(
   if (!P_layout)
     P_layout = J_layout;
 
-  common::petsc::check(PetscObjectReference((PetscObject)J_layout),
-                       "PetscObjectReference");
-  common::petsc::check(PetscObjectReference((PetscObject)P_layout),
-                       "PetscObjectReference");
+  common::petsc::check(
+      PetscObjectReference(reinterpret_cast<PetscObject>(J_layout)),
+      "PetscObjectReference");
+  common::petsc::check(
+      PetscObjectReference(reinterpret_cast<PetscObject>(P_layout)),
+      "PetscObjectReference");
 
   if (_matJ)
     MatDestroy(&_matJ);
@@ -201,20 +205,35 @@ void nls::petsc::SNESSolver::set_from_options() const
 //-----------------------------------------------------------------------------
 SNES nls::petsc::SNESSolver::snes() const { return _snes; }
 //-----------------------------------------------------------------------------
+template <typename F>
+PetscErrorCode nls::petsc::SNESSolver::invoke(F&& f)
+{
+  try
+  {
+    std::forward<F>(f)();
+    return 0;
+  }
+  catch (const std::exception& e)
+  {
+    // Logging matters when the caller ran SNESSolve directly, as
+    // nothing then re-throws _exception
+    spdlog::error("Exception raised in a SNES callback: {}", e.what());
+    _exception = std::current_exception();
+    return PETSC_ERR_LIB;
+  }
+  catch (...)
+  {
+    spdlog::error("Unknown exception raised in a SNES callback.");
+    _exception = std::current_exception();
+    return PETSC_ERR_LIB;
+  }
+}
+//-----------------------------------------------------------------------------
 PetscErrorCode nls::petsc::SNESSolver::residual(SNES, Vec x, Vec b, void* ctx)
 {
   SNESSolver* solver = static_cast<SNESSolver*>(ctx);
   assert(solver->_fnF);
-  try
-  {
-    solver->_fnF(x, b);
-  }
-  catch (...)
-  {
-    return solver->store_exception();
-  }
-
-  return 0;
+  return solver->invoke([&] { solver->_fnF(x, b); });
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode nls::petsc::SNESSolver::jacobian(SNES, Vec x, Mat Jmat, Mat Pmat,
@@ -222,82 +241,33 @@ PetscErrorCode nls::petsc::SNESSolver::jacobian(SNES, Vec x, Mat Jmat, Mat Pmat,
 {
   SNESSolver* solver = static_cast<SNESSolver*>(ctx);
   assert(solver->_fnJ);
-  try
-  {
-    solver->_fnJ(x, Jmat, Pmat);
-  }
-  catch (...)
-  {
-    return solver->store_exception();
-  }
-
-  return 0;
+  return solver->invoke([&] { solver->_fnJ(x, Jmat, Pmat); });
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode nls::petsc::SNESSolver::update_step(SNES snes, PetscInt step)
 {
-  // SNESSetUpdate takes no context argument, so recover the solver from
-  // the context registered with SNESSetFunction. Errors are returned
-  // rather than thrown, as this is called from PETSc.
-  decltype(&residual) fn = nullptr;
-  void* ctx = nullptr;
-  PetscErrorCode ierr = SNESGetFunction(snes, nullptr, &fn, &ctx);
+  // SNESSetUpdate takes no context argument, so recover the solver
+  // from the SNES application context that set_callbacks() claimed.
+  // Errors are returned rather than thrown, as this is called from
+  // PETSc.
+  SNESSolver* solver = nullptr;
+  PetscErrorCode ierr
+      = SNESGetApplicationContext(snes, static_cast<void*>(&solver));
   if (ierr != 0)
     return ierr;
 
-  // The context is this class's only if the residual callback is, which
-  // it is not if the caller set their own on a wrapped SNES
-  if (fn != residual)
-  {
-    spdlog::error("SNES residual function was not set by SNESSolver, so the "
-                  "solver cannot be recovered in the update hook.");
-    return PETSC_ERR_ARG_WRONGSTATE;
-  }
-
-  SNESSolver* solver = static_cast<SNESSolver*>(ctx);
   assert(solver);
-
   assert(solver->_fnupdate);
-  try
-  {
-    solver->_fnupdate(step);
-  }
-  catch (...)
-  {
-    return solver->store_exception();
-  }
-
-  return 0;
-}
-//-----------------------------------------------------------------------------
-PetscErrorCode nls::petsc::SNESSolver::store_exception()
-{
-  _exception = std::current_exception();
-
-  // Re-throw and catch to read the message, the only way to inspect an
-  // exception_ptr. Logging matters when the caller ran SNESSolve
-  // directly, as nothing then re-throws.
-  try
-  {
-    std::rethrow_exception(_exception);
-  }
-  catch (const std::exception& e)
-  {
-    spdlog::error("Exception raised in a SNES callback: {}", e.what());
-  }
-  catch (...)
-  {
-    // An exception_ptr need not hold a std::exception
-    spdlog::error("Unknown exception raised in a SNES callback.");
-  }
-
-  return PETSC_ERR_LIB;
+  return solver->invoke([&] { solver->_fnupdate(step); });
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::SNESSolver::set_callbacks()
 {
   if (!_snes)
     return;
+
+  common::petsc::check(SNESSetApplicationContext(_snes, this),
+                       "SNESSetApplicationContext");
 
   if (_fnF)
   {

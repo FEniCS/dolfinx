@@ -52,6 +52,11 @@ public:
   /// solver, which is not reference counted. Using `snes` once the
   /// solver has been destroyed is undefined.
   ///
+  /// @note The solver claims the SNES application context (via
+  /// `SNESSetApplicationContext`) to recover itself in callbacks that
+  /// take no context argument, e.g. the update hook. Any application
+  /// context already set on `snes` is overwritten.
+  ///
   /// @param[in] snes PETSc SNES object. It should already have been
   /// created.
   /// @param[in] inc_ref_count Increment the reference count on `snes`
@@ -168,10 +173,12 @@ private:
   // registered on the SNES object.
   static PetscErrorCode update_step(SNES snes, PetscInt step);
 
-  // Store an in-flight exception and stop the solve. Called by the
-  // callbacks, because C++ exceptions cannot be propagated through the
-  // PETSc C frames.
-  PetscErrorCode store_exception();
+  // Run a callback, catching and storing any exception it throws (for
+  // solve() to re-throw) and returning a PETSc error code in its
+  // place, since a C++ exception cannot propagate through the PETSc C
+  // callback frames.
+  template <typename F>
+  PetscErrorCode invoke(F&& f);
 
   // Register the callbacks that have been set, and attach this as the
   // context that the callbacks recover the solver from
