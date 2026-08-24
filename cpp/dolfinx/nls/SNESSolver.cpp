@@ -233,7 +233,7 @@ PetscErrorCode nls::petsc::SNESSolver::residual(SNES, Vec x, Vec b, void* ctx)
 {
   SNESSolver* solver = static_cast<SNESSolver*>(ctx);
   assert(solver->_fnF);
-  return solver->invoke([&] { solver->_fnF(x, b); });
+  return solver->invoke([&solver, &x, &b] { solver->_fnF(x, b); });
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode nls::petsc::SNESSolver::jacobian(SNES, Vec x, Mat Jmat, Mat Pmat,
@@ -241,7 +241,8 @@ PetscErrorCode nls::petsc::SNESSolver::jacobian(SNES, Vec x, Mat Jmat, Mat Pmat,
 {
   SNESSolver* solver = static_cast<SNESSolver*>(ctx);
   assert(solver->_fnJ);
-  return solver->invoke([&] { solver->_fnJ(x, Jmat, Pmat); });
+  return solver->invoke([&solver, &x, &Jmat, &Pmat]
+                        { solver->_fnJ(x, Jmat, Pmat); });
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode nls::petsc::SNESSolver::update_step(SNES snes, PetscInt step)
@@ -258,7 +259,7 @@ PetscErrorCode nls::petsc::SNESSolver::update_step(SNES snes, PetscInt step)
 
   assert(solver);
   assert(solver->_fnupdate);
-  return solver->invoke([&] { solver->_fnupdate(step); });
+  return solver->invoke([&solver, &step] { solver->_fnupdate(step); });
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::SNESSolver::set_callbacks()
