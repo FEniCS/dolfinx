@@ -60,9 +60,9 @@ auto create_cell_partitioner_py(Functor&& p)
   {
     std::vector<std::span<const std::int64_t>> cells = vec_of_spans(cells_nb);
     std::span<const std::int32_t> cell_weights_span(cell_weights.data(),
-                                                     cell_weights.size());
+                                                    cell_weights.size());
     std::span<const std::int32_t> edge_weights_span(edge_weights.data(),
-                                                     edge_weights.size());
+                                                    edge_weights.size());
     return p(comm.get(), n, cell_types, cells, cell_weights_span,
              edge_weights_span);
   };
@@ -335,8 +335,8 @@ void declare_mesh(nb::module_& m, std::string type)
          nb::ndarray<const T, nb::c_contig> x,
          const part::impl::PythonCellPartitionFunction& p,
          std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
-         std::optional<nb::ndarray<const std::int32_t, nb::ndim<1>,
-                                   nb::c_contig>>
+         std::optional<
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              cell_weights)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
@@ -347,15 +347,15 @@ void declare_mesh(nb::module_& m, std::string type)
             { return std::span<const std::int64_t>(c.data(), c.size()); });
 
         std::span<const std::int32_t> cell_weights_span
-            = cell_weights ? std::span<const std::int32_t>(
-                  cell_weights->data(), cell_weights->size())
-                          : std::span<const std::int32_t>();
+            = cell_weights ? std::span<const std::int32_t>(cell_weights->data(),
+                                                           cell_weights->size())
+                           : std::span<const std::int32_t>();
 
         return dolfinx::mesh::create_mesh(
             comm.get(), comm.get(), cells, cell_weights_span, elements,
             comm.get(), std::span(x.data(), x.size()), {x.shape(0), shape1},
-            part::impl::create_cell_partitioner_cpp(p),
-            max_facet_to_cell_links, num_threads);
+            part::impl::create_cell_partitioner_cpp(p), max_facet_to_cell_links,
+            num_threads);
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("elements"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
@@ -371,15 +371,15 @@ void declare_mesh(nb::module_& m, std::string type)
          nb::ndarray<const T, nb::c_contig> x,
          const part::impl::PythonCellPartitionFunction& p,
          std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
-         std::optional<nb::ndarray<const std::int32_t, nb::ndim<1>,
-                                   nb::c_contig>>
+         std::optional<
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              cell_weights)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
         std::span<const std::int32_t> cell_weights_span
-            = cell_weights ? std::span<const std::int32_t>(
-                  cell_weights->data(), cell_weights->size())
-                          : std::span<const std::int32_t>();
+            = cell_weights ? std::span<const std::int32_t>(cell_weights->data(),
+                                                           cell_weights->size())
+                           : std::span<const std::int32_t>();
         return dolfinx::mesh::create_mesh(
             comm.get(), comm.get(), std::span(cells.data(), cells.size()),
             cell_weights_span, element, comm.get(),
@@ -390,8 +390,7 @@ void declare_mesh(nb::module_& m, std::string type)
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
       nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"),
-      nb::arg("cell_weights").none(),
-      "Helper function for creating meshes.");
+      nb::arg("cell_weights").none(), "Helper function for creating meshes.");
   m.def(
       "create_submesh",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
