@@ -9,8 +9,10 @@
 
 #ifdef HAS_PETSC
 
+#include <format>
 #include <petscsys.h>
 #include <source_location>
+#include <string>
 #include <string_view>
 
 namespace dolfinx::common
@@ -42,6 +44,36 @@ inline void check(PetscErrorCode ierr, std::string_view petsc_function,
   if (ierr != 0)
     error(ierr, petsc_function, loc);
 }
+
+/// @brief Set a PETSc option in the PETSc options/parameter database.
+/// The option must not be prefixed by '-', e.g.
+///
+///     common::petsc::set_option("mat_mumps_icntl_14", 40);
+void set_option(std::string option);
+
+/// @brief Set a PETSc option that takes a value in the PETSc
+/// options/parameter database. The option must not be prefixed by
+/// '-', e.g.
+///
+///     common::petsc::set_option("mat_mumps_icntl_14", 40);
+template <typename T>
+  requires requires(const T& value) { std::format("{}", value); }
+void set_option(std::string option, const T& value)
+{
+  if (option[0] != '-')
+    option = '-' + option;
+
+  check(PetscOptionsSetValue(nullptr, option.c_str(),
+                             std::format("{}", value).c_str()),
+        "PetscOptionsSetValue");
+}
+
+/// @brief Clear a PETSc option from the PETSc options/parameter
+/// database.
+void clear_option(std::string option);
+
+/// @brief Clear the PETSc global options/parameter database.
+void clear_options();
 } // namespace petsc
 } // namespace dolfinx::common
 

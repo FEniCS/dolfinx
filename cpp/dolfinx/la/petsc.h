@@ -13,12 +13,10 @@
 #include <cassert>
 #include <cstdint>
 #include <dolfinx/common/petsc.h>
-#include <format>
 #include <functional>
 #include <optional>
 #include <petscksp.h>
 #include <petscmat.h>
-#include <petscoptions.h>
 #include <petscvec.h>
 #include <span>
 #include <string>
@@ -135,36 +133,6 @@ Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
 /// @param[in] basis The nullspace basis vectors
 /// @return A PETSc nullspace object
 MatNullSpace create_nullspace(MPI_Comm comm, std::span<const Vec> basis);
-
-/// These class provides static functions that permit users to set and
-/// retrieve PETSc options via the PETSc option/parameter system. The
-/// option must not be prefixed by '-', e.g.
-///
-///     la::petsc::options::set("mat_mumps_icntl_14", 40);
-namespace options
-{
-/// Set PETSc option that takes no value
-void set(std::string option);
-
-/// Generic function for setting PETSc option
-template <typename T>
-  requires requires(const T& value) { std::format("{}", value); }
-void set(std::string option, const T& value)
-{
-  if (option[0] != '-')
-    option = '-' + option;
-
-  common::petsc::check(PetscOptionsSetValue(nullptr, option.c_str(),
-                                            std::format("{}", value).c_str()),
-                       "PetscOptionsSetValue");
-}
-
-/// Clear a PETSc option
-void clear(std::string option);
-
-/// Clear PETSc global options database
-void clear();
-} // namespace options
 
 /// A simple wrapper for a PETSc vector pointer (Vec). Its main purpose
 /// is to assist with memory/lifetime management of PETSc Vec objects.

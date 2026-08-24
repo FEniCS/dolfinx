@@ -16,7 +16,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
-#include <format>
 #include <numeric>
 #include <ranges>
 #include <stdexcept>
@@ -360,26 +359,6 @@ MatNullSpace la::petsc::create_nullspace(MPI_Comm comm,
       MatNullSpaceCreate(comm, PETSC_FALSE, basis.size(), basis.data(), &ns),
       "MatNullSpaceCreate");
   return ns;
-}
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-void petsc::options::set(std::string option)
-{
-  petsc::options::set<std::string>(std::move(option), "");
-}
-//-----------------------------------------------------------------------------
-void petsc::options::clear(std::string option)
-{
-  if (option[0] != '-')
-    option = '-' + option;
-
-  common::petsc::check(PetscOptionsClearValue(nullptr, option.c_str()),
-                       "PetscOptionsClearValue");
-}
-//-----------------------------------------------------------------------------
-void petsc::options::clear()
-{
-  common::petsc::check(PetscOptionsClear(nullptr), "PetscOptionsClear");
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

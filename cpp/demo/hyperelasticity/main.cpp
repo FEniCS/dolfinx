@@ -64,8 +64,8 @@ public:
 
     // Create linear solver. Default to LU.
     _solver.set_options_prefix("nls_solve_");
-    la::petsc::options::set("nls_solve_ksp_type", "preonly");
-    la::petsc::options::set("nls_solve_pc_type", "lu");
+    common::petsc::set_option("nls_solve_ksp_type", "preonly");
+    common::petsc::set_option("nls_solve_pc_type", "lu");
     _solver.set_from_options();
   }
 

@@ -12,6 +12,7 @@
 #include <dolfinx/common/log.h>
 #include <format>
 #include <stdexcept>
+#include <utility>
 
 using namespace dolfinx;
 
@@ -36,6 +37,25 @@ void common::petsc::error(PetscErrorCode error_code,
       std::format("Failed to successfully call PETSc function '{}'. PETSc "
                   "error code is: {}, {}",
                   petsc_function, static_cast<int>(error_code), desc));
+}
+//-----------------------------------------------------------------------------
+void common::petsc::set_option(std::string option)
+{
+  common::petsc::set_option<std::string>(std::move(option), "");
+}
+//-----------------------------------------------------------------------------
+void common::petsc::clear_option(std::string option)
+{
+  if (option[0] != '-')
+    option = '-' + option;
+
+  check(PetscOptionsClearValue(nullptr, option.c_str()),
+        "PetscOptionsClearValue");
+}
+//-----------------------------------------------------------------------------
+void common::petsc::clear_options()
+{
+  check(PetscOptionsClear(nullptr), "PetscOptionsClear");
 }
 //-----------------------------------------------------------------------------
 
