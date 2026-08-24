@@ -191,13 +191,18 @@ int main(int argc, char* argv[])
     solver.set_from_options();
 
     PetscInt niter = solver.solve(u_vec.vec());
-    VecGhostUpdateBegin(u_vec.vec(), INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(u_vec.vec(), INSERT_VALUES, SCATTER_FORWARD);
+    common::petsc::check(
+        VecGhostUpdateBegin(u_vec.vec(), INSERT_VALUES, SCATTER_FORWARD),
+        "VecGhostUpdateBegin");
+    common::petsc::check(
+        VecGhostUpdateEnd(u_vec.vec(), INSERT_VALUES, SCATTER_FORWARD),
+        "VecGhostUpdateEnd");
 
     // The SNES object is available for anything the solver does not
     // wrap, here the total number of linear solver iterations
     PetscInt lin_iter = 0;
-    SNESGetLinearSolveIterations(solver.snes(), &lin_iter);
+    common::petsc::check(SNESGetLinearSolveIterations(solver.snes(), &lin_iter),
+                         "SNESGetLinearSolveIterations");
     std::cout << "Number of Newton iterations: " << niter << std::endl;
     std::cout << "Number of linear solver iterations: " << lin_iter
               << std::endl;
