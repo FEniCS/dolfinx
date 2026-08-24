@@ -151,7 +151,7 @@ def test_asymmetric_partitioner():
         x = np.zeros((0, 2), dtype=np.float64)
 
     # Send cells to self, and if on process 1, also send to process 0.
-    def partitioner(comm, n, cell_types, topo):
+    def partitioner(comm, n, cell_types, topo, cell_weights, edge_weights):
         r = comm.Get_rank()
         dests = []
         offsets = [0]
@@ -234,6 +234,8 @@ def test_mixed_topology_partitioning():
         nparts,
         [CellType.hexahedron, CellType.pyramid, CellType.tetrahedron],
         cells_np,
+        np.array([], dtype=np.int32),
+        np.array([], dtype=np.int32),
     )
 
     counts = np.array([sum(p.array == i) for i in range(nparts)])
