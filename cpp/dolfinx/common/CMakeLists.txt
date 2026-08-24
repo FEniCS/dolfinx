@@ -22,6 +22,12 @@ set(
 
 target_sources(
   dolfinx
-  PRIVATE IndexMap.cpp log.cpp MPI.cpp petsc.cpp Table.cpp TimeLogger.cpp
-          timing.cpp
+  PRIVATE
+    IndexMap.cpp
+    log.cpp
+    MPI.cpp
+    petsc.cpp
+    Table.cpp
+    TimeLogger.cpp
+    timing.cpp
 )
