@@ -14,6 +14,7 @@
 #include <exception>
 #include <petscsys.h>
 #include <petscsystypes.h>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -28,7 +29,9 @@ nls::petsc::SNESSolver::SNESSolver(MPI_Comm comm) : _snes(nullptr)
 //-----------------------------------------------------------------------------
 nls::petsc::SNESSolver::SNESSolver(SNES snes, bool inc_ref_count) : _snes(snes)
 {
-  assert(_snes);
+  if (!_snes)
+    throw std::runtime_error("PETSc SNES must be initialised before wrapping");
+
   if (inc_ref_count)
   {
     common::petsc::check(
