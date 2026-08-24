@@ -132,7 +132,7 @@ void nls::petsc::SNESSolver::set_update(
   common::petsc::check(SNESSetUpdate(_snes, update_step), "SNESSetUpdate");
 }
 //-----------------------------------------------------------------------------
-PetscInt nls::petsc::SNESSolver::solve(Vec x)
+void nls::petsc::SNESSolver::solve(Vec x)
 {
   common::Timer timer("PETSc SNES solver");
   assert(_snes);
@@ -171,8 +171,6 @@ PetscInt nls::petsc::SNESSolver::solve(Vec x)
                  "(PETSc reason: {}).",
                  num_iterations, reason_str);
   }
-
-  return num_iterations;
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::SNESSolver::set_options_prefix(std::string_view options_prefix)

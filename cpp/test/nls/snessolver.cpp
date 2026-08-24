@@ -118,6 +118,14 @@ PetscInt ref_count(O obj)
   return count;
 }
 
+// Number of nonlinear iterations taken by the last solve
+PetscInt num_iterations(SNES snes)
+{
+  PetscInt n = 0;
+  CHECK(SNESGetIterationNumber(snes, &n) == 0);
+  return n;
+}
+
 // Check that all entries of x are `root`, by default the positive root
 // sqrt(2), to the accuracy the solver stopped at rather than to a fixed
 // tolerance, which would depend on the precision PETSc was built with
@@ -177,8 +185,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     CHECK(solver.get_options_prefix() == "test_snes_");
     solver.set_from_options();
 
-    PetscInt num_it = solver.solve(x);
-    CHECK(num_it > 0);
+    solver.solve(x);
+    CHECK(num_iterations(solver.snes()) > 0);
     SNESConvergedReason reason;
     CHECK(SNESGetConvergedReason(solver.snes(), &reason) == 0);
     CHECK(reason > 0);
@@ -201,9 +209,9 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // The SNES callback context points at the solver, so the callbacks
     // must survive a move
     nls::petsc::SNESSolver moved(std::move(solver));
-    PetscInt num_it = moved.solve(x);
+    moved.solve(x);
     check_solution(x, moved.snes());
-    CHECK(steps.size() == std::size_t(num_it));
+    CHECK(steps.size() == std::size_t(num_iterations(moved.snes())));
 
     nls::petsc::SNESSolver assigned(comm);
     assigned = std::move(moved);
@@ -219,9 +227,10 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     CHECK(VecSet(x, PetscScalar(1)) == 0);
     steps.clear();
-    num_it = assigned.solve(x);
+    assigned.solve(x);
     check_solution(x, assigned.snes());
-    CHECK(assigned_steps.size() == std::size_t(num_it));
+    CHECK(assigned_steps.size()
+          == std::size_t(num_iterations(assigned.snes())));
     CHECK(steps.empty());
   }
 
@@ -251,8 +260,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     // A solver that has converged can be solved again
     CHECK(VecSet(x, PetscScalar(5)) == 0);
-    PetscInt num_it = solver.solve(x);
-    CHECK(num_it > 0);
+    solver.solve(x);
+    CHECK(num_iterations(solver.snes()) > 0);
     check_solution(x, solver.snes());
   }
 
@@ -300,11 +309,11 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     std::vector<PetscInt> steps;
     solver.set_update([&steps](PetscInt step) { steps.push_back(step); });
 
-    PetscInt num_it = solver.solve(x);
+    solver.solve(x);
     check_solution(x, solver.snes());
 
     // The hook runs once at the start of each iteration
-    REQUIRE(steps.size() == std::size_t(num_it));
+    REQUIRE(steps.size() == std::size_t(num_iterations(solver.snes())));
     for (std::size_t i = 0; i < steps.size(); ++i)
       CHECK(steps[i] == PetscInt(i));
   }
@@ -478,8 +487,8 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_options_prefix("nest_");
     solver.set_from_options();
 
-    PetscInt num_it = solver.solve(x_nest);
-    CHECK(num_it > 0);
+    solver.solve(x_nest);
+    CHECK(num_iterations(solver.snes()) > 0);
 
     // The solver did not substitute anything for the nest matrix
     Mat Jmat_snes;
