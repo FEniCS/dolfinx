@@ -19,6 +19,7 @@
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/petsc.h>
 #include <dolfinx/fem/petsc.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/la/Vector.h>
@@ -180,11 +181,11 @@ int main(int argc, char* argv[])
     // Newton update is solved for with a direct LU solver, and a failure to
     // converge raises an error rather than being reported by the return value.
     const U tol = 10 * std::numeric_limits<U>::epsilon();
-    la::petsc::options::set("hyperelasticity_ksp_type", "preonly");
-    la::petsc::options::set("hyperelasticity_pc_type", "lu");
-    la::petsc::options::set("hyperelasticity_snes_rtol", tol);
-    la::petsc::options::set("hyperelasticity_snes_atol", tol);
-    la::petsc::options::set("hyperelasticity_snes_error_if_not_converged");
+    common::petsc::set_option("hyperelasticity_ksp_type", "preonly");
+    common::petsc::set_option("hyperelasticity_pc_type", "lu");
+    common::petsc::set_option("hyperelasticity_snes_rtol", tol);
+    common::petsc::set_option("hyperelasticity_snes_atol", tol);
+    common::petsc::set_option("hyperelasticity_snes_error_if_not_converged");
 
     solver.set_options_prefix("hyperelasticity_");
     solver.set_from_options();
