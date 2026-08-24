@@ -58,9 +58,11 @@ public:
 
     std::vector<PetscInt> ghosts(map->ghosts().begin(), map->ghosts().end());
     std::int64_t size_global = bs * map->size_global();
-    VecCreateGhostBlockWithArray(map->comm(), bs, size_local, size_global,
-                                 ghosts.size(), ghosts.data(),
-                                 _b_vec.array().data(), &_b);
+    common::petsc::check(
+        VecCreateGhostBlockWithArray(map->comm(), bs, size_local, size_global,
+                                     ghosts.size(), ghosts.data(),
+                                     _b_vec.array().data(), &_b),
+        "VecCreateGhostBlockWithArray");
 
     // Create linear solver. Default to LU.
     _solver.set_options_prefix("nls_solve_");
@@ -73,7 +75,9 @@ public:
   virtual ~HyperElasticProblem()
   {
     assert(_b);
-    VecDestroy(&_b);
+    // Destructor is implicitly noexcept, so a thrown error here calls
+    // std::terminate rather than propagating
+    common::petsc::check(VecDestroy(&_b), "VecDestroy");
   }
 
   /// @brief Newton Solver
@@ -88,7 +92,7 @@ public:
         = [&iteration, &residual0, this](const Vec r) -> std::pair<double, bool>
     {
       PetscReal residual = 0;
-      VecNorm(r, NORM_2, &residual);
+      common::petsc::check(VecNorm(r, NORM_2, &residual), "VecNorm");
 
       // Relative residual
       const double relative_residual = residual / residual0;
@@ -111,7 +115,8 @@ public:
     _solver.set_operators(_matJ.mat(), _matJ.mat());
 
     Vec dx;
-    MatCreateVecs(_matJ.mat(), &dx, nullptr);
+    common::petsc::check(MatCreateVecs(_matJ.mat(), &dx, nullptr),
+                         "MatCreateVecs");
 
     int max_it = 50;
     int krylov_iterations = 0;
@@ -128,7 +133,7 @@ public:
 
       // Update solution
       double relaxation_parameter = 1.0;
-      VecAXPY(x, -relaxation_parameter, dx);
+      common::petsc::check(VecAXPY(x, -relaxation_parameter, dx), "VecAXPY");
 
       // Increment iteration count
       ++iteration;
@@ -138,7 +143,7 @@ public:
 
       // Initialize residual0
       if (iteration == 1)
-        VecNorm(dx, NORM_2, &residual0);
+        common::petsc::check(VecNorm(dx, NORM_2, &residual0), "VecNorm");
 
       // Test for convergence
       std::tie(residual, newton_converged) = converged(_b);
@@ -151,7 +156,7 @@ public:
                  "solver iterations.",
                  iteration, krylov_iterations);
 
-    VecDestroy(&dx);
+    common::petsc::check(VecDestroy(&dx), "VecDestroy");
 
     return {iteration, newton_converged};
   }
@@ -159,15 +164,19 @@ public:
   /// Compute F at current point x
   void F(const Vec x)
   {
-    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+    common::petsc::check(VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD),
+                         "VecGhostUpdateBegin");
+    common::petsc::check(VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD),
+                         "VecGhostUpdateEnd");
 
     // Assemble b and update ghosts
     std::span b(_b_vec.array());
     std::ranges::fill(b, 0);
     fem::assemble_vector(b, _l);
-    VecGhostUpdateBegin(_b, ADD_VALUES, SCATTER_REVERSE);
-    VecGhostUpdateEnd(_b, ADD_VALUES, SCATTER_REVERSE);
+    common::petsc::check(VecGhostUpdateBegin(_b, ADD_VALUES, SCATTER_REVERSE),
+                         "VecGhostUpdateBegin");
+    common::petsc::check(VecGhostUpdateEnd(_b, ADD_VALUES, SCATTER_REVERSE),
+                         "VecGhostUpdateEnd");
 
     // Set bcs
     fem::petsc::set_bc(_b, _bcs, x, -1);
@@ -176,15 +185,19 @@ public:
   /// Compute J = F' at current point x
   void J(const Vec, Mat A)
   {
-    MatZeroEntries(A);
+    common::petsc::check(MatZeroEntries(A), "MatZeroEntries");
     fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A, ADD_VALUES), _j,
                          _bcs);
-    MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
-    MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyEnd");
     fem::set_diagonal(la::petsc::Matrix::set_fn(A, INSERT_VALUES),
                       *_j.function_spaces()[0], _bcs);
-    MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyEnd");
   }
 
   /// @brief Relative convergence tolerance.

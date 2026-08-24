@@ -42,8 +42,10 @@ SLEPcEigenSolver::SLEPcEigenSolver(SLEPcEigenSolver&& solver) noexcept
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
 {
+  // Destructor is implicitly noexcept, so a thrown error here calls
+  // std::terminate rather than propagating
   if (_eps)
-    EPSDestroy(&_eps);
+    common::petsc::check(EPSDestroy(&_eps), "EPSDestroy");
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver&

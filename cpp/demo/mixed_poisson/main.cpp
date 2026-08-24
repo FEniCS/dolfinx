@@ -314,17 +314,21 @@ int main(int argc, char* argv[])
 
     // Assemble the bilinear form into a matrix. The PETSc matrix is
     // 'flushed' so we can set values in it in the subsequent step.
-    MatZeroEntries(A.mat());
+    common::petsc::check(MatZeroEntries(A.mat()), "MatZeroEntries");
     fem::assemble_matrix(la::petsc::Matrix::set_fn(A.mat(), ADD_VALUES), a,
                          {bc});
-    MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyEnd");
 
     // Set '1' on diagonal for Dirichlet dofs
     fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
                          {bc});
-    MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyEnd");
 
     // Assemble the linear form `L` into RHS vector
     std::ranges::fill(b.array(), 0);

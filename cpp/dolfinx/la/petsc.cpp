@@ -384,8 +384,10 @@ petsc::Vector::Vector(Vector&& v) noexcept : _x(std::exchange(v._x, nullptr)) {}
 //-----------------------------------------------------------------------------
 petsc::Vector::~Vector()
 {
+  // Destructor is implicitly noexcept, so a thrown error here calls
+  // std::terminate rather than propagating
   if (_x)
-    VecDestroy(&_x);
+    common::petsc::check(VecDestroy(&_x), "VecDestroy");
 }
 //-----------------------------------------------------------------------------
 petsc::Vector& petsc::Vector::operator=(Vector&& v) noexcept
@@ -489,9 +491,10 @@ petsc::Matrix::Matrix(Matrix&& A) noexcept
 petsc::Matrix::~Matrix()
 {
   // Decrease reference count (PETSc will destroy object once reference
-  // counts reached zero)
+  // counts reached zero). Destructor is implicitly noexcept, so a
+  // thrown error here calls std::terminate rather than propagating.
   if (_matA)
-    MatDestroy(&_matA);
+    common::petsc::check(MatDestroy(&_matA), "MatDestroy");
 }
 //-----------------------------------------------------------------------------
 petsc::Matrix& petsc::Matrix::operator=(Matrix&& A) noexcept
@@ -580,8 +583,10 @@ petsc::KrylovSolver::KrylovSolver(KrylovSolver&& solver) noexcept
 //-----------------------------------------------------------------------------
 petsc::KrylovSolver::~KrylovSolver()
 {
+  // Destructor is implicitly noexcept, so a thrown error here calls
+  // std::terminate rather than propagating
   if (_ksp)
-    KSPDestroy(&_ksp);
+    common::petsc::check(KSPDestroy(&_ksp), "KSPDestroy");
 }
 //-----------------------------------------------------------------------------
 petsc::KrylovSolver&
