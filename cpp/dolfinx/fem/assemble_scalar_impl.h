@@ -53,8 +53,12 @@ T assemble_cells(
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
-    fn(&value, &coeffs(index, 0), constants.data(), cdofs_b.data(), nullptr,
-       nullptr, nullptr);
+    // submdspan(...).data_handle() is used rather than &coeffs(index, 0):
+    // the latter dereferences to form a reference before taking its
+    // address, which is UB when coeffs is empty (a form with no Function
+    // coefficients), whereas submdspan only computes an offset.
+    fn(&value, md::submdspan(coeffs, index, md::full_extent).data_handle(),
+       constants.data(), cdofs_b.data(), nullptr, nullptr, nullptr);
   }
 
   return value;
@@ -106,8 +110,10 @@ T assemble_entities(
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
-    fn(&value, &coeffs(f, 0), constants.data(), cdofs_b.data(), &local_entity,
-       &perm, nullptr);
+    // See note above on avoiding &coeffs(f, 0), which is UB when coeffs is
+    // empty.
+    fn(&value, md::submdspan(coeffs, f, md::full_extent).data_handle(),
+       constants.data(), cdofs_b.data(), &local_entity, &perm, nullptr);
   }
 
   return value;
@@ -160,8 +166,11 @@ T assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    fn(&value, &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
-       local_facet.data(), perm.data(), nullptr);
+    // See note above on avoiding &coeffs(f, 0), which is UB when coeffs is
+    // empty.
+    fn(&value, md::submdspan(coeffs, f, 0, md::full_extent).data_handle(),
+       constants.data(), cdofs_b.data(), local_facet.data(), perm.data(),
+       nullptr);
   }
 
   return value;

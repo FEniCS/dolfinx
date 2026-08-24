@@ -101,10 +101,15 @@ void assemble_cells(
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
-    // Tabulate vector for cell
+    // Tabulate vector for cell. submdspan(...).data_handle() is used rather
+    // than &coeffs(index, 0): the latter dereferences to form a reference
+    // before taking its address, which is UB when coeffs is empty (a form
+    // with no Function coefficients), whereas submdspan only computes an
+    // offset.
     std::ranges::fill(be, 0);
-    kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs_b.data(),
-           nullptr, nullptr, nullptr);
+    kernel(be.data(),
+           md::submdspan(coeffs, index, md::full_extent).data_handle(),
+           constants.data(), cdofs_b.data(), nullptr, nullptr, nullptr);
     P0(be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
@@ -196,10 +201,11 @@ void assemble_entities(
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
 
-    // Tabulate element vector
+    // Tabulate element vector. See note above on avoiding &coeffs(f, 0),
+    // which is UB when coeffs is empty.
     std::ranges::fill(be, 0);
-    kernel(be.data(), &coeffs(f, 0), constants.data(), cdofs_b.data(),
-           &local_entity, &perm, nullptr);
+    kernel(be.data(), md::submdspan(coeffs, f, md::full_extent).data_handle(),
+           constants.data(), cdofs_b.data(), &local_entity, &perm, nullptr);
     P0(be, cell_info0, cell0, 1);
 
     // Add to global vector
@@ -303,14 +309,17 @@ void assemble_interior_facets(
     std::span dmap1 = cells0[1] >= 0 ? std::span(&dmap(cells0[1], 0), dmap_size)
                                      : std::span<const std::int32_t>();
 
-    // Tabulate element vector
+    // Tabulate element vector. See note above on avoiding &coeffs(f, 0),
+    // which is UB when coeffs is empty.
     std::ranges::fill(be, 0);
     std::array perm = perms.empty()
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    kernel(be.data(), &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
-           local_facet.data(), perm.data(), nullptr);
+    kernel(be.data(),
+           md::submdspan(coeffs, f, 0, md::full_extent).data_handle(),
+           constants.data(), cdofs_b.data(), local_facet.data(), perm.data(),
+           nullptr);
 
     if (cells0[0] >= 0)
       P0(be, cell_info0, cells0[0], 1);

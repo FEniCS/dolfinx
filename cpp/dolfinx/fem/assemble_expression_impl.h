@@ -93,8 +93,13 @@ void tabulate_expression(
         std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                     std::next(coord_dofs.begin(), 3 * i));
       }
-      fn(values_local.data(), &coeffs(e, 0), constants.data(),
-         coord_dofs.data(), nullptr, nullptr, nullptr);
+      // submdspan(...).data_handle() is used rather than &coeffs(e, 0): the
+      // latter dereferences to form a reference before taking its address,
+      // which is UB when coeffs is empty (a form with no Function
+      // coefficients), whereas submdspan only computes an offset.
+      fn(values_local.data(),
+         md::submdspan(coeffs, e, md::full_extent).data_handle(),
+         constants.data(), coord_dofs.data(), nullptr, nullptr, nullptr);
 
       P0(values_local, cell_info, entity, size0);
     }
@@ -109,8 +114,11 @@ void tabulate_expression(
         std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                     std::next(coord_dofs.begin(), 3 * i));
       }
-      fn(values_local.data(), &coeffs(e, 0), constants.data(),
-         coord_dofs.data(), &local_entity, &perm, nullptr);
+      // See note above on avoiding &coeffs(e, 0), which is UB when coeffs is
+      // empty.
+      fn(values_local.data(),
+         md::submdspan(coeffs, e, md::full_extent).data_handle(),
+         constants.data(), coord_dofs.data(), &local_entity, &perm, nullptr);
       P0(values_local, cell_info, entity, size0);
     }
 

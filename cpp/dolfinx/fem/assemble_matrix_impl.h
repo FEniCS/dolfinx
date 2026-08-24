@@ -147,10 +147,13 @@ void assemble_cells_matrix(
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
-    // Tabulate tensor
+    // Tabulate tensor. submdspan(...).data_handle() is used rather than
+    // &coeffs(c, 0): the latter dereferences to form a reference before
+    // taking its address, which is UB when coeffs is empty (a form with no
+    // Function coefficients), whereas submdspan only computes an offset.
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), &coeffs(c, 0), constants.data(), cdofs_b.data(), nullptr,
-           nullptr, nullptr);
+    kernel(Ae.data(), md::submdspan(coeffs, c, md::full_extent).data_handle(),
+           constants.data(), cdofs_b.data(), nullptr, nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
     P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
@@ -329,10 +332,11 @@ void assemble_entities(
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
 
-    // Tabulate tensor
+    // Tabulate tensor. See note above on avoiding &coeffs(f, 0), which is UB
+    // when coeffs is empty.
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), &coeffs(f, 0), constants.data(), cdofs_b.data(),
-           &local_entity, &perm, nullptr);
+    kernel(Ae.data(), md::submdspan(coeffs, f, md::full_extent).data_handle(),
+           constants.data(), cdofs_b.data(), &local_entity, &perm, nullptr);
     P0(Ae, cell_info0, cell0, ndim1);
     P1T(Ae, cell_info1, cell1, ndim0);
 
@@ -569,14 +573,17 @@ void assemble_interior_facets(
         continue;
     }
 
-    // Tabulate tensor
+    // Tabulate tensor. See note above on avoiding &coeffs(f, 0), which is UB
+    // when coeffs is empty.
     std::ranges::fill(Ae, 0);
     std::array perm = perms.empty()
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    kernel(Ae.data(), &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
-           local_facet.data(), perm.data(), nullptr);
+    kernel(Ae.data(),
+           md::submdspan(coeffs, f, 0, md::full_extent).data_handle(),
+           constants.data(), cdofs_b.data(), local_facet.data(), perm.data(),
+           nullptr);
 
     // Local element layout is a 2x2 block matrix with structure
     //
