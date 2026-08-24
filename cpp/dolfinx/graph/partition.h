@@ -26,6 +26,7 @@ namespace dolfinx::graph
 /// @param[in] nparts Number of partitions to divide graph nodes into
 /// @param[in] local_graph Node connectivity graph
 /// @param[in] node_weights Node weights
+/// @param[in] edge_weights Edge weights
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution
 /// @return Destination rank for each input node

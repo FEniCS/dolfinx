@@ -208,6 +208,13 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// globally, i.e. the maximum index across all processes can be greater
 /// than the number of vertices. High-order 'nodes', e.g. mid-side
 /// points, should not be included.
+/// @param[in] cell_weights Weights associated with each cell in `cells`
+/// (flattened across cell types in the same order as `cells`), e.g. for
+/// use by the graph partitioner. If empty, cells are treated as having
+/// equal weight.
+/// @param[in] edge_weights Weights associated with each edge of the
+/// dual graph built from `cells`, e.g. for use by the graph partitioner.
+/// If empty, edges are treated as having equal weight.
 /// @return Destination ranks for each cell on this process.
 /// @note Cells can have multiple destination ranks, when ghosted.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
@@ -1052,6 +1059,10 @@ compute_incident_entities(const Topology& topology,
 /// cells this will be just the cell vertices. For higher-order geometry
 /// cells, other cell 'nodes' will be included. See io::cells for
 /// examples of the Basix ordering.
+/// @param[in] cell_weights Weights associated with each cell in `cells`
+/// (flattened across cell types in the same order as `cells`), e.g. for
+/// use by the graph partitioner. If empty, cells are treated as having
+/// equal weight.
 /// @param[in] elements Coordinate elements for the cells, where
 /// `elements[i]` is the coordinate element for the cells in `cells[i]`.
 /// **The list of elements must be the same on all calling parallel
@@ -1286,6 +1297,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// will be just the cell vertices. For higher-order cells, other cells
 /// 'nodes' will be included. See dolfinx::io::cells for examples of the
 /// Basix ordering.
+/// @param[in] cell_weights Weights associated with each cell in `cells`,
+/// e.g. for use by the graph partitioner. If empty, cells are treated
+/// as having equal weight.
 /// @param[in] element Coordinate element for the cells.
 /// @param[in] commg Communicator for geometry.
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
@@ -1348,13 +1362,15 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
 {
   if (dolfinx::MPI::size(comm) == 1)
   {
-    return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
+    return create_mesh(comm, comm, std::vector{cells},
+                       std::span<const std::int32_t>(), std::vector{elements},
                        comm, x, xshape, nullptr, max_facet_to_cell_links, 1);
   }
   else
   {
     return create_mesh(
-        comm, comm, std::vector{cells}, std::vector{elements}, comm, x, xshape,
+        comm, comm, std::vector{cells}, std::span<const std::int32_t>(),
+        std::vector{elements}, comm, x, xshape,
         create_cell_partitioner(ghost_mode, max_facet_to_cell_links),
         max_facet_to_cell_links, 1);
   }
