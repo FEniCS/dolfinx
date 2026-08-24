@@ -8,6 +8,7 @@
 #ifdef HAS_PETSC
 
 #include "petsc.h"
+#include <cassert>
 #include <dolfinx/common/log.h>
 #include <format>
 #include <stdexcept>
@@ -19,6 +20,9 @@ void common::petsc::error(PetscErrorCode error_code,
                           std::string_view petsc_function,
                           std::source_location loc)
 {
+  // Only called from check() with a nonzero error code
+  assert(error_code);
+
   // Fetch PETSc error description
   const char* desc;
   PetscErrorMessage(error_code, &desc, nullptr);
