@@ -33,9 +33,8 @@ graph::partition_graph(MPI_Comm comm, int nparts,
   return graph::scotch::partitioner()(comm, nparts, local_graph, node_weights,
                                       edge_weights, ghosting);
 #elif HAS_KAHIP
-  if (!node_weights.empty() or !edge_weights.empty())
-    spdlog::warn("KaHIP does not support node or edge weights");
-  return graph::kahip::partitioner()(comm, nparts, local_graph, ghosting);
+  return graph::kahip::partitioner()(comm, nparts, local_graph, node_weights,
+                                     edge_weights, ghosting);
 #else
 // Should never reach this point
 #endif
