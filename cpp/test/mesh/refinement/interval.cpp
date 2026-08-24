@@ -154,8 +154,8 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
 
     MPI_Comm commt = rank == 0 ? MPI_COMM_SELF : MPI_COMM_NULL;
     return mesh::create_mesh(MPI_COMM_WORLD, commt, cells,
-                             std::span<const std::int32_t>(), element, commt,
-                             x, {x.size() / 3, 3}, partitioner, 2, 1);
+                             std::span<const std::int32_t>(), element, commt, x,
+                             {x.size() / 3, 3}, partitioner, 2, 1);
   };
 
   mesh::Mesh<T> mesh = create_mesh();

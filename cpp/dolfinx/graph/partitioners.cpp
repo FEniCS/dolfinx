@@ -565,12 +565,11 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 graph::partition_fn graph::parmetis::partitioner(double imbalance,
                                                  std::array<int, 3> options)
 {
-  return
-      [imbalance, options](MPI_Comm comm, idx_t nparts,
-                           const graph::AdjacencyList<std::int64_t>& graph,
-                           std::span<const std::int32_t> node_weights,
-                           std::span<const std::int32_t> edge_weights,
-                           bool ghosting)
+  return [imbalance, options](MPI_Comm comm, idx_t nparts,
+                              const graph::AdjacencyList<std::int64_t>& graph,
+                              std::span<const std::int32_t> node_weights,
+                              std::span<const std::int32_t> edge_weights,
+                              bool ghosting)
   {
     spdlog::info("Compute graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS)");
