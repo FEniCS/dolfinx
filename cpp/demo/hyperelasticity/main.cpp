@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
     solver.set_options_prefix("hyperelasticity_");
     solver.set_from_options();
 
-    solver.solve(u_vec.vec());
+    PetscInt niter = solver.solve(u_vec.vec());
     common::petsc::check(
         VecGhostUpdateBegin(u_vec.vec(), INSERT_VALUES, SCATTER_FORWARD),
         "VecGhostUpdateBegin");
@@ -199,10 +199,7 @@ int main(int argc, char* argv[])
         "VecGhostUpdateEnd");
 
     // The SNES object is available for anything the solver does not
-    // wrap, here the numbers of nonlinear and linear solver iterations
-    PetscInt niter = 0;
-    common::petsc::check(SNESGetIterationNumber(solver.snes(), &niter),
-                         "SNESGetIterationNumber");
+    // wrap, here the total number of linear solver iterations
     PetscInt lin_iter = 0;
     common::petsc::check(SNESGetLinearSolveIterations(solver.snes(), &lin_iter),
                          "SNESGetLinearSolveIterations");

@@ -134,7 +134,8 @@ public:
   ///
   /// @param[in,out] x Solution vector, holding the initial guess on
   /// entry.
-  void solve(Vec x);
+  /// @return Number of nonlinear iterations performed.
+  PetscInt solve(Vec x);
 
   /// @brief Set the prefix used by PETSc when searching the PETSc
   /// options database.
