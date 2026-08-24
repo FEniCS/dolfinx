@@ -79,13 +79,30 @@ ASAN_OPTIONS=detect_container_overflow=0 \
   python -m pytest python/test
 ```
 
-**macOS System Integrity Protection caveat:** `DYLD_*` variables are
-stripped from the environment of any binary in an SIP-protected location.
-`/usr/bin/python3` is protected, and a virtual environment created from it
-whose `bin/python` is a *symlink* inherits the protection. Use a Homebrew or
-conda interpreter, or create the venv with `python -m venv --copies`.
-Symptom if this is wrong: `Interceptors are not working. This may be because
-AddressSanitizer is loaded too late`.
+**macOS "Interceptors are not working" caveat:** on a framework Python build
+(python.org installer, or Homebrew's `python@3.x`), the `bin/python3.x`
+executable most `venv`s activate is itself launched a second time through the
+framework's `Resources/Python.app/Contents/MacOS/Python` binary. `dyld` ends
+up loading the sanitizer runtime twice — once via `DYLD_INSERT_LIBRARIES` at
+the first launch, again when `dolfinx.cpp`'s own `@rpath`-linked copy is
+`dlopen`ed at import time — and the second, too-late initialisation reports
+`Interceptors are not working. This may be because AddressSanitizer is loaded
+too late (e.g. via dlopen)` and aborts. Launch the framework binary directly
+instead, and use `site.addsitedir()` to pull in the venv's site-packages
+(bypassing it skips normal venv activation, so `.pth`-based editable installs
+are not otherwise picked up):
+
+```sh
+PYBIN="$(python -c 'import sys, pathlib; print(next(pathlib.Path(sys.base_prefix).glob("Resources/Python.app/Contents/MacOS/Python")))')"
+DYLD_INSERT_LIBRARIES=$(clang -print-file-name=libclang_rt.asan_osx_dynamic.dylib) \
+ASAN_OPTIONS=detect_container_overflow=0 \
+  "$PYBIN" -c "import site; site.addsitedir('$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')')
+import sys, pytest; sys.exit(pytest.main(sys.argv[1:]))" python/test
+```
+
+A non-framework build (e.g. `pyenv install` without `--enable-framework`,
+or a plain `python -m venv` from such a build) does not have this extra
+launch layer and does not need the workaround.
 
 **Lower-friction entry point:** `-DDOLFINX_DEVELOPER_DEBUG_SANITIZERS=undefined`
 needs no preload at all, since UBSan has no allocator to install early. Start
@@ -96,11 +113,16 @@ case above.
 
 ## Known findings
 
-`DeveloperDebug` is opt-in and not gated by CI, so the test suite is not
-expected to pass cleanly from day one — see the tracking issue for the
-current list. `-fno-sanitize-recover=all` means the first hit aborts the
-whole process (Catch2's `CHECK_NOTHROW` cannot catch a `SIGABRT`), so a
-single finding can mask others further into a test run; re-run with
-`-r <failing test name>` to isolate one at a time. Do not weaken the
+`DeveloperDebug` is opt-in and not gated by CI, so a future change may
+introduce a finding that a `Developer` build does not catch. As of this
+writing, both the C++ suite (`cpp/test/`, all Catch2 test cases, at
+`np` = 1, 2 and 3) and the Python suite (`python/test/unit`) pass cleanly
+under `-DDOLFINX_DEVELOPER_DEBUG_SANITIZERS="address;undefined"`.
+
+`-fno-sanitize-recover=all` means the first hit aborts the whole process
+(Catch2's `CHECK_NOTHROW` cannot catch a `SIGABRT`, and a Python `SIGABRT`
+takes the whole `pytest` run down with it), so a single finding can mask
+others further into a run; re-run with `-r <failing test name>` (Catch2) or
+a narrower `pytest` selection to isolate one at a time. Do not weaken the
 build-time flags to make a run look green — use the run-time options above
 instead.
