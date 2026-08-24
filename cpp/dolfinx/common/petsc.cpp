@@ -1,5 +1,5 @@
-// Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and
-// Garth N. Wells
+// Copyright (C) 2004-2026 Johan Hoffman, Johan Jansson, Anders Logg,
+// Garth N. Wells and Jack S. Hale
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
