@@ -88,7 +88,14 @@ __all__ = [
 ]
 
 PartitioningFunc = typing.Callable[
-    [_MPI.Comm, int, _cpp.graph.AdjacencyList_int64, bool],
+    [
+        _MPI.Comm,
+        int,
+        _cpp.graph.AdjacencyList_int64,
+        npt.NDArray[np.int32],
+        npt.NDArray[np.int32],
+        bool,
+    ],
     _cpp.graph.AdjacencyList_int32,
 ]
 

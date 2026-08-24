@@ -289,7 +289,15 @@ def model_to_mesh(
     rank: int,
     gdim: int = 3,
     partitioner: Callable[
-        [_MPI.Comm, int, Sequence[CellType], Sequence[npt.NDArray[np.int64]]], _AdjacencyList_int32
+        [
+            _MPI.Comm,
+            int,
+            Sequence[CellType],
+            Sequence[npt.NDArray[np.int64]],
+            npt.NDArray[np.int32],
+            npt.NDArray[np.int32],
+        ],
+        _AdjacencyList_int32,
     ]
     | None = None,
     dtype: npt.DTypeLike = default_real_type,
@@ -512,7 +520,15 @@ def read_from_msh(
     rank: int = 0,
     gdim: int = 3,
     partitioner: Callable[
-        [_MPI.Comm, int, Sequence[CellType], Sequence[npt.NDArray[np.int64]]], _AdjacencyList_int32
+        [
+            _MPI.Comm,
+            int,
+            Sequence[CellType],
+            Sequence[npt.NDArray[np.int64]],
+            npt.NDArray[np.int32],
+            npt.NDArray[np.int32],
+        ],
+        _AdjacencyList_int32,
     ]
     | None = None,
 ) -> MeshData:
