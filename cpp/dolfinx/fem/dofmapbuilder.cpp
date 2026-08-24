@@ -397,27 +397,34 @@ build_basic_dofmaps(
 }
 //-----------------------------------------------------------------------------
 
-/// @brief Compute re-ordering map from old local index to new local
-/// index.
+/// @brief Compute re-ordering map from old local dof index to new
+/// local dof index.
 ///
-/// The M dofs owned by this process are reordered for locality and fill
-/// the positions [0, ..., M). Dof owned by another process are placed
-/// at the end, i.e. in the positions [M, ..., N), where N is the total
-/// number of dofs on this process.
+/// The M dofs owned by this process are placed first, in positions
+/// [0, ..., M), and are reordered for locality by `reorder_fn`. Dofs
+/// owned by another process (ghosts) are placed at the end, in
+/// positions [M, ..., N), where N is the total number of dofs on this
+/// process, in their original relative order.
 ///
-/// @param [in] dofmaps The basic dofmap data in multiple dofmaps
-/// sharing the same range
-/// @param [in] dof_entity Map from dof index to (index_map,
-/// entity_index), where entity_index is the local mesh entity index in
-/// the given index_map
-/// @param [in] index_maps The set of IndexMaps, one for each
-/// topological entity type used in the dofmap. The location in this
-/// array is referred to by the first item in each entry of
-/// `dof_entity`.
-/// @param [in] reorder_fn Graph reordering function that is applied for
-/// dof re-ordering
-/// @return The pair (old-to-new local index map, M), where M is the
-/// number of dofs owned by this process
+/// A dof (old local index `i`) is owned by this process if the mesh
+/// entity it is associated with, `dof_entity[i]`, is owned, i.e. if
+/// `dof_entity[i].second < index_maps[dof_entity[i].first]->size_local()`.
+///
+/// @param[in] dofmaps Basic (unordered) dofmap data (cell -> dofs) for
+/// one or more cell types, each referring to dof indices in the same
+/// range [0, N).
+/// @param[in] dof_entity For each dof (old local index), the
+/// associated mesh entity as a pair (index into `index_maps`, local
+/// index of the entity in that IndexMap).
+/// @param[in] index_maps IndexMaps, one for each topological entity
+/// type/dimension used by the dofmap. Entries in `dof_entity` index
+/// into this array.
+/// @param[in] reorder_fn Graph reordering function applied to the
+/// owned dofs to improve locality. If empty (default-constructed),
+/// owned dofs keep their relative order and only the owned/ghost
+/// split described above is performed.
+/// @return (old-to-new local dof index map, M), where M is the number
+/// of dofs owned by this process.
 std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     const std::vector<dofmap_t>& dofmaps,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
@@ -442,14 +449,16 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 
   // Create map from old index to new contiguous numbering for locally
   // owned dofs. Set to -1 for unowned dofs.
-  std::vector<int> original_to_contiguous(dof_entity.size(), -1);
+  std::vector<std::int32_t> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t counter_owned(0), counter_unowned(owned_size);
   for (auto& dofmap : dofmaps)
   {
     for (std::int32_t dof : dofmap.array)
     {
+      // Assign new index on first occurrence; reuse otherwise
       if (original_to_contiguous[dof] == -1)
       {
+        // e.second < offset[e.first]: entity is owned
         if (auto e = dof_entity[dof]; e.second < offset[e.first])
           original_to_contiguous[dof] = counter_owned++;
         else
