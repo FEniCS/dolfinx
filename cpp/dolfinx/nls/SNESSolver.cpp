@@ -20,6 +20,37 @@
 
 using namespace dolfinx;
 
+namespace
+{
+// Run a callback, catching and storing any exception it throws (for
+// solve() to re-throw) into `exception` and returning a PETSc error
+// code in its place, since a C++ exception cannot propagate through
+// the PETSc C callback frames.
+template <typename F>
+PetscErrorCode invoke(F&& f, std::exception_ptr& exception)
+{
+  try
+  {
+    std::forward<F>(f)();
+    return 0;
+  }
+  catch (const std::exception& e)
+  {
+    // Logging matters when the caller ran SNESSolve directly, as
+    // nothing then re-throws `exception`
+    spdlog::error("Exception raised in a SNES callback: {}", e.what());
+    exception = std::current_exception();
+    return PETSC_ERR_LIB;
+  }
+  catch (...)
+  {
+    spdlog::error("Unknown exception raised in a SNES callback.");
+    exception = std::current_exception();
+    return PETSC_ERR_LIB;
+  }
+}
+} // namespace
+
 //-----------------------------------------------------------------------------
 nls::petsc::SNESSolver::SNESSolver(MPI_Comm comm) : _snes(nullptr)
 {
@@ -208,35 +239,11 @@ void nls::petsc::SNESSolver::set_from_options() const
 //-----------------------------------------------------------------------------
 SNES nls::petsc::SNESSolver::snes() const { return _snes; }
 //-----------------------------------------------------------------------------
-template <typename F>
-PetscErrorCode nls::petsc::SNESSolver::invoke(F&& f)
-{
-  try
-  {
-    std::forward<F>(f)();
-    return 0;
-  }
-  catch (const std::exception& e)
-  {
-    // Logging matters when the caller ran SNESSolve directly, as
-    // nothing then re-throws _exception
-    spdlog::error("Exception raised in a SNES callback: {}", e.what());
-    _exception = std::current_exception();
-    return PETSC_ERR_LIB;
-  }
-  catch (...)
-  {
-    spdlog::error("Unknown exception raised in a SNES callback.");
-    _exception = std::current_exception();
-    return PETSC_ERR_LIB;
-  }
-}
-//-----------------------------------------------------------------------------
 PetscErrorCode nls::petsc::SNESSolver::residual(SNES, Vec x, Vec b, void* ctx)
 {
   SNESSolver* solver = static_cast<SNESSolver*>(ctx);
   assert(solver->_fnF);
-  return solver->invoke([&solver, &x, &b] { solver->_fnF(x, b); });
+  return invoke([&solver, &x, &b] { solver->_fnF(x, b); }, solver->_exception);
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode nls::petsc::SNESSolver::jacobian(SNES, Vec x, Mat Jmat, Mat Pmat,
@@ -244,8 +251,8 @@ PetscErrorCode nls::petsc::SNESSolver::jacobian(SNES, Vec x, Mat Jmat, Mat Pmat,
 {
   SNESSolver* solver = static_cast<SNESSolver*>(ctx);
   assert(solver->_fnJ);
-  return solver->invoke([&solver, &x, &Jmat, &Pmat]
-                        { solver->_fnJ(x, Jmat, Pmat); });
+  return invoke([&solver, &x, &Jmat, &Pmat] { solver->_fnJ(x, Jmat, Pmat); },
+                solver->_exception);
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode nls::petsc::SNESSolver::update_step(SNES snes, PetscInt step)
@@ -262,7 +269,8 @@ PetscErrorCode nls::petsc::SNESSolver::update_step(SNES snes, PetscInt step)
 
   assert(solver);
   assert(solver->_fnupdate);
-  return solver->invoke([&solver, &step] { solver->_fnupdate(step); });
+  return invoke([&solver, &step] { solver->_fnupdate(step); },
+                solver->_exception);
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::SNESSolver::set_callbacks()

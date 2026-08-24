@@ -173,13 +173,6 @@ private:
   // registered on the SNES object.
   static PetscErrorCode update_step(SNES snes, PetscInt step);
 
-  // Run a callback, catching and storing any exception it throws (for
-  // solve() to re-throw) and returning a PETSc error code in its
-  // place, since a C++ exception cannot propagate through the PETSc C
-  // callback frames.
-  template <typename F>
-  PetscErrorCode invoke(F&& f);
-
   // Register the callbacks that have been set, and attach this as the
   // context that the callbacks recover the solver from
   void set_callbacks();
