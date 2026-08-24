@@ -1,0 +1,9 @@
+# AddressSanitizer suppressions for DOLFINx DeveloperDebug builds.
+#
+# Use with: ASAN_OPTIONS=suppressions=<path-to-this-file>
+#
+# container-overflow suppressions are typically better handled with
+# ASAN_OPTIONS=detect_container_overflow=0, since they arise from
+# std::vector/std::string built by a non-instrumented dependency (Catch2,
+# spdlog, ADIOS2, PETSc) and touched by instrumented DOLFINx code, not from a
+# real bug.
