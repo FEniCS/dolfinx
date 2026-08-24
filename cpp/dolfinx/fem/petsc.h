@@ -184,14 +184,14 @@ Mat create_matrix_block(
   PetscErrorCode ierr = ISLocalToGlobalMappingCreate(
       MPI_COMM_SELF, 1, _maps[0].size(), _maps[0].data(), PETSC_COPY_VALUES,
       &petsc_local_to_global0);
-  la::petsc::check(ierr, "ISLocalToGlobalMappingCreate");
+  common::petsc::check(ierr, "ISLocalToGlobalMappingCreate");
   if (V[0] == V[1])
   {
     ierr = MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
                                       petsc_local_to_global0);
-    la::petsc::check(ierr, "MatSetLocalToGlobalMapping");
+    common::petsc::check(ierr, "MatSetLocalToGlobalMapping");
     ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
-    la::petsc::check(ierr, "ISLocalToGlobalMappingDestroy");
+    common::petsc::check(ierr, "ISLocalToGlobalMappingDestroy");
   }
   else
   {
@@ -199,14 +199,14 @@ Mat create_matrix_block(
     ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
                                         _maps[1].data(), PETSC_COPY_VALUES,
                                         &petsc_local_to_global1);
-    la::petsc::check(ierr, "ISLocalToGlobalMappingCreate");
+    common::petsc::check(ierr, "ISLocalToGlobalMappingCreate");
     ierr = MatSetLocalToGlobalMapping(A, petsc_local_to_global0,
                                       petsc_local_to_global1);
-    la::petsc::check(ierr, "MatSetLocalToGlobalMapping");
+    common::petsc::check(ierr, "MatSetLocalToGlobalMapping");
     ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
-    la::petsc::check(ierr, "ISLocalToGlobalMappingDestroy");
+    common::petsc::check(ierr, "ISLocalToGlobalMappingDestroy");
     ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
-    la::petsc::check(ierr, "ISLocalToGlobalMappingDestroy");
+    common::petsc::check(ierr, "ISLocalToGlobalMappingDestroy");
   }
 
   return A;
@@ -257,13 +257,13 @@ Mat create_matrix_nest(
   try
   {
     PetscErrorCode ierr = MatCreate(mesh->comm(), &A);
-    la::petsc::check(ierr, "MatCreate");
+    common::petsc::check(ierr, "MatCreate");
     ierr = MatSetType(A, MATNEST);
-    la::petsc::check(ierr, "MatSetType");
+    common::petsc::check(ierr, "MatSetType");
     ierr = MatNestSetSubMats(A, rows, nullptr, cols, nullptr, mats.data());
-    la::petsc::check(ierr, "MatNestSetSubMats");
+    common::petsc::check(ierr, "MatNestSetSubMats");
     ierr = MatSetUp(A);
-    la::petsc::check(ierr, "MatSetUp");
+    common::petsc::check(ierr, "MatSetUp");
   }
   catch (...)
   {
@@ -316,19 +316,19 @@ void assemble_vector(
 {
   Vec b_local;
   PetscErrorCode ierr = VecGhostGetLocalForm(b, &b_local);
-  la::petsc::check(ierr, "VecGhostGetLocalForm");
+  common::petsc::check(ierr, "VecGhostGetLocalForm");
   PetscInt n = 0;
   ierr = VecGetSize(b_local, &n);
-  la::petsc::check(ierr, "VecGetSize");
+  common::petsc::check(ierr, "VecGetSize");
   PetscScalar* array = nullptr;
   ierr = VecGetArray(b_local, &array);
-  la::petsc::check(ierr, "VecGetArray");
+  common::petsc::check(ierr, "VecGetArray");
   std::span<PetscScalar> _b(array, n);
   fem::assemble_vector(_b, L, constants, coeffs);
   ierr = VecRestoreArray(b_local, &array);
-  la::petsc::check(ierr, "VecRestoreArray");
+  common::petsc::check(ierr, "VecRestoreArray");
   ierr = VecGhostRestoreLocalForm(b, &b_local);
-  la::petsc::check(ierr, "VecGhostRestoreLocalForm");
+  common::petsc::check(ierr, "VecGhostRestoreLocalForm");
 }
 
 /// @brief Assemble linear form into an already allocated PETSc vector.
@@ -346,19 +346,19 @@ void assemble_vector(Vec b, const Form<PetscScalar, T>& L)
 {
   Vec b_local;
   PetscErrorCode ierr = VecGhostGetLocalForm(b, &b_local);
-  la::petsc::check(ierr, "VecGhostGetLocalForm");
+  common::petsc::check(ierr, "VecGhostGetLocalForm");
   PetscInt n = 0;
   ierr = VecGetSize(b_local, &n);
-  la::petsc::check(ierr, "VecGetSize");
+  common::petsc::check(ierr, "VecGetSize");
   PetscScalar* array = nullptr;
   ierr = VecGetArray(b_local, &array);
-  la::petsc::check(ierr, "VecGetArray");
+  common::petsc::check(ierr, "VecGetArray");
   std::span<PetscScalar> _b(array, n);
   fem::assemble_vector(_b, L);
   ierr = VecRestoreArray(b_local, &array);
-  la::petsc::check(ierr, "VecRestoreArray");
+  common::petsc::check(ierr, "VecRestoreArray");
   ierr = VecGhostRestoreLocalForm(b, &b_local);
-  la::petsc::check(ierr, "VecGhostRestoreLocalForm");
+  common::petsc::check(ierr, "VecGhostRestoreLocalForm");
 }
 
 // FIXME: clarify zeroing of vector
@@ -412,13 +412,13 @@ void apply_lifting(
 
   Vec b_local;
   PetscErrorCode ierr = VecGhostGetLocalForm(b, &b_local);
-  la::petsc::check(ierr, "VecGhostGetLocalForm");
+  common::petsc::check(ierr, "VecGhostGetLocalForm");
   PetscInt n = 0;
   ierr = VecGetSize(b_local, &n);
-  la::petsc::check(ierr, "VecGetSize");
+  common::petsc::check(ierr, "VecGetSize");
   PetscScalar* array = nullptr;
   ierr = VecGetArray(b_local, &array);
-  la::petsc::check(ierr, "VecGetArray");
+  common::petsc::check(ierr, "VecGetArray");
   std::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
@@ -432,12 +432,12 @@ void apply_lifting(
     {
       assert(x0[i]);
       ierr = VecGhostGetLocalForm(x0[i], &x0_local[i]);
-      la::petsc::check(ierr, "VecGhostGetLocalForm");
+      common::petsc::check(ierr, "VecGhostGetLocalForm");
       PetscInt n0 = 0;
       ierr = VecGetSize(x0_local[i], &n0);
-      la::petsc::check(ierr, "VecGetSize");
+      common::petsc::check(ierr, "VecGetSize");
       ierr = VecGetArrayRead(x0_local[i], &x0_array[i]);
-      la::petsc::check(ierr, "VecGetArrayRead");
+      common::petsc::check(ierr, "VecGetArrayRead");
       x0_ref.emplace_back(x0_array[i], n0);
     }
 
@@ -446,16 +446,16 @@ void apply_lifting(
     for (std::size_t i = 0; i < x0_local.size(); ++i)
     {
       ierr = VecRestoreArrayRead(x0_local[i], &x0_array[i]);
-      la::petsc::check(ierr, "VecRestoreArrayRead");
+      common::petsc::check(ierr, "VecRestoreArrayRead");
       ierr = VecGhostRestoreLocalForm(x0[i], &x0_local[i]);
-      la::petsc::check(ierr, "VecGhostRestoreLocalForm");
+      common::petsc::check(ierr, "VecGhostRestoreLocalForm");
     }
   }
 
   ierr = VecRestoreArray(b_local, &array);
-  la::petsc::check(ierr, "VecRestoreArray");
+  common::petsc::check(ierr, "VecRestoreArray");
   ierr = VecGhostRestoreLocalForm(b, &b_local);
-  la::petsc::check(ierr, "VecGhostRestoreLocalForm");
+  common::petsc::check(ierr, "VecGhostRestoreLocalForm");
 }
 
 // FIXME: clarify zeroing of vector
@@ -500,13 +500,13 @@ void apply_lifting(
 
   Vec b_local;
   PetscErrorCode ierr = VecGhostGetLocalForm(b, &b_local);
-  la::petsc::check(ierr, "VecGhostGetLocalForm");
+  common::petsc::check(ierr, "VecGhostGetLocalForm");
   PetscInt n = 0;
   ierr = VecGetSize(b_local, &n);
-  la::petsc::check(ierr, "VecGetSize");
+  common::petsc::check(ierr, "VecGetSize");
   PetscScalar* array = nullptr;
   ierr = VecGetArray(b_local, &array);
-  la::petsc::check(ierr, "VecGetArray");
+  common::petsc::check(ierr, "VecGetArray");
   std::span<PetscScalar> _b(array, n);
 
   if (x0.empty())
@@ -520,12 +520,12 @@ void apply_lifting(
     {
       assert(x0[i]);
       ierr = VecGhostGetLocalForm(x0[i], &x0_local[i]);
-      la::petsc::check(ierr, "VecGhostGetLocalForm");
+      common::petsc::check(ierr, "VecGhostGetLocalForm");
       PetscInt n0 = 0;
       ierr = VecGetSize(x0_local[i], &n0);
-      la::petsc::check(ierr, "VecGetSize");
+      common::petsc::check(ierr, "VecGetSize");
       ierr = VecGetArrayRead(x0_local[i], &x0_array[i]);
-      la::petsc::check(ierr, "VecGetArrayRead");
+      common::petsc::check(ierr, "VecGetArrayRead");
       x0_ref.emplace_back(x0_array[i], n0);
     }
 
@@ -534,16 +534,16 @@ void apply_lifting(
     for (std::size_t i = 0; i < x0_local.size(); ++i)
     {
       ierr = VecRestoreArrayRead(x0_local[i], &x0_array[i]);
-      la::petsc::check(ierr, "VecRestoreArrayRead");
+      common::petsc::check(ierr, "VecRestoreArrayRead");
       ierr = VecGhostRestoreLocalForm(x0[i], &x0_local[i]);
-      la::petsc::check(ierr, "VecGhostRestoreLocalForm");
+      common::petsc::check(ierr, "VecGhostRestoreLocalForm");
     }
   }
 
   ierr = VecRestoreArray(b_local, &array);
-  la::petsc::check(ierr, "VecRestoreArray");
+  common::petsc::check(ierr, "VecRestoreArray");
   ierr = VecGhostRestoreLocalForm(b, &b_local);
-  la::petsc::check(ierr, "VecGhostRestoreLocalForm");
+  common::petsc::check(ierr, "VecGhostRestoreLocalForm");
 }
 
 // -- Setting bcs ------------------------------------------------------------
@@ -570,29 +570,29 @@ void set_bc(Vec b,
 {
   PetscInt n = 0;
   PetscErrorCode ierr = VecGetLocalSize(b, &n);
-  la::petsc::check(ierr, "VecGetLocalSize");
+  common::petsc::check(ierr, "VecGetLocalSize");
   PetscScalar* array = nullptr;
   ierr = VecGetArray(b, &array);
-  la::petsc::check(ierr, "VecGetArray");
+  common::petsc::check(ierr, "VecGetArray");
   std::span<PetscScalar> _b(array, n);
   if (x0.has_value())
   {
     Vec x0_local;
     ierr = VecGhostGetLocalForm(x0.value(), &x0_local);
-    la::petsc::check(ierr, "VecGhostGetLocalForm");
+    common::petsc::check(ierr, "VecGhostGetLocalForm");
     PetscInt n0 = 0;
     ierr = VecGetSize(x0_local, &n0);
-    la::petsc::check(ierr, "VecGetSize");
+    common::petsc::check(ierr, "VecGetSize");
     const PetscScalar* x0_array = nullptr;
     ierr = VecGetArrayRead(x0_local, &x0_array);
-    la::petsc::check(ierr, "VecGetArrayRead");
+    common::petsc::check(ierr, "VecGetArrayRead");
     std::span<const PetscScalar> _x0(x0_array, n0);
     for (auto& bc : bcs)
       bc.get().set(_b, _x0, alpha);
     ierr = VecRestoreArrayRead(x0_local, &x0_array);
-    la::petsc::check(ierr, "VecRestoreArrayRead");
+    common::petsc::check(ierr, "VecRestoreArrayRead");
     ierr = VecGhostRestoreLocalForm(x0.value(), &x0_local);
-    la::petsc::check(ierr, "VecGhostRestoreLocalForm");
+    common::petsc::check(ierr, "VecGhostRestoreLocalForm");
   }
   else
   {
@@ -600,7 +600,7 @@ void set_bc(Vec b,
       bc.get().set(_b, std::nullopt, alpha);
   }
   ierr = VecRestoreArray(b, &array);
-  la::petsc::check(ierr, "VecRestoreArray");
+  common::petsc::check(ierr, "VecRestoreArray");
 }
 
 } // namespace petsc

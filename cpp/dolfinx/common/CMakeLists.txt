@@ -10,6 +10,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/local_range.h
   ${CMAKE_CURRENT_SOURCE_DIR}/math.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MPI.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/petsc.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Scatterer.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Table.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Timer.h
@@ -21,5 +22,6 @@ set(
 
 target_sources(
   dolfinx
-  PRIVATE IndexMap.cpp log.cpp MPI.cpp Table.cpp TimeLogger.cpp timing.cpp
+  PRIVATE IndexMap.cpp log.cpp MPI.cpp petsc.cpp Table.cpp TimeLogger.cpp
+          timing.cpp
 )

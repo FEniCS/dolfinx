@@ -20,7 +20,7 @@ using namespace dolfinx::la;
 SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm) : _eps(nullptr)
 {
   PetscErrorCode ierr = EPSCreate(comm, &_eps);
-  petsc::check(ierr, "EPSCreate");
+  common::petsc::check(ierr, "EPSCreate");
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(EPS eps, bool inc_ref_count) : _eps(eps)
@@ -31,7 +31,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(EPS eps, bool inc_ref_count) : _eps(eps)
   if (inc_ref_count)
   {
     PetscErrorCode ierr = PetscObjectReference((PetscObject)_eps);
-    petsc::check(ierr, "PetscObjectReference");
+    common::petsc::check(ierr, "PetscObjectReference");
   }
 }
 //-----------------------------------------------------------------------------
@@ -59,7 +59,7 @@ void SLEPcEigenSolver::set_operators(const Mat A, const Mat B)
   assert(A);
   assert(_eps);
   PetscErrorCode ierr = EPSSetOperators(_eps, A, B);
-  petsc::check(ierr, "EPSSetOperators");
+  common::petsc::check(ierr, "EPSSetOperators");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()
@@ -69,23 +69,23 @@ void SLEPcEigenSolver::solve()
   // Solve eigenvalue problem. EPSSetUp errors if no operators have been
   // set
   PetscErrorCode ierr = EPSSolve(_eps);
-  petsc::check(ierr, "EPSSolve");
+  common::petsc::check(ierr, "EPSSolve");
 
   // Check for convergence
   EPSConvergedReason reason;
   ierr = EPSGetConvergedReason(_eps, &reason);
-  petsc::check(ierr, "EPSGetConvergedReason");
+  common::petsc::check(ierr, "EPSGetConvergedReason");
   if (reason < 0)
     spdlog::warn("Eigenvalue solver did not converge");
 
   // Report solver status
   PetscInt num_iterations = 0;
   ierr = EPSGetIterationNumber(_eps, &num_iterations);
-  petsc::check(ierr, "EPSGetIterationNumber");
+  common::petsc::check(ierr, "EPSGetIterationNumber");
 
   EPSType eps_type = nullptr;
   ierr = EPSGetType(_eps, &eps_type);
-  petsc::check(ierr, "EPSGetType");
+  common::petsc::check(ierr, "EPSGetType");
   spdlog::info("Eigenvalue solver ({}) converged in {} iterations.",
                eps_type ? eps_type : "unknown", num_iterations);
 }
@@ -100,12 +100,12 @@ std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(PetscInt i) const
 #ifdef PETSC_USE_COMPLEX
   PetscScalar l;
   ierr = EPSGetEigenvalue(_eps, i, &l, nullptr);
-  petsc::check(ierr, "EPSGetEigenvalue");
+  common::petsc::check(ierr, "EPSGetEigenvalue");
   return l;
 #else
   PetscScalar lr, li;
   ierr = EPSGetEigenvalue(_eps, i, &lr, &li);
-  petsc::check(ierr, "EPSGetEigenvalue");
+  common::petsc::check(ierr, "EPSGetEigenvalue");
   return std::complex<PetscReal>(lr, li);
 #endif
 }
@@ -118,7 +118,7 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
   // EPSGetEigenpair checks that the problem has been solved and that i
   // is in range
   PetscErrorCode ierr = EPSGetEigenpair(_eps, i, &lr, &lc, r, c);
-  petsc::check(ierr, "EPSGetEigenpair");
+  common::petsc::check(ierr, "EPSGetEigenpair");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_options_prefix(std::string_view options_prefix)
@@ -126,7 +126,7 @@ void SLEPcEigenSolver::set_options_prefix(std::string_view options_prefix)
   assert(_eps);
   PetscErrorCode ierr
       = EPSSetOptionsPrefix(_eps, std::string(options_prefix).c_str());
-  petsc::check(ierr, "EPSSetOptionsPrefix");
+  common::petsc::check(ierr, "EPSSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string SLEPcEigenSolver::get_options_prefix() const
@@ -134,7 +134,7 @@ std::string SLEPcEigenSolver::get_options_prefix() const
   assert(_eps);
   const char* prefix = nullptr;
   PetscErrorCode ierr = EPSGetOptionsPrefix(_eps, &prefix);
-  petsc::check(ierr, "EPSGetOptionsPrefix");
+  common::petsc::check(ierr, "EPSGetOptionsPrefix");
   return prefix ? std::string(prefix) : std::string();
 }
 //-----------------------------------------------------------------------------
@@ -142,7 +142,7 @@ void SLEPcEigenSolver::set_from_options() const
 {
   assert(_eps);
   PetscErrorCode ierr = EPSSetFromOptions(_eps);
-  petsc::check(ierr, "EPSSetFromOptions");
+  common::petsc::check(ierr, "EPSSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 EPS SLEPcEigenSolver::eps() const { return _eps; }
@@ -152,7 +152,7 @@ MPI_Comm SLEPcEigenSolver::comm() const
   assert(_eps);
   MPI_Comm mpi_comm = MPI_COMM_NULL;
   PetscErrorCode ierr = PetscObjectGetComm((PetscObject)_eps, &mpi_comm);
-  petsc::check(ierr, "PetscObjectGetComm");
+  common::petsc::check(ierr, "PetscObjectGetComm");
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------

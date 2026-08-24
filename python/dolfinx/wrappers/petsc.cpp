@@ -10,6 +10,7 @@
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/pycoeff.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/petsc.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/Form.h>
@@ -61,7 +62,7 @@ bool unit_block_size(Mat A)
 {
   PetscInt bs0 = -1, bs1 = -1;
   PetscErrorCode ierr = MatGetBlockSizes(A, &bs0, &bs1);
-  dolfinx::la::petsc::check(ierr, "MatGetBlockSizes");
+  dolfinx::common::petsc::check(ierr, "MatGetBlockSizes");
   return bs0 == 1 and bs1 == 1;
 }
 
