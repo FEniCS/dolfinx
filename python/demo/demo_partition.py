@@ -160,8 +160,7 @@ def cube_block(comm: MPI.Comm, n: int) -> tuple[npt.NDArray[np.int64], npt.NDArr
         corresponding coordinates are in general held by other ranks.
     """
     # Cells: this rank's slice of the n^3 hexahedra
-    c0 = (n**3 * comm.rank) // comm.size
-    c1 = (n**3 * (comm.rank + 1)) // comm.size
+    c0, c1 = common.local_range(comm.rank, n**3, comm.size)
     i = np.arange(c0, c1, dtype=np.int64)
     iz, j = np.divmod(i, n * n)
     iy, ix = np.divmod(j, n)
@@ -178,8 +177,7 @@ def cube_block(comm: MPI.Comm, n: int) -> tuple[npt.NDArray[np.int64], npt.NDArr
     cells = np.stack([v[k] for t in tets for k in t], axis=1).reshape(-1, 4)
 
     # Points: this rank's slice of the (n + 1)^3 grid points
-    p0 = ((n + 1) ** 3 * comm.rank) // comm.size
-    p1 = ((n + 1) ** 3 * (comm.rank + 1)) // comm.size
+    p0, p1 = common.local_range(comm.rank, (n + 1) ** 3, comm.size)
     p = np.arange(p0, p1, dtype=np.int64)
     pz, q = np.divmod(p, (n + 1) ** 2)
     py, px = np.divmod(q, n + 1)
@@ -250,7 +248,9 @@ def redistribute_cells(
 # The edge cut is the global number of inter-process facets: a facet is
 # listed as inter-process on the rank that owns it when its two cells are
 # owned by different ranks, so summing the local counts counts each cut
-# facet once.
+# facet once. This assumes exactly two cells per facet, true for the
+# tetrahedral mesh used here; meshes with branching facets (T-joints, 1D
+# graph structures) can have more, and are not counted by this measure.
 
 
 def partition_quality(msh: Mesh) -> tuple[float, int]:
@@ -281,8 +281,9 @@ def partition_quality(msh: Mesh) -> tuple[float, int]:
 
 # ## Creating a mesh with each partitioner
 #
-# The coordinate element is the same in each case; only the partitioner and
-# the input cell distribution differ. Note that the geometric partitioners
+# The {py:func}`coordinate element <dolfinx.fem.coordinate_element>` is the
+# same in each case; only the partitioner and the input cell distribution
+# differ. Note that the geometric partitioners
 # are given the same coordinate array `x` that is passed to
 # {py:func}`create_mesh <dolfinx.mesh.create_mesh>`, as they need the cell
 # positions to partition on.
@@ -299,10 +300,9 @@ comm = MPI.COMM_WORLD
 # tetrahedra. The effect of the input cell distribution on partitioning
 # cost is visible only on a large mesh, so `n` is large by default. It is
 # reduced when there is nothing to partition (a single rank), and in CI,
-# where the demo must run quickly. Set DEMO_PARTITION_N to override, e.g.
-# when running on few ranks.
+# where the demo must run quickly.
 _small = comm.size == 1 or "CI" in os.environ or "GITHUB_ACTIONS" in os.environ
-n = int(os.environ.get("DEMO_PARTITION_N", 24 if _small else 128))
+n = 24 if _small else 128
 
 cells0, x = cube_block(comm, n)
 cmap = coordinate_element(CellType.tetrahedron, 1)
