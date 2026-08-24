@@ -12,9 +12,10 @@ import warnings
 # Compiler flags block, shared by all templates below. Written with single
 # braces as it is substituted into the templates as a format argument.
 compiler_flags_str = """\
-# Use the DOLFINx Developer compiler flags for Developer build types. Included
-# by path, as putting DOLFINX_DIR on CMAKE_MODULE_PATH lets the installed
-# FindUFCx.cmake shadow the ufcx CONFIG package on case-insensitive filesystems.
+# Use the DOLFINx Developer/DeveloperDebug compiler flags for those build
+# types. Included by path, as putting DOLFINX_DIR on CMAKE_MODULE_PATH lets
+# the installed FindUFCx.cmake shadow the ufcx CONFIG package on
+# case-insensitive filesystems.
 if(DOLFINX_DIR)
   include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
 else()
@@ -23,10 +24,11 @@ endif()
 target_compile_options(
   ${PROJECT_NAME} PRIVATE
   $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  $<$<AND:$<CONFIG:DeveloperDebug>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEBUG_FLAGS}>
 )
 target_compile_definitions(
   ${PROJECT_NAME} PRIVATE
-  $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+  $<$<AND:$<CONFIG:Developer,DeveloperDebug>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which

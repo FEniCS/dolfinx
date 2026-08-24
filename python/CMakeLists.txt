@@ -50,7 +50,13 @@ enable_language(C)
 find_package(DOLFINX REQUIRED CONFIG)
 message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 
-if(CMAKE_BUILD_TYPE STREQUAL "Developer")
+include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
+dolfinx_validate_build_type()
+
+if(
+  CMAKE_BUILD_TYPE STREQUAL "Developer"
+  OR CMAKE_BUILD_TYPE STREQUAL "DeveloperDebug"
+)
   # This enables warnings from DOLFINx headers even though they are a SYSTEM
   # dependency.
   set_target_properties(dolfinx::dolfinx PROPERTIES SYSTEM OFF)
@@ -108,17 +114,16 @@ if(NANOBIND_SABI)
   target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
 endif()
 
-include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
-
 target_compile_options(
   cpp
   PRIVATE
     $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+    $<$<AND:$<CONFIG:DeveloperDebug>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEBUG_FLAGS}>
 )
 target_compile_definitions(
   cpp
   PRIVATE
-    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+    $<$<AND:$<CONFIG:Developer,DeveloperDebug>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 target_compile_features(cpp PRIVATE cxx_std_20)
 

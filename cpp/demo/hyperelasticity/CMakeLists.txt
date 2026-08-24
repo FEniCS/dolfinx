@@ -61,9 +61,10 @@ else()
   target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
   set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
-  # Use the DOLFINx Developer compiler flags for Developer build types. Included
-  # by path, as putting DOLFINX_DIR on CMAKE_MODULE_PATH lets the installed
-  # FindUFCx.cmake shadow the ufcx CONFIG package on case-insensitive filesystems.
+  # Use the DOLFINx Developer/DeveloperDebug compiler flags for those build
+  # types. Included by path, as putting DOLFINX_DIR on CMAKE_MODULE_PATH lets
+  # the installed FindUFCx.cmake shadow the ufcx CONFIG package on
+  # case-insensitive filesystems.
   if(DOLFINX_DIR)
     include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
   else()
@@ -73,11 +74,12 @@ else()
     ${PROJECT_NAME}
     PRIVATE
       $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+      $<$<AND:$<CONFIG:DeveloperDebug>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEBUG_FLAGS}>
   )
   target_compile_definitions(
     ${PROJECT_NAME}
     PRIVATE
-      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+      $<$<AND:$<CONFIG:Developer,DeveloperDebug>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
   )
 
   # Do not throw error for 'multi-line comments' (these are typical in rst which
