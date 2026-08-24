@@ -1139,9 +1139,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       std::vector<std::int32_t> data_i(
           std::next(dest.array().begin(), offsets_i.front()),
           std::next(dest.array().begin(), offsets_i.back()));
-      std::int32_t offset_0 = offsets_i.front();
-      std::ranges::for_each(offsets_i,
-                            [&offset_0](std::int32_t& j) { j -= offset_0; });
+      std::ranges::transform(offsets_i, offsets_i.begin(),
+                             [offset0 = offsets_i.front()](auto x)
+                             { return x - offset0; });
       graph::AdjacencyList<std::int32_t> dest_i(data_i, offsets_i);
       cell_offset += num_cells;
 
