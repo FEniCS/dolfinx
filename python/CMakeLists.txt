@@ -126,6 +126,20 @@ target_compile_definitions(
 )
 target_compile_features(cpp PRIVATE cxx_std_20)
 
+if(
+  CMAKE_BUILD_TYPE STREQUAL "DeveloperDebug"
+  AND DOLFINX_CXX_DEVELOPER_DEBUG_SANITIZE_FLAGS
+)
+  # Re-applied as target properties (not just via CMAKE_*_FLAGS_DEVELOPERDEBUG)
+  # so nanobind_add_stub's sanitizer auto-detection can see them and preload
+  # the runtime for its stub-generation subprocess.
+  target_compile_options(
+    cpp
+    PRIVATE ${DOLFINX_CXX_DEVELOPER_DEBUG_SANITIZE_FLAGS}
+  )
+  target_link_options(cpp PRIVATE ${DOLFINX_CXX_DEVELOPER_DEBUG_LINK_OPTIONS})
+endif()
+
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)
   set_target_properties(
