@@ -1,14 +1,6 @@
-# UndefinedBehaviorSanitizer suppressions for DOLFINx DeveloperDebug builds.
+# UndefinedBehaviorSanitizer suppressions for DOLFINx builds.
 #
 # Use with: UBSAN_OPTIONS=suppressions=<path-to-this-file>
-#
-# NOTE: on macOS/Apple Clang the runtime suppression mechanism does not
-# reliably honour "null" or "alignment" checks by file/function glob (tested
-# against LLVM 17's Darwin UBSan runtime, which supports a narrower
-# suppression set than the Linux runtime). Where a runtime suppression does
-# not take effect, disable the specific check at compile time instead, e.g.
-# with a file-scoped `#pragma clang attribute` or `-fsanitize-ignorelist=`
-# entry local to the affected translation unit.
 #
 # Empty by default. Add entries as false positives are found in
 # non-DOLFINx code, e.g.:
