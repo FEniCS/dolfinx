@@ -51,7 +51,6 @@ find_package(DOLFINX REQUIRED CONFIG)
 message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 
 include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
-dolfinx_validate_build_type()
 
 if(
   CMAKE_BUILD_TYPE STREQUAL "Developer"

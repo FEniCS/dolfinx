@@ -243,7 +243,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 include(DolfinxDeveloperCompilerFlags)
-dolfinx_validate_build_type()
 
 # ------------------------------------------------------------------------------
 # Find required packages
