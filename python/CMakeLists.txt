@@ -123,9 +123,7 @@ target_compile_definitions(
 target_compile_features(cpp PRIVATE cxx_std_20)
 
 # nanobind_add_stub's own sanitizer auto-detection only sees -fsanitize= in a
-# target's COMPILE_OPTIONS/LINK_OPTIONS, not in CMAKE_CXX_FLAGS; without this,
-# building with a sanitizer enabled via CMAKE_CXX_FLAGS(_INIT) crashes during
-# the stub-generation subprocess with "Interceptors are not working".
+# target's COMPILE_OPTIONS/LINK_OPTIONS, not in CMAKE_CXX_FLAGS.
 if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=[^ ]+")
   target_compile_options(cpp PRIVATE ${CMAKE_MATCH_0})
   target_link_options(cpp PRIVATE ${CMAKE_MATCH_0})
