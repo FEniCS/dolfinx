@@ -44,9 +44,8 @@ T assemble_cells(
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
 
   // Base pointer and per-cell stride into coeffs, computed once rather than
-  // per cell. coeffs_data is nullptr when coeffs is empty (a form with no
-  // Function coefficients); coeffs_data + index * cstride is well-defined
-  // even then, as cstride is 0 and every offset collapses to nullptr + 0.
+  // per cell; coeffs_data + index * cstride is well-defined even when coeffs
+  // is empty (cstride == 0), unlike &coeffs(index, 0).
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = coeffs.extent(1);
 
@@ -100,7 +99,6 @@ T assemble_entities(
 
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
 
-  // See the note in assemble_cells on coeffs_data/cstride.
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = coeffs.extent(1);
 
@@ -153,8 +151,7 @@ T assemble_interior_facets(
   auto cdofs0 = cdofs_b.first(3 * x_dofmap.extent(1));
   auto cdofs1 = cdofs_b.last(3 * x_dofmap.extent(1));
 
-  // See the note in assemble_cells on coeffs_data/cstride. coeffs is
-  // indexed (f, side, cstride), so the per-facet stride covers both sides.
+  // coeffs is indexed (f, side, cstride); cstride here covers both sides.
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = 2 * coeffs.extent(2);
 
