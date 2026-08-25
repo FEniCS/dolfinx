@@ -35,31 +35,46 @@ Notes:
 
 ## Python
 
-`dolfinx.cpp` is `dlopen`ed after interpreter start, so the sanitizer
-runtime must be preloaded.
+Activate your venv first. `dolfinx.cpp` is `dlopen`ed after interpreter
+start, so the sanitizer runtime must be preloaded.
 
-**Linux:**
+**Linux, GCC:**
 
 ```sh
-# GCC: libasan.so   Clang: libclang_rt.asan-x86_64.so
-LD_PRELOAD=$($CC -print-file-name=<libname above>) \
+LD_PRELOAD=$(gcc -print-file-name=libasan.so) \
 ASAN_OPTIONS=detect_container_overflow=0 \
   python -m pytest python/test
 ```
 
-**macOS:**
+**Linux, Clang:**
+
+```sh
+LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-$(uname -m).so) \
+ASAN_OPTIONS=detect_container_overflow=0 \
+  python -m pytest python/test
+```
+
+**macOS:** the venv's `python` re-launches itself through
+`Resources/Python.app/Contents/MacOS/Python`, so `DYLD_INSERT_LIBRARIES` set
+on `python` loads ASan twice and aborts with `Interceptors are not working`.
+Launch that inner binary directly instead:
+
+```sh
+cat > /tmp/run_pytest_sanitized.py <<'EOF'
+import os, site, sys
+site.addsitedir(os.path.join(os.environ["VIRTUAL_ENV"], "lib",
+    f"python{sys.version_info.major}.{sys.version_info.minor}", "site-packages"))
+import pytest
+sys.exit(pytest.main(sys.argv[1:]))
+EOF
+```
 
 ```sh
 PYBIN="$(python -c 'import sys, pathlib; print(next(pathlib.Path(sys.base_prefix).glob("Resources/Python.app/Contents/MacOS/Python")))')"
 DYLD_INSERT_LIBRARIES=$(clang -print-file-name=libclang_rt.asan_osx_dynamic.dylib) \
 ASAN_OPTIONS=detect_container_overflow=0 \
-  "$PYBIN" -c "import site; site.addsitedir('$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')')
-import sys, pytest; sys.exit(pytest.main(sys.argv[1:]))" python/test
+  "$PYBIN" /tmp/run_pytest_sanitized.py python/test
 ```
-
-Use the venv's actual interpreter binary directly (found above), not the
-`python` on `PATH` — otherwise ASan loads twice and aborts with
-`Interceptors are not working`.
 
 For MPI, wrap with `mpiexec -x ...` as above.
 
