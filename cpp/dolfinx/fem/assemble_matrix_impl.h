@@ -121,6 +121,13 @@ void assemble_cells_matrix(
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
   auto Ae = Ab.first(ndim0 * ndim1);
 
+  // Base pointer and per-cell stride into coeffs, computed once rather than
+  // per cell. coeffs_data is nullptr when coeffs is empty (a form with no
+  // Function coefficients); coeffs_data + c * cstride is well-defined even
+  // then, as cstride is 0 and every offset collapses to nullptr + 0.
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
   // Iterate over active cells
   assert(cells0.size() == cells.size());
   assert(cells1.size() == cells.size());
@@ -147,13 +154,10 @@ void assemble_cells_matrix(
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
-    // Tabulate tensor. submdspan(...).data_handle() is used rather than
-    // &coeffs(c, 0): the latter dereferences to form a reference before
-    // taking its address, which is UB when coeffs is empty (a form with no
-    // Function coefficients), whereas submdspan only computes an offset.
+    // Tabulate tensor
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), md::submdspan(coeffs, c, md::full_extent).data_handle(),
-           constants.data(), cdofs_b.data(), nullptr, nullptr, nullptr);
+    kernel(Ae.data(), coeffs_data + c * cstride, constants.data(),
+           cdofs_b.data(), nullptr, nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
     P0(Ae, cell_info0, cell0, ndim1);  // B = P0 \tilde{A}
@@ -304,6 +308,11 @@ void assemble_entities(
   assert(Ab.size() >= ndim0 * ndim1);
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
   auto Ae = Ab.first(ndim0 * ndim1);
+
+  // See the note in assemble_cells_matrix on coeffs_data/cstride.
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
   for (std::size_t f = 0; f < entities.extent(0); ++f)
   {
     // Cell in the integration domain, local entity index relative to the
@@ -332,11 +341,10 @@ void assemble_entities(
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
 
-    // Tabulate tensor. See note above on avoiding &coeffs(f, 0), which is UB
-    // when coeffs is empty.
+    // Tabulate tensor
     std::ranges::fill(Ae, 0);
-    kernel(Ae.data(), md::submdspan(coeffs, f, md::full_extent).data_handle(),
-           constants.data(), cdofs_b.data(), &local_entity, &perm, nullptr);
+    kernel(Ae.data(), coeffs_data + f * cstride, constants.data(),
+           cdofs_b.data(), &local_entity, &perm, nullptr);
     P0(Ae, cell_info0, cell0, ndim1);
     P1T(Ae, cell_info1, cell1, ndim0);
 
@@ -504,6 +512,12 @@ void assemble_interior_facets(
   // where both cells exist, so such blocks must be inserted
   // individually rather than as part of the full joint block.
   assert(Ae_block_b.size() >= dmap0_size * bs0 * dmap1_size * bs1);
+
+  // See the note in assemble_cells_matrix on coeffs_data/cstride. coeffs is
+  // indexed (f, side, cstride), so the per-facet stride covers both sides.
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = 2 * coeffs.extent(2);
+
   auto insert_block = [&Ae_block_b, &Ae, &bs0, &bs1, &num_cols,
                        &mat_set](std::span<const std::int32_t> rdofs,
                                  std::span<const std::int32_t> cdofs,
@@ -573,17 +587,14 @@ void assemble_interior_facets(
         continue;
     }
 
-    // Tabulate tensor. See note above on avoiding &coeffs(f, 0), which is UB
-    // when coeffs is empty.
+    // Tabulate tensor
     std::ranges::fill(Ae, 0);
     std::array perm = perms.empty()
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    kernel(Ae.data(),
-           md::submdspan(coeffs, f, 0, md::full_extent).data_handle(),
-           constants.data(), cdofs_b.data(), local_facet.data(), perm.data(),
-           nullptr);
+    kernel(Ae.data(), coeffs_data + f * cstride, constants.data(),
+           cdofs_b.data(), local_facet.data(), perm.data(), nullptr);
 
     // Local element layout is a 2x2 block matrix with structure
     //

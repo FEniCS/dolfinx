@@ -43,6 +43,13 @@ T assemble_cells(
 
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
 
+  // Base pointer and per-cell stride into coeffs, computed once rather than
+  // per cell. coeffs_data is nullptr when coeffs is empty (a form with no
+  // Function coefficients); coeffs_data + index * cstride is well-defined
+  // even then, as cstride is 0 and every offset collapses to nullptr + 0.
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
   // Iterate over all cells
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
@@ -53,12 +60,8 @@ T assemble_cells(
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
       std::copy_n(&x(x_dofs[i], 0), 3, std::next(cdofs_b.begin(), 3 * i));
 
-    // submdspan(...).data_handle() is used rather than &coeffs(index, 0):
-    // the latter dereferences to form a reference before taking its
-    // address, which is UB when coeffs is empty (a form with no Function
-    // coefficients), whereas submdspan only computes an offset.
-    fn(&value, md::submdspan(coeffs, index, md::full_extent).data_handle(),
-       constants.data(), cdofs_b.data(), nullptr, nullptr, nullptr);
+    fn(&value, coeffs_data + index * cstride, constants.data(), cdofs_b.data(),
+       nullptr, nullptr, nullptr);
   }
 
   return value;
@@ -97,6 +100,10 @@ T assemble_entities(
 
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
 
+  // See the note in assemble_cells on coeffs_data/cstride.
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
   // Iterate over all facets
   for (std::size_t f = 0; f < entities.extent(0); ++f)
   {
@@ -110,10 +117,8 @@ T assemble_entities(
 
     // Permutations
     std::uint8_t perm = perms.empty() ? 0 : perms(cell, local_entity);
-    // See note above on avoiding &coeffs(f, 0), which is UB when coeffs is
-    // empty.
-    fn(&value, md::submdspan(coeffs, f, md::full_extent).data_handle(),
-       constants.data(), cdofs_b.data(), &local_entity, &perm, nullptr);
+    fn(&value, coeffs_data + f * cstride, constants.data(), cdofs_b.data(),
+       &local_entity, &perm, nullptr);
   }
 
   return value;
@@ -148,6 +153,11 @@ T assemble_interior_facets(
   auto cdofs0 = cdofs_b.first(3 * x_dofmap.extent(1));
   auto cdofs1 = cdofs_b.last(3 * x_dofmap.extent(1));
 
+  // See the note in assemble_cells on coeffs_data/cstride. coeffs is
+  // indexed (f, side, cstride), so the per-facet stride covers both sides.
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = 2 * coeffs.extent(2);
+
   // Iterate over all facets
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
@@ -166,11 +176,8 @@ T assemble_interior_facets(
                           ? std::array<std::uint8_t, 2>{0, 0}
                           : std::array{perms(cells[0], local_facet[0]),
                                        perms(cells[1], local_facet[1])};
-    // See note above on avoiding &coeffs(f, 0), which is UB when coeffs is
-    // empty.
-    fn(&value, md::submdspan(coeffs, f, 0, md::full_extent).data_handle(),
-       constants.data(), cdofs_b.data(), local_facet.data(), perm.data(),
-       nullptr);
+    fn(&value, coeffs_data + f * cstride, constants.data(), cdofs_b.data(),
+       local_facet.data(), perm.data(), nullptr);
   }
 
   return value;
