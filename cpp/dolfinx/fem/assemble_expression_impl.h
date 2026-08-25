@@ -81,6 +81,15 @@ void tabulate_expression(
   int size0 = Xshape[0] * value_size;
   std::vector<T> values_local(size0 * num_argument_dofs, 0);
   std::size_t offset = values_local.size();
+
+  // Base pointer and per-entity stride into coeffs, computed once rather
+  // than per entity. coeffs_data is nullptr when coeffs is empty (a form
+  // with no Function coefficients); coeffs_data + e * cstride is
+  // well-defined even then, as cstride is 0 and every offset collapses to
+  // nullptr + 0.
+  const T* coeffs_data = coeffs.data_handle();
+  const std::size_t cstride = coeffs.extent(1);
+
   for (std::size_t e = 0; e < entities.extent(0); ++e)
   {
     std::ranges::fill(values_local, 0);
@@ -93,7 +102,7 @@ void tabulate_expression(
         std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                     std::next(coord_dofs.begin(), 3 * i));
       }
-      fn(values_local.data(), &coeffs(e, 0), constants.data(),
+      fn(values_local.data(), coeffs_data + e * cstride, constants.data(),
          coord_dofs.data(), nullptr, nullptr, nullptr);
 
       P0(values_local, cell_info, entity, size0);
@@ -109,7 +118,7 @@ void tabulate_expression(
         std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
                     std::next(coord_dofs.begin(), 3 * i));
       }
-      fn(values_local.data(), &coeffs(e, 0), constants.data(),
+      fn(values_local.data(), coeffs_data + e * cstride, constants.data(),
          coord_dofs.data(), &local_entity, &perm, nullptr);
       P0(values_local, cell_info, entity, size0);
     }
