@@ -1,9 +1,11 @@
 # Running DOLFINx under sanitizers
 
-## Configure
+## Build the C++ library
 
 ```sh
 cmake -G Ninja -DCMAKE_BUILD_TYPE=DeveloperDebug -B build -S cpp
+cmake --build build
+cmake --install build --prefix <install prefix, e.g. your venv>
 ```
 
 Sanitizer set: `-DDOLFINX_DEVELOPER_DEBUG_SANITIZERS="address;undefined"`
@@ -12,7 +14,7 @@ Sanitizer set: `-DDOLFINX_DEVELOPER_DEBUG_SANITIZERS="address;undefined"`
 Suppressions files (`asan.supp`, `lsan.supp`, `ubsan.supp`) live in this
 directory and are installed to `${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx/sanitizers`.
 
-## C++
+## Run under C++
 
 ```sh
 ASAN_OPTIONS=detect_container_overflow=0:suppressions=$PWD/cpp/cmake/sanitizers/asan.supp \
@@ -33,10 +35,20 @@ Notes:
 - If MPI/PETSc leak noise dominates, add `detect_leaks=0` and
   `PETSC_OPTIONS=-malloc_debug 0`.
 
-## Python
+## Build the Python bindings
 
-Activate your venv first. `dolfinx.cpp` is `dlopen`ed after interpreter
-start, so the sanitizer runtime must be preloaded.
+With the C++ library above installed into your venv's prefix, and the venv
+active:
+
+```sh
+pip install --check-build-dependencies --no-build-isolation \
+  -Ccmake.build-type="DeveloperDebug" python/
+```
+
+## Run under Python
+
+`dolfinx.cpp` is `dlopen`ed after interpreter start, so the sanitizer
+runtime must be preloaded.
 
 **Linux, GCC:**
 
