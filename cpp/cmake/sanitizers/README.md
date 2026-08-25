@@ -14,6 +14,8 @@ cmake --build build
 cmake --install build
 ```
 
+`-O0` rather than `-Og` may be best for step-through debugging sessions.
+
 For UBSan only (required for MPI-parallel Python on macOS, see below): drop
 `address,` from both `-fsanitize=` values and drop the two `LINKER_FLAGS`
 lines.
