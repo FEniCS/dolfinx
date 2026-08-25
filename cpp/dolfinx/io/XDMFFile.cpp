@@ -194,31 +194,8 @@ XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
   auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);
   auto [x, xshape] = XDMFFile::read_geometry_data(name, xpath);
 
-  // TODO: formalise how this should work with XDMFFile
+  // TODO: figure out how to include this data with XDMFFile
   std::vector<std::int32_t> cell_weights;
-  if (_h5_id)
-  {
-    std::string cwname = "/Mesh/mesh/cell_weights";
-    if (io::hdf5::has_dataset(_h5_id, cwname))
-    {
-      std::cout << "Reading cell weight dataset /Mesh/mesh/cell_weights\n";
-
-      // Get data shape from HDF5 file
-      const std::vector shape_hdf5
-          = io::hdf5::get_dataset_shape(_h5_id, cwname);
-      auto range
-          = common::local_range(dolfinx::MPI::rank(_comm.comm()), shape_hdf5[0],
-                                dolfinx::MPI::size(_comm.comm()));
-
-      hid_t dset_id = io::hdf5::open_dataset(_h5_id, cwname);
-      cell_weights = io::hdf5::read_dataset<std::int32_t>(dset_id, range, true);
-      H5Dclose(dset_id);
-
-      if (cell_weights.size() != cshape[0])
-        throw std::runtime_error(
-            "Cell weights size mismatch with number of local cells");
-    }
-  }
 
   // Create mesh
   const std::vector<double>& _x = std::get<std::vector<double>>(x);
