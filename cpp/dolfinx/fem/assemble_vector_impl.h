@@ -89,9 +89,6 @@ void assemble_cells(
   assert(be_b.size() >= bs * dmap.extent(1));
   auto be = be_b.first(bs * dmap.extent(1));
 
-  // Base pointer and per-cell stride into coeffs, computed once rather than
-  // per cell; coeffs_data + index * cstride is well-defined even when coeffs
-  // is empty (cstride == 0), unlike &coeffs(index, 0).
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = coeffs.extent(1);
 
@@ -287,7 +284,6 @@ void assemble_interior_facets(
   assert(be_b.size() >= static_cast<std::size_t>(bs) * 2 * dmap_size);
   auto be = be_b.first(bs * 2 * dmap_size);
 
-  // coeffs is indexed (f, side, cstride); cstride here covers both sides.
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = 2 * coeffs.extent(2);
 
