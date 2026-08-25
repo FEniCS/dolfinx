@@ -83,10 +83,8 @@ void tabulate_expression(
   std::size_t offset = values_local.size();
 
   // Base pointer and per-entity stride into coeffs, computed once rather
-  // than per entity. coeffs_data is nullptr when coeffs is empty (a form
-  // with no Function coefficients); coeffs_data + e * cstride is
-  // well-defined even then, as cstride is 0 and every offset collapses to
-  // nullptr + 0.
+  // than per entity; coeffs_data + e * cstride is well-defined even when
+  // coeffs is empty (cstride == 0), unlike &coeffs(e, 0).
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = coeffs.extent(1);
 
