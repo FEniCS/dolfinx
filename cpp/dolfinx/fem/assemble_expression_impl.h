@@ -82,9 +82,6 @@ void tabulate_expression(
   std::vector<T> values_local(size0 * num_argument_dofs, 0);
   std::size_t offset = values_local.size();
 
-  // Base pointer and per-entity stride into coeffs, computed once rather
-  // than per entity; coeffs_data + e * cstride is well-defined even when
-  // coeffs is empty (cstride == 0), unlike &coeffs(e, 0).
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = coeffs.extent(1);
 

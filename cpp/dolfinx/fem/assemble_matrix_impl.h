@@ -121,9 +121,6 @@ void assemble_cells_matrix(
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
   auto Ae = Ab.first(ndim0 * ndim1);
 
-  // Base pointer and per-cell stride into coeffs, computed once rather than
-  // per cell; coeffs_data + c * cstride is well-defined even when coeffs is
-  // empty (cstride == 0), unlike &coeffs(c, 0).
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = coeffs.extent(1);
 
@@ -511,7 +508,6 @@ void assemble_interior_facets(
   // individually rather than as part of the full joint block.
   assert(Ae_block_b.size() >= dmap0_size * bs0 * dmap1_size * bs1);
 
-  // coeffs is indexed (f, side, cstride); cstride here covers both sides.
   const T* coeffs_data = coeffs.data_handle();
   const std::size_t cstride = 2 * coeffs.extent(2);
 
