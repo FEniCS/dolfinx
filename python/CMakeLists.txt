@@ -50,12 +50,7 @@ enable_language(C)
 find_package(DOLFINX REQUIRED CONFIG)
 message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 
-include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
-
-if(
-  CMAKE_BUILD_TYPE STREQUAL "Developer"
-  OR CMAKE_BUILD_TYPE STREQUAL "DeveloperDebug"
-)
+if(CMAKE_BUILD_TYPE STREQUAL "Developer")
   # This enables warnings from DOLFINx headers even though they are a SYSTEM
   # dependency.
   set_target_properties(dolfinx::dolfinx PROPERTIES SYSTEM OFF)
@@ -113,32 +108,19 @@ if(NANOBIND_SABI)
   target_compile_definitions(cpp PRIVATE CYTHON_COMPILING_IN_LIMITED_API=1)
 endif()
 
+include("${DOLFINX_DIR}/DolfinxDeveloperCompilerFlags.cmake")
+
 target_compile_options(
   cpp
   PRIVATE
     $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
-    $<$<AND:$<CONFIG:DeveloperDebug>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEBUG_FLAGS}>
 )
 target_compile_definitions(
   cpp
   PRIVATE
-    $<$<AND:$<CONFIG:Developer,DeveloperDebug>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 target_compile_features(cpp PRIVATE cxx_std_20)
-
-if(
-  CMAKE_BUILD_TYPE STREQUAL "DeveloperDebug"
-  AND DOLFINX_CXX_DEVELOPER_DEBUG_SANITIZE_FLAGS
-)
-  # Re-applied as target properties (not just via CMAKE_*_FLAGS_DEVELOPERDEBUG)
-  # so nanobind_add_stub's sanitizer auto-detection can see them and preload
-  # the runtime for its stub-generation subprocess.
-  target_compile_options(
-    cpp
-    PRIVATE ${DOLFINX_CXX_DEVELOPER_DEBUG_SANITIZE_FLAGS}
-  )
-  target_link_options(cpp PRIVATE ${DOLFINX_CXX_DEVELOPER_DEBUG_LINK_OPTIONS})
-endif()
 
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY NAMES clang-tidy REQUIRED)

@@ -237,7 +237,7 @@ if(NOT CMAKE_BUILD_TYPE)
     CMAKE_BUILD_TYPE
     "RelWithDebInfo"
     CACHE STRING
-    "Choose the type of build, options are: Debug Developer DeveloperDebug MinSizeRel Release RelWithDebInfo."
+    "Choose the type of build, options are: Debug Developer MinSizeRel Release RelWithDebInfo."
     FORCE
   )
 endif()

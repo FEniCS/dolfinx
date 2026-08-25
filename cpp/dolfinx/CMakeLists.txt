@@ -73,19 +73,18 @@ target_compile_definitions(
 # ------------------------------------------------------------------------------
 # Set compiler options and definitions
 
-# Set 'Developer' and 'DeveloperDebug' build type flags
+# Set 'Developer' build type flags
 target_compile_options(
   dolfinx
   PRIVATE
     $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
-    $<$<AND:$<CONFIG:DeveloperDebug>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEBUG_FLAGS}>
 )
 
-# Set 'Developer' and 'DeveloperDebug' compile definitions
+# Set 'Developer' compile definitions
 target_compile_definitions(
   dolfinx
   PRIVATE
-    $<$<AND:$<CONFIG:Developer,DeveloperDebug>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
 )
 
 # Add version to definitions (public)
@@ -264,13 +263,6 @@ install(
     ${CMAKE_BINARY_DIR}/dolfinx/DOLFINXConfigVersion.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/FindUFCx.cmake
     ${DOLFINX_SOURCE_DIR}/cmake/modules/DolfinxDeveloperCompilerFlags.cmake
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
-  COMPONENT Development
-)
-
-# Install sanitizer suppressions files for the DeveloperDebug build type
-install(
-  DIRECTORY ${DOLFINX_SOURCE_DIR}/cmake/sanitizers
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx
   COMPONENT Development
 )

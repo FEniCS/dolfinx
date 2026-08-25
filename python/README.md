@@ -18,12 +18,6 @@ To build in Developer and editable mode for development:
 
 Note that Developer mode is significantly stricter than CMake's default Debug mode.
 
-To build with sanitizers for finding bugs rather than performance, use
-`-Ccmake.build-type="DeveloperDebug"` in place of `Developer` above. See the
-[sanitizer runbook](../cpp/cmake/sanitizers/README.md) for how to run the
-Python extension module under it, including the `LD_PRELOAD`/
-`DYLD_INSERT_LIBRARIES` recipe it requires.
-
 # Type checking with mypy
 
 1. Install DOLFINx Python with the `typing` extra, plus `mypy` itself

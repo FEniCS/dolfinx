@@ -22,14 +22,6 @@ The demos can also be built as part of DOLFINx by configuring `cpp/` with
 `-DDOLFINX_BUILD_DEMOS=ON`. The `demos` target then builds them all, and their
 tests are added to the `test` target alongside the unit tests.
 
-## Running under sanitizers
-
-`-DCMAKE_BUILD_TYPE=DeveloperDebug` builds with `-Og`, debug symbols, and
-AddressSanitizer + UndefinedBehaviorSanitizer by default (override with
-`-DDOLFINX_DEVELOPER_DEBUG_SANITIZERS=...`, e.g. `thread` or empty for none).
-See the [sanitizer runbook](../cmake/sanitizers/README.md) for the run-time
-options needed to keep MPI/PETSc/HDF5 allocation noise out of the report.
-
 ## Documentation
 
 The demo sources are commented in Markdown and rendered into the DOLFINx

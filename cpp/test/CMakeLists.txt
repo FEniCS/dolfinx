@@ -91,19 +91,11 @@ if(DEFINED DOLFINX_CXX_DEVELOPER_FLAGS)
   )
 endif()
 
-if(DEFINED DOLFINX_CXX_DEVELOPER_DEBUG_FLAGS)
-  target_compile_options(
-    unittests
-    PRIVATE
-      $<$<AND:$<CONFIG:DeveloperDebug>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEBUG_FLAGS}>
-  )
-endif()
-
 if(DEFINED DOLFINX_CXX_DEVELOPER_DEFINITIONS)
   target_compile_definitions(
     unittests
     PRIVATE
-      $<$<AND:$<CONFIG:Developer,DeveloperDebug>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
+      $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_DEFINITIONS}>
   )
 endif()
 
