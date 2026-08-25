@@ -22,6 +22,8 @@ The demos can also be built as part of DOLFINx by configuring `cpp/` with
 `-DDOLFINX_BUILD_DEMOS=ON`. The `demos` target then builds them all, and their
 tests are added to the `test` target alongside the unit tests.
 
+To run under sanitizers, see the [sanitizer runbook](../cmake/sanitizers/README.md).
+
 ## Documentation
 
 The demo sources are commented in Markdown and rendered into the DOLFINx
