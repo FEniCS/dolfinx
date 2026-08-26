@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,6 +10,7 @@
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/pycoeff.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/petsc.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/Form.h>
@@ -55,6 +56,16 @@ to_index_map_refs(const std::vector<std::pair<U, int>>& maps)
   std::ranges::transform(maps, std::back_inserter(_maps), [](auto& m)
                          { return std::pair{std::cref(*m.first), m.second}; });
   return _maps;
+}
+
+/// @brief Test if A has row and column block size 1, in which case
+/// blocked and non-blocked insertion of dof indices are equivalent.
+bool unit_block_size(Mat A)
+{
+  PetscInt bs0 = -1, bs1 = -1;
+  dolfinx::common::petsc::check(MatGetBlockSizes(A, &bs0, &bs1),
+                                "MatGetBlockSizes");
+  return bs0 == 1 and bs1 == 1;
 }
 
 void petsc_la_module(nb::module_& m)
@@ -187,10 +198,22 @@ void petsc_fem_module(nb::module_& m)
         }
         else
         {
-          dolfinx::fem::assemble_matrix(
-              dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
-              std::span(constants.data(), constants.size()),
-              dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+          // Non-blocked insertion is cheaper than the blocked interface,
+          // and equivalent when A has block size 1
+          if (unit_block_size(A))
+          {
+            dolfinx::fem::assemble_matrix(
+                dolfinx::la::petsc::Matrix::set_fn(A, ADD_VALUES), a,
+                std::span(constants.data(), constants.size()),
+                dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+          }
+          else
+          {
+            dolfinx::fem::assemble_matrix(
+                dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
+                std::span(constants.data(), constants.size()),
+                dolfinx_wrappers::py_to_cpp_coeffs(coefficients), _bcs);
+          }
         }
       },
       nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
@@ -238,6 +261,8 @@ void petsc_fem_module(nb::module_& m)
               A, a.function_spaces()[0]->dofmap()->bs(),
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
         }
+        else if (unit_block_size(A))
+          set_fn = dolfinx::la::petsc::Matrix::set_fn(A, ADD_VALUES);
         else
           set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
 

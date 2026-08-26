@@ -85,7 +85,7 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
     auto cell_facets = c_to_f.links(cell);
     auto facet_it = std::find(cell_facets.begin(), cell_facets.end(), f);
     assert(facet_it != cell_facets.end());
-    int local_f = std::distance(cell_facets.begin(), facet_it);
+    int local_f = std::ranges::distance(cell_facets.begin(), facet_it);
     cell_local_facet_pairs[2 * c] = cell;
     cell_local_facet_pairs[2 * c + 1] = local_f;
   }
@@ -116,7 +116,7 @@ get_cell_entity_pairs(std::int32_t e, std::span<const std::int32_t> cells,
   auto cell_entities = c_to_e.links(cell);
   auto it = std::ranges::find(cell_entities, e);
   assert(it != cell_entities.end());
-  std::int32_t local_index = std::distance(cell_entities.begin(), it);
+  std::int32_t local_index = std::ranges::distance(cell_entities.begin(), it);
 
   return {cell, local_index};
 }

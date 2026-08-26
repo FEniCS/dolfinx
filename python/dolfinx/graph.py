@@ -68,7 +68,7 @@ class AdjacencyList(Generic[Index]):
         """
         self._cpp_object = g
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """String representation of the adjacency list."""
         return self._cpp_object.__repr__()
 

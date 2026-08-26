@@ -9,27 +9,30 @@
 #include "partitioners.h"
 #include <algorithm>
 #include <boost/sort/sort.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
-#include <map>
 #include <memory>
 
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-graph::partition_graph(MPI_Comm comm, int nparts,
-                       const AdjacencyList<std::int64_t>& local_graph,
-                       bool ghosting)
+graph::AdjacencyList<std::int32_t> graph::partition_graph(
+    MPI_Comm comm, int nparts, const AdjacencyList<std::int64_t>& local_graph,
+    std::span<const std::int32_t> node_weights,
+    std::span<const std::int32_t> edge_weights, bool ghosting)
 {
 #if HAS_PARMETIS
-  return graph::parmetis::partitioner()(comm, nparts, local_graph, ghosting);
+  return graph::parmetis::partitioner()(comm, nparts, local_graph, node_weights,
+                                        edge_weights, ghosting);
 #elif HAS_PTSCOTCH
-  return graph::scotch::partitioner()(comm, nparts, local_graph, ghosting);
+  return graph::scotch::partitioner()(comm, nparts, local_graph, node_weights,
+                                      edge_weights, ghosting);
 #elif HAS_KAHIP
-  return graph::kahip::partitioner()(comm, nparts, local_graph, ghosting);
+  return graph::kahip::partitioner()(comm, nparts, local_graph, node_weights,
+                                     edge_weights, ghosting);
 #else
 // Should never reach this point
 #endif
@@ -98,7 +101,7 @@ graph::build::distribute(MPI_Comm comm,
                          [r = dest.back()](auto idx) { return idx[0] != r; });
 
       // Store number of items for current rank
-      num_items_per_dest.push_back(std::distance(it, it1));
+      num_items_per_dest.push_back(std::ranges::distance(it, it1));
 
       // Advance iterator
       it = it1;
@@ -287,7 +290,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
                          [r = dest.back()](auto& idx) { return idx[0] != r; });
 
       // Store number of items for current rank
-      num_items_per_dest.push_back(std::distance(it, it1));
+      num_items_per_dest.push_back(std::ranges::distance(it, it1));
 
       // Advance iterator
       it = it1;
@@ -420,7 +423,12 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   // Find out how many ghosts are on each neighboring process
   std::vector<int> ghost_index_count;
   std::vector<int> neighbors;
-  std::map<int, int> proc_to_neighbor;
+  // A tree map here costs a heap-allocating node lookup/insert on
+  // every one of potentially many millions of ghost ranks touched
+  // below, even though the map itself stays tiny (bounded by the
+  // number of distinct neighbour ranks); an open-addressed map avoids
+  // that per-element allocation and pointer-chasing.
+  boost::unordered_flat_map<int, int> proc_to_neighbor;
   for (int p : ghost_owners)
   {
     assert(p != dolfinx::MPI::rank(comm));
@@ -492,33 +500,53 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   // Complete global_offset scan
   MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
 
-  std::vector<std::array<std::int64_t, 2>> old_to_new;
-  old_to_new.reserve(owned_indices.size());
-
-  for (auto idx : owned_indices)
-  {
-    old_to_new.push_back(
-        {idx, static_cast<std::int64_t>(offset_local + old_to_new.size())});
-  }
-
   if (num_threads > 1)
   {
+    std::vector<std::array<std::int64_t, 2>> old_to_new;
+    old_to_new.reserve(owned_indices.size());
+    for (auto idx : owned_indices)
+    {
+      old_to_new.push_back(
+          {idx, static_cast<std::int64_t>(offset_local + old_to_new.size())});
+    }
+
     boost::sort::block_indirect_sort(old_to_new.begin(), old_to_new.end(),
                                      num_threads);
+
+    // Replace values in recv_data with new_index and send back
+    std::ranges::transform(
+        recv_data, recv_data.begin(),
+        [&old_to_new](auto r)
+        {
+          auto it = std::ranges::lower_bound(old_to_new, r, std::ranges::less(),
+                                             [](auto e) { return e[0]; });
+          assert(it != old_to_new.end() and it->front() == r);
+          return (*it)[1];
+        });
   }
   else
-    std::ranges::sort(old_to_new);
+  {
+    // Map from old (global) index to new (global) index. A hash map
+    // replaces the sort and O(log n) binary search with an
+    // O(1)-average lookup per entry of recv_data -- worth it since
+    // owned_indices (built once) can be in the millions, while
+    // recv_data (the ghost-boundary traffic, looked up repeatedly) is
+    // typically far smaller.
+    boost::unordered_flat_map<std::int64_t, std::int64_t> old_to_new;
+    old_to_new.reserve(owned_indices.size());
+    std::int64_t new_idx = offset_local;
+    for (auto idx : owned_indices)
+      old_to_new.emplace(idx, new_idx++);
 
-  // Replace values in recv_data with new_index and send back
-  std::ranges::transform(recv_data, recv_data.begin(),
-                         [&old_to_new](auto r)
-                         {
-                           auto it = std::ranges::lower_bound(
-                               old_to_new, r, std::ranges::less(),
-                               [](auto e) { return e[0]; });
-                           assert(it != old_to_new.end() and it->front() == r);
-                           return (*it)[1];
-                         });
+    // Replace values in recv_data with new_index and send back
+    std::ranges::transform(recv_data, recv_data.begin(),
+                           [&old_to_new](auto r)
+                           {
+                             auto it = old_to_new.find(r);
+                             assert(it != old_to_new.end());
+                             return it->second;
+                           });
+  }
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
@@ -528,23 +556,22 @@ std::vector<std::int64_t> graph::build::compute_ghost_indices(
   MPI_Comm_free(&neighbor_comm_fwd);
   MPI_Comm_free(&neighbor_comm_rev);
 
-  // Build (old id,  new id) pairs
-  std::vector<std::array<std::int64_t, 2>> old_to_new1(send_data.size());
-  std::ranges::transform(send_data, new_recv, old_to_new1.begin(),
-                         [](auto idx_old, auto idx_new) ->
-                         typename decltype(old_to_new1)::value_type
-                         { return {idx_old, idx_new}; });
-  std::ranges::sort(old_to_new1);
+  // Build old id -> new id map. As above, built once and then queried
+  // once per entry of `ghost_indices` -- a hash map replaces the sort
+  // and the O(log n) binary search per lookup with an O(1)-average
+  // lookup.
+  boost::unordered_flat_map<std::int64_t, std::int64_t> old_to_new1;
+  old_to_new1.reserve(send_data.size());
+  for (std::size_t i = 0; i < send_data.size(); ++i)
+    old_to_new1.emplace(send_data[i], new_recv[i]);
 
   std::vector<std::int64_t> ghost_global_indices(ghost_indices.size());
   std::ranges::transform(ghost_indices, ghost_global_indices.begin(),
                          [&old_to_new1](auto q)
                          {
-                           auto it = std::ranges::lower_bound(
-                               old_to_new1, std::array<std::int64_t, 2>{q, 0},
-                               [](auto a, auto b) { return a[0] < b[0]; });
-                           assert(it != old_to_new1.end() and it->front() == q);
-                           return (*it)[1];
+                           auto it = old_to_new1.find(q);
+                           assert(it != old_to_new1.end());
+                           return it->second;
                          });
 
   return ghost_global_indices;

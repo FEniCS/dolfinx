@@ -266,7 +266,7 @@ private:
     std::int32_t map_size = dofmap.index_map->size_local();
     std::int32_t owned_size = bs * map_size;
     auto it = std::ranges::lower_bound(dofs, owned_size);
-    return std::distance(dofs.begin(), it);
+    return std::ranges::distance(dofs.begin(), it);
   }
 
   /// Unroll dofs for block size.

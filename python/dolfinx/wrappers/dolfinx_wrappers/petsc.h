@@ -14,6 +14,7 @@
 #include "pycoeff.h"
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/petsc.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -86,13 +87,17 @@ void declare_petsc_discrete_operators(nb::module_& m)
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         try
         {
-          MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
+          dolfinx::common::petsc::check(
+              MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE),
+              "MatSetOption");
           dolfinx::fem::discrete_curl<U, T>(
               V0, V1, dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
         }
         catch (...)
         {
-          MatDestroy(&A);
+          // Already unwinding, so a thrown error here calls
+          // std::terminate rather than propagating
+          dolfinx::common::petsc::check(MatDestroy(&A), "MatDestroy");
           throw;
         }
         return A;
@@ -134,7 +139,9 @@ void declare_petsc_discrete_operators(nb::module_& m)
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         try
         {
-          MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
+          dolfinx::common::petsc::check(
+              MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE),
+              "MatSetOption");
           dolfinx::fem::discrete_gradient<T, U>(
               *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
               {*V1.element(), *V1.dofmap()},
@@ -142,7 +149,9 @@ void declare_petsc_discrete_operators(nb::module_& m)
         }
         catch (...)
         {
-          MatDestroy(&A);
+          // Already unwinding, so a thrown error here calls
+          // std::terminate rather than propagating
+          dolfinx::common::petsc::check(MatDestroy(&A), "MatDestroy");
           throw;
         }
         return A;
@@ -183,13 +192,17 @@ void declare_petsc_discrete_operators(nb::module_& m)
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         try
         {
-          MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
+          dolfinx::common::petsc::check(
+              MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE),
+              "MatSetOption");
           dolfinx::fem::interpolation_matrix<T, U>(
               V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES));
         }
         catch (...)
         {
-          MatDestroy(&A);
+          // Already unwinding, so a thrown error here calls
+          // std::terminate rather than propagating
+          dolfinx::common::petsc::check(MatDestroy(&A), "MatDestroy");
           throw;
         }
         return A;

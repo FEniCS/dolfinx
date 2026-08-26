@@ -38,7 +38,7 @@ namespace
 /// before this function is called.
 ///
 /// @param[in] comm MPI communicator
-/// @param[in] facets Facets on this rank that are shared by only on
+/// @param[in] facets Facets on this rank that are shared by only one
 /// cell on this rank, i.e. candidates for possibly residing on other
 /// processes. Each row in `facets` corresponds to a facet, and the row
 /// data has the form `[v0, ..., v_{n-1}, -1, -1]`, where `v_i` are the
@@ -187,12 +187,14 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     }
     // A radix sort on the flattened data is used in place of a generic
     // comparison sort, as dest_to_index can have hundreds of thousands
-    // of entries for a large mesh.
+    // of entries for a large mesh. Sort by the dest-rank column (0)
+    // only -- grouping below only depends on dest rank, so sorting by
+    // the facet-position column (1) too would be a wasted second pass.
     std::span<const std::int32_t> flat(
         reinterpret_cast<const std::int32_t*>(dest_to_index.data()),
         2 * dest_to_index.size());
     std::vector<std::int32_t> perm
-        = dolfinx::sort_by_perm<std::int32_t, 16>(flat, 2);
+        = dolfinx::sort_by_perm<std::int32_t, 16>(flat, 2, 1);
     std::vector<std::array<std::int32_t, 2>> sorted(dest_to_index.size());
     for (std::size_t i = 0; i < perm.size(); ++i)
       sorted[i] = dest_to_index[perm[i]];
@@ -213,7 +215,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                          [r = dest.back()](auto& idx) { return idx[0] != r; });
 
       // Store number of items for current rank
-      num_items_per_dest.push_back(std::distance(it, it1));
+      num_items_per_dest.push_back(std::ranges::distance(it, it1));
 
       // Set entry in map from local facet row index (position) to local
       // destination rank
@@ -301,7 +303,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Search for consecutive facets (-> dual graph edge between cells)
   // and pack into send buffer. We store for every cell the number of
   // matches, the offsets of each cell and the continuous data. Note:
-  // 'deges' is short for dual edges.
+  // 'dedges' is short for dual edges.
   std::vector<int> dedge_send_count(recv_disp.back());
   std::vector<std::int32_t> dedge_send_displs(dedge_send_count.size() + 1, 0);
   std::vector<std::int64_t> dedge_send_data;
@@ -417,46 +419,40 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
                           num_items_per_dest.data(), send_disp.data(), MPI_INT,
                           comm_po_receive, &dedge_recv_count_request);
 
+  // Collapse per-facet-slot counts into per-neighbour-rank totals and
+  // the corresponding displacements. `counts` is indexed by facet
+  // slot (flat across all neighbours' facets); `group_sizes[i]` is
+  // the number of facet slots sent to/received from neighbour `i`.
+  // Note: pp in variable names is short for per-process.
+  auto collapse_counts_to_pp
+      = [](std::span<const int> counts, const auto& group_sizes)
+      -> std::pair<std::vector<int>, std::vector<std::int32_t>>
+  {
+    std::vector<int> pp_count(group_sizes.size(), 0);
+    std::vector<std::int32_t> pp_displs(pp_count.size() + 1, 0);
+    int index = 0;
+    for (std::size_t i = 0; i < group_sizes.size(); i++)
+    {
+      for (int j = 0; j < group_sizes[i]; j++)
+        pp_count[i] += counts[index++];
+    }
+
+    std::partial_sum(pp_count.begin(), pp_count.end(),
+                     std::next(pp_displs.begin()));
+    return {std::move(pp_count), std::move(pp_displs)};
+  };
+
   // Prepare send data for matched facets. Note, we have prepared
   // adjacency information for all cells. Here we retrieve the offset
   // and displacement data corresponding to the per process adjacency
   // lists.
-  // Note: pp in variable names is short for per-process.
-  std::vector<int> dedge_send_count_pp(num_items_recv.size(), 0);
-  std::vector<std::int32_t> dedge_send_displs_pp(dedge_send_count_pp.size() + 1,
-                                                 0);
-  {
-    int index = 0;
-    for (std::size_t i = 0; i < num_items_recv.size(); i++)
-    {
-      for (int j = 0; j < num_items_recv[i]; j++)
-        dedge_send_count_pp[i] += dedge_send_count[index + j];
-
-      index += num_items_recv[i];
-    }
-
-    std::partial_sum(dedge_send_count_pp.begin(), dedge_send_count_pp.end(),
-                     std::next(dedge_send_displs_pp.begin()));
-  }
+  auto [dedge_send_count_pp, dedge_send_displs_pp]
+      = collapse_counts_to_pp(dedge_send_count, num_items_recv);
 
   // Compute matched facet receive counts and displacements.
-  std::vector<int> dedge_recv_count_pp(num_items_per_dest.size(), 0);
-  std::vector<std::int32_t> dedge_recv_displs_pp(dedge_recv_count_pp.size() + 1,
-                                                 0);
   MPI_Wait(&dedge_recv_count_request, MPI_STATUS_IGNORE);
-  {
-    int index = 0;
-    for (std::size_t i = 0; i < num_items_per_dest.size(); i++)
-    {
-      for (int j = 0; j < num_items_per_dest[i]; j++)
-        dedge_recv_count_pp[i] += dedge_recv_count[index + j];
-
-      index += num_items_per_dest[i];
-    }
-
-    std::partial_sum(dedge_recv_count_pp.begin(), dedge_recv_count_pp.end(),
-                     std::next(dedge_recv_displs_pp.begin()));
-  }
+  auto [dedge_recv_count_pp, dedge_recv_displs_pp]
+      = collapse_counts_to_pp(dedge_recv_count, num_items_per_dest);
   // Exchange flattened list of matched facets
   std::vector<std::int64_t> recv_dual_edges(dedge_recv_displs_pp.back());
   MPI_Neighbor_alltoallv(dedge_send_data.data(), dedge_send_count_pp.data(),
@@ -630,20 +626,29 @@ mesh::build_local_dual_graph(
   // 2) Build a list of (all) facets, defined by sorted vertices, with
   //    the connected cell index after the vertices. For v_ij the j-th
   //    vertex of the i-th facet. The last index is the cell index (non
-  //    unique).
-  // facets = [v_11, v_12, v_13, -1, ..., -1, 0,
-  //           v_21, v_22, v_23, -1, ..., -1, 0,
-  //             ⋮     ⋮      ⋮    ⋮   ⋱    ⋮  ⋮
-  //           v_n1, v_n2,   -1, -1, ..., -1, n]
+  //    unique). Stored column-major (SoA): `facets` is one span per
+  //    column, backed by a single contiguous allocation
+  //    (`facets_storage`), so sorting the leading max_vertices_per_facet
+  //    columns (via the column-major sort_by_perm overload below) needs
+  //    no per-column extraction copy, unlike the row-major layout this
+  //    replaced.
+  // facets[0] = [v_11, v_21, ..., v_n1]
+  // facets[1] = [v_12, v_22, ..., v_n2]
+  //                ⋮      ⋮  ⋱     ⋮
+  // facets[k] = [-1,   -1,  ..., -1]    (padding, mixed-topology only)
+  // facets[max_vertices_per_facet] = [0, 1, ..., n]   (attached cell)
 
   common::Timer timer1("Compute local part of mesh dual graph: 1");
 
   auto build_facets_fn
-      = [](int shape1, int num_cell_vertices, std::size_t cell_offset,
+      = [](int num_vertices_per_facet_max, int num_cell_vertices,
+           std::size_t cell_offset, std::size_t facet_offset,
            const graph::AdjacencyList<int>& cell_facets,
-           std::span<const std::int64_t> cells, std::span<std::int64_t> facets)
+           std::span<const std::int64_t> cells,
+           std::span<const std::span<std::int64_t>> facets)
   {
     constexpr std::int32_t padding_value = -1;
+    std::vector<std::int64_t> row(num_vertices_per_facet_max);
     for (std::size_t c = 0; c < cells.size() / num_cell_vertices; ++c)
     {
       // Loop over cell facets
@@ -651,55 +656,66 @@ mesh::build_local_dual_graph(
       for (int f = 0; f < cell_facets.num_nodes(); ++f)
       {
         std::span facet_vertices = cell_facets.links(f);
-        auto facet_c = facets.subspan(
-            (c * cell_facets.num_nodes() + f) * shape1, shape1);
-        std::ranges::transform(facet_vertices, facet_c.begin(),
+        std::ranges::transform(facet_vertices, row.begin(),
                                [v](auto idx) { return v[idx]; });
 
         // Sort the facet's vertices (a hot loop over all cell facets, so
         // the common sizes are hand-unrolled rather than calling the
         // general-purpose std::sort for what is almost always a 2- or
         // 3-element array).
-        auto it = std::next(facet_c.begin(), facet_vertices.size());
+        auto it = std::next(row.begin(), facet_vertices.size());
         if (facet_vertices.size() == 2)
         {
-          if (facet_c[0] > facet_c[1])
-            std::swap(facet_c[0], facet_c[1]);
+          if (row[0] > row[1])
+            std::swap(row[0], row[1]);
         }
         else if (facet_vertices.size() == 3)
         {
-          if (facet_c[0] > facet_c[1])
-            std::swap(facet_c[0], facet_c[1]);
-          if (facet_c[1] > facet_c[2])
-            std::swap(facet_c[1], facet_c[2]);
-          if (facet_c[0] > facet_c[1])
-            std::swap(facet_c[0], facet_c[1]);
+          if (row[0] > row[1])
+            std::swap(row[0], row[1]);
+          if (row[1] > row[2])
+            std::swap(row[1], row[2]);
+          if (row[0] > row[1])
+            std::swap(row[0], row[1]);
         }
         else if (facet_vertices.size() == 4)
         {
           // 5-compare-exchange sorting network (quadrilateral facets,
           // e.g. hexahedron/prism cells).
-          if (facet_c[0] > facet_c[1])
-            std::swap(facet_c[0], facet_c[1]);
-          if (facet_c[2] > facet_c[3])
-            std::swap(facet_c[2], facet_c[3]);
-          if (facet_c[0] > facet_c[2])
-            std::swap(facet_c[0], facet_c[2]);
-          if (facet_c[1] > facet_c[3])
-            std::swap(facet_c[1], facet_c[3]);
-          if (facet_c[1] > facet_c[2])
-            std::swap(facet_c[1], facet_c[2]);
+          if (row[0] > row[1])
+            std::swap(row[0], row[1]);
+          if (row[2] > row[3])
+            std::swap(row[2], row[3]);
+          if (row[0] > row[2])
+            std::swap(row[0], row[2]);
+          if (row[1] > row[3])
+            std::swap(row[1], row[3]);
+          if (row[1] > row[2])
+            std::swap(row[1], row[2]);
         }
         else
-          std::sort(facet_c.begin(), it);
-        std::fill(it, facet_c.end(), padding_value);
-        facet_c.back() = c + cell_offset;
+          std::sort(row.begin(), it);
+        // Pad unused vertex columns.
+        std::fill(it, row.end(), padding_value);
+
+        // Scatter the facet's row out to its column-major positions.
+        std::size_t idx = facet_offset + c * cell_facets.num_nodes() + f;
+        for (int k = 0; k < num_vertices_per_facet_max; ++k)
+          facets[k][idx] = row[k];
+        facets[num_vertices_per_facet_max][idx] = c + cell_offset;
       }
     }
   };
 
   const int shape1 = max_vertices_per_facet + 1;
-  std::vector<std::int64_t> facets(facet_count * shape1);
+  std::vector<std::int64_t> facets_storage(facet_count * shape1);
+  std::vector<std::span<std::int64_t>> facets(shape1);
+  for (int col = 0; col < shape1; ++col)
+  {
+    facets[col] = std::span<std::int64_t>(
+        facets_storage.data() + col * facet_count, facet_count);
+  }
+
   std::size_t facet_offset = 0;
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
@@ -714,21 +730,18 @@ mesh::build_local_dual_graph(
     {
       auto [c0, c1] = common::local_range(i, num_cells_j, num_threads);
       threads.emplace_back(
-          build_facets_fn, shape1, num_cell_vertices, cell_offsets[j] + c0,
+          build_facets_fn, max_vertices_per_facet, num_cell_vertices,
+          cell_offsets[j] + c0, facet_offset + c0 * cell_facets.num_nodes(),
           std::cref(cell_facets),
           _cells.subspan(c0 * num_cell_vertices, (c1 - c0) * num_cell_vertices),
-          std::span(facets.data()
-                        + (facet_offset + c0 * cell_facets.num_nodes())
-                              * shape1,
-                    ((c1 - c0) * cell_facets.num_nodes()) * shape1));
+          std::span<const std::span<std::int64_t>>(facets));
     }
     auto [c0, c1] = common::local_range(0, num_cells_j, num_threads);
     build_facets_fn(
-        shape1, num_cell_vertices, cell_offsets[j] + c0, std::cref(cell_facets),
+        max_vertices_per_facet, num_cell_vertices, cell_offsets[j] + c0,
+        facet_offset + c0 * cell_facets.num_nodes(), std::cref(cell_facets),
         _cells.subspan(c0 * num_cell_vertices, (c1 - c0) * num_cell_vertices),
-        std::span(facets.data()
-                      + (facet_offset + c0 * cell_facets.num_nodes()) * shape1,
-                  ((c1 - c0) * cell_facets.num_nodes()) * shape1));
+        std::span<const std::span<std::int64_t>>(facets));
 
     facet_offset += num_cells_j * cell_facets.num_nodes();
   }
@@ -742,22 +755,33 @@ mesh::build_local_dual_graph(
   std::vector<std::int32_t> perm;
   if (num_threads > 1)
   {
-    perm.resize(facets.size() / shape1, 0);
+    perm.resize(facet_count, 0);
     std::iota(perm.begin(), perm.end(), 0);
     boost::sort::block_indirect_sort(
         perm.begin(), perm.end(),
-        [facets = std::cref(facets), shape1](auto f0, auto f1)
+        // Compare only the vertex columns (`max_vertices_per_facet` of
+        // the `shape1` columns) -- the trailing column is the attached
+        // cell index, which the matching step below never compares on.
+        [facets = std::cref(facets), max_vertices_per_facet](auto f0, auto f1)
         {
-          auto it0 = std::next(facets.get().begin(), f0 * shape1);
-          auto it1 = std::next(facets.get().begin(), f1 * shape1);
-          return std::lexicographical_compare(it0, std::next(it0, shape1), it1,
-                                              std::next(it1, shape1));
+          for (int col = 0; col < max_vertices_per_facet; ++col)
+          {
+            std::int64_t v0 = facets.get()[col][f0];
+            std::int64_t v1 = facets.get()[col][f1];
+            if (v0 != v1)
+              return v0 < v1;
+          }
+          return false;
         },
         num_threads);
   }
   else
   {
-    perm = dolfinx::sort_by_perm(std::span<const std::int64_t>(facets), shape1);
+    // Exclude the trailing cell-index column from the sort key, as
+    // above.
+    std::vector<std::span<const std::int64_t>> sort_cols(
+        facets.begin(), std::next(facets.begin(), max_vertices_per_facet));
+    perm = dolfinx::sort_by_perm(std::span(sort_cols));
   }
 
   timer3.stop();
@@ -769,6 +793,21 @@ mesh::build_local_dual_graph(
   //    process.
   common::Timer timer4("Compute local part of mesh dual graph: 4");
 
+  // Column-major accessors: vertex column `col` of facet `idx`, and the
+  // attached cell index (the last column) of facet `idx`.
+  auto facet_vertex
+      = [&facets](std::size_t idx, int col) { return facets[col][idx]; };
+  auto facet_cell = [&facets, max_vertices_per_facet](std::size_t idx)
+  { return static_cast<std::int32_t>(facets[max_vertices_per_facet][idx]); };
+  auto facets_equal = [&facet_vertex, max_vertices_per_facet](std::size_t idx0,
+                                                              std::size_t idx1)
+  {
+    for (int col = 0; col < max_vertices_per_facet; ++col)
+      if (facet_vertex(idx0, col) != facet_vertex(idx1, col))
+        return false;
+    return true;
+  };
+
   std::vector<std::int64_t> unmatched_facets;
   std::vector<std::int32_t> local_cells;
   std::vector<std::array<std::int32_t, 2>> edges;
@@ -776,20 +815,13 @@ mesh::build_local_dual_graph(
     for (auto it = perm.begin(); it != perm.end();)
     {
       std::size_t facet_index = *it;
-      std::span facet(facets.data() + facet_index * shape1, shape1);
 
       // Find iterator to next facet different from f0 -> all facets in
       // [it, it_next_facet) describe the same facet
       auto matching_facets = std::ranges::subrange(
           it, std::find_if_not(it, perm.end(),
-                               [facet, &facets, shape1](auto idx) -> bool
-                               {
-                                 auto f1_it
-                                     = std::next(facets.begin(), idx * shape1);
-                                 return std::equal(facet.begin(),
-                                                   std::prev(facet.end()),
-                                                   f1_it);
-                               }));
+                               [facet_index, &facets_equal](auto idx)
+                               { return facets_equal(facet_index, idx); }));
 
       std::int32_t cell_count = matching_facets.size();
       assert(cell_count >= 1);
@@ -798,10 +830,10 @@ mesh::build_local_dual_graph(
         // Store unmatched facets and the attached cell
         for (std::int32_t i = 0; i < cell_count; i++)
         {
-          unmatched_facets.insert(unmatched_facets.end(), facet.begin(),
-                                  std::prev(facet.end()));
-          std::int32_t cell = facets[*std::next(it, i) * shape1 + (shape1 - 1)];
-          local_cells.push_back(cell);
+          std::size_t idx = *std::next(it, i);
+          for (int col = 0; col < max_vertices_per_facet; ++col)
+            unmatched_facets.push_back(facet_vertex(idx, col));
+          local_cells.push_back(facet_cell(idx));
         }
       }
 
@@ -811,13 +843,11 @@ mesh::build_local_dual_graph(
       for (auto facet_a_it = it; facet_a_it != matching_facets.end();
            ++facet_a_it)
       {
-        std::span facet_a(facets.data() + *facet_a_it * shape1, shape1);
-        std::int32_t cell_a = facet_a.back();
+        std::int32_t cell_a = facet_cell(*facet_a_it);
         for (auto facet_b_it = std::next(facet_a_it);
              facet_b_it != matching_facets.end(); ++facet_b_it)
         {
-          std::span facet_b(facets.data() + *facet_b_it * shape1, shape1);
-          std::int32_t cell_b = facet_b.back();
+          std::int32_t cell_b = facet_cell(*facet_b_it);
           edges.push_back({cell_a, cell_b});
         }
       }

@@ -153,7 +153,7 @@ def create_vector(
 
 
 def create_matrix(
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     kind: str | Sequence[Sequence[str]] | None = None,
 ) -> PETSc.Mat:
     """Create a matrix compatible with a sequence of bilinear forms.
@@ -345,11 +345,14 @@ def _assemble_vector_petsc(
         for b_sub, L_sub, const, coeff in zip(
             b.getNestSubVecs(), L, constants, coeffs, strict=True
         ):
+            assert L_sub is not None
             with b_sub.localForm() as b_local:
                 _assemble_vector_array(b_local.array_w, L_sub, const, coeff)
     elif isinstance(L, Sequence):
-        constants = pack_constants(L) if constants is None else constants
-        coeffs = pack_coefficients(L) if coeffs is None else coeffs
+        if constants is None:
+            constants = pack_constants(L)
+        if coeffs is None:
+            coeffs = pack_coefficients(L)
         offset0, offset1 = b.getAttr("_blocks")  # type: ignore
         with b.localForm() as b_l:
             for L_, const, coeff, off0, off1, offg0, offg1 in zip(
@@ -381,7 +384,7 @@ def _assemble_vector_petsc(
 # -- Matrix assembly ------------------------------------------------------
 @overload
 def assemble_matrix(
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1.0,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
@@ -395,7 +398,7 @@ def assemble_matrix(
 @overload
 def assemble_matrix(
     A: PETSc.Mat,
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1.0,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
@@ -409,7 +412,7 @@ def assemble_matrix(
 
 @functools.singledispatch
 def assemble_matrix(
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
@@ -418,8 +421,8 @@ def assemble_matrix(
         | Sequence[Sequence[dict[tuple[dolfinx.fem.IntegralType, int], npt.NDArray]]]
         | None
     ) = None,
-    kind=None,
-):
+    kind: str | Sequence[Sequence[str]] | None = None,
+) -> PETSc.Mat:
     """Assemble a bilinear form into a matrix.
 
     The following cases are supported:
@@ -478,7 +481,7 @@ def assemble_matrix(
 @assemble_matrix.register  # type: ignore[attr-defined]
 def _assemble_matrix_petsc(
     A: PETSc.Mat,
-    a: Form | Sequence[Sequence[Form]],
+    a: Form | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | None = None,
     diag: float = 1,
     constants: npt.NDArray | Sequence[Sequence[npt.NDArray]] | None = None,
@@ -504,8 +507,10 @@ def _assemble_matrix_petsc(
             raise ValueError(
                 "Must provide a sequence of sequences of coefficients when assembling a nest matrix"
             )
-        constants = [pack_constants(forms) for forms in a] if constants is None else constants
-        coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
+        if constants is None:
+            constants = [pack_constants(forms) for forms in a]
+        if coeffs is None:
+            coeffs = [pack_coefficients(forms) for forms in a]
         for i, (a_row, const_row, coeff_row) in enumerate(zip(a, constants, coeffs, strict=True)):
             for j, (a_block, const, coeff) in enumerate(
                 zip(a_row, const_row, coeff_row, strict=True)
@@ -513,12 +518,12 @@ def _assemble_matrix_petsc(
                 if a_block is not None:
                     Asub = A.getNestSubMatrix(i, j)
                     _assemble_matrix_petsc(Asub, a_block, bcs, diag, const, coeff)
-                elif i == j:
+                elif i == j and bcs is not None:
                     for bc in bcs:
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
-                        if row_forms[0].function_spaces[0].contains(bc.function_space._cpp_object):
+                        if row_forms[0].function_spaces[0].contains(bc.function_space._cpp_object):  # type: ignore
                             raise RuntimeError(
                                 f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
                                 " and have DirichletBC applied."
@@ -526,7 +531,8 @@ def _assemble_matrix_petsc(
                             )
     elif isinstance(a, Sequence):  # Blocked
         consts = [pack_constants(forms) for forms in a] if constants is None else constants
-        coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs
+        if coeffs is None:
+            coeffs = [pack_coefficients(forms) for forms in a]
         V = (_extract_function_spaces(a, 0), _extract_function_spaces(a, 1))
         for index in range(2):
             # the check below is to ensure that a .dofmaps attribute is
@@ -559,7 +565,7 @@ def _assemble_matrix_petsc(
                     )
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
                 elif i == j:
-                    for bc in _bcs:
+                    for bc in _bcs:  # type: ignore
                         row_forms = [row_form for row_form in a_row if row_form is not None]
                         if len(row_forms) == 0:
                             raise ValueError(f"Row {i} of forms is entirely 'None'.")
@@ -582,8 +588,10 @@ def _assemble_matrix_petsc(
                         _cpp.fem.petsc.insert_diagonal(Asub, a_sub.function_spaces[0], _bcs, diag)  # type: ignore[arg-type]
                     A.restoreLocalSubMatrix(is0[i], is1[j], Asub)
     else:  # Non-blocked
-        constants = pack_constants(a) if constants is None else constants
-        coeffs = pack_coefficients(a) if coeffs is None else coeffs
+        if constants is None:
+            constants = pack_constants(a)
+        if coeffs is None:
+            coeffs = pack_coefficients(a)
         _bcs = [bc._cpp_object for bc in bcs] if bcs is not None else []
         _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)  # type: ignore
         if a.function_spaces[0] is a.function_spaces[1]:
@@ -599,7 +607,7 @@ def _assemble_matrix_petsc(
 
 def apply_lifting(
     b: PETSc.Vec,
-    a: Sequence[Form] | Sequence[Sequence[Form]],
+    a: Sequence[Form | None] | Sequence[Sequence[Form | None]],
     bcs: Sequence[DirichletBC] | Sequence[Sequence[DirichletBC]] | None,
     x0: Sequence[PETSc.Vec] | None = None,
     alpha: float = 1,
@@ -665,12 +673,16 @@ def apply_lifting(
     """
     if b.getType() == PETSc.Vec.Type.NEST:
         x0 = [] if x0 is None else x0.getNestSubVecs()  # type: ignore[attr-defined]
-        constants = [pack_constants(forms) for forms in a] if constants is None else constants  # type: ignore[assignment]
-        coeffs = [pack_coefficients(forms) for forms in a] if coeffs is None else coeffs  # type: ignore[misc]
+        if constants is None:
+            constants = [pack_constants(forms) for forms in a]  # type: ignore
+        if coeffs is None:
+            coeffs = [pack_coefficients(forms) for forms in a]  # type: ignore
+        assert coeffs is not None
+        assert constants is not None
         for b_sub, a_sub, const, coeff in zip(
             b.getNestSubVecs(),
             a,
-            constants,  # type: ignore[arg-type]
+            constants,
             coeffs,
             strict=True,
         ):
@@ -682,8 +694,9 @@ def apply_lifting(
                 if x0 is not None:
                     offset0, offset1 = x0.getAttr("_blocks")  # type: ignore[attr-defined]
                     xl = stack.enter_context(x0.localForm())  # type: ignore[attr-defined]
+                    xl_r = xl.array_r
                     xlocal = [
-                        np.concatenate((xl[off0:off1], xl[offg0:offg1]))
+                        np.concatenate((xl_r[off0:off1], xl_r[offg0:offg1]))
                         for (off0, off1, offg0, offg1) in zip(
                             offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True
                         )
@@ -696,19 +709,21 @@ def apply_lifting(
                     for i, (a_, off0, off1, offg0, offg1) in enumerate(
                         zip(a, offset0[:-1], offset0[1:], offset1[:-1], offset1[1:], strict=True)
                     ):
-                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore[call-overload]
-                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore[index, call-overload, assignment]
+                        const = pack_constants(a_) if constants is None else constants[i]  # type: ignore
+                        coeff = pack_coefficients(a_) if coeffs is None else coeffs[i]  # type: ignore
                         const_ = [
                             np.empty(0, dtype=PETSc.ScalarType) if val is None else val
                             for val in const
                         ]
-                        bx_ = np.concatenate((b_l[off0:off1], b_l[offg0:offg1]))
+                        b_l_r = b_l.array_r
+                        bx_ = np.concatenate((b_l_r[off0:off1], b_l_r[offg0:offg1]))
                         _apply_lifting(bx_, a_, bcs, xlocal, float(alpha), const_, coeff)  # type: ignore[arg-type]
                         size = off1 - off0
                         b_l.array_w[off0:off1] = bx_[:size]
                         b_l.array_w[offg0:offg1] = bx_[size:]
             else:
-                x0 = [] if x0 is None else x0
+                if x0 is None:
+                    x0 = []
                 x0 = [stack.enter_context(x.localForm()) for x in x0]
                 x0_r = [x.array_r for x in x0]
                 b_local = stack.enter_context(b.localForm())
@@ -998,7 +1013,7 @@ class LinearProblem(typing.Generic[_U]):
             )
             self.solver.getPC().setFieldSplitIS(*fieldsplit_IS)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destroy internally held PETSc objects."""
         # __init__ may have raised before all attributes were set
         for name in ("_solver", "_A", "_b", "_x", "_P_mat"):
@@ -1083,7 +1098,7 @@ class LinearProblem(typing.Generic[_U]):
         return typing.cast(Form | Sequence[Sequence[Form]], self._a)
 
     @property
-    def preconditioner(self) -> Form | Sequence[Sequence[Form]] | None:
+    def preconditioner(self) -> Form | Sequence[Sequence[Form | None]] | None:
         """The compiled bilinear form representing the preconditioner."""
         return self._preconditioner
 
@@ -1140,7 +1155,7 @@ def assemble_residual(
     jacobian: Form | Sequence[Sequence[Form]],
     bcs: Sequence[DirichletBC],
     _blocks: tuple[tuple[int, int, int], ...] | None = None,
-):
+) -> None:
     """Assemble the residual at ``x`` into the vector ``b``.
 
     A function conforming to the interface expected by ``SNES.setFunction``
@@ -1214,7 +1229,7 @@ def assemble_jacobian(
     jacobian: Form | Sequence[Sequence[Form]],
     preconditioner: Form | Sequence[Sequence[Form]] | None,
     bcs: Sequence[DirichletBC],
-):
+) -> None:
     """Assemble the Jacobian and preconditioner matrices.
 
     A function conforming to the interface expected by
@@ -1278,7 +1293,7 @@ class NonlinearProblem(typing.Generic[_U]):
     """  # noqa: D301
 
     _P_mat: PETSc.Mat | None
-    _preconditioner: Form | Sequence[Sequence[Form]] | None
+    _preconditioner: Form | Sequence[Sequence[Form | None]] | None
 
     @typing.overload
     def __init__(
@@ -1419,7 +1434,8 @@ class NonlinearProblem(typing.Generic[_U]):
 
         self._u = u
         # Set default values if not supplied
-        bcs = [] if bcs is None else bcs
+        if bcs is None:
+            bcs = []
 
         # Create PETSc structures for the residual, Jacobian and solution
         # vector
@@ -1519,7 +1535,7 @@ class NonlinearProblem(typing.Generic[_U]):
 
         return self.u
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destroy PETSc objects created internally."""
         # __init__ may have raised before all attributes were set
         for name in ("_snes", "_A", "_b", "_x", "_P_mat"):
@@ -1537,7 +1553,7 @@ class NonlinearProblem(typing.Generic[_U]):
         return typing.cast(Form | Sequence[Sequence[Form]], self._J)
 
     @property
-    def preconditioner(self) -> Form | Sequence[Sequence[Form]] | None:
+    def preconditioner(self) -> Form | Sequence[Sequence[Form | None]] | None:
         """The compiled preconditioner."""
         return self._preconditioner
 
@@ -1766,7 +1782,7 @@ def interpolation_matrix(V0: _FunctionSpace, V1: _FunctionSpace) -> PETSc.Mat:
 
 
 @functools.singledispatch
-def assign(u: _Function | Sequence[_Function], x: PETSc.Vec):
+def assign(u: _Function | Sequence[_Function], x: PETSc.Vec) -> None:
     """Assign :class:`Function` degrees-of-freedom to a vector.
 
     Assigns degree-of-freedom values in ``u``, which is possibly a
@@ -1795,7 +1811,7 @@ def assign(u: _Function | Sequence[_Function], x: PETSc.Vec):
 
 
 @assign.register
-def _(x: PETSc.Vec, u: _Function | Sequence[_Function]):  # type: ignore[misc]
+def _(x: PETSc.Vec, u: _Function | Sequence[_Function]) -> None:  # type: ignore[misc]
     """Assign vector entries to :class:`Function` degrees-of-freedom.
 
     Assigns values in ``x`` to the degrees-of-freedom of ``u``, which is
@@ -2057,12 +2073,12 @@ class cffi_utils:
                                     """
         )
 
-        MatSetValuesLocal = _lib_cffi.MatSetValuesLocal  # type: ignore[attr-defined]
+        MatSetValuesLocal = _lib_cffi.MatSetValuesLocal
         """See PETSc `MatSetValuesLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesLocal>`_
         documentation."""
 
-        MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal  # type: ignore[attr-defined]
+        MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal
         """See PETSc `MatSetValuesBlockedLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""

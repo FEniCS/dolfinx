@@ -150,7 +150,8 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     auto cell_vertices = c_to_v->links(c);
     auto it = std::ranges::find(cell_vertices, v);
     assert(it != cell_vertices.end());
-    const std::size_t local_pos = std::distance(cell_vertices.begin(), it);
+    const std::size_t local_pos
+        = std::ranges::distance(cell_vertices.begin(), it);
 
     auto dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t j = 0; j < 3; ++j)
@@ -207,11 +208,20 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// globally, i.e. the maximum index across all processes can be greater
 /// than the number of vertices. High-order 'nodes', e.g. mid-side
 /// points, should not be included.
+/// @param[in] cell_weights Weights associated with each cell in `cells`
+/// (flattened across cell types in the same order as `cells`), e.g. for
+/// use by the graph partitioner. If empty, cells are treated as having
+/// equal weight.
+/// @param[in] edge_weights Weights associated with each edge of the
+/// dual graph built from `cells`, e.g. for use by the graph partitioner.
+/// If empty, edges are treated as having equal weight.
 /// @return Destination ranks for each cell on this process.
 /// @note Cells can have multiple destination ranks, when ghosted.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
-    const std::vector<std::span<const std::int64_t>>& cells)>;
+    const std::vector<std::span<const std::int64_t>>& cells,
+    std::span<const std::int32_t> cell_weights,
+    std::span<const std::int32_t> edge_weights)>;
 
 /// @brief Function that reorders (locally) cells that
 /// are owned by this process. It takes the local mesh dual graph as an
@@ -326,53 +336,77 @@ create_boundary_vertices_fn(const CellReorderFunction& reorder_fn,
     }
     else
     {
-      // Pack 'unmatched' facets for all cell types into single array
-      // (facets0)
-      std::vector<std::int64_t> facets0;
-      facets0.reserve(std::accumulate(facets.begin(), facets.end(),
-                                      std::size_t(0), [](std::size_t x, auto& y)
-                                      { return x + y.first.size(); }));
+      // Pack 'unmatched' facets for all cell types into a single
+      // column-major array (facets0): column j holds vertex j across
+      // all facets, so the multi-column sort_by_perm() overload can
+      // operate directly on contiguous per-column data.
+      std::size_t num_facets = std::accumulate(
+          facets.begin(), facets.end(), std::size_t(0),
+          [](std::size_t x, auto& y)
+          { return x + (y.second > 0 ? y.first.size() / y.second : 0); });
       int max_v = std::ranges::max_element(facets, [](auto& a, auto& b)
                                            { return a.second < b.second; })
                       ->second;
-      for (const auto& [v_data, num_v] : facets)
+
+      std::vector<std::int64_t> facets0_b(max_v * num_facets, -1);
+      std::vector<std::span<std::int64_t>> facets0(max_v);
+      for (int j = 0; j < max_v; ++j)
+        facets0[j] = std::span(facets0_b.data() + j * num_facets, num_facets);
+
       {
-        for (auto it = v_data.begin(); it != v_data.end(); it += num_v)
+        std::size_t row = 0;
+        for (const auto& [v_data, num_v] : facets)
         {
-          facets0.insert(facets0.end(), it, std::next(it, num_v));
-          facets0.insert(facets0.end(), max_v - num_v, -1);
+          for (auto it = v_data.begin(); it != v_data.end(); it += num_v, ++row)
+            for (int j = 0; j < num_v; ++j)
+              facets0[j][row] = *std::next(it, j);
         }
       }
 
       // Compute row permutation
+      std::vector<std::span<const std::int64_t>> facets0_view(facets0.begin(),
+                                                              facets0.end());
       const std::vector<std::int32_t> perm = dolfinx::sort_by_perm(
-          std::span<const std::int64_t>(facets0), max_v);
+          std::span<std::span<const std::int64_t>>(facets0_view));
 
       // For facets in facets0 that appear only once, store the facet
       // vertices
       std::vector<std::int64_t> vertices;
       // TODO: allocate memory for vertices
+
+      // Number of leading valid (non -1 padding) vertices in row
+      auto trim_len = [&facets0, max_v](std::int32_t row)
+      {
+        int n = max_v;
+        while (n > 0 and facets0[n - 1][row] < 0)
+          --n;
+        return n;
+      };
+
       auto it = perm.begin();
       while (it != perm.end())
       {
-        // Find iterator to next facet different from f and trim any  -1
-        // padding
-        std::span _f(facets0.data() + (*it) * max_v, max_v);
-        auto end = std::find_if(_f.rbegin(), _f.rend(),
-                                [](auto a) { return a >= 0; });
-        auto f = _f.first(std::distance(end, _f.rend()));
+        std::int32_t row0 = *it;
+        int n = trim_len(row0);
 
-        auto it1 = std::find_if_not(
-            it, perm.end(),
-            [f, max_v, it0 = facets0.begin()](auto p) -> bool
-            {
-              return std::equal(f.begin(), f.end(), std::next(it0, p * max_v));
-            });
+        // Find iterator to next facet whose leading n vertices differ
+        // from row0
+        auto it1 = std::find_if_not(it, perm.end(),
+                                    [&facets0, row0, n](std::int32_t row)
+                                    {
+                                      for (int j = 0; j < n; ++j)
+                                        if (facets0[j][row] != facets0[j][row0])
+                                          return false;
+                                      return true;
+                                    });
 
-        // If no repeated facet found, insert f vertices
-        if (std::distance(it, it1) == 1)
-          vertices.insert(vertices.end(), f.begin(), f.end());
-        else if (std::distance(it, it1) > 2)
+        // If no repeated facet found, insert row0 vertices
+        if (std::ranges::distance(it, it1) == 1)
+        {
+          for (int j = 0; j < n; ++j)
+            vertices.push_back(facets0[j][row0]);
+        }
+        else if (std::ranges::distance(it, it1) > 2)
           throw std::runtime_error("More than two matching facets found.");
 
         // Advance iterator
@@ -938,7 +972,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     std::span<const std::int32_t> cell_entities = c_to_e->links(c);
     auto it = std::find(cell_entities.begin(), cell_entities.end(), e);
     assert(it != cell_entities.end());
-    std::size_t local_entity = std::distance(cell_entities.begin(), it);
+    std::size_t local_entity = std::ranges::distance(cell_entities.begin(), it);
 
     // Cell sub-entities must be permuted so that their local
     // orientation agrees with their global orientation
@@ -1025,6 +1059,10 @@ compute_incident_entities(const Topology& topology,
 /// cells this will be just the cell vertices. For higher-order geometry
 /// cells, other cell 'nodes' will be included. See io::cells for
 /// examples of the Basix ordering.
+/// @param[in] cell_weights Weights associated with each cell in `cells`
+/// (flattened across cell types in the same order as `cells`), e.g. for
+/// use by the graph partitioner. If empty, cells are treated as having
+/// equal weight.
 /// @param[in] elements Coordinate elements for the cells, where
 /// `elements[i]` is the coordinate element for the cells in `cells[i]`.
 /// **The list of elements must be the same on all calling parallel
@@ -1049,6 +1087,7 @@ template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt,
     std::vector<std::span<const std::int64_t>> cells,
+    std::span<const std::int32_t> cell_weights,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
@@ -1093,7 +1132,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         t[i] = extract_topology(celltypes[i], doflayouts[i], cells[i]);
         tspan[i] = std::span(t[i]);
       }
-      dest = partitioner(commt, size, celltypes, tspan);
+      std::vector<std::int32_t> edge_weights;
+      dest = partitioner(commt, size, celltypes, tspan, cell_weights,
+                         edge_weights);
     }
 
     std::int32_t cell_offset = 0;
@@ -1256,6 +1297,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// will be just the cell vertices. For higher-order cells, other cells
 /// 'nodes' will be included. See dolfinx::io::cells for examples of the
 /// Basix ordering.
+/// @param[in] cell_weights Weights associated with each cell in `cells`,
+/// e.g. for use by the graph partitioner. If empty, cells are treated
+/// as having equal weight.
 /// @param[in] element Coordinate element for the cells.
 /// @param[in] commg Communicator for geometry.
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
@@ -1275,6 +1319,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt, std::span<const std::int64_t> cells,
+    std::span<const std::int32_t> cell_weights,
     const fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
@@ -1282,9 +1327,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
     const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
-  return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
-                     commg, x, xshape, partitioner, max_facet_to_cell_links,
-                     num_threads, reorder_fn);
+  return create_mesh(comm, commt, std::vector{cells}, cell_weights,
+                     std::vector{element}, commg, x, xshape, partitioner,
+                     max_facet_to_cell_links, num_threads, reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
@@ -1317,13 +1362,15 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
 {
   if (dolfinx::MPI::size(comm) == 1)
   {
-    return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
+    return create_mesh(comm, comm, std::vector{cells},
+                       std::span<const std::int32_t>(), std::vector{elements},
                        comm, x, xshape, nullptr, max_facet_to_cell_links, 1);
   }
   else
   {
     return create_mesh(
-        comm, comm, std::vector{cells}, std::vector{elements}, comm, x, xshape,
+        comm, comm, std::vector{cells}, std::span<const std::int32_t>(),
+        std::vector{elements}, comm, x, xshape,
         create_cell_partitioner(ghost_mode, max_facet_to_cell_links),
         max_facet_to_cell_links, 1);
   }

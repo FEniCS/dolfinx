@@ -26,14 +26,20 @@ from dolfinx.fem.utils import create_sparsity_pattern
 
 
 @typing.overload
+def pack_constants(form: None) -> None: ...
+
+
+@typing.overload
 def pack_constants(form: Form) -> npt.NDArray: ...
 
 
 @typing.overload
-def pack_constants(form: Sequence[Form]) -> list[npt.NDArray]: ...
+def pack_constants(form: Sequence[Form | None]) -> list[npt.NDArray]: ...
 
 
-def pack_constants(form):
+def pack_constants(
+    form: Form | Sequence[Form | None] | None,
+) -> npt.NDArray | list[npt.NDArray] | None:
     """Pack form constants for use in assembly.
 
     Pack the 'constants' that appear in forms. The packed constants can
@@ -54,7 +60,7 @@ def pack_constants(form):
     if form is None:
         return None
     elif isinstance(form, Sequence):
-        return list(map(pack_constants, form))
+        return list(map(pack_constants, form))  # type: ignore
     else:
         return _pack_constants(form._cpp_object)
 
@@ -65,11 +71,15 @@ def pack_coefficients(form: Form | None) -> dict[tuple[IntegralType, int], npt.N
 
 @typing.overload
 def pack_coefficients(
-    form: Sequence[Form],
+    form: Sequence[Form | None],
 ) -> list[dict[tuple[IntegralType, int], npt.NDArray]]: ...
 
 
-def pack_coefficients(form):
+def pack_coefficients(
+    form: Form | Sequence[Form | None] | None,
+) -> (
+    dict[tuple[IntegralType, int], npt.NDArray] | list[dict[tuple[IntegralType, int], npt.NDArray]]
+):
     """Pack form coefficients for use in assembly.
 
     Pack the ``coefficients`` that appear in forms. The packed

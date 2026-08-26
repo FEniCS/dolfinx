@@ -166,7 +166,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> npt.NDArray[np.uint1
 
 
 def extract_topology_and_markers(
-    model, name: str | None = None
+    model: typing.Any, name: str | None = None
 ) -> tuple[dict[int, TopologyDict], dict[str, PhysicalGroup]]:
     """Extract entities with a physical marker in the Gmsh model.
 
@@ -248,7 +248,7 @@ def extract_topology_and_markers(
     return topologies, physical_groups
 
 
-def extract_geometry(model, name: str | None = None) -> npt.NDArray[np.float64]:
+def extract_geometry(model: typing.Any, name: str | None = None) -> npt.NDArray[np.float64]:
     """Extract the mesh geometry from a Gmsh model.
 
     Returns an array of shape ``(num_nodes, 3)``, where the i-th row
@@ -284,15 +284,23 @@ def extract_geometry(model, name: str | None = None) -> npt.NDArray[np.float64]:
 
 
 def model_to_mesh(
-    model,
+    model: typing.Any,
     comm: _MPI.Comm,
     rank: int,
     gdim: int = 3,
     partitioner: Callable[
-        [_MPI.Comm, int, Sequence[CellType], Sequence[npt.NDArray[np.int64]]], _AdjacencyList_int32
+        [
+            _MPI.Comm,
+            int,
+            Sequence[CellType],
+            Sequence[npt.NDArray[np.int64]],
+            npt.NDArray[np.int32],
+            npt.NDArray[np.int32],
+        ],
+        _AdjacencyList_int32,
     ]
     | None = None,
-    dtype=default_real_type,
+    dtype: npt.DTypeLike = default_real_type,
     max_facet_to_cell_links: int = 2,
 ) -> MeshData:
     """Create a Mesh from a Gmsh model.
@@ -446,6 +454,7 @@ def model_to_mesh(
             partitioner,
             max_facet_to_cell_links,
             1,
+            cell_weights=None,
         )
         mesh = Mesh(cpp_mesh, None)
 
@@ -512,7 +521,15 @@ def read_from_msh(
     rank: int = 0,
     gdim: int = 3,
     partitioner: Callable[
-        [_MPI.Comm, int, Sequence[CellType], Sequence[npt.NDArray[np.int64]]], _AdjacencyList_int32
+        [
+            _MPI.Comm,
+            int,
+            Sequence[CellType],
+            Sequence[npt.NDArray[np.int64]],
+            npt.NDArray[np.int32],
+            npt.NDArray[np.int32],
+        ],
+        _AdjacencyList_int32,
     ]
     | None = None,
 ) -> MeshData:

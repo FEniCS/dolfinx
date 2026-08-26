@@ -6,6 +6,7 @@
 
 #include "partitioners.h"
 #include <algorithm>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -63,7 +64,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
       if (node1 < range0 or node1 >= range1)
       {
         auto it = std::ranges::upper_bound(node_disp, node1);
-        int remote_rank = std::distance(node_disp.begin(), it) - 1;
+        int remote_rank = std::ranges::distance(node_disp.begin(), it) - 1;
         node_to_dest.push_back(
             {remote_rank, node1, static_cast<std::int64_t>(part[node0])});
       }
@@ -73,21 +74,26 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     }
   }
 
-  // Sort node_to_dest (lexicographically, by the 3 std::int64_t columns)
-  // and de-duplicate. A radix sort on the flattened data is used in
-  // place of a generic comparison sort, as node_to_dest can have tens of
-  // millions of entries for a large mesh.
+  // De-duplicate exact (dest, node1, partition) triples with a single
+  // hash-set pass (O(1)-average per insert, no sort needed for dedup).
+  // Then sort only by the dest-rank column (0), which is all the
+  // grouping below depends on, rather than by all 3 columns; a radix
+  // sort on the flattened data is used for that single column, as
+  // node_to_dest can have tens of millions of entries for a large
+  // mesh.
   {
+    boost::unordered_flat_set<std::array<std::int64_t, 3>> unique_set(
+        node_to_dest.begin(), node_to_dest.end());
+    node_to_dest.assign(unique_set.begin(), unique_set.end());
+
     std::span<const std::int64_t> flat(
         reinterpret_cast<const std::int64_t*>(node_to_dest.data()),
         3 * node_to_dest.size());
     std::vector<std::int32_t> perm
-        = dolfinx::sort_by_perm<std::int64_t, 16>(flat, 3);
+        = dolfinx::sort_by_perm<std::int64_t, 16>(flat, 3, 1);
     std::vector<std::array<std::int64_t, 3>> sorted(node_to_dest.size());
     for (std::size_t i = 0; i < perm.size(); ++i)
       sorted[i] = node_to_dest[perm[i]];
-    auto [unique_end, range_end] = std::ranges::unique(sorted);
-    sorted.erase(unique_end, range_end);
     node_to_dest = std::move(sorted);
   }
 
@@ -105,7 +111,7 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
       auto it1
           = std::find_if(it, node_to_dest.end(), [r0 = dest.back()](auto& idx)
                          { return idx[0] != r0; });
-      send_sizes.push_back(2 * std::distance(it, it1));
+      send_sizes.push_back(2 * std::ranges::distance(it, it1));
       for (auto itx = it; itx != it1; ++itx)
       {
         send_buffer.push_back(itx->at(1));
@@ -172,21 +178,24 @@ graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
     local_node_to_dest.push_back({idx_local, d});
   }
 
-  // Sort local_node_to_dest (lexicographically, by the 2 int columns)
-  // and de-duplicate. As above, a radix sort on the flattened data is
-  // used in place of a generic comparison sort - this array is sized
-  // by the local node count plus received halo entries, and so can
-  // also have millions of entries for a large mesh.
+  // De-duplicate with a single hash-set pass, then sort only by the
+  // local-node-index column (0) -- the grouping below depends on that
+  // column alone. As above, a radix sort on the flattened data is used
+  // for that single column -- this array is sized by the local node
+  // count plus received halo entries, and so can also have millions of
+  // entries for a large mesh.
   {
+    boost::unordered_flat_set<std::array<int, 2>> unique_set(
+        local_node_to_dest.begin(), local_node_to_dest.end());
+    local_node_to_dest.assign(unique_set.begin(), unique_set.end());
+
     std::span<const int> flat(
         reinterpret_cast<const int*>(local_node_to_dest.data()),
         2 * local_node_to_dest.size());
-    std::vector<std::int32_t> perm = dolfinx::sort_by_perm<int, 16>(flat, 2);
+    std::vector<std::int32_t> perm = dolfinx::sort_by_perm<int, 16>(flat, 2, 1);
     std::vector<std::array<int, 2>> sorted(local_node_to_dest.size());
     for (std::size_t i = 0; i < perm.size(); ++i)
       sorted[i] = local_node_to_dest[perm[i]];
-    auto [unique_end, range_end] = std::ranges::unique(sorted);
-    sorted.erase(unique_end, range_end);
     local_node_to_dest = std::move(sorted);
   }
   // Compute offsets
@@ -342,6 +351,8 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 {
   return [imbalance, strategy, seed](MPI_Comm comm, int nparts,
                                      const AdjacencyList<std::int64_t>& graph,
+                                     std::span<const std::int32_t> node_weights,
+                                     std::span<const std::int32_t> edge_weights,
                                      bool ghosting)
   {
     spdlog::info("Compute graph partition using PT-SCOTCH");
@@ -371,11 +382,15 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // FIXME: If the nodes have weights but this rank has no nodes, then
     //        SCOTCH may deadlock since vload.data() will be nullptr on
     //        this rank but not null on all other ranks.
-    // Handle node weights (disabled for now)
-    std::vector<SCOTCH_Num> node_weights;
+    // Handle node weights
     std::vector<SCOTCH_Num> vload;
     if (!node_weights.empty())
       vload.assign(node_weights.begin(), node_weights.end());
+
+    // Handle edge weights
+    std::vector<SCOTCH_Num> edload;
+    if (!edge_weights.empty())
+      edload.assign(edge_weights.begin(), edge_weights.end());
 
     // Set seed and reset SCOTCH random number generator to produce
     // deterministic partitions on repeated calls
@@ -388,10 +403,11 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     err = SCOTCH_dgraphBuild(
         &dgrafdat, baseval, graph.num_nodes(), graph.num_nodes(),
         vertloctab.data(), nullptr, vload.data(), nullptr, edgeloctab.size(),
-        edgeloctab.size(), edgeloctab.data(), nullptr, nullptr);
+        edgeloctab.size(), edgeloctab.data(), nullptr, edload.data());
     if (err != 0)
       throw std::runtime_error("Error building SCOTCH graph");
     timer1.stop();
+    timer1.flush();
 
 // Check graph data for consistency
 #ifndef NDEBUG
@@ -435,19 +451,19 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       throw std::runtime_error("Error calling SCOTCH_stratDgraphMapBuild");
 
     // Count number of 'ghost' edges, i.e. an edge to a cell that does
-    // not belong to the caller
+    // not belong to the caller. A single hash-set pass over the (much
+    // larger) full edge array avoids materialising and sorting a
+    // separate ghost-edges vector just to count distinct values.
     std::int32_t num_ghost_nodes = 0;
     {
       MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
       std::array<std::int64_t, 2> range
           = {offset_global, offset_global + num_owned};
-      std::vector<std::int64_t> ghost_edges;
-      std::copy_if(graph.array().begin(), graph.array().end(),
-                   std::back_inserter(ghost_edges),
-                   [range](auto e) { return e < range[0] or e >= range[1]; });
-      std::ranges::sort(ghost_edges);
-      auto it = std::ranges::unique(ghost_edges).begin();
-      num_ghost_nodes = std::distance(ghost_edges.begin(), it);
+      boost::unordered_flat_set<std::int64_t> ghost_nodes;
+      for (std::int64_t e : graph.array())
+        if (e < range[0] or e >= range[1])
+          ghost_nodes.insert(e);
+      num_ghost_nodes = ghost_nodes.size();
     }
 
     // Resize vector to hold node partition indices with enough extra
@@ -463,6 +479,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     if (err != 0)
       throw std::runtime_error("Error during SCOTCH partitioning");
     timer2.stop();
+    timer2.flush();
 
     // Data arrays for adjacency list, where the edges are the destination
     // ranks for each node
@@ -477,6 +494,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
       if (err != 0)
         throw std::runtime_error("Error during SCOTCH halo exchange");
       timer3.stop();
+      timer3.flush();
 
       // Get SCOTCH's locally indexed graph
       common::Timer timer4("Get SCOTCH graph data");
@@ -485,6 +503,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
                         nullptr, nullptr, &edge_ghost_tab, nullptr, &comm);
       timer4.stop();
+      timer4.flush();
 
       // Iterate through SCOTCH's local compact graph to find partition
       // boundaries and save to map
@@ -507,6 +526,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
         }
       }
       timer5.stop();
+      timer5.flush();
 
       offsets.reserve(graph.num_nodes() + 1);
       for (std::int32_t i = 0; i < graph.num_nodes(); ++i)
@@ -547,6 +567,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
 {
   return [imbalance, options](MPI_Comm comm, idx_t nparts,
                               const graph::AdjacencyList<std::int64_t>& graph,
+                              std::span<const std::int32_t> node_weights,
+                              std::span<const std::int32_t> edge_weights,
                               bool ghosting)
   {
     spdlog::info("Compute graph partition using ParMETIS");
@@ -561,7 +583,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
 
     // Note: ParMETIS fails (crashes) if a rank does not have any graph
     // data. Therefore we split the communicator such that ParMETIS
-    // partitioning happens only on ranks that have data. Ideallt we
+    // partitioning happens only on ranks that have data. Ideally we
     // wouldn't need to do this.
     constexpr bool split_comm = true;
     MPI_Comm pcomm = MPI_COMM_NULL;
@@ -593,8 +615,21 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       // Options and data for ParMETIS
       std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
       idx_t ncon = 1;
-      idx_t* elmwgt = nullptr;
       idx_t wgtflag(0), edgecut(0), numflag(0);
+      std::vector<idx_t> elmwgt(node_weights.begin(), node_weights.end());
+      std::vector<idx_t> edgwgt(edge_weights.begin(), edge_weights.end());
+
+      if (!elmwgt.empty())
+      {
+        spdlog::info("ParMETIS: applying node weights");
+        wgtflag += 2;
+      }
+      if (!edgwgt.empty())
+      {
+        spdlog::info("ParMETIS: applying edge weights");
+        wgtflag += 1;
+      }
+
       std::vector<real_t> tpwgts(ncon * nparts,
                                  1.0 / static_cast<real_t>(nparts));
       real_t ubvec = static_cast<real_t>(imbalance);
@@ -602,9 +637,9 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       // Partition
       common::Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
       int err = ParMETIS_V3_PartKway(
-          node_disp.data(), offsets.data(), array.data(), elmwgt, nullptr,
-          &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(), &ubvec,
-          opts.data(), &edgecut, part.data(), &pcomm);
+          node_disp.data(), offsets.data(), array.data(), elmwgt.data(),
+          edgwgt.data(), &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(),
+          &ubvec, opts.data(), &edgecut, part.data(), &pcomm);
       if (err != METIS_OK)
       {
         throw std::runtime_error(
@@ -642,7 +677,9 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 {
   return [mode, seed, imbalance, suppress_output](
              MPI_Comm comm, int nparts,
-             const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
+             const graph::AdjacencyList<std::int64_t>& graph,
+             std::span<const std::int32_t> node_weights,
+             std::span<const std::int32_t> edge_weights, bool ghosting)
   {
     spdlog::info("Compute graph partition using (parallel) KaHIP");
 
@@ -651,9 +688,8 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 
     common::Timer timer("Compute graph partition (KaHIP)");
 
-    // Graph does not have vertex or adjacency weights, so we use null
-    // pointers as arguments
-    T *vwgt(nullptr), *adjcwgt(nullptr);
+    std::vector<T> vwgt(node_weights.begin(), node_weights.end());
+    std::vector<T> adjcwgt(edge_weights.begin(), edge_weights.end());
 
     // Build adjacency list data
     common::Timer timer1("KaHIP: build adjacency data");
@@ -676,9 +712,10 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     std::vector<T> part(graph.num_nodes());
     int edgecut = 0;
     double _imbalance = imbalance;
-    ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(), vwgt,
-                        adjcwgt, &nparts, &_imbalance, suppress_output, seed,
-                        mode, &edgecut, part.data(), &comm);
+    ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(),
+                        vwgt.data(), adjcwgt.data(), &nparts, &_imbalance,
+                        suppress_output, seed, mode, &edgecut, part.data(),
+                        &comm);
     timer2.stop();
 
     if (ghosting)
