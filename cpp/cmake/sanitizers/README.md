@@ -10,17 +10,16 @@ cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug \
   -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined" \
   -DCMAKE_SHARED_LINKER_FLAGS="-fsanitize=address,undefined" \
   -DBUILD_TESTING=ON -DDOLFINX_BUILD_DEMOS=ON -B build -S cpp
-cmake --build build
-cmake --install build
 ```
 
-`-O0` rather than `-Og` may be best for step-through debugging sessions.
+`-O0` rather than `-Og` may be best for step-through debugging
+sessions.
 
-For UBSan only (required for MPI-parallel Python on macOS, see below): drop
-`address,` from both `-fsanitize=` values and drop the two `LINKER_FLAGS`
-lines.
+For MPI-parallel Python on macOS only UBSan works.
 
 ## Run under C++
+
+TODO: Clarify using ctest to hit targets with MPI
 
 ```sh
 ASAN_OPTIONS=detect_container_overflow=0:suppressions=$PWD/cpp/cmake/sanitizers/asan.supp \
@@ -53,15 +52,7 @@ pip install --check-build-dependencies --no-build-isolation \
 
 ## Run under Python
 
-**Linux, GCC:**
-
-```sh
-LD_PRELOAD=$(gcc -print-file-name=libasan.so) \
-ASAN_OPTIONS=detect_container_overflow=0 \
-  python -m pytest python/test
-```
-
-Under MPI:
+### Linux, GCC:
 
 ```sh
 export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
@@ -69,13 +60,7 @@ export ASAN_OPTIONS=detect_container_overflow=0
 mpiexec -n 3 -x LD_PRELOAD -x ASAN_OPTIONS python -m pytest python/test
 ```
 
-**Linux, Clang:**
-
-```sh
-LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-$(uname -m).so) \
-ASAN_OPTIONS=detect_container_overflow=0 \
-  python -m pytest python/test
-```
+### Linux, Clang:
 
 Under MPI:
 
@@ -85,7 +70,11 @@ export ASAN_OPTIONS=detect_container_overflow=0
 mpiexec -n 3 -x LD_PRELOAD -x ASAN_OPTIONS python -m pytest python/test
 ```
 
-**macOS:** plain `python -m pytest` with `DYLD_INSERT_LIBRARIES` set aborts
+### macOS
+
+TODO: Revise
+
+Plain `python -m pytest` with `DYLD_INSERT_LIBRARIES` set aborts
 with `Interceptors are not working` (the venv's `python` re-launches itself
 through `Resources/Python.app/...`, double-loading ASan) — launch the inner
 binary directly instead:
@@ -102,13 +91,12 @@ EOF
 
 ```sh
 PYBIN="$(python -c 'import sys, pathlib; print(next(pathlib.Path(sys.base_prefix).glob("Resources/Python.app/Contents/MacOS/Python")))')"
-DYLD_INSERT_LIBRARIES=$(clang -print-file-name=libclang_rt.asan_osx_dynamic.dylib) \
-ASAN_OPTIONS=detect_container_overflow=0 \
+  DYLD_INSERT_LIBRARIES=$(clang -print-file-name=libclang_rt.asan_osx_dynamic.dylib) \
+  ASAN_OPTIONS=detect_container_overflow=0 \
   "$PYBIN" /tmp/run_pytest_sanitized.py python/test
 ```
 
-Under MPI (UBSan-only build, per above — Open MPI strips
-`DYLD_INSERT_LIBRARIES` before launching each rank):
+Under MPI, UBSan-only on MacOS with OpenMPI:
 
 ```sh
 export UBSAN_OPTIONS=print_stacktrace=1
