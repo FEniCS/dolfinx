@@ -61,7 +61,9 @@ ENV OPENBLAS_NUM_THREADS=1 \
 #   documentation or tests.
 # OCCT (gmsh's CAD kernel) is built from source below since Ubuntu's
 # libocct-data-exchange-dev drags in the full libvtk9-dev toolchain.
-# libx11-dev is OCCT's own header-only dependency, unrelated to gmsh's GUI.
+# libx11-dev is OCCT's own header-only dependency.
+# libfltk1.3-dev pulls the whole GUI stack gmsh needs (FLTK, GL, Xft,
+# Xcursor, Xinerama, fonts); libGLU is the one piece outside its closure.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -72,6 +74,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     gfortran \
     libadios2-mpi-c++-dev \
     libboost-dev \
+    libfltk1.3-dev \
+    libglu1-mesa-dev \
     libhdf5-mpi-dev \
     liblapack-dev \
     libopenblas-dev \
@@ -136,9 +140,10 @@ RUN git clone -b V${OCCT_VERSION} --single-branch --depth 1 https://github.com/O
     ldconfig && \
     rm -rf /tmp/*
 
-# Install GMSH, headless (no FLTK/OpenGL GUI, meshing/OCC/Python API only)
+# Install GMSH. The FLTK GUI costs ~70 MiB and is kept so gmsh.fltk.run()
+# works against a forwarded X11 display.
 RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.onelab.info/gmsh/gmsh.git && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1 -DENABLE_OPENMP=1 -DENABLE_FLTK=0 -B build-dir -S gmsh && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1 -DENABLE_OPENMP=1 -DENABLE_FLTK=1 -B build-dir -S gmsh && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     ldconfig && \
