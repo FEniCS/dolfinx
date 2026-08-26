@@ -44,7 +44,9 @@ void graph(nb::module_& m)
   using partition_fn
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int,
-          const dolfinx::graph::AdjacencyList<std::int64_t>&, bool)>;
+          const dolfinx::graph::AdjacencyList<std::int64_t>&,
+          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>,
+          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>, bool)>;
   using geom_partition_fn
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int,

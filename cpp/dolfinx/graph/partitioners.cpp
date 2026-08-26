@@ -250,6 +250,8 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 {
   return [imbalance, strategy, seed](MPI_Comm comm, int nparts,
                                      const AdjacencyList<std::int64_t>& graph,
+                                     std::span<const std::int32_t> node_weights,
+                                     std::span<const std::int32_t> edge_weights,
                                      bool ghosting)
   {
     spdlog::info("Compute graph partition using PT-SCOTCH");
@@ -279,11 +281,15 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // FIXME: If the nodes have weights but this rank has no nodes, then
     //        SCOTCH may deadlock since vload.data() will be nullptr on
     //        this rank but not null on all other ranks.
-    // Handle node weights (disabled for now)
-    std::vector<SCOTCH_Num> node_weights;
+    // Handle node weights
     std::vector<SCOTCH_Num> vload;
     if (!node_weights.empty())
       vload.assign(node_weights.begin(), node_weights.end());
+
+    // Handle edge weights
+    std::vector<SCOTCH_Num> edload;
+    if (!edge_weights.empty())
+      edload.assign(edge_weights.begin(), edge_weights.end());
 
     // Set seed and reset SCOTCH random number generator to produce
     // deterministic partitions on repeated calls
@@ -296,7 +302,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     err = SCOTCH_dgraphBuild(
         &dgrafdat, baseval, graph.num_nodes(), graph.num_nodes(),
         vertloctab.data(), nullptr, vload.data(), nullptr, edgeloctab.size(),
-        edgeloctab.size(), edgeloctab.data(), nullptr, nullptr);
+        edgeloctab.size(), edgeloctab.data(), nullptr, edload.data());
     if (err != 0)
       throw std::runtime_error("Error building SCOTCH graph");
     timer1.stop();
@@ -460,6 +466,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
 {
   return [imbalance, options](MPI_Comm comm, idx_t nparts,
                               const graph::AdjacencyList<std::int64_t>& graph,
+                              std::span<const std::int32_t> node_weights,
+                              std::span<const std::int32_t> edge_weights,
                               bool ghosting)
   {
     spdlog::info("Compute graph partition using ParMETIS");
@@ -474,7 +482,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
 
     // Note: ParMETIS fails (crashes) if a rank does not have any graph
     // data. Therefore we split the communicator such that ParMETIS
-    // partitioning happens only on ranks that have data. Ideallt we
+    // partitioning happens only on ranks that have data. Ideally we
     // wouldn't need to do this.
     constexpr bool split_comm = true;
     MPI_Comm pcomm = MPI_COMM_NULL;
@@ -506,8 +514,21 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       // Options and data for ParMETIS
       std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
       idx_t ncon = 1;
-      idx_t* elmwgt = nullptr;
       idx_t wgtflag(0), edgecut(0), numflag(0);
+      std::vector<idx_t> elmwgt(node_weights.begin(), node_weights.end());
+      std::vector<idx_t> edgwgt(edge_weights.begin(), edge_weights.end());
+
+      if (!elmwgt.empty())
+      {
+        spdlog::info("ParMETIS: applying node weights");
+        wgtflag += 2;
+      }
+      if (!edgwgt.empty())
+      {
+        spdlog::info("ParMETIS: applying edge weights");
+        wgtflag += 1;
+      }
+
       std::vector<real_t> tpwgts(ncon * nparts,
                                  1.0 / static_cast<real_t>(nparts));
       real_t ubvec = static_cast<real_t>(imbalance);
@@ -515,9 +536,9 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       // Partition
       common::Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
       int err = ParMETIS_V3_PartKway(
-          node_disp.data(), offsets.data(), array.data(), elmwgt, nullptr,
-          &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(), &ubvec,
-          opts.data(), &edgecut, part.data(), &pcomm);
+          node_disp.data(), offsets.data(), array.data(), elmwgt.data(),
+          edgwgt.data(), &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(),
+          &ubvec, opts.data(), &edgecut, part.data(), &pcomm);
       if (err != METIS_OK)
       {
         throw std::runtime_error(
@@ -548,9 +569,11 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
                                                    double imbalance,
                                                    std::array<int, 3> options)
 {
-  return [ipc2redist, imbalance, options](
-             MPI_Comm comm, idx_t nparts,
-             const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
+  return [ipc2redist, imbalance,
+          options](MPI_Comm comm, idx_t nparts,
+                   const graph::AdjacencyList<std::int64_t>& graph,
+                   std::span<const std::int32_t> node_weights,
+                   std::span<const std::int32_t> edge_weights, bool ghosting)
   {
     spdlog::info("Compute graph re-partition using ParMETIS");
     common::Timer timer("Compute graph re-partition (ParMETIS)");
@@ -607,6 +630,20 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
           = {options[0], options[1], options[2], PARMETIS_PSR_UNCOUPLED};
       idx_t ncon = 1;
       idx_t wgtflag(0), numflag(0), edgecut(0);
+      std::vector<idx_t> elmwgt(node_weights.begin(), node_weights.end());
+      std::vector<idx_t> edgwgt(edge_weights.begin(), edge_weights.end());
+
+      if (!elmwgt.empty())
+      {
+        spdlog::info("ParMETIS: applying node weights");
+        wgtflag += 2;
+      }
+      if (!edgwgt.empty())
+      {
+        spdlog::info("ParMETIS: applying edge weights");
+        wgtflag += 1;
+      }
+
       std::vector<real_t> tpwgts(ncon * nparts,
                                  1.0 / static_cast<real_t>(nparts));
       std::vector<real_t> ubvec(ncon, static_cast<real_t>(imbalance));
@@ -614,9 +651,10 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
 
       common::Timer timer1("ParMETIS: call ParMETIS_V3_AdaptiveRepart");
       int err = ParMETIS_V3_AdaptiveRepart(
-          node_disp.data(), offsets.data(), array.data(), nullptr, vsize.data(),
-          nullptr, &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(),
-          ubvec.data(), &itr, opts.data(), &edgecut, part.data(), &pcomm);
+          node_disp.data(), offsets.data(), array.data(), elmwgt.data(),
+          vsize.data(), edgwgt.data(), &wgtflag, &numflag, &ncon, &nparts,
+          tpwgts.data(), ubvec.data(), &itr, opts.data(), &edgecut, part.data(),
+          &pcomm);
       if (err != METIS_OK)
       {
         throw std::runtime_error(std::format(
@@ -836,7 +874,9 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 {
   return [mode, seed, imbalance, suppress_output](
              MPI_Comm comm, int nparts,
-             const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
+             const graph::AdjacencyList<std::int64_t>& graph,
+             std::span<const std::int32_t> node_weights,
+             std::span<const std::int32_t> edge_weights, bool ghosting)
   {
     spdlog::info("Compute graph partition using (parallel) KaHIP");
 
@@ -845,9 +885,8 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 
     common::Timer timer("Compute graph partition (KaHIP)");
 
-    // Graph does not have vertex or adjacency weights, so we use null
-    // pointers as arguments
-    T *vwgt(nullptr), *adjcwgt(nullptr);
+    std::vector<T> vwgt(node_weights.begin(), node_weights.end());
+    std::vector<T> adjcwgt(edge_weights.begin(), edge_weights.end());
 
     // Build adjacency list data
     common::Timer timer1("KaHIP: build adjacency data");
@@ -870,9 +909,10 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     std::vector<T> part(graph.num_nodes());
     int edgecut = 0;
     double _imbalance = imbalance;
-    ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(), vwgt,
-                        adjcwgt, &nparts, &_imbalance, suppress_output, seed,
-                        mode, &edgecut, part.data(), &comm);
+    ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(),
+                        vwgt.data(), adjcwgt.data(), &nparts, &_imbalance,
+                        suppress_output, seed, mode, &edgecut, part.data(),
+                        &comm);
     timer2.stop();
 
     if (ghosting)

@@ -90,7 +90,14 @@ __all__ = [
 ]
 
 PartitioningFunc = typing.Callable[
-    [_MPI.Comm, int, _cpp.graph.AdjacencyList_int64, bool],
+    [
+        _MPI.Comm,
+        int,
+        _cpp.graph.AdjacencyList_int64,
+        npt.NDArray[np.int32],
+        npt.NDArray[np.int32],
+        bool,
+    ],
     _cpp.graph.AdjacencyList_int32,
 ]
 
@@ -950,6 +957,7 @@ def create_mesh(
     partitioner: Callable | None = None,
     max_facet_to_cell_links: int = 2,
     num_threads: int = 1,
+    cell_weights: npt.NDArray[np.int32] | None = None,
 ) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -967,6 +975,9 @@ def create_mesh(
             be connected to.
         num_threads: Number of threads to use to build mesh. Must be
             greater than 0.
+        cell_weights: Weights associated with each cell in ``cells``,
+            e.g. for use by the graph partitioner. If not provided,
+            cells are treated as having equal weight.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
@@ -1018,6 +1029,8 @@ def create_mesh(
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
+    if cell_weights is not None:
+        cell_weights = np.asarray(cell_weights, dtype=np.int32, order="C")
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
         comm,
         cells,
@@ -1026,6 +1039,7 @@ def create_mesh(
         partitioner,
         max_facet_to_cell_links,
         num_threads,
+        cell_weights,
     )
 
     return Mesh(msh, domain)

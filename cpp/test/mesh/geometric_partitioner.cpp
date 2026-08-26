@@ -86,6 +86,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
         comm, comm,
         std::vector<std::span<const std::int64_t>>{
             std::span<const std::int64_t>(cells)},
+        std::span<const std::int32_t>(),
         std::vector<fem::CoordinateElement<double>>{element}, comm, x, xshape,
         part, 2, 1);
     mesh.topology_mutable()->create_entities(1);

@@ -21,14 +21,27 @@
 namespace dolfinx_wrappers
 {
 
+namespace nb = nanobind;
+
 /// Wrap a C++ graph partitioning function as a Python-ready function.
 template <typename Functor>
 auto create_partitioner_py(Functor&& p_cpp)
 {
   return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
                  const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+                     node_weights,
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+                     edge_weights,
                  bool ghosting)
-  { return p_cpp(comm.get(), nparts, local_graph, ghosting); };
+  {
+    std::span<const std::int32_t> node_weights_span(node_weights.data(),
+                                                    node_weights.size());
+    std::span<const std::int32_t> edge_weights_span(edge_weights.data(),
+                                                    edge_weights.size());
+    return p_cpp(comm.get(), nparts, local_graph, node_weights_span,
+                 edge_weights_span, ghosting);
+  };
 }
 
 /// Wrap a C++ geometric graph partitioner for use from Python. Node

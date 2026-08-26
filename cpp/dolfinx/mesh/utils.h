@@ -864,6 +864,10 @@ namespace impl
 /// vertex-only dof layout, so that a cell's 'nodes' are already exactly
 /// its vertices and extracting the topology is unnecessary.
 /// @param[in] partitioner Partitioner, as for ::create_mesh.
+/// @param[in] cell_weights Weights associated with each cell in `cells`
+/// (flattened across cell types in the same order as `cells`). Used
+/// only if `partitioner` holds a ::CellPartitionFunction. If empty,
+/// cells are treated as having equal weight.
 /// @param[in] commg Communicator that `x` is distributed on. Used only
 /// if `partitioner` holds a ::GeometricCellPartitionFunction.
 /// @param[in] x Geometry ('node') coordinates. Used only if
@@ -883,8 +887,8 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
                 const std::vector<CellType>& celltypes,
                 const std::vector<fem::ElementDofLayout>& doflayouts,
                 bool p1_geometry, const AnyCellPartitionFunction& partitioner,
-                MPI_Comm commg, std::span<const T> x,
-                std::array<std::size_t, 2> xshape)
+                std::span<const std::int32_t> cell_weights, MPI_Comm commg,
+                std::span<const T> x, std::array<std::size_t, 2> xshape)
 {
   const std::int32_t num_cell_types = cells.size();
   std::vector<std::vector<std::int64_t>> cells1(num_cell_types);
@@ -933,7 +937,11 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
                        std::span<const double>(centroid), cshape);
             }
             else
-              return p(commt, size, celltypes, tspan);
+            {
+              std::vector<std::int32_t> edge_weights;
+              return p(commt, size, celltypes, tspan, cell_weights,
+                       edge_weights);
+            }
           },
           partitioner);
     }
@@ -1037,6 +1045,10 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
 /// cells this will be just the cell vertices. For higher-order geometry
 /// cells, other cell 'nodes' will be included. See io::cells for
 /// examples of the Basix ordering.
+/// @param[in] cell_weights Weights associated with each cell in `cells`
+/// (flattened across cell types in the same order as `cells`), e.g. for
+/// use by the graph partitioner. If empty, cells are treated as having
+/// equal weight.
 /// @param[in] elements Coordinate elements for the cells, where
 /// `elements[i]` is the coordinate element for the cells in `cells[i]`.
 /// **The list of elements must be the same on all calling parallel
@@ -1063,6 +1075,7 @@ template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt,
     std::vector<std::span<const std::int64_t>> cells,
+    std::span<const std::int32_t> cell_weights,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
@@ -1102,7 +1115,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // globally unique index)
   auto [cells1, original_idx1, ghost_owners] = impl::partition_cells(
       comm, commt, cells, celltypes, doflayouts, p1_geometry, partitioner,
-      commg, std::span<const T>(x), xshape);
+      cell_weights, commg, std::span<const T>(x), xshape);
 
   // Extract cell 'topology', i.e. extract the vertices for each cell
   // and discard any 'higher-order' nodes. `cells1_v_storage` is empty
@@ -1237,6 +1250,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// will be just the cell vertices. For higher-order cells, other cells
 /// 'nodes' will be included. See dolfinx::io::cells for examples of the
 /// Basix ordering.
+/// @param[in] cell_weights Weights associated with each cell in `cells`,
+/// e.g. for use by the graph partitioner. If empty, cells are treated
+/// as having equal weight.
 /// @param[in] element Coordinate element for the cells.
 /// @param[in] commg Communicator for geometry.
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
@@ -1258,6 +1274,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt, std::span<const std::int64_t> cells,
+    std::span<const std::int32_t> cell_weights,
     const fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
@@ -1265,9 +1282,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
     const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
-  return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
-                     commg, x, xshape, partitioner, max_facet_to_cell_links,
-                     num_threads, reorder_fn);
+  return create_mesh(comm, commt, std::vector{cells}, cell_weights,
+                     std::vector{element}, commg, x, xshape, partitioner,
+                     max_facet_to_cell_links, num_threads, reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
@@ -1300,14 +1317,16 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
 {
   if (dolfinx::MPI::size(comm) == 1)
   {
-    return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
+    return create_mesh(comm, comm, std::vector{cells},
+                       std::span<const std::int32_t>(), std::vector{elements},
                        comm, x, xshape, CellPartitionFunction(nullptr),
                        max_facet_to_cell_links, 1);
   }
   else
   {
     return create_mesh(
-        comm, comm, std::vector{cells}, std::vector{elements}, comm, x, xshape,
+        comm, comm, std::vector{cells}, std::span<const std::int32_t>(),
+        std::vector{elements}, comm, x, xshape,
         create_cell_partitioner(ghost_mode, max_facet_to_cell_links),
         max_facet_to_cell_links, 1);
   }

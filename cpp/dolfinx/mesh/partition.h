@@ -55,12 +55,21 @@ enum class GhostMode : std::uint8_t
 /// globally, i.e. the maximum index across all processes can be greater
 /// than the number of vertices. High-order 'nodes', e.g. mid-side
 /// points, should not be included.
+/// @param[in] cell_weights Weights associated with each cell in `cells`
+/// (flattened across cell types in the same order as `cells`), e.g. for
+/// use by the graph partitioner. If empty, cells are treated as having
+/// equal weight.
+/// @param[in] edge_weights Weights associated with each edge of the
+/// dual graph built from `cells`, e.g. for use by the graph partitioner.
+/// If empty, edges are treated as having equal weight.
 /// @return Destination rank(s) for each cell on this process, the
 /// owning rank first. A cell has more than one destination rank only
 /// when it is ghosted.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
-    const std::vector<std::span<const std::int64_t>>& cells)>;
+    const std::vector<std::span<const std::int64_t>>& cells,
+    std::span<const std::int32_t> cell_weights,
+    std::span<const std::int32_t> edge_weights)>;
 
 /// @brief Signature for a cell partitioning function that also has
 /// access to the cell centroids, e.g. to partition using them rather

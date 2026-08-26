@@ -51,7 +51,9 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
   {
     return [p](MPI_Comm comm, int n,
                const std::vector<dolfinx::mesh::CellType>& cell_types,
-               const std::vector<std::span<const std::int64_t>>& cells)
+               const std::vector<std::span<const std::int64_t>>& cells,
+               std::span<const std::int32_t> cell_weights,
+               std::span<const std::int32_t> edge_weights)
     {
       std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
       std::ranges::transform(
@@ -61,7 +63,12 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
             return nb::ndarray<const std::int64_t, nb::numpy>(c.data(),
                                                               {c.size()});
           });
-      return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_types, cells_nb);
+      nb::ndarray<const std::int32_t, nb::numpy> cell_weights_nb(
+          cell_weights.data(), {cell_weights.size()});
+      nb::ndarray<const std::int32_t, nb::numpy> edge_weights_nb(
+          edge_weights.data(), {edge_weights.size()});
+      return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_types, cells_nb,
+               cell_weights_nb, edge_weights_nb);
     };
   }
   else
@@ -377,6 +384,8 @@ void mesh(nb::module_& m)
       [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
              MPICommWrapper comm, int nparts,
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+             nb::ndarray<const std::int32_t, nb::numpy> node_weights,
+             nb::ndarray<const std::int32_t, nb::numpy> edge_weights,
              bool ghosting)>& part,
          dolfinx::mesh::GhostMode mode,
          std::optional<std::int32_t> max_facet_to_cell_links,
@@ -454,7 +463,9 @@ void mesh(nb::module_& m)
                  std::move(partfn))](
                 MPI_Comm comm, int nparts,
                 const std::vector<dolfinx::mesh::CellType>& cell_types,
-                const std::vector<std::span<const std::int64_t>>& cells)
+                const std::vector<std::span<const std::int64_t>>& cells,
+                std::span<const std::int32_t> /*cell_weights*/,
+                std::span<const std::int32_t> /*edge_weights*/)
             {
               const int gdim = static_cast<int>(xshape[1]);
               std::vector<int> num_vertices_per_cell;
@@ -527,7 +538,9 @@ void mesh(nb::module_& m)
                  std::move(partfn))](
                 MPI_Comm comm, int nparts,
                 const std::vector<dolfinx::mesh::CellType>& cell_types,
-                const std::vector<std::span<const std::int64_t>>& cells)
+                const std::vector<std::span<const std::int64_t>>& cells,
+                std::span<const std::int32_t> /*cell_weights*/,
+                std::span<const std::int32_t> /*edge_weights*/)
             {
               const int gdim = static_cast<int>(xshape[1]);
               std::vector<int> num_vertices_per_cell;
