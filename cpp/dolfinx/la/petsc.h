@@ -430,8 +430,10 @@ public:
   ///
   /// @return The PETSc convergence reason (positive on convergence,
   /// negative on divergence).
-  [[nodiscard]] KSPConvergedReason solve(Vec x, const Vec b,
-                                         bool transpose = false);
+  [[nodiscard(
+      "check the converged reason - positive on convergence, negative on "
+      "divergence")]] KSPConvergedReason
+  solve(Vec x, const Vec b, bool transpose = false);
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database

@@ -80,7 +80,10 @@ public:
   /// @endcode
   /// @return The PETSc convergence reason (positive on convergence,
   /// negative on divergence).
-  [[nodiscard]] EPSConvergedReason solve();
+  [[nodiscard(
+      "check the converged reason - positive on convergence, negative on "
+      "divergence")]] EPSConvergedReason
+  solve();
 
   /// @brief Get the ith eigenvalue.
   /// @param[in] i Index of the eigenvalue, in `[0, nconv)`, where

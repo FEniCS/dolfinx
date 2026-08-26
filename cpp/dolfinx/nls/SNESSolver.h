@@ -141,7 +141,10 @@ public:
   /// entry.
   /// @return The PETSc convergence reason (positive on convergence,
   /// negative on divergence).
-  [[nodiscard]] SNESConvergedReason solve(Vec x);
+  [[nodiscard(
+      "check the converged reason - positive on convergence, negative on "
+      "divergence")]] SNESConvergedReason
+  solve(Vec x);
 
   /// @brief Set the prefix used by PETSc when searching the PETSc
   /// options database.
