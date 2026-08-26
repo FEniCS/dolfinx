@@ -1344,7 +1344,9 @@ class TestPETScAssemblers:
             element("Lagrange", cell_type.name, 1, shape=(2,), dtype=default_real_type)
         )
 
-        def partitioner(comm, nparts, cell_types, cell_topology, cell_weights, edge_weights):
+        def partitioner(
+            comm, nparts, cell_types, cell_topology, cell_weights, edge_weights, ghosting
+        ):
             """Leave cells on the current rank."""
             dest = np.full(len(cells), comm.rank, dtype=np.int32)
             return graph.adjacencylist(dest)._cpp_object
@@ -2159,7 +2161,8 @@ def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype, coefficient):
         x=nodes,
         cells=connectivity,
         e=c_el,
-        partitioner=dolfinx.mesh.create_cell_partitioner(ghost_mode, 2),
+        partitioner=dolfinx.mesh.create_cell_partitioner(max_facet_to_cell_links=2),
+        ghost_mode=ghost_mode,
     )
 
     line_element = basix.ufl.element(

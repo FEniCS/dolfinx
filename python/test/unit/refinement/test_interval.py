@@ -22,9 +22,11 @@ from dolfinx import mesh
 def test_refine_interval(n, ghost_mode, ghost_mode_refined, option):
     msh = mesh.create_interval(MPI.COMM_WORLD, n, [0, 1], ghost_mode=ghost_mode)
     msh_refined, edges, _vertices = mesh.refine(
-        msh, option=option, partitioner=mesh.create_cell_partitioner(ghost_mode_refined, 2)
+        msh,
+        option=option,
+        partitioner=mesh.create_cell_partitioner(max_facet_to_cell_links=2),
+        ghost_mode=ghost_mode_refined,
     )
-    # TODO: add create_cell_partitioner(ghost_mode) when works
 
     # vertex count
     assert msh_refined.topology.index_map(0).size_global == 2 * n + 1

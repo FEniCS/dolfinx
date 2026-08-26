@@ -24,7 +24,7 @@ from dolfinx.cpp.graph import AdjacencyList_int32 as _AdjacencyList_int32
 from dolfinx.fem import coordinate_element
 from dolfinx.graph import adjacencylist
 from dolfinx.io.utils import distribute_entity_data
-from dolfinx.mesh import CellType, Mesh, MeshTags, create_mesh, meshtags_from_entities
+from dolfinx.mesh import CellType, GhostMode, Mesh, MeshTags, create_mesh, meshtags_from_entities
 
 __all__ = [
     "MeshData",
@@ -302,6 +302,7 @@ def model_to_mesh(
     | None = None,
     dtype: npt.DTypeLike = default_real_type,
     max_facet_to_cell_links: int = 2,
+    ghost_mode: GhostMode = GhostMode.none,
 ) -> MeshData:
     """Create a Mesh from a Gmsh model.
 
@@ -320,6 +321,8 @@ def model_to_mesh(
         dtype: Data-type used for the mesh coordinates
         max_facet_to_cell_links: Maximum number of cells a facet can
             be connected to.
+        ghost_mode: Ghost mode used in the mesh partitioning, passed to
+            ``partitioner`` at call time.
 
     Returns:
         MeshData with mesh and tags of corresponding entities by
@@ -452,6 +455,7 @@ def model_to_mesh(
             cmaps,  # type: ignore[arg-type]
             x[:, :gdim].astype(dtype).copy(),
             partitioner,
+            ghost_mode,
             max_facet_to_cell_links,
             1,
             cell_weights=None,
@@ -467,6 +471,7 @@ def model_to_mesh(
             ufl_domains[0],
             x[:, :gdim].astype(dtype, copy=False),
             partitioner,
+            ghost_mode=ghost_mode,
             max_facet_to_cell_links=max_facet_to_cell_links,
         )
     if tdim != mesh.topology.dim:

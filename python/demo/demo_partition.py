@@ -44,23 +44,28 @@
 #   are ordered along a space-filling curve through the mesh and the curve
 #   is cut into equal pieces. This is much cheaper than graph
 #   partitioning, and the cost barely grows with the number of ranks, but
-#   more edges are cut. These are used via
-#   {py:func}`create_geometric_cell_partitioner
+#   more edges are cut. A partitioner that uses only the cell positions is
+#   used via {py:func}`create_geometric_cell_partitioner
 #   <dolfinx.mesh.create_geometric_cell_partitioner>`, which computes a
 #   coordinate for each cell (the mean of its vertex positions) and passes
-#   it to the partitioner.
+#   it to the partitioner. A **hybrid** partitioner, one that also uses
+#   the graph edges as part of the partitioning decision itself rather
+#   than only to determine ghost cells, is used via
+#   {py:func}`create_hybrid_cell_partitioner
+#   <dolfinx.mesh.create_hybrid_cell_partitioner>` instead.
 #
-#   ParMETIS provides two: `GeomKway`, which uses the space-filling curve
-#   to redistribute the graph and then applies k-way partitioning to it,
-#   and `Geom`, which uses the curve alone.
+#   ParMETIS provides two: `GeomKway` (hybrid), which uses the
+#   space-filling curve to redistribute the graph and then applies k-way
+#   partitioning to it, and `Geom` (purely geometric), which uses the
+#   curve alone.
 #
 #   DOLFINx provides curve partitioners that require no external library,
-#   for two curves. A **Morton** ('Z-order') curve is cheap to evaluate,
-#   but jumps a long way in space whenever a high bit of the key changes,
-#   so consecutive cells on the curve are not always neighbours. A
-#   **Hilbert** curve has no such jumps: successive points on it are
-#   always neighbours, which gives more compact partitions and a smaller
-#   edge cut.
+#   for two curves, both purely geometric. A **Morton** ('Z-order') curve
+#   is cheap to evaluate, but jumps a long way in space whenever a high
+#   bit of the key changes, so consecutive cells on the curve are not
+#   always neighbours. A **Hilbert** curve has no such jumps: successive
+#   points on it are always neighbours, which gives more compact
+#   partitions and a smaller edge cut.
 #
 # Which of ParMETIS, PT-SCOTCH and KaHIP are present depends on the build,
 # so the demo checks {py:data}`dolfinx.has_parmetis`,
@@ -98,6 +103,7 @@ from dolfinx.mesh import (
     CellType,
     GhostMode,
     Mesh,
+    compute_cell_centroids,
     create_cell_partitioner,
     create_geometric_cell_partitioner,
     create_hybrid_cell_partitioner,
@@ -283,10 +289,10 @@ def partition_quality(msh: Mesh) -> tuple[float, int]:
 #
 # The {py:func}`coordinate element <dolfinx.fem.coordinate_element>` is the
 # same in each case; only the partitioner and the input cell distribution
-# differ. Note that the geometric partitioners
-# are given the same coordinate array `x` that is passed to
-# {py:func}`create_mesh <dolfinx.mesh.create_mesh>`, as they need the cell
-# positions to partition on.
+# differ. The geometric and hybrid partitioners need cell positions to
+# partition on; {py:func}`create_mesh <dolfinx.mesh.create_mesh>` computes
+# these itself, as the mean of each cell's vertex positions in the
+# coordinate array `x` it is given, and passes them to the partitioner.
 #
 # A mesh creation time is reported alongside the quality measures, since
 # the cost of partitioning is the reason to prefer a cheaper partitioner.
@@ -306,27 +312,24 @@ n = 24 if _small else 128
 
 cells0, x = cube_block(comm, n)
 cmap = coordinate_element(CellType.tetrahedron, 1)
-# ghost_mode = GhostMode.shared_facet
 ghost_mode = GhostMode.none
 
 partitioners = {}
 
 if has_parmetis:
-    partitioners["ParMETIS Kway"] = create_cell_partitioner(
-        graph.partitioner_parmetis(), ghost_mode, 2
-    )
+    partitioners["ParMETIS Kway"] = create_cell_partitioner(graph.partitioner_parmetis())
     partitioners["ParMETIS GeomKway"] = create_hybrid_cell_partitioner(
-        graph.geom_partitioner_parmetis_kway(1.02, [1, 0, 5]), ghost_mode, comm, x
+        graph.geom_partitioner_parmetis_kway(1.02, [1, 0, 5])
     )
     partitioners["ParMETIS Geom"] = create_geometric_cell_partitioner(
-        graph.geom_partitioner_parmetis(), ghost_mode, comm, x
+        graph.geom_partitioner_parmetis()
     )
 
 if has_ptscotch:
-    partitioners["PT-SCOTCH"] = create_cell_partitioner(graph.partitioner_scotch(), ghost_mode, 2)
+    partitioners["PT-SCOTCH"] = create_cell_partitioner(graph.partitioner_scotch())
 
 if has_kahip:
-    partitioners["KaHIP"] = create_cell_partitioner(graph.partitioner_kahip(), ghost_mode, 2)
+    partitioners["KaHIP"] = create_cell_partitioner(graph.partitioner_kahip())
 
 # The space-filling curve partitioners are built into DOLFINx, so they are
 # always available
@@ -334,9 +337,7 @@ for label, curve in [
     ("SFC Morton", graph.SFCCurve.morton),
     ("SFC Hilbert", graph.SFCCurve.hilbert),
 ]:
-    partitioners[label] = create_geometric_cell_partitioner(
-        graph.geom_partitioner_sfc(curve), ghost_mode, comm, x
-    )
+    partitioners[label] = create_geometric_cell_partitioner(graph.geom_partitioner_sfc(curve))
 
 if comm.rank == 0:
     print(f"Mesh: {6 * n**3} tetrahedra on {comm.size} rank(s)")
@@ -352,7 +353,7 @@ for fraction in (0.0, 0.5, 1.0):
     for name, partitioner in partitioners.items():
         comm.Barrier()
         t = time.perf_counter()
-        msh = create_mesh(comm, cells, cmap, x, partitioner=partitioner)
+        msh = create_mesh(comm, cells, cmap, x, partitioner=partitioner, ghost_mode=ghost_mode)
         comm.Barrier()
         elapsed = comm.allreduce(time.perf_counter() - t, MPI.MAX)
 
@@ -384,29 +385,40 @@ for fraction in (0.0, 0.5, 1.0):
 # all-to-all over the whole communicator. Since `sfc` below does not
 # ghost, every cell is sent to exactly one rank, so it still appears
 # exactly once, in the same vertex numbering it started with.
+#
+# `sfc` is a geometric partitioner, called directly with cell centroids
+# (see :func:`create_geometric_cell_partitioner`), computed here with
+# :func:`compute_cell_centroids` -- the same step
+# :func:`create_mesh` performs internally before calling it.
 
 
 def redistribute_by_partitioner(
     comm: MPI.Comm,
     cell_type: CellType,
     cells: npt.NDArray[np.int64],
+    x: npt.NDArray[np.float64],
     partitioner: Callable,
 ) -> npt.NDArray[np.int64]:
-    """Redistribute cells to the ranks a cell partitioner assigns them to.
+    """Redistribute cells to the ranks assigned by a geometric partitioner.
 
     Args:
-        comm: MPI communicator the cells are distributed over.
+        comm: MPI communicator the cells and ``x`` are distributed over.
         cell_type: Cell type of ``cells``.
         cells: Local cells, with shape ``(num_cells, num_vertices)``.
-        partitioner: Cell partitioning function, as passed to
-            :func:`create_mesh`.
+        x: Geometry ('node') coordinates, as passed to :func:`create_mesh`.
+        partitioner: Geometric cell partitioning function, as returned by
+            :func:`create_geometric_cell_partitioner`. Called here
+            directly, with its low-level ``(comm, nparts, commg, x)``
+            signature, rather than through :func:`create_mesh`.
 
     Returns:
         The cells assigned to this rank, in the same vertex numbering as
         the input ``cells``.
     """
-    no_weights = np.empty(0, dtype=np.int32)
-    dest = partitioner(comm, comm.size, [cell_type], [cells.reshape(-1)], no_weights, no_weights)
+    centroid = compute_cell_centroids(comm, [cell_type], [cells.reshape(-1)], comm, x)
+    dest = graph.adjacencylist(
+        np.asarray(partitioner(comm, comm.size, comm, centroid), dtype=np.int32)
+    )._cpp_object
     recv, _, _, _ = graph.distribute(comm, cells, dest)
     return recv
 
@@ -429,7 +441,7 @@ if has_ptscotch and comm.size > 1:
         """Create a mesh, with the elapsed and the SCOTCH time."""
         comm.Barrier()
         t, t_scotch = time.perf_counter(), scotch_partitioner_time()
-        msh = create_mesh(comm, cells, cmap, x, partitioner=partitioner)
+        msh = create_mesh(comm, cells, cmap, x, partitioner=partitioner, ghost_mode=ghost_mode)
         comm.Barrier()
         return (
             msh,
@@ -447,7 +459,7 @@ if has_ptscotch and comm.size > 1:
     # since a full mesh from it would be thrown away immediately.
     comm.Barrier()
     t = time.perf_counter()
-    cells_sfc = redistribute_by_partitioner(comm, CellType.tetrahedron, cells_random, sfc)
+    cells_sfc = redistribute_by_partitioner(comm, CellType.tetrahedron, cells_random, x, sfc)
     comm.Barrier()
     t2a = comm.allreduce(time.perf_counter() - t, MPI.MAX)
     msh2b, t2b, t2b_scotch = timed(cells_sfc, scotch)

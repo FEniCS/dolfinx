@@ -69,7 +69,7 @@ void declare_refinement(nanobind::module_& m)
                       std::optional<dolfinx_wrappers::part::impl::
                                         PythonCellPartitionFunction>>
              partitioner,
-         dolfinx::refinement::Option option)
+         dolfinx::refinement::Option option, dolfinx::mesh::GhostMode ghost_mode)
       {
         std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
         if (edges.has_value())
@@ -117,7 +117,7 @@ void declare_refinement(nanobind::module_& m)
         }
 
         auto [mesh1, cell, facet] = dolfinx::refinement::refine(
-            mesh, cpp_edges, cpp_partitioner, option);
+            mesh, cpp_edges, cpp_partitioner, option, ghost_mode);
 
         std::optional<nb::ndarray<std::int32_t, nb::numpy>> python_cell(
             std::nullopt);
@@ -139,7 +139,7 @@ void declare_refinement(nanobind::module_& m)
                           std::move(python_facet)};
       },
       nb::arg("mesh"), nb::arg("edges").none(), nb::arg("partitioner").none(),
-      nb::arg("option"));
+      nb::arg("option"), nb::arg("ghost_mode"));
 
   m.def(
       "mark_maximum",

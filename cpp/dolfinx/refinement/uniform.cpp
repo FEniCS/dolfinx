@@ -304,8 +304,8 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
     geometry_cmaps.push_back(cm);
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, std::span<std::int32_t>(),
-      geometry_cmaps, mesh.comm(), new_x, {new_x.size() / 3, 3}, partitioner, 2,
-      1);
+      geometry_cmaps, mesh.comm(), new_x, {new_x.size() / 3, 3}, partitioner,
+      mesh::GhostMode::none, 2, 1);
 
   return new_mesh;
 }

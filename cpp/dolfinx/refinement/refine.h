@@ -46,13 +46,13 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
 {
   // TODO: optimize for non ghosted mesh?
 
-  return [&parent_mesh,
-          parent_cell](MPI_Comm comm, int /*nparts*/,
-                       std::vector<mesh::CellType> cell_types,
-                       std::vector<std::span<const std::int64_t>> cells,
-                       std::span<const std::int32_t> /* cell_weights */,
-                       std::span<const std::int32_t> /* edge_weights */)
-             -> graph::AdjacencyList<std::int32_t>
+  return
+      [&parent_mesh, parent_cell](
+          MPI_Comm comm, int /*nparts*/, std::vector<mesh::CellType> cell_types,
+          std::vector<std::span<const std::int64_t>> cells,
+          std::span<const std::int32_t> /* cell_weights */,
+          std::span<const std::int32_t> /* edge_weights */,
+          bool /* ghosting */) -> graph::AdjacencyList<std::int32_t>
   {
     auto parent_cell_im
         = parent_mesh.topology()->index_map(parent_mesh.topology()->dim());
@@ -117,6 +117,9 @@ struct IdentityPartitionerPlaceholder
 /// process as the parent cell.
 /// @param[in] option Control the computation of parent facets, parent
 /// cells.
+/// @param[in] ghost_mode Ghost mode of the refined mesh, passed to
+/// `partitioner` if it is a ::mesh::CellPartitionFunction. Has no
+/// effect on the identity partitioner (see the warning above).
 /// @return New mesh, and optional parent cell indices and parent facet
 /// indices.
 template <std::floating_point T>
@@ -126,7 +129,8 @@ refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges,
        std::variant<IdentityPartitionerPlaceholder, mesh::CellPartitionFunction>
            partitioner = IdentityPartitionerPlaceholder(),
-       Option option = Option::parent_cell)
+       Option option = Option::parent_cell,
+       mesh::GhostMode ghost_mode = mesh::GhostMode::none)
 {
   auto topology = mesh.topology();
   assert(topology);
@@ -155,7 +159,7 @@ refine(const mesh::Mesh<T>& mesh,
       mesh.comm(), mesh.comm(), cell_adj.array(),
       std::span<const std::int32_t>(), mesh.geometry().cmaps().front(),
       mesh.comm(), new_vertex_coords, xshape,
-      std::get<mesh::CellPartitionFunction>(partitioner), 2, 1);
+      std::get<mesh::CellPartitionFunction>(partitioner), ghost_mode, 2, 1);
 
   // Report the number of refined cells
   const int D = topology->dim();

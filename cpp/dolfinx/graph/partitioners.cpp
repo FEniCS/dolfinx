@@ -16,7 +16,6 @@
 #include <functional>
 #include <map>
 #include <numeric>
-#include <optional>
 #include <set>
 #include <span>
 #include <vector>
@@ -681,33 +680,18 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
 //-----------------------------------------------------------------------------
 graph::geom_partition_fn graph::parmetis::geom_partitioner()
 {
-  return
-      [](MPI_Comm comm, idx_t nparts,
-         std::optional<
-             std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
-             local_graph,
-         std::span<const double> x, int gdim, bool ghosting)
+  return [](MPI_Comm comm, idx_t nparts, std::span<const double> x,
+            int gdim) -> std::vector<int>
   {
     spdlog::info("Compute geometric graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS geometric)");
 
-    if (ghosting and !local_graph)
-    {
-      throw std::runtime_error(
-          "A graph is required to compute ghost destinations.");
-    }
-
     const idx_t num_nodes = x.size() / gdim;
-    if (local_graph and num_nodes != local_graph->get().num_nodes())
-    {
-      throw std::runtime_error(
-          "Number of coordinates does not match number of graph nodes.");
-    }
 
     if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
     {
       // Nothing to be partitioned
-      return regular_adjacency_list(std::vector<std::int32_t>(num_nodes, 0), 1);
+      return std::vector<int>(num_nodes, 0);
     }
 
     // Note: ParMETIS fails (crashes) if a rank does not have any graph
@@ -722,7 +706,6 @@ graph::geom_partition_fn graph::parmetis::geom_partitioner()
     }
 
     std::vector<idx_t> part(num_nodes);
-    std::vector<idx_t> node_disp;
     if (pcomm != MPI_COMM_NULL)
     {
       const int psize = dolfinx::MPI::size(pcomm);
@@ -734,7 +717,7 @@ graph::geom_partition_fn graph::parmetis::geom_partitioner()
       }
 
       const idx_t num_local_nodes = num_nodes;
-      node_disp = std::vector<idx_t>(psize + 1, 0);
+      std::vector<idx_t> node_disp(psize + 1, 0);
       MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<idx_t>,
                     node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<idx_t>, pcomm);
       std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
@@ -751,23 +734,11 @@ graph::geom_partition_fn graph::parmetis::geom_partitioner()
         throw std::runtime_error(
             std::format("ParMETIS_V3_PartGeom failed. Error code: {}", err));
       }
+
+      MPI_Comm_free(&pcomm);
     }
 
-    if (ghosting and pcomm != MPI_COMM_NULL)
-    {
-      assert(local_graph);
-      graph::AdjacencyList<int> dest = graph::compute_destination_ranks(
-          pcomm, local_graph->get(), node_disp, part);
-      MPI_Comm_free(&pcomm);
-      return dest;
-    }
-    else
-    {
-      if (pcomm != MPI_COMM_NULL)
-        MPI_Comm_free(&pcomm);
-      return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
-                                    1);
-    }
+    return std::vector<int>(part.begin(), part.end());
   };
 }
 //-----------------------------------------------------------------------------

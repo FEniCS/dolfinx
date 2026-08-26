@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <functional>
 #include <mpi.h>
-#include <optional>
 #include <span>
 #include <tuple>
 #include <vector>
@@ -36,16 +35,12 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 
 /// @brief Signature of functions for computing the parallel
 /// partitioning of a distributed graph from the positions of its nodes
-/// in space, optionally also using the graph edges.
+/// in space alone, with no access to the graph edges.
 ///
-/// `local_graph` is optional since a purely geometric partitioner (e.g.
-/// a space-filling curve) does not need it to decide which part a node
-/// belongs to; it is up to a given implementation whether it requires
-/// `local_graph` regardless (and throws if it is not supplied), e.g.
-/// because it also uses the graph edges, or because ghosting has been
-/// requested and ghost destinations can only be computed from the
-/// edges. A caller that has the graph should generally supply it, even
-/// if it does not know whether the chosen partitioner needs it.
+/// Since an implementation has no graph, it cannot compute ghost
+/// destinations: it must throw if `ghosting` is true. See
+/// ::hybrid_partition_fn for a partitioning function that has access to
+/// both the node positions and the graph edges.
 ///
 /// @note The coordinates are always `double`, whatever the scalar type
 /// of the data they were derived from. Which nodes end up in which part
@@ -57,26 +52,19 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 /// @param[in] comm MPI Communicator that the graph is distributed
 /// across.
 /// @param[in] nparts Number of partitions to divide graph nodes into.
-/// @param[in] local_graph Node connectivity graph. Absent if
-/// partitioner does not require it. Will raise an exception if the
-/// partitioner requires it and it is not supplied.
 /// @param[in] x Node coordinates, row-major with `gdim` columns and one
 /// row per node.
 /// @param[in] gdim Number of coordinate components per node.
-/// @param[in] ghosting Flag to enable ghosting of the output node
-/// distribution.
 /// @return Destination rank(s) for each input node.
-using geom_partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm, int,
-    std::optional<std::reference_wrapper<const AdjacencyList<std::int64_t>>>,
-    std::span<const double>, int, bool)>;
+using geom_partition_fn = std::function<std::vector<int>(
+    MPI_Comm, int, std::span<const double>, int)>;
 
 /// @brief Signature of functions for computing the parallel
 /// partitioning of a distributed graph using both its edges and the
 /// positions of its nodes in space.
 ///
-/// Unlike ::geom_partition_fn, `local_graph` is not optional here: a
-/// hybrid partitioner (e.g. one that redistributes nodes along a
+/// Unlike ::geom_partition_fn, which has no access to the graph at all,
+/// a hybrid partitioner (e.g. one that redistributes nodes along a
 /// space-filling curve and then applies graph partitioning to the
 /// result, as ParMETIS `GeomKway` does) uses the graph edges as part of
 /// the partitioning decision itself, not only to compute ghost

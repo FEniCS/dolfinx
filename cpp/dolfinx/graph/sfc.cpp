@@ -7,7 +7,6 @@
 #include "sfc.h"
 #include "AdjacencyList.h"
 #include "partition.h"
-#include "partitioners.h"
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -17,7 +16,6 @@
 #include <functional>
 #include <limits>
 #include <numeric>
-#include <optional>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -232,99 +230,46 @@ std::vector<int> partition_by_curve(MPI_Comm comm, int nparts,
 
   return part;
 }
-/// @brief Partition points by their position along a space-filling curve
-/// and, if requested, add the destinations needed for ghosting.
+/// @brief Partition points by their position along a space-filling curve.
 ///
 /// @param[in] comm MPI communicator the points are distributed across.
 /// @param[in] nparts Number of partitions.
-/// @param[in] graph Node connectivity graph, one node per point. Used
-/// only to determine ghost nodes.
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
 /// @param[in] gdim Number of coordinate components per point.
-/// @param[in] ghosting Flag to enable ghosting.
 /// @param[in] key Curve key for a point.
-/// @return Destination rank(s) for each point, owner first.
+/// @return Destination rank for each point, one entry per row of `x`.
 template <typename K>
-dolfinx::graph::AdjacencyList<std::int32_t>
-partition_curve(MPI_Comm comm, int nparts,
-                const dolfinx::graph::AdjacencyList<std::int64_t>& graph,
-                std::span<const double> x, int gdim, bool ghosting, K key)
+std::vector<int> partition_curve(MPI_Comm comm, int nparts,
+                                 std::span<const double> x, int gdim, K key)
 {
-  if (static_cast<std::int64_t>(x.size())
-      != static_cast<std::int64_t>(gdim) * graph.num_nodes())
-  {
-    throw std::runtime_error(
-        "Number of coordinates does not match number of graph nodes.");
-  }
-
-  std::vector<int> part = partition_by_curve(comm, nparts, x, gdim, key);
-  if (!ghosting)
-    return dolfinx::graph::regular_adjacency_list(std::move(part), 1);
-
-  // Wherever a point goes, so must the points connected to it by an edge
-  std::vector<int> node_disp(dolfinx::MPI::size(comm) + 1, 0);
-  const int num_local = graph.num_nodes();
-  MPI_Allgather(&num_local, 1, MPI_INT, std::next(node_disp.data()), 1, MPI_INT,
-                comm);
-  std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
-  return dolfinx::graph::compute_destination_ranks(comm, graph, node_disp,
-                                                   part);
+  return partition_by_curve(comm, nparts, x, gdim, key);
 }
 } // namespace
 
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-graph::partition_sfc_morton(MPI_Comm comm, int nparts,
-                            const graph::AdjacencyList<std::int64_t>& graph,
-                            std::span<const double> x, int gdim, bool ghosting)
+std::vector<int> graph::partition_sfc_morton(MPI_Comm comm, int nparts,
+                                             std::span<const double> x,
+                                             int gdim)
 {
   common::Timer timer("Compute Morton SFC partition of points");
-  return partition_curve(comm, nparts, graph, x, gdim, ghosting, morton_key);
+  return partition_curve(comm, nparts, x, gdim, morton_key);
 }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-graph::partition_sfc_hilbert(MPI_Comm comm, int nparts,
-                             const graph::AdjacencyList<std::int64_t>& graph,
-                             std::span<const double> x, int gdim, bool ghosting)
+std::vector<int> graph::partition_sfc_hilbert(MPI_Comm comm, int nparts,
+                                              std::span<const double> x,
+                                              int gdim)
 {
   common::Timer timer("Compute Hilbert SFC partition of points");
-  return partition_curve(comm, nparts, graph, x, gdim, ghosting, hilbert_key);
+  return partition_curve(comm, nparts, x, gdim, hilbert_key);
 }
 //-----------------------------------------------------------------------------
 graph::geom_partition_fn graph::sfc::partitioner(sfc::curve curve)
 {
-  return
-      [curve](
-          MPI_Comm comm, int nparts,
-          std::optional<
-              std::reference_wrapper<const graph::AdjacencyList<std::int64_t>>>
-              local_graph,
-          std::span<const double> x, int gdim, bool ghosting)
+  return [curve](MPI_Comm comm, int nparts, std::span<const double> x, int gdim)
   {
-    if (ghosting and !local_graph)
-    {
-      throw std::runtime_error("Space-filling curve partitioner requires a "
-                               "graph to compute ghosts.");
-    }
-
-    auto call = [curve, comm, nparts, x, gdim,
-                 ghosting](const graph::AdjacencyList<std::int64_t>& graph)
-    {
-      return (curve == sfc::curve::hilbert)
-                 ? graph::partition_sfc_hilbert(comm, nparts, graph, x, gdim,
-                                                ghosting)
-                 : graph::partition_sfc_morton(comm, nparts, graph, x, gdim,
-                                               ghosting);
-    };
-
-    if (local_graph)
-      return call(local_graph->get());
-
-    // local_graph is not read at all when ghosting is false, so a
-    // trivial placeholder of the right size stands in for it.
-    const graph::AdjacencyList<std::int64_t> trivial_graph(
-        static_cast<std::int32_t>(x.size() / gdim));
-    return call(trivial_graph);
+    return curve == sfc::curve::hilbert
+               ? graph::partition_sfc_hilbert(comm, nparts, x, gdim)
+               : graph::partition_sfc_morton(comm, nparts, x, gdim);
   };
 }
 //-----------------------------------------------------------------------------

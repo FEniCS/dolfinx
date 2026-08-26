@@ -62,6 +62,8 @@ enum class GhostMode : std::uint8_t
 /// @param[in] edge_weights Weights associated with each edge of the
 /// dual graph built from `cells`, e.g. for use by the graph partitioner.
 /// If empty, edges are treated as having equal weight.
+/// @param[in] ghosting Flag to enable ghosting of the output cell
+/// distribution.
 /// @return Destination rank(s) for each cell on this process, the
 /// owning rank first. A cell has more than one destination rank only
 /// when it is ghosted.
@@ -69,23 +71,49 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
     const std::vector<std::span<const std::int64_t>>& cells,
     std::span<const std::int32_t> cell_weights,
-    std::span<const std::int32_t> edge_weights)>;
+    std::span<const std::int32_t> edge_weights, bool ghosting)>;
 
-/// @brief Signature for a cell partitioning function that also has
-/// access to the cell centroids, e.g. to partition using them rather
-/// than (or in addition to) the mesh dual graph.
+/// @brief Signature for a cell partitioning function that partitions
+/// using cell centroids alone, with no access to the mesh dual graph.
 ///
-/// As ::CellPartitionFunction, with the addition of the cell
-/// centroids, `x`. `x` holds one row per cell in `cells` (in the same
-/// order), not the mesh 'node' coordinates -- see ::AnyCellPartitionFunction
-/// and ::create_geometric_cell_partitioner for how the centroids are
-/// obtained. Since the centroids are already local to the cells on
-/// this rank, `commg` is typically unused by an implementation.
+/// `x` holds one row per cell on this rank, in the order of the cells
+/// ::create_mesh was called with, not the mesh 'node' coordinates -- see
+/// ::AnyCellPartitionFunction and ::create_geometric_cell_partitioner for
+/// how the centroids are obtained. Since the centroids are already
+/// local to the cells on this rank, `commg` is typically unused by an
+/// implementation.
+///
+/// A function of this type has no cell topology to build the mesh dual
+/// graph from, so it cannot support ghosting -- see
+/// ::HybridCellPartitionFunction for a partitioning function that can.
 ///
 /// @note The coordinates are always `double`, whatever the scalar type
 /// of the mesh being created, for the same reason as
 /// graph::partition_fn: partitioning is not sensitive to the precision
 /// of the positions.
+///
+/// @param[in] comm MPI Communicator.
+/// @param[in] nparts Number of partitions.
+/// @param[in] commg MPI Communicator that `x` is distributed across.
+/// @param[in] x Cell centroids, row-major with `xshape[1]` columns, one
+/// row per cell on this rank.
+/// @param[in] xshape Shape of `x`.
+/// @return Destination rank for each cell on this process, one entry
+/// per row of `x`, as ::CellPartitionFunction's return value but never
+/// with more than one destination rank per cell.
+using GeometricPartitionFunction = std::function<std::vector<int>(
+    MPI_Comm comm, int nparts, MPI_Comm commg, std::span<const double> x,
+    std::array<std::size_t, 2> xshape)>;
+
+/// @brief Signature for a cell partitioning function that has access to
+/// both the cell topology (as ::CellPartitionFunction) and the cell
+/// centroids (as ::GeometricPartitionFunction), e.g. to partition using
+/// the cell positions while still being able to build the mesh dual
+/// graph, for ghosting or because the graph edges are themselves part
+/// of the partitioning decision -- see ::create_hybrid_cell_partitioner.
+///
+/// @note The coordinates are always `double`, for the same reason as
+/// ::GeometricPartitionFunction.
 ///
 /// @param[in] comm MPI Communicator that `cell_types`/`cells` are
 /// distributed across.
@@ -97,32 +125,42 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
 /// @param[in] x Cell centroids, row-major with `xshape[1]` columns,
 /// one row per cell across `cells` (in the same order).
 /// @param[in] xshape Shape of `x`.
+/// @param[in] ghosting Flag to enable ghosting of the output cell
+/// distribution.
 /// @return Destination rank(s) for each cell on this process, as
 /// ::CellPartitionFunction.
-using GeometricCellPartitionFunction
+using HybridCellPartitionFunction
     = std::function<graph::AdjacencyList<std::int32_t>(
         MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
         const std::vector<std::span<const std::int64_t>>& cells, MPI_Comm commg,
-        std::span<const double> x, std::array<std::size_t, 2> xshape)>;
+        std::span<const double> x, std::array<std::size_t, 2> xshape,
+        bool ghosting)>;
 
-/// @brief Either kind of cell partitioning function that ::create_mesh
+/// @brief Any kind of cell partitioning function that ::create_mesh
 /// accepts.
 ///
 /// ::create_mesh always has the cell topology available, so a
 /// ::CellPartitionFunction alternative is simply called directly. If
-/// the alternative held is a ::GeometricCellPartitionFunction,
-/// ::create_mesh first computes the centroid of each cell from the
-/// vertex coordinates -- using the same `(commg, x, xshape)` geometry
-/// data it uses to build the mesh -- and supplies them, since a
-/// GeometricCellPartitionFunction has no other way to obtain them.
+/// the alternative held is a ::GeometricPartitionFunction or a
+/// ::HybridCellPartitionFunction, ::create_mesh first computes the
+/// centroid of each cell from the vertex coordinates -- using the same
+/// `(commg, x, xshape)` geometry data it uses to build the mesh -- and
+/// supplies them, since neither has any other way to obtain them; a
+/// ::HybridCellPartitionFunction is additionally given the cell
+/// topology, as a ::CellPartitionFunction is.
 using AnyCellPartitionFunction
-    = std::variant<CellPartitionFunction, GeometricCellPartitionFunction>;
+    = std::variant<CellPartitionFunction, GeometricPartitionFunction,
+                   HybridCellPartitionFunction>;
 
 /// @brief Create a function that computes destination rank for mesh
 /// cells on this rank by applying `partfn` to the dual graph of the
 /// mesh.
 ///
-/// @param[in] ghost_mode Ghost mode of the created mesh.
+/// The dual graph is always built, regardless of whether the returned
+/// function is later called with `ghosting` true or false, since it is
+/// the caller of the returned function -- not this function -- that
+/// decides whether to ghost.
+///
 /// @param[in] partfn Partitioning function for distributing cells
 /// across MPI ranks.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
@@ -132,7 +170,7 @@ using AnyCellPartitionFunction
 /// dual graph. Must be >= 1.
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction
-create_cell_partitioner(mesh::GhostMode ghost_mode, graph::partition_fn partfn,
+create_cell_partitioner(graph::partition_fn partfn,
                         std::optional<std::int32_t> max_facet_to_cell_links,
                         int num_threads = 1);
 
@@ -140,7 +178,6 @@ create_cell_partitioner(mesh::GhostMode ghost_mode, graph::partition_fn partfn,
 /// cells on this rank by applying the default graph partitioner to the
 /// dual graph of the mesh.
 ///
-/// @param[in] ghost_mode Ghost mode of the created mesh.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet must be connected to for it to be considered *matched* (not
 /// on boundary for non-branching meshes).
@@ -148,8 +185,7 @@ create_cell_partitioner(mesh::GhostMode ghost_mode, graph::partition_fn partfn,
 /// dual graph. Must be >= 1.
 /// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction
-create_cell_partitioner(mesh::GhostMode ghost_mode,
-                        std::optional<std::int32_t> max_facet_to_cell_links,
+create_cell_partitioner(std::optional<std::int32_t> max_facet_to_cell_links,
                         int num_threads = 1);
 
 namespace impl
@@ -228,8 +264,9 @@ compute_cell_centroids(MPI_Comm comm,
 /// cells on this rank from the position of the cell 'centroids' on a
 /// space-filling curve (see graph::sfc::partitioner).
 ///
-/// Unlike ::create_cell_partitioner, no graph partitioner is used by
-/// default (though `partfn` may use one). This is markedly cheaper --
+/// Unlike ::create_cell_partitioner, no graph partitioner is used --
+/// `partfn` has no graph to use, see ::geom_partition_fn. This is markedly
+/// cheaper --
 /// the cost is nearly independent of the number of MPI ranks, whereas
 /// graph partitioning cost grows with the rank count -- and the load
 /// balance is near-perfect, but more cells lie on the partition
@@ -237,32 +274,26 @@ compute_cell_centroids(MPI_Comm comm,
 /// the created mesh. It is intended for cases where mesh partitioning
 /// cost dominates, e.g. very large rank counts.
 ///
-/// @note The returned ::GeometricCellPartitionFunction is called with
-/// the cell *centroids* as its `x` argument, not the mesh node
-/// coordinates -- e.g. as ::create_mesh supplies automatically when
-/// this is used as (part of) an ::AnyCellPartitionFunction. The
-/// `commg`/`xshape` it is called with describe that centroid array, and
-/// are unused here since the centroids are already local to the
-/// calling rank.
+/// The returned function never has the cell topology available, so it
+/// cannot build the mesh dual graph and therefore cannot support
+/// ghosting: a mesh built with it always has GhostMode::none, regardless
+/// of what is otherwise requested. Use
+/// ::create_hybrid_cell_partitioner for a partitioner that also needs
+/// the dual graph, e.g. to support ghosting.
 ///
-/// @param[in] ghost_mode Ghost mode of the created mesh. Cell ghosting
-/// requires the mesh dual graph, which is built only if `ghost_mode` is
-/// not GhostMode::none.
-/// @param[in] max_facet_to_cell_links Bound on the number of cells a
-/// facet needs to be connected to to be considered *matched* (not on
-/// boundary for non-branching meshes).
-/// @param[in] num_threads Number of threads to use when building the
-/// dual graph (cell ghosting only). Must be >= 1.
+/// @note The returned ::GeometricPartitionFunction is called with the
+/// cell *centroids* as its `x` argument, not the mesh node coordinates
+/// -- e.g. as ::create_mesh supplies automatically when this is used as
+/// (part of) an ::AnyCellPartitionFunction.
+///
 /// @param[in] partfn Geometric graph partitioner to apply to the cell
 /// centroids. Defaults to the space-filling curve partitioner,
-/// graph::sfc::partitioner. The centroids are always supplied; the dual
-/// graph is supplied only when `ghost_mode` is not GhostMode::none, and
-/// is otherwise absent (see ::geom_partition_fn).
+/// graph::sfc::partitioner. Always called with no graph and no
+/// ghosting (see ::geom_partition_fn).
 /// @return A geometric cell partitioning function.
-GeometricCellPartitionFunction create_geometric_cell_partitioner(
-    mesh::GhostMode ghost_mode,
-    std::optional<std::int32_t> max_facet_to_cell_links, int num_threads = 1,
-    graph::geom_partition_fn partfn = graph::sfc::partitioner());
+GeometricPartitionFunction
+create_geometric_cell_partitioner(graph::geom_partition_fn partfn
+                                  = graph::sfc::partitioner());
 
 /// @brief Create a function that computes the destination rank for mesh
 /// cells on this rank using a hybrid partitioner that needs both the
@@ -270,11 +301,11 @@ GeometricCellPartitionFunction create_geometric_cell_partitioner(
 /// see graph::parmetis::geom_partitioner_kway).
 ///
 /// Unlike ::create_geometric_cell_partitioner, the dual graph is always
-/// built and supplied to `partfn`, regardless of `ghost_mode`, since a
+/// built and supplied to `partfn`, regardless of whether the returned
+/// function is later called with `ghosting` true or false, since a
 /// hybrid partitioner uses the graph edges as part of the partitioning
 /// decision itself, not only for ghosting.
 ///
-/// @param[in] ghost_mode Ghost mode of the created mesh.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet needs to be connected to to be considered *matched* (not on
 /// boundary for non-branching meshes).
@@ -282,9 +313,8 @@ GeometricCellPartitionFunction create_geometric_cell_partitioner(
 /// dual graph. Must be >= 1.
 /// @param[in] partfn Hybrid graph partitioner to apply to the dual graph
 /// and the cell centroids.
-/// @return A geometric cell partitioning function.
-GeometricCellPartitionFunction create_hybrid_cell_partitioner(
-    mesh::GhostMode ghost_mode,
+/// @return A hybrid cell partitioning function.
+HybridCellPartitionFunction create_hybrid_cell_partitioner(
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
     graph::hybrid_partition_fn partfn);
 

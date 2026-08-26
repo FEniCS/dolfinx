@@ -864,14 +864,21 @@ namespace impl
 /// vertex-only dof layout, so that a cell's 'nodes' are already exactly
 /// its vertices and extracting the topology is unnecessary.
 /// @param[in] partitioner Partitioner, as for ::create_mesh.
+/// @param[in] ghosting Flag to enable ghosting of the output cell
+/// distribution. Passed on to `partitioner` if it holds a
+/// ::CellPartitionFunction or a ::HybridCellPartitionFunction; has no
+/// effect if it holds a ::GeometricPartitionFunction, which can never
+/// ghost.
 /// @param[in] cell_weights Weights associated with each cell in `cells`
 /// (flattened across cell types in the same order as `cells`). Used
 /// only if `partitioner` holds a ::CellPartitionFunction. If empty,
 /// cells are treated as having equal weight.
 /// @param[in] commg Communicator that `x` is distributed on. Used only
-/// if `partitioner` holds a ::GeometricCellPartitionFunction.
+/// if `partitioner` holds a ::GeometricPartitionFunction or a
+/// ::HybridCellPartitionFunction.
 /// @param[in] x Geometry ('node') coordinates. Used only if
-/// `partitioner` holds a ::GeometricCellPartitionFunction.
+/// `partitioner` holds a ::GeometricPartitionFunction or a
+/// ::HybridCellPartitionFunction.
 /// @param[in] xshape Shape of `x`.
 /// @return
 /// 1. Cells assigned to this rank, by cell type, with all 'nodes' (not
@@ -887,8 +894,9 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
                 const std::vector<CellType>& celltypes,
                 const std::vector<fem::ElementDofLayout>& doflayouts,
                 bool p1_geometry, const AnyCellPartitionFunction& partitioner,
-                std::span<const std::int32_t> cell_weights, MPI_Comm commg,
-                std::span<const T> x, std::array<std::size_t, 2> xshape)
+                bool ghosting, std::span<const std::int32_t> cell_weights,
+                MPI_Comm commg, std::span<const T> x,
+                std::array<std::size_t, 2> xshape)
 {
   const std::int32_t num_cell_types = cells.size();
   std::vector<std::vector<std::int64_t>> cells1(num_cell_types);
@@ -917,30 +925,48 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
         }
       }
 
+      // Shared by the GeometricPartitionFunction and
+      // HybridCellPartitionFunction alternatives below: neither has any
+      // other way to obtain the cell centroids.
+      auto centroids
+          = [&]() -> std::pair<std::vector<double>, std::array<std::size_t, 2>>
+      {
+        const int gdim = xshape[1];
+        std::vector<int> num_vertices_per_cell;
+        std::ranges::transform(celltypes,
+                               std::back_inserter(num_vertices_per_cell),
+                               [](CellType c) { return num_cell_vertices(c); });
+        std::vector<double> centroid = impl::compute_cell_centroids(
+            commt, num_vertices_per_cell, tspan, commg, x, gdim);
+        std::array<std::size_t, 2> cshape
+            = {centroid.size() / static_cast<std::size_t>(gdim),
+               static_cast<std::size_t>(gdim)};
+        return {std::move(centroid), cshape};
+      };
+
       dest = std::visit(
           [&](const auto& p) -> graph::AdjacencyList<std::int32_t>
           {
             using P = std::decay_t<decltype(p)>;
-            if constexpr (std::is_same_v<P, GeometricCellPartitionFunction>)
+            if constexpr (std::is_same_v<P, GeometricPartitionFunction>)
             {
-              const int gdim = xshape[1];
-              std::vector<int> num_vertices_per_cell;
-              std::ranges::transform(
-                  celltypes, std::back_inserter(num_vertices_per_cell),
-                  [](CellType c) { return num_cell_vertices(c); });
-              std::vector<double> centroid = impl::compute_cell_centroids(
-                  commt, num_vertices_per_cell, tspan, commg, x, gdim);
-              std::array<std::size_t, 2> cshape
-                  = {centroid.size() / static_cast<std::size_t>(gdim),
-                     static_cast<std::size_t>(gdim)};
+              auto [centroid, cshape] = centroids();
+              return graph::regular_adjacency_list(
+                  p(commt, size, commg, std::span<const double>(centroid),
+                    cshape),
+                  1);
+            }
+            else if constexpr (std::is_same_v<P, HybridCellPartitionFunction>)
+            {
+              auto [centroid, cshape] = centroids();
               return p(commt, size, celltypes, tspan, commg,
-                       std::span<const double>(centroid), cshape);
+                       std::span<const double>(centroid), cshape, ghosting);
             }
             else
             {
               std::vector<std::int32_t> edge_weights;
               return p(commt, size, celltypes, tspan, cell_weights,
-                       edge_weights);
+                       edge_weights, ghosting);
             }
           },
           partitioner);
@@ -1061,9 +1087,14 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Partitioner that computes the owning rank for
 /// each cell in `cells`. If not callable, cells are not redistributed.
-/// If it holds a ::GeometricCellPartitionFunction, this function
-/// computes the centroid of each cell in `cells` (from `x`) and
-/// supplies them, see ::AnyCellPartitionFunction.
+/// If it holds a ::GeometricPartitionFunction or a
+/// ::HybridCellPartitionFunction, this function computes the centroid
+/// of each cell in `cells` (from `x`) and supplies them, see
+/// ::AnyCellPartitionFunction.
+/// @param[in] ghost_mode Ghost mode of the created mesh, passed to
+/// `partitioner` if it holds a ::CellPartitionFunction or a
+/// ::HybridCellPartitionFunction. Has no effect if it holds a
+/// ::GeometricPartitionFunction, which can never ghost.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet can be connected to.
 /// @param[in] num_threads Number threads to use in mesh construction.
@@ -1079,7 +1110,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
-    const AnyCellPartitionFunction& partitioner,
+    const AnyCellPartitionFunction& partitioner, GhostMode ghost_mode,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
     const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
@@ -1113,9 +1144,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Partition cells across ranks of `comm` (or, if `partitioner` is not
   // callable, keep them on their current rank and just assign each a
   // globally unique index)
+  const bool ghosting = (ghost_mode != GhostMode::none);
   auto [cells1, original_idx1, ghost_owners] = impl::partition_cells(
       comm, commt, cells, celltypes, doflayouts, p1_geometry, partitioner,
-      cell_weights, commg, std::span<const T>(x), xshape);
+      ghosting, cell_weights, commg, std::span<const T>(x), xshape);
 
   // Extract cell 'topology', i.e. extract the vertices for each cell
   // and discard any 'higher-order' nodes. `cells1_v_storage` is empty
@@ -1262,8 +1294,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Partitioner that computes the owning rank for
 /// each cell. If not callable, cells are not redistributed. See the
-/// more general ::create_mesh for the ::GeometricCellPartitionFunction
-/// alternative.
+/// more general ::create_mesh for the ::GeometricPartitionFunction and
+/// ::HybridCellPartitionFunction alternatives.
+/// @param[in] ghost_mode Ghost mode of the created mesh, as for the
+/// more general ::create_mesh.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet can be connected to.
 /// @param[in] num_threads Number threads to use in mesh construction.
@@ -1278,13 +1312,14 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
-    const AnyCellPartitionFunction& partitioner,
+    const AnyCellPartitionFunction& partitioner, GhostMode ghost_mode,
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
     const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
   return create_mesh(comm, commt, std::vector{cells}, cell_weights,
                      std::vector{element}, commg, x, xshape, partitioner,
-                     max_facet_to_cell_links, num_threads, reorder_fn);
+                     ghost_mode, max_facet_to_cell_links, num_threads,
+                     reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
@@ -1320,15 +1355,15 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
     return create_mesh(comm, comm, std::vector{cells},
                        std::span<const std::int32_t>(), std::vector{elements},
                        comm, x, xshape, CellPartitionFunction(nullptr),
-                       max_facet_to_cell_links, 1);
+                       ghost_mode, max_facet_to_cell_links, 1);
   }
   else
   {
-    return create_mesh(
-        comm, comm, std::vector{cells}, std::span<const std::int32_t>(),
-        std::vector{elements}, comm, x, xshape,
-        create_cell_partitioner(ghost_mode, max_facet_to_cell_links),
-        max_facet_to_cell_links, 1);
+    return create_mesh(comm, comm, std::vector{cells},
+                       std::span<const std::int32_t>(), std::vector{elements},
+                       comm, x, xshape,
+                       create_cell_partitioner(max_facet_to_cell_links),
+                       ghost_mode, max_facet_to_cell_links, 1);
   }
 }
 

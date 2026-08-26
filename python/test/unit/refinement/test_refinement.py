@@ -47,7 +47,9 @@ def test_refine_create_unit_cube(ghost_mode):
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh, partitioner=create_cell_partitioner(ghost_mode, 2))
+    mesh, _, _ = refine(
+        mesh, partitioner=create_cell_partitioner(max_facet_to_cell_links=2), ghost_mode=ghost_mode
+    )
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 

@@ -80,7 +80,8 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
 
   // Global entity counts for each entity dimension
   auto counts = [&cells, &x, xshape, &element,
-                 comm](const mesh::AnyCellPartitionFunction& part)
+                 comm](const mesh::AnyCellPartitionFunction& part,
+                       mesh::GhostMode ghost_mode)
   {
     mesh::Mesh<double> mesh = mesh::create_mesh(
         comm, comm,
@@ -88,7 +89,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
             std::span<const std::int64_t>(cells)},
         std::span<const std::int32_t>(),
         std::vector<fem::CoordinateElement<double>>{element}, comm, x, xshape,
-        part, 2, 1);
+        part, ghost_mode, 2, 1);
     mesh.topology_mutable()->create_entities(1);
     mesh.topology_mutable()->create_entities(2);
 
@@ -102,36 +103,49 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
     return c;
   };
 
+  // create_geometric_cell_partitioner has no cell topology, so it never
+  // ghosts regardless of what is otherwise requested; compare it against
+  // the unghosted baseline.
+  std::array<std::int64_t, 5> c0n
+      = counts(mesh::create_cell_partitioner(2), mesh::GhostMode::none);
+  std::array<std::int64_t, 5> c1 = counts(
+      mesh::create_geometric_cell_partitioner(), mesh::GhostMode::none);
+
+  CHECK(c0n[0] == (n + 1) * (n + 1) * (n + 1));
+  CHECK(c0n[3] == 6 * n * n * n);
+  for (int d = 0; d < 4; ++d)
+    CHECK(c1[d] == c0n[d]);
+
+  // Cells are shared out evenly (the partition is by equal count)
+  const int size = dolfinx::MPI::size(comm);
+  CHECK(c1[4] * size <= 1.1 * c1[3] + size);
+
+#ifdef HAS_PARMETIS
+  std::array<std::int64_t, 5> c3
+      = counts(mesh::create_geometric_cell_partitioner(
+                   graph::parmetis::geom_partitioner()),
+               mesh::GhostMode::none);
+  for (int d = 0; d < 4; ++d)
+    CHECK(c3[d] == c0n[d]);
+#endif
+
   for (mesh::GhostMode gm :
        {mesh::GhostMode::none, mesh::GhostMode::shared_facet})
   {
     std::array<std::int64_t, 5> c0
-        = counts(mesh::create_cell_partitioner(gm, 2));
-    std::array<std::int64_t, 5> c1
-        = counts(mesh::create_geometric_cell_partitioner(gm, 2));
+        = counts(mesh::create_cell_partitioner(2), gm);
 
     // Global entity counts do not depend on the partitioner
     CHECK(c0[0] == (n + 1) * (n + 1) * (n + 1));
     CHECK(c0[3] == 6 * n * n * n);
-    for (int d = 0; d < 4; ++d)
-      CHECK(c1[d] == c0[d]);
-
-    // Cells are shared out evenly (the partition is by equal count)
-    const int size = dolfinx::MPI::size(comm);
-    CHECK(c1[4] * size <= 1.1 * c1[3] + size);
 
 #ifdef HAS_PARMETIS
     std::array<std::int64_t, 5> c2
         = counts(mesh::create_hybrid_cell_partitioner(
-            gm, 2, 1, graph::parmetis::geom_partitioner_kway()));
+                     2, 1, graph::parmetis::geom_partitioner_kway()),
+                 gm);
     for (int d = 0; d < 4; ++d)
       CHECK(c2[d] == c0[d]);
-
-    std::array<std::int64_t, 5> c3
-        = counts(mesh::create_geometric_cell_partitioner(
-            gm, 2, 1, graph::parmetis::geom_partitioner()));
-    for (int d = 0; d < 4; ++d)
-      CHECK(c3[d] == c0[d]);
 #endif
   }
 }
@@ -142,34 +156,21 @@ TEST_CASE("SFC point partition", "[partition_sfc]")
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
 
-  // Points on a line, distributed in blocks, connected as a chain so that
-  // there is something to ghost
+  // Points on a line, distributed in blocks
   constexpr int num_points = 100;
   std::vector<double> x(num_points);
   for (int i = 0; i < num_points; ++i)
     x[i] = (num_points * rank + i) / static_cast<double>(num_points * size);
 
-  std::vector<std::int64_t> edges;
-  std::vector<std::int32_t> offsets{0};
-  for (int i = 0; i < num_points; ++i)
-  {
-    const std::int64_t global = num_points * rank + i;
-    if (global > 0)
-      edges.push_back(global - 1);
-    if (global + 1 < num_points * size)
-      edges.push_back(global + 1);
-    offsets.push_back(edges.size());
-  }
-  graph::AdjacencyList<std::int64_t> chain(edges, offsets);
-
   for (auto partition :
        {&graph::partition_sfc_morton, &graph::partition_sfc_hilbert})
   {
     graph::AdjacencyList<std::int32_t> dest
-        = partition(comm, size, chain, x, 1, false);
+        = graph::regular_adjacency_list(partition(comm, size, x, 1), 1);
     REQUIRE(dest.num_nodes() == num_points);
 
-    // Without ghosting there is exactly one destination per point
+    // There is exactly one destination per point (no graph, so no
+    // ghosting is possible)
     CHECK(dest.array().size() == std::size_t(num_points));
     std::span<const std::int32_t> part = dest.array();
     CHECK(std::ranges::all_of(part,
@@ -187,25 +188,9 @@ TEST_CASE("SFC point partition", "[partition_sfc]")
     // dimension is sorted order for both curves
     CHECK(std::ranges::is_sorted(part));
 
-    // With ghosting, the owner comes first and a point may have further
-    // destinations, but never fewer
-    graph::AdjacencyList<std::int32_t> dest_g
-        = partition(comm, size, chain, x, 1, true);
-    REQUIRE(dest_g.num_nodes() == num_points);
-    CHECK(dest_g.array().size() >= dest.array().size());
-    for (std::int32_t i = 0; i < dest_g.num_nodes(); ++i)
-    {
-      CHECK(dest_g.num_links(i) >= 1);
-      CHECK(dest_g.links(i).front() == dest.links(i).front());
-    }
-
-    // Ghosting is only required where the chain crosses a part boundary,
-    // so most points have a single destination
-    CHECK(dest_g.array().size() < 2 * dest.array().size());
-
     // A single partition holds everything
     graph::AdjacencyList<std::int32_t> part1
-        = partition(comm, 1, chain, x, 1, false);
+        = graph::regular_adjacency_list(partition(comm, 1, x, 1), 1);
     CHECK(std::ranges::all_of(part1.array(), [](int p) { return p == 0; }));
   }
 }
@@ -231,13 +216,10 @@ TEST_CASE("SFC curve properties", "[partition_sfc]")
   }
   const int num_points = grid.size();
 
-  // No edges: the curve order does not depend on the graph
-  graph::AdjacencyList<std::int64_t> nograph(num_points);
-
-  auto curve_order = [&x, &nograph, num_points](auto partition)
+  auto curve_order = [&x, num_points](auto partition)
   {
-    graph::AdjacencyList<std::int32_t> dest
-        = partition(MPI_COMM_SELF, num_points, nograph, x, 3, false);
+    graph::AdjacencyList<std::int32_t> dest = graph::regular_adjacency_list(
+        partition(MPI_COMM_SELF, num_points, x, 3), 1);
     std::span<const std::int32_t> part = dest.array();
 
     // The part indices must be a permutation of [0, num_points), i.e.

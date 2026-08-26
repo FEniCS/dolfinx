@@ -16,9 +16,8 @@ namespace dolfinx::refinement
 /// @param partitioner Function to partition new mesh across processes.
 /// @returns Uniformly refined mesh
 template <typename T>
-mesh::Mesh<T>
-uniform_refine(const mesh::Mesh<T>& mesh,
-               const mesh::CellPartitionFunction& partitioner
-               = mesh::create_cell_partitioner(mesh::GhostMode::none, 2));
+mesh::Mesh<T> uniform_refine(const mesh::Mesh<T>& mesh,
+                             const mesh::CellPartitionFunction& partitioner
+                             = mesh::create_cell_partitioner(2));
 
 } // namespace dolfinx::refinement

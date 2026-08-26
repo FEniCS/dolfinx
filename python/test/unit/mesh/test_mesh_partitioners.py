@@ -80,7 +80,7 @@ except ImportError:
 @pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron, CellType.prism])
 def test_partition_box_mesh(gpart, Nx, cell_type):
-    part = create_cell_partitioner(gpart, GhostMode.none, 2)
+    part = create_cell_partitioner(gpart, max_facet_to_cell_links=2)
     mesh = create_box(
         MPI.COMM_WORLD,
         [np.array([0, 0, 0]), np.array([1, 1, 1])],
@@ -173,7 +173,7 @@ def test_asymmetric_partitioner():
         x = np.zeros((0, 2), dtype=np.float64)
 
     # Send cells to self, and if on process 1, also send to process 0.
-    def partitioner(comm, n, cell_types, topo, cell_weights, edge_weights):
+    def partitioner(comm, n, cell_types, topo, cell_weights, edge_weights, ghosting):
         r = comm.Get_rank()
         dests = []
         offsets = [0]
@@ -250,7 +250,7 @@ def test_mixed_topology_partitioning():
         cells_np = [np.zeros(0) for c in cells]
 
     nparts = 4
-    part = create_cell_partitioner(GhostMode.none, 2)
+    part = create_cell_partitioner(max_facet_to_cell_links=2)
     p = part(
         MPI.COMM_WORLD,
         nparts,
@@ -258,6 +258,7 @@ def test_mixed_topology_partitioning():
         cells_np,
         np.array([], dtype=np.int32),
         np.array([], dtype=np.int32),
+        False,
     )
 
     counts = np.array([sum(p.array == i) for i in range(nparts)])
@@ -325,7 +326,7 @@ def test_partition_respects_cell_weights(gpart):
     local_points = np.array_split(points, comm.size)[comm.rank]
 
     elem = coordinate_element(CellType.triangle, 1)
-    part = create_cell_partitioner(gpart, GhostMode.none, 2)
+    part = create_cell_partitioner(gpart, max_facet_to_cell_links=2)
 
     new_mesh = create_mesh(
         comm,

@@ -81,6 +81,7 @@ namespace parmetis
 /// (https://github.com/KarypisLab/ParMETIS/blob/main/manual/manual.pdf).
 /// @param[in] options The ParMETIS option. See ParMETIS manual for
 /// details.
+/// @return A graph partitioning function.
 graph::partition_fn partitioner(double imbalance = 1.02,
                                 std::array<int, 3> options = {1, 0, 5});
 
@@ -130,9 +131,10 @@ graph::partition_fn repartitioner(double ipc2redist = 1000.0,
 /// @note This partitions into one part per rank of the communicator, so
 /// `nparts` must equal the communicator size.
 ///
+/// @note ::geom_partition_fn has no graph, so the returned function
+/// cannot ghost: it throws if called with `ghosting` true.
+///
 /// @return A geometric graph partitioning function. It requires `x`.
-/// `local_graph` is optional, unless ghosting is requested, in which
-/// case it is required.
 graph::geom_partition_fn geom_partitioner();
 
 /// @brief Create a geometric graph partitioning function that uses

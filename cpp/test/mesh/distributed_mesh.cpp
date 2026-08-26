@@ -27,10 +27,10 @@ constexpr int N = 8;
 [[maybe_unused]] void create_mesh_file(MPI_Comm comm)
 {
   // Create mesh using all processes and save xdmf
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet, 2);
-  auto mesh = std::make_shared<mesh::Mesh<double>>(
-      mesh::create_rectangle(comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
-                             mesh::CellType::triangle, part));
+  auto part = mesh::create_cell_partitioner(2);
+  auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle(
+      comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N}, mesh::CellType::triangle, part,
+      mesh::DiagonalType::right, 2, mesh::GhostMode::shared_facet));
 
   // Save mesh in XDMF format
   io::XDMFFile file(MPI_COMM_SELF, "mesh.xdmf", "w");
@@ -138,9 +138,9 @@ void test_distributed_mesh(const mesh::CellPartitionFunction& partitioner)
   CHECK(xshape[1] == 2);
 
   // Build mesh
-  mesh::Mesh mesh = mesh::create_mesh(comm, subset_comm, cells,
-                                      std::span<const std::int32_t>(), cmap,
-                                      comm, x, xshape, partitioner, 2, 1);
+  mesh::Mesh mesh = mesh::create_mesh(
+      comm, subset_comm, cells, std::span<const std::int32_t>(), cmap, comm, x,
+      xshape, partitioner, mesh::GhostMode::none, 2, 1);
   auto t = mesh.topology();
   int tdim = t->dim();
   CHECK(t->index_map(tdim)->size_global() == 2 * N * N);
@@ -161,12 +161,12 @@ void test_distributed_mesh(const mesh::CellPartitionFunction& partitioner)
 TEST_CASE("Create box", "[create_box]")
 {
 #ifdef HAS_PTSCOTCH
-  CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::scotch::partitioner(), 2)));
+  CHECK_NOTHROW(test_create_box(
+      mesh::create_cell_partitioner(graph::scotch::partitioner(), 2)));
 #endif
 #ifdef HAS_PARMETIS
-  CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::parmetis::partitioner(), 2)));
+  CHECK_NOTHROW(test_create_box(
+      mesh::create_cell_partitioner(graph::parmetis::partitioner(), 2)));
 #endif
   // #ifdef HAS_KAHIP
   //   CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
@@ -183,15 +183,15 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
   MPI_Barrier(MPI_COMM_WORLD);
 
 #ifdef HAS_PTSCOTCH
-  CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::scotch::partitioner(), 2)));
+  CHECK_NOTHROW(test_distributed_mesh(
+      mesh::create_cell_partitioner(graph::scotch::partitioner(), 2)));
 #endif
 #ifdef HAS_PARMETIS
-  CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::parmetis::partitioner(), 2)));
+  CHECK_NOTHROW(test_distributed_mesh(
+      mesh::create_cell_partitioner(graph::parmetis::partitioner(), 2)));
 #endif
 #ifdef HAS_KAHIP
   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::kahip::partitioner(1, 1, 0.03, false), 2)));
+      graph::kahip::partitioner(1, 1, 0.03, false), 2)));
 #endif
 }

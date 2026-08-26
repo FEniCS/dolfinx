@@ -50,8 +50,7 @@ from dolfinx.fem import (
     mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
-from dolfinx.mesh import CellType, Mesh, Topology
-from dolfinx.mesh import _create_cell_partitioner_from_ghost_mode as _cell_partitioner
+from dolfinx.mesh import CellType, Mesh, Topology, create_cell_partitioner
 
 # -
 
@@ -114,7 +113,7 @@ geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
 
-part = _cell_partitioner(GhostMode.none, 2)
+part = create_cell_partitioner(max_facet_to_cell_links=2)
 mesh = create_mesh(
     MPI.COMM_WORLD,
     cells_np,
@@ -124,6 +123,7 @@ mesh = create_mesh(
     ],
     geomx,
     part,
+    GhostMode.none,
     2,
     1,
     cell_weights=None,

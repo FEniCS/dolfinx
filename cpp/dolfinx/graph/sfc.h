@@ -37,23 +37,18 @@ namespace dolfinx::graph
 ///
 /// @note Collective.
 ///
+/// @note There is no graph, so this cannot ghost: it always assigns
+/// exactly one destination per point.
+///
 /// @param[in] comm MPI communicator that the points are distributed
 /// across.
 /// @param[in] nparts Number of partitions to divide the points into.
-/// @param[in] local_graph Node connectivity graph, with one node per
-/// point. It is used only to determine ghost nodes, i.e. it has no
-/// influence on which part a point is assigned to, and is not read at
-/// all when `ghosting` is false.
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
 /// @param[in] gdim Number of coordinate components per point. Must be
 /// 1, 2 or 3.
-/// @param[in] ghosting Flag to enable ghosting of the output node
-/// distribution.
-/// @return Destination rank(s) for each point, the owning rank first.
-AdjacencyList<std::int32_t>
-partition_sfc_morton(MPI_Comm comm, int nparts,
-                     const AdjacencyList<std::int64_t>& local_graph,
-                     std::span<const double> x, int gdim, bool ghosting);
+/// @return Destination rank for each point, one entry per row of `x`.
+std::vector<int> partition_sfc_morton(MPI_Comm comm, int nparts,
+                                      std::span<const double> x, int gdim);
 
 /// @brief Partition points into `nparts` groups of (approximately) equal
 /// size using a Hilbert space-filling curve.
@@ -67,21 +62,18 @@ partition_sfc_morton(MPI_Comm comm, int nparts,
 ///
 /// @note Collective.
 ///
+/// @note There is no graph, so this cannot ghost: it always assigns
+/// exactly one destination per point.
+///
 /// @param[in] comm MPI communicator that the points are distributed
 /// across.
 /// @param[in] nparts Number of partitions to divide the points into.
-/// @param[in] local_graph Node connectivity graph, with one node per
-/// point. See ::partition_sfc_morton.
 /// @param[in] x Point coordinates, row-major with `gdim` columns.
 /// @param[in] gdim Number of coordinate components per point. Must be
 /// 1, 2 or 3.
-/// @param[in] ghosting Flag to enable ghosting of the output node
-/// distribution.
-/// @return Destination rank(s) for each point, the owning rank first.
-AdjacencyList<std::int32_t>
-partition_sfc_hilbert(MPI_Comm comm, int nparts,
-                      const AdjacencyList<std::int64_t>& local_graph,
-                      std::span<const double> x, int gdim, bool ghosting);
+/// @return Destination rank for each point, one entry per row of `x`.
+std::vector<int> partition_sfc_hilbert(MPI_Comm comm, int nparts,
+                                       std::span<const double> x, int gdim);
 
 /// Space-filling curve partitioner
 namespace sfc
@@ -99,17 +91,18 @@ enum class curve : std::uint8_t
 /// @brief Create a geometric partitioning function that orders nodes
 /// along a space-filling curve.
 ///
-/// The graph edges are used only to determine ghost nodes, i.e. the
-/// partition itself is computed from the node coordinates alone.
+/// The partition is computed from the node coordinates alone.
 ///
 /// @note The default is curve::hilbert. For the dual graph of a
 /// tetrahedral mesh on 20 ranks, it was measured to cut 10% fewer edges
 /// than curve::morton (457772 against 508750 for 12.6M cells), for a
 /// similar cost.
 ///
+/// @note ::geom_partition_fn has no graph, so the returned function
+/// cannot ghost: it throws if called with `ghosting` true.
+///
 /// @param[in] curve Space-filling curve to order the nodes along.
-/// @return A geometric graph partitioning function. It requires `x` and
-/// ignores `local_graph` unless ghosting is requested.
+/// @return A geometric graph partitioning function. It requires `x`.
 graph::geom_partition_fn partitioner(sfc::curve curve = sfc::curve::hilbert);
 } // namespace sfc
 
