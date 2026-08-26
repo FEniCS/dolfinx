@@ -111,28 +111,25 @@ GeometricPartitioningFunc = typing.Callable[
 
 def create_cell_partitioner(
     part: PartitioningFunc | None = None,
-    num_threads: int = 1,
 ) -> Callable:
     """Create a function to partition a mesh.
 
-    Ghosting and the maximum number of cells connected to a facet
-    (used to build the mesh dual graph) are both controlled at call
-    time, by :func:`create_mesh`'s ``ghost_mode`` and
-    ``max_facet_to_cell_links`` arguments, rather than fixed when the
-    partitioner is created.
+    Ghosting and the mesh dual graph (including the maximum number of
+    cells connected to a facet and the number of threads used to build
+    it) are both controlled at call time, by :func:`create_mesh`'s
+    ``ghost_mode``, ``max_facet_to_cell_links`` and ``num_threads``
+    arguments, rather than fixed when the partitioner is created.
 
     Args:
         part: Partition function. If not provided, the default graph
             partitioner is used.
-        num_threads: Number of CPU threads to use when building the mesh
-            dual graph. Must be >= 1.
 
     Return:
         Partitioning function.
     """
     if part is None:
-        return _cpp.mesh.create_cell_partitioner(num_threads)
-    return _cpp.mesh.create_cell_partitioner(part, num_threads)
+        return _cpp.mesh.create_cell_partitioner()
+    return _cpp.mesh.create_cell_partitioner(part)
 
 
 def create_geometric_cell_partitioner(
@@ -166,7 +163,6 @@ def create_geometric_cell_partitioner(
 
 def create_hybrid_cell_partitioner(
     part: GeometricPartitioningFunc,
-    num_threads: int = 1,
 ) -> _cpp.mesh.HybridPartitioner:
     """Create a function to partition a mesh using a hybrid partitioner.
 
@@ -178,21 +174,20 @@ def create_hybrid_cell_partitioner(
     ``dolfinx.cpp.graph.geom_partitioner_parmetis_kway``), rather than
     only to determine ghost cells.
 
-    The maximum number of cells connected to a facet (used to build
-    the mesh dual graph) is controlled at call time, by
-    :func:`create_mesh`'s ``max_facet_to_cell_links`` argument, rather
+    The mesh dual graph (including the maximum number of cells
+    connected to a facet and the number of threads used to build it)
+    is controlled at call time, by :func:`create_mesh`'s
+    ``max_facet_to_cell_links`` and ``num_threads`` arguments, rather
     than fixed when the partitioner is created.
 
     Args:
         part: Hybrid graph partitioning function.
-        num_threads: Number of CPU threads to use when building the mesh
-            dual graph. Must be >= 1.
 
     Return:
         Partitioning function, for use as :func:`create_mesh`'s
         ``partitioner`` argument.
     """
-    return _cpp.mesh.create_hybrid_cell_partitioner(part, num_threads)
+    return _cpp.mesh.create_hybrid_cell_partitioner(part)
 
 
 def compute_cell_centroids(
@@ -1175,7 +1170,7 @@ def create_interval(
         An interval mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(1)
+        partitioner = _cpp.mesh.create_cell_partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1260,7 +1255,7 @@ def create_rectangle(
         A mesh of a rectangle.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(1)
+        partitioner = _cpp.mesh.create_cell_partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1372,7 +1367,7 @@ def create_box(
         A mesh of a box domain.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(1)
+        partitioner = _cpp.mesh.create_cell_partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",

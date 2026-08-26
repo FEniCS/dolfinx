@@ -597,16 +597,7 @@ def test_empty_rank_mesh(dtype):
     tdim = 2
     domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,), dtype=dtype))
 
-    def partitioner(
-        comm,
-        nparts,
-        cell_types,
-        cell_topology,
-        max_facet_to_cell_links,
-        cell_weights,
-        edge_weights,
-        ghosting,
-    ):
+    def partitioner(comm, nparts, dual_graph, cell_weights, edge_weights, ghosting):
         """Leave cells on the current rank,."""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
         return graph.adjacencylist(dest)._cpp_object

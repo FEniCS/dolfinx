@@ -12,9 +12,8 @@
 using namespace dolfinx;
 
 template <typename T>
-mesh::Mesh<T>
-refinement::uniform_refine(const mesh::Mesh<T>& mesh,
-                           const mesh::CellPartitionFunction& partitioner)
+mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
+                                         const graph::partition_fn& partitioner)
 {
   // Requires edges (and facets for some 3D meshes) to be built already
   auto topology = mesh.topology();
@@ -313,8 +312,8 @@ refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 /// @cond Explicit instantiation for float and double
 template mesh::Mesh<double>
 refinement::uniform_refine(const mesh::Mesh<double>& mesh,
-                           const mesh::CellPartitionFunction&);
+                           const graph::partition_fn&);
 template mesh::Mesh<float>
 refinement::uniform_refine(const mesh::Mesh<float>& mesh,
-                           const mesh::CellPartitionFunction&);
+                           const graph::partition_fn&);
 /// @endcond

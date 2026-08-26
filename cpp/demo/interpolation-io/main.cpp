@@ -208,14 +208,14 @@ int main(int argc, char* argv[])
     auto mesh0
         = std::make_shared<mesh::Mesh<float>>(mesh::create_rectangle<float>(
             MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
-            mesh::CellType::triangle, mesh::create_cell_partitioner()));
+            mesh::CellType::triangle, graph::partition_graph));
 
     // Create mesh using same topology as mesh0, but with different
     // scalar type for geometry
     auto mesh1
         = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle<double>(
             MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
-            mesh::CellType::triangle, mesh::create_cell_partitioner()));
+            mesh::CellType::triangle, graph::partition_graph));
 
     // Interpolate a function in a scalar Lagrange space and output the
     // result to file for visualisation using different types

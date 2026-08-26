@@ -27,7 +27,7 @@ constexpr int N = 8;
 [[maybe_unused]] void create_mesh_file(MPI_Comm comm)
 {
   // Create mesh using all processes and save xdmf
-  auto part = mesh::create_cell_partitioner();
+  auto part = graph::partition_graph;
   auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle(
       comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N}, mesh::CellType::triangle, part,
       mesh::DiagonalType::right, 2, mesh::GhostMode::shared_facet));
@@ -37,7 +37,7 @@ constexpr int N = 8;
   file.write_mesh(*mesh);
 }
 
-[[maybe_unused]] void test_create_box(const mesh::CellPartitionFunction& part)
+[[maybe_unused]] void test_create_box(const graph::partition_fn& part)
 {
   MPI_Comm comm;
   MPI_Comm_dup(MPI_COMM_WORLD, &comm);
@@ -84,7 +84,7 @@ constexpr int N = 8;
   MPI_Comm_free(&comm);
 }
 
-void test_distributed_mesh(const mesh::CellPartitionFunction& partitioner)
+void test_distributed_mesh(const graph::partition_fn& partitioner)
 {
   using T = double;
 
@@ -161,12 +161,10 @@ void test_distributed_mesh(const mesh::CellPartitionFunction& partitioner)
 TEST_CASE("Create box", "[create_box]")
 {
 #ifdef HAS_PTSCOTCH
-  CHECK_NOTHROW(test_create_box(
-      mesh::create_cell_partitioner(graph::scotch::partitioner())));
+  CHECK_NOTHROW(test_create_box(graph::scotch::partitioner()));
 #endif
 #ifdef HAS_PARMETIS
-  CHECK_NOTHROW(test_create_box(
-      mesh::create_cell_partitioner(graph::parmetis::partitioner())));
+  CHECK_NOTHROW(test_create_box(graph::parmetis::partitioner()));
 #endif
   // #ifdef HAS_KAHIP
   //   CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
@@ -183,15 +181,13 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
   MPI_Barrier(MPI_COMM_WORLD);
 
 #ifdef HAS_PTSCOTCH
-  CHECK_NOTHROW(test_distributed_mesh(
-      mesh::create_cell_partitioner(graph::scotch::partitioner())));
+  CHECK_NOTHROW(test_distributed_mesh(graph::scotch::partitioner()));
 #endif
 #ifdef HAS_PARMETIS
-  CHECK_NOTHROW(test_distributed_mesh(
-      mesh::create_cell_partitioner(graph::parmetis::partitioner())));
+  CHECK_NOTHROW(test_distributed_mesh(graph::parmetis::partitioner()));
 #endif
 #ifdef HAS_KAHIP
-  CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
-      graph::kahip::partitioner(1, 1, 0.03, false))));
+  CHECK_NOTHROW(
+      test_distributed_mesh(graph::kahip::partitioner(1, 1, 0.03, false)));
 #endif
 }

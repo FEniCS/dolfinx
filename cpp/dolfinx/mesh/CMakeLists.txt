@@ -23,7 +23,6 @@ target_sources(
     EntityMap.cpp
     cell_types.cpp
     graphbuild.cpp
-    partition.cpp
     permutationcomputation.cpp
     topologycomputation.cpp
     utils.cpp

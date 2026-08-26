@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/graph/ordering.h>
+#include <dolfinx/graph/partition.h>
 #include <limits>
 #include <mpi.h>
 #include <stdexcept>
@@ -44,40 +45,37 @@ create_interval_cells(std::array<T, 2> p, std::int64_t n);
 template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
-                  const CellPartitionFunction& partitioner,
-                  DiagonalType diagonal, GhostMode ghost_mode,
-                  const CellReorderFunction& reorder_fn, int gdim);
+                  const graph::partition_fn& partitioner, DiagonalType diagonal,
+                  GhostMode ghost_mode, const CellReorderFunction& reorder_fn,
+                  int gdim);
 
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
-                   const CellPartitionFunction& partitioner,
-                   GhostMode ghost_mode, const CellReorderFunction& reorder_fn,
-                   int gdim);
+                   const graph::partition_fn& partitioner, GhostMode ghost_mode,
+                   const CellReorderFunction& reorder_fn, int gdim);
 
 template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                            std::array<std::int64_t, 3> n);
 
 template <std::floating_point T>
-Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
-                  std::array<std::array<T, 3>, 2> p,
-                  std::array<std::int64_t, 3> n,
-                  const CellPartitionFunction& partitioner,
-                  GhostMode ghost_mode, const CellReorderFunction& reorder_fn);
+Mesh<T>
+build_tet(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
+          std::array<std::int64_t, 3> n, const graph::partition_fn& partitioner,
+          GhostMode ghost_mode, const CellReorderFunction& reorder_fn);
 
 template <std::floating_point T>
-Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
-                  std::array<std::array<T, 3>, 2> p,
-                  std::array<std::int64_t, 3> n,
-                  const CellPartitionFunction& partitioner,
-                  GhostMode ghost_mode, const CellReorderFunction& reorder_fn);
+Mesh<T>
+build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
+          std::array<std::int64_t, 3> n, const graph::partition_fn& partitioner,
+          GhostMode ghost_mode, const CellReorderFunction& reorder_fn);
 
 template <std::floating_point T>
 Mesh<T>
 build_prism(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
             std::array<std::int64_t, 3> n,
-            const CellPartitionFunction& partitioner, GhostMode ghost_mode,
+            const graph::partition_fn& partitioner, GhostMode ghost_mode,
             const CellReorderFunction& reorder_fn);
 } // namespace impl
 
@@ -101,7 +99,7 @@ build_prism(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
 /// @param[in] ghost_mode Ghost mode of the created mesh, passed to
-/// `partitioner` if it holds a ::CellPartitionFunction. Defaults to
+/// `partitioner` if it is callable. Defaults to
 /// GhostMode::none.
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return Mesh
@@ -109,7 +107,7 @@ template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
-                   CellPartitionFunction partitioner = nullptr,
+                   graph::partition_fn partitioner = nullptr,
                    GhostMode ghost_mode = GhostMode::none,
                    const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
@@ -123,7 +121,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
-    partitioner = create_cell_partitioner();
+    partitioner = graph::partition_graph;
 
   switch (celltype)
   {
@@ -163,7 +161,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
 template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
                    std::array<std::int64_t, 3> n, CellType celltype,
-                   const CellPartitionFunction& partitioner = nullptr,
+                   const graph::partition_fn& partitioner = nullptr,
                    GhostMode ghost_mode = GhostMode::none,
                    const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
@@ -189,14 +187,14 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
 /// @param[in] gdim Geometric dimension. Must be >= 2. Coordinates are
 /// embedded in the first 2 components; remaining components are zero.
 /// @param[in] ghost_mode Ghost mode of the created mesh, passed to
-/// `partitioner` if it holds a ::CellPartitionFunction. Defaults to
+/// `partitioner` if it is callable. Defaults to
 /// GhostMode::none.
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                          std::array<std::int64_t, 2> n, CellType celltype,
-                         CellPartitionFunction partitioner,
+                         graph::partition_fn partitioner,
                          DiagonalType diagonal = DiagonalType::right,
                          int gdim = 2, GhostMode ghost_mode = GhostMode::none,
                          const CellReorderFunction& reorder_fn
@@ -214,7 +212,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
   }
 
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
-    partitioner = create_cell_partitioner();
+    partitioner = graph::partition_graph;
 
   switch (celltype)
   {
@@ -271,11 +269,11 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 /// @param[in] reorder_fn Function for (locally) reordering cells
 /// @return A mesh.
 template <std::floating_point T = double>
-Mesh<T>
-create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
-                mesh::GhostMode ghost_mode = mesh::GhostMode::none,
-                CellPartitionFunction partitioner = nullptr, int gdim = 1,
-                const CellReorderFunction& reorder_fn = graph::reorder_rcm)
+Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
+                        mesh::GhostMode ghost_mode = mesh::GhostMode::none,
+                        graph::partition_fn partitioner = nullptr, int gdim = 1,
+                        const CellReorderFunction& reorder_fn
+                        = graph::reorder_rcm)
 {
   if (gdim < 1 || gdim > 3)
     throw std::runtime_error("1 <= gdim <= 3 for interval mesh.");
@@ -292,7 +290,7 @@ create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
   }
 
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
-    partitioner = create_cell_partitioner();
+    partitioner = graph::partition_graph;
 
   fem::CoordinateElement<T> element(CellType::interval, 1);
   if (dolfinx::MPI::rank(comm) == 0)
@@ -398,11 +396,10 @@ std::vector<T> create_geom(MPI_Comm comm, std::array<std::array<T, 3>, 2> p,
 }
 
 template <std::floating_point T>
-Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
-                  std::array<std::array<T, 3>, 2> p,
-                  std::array<std::int64_t, 3> n,
-                  const CellPartitionFunction& partitioner,
-                  GhostMode ghost_mode, const CellReorderFunction& reorder_fn)
+Mesh<T>
+build_tet(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
+          std::array<std::int64_t, 3> n, const graph::partition_fn& partitioner,
+          GhostMode ghost_mode, const CellReorderFunction& reorder_fn)
 {
   common::Timer timer("Build BoxMesh (tetrahedra)");
   std::vector<T> x;
@@ -450,8 +447,8 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
 template <std::floating_point T>
 mesh::Mesh<T>
 build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
-          std::array<std::int64_t, 3> n,
-          const CellPartitionFunction& partitioner, GhostMode ghost_mode,
+          std::array<std::int64_t, 3> n, const graph::partition_fn& partitioner,
+          GhostMode ghost_mode,
           const std::function<std::vector<std::int32_t>(
               const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
@@ -497,7 +494,7 @@ template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
                     std::array<std::array<T, 3>, 2> p,
                     std::array<std::int64_t, 3> n,
-                    const CellPartitionFunction& partitioner,
+                    const graph::partition_fn& partitioner,
                     GhostMode ghost_mode, const CellReorderFunction& reorder_fn)
 {
   std::vector<T> x;
@@ -545,9 +542,9 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
 template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                   std::array<std::int64_t, 2> n,
-                  const CellPartitionFunction& partitioner,
-                  DiagonalType diagonal, GhostMode ghost_mode,
-                  const CellReorderFunction& reorder_fn, int gdim)
+                  const graph::partition_fn& partitioner, DiagonalType diagonal,
+                  GhostMode ghost_mode, const CellReorderFunction& reorder_fn,
+                  int gdim)
 {
   fem::CoordinateElement<T> element(CellType::triangle, 1);
   if (gdim < 2 || gdim > 3)
@@ -723,9 +720,8 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
                    std::array<std::int64_t, 2> n,
-                   const CellPartitionFunction& partitioner,
-                   GhostMode ghost_mode, const CellReorderFunction& reorder_fn,
-                   int gdim)
+                   const graph::partition_fn& partitioner, GhostMode ghost_mode,
+                   const CellReorderFunction& reorder_fn, int gdim)
 {
   if (gdim < 2 || gdim > 3)
     throw std::runtime_error("2 <= gdim <= 3 for quad mesh.");

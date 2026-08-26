@@ -103,13 +103,13 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
     return c;
   };
 
-  // create_geometric_cell_partitioner has no cell topology, so it never
-  // ghosts regardless of what is otherwise requested; compare it against
-  // the unghosted baseline.
+  // A graph::geom_partition_fn has no cell topology, so it never ghosts
+  // regardless of what is otherwise requested; compare it against the
+  // unghosted baseline.
   std::array<std::int64_t, 5> c0n
-      = counts(mesh::create_cell_partitioner(), mesh::GhostMode::none);
-  std::array<std::int64_t, 5> c1 = counts(
-      mesh::create_geometric_cell_partitioner(), mesh::GhostMode::none);
+      = counts(graph::partition_graph, mesh::GhostMode::none);
+  std::array<std::int64_t, 5> c1
+      = counts(graph::sfc::partitioner(), mesh::GhostMode::none);
 
   CHECK(c0n[0] == (n + 1) * (n + 1) * (n + 1));
   CHECK(c0n[3] == 6 * n * n * n);
@@ -122,9 +122,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
 
 #ifdef HAS_PARMETIS
   std::array<std::int64_t, 5> c3
-      = counts(mesh::create_geometric_cell_partitioner(
-                   graph::parmetis::geom_partitioner()),
-               mesh::GhostMode::none);
+      = counts(graph::parmetis::geom_partitioner(), mesh::GhostMode::none);
   for (int d = 0; d < 4; ++d)
     CHECK(c3[d] == c0n[d]);
 #endif
@@ -132,8 +130,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
   for (mesh::GhostMode gm :
        {mesh::GhostMode::none, mesh::GhostMode::shared_facet})
   {
-    std::array<std::int64_t, 5> c0
-        = counts(mesh::create_cell_partitioner(), gm);
+    std::array<std::int64_t, 5> c0 = counts(graph::partition_graph, gm);
 
     // Global entity counts do not depend on the partitioner
     CHECK(c0[0] == (n + 1) * (n + 1) * (n + 1));
@@ -141,9 +138,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
 
 #ifdef HAS_PARMETIS
     std::array<std::int64_t, 5> c2
-        = counts(mesh::create_hybrid_cell_partitioner(
-                     1, graph::parmetis::geom_partitioner_kway()),
-                 gm);
+        = counts(graph::parmetis::geom_partitioner_kway(), gm);
     for (int d = 0; d < 4; ++d)
       CHECK(c2[d] == c0[d]);
 #endif

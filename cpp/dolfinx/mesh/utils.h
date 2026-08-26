@@ -866,26 +866,28 @@ namespace impl
 /// @param[in] partitioner Partitioner, as for ::create_mesh.
 /// @param[in] ghosting Flag to enable ghosting of the output cell
 /// distribution. Passed on to `partitioner` if it holds a
-/// ::CellPartitionFunction or a ::HybridCellPartitionFunction; has no
-/// effect if it holds a ::GeometricPartitionFunction, which can never
+/// graph::partition_fn or a graph::hybrid_partition_fn; has no
+/// effect if it holds a graph::geom_partition_fn, which can never
 /// ghost.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet must be connected to for it to be considered *matched* (not
-/// on boundary for non-branching meshes). Passed on to `partitioner`
-/// if it holds a ::CellPartitionFunction or a
-/// ::HybridCellPartitionFunction, for use when it builds the mesh dual
-/// graph; has no effect if it holds a ::GeometricPartitionFunction,
-/// which never builds the dual graph.
+/// on boundary for non-branching meshes). Used to build the mesh dual
+/// graph if `partitioner` holds a graph::partition_fn or a
+/// graph::hybrid_partition_fn; has no effect if it holds a
+/// graph::geom_partition_fn, which never needs the dual graph.
+/// @param[in] num_threads Number of threads to use when building the
+/// mesh dual graph. Must be >= 1. Used only if `partitioner` holds a
+/// graph::partition_fn or a graph::hybrid_partition_fn.
 /// @param[in] cell_weights Weights associated with each cell in `cells`
 /// (flattened across cell types in the same order as `cells`). Used
-/// only if `partitioner` holds a ::CellPartitionFunction. If empty,
+/// only if `partitioner` holds a graph::partition_fn. If empty,
 /// cells are treated as having equal weight.
 /// @param[in] commg Communicator that `x` is distributed on. Used only
-/// if `partitioner` holds a ::GeometricPartitionFunction or a
-/// ::HybridCellPartitionFunction.
+/// if `partitioner` holds a graph::geom_partition_fn or a
+/// graph::hybrid_partition_fn.
 /// @param[in] x Geometry ('node') coordinates. Used only if
-/// `partitioner` holds a ::GeometricPartitionFunction or a
-/// ::HybridCellPartitionFunction.
+/// `partitioner` holds a graph::geom_partition_fn or a
+/// graph::hybrid_partition_fn.
 /// @param[in] xshape Shape of `x`.
 /// @return
 /// 1. Cells assigned to this rank, by cell type, with all 'nodes' (not
@@ -903,8 +905,9 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
                 bool p1_geometry, const AnyCellPartitionFunction& partitioner,
                 bool ghosting,
                 std::optional<std::int32_t> max_facet_to_cell_links,
-                std::span<const std::int32_t> cell_weights, MPI_Comm commg,
-                std::span<const T> x, std::array<std::size_t, 2> xshape)
+                int num_threads, std::span<const std::int32_t> cell_weights,
+                MPI_Comm commg, std::span<const T> x,
+                std::array<std::size_t, 2> xshape)
 {
   const std::int32_t num_cell_types = cells.size();
   std::vector<std::vector<std::int64_t>> cells1(num_cell_types);
@@ -933,8 +936,8 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
         }
       }
 
-      // Shared by the GeometricPartitionFunction and
-      // HybridCellPartitionFunction alternatives below: neither has any
+      // Shared by the graph::geom_partition_fn and
+      // graph::hybrid_partition_fn alternatives below: neither has any
       // other way to obtain the cell centroids.
       auto centroids
           = [&]() -> std::pair<std::vector<double>, std::array<std::size_t, 2>>
@@ -952,28 +955,36 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
         return {std::move(centroid), cshape};
       };
 
+      // Shared by the graph::partition_fn and
+      // graph::hybrid_partition_fn alternatives below: neither has any
+      // other way to obtain the mesh dual graph.
+      auto dual_graph = [&]() -> graph::AdjacencyList<std::int64_t>
+      {
+        return build_dual_graph(commt, celltypes, tspan,
+                                max_facet_to_cell_links, num_threads);
+      };
+
       dest = std::visit(
           [&](const auto& p) -> graph::AdjacencyList<std::int32_t>
           {
             using P = std::decay_t<decltype(p)>;
-            if constexpr (std::is_same_v<P, GeometricPartitionFunction>)
+            if constexpr (std::is_same_v<P, graph::geom_partition_fn>)
             {
               auto [centroid, cshape] = centroids();
               return graph::regular_adjacency_list(
                   p(commt, size, std::span<const double>(centroid), cshape[1]),
                   1);
             }
-            else if constexpr (std::is_same_v<P, HybridCellPartitionFunction>)
+            else if constexpr (std::is_same_v<P, graph::hybrid_partition_fn>)
             {
-              auto [centroid, cshape] = centroids();
-              return p(commt, size, celltypes, tspan, max_facet_to_cell_links,
-                       std::span<const double>(centroid), cshape, ghosting);
+              return p(commt, size, dual_graph(),
+                       std::span<const double>(centroids().first), ghosting);
             }
             else
             {
               std::vector<std::int32_t> edge_weights;
-              return p(commt, size, celltypes, tspan, max_facet_to_cell_links,
-                       cell_weights, edge_weights, ghosting);
+              return p(commt, size, dual_graph(), cell_weights, edge_weights,
+                       ghosting);
             }
           },
           partitioner);
@@ -1094,14 +1105,14 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Partitioner that computes the owning rank for
 /// each cell in `cells`. If not callable, cells are not redistributed.
-/// If it holds a ::GeometricPartitionFunction or a
-/// ::HybridCellPartitionFunction, this function computes the centroid
+/// If it holds a graph::geom_partition_fn or a
+/// graph::hybrid_partition_fn, this function computes the centroid
 /// of each cell in `cells` (from `x`) and supplies them, see
 /// ::AnyCellPartitionFunction.
 /// @param[in] ghost_mode Ghost mode of the created mesh, passed to
-/// `partitioner` if it holds a ::CellPartitionFunction or a
-/// ::HybridCellPartitionFunction. Has no effect if it holds a
-/// ::GeometricPartitionFunction, which can never ghost.
+/// `partitioner` if it holds a graph::partition_fn or a
+/// graph::hybrid_partition_fn. Has no effect if it holds a
+/// graph::geom_partition_fn, which can never ghost.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
 /// facet can be connected to.
 /// @param[in] num_threads Number threads to use in mesh construction.
@@ -1154,7 +1165,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   const bool ghosting = (ghost_mode != GhostMode::none);
   auto [cells1, original_idx1, ghost_owners] = impl::partition_cells(
       comm, commt, cells, celltypes, doflayouts, p1_geometry, partitioner,
-      ghosting, max_facet_to_cell_links, cell_weights, commg,
+      ghosting, max_facet_to_cell_links, num_threads, cell_weights, commg,
       std::span<const T>(x), xshape);
 
   // Extract cell 'topology', i.e. extract the vertices for each cell
@@ -1302,8 +1313,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Partitioner that computes the owning rank for
 /// each cell. If not callable, cells are not redistributed. See the
-/// more general ::create_mesh for the ::GeometricPartitionFunction and
-/// ::HybridCellPartitionFunction alternatives.
+/// more general ::create_mesh for the graph::geom_partition_fn and
+/// graph::hybrid_partition_fn alternatives.
 /// @param[in] ghost_mode Ghost mode of the created mesh, as for the
 /// more general ::create_mesh.
 /// @param[in] max_facet_to_cell_links Bound on the number of cells a
@@ -1362,14 +1373,14 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
   {
     return create_mesh(comm, comm, std::vector{cells},
                        std::span<const std::int32_t>(), std::vector{elements},
-                       comm, x, xshape, CellPartitionFunction(nullptr),
+                       comm, x, xshape, graph::partition_fn(nullptr),
                        ghost_mode, max_facet_to_cell_links, 1);
   }
   else
   {
     return create_mesh(comm, comm, std::vector{cells},
                        std::span<const std::int32_t>(), std::vector{elements},
-                       comm, x, xshape, create_cell_partitioner(), ghost_mode,
+                       comm, x, xshape, graph::partition_graph, ghost_mode,
                        max_facet_to_cell_links, 1);
   }
 }

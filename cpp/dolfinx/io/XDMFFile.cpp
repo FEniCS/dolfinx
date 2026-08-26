@@ -199,10 +199,10 @@ XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
 
   // Create mesh
   const std::vector<double>& _x = std::get<std::vector<double>>(x);
-  auto part = mesh::create_cell_partitioner(dolfinx::graph::partition_graph);
   mesh::Mesh<double> mesh = mesh::create_mesh(
       _comm.comm(), _comm.comm(), cells, cell_weights, {element}, _comm.comm(),
-      _x, xshape, part, mode, max_facet_to_cell_links, 1);
+      _x, xshape, dolfinx::graph::partition_graph, mode,
+      max_facet_to_cell_links, 1);
 
   mesh.name = name;
   return mesh;

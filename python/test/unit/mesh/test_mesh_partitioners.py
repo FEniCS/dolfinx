@@ -15,7 +15,6 @@ import ufl
 from basix.ufl import element
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.cpp.mesh import cell_num_vertices
 from dolfinx.fem import coordinate_element
 from dolfinx.graph import partitioner
 from dolfinx.io import XDMFFile
@@ -173,13 +172,11 @@ def test_asymmetric_partitioner():
         x = np.zeros((0, 2), dtype=np.float64)
 
     # Send cells to self, and if on process 1, also send to process 0.
-    def partitioner(
-        comm, n, cell_types, topo, max_facet_to_cell_links, cell_weights, edge_weights, ghosting
-    ):
+    def partitioner(comm, n, dual_graph, cell_weights, edge_weights, ghosting):
         r = comm.Get_rank()
         dests = []
         offsets = [0]
-        num_cells = len(topo[0]) // cell_num_vertices(cell_types[0])
+        num_cells = dual_graph.num_nodes
         for i in range(num_cells):
             dests.append(r)
             if r == 1:
@@ -252,13 +249,13 @@ def test_mixed_topology_partitioning():
         cells_np = [np.zeros(0) for c in cells]
 
     nparts = 4
+    cell_types = [CellType.hexahedron, CellType.pyramid, CellType.tetrahedron]
+    dual_graph = _cpp.mesh.build_dual_graph(MPI.COMM_WORLD, cell_types, cells_np, 2, 1)
     part = create_cell_partitioner()
     p = part(
         MPI.COMM_WORLD,
         nparts,
-        [CellType.hexahedron, CellType.pyramid, CellType.tetrahedron],
-        cells_np,
-        2,
+        dual_graph,
         np.array([], dtype=np.int32),
         np.array([], dtype=np.int32),
         False,

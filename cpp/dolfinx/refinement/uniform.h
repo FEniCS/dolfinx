@@ -1,3 +1,4 @@
+#include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Mesh.h>
 
 #pragma once
@@ -17,7 +18,7 @@ namespace dolfinx::refinement
 /// @returns Uniformly refined mesh
 template <typename T>
 mesh::Mesh<T> uniform_refine(const mesh::Mesh<T>& mesh,
-                             const mesh::CellPartitionFunction& partitioner
-                             = mesh::create_cell_partitioner());
+                             const graph::partition_fn& partitioner
+                             = graph::partition_graph);
 
 } // namespace dolfinx::refinement

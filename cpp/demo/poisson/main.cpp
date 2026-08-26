@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
     // Create mesh and function space
     auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
         MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}}, {32, 16},
-        mesh::CellType::triangle, mesh::create_cell_partitioner(),
+        mesh::CellType::triangle, graph::partition_graph,
         mesh::DiagonalType::right, 2, mesh::GhostMode::shared_facet));
 
     auto element = basix::create_element<U>(

@@ -59,56 +59,50 @@ template <typename Functor>
 auto create_cell_partitioner_py(Functor&& p)
 {
   return [p](dolfinx_wrappers::MPICommWrapper comm, int n,
-             const std::vector<dolfinx::mesh::CellType>& cell_types,
-             std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb,
-             std::optional<std::int32_t> max_facet_to_cell_links,
+             const dolfinx::graph::AdjacencyList<std::int64_t>& dual_graph,
              nb::ndarray<const std::int32_t, nb::numpy> cell_weights,
              nb::ndarray<const std::int32_t, nb::numpy> edge_weights,
              bool ghosting)
   {
-    std::vector<std::span<const std::int64_t>> cells = vec_of_spans(cells_nb);
     std::span<const std::int32_t> cell_weights_span(cell_weights.data(),
                                                     cell_weights.size());
     std::span<const std::int32_t> edge_weights_span(edge_weights.data(),
                                                     edge_weights.size());
-    return p(comm.get(), n, cell_types, cells, max_facet_to_cell_links,
-             cell_weights_span, edge_weights_span, ghosting);
+    return p(comm.get(), n, dual_graph, cell_weights_span, edge_weights_span,
+             ghosting);
   };
 }
 
 using PythonCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         dolfinx_wrappers::MPICommWrapper, int,
-        const std::vector<dolfinx::mesh::CellType>&,
-        std::vector<nb::ndarray<const std::int64_t, nb::numpy>>,
-        std::optional<std::int32_t>, nb::ndarray<const std::int32_t, nb::numpy>,
+        const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        nb::ndarray<const std::int32_t, nb::numpy>,
         nb::ndarray<const std::int32_t, nb::numpy>, bool)>;
 
 using CppCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, const std::vector<dolfinx::mesh::CellType>& q,
-        const std::vector<std::span<const std::int64_t>>&,
-        std::optional<std::int32_t>, std::span<const std::int32_t>,
-        std::span<const std::int32_t>, bool)>;
+        MPI_Comm, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        std::span<const std::int32_t>, std::span<const std::int32_t>, bool)>;
 
 /// Wrap a Python cell graph partitioning function as a C++ function
 CppCellPartitionFunction
 create_cell_partitioner_cpp(const PythonCellPartitionFunction& p);
 
-/// Opaque handles for a dolfinx::mesh::GeometricPartitionFunction and a
-/// dolfinx::mesh::HybridCellPartitionFunction, bound to Python as their
-/// own types so that create_mesh can distinguish them from a
+/// Opaque handles for a dolfinx::graph::geom_partition_fn and a
+/// dolfinx::graph::hybrid_partition_fn, bound to Python as their own
+/// types so that create_mesh can distinguish them from a
 /// PythonCellPartitionFunction (and from each other): nanobind cannot
 /// tell which of several different std::function signatures a bare
 /// Python callable is meant to satisfy, so distinct callable shapes must
 /// be distinct Python types, not disambiguated by argument count.
 struct GeometricPartitioner
 {
-  dolfinx::mesh::GeometricPartitionFunction fn;
+  dolfinx::graph::geom_partition_fn fn;
 };
 struct HybridPartitioner
 {
-  dolfinx::mesh::HybridCellPartitionFunction fn;
+  dolfinx::graph::hybrid_partition_fn fn;
 };
 
 /// The Python-visible partitioner argument accepted by create_mesh: a

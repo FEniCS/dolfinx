@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
     //  Create mesh
     auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
         MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 32},
-        mesh::CellType::triangle, mesh::create_cell_partitioner(),
+        mesh::CellType::triangle, graph::partition_graph,
         mesh::DiagonalType::right, 2, mesh::GhostMode::shared_facet));
 
     //    A function space object, which is defined in the generated code,
