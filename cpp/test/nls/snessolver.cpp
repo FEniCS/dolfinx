@@ -177,11 +177,10 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     CHECK(solver.get_options_prefix() == "test_snes_");
     solver.set_from_options();
 
-    PetscInt num_it = solver.solve(x);
+    CHECK(solver.solve(x) > 0);
+    PetscInt num_it = 0;
+    CHECK(SNESGetIterationNumber(solver.snes(), &num_it) == 0);
     CHECK(num_it > 0);
-    SNESConvergedReason reason;
-    CHECK(SNESGetConvergedReason(solver.snes(), &reason) == 0);
-    CHECK(reason > 0);
     check_solution(x, solver.snes());
   }
 
@@ -201,8 +200,10 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // The SNES callback context points at the solver, so the callbacks
     // must survive a move
     nls::petsc::SNESSolver moved(std::move(solver));
-    PetscInt num_it = moved.solve(x);
+    CHECK(moved.solve(x) > 0);
     check_solution(x, moved.snes());
+    PetscInt num_it = 0;
+    CHECK(SNESGetIterationNumber(moved.snes(), &num_it) == 0);
     CHECK(steps.size() == std::size_t(num_it));
 
     nls::petsc::SNESSolver assigned(comm);
@@ -219,8 +220,9 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     CHECK(VecSet(x, PetscScalar(1)) == 0);
     steps.clear();
-    num_it = assigned.solve(x);
+    CHECK(assigned.solve(x) > 0);
     check_solution(x, assigned.snes());
+    CHECK(SNESGetIterationNumber(assigned.snes(), &num_it) == 0);
     CHECK(assigned_steps.size() == std::size_t(num_it));
     CHECK(steps.empty());
   }
@@ -235,7 +237,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // Newton from a negative guess converges to the negative root, so
     // the vector passed to solve is used as the starting point
     CHECK(VecSet(x, PetscScalar(-1)) == 0);
-    solver.solve(x);
+    CHECK(solver.solve(x) > 0);
     check_solution(x, solver.snes(), -std::sqrt(2.0));
   }
 
@@ -246,12 +248,14 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_J([](const Vec x, Mat Jmat, Mat) { assemble_jacobian(x, Jmat); },
                  J);
 
-    solver.solve(x);
+    CHECK(solver.solve(x) > 0);
     check_solution(x, solver.snes());
 
     // A solver that has converged can be solved again
     CHECK(VecSet(x, PetscScalar(5)) == 0);
-    PetscInt num_it = solver.solve(x);
+    CHECK(solver.solve(x) > 0);
+    PetscInt num_it = 0;
+    CHECK(SNESGetIterationNumber(solver.snes(), &num_it) == 0);
     CHECK(num_it > 0);
     check_solution(x, solver.snes());
   }
@@ -272,7 +276,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
           assemble_jacobian(x, Pmat);
         },
         J, P);
-    solver.solve(x);
+    CHECK(solver.solve(x) > 0);
     check_solution(x, solver.snes());
 
     Mat Jmat_snes, Pmat_snes;
@@ -300,10 +304,12 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     std::vector<PetscInt> steps;
     solver.set_update([&steps](PetscInt step) { steps.push_back(step); });
 
-    PetscInt num_it = solver.solve(x);
+    CHECK(solver.solve(x) > 0);
     check_solution(x, solver.snes());
 
     // The hook runs once at the start of each iteration
+    PetscInt num_it = 0;
+    CHECK(SNESGetIterationNumber(solver.snes(), &num_it) == 0);
     REQUIRE(steps.size() == std::size_t(num_it));
     for (std::size_t i = 0; i < steps.size(); ++i)
       CHECK(steps[i] == PetscInt(i));
@@ -328,7 +334,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     // The exception from the callback is re-thrown, not a PETSc error
     try
     {
-      solver.solve(x_local);
+      static_cast<void>(solver.solve(x_local));
       FAIL("Expected the callback exception to be re-thrown.");
     }
     catch (const std::runtime_error& e)
@@ -355,7 +361,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     try
     {
-      solver.solve(x_local);
+      static_cast<void>(solver.solve(x_local));
       FAIL("Expected the callback exception to be re-thrown.");
     }
     catch (const std::runtime_error& e)
@@ -384,7 +390,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
 
     try
     {
-      solver.solve(x_local);
+      static_cast<void>(solver.solve(x_local));
       FAIL("Expected the callback exception to be re-thrown.");
     }
     catch (const std::runtime_error& e)
@@ -478,7 +484,9 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     solver.set_options_prefix("nest_");
     solver.set_from_options();
 
-    PetscInt num_it = solver.solve(x_nest);
+    CHECK(solver.solve(x_nest) > 0);
+    PetscInt num_it = 0;
+    CHECK(SNESGetIterationNumber(solver.snes(), &num_it) == 0);
     CHECK(num_it > 0);
 
     // The solver did not substitute anything for the nest matrix
@@ -486,9 +494,6 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
     CHECK(SNESGetJacobian(solver.snes(), &Jmat_snes, nullptr, nullptr, nullptr)
           == 0);
     CHECK(Jmat_snes == J_nest);
-    SNESConvergedReason reason;
-    CHECK(SNESGetConvergedReason(solver.snes(), &reason) == 0);
-    CHECK(reason > 0);
 
     // The nest shares its sub-vectors, so the solution is visible there
     check_solution(x_sub[0], solver.snes(), std::sqrt(2.0));
@@ -578,7 +583,7 @@ TEST_CASE("Solve nonlinear problem with SNES", "[nls_snes]")
       solver.set_F(assemble_residual, b);
       solver.set_J([](const Vec x, Mat Jmat, Mat)
                    { assemble_jacobian(x, Jmat); }, J);
-      solver.solve(x);
+      CHECK(solver.solve(x) > 0);
       check_solution(x, solver.snes());
     }
 

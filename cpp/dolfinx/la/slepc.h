@@ -63,6 +63,10 @@ public:
 
   /// @brief Solve the eigenvalue problem \f$A x = \lambda x\f$ (or
   /// \f$A x = \lambda B x\f$).
+  ///
+  /// Non-convergence is not treated as an error (a warning is
+  /// logged); check the returned convergence reason.
+  ///
   /// @note The number of eigenpairs to compute, and every other solver
   /// setting, is applied to the EPS object returned by eps(). SLEPc
   /// sizes its working subspace from the requested number, which
@@ -74,7 +78,9 @@ public:
   /// EPSSetWhichEigenpairs(solver.eps(), EPS_SMALLEST_REAL);
   /// solver.solve();
   /// @endcode
-  void solve();
+  /// @return The PETSc convergence reason (positive on convergence,
+  /// negative on divergence).
+  [[nodiscard]] EPSConvergedReason solve();
 
   /// @brief Get the ith eigenvalue.
   /// @param[in] i Index of the eigenvalue, in `[0, nconv)`, where
