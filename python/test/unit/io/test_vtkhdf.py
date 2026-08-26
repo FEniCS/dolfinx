@@ -83,7 +83,7 @@ def test_read_write_higher_order():
     ]
 
     max_cells_per_facet = 2
-    part = dolfinx.mesh.create_cell_partitioner(max_facet_to_cell_links=max_cells_per_facet)
+    part = dolfinx.mesh.create_cell_partitioner()
     mesh = dolfinx.cpp.mesh.create_mesh(
         MPI.COMM_WORLD,
         cells_np,

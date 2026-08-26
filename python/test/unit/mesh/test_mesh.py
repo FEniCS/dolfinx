@@ -143,7 +143,7 @@ def mesh_2d(dtype):
         CellType.triangle,
         dtype,
         GhostMode.none,
-        create_cell_partitioner(max_facet_to_cell_links=2),
+        create_cell_partitioner(),
         DiagonalType.left,
     )
     i1 = np.where((np.isclose(mesh2d.geometry.x, (1.0, 1.0, 0.0))).all(axis=1))[0][0]
@@ -597,7 +597,16 @@ def test_empty_rank_mesh(dtype):
     tdim = 2
     domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,), dtype=dtype))
 
-    def partitioner(comm, nparts, cell_types, cell_topology, cell_weights, edge_weights, ghosting):
+    def partitioner(
+        comm,
+        nparts,
+        cell_types,
+        cell_topology,
+        max_facet_to_cell_links,
+        cell_weights,
+        edge_weights,
+        ghosting,
+    ):
         """Leave cells on the current rank,."""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
         return graph.adjacencylist(dest)._cpp_object
@@ -796,9 +805,7 @@ def test_mesh_single_process_distribution(partitioner):
         cells,
         element,
         x,
-        partitioner=dolfinx.mesh.create_cell_partitioner(
-            partitioner(), max_facet_to_cell_links=2
-        ),
+        partitioner=dolfinx.mesh.create_cell_partitioner(partitioner()),
         ghost_mode=dolfinx.mesh.GhostMode.shared_facet,
     )
 

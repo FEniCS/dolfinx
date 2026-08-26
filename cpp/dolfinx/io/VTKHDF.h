@@ -466,7 +466,7 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
         return fem::CoordinateElement<U>(cell_type, cell_degree, variant);
       });
 
-  auto part = mesh::create_cell_partitioner(max_facet_to_cell_links);
+  auto part = mesh::create_cell_partitioner();
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());
   return mesh::create_mesh(

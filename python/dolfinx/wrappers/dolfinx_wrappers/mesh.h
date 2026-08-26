@@ -61,6 +61,7 @@ auto create_cell_partitioner_py(Functor&& p)
   return [p](dolfinx_wrappers::MPICommWrapper comm, int n,
              const std::vector<dolfinx::mesh::CellType>& cell_types,
              std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb,
+             std::optional<std::int32_t> max_facet_to_cell_links,
              nb::ndarray<const std::int32_t, nb::numpy> cell_weights,
              nb::ndarray<const std::int32_t, nb::numpy> edge_weights,
              bool ghosting)
@@ -70,8 +71,8 @@ auto create_cell_partitioner_py(Functor&& p)
                                                     cell_weights.size());
     std::span<const std::int32_t> edge_weights_span(edge_weights.data(),
                                                     edge_weights.size());
-    return p(comm.get(), n, cell_types, cells, cell_weights_span,
-             edge_weights_span, ghosting);
+    return p(comm.get(), n, cell_types, cells, max_facet_to_cell_links,
+             cell_weights_span, edge_weights_span, ghosting);
   };
 }
 
@@ -80,6 +81,7 @@ using PythonCellPartitionFunction
         dolfinx_wrappers::MPICommWrapper, int,
         const std::vector<dolfinx::mesh::CellType>&,
         std::vector<nb::ndarray<const std::int64_t, nb::numpy>>,
+        std::optional<std::int32_t>,
         nb::ndarray<const std::int32_t, nb::numpy>,
         nb::ndarray<const std::int32_t, nb::numpy>, bool)>;
 
@@ -87,7 +89,8 @@ using CppCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         MPI_Comm, int, const std::vector<dolfinx::mesh::CellType>& q,
         const std::vector<std::span<const std::int64_t>>&,
-        std::span<const std::int32_t>, std::span<const std::int32_t>, bool)>;
+        std::optional<std::int32_t>, std::span<const std::int32_t>,
+        std::span<const std::int32_t>, bool)>;
 
 /// Wrap a Python cell graph partitioning function as a C++ function
 CppCellPartitionFunction
@@ -347,7 +350,7 @@ void declare_mesh(nb::module_& m, std::string type)
             part::impl::create_cell_partitioner_cpp(part), gdim);
       },
       nb::arg("comm"), nb::arg("n"), nb::arg("p"), nb::arg("ghost_mode"),
-      nb::arg("partitioner").none(), nb::arg("gdim") = 1);
+      nb::arg("partitioner").none(), nb::arg("gdim"));
 
   std::string create_rectangle("create_rectangle_" + type);
   m.def(
@@ -364,7 +367,8 @@ void declare_mesh(nb::module_& m, std::string type)
             ghost_mode);
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
-      nb::arg("partitioner").none(), nb::arg("diagonal"), nb::arg("gdim") = 2, nb::arg("ghost_mode"));
+      nb::arg("partitioner").none(), nb::arg("diagonal"), nb::arg("gdim"),
+      nb::arg("ghost_mode"));
 
   std::string create_box("create_box_" + type);
   m.def(

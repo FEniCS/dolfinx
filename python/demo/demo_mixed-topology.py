@@ -113,7 +113,7 @@ geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
 
-part = create_cell_partitioner(max_facet_to_cell_links=2)
+part = create_cell_partitioner()
 mesh = create_mesh(
     MPI.COMM_WORLD,
     cells_np,

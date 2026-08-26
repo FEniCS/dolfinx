@@ -294,8 +294,10 @@ def model_to_mesh(
             int,
             Sequence[CellType],
             Sequence[npt.NDArray[np.int64]],
+            int | None,
             npt.NDArray[np.int32],
             npt.NDArray[np.int32],
+            bool,
         ],
         _AdjacencyList_int32,
     ]
@@ -531,8 +533,10 @@ def read_from_msh(
             int,
             Sequence[CellType],
             Sequence[npt.NDArray[np.int64]],
+            int | None,
             npt.NDArray[np.int32],
             npt.NDArray[np.int32],
+            bool,
         ],
         _AdjacencyList_int32,
     ]

@@ -423,7 +423,7 @@ class XDMFFile:
             cells,
             cmap,
             x,
-            _create_cell_partitioner(max_facet_to_cell_links=max_facet_to_cell_links),
+            _create_cell_partitioner(),
             ghost_mode,
             max_facet_to_cell_links,
             1,

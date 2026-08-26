@@ -61,7 +61,7 @@ mesh::Mesh<T> create_3_vertex_interval_mesh()
   return mesh::create_mesh(
       MPI_COMM_SELF, MPI_COMM_SELF, cells, std::span<const std::int32_t>(),
       element, MPI_COMM_SELF, x, {x.size() / 3, 3},
-      mesh::create_cell_partitioner(2), mesh::GhostMode::none, 2, 1);
+      mesh::create_cell_partitioner(), mesh::GhostMode::none, 2, 1);
 }
 
 TEMPLATE_TEST_CASE("Interval uniform refinement",
@@ -92,7 +92,7 @@ TEMPLATE_TEST_CASE("Interval adaptive refinement",
   std::vector<std::int32_t> edges{1};
   // TODO: parent_facet
   auto [refined_mesh, parent_edge, parent_facet] = refinement::refine(
-      mesh, std::span(edges), mesh::create_cell_partitioner(2),
+      mesh, std::span(edges), mesh::create_cell_partitioner(),
       refinement::Option::parent_cell);
 
   auto topology = refined_mesh.topology_mutable();
@@ -143,6 +143,7 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
         = [](MPI_Comm /* comm */, int /* nparts */,
              const std::vector<mesh::CellType>& /* cell_types */,
              const std::vector<std::span<const std::int64_t>>& /* cells */,
+             std::optional<std::int32_t> /* max_facet_to_cell_links */,
              std::span<const std::int32_t> /* cell_weights */,
              std::span<const std::int32_t> /* edge_weights */,
              bool /* ghosting */) -> graph::AdjacencyList<std::int32_t>

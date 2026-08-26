@@ -52,6 +52,7 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
     return [p](MPI_Comm comm, int n,
                const std::vector<dolfinx::mesh::CellType>& cell_types,
                const std::vector<std::span<const std::int64_t>>& cells,
+               std::optional<std::int32_t> max_facet_to_cell_links,
                std::span<const std::int32_t> cell_weights,
                std::span<const std::int32_t> edge_weights, bool ghosting)
     {
@@ -68,7 +69,8 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
       nb::ndarray<const std::int32_t, nb::numpy> edge_weights_nb(
           edge_weights.data(), {edge_weights.size()});
       return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_types, cells_nb,
-               cell_weights_nb, edge_weights_nb, ghosting);
+               max_facet_to_cell_links, cell_weights_nb, edge_weights_nb,
+               ghosting);
     };
   }
   else
@@ -368,16 +370,13 @@ void mesh(nb::module_& m)
 
   m.def(
       "create_cell_partitioner",
-      [](std::optional<std::int32_t> max_facet_to_cell_links,
-         int num_threads) -> part::impl::PythonCellPartitionFunction
+      [](int num_threads) -> part::impl::PythonCellPartitionFunction
       {
         return part::impl::create_cell_partitioner_py(
             dolfinx::mesh::create_cell_partitioner(
-                dolfinx::graph::partition_graph, max_facet_to_cell_links,
-                num_threads));
+                dolfinx::graph::partition_graph, num_threads));
       },
-      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"),
-      "Create default cell partitioner.");
+      nb::arg("num_threads"), "Create default cell partitioner.");
   m.def(
       "create_cell_partitioner",
       [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
@@ -386,16 +385,13 @@ void mesh(nb::module_& m)
              nb::ndarray<const std::int32_t, nb::numpy> node_weights,
              nb::ndarray<const std::int32_t, nb::numpy> edge_weights,
              bool ghosting)>& part,
-         std::optional<std::int32_t> max_facet_to_cell_links,
          int num_threads) -> part::impl::PythonCellPartitionFunction
       {
         return part::impl::create_cell_partitioner_py(
             dolfinx::mesh::create_cell_partitioner(
-                part::impl::create_partitioner_cpp(part),
-                max_facet_to_cell_links, num_threads));
+                part::impl::create_partitioner_cpp(part), num_threads));
       },
-      nb::arg("part"), nb::arg("max_facet_to_cell_links").none(),
-      nb::arg("num_threads"),
+      nb::arg("part"), nb::arg("num_threads"),
       "Create a cell partitioner from a graph partitioning function.");
 
   // Opaque holders for a dolfinx::mesh::GeometricPartitionFunction and a
@@ -437,6 +433,7 @@ void mesh(nb::module_& m)
           [](const part::impl::HybridPartitioner& self, MPICommWrapper comm,
              int nparts, const std::vector<dolfinx::mesh::CellType>& cell_types,
              std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb,
+             std::optional<std::int32_t> max_facet_to_cell_links,
              MPICommWrapper commg,
              nb::ndarray<const double, nb::ndim<2>, nb::c_contig> x,
              bool ghosting)
@@ -444,13 +441,14 @@ void mesh(nb::module_& m)
             std::vector<std::span<const std::int64_t>> cells
                 = vec_of_spans(cells_nb);
             std::array<std::size_t, 2> xshape = {x.shape(0), x.shape(1)};
-            return self.fn(comm.get(), nparts, cell_types, cells, commg.get(),
+            return self.fn(comm.get(), nparts, cell_types, cells,
+                           max_facet_to_cell_links, commg.get(),
                            std::span<const double>(x.data(), x.size()), xshape,
                            ghosting);
           },
           nb::arg("comm"), nb::arg("nparts"), nb::arg("cell_types"),
-          nb::arg("cells"), nb::arg("commg"), nb::arg("x").noconvert(),
-          nb::arg("ghosting"),
+          nb::arg("cells"), nb::arg("max_facet_to_cell_links").none(),
+          nb::arg("commg"), nb::arg("x").noconvert(), nb::arg("ghosting"),
           "Compute the destination rank for each cell, given cell "
           "centroids (not raw node coordinates -- see "
           "compute_cell_centroids) as well as the cell topology.");
@@ -538,7 +536,6 @@ void mesh(nb::module_& m)
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
              nb::ndarray<const double, nb::ndim<2>, nb::numpy> x,
              bool ghosting)>& part,
-         std::optional<std::int32_t> max_facet_to_cell_links,
          int num_threads) -> part::impl::HybridPartitioner
       {
         // Wrap the Python hybrid graph partitioner as a C++ one.
@@ -562,10 +559,9 @@ void mesh(nb::module_& m)
 
         return part::impl::HybridPartitioner{
             dolfinx::mesh::create_hybrid_cell_partitioner(
-                max_facet_to_cell_links, num_threads, std::move(partfn))};
+                num_threads, std::move(partfn))};
       },
-      nb::arg("part"), nb::arg("max_facet_to_cell_links").none(),
-      nb::arg("num_threads"),
+      nb::arg("part"), nb::arg("num_threads"),
       "Create a cell partitioner from a hybrid graph partitioning "
       "function that needs both the mesh dual graph and cell positions. "
       "Unlike create_geometric_cell_partitioner, the dual graph is "

@@ -869,6 +869,13 @@ namespace impl
 /// ::CellPartitionFunction or a ::HybridCellPartitionFunction; has no
 /// effect if it holds a ::GeometricPartitionFunction, which can never
 /// ghost.
+/// @param[in] max_facet_to_cell_links Bound on the number of cells a
+/// facet must be connected to for it to be considered *matched* (not
+/// on boundary for non-branching meshes). Passed on to `partitioner`
+/// if it holds a ::CellPartitionFunction or a
+/// ::HybridCellPartitionFunction, for use when it builds the mesh dual
+/// graph; has no effect if it holds a ::GeometricPartitionFunction,
+/// which never builds the dual graph.
 /// @param[in] cell_weights Weights associated with each cell in `cells`
 /// (flattened across cell types in the same order as `cells`). Used
 /// only if `partitioner` holds a ::CellPartitionFunction. If empty,
@@ -894,9 +901,10 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
                 const std::vector<CellType>& celltypes,
                 const std::vector<fem::ElementDofLayout>& doflayouts,
                 bool p1_geometry, const AnyCellPartitionFunction& partitioner,
-                bool ghosting, std::span<const std::int32_t> cell_weights,
-                MPI_Comm commg, std::span<const T> x,
-                std::array<std::size_t, 2> xshape)
+                bool ghosting,
+                std::optional<std::int32_t> max_facet_to_cell_links,
+                std::span<const std::int32_t> cell_weights, MPI_Comm commg,
+                std::span<const T> x, std::array<std::size_t, 2> xshape)
 {
   const std::int32_t num_cell_types = cells.size();
   std::vector<std::vector<std::int64_t>> cells1(num_cell_types);
@@ -952,21 +960,19 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
             {
               auto [centroid, cshape] = centroids();
               return graph::regular_adjacency_list(
-                  p(commt, size, commg, std::span<const double>(centroid),
-                    cshape),
-                  1);
+                  p(commt, size, std::span<const double>(centroid), cshape[1]), 1);
             }
             else if constexpr (std::is_same_v<P, HybridCellPartitionFunction>)
             {
               auto [centroid, cshape] = centroids();
-              return p(commt, size, celltypes, tspan, commg,
+              return p(commt, size, celltypes, tspan, max_facet_to_cell_links,
                        std::span<const double>(centroid), cshape, ghosting);
             }
             else
             {
               std::vector<std::int32_t> edge_weights;
-              return p(commt, size, celltypes, tspan, cell_weights,
-                       edge_weights, ghosting);
+              return p(commt, size, celltypes, tspan, max_facet_to_cell_links,
+                       cell_weights, edge_weights, ghosting);
             }
           },
           partitioner);
@@ -1147,7 +1153,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   const bool ghosting = (ghost_mode != GhostMode::none);
   auto [cells1, original_idx1, ghost_owners] = impl::partition_cells(
       comm, commt, cells, celltypes, doflayouts, p1_geometry, partitioner,
-      ghosting, cell_weights, commg, std::span<const T>(x), xshape);
+      ghosting, max_facet_to_cell_links, cell_weights, commg,
+      std::span<const T>(x), xshape);
 
   // Extract cell 'topology', i.e. extract the vertices for each cell
   // and discard any 'higher-order' nodes. `cells1_v_storage` is empty
@@ -1361,9 +1368,8 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
   {
     return create_mesh(comm, comm, std::vector{cells},
                        std::span<const std::int32_t>(), std::vector{elements},
-                       comm, x, xshape,
-                       create_cell_partitioner(max_facet_to_cell_links),
-                       ghost_mode, max_facet_to_cell_links, 1);
+                       comm, x, xshape, create_cell_partitioner(), ghost_mode,
+                       max_facet_to_cell_links, 1);
   }
 }
 

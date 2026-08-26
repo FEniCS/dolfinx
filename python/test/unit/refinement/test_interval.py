@@ -24,7 +24,7 @@ def test_refine_interval(n, ghost_mode, ghost_mode_refined, option):
     msh_refined, edges, _vertices = mesh.refine(
         msh,
         option=option,
-        partitioner=mesh.create_cell_partitioner(max_facet_to_cell_links=2),
+        partitioner=mesh.create_cell_partitioner(),
         ghost_mode=ghost_mode_refined,
     )
 

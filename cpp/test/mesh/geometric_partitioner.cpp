@@ -107,7 +107,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
   // ghosts regardless of what is otherwise requested; compare it against
   // the unghosted baseline.
   std::array<std::int64_t, 5> c0n
-      = counts(mesh::create_cell_partitioner(2), mesh::GhostMode::none);
+      = counts(mesh::create_cell_partitioner(), mesh::GhostMode::none);
   std::array<std::int64_t, 5> c1 = counts(
       mesh::create_geometric_cell_partitioner(), mesh::GhostMode::none);
 
@@ -133,7 +133,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
        {mesh::GhostMode::none, mesh::GhostMode::shared_facet})
   {
     std::array<std::int64_t, 5> c0
-        = counts(mesh::create_cell_partitioner(2), gm);
+        = counts(mesh::create_cell_partitioner(), gm);
 
     // Global entity counts do not depend on the partitioner
     CHECK(c0[0] == (n + 1) * (n + 1) * (n + 1));
@@ -142,7 +142,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
 #ifdef HAS_PARMETIS
     std::array<std::int64_t, 5> c2
         = counts(mesh::create_hybrid_cell_partitioner(
-                     2, 1, graph::parmetis::geom_partitioner_kway()),
+                     1, graph::parmetis::geom_partitioner_kway()),
                  gm);
     for (int d = 0; d < 4; ++d)
       CHECK(c2[d] == c0[d]);

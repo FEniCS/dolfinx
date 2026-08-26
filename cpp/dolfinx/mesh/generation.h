@@ -123,7 +123,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
-    partitioner = create_cell_partitioner(2);
+    partitioner = create_cell_partitioner();
 
   switch (celltype)
   {
@@ -214,7 +214,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
   }
 
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
-    partitioner = create_cell_partitioner(2);
+    partitioner = create_cell_partitioner();
 
   switch (celltype)
   {
@@ -292,7 +292,7 @@ create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
   }
 
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
-    partitioner = create_cell_partitioner(2);
+    partitioner = create_cell_partitioner();
 
   fem::CoordinateElement<T> element(CellType::interval, 1);
   if (dolfinx::MPI::rank(comm) == 0)

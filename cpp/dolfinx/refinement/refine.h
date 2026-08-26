@@ -50,6 +50,7 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
       [&parent_mesh, parent_cell](
           MPI_Comm comm, int /*nparts*/, std::vector<mesh::CellType> cell_types,
           std::vector<std::span<const std::int64_t>> cells,
+          std::optional<std::int32_t> max_facet_to_cell_links,
           std::span<const std::int32_t> /* cell_weights */,
           std::span<const std::int32_t> /* edge_weights */,
           bool /* ghosting */) -> graph::AdjacencyList<std::int32_t>
@@ -76,7 +77,8 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
     if (comm == MPI_COMM_NULL)
       return graph::regular_adjacency_list(std::move(destinations), 1);
 
-    auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells, 2);
+    auto dual_graph = mesh::build_dual_graph(comm, cell_types, cells,
+                                             max_facet_to_cell_links);
     std::vector<std::int32_t> node_disp(MPI::size(comm) + 1, 0);
     std::int32_t local_size = dual_graph.num_nodes();
     MPI_Allgather(&local_size, 1, dolfinx::MPI::mpi_t<std::int32_t>,
