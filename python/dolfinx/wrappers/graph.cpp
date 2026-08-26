@@ -100,7 +100,7 @@ void graph(nb::module_& m)
             dolfinx::graph::parmetis::partitioner(imbalance, options));
       },
       nb::arg("imbalance") = 1.02,
-      nb::arg("options") = std ::array<int, 3>({1, 0, 5}),
+      nb::arg("options") = std::array<int, 3>({1, 0, 5}),
       "ParMETIS graph partitioner");
 
   m.def(
@@ -121,7 +121,7 @@ void graph(nb::module_& m)
                                                             options));
       },
       nb::arg("imbalance") = 1.02,
-      nb::arg("options") = std ::array<int, 3>({1, 0, 5}),
+      nb::arg("options") = std::array<int, 3>({1, 0, 5}),
       "ParMETIS geometric (space-filling curve redistribution followed by "
       "k-way) graph partitioner");
 #endif

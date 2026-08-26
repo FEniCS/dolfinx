@@ -58,10 +58,15 @@ namespace impl
 /// @param[in] num_vertices_per_cell Number of vertices per cell, one
 /// entry per cell type of `cells`.
 /// @param[in] cells Cells of each cell type, using global vertex
-/// indices (no higher-order 'nodes').
+/// indices (no higher-order 'nodes'). `cells[i]` is a flattened
+/// row-major array of shape `(num_cells_i, num_vertices_per_cell[i])`
+/// for cell type `i`, where `num_cells_i` is however many cells of
+/// that type are on this rank.
 /// @param[in] commg Communicator that `x` is distributed across.
 /// @param[in] x Geometry ('node') coordinates, row-major with `gdim`
-/// columns, distributed over `commg`.
+/// columns, distributed over `commg`. Rows are addressed by the
+/// global vertex indices used in `cells`; only the rows for vertices
+/// referenced by `cells` on this rank are gathered from `commg`.
 /// @param[in] gdim Number of coordinate components per node.
 /// @return Cell centroids, row-major with `gdim` columns, one row per
 /// cell, with the cells of each cell type concatenated in the order
