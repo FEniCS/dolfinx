@@ -69,7 +69,8 @@ void declare_refinement(nanobind::module_& m)
                       std::optional<dolfinx_wrappers::part::impl::
                                         PythonCellPartitionFunction>>
              partitioner,
-         dolfinx::refinement::Option option, dolfinx::mesh::GhostMode ghost_mode)
+         dolfinx::refinement::Option option,
+         dolfinx::mesh::GhostMode ghost_mode)
       {
         std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
         if (edges.has_value())

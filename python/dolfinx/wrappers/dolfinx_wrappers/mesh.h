@@ -81,8 +81,7 @@ using PythonCellPartitionFunction
         dolfinx_wrappers::MPICommWrapper, int,
         const std::vector<dolfinx::mesh::CellType>&,
         std::vector<nb::ndarray<const std::int64_t, nb::numpy>>,
-        std::optional<std::int32_t>,
-        nb::ndarray<const std::int32_t, nb::numpy>,
+        std::optional<std::int32_t>, nb::ndarray<const std::int32_t, nb::numpy>,
         nb::ndarray<const std::int32_t, nb::numpy>, bool)>;
 
 using CppCellPartitionFunction
@@ -419,9 +418,9 @@ void declare_mesh(nb::module_& m, std::string type)
             max_facet_to_cell_links, num_threads);
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("elements"),
-      nb::arg("x").noconvert(), nb::arg("partitioner").none(), nb::arg("ghost_mode"),
-      nb::arg("max_facet_to_cell_links").none(), nb::arg("num_threads"),
-      nb::arg("cell_weights").none(),
+      nb::arg("x").noconvert(), nb::arg("partitioner").none(),
+      nb::arg("ghost_mode"), nb::arg("max_facet_to_cell_links").none(),
+      nb::arg("num_threads"), nb::arg("cell_weights").none(),
       "Helper function for creating a mixed topology mesh.");
 
   m.def(

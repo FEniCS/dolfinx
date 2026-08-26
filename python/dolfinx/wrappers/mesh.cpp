@@ -411,15 +411,13 @@ void mesh(nb::module_& m)
       .def(
           "__call__",
           [](const part::impl::GeometricPartitioner& self, MPICommWrapper comm,
-             int nparts, MPICommWrapper commg,
-             nb::ndarray<const double, nb::ndim<2>, nb::c_contig> x)
+             int nparts, nb::ndarray<const double, nb::ndim<2>, nb::c_contig> x)
           {
-            std::array<std::size_t, 2> xshape = {x.shape(0), x.shape(1)};
-            return self.fn(comm.get(), nparts, commg.get(),
-                           std::span<const double>(x.data(), x.size()), xshape);
+            int gdim = static_cast<int>(x.shape(1));
+            return self.fn(comm.get(), nparts,
+                           std::span<const double>(x.data(), x.size()), gdim);
           },
-          nb::arg("comm"), nb::arg("nparts"), nb::arg("commg"),
-          nb::arg("x").noconvert(),
+          nb::arg("comm"), nb::arg("nparts"), nb::arg("x").noconvert(),
           "Compute the destination rank for each row of x (cell centroids, "
           "not raw node coordinates -- see compute_cell_centroids).");
 
@@ -434,21 +432,19 @@ void mesh(nb::module_& m)
              int nparts, const std::vector<dolfinx::mesh::CellType>& cell_types,
              std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb,
              std::optional<std::int32_t> max_facet_to_cell_links,
-             MPICommWrapper commg,
              nb::ndarray<const double, nb::ndim<2>, nb::c_contig> x,
              bool ghosting)
           {
             std::vector<std::span<const std::int64_t>> cells
                 = vec_of_spans(cells_nb);
             std::array<std::size_t, 2> xshape = {x.shape(0), x.shape(1)};
-            return self.fn(comm.get(), nparts, cell_types, cells,
-                           max_facet_to_cell_links, commg.get(),
-                           std::span<const double>(x.data(), x.size()), xshape,
-                           ghosting);
+            return self.fn(
+                comm.get(), nparts, cell_types, cells, max_facet_to_cell_links,
+                std::span<const double>(x.data(), x.size()), xshape, ghosting);
           },
           nb::arg("comm"), nb::arg("nparts"), nb::arg("cell_types"),
           nb::arg("cells"), nb::arg("max_facet_to_cell_links").none(),
-          nb::arg("commg"), nb::arg("x").noconvert(), nb::arg("ghosting"),
+          nb::arg("x").noconvert(), nb::arg("ghosting"),
           "Compute the destination rank for each cell, given cell "
           "centroids (not raw node coordinates -- see "
           "compute_cell_centroids) as well as the cell topology.");
@@ -558,8 +554,8 @@ void mesh(nb::module_& m)
         };
 
         return part::impl::HybridPartitioner{
-            dolfinx::mesh::create_hybrid_cell_partitioner(
-                num_threads, std::move(partfn))};
+            dolfinx::mesh::create_hybrid_cell_partitioner(num_threads,
+                                                          std::move(partfn))};
       },
       nb::arg("part"), nb::arg("num_threads"),
       "Create a cell partitioner from a hybrid graph partitioning "

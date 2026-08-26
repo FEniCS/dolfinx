@@ -960,7 +960,8 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
             {
               auto [centroid, cshape] = centroids();
               return graph::regular_adjacency_list(
-                  p(commt, size, std::span<const double>(centroid), cshape[1]), 1);
+                  p(commt, size, std::span<const double>(centroid), cshape[1]),
+                  1);
             }
             else if constexpr (std::is_same_v<P, HybridCellPartitionFunction>)
             {
