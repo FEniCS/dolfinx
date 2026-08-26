@@ -405,7 +405,8 @@ def redistribute_by_partitioner(
         The cells assigned to this rank, in the same vertex numbering as
         the input ``cells``.
     """
-    dest = partitioner(comm, comm.size, [cell_type], [cells.reshape(-1)])
+    no_weights = np.empty(0, dtype=np.int32)
+    dest = partitioner(comm, comm.size, [cell_type], [cells.reshape(-1)], no_weights, no_weights)
     recv, _, _, _ = graph.distribute(comm, cells, dest)
     return recv
 
