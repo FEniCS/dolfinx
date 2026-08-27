@@ -1315,7 +1315,7 @@ void declare_real_functions(nb::module_& m)
             padding);
       },
       nb::arg("geometry0"), nb::arg("element0"), nb::arg("mesh1"),
-      nb::arg("cells"), nb ::arg("padding"));
+      nb::arg("cells"), nb::arg("padding"));
 }
 
 } // namespace dolfinx_wrappers
