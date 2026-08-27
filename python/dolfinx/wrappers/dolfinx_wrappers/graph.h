@@ -61,7 +61,7 @@ auto partitioner_cpp_to_py(Functor&& p_cpp)
 /// array" -- matching graph::partition_fn's own std::optional weights.
 /// The inverse of partitioner_cpp_to_py.
 template <typename Functor>
-auto create_partitioner_cpp(Functor&& p)
+auto partitioner_py_to_cpp(Functor&& p)
 {
   return [p](MPI_Comm comm, int nparts,
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,

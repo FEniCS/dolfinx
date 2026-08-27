@@ -49,7 +49,7 @@ void declare_refinement(nanobind::module_& m)
         if (partitioner.has_value())
         {
           cpp_partitioner
-              = dolfinx_wrappers::create_partitioner_cpp(partitioner.value());
+              = dolfinx_wrappers::partitioner_py_to_cpp(partitioner.value());
         }
         else
         {
@@ -114,7 +114,7 @@ void declare_refinement(nanobind::module_& m)
           else
           {
             cpp_partitioner
-                = dolfinx_wrappers::create_partitioner_cpp(optional.value());
+                = dolfinx_wrappers::partitioner_py_to_cpp(optional.value());
           }
         }
 

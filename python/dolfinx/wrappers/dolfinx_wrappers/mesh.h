@@ -97,7 +97,7 @@ to_any_cell_partitioner(const PythonMeshPartitioner& p)
 
   const auto& opt = std::get<std::optional<PythonCellPartitionFunction>>(p);
   return dolfinx::mesh::AnyCellPartitionFunction(
-      opt ? create_partitioner_cpp(*opt) : CppCellPartitionFunction(nullptr));
+      opt ? partitioner_py_to_cpp(*opt) : CppCellPartitionFunction(nullptr));
 }
 } // namespace dolfinx_wrappers::part::impl
 
