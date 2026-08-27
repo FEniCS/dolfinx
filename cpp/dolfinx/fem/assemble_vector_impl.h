@@ -93,6 +93,13 @@ void assemble_cells(
   const std::int32_t gdim = x.extent(1);
   const std::int32_t* x_dofmap_ptr = x_dofmap.data_handle();
   const std::int32_t num_x_dofs_cell = x_dofmap.extent(1);
+  const std::int32_t* dmap_ptr = dmap.data_handle();
+  const std::size_t num_dofs = dmap.extent(1);
+
+  // P0 does not change across cells in this call, so whether it is a
+  // set (non-null) transform is loop-invariant -- checked once here
+  // rather than on every cell.
+  const bool p0_set = is_transform_set(P0);
 
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -114,11 +121,11 @@ void assemble_cells(
     std::ranges::fill(be, 0);
     kernel(be.data(), &coeffs(index, 0), constants.data(), cdofs_b.data(),
            nullptr, nullptr, nullptr);
-    if (is_transform_set(P0))
+    if (p0_set)
       P0(be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
-    auto dofs = md::submdspan(dmap, c0, md::full_extent);
+    std::span dofs(dmap_ptr + c0 * num_dofs, num_dofs);
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (int k = 0; k < bs; ++k)
         b[bs * dofs[i] + k] += be[bs * i + k];

@@ -124,6 +124,12 @@ void assemble_cells_matrix(
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
   auto Ae = Ab.first(ndim0 * ndim1);
 
+  // P0/P1T do not change across cells in this call, so whether each is a
+  // set (non-null) transform is loop-invariant -- checked once here
+  // rather than on every cell.
+  const bool p0_set = is_transform_set(P0);
+  const bool p1t_set = is_transform_set(P1T);
+
   // Iterate over active cells
   assert(cells0.size() == cells.size());
   assert(cells1.size() == cells.size());
@@ -160,9 +166,9 @@ void assemble_cells_matrix(
            nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
-    if (is_transform_set(P0))
+    if (p0_set)
       P0(Ae, cell_info0, cell0, ndim1); // B = P0 \tilde{A}
-    if (is_transform_set(P1T))
+    if (p1t_set)
       P1T(Ae, cell_info1, cell1, ndim0); // A =  B P1_T
 
     // In lifting mode only BC dofs are assembled, while in standard mode these
