@@ -58,9 +58,10 @@ ENV OPENBLAS_NUM_THREADS=1 \
 # libx11-dev is OCCT's own header-only dependency.
 # libfltk1.3-dev pulls the whole GUI stack gmsh needs (FLTK, GL, Xft,
 # Xcursor, Xinerama, fonts); libGLU is the one piece outside its closure.
-# NumPy, mpi4py and the ADIOS2 Python bindings come from apt, reached
-# through the --system-site-packages venv below. python3-adios2 depends
-# on python3-adios2-serial | python3-adios2-mpi, so name the MPI variant.
+# The Python runtime and test dependencies come from apt, reached through
+# the --system-site-packages venv below; pip keeps the build tooling,
+# whose pinned versions Ubuntu is too old for. python3-adios2 depends on
+# python3-adios2-serial | python3-adios2-mpi, so name the MPI variant.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -84,11 +85,18 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     pkg-config \
     python3-adios2 \
     python3-adios2-mpi \
+    python3-cffi \
     python3-dev \
+    python3-matplotlib \
     python3-mpi4py \
+    python3-networkx \
     python3-numpy \
     python3-numpy-dev \
+    python3-packaging \
     python3-pip \
+    python3-pytest \
+    python3-pytest-xdist \
+    python3-scipy \
     python3-venv && \
     #
     apt-get -y install --no-install-recommends \
