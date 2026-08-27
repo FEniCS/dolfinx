@@ -11,8 +11,8 @@
 #
 #    docker build --target dev-env --file docker/Dockerfile.test-env --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
-# The build context is the repository root: python/pyproject.toml is
-# copied in below and .dockerignore keeps the rest of the tree out.
+# The build context is the repository root, from which
+# python/pyproject.toml is copied in below.
 #
 
 ARG GMSH_VERSION=4_15_2
@@ -264,9 +264,10 @@ RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git 
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
 
-# The DOLFINx build dependencies, last so that editing pyproject.toml
-# does not invalidate the PETSc/SLEPc layers above. Downstream images
-# build with --no-build-isolation and rely on these being present.
+# The DOLFINx build dependencies, read from pyproject.toml rather than
+# duplicated here. Last, so that editing pyproject.toml does not
+# invalidate the PETSc/SLEPc layers above. Downstream images build with
+# --no-build-isolation and rely on these being present.
 COPY python/pyproject.toml /tmp/pyproject.toml
 RUN pip install --no-cache-dir --group /tmp/pyproject.toml:build && \
     rm /tmp/pyproject.toml
