@@ -13,6 +13,8 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
 #include <nanobind/stl/function.h>
+#include <nanobind/stl/optional.h>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -25,30 +27,34 @@ namespace nb = nanobind;
 
 /// Wrap a C++ graph partitioner (dolfinx::graph::partition_fn) for use
 /// from Python. Node and edge weights are passed as 1D arrays, one
-/// entry per node/edge; unlike create_geom_partitioner_py and
+/// entry per node/edge, or None; unlike create_geom_partitioner_py and
 /// create_hybrid_partitioner_py, there are no node coordinates -- only
 /// the local graph itself -- matching dolfinx::graph::partition_fn
-/// exactly. The Python-visible arrays are always present (though
-/// possibly zero-length), never None: graph::partition_fn's weights
-/// are std::optional so that C++ callers can omit them without
-/// constructing an empty span, but every Python call already supplies
-/// concrete arrays, so they are passed through as populated
-/// std::optional values, never std::nullopt.
+/// exactly, including its std::optional weights (None from Python maps
+/// to std::nullopt).
 template <typename Functor>
 auto create_partitioner_py(Functor&& p_cpp)
 {
   return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
                  const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+                 std::optional<
+                     nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
                      node_weights,
-                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+                 std::optional<
+                     nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
                      edge_weights,
                  bool ghosting)
   {
-    std::span<const std::int32_t> node_weights_span(node_weights.data(),
-                                                    node_weights.size());
-    std::span<const std::int32_t> edge_weights_span(edge_weights.data(),
-                                                    edge_weights.size());
+    std::optional<std::span<const std::int32_t>> node_weights_span;
+    if (node_weights)
+    {
+      node_weights_span.emplace(node_weights->data(), node_weights->size());
+    }
+    std::optional<std::span<const std::int32_t>> edge_weights_span;
+    if (edge_weights)
+    {
+      edge_weights_span.emplace(edge_weights->data(), edge_weights->size());
+    }
     return p_cpp(comm.get(), nparts, local_graph, node_weights_span,
                  edge_weights_span, ghosting);
   };

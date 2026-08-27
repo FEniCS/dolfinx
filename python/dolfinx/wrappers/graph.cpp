@@ -21,10 +21,12 @@
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <vector>
@@ -41,12 +43,12 @@ void graph(nb::module_& m)
                          std::pair<std::int32_t, std::int32_t>>(
       m, "int_sizet_int8__int32_int32");
 
-  using partition_fn
-      = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-          MPICommWrapper, int,
-          const dolfinx::graph::AdjacencyList<std::int64_t>&,
-          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>,
-          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>, bool)>;
+  using partition_fn = std::function<dolfinx::graph::AdjacencyList<
+      std::int32_t>(
+      MPICommWrapper, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
+      std::optional<nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>,
+      std::optional<nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>,
+      bool)>;
   using geom_partition_fn
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int,
