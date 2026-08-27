@@ -34,21 +34,21 @@ constexpr double eig_rtol
 Mat create_diagonal_matrix(PetscInt N)
 {
   Mat A = nullptr;
-  MatCreate(MPI_COMM_WORLD, &A);
-  MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, N, N);
-  MatSetType(A, MATAIJ);
-  MatSetUp(A);
+  CHECK(MatCreate(MPI_COMM_WORLD, &A) == 0);
+  CHECK(MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, N, N) == 0);
+  CHECK(MatSetType(A, MATAIJ) == 0);
+  CHECK(MatSetUp(A) == 0);
 
   PetscInt r0 = 0, r1 = 0;
-  MatGetOwnershipRange(A, &r0, &r1);
+  CHECK(MatGetOwnershipRange(A, &r0, &r1) == 0);
   for (PetscInt i = r0; i < r1; ++i)
   {
     PetscScalar v = static_cast<PetscReal>(i + 1);
-    MatSetValues(A, 1, &i, 1, &i, &v, INSERT_VALUES);
+    CHECK(MatSetValues(A, 1, &i, 1, &i, &v, INSERT_VALUES) == 0);
   }
 
-  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+  CHECK(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY) == 0);
+  CHECK(MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY) == 0);
   return A;
 }
 
@@ -60,14 +60,14 @@ Mat create_conjugate_pair_matrix(PetscInt num_blocks)
 {
   const PetscInt N = 2 * num_blocks;
   Mat A = nullptr;
-  MatCreate(MPI_COMM_WORLD, &A);
-  MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, N, N);
-  MatSetType(A, MATAIJ);
-  MatSeqAIJSetPreallocation(A, 2, nullptr);
-  MatMPIAIJSetPreallocation(A, 2, nullptr, 2, nullptr);
+  CHECK(MatCreate(MPI_COMM_WORLD, &A) == 0);
+  CHECK(MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, N, N) == 0);
+  CHECK(MatSetType(A, MATAIJ) == 0);
+  CHECK(MatSeqAIJSetPreallocation(A, 2, nullptr) == 0);
+  CHECK(MatMPIAIJSetPreallocation(A, 2, nullptr, 2, nullptr) == 0);
 
   PetscInt r0 = 0, r1 = 0;
-  MatGetOwnershipRange(A, &r0, &r1);
+  CHECK(MatGetOwnershipRange(A, &r0, &r1) == 0);
   for (PetscInt i = r0; i < r1; ++i)
   {
     const PetscInt block = i / 2;
@@ -76,18 +76,18 @@ Mat create_conjugate_pair_matrix(PetscInt num_blocks)
     {
       const PetscInt cols[2] = {i, i + 1};
       const PetscScalar vals[2] = {a, -a};
-      MatSetValues(A, 1, &i, 2, cols, vals, INSERT_VALUES);
+      CHECK(MatSetValues(A, 1, &i, 2, cols, vals, INSERT_VALUES) == 0);
     }
     else
     {
       const PetscInt cols[2] = {i - 1, i};
       const PetscScalar vals[2] = {a, a};
-      MatSetValues(A, 1, &i, 2, cols, vals, INSERT_VALUES);
+      CHECK(MatSetValues(A, 1, &i, 2, cols, vals, INSERT_VALUES) == 0);
     }
   }
 
-  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+  CHECK(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY) == 0);
+  CHECK(MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY) == 0);
   return A;
 }
 } // namespace
@@ -108,14 +108,15 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
 
     // Diagonal matrix is Hermitian; ask for the largest eigenvalues,
     // which Krylov methods recover first
-    EPSSetProblemType(solver.eps(), EPS_HEP);
-    EPSSetWhichEigenpairs(solver.eps(), EPS_LARGEST_MAGNITUDE);
-    EPSSetDimensions(solver.eps(), 3, PETSC_DETERMINE, PETSC_DETERMINE);
+    CHECK(EPSSetProblemType(solver.eps(), EPS_HEP) == 0);
+    CHECK(EPSSetWhichEigenpairs(solver.eps(), EPS_LARGEST_MAGNITUDE) == 0);
+    CHECK(EPSSetDimensions(solver.eps(), 3, PETSC_DETERMINE, PETSC_DETERMINE)
+          == 0);
 
     solver.solve();
 
     PetscInt nconv = 0;
-    EPSGetConverged(solver.eps(), &nconv);
+    CHECK(EPSGetConverged(solver.eps(), &nconv) == 0);
     REQUIRE(nconv >= 3);
 
     // Spectrum is {1, ..., N}, so the three largest are N, N-1, N-2
@@ -132,16 +133,16 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     SECTION("Eigenpair matches eigenvalue")
     {
       Vec r = nullptr, c = nullptr;
-      MatCreateVecs(A, nullptr, &r);
-      MatCreateVecs(A, nullptr, &c);
+      CHECK(MatCreateVecs(A, nullptr, &r) == 0);
+      CHECK(MatCreateVecs(A, nullptr, &c) == 0);
 
       PetscScalar lr = 0, lc = 0;
       solver.get_eigenpair(lr, lc, r, c, 0);
       CHECK_THAT(static_cast<double>(PetscRealPart(lr)),
                  Catch::Matchers::WithinRel(static_cast<double>(N), eig_rtol));
 
-      VecDestroy(&r);
-      VecDestroy(&c);
+      CHECK(VecDestroy(&r) == 0);
+      CHECK(VecDestroy(&c) == 0);
     }
 
     // SLEPc rejects these itself; the point is that the return code is
@@ -157,7 +158,7 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
                       std::runtime_error);
     }
 
-    MatDestroy(&A);
+    CHECK(MatDestroy(&A) == 0);
   }
 
   SECTION("Complex conjugate eigenpair of a non-symmetric operator")
@@ -167,13 +168,14 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
     la::SLEPcEigenSolver solver(MPI_COMM_WORLD);
     solver.set_operators(A, nullptr);
 
-    EPSSetProblemType(solver.eps(), EPS_NHEP);
-    EPSSetWhichEigenpairs(solver.eps(), EPS_LARGEST_MAGNITUDE);
-    EPSSetDimensions(solver.eps(), 2, PETSC_DETERMINE, PETSC_DETERMINE);
+    CHECK(EPSSetProblemType(solver.eps(), EPS_NHEP) == 0);
+    CHECK(EPSSetWhichEigenpairs(solver.eps(), EPS_LARGEST_MAGNITUDE) == 0);
+    CHECK(EPSSetDimensions(solver.eps(), 2, PETSC_DETERMINE, PETSC_DETERMINE)
+          == 0);
 
     solver.solve();
     PetscInt nconv = 0;
-    EPSGetConverged(solver.eps(), &nconv);
+    CHECK(EPSGetConverged(solver.eps(), &nconv) == 0);
     REQUIRE(nconv >= 2);
 
     // get_eigenvalue is independent of the PETSc scalar type: the pair
@@ -214,7 +216,7 @@ TEST_CASE("SLEPc eigenvalue solver", "[slepc]")
 #endif
     }
 
-    MatDestroy(&A);
+    CHECK(MatDestroy(&A) == 0);
   }
 
   SECTION("Solving before setting operators throws")

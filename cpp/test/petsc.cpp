@@ -39,8 +39,8 @@ TEST_CASE("PETSc wrappers reject null handles", "[petsc]")
   // is examined, so both values must be rejected.
   CHECK_THROWS_AS(la::petsc::Vector(nullptr, true), std::runtime_error);
   CHECK_THROWS_AS(la::petsc::Vector(nullptr, false), std::runtime_error);
-  CHECK_THROWS_AS(la::petsc::Operator(nullptr, true), std::runtime_error);
-  CHECK_THROWS_AS(la::petsc::Operator(nullptr, false), std::runtime_error);
+  CHECK_THROWS_AS(la::petsc::Matrix(nullptr, true), std::runtime_error);
+  CHECK_THROWS_AS(la::petsc::Matrix(nullptr, false), std::runtime_error);
   CHECK_THROWS_AS(la::petsc::KrylovSolver(nullptr, true), std::runtime_error);
   CHECK_THROWS_AS(la::petsc::KrylovSolver(nullptr, false), std::runtime_error);
 }
@@ -51,7 +51,7 @@ TEST_CASE("PETSc wrappers manage reference counts", "[petsc]")
 
   PetscInt refs = 0;
 
-  SECTION("Operator, inc_ref_count = true shares ownership")
+  SECTION("Matrix, inc_ref_count = true shares ownership")
   {
     Mat A = nullptr;
     CHECK(MatCreate(MPI_COMM_WORLD, &A) == 0);
@@ -62,7 +62,7 @@ TEST_CASE("PETSc wrappers manage reference counts", "[petsc]")
     CHECK(MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY) == 0);
 
     {
-      la::petsc::Operator op(A, true);
+      la::petsc::Matrix op(A, true);
       CHECK(PetscObjectGetReference((PetscObject)A, &refs) == 0);
       CHECK(refs == 2);
     }
@@ -73,7 +73,7 @@ TEST_CASE("PETSc wrappers manage reference counts", "[petsc]")
     CHECK(MatDestroy(&A) == 0);
   }
 
-  SECTION("Operator, inc_ref_count = false takes ownership")
+  SECTION("Matrix, inc_ref_count = false takes ownership")
   {
     Mat A = nullptr;
     CHECK(MatCreate(MPI_COMM_WORLD, &A) == 0);
@@ -86,7 +86,7 @@ TEST_CASE("PETSc wrappers manage reference counts", "[petsc]")
     // No caller-side reference remains once the wrapper is constructed;
     // destroying it must be the only thing that frees A (nothing left
     // here to double-destroy).
-    la::petsc::Operator op(A, false);
+    la::petsc::Matrix op(A, false);
     CHECK(PetscObjectGetReference((PetscObject)op.mat(), &refs) == 0);
     CHECK(refs == 1);
   }

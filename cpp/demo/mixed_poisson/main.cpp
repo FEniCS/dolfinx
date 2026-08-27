@@ -314,17 +314,21 @@ int main(int argc, char* argv[])
 
     // Assemble the bilinear form into a matrix. The PETSc matrix is
     // 'flushed' so we can set values in it in the subsequent step.
-    MatZeroEntries(A.mat());
+    common::petsc::check(MatZeroEntries(A.mat()), "MatZeroEntries");
     fem::assemble_matrix(la::petsc::Matrix::set_fn(A.mat(), ADD_VALUES), a,
                          {bc});
-    MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY),
+                         "MatAssemblyEnd");
 
     // Set '1' on diagonal for Dirichlet dofs
     fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
                          {bc});
-    MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
+    common::petsc::check(MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyBegin");
+    common::petsc::check(MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY),
+                         "MatAssemblyEnd");
 
     // Assemble the linear form `L` into RHS vector
     std::ranges::fill(b.array(), 0);
@@ -340,12 +344,12 @@ int main(int argc, char* argv[])
 
     // Create PETSc linear solver
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
-    la::petsc::options::set("ksp_type", "preonly");
-    la::petsc::options::set("pc_type", "lu");
+    common::petsc::set_option("ksp_type", "preonly");
+    common::petsc::set_option("pc_type", "lu");
     if (sizeof(PetscInt) == 4)
-      la::petsc::options::set("pc_factor_mat_solver_type", "mumps");
+      common::petsc::set_option("pc_factor_mat_solver_type", "mumps");
     else
-      la::petsc::options::set("pc_factor_mat_solver_type", "superlu_dist");
+      common::petsc::set_option("pc_factor_mat_solver_type", "superlu_dist");
     lu.set_from_options();
 
     // Solve linear system Ax = b
