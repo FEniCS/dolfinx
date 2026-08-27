@@ -318,10 +318,10 @@ partitioners = {}
 if has_parmetis:
     partitioners["ParMETIS Kway"] = graph.partitioner_parmetis()
     partitioners["ParMETIS GeomKway"] = create_hybrid_cell_partitioner(
-        graph.geom_partitioner_parmetis_kway(1.02, [1, 0, 5])
+        graph.partitioner_parmetis_hybrid(1.02, [1, 0, 5])
     )
     partitioners["ParMETIS Geom"] = create_geometric_cell_partitioner(
-        graph.geom_partitioner_parmetis()
+        graph.partitioner_parmetis_geom()
     )
 
 if has_ptscotch:

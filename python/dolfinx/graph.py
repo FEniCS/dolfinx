@@ -33,12 +33,12 @@ if _partitioner_kahip is not None:
 
 # Geometric partitioners, i.e. partitioners that use the position of each
 # graph node. As above, availability depends on the build configuration.
-_geom_partitioner_parmetis = getattr(_cpp.graph, "geom_partitioner_parmetis", None)
-if _geom_partitioner_parmetis is not None:
-    geom_partitioner_parmetis = _geom_partitioner_parmetis
-_geom_partitioner_parmetis_kway = getattr(_cpp.graph, "geom_partitioner_parmetis_kway", None)
-if _geom_partitioner_parmetis_kway is not None:
-    geom_partitioner_parmetis_kway = _geom_partitioner_parmetis_kway
+_partitioner_parmetis_geom = getattr(_cpp.graph, "partitioner_parmetis_geom", None)
+if _partitioner_parmetis_geom is not None:
+    partitioner_parmetis_geom = _partitioner_parmetis_geom
+_partitioner_parmetis_hybrid = getattr(_cpp.graph, "partitioner_parmetis_hybrid", None)
+if _partitioner_parmetis_hybrid is not None:
+    partitioner_parmetis_hybrid = _partitioner_parmetis_hybrid
 
 
 __all__ = [

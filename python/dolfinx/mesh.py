@@ -150,7 +150,7 @@ def create_hybrid_cell_partitioner(
     positions, regardless of the ghost mode the partitioner is called
     with. Use this for a partitioner that needs the graph edges as part
     of the partitioning decision itself (e.g. ParMETIS `GeomKway`, via
-    ``dolfinx.cpp.graph.geom_partitioner_parmetis_kway``), rather than
+    ``dolfinx.cpp.graph.partitioner_parmetis_hybrid``), rather than
     only to determine ghost cells.
 
     The mesh dual graph (including the maximum number of cells

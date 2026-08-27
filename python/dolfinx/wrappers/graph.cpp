@@ -55,7 +55,7 @@ void graph(nb::module_& m)
           nb::ndarray<const double, nb::ndim<2>, nb::c_contig>)>;
   m.def(
       "partitioner", []() -> partition_fn
-      { return create_partitioner_py(dolfinx::graph::partition_graph); },
+      { return partitioner_cpp_to_py(dolfinx::graph::partition_graph); },
       "Default graph partitioner");
 
   nb::enum_<dolfinx::graph::sfc::curve>(m, "SFCCurve")
@@ -85,7 +85,7 @@ void graph(nb::module_& m)
       [](double imbalance, int seed,
          dolfinx::graph::scotch::strategy strategy) -> partition_fn
       {
-        return create_partitioner_py(
+        return partitioner_cpp_to_py(
             dolfinx::graph::scotch::partitioner(strategy, imbalance, seed));
       },
       nb::arg("imbalance") = 0.025, nb::arg("seed") = 0,
@@ -97,7 +97,7 @@ void graph(nb::module_& m)
       "partitioner_parmetis",
       [](double imbalance, std::array<int, 3> options) -> partition_fn
       {
-        return create_partitioner_py(
+        return partitioner_cpp_to_py(
             dolfinx::graph::parmetis::partitioner(imbalance, options));
       },
       nb::arg("imbalance") = 1.02,
@@ -105,7 +105,7 @@ void graph(nb::module_& m)
       "ParMETIS graph partitioner");
 
   m.def(
-      "geom_partitioner_parmetis",
+      "partitioner_parmetis_geom",
       []() -> geom_partition_fn
       {
         return create_geom_partitioner_py(
@@ -119,7 +119,7 @@ void graph(nb::module_& m)
           const dolfinx::graph::AdjacencyList<std::int64_t>&,
           nb::ndarray<const double, nb::ndim<2>, nb::c_contig>, bool)>;
   m.def(
-      "geom_partitioner_parmetis_kway",
+      "partitioner_parmetis_hybrid",
       [](double imbalance, std::array<int, 3> options) -> hybrid_partition_fn
       {
         return create_hybrid_partitioner_py(
@@ -137,7 +137,7 @@ void graph(nb::module_& m)
       [](int mode = 1, int seed = 1, double imbalance = 0.03,
          bool suppress_output = true) -> partition_fn
       {
-        return create_partitioner_py(dolfinx::graph::kahip::partitioner(
+        return partitioner_cpp_to_py(dolfinx::graph::kahip::partitioner(
             mode, seed, imbalance, suppress_output));
       },
       nb::arg("mode") = 1, nb::arg("seed") = 1, nb::arg("imbalance") = 0.03,

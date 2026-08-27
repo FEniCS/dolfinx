@@ -31,7 +31,7 @@ namespace nb = nanobind;
 /// create_geom_partitioner_py and create_hybrid_partitioner_py, there
 /// are no node coordinates -- only the local graph itself.
 template <typename Functor>
-auto create_partitioner_py(Functor&& p_cpp)
+auto partitioner_cpp_to_py(Functor&& p_cpp)
 {
   return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
                  const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
@@ -59,7 +59,7 @@ auto create_partitioner_py(Functor&& p_cpp)
 /// zero-length array, so a custom Python partitioner can distinguish
 /// "no weights were provided" from "an empty (but present) weights
 /// array" -- matching graph::partition_fn's own std::optional weights.
-/// The inverse of create_partitioner_py.
+/// The inverse of partitioner_cpp_to_py.
 template <typename Functor>
 auto create_partitioner_cpp(Functor&& p)
 {
