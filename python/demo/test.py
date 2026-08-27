@@ -12,6 +12,12 @@ import sys
 
 import pytest
 
+# Bound on the run time of a single demo, so a deadlocked demo (e.g. an
+# MPI collective mismatch) fails with a clear TimeoutExpired naming the
+# demo and command, rather than hanging the CI job until the runner's
+# own multi-hour job timeout is reached.
+DEMO_TIMEOUT_S = 300
+
 
 def imports_petsc4py(f):
     """Check if a file imports petsc4py."""
@@ -35,7 +41,7 @@ else:
 @pytest.mark.parametrize("path,name", demos)
 def test_demos(path, name):
     """Test demo scripts in serial."""
-    ret = subprocess.run([sys.executable, name], cwd=str(path), check=True)
+    ret = subprocess.run([sys.executable, name], cwd=str(path), check=True, timeout=DEMO_TIMEOUT_S)
     assert ret.returncode == 0
 
 
@@ -45,5 +51,5 @@ def test_demos_mpi(num_proc, mpiexec, path, name):
     """Test demo scripts in parallel using MPI."""
     cmd = [mpiexec, "-np", str(num_proc), sys.executable, name]
     print(cmd)
-    ret = subprocess.run(cmd, cwd=str(path), check=True)
+    ret = subprocess.run(cmd, cwd=str(path), check=True, timeout=DEMO_TIMEOUT_S)
     assert ret.returncode == 0
