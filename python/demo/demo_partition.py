@@ -314,7 +314,6 @@ cmap = coordinate_element(CellType.tetrahedron, 1)
 ghost_mode = GhostMode.none
 
 partitioners = {}
-
 if has_parmetis:
     partitioners["ParMETIS Kway"] = graph.partitioner_parmetis()
     partitioners["ParMETIS GeomKway"] = create_hybrid_cell_partitioner(
@@ -323,10 +322,8 @@ if has_parmetis:
     partitioners["ParMETIS Geom"] = create_geometric_cell_partitioner(
         graph.partitioner_parmetis_geom()
     )
-
 if has_ptscotch:
     partitioners["PT-SCOTCH"] = graph.partitioner_scotch()
-
 if has_kahip:
     partitioners["KaHIP"] = graph.partitioner_kahip()
 
