@@ -7,7 +7,7 @@
 """Tools to extract data from Gmsh models."""
 
 import typing
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from pathlib import Path
 
 from mpi4py import MPI as _MPI
@@ -21,6 +21,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32 as _AdjacencyList_int32
+from dolfinx.cpp.graph import AdjacencyList_int64 as _AdjacencyList_int64
 from dolfinx.fem import coordinate_element
 from dolfinx.graph import adjacencylist
 from dolfinx.io.utils import distribute_entity_data
@@ -292,9 +293,7 @@ def model_to_mesh(
         [
             _MPI.Comm,
             int,
-            Sequence[CellType],
-            Sequence[npt.NDArray[np.int64]],
-            int | None,
+            _AdjacencyList_int64,
             npt.NDArray[np.int32],
             npt.NDArray[np.int32],
             bool,
@@ -531,9 +530,7 @@ def read_from_msh(
         [
             _MPI.Comm,
             int,
-            Sequence[CellType],
-            Sequence[npt.NDArray[np.int64]],
-            int | None,
+            _AdjacencyList_int64,
             npt.NDArray[np.int32],
             npt.NDArray[np.int32],
             bool,
