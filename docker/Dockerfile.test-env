@@ -106,9 +106,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 ENV ADIOS2_ALWAYS_USE_MPI=1
 
 # CMake's FindHDF5 picks the serial build whenever Ubuntu's serial and
-# MPI HDF5 are both present, and the hdf5.pc alternative does not stop
-# it. Pin HDF5_ROOT to the MPI build; the symlink keeps the path
-# independent of the multiarch triplet, which ENV cannot interpolate.
+# MPI HDF5 are both present. Pin HDF5_ROOT to the MPI build.
 RUN ln -s /usr/lib/$(gcc -print-multiarch)/hdf5/openmpi /usr/lib/hdf5-mpi
 ENV HDF5_ROOT=/usr/lib/hdf5-mpi
 
