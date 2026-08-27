@@ -332,29 +332,6 @@ void mesh(nb::module_& m)
 
   m.def("compute_mixed_cell_pairs", &dolfinx::mesh::compute_mixed_cell_pairs);
 
-  m.def(
-      "create_cell_partitioner",
-      []() -> part::impl::PythonCellPartitionFunction
-      {
-        return part::impl::create_cell_partitioner_py(
-            dolfinx::graph::partition_graph);
-      },
-      "Create default cell partitioner.");
-  m.def(
-      "create_cell_partitioner",
-      [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-             MPICommWrapper comm, int nparts,
-             const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-             nb::ndarray<const std::int32_t, nb::numpy> node_weights,
-             nb::ndarray<const std::int32_t, nb::numpy> edge_weights,
-             bool ghosting)>& part) -> part::impl::PythonCellPartitionFunction
-      {
-        return part::impl::create_cell_partitioner_py(
-            part::impl::create_partitioner_cpp(part));
-      },
-      nb::arg("part"),
-      "Create a cell partitioner from a graph partitioning function.");
-
   // Opaque holders for a dolfinx::graph::geom_partition_fn and a
   // dolfinx::graph::hybrid_partition_fn. create_mesh recognises
   // these types (as distinct from a plain callable and from each other)

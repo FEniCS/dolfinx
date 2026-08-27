@@ -35,11 +35,11 @@
 # - **Graph partitioners** work on the mesh *dual graph*, in which each
 #   cell is a node and cells sharing a facet are connected by an edge.
 #   They aim to divide the nodes into equally sized parts while cutting as
-#   few edges as possible. They are used via
-#   {py:func}`create_cell_partitioner
-#   <dolfinx.mesh.create_cell_partitioner>`. Three are available,
-#   depending on how DOLFINx was built: ParMETIS `Kway` (multilevel k-way
-#   partitioning), PT-SCOTCH and KaHIP.
+#   few edges as possible. A graph partitioning function can be passed to
+#   {py:func}`create_mesh <dolfinx.mesh.create_mesh>` directly, as its
+#   `partitioner` argument. Three are available, depending on how DOLFINx
+#   was built: ParMETIS `Kway` (multilevel k-way partitioning), PT-SCOTCH
+#   and KaHIP.
 # - **Geometric partitioners** work on the *positions* of the cells. Cells
 #   are ordered along a space-filling curve through the mesh and the curve
 #   is cut into equal pieces. This is much cheaper than graph
@@ -104,7 +104,6 @@ from dolfinx.mesh import (
     GhostMode,
     Mesh,
     compute_cell_centroids,
-    create_cell_partitioner,
     create_geometric_cell_partitioner,
     create_hybrid_cell_partitioner,
     create_mesh,
@@ -317,7 +316,7 @@ ghost_mode = GhostMode.none
 partitioners = {}
 
 if has_parmetis:
-    partitioners["ParMETIS Kway"] = create_cell_partitioner(graph.partitioner_parmetis())
+    partitioners["ParMETIS Kway"] = graph.partitioner_parmetis()
     partitioners["ParMETIS GeomKway"] = create_hybrid_cell_partitioner(
         graph.geom_partitioner_parmetis_kway(1.02, [1, 0, 5])
     )
@@ -326,10 +325,10 @@ if has_parmetis:
     )
 
 if has_ptscotch:
-    partitioners["PT-SCOTCH"] = create_cell_partitioner(graph.partitioner_scotch())
+    partitioners["PT-SCOTCH"] = graph.partitioner_scotch()
 
 if has_kahip:
-    partitioners["KaHIP"] = create_cell_partitioner(graph.partitioner_kahip())
+    partitioners["KaHIP"] = graph.partitioner_kahip()
 
 # The space-filling curve partitioners are built into DOLFINx, so they are
 # always available

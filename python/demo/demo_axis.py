@@ -30,9 +30,8 @@ from scipy.special import jv, jvp
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import fem, io, mesh, plot
+from dolfinx import fem, graph, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
-from dolfinx.mesh import create_cell_partitioner
 
 try:
     from dolfinx.io import VTXWriter
@@ -452,7 +451,7 @@ if MPI.COMM_WORLD.rank == 0:
     )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = create_cell_partitioner()
+partitioner = graph.partitioner()
 mesh_data = io.gmsh.model_to_mesh(
     model,
     MPI.COMM_WORLD,

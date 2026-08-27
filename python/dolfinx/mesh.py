@@ -62,7 +62,6 @@ __all__ = [
     "compute_incident_entities",
     "compute_midpoints",
     "create_box",
-    "create_cell_partitioner",
     "create_geometric_cell_partitioner",
     "create_geometry",
     "create_hybrid_cell_partitioner",
@@ -111,29 +110,6 @@ HybridPartitioningFunc = typing.Callable[
     [_MPI.Comm, int, _cpp.graph.AdjacencyList_int64, npt.NDArray[np.float64], bool],
     _cpp.graph.AdjacencyList_int32,
 ]
-
-
-def create_cell_partitioner(
-    part: PartitioningFunc | None = None,
-) -> Callable:
-    """Create a function to partition a mesh.
-
-    Ghosting and the mesh dual graph (including the maximum number of
-    cells connected to a facet and the number of threads used to build
-    it) are both controlled at call time, by :func:`create_mesh`'s
-    ``ghost_mode``, ``max_facet_to_cell_links`` and ``num_threads``
-    arguments, rather than fixed when the partitioner is created.
-
-    Args:
-        part: Partition function. If not provided, the default graph
-            partitioner is used.
-
-    Return:
-        Partitioning function.
-    """
-    if part is None:
-        return _cpp.mesh.create_cell_partitioner()
-    return _cpp.mesh.create_cell_partitioner(part)
 
 
 def create_geometric_cell_partitioner(
@@ -964,7 +940,7 @@ def create_mesh(
         A mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = create_cell_partitioner()
+        partitioner = _cpp.graph.partitioner()
 
     x = np.asarray(x, order="C")
     if x.ndim == 1:
@@ -1177,7 +1153,7 @@ def create_interval(
         An interval mesh.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner()
+        partitioner = _cpp.graph.partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1262,7 +1238,7 @@ def create_rectangle(
         A mesh of a rectangle.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner()
+        partitioner = _cpp.graph.partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -1374,7 +1350,7 @@ def create_box(
         A mesh of a box domain.
     """
     if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner()
+        partitioner = _cpp.graph.partitioner()
     domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",

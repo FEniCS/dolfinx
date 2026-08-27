@@ -2159,7 +2159,7 @@ def test_ridge_integrals_rank1_3D(cell_type, ghost_mode, dtype, coefficient):
         x=nodes,
         cells=connectivity,
         e=c_el,
-        partitioner=dolfinx.mesh.create_cell_partitioner(),
+        partitioner=graph.partitioner(),
         ghost_mode=ghost_mode,
     )
 

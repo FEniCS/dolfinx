@@ -27,7 +27,6 @@ from dolfinx.mesh import (
     DiagonalType,
     GhostMode,
     create_box,
-    create_cell_partitioner,
     create_interval,
     create_point_mesh,
     create_rectangle,
@@ -143,7 +142,7 @@ def mesh_2d(dtype):
         CellType.triangle,
         dtype,
         GhostMode.none,
-        create_cell_partitioner(),
+        graph.partitioner(),
         DiagonalType.left,
     )
     i1 = np.where((np.isclose(mesh2d.geometry.x, (1.0, 1.0, 0.0))).all(axis=1))[0][0]
@@ -796,7 +795,7 @@ def test_mesh_single_process_distribution(partitioner):
         cells,
         element,
         x,
-        partitioner=dolfinx.mesh.create_cell_partitioner(partitioner()),
+        partitioner=partitioner(),
         ghost_mode=dolfinx.mesh.GhostMode.shared_facet,
     )
 

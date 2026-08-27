@@ -23,13 +23,13 @@ from dolfinx.cpp.mesh import (
     locate_entities,
 )
 from dolfinx.fem import coordinate_element
+from dolfinx.graph import partitioner
 from dolfinx.log import LogLevel, set_log_level
 from dolfinx.mesh import (
     CellType,
     GhostMode,
     Mesh,
     Topology,
-    create_cell_partitioner,
     create_unit_cube,
 )
 
@@ -362,7 +362,7 @@ def test_locate_entities(dtype):
         cells = [np.array([], dtype=np.int64), np.array([], dtype=np.int64)]
         geom = np.array([], dtype=dtype)
 
-    part = create_cell_partitioner()
+    part = partitioner()
     hexahedron = coordinate_element(CellType.hexahedron, 1, dtype=dtype)
     prism = coordinate_element(CellType.prism, 1, dtype=dtype)
     comm = MPI.COMM_WORLD

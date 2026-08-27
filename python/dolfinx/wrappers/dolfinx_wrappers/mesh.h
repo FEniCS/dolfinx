@@ -54,25 +54,6 @@ auto create_partitioner_cpp(Functor&& p)
   };
 }
 
-/// Wrap a C++ cell partitioning function as a Python function
-template <typename Functor>
-auto create_cell_partitioner_py(Functor&& p)
-{
-  return [p](dolfinx_wrappers::MPICommWrapper comm, int n,
-             const dolfinx::graph::AdjacencyList<std::int64_t>& dual_graph,
-             nb::ndarray<const std::int32_t, nb::numpy> cell_weights,
-             nb::ndarray<const std::int32_t, nb::numpy> edge_weights,
-             bool ghosting)
-  {
-    std::span<const std::int32_t> cell_weights_span(cell_weights.data(),
-                                                    cell_weights.size());
-    std::span<const std::int32_t> edge_weights_span(edge_weights.data(),
-                                                    edge_weights.size());
-    return p(comm.get(), n, dual_graph, cell_weights_span, edge_weights_span,
-             ghosting);
-  };
-}
-
 using PythonCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         dolfinx_wrappers::MPICommWrapper, int,

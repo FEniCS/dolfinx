@@ -13,7 +13,8 @@ import pytest
 
 from dolfinx.cpp.mesh import create_mesh
 from dolfinx.fem import coordinate_element
-from dolfinx.mesh import CellType, GhostMode, create_cell_partitioner
+from dolfinx.graph import partitioner
+from dolfinx.mesh import CellType, GhostMode
 
 
 @pytest.fixture
@@ -110,7 +111,7 @@ def mixed_topology_mesh():
 
     cell_types = [CellType.hexahedron, CellType.prism, CellType.tetrahedron, CellType.pyramid]
     coordinate_elements = [coordinate_element(cell, 1) for cell in cell_types]
-    part = create_cell_partitioner()
+    part = partitioner()
     max_cells_per_facet = 2
     return create_mesh(
         MPI.COMM_WORLD,

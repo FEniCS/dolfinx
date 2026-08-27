@@ -12,13 +12,13 @@ from numpy import isclose
 
 import ufl
 from dolfinx.fem import assemble_matrix, form, functionspace
+from dolfinx.graph import partitioner
 from dolfinx.mesh import (
     CellType,
     DiagonalType,
     GhostMode,
     RefinementOption,
     compute_incident_entities,
-    create_cell_partitioner,
     create_unit_cube,
     create_unit_interval,
     create_unit_square,
@@ -47,7 +47,7 @@ def test_refine_create_unit_cube(ghost_mode):
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh, partitioner=create_cell_partitioner(), ghost_mode=ghost_mode)
+    mesh, _, _ = refine(mesh, partitioner=partitioner(), ghost_mode=ghost_mode)
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 

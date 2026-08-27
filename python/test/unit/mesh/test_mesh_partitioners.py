@@ -23,7 +23,6 @@ from dolfinx.mesh import (
     GhostMode,
     compute_midpoints,
     create_box,
-    create_cell_partitioner,
     create_mesh,
 )
 
@@ -79,14 +78,13 @@ except ImportError:
 @pytest.mark.parametrize("Nx", [5, 10])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron, CellType.prism])
 def test_partition_box_mesh(gpart, Nx, cell_type):
-    part = create_cell_partitioner(gpart)
     mesh = create_box(
         MPI.COMM_WORLD,
         [np.array([0, 0, 0]), np.array([1, 1, 1])],
         [Nx, Nx, Nx],
         cell_type,
         ghost_mode=GhostMode.shared_facet,
-        partitioner=part,
+        partitioner=gpart,
     )
     tdim = mesh.topology.dim
     c = {CellType.tetrahedron: 6, CellType.prism: 2, CellType.hexahedron: 1}[cell_type]
@@ -251,7 +249,7 @@ def test_mixed_topology_partitioning():
     nparts = 4
     cell_types = [CellType.hexahedron, CellType.pyramid, CellType.tetrahedron]
     dual_graph = _cpp.mesh.build_dual_graph(MPI.COMM_WORLD, cell_types, cells_np, 2, 1)
-    part = create_cell_partitioner()
+    part = partitioner()
     p = part(
         MPI.COMM_WORLD,
         nparts,
@@ -326,14 +324,13 @@ def test_partition_respects_cell_weights(gpart):
     local_points = np.array_split(points, comm.size)[comm.rank]
 
     elem = coordinate_element(CellType.triangle, 1)
-    part = create_cell_partitioner(gpart)
 
     new_mesh = create_mesh(
         comm,
         local_cells,
         elem,
         local_points,
-        partitioner=part,
+        partitioner=gpart,
         cell_weights=local_weights,
     )
 

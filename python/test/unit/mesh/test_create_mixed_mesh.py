@@ -8,7 +8,8 @@ from dolfinx.cpp.mesh import (
     create_mesh,
 )
 from dolfinx.fem import coordinate_element
-from dolfinx.mesh import CellType, create_cell_partitioner
+from dolfinx.graph import partitioner
+from dolfinx.mesh import CellType
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -82,7 +83,7 @@ def test_create_mixed_mesh(dtype):
     pyramid = coordinate_element(CellType.pyramid, 1, variant=1, dtype=dtype)
     tetrahedron = coordinate_element(CellType.tetrahedron, 1, dtype=dtype)
 
-    part = create_cell_partitioner()
+    part = partitioner()
     max_cells_per_facet = 2
     mesh = create_mesh(
         MPI.COMM_WORLD,

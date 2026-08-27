@@ -31,10 +31,9 @@ from scipy.special import h2vp, hankel2, jv, jvp
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
+from dolfinx import default_real_type, default_scalar_type, fem, graph, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import gmsh as gmshio
-from dolfinx.mesh import create_cell_partitioner
 
 try:
     from dolfinx.io import VTXWriter
@@ -375,7 +374,7 @@ if MPI.COMM_WORLD.rank == 0:
         pml_tag,
     )
 model = MPI.COMM_WORLD.bcast(model, root=0)
-partitioner = create_cell_partitioner()
+partitioner = graph.partitioner()
 
 mesh_data = gmshio.model_to_mesh(
     model,

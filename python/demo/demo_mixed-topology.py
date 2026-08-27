@@ -50,7 +50,7 @@ from dolfinx.fem import (
     mixed_topology_form,
 )
 from dolfinx.io.utils import cell_perm_vtk
-from dolfinx.mesh import CellType, Mesh, Topology, create_cell_partitioner
+from dolfinx.mesh import CellType, Mesh, Topology
 
 # -
 
@@ -113,7 +113,7 @@ geomx = np.array(geom, dtype=np.float64)
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
 
-part = create_cell_partitioner()
+part = _cpp.graph.partitioner()
 mesh = create_mesh(
     MPI.COMM_WORLD,
     cells_np,
