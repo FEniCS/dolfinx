@@ -419,7 +419,7 @@ def redistribute_by_partitioner(
     dest = graph.adjacencylist(
         np.asarray(partitioner(comm, comm.size, centroid), dtype=np.int32)
     )._cpp_object
-    recv, _, _, _ = graph.distribute(comm, cells, dest)
+    recv, _, _, _ = graph.distribute(comm, cells, dest)  # type: ignore[arg-type]
     return recv
 
 
