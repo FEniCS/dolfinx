@@ -261,7 +261,7 @@ jobs:
         run: |
           spack env activate ci
           spack load gcc
-          python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
+          python -m pytest -vs -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
 
       # NOTE: the marker expression is written '!matrix.petsc && X || Y'
       # rather than 'matrix.petsc && Y || X'. GitHub expressions treat the
