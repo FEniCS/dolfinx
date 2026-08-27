@@ -53,28 +53,23 @@ ENV OPENBLAS_NUM_THREADS=1 \
     OPENBLAS_VERBOSE=0
 
 # Install dependencies available via apt-get.
-# - First set of packages are required to build and run FEniCS.
-# - Second set of packages are recommended and/or required to build
-#   documentation or tests.
 # OCCT (gmsh's CAD kernel) is built from source below since Ubuntu's
 # libocct-data-exchange-dev drags in the full libvtk9-dev toolchain.
 # libx11-dev is OCCT's own header-only dependency.
-# libfltk1.3-dev pulls the whole GUI stack gmsh needs (FLTK, GL, Xft,
-# Xcursor, Xinerama, fonts); libGLU is the one piece outside its closure.
-# The Python runtime and test dependencies come from apt, reached through
-# the --system-site-packages venv below; pip keeps the build tooling and
-# the demo set. python3-adios2 carries the Python API and python3-adios2-mpi
-# only the compiled bindings, so both are needed; without the latter named
-# explicitly, apt satisfies the former's serial-or-MPI dependency with the
-# serial build.
+# libfltk1.3-dev pulls the whole GUI stack gmsh needs. 
+# python3-adios2 carries the Python API and python3-adios2-mpi
+# the compiled bindings, so both are needed explicitly.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install --no-install-recommends \
+    catch2 \
     cmake \
     doxygen \
     g++ \
+    git \
     gfortran \
+		graphviz \
     libadios2-mpi-c++-dev \
     libboost-dev \
     libfltk1.3-dev \
@@ -84,6 +79,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libopenblas-dev \
     libpugixml-dev \
     libspdlog-dev \
+		libx11-dev \
     make \
     mpi-default-dev \
     ninja-build \
@@ -100,13 +96,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-pytest \
     python3-pytest-xdist \
     python3-scipy \
-    python3-venv && \
-    #
-    apt-get -y install --no-install-recommends \
-    catch2 \
-    git \
-    graphviz \
-    libx11-dev \
+    python3-venv \
     wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -127,8 +117,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     # Cython 3.3 tightened pointer-indexing checks that break
     # petsc4py 3.25.4's generated PC.pyx; pin below that for now.
     pip install --no-cache-dir "cython<3.3" && \
-    pip install --no-cache-dir matplotlib networkx numba pyamg && \
-    python3 -c "import numpy, mpi4py.MPI, adios2; print(numpy.__version__, adios2.__version__)"
+    pip install --no-cache-dir matplotlib networkx numba pyamg
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
@@ -140,7 +129,7 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
 
 # Headless OCCT: only the modules gmsh's STEP/IGES/meshing needs are
 # built. FreeType is force-disabled since DataExchange still probes for
-# it with Visualization off. ldconfig covers what a manual install skips.
+# it with Visualization disabled.
 RUN git clone -b V${OCCT_VERSION} --single-branch --depth 1 https://github.com/Open-Cascade-SAS/OCCT.git && \
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_LIBRARY_TYPE=Shared \
@@ -170,7 +159,7 @@ RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.o
     ldconfig && \
     rm -rf /tmp/*
 
-# GMSH installs python library in /usr/local/lib, see: https://gitlab.onelab.info/gmsh/gmsh/-/issues/1414
+# GMSH installs Python library in /usr/local/lib, see: https://gitlab.onelab.info/gmsh/gmsh/-/issues/1414
 ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 
 # Install PETSc and petsc4py with real and complex types
@@ -265,9 +254,7 @@ RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git 
     rm -rf /tmp/*
 
 # The DOLFINx build dependencies, read from pyproject.toml rather than
-# duplicated here. Last, so that editing pyproject.toml does not
-# invalidate the PETSc/SLEPc layers above. Downstream images build with
-# --no-build-isolation and rely on these being present.
+# duplicated here.
 COPY python/pyproject.toml /tmp/pyproject.toml
 RUN pip install --no-cache-dir --group /tmp/pyproject.toml:build && \
     rm /tmp/pyproject.toml
