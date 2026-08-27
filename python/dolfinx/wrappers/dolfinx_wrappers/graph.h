@@ -23,7 +23,12 @@ namespace dolfinx_wrappers
 
 namespace nb = nanobind;
 
-/// Wrap a C++ graph partitioning function as a Python-ready function.
+/// Wrap a C++ graph partitioner (dolfinx::graph::partition_fn) for use
+/// from Python. Node and edge weights are passed as 1D arrays, one
+/// entry per node/edge; unlike create_geom_partitioner_py and
+/// create_hybrid_partitioner_py, there are no node coordinates -- only
+/// the local graph itself -- matching dolfinx::graph::partition_fn
+/// exactly.
 template <typename Functor>
 auto create_partitioner_py(Functor&& p_cpp)
 {
