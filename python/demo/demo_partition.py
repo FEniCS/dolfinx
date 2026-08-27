@@ -408,7 +408,7 @@ def redistribute_by_partitioner(
         x: Geometry ('node') coordinates, as passed to :func:`create_mesh`.
         partitioner: Geometric cell partitioning function, as returned by
             :func:`create_geometric_cell_partitioner`. Called here
-            directly, with its low-level ``(comm, nparts, commg, x)``
+            directly, with its low-level ``(comm, nparts, x)``
             signature, rather than through :func:`create_mesh`.
 
     Returns:
@@ -417,7 +417,7 @@ def redistribute_by_partitioner(
     """
     centroid = compute_cell_centroids(comm, [cell_type], [cells.reshape(-1)], comm, x)
     dest = graph.adjacencylist(
-        np.asarray(partitioner(comm, comm.size, comm, centroid), dtype=np.int32)
+        np.asarray(partitioner(comm, comm.size, centroid), dtype=np.int32)
     )._cpp_object
     recv, _, _, _ = graph.distribute(comm, cells, dest)
     return recv
