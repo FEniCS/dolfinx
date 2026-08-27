@@ -85,12 +85,19 @@ using geom_partition_fn = std::function<std::vector<int>(
 /// @param[in] x Node coordinates, row-major with one row per node.
 /// `x.size() / local_graph.num_nodes()` gives the number of coordinate
 /// components per node.
+/// @param[in] node_weights Node weights, one entry per node in
+/// `local_graph`. If `std::nullopt`, nodes are treated as having equal
+/// weight.
+/// @param[in] edge_weights Edge weights, one entry per edge in
+/// `local_graph`. If `std::nullopt`, edges are treated as having equal
+/// weight.
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution.
 /// @return Destination rank(s) for each input node.
 using hybrid_partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm, int, const AdjacencyList<std::int64_t>&, std::span<const double>,
-    bool)>;
+    std::optional<std::span<const std::int32_t>>,
+    std::optional<std::span<const std::int32_t>>, bool)>;
 
 /// @brief Partition graph across processes using the default graph
 /// partitioner.

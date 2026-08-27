@@ -526,6 +526,7 @@ finalise_partition(MPI_Comm pcomm, bool ghosting,
     MPI_Comm_free(&pcomm);
   return dest;
 }
+
 } // namespace
 
 graph::partition_fn graph::parmetis::partitioner(double imbalance,
@@ -694,61 +695,63 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
   };
 }
 //-----------------------------------------------------------------------------
-graph::geom_partition_fn graph::parmetis::geom_partitioner()
+std::vector<int> graph::parmetis::geom_partitioner(MPI_Comm comm, int nparts,
+                                                   std::span<const double> x,
+                                                   int gdim)
 {
-  return [](MPI_Comm comm, idx_t nparts, std::span<const double> x,
-            int gdim) -> std::vector<int>
+  spdlog::info("Compute geometric graph partition using ParMETIS");
+  common::Timer timer("Compute graph partition (ParMETIS geometric)");
+
+  const idx_t num_nodes = x.size() / gdim;
+
+  if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
   {
-    spdlog::info("Compute geometric graph partition using ParMETIS");
-    common::Timer timer("Compute graph partition (ParMETIS geometric)");
+    // Nothing to be partitioned
+    return std::vector<int>(num_nodes, 0);
+  }
 
-    const idx_t num_nodes = x.size() / gdim;
+  auto [pcomm, node_disp] = split_and_build_node_disp(comm, num_nodes);
 
-    if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
+  std::vector<idx_t> part(num_nodes);
+  if (pcomm != MPI_COMM_NULL)
+  {
+    if (nparts != dolfinx::MPI::size(pcomm))
     {
-      // Nothing to be partitioned
-      return std::vector<int>(num_nodes, 0);
+      throw std::runtime_error(
+          "ParMETIS_V3_PartGeom partitions into one part per MPI rank, so "
+          "the number of parts must equal the communicator size.");
     }
 
-    auto [pcomm, node_disp] = split_and_build_node_disp(comm, num_nodes);
+    // ParMETIS requires its own scalar type for the coordinates
+    std::vector<real_t> xyz(x.begin(), x.end());
+    idx_t ndims = gdim;
 
-    std::vector<idx_t> part(num_nodes);
-    if (pcomm != MPI_COMM_NULL)
+    common::Timer timer1("ParMETIS: call ParMETIS_V3_PartGeom");
+    int err = ParMETIS_V3_PartGeom(node_disp.data(), &ndims, xyz.data(),
+                                   part.data(), &pcomm);
+    if (err != METIS_OK)
     {
-      if (nparts != dolfinx::MPI::size(pcomm))
-      {
-        throw std::runtime_error(
-            "ParMETIS_V3_PartGeom partitions into one part per MPI rank, so "
-            "the number of parts must equal the communicator size.");
-      }
-
-      // ParMETIS requires its own scalar type for the coordinates
-      std::vector<real_t> xyz(x.begin(), x.end());
-      idx_t ndims = gdim;
-
-      common::Timer timer1("ParMETIS: call ParMETIS_V3_PartGeom");
-      int err = ParMETIS_V3_PartGeom(node_disp.data(), &ndims, xyz.data(),
-                                     part.data(), &pcomm);
-      if (err != METIS_OK)
-      {
-        throw std::runtime_error(
-            std::format("ParMETIS_V3_PartGeom failed. Error code: {}", err));
-      }
-
-      MPI_Comm_free(&pcomm);
+      throw std::runtime_error(
+          std::format("ParMETIS_V3_PartGeom failed. Error code: {}", err));
     }
 
-    return std::vector<int>(part.begin(), part.end());
-  };
+    MPI_Comm_free(&pcomm);
+  }
+
+  return std::vector<int>(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
 graph::hybrid_partition_fn
 graph::parmetis::geom_partitioner_kway(double imbalance,
                                        std::array<int, 3> options)
 {
-  return [imbalance, options](MPI_Comm comm, idx_t nparts,
-                              const graph::AdjacencyList<std::int64_t>& graph,
-                              std::span<const double> x, bool ghosting)
+  return [imbalance, options](
+             MPI_Comm comm, idx_t nparts,
+             const graph::AdjacencyList<std::int64_t>& graph,
+             std::span<const double> x,
+             std::optional<std::span<const std::int32_t>> node_weights,
+             std::optional<std::span<const std::int32_t>> edge_weights,
+             bool ghosting)
   {
     spdlog::info("Compute geometric graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS geometric)");
@@ -784,15 +787,34 @@ graph::parmetis::geom_partitioner_kway(double imbalance,
       std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
       idx_t ncon = 1;
       idx_t wgtflag(0), edgecut(0), numflag(0);
+      std::vector<idx_t> elmwgt;
+      if (node_weights)
+        elmwgt.assign(node_weights->begin(), node_weights->end());
+      std::vector<idx_t> edgwgt;
+      if (edge_weights)
+        edgwgt.assign(edge_weights->begin(), edge_weights->end());
+
+      if (!elmwgt.empty())
+      {
+        spdlog::info("ParMETIS: applying node weights");
+        wgtflag += 2;
+      }
+      if (!edgwgt.empty())
+      {
+        spdlog::info("ParMETIS: applying edge weights");
+        wgtflag += 1;
+      }
+
       std::vector<real_t> tpwgts(ncon * nparts,
                                  1.0 / static_cast<real_t>(nparts));
       real_t ubvec = static_cast<real_t>(imbalance);
 
       common::Timer timer1("ParMETIS: call ParMETIS_V3_PartGeomKway");
       int err = ParMETIS_V3_PartGeomKway(
-          node_disp.data(), offsets.data(), array.data(), nullptr, nullptr,
-          &wgtflag, &numflag, &ndims, xyz.data(), &ncon, &nparts, tpwgts.data(),
-          &ubvec, opts.data(), &edgecut, part.data(), &pcomm);
+          node_disp.data(), offsets.data(), array.data(), elmwgt.data(),
+          edgwgt.data(), &wgtflag, &numflag, &ndims, xyz.data(), &ncon,
+          &nparts, tpwgts.data(), &ubvec, opts.data(), &edgecut, part.data(),
+          &pcomm);
       if (err != METIS_OK)
       {
         throw std::runtime_error(std::format(

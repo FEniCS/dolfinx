@@ -40,21 +40,19 @@ void declare_refinement(nanobind::module_& m)
   m.def(
       "uniform_refine",
       [](const dolfinx::mesh::Mesh<T>& mesh,
-         std::optional<
-             dolfinx_wrappers::part::impl::PythonCellPartitionFunction>
+         std::optional<dolfinx_wrappers::part::impl::PythonPartitionFunction>
              partitioner,
          dolfinx::mesh::GhostMode ghost_mode)
       {
-        dolfinx_wrappers::part::impl::CppCellPartitionFunction cpp_partitioner;
+        dolfinx::graph::partition_fn cpp_partitioner;
         if (partitioner.has_value())
         {
-          cpp_partitioner
-              = dolfinx_wrappers::partitioner_py_to_cpp(partitioner.value());
+          cpp_partitioner = dolfinx_wrappers::partitioner_wrap_py_to_cpp(
+              partitioner.value());
         }
         else
         {
-          cpp_partitioner
-              = dolfinx_wrappers::part::impl::CppCellPartitionFunction(nullptr);
+          cpp_partitioner = dolfinx::graph::partition_fn(nullptr);
         }
         return dolfinx::refinement::uniform_refine<T>(mesh, cpp_partitioner,
                                                       ghost_mode);
@@ -69,7 +67,7 @@ void declare_refinement(nanobind::module_& m)
              edges,
          std::variant<dolfinx::refinement::IdentityPartitionerPlaceholder,
                       std::optional<dolfinx_wrappers::part::impl::
-                                        PythonCellPartitionFunction>>
+                                        PythonPartitionFunction>>
              partitioner,
          dolfinx::refinement::Option option,
          dolfinx::mesh::GhostMode ghost_mode)
@@ -97,24 +95,22 @@ void declare_refinement(nanobind::module_& m)
         }
 
         std::variant<dolfinx::refinement::IdentityPartitionerPlaceholder,
-                     dolfinx_wrappers::part::impl::CppCellPartitionFunction>
+                     dolfinx::graph::partition_fn>
             cpp_partitioner
             = dolfinx::refinement::IdentityPartitionerPlaceholder();
         if (std::holds_alternative<std::optional<
-                dolfinx_wrappers::part::impl::PythonCellPartitionFunction>>(
+                dolfinx_wrappers::part::impl::PythonPartitionFunction>>(
                 partitioner))
         {
           auto optional = std::get<std::optional<
-              dolfinx_wrappers::part::impl::PythonCellPartitionFunction>>(
+              dolfinx_wrappers::part::impl::PythonPartitionFunction>>(
               partitioner);
           if (!optional.has_value())
-            cpp_partitioner
-                = dolfinx_wrappers::part::impl::CppCellPartitionFunction(
-                    nullptr);
+            cpp_partitioner = dolfinx::graph::partition_fn(nullptr);
           else
           {
-            cpp_partitioner
-                = dolfinx_wrappers::partitioner_py_to_cpp(optional.value());
+            cpp_partitioner = dolfinx_wrappers::partitioner_wrap_py_to_cpp(
+                optional.value());
           }
         }
 

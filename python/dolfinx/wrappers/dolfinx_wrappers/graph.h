@@ -7,7 +7,9 @@
 #pragma once
 
 #include "MPICommWrapper.h"
+#include "array.h"
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/partition.h>
 #include <functional>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -25,109 +27,67 @@ namespace dolfinx_wrappers
 
 namespace nb = nanobind;
 
-/// Wrap a C++ graph partitioner (dolfinx::graph::partition_fn) for use
-/// from Python. Node and edge weights are passed as 1D arrays, one
-/// entry per node/edge, or None (mapped to std::nullopt); unlike
-/// create_geom_partitioner_py and create_hybrid_partitioner_py, there
-/// are no node coordinates -- only the local graph itself.
-template <typename Functor>
-auto partitioner_wrap_cpp_to_py(Functor&& p_cpp)
-{
-  return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int nparts,
-                 const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-                 std::optional<
-                     nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
-                     node_weights,
-                 std::optional<
-                     nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
-                     edge_weights,
-                 bool ghosting)
-  {
-    std::optional<std::span<const std::int32_t>> node_weights_span;
-    if (node_weights)
-      node_weights_span.emplace(node_weights->data(), node_weights->size());
-    std::optional<std::span<const std::int32_t>> edge_weights_span;
-    if (edge_weights)
-      edge_weights_span.emplace(edge_weights->data(), edge_weights->size());
-    return p_cpp(comm.get(), nparts, local_graph, node_weights_span,
-                 edge_weights_span, ghosting);
-  };
-}
-
 /// Wrap a Python graph partitioning function as a C++ function. A
 /// std::nullopt weight is passed through as Python None, not a
 /// zero-length array, so a custom Python partitioner can distinguish
 /// "no weights were provided" from "an empty (but present) weights
 /// array" -- matching graph::partition_fn's own std::optional weights.
-/// The inverse of partitioner_wrap_cpp_to_py.
-template <typename Functor>
-auto partitioner_py_to_cpp(Functor&& p)
-{
-  return [p](MPI_Comm comm, int nparts,
-             const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-             std::optional<std::span<const std::int32_t>> node_weights,
-             std::optional<std::span<const std::int32_t>> edge_weights,
-             bool ghosting)
-  {
-    std::optional<nb::ndarray<const std::int32_t, nb::numpy>> node_weights_nb;
-    if (node_weights)
-    {
-      node_weights_nb.emplace(
-          node_weights->data(),
-          std::initializer_list<std::size_t>({node_weights->size()}));
-    }
-    std::optional<nb::ndarray<const std::int32_t, nb::numpy>> edge_weights_nb;
-    if (edge_weights)
-    {
-      edge_weights_nb.emplace(
-          edge_weights->data(),
-          std::initializer_list<std::size_t>({edge_weights->size()}));
-    }
-    return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
-             node_weights_nb, edge_weights_nb, ghosting);
-  };
-}
+/// The inverse of partitioner_wrap_cpp_to_py. Defined in graph.cpp.
+dolfinx::graph::partition_fn partitioner_wrap_py_to_cpp(
+    const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        dolfinx_wrappers::MPICommWrapper, int,
+        const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
+        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>& p);
 
-/// Wrap a C++ geometric graph partitioner (dolfinx::graph::geom_partition_fn,
-/// which has no graph) for use from Python. Node coordinates are passed
-/// as a 2D array of shape (num_nodes, gdim); unlike
-/// create_hybrid_partitioner_py, there is no graph or `ghosting`
-/// argument.
-template <typename Functor>
-auto create_geom_partitioner_py(Functor&& p_cpp)
-{
-  return
-      [p_cpp](
-          dolfinx_wrappers::MPICommWrapper comm, int nparts,
-          nanobind::ndarray<const double, nanobind::ndim<2>, nanobind::c_contig>
-              x) -> dolfinx::graph::AdjacencyList<std::int32_t>
-  {
-    return dolfinx::graph::regular_adjacency_list(
-        p_cpp(comm.get(), nparts, std::span<const double>(x.data(), x.size()),
-              x.shape(1)),
-        1);
-  };
-}
+/// Wrap a Python geometric graph partitioning function as a C++
+/// function. `gdim` is not part of what the Python callable receives --
+/// it is recovered from `x`'s own second dimension when reshaping the
+/// flat `x` span for the call, matching how `x` is passed to a Python
+/// geometric partitioner elsewhere (e.g. create_geometric_cell_partitioner).
+/// Defined in graph.cpp.
+dolfinx::graph::geom_partition_fn partitioner_wrap_py_to_cpp(
+    const std::function<nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
+        dolfinx_wrappers::MPICommWrapper, int,
+        nb::ndarray<const double, nb::ndim<2>, nb::numpy>)>& p);
 
-/// Wrap a C++ hybrid graph partitioner for use from Python. As
-/// create_geom_partitioner_py, but the wrapped C++ functor's graph
-/// argument is required (not optional) and has no separate `gdim`
-/// parameter, matching dolfinx::graph::hybrid_partition_fn.
-template <typename Functor>
-auto create_hybrid_partitioner_py(Functor&& p_cpp)
+/// Wrap a Python hybrid graph partitioning function as a C++ function.
+/// `gdim` is recovered from `local_graph`'s node count and `x`'s flat
+/// size when reshaping `x` for the call; `local_graph` is always a real
+/// graph here, never a placeholder, so there is no optional-unwrapping
+/// to do for it (unlike node/edge weights, which follow the same
+/// None-means-std::nullopt convention as the plain graph partitioner).
+/// Defined in graph.cpp.
+dolfinx::graph::hybrid_partition_fn partitioner_wrap_py_to_cpp(
+    const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        dolfinx_wrappers::MPICommWrapper, int,
+        const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        nb::ndarray<const double, nb::ndim<2>, nb::numpy>,
+        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
+        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>& p);
+
+/// Opaque handle wrapping a partitioning function `Fn`, bound to
+/// Python as its own type -- see GraphPartitioner/GeometricPartitioner/
+/// HybridPartitioner below.
+template <typename Fn>
+struct OpaquePartitioner
 {
-  return
-      [p_cpp](
-          dolfinx_wrappers::MPICommWrapper comm, int nparts,
-          const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-          nanobind::ndarray<const double, nanobind::ndim<2>, nanobind::c_contig>
-              x,
-          bool ghosting)
-  {
-    return p_cpp(comm.get(), nparts, local_graph,
-                 std::span<const double>(x.data(), x.size()), ghosting);
-  };
-}
+  Fn fn;
+};
+
+/// Opaque handles for a dolfinx::graph::partition_fn, a
+/// dolfinx::graph::geom_partition_fn and a
+/// dolfinx::graph::hybrid_partition_fn, bound to Python as their own
+/// types so that create_mesh can distinguish them from a bare Python
+/// callable (and from each other): nanobind cannot tell which of
+/// several different std::function signatures a bare Python callable
+/// is meant to satisfy, so distinct callable shapes must be distinct
+/// Python types, not disambiguated by argument count.
+using GraphPartitioner = OpaquePartitioner<dolfinx::graph::partition_fn>;
+using GeometricPartitioner
+    = OpaquePartitioner<dolfinx::graph::geom_partition_fn>;
+using HybridPartitioner
+    = OpaquePartitioner<dolfinx::graph::hybrid_partition_fn>;
 
 /// Declare AdjacencyList class with __init__ methods for a given type
 /// @param m The nanobind module

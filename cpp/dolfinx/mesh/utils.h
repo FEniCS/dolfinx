@@ -877,8 +877,9 @@ namespace impl
 /// graph::partition_fn or a graph::hybrid_partition_fn.
 /// @param[in] cell_weights Weights associated with each cell in `cells`
 /// (flattened across cell types in the same order as `cells`). Used
-/// only if `partitioner` holds a graph::partition_fn. If empty,
-/// cells are treated as having equal weight.
+/// only if `partitioner` holds a graph::partition_fn or a
+/// graph::hybrid_partition_fn. If empty, cells are treated as having
+/// equal weight.
 /// @param[in] commg Communicator that `x` is distributed on. Used only
 /// if `partitioner` holds a graph::geom_partition_fn or a
 /// graph::hybrid_partition_fn.
@@ -963,6 +964,11 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
                                   max_facet_to_cell_links, num_threads);
         };
 
+        std::optional<std::span<const std::int32_t>> node_weights
+            = cell_weights.empty()
+                  ? std::nullopt
+                  : std::optional<std::span<const std::int32_t>>(cell_weights);
+
         dest = std::visit(
             [&](const auto& p) -> graph::AdjacencyList<std::int32_t>
             {
@@ -978,15 +984,11 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
               else if constexpr (std::is_same_v<P, graph::hybrid_partition_fn>)
               {
                 return p(commt, size, dual_graph(),
-                         std::span<const double>(centroids().first), ghosting);
+                         std::span<const double>(centroids().first),
+                         node_weights, std::nullopt, ghosting);
               }
               else
               {
-                std::optional<std::span<const std::int32_t>> node_weights
-                    = cell_weights.empty()
-                          ? std::nullopt
-                          : std::optional<std::span<const std::int32_t>>(
-                                cell_weights);
                 return p(commt, size, dual_graph(), node_weights, std::nullopt,
                          ghosting);
               }

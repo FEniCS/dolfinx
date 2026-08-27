@@ -44,15 +44,20 @@
 #   are ordered along a space-filling curve through the mesh and the curve
 #   is cut into equal pieces. This is much cheaper than graph
 #   partitioning, and the cost barely grows with the number of ranks, but
-#   more edges are cut. A partitioner that uses only the cell positions is
-#   used via {py:func}`create_geometric_cell_partitioner
-#   <dolfinx.mesh.create_geometric_cell_partitioner>`, which computes a
-#   coordinate for each cell (the mean of its vertex positions) and passes
-#   it to the partitioner. A **hybrid** partitioner, one that also uses
-#   the graph edges as part of the partitioning decision itself rather
-#   than only to determine ghost cells, is used via
+#   more edges are cut. A partitioner that uses only the cell positions
+#   can be passed to {py:func}`create_mesh <dolfinx.mesh.create_mesh>`
+#   directly, where it is called with a coordinate for each cell (the mean
+#   of its vertex positions) rather than the graph -- a custom geometric
+#   partitioning function must first be wrapped with
+#   {py:func}`create_geometric_cell_partitioner
+#   <dolfinx.mesh.create_geometric_cell_partitioner>`, but the built-in
+#   ones below (`Morton`, `Hilbert`, `Geom`) already come wrapped. A
+#   **hybrid** partitioner, one that also uses the graph edges as part of
+#   the partitioning decision itself rather than only to determine ghost
+#   cells, works the same way: a custom one is wrapped with
 #   {py:func}`create_hybrid_cell_partitioner
-#   <dolfinx.mesh.create_hybrid_cell_partitioner>` instead.
+#   <dolfinx.mesh.create_hybrid_cell_partitioner>`, but `GeomKway` below
+#   already comes wrapped.
 #
 #   ParMETIS provides two: `GeomKway` (hybrid), which uses the
 #   space-filling curve to redistribute the graph and then applies k-way
@@ -66,6 +71,15 @@
 #   always neighbours. A **Hilbert** curve has no such jumps: successive
 #   points on it are always neighbours, which gives more compact
 #   partitions and a smaller edge cut.
+#
+#   A geometric partitioner just needs to map each cell's centroid to a
+#   destination rank, so a simple one is easy to write by hand -- see
+#   `slab_partitioner` below, which cuts the domain into slabs along the
+#   `x` axis. It is included to show the shape a custom geometric
+#   partitioner takes, not because it performs well: unlike a
+#   space-filling curve, it ignores the other coordinates entirely, so
+#   it keeps cells together in only one direction and balances cell
+#   counts well only when they are spread evenly along `x`.
 #
 # Which of ParMETIS, PT-SCOTCH and KaHIP are present depends on the build,
 # so the demo checks {py:data}`dolfinx.has_parmetis`,
@@ -105,7 +119,6 @@ from dolfinx.mesh import (
     Mesh,
     compute_cell_centroids,
     create_geometric_cell_partitioner,
-    create_hybrid_cell_partitioner,
     create_mesh,
 )
 
@@ -284,6 +297,45 @@ def partition_quality(msh: Mesh) -> tuple[float, int]:
     return imbalance, cut
 
 
+# ## A simple, user-defined geometric partitioner
+#
+# A geometric partitioner is just a function taking `(comm, nparts, x)`,
+# where `x` is one row of coordinates per cell, and returning one
+# destination rank per row. `slab_partitioner` below is about as simple
+# as that can be: it cuts the domain into `nparts` slabs along the `x`
+# axis and assigns each cell to the slab its centroid falls in. Wrapping
+# it with {py:func}`create_geometric_cell_partitioner
+# <dolfinx.mesh.create_geometric_cell_partitioner>` makes it usable as
+# {py:func}`create_mesh <dolfinx.mesh.create_mesh>`'s `partitioner`
+# argument, exactly like the built-in partitioners above.
+
+
+def slab_partitioner(
+    comm: MPI.Comm, nparts: int, x: npt.NDArray[np.float64]
+) -> npt.NDArray[np.int32]:
+    """Partition cells into slabs of the domain, ordered by `x`-coordinate.
+
+    Cuts the domain into `nparts` equal-width slabs along the first
+    coordinate axis and assigns each cell to the slab its centroid
+    falls in. This balances cell counts well only when cells are
+    spread evenly along `x`, and -- unlike a space-filling curve -- it
+    ignores the other coordinates entirely, so it keeps neighbouring
+    cells together in only one direction.
+
+    Args:
+        comm: Unused; a geometric partitioner is called collectively,
+            but does not need the communicator itself to compute a
+            per-row destination.
+        nparts: Number of parts to divide the domain into.
+        x: Cell centroids, with shape ``(num_cells, gdim)``.
+
+    Returns:
+        Destination rank for each row of `x`.
+    """
+    dest = np.floor(x[:, 0] * nparts).astype(np.int32)
+    return np.clip(dest, 0, nparts - 1)
+
+
 # ## Creating a mesh with each partitioner
 #
 # The {py:func}`coordinate element <dolfinx.fem.coordinate_element>` is the
@@ -316,12 +368,8 @@ ghost_mode = GhostMode.none
 partitioners = {}
 if has_parmetis:
     partitioners["ParMETIS Kway"] = graph.partitioner_parmetis()
-    partitioners["ParMETIS GeomKway"] = create_hybrid_cell_partitioner(
-        graph.partitioner_parmetis_hybrid(1.02, [1, 0, 5])
-    )
-    partitioners["ParMETIS Geom"] = create_geometric_cell_partitioner(
-        graph.partitioner_parmetis_geom()
-    )
+    partitioners["ParMETIS GeomKway"] = graph.partitioner_parmetis_hybrid(1.02, [1, 0, 5])
+    partitioners["ParMETIS Geom"] = graph.partitioner_parmetis_geom
 if has_ptscotch:
     partitioners["PT-SCOTCH"] = graph.partitioner_scotch()
 if has_kahip:
@@ -329,11 +377,12 @@ if has_kahip:
 
 # The space-filling curve partitioners are built into DOLFINx, so they are
 # always available
-for label, curve in [
-    ("SFC Morton", graph.SFCCurve.morton),
-    ("SFC Hilbert", graph.SFCCurve.hilbert),
-]:
-    partitioners[label] = create_geometric_cell_partitioner(graph.geom_partitioner_sfc(curve))
+partitioners["SFC Morton"] = graph.partition_morton
+partitioners["SFC Hilbert"] = graph.partition_hilbert
+
+# A hand-written geometric partitioner needs wrapping before it can be
+# passed to create_mesh, unlike the built-ins above
+partitioners["Slab (custom)"] = create_geometric_cell_partitioner(slab_partitioner)
 
 if comm.rank == 0:
     print(f"Mesh: {6 * n**3} tetrahedra on {comm.size} rank(s)")
@@ -383,8 +432,7 @@ for fraction in (0.0, 0.5, 1.0):
 # exactly once, in the same vertex numbering it started with.
 #
 # `sfc` is a geometric partitioner, called directly with cell centroids
-# (see :func:`create_geometric_cell_partitioner`), computed here with
-# :func:`compute_cell_centroids` -- the same step
+# computed here with :func:`compute_cell_centroids` -- the same step
 # :func:`create_mesh` performs internally before calling it.
 
 
@@ -402,10 +450,11 @@ def redistribute_by_partitioner(
         cell_type: Cell type of ``cells``.
         cells: Local cells, with shape ``(num_cells, num_vertices)``.
         x: Geometry ('node') coordinates, as passed to :func:`create_mesh`.
-        partitioner: Geometric cell partitioning function, as returned by
-            :func:`create_geometric_cell_partitioner`. Called here
-            directly, with its low-level ``(comm, nparts, x)``
-            signature, rather than through :func:`create_mesh`.
+        partitioner: Geometric cell partitioning function, i.e. one
+            taking cell centroids rather than the graph -- see
+            :func:`create_mesh`. Called here directly, rather than
+            through :func:`create_mesh`, with its ``(comm, nparts, x)``
+            signature, returning one destination rank per centroid.
 
     Returns:
         The cells assigned to this rank, in the same vertex numbering as

@@ -37,68 +37,31 @@ namespace nb = nanobind;
 
 namespace dolfinx_wrappers::part::impl
 {
-using PythonCellPartitionFunction
+using PythonPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         dolfinx_wrappers::MPICommWrapper, int,
         const dolfinx::graph::AdjacencyList<std::int64_t>&,
         std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
         std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>;
 
-using CppCellPartitionFunction
-    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
-        std::optional<std::span<const std::int32_t>>,
-        std::optional<std::span<const std::int32_t>>, bool)>;
-
-/// Opaque handle wrapping a partitioning function `Fn`, bound to
-/// Python as its own type -- see GeometricPartitioner/HybridPartitioner
-/// below.
-template <typename Fn>
-struct OpaquePartitioner
-{
-  Fn fn;
-};
-
-/// Opaque handles for a dolfinx::graph::geom_partition_fn and a
-/// dolfinx::graph::hybrid_partition_fn, bound to Python as their own
-/// types so that create_mesh can distinguish them from a
-/// PythonCellPartitionFunction (and from each other): nanobind cannot
-/// tell which of several different std::function signatures a bare
-/// Python callable is meant to satisfy, so distinct callable shapes must
-/// be distinct Python types, not disambiguated by argument count.
-using GeometricPartitioner
-    = OpaquePartitioner<dolfinx::graph::geom_partition_fn>;
-using HybridPartitioner
-    = OpaquePartitioner<dolfinx::graph::hybrid_partition_fn>;
-
 /// The Python-visible partitioner argument accepted by create_mesh: a
-/// GeometricPartitioner, a HybridPartitioner, or a plain graph
-/// partitioner (std::nullopt disables redistribution). The two opaque
-/// handle types must be listed first: nanobind tries variant
-/// alternatives in order and stops at the first that converts, and
-/// their __call__ makes them callable, so a raw
-/// PythonCellPartitionFunction-shaped std::function would also happily
-/// (and wrongly) construct from either if that alternative were tried
-/// first.
-using PythonMeshPartitioner
-    = std::variant<GeometricPartitioner, HybridPartitioner,
-                   std::optional<PythonCellPartitionFunction>>;
+/// GraphPartitioner, a GeometricPartitioner, a HybridPartitioner, or a
+/// plain (raw callable) graph partitioner (std::nullopt disables
+/// redistribution). The three opaque handle types must be listed
+/// first: nanobind tries variant alternatives in order and stops at
+/// the first that converts, and their __call__ makes them callable, so
+/// a raw PythonPartitionFunction-shaped std::function would also
+/// happily (and wrongly) construct from any of them if that
+/// alternative were tried first.
+using PythonPartitionFn
+    = std::variant<GraphPartitioner, GeometricPartitioner, HybridPartitioner,
+                   std::optional<PythonPartitionFunction>>;
 
 /// Convert create_mesh's Python-visible partitioner argument to the
 /// dolfinx::mesh::AnyCellPartitionFunction that dolfinx::mesh::create_mesh
-/// expects.
-inline dolfinx::mesh::AnyCellPartitionFunction
-to_any_cell_partitioner(const PythonMeshPartitioner& p)
-{
-  if (const auto* geo = std::get_if<GeometricPartitioner>(&p))
-    return dolfinx::mesh::AnyCellPartitionFunction(geo->fn);
-  if (const auto* hyb = std::get_if<HybridPartitioner>(&p))
-    return dolfinx::mesh::AnyCellPartitionFunction(hyb->fn);
-
-  const auto& opt = std::get<std::optional<PythonCellPartitionFunction>>(p);
-  return dolfinx::mesh::AnyCellPartitionFunction(
-      opt ? partitioner_py_to_cpp(*opt) : CppCellPartitionFunction(nullptr));
-}
+/// expects. Defined in mesh.cpp.
+dolfinx::mesh::AnyCellPartitionFunction
+to_any_cell_partitioner(const PythonPartitionFn& p);
 } // namespace dolfinx_wrappers::part::impl
 
 namespace dolfinx_wrappers
@@ -301,7 +264,7 @@ void declare_mesh(nb::module_& m, std::string type)
       create_interval.c_str(),
       [](MPICommWrapper comm, std::int64_t n, std::array<T, 2> p,
          dolfinx::mesh::GhostMode mode,
-         const part::impl::PythonMeshPartitioner& part, int gdim)
+         const part::impl::PythonPartitionFn& part, int gdim)
       {
         return dolfinx::mesh::create_interval<T>(
             comm.get(), n, p, mode, part::impl::to_any_cell_partitioner(part),
@@ -315,7 +278,7 @@ void declare_mesh(nb::module_& m, std::string type)
       create_rectangle.c_str(),
       [](MPICommWrapper comm, std::array<std::array<T, 2>, 2> p,
          std::array<std::int64_t, 2> n, dolfinx::mesh::CellType celltype,
-         const part::impl::PythonMeshPartitioner& part,
+         const part::impl::PythonPartitionFn& part,
          dolfinx::mesh::DiagonalType diagonal, int gdim,
          dolfinx::mesh::GhostMode ghost_mode)
       {
@@ -333,7 +296,7 @@ void declare_mesh(nb::module_& m, std::string type)
       create_box.c_str(),
       [](MPICommWrapper comm, std::array<std::array<T, 3>, 2> p,
          std::array<std::int64_t, 3> n, dolfinx::mesh::CellType celltype,
-         const part::impl::PythonMeshPartitioner& part,
+         const part::impl::PythonPartitionFn& part,
          dolfinx::mesh::GhostMode ghost_mode)
       {
         MPI_Comm _comm = comm.get();
@@ -351,7 +314,7 @@ void declare_mesh(nb::module_& m, std::string type)
                                        nb::c_contig>>& cells_nb,
          const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
          nb::ndarray<const T, nb::c_contig> x,
-         const part::impl::PythonMeshPartitioner& p,
+         const part::impl::PythonPartitionFn& p,
          dolfinx::mesh::GhostMode ghost_mode,
          std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
          std::optional<
@@ -388,7 +351,7 @@ void declare_mesh(nb::module_& m, std::string type)
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> cells,
          const dolfinx::fem::CoordinateElement<T>& element,
          nb::ndarray<const T, nb::c_contig> x,
-         const part::impl::PythonMeshPartitioner& p,
+         const part::impl::PythonPartitionFn& p,
          dolfinx::mesh::GhostMode ghost_mode,
          std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
          std::optional<

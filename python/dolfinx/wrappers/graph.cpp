@@ -35,6 +35,95 @@ namespace nb = nanobind;
 
 namespace dolfinx_wrappers
 {
+dolfinx::graph::partition_fn partitioner_wrap_py_to_cpp(
+    const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        dolfinx_wrappers::MPICommWrapper, int,
+        const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
+        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>& p)
+{
+  return [p](MPI_Comm comm, int nparts,
+             const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+             std::optional<std::span<const std::int32_t>> node_weights,
+             std::optional<std::span<const std::int32_t>> edge_weights,
+             bool ghosting)
+  {
+    std::optional<nb::ndarray<const std::int32_t, nb::numpy>> node_weights_nb;
+    if (node_weights)
+    {
+      node_weights_nb.emplace(
+          node_weights->data(),
+          std::initializer_list<std::size_t>({node_weights->size()}));
+    }
+    std::optional<nb::ndarray<const std::int32_t, nb::numpy>> edge_weights_nb;
+    if (edge_weights)
+    {
+      edge_weights_nb.emplace(
+          edge_weights->data(),
+          std::initializer_list<std::size_t>({edge_weights->size()}));
+    }
+    return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
+             node_weights_nb, edge_weights_nb, ghosting);
+  };
+}
+
+dolfinx::graph::geom_partition_fn partitioner_wrap_py_to_cpp(
+    const std::function<nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
+        dolfinx_wrappers::MPICommWrapper, int,
+        nb::ndarray<const double, nb::ndim<2>, nb::numpy>)>& p)
+{
+  return [p](MPI_Comm comm, int nparts, std::span<const double> x,
+             int gdim) -> std::vector<int>
+  {
+    std::size_t shape0 = gdim > 0 ? x.size() / gdim : 0;
+    std::size_t shape[2] = {shape0, static_cast<std::size_t>(gdim)};
+    nb::ndarray<const double, nb::ndim<2>, nb::numpy> x_nb(x.data(), 2, shape,
+                                                           nb::handle());
+    nb::ndarray<const int, nb::ndim<1>, nb::numpy> dest
+        = p(dolfinx_wrappers::MPICommWrapper(comm), nparts, x_nb);
+    return std::vector<int>(dest.data(), dest.data() + dest.size());
+  };
+}
+
+dolfinx::graph::hybrid_partition_fn partitioner_wrap_py_to_cpp(
+    const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        dolfinx_wrappers::MPICommWrapper, int,
+        const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        nb::ndarray<const double, nb::ndim<2>, nb::numpy>,
+        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
+        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>& p)
+{
+  return [p](MPI_Comm comm, int nparts,
+             const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+             std::span<const double> x,
+             std::optional<std::span<const std::int32_t>> node_weights,
+             std::optional<std::span<const std::int32_t>> edge_weights,
+             bool ghosting)
+  {
+    std::size_t num_nodes = static_cast<std::size_t>(local_graph.num_nodes());
+    std::size_t gdim = num_nodes > 0 ? x.size() / num_nodes : 0;
+    std::size_t shape[2] = {num_nodes, gdim};
+    nb::ndarray<const double, nb::ndim<2>, nb::numpy> x_nb(x.data(), 2, shape,
+                                                           nb::handle());
+    std::optional<nb::ndarray<const std::int32_t, nb::numpy>> node_weights_nb;
+    if (node_weights)
+    {
+      node_weights_nb.emplace(
+          node_weights->data(),
+          std::initializer_list<std::size_t>({node_weights->size()}));
+    }
+    std::optional<nb::ndarray<const std::int32_t, nb::numpy>> edge_weights_nb;
+    if (edge_weights)
+    {
+      edge_weights_nb.emplace(
+          edge_weights->data(),
+          std::initializer_list<std::size_t>({edge_weights->size()}));
+    }
+    return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph, x_nb,
+             node_weights_nb, edge_weights_nb, ghosting);
+  };
+}
+
 void graph(nb::module_& m)
 {
   declare_adjacency_list_init<std::int32_t, std::nullptr_t>(m, "int32");
@@ -43,33 +132,11 @@ void graph(nb::module_& m)
                          std::pair<std::int32_t, std::int32_t>>(
       m, "int_sizet_int8__int32_int32");
 
-  using partition_fn = std::function<dolfinx::graph::AdjacencyList<
-      std::int32_t>(
-      MPICommWrapper, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
-      std::optional<nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>,
-      std::optional<nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>,
-      bool)>;
-  using geom_partition_fn
-      = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-          MPICommWrapper, int,
-          nb::ndarray<const double, nb::ndim<2>, nb::c_contig>)>;
   m.def(
-      "partitioner", []() -> partition_fn
-      { return partitioner_wrap_cpp_to_py(dolfinx::graph::partition_graph); },
-      "Default graph partitioner");
-
-  nb::enum_<dolfinx::graph::sfc::curve>(m, "SFCCurve")
-      .value("morton", dolfinx::graph::sfc::curve::morton)
-      .value("hilbert", dolfinx::graph::sfc::curve::hilbert);
-
-  m.def(
-      "geom_partitioner_sfc",
-      [](dolfinx::graph::sfc::curve curve) -> geom_partition_fn
-      {
-        return create_geom_partitioner_py(
-            dolfinx::graph::sfc::partitioner(curve));
-      },
-      nb::arg("curve"), "Space-filling curve geometric graph partitioner");
+      "partitioner", []() -> GraphPartitioner
+      { return GraphPartitioner{dolfinx::graph::partition_graph}; },
+      "Default graph partitioner. Returns a GraphPartitioner, ready to "
+      "pass directly as create_mesh's partitioner argument.");
 
 #ifdef HAS_PTSCOTCH
   nb::enum_<dolfinx::graph::scotch::strategy>(m, "SCOTCHStrategy")
@@ -83,66 +150,214 @@ void graph(nb::module_& m)
   m.def(
       "partitioner_scotch",
       [](double imbalance, int seed,
-         dolfinx::graph::scotch::strategy strategy) -> partition_fn
+         dolfinx::graph::scotch::strategy strategy) -> GraphPartitioner
       {
-        return partitioner_wrap_cpp_to_py(
-            dolfinx::graph::scotch::partitioner(strategy, imbalance, seed));
+        return GraphPartitioner{
+            dolfinx::graph::scotch::partitioner(strategy, imbalance, seed)};
       },
       nb::arg("imbalance") = 0.025, nb::arg("seed") = 0,
       nb::arg("strategy") = dolfinx::graph::scotch::strategy::speed,
-      "SCOTCH graph partitioner");
+      "SCOTCH graph partitioner. Returns a GraphPartitioner, ready to pass "
+      "directly as create_mesh's partitioner argument.");
 #endif
 #ifdef HAS_PARMETIS
   m.def(
       "partitioner_parmetis",
-      [](double imbalance, std::array<int, 3> options) -> partition_fn
+      [](double imbalance, std::array<int, 3> options) -> GraphPartitioner
       {
-        return partitioner_wrap_cpp_to_py(
-            dolfinx::graph::parmetis::partitioner(imbalance, options));
+        return GraphPartitioner{
+            dolfinx::graph::parmetis::partitioner(imbalance, options)};
       },
       nb::arg("imbalance") = 1.02,
       nb::arg("options") = std::array<int, 3>({1, 0, 5}),
-      "ParMETIS graph partitioner");
+      "ParMETIS graph partitioner. Returns a GraphPartitioner, ready to "
+      "pass directly as create_mesh's partitioner argument.");
 
-  m.def(
-      "partitioner_parmetis_geom",
-      []() -> geom_partition_fn
-      {
-        return create_geom_partitioner_py(
-            dolfinx::graph::parmetis::geom_partitioner());
-      },
-      "ParMETIS geometric (space-filling curve) graph partitioner");
-
-  using hybrid_partition_fn
-      = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-          MPICommWrapper, int,
-          const dolfinx::graph::AdjacencyList<std::int64_t>&,
-          nb::ndarray<const double, nb::ndim<2>, nb::c_contig>, bool)>;
   m.def(
       "partitioner_parmetis_hybrid",
-      [](double imbalance, std::array<int, 3> options) -> hybrid_partition_fn
+      [](double imbalance, std::array<int, 3> options) -> HybridPartitioner
       {
-        return create_hybrid_partitioner_py(
+        return HybridPartitioner{
             dolfinx::graph::parmetis::geom_partitioner_kway(imbalance,
-                                                            options));
+                                                            options)};
       },
       nb::arg("imbalance") = 1.02,
       nb::arg("options") = std::array<int, 3>({1, 0, 5}),
       "ParMETIS geometric (space-filling curve redistribution followed by "
-      "k-way) graph partitioner");
+      "k-way) graph partitioner. Returns a HybridPartitioner, ready to pass "
+      "directly as create_mesh's partitioner argument.");
 #endif
 #ifdef HAS_KAHIP
   m.def(
       "partitioner_kahip",
       [](int mode = 1, int seed = 1, double imbalance = 0.03,
-         bool suppress_output = true) -> partition_fn
+         bool suppress_output = true) -> GraphPartitioner
       {
-        return partitioner_wrap_cpp_to_py(dolfinx::graph::kahip::partitioner(
-            mode, seed, imbalance, suppress_output));
+        return GraphPartitioner{dolfinx::graph::kahip::partitioner(
+            mode, seed, imbalance, suppress_output)};
       },
       nb::arg("mode") = 1, nb::arg("seed") = 1, nb::arg("imbalance") = 0.03,
-      nb::arg("suppress_output") = true, "KaHIP graph partitioner");
+      nb::arg("suppress_output") = true,
+      "KaHIP graph partitioner. Returns a GraphPartitioner, ready to pass "
+      "directly as create_mesh's partitioner argument.");
 #endif
+
+  // Opaque holders for a dolfinx::graph::partition_fn, a
+  // dolfinx::graph::geom_partition_fn and a
+  // dolfinx::graph::hybrid_partition_fn. dolfinx.mesh.create_mesh
+  // recognises these types (as distinct from a plain callable and from
+  // each other) to route them through the matching alternative of
+  // dolfinx::mesh::AnyCellPartitionFunction, which computes cell
+  // centroids itself for the geometric/hybrid alternatives. __call__ is
+  // exposed on all three for direct low-level use (bypassing
+  // create_mesh); the geometric and hybrid __call__ signatures take
+  // cell centroids, not raw node coordinates -- see
+  // dolfinx.mesh.compute_cell_centroids.
+  nb::class_<GraphPartitioner>(
+      m, "GraphPartitioner",
+      "Cell partitioner using the mesh dual graph, e.g. as returned by "
+      "partitioner, partitioner_scotch, partitioner_parmetis or "
+      "partitioner_kahip. Pass it as create_mesh's partitioner argument; "
+      "it is also directly callable for low-level use.")
+      .def(
+          "__call__",
+          [](const GraphPartitioner& self, MPICommWrapper comm, int nparts,
+             const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 node_weights,
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 edge_weights,
+             bool ghosting)
+          {
+            std::optional<std::span<const std::int32_t>> node_weights_span;
+            if (node_weights)
+            {
+              node_weights_span.emplace(node_weights->data(),
+                                        node_weights->size());
+            }
+            std::optional<std::span<const std::int32_t>> edge_weights_span;
+            if (edge_weights)
+            {
+              edge_weights_span.emplace(edge_weights->data(),
+                                        edge_weights->size());
+            }
+            return self.fn(comm.get(), nparts, local_graph, node_weights_span,
+                           edge_weights_span, ghosting);
+          },
+          nb::arg("comm"), nb::arg("nparts"), nb::arg("local_graph"),
+          nb::arg("node_weights").none(), nb::arg("edge_weights").none(),
+          nb::arg("ghosting"),
+          "Compute the destination rank for each node of local_graph.");
+
+  nb::class_<GeometricPartitioner>(
+      m, "GeometricPartitioner",
+      "Cell partitioner using cell positions rather than the mesh dual "
+      "graph, e.g. create_geometric_cell_partitioner's result, or the "
+      "partition_morton, partition_hilbert and partitioner_parmetis_geom "
+      "built-ins. Pass it as create_mesh's partitioner argument; it is "
+      "also directly callable for low-level use, e.g. via "
+      "compute_cell_centroids.")
+      .def(
+          "__call__",
+          [](const GeometricPartitioner& self, MPICommWrapper comm, int nparts,
+             nb::ndarray<const double, nb::ndim<2>, nb::c_contig> x)
+          {
+            int gdim = static_cast<int>(x.shape(1));
+            return dolfinx_wrappers::as_nbarray(
+                self.fn(comm.get(), nparts,
+                        std::span<const double>(x.data(), x.size()), gdim));
+          },
+          nb::arg("comm"), nb::arg("nparts"), nb::arg("x").noconvert(),
+          "Compute the destination rank for each row of x (cell centroids, "
+          "not raw node coordinates -- see compute_cell_centroids).");
+
+  // partition_morton, partition_hilbert and partitioner_parmetis_geom
+  // take no configuration, so they are plain GeometricPartitioner
+  // attributes rather than factory functions.
+  m.attr("partition_morton")
+      = GeometricPartitioner{dolfinx::graph::partition_sfc_morton};
+  m.attr("partition_hilbert")
+      = GeometricPartitioner{dolfinx::graph::partition_sfc_hilbert};
+#ifdef HAS_PARMETIS
+  m.attr("partitioner_parmetis_geom")
+      = GeometricPartitioner{dolfinx::graph::parmetis::geom_partitioner};
+#endif
+
+  nb::class_<HybridPartitioner>(
+      m, "HybridPartitioner",
+      "Cell partitioner returned by create_hybrid_cell_partitioner. Pass "
+      "it as create_mesh's partitioner argument; it is also directly "
+      "callable for low-level use, e.g. via compute_cell_centroids.")
+      .def(
+          "__call__",
+          [](const HybridPartitioner& self, MPICommWrapper comm, int nparts,
+             const dolfinx::graph::AdjacencyList<std::int64_t>& dual_graph,
+             nb::ndarray<const double, nb::ndim<2>, nb::c_contig> x,
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 node_weights,
+             std::optional<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+                 edge_weights,
+             bool ghosting)
+          {
+            std::optional<std::span<const std::int32_t>> node_weights_span;
+            if (node_weights)
+            {
+              node_weights_span.emplace(node_weights->data(),
+                                        node_weights->size());
+            }
+            std::optional<std::span<const std::int32_t>> edge_weights_span;
+            if (edge_weights)
+            {
+              edge_weights_span.emplace(edge_weights->data(),
+                                        edge_weights->size());
+            }
+            return self.fn(comm.get(), nparts, dual_graph,
+                           std::span<const double>(x.data(), x.size()),
+                           node_weights_span, edge_weights_span, ghosting);
+          },
+          nb::arg("comm"), nb::arg("nparts"), nb::arg("dual_graph"),
+          nb::arg("x").noconvert(), nb::arg("node_weights").none(),
+          nb::arg("edge_weights").none(), nb::arg("ghosting"),
+          "Compute the destination rank for each cell, given the mesh "
+          "dual graph and cell centroids (not raw node coordinates -- "
+          "see compute_cell_centroids).");
+
+  m.def(
+      "create_geometric_cell_partitioner",
+      [](const std::function<nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
+             MPICommWrapper, int,
+             nb::ndarray<const double, nb::ndim<2>, nb::numpy>)>& part)
+          -> GeometricPartitioner
+      { return GeometricPartitioner{partitioner_wrap_py_to_cpp(part)}; },
+      nb::arg("part"),
+      "Create a geometric cell partitioner from a geometric graph "
+      "partitioning function. Pass the result as create_mesh's "
+      "partitioner argument; create_mesh supplies the cell centroids "
+      "itself from whatever coordinate data it is given. The resulting "
+      "partitioner never ghosts: it has no cell topology, so it cannot "
+      "build the mesh dual graph. Use create_hybrid_cell_partitioner for "
+      "a partitioner that also needs the dual graph.");
+
+  m.def(
+      "create_hybrid_cell_partitioner",
+      [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+             MPICommWrapper, int,
+             const dolfinx::graph::AdjacencyList<std::int64_t>&,
+             nb::ndarray<const double, nb::ndim<2>, nb::numpy>,
+             std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
+             std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>&
+             part) -> HybridPartitioner
+      { return HybridPartitioner{partitioner_wrap_py_to_cpp(part)}; },
+      nb::arg("part"),
+      "Create a cell partitioner from a hybrid graph partitioning "
+      "function that needs both the mesh dual graph and cell positions. "
+      "Unlike create_geometric_cell_partitioner, the dual graph is "
+      "always supplied, regardless of ghost_mode. Pass the result as "
+      "create_mesh's partitioner argument.");
 
   m.def("reorder_rcm", &dolfinx::graph::reorder_rcm, nb::arg("graph"));
 

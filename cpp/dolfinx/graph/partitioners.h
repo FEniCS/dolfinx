@@ -135,7 +135,8 @@ graph::partition_fn repartitioner(double ipc2redist = 1000.0,
 /// has no `ghosting` parameter and is never asked to ghost.
 ///
 /// @return A geometric graph partitioning function. It requires `x`.
-graph::geom_partition_fn geom_partitioner();
+std::vector<int> geom_partitioner(MPI_Comm comm, int nparts,
+                                  std::span<const double> x, int gdim);
 
 /// @brief Create a geometric graph partitioning function that uses
 /// ParMETIS to order the coordinates along a space-filling curve,
@@ -158,7 +159,8 @@ graph::geom_partition_fn geom_partitioner();
 /// details.
 /// @return A hybrid graph partitioning function. It requires both `x`
 /// and `local_graph`, since the graph edges are used as well as the
-/// coordinates.
+/// coordinates. Node and edge weights, if supplied at call time, are
+/// passed on to `ParMETIS_V3_PartGeomKway`.
 graph::hybrid_partition_fn geom_partitioner_kway(double imbalance = 1.02,
                                                  std::array<int, 3> options
                                                  = {1, 0, 5});

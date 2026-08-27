@@ -122,7 +122,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
 
 #ifdef HAS_PARMETIS
   std::array<std::int64_t, 5> c3
-      = counts(graph::parmetis::geom_partitioner(), mesh::GhostMode::none);
+      = counts(graph::parmetis::geom_partitioner, mesh::GhostMode::none);
   for (int d = 0; d < 4; ++d)
     CHECK(c3[d] == c0n[d]);
 #endif

@@ -101,20 +101,30 @@ PartitioningFunc = typing.Callable[
 ]
 
 # Note: the coordinates are float64, matching the C++ interface, which
-# takes a span of double
+# takes a span of double. Unlike PartitioningFunc/HybridPartitioningFunc,
+# the return value is a plain destination rank per node, not an
+# AdjacencyList: a geometric partitioner never ghosts.
 GeometricPartitioningFunc = typing.Callable[
     [_MPI.Comm, int, npt.NDArray[np.float64]],
-    _cpp.graph.AdjacencyList_int32,
+    npt.NDArray[np.int32],
 ]
 HybridPartitioningFunc = typing.Callable[
-    [_MPI.Comm, int, _cpp.graph.AdjacencyList_int64, npt.NDArray[np.float64], bool],
+    [
+        _MPI.Comm,
+        int,
+        _cpp.graph.AdjacencyList_int64,
+        npt.NDArray[np.float64],
+        npt.NDArray[np.int32] | None,
+        npt.NDArray[np.int32] | None,
+        bool,
+    ],
     _cpp.graph.AdjacencyList_int32,
 ]
 
 
 def create_geometric_cell_partitioner(
     part: GeometricPartitioningFunc,
-) -> _cpp.mesh.GeometricPartitioner:
+) -> _cpp.graph.GeometricPartitioner:
     """Create a function to partition a mesh using cell positions.
 
     The returned partitioner is called by :func:`create_mesh` with the
@@ -130,28 +140,31 @@ def create_geometric_cell_partitioner(
     needs the dual graph, e.g. to support ghosting.
 
     Args:
-        part: Geometric graph partitioning function, e.g. from
-            ``dolfinx.cpp.graph.geom_partitioner_sfc``.
+        part: A custom geometric graph partitioning function. The
+            built-in geometric partitioners (``dolfinx.cpp.graph``'s
+            ``partition_morton``, ``partition_hilbert`` and
+            ``partitioner_parmetis_geom``) already return a
+            :class:`~dolfinx.cpp.graph.GeometricPartitioner` and do not
+            need to be wrapped.
 
     Return:
         Partitioning function, for use as :func:`create_mesh`'s
         ``partitioner`` argument.
     """
-    return _cpp.mesh.create_geometric_cell_partitioner(part)
+    return _cpp.graph.create_geometric_cell_partitioner(part)
 
 
 def create_hybrid_cell_partitioner(
     part: HybridPartitioningFunc,
-) -> _cpp.mesh.HybridPartitioner:
+) -> _cpp.graph.HybridPartitioner:
     """Create a function to partition a mesh using a hybrid partitioner.
 
     Unlike :func:`create_geometric_cell_partitioner`, the mesh dual graph
     is always computed and passed to ``part`` along with the cell
     positions, regardless of the ghost mode the partitioner is called
     with. Use this for a partitioner that needs the graph edges as part
-    of the partitioning decision itself (e.g. ParMETIS `GeomKway`, via
-    ``dolfinx.cpp.graph.partitioner_parmetis_hybrid``), rather than
-    only to determine ghost cells.
+    of the partitioning decision itself, rather than only to determine
+    ghost cells.
 
     The mesh dual graph (including the maximum number of cells
     connected to a facet and the number of threads used to build it)
@@ -159,14 +172,23 @@ def create_hybrid_cell_partitioner(
     ``max_facet_to_cell_links`` and ``num_threads`` arguments, rather
     than fixed when the partitioner is created.
 
+    ``part`` is also passed optional node and edge weights, matching
+    :data:`PartitioningFunc`; :func:`create_mesh` supplies its
+    ``cell_weights`` argument as the node weights and always passes
+    ``None`` for the edge weights, since it has no way to compute them.
+
     Args:
-        part: Hybrid graph partitioning function.
+        part: A custom hybrid graph partitioning function. ParMETIS's
+            built-in hybrid partitioner (``dolfinx.cpp.graph``'s
+            ``partitioner_parmetis_hybrid``, i.e. ParMETIS `GeomKway`)
+            already returns a :class:`~dolfinx.cpp.graph.HybridPartitioner`
+            and does not need to be wrapped.
 
     Return:
         Partitioning function, for use as :func:`create_mesh`'s
         ``partitioner`` argument.
     """
-    return _cpp.mesh.create_hybrid_cell_partitioner(part)
+    return _cpp.graph.create_hybrid_cell_partitioner(part)
 
 
 def compute_cell_centroids(
@@ -928,8 +950,9 @@ def create_mesh(
         num_threads: Number of threads to use to build mesh. Must be
             greater than 0.
         cell_weights: Weights associated with each cell in ``cells``,
-            e.g. for use by the graph partitioner. If not provided,
-            cells are treated as having equal weight.
+            e.g. for use by a plain graph partitioner or a hybrid
+            partitioner. If not provided, cells are treated as having
+            equal weight.
 
     Note:
         If required, the coordinates ``x`` will be cast to the same
