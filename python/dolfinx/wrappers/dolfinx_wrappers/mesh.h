@@ -89,6 +89,15 @@ using CppCellPartitionFunction
 CppCellPartitionFunction
 create_cell_partitioner_cpp(const PythonCellPartitionFunction& p);
 
+/// Opaque handle wrapping a partitioning function `Fn`, bound to
+/// Python as its own type -- see GeometricPartitioner/HybridPartitioner
+/// below.
+template <typename Fn>
+struct OpaquePartitioner
+{
+  Fn fn;
+};
+
 /// Opaque handles for a dolfinx::graph::geom_partition_fn and a
 /// dolfinx::graph::hybrid_partition_fn, bound to Python as their own
 /// types so that create_mesh can distinguish them from a
@@ -96,14 +105,10 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p);
 /// tell which of several different std::function signatures a bare
 /// Python callable is meant to satisfy, so distinct callable shapes must
 /// be distinct Python types, not disambiguated by argument count.
-struct GeometricPartitioner
-{
-  dolfinx::graph::geom_partition_fn fn;
-};
-struct HybridPartitioner
-{
-  dolfinx::graph::hybrid_partition_fn fn;
-};
+using GeometricPartitioner
+    = OpaquePartitioner<dolfinx::graph::geom_partition_fn>;
+using HybridPartitioner
+    = OpaquePartitioner<dolfinx::graph::hybrid_partition_fn>;
 
 /// The Python-visible partitioner argument accepted by create_mesh: a
 /// GeometricPartitioner, a HybridPartitioner, or a plain graph

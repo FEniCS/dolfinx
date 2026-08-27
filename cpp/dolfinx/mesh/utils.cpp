@@ -15,6 +15,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/math.h>
+#include <dolfinx/common/sort.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
@@ -105,7 +106,7 @@ mesh::impl::reorder_cells(const CellReorderFunction& reorder_fn,
     std::vector<std::int64_t>& vertices = facets.front().first;
 
     // Remove duplicated vertex indices
-    std::ranges::sort(vertices);
+    dolfinx::radix_sort(vertices);
     auto [unique_end, range_end] = std::ranges::unique(vertices);
     vertices.erase(unique_end, range_end);
 
@@ -195,7 +196,7 @@ mesh::impl::reorder_cells(const CellReorderFunction& reorder_fn,
     }
 
     // Remove duplicate indices
-    std::ranges::sort(vertices);
+    dolfinx::radix_sort(vertices);
     auto [unique_end, range_end] = std::ranges::unique(vertices);
     vertices.erase(unique_end, range_end);
 

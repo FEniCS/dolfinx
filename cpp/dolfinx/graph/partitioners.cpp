@@ -460,6 +460,44 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
 #endif
 //-----------------------------------------------------------------------------
 #ifdef HAS_PARMETIS
+namespace
+{
+/// @brief Split `comm` into the ranks holding graph nodes, and build
+/// the node displacement array for the resulting sub-communicator.
+///
+/// ParMETIS fails (crashes) if a rank does not have any graph data,
+/// so partitioning must happen only on ranks that have data.
+///
+/// @param[in] comm Communicator to split.
+/// @param[in] num_local_nodes Number of graph nodes on this rank.
+/// @return Sub-communicator holding the ranks with `num_local_nodes >
+/// 0` (`MPI_COMM_NULL` on the other ranks), and that sub-communicator's
+/// node displacement array (empty on the other ranks). The caller must
+/// free the returned communicator with `MPI_Comm_free` once done with
+/// it, if it is not `MPI_COMM_NULL`.
+std::pair<MPI_Comm, std::vector<idx_t>>
+split_and_build_node_disp(MPI_Comm comm, idx_t num_local_nodes)
+{
+  const int rank = dolfinx::MPI::rank(comm);
+  const int color = num_local_nodes > 0 ? 1 : MPI_UNDEFINED;
+  MPI_Comm pcomm = MPI_COMM_NULL;
+  int ierr = MPI_Comm_split(comm, color, rank, &pcomm);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  std::vector<idx_t> node_disp;
+  if (pcomm != MPI_COMM_NULL)
+  {
+    const int psize = dolfinx::MPI::size(pcomm);
+    node_disp = std::vector<idx_t>(psize + 1, 0);
+    MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<idx_t>,
+                  node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<idx_t>, pcomm);
+    std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
+  }
+
+  return {pcomm, std::move(node_disp)};
+}
+} // namespace
+
 graph::partition_fn graph::parmetis::partitioner(double imbalance,
                                                  std::array<int, 3> options)
 {
@@ -479,33 +517,12 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
           std::vector<std::int32_t>(graph.num_nodes(), 0), 1);
     }
 
-    // Note: ParMETIS fails (crashes) if a rank does not have any graph
-    // data. Therefore we split the communicator such that ParMETIS
-    // partitioning happens only on ranks that have data. Ideally we
-    // wouldn't need to do this.
-    constexpr bool split_comm = true;
-    MPI_Comm pcomm = MPI_COMM_NULL;
-    if (split_comm)
-    {
-      int rank = dolfinx::MPI::rank(comm);
-      int color = graph.num_nodes() > 0 ? 1 : MPI_UNDEFINED;
-      int ierr = MPI_Comm_split(comm, color, rank, &pcomm);
-      dolfinx::MPI::check_error(comm, ierr);
-    }
-    else
-      pcomm = comm;
+    auto [pcomm, node_disp]
+        = split_and_build_node_disp(comm, graph.num_nodes());
 
     std::vector<idx_t> part(graph.num_nodes());
-    std::vector<idx_t> node_disp;
     if (pcomm != MPI_COMM_NULL)
     {
-      // Build adjacency list data
-      const int psize = dolfinx::MPI::size(pcomm);
-      const idx_t num_local_nodes = graph.num_nodes();
-      node_disp = std::vector<idx_t>(psize + 1, 0);
-      MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<idx_t>,
-                    node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<idx_t>, pcomm);
-      std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
       std::vector<idx_t> array(graph.array().begin(), graph.array().end());
       std::vector<idx_t> offsets(graph.offsets().begin(),
                                  graph.offsets().end());
@@ -550,13 +567,12 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       // FIXME: Is it implicit that the first entry is the owner?
       graph::AdjacencyList<int> dest
           = graph::compute_destination_ranks(pcomm, graph, node_disp, part);
-      if (split_comm)
-        MPI_Comm_free(&pcomm);
+      MPI_Comm_free(&pcomm);
       return dest;
     }
     else
     {
-      if (split_comm and pcomm != MPI_COMM_NULL)
+      if (pcomm != MPI_COMM_NULL)
         MPI_Comm_free(&pcomm);
       return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
                                     1);
@@ -593,29 +609,15 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
           std::vector<std::int32_t>(graph.num_nodes(), 0), 1);
     }
 
-    // Note: ParMETIS fails (crashes) if a rank does not have any graph
-    // data. Therefore we split the communicator such that ParMETIS
-    // partitioning happens only on ranks that have data.
-    MPI_Comm pcomm = MPI_COMM_NULL;
-    {
-      int color = graph.num_nodes() > 0 ? 1 : MPI_UNDEFINED;
-      int ierr = MPI_Comm_split(comm, color, rank, &pcomm);
-      dolfinx::MPI::check_error(comm, ierr);
-    }
+    auto [pcomm, node_disp]
+        = split_and_build_node_disp(comm, graph.num_nodes());
 
     // The current partition is the current distribution, i.e. the nodes
     // held by this rank are currently assigned to this rank. ParMETIS
     // overwrites `part` with the new partition.
     std::vector<idx_t> part(graph.num_nodes(), rank);
-    std::vector<idx_t> node_disp;
     if (pcomm != MPI_COMM_NULL)
     {
-      const int psize = dolfinx::MPI::size(pcomm);
-      const idx_t num_local_nodes = graph.num_nodes();
-      node_disp = std::vector<idx_t>(psize + 1, 0);
-      MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<idx_t>,
-                    node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<idx_t>, pcomm);
-      std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
       std::vector<idx_t> array(graph.array().begin(), graph.array().end());
       std::vector<idx_t> offsets(graph.offsets().begin(),
                                  graph.offsets().end());
@@ -694,33 +696,17 @@ graph::geom_partition_fn graph::parmetis::geom_partitioner()
       return std::vector<int>(num_nodes, 0);
     }
 
-    // Note: ParMETIS fails (crashes) if a rank does not have any graph
-    // data. Therefore we split the communicator such that ParMETIS
-    // partitioning happens only on ranks that have data.
-    MPI_Comm pcomm = MPI_COMM_NULL;
-    {
-      int rank = dolfinx::MPI::rank(comm);
-      int color = num_nodes > 0 ? 1 : MPI_UNDEFINED;
-      int ierr = MPI_Comm_split(comm, color, rank, &pcomm);
-      dolfinx::MPI::check_error(comm, ierr);
-    }
+    auto [pcomm, node_disp] = split_and_build_node_disp(comm, num_nodes);
 
     std::vector<idx_t> part(num_nodes);
     if (pcomm != MPI_COMM_NULL)
     {
-      const int psize = dolfinx::MPI::size(pcomm);
-      if (nparts != psize)
+      if (nparts != dolfinx::MPI::size(pcomm))
       {
         throw std::runtime_error(
             "ParMETIS_V3_PartGeom partitions into one part per MPI rank, so "
             "the number of parts must equal the communicator size.");
       }
-
-      const idx_t num_local_nodes = num_nodes;
-      std::vector<idx_t> node_disp(psize + 1, 0);
-      MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<idx_t>,
-                    node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<idx_t>, pcomm);
-      std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
 
       // ParMETIS requires its own scalar type for the coordinates
       std::vector<real_t> xyz(x.begin(), x.end());
@@ -769,28 +755,11 @@ graph::parmetis::geom_partitioner_kway(double imbalance,
       return regular_adjacency_list(std::vector<std::int32_t>(num_nodes, 0), 1);
     }
 
-    // Note: ParMETIS fails (crashes) if a rank does not have any graph
-    // data. Therefore we split the communicator such that ParMETIS
-    // partitioning happens only on ranks that have data.
-    MPI_Comm pcomm = MPI_COMM_NULL;
-    {
-      int rank = dolfinx::MPI::rank(comm);
-      int color = num_nodes > 0 ? 1 : MPI_UNDEFINED;
-      int ierr = MPI_Comm_split(comm, color, rank, &pcomm);
-      dolfinx::MPI::check_error(comm, ierr);
-    }
+    auto [pcomm, node_disp] = split_and_build_node_disp(comm, num_nodes);
 
     std::vector<idx_t> part(num_nodes);
-    std::vector<idx_t> node_disp;
     if (pcomm != MPI_COMM_NULL)
     {
-      const int psize = dolfinx::MPI::size(pcomm);
-      const idx_t num_local_nodes = num_nodes;
-      node_disp = std::vector<idx_t>(psize + 1, 0);
-      MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_t<idx_t>,
-                    node_disp.data() + 1, 1, dolfinx::MPI::mpi_t<idx_t>, pcomm);
-      std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
-
       // ParMETIS requires its own scalar type for the coordinates
       std::vector<real_t> xyz(x.begin(), x.end());
       idx_t ndims = gdim;
