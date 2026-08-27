@@ -59,9 +59,9 @@ ENV OPENBLAS_NUM_THREADS=1 \
 # libfltk1.3-dev pulls the whole GUI stack gmsh needs (FLTK, GL, Xft,
 # Xcursor, Xinerama, fonts); libGLU is the one piece outside its closure.
 # The Python runtime and test dependencies come from apt, reached through
-# the --system-site-packages venv below; pip keeps the build tooling,
-# whose pinned versions Ubuntu is too old for. python3-adios2 depends on
-# python3-adios2-serial | python3-adios2-mpi, so name the MPI variant.
+# the --system-site-packages venv below; pip keeps the build tooling and
+# the demo set. python3-adios2 depends on python3-adios2-serial |
+# python3-adios2-mpi, so name the MPI variant.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -87,10 +87,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-adios2-mpi \
     python3-cffi \
     python3-dev \
-    python3-matplotlib \
     python3-mpi4py \
-    python3-networkx \
-    python3-numba \
     python3-numpy \
     python3-numpy-dev \
     python3-packaging \
@@ -117,11 +114,19 @@ ENV VIRTUAL_ENV=/dolfinx-env
 ENV PATH=/dolfinx-env/bin:$PATH
 RUN python3 -m venv --system-site-packages ${VIRTUAL_ENV}
 
-# Install Python packages (via pip)
+# Install Python packages (via pip).
+# The build tooling is newer than Ubuntu's; keep the constraints in sync
+# with [build-system].requires in python/pyproject.toml, which is outside
+# this build context and so cannot be read with pip's --group.
+# matplotlib is pip-only because Ubuntu's python3-fonttools pulls sympy
+# and unicode-data (~70 MiB); numba and networkx follow it to keep the
+# demo set on one installer.
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     # Cython 3.3 tightened pointer-indexing checks that break
     # petsc4py 3.25.4's generated PC.pyx; pin below that for now.
     pip install --no-cache-dir "cython<3.3" && \
+    pip install --no-cache-dir "scikit-build-core>=1.0.0" "nanobind>=2.9.2" && \
+    pip install --no-cache-dir matplotlib networkx numba && \
     python3 -c "import numpy, mpi4py.MPI, adios2; print(numpy.__version__, adios2.__version__)"
 
 # Install KaHIP

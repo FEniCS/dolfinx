@@ -64,12 +64,10 @@ ONBUILD COPY dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.js
 # CMake build type for DOLFINx C++ build. See CMake documentation.
 ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
 
-# --no-build-isolation means build dependencies (the `build` dependency
-# group in pyproject.toml) are not installed automatically; also install
-# the packages needed for testing and optional features here.
-ONBUILD RUN cd dolfinx/python && \
-            pip install --no-cache-dir --group pyproject.toml:build && \
-            pip install --no-cache-dir pyamg # not packaged; the rest of the test + optional set comes from apt in dev-env
+# --no-build-isolation means build dependencies are not installed
+# automatically; dev-env carries them, along with the test and optional
+# sets. pyamg is the only piece it does not provide.
+ONBUILD RUN pip install --no-cache-dir pyamg
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/
 # ffcx/ and dolfinx/ mounted/shared at /src.
