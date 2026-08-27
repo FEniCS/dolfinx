@@ -46,20 +46,17 @@ auto create_partitioner_py(Functor&& p_cpp)
 
 /// Wrap a C++ geometric graph partitioner (dolfinx::graph::geom_partition_fn,
 /// which has no graph) for use from Python. Node coordinates are passed
-/// as a 2D array of shape (num_nodes, gdim). The Python signature always
-/// requires both a graph and coordinates, matching
-/// create_hybrid_partitioner_py and the other Python partitioner
-/// wrappers, but the graph is unused: it is not forwarded to `p_cpp`.
+/// as a 2D array of shape (num_nodes, gdim); unlike
+/// create_hybrid_partitioner_py, there is no graph or `ghosting`
+/// argument, matching dolfinx::graph::geom_partition_fn exactly.
 template <typename Functor>
 auto create_geom_partitioner_py(Functor&& p_cpp)
 {
   return
       [p_cpp](
           dolfinx_wrappers::MPICommWrapper comm, int nparts,
-          const dolfinx::graph::AdjacencyList<std::int64_t>& /*local_graph*/,
           nanobind::ndarray<const double, nanobind::ndim<2>, nanobind::c_contig>
-              x,
-          bool /*ghosting*/) -> dolfinx::graph::AdjacencyList<std::int32_t>
+              x) -> dolfinx::graph::AdjacencyList<std::int32_t>
   {
     return dolfinx::graph::regular_adjacency_list(
         p_cpp(comm.get(), nparts, std::span<const double>(x.data(), x.size()),

@@ -38,9 +38,10 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 /// in space alone, with no access to the graph edges.
 ///
 /// Since an implementation has no graph, it cannot compute ghost
-/// destinations: it must throw if `ghosting` is true. See
+/// destinations, so this signature has no `ghosting` parameter -- a
+/// partitioner of this type is never asked to ghost. See
 /// ::hybrid_partition_fn for a partitioning function that has access to
-/// both the node positions and the graph edges.
+/// both the node positions and the graph edges, and so can ghost.
 ///
 /// @note The coordinates are always `double`, whatever the scalar type
 /// of the data they were derived from. Which nodes end up in which part

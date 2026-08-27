@@ -104,6 +104,10 @@ PartitioningFunc = typing.Callable[
 # Note: the coordinates are float64, matching the C++ interface, which
 # takes a span of double
 GeometricPartitioningFunc = typing.Callable[
+    [_MPI.Comm, int, npt.NDArray[np.float64]],
+    _cpp.graph.AdjacencyList_int32,
+]
+HybridPartitioningFunc = typing.Callable[
     [_MPI.Comm, int, _cpp.graph.AdjacencyList_int64, npt.NDArray[np.float64], bool],
     _cpp.graph.AdjacencyList_int32,
 ]
@@ -162,7 +166,7 @@ def create_geometric_cell_partitioner(
 
 
 def create_hybrid_cell_partitioner(
-    part: GeometricPartitioningFunc,
+    part: HybridPartitioningFunc,
 ) -> _cpp.mesh.HybridPartitioner:
     """Create a function to partition a mesh using a hybrid partitioner.
 

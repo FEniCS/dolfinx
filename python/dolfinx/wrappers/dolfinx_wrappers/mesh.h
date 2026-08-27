@@ -341,11 +341,11 @@ void declare_mesh(nb::module_& m, std::string type)
       create_interval.c_str(),
       [](MPICommWrapper comm, std::int64_t n, std::array<T, 2> p,
          dolfinx::mesh::GhostMode mode,
-         const part::impl::PythonCellPartitionFunction& part, int gdim)
+         const part::impl::PythonMeshPartitioner& part, int gdim)
       {
         return dolfinx::mesh::create_interval<T>(
-            comm.get(), n, p, mode,
-            part::impl::create_cell_partitioner_cpp(part), gdim);
+            comm.get(), n, p, mode, part::impl::to_any_cell_partitioner(part),
+            gdim);
       },
       nb::arg("comm"), nb::arg("n"), nb::arg("p"), nb::arg("ghost_mode"),
       nb::arg("partitioner").none(), nb::arg("gdim"));
@@ -355,13 +355,13 @@ void declare_mesh(nb::module_& m, std::string type)
       create_rectangle.c_str(),
       [](MPICommWrapper comm, std::array<std::array<T, 2>, 2> p,
          std::array<std::int64_t, 2> n, dolfinx::mesh::CellType celltype,
-         const part::impl::PythonCellPartitionFunction& part,
+         const part::impl::PythonMeshPartitioner& part,
          dolfinx::mesh::DiagonalType diagonal, int gdim,
          dolfinx::mesh::GhostMode ghost_mode)
       {
         return dolfinx::mesh::create_rectangle<T>(
             comm.get(), p, n, celltype,
-            part::impl::create_cell_partitioner_cpp(part), diagonal, gdim,
+            part::impl::to_any_cell_partitioner(part), diagonal, gdim,
             ghost_mode);
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
@@ -373,13 +373,13 @@ void declare_mesh(nb::module_& m, std::string type)
       create_box.c_str(),
       [](MPICommWrapper comm, std::array<std::array<T, 3>, 2> p,
          std::array<std::int64_t, 3> n, dolfinx::mesh::CellType celltype,
-         const part::impl::PythonCellPartitionFunction& part,
+         const part::impl::PythonMeshPartitioner& part,
          dolfinx::mesh::GhostMode ghost_mode)
       {
         MPI_Comm _comm = comm.get();
         return dolfinx::mesh::create_box<T>(
             _comm, _comm, p, n, celltype,
-            part::impl::create_cell_partitioner_cpp(part), ghost_mode);
+            part::impl::to_any_cell_partitioner(part), ghost_mode);
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
       nb::arg("partitioner").none(), nb::arg("ghost_mode"));

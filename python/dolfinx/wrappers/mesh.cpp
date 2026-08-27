@@ -457,14 +457,10 @@ void mesh(nb::module_& m)
       "create_geometric_cell_partitioner",
       [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
              MPICommWrapper comm, int nparts,
-             const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-             nb::ndarray<const double, nb::ndim<2>, nb::numpy> x,
-             bool ghosting)>& part) -> part::impl::GeometricPartitioner
+             nb::ndarray<const double, nb::ndim<2>, nb::numpy> x)>& part)
+          -> part::impl::GeometricPartitioner
       {
         // Wrap the Python geometric graph partitioner as a C++ one.
-        // geom_partition_fn has no graph to offer, so a graph with no
-        // edges, sized to match the local cell count, stands in for it,
-        // matching the Python signature which always requires one.
         dolfinx::graph::geom_partition_fn partfn
             = [part](MPI_Comm comm, int nparts, std::span<const double> x,
                      int gdim) -> std::vector<int>
@@ -473,11 +469,8 @@ void mesh(nb::module_& m)
           std::size_t shape[2] = {shape0, static_cast<std::size_t>(gdim)};
           nb::ndarray<const double, nb::ndim<2>, nb::numpy> x_nb(
               x.data(), 2, shape, nb::handle());
-          const dolfinx::graph::AdjacencyList<std::int64_t> trivial_graph(
-              static_cast<std::int32_t>(shape0));
           dolfinx::graph::AdjacencyList<std::int32_t> dest
-              = part(MPICommWrapper(comm), nparts, trivial_graph, x_nb,
-                     /* ghosting */ false);
+              = part(MPICommWrapper(comm), nparts, x_nb);
           std::span<const std::int32_t> dest_array = dest.array();
           return std::vector<int>(dest_array.begin(), dest_array.end());
         };

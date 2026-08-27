@@ -230,20 +230,6 @@ std::vector<int> partition_by_curve(MPI_Comm comm, int nparts,
 
   return part;
 }
-/// @brief Partition points by their position along a space-filling curve.
-///
-/// @param[in] comm MPI communicator the points are distributed across.
-/// @param[in] nparts Number of partitions.
-/// @param[in] x Point coordinates, row-major with `gdim` columns.
-/// @param[in] gdim Number of coordinate components per point.
-/// @param[in] key Curve key for a point.
-/// @return Destination rank for each point, one entry per row of `x`.
-template <typename K>
-std::vector<int> partition_curve(MPI_Comm comm, int nparts,
-                                 std::span<const double> x, int gdim, K key)
-{
-  return partition_by_curve(comm, nparts, x, gdim, key);
-}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -252,7 +238,7 @@ std::vector<int> graph::partition_sfc_morton(MPI_Comm comm, int nparts,
                                              int gdim)
 {
   common::Timer timer("Compute Morton SFC partition of points");
-  return partition_curve(comm, nparts, x, gdim, morton_key);
+  return partition_by_curve(comm, nparts, x, gdim, morton_key);
 }
 //-----------------------------------------------------------------------------
 std::vector<int> graph::partition_sfc_hilbert(MPI_Comm comm, int nparts,
@@ -260,7 +246,7 @@ std::vector<int> graph::partition_sfc_hilbert(MPI_Comm comm, int nparts,
                                               int gdim)
 {
   common::Timer timer("Compute Hilbert SFC partition of points");
-  return partition_curve(comm, nparts, x, gdim, hilbert_key);
+  return partition_by_curve(comm, nparts, x, gdim, hilbert_key);
 }
 //-----------------------------------------------------------------------------
 graph::geom_partition_fn graph::sfc::partitioner(sfc::curve curve)

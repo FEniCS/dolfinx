@@ -50,6 +50,10 @@ void graph(nb::module_& m)
   using geom_partition_fn
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int,
+          nb::ndarray<const double, nb::ndim<2>, nb::c_contig>)>;
+  using hybrid_partition_fn
+      = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+          MPICommWrapper, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&,
           nb::ndarray<const double, nb::ndim<2>, nb::c_contig>, bool)>;
   m.def(
@@ -114,7 +118,7 @@ void graph(nb::module_& m)
 
   m.def(
       "geom_partitioner_parmetis_kway",
-      [](double imbalance, std::array<int, 3> options) -> geom_partition_fn
+      [](double imbalance, std::array<int, 3> options) -> hybrid_partition_fn
       {
         return create_hybrid_partitioner_py(
             dolfinx::graph::parmetis::geom_partitioner_kway(imbalance,
