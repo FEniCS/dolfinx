@@ -47,15 +47,17 @@ to_any_cell_partitioner(const PythonPartitionFn& p)
 {
   if (const auto* gp = std::get_if<GraphPartitioner>(&p))
     return dolfinx::mesh::AnyCellPartitionFunction(gp->fn);
-  if (const auto* geo = std::get_if<GeometricPartitioner>(&p))
+  else if (const auto* geo = std::get_if<GeometricPartitioner>(&p))
     return dolfinx::mesh::AnyCellPartitionFunction(geo->fn);
-  if (const auto* hyb = std::get_if<HybridPartitioner>(&p))
+  else if (const auto* hyb = std::get_if<HybridPartitioner>(&p))
     return dolfinx::mesh::AnyCellPartitionFunction(hyb->fn);
-
-  const auto& opt = std::get<std::optional<PythonPartitionFunction>>(p);
-  return dolfinx::mesh::AnyCellPartitionFunction(
-      opt ? partitioner_wrap_py_to_cpp(*opt)
-          : dolfinx::graph::partition_fn(nullptr));
+  else
+  {
+    const auto& opt = std::get<std::optional<PythonPartitionFunction>>(p);
+    return dolfinx::mesh::AnyCellPartitionFunction(
+        opt ? partitioner_wrap_py_to_cpp(*opt)
+            : dolfinx::graph::partition_fn(nullptr));
+  }
 }
 } // namespace dolfinx_wrappers::part::impl
 
