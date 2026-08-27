@@ -51,11 +51,6 @@ void graph(nb::module_& m)
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int,
           nb::ndarray<const double, nb::ndim<2>, nb::c_contig>)>;
-  using hybrid_partition_fn
-      = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-          MPICommWrapper, int,
-          const dolfinx::graph::AdjacencyList<std::int64_t>&,
-          nb::ndarray<const double, nb::ndim<2>, nb::c_contig>, bool)>;
   m.def(
       "partitioner", []() -> partition_fn
       { return create_partitioner_py(dolfinx::graph::partition_graph); },
@@ -116,6 +111,11 @@ void graph(nb::module_& m)
       },
       "ParMETIS geometric (space-filling curve) graph partitioner");
 
+  using hybrid_partition_fn
+      = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+          MPICommWrapper, int,
+          const dolfinx::graph::AdjacencyList<std::int64_t>&,
+          nb::ndarray<const double, nb::ndim<2>, nb::c_contig>, bool)>;
   m.def(
       "geom_partitioner_parmetis_kway",
       [](double imbalance, std::array<int, 3> options) -> hybrid_partition_fn
