@@ -8,6 +8,7 @@
 
 #include "MPICommWrapper.h"
 #include "array.h"
+#include "graph.h"
 #include "numpy_dtype.h"
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -36,39 +37,6 @@ namespace nb = nanobind;
 
 namespace dolfinx_wrappers::part::impl
 {
-/// Wrap a Python graph partitioning function as a C++ function. A
-/// std::nullopt weight is passed through as Python None, not a
-/// zero-length array, so a custom Python partitioner can distinguish
-/// "no weights were provided" from "an empty (but present) weights
-/// array" -- matching graph::partition_fn's own std::optional weights.
-template <typename Functor>
-auto create_partitioner_cpp(Functor&& p)
-{
-  return [p](MPI_Comm comm, int nparts,
-             const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-             std::optional<std::span<const std::int32_t>> node_weights,
-             std::optional<std::span<const std::int32_t>> edge_weights,
-             bool ghosting)
-  {
-    std::optional<nb::ndarray<const std::int32_t, nb::numpy>> node_weights_nb;
-    if (node_weights)
-    {
-      node_weights_nb.emplace(
-          node_weights->data(),
-          std::initializer_list<std::size_t>({node_weights->size()}));
-    }
-    std::optional<nb::ndarray<const std::int32_t, nb::numpy>> edge_weights_nb;
-    if (edge_weights)
-    {
-      edge_weights_nb.emplace(
-          edge_weights->data(),
-          std::initializer_list<std::size_t>({edge_weights->size()}));
-    }
-    return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
-             node_weights_nb, edge_weights_nb, ghosting);
-  };
-}
-
 using PythonCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         dolfinx_wrappers::MPICommWrapper, int,

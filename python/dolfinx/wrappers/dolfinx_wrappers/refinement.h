@@ -10,6 +10,7 @@
 #include "MPICommWrapper.h"
 #include "array.h"
 #include "caster_mpi.h"
+#include "graph.h"
 #include "mesh.h"
 #include <concepts>
 #include <dolfinx/mesh/Mesh.h>
@@ -48,8 +49,7 @@ void declare_refinement(nanobind::module_& m)
         if (partitioner.has_value())
         {
           cpp_partitioner
-              = dolfinx_wrappers::part::impl::create_partitioner_cpp(
-                  partitioner.value());
+              = dolfinx_wrappers::create_partitioner_cpp(partitioner.value());
         }
         else
         {
@@ -114,8 +114,7 @@ void declare_refinement(nanobind::module_& m)
           else
           {
             cpp_partitioner
-                = dolfinx_wrappers::part::impl::create_partitioner_cpp(
-                    optional.value());
+                = dolfinx_wrappers::create_partitioner_cpp(optional.value());
           }
         }
 
