@@ -56,7 +56,7 @@ ENV OPENBLAS_NUM_THREADS=1 \
 # OCCT (gmsh's CAD kernel) is built from source below since Ubuntu's
 # libocct-data-exchange-dev drags in the full libvtk9-dev toolchain.
 # libx11-dev is OCCT's own header-only dependency.
-# libfltk1.3-dev pulls the whole GUI stack gmsh needs. 
+# libfltk1.3-dev pulls the whole GUI stack gmsh needs.
 # python3-adios2 carries the Python API and python3-adios2-mpi
 # the compiled bindings, so both are needed explicitly.
 RUN export DEBIAN_FRONTEND=noninteractive && \
@@ -67,9 +67,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     cmake \
     doxygen \
     g++ \
-    git \
     gfortran \
-		graphviz \
+    git \
+    graphviz \
     libadios2-mpi-c++-dev \
     libboost-dev \
     libfltk1.3-dev \
@@ -79,7 +79,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libopenblas-dev \
     libpugixml-dev \
     libspdlog-dev \
-		libx11-dev \
+    libx11-dev \
     make \
     mpi-default-dev \
     ninja-build \
