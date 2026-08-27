@@ -985,15 +985,15 @@ def create_mesh(
     if cell_weights is not None:
         cell_weights = np.asarray(cell_weights, dtype=np.int32, order="C")
     msh: _cpp.mesh.Mesh_float32 | _cpp.mesh.Mesh_float64 = _cpp.mesh.create_mesh(
-        comm,
-        cells,
-        cmap._cpp_object,  # type: ignore[arg-type]
-        x,
-        partitioner,
-        ghost_mode,
-        max_facet_to_cell_links,
-        num_threads,
-        cell_weights,
+        comm=comm,
+        cells=cells,
+        element=cmap._cpp_object,  # type: ignore[arg-type]
+        x=x,
+        partitioner=partitioner,
+        ghost_mode=ghost_mode,
+        max_facet_to_cell_links=max_facet_to_cell_links,
+        num_threads=num_threads,
+        cell_weights=cell_weights,
     )
 
     return Mesh(msh, domain)
