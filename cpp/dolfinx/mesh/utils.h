@@ -986,8 +986,12 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
               }
               else
               {
-                std::vector<std::int32_t> edge_weights;
-                return p(commt, size, dual_graph(), cell_weights, edge_weights,
+                std::optional<std::span<const std::int32_t>> node_weights
+                    = cell_weights.empty()
+                          ? std::nullopt
+                          : std::optional<std::span<const std::int32_t>>(
+                                cell_weights);
+                return p(commt, size, dual_graph(), node_weights, std::nullopt,
                          ghosting);
               }
             },

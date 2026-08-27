@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <functional>
 #include <mpi.h>
+#include <optional>
 #include <span>
 #include <tuple>
 #include <vector>
@@ -24,14 +25,19 @@ namespace dolfinx::graph
 /// across.
 /// @param[in] nparts Number of partitions to divide graph nodes into.
 /// @param[in] local_graph Node connectivity graph.
-/// @param[in] node_weights Node weights.
-/// @param[in] edge_weights Edge weights.
+/// @param[in] node_weights Node weights, one entry per node in
+/// `local_graph`. If `std::nullopt`, nodes are treated as having equal
+/// weight.
+/// @param[in] edge_weights Edge weights, one entry per edge in
+/// `local_graph`. If `std::nullopt`, edges are treated as having equal
+/// weight.
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution.
 /// @return Destination rank(s) for each input node.
 using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm, int, const AdjacencyList<std::int64_t>&,
-    std::span<const std::int32_t>, std::span<const std::int32_t>, bool)>;
+    std::optional<std::span<const std::int32_t>>,
+    std::optional<std::span<const std::int32_t>>, bool)>;
 
 /// @brief Signature of functions for computing the parallel
 /// partitioning of a distributed graph from the positions of its nodes
@@ -96,17 +102,18 @@ using hybrid_partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 /// @param[in] nparts Number of partitions to divide graph nodes into.
 /// @param[in] local_graph Node connectivity graph.
 /// @param[in] node_weights Node weights. Each partition aims to have the same
-/// sum of node weights.
+/// sum of node weights. If `std::nullopt`, nodes are treated as having
+/// equal weight.
 /// @param[in] edge_weights Edge weights. Higher values increase the likelihood
-/// that adjacent cells will be on the same partition.
+/// that adjacent cells will be on the same partition. If `std::nullopt`,
+/// edges are treated as having equal weight.
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution.
 /// @return Destination rank for each input node.
-AdjacencyList<std::int32_t>
-partition_graph(MPI_Comm comm, int nparts,
-                const AdjacencyList<std::int64_t>& local_graph,
-                std::span<const std::int32_t> node_weights,
-                std::span<const std::int32_t> edge_weights, bool ghosting);
+AdjacencyList<std::int32_t> partition_graph(
+    MPI_Comm comm, int nparts, const AdjacencyList<std::int64_t>& local_graph,
+    std::optional<std::span<const std::int32_t>> node_weights,
+    std::optional<std::span<const std::int32_t>> edge_weights, bool ghosting);
 
 /// Tools for distributed graphs
 ///

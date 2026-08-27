@@ -142,8 +142,8 @@ TEMPLATE_TEST_CASE("Interval Refinement (parallel)",
     auto partitioner
         = [](MPI_Comm /* comm */, int /* nparts */,
              const graph::AdjacencyList<std::int64_t>& /* dual_graph */,
-             std::span<const std::int32_t> /* cell_weights */,
-             std::span<const std::int32_t> /* edge_weights */,
+             std::optional<std::span<const std::int32_t>> /* cell_weights */,
+             std::optional<std::span<const std::int32_t>> /* edge_weights */,
              bool /* ghosting */) -> graph::AdjacencyList<std::int32_t>
     {
       return graph::AdjacencyList<std::int32_t>(

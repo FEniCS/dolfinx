@@ -48,8 +48,8 @@ create_identity_partitioner(const mesh::Mesh<T>& parent_mesh,
   return [&parent_mesh, parent_cell](
              MPI_Comm comm, int /*nparts*/,
              const graph::AdjacencyList<std::int64_t>& dual_graph,
-             std::span<const std::int32_t> /* cell_weights */,
-             std::span<const std::int32_t> /* edge_weights */,
+             std::optional<std::span<const std::int32_t>> /* cell_weights */,
+             std::optional<std::span<const std::int32_t>> /* edge_weights */,
              bool /* ghosting */) -> graph::AdjacencyList<std::int32_t>
   {
     auto parent_cell_im

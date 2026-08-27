@@ -16,6 +16,7 @@
 #include <dolfinx/mesh/utils.h>
 #include <iterator>
 #include <mpi.h>
+#include <optional>
 #include <vector>
 
 using namespace dolfinx;
@@ -97,11 +98,12 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
   //       = mesh::create_cell_partitioner(ghost_mode,
   //       graph::scotch::partitioner());
   graph::partition_fn part
-      = [comm_size](MPI_Comm /* comm */, int /* nparts */,
-                    const graph::AdjacencyList<std::int64_t>& /* dual_graph */,
-                    std::span<const std::int32_t> /* cell_weights */,
-                    std::span<const std::int32_t> /* edge_weights */,
-                    bool /* ghosting */)
+      = [comm_size](
+            MPI_Comm /* comm */, int /* nparts */,
+            const graph::AdjacencyList<std::int64_t>& /* dual_graph */,
+            std::optional<std::span<const std::int32_t>> /* cell_weights */,
+            std::optional<std::span<const std::int32_t>> /* edge_weights */,
+            bool /* ghosting */)
   {
     std::vector<std::vector<std::int32_t>> data;
     if (comm_size == 1)

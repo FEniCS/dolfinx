@@ -28,7 +28,12 @@ namespace nb = nanobind;
 /// entry per node/edge; unlike create_geom_partitioner_py and
 /// create_hybrid_partitioner_py, there are no node coordinates -- only
 /// the local graph itself -- matching dolfinx::graph::partition_fn
-/// exactly.
+/// exactly. The Python-visible arrays are always present (though
+/// possibly zero-length), never None: graph::partition_fn's weights
+/// are std::optional so that C++ callers can omit them without
+/// constructing an empty span, but every Python call already supplies
+/// concrete arrays, so they are passed through as populated
+/// std::optional values, never std::nullopt.
 template <typename Functor>
 auto create_partitioner_py(Functor&& p_cpp)
 {

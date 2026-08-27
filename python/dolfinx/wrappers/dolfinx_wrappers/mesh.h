@@ -36,19 +36,27 @@ namespace nb = nanobind;
 
 namespace dolfinx_wrappers::part::impl
 {
-/// Wrap a Python graph partitioning function as a C++ function.
+/// Wrap a Python graph partitioning function as a C++ function. The
+/// wrapped Python function always receives real (possibly zero-length)
+/// node/edge weight arrays, never None, regardless of whether the C++
+/// caller passed weights: this keeps existing Python-defined
+/// partitioners working unchanged even though the C++-side
+/// graph::partition_fn now carries the weights as std::optional.
 template <typename Functor>
 auto create_partitioner_cpp(Functor&& p)
 {
   return [p](MPI_Comm comm, int nparts,
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-             std::span<const std::int32_t> node_weights,
-             std::span<const std::int32_t> edge_weights, bool ghosting)
+             std::optional<std::span<const std::int32_t>> node_weights,
+             std::optional<std::span<const std::int32_t>> edge_weights,
+             bool ghosting)
   {
     nb::ndarray<const std::int32_t, nb::numpy> node_weights_nb(
-        node_weights.data(), {node_weights.size()});
+        node_weights ? node_weights->data() : nullptr,
+        {node_weights ? node_weights->size() : 0});
     nb::ndarray<const std::int32_t, nb::numpy> edge_weights_nb(
-        edge_weights.data(), {edge_weights.size()});
+        edge_weights ? edge_weights->data() : nullptr,
+        {edge_weights ? edge_weights->size() : 0});
     return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
              node_weights_nb, edge_weights_nb, ghosting);
   };
@@ -64,7 +72,8 @@ using PythonCellPartitionFunction
 using CppCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         MPI_Comm, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
-        std::span<const std::int32_t>, std::span<const std::int32_t>, bool)>;
+        std::optional<std::span<const std::int32_t>>,
+        std::optional<std::span<const std::int32_t>>, bool)>;
 
 /// Opaque handle wrapping a partitioning function `Fn`, bound to
 /// Python as its own type -- see GeometricPartitioner/HybridPartitioner

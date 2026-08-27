@@ -16,6 +16,7 @@
 #include <functional>
 #include <map>
 #include <numeric>
+#include <optional>
 #include <set>
 #include <span>
 #include <vector>
@@ -247,11 +248,12 @@ template graph::AdjacencyList<int> dolfinx::graph::compute_destination_ranks(
 graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                                                double imbalance, int seed)
 {
-  return [imbalance, strategy, seed](MPI_Comm comm, int nparts,
-                                     const AdjacencyList<std::int64_t>& graph,
-                                     std::span<const std::int32_t> node_weights,
-                                     std::span<const std::int32_t> edge_weights,
-                                     bool ghosting)
+  return [imbalance, strategy,
+          seed](MPI_Comm comm, int nparts,
+                const AdjacencyList<std::int64_t>& graph,
+                std::optional<std::span<const std::int32_t>> node_weights,
+                std::optional<std::span<const std::int32_t>> edge_weights,
+                bool ghosting)
   {
     spdlog::info("Compute graph partition using PT-SCOTCH");
     common::Timer timer("Compute graph partition (SCOTCH)");
@@ -282,13 +284,13 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     //        this rank but not null on all other ranks.
     // Handle node weights
     std::vector<SCOTCH_Num> vload;
-    if (!node_weights.empty())
-      vload.assign(node_weights.begin(), node_weights.end());
+    if (node_weights)
+      vload.assign(node_weights->begin(), node_weights->end());
 
     // Handle edge weights
     std::vector<SCOTCH_Num> edload;
-    if (!edge_weights.empty())
-      edload.assign(edge_weights.begin(), edge_weights.end());
+    if (edge_weights)
+      edload.assign(edge_weights->begin(), edge_weights->end());
 
     // Set seed and reset SCOTCH random number generator to produce
     // deterministic partitions on repeated calls
@@ -529,11 +531,12 @@ finalise_partition(MPI_Comm pcomm, bool ghosting,
 graph::partition_fn graph::parmetis::partitioner(double imbalance,
                                                  std::array<int, 3> options)
 {
-  return [imbalance, options](MPI_Comm comm, idx_t nparts,
-                              const graph::AdjacencyList<std::int64_t>& graph,
-                              std::span<const std::int32_t> node_weights,
-                              std::span<const std::int32_t> edge_weights,
-                              bool ghosting)
+  return [imbalance,
+          options](MPI_Comm comm, idx_t nparts,
+                   const graph::AdjacencyList<std::int64_t>& graph,
+                   std::optional<std::span<const std::int32_t>> node_weights,
+                   std::optional<std::span<const std::int32_t>> edge_weights,
+                   bool ghosting)
   {
     spdlog::info("Compute graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS)");
@@ -559,8 +562,12 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
       idx_t ncon = 1;
       idx_t wgtflag(0), edgecut(0), numflag(0);
-      std::vector<idx_t> elmwgt(node_weights.begin(), node_weights.end());
-      std::vector<idx_t> edgwgt(edge_weights.begin(), edge_weights.end());
+      std::vector<idx_t> elmwgt;
+      if (node_weights)
+        elmwgt.assign(node_weights->begin(), node_weights->end());
+      std::vector<idx_t> edgwgt;
+      if (edge_weights)
+        edgwgt.assign(edge_weights->begin(), edge_weights->end());
 
       if (!elmwgt.empty())
       {
@@ -602,8 +609,9 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
   return [ipc2redist, imbalance,
           options](MPI_Comm comm, idx_t nparts,
                    const graph::AdjacencyList<std::int64_t>& graph,
-                   std::span<const std::int32_t> node_weights,
-                   std::span<const std::int32_t> edge_weights, bool ghosting)
+                   std::optional<std::span<const std::int32_t>> node_weights,
+                   std::optional<std::span<const std::int32_t>> edge_weights,
+                   bool ghosting)
   {
     spdlog::info("Compute graph re-partition using ParMETIS");
     common::Timer timer("Compute graph re-partition (ParMETIS)");
@@ -646,8 +654,12 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
           = {options[0], options[1], options[2], PARMETIS_PSR_UNCOUPLED};
       idx_t ncon = 1;
       idx_t wgtflag(0), numflag(0), edgecut(0);
-      std::vector<idx_t> elmwgt(node_weights.begin(), node_weights.end());
-      std::vector<idx_t> edgwgt(edge_weights.begin(), edge_weights.end());
+      std::vector<idx_t> elmwgt;
+      if (node_weights)
+        elmwgt.assign(node_weights->begin(), node_weights->end());
+      std::vector<idx_t> edgwgt;
+      if (edge_weights)
+        edgwgt.assign(edge_weights->begin(), edge_weights->end());
 
       if (!elmwgt.empty())
       {
@@ -804,8 +816,9 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
   return [mode, seed, imbalance, suppress_output](
              MPI_Comm comm, int nparts,
              const graph::AdjacencyList<std::int64_t>& graph,
-             std::span<const std::int32_t> node_weights,
-             std::span<const std::int32_t> edge_weights, bool ghosting)
+             std::optional<std::span<const std::int32_t>> node_weights,
+             std::optional<std::span<const std::int32_t>> edge_weights,
+             bool ghosting)
   {
     spdlog::info("Compute graph partition using (parallel) KaHIP");
 
@@ -814,8 +827,12 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 
     common::Timer timer("Compute graph partition (KaHIP)");
 
-    std::vector<T> vwgt(node_weights.begin(), node_weights.end());
-    std::vector<T> adjcwgt(edge_weights.begin(), edge_weights.end());
+    std::vector<T> vwgt;
+    if (node_weights)
+      vwgt.assign(node_weights->begin(), node_weights->end());
+    std::vector<T> adjcwgt;
+    if (edge_weights)
+      adjcwgt.assign(edge_weights->begin(), edge_weights->end());
 
     // Build adjacency list data
     common::Timer timer1("KaHIP: build adjacency data");
