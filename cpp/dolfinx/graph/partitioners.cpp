@@ -496,6 +496,34 @@ split_and_build_node_disp(MPI_Comm comm, idx_t num_local_nodes)
 
   return {pcomm, std::move(node_disp)};
 }
+
+/// @brief Finalise a ParMETIS partition result: extend `part` to
+/// per-node destination ranks with ghosts if `ghosting` is requested,
+/// and free `pcomm`.
+///
+/// @param[in] pcomm Sub-communicator returned by
+/// split_and_build_node_disp.
+/// @param[in] ghosting Whether to compute ghost destinations.
+/// @param[in] graph Local graph, used to compute ghost destinations
+/// when `ghosting` is true.
+/// @param[in] node_disp Node displacement array for `pcomm`.
+/// @param[in] part Partition index of each local node.
+/// @return Destination rank(s) for each node.
+graph::AdjacencyList<int>
+finalise_partition(MPI_Comm pcomm, bool ghosting,
+                   const graph::AdjacencyList<std::int64_t>& graph,
+                   const std::vector<idx_t>& node_disp,
+                   const std::vector<idx_t>& part)
+{
+  graph::AdjacencyList<int> dest
+      = (ghosting and pcomm != MPI_COMM_NULL)
+            ? graph::compute_destination_ranks(pcomm, graph, node_disp, part)
+            : graph::regular_adjacency_list(
+                  std::vector<int>(part.begin(), part.end()), 1);
+  if (pcomm != MPI_COMM_NULL)
+    MPI_Comm_free(&pcomm);
+  return dest;
+}
 } // namespace
 
 graph::partition_fn graph::parmetis::partitioner(double imbalance,
@@ -562,21 +590,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       }
     }
 
-    if (ghosting and pcomm != MPI_COMM_NULL)
-    {
-      // FIXME: Is it implicit that the first entry is the owner?
-      graph::AdjacencyList<int> dest
-          = graph::compute_destination_ranks(pcomm, graph, node_disp, part);
-      MPI_Comm_free(&pcomm);
-      return dest;
-    }
-    else
-    {
-      if (pcomm != MPI_COMM_NULL)
-        MPI_Comm_free(&pcomm);
-      return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
-                                    1);
-    }
+    // FIXME: Is it implicit that the first entry is the owner?
+    return finalise_partition(pcomm, ghosting, graph, node_disp, part);
   };
 }
 //-----------------------------------------------------------------------------
@@ -663,20 +678,7 @@ graph::partition_fn graph::parmetis::repartitioner(double ipc2redist,
       }
     }
 
-    if (ghosting and pcomm != MPI_COMM_NULL)
-    {
-      graph::AdjacencyList<int> dest
-          = graph::compute_destination_ranks(pcomm, graph, node_disp, part);
-      MPI_Comm_free(&pcomm);
-      return dest;
-    }
-    else
-    {
-      if (pcomm != MPI_COMM_NULL)
-        MPI_Comm_free(&pcomm);
-      return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
-                                    1);
-    }
+    return finalise_partition(pcomm, ghosting, graph, node_disp, part);
   };
 }
 //-----------------------------------------------------------------------------
@@ -786,20 +788,7 @@ graph::parmetis::geom_partitioner_kway(double imbalance,
       }
     }
 
-    if (ghosting and pcomm != MPI_COMM_NULL)
-    {
-      graph::AdjacencyList<int> dest
-          = graph::compute_destination_ranks(pcomm, graph, node_disp, part);
-      MPI_Comm_free(&pcomm);
-      return dest;
-    }
-    else
-    {
-      if (pcomm != MPI_COMM_NULL)
-        MPI_Comm_free(&pcomm);
-      return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
-                                    1);
-    }
+    return finalise_partition(pcomm, ghosting, graph, node_disp, part);
   };
 }
 //-----------------------------------------------------------------------------

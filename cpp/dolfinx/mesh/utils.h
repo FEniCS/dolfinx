@@ -919,7 +919,7 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
     spdlog::info("Using partitioner with cell data ({} cell types)",
                  num_cell_types);
     graph::AdjacencyList<std::int32_t> dest(0);
-    bool failed = false;
+    int failed = 0;
     std::string error_msg;
     if (commt != MPI_COMM_NULL)
     {
@@ -1002,14 +1002,13 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
         // Turn that into a comm-wide decision below before any rank
         // reaches the graph::build::distribute collective, or a throw
         // here would leave the rest of comm blocked on it forever.
-        failed = true;
+        failed = 1;
         error_msg = e.what();
       }
     }
 
-    int local_failed = failed ? 1 : 0;
     int any_failed = 0;
-    MPI_Allreduce(&local_failed, &any_failed, 1, MPI_INT, MPI_MAX, comm);
+    MPI_Allreduce(&failed, &any_failed, 1, MPI_INT, MPI_MAX, comm);
     if (any_failed)
     {
       throw std::runtime_error(
