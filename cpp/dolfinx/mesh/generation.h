@@ -124,9 +124,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
       throw std::runtime_error("It must hold p[0] < p[1].");
   }
 
-  bool have_partitioner = std::visit(
-      [](const auto& p) { return static_cast<bool>(p); }, partitioner);
-  if (!have_partitioner and dolfinx::MPI::size(comm) > 1)
+  if (!has_partitioner(partitioner) and dolfinx::MPI::size(comm) > 1)
     partitioner = graph::partition_graph;
 
   switch (celltype)
@@ -217,9 +215,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
       throw std::runtime_error("It must hold p[0] < p[1].");
   }
 
-  bool have_partitioner = std::visit(
-      [](const auto& p) { return static_cast<bool>(p); }, partitioner);
-  if (!have_partitioner and dolfinx::MPI::size(comm) > 1)
+  if (!has_partitioner(partitioner) and dolfinx::MPI::size(comm) > 1)
     partitioner = graph::partition_graph;
 
   switch (celltype)
@@ -298,9 +294,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
         "Length of interval is zero. Check your dimensions.");
   }
 
-  bool have_partitioner = std::visit(
-      [](const auto& p) { return static_cast<bool>(p); }, partitioner);
-  if (!have_partitioner and dolfinx::MPI::size(comm) > 1)
+  if (!has_partitioner(partitioner) and dolfinx::MPI::size(comm) > 1)
     partitioner = graph::partition_graph;
 
   fem::CoordinateElement<T> element(CellType::interval, 1);

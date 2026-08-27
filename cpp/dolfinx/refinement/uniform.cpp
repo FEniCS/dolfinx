@@ -13,7 +13,8 @@ using namespace dolfinx;
 
 template <typename T>
 mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
-                                         const graph::partition_fn& partitioner)
+                                         const graph::partition_fn& partitioner,
+                                         mesh::GhostMode ghost_mode)
 {
   // Requires edges (and facets for some 3D meshes) to be built already
   auto topology = mesh.topology();
@@ -304,7 +305,7 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
   mesh::Mesh new_mesh = mesh::create_mesh(
       mesh.comm(), mesh.comm(), topo_span, std::span<std::int32_t>(),
       geometry_cmaps, mesh.comm(), new_x, {new_x.size() / 3, 3}, partitioner,
-      mesh::GhostMode::none, 2, 1);
+      ghost_mode, 2, 1);
 
   return new_mesh;
 }
@@ -312,8 +313,8 @@ mesh::Mesh<T> refinement::uniform_refine(const mesh::Mesh<T>& mesh,
 /// @cond Explicit instantiation for float and double
 template mesh::Mesh<double>
 refinement::uniform_refine(const mesh::Mesh<double>& mesh,
-                           const graph::partition_fn&);
+                           const graph::partition_fn&, mesh::GhostMode);
 template mesh::Mesh<float>
 refinement::uniform_refine(const mesh::Mesh<float>& mesh,
-                           const graph::partition_fn&);
+                           const graph::partition_fn&, mesh::GhostMode);
 /// @endcond

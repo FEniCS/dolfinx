@@ -41,7 +41,8 @@ void declare_refinement(nanobind::module_& m)
       [](const dolfinx::mesh::Mesh<T>& mesh,
          std::optional<
              dolfinx_wrappers::part::impl::PythonCellPartitionFunction>
-             partitioner)
+             partitioner,
+         dolfinx::mesh::GhostMode ghost_mode)
       {
         dolfinx_wrappers::part::impl::CppCellPartitionFunction cpp_partitioner;
         if (partitioner.has_value())
@@ -55,9 +56,10 @@ void declare_refinement(nanobind::module_& m)
           cpp_partitioner
               = dolfinx_wrappers::part::impl::CppCellPartitionFunction(nullptr);
         }
-        return dolfinx::refinement::uniform_refine<T>(mesh, cpp_partitioner);
+        return dolfinx::refinement::uniform_refine<T>(mesh, cpp_partitioner,
+                                                      ghost_mode);
       },
-      nb::arg("mesh"), nb::arg("partitioner").none());
+      nb::arg("mesh"), nb::arg("partitioner").none(), nb::arg("ghost_mode"));
 
   m.def(
       "refine",

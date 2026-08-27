@@ -132,7 +132,7 @@ graph::partition_fn repartitioner(double ipc2redist = 1000.0,
 /// `nparts` must equal the communicator size.
 ///
 /// @note ::geom_partition_fn has no graph, so the returned function
-/// cannot ghost: it throws if called with `ghosting` true.
+/// has no `ghosting` parameter and is never asked to ghost.
 ///
 /// @return A geometric graph partitioning function. It requires `x`.
 graph::geom_partition_fn geom_partitioner();

@@ -49,6 +49,17 @@ using AnyCellPartitionFunction
     = std::variant<graph::partition_fn, graph::geom_partition_fn,
                    graph::hybrid_partition_fn>;
 
+/// @brief Whether an ::AnyCellPartitionFunction holds a callable
+/// partitioner.
+/// @param[in] partitioner Partitioner to check.
+/// @return `true` if `partitioner` holds a callable function, `false`
+/// if it is default-constructed (not callable).
+inline bool has_partitioner(const AnyCellPartitionFunction& partitioner)
+{
+  return std::visit([](const auto& p) { return static_cast<bool>(p); },
+                    partitioner);
+}
+
 namespace impl
 {
 /// @brief Compute the centroid of each cell from its vertex positions.

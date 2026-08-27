@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <mpi.h>
 #include <span>
+#include <vector>
 
 /// @file sfc.h
 /// @brief Point partitioning by position along a space-filling curve.
@@ -99,7 +100,7 @@ enum class curve : std::uint8_t
 /// similar cost.
 ///
 /// @note ::geom_partition_fn has no graph, so the returned function
-/// cannot ghost: it throws if called with `ghosting` true.
+/// has no `ghosting` parameter and is never asked to ghost.
 ///
 /// @param[in] curve Space-filling curve to order the nodes along.
 /// @return A geometric graph partitioning function. It requires `x`.

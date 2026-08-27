@@ -1,5 +1,6 @@
 #include <dolfinx/graph/partition.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/partition.h>
 
 #pragma once
 
@@ -15,10 +16,13 @@ namespace dolfinx::refinement
 /// @tparam T Scalar type of the mesh geometry
 /// @param mesh Input mesh
 /// @param partitioner Function to partition new mesh across processes.
+/// @param ghost_mode Ghost mode of the refined mesh, passed to
+/// `partitioner` if it is callable.
 /// @returns Uniformly refined mesh
 template <typename T>
-mesh::Mesh<T> uniform_refine(const mesh::Mesh<T>& mesh,
-                             const graph::partition_fn& partitioner
-                             = graph::partition_graph);
+mesh::Mesh<T>
+uniform_refine(const mesh::Mesh<T>& mesh,
+               const graph::partition_fn& partitioner = graph::partition_graph,
+               mesh::GhostMode ghost_mode = mesh::GhostMode::none);
 
 } // namespace dolfinx::refinement

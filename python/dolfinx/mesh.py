@@ -844,6 +844,7 @@ def transfer_meshtag(
 def uniform_refine(
     msh: Mesh,
     partitioner: Callable | None = None,
+    ghost_mode: GhostMode = GhostMode.none,
 ) -> Mesh:
     """Uniformly refine a mesh.
 
@@ -857,11 +858,13 @@ def uniform_refine(
         msh: Mesh from which to create the refined mesh.
         partitioner: Partitioner to distribute the refined mesh.
             If ``None`` is passed (default) no redistribution will happen.
+        ghost_mode: Ghost mode of the refined mesh, passed to
+            ``partitioner``. Has no effect if ``partitioner`` is ``None``.
 
     Returns:
         The refined mesh.
     """
-    _cpp_mesh = _uniform_refine(msh._cpp_object, partitioner)
+    _cpp_mesh = _uniform_refine(msh._cpp_object, partitioner, ghost_mode)
     if msh._ufl_domain is None:
         raise ValueError("Cannot refine a mesh without a UFL domain.")
     # Create new ufl domain as it will carry a reference to the C++ mesh
