@@ -85,10 +85,6 @@ using CppCellPartitionFunction
         MPI_Comm, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
         std::span<const std::int32_t>, std::span<const std::int32_t>, bool)>;
 
-/// Wrap a Python cell graph partitioning function as a C++ function
-CppCellPartitionFunction
-create_cell_partitioner_cpp(const PythonCellPartitionFunction& p);
-
 /// Opaque handle wrapping a partitioning function `Fn`, bound to
 /// Python as its own type -- see GeometricPartitioner/HybridPartitioner
 /// below.
@@ -136,8 +132,7 @@ to_any_cell_partitioner(const PythonMeshPartitioner& p)
 
   const auto& opt = std::get<std::optional<PythonCellPartitionFunction>>(p);
   return dolfinx::mesh::AnyCellPartitionFunction(
-      opt ? create_cell_partitioner_cpp(*opt)
-          : CppCellPartitionFunction(nullptr));
+      opt ? create_partitioner_cpp(*opt) : CppCellPartitionFunction(nullptr));
 }
 } // namespace dolfinx_wrappers::part::impl
 

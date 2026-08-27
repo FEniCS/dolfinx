@@ -42,20 +42,6 @@ namespace nb = nanobind;
 
 namespace dolfinx_wrappers
 {
-namespace part::impl
-{
-CppCellPartitionFunction
-create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
-{
-  // PythonCellPartitionFunction is exactly the shape create_partitioner_cpp
-  // wraps (a Python graph partitioning function), so delegate to it.
-  if (p)
-    return create_partitioner_cpp(p);
-  else
-    return nullptr;
-}
-} // namespace part::impl
-
 void mesh(nb::module_& m)
 {
   nb::enum_<dolfinx::mesh::CellType>(m, "CellType")
