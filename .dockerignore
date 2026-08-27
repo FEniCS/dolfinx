@@ -1,12 +1,9 @@
-# Keep build artefacts out of the build context. Only artefacts belong
-# here: excluding source or configuration would silently starve a COPY.
-# .git is deliberately kept, since cpp/CMakeLists.txt reads the commit
-# hash from it into DOLFINX_GIT_COMMIT_HASH.
+# Keep build artefacts out of the build context. .git is deliberately kept, 
+# since cpp/CMakeLists.txt reads the commit hash.
 
 # Build and install trees
 cpp/build*/
 python/build*/
-cpp/local*/
 
 # Compiled objects and extension modules
 **/*.o
@@ -47,10 +44,6 @@ python/doc/source/generated/
 # and demos without a broad build*/ rule
 **/CMakeFiles/
 **/CMakeCache.txt
-
-# Downloaded archives (*.gz and *.xz are in .gitignore too)
-**/*.gz
-**/*.xz
 
 # Editor and tool caches
 **/.cache/
