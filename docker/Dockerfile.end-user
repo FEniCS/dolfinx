@@ -69,7 +69,7 @@ ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
 # the packages needed for testing and optional features here.
 ONBUILD RUN cd dolfinx/python && \
             pip install --no-cache-dir --group pyproject.toml:build && \
-            pip install --no-cache-dir pyamg numba # test + optional set; the rest comes from apt in dev-env
+            pip install --no-cache-dir pyamg # not packaged; the rest of the test + optional set comes from apt in dev-env
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/
 # ffcx/ and dolfinx/ mounted/shared at /src.
@@ -160,8 +160,7 @@ RUN apt-get -qq update && \
 # Install pyvista.
 # jupytext ensures DOLFINx `.py` demos can be opened in a JupyterLab
 # notebook environment.
-RUN pip install --no-cache-dir matplotlib && \
-    pip install --no-cache-dir pyvista[jupyter] jupytext
+RUN pip install --no-cache-dir pyvista[jupyter] jupytext
 
 # Jupyter Notebook kernel specification for complex build DOLFINx
 COPY dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json

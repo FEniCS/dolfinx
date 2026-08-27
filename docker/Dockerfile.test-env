@@ -90,6 +90,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-matplotlib \
     python3-mpi4py \
     python3-networkx \
+    python3-numba \
     python3-numpy \
     python3-numpy-dev \
     python3-packaging \
