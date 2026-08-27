@@ -49,12 +49,10 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 /// ::hybrid_partition_fn for a partitioning function that has access to
 /// both the node positions and the graph edges, and so can ghost.
 ///
-/// @note The coordinates are always `double`, whatever the scalar type
-/// of the data they were derived from. Which nodes end up in which part
-/// is not sensitive to the precision of the positions, so there is
-/// nothing to be gained from partitioning single precision positions in
-/// single precision, and computing the keys in `double` removes any
-/// question of precision loss when positions are quantised.
+/// @note The coordinates are always `double`, regardless of the mesh's
+/// scalar type: partition quality is insensitive to position precision,
+/// and `double` avoids any precision loss when positions are
+/// quantised into keys.
 ///
 /// @param[in] comm MPI Communicator that the graph is distributed
 /// across.
@@ -71,11 +69,11 @@ using geom_partition_fn = std::function<std::vector<int>(
 /// positions of its nodes in space.
 ///
 /// Unlike ::geom_partition_fn, which has no access to the graph at all,
-/// a hybrid partitioner (e.g. one that redistributes nodes along a
-/// space-filling curve and then applies graph partitioning to the
-/// result, as ParMETIS `GeomKway` does) uses the graph edges as part of
-/// the partitioning decision itself, not only to compute ghost
-/// destinations, so it always needs both inputs.
+/// a hybrid partitioner uses the graph edges as part of the
+/// partitioning decision itself, not only to compute ghost
+/// destinations, so it always needs both inputs. ParMETIS `GeomKway`,
+/// for example, redistributes nodes along a space-filling curve and
+/// then applies graph partitioning to the result.
 ///
 /// @note The coordinates are always `double`, for the same reason as
 /// ::geom_partition_fn.

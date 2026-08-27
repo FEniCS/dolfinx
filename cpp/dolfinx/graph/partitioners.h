@@ -88,13 +88,13 @@ graph::partition_fn partitioner(double imbalance = 1.02,
 /// @brief Create a graph re-partitioning function that uses ParMETIS.
 ///
 /// Unlike ::partitioner, which computes a partition from scratch, the
-/// returned function treats the *current* distribution of the graph as
-/// the current partition, i.e. the nodes held by a rank are taken to be
-/// currently assigned to that rank, and computes a new partition that
-/// balances the load while limiting how many nodes have to be moved.
-/// This is appropriate when a distributed mesh needs re-balancing, e.g.
-/// after non-uniform refinement, where re-partitioning from scratch
-/// would migrate almost every cell.
+/// returned function treats the graph's *current* distribution as the
+/// current partition -- the nodes held by a rank are taken to be
+/// assigned to that rank -- and computes a new partition that balances
+/// the load while limiting how many nodes have to move. This is
+/// appropriate when a distributed mesh needs re-balancing, e.g. after
+/// non-uniform refinement, where re-partitioning from scratch would
+/// migrate almost every cell.
 ///
 /// @note ParMETIS fails (crashes) if an MPI rank has no part of the
 /// graph. If necessary, the communicator should be split to avoid this

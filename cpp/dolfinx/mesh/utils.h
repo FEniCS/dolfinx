@@ -206,19 +206,15 @@ namespace impl
 /// @brief Find a mesh's process boundary vertices, reordering cells for
 /// locality as a side effect.
 ///
-/// The logical purpose of this function, from the caller's point of
-/// view, is to return the vertices that may be shared with another
-/// process, found from the facets that are not matched by another cell
-/// on this rank. Finding those unmatched facets requires building the
-/// local dual graph for the cells -- exactly the graph a cell reordering
-/// (e.g. for cache locality) is computed from. So, to avoid building
-/// that graph twice, this function also applies `reorder_fn` to it and
-/// reorders `cells`, `cells_v` and `original_idx` **in place** as it
-/// goes. `reorder_fn` is therefore a required argument even though it
-/// plays no part in finding boundary vertices: it is how the caller
-/// controls the cell reordering that comes bundled with this
-/// computation, since the two cannot be separated without building the
-/// local dual graph twice.
+/// Logically this function only finds the vertices that may be shared
+/// with another process (from the facets unmatched by another local
+/// cell), which requires building the local dual graph. Since that is
+/// the same graph a cell reorder (e.g. for cache locality) is computed
+/// from, this function also applies `reorder_fn` to it and reorders
+/// `cells`, `cells_v` and `original_idx` **in place**, to avoid
+/// building the graph twice. `reorder_fn` is therefore required even
+/// though it plays no part in finding boundary vertices -- it is
+/// bundled in because the two computations share the same dual graph.
 ///
 /// @param[in] reorder_fn Cell reorder function, applied to the local
 /// dual graph built internally.
@@ -1102,9 +1098,8 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
 /// calling ranks, but must be not duplicated across ranks.
 ///
 /// The function `partitioner` computes the parallel distribution, i.e.
-/// the destination rank for each cell passed to the constructor. If
-/// `partitioner` is not callable, i.e. it does not store a callable
-/// function, no parallel re-distribution of cells is performed.
+/// the destination rank for each cell. If it is not callable, no
+/// redistribution is performed.
 ///
 /// @note Collective.
 ///

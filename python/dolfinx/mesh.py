@@ -118,10 +118,9 @@ def create_geometric_cell_partitioner(
     """Create a function to partition a mesh using cell positions.
 
     The returned partitioner is called by :func:`create_mesh` with the
-    centroid of each cell (the mean of its vertex positions), computed by
-    :func:`create_mesh` itself from whatever geometry it was given, and
-    passes them to ``part``. This allows partitioners that use cell
-    positions, rather than the graph edges, to be used by
+    centroid of each cell (the mean of its vertex positions), computed
+    from whatever geometry it was given. This allows partitioners that
+    use cell positions, rather than the graph edges, to be used by
     :func:`create_mesh`.
 
     The returned partitioner has no access to the mesh dual graph, so it

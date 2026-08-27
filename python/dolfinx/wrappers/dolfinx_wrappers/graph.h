@@ -27,11 +27,9 @@ namespace nb = nanobind;
 
 /// Wrap a C++ graph partitioner (dolfinx::graph::partition_fn) for use
 /// from Python. Node and edge weights are passed as 1D arrays, one
-/// entry per node/edge, or None; unlike create_geom_partitioner_py and
-/// create_hybrid_partitioner_py, there are no node coordinates -- only
-/// the local graph itself -- matching dolfinx::graph::partition_fn
-/// exactly, including its std::optional weights (None from Python maps
-/// to std::nullopt).
+/// entry per node/edge, or None (mapped to std::nullopt); unlike
+/// create_geom_partitioner_py and create_hybrid_partitioner_py, there
+/// are no node coordinates -- only the local graph itself.
 template <typename Functor>
 auto create_partitioner_py(Functor&& p_cpp)
 {
@@ -94,7 +92,7 @@ auto create_partitioner_cpp(Functor&& p)
 /// which has no graph) for use from Python. Node coordinates are passed
 /// as a 2D array of shape (num_nodes, gdim); unlike
 /// create_hybrid_partitioner_py, there is no graph or `ghosting`
-/// argument, matching dolfinx::graph::geom_partition_fn exactly.
+/// argument.
 template <typename Functor>
 auto create_geom_partitioner_py(Functor&& p_cpp)
 {

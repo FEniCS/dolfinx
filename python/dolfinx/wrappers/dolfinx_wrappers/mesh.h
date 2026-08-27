@@ -73,13 +73,13 @@ using HybridPartitioner
 
 /// The Python-visible partitioner argument accepted by create_mesh: a
 /// GeometricPartitioner, a HybridPartitioner, or a plain graph
-/// partitioner (std::nullopt disables redistribution, as for
-/// PythonCellPartitionFunction alone). The two opaque handle types must
-/// be listed first: nanobind tries variant alternatives in order and
-/// stops at the first that converts, and their __call__ makes them
-/// callable, so a raw PythonCellPartitionFunction-shaped std::function
-/// would also happily (and wrongly) construct from either if that
-/// alternative were tried first.
+/// partitioner (std::nullopt disables redistribution). The two opaque
+/// handle types must be listed first: nanobind tries variant
+/// alternatives in order and stops at the first that converts, and
+/// their __call__ makes them callable, so a raw
+/// PythonCellPartitionFunction-shaped std::function would also happily
+/// (and wrongly) construct from either if that alternative were tried
+/// first.
 using PythonMeshPartitioner
     = std::variant<GeometricPartitioner, HybridPartitioner,
                    std::optional<PythonCellPartitionFunction>>;
