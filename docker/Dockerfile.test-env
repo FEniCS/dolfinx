@@ -63,8 +63,10 @@ ENV OPENBLAS_NUM_THREADS=1 \
 # Xcursor, Xinerama, fonts); libGLU is the one piece outside its closure.
 # The Python runtime and test dependencies come from apt, reached through
 # the --system-site-packages venv below; pip keeps the build tooling and
-# the demo set. python3-adios2 depends on python3-adios2-serial |
-# python3-adios2-mpi, so name the MPI variant.
+# the demo set. python3-adios2 carries the Python API and python3-adios2-mpi
+# only the compiled bindings, so both are needed; without the latter named
+# explicitly, apt satisfies the former's serial-or-MPI dependency with the
+# serial build.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
