@@ -9,7 +9,10 @@
 # You can build an optimised version of the FEniCS development environment
 # (without the FEniCS components) for your platform using the command:
 #
-#    docker build --target dev-env --file dolfinx/docker/Dockerfile.test-env --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
+#    docker build --target dev-env --file docker/Dockerfile.test-env --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
+#
+# The build context is the repository root: python/pyproject.toml is
+# copied in below and .dockerignore keeps the rest of the tree out.
 #
 
 ARG GMSH_VERSION=4_15_2
@@ -115,18 +118,14 @@ ENV PATH=/dolfinx-env/bin:$PATH
 RUN python3 -m venv --system-site-packages ${VIRTUAL_ENV}
 
 # Install Python packages (via pip).
-# The build tooling is newer than Ubuntu's; keep the constraints in sync
-# with [build-system].requires in python/pyproject.toml, which is outside
-# this build context and so cannot be read with pip's --group.
 # matplotlib is pip-only because Ubuntu's python3-fonttools pulls sympy
-# and unicode-data (~70 MiB); numba and networkx follow it to keep the
-# demo set on one installer.
+# and unicode-data (~70 MiB); networkx, numba and pyamg follow it to keep
+# the demo and optional sets on one installer.
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     # Cython 3.3 tightened pointer-indexing checks that break
     # petsc4py 3.25.4's generated PC.pyx; pin below that for now.
     pip install --no-cache-dir "cython<3.3" && \
-    pip install --no-cache-dir "scikit-build-core>=1.0.0" "nanobind>=2.9.2" && \
-    pip install --no-cache-dir matplotlib networkx numba && \
+    pip install --no-cache-dir matplotlib networkx numba pyamg && \
     python3 -c "import numpy, mpi4py.MPI, adios2; print(numpy.__version__, adios2.__version__)"
 
 # Install KaHIP
@@ -262,5 +261,12 @@ RUN git clone --depth=1 -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git 
     PETSC_ARCH=${PETSC_ARCHS} pip -v install --no-cache-dir --no-build-isolation . && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
+
+# The DOLFINx build dependencies, last so that editing pyproject.toml
+# does not invalidate the PETSc/SLEPc layers above. Downstream images
+# build with --no-build-isolation and rely on these being present.
+COPY python/pyproject.toml /tmp/pyproject.toml
+RUN pip install --no-cache-dir --group /tmp/pyproject.toml:build && \
+    rm /tmp/pyproject.toml
 
 WORKDIR /root

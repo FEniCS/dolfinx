@@ -1,0 +1,8 @@
+# docker/Dockerfile.test-env builds from the repository root but needs
+# only python/pyproject.toml from it; keep the rest of the tree out of
+# the build context. docker/Dockerfile.end-user is built from the parent
+# directory and so is unaffected by this file.
+/*
+!/python
+/python/*
+!/python/pyproject.toml
