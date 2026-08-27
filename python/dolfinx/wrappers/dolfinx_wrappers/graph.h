@@ -47,14 +47,10 @@ auto create_partitioner_py(Functor&& p_cpp)
   {
     std::optional<std::span<const std::int32_t>> node_weights_span;
     if (node_weights)
-    {
       node_weights_span.emplace(node_weights->data(), node_weights->size());
-    }
     std::optional<std::span<const std::int32_t>> edge_weights_span;
     if (edge_weights)
-    {
       edge_weights_span.emplace(edge_weights->data(), edge_weights->size());
-    }
     return p_cpp(comm.get(), nparts, local_graph, node_weights_span,
                  edge_weights_span, ghosting);
   };
