@@ -250,13 +250,13 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
-      - name: Run Python demos (serial)
+      - name: Run Python demos (PETSc, serial)
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
           python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
-      - name: Run Python demos (MPI)
+      - name: Run Python demos (PETSc, MPI)
         shell: spack-bash {0}
         run: |
           spack env activate ci
@@ -267,12 +267,17 @@ jobs:
       # rather than 'matrix.petsc && Y || X'. GitHub expressions treat the
       # empty string as false, so the latter form falls through to X on
       # every leg and silently skips the petsc4py tests everywhere.
-      - name: Run Python unit tests (serial and MPI)
+      - name: Run Python unit tests (no PETSc, serial)
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
           python -m pytest -n=auto --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
+      - name: Run Python unit tests (no PETSC, MPI)
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          spack load gcc
           mpiexec -np 3 python -m pytest --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
 
       # The test tools are environment roots, so '--only dependencies'
