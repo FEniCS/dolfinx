@@ -250,12 +250,17 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
-      - name: Run Python demos (serial and MPI)
+      - name: Run Python demos (serial)
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
           python -m pytest -n=auto -m serial --durations=10 dolfinx-src/python/demo/test.py
+      - name: Run Python demos (MPI)
+        shell: spack-bash {0}
+        run: |
+          spack env activate ci
+          spack load gcc
           python -m pytest -m mpi --num-proc=3 dolfinx-src/python/demo/test.py
 
       # NOTE: the marker expression is written '!matrix.petsc && X || Y'
