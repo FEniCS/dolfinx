@@ -829,13 +829,15 @@ class FunctionSpace(ufl.FunctionSpace, Generic[Real]):
 
     def __eq__(self, other: object) -> bool:
         """Comparison for equality."""
-        _other = typing.cast("FunctionSpace", other)
-        return super().__eq__(other) and self._cpp_object == _other._cpp_object
+        if not isinstance(other, FunctionSpace):
+            return NotImplemented
+        return super().__eq__(other) and self._cpp_object == other._cpp_object
 
     def __ne__(self, other: object) -> bool:
         """Comparison for inequality."""
-        _other = typing.cast("FunctionSpace", other)
-        return super().__ne__(other) or self._cpp_object != _other._cpp_object
+        if not isinstance(other, FunctionSpace):
+            return NotImplemented
+        return super().__ne__(other) or self._cpp_object != other._cpp_object
 
     def ufl_function_space(self) -> Self:
         """UFL function space."""

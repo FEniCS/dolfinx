@@ -210,11 +210,20 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// globally, i.e. the maximum index across all processes can be greater
 /// than the number of vertices. High-order 'nodes', e.g. mid-side
 /// points, should not be included.
+/// @param[in] cell_weights Weights associated with each cell in `cells`
+/// (flattened across cell types in the same order as `cells`), e.g. for
+/// use by the graph partitioner. If empty, cells are treated as having
+/// equal weight.
+/// @param[in] edge_weights Weights associated with each edge of the
+/// dual graph built from `cells`, e.g. for use by the graph partitioner.
+/// If empty, edges are treated as having equal weight.
 /// @return Destination ranks for each cell on this process.
 /// @note Cells can have multiple destination ranks, when ghosted.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
-    const std::vector<std::span<const std::int64_t>>& cells)>;
+    const std::vector<std::span<const std::int64_t>>& cells,
+    std::span<const std::int32_t> cell_weights,
+    std::span<const std::int32_t> edge_weights)>;
 
 /// @brief Function that reorders (locally) cells that
 /// are owned by this process. It takes the local mesh dual graph as an
@@ -1120,6 +1129,10 @@ compute_incident_entities(const Topology& topology,
 /// cells this will be just the cell vertices. For higher-order geometry
 /// cells, other cell 'nodes' will be included. See io::cells for
 /// examples of the Basix ordering.
+/// @param[in] cell_weights Weights associated with each cell in `cells`
+/// (flattened across cell types in the same order as `cells`), e.g. for
+/// use by the graph partitioner. If empty, cells are treated as having
+/// equal weight.
 /// @param[in] elements Coordinate elements for the cells, where
 /// `elements[i]` is the coordinate element for the cells in `cells[i]`.
 /// **The list of elements must be the same on all calling parallel
@@ -1144,6 +1157,7 @@ template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt,
     std::vector<std::span<const std::int64_t>> cells,
+    std::span<const std::int32_t> cell_weights,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
@@ -1188,7 +1202,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         t[i] = extract_topology(celltypes[i], doflayouts[i], cells[i]);
         tspan[i] = std::span(t[i]);
       }
-      dest = partitioner(commt, size, celltypes, tspan);
+      std::vector<std::int32_t> edge_weights;
+      dest = partitioner(commt, size, celltypes, tspan, cell_weights,
+                         edge_weights);
     }
 
     std::int32_t cell_offset = 0;
@@ -1351,6 +1367,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// will be just the cell vertices. For higher-order cells, other cells
 /// 'nodes' will be included. See dolfinx::io::cells for examples of the
 /// Basix ordering.
+/// @param[in] cell_weights Weights associated with each cell in `cells`,
+/// e.g. for use by the graph partitioner. If empty, cells are treated
+/// as having equal weight.
 /// @param[in] element Coordinate element for the cells.
 /// @param[in] commg Communicator for geometry.
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
@@ -1370,6 +1389,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt, std::span<const std::int64_t> cells,
+    std::span<const std::int32_t> cell_weights,
     const fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
@@ -1377,9 +1397,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::optional<std::int32_t> max_facet_to_cell_links, int num_threads,
     const CellReorderFunction& reorder_fn = graph::reorder_rcm)
 {
-  return create_mesh(comm, commt, std::vector{cells}, std::vector{element},
-                     commg, x, xshape, partitioner, max_facet_to_cell_links,
-                     num_threads, reorder_fn);
+  return create_mesh(comm, commt, std::vector{cells}, cell_weights,
+                     std::vector{element}, commg, x, xshape, partitioner,
+                     max_facet_to_cell_links, num_threads, reorder_fn);
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
@@ -1412,13 +1432,15 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
 {
   if (dolfinx::MPI::size(comm) == 1)
   {
-    return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
+    return create_mesh(comm, comm, std::vector{cells},
+                       std::span<const std::int32_t>(), std::vector{elements},
                        comm, x, xshape, nullptr, max_facet_to_cell_links, 1);
   }
   else
   {
     return create_mesh(
-        comm, comm, std::vector{cells}, std::vector{elements}, comm, x, xshape,
+        comm, comm, std::vector{cells}, std::span<const std::int32_t>(),
+        std::vector{elements}, comm, x, xshape,
         create_cell_partitioner(ghost_mode, max_facet_to_cell_links),
         max_facet_to_cell_links, 1);
   }

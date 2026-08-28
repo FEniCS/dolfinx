@@ -128,7 +128,9 @@ def plot_meshtags():
     # otherwise 0
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32))
-    cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))  # type: ignore[arg-type]
+    cell_tags = meshtags(
+        msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32), in_circle(midpoints)
+    )
 
     # Create VTK mesh
     cells, types, x = plot.vtk_mesh(msh)
@@ -188,7 +190,9 @@ def plot_higher_order():
     # it gets value 1, otherwise 0.
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32))
-    cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))  # type: ignore[arg-type]
+    cell_tags = meshtags(
+        msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32), in_circle(midpoints)
+    )
 
     # We start by interpolating a discontinuous function (discontinuous
     # between cells with different mesh tag values) into a degree 2

@@ -194,10 +194,17 @@ XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
   auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);
   auto [x, xshape] = XDMFFile::read_geometry_data(name, xpath);
 
+  // TODO: figure out how to include this data with XDMFFile
+  std::vector<std::int32_t> cell_weights;
+
   // Create mesh
   const std::vector<double>& _x = std::get<std::vector<double>>(x);
+  auto part = create_cell_partitioner(mode, dolfinx::graph::partition_graph,
+                                      max_facet_to_cell_links);
   mesh::Mesh<double> mesh = mesh::create_mesh(
-      _comm.comm(), cells, element, _x, xshape, mode, max_facet_to_cell_links);
+      _comm.comm(), _comm.comm(), cells, cell_weights, {element}, _comm.comm(),
+      _x, xshape, part, max_facet_to_cell_links, 1);
+
   mesh.name = name;
   return mesh;
 }
