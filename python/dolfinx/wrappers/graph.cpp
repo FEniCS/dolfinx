@@ -68,7 +68,7 @@ void graph(nb::module_& m)
             dolfinx::graph::parmetis::partitioner(imbalance, options));
       },
       nb::arg("imbalance") = 1.02,
-      nb::arg("options") = std ::array<int, 3>({1, 0, 5}),
+      nb::arg("options") = std::array<int, 3>({1, 0, 5}),
       "ParMETIS graph partitioner");
 #endif
 #ifdef HAS_KAHIP

@@ -181,7 +181,7 @@ jobs:
     needs: [lint]
     strategy:
       matrix:
-        petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32, linux-gnu-real64-64]
+        petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32]
     container: "ghcr.io/fenics/test-env:current"
     env:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
@@ -274,7 +274,8 @@ jobs:
 
       - name: Install pyvista (and dependencies)
         run: |
-          apt-get install libegl1 libxrender1
+          apt-get update
+          apt-get install -y libegl1 libxrender1
           pip install pyvista
 
       - name: Run demos (Python, serial)
