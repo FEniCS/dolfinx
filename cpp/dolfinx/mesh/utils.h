@@ -1394,16 +1394,16 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
 {
   if (dolfinx::MPI::size(comm) == 1)
   {
-    return create_mesh(comm, comm, std::vector{cells},
-                       std::nullopt, std::vector{elements},
-                       comm, x, xshape, graph::partition_fn(nullptr),
-                       ghost_mode, max_facet_to_cell_links, 1);
+    return create_mesh(comm, comm, std::vector{cells}, std::nullopt,
+                       std::vector{elements}, comm, x, xshape,
+                       graph::partition_fn(nullptr), ghost_mode,
+                       max_facet_to_cell_links, 1);
   }
   else
   {
-    return create_mesh(comm, comm, std::vector{cells},
-                       std::nullopt, std::vector{elements},
-                       comm, x, xshape, graph::partition_graph, ghost_mode,
+    return create_mesh(comm, comm, std::vector{cells}, std::nullopt,
+                       std::vector{elements}, comm, x, xshape,
+                       graph::partition_graph, ghost_mode,
                        max_facet_to_cell_links, 1);
   }
 }

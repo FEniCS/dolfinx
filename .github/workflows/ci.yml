@@ -280,17 +280,19 @@ jobs:
           spack load gcc
           mpiexec -np 3 python -m pytest --durations=50 ${{ !matrix.petsc && '-m "not petsc4py"' || '' }} dolfinx-src/python/test/unit/
       - name: Run Python unit tests (PETSc, serial)
+        if: ${{ matrix.petsc }}
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
-          python -m pytest -n=auto --durations=50 -m "not petsc4py" dolfinx-src/python/test/unit/
+          python -m pytest -n=auto --durations=50 -m petsc4py dolfinx-src/python/test/unit/
       - name: Run Python unit tests (PETSc, MPI)
+        if: ${{ matrix.petsc }}
         shell: spack-bash {0}
         run: |
           spack env activate ci
           spack load gcc
-          mpiexec -np 3 python -m pytest --durations=50 -m "not petsc4py" dolfinx-src/python/test/unit/
+          mpiexec -np 3 python -m pytest --durations=50 -m petsc4py dolfinx-src/python/test/unit/
 
       # The test tools are environment roots, so '--only dependencies'
       # skips them and they need naming explicitly. Only the final push
