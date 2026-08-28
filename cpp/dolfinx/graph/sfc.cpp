@@ -50,6 +50,151 @@ std::uint64_t morton_key(std::array<std::uint32_t, 3> c, int /*gdim*/)
   return spread(c[0]) | (spread(c[1]) << 1) | (spread(c[2]) << 2);
 }
 
+/// Rank count below which the (simpler, lower per-call overhead, but
+/// O(P)-memory) PCX consensus algorithm is used to discover source
+/// ranks for the post-office routing in partition_by_curve; NBX
+/// (higher constant overhead, but genuinely sparse/scalable) is used
+/// at or above it. Benchmarked as a clear win for PCX up to the
+/// largest rank count locally testable (12); this threshold is an
+/// estimate pending validation at real large-scale rank counts, not a
+/// measured crossover point.
+constexpr int pcx_rank_limit = 10000;
+
+/// @brief A plan for routing values to the MPI rank that "owns" them,
+/// via a sparse neighbourhood exchange.
+///
+/// The neighbourhood communicator (`neigh_comm`) must be freed by the
+/// caller with `MPI_Comm_free`.
+struct RoutingPlan
+{
+  MPI_Comm neigh_comm;
+  std::vector<std::int32_t> perm; // reorders local entries by owner rank
+  std::vector<int> send_counts, send_disp; // sized to unique owners
+  std::vector<int> recv_counts, recv_disp; // sized to discovered sources
+};
+
+/// @brief Compute a RoutingPlan that sends each local entry `i` to rank
+/// `owner[i]`.
+///
+/// @note Collective.
+RoutingPlan compute_routing_plan(MPI_Comm comm,
+                                 std::span<const std::int32_t> owner)
+{
+  RoutingPlan plan;
+  plan.perm.resize(owner.size());
+  std::iota(plan.perm.begin(), plan.perm.end(), 0);
+  dolfinx::radix_sort(plan.perm, [&owner](std::int32_t i) { return owner[i]; });
+
+  std::vector<int> dest;
+  {
+    std::size_t i = 0;
+    while (i < plan.perm.size())
+    {
+      std::int32_t r = owner[plan.perm[i]];
+      dest.push_back(r);
+      std::size_t j = i;
+      while (j < plan.perm.size() and owner[plan.perm[j]] == r)
+        ++j;
+      plan.send_counts.push_back(static_cast<int>(j - i));
+      i = j;
+    }
+  }
+
+  const int size = dolfinx::MPI::size(comm);
+  std::vector<int> src
+      = size < pcx_rank_limit
+            ? dolfinx::MPI::compute_graph_edges_pcx(comm, dest)
+            : dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+  std::ranges::sort(src);
+
+  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
+                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &plan.neigh_comm);
+
+  plan.recv_counts.resize(src.size());
+  MPI_Neighbor_alltoall(plan.send_counts.data(), 1, MPI_INT,
+                        plan.recv_counts.data(), 1, MPI_INT, plan.neigh_comm);
+
+  plan.send_disp.assign(dest.size() + 1, 0);
+  std::partial_sum(plan.send_counts.begin(), plan.send_counts.end(),
+                   std::next(plan.send_disp.begin()));
+  plan.recv_disp.assign(src.size() + 1, 0);
+  std::partial_sum(plan.recv_counts.begin(), plan.recv_counts.end(),
+                   std::next(plan.recv_disp.begin()));
+
+  return plan;
+}
+
+/// @brief Route `values` (one entry per RoutingPlan::perm entry) to
+/// their owning ranks.
+std::vector<std::uint64_t> route(const RoutingPlan& plan,
+                                 std::span<const std::uint64_t> values)
+{
+  std::vector<std::uint64_t> send_buf(plan.perm.size());
+  for (std::size_t i = 0; i < plan.perm.size(); ++i)
+    send_buf[i] = values[plan.perm[i]];
+
+  std::vector<std::uint64_t> recv_buf(plan.recv_disp.back());
+  MPI_Neighbor_alltoallv(send_buf.data(), plan.send_counts.data(),
+                         plan.send_disp.data(), MPI_UINT64_T, recv_buf.data(),
+                         plan.recv_counts.data(), plan.recv_disp.data(),
+                         MPI_UINT64_T, plan.neigh_comm);
+  return recv_buf;
+}
+
+/// @brief Route `values` (one entry per RoutingPlan::perm entry) to
+/// their owning ranks.
+std::vector<std::int64_t> route(const RoutingPlan& plan,
+                                std::span<const std::int64_t> values)
+{
+  std::vector<std::int64_t> send_buf(plan.perm.size());
+  for (std::size_t i = 0; i < plan.perm.size(); ++i)
+    send_buf[i] = values[plan.perm[i]];
+
+  std::vector<std::int64_t> recv_buf(plan.recv_disp.back());
+  MPI_Neighbor_alltoallv(send_buf.data(), plan.send_counts.data(),
+                         plan.send_disp.data(), MPI_INT64_T, recv_buf.data(),
+                         plan.recv_counts.data(), plan.recv_disp.data(),
+                         MPI_INT64_T, plan.neigh_comm);
+  return recv_buf;
+}
+
+/// @brief Assign each of `keys` an owning rank, by slicing
+/// `[gmin, gmax]` into `size` equal-width, contiguous ranges (rank `r`
+/// owns range `r`). Computed in `double`, so this is an approximate
+/// (not exact-integer) partition of the key range -- acceptable here
+/// since it only decides which rank does the work of locating a
+/// splitter, not the splitter value itself.
+std::vector<std::int32_t> key_range_owners(std::span<const std::uint64_t> keys,
+                                           std::uint64_t gmin,
+                                           std::uint64_t gmax, int size)
+{
+  const double width = static_cast<double>(gmax - gmin) + 1.0;
+  std::vector<std::int32_t> owner(keys.size());
+  for (std::size_t j = 0; j < keys.size(); ++j)
+  {
+    double frac = static_cast<double>(keys[j] - gmin) / width;
+    owner[j] = std::clamp(static_cast<std::int32_t>(frac * size), 0, size - 1);
+  }
+  return owner;
+}
+
+/// @brief floor(total * p / n), without risking the overflow of
+/// `total * p` in std::int64_t arithmetic.
+///
+/// `p` and `n` are bounded by INT32_MAX (both are `int`), so splitting
+/// the division as `q*p + (r*p)/n` (`q`, `r` the quotient and
+/// remainder of `total/n`) keeps every intermediate product within
+/// std::int64_t: `q*p < total` (since `q*n <= total`), and
+/// `r*p < n*n <= INT32_MAX^2`, which fits.
+std::int64_t scaled_target(std::int64_t total, int p, int n)
+{
+  std::int64_t q = total / n;
+  std::int64_t r = total % n;
+  return q * static_cast<std::int64_t>(p)
+         + (r * static_cast<std::int64_t>(p)) / n;
+}
+
 /// @brief Distance along a Hilbert curve of a point with quantised
 /// coordinates.
 ///
@@ -186,10 +331,10 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
   }
 
   // Sample the local keys/weights, over-sampling by a fixed factor per
-  // partition, and gather the samples on all ranks. Splitters taken at
-  // equal cumulative-weight positions of the sorted sample then cut the
-  // global key order into `nparts` pieces of approximately equal
-  // weight, without sorting the keys across ranks.
+  // partition. Splitters are then found at equal cumulative-weight
+  // positions of the *distributed* sample, cutting the global key
+  // order into `nparts` pieces of approximately equal weight, without
+  // ever sorting the full key set across ranks.
   //
   // Note: the local points are sorted by key first so that the sample
   // is a systematic sample of the local (key, cumulative weight)
@@ -197,46 +342,43 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
   // random one, whose much larger variance shows up directly as
   // partition imbalance (measured: 7% versus under 1% for a mesh whose
   // cells arrive in an order unrelated to their position).
+  //
+  // Splitters are located via a "post office" scheme rather than
+  // gathering the sample to every rank (as an Allgatherv would): each
+  // rank owns a slice of the key range and only the sample entries that
+  // fall in it, so no rank ever holds more than its own slice of the
+  // (already bounded) sample -- unlike an Allgatherv, whose payload is
+  // multiplied by the rank count once the sample stops being
+  // sub-sampled (see the two TODOs this replaced, previously here,
+  // about Allgatherv's int-sized counts/displacements overflowing at
+  // large nparts/rank counts: that risk is gone, since no count here
+  // is multiplied by the rank count).
   constexpr int oversample = 32;
   const std::size_t n
       = std::min(num_points, static_cast<std::size_t>(oversample) * nparts);
 
-  std::vector<std::uint64_t> splitters(nparts - 1);
+  const int size = dolfinx::MPI::size(comm);
+  const int rank = dolfinx::MPI::rank(comm);
+
+  std::vector<std::uint64_t> sample_keys(n);
+  // Exact per-sample representative weight -- see the assignment below,
+  // after both branches -- summing to exactly local_total regardless of
+  // how evenly n divides it. Used unconditionally, with local_total set
+  // to num_points when `weights` is absent, so the cross-rank
+  // cumulative tracking below is the same exact-integer code path
+  // either way.
+  std::vector<std::int64_t> sample_weights(n);
+  std::int64_t local_total = 0;
   if (!weights)
   {
-    // Fast path: every point has equal weight, so the sample can be
-    // taken directly from the sorted keys, by position, with no need
-    // to track weights or an index permutation alongside them.
+    // Every point has equal weight, so the sample can be taken
+    // directly from the sorted keys, by position, with no need to
+    // track weights or an index permutation alongside them.
     std::vector<std::uint64_t> keys_sorted(keys);
     dolfinx::radix_sort(keys_sorted);
-    std::vector<std::uint64_t> sample(n);
     for (std::size_t j = 0; j < n; ++j)
-      sample[j] = keys_sorted[(j * num_points) / n];
-
-    std::vector<std::uint64_t> sample_all;
-    {
-      // TODO: the merged sample count (displs.back()) can overflow int
-      // for very large nparts/rank counts (~32 * nparts^2 samples in
-      // the worst case), since MPI_Allgatherv's counts/displacements
-      // are int. Would need either a sample budget that doesn't grow
-      // with nparts^2 or the MPI-4 large-count (_c) collectives.
-      const int size = dolfinx::MPI::size(comm);
-      int num_local = sample.size();
-      std::vector<int> counts(size), displs(size + 1, 0);
-      MPI_Allgather(&num_local, 1, MPI_INT, counts.data(), 1, MPI_INT, comm);
-      std::partial_sum(counts.begin(), counts.end(), std::next(displs.begin()));
-      sample_all.resize(displs.back());
-      MPI_Allgatherv(sample.data(), num_local, MPI_UINT64_T, sample_all.data(),
-                     counts.data(), displs.data(), MPI_UINT64_T, comm);
-      dolfinx::radix_sort(sample_all);
-    }
-
-    // Degenerate case: no points anywhere
-    if (sample_all.empty())
-      return std::vector<int>(num_points, 0);
-
-    for (int p = 1; p < nparts; ++p)
-      splitters[p - 1] = sample_all[(sample_all.size() * p) / nparts];
+      sample_keys[j] = keys_sorted[(j * num_points) / n];
+    local_total = static_cast<std::int64_t>(num_points);
   }
   else
   {
@@ -245,25 +387,25 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
     dolfinx::radix_sort(order, [&keys](std::int32_t i) { return keys[i]; });
 
     std::vector<std::int64_t> cum(num_points);
-    std::int64_t local_total = 0;
     for (std::size_t i = 0; i < num_points; ++i)
     {
       local_total += (*weights)[order[i]];
       cum[i] = local_total;
     }
 
-    std::vector<std::uint64_t> sample_keys(n);
-    std::vector<double> sample_weights(n);
     for (std::size_t j = 0; j < n; ++j)
     {
       // Position of the sample in cumulative weight: the point whose
       // weight interval covers this position, i.e. the first point
       // whose inclusive cumulative weight exceeds it. With equal
       // weights this reduces to the point at array position `j *
-      // num_points / n`. Computed in double, as for the global target
-      // below, since local_total * j can exceed the range of
-      // std::int64_t (large local point counts with weights near the
-      // top of the std::int32_t range).
+      // num_points / n`. Computed in double since local_total * j can
+      // exceed the range of std::int64_t (large local point counts
+      // with weights near the top of the std::int32_t range) -- this
+      // is a purely local computation (selecting which local point
+      // becomes sample j), so the approximation from using double
+      // costs at most a slightly different sample choice, not a
+      // correctness issue.
       const auto target = static_cast<std::int64_t>(
           static_cast<double>(local_total) * static_cast<double>(j) / n);
       auto it = std::ranges::upper_bound(cum, target);
@@ -271,61 +413,99 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
           static_cast<std::size_t>(std::ranges::distance(cum.begin(), it)),
           num_points - 1);
       sample_keys[j] = keys[order[pos]];
-      sample_weights[j] = static_cast<double>(local_total) / n;
-    }
-
-    std::vector<std::uint64_t> sample_keys_all;
-    std::vector<double> sample_weights_all;
-    {
-      // TODO: see the same-shaped gather in the unweighted branch
-      // above -- displs.back() can overflow int at large nparts/rank
-      // counts.
-      const int size = dolfinx::MPI::size(comm);
-      int num_local = sample_keys.size();
-      std::vector<int> counts(size), displs(size + 1, 0);
-      MPI_Allgather(&num_local, 1, MPI_INT, counts.data(), 1, MPI_INT, comm);
-      std::partial_sum(counts.begin(), counts.end(), std::next(displs.begin()));
-      sample_keys_all.resize(displs.back());
-      sample_weights_all.resize(displs.back());
-      MPI_Allgatherv(sample_keys.data(), num_local, MPI_UINT64_T,
-                     sample_keys_all.data(), counts.data(), displs.data(),
-                     MPI_UINT64_T, comm);
-      MPI_Allgatherv(sample_weights.data(), num_local, MPI_DOUBLE,
-                     sample_weights_all.data(), counts.data(), displs.data(),
-                     MPI_DOUBLE, comm);
-    }
-
-    // Degenerate case: no points anywhere
-    if (sample_keys_all.empty())
-      return std::vector<int>(num_points, 0);
-
-    std::vector<std::int32_t> gorder(sample_keys_all.size());
-    std::iota(gorder.begin(), gorder.end(), 0);
-    dolfinx::radix_sort(gorder, [&sample_keys_all](std::int32_t i)
-                        { return sample_keys_all[i]; });
-
-    std::vector<double> gcum(gorder.size());
-    double global_total = 0;
-    for (std::size_t i = 0; i < gorder.size(); ++i)
-    {
-      global_total += sample_weights_all[gorder[i]];
-      gcum[i] = global_total;
-    }
-
-    // Degenerate case: total weight of zero
-    if (global_total <= 0)
-      return std::vector<int>(num_points, 0);
-
-    for (int p = 1; p < nparts; ++p)
-    {
-      const double target = global_total * static_cast<double>(p) / nparts;
-      auto it = std::ranges::upper_bound(gcum, target);
-      std::size_t pos = std::min(
-          static_cast<std::size_t>(std::ranges::distance(gcum.begin(), it)),
-          gorder.size() - 1);
-      splitters[p - 1] = sample_keys_all[gorder[pos]];
     }
   }
+  // Sample j's representative weight must match the target range it was
+  // actually selected to cover -- [scaled_target(local_total, j, n),
+  // scaled_target(local_total, j+1, n)) -- not merely sum to
+  // local_total: an even split (e.g. remainder extras all assigned to
+  // the first few samples) sums correctly but corresponds to a
+  // different point/weight range than the one each sample was chosen
+  // from, since the position formula's own rounding does not spread
+  // remainders that way, and a mismatch here shows up directly as
+  // partition imbalance.
+  std::int64_t prev = 0;
+  for (std::size_t j = 0; j < n; ++j)
+  {
+    std::int64_t next = scaled_target(local_total, static_cast<int>(j) + 1,
+                                      static_cast<int>(n));
+    sample_weights[j] = next - prev;
+    prev = next;
+  }
+
+  std::uint64_t local_min
+      = n > 0 ? sample_keys.front() : std::numeric_limits<std::uint64_t>::max();
+  std::uint64_t local_max = n > 0 ? sample_keys.back() : 0;
+  std::uint64_t gmin, gmax;
+  MPI_Allreduce(&local_min, &gmin, 1, MPI_UINT64_T, MPI_MIN, comm);
+  MPI_Allreduce(&local_max, &gmax, 1, MPI_UINT64_T, MPI_MAX, comm);
+
+  // Degenerate case: no points anywhere
+  if (gmin > gmax)
+    return std::vector<int>(num_points, 0);
+
+  std::vector<std::int32_t> owner
+      = key_range_owners(sample_keys, gmin, gmax, size);
+  RoutingPlan plan = compute_routing_plan(comm, owner);
+  std::vector<std::uint64_t> recv_keys = route(plan, sample_keys);
+  std::vector<std::int64_t> recv_weights
+      = route(plan, std::span<const std::int64_t>(sample_weights));
+  MPI_Comm_free(&plan.neigh_comm);
+
+  // route() groups by destination rank, not by key, so the receiver
+  // must sort by key itself before it can walk cumulative weight.
+  std::vector<std::int32_t> rorder(recv_keys.size());
+  std::iota(rorder.begin(), rorder.end(), 0);
+  dolfinx::radix_sort(rorder,
+                      [&recv_keys](std::int32_t i) { return recv_keys[i]; });
+
+  std::vector<std::int64_t> rcum(rorder.size());
+  std::int64_t local_weight = 0;
+  for (std::size_t i = 0; i < rorder.size(); ++i)
+  {
+    local_weight += recv_weights[rorder[i]];
+    rcum[i] = local_weight;
+  }
+
+  // Rank r owns the r-th slice of the key range (see key_range_owners),
+  // so rank order and key-range order coincide: an exclusive scan of
+  // local_weight in rank order gives each rank its offset into the
+  // (virtual) fully key-sorted, fully merged sample -- entirely exact
+  // integer arithmetic, unlike a scan over floating-point weights,
+  // which is not guaranteed bit-for-bit consistent across ranks and
+  // could otherwise leave a target unclaimed, or claimed twice, right
+  // at a rank boundary.
+  std::int64_t offset = 0;
+  MPI_Exscan(&local_weight, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
+  if (rank == 0)
+    offset = 0; // Exscan leaves rank 0's recvbuf value unspecified
+
+  std::int64_t total_weight = 0;
+  MPI_Allreduce(&local_weight, &total_weight, 1, MPI_INT64_T, MPI_SUM, comm);
+
+  // Degenerate case: total weight of zero
+  if (total_weight <= 0)
+    return std::vector<int>(num_points, 0);
+
+  // Each target lands in exactly one rank's [offset, offset+local_weight)
+  // range; contributions are otherwise left at 0 so the final Allreduce
+  // can just sum them.
+  std::vector<std::uint64_t> contrib(nparts - 1, 0);
+  for (int p = 1; p < nparts; ++p)
+  {
+    std::int64_t target = scaled_target(total_weight, p, nparts);
+    if (target >= offset and target < offset + local_weight)
+    {
+      auto it = std::ranges::upper_bound(rcum, target - offset);
+      std::size_t pos = std::min(
+          static_cast<std::size_t>(std::ranges::distance(rcum.begin(), it)),
+          rorder.size() - 1);
+      contrib[p - 1] = recv_keys[rorder[pos]];
+    }
+  }
+  std::vector<std::uint64_t> splitters(nparts - 1);
+  MPI_Allreduce(contrib.data(), splitters.data(), nparts - 1, MPI_UINT64_T,
+                MPI_SUM, comm);
 
   std::vector<int> part(num_points);
   std::ranges::transform(keys, part.begin(),

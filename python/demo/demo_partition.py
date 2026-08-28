@@ -451,8 +451,9 @@ def redistribute_by_partitioner(
         partitioner: Geometric cell partitioning function, i.e. one
             taking cell centroids rather than the graph -- see
             :func:`create_mesh`. Called here directly, rather than
-            through :func:`create_mesh`, with its ``(comm, nparts, x)``
-            signature, returning one destination rank per centroid.
+            through :func:`create_mesh`, with its
+            ``(comm, nparts, x, node_weights)`` signature, returning one
+            destination rank per centroid.
 
     Returns:
         The cells assigned to this rank, in the same vertex numbering as
@@ -460,7 +461,7 @@ def redistribute_by_partitioner(
     """
     centroid = compute_cell_centroids(comm, [cell_type], [cells.reshape(-1)], comm, x)
     dest = graph.adjacencylist(
-        np.asarray(partitioner(comm, comm.size, centroid), dtype=np.int32)
+        np.asarray(partitioner(comm, comm.size, centroid, None), dtype=np.int32)
     )._cpp_object
     recv, _, _, _ = graph.distribute(comm, cells, dest)  # type: ignore[arg-type]
     return recv
