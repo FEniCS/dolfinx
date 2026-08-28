@@ -135,7 +135,7 @@ RoutingPlan compute_routing_plan(MPI_Comm comm,
 /// std::int64_t, is exchanged alongside its weight in one
 /// MPI_Neighbor_alltoallv call by doubling the plan's per-rank
 /// counts/displacements, rather than issuing two separate calls.
-std::pair<std::vector<std::uint64_t>, std::vector<std::int64_t>>
+std::vector<std::int64_t>
 route_key_weight(const RoutingPlan& plan, std::span<const std::uint64_t> keys,
                  std::span<const std::int64_t> weights)
 {
@@ -165,16 +165,7 @@ route_key_weight(const RoutingPlan& plan, std::span<const std::uint64_t> keys,
                          MPI_INT64_T, recv_buf.data(), recv_counts.data(),
                          recv_disp.data(), MPI_INT64_T, plan.neigh_comm);
 
-  const std::size_t num_recv = plan.recv_disp.back();
-  std::vector<std::uint64_t> recv_keys(num_recv);
-  std::vector<std::int64_t> recv_weights(num_recv);
-  for (std::size_t i = 0; i < num_recv; ++i)
-  {
-    recv_keys[i] = static_cast<std::uint64_t>(recv_buf[2 * i]);
-    recv_weights[i] = recv_buf[2 * i + 1];
-  }
-
-  return {std::move(recv_keys), std::move(recv_weights)};
+  return recv_buf;
 }
 
 /// @brief Assign each of `keys` an owning rank, by slicing
@@ -431,27 +422,53 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
     std::iota(order.begin(), order.end(), 0);
     dolfinx::radix_sort(order, [&keys](std::int32_t i) { return keys[i]; });
 
-    std::vector<std::int64_t> cum(num_points);
+    bool nonnegative_weights = true;
     for (std::size_t i = 0; i < num_points; ++i)
     {
-      local_total += (*weights)[order[i]];
-      cum[i] = local_total;
+      const std::int32_t weight = (*weights)[order[i]];
+      local_total += weight;
+      nonnegative_weights = nonnegative_weights and weight >= 0;
     }
 
-    for (std::size_t j = 0; j < n; ++j)
+    if (nonnegative_weights)
     {
-      // First point whose cumulative weight exceeds this target
-      // position (reduces to array position `j * num_points / n` for
-      // equal weights). Computed in double, since local_total * j can
-      // overflow std::int64_t -- harmless here, as it only picks which
-      // local point becomes sample j, not a value needing exactness.
-      const auto target = static_cast<std::int64_t>(
-          static_cast<double>(local_total) * static_cast<double>(j) / n);
-      auto it = std::ranges::upper_bound(cum, target);
-      std::size_t pos = std::min(
-          static_cast<std::size_t>(std::ranges::distance(cum.begin(), it)),
-          num_points - 1);
-      sample_keys[j] = keys[order[pos]];
+      // Targets are ordered, so scan the cumulative weights once rather
+      // than materialising them and binary-searching for every sample.
+      std::size_t pos = 0;
+      std::int64_t cumulative = (*weights)[order[0]];
+      for (std::size_t j = 0; j < n; ++j)
+      {
+        // First point whose cumulative weight exceeds this target
+        // position (reduces to array position `j * num_points / n` for
+        // equal weights). Computed in double, since local_total * j can
+        // overflow std::int64_t -- harmless here, as it only picks which
+        // local point becomes sample j, not a value needing exactness.
+        const auto target = static_cast<std::int64_t>(
+            static_cast<double>(local_total) * static_cast<double>(j) / n);
+        while (pos + 1 < num_points and cumulative <= target)
+          cumulative += (*weights)[order[++pos]];
+        sample_keys[j] = keys[order[pos]];
+      }
+    }
+    else
+    {
+      // Negative weights do not form a monotone cumulative distribution.
+      // Retain the existing upper_bound behaviour for this unsupported
+      // input rather than changing its observable result here.
+      std::vector<std::int64_t> cum(num_points);
+      std::partial_sum(order.begin(), order.end(), cum.begin(),
+                       [&weights](std::int64_t sum, std::int32_t i)
+                       { return sum + (*weights)[i]; });
+      for (std::size_t j = 0; j < n; ++j)
+      {
+        const auto target = static_cast<std::int64_t>(
+            static_cast<double>(local_total) * static_cast<double>(j) / n);
+        auto it = std::ranges::upper_bound(cum, target);
+        std::size_t pos = std::min(
+            static_cast<std::size_t>(std::ranges::distance(cum.begin(), it)),
+            num_points - 1);
+        sample_keys[j] = keys[order[pos]];
+      }
     }
   }
   // Sample j's weight is the target range it was actually selected to
@@ -495,24 +512,20 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
   std::vector<std::int32_t> owner
       = key_range_owners(sample_keys, gmin, gmax, size);
   RoutingPlan plan = compute_routing_plan(comm, owner);
-  auto [recv_keys, recv_weights] = route_key_weight(
+  std::vector<std::int64_t> recv_buf = route_key_weight(
       plan, sample_keys, std::span<const std::int64_t>(sample_weights));
   MPI_Comm_free(&plan.neigh_comm);
 
   // route_key_weight() groups by destination rank, not by key, so the receiver
   // must sort by key itself before it can walk cumulative weight.
-  std::vector<std::int32_t> rorder(recv_keys.size());
+  std::vector<std::int32_t> rorder(recv_buf.size() / 2);
   std::iota(rorder.begin(), rorder.end(), 0);
   dolfinx::radix_sort(rorder,
-                      [&recv_keys](std::int32_t i) { return recv_keys[i]; });
+                      [&recv_buf](std::int32_t i) { return recv_buf[2 * i]; });
 
-  std::vector<std::int64_t> rcum(rorder.size());
   std::int64_t local_weight = 0;
   for (std::size_t i = 0; i < rorder.size(); ++i)
-  {
-    local_weight += recv_weights[rorder[i]];
-    rcum[i] = local_weight;
-  }
+    local_weight += recv_buf[2 * rorder[i] + 1];
 
   // Rank order matches key-range order (see key_range_owners), so an
   // exclusive scan of local_weight gives each rank its offset into the
@@ -536,16 +549,38 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
   // range; contributions are otherwise left at 0 so the final Allreduce
   // can just sum them.
   std::vector<std::uint64_t> contrib(nparts - 1, 0);
+  const bool nonnegative_sample_weights = std::ranges::all_of(
+      rorder, [&recv_buf](std::int32_t i) { return recv_buf[2 * i + 1] >= 0; });
+  std::vector<std::int64_t> rcum;
+  if (!nonnegative_sample_weights)
+  {
+    rcum.resize(rorder.size());
+    std::partial_sum(rorder.begin(), rorder.end(), rcum.begin(),
+                     [&recv_buf](std::int64_t sum, std::int32_t i)
+                     { return sum + recv_buf[2 * i + 1]; });
+  }
+
+  std::size_t pos = 0;
+  std::int64_t cumulative = rorder.empty() ? 0 : recv_buf[2 * rorder[0] + 1];
   for (int p = 1; p < nparts; ++p)
   {
     std::int64_t target = scaled_target(total_weight, p, nparts);
     if (target >= offset and target < offset + local_weight)
     {
-      auto it = std::ranges::upper_bound(rcum, target - offset);
-      std::size_t pos = std::min(
-          static_cast<std::size_t>(std::ranges::distance(rcum.begin(), it)),
-          rorder.size() - 1);
-      contrib[p - 1] = recv_keys[rorder[pos]];
+      if (nonnegative_sample_weights)
+      {
+        while (pos + 1 < rorder.size() and cumulative <= target - offset)
+          cumulative += recv_buf[2 * rorder[++pos] + 1];
+        contrib[p - 1] = static_cast<std::uint64_t>(recv_buf[2 * rorder[pos]]);
+      }
+      else
+      {
+        auto it = std::ranges::upper_bound(rcum, target - offset);
+        std::size_t i = std::min(
+            static_cast<std::size_t>(std::ranges::distance(rcum.begin(), it)),
+            rorder.size() - 1);
+        contrib[p - 1] = static_cast<std::uint64_t>(recv_buf[2 * rorder[i]]);
+      }
     }
   }
   std::vector<std::uint64_t> splitters(nparts - 1);

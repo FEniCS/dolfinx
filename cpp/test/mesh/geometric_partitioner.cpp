@@ -19,6 +19,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
+#include <numeric>
 #include <span>
 #include <vector>
 
@@ -181,6 +182,30 @@ TEST_CASE("SFC point partition", "[partition_sfc]")
     // Points are assigned in space-filling-curve order, which in one
     // dimension is sorted order for both curves
     CHECK(std::ranges::is_sorted(part));
+
+    // Unit weights must take the same path through the weighted sampler
+    // without changing the result.
+    std::vector<std::int32_t> weights(num_points, 1);
+    std::vector<int> weighted_part
+        = partition(comm, size, x, 1, std::span<const std::int32_t>(weights));
+    CHECK(weighted_part == std::vector<int>(part.begin(), part.end()));
+
+    for (int i = 0; i < num_points; ++i)
+      weights[i] = 1 + i % 5;
+    weighted_part
+        = partition(comm, size, x, 1, std::span<const std::int32_t>(weights));
+    CHECK(std::ranges::is_sorted(weighted_part));
+    std::vector<std::int64_t> local_weight(size, 0), total_weight(size, 0);
+    for (int i = 0; i < num_points; ++i)
+      local_weight[weighted_part[i]] += weights[i];
+    MPI_Allreduce(local_weight.data(), total_weight.data(), size, MPI_INT64_T,
+                  MPI_SUM, comm);
+    CHECK(*std::ranges::max_element(total_weight)
+          <= 1.2
+                     * std::accumulate(total_weight.begin(), total_weight.end(),
+                                       std::int64_t(0))
+                     / size
+                 + 5);
 
     // A single partition holds everything
     graph::AdjacencyList<std::int32_t> part1 = graph::regular_adjacency_list(
