@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Garth N. Wells and Matthew W. Scroggs
+// Copyright (C) 2020-2026 Garth N. Wells and Matthew W. Scroggs
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //

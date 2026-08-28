@@ -60,13 +60,12 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
 
 /// @brief Gather a single coefficient's degrees-of-freedom for a single
 /// cell and apply its DOF transformation.
-/// @tparam _bs Block size known at compile time (1, 2, or 3), or -1 to
-/// use the runtime block size `bs` (allows the compiler to specialize
-/// and unroll the inner loop for the common block sizes). If `_bs >=
-/// 0`, it must equal `bs`.
 /// @param[out] coeffs Destination for this cell's packed values.
 /// @param[in] cell Cell to gather DOF values for.
-/// @param[in] bs Runtime block size of `dofmap`.
+/// @param[in] bs Block size of `dofmap`, as a run-time `int` or a
+/// compile-time `std::integral_constant<int, N>` (allows the compiler
+/// to specialize and unroll the inner loop for the common block sizes
+/// 1, 2 and 3).
 /// @param[in] v Function values to gather from, indexed by
 /// process-local DOF (see DofMap::cell_dofs).
 /// @param[in] cell_info Cell permutation data (see
@@ -74,29 +73,18 @@ get_cell_orientation_info(const Function<T, U>& coefficient)
 /// @param[in] dofmap Dofmap used to look up `cell`'s DOFs.
 /// @param[in] transform DOF transformation applied to `coeffs` after
 /// gathering (see FiniteElement::dof_transformation_fn).
-template <int _bs, dolfinx::scalar T>
-void pack_impl(std::span<T> coeffs, std::int32_t cell, int bs,
+template <dolfinx::scalar T>
+void pack_impl(std::span<T> coeffs, std::int32_t cell, auto bs,
                std::span<const T> v, std::span<const std::uint32_t> cell_info,
                const DofMap& dofmap, auto transform)
 {
   std::span<const std::int32_t> dofs = dofmap.cell_dofs(cell);
   for (std::size_t i = 0; i < dofs.size(); ++i)
   {
-    if constexpr (_bs < 0)
-    {
-      const int pos_c = bs * i;
-      const int pos_v = bs * dofs[i];
-      for (int k = 0; k < bs; ++k)
-        coeffs[pos_c + k] = v[pos_v + k];
-    }
-    else
-    {
-      assert(_bs == bs);
-      const int pos_c = _bs * i;
-      const int pos_v = _bs * dofs[i];
-      for (int k = 0; k < _bs; ++k)
-        coeffs[pos_c + k] = v[pos_v + k];
-    }
+    const int pos_c = bs * i;
+    const int pos_v = bs * dofs[i];
+    for (int k = 0; k < bs; ++k)
+      coeffs[pos_c + k] = v[pos_v + k];
   }
 
   if (transform)

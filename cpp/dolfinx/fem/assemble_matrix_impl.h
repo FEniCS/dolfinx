@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2019 Garth N. Wells
+// Copyright (C) 2018-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -314,6 +314,13 @@ void assemble_entities(
   assert(Ab.size() >= ndim0 * ndim1);
   assert(cdofs_b.size() >= 3 * x_dofmap.extent(1));
   auto Ae = Ab.first(ndim0 * ndim1);
+
+  // P0/P1T do not change across entities in this call, so whether each is a
+  // set (non-null) transform is loop-invariant -- checked once here rather
+  // than on every entity.
+  const bool p0_set = is_transform_set(P0);
+  const bool p1t_set = is_transform_set(P1T);
+
   for (std::size_t f = 0; f < entities.extent(0); ++f)
   {
     // Cell in the integration domain, local entity index relative to the
@@ -346,9 +353,9 @@ void assemble_entities(
     std::ranges::fill(Ae, 0);
     kernel(Ae.data(), &coeffs(f, 0), constants.data(), cdofs_b.data(),
            &local_entity, &perm, nullptr);
-    if (is_transform_set(P0))
+    if (p0_set)
       P0(Ae, cell_info0, cell0, ndim1);
-    if (is_transform_set(P1T))
+    if (p1t_set)
       P1T(Ae, cell_info1, cell1, ndim0);
 
     // Don't clear rows/cols in LiftingMode
@@ -533,6 +540,12 @@ void assemble_interior_facets(
     mat_set(rdofs, cdofs, Ae_block);
   };
 
+  // P0/P1T do not change across facets in this call, so whether each is a
+  // set (non-null) transform is loop-invariant -- checked once here rather
+  // than on every facet.
+  const bool p0_set = is_transform_set(P0);
+  const bool p1t_set = is_transform_set(P1T);
+
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
     // Cells in integration domain,  test function domain and trial
@@ -601,18 +614,18 @@ void assemble_interior_facets(
     // where each block is element tensor of size (dmap0, dmap1).
 
     // Only apply transformation when cells exist
-    if (P0 and cells0[0] >= 0)
+    if (p0_set and cells0[0] >= 0)
       P0(Ae, cell_info0, cells0[0], num_cols);
-    if (P0 and cells0[1] >= 0)
+    if (p0_set and cells0[1] >= 0)
     {
       std::span sub_Ae0(Ae.data() + bs0 * dmap0_size * num_cols,
                         bs0 * dmap0_size * num_cols);
       P0(sub_Ae0, cell_info0, cells0[1], num_cols);
     }
-    if (P1T and cells1[0] >= 0)
+    if (p1t_set and cells1[0] >= 0)
       P1T(Ae, cell_info1, cells1[0], num_rows);
 
-    if (P1T and cells1[1] >= 0)
+    if (p1t_set and cells1[1] >= 0)
     {
       for (std::size_t row = 0; row < num_rows; ++row)
       {
