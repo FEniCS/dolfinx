@@ -111,6 +111,8 @@ RoutingPlan compute_routing_plan(MPI_Comm comm,
                                  MPI_INFO_NULL, false, &plan.neigh_comm);
 
   plan.recv_counts.resize(src.size());
+  plan.send_counts.reserve(1); // ensure data is not a nullptr
+  plan.recv_counts.reserve(1); // ensure data is not a nullptr
   MPI_Neighbor_alltoall(plan.send_counts.data(), 1, MPI_INT,
                         plan.recv_counts.data(), 1, MPI_INT, plan.neigh_comm);
 
@@ -152,6 +154,10 @@ route_key_weight(const RoutingPlan& plan, std::span<const std::uint64_t> keys,
   std::ranges::transform(plan.recv_disp, recv_disp.begin(), scale2);
 
   std::vector<std::int64_t> recv_buf(recv_disp.back());
+  send_buf.reserve(1);    // ensure data is not a nullptr
+  send_counts.reserve(1); // ensure data is not a nullptr
+  recv_counts.reserve(1); // ensure data is not a nullptr
+  recv_buf.reserve(1);    // ensure data is not a nullptr
   MPI_Neighbor_alltoallv(send_buf.data(), send_counts.data(), send_disp.data(),
                          MPI_INT64_T, recv_buf.data(), recv_counts.data(),
                          recv_disp.data(), MPI_INT64_T, plan.neigh_comm);
