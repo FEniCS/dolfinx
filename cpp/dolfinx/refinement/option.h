@@ -18,7 +18,7 @@ enum class Option : std::uint8_t
   parent_facet = 0b01, /*!< Compute list of the cell-local facet indices in the
           parent cell of each facet in each new cell (or -1 if no match)  */
   parent_cell = 0b10,  /*!< Compute list with the parent cell index for each new
-                           cell */
+                          cell */
   parent_cell_and_facet = 0b11 /*< Both cell and facet parent data */
 };
 
