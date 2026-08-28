@@ -99,7 +99,9 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
   mesh::CellPartitionFunction part =
       [comm_size](MPI_Comm /* comm */, int /* nparts */,
                   const std::vector<mesh::CellType>& /* cell_types */,
-                  const std::vector<std::span<const std::int64_t>>& /* cells */)
+                  const std::vector<std::span<const std::int64_t>>& /* cells */,
+                  std::span<const std::int32_t> /* cell_weights */,
+                  std::span<const std::int32_t> /* edge_weights */)
   {
     std::vector<std::vector<std::int32_t>> data;
     if (comm_size == 1)

@@ -40,7 +40,9 @@ void graph(nb::module_& m)
   using partition_fn
       = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
           MPICommWrapper, int,
-          const dolfinx::graph::AdjacencyList<std::int64_t>&, bool)>;
+          const dolfinx::graph::AdjacencyList<std::int64_t>&,
+          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>,
+          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>, bool)>;
   m.def(
       "partitioner", []() -> partition_fn
       { return create_partitioner_py(dolfinx::graph::partition_graph); },
@@ -66,7 +68,7 @@ void graph(nb::module_& m)
             dolfinx::graph::parmetis::partitioner(imbalance, options));
       },
       nb::arg("imbalance") = 1.02,
-      nb::arg("options") = std ::array<int, 3>({1, 0, 5}),
+      nb::arg("options") = std::array<int, 3>({1, 0, 5}),
       "ParMETIS graph partitioner");
 #endif
 #ifdef HAS_KAHIP

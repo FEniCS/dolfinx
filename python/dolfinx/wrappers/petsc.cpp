@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2025 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2026 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,6 +10,7 @@
 #include "dolfinx_wrappers/array.h"
 #include "dolfinx_wrappers/pycoeff.h"
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/petsc.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/Form.h>
@@ -60,8 +61,8 @@ to_index_map_refs(const std::vector<std::pair<U, int>>& maps)
 bool unit_block_size(Mat A)
 {
   PetscInt bs0 = -1, bs1 = -1;
-  if (PetscErrorCode ierr = MatGetBlockSizes(A, &bs0, &bs1); ierr != 0)
-    dolfinx::la::petsc::error(ierr, __FILE__, "MatGetBlockSizes");
+  dolfinx::common::petsc::check(MatGetBlockSizes(A, &bs0, &bs1),
+                                "MatGetBlockSizes");
   return bs0 == 1 and bs1 == 1;
 }
 
