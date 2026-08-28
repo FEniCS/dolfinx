@@ -59,6 +59,9 @@ std::uint64_t morton_key(std::array<std::uint32_t, 3> c, int /*gdim*/)
 /// crossover point.
 constexpr int pcx_rank_limit = 10000;
 
+/// Number of samples per output partition.
+constexpr int oversample = 32;
+
 /// @brief A plan for routing values to the MPI rank that "owns" them,
 /// via a sparse neighbourhood exchange.
 ///
@@ -194,20 +197,54 @@ std::vector<std::int32_t> key_range_owners(std::span<const std::uint64_t> keys,
   return owner;
 }
 
-/// @brief floor(total * p / n), without risking the overflow of
-/// `total * p` in std::int64_t arithmetic.
+/// @brief floor(total * p / n), without overflowing `std::int64_t`.
 ///
-/// `p` and `n` are bounded by INT32_MAX (both are `int`), so splitting
-/// the division as `q*p + (r*p)/n` (`q`, `r` the quotient and
-/// remainder of `total/n`) keeps every intermediate product within
-/// std::int64_t: `q*p < total` (since `q*n <= total`), and
-/// `r*p < n*n <= INT32_MAX^2`, which fits.
-std::int64_t scaled_target(std::int64_t total, int p, int n)
+/// `p` must be in [0, n].
+std::int64_t scaled_target(std::int64_t total, std::int64_t p, std::int64_t n)
 {
-  std::int64_t q = total / n;
-  std::int64_t r = total % n;
-  return q * static_cast<std::int64_t>(p)
-         + (r * static_cast<std::int64_t>(p)) / n;
+  return static_cast<std::int64_t>(static_cast<__int128>(total) * p / n);
+}
+
+/// @brief Return the local share of a globally bounded sample.
+///
+/// Every rank with points receives one sample so that its contribution
+/// to the weight distribution is retained. Remaining samples are
+/// allocated proportionally to the number of additional local points.
+std::size_t sample_size(MPI_Comm comm, std::size_t num_points, int nparts)
+{
+  const int rank = dolfinx::MPI::rank(comm);
+  std::array<std::int64_t, 2> local_counts
+      = {static_cast<std::int64_t>(num_points), num_points > 0 ? 1 : 0};
+  std::array<std::int64_t, 2> global_counts;
+  MPI_Allreduce(local_counts.data(), global_counts.data(), 2, MPI_INT64_T,
+                MPI_SUM, comm);
+
+  const std::int64_t total_points = global_counts[0];
+  const std::int64_t num_nonempty_ranks = global_counts[1];
+  const std::int64_t num_samples = std::min(
+      total_points, std::max(static_cast<std::int64_t>(oversample) * nparts,
+                             num_nonempty_ranks));
+  const std::int64_t local_extra_points
+      = num_points > 0 ? static_cast<std::int64_t>(num_points) - 1 : 0;
+  const std::int64_t total_extra_points = total_points - num_nonempty_ranks;
+
+  std::int64_t extra_offset = 0;
+  MPI_Exscan(&local_extra_points, &extra_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+  if (rank == 0)
+    extra_offset = 0;
+
+  if (num_points == 0)
+    return 0;
+
+  const std::int64_t extra_samples = num_samples - num_nonempty_ranks;
+  return 1
+         + (total_extra_points > 0
+                ? scaled_target(extra_samples,
+                                extra_offset + local_extra_points,
+                                total_extra_points)
+                      - scaled_target(extra_samples, extra_offset,
+                                      total_extra_points)
+                : 0);
 }
 
 /// @brief Distance along a Hilbert curve of a point with quantised
@@ -345,8 +382,10 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
     keys[i] = key(c, gdim);
   }
 
-  // Sample the local keys/weights, over-sampling by a fixed factor per
-  // partition. Splitters are then found at equal cumulative-weight
+  // Sample the local keys/weights, using a global budget that is a
+  // fixed factor per partition. A sample is kept for every non-empty
+  // rank, with the remainder distributed in proportion to local point
+  // counts. Splitters are then found at equal cumulative-weight
   // positions of the *distributed* sample, cutting the global key
   // order into `nparts` pieces of approximately equal weight, without
   // ever sorting the full key set across ranks.
@@ -363,12 +402,9 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
   // rank owns a slice of the key range and only the sample entries
   // that fall in it, so per-rank cost scales with the sample size
   // divided across ranks, not multiplied by the rank count.
-  constexpr int oversample = 32;
-  const std::size_t n
-      = std::min(num_points, static_cast<std::size_t>(oversample) * nparts);
-
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
+  const std::size_t n = sample_size(comm, num_points, nparts);
 
   std::vector<std::uint64_t> sample_keys(n);
   // Exact per-sample representative weight (assigned below, after both

@@ -29,10 +29,11 @@ namespace dolfinx::graph
 /// every rank, so per-rank cost and memory scale with the sample size
 /// divided across ranks, not multiplied by them.
 ///
-/// Compared to a graph partitioner, this is much cheaper (no graph is
-/// required and the cost is nearly independent of the number of ranks)
-/// and gives a near-perfect load balance, at the cost of a larger number
-/// of cut edges (typically tens of percent for a mesh dual graph).
+/// Compared to a graph partitioner, this is much cheaper because no graph
+/// is required and gives a near-perfect load balance, at the cost of a
+/// larger number of cut edges (typically tens of percent for a mesh dual
+/// graph). The distributed sample uses a global budget proportional to
+/// `nparts`, but every rank stores the `nparts - 1` splitter keys.
 ///
 /// A Morton curve jumps a long way in space each time a high bit of the
 /// key changes, so consecutive points on the curve are not always close
