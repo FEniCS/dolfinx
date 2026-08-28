@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Garth N. Wells and Chris N. Richardson
+// Copyright (C) 2021-2026 Garth N. Wells and Chris N. Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <concepts>
 #include <numeric>
 #include <span>
@@ -34,6 +35,42 @@ template <typename T>
 concept BlockSizeArg = std::integral<std::remove_cvref_t<T>>
                        or is_integral_constant<std::remove_cvref_t<T>>::value;
 /// @endcond
+
+/// @brief Position of `col` within the sorted column-index range
+/// `cols[begin, end)` of one CSR row.
+///
+/// Matches `std::lower_bound(cols.begin() + begin, cols.begin() + end,
+/// col)` in semantics -- returns `end` if `col` is greater than every
+/// entry in the range, otherwise the position of the first entry
+/// `>= col`. Callers must check `cols[pos] == col` themselves to
+/// detect a genuinely missing entry; this function does not throw.
+///
+/// A single shared search used by `insert_csr`, `insert_blocked_csr`,
+/// `insert_nonblocked_csr` and `MatrixCSR`'s ghost-row unpacking, which
+/// otherwise duplicate this lookup identically. A hand-written
+/// "branchless" (conditional-move) rewrite of `std::lower_bound` was
+/// tried here and measured ~13% *slower* in `csr_reasm`
+/// (`scripts/bench_backend.py`) than plain `std::lower_bound` -- GCC
+/// did not turn the conditional-move idiom into a `cmov` (confirmed by
+/// disassembly: it kept a real conditional branch, structurally
+/// identical to libstdc++'s own implementation, just without
+/// libstdc++'s tuning), so there was no bet to win. Kept as a thin
+/// wrapper around `std::lower_bound` for the sole purpose of removing
+/// that duplication.
+///
+/// @param[in] cols CSR column indices for the whole matrix.
+/// @param[in] begin Start of the row's range within `cols`.
+/// @param[in] end End (one past last) of the row's range within
+/// `cols`.
+/// @param[in] col Column index to locate.
+/// @return Position within `cols` of `col`, or `end` if not present.
+template <typename V, std::integral T>
+std::size_t csr_position(const V& cols, std::size_t begin, std::size_t end,
+                         T col)
+{
+  const auto* c = cols.data();
+  return std::lower_bound(c + begin, c + end, col) - c;
+}
 
 /// @brief Incorporate data into a CSR matrix.
 ///
@@ -84,16 +121,15 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       throw std::runtime_error("Local row out of range");
 #endif
     // Columns indices for row
-    auto cit0 = std::next(cols.begin(), row_ptr[row]);
-    auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
+    std::size_t row_begin = row_ptr[row];
+    std::size_t row_end = row_ptr[row + 1];
     for (std::size_t c = 0; c < nc; ++c)
     {
       // Find position of column index
-      auto it = std::lower_bound(cit0, cit1, xcols[c]);
-      if (it == cit1 or *it != xcols[c])
+      std::size_t d = csr_position(cols, row_begin, row_end, xcols[c]);
+      if (d == row_end or cols[d] != xcols[c])
         throw std::runtime_error("Entry not in sparsity");
 
-      std::size_t d = std::ranges::distance(cols.begin(), it);
       std::size_t di = d * BS0 * BS1;
       std::size_t xi = c * BS1;
       assert(di < data.size());
@@ -152,16 +188,15 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       const T* xr = x.data() + (r * BS0 + i) * nc * BS1;
 
       // Columns indices for row
-      auto cit0 = std::next(cols.begin(), row_ptr[row + i]);
-      auto cit1 = std::next(cols.begin(), row_ptr[row + i + 1]);
+      std::size_t row_begin = row_ptr[row + i];
+      std::size_t row_end = row_ptr[row + i + 1];
       for (std::size_t c = 0; c < nc; ++c)
       {
         // Find position of column index
-        auto it = std::lower_bound(cit0, cit1, xcols[c] * BS1);
-        if (it == cit1 or *it != xcols[c] * BS1)
+        std::size_t d = csr_position(cols, row_begin, row_end, xcols[c] * BS1);
+        if (d == row_end or cols[d] != xcols[c] * BS1)
           throw std::runtime_error("Entry not in sparsity");
 
-        std::size_t d = std::ranges::distance(cols.begin(), it);
         assert(d < data.size());
         std::size_t xi = c * BS1;
         for (int j = 0; j < BS1; ++j)
@@ -213,17 +248,16 @@ void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       throw std::runtime_error("Local row out of range");
 #endif
     // Columns indices for row
-    auto cit0 = std::next(cols.begin(), row_ptr[rdiv.quot]);
-    auto cit1 = std::next(cols.begin(), row_ptr[rdiv.quot + 1]);
+    std::size_t row_begin = row_ptr[rdiv.quot];
+    std::size_t row_end = row_ptr[rdiv.quot + 1];
     for (std::size_t c = 0; c < nc; ++c)
     {
       // Find position of column index
       auto cdiv = std::div(xcols[c], bs1);
-      auto it = std::lower_bound(cit0, cit1, cdiv.quot);
-      if (it == cit1 or *it != cdiv.quot)
+      std::size_t d = csr_position(cols, row_begin, row_end, cdiv.quot);
+      if (d == row_end or cols[d] != cdiv.quot)
         throw std::runtime_error("Entry not in sparsity");
 
-      std::size_t d = std::ranges::distance(cols.begin(), it);
       std::size_t di = d * nbs + rdiv.rem * bs1 + cdiv.rem;
       assert(di < data.size());
       op(data[di], xr[c]);
