@@ -152,9 +152,8 @@ refine(const mesh::Mesh<T>& mesh,
   assert(std::holds_alternative<graph::partition_fn>(partitioner));
 
   mesh::Mesh<T> mesh1 = mesh::create_mesh(
-      mesh.comm(), mesh.comm(), cell_adj.array(),
-      std::span<const std::int32_t>(), mesh.geometry().cmaps().front(),
-      mesh.comm(), new_vertex_coords, xshape,
+      mesh.comm(), mesh.comm(), cell_adj.array(), std::nullopt,
+      mesh.geometry().cmaps().front(), mesh.comm(), new_vertex_coords, xshape,
       std::get<graph::partition_fn>(partitioner), ghost_mode, 2, 1);
 
   // Report the number of refined cells

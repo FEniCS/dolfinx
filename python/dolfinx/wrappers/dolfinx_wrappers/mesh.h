@@ -37,13 +37,6 @@ namespace nb = nanobind;
 
 namespace dolfinx_wrappers::part::impl
 {
-using PythonPartitionFunction
-    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&,
-        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
-        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>;
-
 /// The Python-visible partitioner argument accepted by create_mesh: a
 /// GraphPartitioner, a GeometricPartitioner, a HybridPartitioner, or a
 /// plain (raw callable) graph partitioner (std::nullopt disables
@@ -66,6 +59,38 @@ to_any_cell_partitioner(const PythonPartitionFn& p);
 
 namespace dolfinx_wrappers
 {
+
+/// Convert create_mesh's optional cell_weights argument (an ndarray, as
+/// received from Python) to the optional span dolfinx::mesh::create_mesh
+/// expects. Python None (no weights) becomes std::nullopt.
+inline std::optional<std::span<const std::int32_t>> to_cell_weights_span(
+    std::optional<nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+        cell_weights)
+{
+  if (!cell_weights)
+    return std::nullopt;
+  return std::span<const std::int32_t>(cell_weights->data(),
+                                       cell_weights->size());
+}
+
+/// Wrap a Python entity marker (candidate-entity coordinates -> a
+/// boolean array) as the callable dolfinx::mesh::locate_entities and
+/// dolfinx::mesh::locate_entities_boundary expect. The returned
+/// closure holds a reference to `marker`, so it must not outlive it.
+template <typename T>
+auto to_cpp_marker(
+    const std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
+        nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>& marker)
+{
+  return [&marker](auto x)
+  {
+    nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
+        x.data_handle(), {x.extent(0), x.extent(1)});
+    auto marked = marker(x_view);
+    return std::vector<std::int8_t>(marked.data(),
+                                    marked.data() + marked.size());
+  };
+}
 
 template <typename T>
 void declare_meshtags(nb::module_& m, const std::string& type)
@@ -328,16 +353,11 @@ void declare_mesh(nb::module_& m, std::string type)
             cells_nb, std::back_inserter(cells), [](auto& c)
             { return std::span<const std::int64_t>(c.data(), c.size()); });
 
-        std::span<const std::int32_t> cell_weights_span
-            = cell_weights ? std::span<const std::int32_t>(cell_weights->data(),
-                                                           cell_weights->size())
-                           : std::span<const std::int32_t>();
-
         return dolfinx::mesh::create_mesh(
-            comm.get(), comm.get(), cells, cell_weights_span, elements,
-            comm.get(), std::span(x.data(), x.size()), {x.shape(0), shape1},
-            part::impl::to_any_cell_partitioner(p), ghost_mode,
-            max_facet_to_cell_links, num_threads);
+            comm.get(), comm.get(), cells, to_cell_weights_span(cell_weights),
+            elements, comm.get(), std::span(x.data(), x.size()),
+            {x.shape(0), shape1}, part::impl::to_any_cell_partitioner(p),
+            ghost_mode, max_facet_to_cell_links, num_threads);
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("elements"),
       nb::arg("x").noconvert(), nb::arg("partitioner").none(),
@@ -359,13 +379,9 @@ void declare_mesh(nb::module_& m, std::string type)
              cell_weights)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
-        std::span<const std::int32_t> cell_weights_span
-            = cell_weights ? std::span<const std::int32_t>(cell_weights->data(),
-                                                           cell_weights->size())
-                           : std::span<const std::int32_t>();
         return dolfinx::mesh::create_mesh(
             comm.get(), comm.get(), std::span(cells.data(), cells.size()),
-            cell_weights_span, element, comm.get(),
+            to_cell_weights_span(cell_weights), element, comm.get(),
             std::span(x.data(), x.size()), {x.shape(0), shape1},
             part::impl::to_any_cell_partitioner(p), ghost_mode,
             max_facet_to_cell_links, num_threads);
@@ -427,17 +443,8 @@ void declare_mesh(nb::module_& m, std::string type)
              nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
              marker)
       {
-        auto cpp_marker = [&marker](auto x)
-        {
-          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)});
-          auto marked = marker(x_view);
-          return std::vector<std::int8_t>(marked.data(),
-                                          marked.data() + marked.size());
-        };
-
-        return as_nbarray(
-            dolfinx::mesh::locate_entities(mesh, dim, cpp_marker));
+        return as_nbarray(dolfinx::mesh::locate_entities(
+            mesh, dim, to_cpp_marker<T>(marker)));
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("marker"));
 
@@ -449,17 +456,8 @@ void declare_mesh(nb::module_& m, std::string type)
              marker,
          int entity_type_idx)
       {
-        auto cpp_marker = [&marker](auto x)
-        {
-          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)});
-          auto marked = marker(x_view);
-          return std::vector<std::int8_t>(marked.data(),
-                                          marked.data() + marked.size());
-        };
-
-        return as_nbarray(dolfinx::mesh::locate_entities(mesh, dim, cpp_marker,
-                                                         entity_type_idx));
+        return as_nbarray(dolfinx::mesh::locate_entities(
+            mesh, dim, to_cpp_marker<T>(marker), entity_type_idx));
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("marker"),
       nb::arg("entity_type_idx"));
@@ -471,16 +469,8 @@ void declare_mesh(nb::module_& m, std::string type)
              nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
              marker)
       {
-        auto cpp_marker = [&marker](auto x)
-        {
-          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)});
-          auto marked = marker(x_view);
-          return std::vector<std::int8_t>(marked.data(),
-                                          marked.data() + marked.size());
-        };
-        return as_nbarray(
-            dolfinx::mesh::locate_entities_boundary(mesh, dim, cpp_marker));
+        return as_nbarray(dolfinx::mesh::locate_entities_boundary(
+            mesh, dim, to_cpp_marker<T>(marker)));
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("marker"));
 

@@ -97,7 +97,7 @@ void mesh(nb::module_& m)
          const dolfinx::fem::ElementDofLayout& layout,
          nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> cells)
       {
-        return dolfinx_wrappers::as_nbarray(dolfinx::mesh::extract_topology(
+        return as_nbarray(dolfinx::mesh::extract_topology(
             cell_type, layout, std::span(cells.data(), cells.size())));
       },
       nb::arg("cell_type"), nb::arg("layout"), nb::arg("cells"));
@@ -376,7 +376,7 @@ void mesh(nb::module_& m)
         std::array<std::size_t, 2> cshape
             = {centroid.size() / static_cast<std::size_t>(gdim),
                static_cast<std::size_t>(gdim)};
-        return dolfinx_wrappers::as_nbarray(std::move(centroid), cshape);
+        return as_nbarray(std::move(centroid), cshape);
       },
       nb::arg("comm"), nb::arg("cell_types"), nb::arg("cells"),
       nb::arg("commg"), nb::arg("x").noconvert(),
@@ -388,12 +388,8 @@ void mesh(nb::module_& m)
       "in the same order as cells.");
 
   m.def(
-      "exterior_facet_indices",
-      [](const dolfinx::mesh::Topology& t)
-      {
-        return dolfinx_wrappers::as_nbarray(
-            dolfinx::mesh::exterior_facet_indices(t));
-      },
+      "exterior_facet_indices", [](const dolfinx::mesh::Topology& t)
+      { return as_nbarray(dolfinx::mesh::exterior_facet_indices(t)); },
       nb::arg("topology"));
   m.def(
       "compute_incident_entities",
@@ -401,9 +397,8 @@ void mesh(nb::module_& m)
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
          int d0, int d1)
       {
-        return dolfinx_wrappers::as_nbarray(
-            dolfinx::mesh::compute_incident_entities(
-                topology, std::span(entities.data(), entities.size()), d0, d1));
+        return as_nbarray(dolfinx::mesh::compute_incident_entities(
+            topology, std::span(entities.data(), entities.size()), d0, d1));
       },
       nb::arg("mesh"), nb::arg("entities"), nb::arg("d0"), nb::arg("d1"));
 

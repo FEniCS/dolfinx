@@ -33,14 +33,36 @@
 
 namespace nb = nanobind;
 
+namespace
+{
+/// Convert an optional span of weights to the optional ndarray a Python
+/// partitioner expects. A std::nullopt span (no weights) becomes Python
+/// None, not a zero-length array.
+std::optional<nb::ndarray<const std::int32_t, nb::numpy>>
+weights_to_ndarray(std::optional<std::span<const std::int32_t>> w)
+{
+  if (!w)
+    return std::nullopt;
+  return nb::ndarray<const std::int32_t, nb::numpy>(
+      w->data(), std::initializer_list<std::size_t>({w->size()}));
+}
+
+/// Convert an optional ndarray of weights (as received from Python) to
+/// the optional span a C++ partitioner expects. Python None becomes
+/// std::nullopt (no weights), not a zero-length span.
+std::optional<std::span<const std::int32_t>> weights_to_span(
+    std::optional<nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>> w)
+{
+  if (!w)
+    return std::nullopt;
+  return std::span<const std::int32_t>(w->data(), w->size());
+}
+} // namespace
+
 namespace dolfinx_wrappers
 {
-dolfinx::graph::partition_fn partitioner_wrap_py_to_cpp(
-    const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&,
-        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
-        std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>& p)
+dolfinx::graph::partition_fn
+partitioner_wrap_py_to_cpp(const PythonPartitionFunction& p)
 {
   return [p](MPI_Comm comm, int nparts,
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
@@ -48,28 +70,15 @@ dolfinx::graph::partition_fn partitioner_wrap_py_to_cpp(
              std::optional<std::span<const std::int32_t>> edge_weights,
              bool ghosting)
   {
-    std::optional<nb::ndarray<const std::int32_t, nb::numpy>> node_weights_nb;
-    if (node_weights)
-    {
-      node_weights_nb.emplace(
-          node_weights->data(),
-          std::initializer_list<std::size_t>({node_weights->size()}));
-    }
-    std::optional<nb::ndarray<const std::int32_t, nb::numpy>> edge_weights_nb;
-    if (edge_weights)
-    {
-      edge_weights_nb.emplace(
-          edge_weights->data(),
-          std::initializer_list<std::size_t>({edge_weights->size()}));
-    }
-    return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
-             node_weights_nb, edge_weights_nb, ghosting);
+    return p(MPICommWrapper(comm), nparts, local_graph,
+             weights_to_ndarray(node_weights), weights_to_ndarray(edge_weights),
+             ghosting);
   };
 }
 
 dolfinx::graph::geom_partition_fn partitioner_wrap_py_to_cpp(
     const std::function<nb::ndarray<const int, nb::ndim<1>, nb::numpy>(
-        dolfinx_wrappers::MPICommWrapper, int,
+        MPICommWrapper, int,
         nb::ndarray<const double, nb::ndim<2>, nb::numpy>)>& p)
 {
   return [p](MPI_Comm comm, int nparts, std::span<const double> x,
@@ -80,15 +89,14 @@ dolfinx::graph::geom_partition_fn partitioner_wrap_py_to_cpp(
     nb::ndarray<const double, nb::ndim<2>, nb::numpy> x_nb(x.data(), 2, shape,
                                                            nb::handle());
     nb::ndarray<const int, nb::ndim<1>, nb::numpy> dest
-        = p(dolfinx_wrappers::MPICommWrapper(comm), nparts, x_nb);
+        = p(MPICommWrapper(comm), nparts, x_nb);
     return std::vector<int>(dest.data(), dest.data() + dest.size());
   };
 }
 
 dolfinx::graph::hybrid_partition_fn partitioner_wrap_py_to_cpp(
     const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&,
+        MPICommWrapper, int, const dolfinx::graph::AdjacencyList<std::int64_t>&,
         nb::ndarray<const double, nb::ndim<2>, nb::numpy>,
         std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
         std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>& p)
@@ -105,22 +113,9 @@ dolfinx::graph::hybrid_partition_fn partitioner_wrap_py_to_cpp(
     std::size_t shape[2] = {num_nodes, gdim};
     nb::ndarray<const double, nb::ndim<2>, nb::numpy> x_nb(x.data(), 2, shape,
                                                            nb::handle());
-    std::optional<nb::ndarray<const std::int32_t, nb::numpy>> node_weights_nb;
-    if (node_weights)
-    {
-      node_weights_nb.emplace(
-          node_weights->data(),
-          std::initializer_list<std::size_t>({node_weights->size()}));
-    }
-    std::optional<nb::ndarray<const std::int32_t, nb::numpy>> edge_weights_nb;
-    if (edge_weights)
-    {
-      edge_weights_nb.emplace(
-          edge_weights->data(),
-          std::initializer_list<std::size_t>({edge_weights->size()}));
-    }
-    return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph, x_nb,
-             node_weights_nb, edge_weights_nb, ghosting);
+    return p(MPICommWrapper(comm), nparts, local_graph, x_nb,
+             weights_to_ndarray(node_weights), weights_to_ndarray(edge_weights),
+             ghosting);
   };
 }
 
@@ -231,20 +226,9 @@ void graph(nb::module_& m)
                  edge_weights,
              bool ghosting)
           {
-            std::optional<std::span<const std::int32_t>> node_weights_span;
-            if (node_weights)
-            {
-              node_weights_span.emplace(node_weights->data(),
-                                        node_weights->size());
-            }
-            std::optional<std::span<const std::int32_t>> edge_weights_span;
-            if (edge_weights)
-            {
-              edge_weights_span.emplace(edge_weights->data(),
-                                        edge_weights->size());
-            }
-            return self.fn(comm.get(), nparts, local_graph, node_weights_span,
-                           edge_weights_span, ghosting);
+            return self.fn(comm.get(), nparts, local_graph,
+                           weights_to_span(node_weights),
+                           weights_to_span(edge_weights), ghosting);
           },
           nb::arg("comm"), nb::arg("nparts"), nb::arg("local_graph"),
           nb::arg("node_weights").none(), nb::arg("edge_weights").none(),
@@ -265,7 +249,7 @@ void graph(nb::module_& m)
              nb::ndarray<const double, nb::ndim<2>, nb::c_contig> x)
           {
             int gdim = static_cast<int>(x.shape(1));
-            return dolfinx_wrappers::as_nbarray(
+            return as_nbarray(
                 self.fn(comm.get(), nparts,
                         std::span<const double>(x.data(), x.size()), gdim));
           },
@@ -303,21 +287,10 @@ void graph(nb::module_& m)
                  edge_weights,
              bool ghosting)
           {
-            std::optional<std::span<const std::int32_t>> node_weights_span;
-            if (node_weights)
-            {
-              node_weights_span.emplace(node_weights->data(),
-                                        node_weights->size());
-            }
-            std::optional<std::span<const std::int32_t>> edge_weights_span;
-            if (edge_weights)
-            {
-              edge_weights_span.emplace(edge_weights->data(),
-                                        edge_weights->size());
-            }
             return self.fn(comm.get(), nparts, dual_graph,
                            std::span<const double>(x.data(), x.size()),
-                           node_weights_span, edge_weights_span, ghosting);
+                           weights_to_span(node_weights),
+                           weights_to_span(edge_weights), ghosting);
           },
           nb::arg("comm"), nb::arg("nparts"), nb::arg("dual_graph"),
           nb::arg("x").noconvert(), nb::arg("node_weights").none(),

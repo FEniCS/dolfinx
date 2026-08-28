@@ -469,9 +469,9 @@ mesh::Mesh<U> read_mesh(MPI_Comm comm, const std::filesystem::path& filename,
 
   std::vector<std::span<const std::int64_t>> cells_span(cells_local.begin(),
                                                         cells_local.end());
-  return mesh::create_mesh(comm, comm, cells_span,
-                           std::span<const std::int32_t>(), coordinate_elements,
-                           comm, points_pruned, {(std::size_t)x_shape[0], gdim},
+  return mesh::create_mesh(comm, comm, cells_span, std::nullopt,
+                           coordinate_elements, comm, points_pruned,
+                           {(std::size_t)x_shape[0], gdim},
                            graph::partition_graph, mesh::GhostMode::none,
                            max_facet_to_cell_links, 1);
 }

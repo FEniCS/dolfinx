@@ -878,8 +878,8 @@ namespace impl
 /// @param[in] cell_weights Weights associated with each cell in `cells`
 /// (flattened across cell types in the same order as `cells`). Used
 /// only if `partitioner` holds a graph::partition_fn or a
-/// graph::hybrid_partition_fn. If empty, cells are treated as having
-/// equal weight.
+/// graph::hybrid_partition_fn. If std::nullopt, cells are treated as
+/// having equal weight.
 /// @param[in] commg Communicator that `x` is distributed on. Used only
 /// if `partitioner` holds a graph::geom_partition_fn or a
 /// graph::hybrid_partition_fn.
@@ -903,7 +903,8 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
                 bool p1_geometry, const AnyCellPartitionFunction& partitioner,
                 bool ghosting,
                 std::optional<std::int32_t> max_facet_to_cell_links,
-                int num_threads, std::span<const std::int32_t> cell_weights,
+                int num_threads,
+                std::optional<std::span<const std::int32_t>> cell_weights,
                 MPI_Comm commg, std::span<const T> x,
                 std::array<std::size_t, 2> xshape)
 {
@@ -964,11 +965,6 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
                                   max_facet_to_cell_links, num_threads);
         };
 
-        std::optional<std::span<const std::int32_t>> node_weights
-            = cell_weights.empty()
-                  ? std::nullopt
-                  : std::optional<std::span<const std::int32_t>>(cell_weights);
-
         dest = std::visit(
             [&](const auto& p) -> graph::AdjacencyList<std::int32_t>
             {
@@ -985,11 +981,11 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
               {
                 return p(commt, size, dual_graph(),
                          std::span<const double>(centroids().first),
-                         node_weights, std::nullopt, ghosting);
+                         cell_weights, std::nullopt, ghosting);
               }
               else
               {
-                return p(commt, size, dual_graph(), node_weights, std::nullopt,
+                return p(commt, size, dual_graph(), cell_weights, std::nullopt,
                          ghosting);
               }
             },
@@ -1118,8 +1114,8 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
 /// examples of the Basix ordering.
 /// @param[in] cell_weights Weights associated with each cell in `cells`
 /// (flattened across cell types in the same order as `cells`), e.g. for
-/// use by the graph partitioner. If empty, cells are treated as having
-/// equal weight.
+/// use by the graph partitioner. If std::nullopt, cells are treated as
+/// having equal weight.
 /// @param[in] elements Coordinate elements for the cells, where
 /// `elements[i]` is the coordinate element for the cells in `cells[i]`.
 /// **The list of elements must be the same on all calling parallel
@@ -1151,7 +1147,7 @@ template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt,
     std::vector<std::span<const std::int64_t>> cells,
-    std::span<const std::int32_t> cell_weights,
+    std::optional<std::span<const std::int32_t>> cell_weights,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
@@ -1329,8 +1325,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// 'nodes' will be included. See dolfinx::io::cells for examples of the
 /// Basix ordering.
 /// @param[in] cell_weights Weights associated with each cell in `cells`,
-/// e.g. for use by the graph partitioner. If empty, cells are treated
-/// as having equal weight.
+/// e.g. for use by the graph partitioner. If std::nullopt, cells are
+/// treated as having equal weight.
 /// @param[in] element Coordinate element for the cells.
 /// @param[in] commg Communicator for geometry.
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
@@ -1354,7 +1350,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt, std::span<const std::int64_t> cells,
-    std::span<const std::int32_t> cell_weights,
+    std::optional<std::span<const std::int32_t>> cell_weights,
     const fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
@@ -1399,14 +1395,14 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
   if (dolfinx::MPI::size(comm) == 1)
   {
     return create_mesh(comm, comm, std::vector{cells},
-                       std::span<const std::int32_t>(), std::vector{elements},
+                       std::nullopt, std::vector{elements},
                        comm, x, xshape, graph::partition_fn(nullptr),
                        ghost_mode, max_facet_to_cell_links, 1);
   }
   else
   {
     return create_mesh(comm, comm, std::vector{cells},
-                       std::span<const std::int32_t>(), std::vector{elements},
+                       std::nullopt, std::vector{elements},
                        comm, x, xshape, graph::partition_graph, ghost_mode,
                        max_facet_to_cell_links, 1);
   }

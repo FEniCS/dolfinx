@@ -40,15 +40,13 @@ void declare_refinement(nanobind::module_& m)
   m.def(
       "uniform_refine",
       [](const dolfinx::mesh::Mesh<T>& mesh,
-         std::optional<dolfinx_wrappers::part::impl::PythonPartitionFunction>
-             partitioner,
+         std::optional<PythonPartitionFunction> partitioner,
          dolfinx::mesh::GhostMode ghost_mode)
       {
         dolfinx::graph::partition_fn cpp_partitioner;
         if (partitioner.has_value())
         {
-          cpp_partitioner = dolfinx_wrappers::partitioner_wrap_py_to_cpp(
-              partitioner.value());
+          cpp_partitioner = partitioner_wrap_py_to_cpp(partitioner.value());
         }
         else
         {
@@ -66,8 +64,7 @@ void declare_refinement(nanobind::module_& m)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              edges,
          std::variant<dolfinx::refinement::IdentityPartitionerPlaceholder,
-                      std::optional<dolfinx_wrappers::part::impl::
-                                        PythonPartitionFunction>>
+                      std::optional<PythonPartitionFunction>>
              partitioner,
          dolfinx::refinement::Option option,
          dolfinx::mesh::GhostMode ghost_mode)
@@ -98,19 +95,16 @@ void declare_refinement(nanobind::module_& m)
                      dolfinx::graph::partition_fn>
             cpp_partitioner
             = dolfinx::refinement::IdentityPartitionerPlaceholder();
-        if (std::holds_alternative<std::optional<
-                dolfinx_wrappers::part::impl::PythonPartitionFunction>>(
+        if (std::holds_alternative<std::optional<PythonPartitionFunction>>(
                 partitioner))
         {
-          auto optional = std::get<std::optional<
-              dolfinx_wrappers::part::impl::PythonPartitionFunction>>(
-              partitioner);
+          auto optional
+              = std::get<std::optional<PythonPartitionFunction>>(partitioner);
           if (!optional.has_value())
             cpp_partitioner = dolfinx::graph::partition_fn(nullptr);
           else
           {
-            cpp_partitioner = dolfinx_wrappers::partitioner_wrap_py_to_cpp(
-                optional.value());
+            cpp_partitioner = partitioner_wrap_py_to_cpp(optional.value());
           }
         }
 

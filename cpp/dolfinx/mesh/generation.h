@@ -20,6 +20,7 @@
 #include <dolfinx/graph/partition.h>
 #include <limits>
 #include <mpi.h>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -305,7 +306,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
     if (gdim == 1)
     {
       return create_mesh(comm, MPI_COMM_SELF, cells,
-                         std::span<const std::int32_t>(), element,
+                         std::nullopt, element,
                          MPI_COMM_SELF, x1d, {npts, 1}, partitioner, ghost_mode,
                          2, 1, reorder_fn);
     }
@@ -313,13 +314,13 @@ Mesh<T> create_interval(MPI_Comm comm, std::int64_t n, std::array<T, 2> p,
     for (std::size_t i = 0; i < npts; i++)
       x[i * gdim] = x1d[i];
     return create_mesh(comm, MPI_COMM_SELF, cells,
-                       std::span<const std::int32_t>(), element, MPI_COMM_SELF,
+                       std::nullopt, element, MPI_COMM_SELF,
                        x, {npts, static_cast<std::size_t>(gdim)}, partitioner,
                        ghost_mode, 2, 1, reorder_fn);
   }
   else
   {
-    return create_mesh(comm, MPI_COMM_NULL, {}, std::span<const std::int32_t>(),
+    return create_mesh(comm, MPI_COMM_NULL, {}, std::nullopt,
                        element, MPI_COMM_NULL, std::vector<T>{},
                        {0, static_cast<std::size_t>(gdim)}, partitioner,
                        ghost_mode, 2, 1, reorder_fn);
@@ -445,7 +446,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
     }
   }
 
-  return create_mesh(comm, subcomm, cells, std::span<const std::int32_t>(),
+  return create_mesh(comm, subcomm, cells, std::nullopt,
                      element, subcomm, x, {x.size() / 3, 3}, partitioner,
                      ghost_mode, 2, 1, reorder_fn);
 }
@@ -491,7 +492,7 @@ build_hex(MPI_Comm comm, MPI_Comm subcomm, std::array<std::array<T, 3>, 2> p,
     }
   }
 
-  return create_mesh(comm, subcomm, cells, std::span<const std::int32_t>(),
+  return create_mesh(comm, subcomm, cells, std::nullopt,
                      element, subcomm, x, {x.size() / 3, 3}, partitioner,
                      ghost_mode, 2, 1, reorder_fn);
 }
@@ -540,7 +541,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
     }
   }
 
-  return create_mesh(comm, subcomm, cells, std::span<const std::int32_t>(),
+  return create_mesh(comm, subcomm, cells, std::nullopt,
                      element, subcomm, x, {x.size() / 3, 3}, partitioner,
                      ghost_mode, 2, 1, reorder_fn);
 }
@@ -699,7 +700,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     if (gdim == 2)
     {
       return create_mesh(comm, MPI_COMM_SELF, cells,
-                         std::span<const std::int32_t>(), element,
+                         std::nullopt, element,
                          MPI_COMM_SELF, x, {npts, 2}, partitioner, ghost_mode,
                          2, 1, reorder_fn);
     }
@@ -710,13 +711,13 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
       xg[i * gdim + 1] = x[2 * i + 1];
     }
     return create_mesh(comm, MPI_COMM_SELF, cells,
-                       std::span<const std::int32_t>(), element, MPI_COMM_SELF,
+                       std::nullopt, element, MPI_COMM_SELF,
                        xg, {npts, static_cast<std::size_t>(gdim)}, partitioner,
                        ghost_mode, 2, 1, reorder_fn);
   }
   else
   {
-    return create_mesh(comm, MPI_COMM_NULL, {}, std::span<const std::int32_t>(),
+    return create_mesh(comm, MPI_COMM_NULL, {}, std::nullopt,
                        element, MPI_COMM_NULL, std::vector<T>{},
                        {0, static_cast<std::size_t>(gdim)}, partitioner,
                        ghost_mode, 2, 1, reorder_fn);
@@ -770,7 +771,7 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
     if (gdim == 2)
     {
       return create_mesh(comm, MPI_COMM_SELF, cells,
-                         std::span<const std::int32_t>(), element,
+                         std::nullopt, element,
                          MPI_COMM_SELF, x, {npts, 2}, partitioner, ghost_mode,
                          2, 1, reorder_fn);
     }
@@ -781,13 +782,13 @@ Mesh<T> build_quad(MPI_Comm comm, std::array<std::array<T, 2>, 2> p,
       xg[i * gdim + 1] = x[2 * i + 1];
     }
     return create_mesh(comm, MPI_COMM_SELF, cells,
-                       std::span<const std::int32_t>(), element, MPI_COMM_SELF,
+                       std::nullopt, element, MPI_COMM_SELF,
                        xg, {npts, static_cast<std::size_t>(gdim)}, partitioner,
                        ghost_mode, 2, 1, reorder_fn);
   }
   else
   {
-    return create_mesh(comm, MPI_COMM_NULL, {}, std::span<const std::int32_t>(),
+    return create_mesh(comm, MPI_COMM_NULL, {}, std::nullopt,
                        element, MPI_COMM_NULL, std::vector<T>{},
                        {0, static_cast<std::size_t>(gdim)}, partitioner,
                        ghost_mode, 2, 1, reorder_fn);
