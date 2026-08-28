@@ -274,6 +274,7 @@ jobs:
 
       - name: Install pyvista (and dependencies)
         run: |
+          apt-get update
           apt-get install libegl1 libxrender1
           pip install pyvista
 
