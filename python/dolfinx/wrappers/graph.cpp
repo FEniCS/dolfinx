@@ -196,7 +196,7 @@ void graph(nb::module_& m)
   // dolfinx::graph::hybrid_partition_fn. dolfinx.mesh.create_mesh
   // recognises these types (as distinct from a plain callable and from
   // each other) to route them through the matching alternative of
-  // dolfinx::mesh::AnyCellPartitionFunction, which computes cell
+  // dolfinx::graph::AnyPartitionFunction, which computes cell
   // centroids itself for the geometric/hybrid alternatives. __call__ is
   // exposed on all three for direct low-level use (bypassing
   // create_mesh); the geometric and hybrid __call__ signatures take

@@ -51,9 +51,9 @@ using PythonPartitionFn
                    std::optional<PythonPartitionFunction>>;
 
 /// Convert create_mesh's Python-visible partitioner argument to the
-/// dolfinx::mesh::AnyCellPartitionFunction that dolfinx::mesh::create_mesh
+/// dolfinx::graph::AnyPartitionFunction that dolfinx::mesh::create_mesh
 /// expects. Defined in mesh.cpp.
-dolfinx::mesh::AnyCellPartitionFunction
+dolfinx::graph::AnyPartitionFunction
 to_any_cell_partitioner(const PythonPartitionFn& p);
 } // namespace dolfinx_wrappers::part::impl
 

@@ -79,9 +79,9 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
   fem::CoordinateElement<double> element(mesh::CellType::tetrahedron, 1);
 
   // Global entity counts for each entity dimension
-  auto counts = [&cells, &x, xshape, &element,
-                 comm](const mesh::AnyCellPartitionFunction& part,
-                       mesh::GhostMode ghost_mode)
+  auto counts
+      = [&cells, &x, xshape, &element, comm](
+            const graph::AnyPartitionFunction& part, mesh::GhostMode ghost_mode)
   {
     mesh::Mesh<double> mesh = mesh::create_mesh(
         comm, comm,
@@ -108,7 +108,7 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
   std::array<std::int64_t, 5> c0n
       = counts(graph::partition_graph, mesh::GhostMode::none);
   std::array<std::int64_t, 5> c1
-      = counts(graph::sfc::partitioner(), mesh::GhostMode::none);
+      = counts(graph::partition_sfc_hilbert, mesh::GhostMode::none);
 
   CHECK(c0n[0] == (n + 1) * (n + 1) * (n + 1));
   CHECK(c0n[3] == 6 * n * n * n);

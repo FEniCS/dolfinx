@@ -249,13 +249,3 @@ std::vector<int> graph::partition_sfc_hilbert(MPI_Comm comm, int nparts,
   return partition_by_curve(comm, nparts, x, gdim, hilbert_key);
 }
 //-----------------------------------------------------------------------------
-graph::geom_partition_fn graph::sfc::partitioner(sfc::curve curve)
-{
-  return [curve](MPI_Comm comm, int nparts, std::span<const double> x, int gdim)
-  {
-    return curve == sfc::curve::hilbert
-               ? graph::partition_sfc_hilbert(comm, nparts, x, gdim)
-               : graph::partition_sfc_morton(comm, nparts, x, gdim);
-  };
-}
-//-----------------------------------------------------------------------------

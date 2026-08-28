@@ -42,19 +42,19 @@ namespace nb = nanobind;
 
 namespace dolfinx_wrappers::part::impl
 {
-dolfinx::mesh::AnyCellPartitionFunction
+dolfinx::graph::AnyPartitionFunction
 to_any_cell_partitioner(const PythonPartitionFn& p)
 {
   if (const auto* gp = std::get_if<GraphPartitioner>(&p))
-    return dolfinx::mesh::AnyCellPartitionFunction(gp->fn);
+    return dolfinx::graph::AnyPartitionFunction(gp->fn);
   else if (const auto* geo = std::get_if<GeometricPartitioner>(&p))
-    return dolfinx::mesh::AnyCellPartitionFunction(geo->fn);
+    return dolfinx::graph::AnyPartitionFunction(geo->fn);
   else if (const auto* hyb = std::get_if<HybridPartitioner>(&p))
-    return dolfinx::mesh::AnyCellPartitionFunction(hyb->fn);
+    return dolfinx::graph::AnyPartitionFunction(hyb->fn);
   else
   {
     const auto& opt = std::get<std::optional<PythonPartitionFunction>>(p);
-    return dolfinx::mesh::AnyCellPartitionFunction(
+    return dolfinx::graph::AnyPartitionFunction(
         opt ? partitioner_wrap_py_to_cpp(*opt)
             : dolfinx::graph::partition_fn(nullptr));
   }

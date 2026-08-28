@@ -76,35 +76,4 @@ std::vector<int> partition_sfc_morton(MPI_Comm comm, int nparts,
 std::vector<int> partition_sfc_hilbert(MPI_Comm comm, int nparts,
                                        std::span<const double> x, int gdim);
 
-/// Space-filling curve partitioner
-namespace sfc
-{
-/// @brief Space-filling curves that nodes can be ordered along.
-enum class curve : std::uint8_t
-{
-  /// Morton ('Z-order') curve, see ::partition_sfc_morton
-  morton,
-
-  /// Hilbert curve, see ::partition_sfc_hilbert
-  hilbert
-};
-
-/// @brief Create a geometric partitioning function that orders nodes
-/// along a space-filling curve.
-///
-/// The partition is computed from the node coordinates alone.
-///
-/// @note The default is curve::hilbert. For the dual graph of a
-/// tetrahedral mesh on 20 ranks, it was measured to cut 10% fewer edges
-/// than curve::morton (457772 against 508750 for 12.6M cells), for a
-/// similar cost.
-///
-/// @note ::geom_partition_fn has no graph, so the returned function
-/// has no `ghosting` parameter and is never asked to ghost.
-///
-/// @param[in] curve Space-filling curve to order the nodes along.
-/// @return A geometric graph partitioning function. It requires `x`.
-graph::geom_partition_fn partitioner(sfc::curve curve = sfc::curve::hilbert);
-} // namespace sfc
-
 } // namespace dolfinx::graph

@@ -14,6 +14,7 @@
 #include <optional>
 #include <span>
 #include <tuple>
+#include <variant>
 #include <vector>
 
 namespace dolfinx::graph
@@ -98,6 +99,32 @@ using hybrid_partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm, int, const AdjacencyList<std::int64_t>&, std::span<const double>,
     std::optional<std::span<const std::int32_t>>,
     std::optional<std::span<const std::int32_t>>, bool)>;
+
+/// @brief Any of the three partitioning function shapes that
+/// mesh::create_mesh accepts: ::partition_fn, ::geom_partition_fn, or
+/// ::hybrid_partition_fn.
+///
+/// mesh::create_mesh always has the cell topology available, so it can
+/// build the mesh dual graph itself and pass it to a ::partition_fn or
+/// a ::hybrid_partition_fn alternative, neither of which has any other
+/// way to obtain it. If the alternative held is a ::geom_partition_fn
+/// or a ::hybrid_partition_fn, mesh::create_mesh additionally computes
+/// the centroid of each cell from the vertex coordinates -- using the
+/// same `(commg, x, xshape)` geometry data it uses to build the mesh --
+/// and supplies them, since neither has any other way to obtain them.
+using AnyPartitionFunction
+    = std::variant<partition_fn, geom_partition_fn, hybrid_partition_fn>;
+
+/// @brief Whether an ::AnyPartitionFunction holds a callable
+/// partitioner.
+/// @param[in] partitioner Partitioner to check.
+/// @return `true` if `partitioner` holds a callable function, `false`
+/// if it is default-constructed (not callable).
+inline bool has_partitioner(const AnyPartitionFunction& partitioner)
+{
+  return std::visit([](const auto& p) { return static_cast<bool>(p); },
+                    partitioner);
+}
 
 /// @brief Partition graph across processes using the default graph
 /// partitioner.
