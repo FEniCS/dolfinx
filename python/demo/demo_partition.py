@@ -460,9 +460,7 @@ def redistribute_by_partitioner(
         the input ``cells``.
     """
     centroid = compute_cell_centroids(comm, [cell_type], [cells.reshape(-1)], comm, x)
-    dest = graph.adjacencylist(
-        np.asarray(partitioner(comm, comm.size, centroid, None), dtype=np.int32)
-    )._cpp_object
+    dest = graph.adjacencylist(partitioner(comm, comm.size, centroid, None))._cpp_object
     recv, _, _, _ = graph.distribute(comm, cells, dest)  # type: ignore[arg-type]
     return recv
 
