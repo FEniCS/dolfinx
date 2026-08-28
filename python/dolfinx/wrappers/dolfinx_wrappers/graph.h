@@ -53,32 +53,29 @@ using PythonHybridPartitionFunction
         std::optional<nb::ndarray<const std::int32_t, nb::numpy>>,
         std::optional<nb::ndarray<const std::int32_t, nb::numpy>>, bool)>;
 
-/// Wrap a Python graph partitioning function as a C++ function. A
-/// std::nullopt weight is passed through as Python None, not a
-/// zero-length array, so a custom Python partitioner can distinguish
-/// "no weights were provided" from "an empty (but present) weights
-/// array" -- matching graph::partition_fn's own std::optional weights.
-/// The inverse of partitioner_wrap_cpp_to_py. Defined in graph.cpp.
+/// Wrap a Python graph partitioning function as a C++ function.
+/// std::nullopt is passed through as Python None rather than a
+/// zero-length array, so a custom partitioner can distinguish "no
+/// weights given" from "empty weights array" -- matching
+/// graph::partition_fn's own std::optional weights. Defined in
+/// graph.cpp.
 dolfinx::graph::partition_fn
 partitioner_wrap_py_to_cpp(const PythonPartitionFunction& p);
 
 /// Wrap a Python geometric graph partitioning function as a C++
-/// function. `gdim` is not part of what the Python callable receives --
-/// it is recovered from `x`'s own second dimension when reshaping the
-/// flat `x` span for the call, matching how `x` is passed to a Python
-/// geometric partitioner elsewhere (e.g. create_geometric_cell_partitioner).
-/// A std::nullopt weight is passed through as Python None, matching
-/// graph::geom_partition_fn's own std::optional weights. Defined in
-/// graph.cpp.
+/// function. `gdim` is not received directly by the Python callable --
+/// it is recovered from `x`'s second dimension when reshaping the flat
+/// `x` span for the call. A std::nullopt weight is passed through as
+/// Python None, matching graph::geom_partition_fn's own std::optional
+/// weights. Defined in graph.cpp.
 dolfinx::graph::geom_partition_fn
 partitioner_wrap_py_to_cpp(const PythonGeoPartitionFunction& p);
 
 /// Wrap a Python hybrid graph partitioning function as a C++ function.
 /// `gdim` is recovered from `local_graph`'s node count and `x`'s flat
-/// size when reshaping `x` for the call; `local_graph` is always a real
-/// graph here, never a placeholder, so there is no optional-unwrapping
-/// to do for it (unlike node/edge weights, which follow the same
-/// None-means-std::nullopt convention as the plain graph partitioner).
+/// size when reshaping `x` for the call. `local_graph` is always
+/// present, unlike the node/edge weights, which follow the same
+/// None-means-std::nullopt convention as the plain graph partitioner.
 /// Defined in graph.cpp.
 dolfinx::graph::hybrid_partition_fn
 partitioner_wrap_py_to_cpp(const PythonHybridPartitionFunction& p);
@@ -92,14 +89,11 @@ struct OpaquePartitioner
   Fn fn;
 };
 
-/// Opaque handles for a dolfinx::graph::partition_fn, a
-/// dolfinx::graph::geom_partition_fn and a
-/// dolfinx::graph::hybrid_partition_fn, bound to Python as their own
-/// types so that create_mesh can distinguish them from a bare Python
-/// callable (and from each other): nanobind cannot tell which of
-/// several different std::function signatures a bare Python callable
-/// is meant to satisfy, so distinct callable shapes must be distinct
-/// Python types, not disambiguated by argument count.
+/// Opaque handles for partition_fn, geom_partition_fn and
+/// hybrid_partition_fn, each bound as its own Python type. nanobind
+/// cannot tell which of several std::function signatures a bare Python
+/// callable is meant to satisfy, so create_mesh needs distinct types
+/// to disambiguate rather than relying on argument count.
 using GraphPartitioner = OpaquePartitioner<dolfinx::graph::partition_fn>;
 using GeometricPartitioner
     = OpaquePartitioner<dolfinx::graph::geom_partition_fn>;

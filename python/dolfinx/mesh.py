@@ -100,10 +100,10 @@ PartitioningFunc = typing.Callable[
     _cpp.graph.AdjacencyList_int32,
 ]
 
-# Note: the coordinates are float64, matching the C++ interface, which
-# takes a span of double. Unlike PartitioningFunc/HybridPartitioningFunc,
-# the return value is a plain destination rank per node, not an
-# AdjacencyList: a geometric partitioner never ghosts.
+# float64 to match the C++ span<double> interface. Unlike
+# PartitioningFunc/HybridPartitioningFunc, the return is a plain
+# destination rank per node, not an AdjacencyList: a geometric
+# partitioner never ghosts.
 GeometricPartitioningFunc = typing.Callable[
     [_MPI.Comm, int, npt.NDArray[np.float64], npt.NDArray[np.int32] | None],
     npt.NDArray[np.int32],
@@ -127,23 +127,20 @@ def create_geometric_cell_partitioner(
 ) -> _cpp.graph.GeometricPartitioner:
     """Create a function to partition a mesh using cell positions.
 
-    The returned partitioner is called by :func:`create_mesh` with the
-    centroid of each cell (the mean of its vertex positions), computed
-    from whatever geometry it was given. This allows partitioners that
-    use cell positions, rather than the graph edges, to be used by
-    :func:`create_mesh`.
+    ``part`` is called by :func:`create_mesh` with each cell's centroid
+    (mean of its vertex positions), letting position-based partitioners
+    be used where :func:`create_mesh` otherwise expects graph edges.
 
-    The returned partitioner has no access to the mesh dual graph, so it
-    never ghosts: a mesh built with it always has ``GhostMode.none``,
-    regardless of what is otherwise requested. Use
-    :func:`create_hybrid_cell_partitioner` for a partitioner that also
-    needs the dual graph, e.g. to support ghosting.
+    The returned partitioner has no access to the dual graph, so it
+    never ghosts: the mesh always has ``GhostMode.none`` regardless of
+    what was requested. Use :func:`create_hybrid_cell_partitioner` if
+    the partitioner also needs the dual graph, e.g. to support ghosting.
 
-    ``part`` is also passed optional node weights, matching
+    ``part`` also receives optional node weights, matching
     :data:`PartitioningFunc`; :func:`create_mesh` supplies its
-    ``cell_weights`` argument as the node weights. Not every geometric
-    partitioner can honour node weights, e.g. ``partitioner_parmetis_geom``
-    raises if given anything other than ``None``.
+    ``cell_weights`` as the node weights. Not every geometric
+    partitioner honours these, e.g. ``partitioner_parmetis_geom`` raises
+    if given anything other than ``None``.
 
     Args:
         part: A custom geometric graph partitioning function. The
@@ -165,23 +162,20 @@ def create_hybrid_cell_partitioner(
 ) -> _cpp.graph.HybridPartitioner:
     """Create a function to partition a mesh using a hybrid partitioner.
 
-    Unlike :func:`create_geometric_cell_partitioner`, the mesh dual graph
-    is always computed and passed to ``part`` along with the cell
-    positions, regardless of the ghost mode the partitioner is called
-    with. Use this for a partitioner that needs the graph edges as part
-    of the partitioning decision itself, rather than only to determine
+    Unlike :func:`create_geometric_cell_partitioner`, the dual graph is
+    always computed and passed to ``part`` along with cell positions,
+    regardless of ghost mode. Use this when the partitioner needs graph
+    edges for the partitioning decision itself, not only to determine
     ghost cells.
 
-    The mesh dual graph (including the maximum number of cells
-    connected to a facet and the number of threads used to build it)
-    is controlled at call time, by :func:`create_mesh`'s
-    ``max_facet_to_cell_links`` and ``num_threads`` arguments, rather
-    than fixed when the partitioner is created.
+    The dual graph (its ``max_facet_to_cell_links`` and ``num_threads``)
+    is controlled at call time by :func:`create_mesh`'s matching
+    arguments, rather than fixed when the partitioner is created.
 
-    ``part`` is also passed optional node and edge weights, matching
+    ``part`` also receives optional node and edge weights, matching
     :data:`PartitioningFunc`; :func:`create_mesh` supplies its
-    ``cell_weights`` argument as the node weights and always passes
-    ``None`` for the edge weights, since it has no way to compute them.
+    ``cell_weights`` as the node weights and always passes ``None`` for
+    edge weights, since it has no way to compute them.
 
     Args:
         part: A custom hybrid graph partitioning function. ParMETIS's
@@ -206,11 +200,11 @@ def compute_cell_centroids(
 ) -> npt.NDArray[np.float64]:
     """Compute the centroid of each cell from its vertex positions.
 
-    This is the computation :func:`create_mesh` performs internally
-    before calling a partitioner created by
+    :func:`create_mesh` performs this computation internally before
+    calling a partitioner created by
     :func:`create_geometric_cell_partitioner` or
-    :func:`create_hybrid_cell_partitioner`. Use it directly when calling
-    such a partitioner without going through :func:`create_mesh`.
+    :func:`create_hybrid_cell_partitioner`. Use it directly to call such
+    a partitioner without going through :func:`create_mesh`.
 
     Args:
         comm: MPI communicator that ``cells`` is distributed over.

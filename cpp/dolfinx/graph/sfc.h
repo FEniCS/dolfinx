@@ -24,9 +24,10 @@ namespace dolfinx::graph
 ///
 /// Points are ordered by the Morton key of their position in the global
 /// bounding box, and the resulting order is cut into `nparts` equal
-/// pieces. Splitters are selected from a gathered sample of the keys, so
-/// the cost is linear in the number of local points plus one all-gather
-/// of the sample.
+/// pieces. Splitters are found from a distributed sample of the keys,
+/// routed to the rank owning its key range rather than gathered to
+/// every rank, so per-rank cost and memory scale with the sample size
+/// divided across ranks, not multiplied by them.
 ///
 /// Compared to a graph partitioner, this is much cheaper (no graph is
 /// required and the cost is nearly independent of the number of ranks)

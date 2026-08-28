@@ -50,14 +50,13 @@ std::uint64_t morton_key(std::array<std::uint32_t, 3> c, int /*gdim*/)
   return spread(c[0]) | (spread(c[1]) << 1) | (spread(c[2]) << 2);
 }
 
-/// Rank count below which the (simpler, lower per-call overhead, but
-/// O(P)-memory) PCX consensus algorithm is used to discover source
-/// ranks for the post-office routing in partition_by_curve; NBX
-/// (higher constant overhead, but genuinely sparse/scalable) is used
-/// at or above it. Benchmarked as a clear win for PCX up to the
-/// largest rank count locally testable (12); this threshold is an
-/// estimate pending validation at real large-scale rank counts, not a
-/// measured crossover point.
+/// Rank count below which the post-office routing in partition_by_curve
+/// uses PCX (simpler, lower per-call overhead, but O(P) memory) to
+/// discover source ranks, and NBX (sparse/scalable, higher constant
+/// overhead) above it. Benchmarked as a clear win for PCX up to the
+/// largest rank count locally testable (12); an estimate pending
+/// validation at real large-scale rank counts, not a measured
+/// crossover point.
 constexpr int pcx_rank_limit = 10000;
 
 /// @brief A plan for routing values to the MPI rank that "owns" them,
@@ -355,14 +354,9 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
   //
   // Splitters are located via a "post office" scheme rather than
   // gathering the sample to every rank (as an Allgatherv would): each
-  // rank owns a slice of the key range and only the sample entries that
-  // fall in it, so no rank ever holds more than its own slice of the
-  // (already bounded) sample -- unlike an Allgatherv, whose payload is
-  // multiplied by the rank count once the sample stops being
-  // sub-sampled (see the two TODOs this replaced, previously here,
-  // about Allgatherv's int-sized counts/displacements overflowing at
-  // large nparts/rank counts: that risk is gone, since no count here
-  // is multiplied by the rank count).
+  // rank owns a slice of the key range and only the sample entries
+  // that fall in it, so per-rank cost scales with the sample size
+  // divided across ranks, not multiplied by the rank count.
   constexpr int oversample = 32;
   const std::size_t n
       = std::min(num_points, static_cast<std::size_t>(oversample) * nparts);
@@ -371,12 +365,11 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
   const int rank = dolfinx::MPI::rank(comm);
 
   std::vector<std::uint64_t> sample_keys(n);
-  // Exact per-sample representative weight -- see the assignment below,
-  // after both branches -- summing to exactly local_total regardless of
-  // how evenly n divides it. Used unconditionally, with local_total set
-  // to num_points when `weights` is absent, so the cross-rank
-  // cumulative tracking below is the same exact-integer code path
-  // either way.
+  // Exact per-sample representative weight (assigned below, after both
+  // branches), summing to exactly local_total regardless of how evenly
+  // n divides it. Used unconditionally -- local_total is num_points
+  // when `weights` is absent -- so the cross-rank cumulative tracking
+  // below is one exact-integer code path either way.
   std::vector<std::int64_t> sample_weights(n);
   std::int64_t local_total = 0;
   if (!weights)
@@ -405,17 +398,11 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
 
     for (std::size_t j = 0; j < n; ++j)
     {
-      // Position of the sample in cumulative weight: the point whose
-      // weight interval covers this position, i.e. the first point
-      // whose inclusive cumulative weight exceeds it. With equal
-      // weights this reduces to the point at array position `j *
-      // num_points / n`. Computed in double since local_total * j can
-      // exceed the range of std::int64_t (large local point counts
-      // with weights near the top of the std::int32_t range) -- this
-      // is a purely local computation (selecting which local point
-      // becomes sample j), so the approximation from using double
-      // costs at most a slightly different sample choice, not a
-      // correctness issue.
+      // First point whose cumulative weight exceeds this target
+      // position (reduces to array position `j * num_points / n` for
+      // equal weights). Computed in double, since local_total * j can
+      // overflow std::int64_t -- harmless here, as it only picks which
+      // local point becomes sample j, not a value needing exactness.
       const auto target = static_cast<std::int64_t>(
           static_cast<double>(local_total) * static_cast<double>(j) / n);
       auto it = std::ranges::upper_bound(cum, target);
@@ -425,15 +412,11 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
       sample_keys[j] = keys[order[pos]];
     }
   }
-  // Sample j's representative weight must match the target range it was
-  // actually selected to cover -- [scaled_target(local_total, j, n),
-  // scaled_target(local_total, j+1, n)) -- not merely sum to
-  // local_total: an even split (e.g. remainder extras all assigned to
-  // the first few samples) sums correctly but corresponds to a
-  // different point/weight range than the one each sample was chosen
-  // from, since the position formula's own rounding does not spread
-  // remainders that way, and a mismatch here shows up directly as
-  // partition imbalance.
+  // Sample j's weight is the target range it was actually selected to
+  // cover -- [scaled_target(local_total, j, n), scaled_target(...,
+  // j+1, n)) -- not just any split summing to local_total: the
+  // position formula's rounding doesn't spread remainders evenly, so a
+  // mismatched split shows up directly as partition imbalance.
   std::int64_t prev = 0;
   for (std::size_t j = 0; j < n; ++j)
   {
@@ -445,13 +428,12 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
 
   // Reduce {-min, max} in one MPI_MAX, as for the bounding box above.
   // Keys fit in 63 bits, so reinterpreting as std::int64_t and negating
-  // is safe for any real key (int64_t's range covers [-2^63, 2^63-1),
-  // and a real key, negated, is in (-2^63+1, 0]). A rank with no local
-  // sample contributes sentinels that always lose: INT64_MAX negated
-  // for the min side, INT64_MIN (never negated) for the max side --
-  // when every rank is empty, the reduced max stays negative, which no
-  // real (non-negative) key can produce, flagging the degenerate case
-  // before any cast back to std::uint64_t is attempted.
+  // is always safe. A rank with no local sample contributes sentinels
+  // that always lose the reduction (INT64_MAX negated for the min
+  // side, INT64_MIN, never negated, for the max side), so if every
+  // rank is empty the reduced max stays negative -- impossible for a
+  // real key -- flagging the degenerate case before casting back to
+  // std::uint64_t.
   std::array<std::int64_t, 2> local_bounds
       = {n > 0 ? -static_cast<std::int64_t>(sample_keys.front())
                : -std::numeric_limits<std::int64_t>::max(),
@@ -490,14 +472,12 @@ partition_by_curve(MPI_Comm comm, int nparts, std::span<const double> x,
     rcum[i] = local_weight;
   }
 
-  // Rank r owns the r-th slice of the key range (see key_range_owners),
-  // so rank order and key-range order coincide: an exclusive scan of
-  // local_weight in rank order gives each rank its offset into the
-  // (virtual) fully key-sorted, fully merged sample -- entirely exact
-  // integer arithmetic, unlike a scan over floating-point weights,
-  // which is not guaranteed bit-for-bit consistent across ranks and
-  // could otherwise leave a target unclaimed, or claimed twice, right
-  // at a rank boundary.
+  // Rank order matches key-range order (see key_range_owners), so an
+  // exclusive scan of local_weight gives each rank its offset into the
+  // virtual, fully key-sorted, fully merged sample. Exact integer
+  // arithmetic matters here: a scan over floating-point weights isn't
+  // guaranteed bit-for-bit consistent across ranks, and could leave a
+  // target unclaimed, or claimed twice, at a rank boundary.
   std::int64_t offset = 0;
   MPI_Exscan(&local_weight, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
   if (rank == 0)

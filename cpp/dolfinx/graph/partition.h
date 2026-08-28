@@ -44,16 +44,16 @@ using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 /// partitioning of a distributed graph from the positions of its nodes
 /// in space alone, with no access to the graph edges.
 ///
-/// Since an implementation has no graph, it cannot compute ghost
-/// destinations, so this signature has no `ghosting` parameter -- a
-/// partitioner of this type is never asked to ghost. See
-/// ::hybrid_partition_fn for a partitioning function that has access to
-/// both the node positions and the graph edges, and so can ghost.
+/// With no graph, ghost destinations cannot be computed, so this
+/// signature has no `ghosting` parameter -- a partitioner of this type
+/// is never asked to ghost. See ::hybrid_partition_fn for a
+/// partitioning function that has access to both node positions and
+/// graph edges, and so can ghost.
 ///
-/// @note The coordinates are always `double`, regardless of the mesh's
+/// @note Coordinates are always `double`, regardless of the mesh's
 /// scalar type: partition quality is insensitive to position precision,
-/// and `double` avoids any precision loss when positions are
-/// quantised into keys.
+/// and `double` avoids precision loss when positions are quantised
+/// into keys.
 ///
 /// @param[in] comm MPI Communicator that the graph is distributed
 /// across.
@@ -74,12 +74,11 @@ using geom_partition_fn = std::function<std::vector<int>(
 /// partitioning of a distributed graph using both its edges and the
 /// positions of its nodes in space.
 ///
-/// Unlike ::geom_partition_fn, which has no access to the graph at all,
-/// a hybrid partitioner uses the graph edges as part of the
-/// partitioning decision itself, not only to compute ghost
-/// destinations, so it always needs both inputs. ParMETIS `GeomKway`,
-/// for example, redistributes nodes along a space-filling curve and
-/// then applies graph partitioning to the result.
+/// Unlike ::geom_partition_fn, a hybrid partitioner uses the graph
+/// edges in the partitioning decision itself, not just for ghosting,
+/// so it always needs both inputs. ParMETIS `GeomKway`, for example,
+/// redistributes nodes along a space-filling curve and then applies
+/// graph partitioning to the result.
 ///
 /// @note The coordinates are always `double`, for the same reason as
 /// ::geom_partition_fn.
@@ -109,14 +108,13 @@ using hybrid_partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
 /// mesh::create_mesh accepts: ::partition_fn, ::geom_partition_fn, or
 /// ::hybrid_partition_fn.
 ///
-/// mesh::create_mesh always has the cell topology available, so it can
-/// build the mesh dual graph itself and pass it to a ::partition_fn or
-/// a ::hybrid_partition_fn alternative, neither of which has any other
-/// way to obtain it. If the alternative held is a ::geom_partition_fn
-/// or a ::hybrid_partition_fn, mesh::create_mesh additionally computes
-/// the centroid of each cell from the vertex coordinates -- using the
-/// same `(commg, x, xshape)` geometry data it uses to build the mesh --
-/// and supplies them, since neither has any other way to obtain them.
+/// mesh::create_mesh always has the cell topology available, so it
+/// builds the dual graph itself and passes it to a ::partition_fn or
+/// ::hybrid_partition_fn, neither of which has any other way to obtain
+/// it. For a ::geom_partition_fn or ::hybrid_partition_fn it also
+/// computes cell centroids from the vertex coordinates -- using the
+/// same `(commg, x, xshape)` data it uses to build the mesh -- since
+/// neither has any other way to obtain them.
 using AnyPartitionFunction
     = std::variant<partition_fn, geom_partition_fn, hybrid_partition_fn>;
 
@@ -179,15 +177,12 @@ namespace build
 ///
 /// @note Collective.
 ///
-/// @note The neighbourhood communicator used for the exchange is built
-/// with MPI::compute_graph_edges_nbx, which uses the scalable NBX
-/// consensus algorithm to discover incoming edges from the outgoing
-/// edges alone, i.e. no arrays the size of the communicator are built
-/// and the communication pattern stays sparse. Determining the
-/// neighbourhood this way is not free, though: it costs one or more
-/// non-blocking consensus rounds, so calling this function repeatedly
-/// (e.g. once per cell type) has a real cost even though no large
-/// arrays are built.
+/// @note The neighbourhood communicator is built with
+/// MPI::compute_graph_edges_nbx, which discovers incoming edges from
+/// the outgoing edges alone via the scalable NBX consensus algorithm,
+/// keeping the communication pattern sparse. This is not free: it
+/// costs one or more non-blocking consensus rounds, so calling this
+/// function repeatedly (e.g. once per cell type) has a real cost.
 ///
 /// @param[in] comm MPI Communicator that `list`/`destinations` are
 /// distributed across.
@@ -216,15 +211,12 @@ distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
 ///
 /// @note Collective.
 ///
-/// @note The neighbourhood communicator used for the exchange is built
-/// with MPI::compute_graph_edges_nbx, which uses the scalable NBX
-/// consensus algorithm to discover incoming edges from the outgoing
-/// edges alone, i.e. no arrays the size of the communicator are built
-/// and the communication pattern stays sparse. Determining the
-/// neighbourhood this way is not free, though: it costs one or more
-/// non-blocking consensus rounds, so calling this function repeatedly
-/// (e.g. once per cell type) has a real cost even though no large
-/// arrays are built.
+/// @note The neighbourhood communicator is built with
+/// MPI::compute_graph_edges_nbx, which discovers incoming edges from
+/// the outgoing edges alone via the scalable NBX consensus algorithm,
+/// keeping the communication pattern sparse. This is not free: it
+/// costs one or more non-blocking consensus rounds, so calling this
+/// function repeatedly (e.g. once per cell type) has a real cost.
 ///
 /// @param[in] comm MPI Communicator that `list`/`destinations` are
 /// distributed across.

@@ -26,14 +26,12 @@ using namespace dolfinx;
 
 namespace
 {
-/// @brief Common setup shared by both graph::build::distribute
-/// overloads: work out which ranks to send to/receive from and start
-/// exchanging the item counts, ahead of the payload-specific packing
-/// and exchange each overload does for itself.
+/// @brief Setup shared by both graph::build::distribute overloads:
+/// determine send/receive ranks and start exchanging item counts,
+/// before each overload packs and exchanges its own payload.
 ///
-/// The size exchange (`request`) is left pending, rather than waited
-/// on here, so that the caller's (potentially expensive) send-buffer
-/// packing can overlap with it.
+/// The size exchange (`request`) is left pending so the caller can
+/// overlap it with (potentially expensive) send-buffer packing.
 struct DistributionPlan
 {
   /// (destination rank, local index, owning rank) triples for each

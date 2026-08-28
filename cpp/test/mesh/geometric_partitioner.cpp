@@ -102,9 +102,9 @@ TEST_CASE("Geometric cell partitioner", "[geometric_partitioner]")
     return c;
   };
 
-  // A graph::geom_partition_fn has no cell topology, so it never ghosts
-  // regardless of what is otherwise requested; compare it against the
-  // unghosted baseline.
+  // graph::geom_partition_fn has no cell topology, so it never ghosts
+  // regardless of the requested mode; compare against the unghosted
+  // baseline.
   std::array<std::int64_t, 5> c0n
       = counts(graph::partition_graph, mesh::GhostMode::none);
   std::array<std::int64_t, 5> c1
@@ -191,9 +191,9 @@ TEST_CASE("SFC point partition", "[partition_sfc]")
 
 TEST_CASE("SFC curve properties", "[partition_sfc]")
 {
-  // With one part per point, a point's part index is its position along
-  // the curve, so the traversal order can be checked directly. Uses
-  // MPI_COMM_SELF, so that every rank tests the curve on the whole grid.
+  // One part per point makes a point's part index its curve position,
+  // so traversal order can be checked directly. MPI_COMM_SELF lets
+  // every rank test the curve over the whole grid.
   constexpr int k = 8;
   std::vector<double> x;
   std::vector<std::array<int, 3>> grid;

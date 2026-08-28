@@ -170,12 +170,10 @@ def distribute(
 ]:
     """Distribute rows of a fixed-degree array to destination ranks.
 
-    Uses a scalable neighbourhood exchange: the ranks to send to/receive
-    from are discovered with the NBX consensus algorithm rather than an
-    all-to-all over the whole communicator, so the communication
-    pattern stays sparse as the communicator grows. Determining the
-    neighbourhood this way is not free, though: it costs at least one
-    non-blocking consensus round.
+    Uses a scalable neighbourhood exchange: send/receive ranks are
+    discovered via NBX consensus rather than an all-to-all, keeping
+    communication sparse as the communicator grows, at the cost of at
+    least one non-blocking consensus round.
 
     Args:
         comm: MPI communicator that ``list``/``destinations`` are

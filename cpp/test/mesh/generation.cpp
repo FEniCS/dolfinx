@@ -93,9 +93,9 @@ TEMPLATE_TEST_CASE("Interval mesh (parallel)", "[mesh][interval]", float,
 
   mesh::GhostMode ghost_mode = mesh::GhostMode::shared_facet;
 
-  // A real graph partitioner (e.g. PT-SCOTCH) is not used here: its
-  // result is not guaranteed stable across platforms (see #3358), so a
-  // fixed partition table is hardcoded instead for a reproducible test.
+  // A real partitioner (e.g. PT-SCOTCH) isn't used: its result isn't
+  // stable across platforms (#3358), so hardcode a fixed table instead
+  // for a reproducible test.
   graph::partition_fn part
       = [comm_size](
             MPI_Comm /* comm */, int /* nparts */,

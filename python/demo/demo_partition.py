@@ -241,9 +241,7 @@ def redistribute_cells(
     if fraction <= 0.0 or comm.size == 1:
         return cells
 
-    # Choose a destination for each local cell. Each rank decides only
-    # for its own cells, so a per-rank generator gives a deterministic
-    # but independent choice on each.
+    # A per-rank seed avoids every rank drawing the same random stream.
     rng = np.random.default_rng(seed + comm.rank)
     dest = np.full(len(cells), comm.rank)
     move = rng.random(len(cells)) < fraction
@@ -351,11 +349,9 @@ def slab_partitioner(
 # +
 comm = MPI.COMM_WORLD
 
-# Number of divisions in each direction of the cube, giving 6 n^3
-# tetrahedra. The effect of the input cell distribution on partitioning
-# cost is visible only on a large mesh, so `n` is large by default. It is
-# reduced when there is nothing to partition (a single rank), and in CI,
-# where the demo must run quickly.
+# Divisions per direction (6*n^3 tetrahedra). Large by default, since
+# input-distribution effects only show up on a big mesh; reduced for a
+# single rank (nothing to partition) or in CI (must run quickly).
 _small = comm.size == 1 or "CI" in os.environ or "GITHUB_ACTIONS" in os.environ
 n = 24 if _small else 128
 
@@ -491,14 +487,12 @@ if has_ptscotch and comm.size > 1:
             comm.allreduce(scotch_partitioner_time() - t_scotch, MPI.MAX),
         )
 
-    # One stage: SCOTCH on the randomly distributed input. This repeats
-    # the fraction = 1.0 row of the sweep above, deliberately, so that
-    # the comparison below stands on its own.
+    # SCOTCH alone, on the random input -- repeats the fraction = 1.0
+    # row above, deliberately, so this comparison stands on its own.
     msh1, t1, t1_scotch = timed(cells_random, scotch)
 
-    # Two stages: the curve first, then SCOTCH on its output. The first
-    # stage redistributes the cells alone (see redistribute_by_partitioner)
-    # since a full mesh from it would be thrown away immediately.
+    # Curve first, then SCOTCH on its output. Stage 1 redistributes
+    # cells only (not a full mesh, which would be discarded immediately).
     comm.Barrier()
     t = time.perf_counter()
     cells_sfc = redistribute_by_partitioner(comm, CellType.tetrahedron, cells_random, x, sfc)

@@ -40,12 +40,11 @@ namespace dolfinx_wrappers::part::impl
 /// The Python-visible partitioner argument accepted by create_mesh: a
 /// GraphPartitioner, a GeometricPartitioner, a HybridPartitioner, or a
 /// plain (raw callable) graph partitioner (std::nullopt disables
-/// redistribution). The three opaque handle types must be listed
-/// first: nanobind tries variant alternatives in order and stops at
-/// the first that converts, and their __call__ makes them callable, so
-/// a raw PythonPartitionFunction-shaped std::function would also
-/// happily (and wrongly) construct from any of them if that
-/// alternative were tried first.
+/// redistribution). The three opaque handle types must come first in
+/// the variant: nanobind tries alternatives in order and stops at the
+/// first that converts, and since their __call__ makes them callable,
+/// a raw PythonPartitionFunction would wrongly match any of them if
+/// tried first.
 using PythonPartitionFn
     = std::variant<GraphPartitioner, GeometricPartitioner, HybridPartitioner,
                    std::optional<PythonPartitionFunction>>;

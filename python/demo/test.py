@@ -12,10 +12,9 @@ import sys
 
 import pytest
 
-# Bound on the run time of a single demo, so a deadlocked demo (e.g. an
-# MPI collective mismatch) fails with a clear TimeoutExpired naming the
-# demo and command, rather than hanging the CI job until the runner's
-# own multi-hour job timeout is reached.
+# Bound on a single demo's run time, so a deadlock (e.g. an MPI
+# collective mismatch) fails fast with a clear TimeoutExpired instead
+# of hanging until CI's own multi-hour job timeout.
 DEMO_TIMEOUT_S = 300
 
 

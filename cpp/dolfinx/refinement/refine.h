@@ -114,8 +114,8 @@ struct IdentityPartitionerPlaceholder
 /// @param[in] option Control the computation of parent facets, parent
 /// cells.
 /// @param[in] ghost_mode Ghost mode of the refined mesh, passed to
-/// `partitioner` if it is a graph::partition_fn. Has no
-/// effect on the identity partitioner (see the warning above).
+/// `partitioner` when it is a graph::partition_fn; has no effect for
+/// the identity partitioner (see warning above).
 /// @return New mesh, and optional parent cell indices and parent facet
 /// indices.
 template <std::floating_point T>

@@ -36,8 +36,8 @@ namespace nb = nanobind;
 namespace
 {
 /// Convert an optional span of weights to the optional ndarray a Python
-/// partitioner expects. A std::nullopt span (no weights) becomes Python
-/// None, not a zero-length array.
+/// partitioner expects. std::nullopt (no weights) becomes Python None,
+/// not a zero-length array.
 std::optional<nb::ndarray<const std::int32_t, nb::numpy>>
 weights_to_ndarray(std::optional<std::span<const std::int32_t>> w)
 {
@@ -47,9 +47,8 @@ weights_to_ndarray(std::optional<std::span<const std::int32_t>> w)
       w->data(), std::initializer_list<std::size_t>({w->size()}));
 }
 
-/// Convert an optional ndarray of weights (as received from Python) to
-/// the optional span a C++ partitioner expects. Python None becomes
-/// std::nullopt (no weights), not a zero-length span.
+/// Inverse of weights_to_ndarray: Python None becomes std::nullopt, not
+/// a zero-length span.
 std::optional<std::span<const std::int32_t>> weights_to_span(
     std::optional<nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>> w)
 {
@@ -192,17 +191,13 @@ void graph(nb::module_& m)
       "directly as create_mesh's partitioner argument.");
 #endif
 
-  // Opaque holders for a dolfinx::graph::partition_fn, a
-  // dolfinx::graph::geom_partition_fn and a
-  // dolfinx::graph::hybrid_partition_fn. dolfinx.mesh.create_mesh
-  // recognises these types (as distinct from a plain callable and from
-  // each other) to route them through the matching alternative of
-  // dolfinx::graph::AnyPartitionFunction, which computes cell
-  // centroids itself for the geometric/hybrid alternatives. __call__ is
-  // exposed on all three for direct low-level use (bypassing
-  // create_mesh); the geometric and hybrid __call__ signatures take
-  // cell centroids, not raw node coordinates -- see
-  // dolfinx.mesh.compute_cell_centroids.
+  // Opaque holders for partition_fn, geom_partition_fn and
+  // hybrid_partition_fn. create_mesh recognises these types -- distinct
+  // from a plain callable and from each other -- to route them to the
+  // matching AnyPartitionFunction alternative, which computes cell
+  // centroids itself for the geometric/hybrid cases. __call__ is
+  // exposed on all three for direct low-level use; the geometric and
+  // hybrid __call__ take cell centroids, not raw node coordinates.
   nb::class_<GraphPartitioner>(
       m, "GraphPartitioner",
       "Cell partitioner using the mesh dual graph, e.g. as returned by "
