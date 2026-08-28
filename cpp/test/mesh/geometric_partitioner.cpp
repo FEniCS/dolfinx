@@ -189,6 +189,48 @@ TEST_CASE("SFC point partition", "[partition_sfc]")
   }
 }
 
+TEST_CASE("Geometric partitioning with distributed geometry",
+          "[geometric_partitioner]")
+{
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const int rank = dolfinx::MPI::rank(comm);
+  const int size = dolfinx::MPI::size(comm);
+  const std::int64_t n = std::max<std::int64_t>(8, 2 * size);
+
+  std::vector<std::int64_t> cells;
+  MPI_Comm commt = MPI_COMM_NULL;
+  if (rank == 0)
+  {
+    commt = MPI_COMM_SELF;
+    cells.resize(2 * n);
+    for (std::int64_t i = 0; i < n; ++i)
+    {
+      cells[2 * i] = i;
+      cells[2 * i + 1] = i + 1;
+    }
+  }
+
+  const auto range = common::local_range(rank, n + 1, size);
+  std::vector<double> x(range[1] - range[0]);
+  for (std::int64_t i = range[0]; i < range[1]; ++i)
+    x[i - range[0]] = static_cast<double>(i) / n;
+
+  fem::CoordinateElement<double> element(mesh::CellType::interval, 1);
+  auto check_partitioner = [&](const graph::AnyPartitionFunction& partitioner)
+  {
+    mesh::Mesh<double> msh = mesh::create_mesh(
+        comm, commt, std::span<const std::int64_t>(cells), element, comm, x,
+        {x.size(), 1}, graph::Partitioner{.fn = partitioner},
+        mesh::GhostMode::none, 2, 1);
+    CHECK(msh.topology()->index_map(1)->size_global() == n);
+  };
+
+  check_partitioner(graph::partition_sfc_hilbert);
+#ifdef HAS_PARMETIS
+  check_partitioner(graph::parmetis::geom_partitioner);
+#endif
+}
+
 TEST_CASE("SFC curve properties", "[partition_sfc]")
 {
   // One part per point makes a point's part index its curve position,

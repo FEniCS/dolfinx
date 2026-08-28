@@ -130,11 +130,11 @@ graph::partition_fn repartitioner(double ipc2redist = 1000.0,
 /// The graph edges are unused for partitioning, so this is much cheaper
 /// than ::geom_partitioner_kway, but cuts more edges.
 ///
-/// @note ParMETIS fails (crashes) if an MPI rank has no part of the
-/// graph. If necessary, the communicator should be split to avoid this
-/// situation.
+/// @note ParMETIS fails (crashes) if an MPI rank has no graph nodes. This
+/// function partitions only on ranks with nodes, mapping output part
+/// indices back to ranks in `comm`.
 ///
-/// @note This partitions into one part per rank of the communicator, so
+/// @note This partitions into one part per rank with graph nodes.
 /// `nparts` must equal the communicator size.
 ///
 /// @note ::geom_partition_fn has no graph, so this has no `ghosting`

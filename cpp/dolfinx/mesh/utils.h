@@ -1005,49 +1005,69 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
     graph::AdjacencyList<std::int32_t> dest(0);
     int failed = 0;
     std::string error_msg;
+
+    // Geometric data can be distributed on ranks that do not participate in
+    // topology partitioning. Gather cell centroids collectively over `comm`
+    // so that every rank in `commg` participates in the coordinate exchange.
+    std::vector<double> centroid;
+    const bool needs_centroids
+        = std::holds_alternative<graph::geom_partition_fn>(partitioner.fn)
+          or std::holds_alternative<graph::hybrid_partition_fn>(partitioner.fn);
+    std::vector<std::vector<std::int64_t>> topology(num_cell_types);
+    std::vector<std::span<const std::int64_t>> topology_view(num_cell_types);
+    if (needs_centroids or commt != MPI_COMM_NULL)
+    {
+      for (std::int32_t i = 0; i < num_cell_types; ++i)
+      {
+        if (p1_geometry)
+          topology_view[i] = cells[i];
+        else
+        {
+          topology[i] = extract_topology(celltypes[i], doflayouts[i], cells[i]);
+          topology_view[i] = topology[i];
+        }
+      }
+    }
+
+    if (needs_centroids)
+    {
+      std::vector<int> num_vertices_per_cell;
+      std::ranges::transform(celltypes,
+                             std::back_inserter(num_vertices_per_cell),
+                             [](CellType c) { return num_cell_vertices(c); });
+      centroid = compute_cell_centroids(comm, num_vertices_per_cell,
+                                        topology_view, commg, x, xshape[1]);
+    }
+
+    if (std::holds_alternative<graph::geom_partition_fn>(partitioner.fn))
+    {
+      try
+      {
+        int size = dolfinx::MPI::size(comm);
+        const auto& p = std::get<graph::geom_partition_fn>(partitioner.fn);
+        dest = graph::regular_adjacency_list(
+            p(comm, size, std::span<const double>(centroid), xshape[1],
+              partitioner.node_weights),
+            1);
+      }
+      catch (const std::exception& e)
+      {
+        failed = 1;
+        error_msg = e.what();
+      }
+    }
+
     if (commt != MPI_COMM_NULL)
     {
       try
       {
         int size = dolfinx::MPI::size(comm);
-        std::vector<std::vector<std::int64_t>> t(num_cell_types);
-        std::vector<std::span<const std::int64_t>> tspan(num_cell_types);
-        for (std::int32_t i = 0; i < num_cell_types; ++i)
-        {
-          if (p1_geometry)
-            tspan[i] = cells[i];
-          else
-          {
-            t[i] = extract_topology(celltypes[i], doflayouts[i], cells[i]);
-            tspan[i] = std::span(t[i]);
-          }
-        }
-
-        // Shared by the graph::geom_partition_fn and
-        // graph::hybrid_partition_fn alternatives below: neither has any
-        // other way to obtain the cell centroids.
-        auto centroids =
-            [&]() -> std::pair<std::vector<double>, std::array<std::size_t, 2>>
-        {
-          const int gdim = xshape[1];
-          std::vector<int> num_vertices_per_cell;
-          std::ranges::transform(
-              celltypes, std::back_inserter(num_vertices_per_cell),
-              [](CellType c) { return num_cell_vertices(c); });
-          std::vector<double> centroid = compute_cell_centroids(
-              commt, num_vertices_per_cell, tspan, commg, x, gdim);
-          std::array<std::size_t, 2> cshape
-              = {centroid.size() / static_cast<std::size_t>(gdim),
-                 static_cast<std::size_t>(gdim)};
-          return {std::move(centroid), cshape};
-        };
-
         // Shared by the graph::partition_fn and
         // graph::hybrid_partition_fn alternatives below: neither has any
         // other way to obtain the mesh dual graph.
         auto dual_graph = [&]() -> graph::AdjacencyList<std::int64_t>
         {
-          return build_dual_graph(commt, celltypes, tspan,
+          return build_dual_graph(commt, celltypes, topology_view,
                                   max_facet_to_cell_links, num_threads);
         };
 
@@ -1055,25 +1075,19 @@ partition_cells(MPI_Comm comm, MPI_Comm commt,
             [&](const auto& p) -> graph::AdjacencyList<std::int32_t>
             {
               using P = std::decay_t<decltype(p)>;
-              if constexpr (std::is_same_v<P, graph::geom_partition_fn>)
-              {
-                auto [centroid, cshape] = centroids();
-                return graph::regular_adjacency_list(
-                    p(commt, size, std::span<const double>(centroid), cshape[1],
-                      partitioner.node_weights),
-                    1);
-              }
-              else if constexpr (std::is_same_v<P, graph::hybrid_partition_fn>)
+              if constexpr (std::is_same_v<P, graph::hybrid_partition_fn>)
               {
                 return p(commt, size, dual_graph(),
-                         std::span<const double>(centroids().first),
+                         std::span<const double>(centroid),
                          partitioner.node_weights, std::nullopt, ghosting);
               }
-              else
+              else if constexpr (std::is_same_v<P, graph::partition_fn>)
               {
                 return p(commt, size, dual_graph(), partitioner.node_weights,
                          std::nullopt, ghosting);
               }
+              else
+                return dest;
             },
             partitioner.fn);
       }

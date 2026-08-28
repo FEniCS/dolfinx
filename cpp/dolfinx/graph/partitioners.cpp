@@ -714,6 +714,13 @@ std::vector<int> graph::parmetis::geom_partitioner(
 
   const idx_t num_nodes = x.size() / gdim;
 
+  if (nparts != dolfinx::MPI::size(comm))
+  {
+    throw std::runtime_error(
+        "ParMETIS_V3_PartGeom partitions into one part per MPI rank, so "
+        "the number of parts must equal the communicator size.");
+  }
+
   if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
   {
     // Nothing to be partitioned
@@ -722,15 +729,15 @@ std::vector<int> graph::parmetis::geom_partitioner(
 
   auto [pcomm, node_disp] = split_and_build_node_disp(comm, num_nodes);
 
-  std::vector<idx_t> part(num_nodes);
+  std::vector<int> dest(num_nodes);
   if (pcomm != MPI_COMM_NULL)
   {
-    if (nparts != dolfinx::MPI::size(pcomm))
-    {
-      throw std::runtime_error(
-          "ParMETIS_V3_PartGeom partitions into one part per MPI rank, so "
-          "the number of parts must equal the communicator size.");
-    }
+    const int rank = dolfinx::MPI::rank(comm);
+    const int psize = dolfinx::MPI::size(pcomm);
+    std::vector<int> pcomm_to_comm(psize);
+    MPI_Allgather(&rank, 1, MPI_INT, pcomm_to_comm.data(), 1, MPI_INT, pcomm);
+
+    std::vector<idx_t> part(num_nodes);
 
     // ParMETIS requires its own scalar type for the coordinates
     std::vector<real_t> xyz(x.begin(), x.end());
@@ -745,10 +752,12 @@ std::vector<int> graph::parmetis::geom_partitioner(
           std::format("ParMETIS_V3_PartGeom failed. Error code: {}", err));
     }
 
+    std::ranges::transform(part, dest.begin(), [&pcomm_to_comm](idx_t p)
+                           { return pcomm_to_comm[p]; });
     MPI_Comm_free(&pcomm);
   }
 
-  return std::vector<int>(part.begin(), part.end());
+  return dest;
 }
 //-----------------------------------------------------------------------------
 graph::hybrid_partition_fn
