@@ -1103,6 +1103,10 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 /// an interpolation point from `mesh0` is on the surface of a cell in
 /// `mesh1`. This parameter can also be used for extrapolation, i.e. if
 /// cells in `mesh0` is not overlapped by `mesh1`.
+/// @param[in] allow_extrapolation If `true` (default), points in `mesh0`
+/// not overlapped by any cell in `mesh1` are assigned the closest cell
+/// (within `padding`) on `mesh1`. If `false`, such points are left
+/// unowned.
 ///
 /// @note Setting the `padding` to a large value will increase the
 /// runtime of this function, as one has to determine what entity is
@@ -1110,7 +1114,8 @@ void piola_mapped_evaluation(const FiniteElement<U>& element, bool symmetric,
 template <std::floating_point T>
 geometry::PointOwnershipData<T> create_interpolation_data(
     const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
-    const mesh::Mesh<T>& mesh1, mesh::CellRange auto&& cells, T padding)
+    const mesh::Mesh<T>& mesh1, mesh::CellRange auto&& cells, T padding,
+    bool allow_extrapolation = true)
 {
   // Collect all the points at which values are needed to define the
   // interpolating function
@@ -1124,8 +1129,8 @@ geometry::PointOwnershipData<T> create_interpolation_data(
       x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
-  return geometry::determine_point_ownership<T>(mesh1, x, padding,
-                                                std::nullopt);
+  return geometry::determine_point_ownership<T>(mesh1, x, padding, std::nullopt,
+                                                allow_extrapolation);
 }
 
 template <dolfinx::scalar T, std::floating_point U>

@@ -669,6 +669,11 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// Each bounding box of the mesh is padded with this amount, to increase
 /// the number of candidates, avoiding rounding errors in determining the owner
 /// of a point if the point is on the surface of a cell in the mesh.
+/// @param[in] allow_extrapolation If `true`, a point that does not collide
+/// with any cell is assigned the owner of the closest cell among all
+/// processes with a bounding box (padded by `padding`) containing the point.
+/// If `false`, such a point is left unowned, i.e. its entry in `src_owner`
+/// is `-1`.
 /// @return Point ownership data.
 ///
 /// @note `dest_owner` is sorted
@@ -683,7 +688,8 @@ template <std::floating_point T>
 PointOwnershipData<T>
 determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
                           T padding,
-                          std::optional<std::span<const std::int32_t>> cells)
+                          std::optional<std::span<const std::int32_t>> cells,
+                          bool allow_extrapolation = true)
 {
   MPI_Comm comm = mesh.comm();
 
@@ -844,87 +850,92 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       point_owners[pos] = recv_ranks[i];
   }
 
-  // Create extrapolation marker for those points already sent to other
-  // process
-  std::vector<std::uint8_t> send_extrapolate(recv_offsets.back());
-  for (std::int32_t i = 0; i < recv_offsets.back(); i++)
+  if (allow_extrapolation)
   {
-    const std::int32_t pos = unpack_map[i];
-    send_extrapolate[i] = point_owners[pos] == -1;
-  }
-
-  // Swap communication direction, to send extrapolation marker to other
-  // processes
-  std::swap(send_sizes, recv_sizes);
-  std::swap(send_offsets, recv_offsets);
-  std::vector<std::uint8_t> dest_extrapolate(recv_offsets.back());
-  MPI_Neighbor_alltoallv(send_extrapolate.data(), send_sizes.data(),
-                         send_offsets.data(), MPI_UINT8_T,
-                         dest_extrapolate.data(), recv_sizes.data(),
-                         recv_offsets.data(), MPI_UINT8_T, forward_comm);
-
-  std::vector<T> squared_distances(received_points.size() / 3, -1);
-
-  for (std::size_t i = 0; i < dest_extrapolate.size(); i++)
-  {
-    if (dest_extrapolate[i] == 1)
+    // Create extrapolation marker for those points already sent to other
+    // process
+    std::vector<std::uint8_t> send_extrapolate(recv_offsets.back());
+    for (std::int32_t i = 0; i < recv_offsets.back(); i++)
     {
-      assert(closest_cells[i] == -1);
-      std::array<T, 3> point;
-      std::copy_n(std::next(received_points.begin(), 3 * i), 3, point.begin());
-
-      // Find shortest distance among cells with colliding bounding box
-      T shortest_distance = std::numeric_limits<T>::max();
-      std::int32_t closest_cell = -1;
-      for (auto cell : candidate_collisions.links(i))
-      {
-        auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
-        std::vector<T> nodes(3 * dofs.size());
-        for (std::size_t j = 0; j < dofs.size(); ++j)
-        {
-          const int pos = 3 * dofs[j];
-          for (std::size_t k = 0; k < 3; ++k)
-            nodes[3 * j + k] = geom_dofs[pos + k];
-        }
-        const std::array<T, 3> d = compute_distance_gjk<T>(
-            std::span<const T>(point.data(), point.size()), nodes);
-        if (T current_distance = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
-            current_distance < shortest_distance)
-        {
-          shortest_distance = current_distance;
-          closest_cell = cell;
-        }
-      }
-      closest_cells[i] = closest_cell;
-      squared_distances[i] = shortest_distance;
+      const std::int32_t pos = unpack_map[i];
+      send_extrapolate[i] = point_owners[pos] == -1;
     }
-  }
 
-  std::swap(recv_sizes, send_sizes);
-  std::swap(recv_offsets, send_offsets);
+    // Swap communication direction, to send extrapolation marker to other
+    // processes
+    std::swap(send_sizes, recv_sizes);
+    std::swap(send_offsets, recv_offsets);
+    std::vector<std::uint8_t> dest_extrapolate(recv_offsets.back());
+    MPI_Neighbor_alltoallv(send_extrapolate.data(), send_sizes.data(),
+                           send_offsets.data(), MPI_UINT8_T,
+                           dest_extrapolate.data(), recv_sizes.data(),
+                           recv_offsets.data(), MPI_UINT8_T, forward_comm);
 
-  // Get distances from closest entity of points that were on the other process
-  std::vector<T> recv_distances(recv_offsets.back());
-  MPI_Neighbor_alltoallv(
-      squared_distances.data(), send_sizes.data(), send_offsets.data(),
-      dolfinx::MPI::mpi_t<T>, recv_distances.data(), recv_sizes.data(),
-      recv_offsets.data(), dolfinx::MPI::mpi_t<T>, reverse_comm);
+    std::vector<T> squared_distances(received_points.size() / 3, -1);
 
-  // Update point ownership with extrapolation information
-  std::vector<T> closest_distance(point_owners.size(),
-                                  std::numeric_limits<T>::max());
-  for (std::size_t i = 0; i < out_ranks.size(); i++)
-  {
-    for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
+    for (std::size_t i = 0; i < dest_extrapolate.size(); i++)
     {
-      const std::int32_t pos = unpack_map[j];
-      auto current_dist = recv_distances[j];
-      // Update if closer than previous guess and was found
-      if (auto d = closest_distance[pos];
-          (current_dist > 0) and (current_dist < d))
+      if (dest_extrapolate[i] == 1)
       {
-        point_owners[pos] = out_ranks[i];
-        closest_distance[pos] = current_dist;
+        assert(closest_cells[i] == -1);
+        std::array<T, 3> point;
+        std::copy_n(std::next(received_points.begin(), 3 * i), 3,
+                    point.begin());
+
+        // Find shortest distance among cells with colliding bounding box
+        T shortest_distance = std::numeric_limits<T>::max();
+        std::int32_t closest_cell = -1;
+        for (auto cell : candidate_collisions.links(i))
+        {
+          auto dofs = md::submdspan(x_dofmap, cell, md::full_extent);
+          std::vector<T> nodes(3 * dofs.size());
+          for (std::size_t j = 0; j < dofs.size(); ++j)
+          {
+            const int pos = 3 * dofs[j];
+            for (std::size_t k = 0; k < 3; ++k)
+              nodes[3 * j + k] = geom_dofs[pos + k];
+          }
+          const std::array<T, 3> d = compute_distance_gjk<T>(
+              std::span<const T>(point.data(), point.size()), nodes);
+          if (T current_distance = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+              current_distance < shortest_distance)
+          {
+            shortest_distance = current_distance;
+            closest_cell = cell;
+          }
+        }
+        closest_cells[i] = closest_cell;
+        squared_distances[i] = shortest_distance;
+      }
+    }
+
+    std::swap(recv_sizes, send_sizes);
+    std::swap(recv_offsets, send_offsets);
+
+    // Get distances from closest entity of points that were on the other
+    // process
+    std::vector<T> recv_distances(recv_offsets.back());
+    MPI_Neighbor_alltoallv(
+        squared_distances.data(), send_sizes.data(), send_offsets.data(),
+        dolfinx::MPI::mpi_t<T>, recv_distances.data(), recv_sizes.data(),
+        recv_offsets.data(), dolfinx::MPI::mpi_t<T>, reverse_comm);
+
+    // Update point ownership with extrapolation information
+    std::vector<T> closest_distance(point_owners.size(),
+                                    std::numeric_limits<T>::max());
+    for (std::size_t i = 0; i < out_ranks.size(); i++)
+    {
+      for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
+      {
+        const std::int32_t pos = unpack_map[j];
+        auto current_dist = recv_distances[j];
+        // Update if closer than previous guess and was found
+        if (auto d = closest_distance[pos];
+            (current_dist > 0) and (current_dist < d))
+        {
+          point_owners[pos] = out_ranks[i];
+          closest_distance[pos] = current_dist;
+        }
       }
     }
   }

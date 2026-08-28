@@ -73,6 +73,7 @@ def create_interpolation_data(
     V_from: FunctionSpace,
     cells: npt.NDArray[np.int32],
     padding: float = 1e-14,
+    allow_extrapolation: bool = True,
 ) -> _PointOwnershipData:
     """Generate data for interpolating functions on different meshes.
 
@@ -83,6 +84,10 @@ def create_interpolation_data(
             interpolate into.
         padding: Absolute padding of bounding boxes of all entities on
             mesh_to.
+        allow_extrapolation: If ``True`` (default), points in `V_to`'s
+            mesh not overlapped by any cell in `V_from`'s mesh are
+            assigned the closest cell (within `padding`). If ``False``,
+            such points are left unowned.
 
     Returns:
         Data needed to interpolation functions defined on function
@@ -95,7 +100,9 @@ def create_interpolation_data(
             _cpp.mesh.Mesh_float32() as mesh1,
         ):
             return _PointOwnershipData(
-                _create_interpolation_data(geometry0, element0, mesh1, cells, padding)
+                _create_interpolation_data(
+                    geometry0, element0, mesh1, cells, padding, allow_extrapolation
+                )
             )
         case (
             _cpp.mesh.Geometry_float64() as geometry0,
@@ -103,7 +110,9 @@ def create_interpolation_data(
             _cpp.mesh.Mesh_float64() as mesh1,
         ):
             return _PointOwnershipData(
-                _create_interpolation_data(geometry0, element0, mesh1, cells, padding)
+                _create_interpolation_data(
+                    geometry0, element0, mesh1, cells, padding, allow_extrapolation
+                )
             )
         case _:
             raise TypeError(

@@ -338,6 +338,7 @@ def determine_point_ownership(
     points: npt.NDArray[Real],
     padding: float,
     cells: npt.NDArray[np.int32] | None = None,
+    allow_extrapolation: bool = True,
 ) -> PointOwnershipData[Real]:
     """Build point ownership data for a mesh-points pair.
 
@@ -355,6 +356,11 @@ def determine_point_ownership(
             surface of a cell in the mesh.
         cells: Cells to check for ownership
             If ``None`` then all cells are considered.
+        allow_extrapolation: If ``True`` (default), a point that does not
+            collide with any cell is assigned the owner of the closest
+            cell among all processes with a padded bounding box
+            containing the point. If ``False``, such a point is left
+            unowned.
 
     Returns:
         Point ownership data
@@ -369,5 +375,7 @@ def determine_point_ownership(
             the scale of the cell size.
     """
     return PointOwnershipData(
-        _cpp.geometry.determine_point_ownership(mesh._cpp_object, points, padding, cells)  # type: ignore[arg-type]
+        _cpp.geometry.determine_point_ownership(
+            mesh._cpp_object, points, padding, cells, allow_extrapolation
+        )  # type: ignore[arg-type]
     )
