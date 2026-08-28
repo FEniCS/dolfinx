@@ -375,7 +375,11 @@ def determine_point_ownership(
             the scale of the cell size.
     """
     return PointOwnershipData(
-        _cpp.geometry.determine_point_ownership(
-            mesh._cpp_object, points, padding, cells, allow_extrapolation
-        )  # type: ignore[arg-type]
+        _cpp.geometry.determine_point_ownership(  # type: ignore[call-overload]
+            mesh._cpp_object,
+            points,
+            padding,
+            cells,
+            allow_extrapolation,
+        )
     )
