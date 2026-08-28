@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Garth N. Wells
+// Copyright (C) 2025-2026 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -184,7 +184,9 @@ void tabulate_expression(
   // generic std::function-based closure, or a plain no-op (no element,
   // or no transformation needed) applies -- see
   // FiniteElement::with_dof_transformation_right_fn for the rationale.
-  auto run = [&](const auto& post_dof_transform)
+  auto run
+      = [&values, &fn, &Xshape, value_size, num_argument_dofs, &mesh, &entities,
+         &coeffs, &constants, &cell_info](const auto& post_dof_transform)
   {
     // An expression has no notion of requiring a facet permutation.
     md::mdspan<const std::uint8_t, md::dextents<std::size_t, 2>> facet_perms;
@@ -209,7 +211,7 @@ void tabulate_expression(
   {
     element->first.get()
         .template with_dof_transformation_right_fn<T, doftransform::transpose>(
-            [&](const auto& post_dof_transform) { run(post_dof_transform); });
+            run);
   }
   else
   {

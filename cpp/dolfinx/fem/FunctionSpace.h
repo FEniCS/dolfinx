@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2023 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2026 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //

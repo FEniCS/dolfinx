@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2024 Anders Logg, Garth N. Wells and Massimiliano Leoni
+// Copyright (C) 2003-2026 Anders Logg, Garth N. Wells and Massimiliano Leoni
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -671,7 +671,12 @@ public:
     const std::size_t num_basis_values = space_dimension * reference_value_size;
     element->template with_dof_transformation_fn<geometry_type,
                                                  doftransform::standard>(
-        [&](const auto& apply_dof_transformation)
+        [&cells, &cell_info, &num_basis_values, &reference_value_size,
+         &basis_derivatives_reference_values_b,
+         &basis_derivatives_reference_values, &J, &K, &detJ, &push_forward_fn,
+         &basis_values, &dofmap, &bs_dof, &_v, &coefficients, &element,
+         &bs_element, &matrix_size, &value_size, &u, &ushape,
+         &space_dimension](const auto& apply_dof_transformation)
         {
           for (auto cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
           {

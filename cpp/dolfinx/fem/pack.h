@@ -141,7 +141,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   // generic std::function-based closure applies -- see
   // FiniteElement::with_dof_transformation_fn for the rationale.
   element->template with_dof_transformation_fn<T, doftransform::transpose>(
-      [&](const auto& transformation)
+      [&cells, &c, &cstride, &offset, &space_dim, &bs, &v, &cell_info,
+       &dofmap](const auto& transformation)
       {
         // Passing the block size as a compile-time constant lets
         // `pack_impl` unroll its inner (per-DOF) loop for the common block

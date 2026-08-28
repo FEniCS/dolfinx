@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Joseph P. Dean and Garth N. Wells
+// Copyright (C) 2024-2026 Joseph P. Dean and Garth N. Wells
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later

@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2025 Garth N. Wells and Paul T. Kühner
+// Copyright (C) 2018-2026 Garth N. Wells and Paul T. Kühner
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -197,6 +197,12 @@ void assemble_entities(
   assert(be_b.size() >= static_cast<std::size_t>(bs) * num_dofs);
   auto be = be_b.first(bs * num_dofs);
   assert(entities0.size() == entities.size());
+
+  // P0 does not change across entities in this call, so whether it is a
+  // set (non-null) transform is loop-invariant -- checked once here rather
+  // than on every entity.
+  const bool p0_set = is_transform_set(P0);
+
   for (std::size_t f = 0; f < entities.extent(0); ++f)
   {
     // Cell in the integration domain, local facet index relative to the
@@ -217,7 +223,7 @@ void assemble_entities(
     std::ranges::fill(be, 0);
     kernel(be.data(), &coeffs(f, 0), constants.data(), cdofs_b.data(),
            &local_entity, &perm, nullptr);
-    if (is_transform_set(P0))
+    if (p0_set)
       P0(be, cell_info0, cell0, 1);
 
     // Add to global vector
@@ -296,6 +302,12 @@ void assemble_interior_facets(
   auto be = be_b.first(bs * 2 * dmap_size);
 
   assert(facets0.size() == facets.size());
+
+  // P0 does not change across facets in this call, so whether it is a
+  // set (non-null) transform is loop-invariant -- checked once here rather
+  // than on every facet.
+  const bool p0_set = is_transform_set(P0);
+
   for (std::size_t f = 0; f < facets.extent(0); ++f)
   {
     // Cells in integration domain and test function domain meshes
@@ -330,9 +342,9 @@ void assemble_interior_facets(
     kernel(be.data(), &coeffs(f, 0, 0), constants.data(), cdofs_b.data(),
            local_facet.data(), perm.data(), nullptr);
 
-    if (P0 and cells0[0] >= 0)
+    if (p0_set and cells0[0] >= 0)
       P0(be, cell_info0, cells0[0], 1);
-    if (P0 and cells0[1] >= 0)
+    if (p0_set and cells0[1] >= 0)
     {
       std::span sub_be(be.data() + bs * dmap_size, bs * dmap_size);
       P0(sub_be, cell_info0, cells0[1], 1);
@@ -488,7 +500,8 @@ void assemble_vector(
     }
 
     element->template with_dof_transformation_fn<T, doftransform::standard>(
-        [&](const auto& P0)
+        [&L, cell_type_idx, &b, &x_dofmap, &x, &dofs, bs, &coefficients,
+         &constants, &cell_info0, &be_b, &cdofs_b, &mesh](const auto& P0)
         {
           for (int i = 0; i < L.num_integrals(IntegralType::cell, 0); ++i)
           {
