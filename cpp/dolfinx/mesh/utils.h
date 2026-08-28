@@ -1474,19 +1474,15 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode,
             std::optional<std::int32_t> max_facet_to_cell_links = 2)
 {
-  if (dolfinx::MPI::size(comm) == 1)
-  {
-    return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
-                       comm, x, xshape,
-                       graph::Partitioner{.fn = graph::partition_fn(nullptr)},
-                       ghost_mode, max_facet_to_cell_links, 1);
-  }
-  else
-  {
-    return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
-                       comm, x, xshape, graph::Partitioner{}, ghost_mode,
-                       max_facet_to_cell_links, 1);
-  }
+  // A single rank has nothing to partition, so skip the default
+  // partitioner and just assign global indices.
+  graph::Partitioner partitioner
+      = dolfinx::MPI::size(comm) == 1
+            ? graph::Partitioner{.fn = graph::partition_fn(nullptr)}
+            : graph::Partitioner{};
+  return create_mesh(comm, comm, std::vector{cells}, std::vector{elements},
+                     comm, x, xshape, partitioner, ghost_mode,
+                     max_facet_to_cell_links, 1);
 }
 
 /// @brief Create a sub-geometry from a mesh and a subset of mesh entities to
